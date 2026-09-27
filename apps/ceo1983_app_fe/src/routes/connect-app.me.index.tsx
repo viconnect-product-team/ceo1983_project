@@ -3,7 +3,7 @@
 // All identity mutations derive the actor server-side; the client only ever
 // holds owner DTOs (MyIdentityPayload) or the recipient projection.
 
-import { useCallback, useEffect, useState } from "react";
+import React, { type ChangeEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,7 +31,7 @@ import { useT, useLang } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
 import type { IdentityShowcaseItem } from "@/lib/business-connect/mobile/identity-showcase.service";
 import { MobilePage } from "@/components/business-connect/mobile/MobilePage";
 import { MeHeader } from "@/components/business-connect/mobile/me/MeHeader";
@@ -358,7 +358,7 @@ function ConnectAppMePage() {
   // Lưới 4 cột: hiện tối đa 4 logo, phần còn lại quy về "+N" tính trên số khách hàng thật.
   const clientLogos = (
     clientLogoItems.length > 4 ? clientLogoItems.slice(0, 3) : clientLogoItems
-  ).map((item) => ({ id: item.id, name: item.title, logoUrl: item.logoUrl as string }));
+  ).map((item) => ({ id: item.id, name: item.title, logoUrl: resolveMediaUrl(item.logoUrl as string) || (item.logoUrl as string) }));
   const clientExtraCount = Math.max(0, clientItems.length - clientLogos.length);
 
   const aboutMetrics = (showcaseQuery.data?.metrics ?? []).map((item) => ({
@@ -975,7 +975,7 @@ function ShowcaseManageSheet({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -986,50 +986,16 @@ function ShowcaseManageSheet({
 
     setUploading(true);
     setError(null);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Compress / resize to max 400x400 to keep fast and fit well
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        const maxDim = 400;
-
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/png", 0.9);
-          setLogoUrl(dataUrl);
-        } else {
-          setLogoUrl(event.target?.result as string);
-        }
-        setUploading(false);
-      };
-      img.onerror = () => {
-        setLogoUrl(event.target?.result as string);
-        setUploading(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.onerror = () => {
-      setError("Lỗi đọc tệp ảnh từ máy");
+    try {
+      const uploadedUrl = await uploadFileToNest(file, "logos");
+      if (!uploadedUrl) throw new Error("Không nhận được URL ảnh từ máy chủ MinIO");
+      setLogoUrl(uploadedUrl);
+    } catch (err: any) {
+      setError(err?.message || "Lỗi tải ảnh logo lên máy chủ");
+    } finally {
       setUploading(false);
-    };
-    reader.readAsDataURL(file);
+      if (e.target) e.target.value = "";
+    }
   };
 
   async function handleAdd() {
@@ -1099,7 +1065,7 @@ function ShowcaseManageSheet({
                   {item.logoUrl ? (
                     <div className="h-10 w-10 shrink-0 rounded-lg bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-subtle)] p-1 grid place-items-center overflow-hidden">
                       <img
-                        src={item.logoUrl}
+                        src={resolveMediaUrl(item.logoUrl) || item.logoUrl}
                         alt={item.title}
                         className="max-h-full max-w-full object-contain"
                         onError={(e) => {
@@ -1236,7 +1202,7 @@ function ShowcaseManageSheet({
                   <div className="flex items-center gap-3 p-2 rounded-xl bg-[var(--bc-mobile-surface-2)] border border-[var(--bc-mobile-border-subtle)]">
                     <div className="h-10 w-10 rounded-lg bg-[var(--bc-mobile-surface)] grid place-items-center overflow-hidden shrink-0">
                       <img
-                        src={logoUrl}
+                        src={resolveMediaUrl(logoUrl) || logoUrl}
                         alt="Xem trước logo"
                         className="max-h-full max-w-full object-contain"
                         onError={() =>

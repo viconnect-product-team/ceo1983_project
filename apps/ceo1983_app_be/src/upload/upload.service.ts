@@ -115,7 +115,102 @@ export class UploadService {
       SET avatar_url = ${url}
       WHERE id = ${userId}::uuid
     `.catch(() => null);
+
+    // Save url to database card_settings (SSOT for digital card & mobile app)
+    await this.prisma.$executeRaw`
+      INSERT INTO public.card_settings (user_id, photo_url, updated_at)
+      VALUES (${userId}::uuid, ${url}, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        photo_url = ${url},
+        updated_at = NOW()
+    `.catch(() => null);
+
+    // Save url to database member_business_cards
+    await this.prisma.$executeRaw`
+      UPDATE public.member_business_cards
+      SET avatar_url = ${url}, updated_at = NOW()
+      WHERE owner_user_id = ${userId}::uuid
+    `.catch(() => null);
     
+    return url;
+  }
+
+  async saveCompanyLogo(file: any, userId: string): Promise<string> {
+    const fileExt = path.extname(file.originalname).toLowerCase() || '.png';
+    const baseFilename = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
+    const safeFilename = `logos/${baseFilename}`;
+
+    let saved = false;
+    let url: string | null = null;
+
+    try {
+      const minioUrl = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
+      if (minioUrl) {
+        url = minioUrl;
+        saved = true;
+      }
+    } catch (minioErr: any) {
+      console.warn('MinIO upload unreachable/failed for logo, fallback to disk storage:', minioErr?.message);
+    }
+
+    if (!saved) {
+      try {
+        url = await this.saveToLocalDisk('logos', baseFilename, file.buffer);
+        saved = true;
+      } catch (diskErr: any) {
+        console.warn('Local disk write notice in saveCompanyLogo:', diskErr?.message);
+      }
+    }
+
+    if (!saved || !url) {
+      throw new InternalServerErrorException('Không thể lưu trữ tệp logo lên hệ thống. Vui lòng thử lại sau.');
+    }
+
+    try {
+      const uploadId = randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_uploads (id, user_id, file_path, filename, original_name, mime_type, size, created_at, updated_at)
+        VALUES (${uploadId}::uuid, ${userId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
+      `;
+    } catch {}
+
+    // Save to card_settings (SSOT for digital card & mobile app)
+    await this.prisma.$executeRaw`
+      INSERT INTO public.card_settings (user_id, company_logo_url, updated_at)
+      VALUES (${userId}::uuid, ${url}, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        company_logo_url = ${url},
+        updated_at = NOW()
+    `.catch(() => null);
+
+    // Save to members table
+    await this.prisma.$executeRaw`
+      UPDATE public.members
+      SET company_logo_url = ${url}, updated_at = NOW()
+      WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
+    `.catch(() => null);
+
+    // Save to user_profiles
+    await this.prisma.$executeRaw`
+      UPDATE public.user_profiles
+      SET company_logo_url = ${url}, updated_at = NOW()
+      WHERE user_id = ${userId}::uuid
+    `.catch(() => null);
+
+    // Save to business_identities
+    await this.prisma.$executeRaw`
+      UPDATE public.business_identities
+      SET company_logo_url = ${url}, updated_at = NOW()
+      WHERE owner_user_id = ${userId}::uuid
+    `.catch(() => null);
+
+    // Save to member_business_cards
+    await this.prisma.$executeRaw`
+      UPDATE public.member_business_cards
+      SET company_logo_url = ${url}, updated_at = NOW()
+      WHERE owner_user_id = ${userId}::uuid
+    `.catch(() => null);
+
     return url;
   }
 

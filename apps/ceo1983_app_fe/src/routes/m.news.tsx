@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 export const Route = createFileRoute("/m/news")({
   component: NewsScreen,
@@ -52,6 +53,13 @@ function NewsScreen() {
             <h2 className="mt-2 text-[14px] font-semibold leading-snug text-[var(--vba-text)] hover:text-[#D8B282]">
               {n.title}
             </h2>
+            {(n.image || n.imageUrl) && (
+              <img
+                src={resolveMediaUrl(n.image || n.imageUrl) || (n.image || n.imageUrl)}
+                alt={n.title}
+                className="mt-2 w-full h-36 object-cover rounded-xl border border-black/10 dark:border-white/10"
+              />
+            )}
             {n.excerpt && (
               <p className="mt-1 line-clamp-2 text-[12px] text-[var(--vba-text-muted)]">
                 {n.excerpt}
@@ -101,6 +109,14 @@ function NewsScreen() {
                 <span>{selectedNews.views} lượt xem</span>
               </div>
             </div>
+
+            {(selectedNews.image || selectedNews.imageUrl) && (
+              <img
+                src={resolveMediaUrl(selectedNews.image || selectedNews.imageUrl) || (selectedNews.image || selectedNews.imageUrl)}
+                alt={selectedNews.title}
+                className="w-full h-48 object-cover rounded-xl border border-white/10 mb-3.5"
+              />
+            )}
 
             <div className="space-y-3.5 text-[13.5px] leading-relaxed text-white/90">
               <p className="font-medium text-white/95 bg-white/5 p-3.5 rounded-xl border border-white/5">

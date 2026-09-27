@@ -93,3 +93,33 @@ export const requireNestAuth = createMiddleware({ type: "function" }).server(
     return next({ context: { userId, token, user, role, supabase: supabaseAdmin } });
   }
 );
+
+export const optionalNestAuth = createMiddleware({ type: "function" }).server(
+  async ({ next }) => {
+    const request = getRequest();
+    const token = request?.headers ? extractToken(request) : null;
+    const decoded = token ? verifyNestJwt(token) : null;
+    const userId: string | null = decoded?.sub ?? decoded?.id ?? null;
+    const role: string = decoded?.role ?? "guest";
+    const user = userId
+      ? {
+          id: userId,
+          email: decoded?.email ?? decoded?.username ?? "",
+          name: decoded?.name ?? "",
+          avatar_url: decoded?.avatar_url ?? "",
+          role,
+        }
+      : null;
+
+    return next({
+      context: {
+        userId: userId || "",
+        token: token || "",
+        user,
+        role,
+        supabase: supabaseAdmin,
+      },
+    });
+  }
+);
+

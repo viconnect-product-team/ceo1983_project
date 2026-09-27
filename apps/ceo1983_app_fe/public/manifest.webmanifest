@@ -1,32 +1,38 @@
 {
-  "name": "ViOne",
-  "short_name": "ViOne",
-  "description": "ViOne — Nền tảng kết nối, chuyển đổi số & giao thương doanh nghiệp thông minh.",
-  "start_url": "/connect-app",
+  "name": "CEO1983",
+  "short_name": "CEO1983",
+  "description": "Ứng dụng CLB Doanh Nhân CEO1983: Thẻ hội viên số, biểu quyết, quay số trúng thưởng, sàn sản phẩm và cơ hội kinh doanh B2B.",
+  "start_url": "/association",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B132B",
-  "theme_color": "#E5A93C",
+  "background_color": "#001D4A",
+  "theme_color": "#001D4A",
   "lang": "vi",
   "icons": [
     {
-      "src": "/vione-gold-192.png",
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/app-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/vione-gold-512.png",
+      "src": "/app-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/vione-gold-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     },
     {
       "src": "/apple-touch-icon.png",

@@ -12,7 +12,8 @@
 // Business Connect attribution. The opaque token is never rendered.
 
 import { useState } from "react";
-import { ShieldOff } from "lucide-react";
+import { ShieldOff, ArrowLeft } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useT } from "@/lib/i18n";
 import { DigitalBusinessCard } from "./DigitalBusinessCard";
 import { IdentityShareContactPanel } from "./IdentityShareContactPanel";
@@ -71,7 +72,20 @@ export function RecipientCardView({
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-4 px-5 py-10">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-4 px-5 py-6 sm:py-10">
+      <div className="flex items-center justify-between">
+        <Link
+          to="/association"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--bc-mobile-border,var(--border))] bg-white/90 dark:bg-slate-900/90 px-3.5 py-1.5 text-[12px] font-bold text-[#003B95] dark:text-amber-300 shadow-xs backdrop-blur-md transition hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Về App Hiệp Hội</span>
+        </Link>
+        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+          CLB Doanh Nhân CEO 1983
+        </span>
+      </div>
+
       <DigitalBusinessCard
         card={card}
         publicUrl={publicUrl}

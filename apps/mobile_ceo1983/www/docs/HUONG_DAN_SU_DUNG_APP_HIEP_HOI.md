@@ -1,567 +1,512 @@
-# HƯỚNG DẪN SỬ DỤNG CHI TIẾT ỨNG DỤNG DI ĐỘNG HIỆP HỘI DOANH NHÂN CEO 1983
-**Phân hệ:** Mobile App Hiệp Hội (iOS & Android) — **Đơn vị vận hành:** CLB Doanh Nhân CEO 1983  
-**Nền tảng công nghệ:** VIONE Ecosystem Pro — **Phiên bản:** v2.6.0  
-**Ngày cập nhật:** 18/09/2026 — **Môi trường:** Live Production Staging  
-**Tài liệu kèm ảnh chụp thực tế 100% (Bao gồm các màn hình liên kết CRM Quản Trị tương ứng)**
+# HƯỚNG DẪN THAO TÁC & VẬN HÀNH TOÀN DIỆN ỨNG DỤNG HIỆP HỘI DOANH NHÂN CEO 1983
+**Phân hệ:** Ứng dụng Di động Doanh nhân (Mobile App / PWA) & Cổng Đăng Ký Hội Viên  
+**Đơn vị phát triển & Vận hành:** Ban Quản Trị & Ban Thư Ký CLB Doanh Nhân CEO 1983 (Trực thuộc Hội Doanh Nhân Trẻ Hà Nội - HanoiBA)  
+**Nền tảng hỗ trợ:** iOS (Apple TestFlight), Android (APK Cài đặt trực tiếp), Web PWA  
 
 ---
 
-## 📑 MỤC LỤC CHI TIẾT
+## 📑 MỤC LỤC TỔNG QUAN
 
-1. [DANH MỤC TÀI KHOẢN VẬN HÀNH & KIỂM THỬ THỰC TẾ](#1-danh-mục-tài-khoản-vận-hành--kiểm-thử-thực-tế)
-2. [QUY TRÌNH GIA NHẬP: LANDING PAGE ➔ CRM PHÊ DUYỆT ➔ KÍCH HOẠT TÀI KHOẢN APP](#2-quy-trình-gia-nhập-landing-page--crm-phê-duyệt--kích-hoạt-tài-khoản-app)
-3. [ĐĂNG NHẬP, KHÔI PHỤC THÔNG TIN & TRANG CHỦ (HOME DASHBOARD)](#3-đăng-nhập-khôi-phục-thông-tin--trang-chủ-home-dashboard)
-4. [THẺ HỘI VIÊN VIP KỸ THUẬT SỐ, QUÉT RADAR NFC & DANH THIẾP SỐ CÔNG KHAI](#4-thẻ-hội-viên-vip-kỹ-thuật-số-quét-radar-nfc--danh-thiếp-số-công-khai)
-5. [QUẢN LÝ SỰ KIỆN: CHI TIẾT SỰ KIỆN, MUA VÉ VIETQR, CHECK-IN & HOẠT ĐỘNG (KÈM ẢNH CRM LIÊN QUAN)](#5-quản-lý-sự-kiện-chi-tiết-sự-kiện-mua-vé-vietqr-check-in--hoạt-động-kèm-ảnh-crm-liên-quan)
-6. [SÀN GIAO THƯƠNG MARKETPLACE: DANH MỤC, THÊM MỚI, XÓA & CHỈNH SỬA SẢN PHẨM (KÈM ẢNH CRM LIÊN QUAN)](#6-sàn-giao-thương-marketplace-danh-mục-thêm-mới-xóa--chỉnh-sửa-sản-phẩm-kèm-ảnh-crm-liên-quan)
-7. [BẢNG TIN CƠ HỘI KẾT NỐI KINH DOANH: ĐĂNG MỚI, CHỈNH SỬA, ĐÓNG & NHẬN DEAL (KÈM ẢNH CRM LIÊN QUAN)](#7-bảng-tin-cơ-hội-kết-nối-kinh-doanh-đăng-mới-chỉnh-sửa-đóng--nhận-deal-kèm-ảnh-crm-liên-quan)
-8. [DANH BẠ HỘI VIÊN, HỒ SƠ DOANH NGHIỆP 360°, KẾT NỐI & MỜI HỘI VIÊN](#8-danh-bạ-hội-viên-hồ-sơ-doanh-nghiệp-360-kết-nối--mời-hội-viên)
-9. [HỘP THƯ TIN NHẮN, TẠO NHÓM, CHAT 1-1, GỬI ĐỊNH VỊ GPS & GỌI ĐIỆN MESSENGER](#9-hộp-thư-tin-nhắn-tạo-nhóm-chat-1-1-gửi-định-vị-gps--gọi-điện-messenger)
-10. [MENU CÁ NHÂN, DANH THIẾP SỐ, KÊNH TRỢ GIÚP & ĐỌC HƯỚNG DẪN SỬ DỤNG TRỰC TIẾP TRONG APP](#10-menu-cá-nhân-danh-thiếp-số-kênh-trợ-giúp--đọc-hướng-dẫn-sử-dụng-trực-tiếp-trong-app)
-11. [QUẢN LÝ HỘI PHÍ THƯỜNG NIÊN (KÈM ẢNH CRM LIÊN QUAN)](#11-quản-lý-hội-phí-thường-niên-kèm-ảnh-crm-liên-quan)
-
----
-
-## 1. DANH MỤC TÀI KHOẢN VẬN HÀNH & KIỂM THỬ THỰC TẾ
-
-Hệ thống được thiết lập sẵn các tài khoản demo chuẩn để kiểm thử toàn bộ luồng nghiệp vụ giữa CRM và App:
-
-| STT | Vai Trò | Email Đăng Nhập | Mật Khẩu | Pháp Nhân Doanh Nghiệp | Phạm Vi Kiểm Thử |
-|:---:|---|---|:---:|---|---|
-| 1 | **Quản Trị Viên (Admin CRM)** | `admin@connect.vn` | `123456` | VIONE Platform Holdings | Quản trị CRM: duyệt hội viên, tạo sự kiện, duyệt bài marketplace, đối soát phí |
-| 2 | **Tổng Thư Ký CLB (Executive)** | `ceo.tongthuky@ceo1983.com` | `123456` | Ban Chấp Hành CEO 1983 | Điều hành hiệp hội, kiểm duyệt bài viết, xuất bản tin tức |
-| 3 | **Hội Viên Doanh Nhân Mới (User A)** | `ceo.namhai@vione.app` | `123456` | Nam Hải Group | Test luồng duyệt hội viên, kích hoạt thẻ VIP, tạo sản phẩm, claim cơ hội |
-| 4 | **Hội Viên Doanh Nhân 1 (User B)** | `ceo.member1@ceo1983.com` | `123456` | CP Xây Dựng 1983 | Test luồng Chat 1-1, gửi định vị công ty, gọi thoại, đăng bài marketplace |
-| 5 | **Hội Viên Doanh Nhân 2 (User C)** | `ceo.member2@ceo1983.com` | `123456` | Logistics 1983 Toàn Cầu | Test nhận thông báo sự kiện, đăng ký vé VietQR, bình chọn trực tiếp |
-
----
-
-## 2. QUY TRÌNH GIA NHẬP: LANDING PAGE ➔ CRM PHÊ DUYỆT ➔ KÍCH HOẠT TÀI KHOẢN APP
-
-### 2.1. Thao Tác Trên Cổng Thông Tin Landing Page (Dành cho Doanh Nhân Mới)
-1. Doanh nhân truy cập cổng thông tin CLB CEO 1983 tại địa chỉ Landing Page.
-2. Tìm hiểu tôn chỉ hoạt động, điều lệ hiệp hội và các quyền lợi kết nối B2B.
-3. Nhấp chọn nút **"Đăng ký gia nhập CLB CEO 1983"** trên thanh điều hướng hoặc banner chính.
-4. Điền đầy đủ thông tin pháp nhân:
-   - Tên doanh nghiệp, Mã số thuế (MST), Địa chỉ trụ sở.
-   - Họ tên người đại diện pháp luật, Chức vụ, Số điện thoại di động, Email công vụ.
-   - Ban chuyên môn mong muốn sinh hoạt (Ban Xúc tiến Thương mại, Ban Sự kiện, Ban Tài chính, v.v.).
-5. Nhấn **"Gửi hồ sơ thẩm định"** và nhận mã tra cứu tiến độ tự động.
-
-![Giao diện Cổng thông tin Landing Page CLB CEO 1983](images/evidence/sub_01_landing_header_hero.png)
-*Hình 2.1: Giao diện Cổng thông tin Landing Page CLB CEO 1983 với nút Đăng ký tham gia.*
-
-![Modal Tiếp nhận Form Đăng ký Hội viên Mới](images/evidence/sub_03_landing_registration_modal.png)
-*Hình 2.2: Form đăng ký trực tuyến tiếp nhận thông tin pháp nhân và hồ sơ doanh nghiệp.*
-
-![Màn hình Tra cứu Tiến độ Thẩm định Hồ sơ](images/evidence/sub_04_landing_status_polling.png)
-*Hình 2.3: Màn hình kiểm tra trạng thái phê duyệt hồ sơ dành cho doanh nghiệp đăng ký mới.*
+1. [PHẦN 1: DANH SÁCH TÀI KHOẢN VẬN HÀNH TRÊN HỆ THỐNG](#phần-1-danh-sách-tài-khoản-vận-hành-trên-hệ-thống)
+2. [PHẦN 2: QUY TRÌNH ĐĂNG KÝ HỘI VIÊN, XÉT DUYỆT & CẤP TÀI KHOẢN](#phần-2-quy-trình-đăng-ký-hội-viên-xét-duyệt--cấp-tài-khoản)
+3. [PHẦN 3: HƯỚNG DẪN CHI TIẾT TỪNG CHỨC NĂNG TRÊN MOBILE APP](#phần-3-hướng-dẫn-chi-tiết-từng-chức-năng-trên-mobile-app)
+   - [3.1. Đăng Nhập & Kích Hoạt Phiên Làm Việc](#31-đăng-nhập--kích-hoạt-phiên-làm-việc)
+   - [3.2. Trang Chủ Dashboard Doanh Nhân & Tiện Ích 1-Chạm](#32-trang-chủ-dashboard-doanh-nhân--tiện-ích-1-chạm)
+   - [3.3. Thẻ Hội Viên VIP Gold & Thẻ Visit Card Thông Minh NFC](#33-thẻ-hội-viên-vip-gold--thẻ-visit-card-thông-minh-nfc)
+   - [3.4. Quét Mã QR Bằng Camera & Quét Ảnh Từ Bộ Sưu Tập](#34-quét-mã-qr-bằng-camera--quét-ảnh-từ-bộ-sưu-tập)
+   - [3.5. Cài Đặt Danh Thiếp Điện Tử & Tùy Biến Ẩn/Hiện Thông Tin](#35-cài-đặt-danh-thiếp-điện-tử--tùy-biến-ẩnhiện-thông-tin)
+   - [3.6. Hồ Sơ Doanh Nhân 360° & Đổi Mật Khẩu Bảo Mật](#36-hồ-sơ-doanh-nhân-360--đổi-mật-khẩu-bảo-mật)
+   - [3.7. Danh Bạ Doanh Nhân CEO 1983 & Bộ Lọc Ngành Nghề Đa Chiều](#37-danh-bạ-doanh-nhân-ceo-1983--bộ-lọc-ngành-nghề-đa-chiều)
+   - [3.8. Xem Chi Tiết Hồ Sơ Đối Tác & Kết Nối Giao Thương 2 Chiều](#38-xem-chi-tiết-hồ-sơ-đối-tác--kết-nối-giao-thương-2-chiều)
+   - [3.9. Hộp Thư Tin Nhắn Doanh Nghiệp B2B](#39-hộp-thư-tin-nhắn-doanh-nghiệp-b2b)
+   - [3.10. Hội Thoại Chat 1-on-1, Gửi File Catalog & Chia Sẻ Điểm Hẹn](#310-hội-thoại-chat-1-on-1-gửi-file-catalog--chia-sẻ-điểm-hẹn)
+   - [3.11. Quản Lý Nhóm Chat Giao Thương, Ghim Tin & Thu Hồi Tin Nhắn](#311-quản-lý-nhóm-chat-giao-thương-ghim-tin--thu-hồi-tin-nhắn)
+   - [3.12. Lịch Sự Kiện, Diễn Đàn & Đồng Bộ Lịch Hẹn Google/Apple Calendar](#312-lịch-sự-kiện-diễn-đàn--đồng-bộ-lịch-hẹn-googleapple-calendar)
+   - [3.13. Đăng Ký Vé Sự Kiện & Chọn Hạng Vé Đại Biểu](#313-đăng-ký-vé-sự-kiện--chọn-hạng-vé-đại-biểu)
+   - [3.14. Vé Điện Tử Thông Minh, Định Vị Số Bàn VIP & Check-in QR 1 Giây](#314-vé-điện-tử-thông-minh-định-vị-số-bàn-vip--check-in-qr-1-giây)
+   - [3.15. Bầu Cử Ban Chấp Hành Trực Tuyến & Quay Số May Mắn Lucky Draw](#315-bầu-cử-ban-chấp-hành-trực-tuyến--quay-số-may-mắn-lucky-draw)
+   - [3.16. Sàn Giao Dịch Marketplace B2B & Ưu Đãi Nội Bộ](#316-sàn-giao-dịch-marketplace-b2b--ưu-đãi-nội-bộ)
+   - [3.17. Đăng Bán Sản Phẩm Mới & Quản Lý Gian Hàng Doanh Nghiệp](#317-đăng-bán-sản-phẩm-mới--quản-lý-gian-hàng-doanh-nghiệp)
+   - [3.18. Chi Tiết Sản Phẩm & Gửi Yêu Cầu Báo Giá Sỉ B2B](#318-chi-tiết-sản-phẩm--gửi-yêu-cầu-báo-giá-sỉ-b2b)
+   - [3.19. Bảng Tin Trao Đổi Cơ Hội Giao Thương & Đón Nhận Deals](#319-bảng-tin-trao-đổi-cơ-hội-giao-thương--đón-nhận-deals)
+   - [3.20. Đăng Tin Trao Cơ Hội Hợp Tác Mới](#320-đăng-tin-trao-cơ-hội-hợp-tác-mới)
+   - [3.21. Cổng Đóng Hội Phí Niên Liễm VietQR & Tải Biên Lai Điện Tử](#321-cổng-đóng-hội-phí-niên-liễm-vietqr--tải-biên-lai-điện-tử)
+   - [3.22. Trung Tâm Thông Báo Đẩy & Bản Tin Hoạt Động Hiệp Hội](#322-trung-tâm-thông-báo-đẩy--bản-tin-hoạt-động-hiệp-hội)
+4. [PHẦN 4: MỐI LIÊN KẾT ĐỒNG BỘ HAI CHIỀU VỚI WEB CRM](#phần-4-mối-liên-kết-đồng-bộ-hai-chiều-với-web-crm)
 
 ---
 
-### 2.2. Thao Tác Phê Duyệt Của Ban Thư Ký Trên Web CRM (Luồng CRM Liên Quan Trực Tiếp)
-1. Ban Thư ký đăng nhập hệ thống Web CRM (`http://14.225.217.232:5000/auth`) bằng tài khoản Quản trị.
-2. Điều hướng vào menu **"Quản lý Hội viên"** (`/members`).
-3. Danh sách hồ sơ mới hiển thị với nhãn trạng thái màu vàng: **"Chờ xét duyệt"**.
-4. Nhấp vào dòng hội viên để mở **Drawer Hồ sơ Chi tiết 360°**, kiểm tra MST, giấy phép ĐKKD và năng lực doanh nghiệp.
-5. Nhấp nút **"Phê duyệt Hội viên (Approve)"**.
-6. **Cơ chế đồng bộ tự động:**
-   - CSDL cập nhật trạng thái hội viên sang `Active` (Hoạt động).
-   - Hệ thống tự động khởi tạo Thẻ Hội Viên VIP Kỹ Thuật Số với Mã ID độc bản (`CEO-1983-xxx`).
-   - Cấp quyền đăng nhập tức thì trên Ứng dụng Di động (Mobile App) cho hội viên.
+## 👥 PHẦN 1: DANH SÁCH TÀI KHOẢN VẬN HÀNH TRÊN HỆ THỐNG
 
-![CRM: Danh sách Hội viên tiếp nhận hồ sơ chờ duyệt](images/evidence/sub_07_crm_members_list.png)
-*Hình 2.4: Màn hình CRM Quản lý Hội viên hiển thị danh sách hồ sơ đăng ký mới cần thẩm định.*
+Hệ thống quản lý định danh người dùng tập trung kết nối đồng bộ giữa Mobile App và Web CRM. Dưới đây là danh sách tài khoản chuẩn phục vụ kiểm thử và vận hành:
 
-![CRM: Drawer kiểm tra chi tiết hồ sơ doanh nghiệp và tư cách hội viên](images/evidence/sub_08_crm_member_detail_drawer.png)
-*Hình 2.5: Drawer chi tiết hồ sơ hội viên trên CRM phục vụ thẩm định năng lực trước khi kích hoạt.*
+### 1.1. Tài Khoản Quản Trị Cấp Cao (Platform & System Admins)
 
-![CRM: Thao tác bấm nút Phê duyệt (Approve) cấp quyền vào App](images/evidence/sub_09_crm_approve_action.png)
-*Hình 2.6: Thao tác bấm nút Phê duyệt trên CRM - Kích hoạt quyền đăng nhập App di động cho hội viên.*
+| STT | Họ và Tên | Email Đăng Nhập | Vai Trò Hệ Thống | Phạm Vi Quyền Hạn |
+|:---:|---|---|---|---|
+| 1 | **Phạm Văn Vũ (Admin)** | `admin@connect.vn` | Super Admin / Quản Trị CRM | Toàn quyền kiểm soát hệ thống: Duyệt hội viên, tài chính sổ quỹ, sự kiện, marketplace, cơ hội và cấu hình hệ thống |
+| 2 | **Trần Tuấn Anh (Platform Admin)** | `admin1@connect.vn` | Platform Admin | Quản trị nền tảng hạ tầng, cấu hình máy chủ, phân quyền bảo mật SSL và nhật ký kiểm toán |
 
----
+### 1.2. Tài Khoản Kiểm Thử Nghiệp Vụ Hội Viên Chuẩn
 
-## 3. ĐĂNG NHẬP, KHÔI PHỤC THÔNG TIN & TRANG CHỦ (HOME DASHBOARD)
+| STT | Họ và Tên Doanh Nhân | Pháp Nhân Doanh Nghiệp | Email Đăng Nhập | Mã Hội Viên | Trạng Thái |
+|:---:|---|---|---|:---:|:---:|
+| 1 | **Phạm Vũ Nam** | Công ty TNHH MediSocial | `vumikasa6@gmail.com` | `CEO1983-000002` | **Active** (Đã kích hoạt) |
 
-### 3.1. Đăng Nhập Ứng Dụng Mobile App
-1. Mở ứng dụng **CEO 1983** trên điện thoại iOS (TestFlight/App Store) hoặc Android (APK/Google Play).
-2. Nhập Email hoặc Số điện thoại đã được đăng ký và phê duyệt.
-3. Nhập Mật khẩu (mặc định ban đầu do hệ thống cấp: `123456` hoặc mật khẩu cá nhân).
-4. Nhấn **"Đăng nhập"**.
-5. Trường hợp quên mật khẩu: Bấm liên kết **"Quên mật khẩu?"** hoặc bấm nút **"Hỗ trợ Thư ký"** để được cấp lại mật khẩu xác thực qua SMS/Email.
+### 1.3. Danh Sách Lãnh Đạo Ban Điều Hành CLB CEO 1983
 
-![Màn hình Đăng nhập App Di động Hiệp hội CEO 1983](images/evidence/sub_10_app_login_screen.png)
-*Hình 3.1: Màn hình Đăng nhập chuyên biệt cho Hội viên Hiệp hội Doanh nhân CEO 1983.*
+Toàn bộ 28 lãnh đạo chủ chốt trong Ban Điều Hành CLB Doanh Nhân CEO 1983 đã được khởi tạo tài khoản hội viên chính thức trên hệ thống:
 
-![Nhập thông tin xác thực đăng nhập vào hệ thống](images/evidence/sub_11_app_login_credentials.png)
-*Hình 3.2: Điền thông tin Email/SĐT và mật khẩu để bắt đầu phiên làm việc an toàn.*
-
----
-
-### 3.2. Trang Chủ Hội Viên (Home Dashboard)
-Trang chủ được thiết kế theo phong cách hiện đại với đầy đủ công cụ điều hướng:
-- **Header Định danh Doanh nhân:** Hiển thị Logo hiệp hội, Tên hội viên, Doanh nghiệp và Huy hiệu Ban chấp hành/Hội viên chính thức.
-- **Top Carousel Banner:** Hiển thị các sự kiện Đại hội, Hội thảo Xúc tiến thương mại mới nhất có ảnh sắc nét.
-- **Thanh Điều hướng Nhanh (Quick Actions):**
-  - Quét QR Điểm danh / Kết nối nhanh.
-  - Sự kiện sắp tới & Đặt vé.
-  - Sàn Marketplace mua bán B2B nội bộ.
-  - Bảng tin Cơ hội kết nối giao thương (Matching).
-  - Danh bạ Doanh nhân & Ban ngành.
-- **Tóm tắt Chỉ số Cá nhân:** Số lượng kết nối thành công, số tin nhắn chưa đọc, sự kiện đã đăng ký.
-
-![Giao diện Trang chủ Hội viên CEO 1983](images/evidence/sub_12_app_home_top_banner.png)
-*Hình 3.3: Giao diện Trang chủ App với Banner Sự kiện nổi bật và các lối tắt chức năng.*
+| STT | Mã Hội Viên | Họ và Tên | Chức Vụ Trong Ban Điều Hành | Số Điện Thoại | Email Đăng Nhập |
+|:---:|:---:|---|---|:---:|---|
+| 1 | `M1983-001` | **Lê Thị Dung** | Chủ tịch CLB | 0988870888 | `ledung22183@gmail.com` |
+| 2 | `M1983-002` | **Hoàng Thanh Tuấn** | Phó Chủ tịch | 0983988999 | `tuanht.vb@gmail.com` |
+| 3 | `M1983-003` | **Nguyễn Thanh Tuấn** | Phó Chủ tịch | 0964699499 | `tuannt@saokim.com.vn` |
+| 4 | `M1983-004` | **Nguyễn Trung Kiên** | Phó Chủ tịch | 0767313314 | `ceo.acmholdings@gmail.com` |
+| 5 | `M1983-005` | **Đỗ Minh Thành** | Phó Chủ tịch | 0948396888 | `thanh.dm@valis.vn` |
+| 6 | `M1983-006` | **Nguyễn Đình Toản** | Ủy viên BCH, Thành viên | 0989310558 | `toannd2910@gmail.com` |
+| 7 | `M1983-007` | **Phùng Quyết Thanh** | Ủy viên BCH, Thành viên | 0987879689 | `thanh.pq@quyettienco.com` |
+| 8 | `M1983-008` | **Nguyễn Thế Duẩn** | Phó Chủ tịch | 0984247726 | `theduan.pvn@gmail.com` |
+| 9 | `M1983-009` | **Nguyễn Thị Hồng Trang** | Ủy viên BCH, Thành viên | 0983126918 | `nguyentrang021083@gmail.com` |
+| 10 | `M1983-010` | **Trần Ánh Phương** | Thành viên, Ủy viên BCH | 0903299616 | `phuong.trananh83@gmail.com` |
+| 11 | `M1983-011` | **Hoàng Văn Nam** | Ủy viên BCH, Thành viên | 0988311882 | `kevin.nam@globalcom.vn` |
+| 12 | `M1983-012` | **Nguyễn Vân Hương** | Thành viên, Ủy viên BCH | 0904157755 | `vanhuongplvn@gmail.com` |
+| 13 | `M1983-013` | **Cao Văn Mạnh** | Ủy viên BCH | 0982848884 | `master@hoaduong.vn` |
+| 14 | `M1983-014` | **Hoàng Thị Ngọc Ánh** | Thành viên, Ủy viên BCH | 0941272222 | `hoanganh@avtravel.com.vn` |
+| 15 | `M1983-015` | **Triệu Văn Ba** | Phó Chủ tịch | 0973256686 | `congtycophanvietphu@gmail.com` |
+| 16 | `M1983-016` | **Dương Thị Huệ** | Thành viên, Ủy viên BCH | 0983971783 | `huedohoa@gmail.com` |
+| 17 | `M1983-017` | **Nguyễn Thị Khuyên** | Thành viên, Ủy viên BCH | 0982695550 | `nasakivn@gmail.com` |
+| 18 | `M1983-018` | **Nguyễn Anh Tuấn** | Phó Chủ tịch, Trưởng ĐD KV Nam | 0915062564 | `tuan.nguyen@haseca.com` |
+| 19 | `M1983-019` | **Phạm Văn Hùng** | Thành viên, Ủy viên BCH | 0942222075 | `hungpham@hoangsaviet.com` |
+| 20 | `M1983-020` | **Nguyễn Thị Phượng** | Ủy viên BCH, Thành viên | 0907117118 | `trangnguyentrangh84@gmail.com` |
+| 21 | `M1983-021` | **Nguyễn Phi Hồng Nguyên** | Thành viên, Ủy viên BCH | 0908898475 | `admin@vietpromotion.vn` |
+| 22 | `M1983-022` | **Đặng Văn Giang** | Thành viên, Ủy viên BCH | 0974788686 | `hoanggiangpt44b@gmail.com` |
+| 23 | `M1983-023` | **Trịnh Quang Thái** | Thành viên, Ủy viên BCH | 0912841157 | `thaitq@tcsoft.vn` |
+| 24 | `M1983-024` | **Nguyễn Thế Tư** | Thành viên, Ủy viên BCH | 0813946888 | `vptdl.prudential.q10@gmail.com` |
+| 25 | `M1983-025` | **Nguyễn Văn Thuy** | Thành viên, Ủy viên BCH | 0913968388 | `thuynv@minhdunggroup.vn` |
+| 26 | `M1983-026` | **Trần Đức Tuân** | Ủy viên BCH, Thành viên | 0909588136 | `vpct@vtgroup.com.vn` |
+| 27 | `M1983-027` | **Phạm Trung Thành** | Thành viên, Ủy viên BCH | 0911859969 | `thanhphamphd@visionviet.vn` |
+| 28 | `M1983-028` | **Phạm Văn Vũ** | Thành viên Ban Điều Hành | 0988090120 | `vupv090120@gmail.com` |
 
 ---
 
-## 4. THẺ HỘI VIÊN VIP KỸ THUẬT SỐ, QUÉT RADAR NFC & DANH THIẾP SỐ CÔNG KHAI
+## 🚀 PHẦN 2: QUY TRÌNH ĐĂNG KÝ HỘI VIÊN, XÉT DUYỆT & CẤP TÀI KHOẢN
 
-### 4.1. Thẻ Hội Viên VIP Kỹ Thuật Số (Digital VIP Card)
-1. Tại Trang chủ hoặc mục Cá nhân, chạm vào biểu tượng **"Thẻ Hội Viên"**.
-2. Thẻ hiển thị thiết kế mạ vàng 3D sang trọng:
-   - Logo Hiệp hội Doanh nhân CEO 1983.
-   - Họ tên Doanh nhân, Tên Công ty, Chức danh.
-   - Hạng thẻ: **VIP Gold / Diamond Member**.
-   - Mã định danh hội viên duy nhất: `CEO-1983-xxx`.
-   - Thời hạn hiệu lực của hội phí (Hạn thẻ).
-3. **Mã QR Độc Bản:** Dùng để đối tác quét kết nối trực tiếp hoặc quét điểm danh vào cổng sự kiện của hiệp hội.
+Quy trình đăng ký gia nhập CLB Doanh Nhân CEO 1983 được khép kín qua 4 bước:
 
-![Thẻ Hội Viên VIP Kỹ Thuật Số CLB Doanh Nhân CEO 1983](images/evidence/sub_13_app_vip_card_front.png)
-*Hình 4.1: Thẻ Hội Viên VIP 3D với mã QR định danh và thời hạn hiệu lực của thẻ.*
+### Bước 1: Tiếp nhận Đăng ký Hội viên Mới (Duy Nhất Qua Cổng Landing Page)
 
----
+Hệ thống quy chuẩn duy nhất **01 luồng tiếp nhận hồ sơ đăng ký chính thức qua Cổng Landing Page Giới thiệu CLB**:
+- Doanh nhân có nhu cầu gia nhập truy cập Cổng Landing Page Giới thiệu CLB Doanh Nhân CEO 1983, nhấn nút **"Đăng Ký Gia Nhập"**.
+- Biểu mẫu mở ra tiếp nhận đầy đủ thông tin lãnh đạo và doanh nghiệp: Họ và tên lãnh đạo, Số điện thoại, Email, Tên doanh nghiệp, Chức vụ (Chủ tịch / CEO / Tổng Giám đốc) và Mã số thuế.
+- Nhấn **"Gửi Hồ Sơ Đăng Ký"**. Dữ liệu được mã hóa và truyền tải tức thì về hàng đợi thẩm định của Ban Quản Trị trên Web CRM.
+- **Lưu ý nghiệp vụ:** Để đảm bảo tính bảo mật và kiểm soát nghiêm ngặt tiêu chuẩn hội viên tinh hoa, **Ứng dụng Di động Hiệp Hội (Mobile App) không mở đăng ký tự do**. Mobile App là không gian số bảo mật nội bộ, chỉ những hội viên đã qua thẩm định và được Ban Thư Ký phê duyệt mới được cấp tài khoản đăng nhập chính thức.
 
-### 4.2. Quét Radar NFC & Kết Nối Doanh Nhân Lân Cận
-1. Tại màn hình Thẻ hoặc Trang chủ, bấm chọn biểu tượng **"Radar NFC"**.
-2. Ứng dụng kích hoạt sóng quét lân cận (Bluetooth BLE / Định vị hội trường sự kiện):
-   - Quét và hiển thị avatar các doanh nhân CEO 1983 đang có mặt trong bán kính sự kiện.
-   - Cho phép chạm 2 điện thoại có hỗ trợ NFC để trao đổi danh thiếp số tức thì không cần kết bạn thủ công.
+![Biểu mẫu Đăng ký Gia nhập trên Landing Page](images/evidence/app_step_01_landing_reg.png)
+*Hình 2.1: Biểu mẫu Tiếp nhận Đăng ký Hội viên Duy Nhất trên Cổng Landing Page CEO 1983.*
 
-![Modal Quét Radar NFC tìm kiếm đối tác lân cận](images/evidence/sub_14_app_nfc_radar_modal.png)
-*Hình 4.2: Tính năng Radar NFC quét tìm doanh nhân cùng hiệp hội trong bán kính sự kiện.*
+### Bước 2: Thẩm định Hồ sơ & Phê duyệt tại Web CRM Quản trị
 
----
+1. Ban Thư Ký đăng nhập vào Web CRM Quản trị.
+2. Truy cập mục **"Hội viên"** (`/members`).
+3. Các hồ sơ mới nộp sẽ hiển thị trạng thái **"Chờ xét duyệt"** (màu vàng).
+4. Nhấp vào hồ sơ để mở Drawer thẩm định chi tiết 360°: Kiểm tra thông tin pháp lý công ty, mã số thuế, chức vụ và ngành nghề hoạt động.
+5. Nhấp nút **"Phê duyệt (Approve)"** màu xanh.
 
-### 4.3. Danh Thiếp Số Điện Tử Công Khai (Public Digital Business Card)
-1. Bấm nút **"Chia sẻ Danh thiếp số"**.
-2. Ứng dụng tạo đường dẫn trang web công khai (vd: `https://app.ceo1983.vn/card/namhai`).
-3. Đối tác ngoài hiệp hội có thể quét mã QR này để:
-   - Lưu danh bạ (vCard) trực tiếp vào điện thoại chỉ với 1 chạm.
-   - Xem catalogue sản phẩm và hồ sơ năng lực công ty.
-   - Gửi yêu cầu hợp tác kinh doanh.
+![CRM: Drawer Thẩm định và Phê duyệt Hồ sơ Hội viên](images/evidence/crm_step_04_member_approval_drawer.png)
+*Hình 2.2: Giao diện Web CRM thẩm định hồ sơ và phê duyệt kết nạp hội viên chính thức.*
 
-![Trang Danh thiếp số Doanh nhân công khai](images/evidence/sub_15_app_public_digital_card.png)
-*Hình 4.3: Trang Danh thiếp số chia sẻ đa nền tảng giúp mở rộng mạng lưới giao thương.*
+### Bước 3: Tự động kích hoạt tài khoản & Bắn Email Cấp Quyền Đăng Nhập
 
----
+Khi Ban Thư Ký / Admin nhấn Phê duyệt trên CRM, hệ thống tự động:
+1. Chuyển trạng thái hồ sơ sang **"Hoạt động (Active)"**.
+2. Sinh mã định danh hội viên chính thức (ví dụ: `CEO1983-000002` hoặc `M1983-xxx`).
+3. Khởi tạo tài khoản đăng nhập trong CSDL PostgreSQL.
+4. Gửi email thông báo chào mừng chính thức kèm tài khoản đăng nhập, mã hội viên và mật khẩu khởi tạo an toàn về hòm thư hội viên.
+5. Cung cấp hướng dẫn 3 bước tiếp theo để hội viên tải ứng dụng, đăng nhập đổi mật khẩu và kích hoạt danh thiếp số doanh nhân.
 
-## 5. QUẢN LÝ SỰ KIỆN: CHI TIẾT SỰ KIỆN, MUA VÉ VIETQR, CHECK-IN & HOẠT ĐỘNG (KÈM ẢNH CRM LIÊN QUAN)
+![Email Chào mừng & Cấp thông tin Đăng nhập Hội viên](images/evidence/app_email_welcome_credentials.png)
+*Hình 2.3: Email chào mừng chính thức từ CLB Doanh Nhân CEO 1983 cấp thông tin tài khoản đăng nhập và mật khẩu khởi tạo an toàn.*
 
-### 5.1. Luồng CRM Cấu Hình & Quản Trị Sự Kiện (Chức năng CRM tương ứng)
-Để sự kiện xuất hiện trên App, Ban tổ chức thực hiện các bước trên Web CRM:
-1. Truy cập CRM menu **"Quản lý Sự kiện"** (`/events`).
-2. Bấm nút **"Tạo Sự kiện Mới"**:
-   - Nhập Tiêu đề sự kiện, Địa điểm tổ chức, Thời gian bắt đầu/kết thúc.
-   - Tải lên Banner sự kiện (tỷ lệ 16:9 chất lượng cao).
-   - Nhập danh sách Diễn giả (Speaker) và Lịch trình chi tiết (Agenda).
-   - Cấu hình loại vé: Vé Miễn phí dành cho Hội viên chính thức hoặc Vé Thu phí (nhập giá vé VNĐ).
-   - Cấu hình Sơ đồ Khán phòng (Cinema Hall Seating Map): Phân hàng ghế VIP, Hạng Thương gia, Tiêu chuẩn.
-3. Xuất bản sự kiện: Sự kiện ngay lập tức đồng bộ thời gian thực sang App hội viên.
-
-![CRM: Quản lý danh sách sự kiện và thiết lập tổ chức](images/evidence/sub_27_crm_events_management.png)
-*Hình 5.1: Màn hình CRM Quản lý Sự kiện - Nơi tạo và điều phối các sự kiện của CLB.*
-
-![CRM: Thiết lập Sơ đồ Khán phòng Cinema Map và vị trí ghế ngồi](images/evidence/sub_28_crm_seating_cinema_map.png)
-*Hình 5.2: Công cụ cấu hình sơ đồ khán phòng và chỗ ngồi sự kiện trên hệ thống Web CRM.*
+![Email Hướng dẫn các bước tiếp theo dành cho Hội viên mới](images/evidence/app_email_next_steps.png)
+*Hình 2.4: Email hướng dẫn chi tiết các bước tải ứng dụng, đăng nhập đổi mật khẩu và hoàn thiện hồ sơ hội viên.*
 
 ---
 
-### 5.2. Xem Danh Sách Sự Kiện Trên App Hội Viên
-1. Trên thanh điều hướng đáy (Bottom Bar), chọn tab **"Sự kiện"**.
-2. Giao diện hiển thị danh sách các sự kiện được phân loại rõ ràng:
-   - Tab **Sắp diễn ra:** Các chương trình sắp tổ chức trong tháng.
-   - Tab **Đang diễn ra:** Các chương trình đang chạy trong ngày để hội viên vào check-in.
-   - Tab **Đã tham gia:** Lịch sử các sự kiện hội viên từng dự.
-3. Bộ lọc theo danh mục: Đại hội thường niên, Caravan xúc tiến, Talkshow doanh nhân, Gala kết nối.
+## 📱 PHẦN 3: HƯỚNG DẪN CHI TIẾT TỪNG CHỨC NĂNG TRÊN MOBILE APP
 
-![Danh sách Sự kiện trên App Hiệp hội](images/evidence/sub_29_app_events_screen.png)
-*Hình 5.3: Màn hình danh sách Sự kiện với thẻ hình ảnh trực quan và trạng thái sự kiện.*
+### 3.1. Đăng Nhập & Kích Hoạt Phiên Làm Việc
 
----
+1. Mở ứng dụng di động trên điện thoại (hoặc truy cập qua trình duyệt Web PWA).
+2. Nhập **Email** hoặc **Số điện thoại** đã được cấp tài khoản.
+3. Nhập mật khẩu bảo mật (hỗ trợ hiển thị/ẩn mật khẩu qua biểu tượng con mắt).
+4. Bật tùy chọn **"Ghi nhớ đăng nhập"** để tự động lưu phiên làm việc.
+5. Nhấn **"Đăng Nhập"**. Hệ thống xác thực bằng mã JWT Bearer mã hóa và chuyển hướng vào Dashboard Doanh nhân.
 
-### 5.3. Xem Chi Tiết Sự Kiện (Event Detail Modal)
-1. Nhấp vào bất kỳ sự kiện nào trong danh sách.
-2. Màn hình Chi tiết Sự kiện mở ra cung cấp toàn bộ dữ liệu:
-   - **Banner và Tiêu đề:** Hình ảnh chủ đạo sắc nét, thời gian và địa chỉ tổ chức cụ thể kèm bản đồ dẫn đường.
-   - **Nội dung chương trình (Agenda):** Lịch trình chi tiết từng khung giờ (Đón khách, Khai mạc, Tọa đàm, Ký kết hợp tác, Tiệc tối).
-   - **Danh sách Diễn giả (Keynote Speakers):** Ảnh đại diện, họ tên, chức vụ và chuyên đề thuyết trình.
-   - **Quyền lợi đại biểu:** Tài liệu độc quyền, tea-break, quà tặng lưu niệm.
-   - **Sơ đồ khán phòng:** Vị trí khán phòng và phân khu chỗ ngồi.
-3. Nhấn nút **"Đăng ký tham dự"** ở chân trang.
-
-![Modal Chi tiết Sự kiện trên App Hiệp hội](images/evidence/sub_30_app_event_detail_modal.png)
-*Hình 5.4: Chi tiết sự kiện với đầy đủ lịch trình, diễn giả, quyền lợi và sơ đồ chỗ ngồi.*
+![Màn hình Đăng nhập App Hiệp Hội](images/evidence/app_step_03_login_screen.png)
+*Hình 3.1: Màn hình Đăng nhập App Hiệp Hội CEO 1983 chuẩn bảo mật cao cấp.*
 
 ---
 
-### 5.4. Đăng Ký Vé, Thanh Toán VietQR & Nhận Vé Điện Tử (Ticket Pass)
-1. Trường hợp sự kiện có thu phí:
-   - Hệ thống mở popup **Thanh toán Chuyển khoản VietQR**.
-   - Hiển thị Mã QR động kèm đầy đủ: Số tài khoản ngân hàng thụ hưởng của CLB, Tên ngân hàng, Số tiền vé, Cú pháp chuyển khoản chuẩn tự động (vd: `VE-1983-NAMHAI`).
-   - Hội viên mở ứng dụng ngân hàng quét mã và xác nhận chuyển khoản.
-2. Sau khi xác nhận đăng ký thành công:
-   - Hệ thống cấp ngay **Vé Điện Tử Chính Thức (Ticket Pass)** lưu trong mục **"Vé của tôi"**.
-   - Vé hiển thị: Tên sự kiện, Mã vé số, Số ghế phân bổ trong khán phòng.
-   - **Mã QR Check-in Tốc độ cao:** Khi đến cổng sự kiện, hội viên chỉ cần mở vé này để Ban tổ chức quét mã check-in qua máy quét hoặc điện thoại CRM.
+### 3.2. Trang Chủ Dashboard Doanh Nhân & Tiện Ích 1-Chạm
 
-![Modal Thanh toán Vé qua Mã VietQR Ngân hàng](images/evidence/08_app_vietqr_payment_modal.png)
-*Hình 5.5: Cổng thanh toán VietQR động tạo mã chuyển khoản tự động kèm cú pháp chuẩn.*
+Trang chủ là trung tâm điều khiển và cập nhật thông tin toàn diện của hội viên:
+- **Thẻ VIP Doanh nhân 3D:** Hiển thị trực quan họ tên, chức danh, doanh nghiệp và mã định danh độc bản.
+- **Thanh tác vụ tiện ích nhanh:** 
+  * *Chạm NFC:* Kích hoạt chế độ truyền danh thiếp điện tử.
+  * *Bầu cử:* Truy cập phòng bỏ phiếu đại hội.
+  * *Điểm danh:* Mở mã QR Pass check-in vào sự kiện.
+  * *Đăng sản phẩm:* Đưa hàng hóa lên sàn Marketplace B2B.
+  * *Đóng hội phí:* Gia hạn niên liễm qua cổng VietQR tự động.
+- **Banner sự kiện tiêu điểm:** Hiển thị sự kiện lớn sắp diễn ra kèm đồng hồ đếm ngược (ngày, giờ, phút, giây).
+- **Bản tin hoạt động CLB:** Tin tức bổ nhiệm, nghị quyết và các hoạt động giao thương mới nhất.
 
-![Vé Điện Tử Ticket Pass có Mã QR Check-in](images/evidence/sub_31_app_event_ticket_pass.png)
-*Hình 5.6: Vé điện tử chính thức kèm mã QR định danh phục vụ check-in nhanh tại quầy sự kiện.*
-
----
-
-### 5.5. Bình Chọn Trực Tiếp (Live Voting) & Bốc Thăm May Mắn (Lucky Draw)
-Khi sự kiện đang diễn ra trong hội trường:
-1. **Bình chọn Trực tiếp (Live Voting):**
-   - Ban tổ chức kích hoạt câu hỏi biểu quyết từ CRM (vd: Bầu cử Ban chấp hành, Bình chọn Doanh nghiệp Xuất sắc).
-   - Ứng dụng hội viên lập tức rung và hiển thị màn hình Bình chọn.
-   - Hội viên chọn phương án và nhấn **"Bỏ phiếu"**. Kết quả được tổng hợp thời gian thực hiển thị trên màn hình LED sân khấu.
-2. **Quay Số Trúng Thưởng (Lucky Draw):**
-   - Mã vé sự kiện của hội viên tự động được đưa vào vòng quay may mắn.
-   - Hội viên theo dõi vòng quay ngẫu nhiên và nhận thông báo trúng thưởng ngay trên điện thoại.
-
-![Tính năng Bình chọn Trực tiếp Live Voting trong sự kiện](images/evidence/sub_32_app_event_live_voting.png)
-*Hình 5.7: Màn hình bỏ phiếu trực tiếp thời gian thực dành cho đại biểu tham dự đại hội.*
-
-![Tính năng Quay số May mắn Lucky Draw sự kiện](images/evidence/sub_33_app_event_lucky_draw.png)
-*Hình 5.8: Vòng quay may mắn Lucky Draw trao thưởng cho đại biểu tham dự.*
+![Trang chủ Dashboard Doanh nhân](images/evidence/app_step_04_home_dashboard.png)
+*Hình 3.2: Trang chủ Dashboard App Doanh nhân với Thẻ VIP và các tiện ích kết nối nhanh.*
 
 ---
 
-## 6. SÀN GIAO THƯƠNG MARKETPLACE: DANH MỤC, THÊM MỚI, XÓA & CHỈNH SỬA SẢN PHẨM (KÈM ẢNH CRM LIÊN QUAN)
+### 3.3. Thẻ Hội Viên VIP Gold & Thẻ Visit Card Thông Minh NFC
 
-### 6.1. Luồng CRM Kiểm Duyệt & Quản Trị Gian Hàng (Chức năng CRM tương ứng)
-1. Ban quản trị truy cập CRM menu **"Sàn Giao thương B2B"** (`/marketplace`).
-2. Xem toàn bộ sản phẩm/dịch vụ do các doanh nghiệp hội viên đăng tải từ App.
-3. Ban quản trị có quyền:
-   - **Phê duyệt:** Đưa sản phẩm lên vị trí nổi bật trên App.
-   - **Gắn nhãn Khuyến mãi:** Kích hoạt ưu đãi đặc quyền cho hội viên CLB.
-   - **Khóa / Ẩn sản phẩm:** Tạm dừng hiển thị các bài đăng không phù hợp quy chế.
+Hệ thống cung cấp bộ đôi công cụ nhận diện thương hiệu số đẳng cấp dành riêng cho Lãnh đạo CLB CEO 1983:
 
-![CRM: Kiểm duyệt và đồng bộ danh mục sản phẩm Marketplace](images/evidence/sub_37_crm_marketplace_sync.png)
-*Hình 6.1: Giao diện CRM Quản trị Sàn giao thương - Kiểm duyệt và điều phối sản phẩm hội viên.*
+#### A. Danh Thiếp Số Doanh Nhân (CEO 1983 Business Visit Card)
+1. **Mặt trước danh thiếp:** Thiết kế chuẩn Brandbook CLB Doanh Nhân CEO 1983 với Logo nhận diện ánh kim, Họ tên lãnh đạo, Chức danh quản trị doanh nghiệp, Số điện thoại và Email.
+2. **Nút thao tác thông minh:**
+   - **"Lật Mặt Sau":** Hiệu ứng lật thẻ trực quan sang mặt sau.
+   - **"Mã QR":** Phóng to mã QR định danh cá nhân để đối tác quét kết nối.
+   - **"Chụp / Tải Nền":** Tùy biến hình nền danh thiếp theo bộ nhận diện công ty.
+   - **"Chia Sẻ" & "Sao Chép Link":** Gửi liên kết danh thiếp số tức thì qua Zalo, Messenger, SMS.
 
----
+![Danh thiếp số Doanh nhân CEO 1983 - Mặt trước](images/evidence/app_visit_card_front.png)
+*Hình 3.3a: Danh thiếp số Doanh nhân CEO 1983 - Mặt trước sang trọng chuẩn Brandbook.*
 
-### 6.2. Xem Lưới Danh Mục Sản Phẩm Trên App Hội Viên
-1. Trên thanh điều hướng đáy, chọn tab **"Marketplace"**.
-2. Duyệt sản phẩm theo dạng lưới 2 cột bắt mắt kèm ảnh bìa, tên sản phẩm, giá bán niêm yết và mức giá ưu đãi nội bộ.
-3. Thanh lọc nhanh theo Danh mục ngành hàng:
-   - Xây dựng & Vật liệu
-   - Công nghệ thông tin & Viễn thông
-   - Dịch vụ Pháp lý, Thuế & Kế toán
-   - Bất động sản & Cho thuê văn phòng
-   - Quà tặng doanh nghiệp & Tiêu dùng
+3. **Mặt sau danh thiếp:** Phủ màu xanh Navy hoàng gia `#24357B`, dập nổi Logo trắng và Slogan bảo chứng **"Kết nối bền - Phát triển vững"**.
 
-![Lưới Danh mục Sản phẩm Marketplace trên App](images/evidence/sub_34_app_products_grid.png)
-*Hình 6.2: Lưới danh mục sản phẩm/dịch vụ B2B do các doanh nghiệp hội viên cung ứng.*
+![Danh thiếp số Doanh nhân CEO 1983 - Mặt sau thẻ visit card](images/evidence/app_visit_card_back.png)
+*Hình 3.3b: Danh thiếp số Doanh nhân CEO 1983 - Mặt sau thẻ visit card sang trọng.*
 
----
+#### B. Thẻ Định Danh Hội Viên Chính Thức (VIP GOLD Membership Card)
+- Cuộn xuống phần Thẻ Hội Viên để xem Thẻ Định Danh Số VIP:
+  - Huy hiệu **👑 VIP GOLD** chứng thực cấp bậc hội viên danh dự.
+  - Ảnh đại diện Avatar sắc nét kèm Tích xanh xác thực danh tính lãnh đạo.
+  - Mã định danh hội viên chính thức (ví dụ: `M1983-292` hoặc `M1983-001`).
+  - Hotline doanh nghiệp, Email liên hệ và Lĩnh vực chuyên môn hoạt động.
+- **Công nghệ Chạm thẻ NFC 1-Chạm:** Chạm mặt lưng điện thoại vào thẻ cứng hoặc điện thoại đối tác để truyền toàn bộ hồ sơ trong 1 giây mà không cần cài đặt thêm app.
 
-### 6.3. Đăng Thêm Mới Sản Phẩm / Dịch Vụ (Create Product)
-1. Tại tab Marketplace, nhấn nút **"+ Đăng Sản Phẩm"** (nút nổi tròn góc dưới phải).
-2. Modal **"Đăng Sản Phẩm Mới"** mở ra:
-   - **Ảnh sản phẩm:** Nhấp chọn để tải ảnh chất lượng cao từ thư viện điện thoại hoặc chụp ảnh trực tiếp.
-   - **Tên sản phẩm / Dịch vụ:** Nhập tiêu đề rõ ràng (tối đa 100 ký tự).
-   - **Danh mục ngành hàng:** Chọn danh mục phù hợp trong danh sách thả xuống.
-   - **Giá niêm yết:** Nhập đơn giá bán ra thị trường (VNĐ).
-   - **Ưu đãi cho Hội viên CEO 1983:** Nhập % chiết khấu hoặc quà tặng dành riêng cho anh chị em trong CLB.
-   - **Mô tả chi tiết:** Giới thiệu thông số kỹ thuật, quy cách đóng gói, chính sách bảo hành.
-   - **Số điện thoại / Zalo phụ trách:** Hotline kinh doanh tiếp nhận đơn.
-3. Nhấn **"Đăng tải ngay"**. Sản phẩm xuất hiện ngay trong gian hàng của doanh nghiệp.
-
-![Modal Đăng Thêm Mới Sản Phẩm Dịch Vụ](images/evidence/sub_35_app_product_create_modal.png)
-*Hình 6.3: Form đăng tải sản phẩm mới đầy đủ hình ảnh, giá niêm yết và ưu đãi hội viên.*
+![Thẻ Định Danh Hội Viên VIP GOLD](images/evidence/app_identity_card_vip.png)
+*Hình 3.3c: Thẻ định danh số Hội viên VIP GOLD với Mã hội viên, Tích xanh & Chip NFC.*
 
 ---
 
-### 6.4. Xem Chi Tiết Sản Phẩm (Product Detail Modal)
-1. Nhấp vào bất kỳ sản phẩm nào trên lưới.
-2. Modal Chi tiết Sản phẩm hiển thị:
-   - Trình xem ảnh phóng to, thông tin nhà sản xuất (Tên công ty hội viên, Logo, Đánh giá uy tín).
-   - Bảng giá ưu đãi độc quyền cho thành viên CLB.
-   - Nút **"Gọi điện đặt hàng"** và **"Nhắn tin thương thảo"**: Chạm để mở ngay cuộc trò chuyện trực tiếp với chủ doanh nghiệp.
+### 3.4. Quét Mã QR Từ Ứng Dụng Khác (Zalo / Camera) Hiển Thị Thông Tin Xác Thực
 
-![Modal Xem Chi Tiết Sản Phẩm](images/evidence/sub_36_app_product_detail_modal.png)
-*Hình 6.4: Chi tiết sản phẩm kèm thông tin nhà cung cấp và nút kết nối giao thương.*
+Một trong những ưu điểm đột phá nhất của nền tảng là **khả năng tương thích mở đa ứng dụng**:
+- Khi đối tác hoặc khách hàng sử dụng **Camera điện thoại iPhone/Android**, ứng dụng **Zalo**, hoặc bất kỳ trình quét QR nào từ bên ngoài để quét mã trên Thẻ / Danh thiếp của hội viên:
+  1. Thiết bị của đối tác sẽ tự động mở trang web định danh số công khai (`/card/$code`).
+  2. Hiển thị giao diện Thẻ Doanh Nhân 3D sang trọng với huy hiệu **"ĐÃ XÁC THỰC" (Verified)**.
+  3. Dấu mộc bảo chứng: **"Hồ sơ hội viên hợp lệ, được cấp chứng thực điện tử bởi CLB Doanh nhân CEO 1983"**.
+  4. Các nút tương tác 1-chạm:
+     - **"Lưu danh bạ" (vCard):** Tự động tải file `.vcf` lưu trọn vẹn số điện thoại, email, chức danh vào danh bạ điện thoại của đối tác.
+     - **"Gọi điện":** Kết nối cuộc gọi trực tiếp đến số hotline của lãnh đạo.
+     - **"Zalo":** Mở cuộc trò chuyện Zalo ngay lập tức với hội viên.
+  5. Đối tác hoàn toàn **không cần đăng nhập hay cài đặt bất kỳ ứng dụng nào** vẫn tiếp cận đầy đủ thông tin doanh nghiệp, website, mã số thuế và địa chỉ trụ sở.
 
----
-
-### 6.5. Thao Tác CHỈNH SỬA & XÓA Sản Phẩm (Thao Tác Menu 3 Chấm)
-Đối với các sản phẩm do chính doanh nghiệp của bạn đăng tải:
-1. Mở màn hình Chi tiết sản phẩm hoặc vào mục **"Sản phẩm của tôi"**.
-2. Trên góc trên bên phải của thẻ sản phẩm, nhấp vào biểu tượng **Menu 3 chấm (`...`)**.
-3. Menu thao tác trượt lên với 2 tùy chọn:
-   - **Chỉnh sửa sản phẩm:** Mở lại form để cập nhật lại giá bán, thay đổi ảnh mô tả hoặc bổ sung chương trình ưu đãi mới ➔ Nhấn **"Lưu thay đổi"**.
-   - **Xóa sản phẩm:** Hiển thị hộp thoại cảnh báo: *"Bạn có chắc chắn muốn xóa sản phẩm này khỏi Sàn giao thương?"* ➔ Nhấn **"Xác nhận xóa"** để gỡ hoàn toàn sản phẩm khỏi hệ thống.
-
-![Thao tác Menu 3 chấm: Chỉnh sửa và Xóa sản phẩm](images/evidence/sub_38_app_product_3dots_actions.png)
-*Hình 6.5: Menu 3 chấm thao tác Quản trị sản phẩm: Chỉnh sửa nội dung hoặc Xóa bài đăng.*
+![Giao diện xác thực công khai khi quét QR từ Zalo hoặc Camera ngoài](images/evidence/app_public_qr_scan_view.png)
+*Hình 3.4: Giao diện xác thực danh thiếp số công khai hiển thị khi đối tác quét mã QR từ Zalo / Camera điện thoại.*
 
 ---
 
-## 7. BẢNG TIN CƠ HỘI KẾT NỐI KINH DOANH: ĐĂNG MỚI, CHỈNH SỬA, ĐÓNG & NHẬN DEAL (KÈM ẢNH CRM LIÊN QUAN)
+### 3.5. Cài Đặt Danh Thiếp Điện Tử & Tùy Biến Ẩn/Hiện Thông Tin Bảo Mật
 
-### 7.1. Luồng CRM Giám Sát & Thống Kê Giao Thương B2B (Chức năng CRM tương ứng)
-1. Ban quản trị truy cập CRM menu **"Cơ hội Kinh doanh"** (`/opportunities`).
-2. Theo dõi lưu lượng nhu cầu mua - bán phát sinh trong nội bộ hiệp hội.
-3. Giám sát các thương vụ đã được hội viên kết nối thành công, tổng hợp báo cáo định kỳ về giá trị giao thương đạt được của CLB.
+Nhằm tối ưu hóa quyền riêng tư và bảo vệ thông tin liên lạc cá nhân của các chủ doanh nghiệp khi networking:
+1. Tại trang Thẻ hội viên, nhấn nút **"Cài đặt"** hoặc biểu tượng bánh răng.
+2. Modal **"Quyền riêng tư khi quét QR"** mở ra cho phép linh hoạt cấu hình:
+   - *Số điện thoại / Hotline:* Tùy chọn cho phép hoặc ẩn số máy khi người ngoài quét thẻ.
+   - *Địa chỉ Email:* Bật/tắt nhận thư liên hệ và hợp tác kinh doanh.
+   - *Địa chỉ văn phòng / Doanh nghiệp:* Ẩn/hiện địa chỉ trụ sở công ty.
+   - *Tên Công ty / Doanh nghiệp & Họ tên hội viên:* Tùy biến hiển thị danh tính.
+   - *Ảnh đại diện (Avatar) & Lĩnh vực kinh doanh:* Tùy biến hồ sơ nhận diện.
+3. Khi hội viên tắt một trường thông tin, người ngoài khi quét mã QR sẽ thấy nhãn *"Đã ẩn theo cài đặt riêng tư"* thay vì số điện thoại hoặc email cá nhân.
+4. Nhấn **"Lưu cài đặt"** để hệ thống đồng bộ tức thời lên máy chủ CSDL.
 
-![CRM: Giám sát và đồng bộ cơ hội kết nối giao thương B2B](images/evidence/sub_42_crm_opportunities_sync.png)
-*Hình 7.1: Giao diện CRM Giám sát dòng chảy cơ hội giao thương và nhu cầu hợp tác.*
-
----
-
-### 7.2. Xem Bảng Tin Cơ Hội Kinh Doanh Trên App Hội Viên
-1. Trên thanh điều hướng đáy, chọn tab **"Cơ hội"** (Matching Leads).
-2. Bảng tin hiển thị danh sách các bài đăng nhu cầu thực tế từ các doanh nghiệp thành viên:
-   - **Nhu cầu Cần Mua:** Doanh nghiệp tìm nguồn cung ứng hàng hóa, nhà thầu phụ, vật tư.
-   - **Nhu cầu Cần Bán / Cung ứng:** Doanh nghiệp cung ứng năng lực sản xuất, giải pháp độc quyền.
-   - **Hợp tác Đầu tư / Đại lý:** Tìm kiếm đối tác nhượng quyền, phân phối vùng miền.
-3. Mỗi thẻ cơ hội ghi rõ: Tiêu đề nhu cầu, Ngân sách dự kiến, Thời hạn hoàn thành và Doanh nghiệp đăng bài.
-
-![Bảng tin Cơ hội Kinh doanh Business Matching trên App](images/evidence/sub_39_app_opportunities_feed.png)
-*Hình 7.2: Bảng tin cơ hội kinh doanh B2B cập nhật liên tục từ các doanh nghiệp hội viên.*
+![Modal Cài đặt Quyền riêng tư khi quét QR Danh thiếp](images/evidence/app_card_privacy_settings.png)
+*Hình 3.5: Modal Cài đặt Quyền riêng tư danh thiếp: Tùy biến Ẩn/Hiện SĐT, Email, Địa chỉ công ty khi đối tác quét thẻ.*
 
 ---
 
-### 7.3. Đăng Mới Cơ Hội Kinh Doanh (Create Opportunity)
-1. Tại tab Cơ hội, nhấn nút **"+ Tạo Cơ Hội"**.
-2. Điền thông tin vào Modal tạo cơ hội:
-   - **Tiêu đề cơ hội:** Tóm tắt ngắn gọn nhu cầu (vd: *"Tìm nhà thầu thi công nội thất văn phòng 500m2 tại Cầu Giấy"*).
-   - **Loại cơ hội:** Chọn Cần Mua / Cần Bán / Hợp tác Dự án.
-   - **Ngân sách dự kiến (VNĐ):** Nhập khoảng ngân sách (vd: 500.000.000đ - 1.000.000.000đ).
-   - **Hạn chót tiếp nhận hồ sơ:** Chọn ngày kết thúc tiếp nhận chào giá.
-   - **Mô tả yêu cầu chi tiết:** Tiêu chuẩn chất lượng, hồ sơ năng lực cần nộp, tiến độ mong muốn.
-3. Nhấn **"Đăng bài kết nối"**. Bài viết hiển thị ngay lập tức trên Bảng tin cho toàn bộ hội viên thấy.
+### 3.6. Hồ Sơ Doanh Nhân 360° & Đổi Mật Khẩu Bảo Mật
 
-![Modal Đăng mới Cơ hội Kinh doanh](images/evidence/sub_40_app_opportunity_create_modal.png)
-*Hình 7.3: Form đăng tải nhu cầu kết nối kinh doanh với đầy đủ ngân sách và thời hạn.*
+Truy cập biểu tượng Cá nhân (`/association/profile`):
+- **Cập nhật thông tin:** Họ tên, chức danh trong CLB, ảnh đại diện Avatar sắc nét và ảnh bìa thương hiệu công ty.
+- **Hồ sơ pháp nhân:** Tên công ty, mã số thuế, địa chỉ văn phòng, lĩnh vực hoạt động và liên kết website.
+- **Đính kèm tài liệu:** Tải lên file Hồ sơ năng lực / Catalog doanh nghiệp định dạng PDF để các hội viên khác tải về.
+- **Quy trình Đổi Mật Khẩu:**
+  1. Nhấn mục **"Đổi mật khẩu"**.
+  2. Nhập mật khẩu hiện tại để xác minh danh tính.
+  3. Nhập mật khẩu mới (tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường và chữ số).
+  4. Nhập lại mật khẩu mới và bấm **"Cập nhật"**. Hệ thống tự động làm mới mã xác thực JWT.
 
----
-
-### 7.4. Xem Chi Tiết Cơ Hội & Nhận Kết Nối (Claim Deal)
-1. Nhấp vào thẻ cơ hội bất kỳ trên Bảng tin.
-2. Màn hình Chi tiết hiển thị thông tin đầy đủ và tên doanh nghiệp mời thầu/hợp tác.
-3. **Thao tác Nhận Cơ Hội (Claim Opportunity):**
-   - Nếu doanh nghiệp của bạn có năng lực đáp ứng, nhấn nút **"Nhận Cơ Hội Kết Nối (Claim Deal)"**.
-   - Hệ thống tự động xác nhận kết nối và mở ngay kênh chat 1-1 riêng tư giữa 2 doanh nghiệp để gửi hồ sơ báo giá.
-   - Trạng thái cơ hội cập nhật số lượt đối tác đã tiếp cận.
-
-![Chi tiết Cơ hội Kinh doanh và Nút Nhận Cơ Hội (Claim Deal)](images/evidence/sub_41_app_opportunity_detail_modal.png)
-*Hình 7.4: Chi tiết cơ hội kinh doanh kèm nút nhận kết nối và thương thảo trực tiếp.*
+![Hồ sơ Doanh nhân 360](images/evidence/app_step_06_profile_view.png)
+*Hình 3.6: Hồ sơ Doanh nhân 360° và Quản lý thông tin doanh nghiệp hội viên.*
 
 ---
 
-### 7.5. Thao Tác CHỈNH SỬA & ĐÓNG / XÓA Cơ Hội Kinh Doanh
-Đối với cơ hội do chính doanh nghiệp của bạn đăng:
-1. Mở bài đăng cơ hội của bạn.
-2. Nhấp vào menu tùy chọn ở góc bài viết:
-   - **Chỉnh sửa nội dung:** Bổ sung yêu cầu kỹ thuật, thay đổi mức ngân sách hoặc gia hạn thời gian tiếp nhận chào giá.
-   - **Đóng cơ hội (Closed):** Đánh dấu đã tìm được đối tác thành công để ngừng tiếp nhận thêm đề xuất mới.
-   - **Xóa bài đăng:** Hủy bỏ bài đăng khi không còn nhu cầu.
+### 3.7. Danh Bạ Doanh Nhân CEO 1983 & Bộ Lọc Ngành Nghề Đa Chiều
+
+Truy cập menu **"Hội viên"** (`/association/members`):
+- **Mạng lưới 100+ Lãnh đạo:** Danh sách đầy đủ các Chủ tịch, Tổng Giám Đốc sinh năm 1983.
+- **Bộ lọc đa chiều:**
+  * Lọc theo ngành nghề: *Xây dựng & Vật liệu, Công nghệ & Chuyển đổi số, Cơ khí & Sản xuất, Y tế & Dược phẩm, F&B, Logistics & Vận tải, Tài chính & Đầu tư.*
+  * Lọc theo ban chuyên môn: *Ban Chủ Tịch, Ban Thư Ký, Ban Xúc Tiến Thương Mại, Ban Sự Kiện, Ban Tài Chính.*
+- **Phân loại trạng thái quan hệ:** 
+  * *Tất cả hội viên:* Danh sách toàn bộ thành viên trong CLB.
+  * *Bạn bè đã kết nối:* Các đối tác đã chấp thuận kết nối giao thương 2 chiều.
+  * *Lời mời đang chờ:* Danh sách các lời mời kết nối đang chờ phản hồi.
+- Nhấn nút **"Kết nối"** để gửi lời mời hợp tác kinh doanh.
+
+![Danh bạ Hội viên CLB CEO 1983](images/evidence/app_step_07_members_directory.png)
+*Hình 3.7: Danh bạ Hội viên CLB Doanh Nhân CEO 1983 và bộ lọc kết nối đối tác.*
 
 ---
 
-## 8. DANH BẠ HỘI VIÊN, HỒ SƠ DOANH NGHIỆP 360°, KẾT NỐI & MỜI HỘI VIÊN
+### 3.8. Xem Chi Tiết Hồ Sơ Đối Tác & Kết Nối Giao Thương 2 Chiều
 
-### 8.1. Danh Bạ Hội Viên Doanh Nhân
-1. Chọn tab **"Hội viên"** trên thanh điều hướng đáy.
-2. Danh bạ số hiển thị danh sách toàn thể thành viên CLB CEO 1983:
-   - Avatar doanh nhân, Họ và tên, Chức vụ trong ban lãnh đạo hiệp hội.
-   - Tên pháp nhân công ty, Ngành nghề kinh doanh chính.
-   - Thanh tìm kiếm thông minh: Tìm theo tên doanh nhân, tên công ty, hoặc mã số thuế.
-   - Bộ lọc theo Chi hội / Ban chuyên môn (Ban Xây dựng, Ban Tài chính, Ban Thương mại,...).
+1. Trong Danh bạ, nhấp vào thẻ thông tin của một doanh nhân bất kỳ.
+2. Modal chi tiết hồ sơ năng lực đối tác mở ra:
+   - Họ tên, chức vụ trong CLB và chức danh quản lý tại doanh nghiệp.
+   - Số điện thoại di động và email liên hệ trực tiếp.
+   - Năng lực cốt lõi, sản phẩm dịch vụ chủ lực và quy mô doanh nghiệp.
+3. Các nút thao tác nhanh:
+   - **"Nhắn tin":** Mở ngay phòng chat 1-on-1 để trao đổi công việc.
+   - **"Kết nối":** Gửi đề nghị thiết lập quan hệ hợp tác chính thức.
+   - **"Lưu danh bạ":** Tải danh thiếp số của đối tác về máy.
 
-![Danh bạ Hội viên Doanh nhân Hiệp hội CEO 1983](images/evidence/sub_16_app_members_directory.png)
-*Hình 8.1: Danh bạ hội viên với công cụ tìm kiếm và lọc theo ngành nghề chuyên môn.*
-
----
-
-### 8.2. Xem Hồ Sơ Doanh Nghiệp 360° (Member Profile Modal)
-1. Nhấp vào tên hoặc ảnh của bất kỳ hội viên nào trong danh bạ.
-2. Modal Hồ sơ Doanh nghiệp 360° mở ra:
-   - **Thông tin Doanh nhân:** Ảnh chân dung, tiểu sử tóm tắt, vai trò trong hiệp hội.
-   - **Hồ sơ Pháp nhân Công ty:** Giới thiệu quy mô công ty, MST, website chính thức, địa chỉ trụ sở.
-   - **Danh mục Sản phẩm cung ứng:** Các sản phẩm tiêu biểu của doanh nghiệp trên Marketplace.
-   - **Phương thức liên hệ trực tiếp:** Số điện thoại, Email, mạng xã hội và nút bấm gọi/chat.
-
-![Hồ sơ Doanh nghiệp Chi tiết 360 độ của Hội viên](images/evidence/sub_17_app_member_profile_modal.png)
-*Hình 8.2: Hồ sơ chi tiết hội viên với đầy đủ năng lực doanh nghiệp và thông tin liên hệ.*
+![Modal Chi tiết Hồ sơ Năng lực Đối tác](images/evidence/app_step_08_member_profile_modal.png)
+*Hình 3.8: Chi tiết Hồ sơ Năng lực Đối tác Doanh nhân và tùy chọn kết nối trực tiếp.*
 
 ---
 
-### 8.3. Thao Tác BẬT/TẮT KẾT NỐI (Connect Toggle) & MỜI HỘI VIÊN MỚI
-1. **Bật/Tắt Kết nối (Connect Toggle):**
-   - Trên hồ sơ hội viên, nhấn nút **"Kết nối"**.
-   - Trạng thái chuyển sang **"Đang kết nối"** (Connected), cho phép hai bên xem đầy đủ danh thiếp nội bộ và bắt đầu gửi tin nhắn trực tiếp không giới hạn.
-   - Có thể chạm lại để ngắt kết nối khi cần thiết.
-2. **Mời Hội Viên Mới Tham Gia CLB (Invite Member):**
-   - Tại đầu danh bạ, nhấn nút **"+ Mời Hội Viên Mới"**.
-   - Modal hiển thị mã giới thiệu cá nhân và liên kết mời tham gia CLB.
-   - Nhấn **"Sao chép liên kết"** hoặc **"Chia sẻ qua Zalo/Facebook"** để giới thiệu các doanh nhân chất lượng gia nhập CLB CEO 1983.
+### 3.9. Hộp Thư Tin Nhắn Doanh Nghiệp B2B
 
-![Thao tác Bật/Tắt Kết nối Hội viên](images/evidence/sub_18_app_connection_toggle.png)
-*Hình 8.3: Nút toggle Kết nối đối tác giúp mở rộng mạng lưới giao thương nội bộ.*
+Truy cập menu **"Tin nhắn"** (`/association/messages`):
+- Quản lý tập trung toàn bộ các cuộc trao đổi kinh doanh giữa các chủ doanh nghiệp.
+- Thanh tìm kiếm nhanh tin nhắn theo tên đối tác hoặc tên công ty.
+- Huy hiệu hiển thị số lượng tin nhắn chưa đọc (Unread badge) nổi bật.
+- Chỉ báo trạng thái hoạt động: Chấm xanh hiển thị đối tác đang online thời gian thực.
 
-![Modal Mời Hội Viên Mới Gia Nhập Hiệp Hội](images/evidence/sub_19_app_invite_member_modal.png)
-*Hình 8.4: Tính năng Mời doanh nhân mới gia nhập hiệp hội bằng mã QR và liên kết giới thiệu.*
+![Hộp thư Tin nhắn B2B](images/evidence/app_step_09_messages_inbox.png)
+*Hình 3.9: Hộp thư Tin nhắn B2B kết nối trao đổi cơ hội kinh doanh giữa các doanh nhân.*
 
 ---
 
-## 9. HỘP THƯ TIN NHẮN, TẠO NHÓM, CHAT 1-1, GỬI ĐỊNH VỊ GPS & GỌI ĐIỆN MESSENGER
+### 3.10. Hội Thoại Chat 1-on-1, Gửi File Catalog & Chia Sẻ Điểm Hẹn
 
-### 9.1. Hộp Thư Đến & Tạo Nhóm Đàm Thoại Mới
-1. Chọn biểu tượng **Tin nhắn (Messenger)** ở thanh điều hướng.
-2. Danh sách các cuộc trò chuyện gần nhất hiển thị:
-   - Avatar đối tác, tên công ty, nội dung tin nhắn mới nhất và thời gian gửi.
-   - Chấm xanh báo hiệu đối tác đang trực tuyến (Online).
-3. **Tạo Nhóm Đàm Thoại (Create Group):**
-   - Nhấn biểu tượng dấu **"+"** góc trên phải.
-   - Đặt tên nhóm dự án (vd: *"Tổ hợp Thầu Dự Án Xây Dựng 1983"*).
-   - Chọn các doanh nhân từ danh bạ để thêm vào nhóm ➔ Nhấn **"Tạo nhóm"**.
+1. Nhấp vào một cuộc hội thoại trong Hộp thư tin nhắn.
+2. Giao diện chat trực tiếp tốc độ cao mở ra:
+   - **Soạn tin nhắn:** Nhập nội dung văn bản và gửi tức thời.
+   - **Đính kèm tài liệu:** Nhấn biểu tượng chiếc ghim để gửi file Catalog sản phẩm, báo giá hoặc hợp đồng nguyên tắc định dạng PDF/Word.
+   - **Gửi hình ảnh:** Chọn ảnh sản phẩm hoặc ảnh mẫu từ máy ảnh/thư viện ảnh.
+   - **Chia sẻ điểm hẹn giao thương:** Nhấn biểu tượng bản đồ để gửi tọa độ quán cafe hoặc văn phòng hẹn gặp làm việc trực tiếp.
+   - **Bảo mật tuyệt đối:** Đường truyền mã hóa WebSocket/HTTPS bảo vệ bí mật kinh doanh của hai bên.
 
-![Hộp thư Tin nhắn Messenger trên App](images/evidence/sub_20_app_messages_inbox.png)
-*Hình 9.1: Hộp thư đến quản lý toàn bộ các luồng hội thoại cá nhân và hội nhóm dự án.*
-
-![Modal Tạo Nhóm Đàm Thoại Dự Án Mới](images/evidence/sub_21_app_create_group_modal.png)
-*Hình 9.2: Form tạo nhóm chat đàm thoại nhiều thành viên theo dự án hoặc ban ngành.*
+![Hội thoại Chat 1-on-1 Realtime](images/evidence/app_step_10_chat_conversation.png)
+*Hình 3.10: Màn hình Chat trực tiếp 1-on-1 hỗ trợ trao đổi tài liệu và giao thương tin cậy.*
 
 ---
 
-### 9.2. Trò Chuyện Trực Tiếp 1-1 & Khung Công Cụ Mở Rộng
-1. Nhấp vào cuộc trò chuyện với một hội viên để mở phòng chat riêng tư.
-2. Hệ thống hỗ trợ đầy đủ các tính năng trò chuyện cao cấp:
-   - Nhắn tin văn bản thời gian thực kèm trạng thái "Đã gửi", "Đã nhận", "Đã xem".
-   - Bấm nút **"+" (Khung công cụ mở rộng)** cạnh ô nhập văn bản để:
-     - Gửi tài liệu hợp đồng, hồ sơ năng lực định dạng PDF/Word/Excel.
-     - Chụp ảnh trực tiếp công trình, nhà máy hoặc gửi ảnh từ thư viện.
+### 3.11. Quản Lý Nhóm Chat Giao Thương, Ghim Tin & Thu Hồi Tin Nhắn
 
-![Trò chuyện Trực tiếp 1-1 với Bong bóng Tin nhắn](images/evidence/sub_22_app_chat_1on1_bubble.png)
-*Hình 9.3: Giao diện Chat 1-1 với bố cục tin nhắn chuyên nghiệp và bảo mật cao.*
-
-![Khung công cụ mở rộng gửi hình ảnh và tệp tài liệu](images/evidence/sub_23_app_chat_input_expander.png)
-*Hình 9.4: Khung công cụ mở rộng hỗ trợ chia sẻ tệp tài liệu, hình ảnh và định vị GPS.*
+Bên cạnh chat 1-on-1, ứng dụng hỗ trợ tính năng làm việc nhóm chuyên sâu:
+- **Tạo nhóm chat:** Hội viên có thể khởi tạo nhóm chat theo dự án liên minh hoặc ban chuyên môn (ví dụ: *Nhóm Xúc Tiến Thương Mại Quý 3*).
+- **Thêm/bớt thành viên:** Quản trị viên nhóm có quyền mời thêm lãnh đạo vào nhóm hoặc mời ra khỏi nhóm khi kết thúc dự án.
+- **Ghim tin nhắn:** Ghim thông báo lịch họp hoặc điều khoản hợp tác quan trọng lên đầu khung chat để mọi thành viên dễ theo dõi.
+- **Biểu tượng cảm xúc (Emoji):** Thả reaction (Thích, Trái tim, Bắt tay) trên từng tin nhắn.
+- **Thu hồi tin nhắn:** Người gửi có thể bấm giữ tin nhắn và chọn **"Thu hồi"** nếu gửi nhầm thông tin.
 
 ---
 
-### 9.3. Gửi Định Vị Trụ Sở Công Ty (Location Pin) & Thu Hồi Tin Nhắn
-1. **Gửi Định Vị Trụ Sở (Location Pin):**
-   - Trong khung công cụ mở rộng, chọn biểu tượng **"Vị trí"**.
-   - Ứng dụng lấy tọa độ GPS chính xác của bạn hoặc cho phép ghim địa chỉ trụ sở công ty.
-   - Thẻ vị trí gửi vào đoạn chat với nút bấm **"Mở chỉ đường trên Bản đồ"** giúp đối tác lái xe đến thẳng văn phòng của bạn.
-2. **Thu Hồi Tin Nhắn:**
-   - Trường hợp gửi nhầm nội dung, nhấn giữ vào tin nhắn đó và chọn **"Thu hồi tin nhắn"**.
-   - Hệ thống xóa nội dung ở cả hai phía người gửi và người nhận.
+### 3.12. Lịch Sự Kiện, Diễn Đàn & Đồng Bộ Lịch Hẹn Google/Apple Calendar
 
-![Chia sẻ Định vị Trụ sở Công ty trong Chat](images/evidence/sub_24_app_chat_location_pin.png)
-*Hình 9.5: Tính năng gửi ghim vị trí trụ sở công ty hỗ trợ đối tác đến làm việc.*
+Truy cập menu **"Sự kiện"** (`/association/events`):
+- Danh sách các sự kiện trọng thể của CLB: Đại hội thường niên, Caravan xúc tiến thương mại liên tỉnh, Cafe Doanh nhân định kỳ sáng thứ 7, Gala Dinner cuối năm.
+- Thông tin chi tiết: Thời gian, địa điểm, nội dung Timeline chương trình (Agenda) từng khung giờ, danh sách diễn giả và nhà tài trợ.
+- **Tiện ích Thêm vào Lịch:** Nhấn nút **"Thêm vào Lịch"** để tự động tạo lịch hẹn trên Google Calendar hoặc Apple Calendar trên điện thoại kèm lời nhắc trước 24 giờ.
+- **Bản đồ chỉ đường:** Nhấn vào địa chỉ sự kiện để mở Google Maps dẫn đường trực tiếp đến hội trường.
 
-![Tính năng Thu hồi Tin nhắn đã gửi](images/evidence/sub_25_app_chat_recalled_msg.png)
-*Hình 9.6: Trạng thái tin nhắn đã được thu hồi an toàn.*
+![Lịch Sự kiện & Diễn đàn Doanh nhân](images/evidence/app_step_11_events_list.png)
+*Hình 3.12: Danh sách Sự kiện, Diễn đàn Doanh nhân & Gala Dinner CLB CEO 1983.*
 
 ---
 
-### 9.4. Cuộc Gọi Thoại / Video Trực Tiếp Trên App (Call Popup)
-1. Ở góc trên màn hình chat, nhấp vào biểu tượng **Chiếc điện thoại (Cuộc gọi)**.
-2. Popup cuộc gọi hiển thị thông tin doanh nhân đang gọi đến.
-3. Hai bên kết nối đàm thoại âm thanh chất lượng cao để trao đổi nhanh công việc mà không tốn cước viễn thông truyền thống.
+### 3.13. Đăng Ký Vé Sự Kiện & Chọn Hạng Vé Đại Biểu
 
-![Popup Cuộc gọi Thoại Messenger trên App](images/evidence/sub_26_app_chat_call_popup.png)
-*Hình 9.7: Giao diện thực hiện cuộc gọi thoại trực tiếp giữa các hội viên doanh nhân.*
+1. Tại danh sách sự kiện, nhấn nút **"Đăng ký vé"**.
+2. Modal đăng ký mở ra:
+   - Chọn hạng vé:
+     * *Vé Hội Viên VIP:* Đặc quyền 0đ dành riêng cho hội viên chính thức của CLB.
+     * *Vé Khách Mời Mở Rộng:* Dành cho đối tác và khách mời tham dự.
+     * *Vé Nhà Tài Trợ:* Dành cho các đơn vị đồng hành cùng sự kiện.
+   - Nhập thông tin người tham dự, chức vụ và yêu cầu bàn tiệc.
+   - Đối với vé có thu phí: Hệ thống tạo đơn hàng và hiển thị mã VietQR chuyển khoản chính xác tới từng đồng.
 
----
-
-## 10. MENU CÁ NHÂN, DANH THIẾP SỐ, KÊNH TRỢ GIÚP & ĐỌC HƯỚNG DẪN SỬ DỤNG TRỰC TIẾP TRONG APP
-
-### 10.1. Menu Cá Nhân & Danh Thiếp Số
-1. Chọn tab **"Cá nhân"** (Tài khoản) ở góc dưới cùng bên phải.
-2. Màn hình quản trị tài khoản cung cấp:
-   - Thông tin cá nhân, chức vụ và gói hội viên hiện tại.
-   - **Kho Danh thiếp số:** Quản lý danh thiếp cá nhân và danh thiếp doanh nghiệp.
-   - Lịch sử tham gia các hoạt động và huy hiệu cống hiến.
-
-![Menu Quản trị Cá nhân và Tài khoản Hội viên](images/evidence/sub_43_app_profile_menu.png)
-*Hình 10.1: Menu quản lý tài khoản cá nhân, bảo mật và các tiện ích mở rộng.*
-
-![Kho Quản lý Danh thiếp số Điện tử](images/evidence/sub_44_app_digital_business_cards.png)
-*Hình 10.2: Danh sách các danh thiếp số công vụ của doanh nhân trong hệ thống.*
+![Modal Đăng ký Vé Tham dự Sự kiện](images/evidence/app_step_12_event_detail_modal.png)
+*Hình 3.13: Biểu mẫu Đăng ký Vé tham dự sự kiện và chọn hạng vé đại biểu.*
 
 ---
 
-### 10.2. Kênh Trợ Giúp & Liên Hệ Ban Thư Ký CLB
-1. Trong menu Cá nhân, chọn **"Liên hệ Ban Thư ký"**.
-2. Modal hỗ trợ hiển thị:
-   - Hotline tiếp nhận hỗ trợ 24/7 của Văn phòng Hiệp hội CEO 1983.
-   - Kênh Zalo Official Account chính thức.
-   - Form gửi kiến nghị trực tiếp lên Ban Chấp Hành CLB.
+### 3.14. Vé Điện Tử Thông Minh, Định Vị Số Bàn VIP & Check-in QR 1 Giây
 
-![Modal Liên hệ và Tiếp nhận Trợ giúp từ Ban Thư ký](images/evidence/sub_45_app_contact_secretariat_modal.png)
-*Hình 10.3: Kênh trợ giúp nhanh kết nối trực tiếp với Ban Thư ký CLB CEO 1983.*
+Truy cập mục **"Vé của tôi / Điểm danh"** (`/association/checkin`):
+- Vé điện tử hiển thị sang trọng: Tên sự kiện, Họ tên đại biểu, Vị trí **Số Bàn VIP** và **Số Ghế Ngồi** được Ban Tổ Chức sắp đặt sẵn.
+- **Mã QR Code động:** Được mã hóa an toàn, tự động làm mới chống hành vi chụp ảnh màn hình chuyển tiếp.
+- **Thao tác Check-in tại cửa:** Đưa màn hình mã QR trước camera tại bàn lễ tân sự kiện. Hệ thống quét và xác thực thành công trong vòng **1 giây**, màn hình lễ tân phát âm thanh thông báo và hiển thị lời chào trân trọng.
 
----
-
-### 10.3. Đọc Hướng Dẫn Sử Dụng Trực Tiếp Trong App (In-App PDF Viewer)
-1. Trong menu Cá nhân, chọn **"Hướng dẫn sử dụng"**.
-2. Hệ thống tích hợp sẵn trình xem tài liệu nội bộ:
-   - Đọc trực tiếp cuốn cẩm nang hướng dẫn sử dụng đầy đủ hình ảnh ngay trên điện thoại mà không cần tải thêm ứng dụng ngoài.
-   - Hỗ trợ phóng to, thu nhỏ, lật trang mượt mà và nút tải file về máy.
-
-![Trình Xem Tài Liệu Hướng Dẫn Sử Dụng Tích Hợp Trong App](images/evidence/sub_46_app_user_guide_modal.png)
-*Hình 10.4: Trình đọc tài liệu cẩm nang hướng dẫn sử dụng tích hợp trực tiếp trên ứng dụng.*
+![Vé điện tử QR Pass Check-in](images/evidence/app_step_13_ticket_qr_pass.png)
+*Hình 3.14: Vé điện tử thông minh tích hợp Mã QR Check-in tức thì tại cổng sự kiện.*
 
 ---
 
-### 10.4. Cài Đặt Mật Khẩu, Bảo Mật, Thông Báo & Bảng Tin Hoạt Động
-1. **Bảo mật & Đổi mật khẩu:** Cập nhật mật khẩu mới định kỳ để bảo vệ tài khoản doanh nghiệp.
-2. **Trung tâm Thông báo:** Lưu trữ các thông báo nhắc nhở lịch sự kiện, thông báo duyệt sản phẩm, thông báo kết nối mới.
-3. **Bảng tin CLB (News Screen):** Cập nhật tin tức đại hội, quyết định kết nạp hội viên mới, các chương trình caravan xúc tiến thương mại.
+### 3.15. Bầu Cử Ban Chấp Hành Trực Tuyến & Vòng Quay May Mắn Lucky Draw
 
-![Cài đặt Mật khẩu và Bảo mật Tài khoản](images/evidence/sub_47_app_settings_password_security.png)
-*Hình 10.5: Màn hình thiết lập mật khẩu mới và chính sách an toàn thông tin.*
+Trong khuôn khổ Đại hội thường niên hoặc đêm tiệc Gala Dinner, ứng dụng hỗ trợ 2 phân hệ tương tác số hóa đặc sắc:
 
-![Trung tâm Thông báo Đẩy trên App](images/evidence/sub_48_app_notifications_screen.png)
-*Hình 10.6: Trung tâm tiếp nhận và lưu trữ thông báo hoạt động của hội viên.*
+#### A. Vòng Quay May Mắn Sự Kiện (Lucky Draw Gala)
+- Ban Tổ chức đồng bộ danh sách đại biểu tham dự và mã vé may mắn vào hệ thống quay số.
+- Vòng quay số ngẫu nhiên minh bạch với cơ cấu giải thưởng hấp dẫn: *Giải Đặc Biệt (Xe VinFast VF3 / Apple VIP Bundle), Giải Nhất, Giải Nhì, Giải May Mắn*.
+- Tự động hiển thị chúc mừng đại biểu trúng giải (họ tên, công ty, mã vé, vị trí bàn VIP) và gửi thông báo đẩy trực tiếp tới điện thoại của người trúng giải.
 
-![Bảng tin Tin tức và Hoạt động của Hiệp hội](images/evidence/sub_49_app_news_screen.png)
-*Hình 10.7: Bảng tin tổng hợp các tin tức, phóng sự và văn bản chỉ đạo của CLB.*
+![Vòng quay may mắn Lucky Draw Sự kiện Gala Dinner](images/evidence/crm_lucky_draw_modal.png)
+*Hình 3.15a-1: Giao diện Vòng quay May mắn Lucky Draw: Quay số ngẫu nhiên theo mã vé, trao giải VinFast VF3 & thông báo trúng giải.*
+
+![Thông báo Đẩy Trúng thưởng Lucky Draw trên Điện thoại Hội viên](images/evidence/app_lucky_draw_winner_notification.png)
+*Hình 3.15a-2: Màn hình điện thoại Hội viên nhận thông báo đẩy chúc mừng trúng thưởng Lucky Draw kèm mã số may mắn và danh mục giải thưởng.*
+
+#### B. Bầu Cử & Biểu Quyết Tín Nhiệm Trực Tuyến
+1. Hội viên truy cập phân hệ **"Biểu quyết"** trên ứng dụng.
+2. Danh sách các kỳ đại hội và phiên biểu quyết hiển thị minh bạch: *Đang diễn ra, Sắp diễn ra, Đã kết thúc*.
+3. Đọc chi tiết phương án / danh sách ứng cử viên Ban Chấp Hành nhiệm kỳ mới.
+4. Chạm chọn phương án và bấm **"Bỏ phiếu"**. Hệ thống mã hóa phiếu bầu đảm bảo tính ẩn danh và công bằng tuyệt đối. Tỷ lệ % kết quả biểu quyết được cập nhật theo thời gian thực trên toàn hệ thống.
+
+![Màn hình Bầu cử & Biểu quyết tín nhiệm đại hội trên App di động](images/evidence/app_voting_mobile_view.png)
+*Hình 3.15b: Phân hệ Bầu cử & Biểu quyết tín nhiệm đại hội trực tuyến trên ứng dụng di động.*
+
+---
+
+### 3.16. Sàn Giao Dịch Marketplace B2B & Ưu Đãi Nội Bộ
+
+Truy cập menu **"Sản phẩm"** (`/association/products`):
+- Sàn thương mại điện tử B2B nội bộ dành riêng cho các doanh nghiệp thành viên CEO 1983.
+- Trưng bày các mặt hàng sản xuất công nghiệp, vật liệu xây dựng, dịch vụ công nghệ, pháp lý, y tế...
+- **Cam kết chiết khấu nội khối:** Mọi sản phẩm niêm yết đều có chính sách giá ưu đãi đặc quyền cho hội viên so với giá thị trường bên ngoài.
+- Thanh tìm kiếm sản phẩm theo tên, khoảng giá và danh mục ngành hàng.
+
+![Sàn Marketplace Sản phẩm Hội viên](images/evidence/app_step_15_marketplace_grid.png)
+*Hình 3.16: Sàn Giao dịch & Gian hàng Sản phẩm Hội viên Ưu đãi Nội bộ CLB CEO 1983.*
 
 ---
 
-## 11. QUẢN LÝ HỘI PHÍ THƯỜNG NIÊN (KÈM ẢNH CRM LIÊN QUAN)
+### 3.17. Đăng Bán Sản Phẩm Mới & Quản Lý Gian Hàng Doanh Nghiệp
 
-### 11.1. Tra Cứu & NỘP HỘI PHÍ Trên App
-1. Trong mục Thẻ hội viên hoặc menu Cá nhân, chọn **"Hội phí thường niên"**.
-2. Kiểm tra ngày hết hạn hội phí và số tiền phí duy trì tư cách hội viên theo quy chế.
-3. Quét mã VietQR của Ban Tài chính CLB để chuyển khoản gia hạn.
+1. Tại màn hình Marketplace, nhấn nút **"Đăng sản phẩm"** (`+`).
+2. Điền đầy đủ thông tin:
+   - Tên sản phẩm / gói dịch vụ.
+   - Giá bán niêm yết thị trường và Giá ưu đãi đặc quyền cho hội viên CLB.
+   - Tải lên hình ảnh sản phẩm sắc nét (hệ thống tự động nén tối ưu dung lượng).
+   - Quy cách đóng gói, tiêu chuẩn chất lượng và chính sách bảo hành.
+3. Nhấn **"Gửi duyệt"**: Bài đăng được chuyển về Web CRM để Ban Quản Trị thẩm định xuất xứ trước khi hiển thị công khai trên App.
+
+![Biểu mẫu Đăng sản phẩm mới lên Sàn](images/evidence/app_step_16_product_create_modal.png)
+*Hình 3.17: Biểu mẫu Đăng tải sản phẩm & dịch vụ doanh nghiệp lên Sàn Marketplace.*
+
+---
+
+### 3.18. Chi Tiết Sản Phẩm & Gửi Yêu Cầu Báo Giá Sỉ B2B
+
+1. Nhấp vào sản phẩm bất kỳ trên Sàn Marketplace.
+2. Xem hình ảnh chi tiết, thông số kỹ thuật và thông tin pháp nhân công ty cung ứng.
+3. Nhấn nút **"Nhận Báo Giá Sỉ"**:
+   - Nhập số lượng dự kiến cần mua sắm.
+   - Nhập ghi chú yêu cầu kỹ thuật và tiến độ giao hàng mong muốn.
+   - Bấm **"Gửi yêu cầu"**: Hệ thống gửi thông báo tức thì đến Giám đốc kinh doanh của doanh nghiệp cung cấp để hai bên tiến hành đàm phán hợp đồng.
+
+![Modal Chi tiết Yêu cầu Báo giá Sản phẩm](images/evidence/app_step_17_product_detail_modal.png)
+*Hình 3.18: Modal Chi tiết Sản phẩm và Yêu cầu Báo giá Ưu đãi VIP dành cho Hội viên.*
 
 ---
 
-### 11.2. Luồng CRM Đối Soát & Gạch Nợ Hội Phí (Chức năng CRM tương ứng)
-1. Ban Kế toán đăng nhập CRM menu **"Quản lý Hội phí & Hội phí"** (`/fees`).
-2. Kiểm tra danh sách doanh nghiệp đến kỳ gia hạn và đối chiếu sao kê tài khoản ngân hàng.
-3. **Thao tác Gạch nợ (Fee Toggle):**
-   - Bật chuyển công tắc trạng thái hội phí sang **"Đã hoàn thành"**.
-   - Thời hạn hiệu lực trên Thẻ Hội Viên VIP của hội viên trên App lập tức tự động gia hạn thêm +1 năm tương ứng.
+### 3.19. Bảng Tin Trao Đổi Cơ Hội Giao Thương & Đón Nhận Deals
 
-![CRM: Quản lý danh sách ĐÓNG HỘI PHÍ của các doanh nghiệp](images/evidence/sub_50_crm_fees_management.png)
-*Hình 11.1: Màn hình CRM Quản lý Hội phí theo dõi tình hình NỘP HỘI PHÍ của các công ty thành viên.*
+Truy cập menu **"Cơ hội"** (`/association/opportunities`):
+- Nơi chia sẻ các nhu cầu hợp tác kinh doanh: Tìm nhà phân phối, tìm nhà thầu phụ, mua vật tư số lượng lớn, kêu gọi vốn đầu tư.
+- **Khu vực Cơ hội tiêu điểm:** Tự động xoay vòng mỗi 2 giây thu hút sự chú ý của các doanh nhân.
+- **Đón nhận cơ hội (Claim Deal):** Nhấn nút **"Đón nhận"** để kết nối trực tiếp với người đăng tin và nhận hồ sơ yêu cầu chi tiết.
 
-![CRM: Thao tác Bật/Tắt Gạch nợ Hội phí để gia hạn Thẻ VIP trên App](images/evidence/sub_51_crm_companies_fee_toggle.png)
-*Hình 11.2: Công tắc gạch nợ hội phí trên CRM - Tự động đồng bộ gia hạn hiệu lực thẻ trên App di động.*
+![Bảng tin Trao Cơ Hội Giao Thương B2B](images/evidence/app_step_18_opportunities_feed.png)
+*Hình 3.19: Bảng tin Trao Cơ Hội Giao Thương B2B & Tìm kiếm Đối tác Tiềm năng.*
 
 ---
-*Tài liệu được biên soạn và chuẩn hóa bởi Ban Công nghệ & Kỹ thuật VIONE - Hiệp hội Doanh nhân CEO 1983.*
+
+### 3.20. Đăng Tin Trao Cơ Hội Hợp Tác Mới
+
+1. Tại màn hình Cơ hội, nhấn nút **"Đăng cơ hội"** (`+`).
+2. Biểu mẫu đăng tin mở ra tiếp nhận:
+   - Tiêu đề cơ hội hợp tác rõ ràng, súc tích.
+   - Phân loại: Mua sắm hàng hóa, Tìm đối tác phân phối, Hợp tác liên danh, Kêu gọi đầu tư.
+   - Giá trị ước tính của thương vụ (Triệu đồng / Tỷ đồng).
+   - Hạn chót tiếp nhận đề xuất hợp tác.
+3. Nhấn **"Đăng tin"**: Cơ hội lập tức xuất hiện trên bảng tin của toàn thể hội viên và đồng bộ về CRM phục vụ báo cáo thống kê quy mô giao thương của CLB.
+
+![Biểu mẫu Đăng cơ hội giao thương mới](images/evidence/app_step_19_opportunity_create_modal.png)
+*Hình 3.20: Biểu mẫu Đăng tin Trao cơ hội Hợp tác & Nhu cầu Giao thương B2B.*
+
+---
+
+### 3.21. Cổng Đóng Hội Phí Niên Liễm VietQR & Tải Biên Lai Điện Tử
+
+Truy cập mục **"Gia hạn hội phí"** (`/association/renew`):
+- Hiển thị thông tin niên độ hội phí (ví dụ: Niên liễm năm 2026), hạn nộp và quyền lợi sinh hoạt.
+- **Cổng thanh toán VietQR tự động:**
+  1. Hệ thống tự động tạo mã VietQR động chứa chính xác số tiền và cú pháp chuyển khoản định danh.
+  2. Hội viên mở bất kỳ ứng dụng ngân hàng nào (Vietcombank, Techcombank, BIDV, MB...) và quét mã QR.
+  3. Sau khi chuyển khoản thành công từ 3-5 giây, hệ thống tự động gạch nợ và gia hạn hạn thẻ hội viên trên ứng dụng.
+  4. Hệ thống tự động gửi **Biên lai thu tiền điện tử** có chữ ký số xác nhận về hòm thư điện tử của doanh nghiệp để làm chứng từ quyết toán kế toán.
+
+![Cổng Đóng Hội Phí Thường Niên VietQR](images/evidence/app_step_20_annual_fee_renewal.png)
+*Hình 3.21: Cổng Đóng Hội Phí Thường Niên tích hợp Quét mã VietQR Tự Động.*
+
+---
+
+### 3.22. Trung Tâm Thông Báo Đẩy & Bản Tin Hoạt Động Hiệp Hội
+
+- **Trung tâm thông báo (`/association/notifications`):**
+  * Nhắc nhở sự kiện sắp diễn ra trước 24 giờ.
+  * Thông báo khi có đối tác gửi lời mời kết nối hoặc tin nhắn mới.
+  * Cập nhật kết quả phê duyệt sản phẩm / cơ hội kinh doanh từ Ban Quản Trị.
+
+![Trung tâm Thông báo Đẩy](images/evidence/app_step_21_notifications_screen.png)
+*Hình 3.22: Trung tâm Thông báo Đẩy, Hoạt động CLB & Lời nhắc Sự kiện.*
+
+- **Bản tin hiệp hội (`/association/news`):**
+  * Đăng tải nghị quyết các kỳ họp Ban Chấp Hành, thông cáo báo chí chính thức.
+  * Vinh danh các doanh nhân tiêu biểu, thành tích sản xuất kinh doanh xuất sắc trong tháng.
+
+![Bản tin Hiệp Hội & Thông cáo Báo chí](images/evidence/app_step_22_news_screen.png)
+*Hình 3.23: Bản tin Hiệp Hội, Thông cáo Báo chí & Văn bản Nghị quyết CLB CEO 1983.*
+
+---
+
+## 🔄 PHẦN 4: MỐI LIÊN KẾT ĐỒNG BỘ HAI CHIỀU VỚI WEB CRM
+
+| Chức Năng Trên Mobile App | Nghiệp Vụ Tương Ứng Trên Web CRM | Cơ Chế Đồng Bộ Thực Tế |
+|---|---|---|
+| **Đăng ký hội viên mới** | Duyệt hồ sơ tại `/members` | Tự động sinh mã hội viên, cấp mật khẩu và gửi email tức thì |
+| **Đăng bán sản phẩm B2B** | Thẩm định sản phẩm tại `/marketplace` | Kiểm tra xuất xứ, gắn nhãn kiểm duyệt trước khi hiển thị lên App |
+| **Đăng tin trao cơ hội B2B** | Giám sát & thống kê Deal tại `/opportunities` | Theo dõi tổng giá trị giao thương kết nối thành công của CLB |
+| **Đăng ký vé sự kiện** | Điều hành sự kiện & ghế ngồi tại `/events` | Cập nhật số lượng vé, phân bổ số ghế VIP vào vé điện tử |
+| **Quét mã QR Check-in vé** | Cổng soát vé lễ tân tại `/checkin` | Tốc độ quét 1s, chống trùng vé 100%, ghi nhận danh sách có mặt |
+| **Quét VietQR nộp hội phí** | Kế toán sổ quỹ tại `/fees` | Đối soát sao kê tự động, gạch nợ và gia hạn thẻ hội viên ngay lập tức |
+
+---
+
+*Tài liệu được biên soạn và chuẩn hóa phục vụ công tác bàn giao vận hành số hóa CLB Doanh Nhân CEO 1983.*

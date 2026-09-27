@@ -135,7 +135,7 @@ export const listDocuments = createServerFn({ method: "GET" })
           type: d.type ?? "PDF",
           time: fmtDate(d.uploadedAt || d.uploaded_at) ?? "10/08/2026",
           description: d.description || d.summary,
-          url: d.url || d.fileUrl || d.file_url,
+          url: d.url || d.fileUrl || d.file_url || d.filePath || d.file_path || "",
           chapters: d.chapters,
         }));
       }

@@ -33,8 +33,8 @@ export const Route = createFileRoute("/association/login")({
   head: () => ({
     meta: [{ title: "Đăng nhập — Hiệp hội Doanh nhân CEO 1983" }],
     links: [
-      { rel: "icon", type: "image/png", sizes: "64x64", href: "/ceo1983-favicon.png" },
-      { rel: "apple-touch-icon", href: "/ceo1983-favicon.png" },
+      { rel: "icon", type: "image/png", sizes: "64x64", href: "/ceo1983-favicon.png?v=ceo1983_2" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=ceo1983_2" },
     ],
   }),
   component: AssociationLoginPage,

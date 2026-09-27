@@ -526,7 +526,24 @@ function ProductModal({
   const [price, setPrice] = useState(product?.price ? formatCurrencyInput(product.price) : "");
   const [originalPrice, setOriginalPrice] = useState(product?.originalPrice ? formatCurrencyInput(product.originalPrice) : "");
   const [unit, setUnit] = useState(product?.unit ?? "");
-  const [company, setCompany] = useState(product?.company ?? "");
+  const profileCompany = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      if (cp?.company?.trim()) return cp.company.trim();
+      const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
+      if (mem?.company?.trim()) return mem.company.trim();
+      if (mem?.companyName?.trim()) return mem.companyName.trim();
+    } catch {}
+    return "";
+  }, []);
+  const [company, setCompany] = useState(product?.company || profileCompany);
+
+  useEffect(() => {
+    if (!company && profileCompany) {
+      setCompany(profileCompany);
+    }
+  }, [profileCompany, company]);
   const [sellerName, setSellerName] = useState(product?.sellerName ?? (user?.user_metadata?.full_name || ""));
   const [sellerPhone, setSellerPhone] = useState(
     product?.sellerPhone ??

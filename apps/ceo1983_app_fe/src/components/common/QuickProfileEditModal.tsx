@@ -81,7 +81,7 @@ export function QuickProfileEditModal({
       setTitle(initialTitle);
       setAvatar(initialAvatar);
       setCover(initialCover);
-      setCompanyLogo(initialCompanyLogo || localStorage.getItem("vba_member_company_logo"));
+      setCompanyLogo(initialCompanyLogo || null);
     }
   }, [open, initialName, initialPhone, initialCompany, initialTitle, initialAvatar, initialCover, initialCompanyLogo]);
 

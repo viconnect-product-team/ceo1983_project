@@ -1,15 +1,27 @@
 {
-  "name": "ViOne — Hội viên Hiệp hội Doanh nghiệp",
-  "short_name": "ViOne Hội viên",
-  "description": "Ứng dụng hội viên: thẻ hội viên, sự kiện, cơ hội kinh doanh và ưu đãi.",
-  "start_url": "/m",
+  "name": "CEO1983",
+  "short_name": "CEO1983",
+  "description": "Ứng dụng CLB Doanh Nhân CEO1983: Thẻ hội viên số, biểu quyết, quay số trúng thưởng, sàn sản phẩm và cơ hội kinh doanh B2B.",
+  "start_url": "/association",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a1834",
-  "theme_color": "#0a1834",
+  "background_color": "#001D4A",
+  "theme_color": "#001D4A",
   "lang": "vi",
   "icons": [
+    {
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/app-icon-192.png",
       "sizes": "192x192",
@@ -23,10 +35,10 @@
       "purpose": "any"
     },
     {
-      "src": "/app-icon.png",
-      "sizes": "512x512",
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ]
 }

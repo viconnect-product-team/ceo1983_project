@@ -1,0 +1,1 @@
+import{j as e}from"./index-BOMF4_3A.js";import{S as t}from"./verify-HwndtXtp.js";const m=({error:r})=>e.jsx(t,{children:e.jsx("div",{className:"text-center text-slate-400",children:r.message})});export{m as errorComponent};

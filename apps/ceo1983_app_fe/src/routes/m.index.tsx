@@ -40,6 +40,7 @@ import {
   type MyAssociationBrand,
 } from "@/lib/member-app.functions";
 import { useT } from "@/lib/i18n";
+import { resolveMediaUrl } from "@/lib/api-client";
 const appIcon = "/app-icon.png";
 
 export const Route = createFileRoute("/m/")({
@@ -105,7 +106,7 @@ function Home() {
             <div className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--vba-gold)]/40 bg-[var(--vba-surface)] p-1 shadow-md">
                 <img
-                  src={brand?.logoUrl || appIcon}
+                  src={brand?.logoUrl ? (resolveMediaUrl(brand.logoUrl) || brand.logoUrl) : appIcon}
                   alt={brand?.name || "CEO 1983"}
                   className="h-full w-full object-contain"
                   width={36}
@@ -196,7 +197,7 @@ function Home() {
       >
         {member?.avatar ? (
           <img
-            src={member.avatar}
+            src={resolveMediaUrl(member.avatar) || member.avatar}
             alt={member?.name ?? ""}
             className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[var(--vba-gold)]/70 ring-offset-2 ring-offset-[var(--vba-bg)] shadow-md"
           />
@@ -348,7 +349,7 @@ function Home() {
           >
             <div className="relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-xl border border-[var(--vba-border)]">
               <img
-                src={eventImg}
+                src={(firstEvent as any)?.image || (firstEvent as any)?.imageUrl ? (resolveMediaUrl((firstEvent as any).image || (firstEvent as any).imageUrl) || (firstEvent as any).image || (firstEvent as any).imageUrl) : eventImg}
                 alt={firstEvent.title}
                 loading="lazy"
                 width={512}

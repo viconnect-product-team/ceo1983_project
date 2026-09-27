@@ -335,8 +335,7 @@ function Home() {
   }, [member?.coverUrl, (member as any)?.cover_url]);
 
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("vba_member_avatar_photo");
+    return member?.avatar || (member as any)?.avatarUrl || null;
   });
   const [avatarError, setAvatarError] = useState(false);
 
@@ -344,27 +343,15 @@ function Home() {
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const direct = localStorage.getItem("vba_member_company_logo");
-      if (direct) return direct;
-      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
-      if (cp?.companyLogo) return cp.companyLogo;
-      const mem = JSON.parse(localStorage.getItem("vba_my_member") || "null");
-      if (mem?.companyLogoUrl || mem?.companyLogo) return mem.companyLogoUrl || mem.companyLogo;
-    } catch {}
-    return null;
+    return (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null;
   });
 
   useEffect(() => {
-    if (!companyLogo) {
-      const found =
-        customProfile?.companyLogo ||
-        (member as any)?.companyLogoUrl ||
-        (member as any)?.companyLogo;
-      if (found) setCompanyLogo(found);
-    }
-  }, [member, customProfile, companyLogo]);
+    const sLogo = (member as any)?.companyLogoUrl || (member as any)?.companyLogo;
+    if (sLogo) setCompanyLogo(sLogo);
+    const sAvatar = member?.avatar || (member as any)?.avatarUrl;
+    if (sAvatar) setAvatarPhoto(sAvatar);
+  }, [(member as any)?.companyLogoUrl, (member as any)?.companyLogo, member?.avatar, (member as any)?.avatarUrl]);
 
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);

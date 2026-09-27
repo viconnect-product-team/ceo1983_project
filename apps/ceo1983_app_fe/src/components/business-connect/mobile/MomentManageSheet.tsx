@@ -246,17 +246,8 @@ export function MomentManageSheet({
       // 1. Upload new photos
       const uploadedNewUrls: string[] = [];
       for (const p of newPhotos) {
-        try {
-          const res = await uploadFileToNest(p.file, "relationship-moments");
-          if (res) uploadedNewUrls.push(res);
-        } catch {
-          const reader = new FileReader();
-          const b64 = await new Promise<string>((resolve) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(p.file);
-          });
-          uploadedNewUrls.push(b64);
-        }
+        const res = await uploadFileToNest(p.file, "relationship-moments");
+        if (res) uploadedNewUrls.push(res);
       }
 
       const finalPhotoUrls = [...existingPhotos, ...uploadedNewUrls];

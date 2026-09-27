@@ -48,3 +48,9 @@ credentials/
 # Uploads and temporary media
 uploads/
 **/uploads/**
+
+# Mobile App Release Builds (large binaries > 100MB)
+release_apk/
+*.apk
+*.ipa
+*.aab

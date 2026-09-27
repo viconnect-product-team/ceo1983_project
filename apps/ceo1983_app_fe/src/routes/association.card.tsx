@@ -125,12 +125,13 @@ function resolveDisplay(
     company: cleanCompany.trim(),
     photo: (() => {
       const raw =
-        customAvatar ||
-        customProfile?.avatar ||
         s?.photoUrl ||
         member?.avatar ||
+        (member as any)?.avatarUrl ||
         (currentUser as any)?.avatar_url ||
         (currentUser as any)?.user_metadata?.avatar_url ||
+        customAvatar ||
+        customProfile?.avatar ||
         null;
       return raw ? (resolveMediaUrl(raw) || raw) : null;
     })(),
@@ -148,33 +149,6 @@ function buildVCard(member: MyMember | null, d: Display): string {
   if (member.phone) lines.push(`TEL;TYPE=CELL:${member.phone}`);
   lines.push("END:VCARD");
   return lines.join("\n");
-}
-
-/** Downscale an image file to a small JPEG data URL (max 256px). */
-function fileToThumbnail(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Không đọc được ảnh"));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("Ảnh không hợp lệ"));
-      img.onload = () => {
-        const max = 256;
-        const scale = Math.min(1, max / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return reject(new Error("Không xử lý được ảnh"));
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
 }
 
 function initials(name: string) {
@@ -388,7 +362,9 @@ function CardScreen() {
   };
 
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
+    const serverLogo = (settings as any)?.companyLogoUrl || (member as any)?.companyLogoUrl || (member as any)?.companyLogo;
+    if (serverLogo && !isBlackLogo(serverLogo)) return serverLogo;
+    if (typeof window === "undefined") return "/ceo1983-official-logo.png";
     try {
       const direct = localStorage.getItem("vba_member_company_logo");
       if (direct && !isBlackLogo(direct)) return direct;
@@ -397,21 +373,32 @@ function CardScreen() {
       }
       const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
       if (cp?.companyLogo && !isBlackLogo(cp.companyLogo)) return cp.companyLogo;
-      const mem = JSON.parse(localStorage.getItem("vba_my_member") || "null");
-      if (mem?.companyLogoUrl && !isBlackLogo(mem.companyLogoUrl)) return mem.companyLogoUrl;
-      if (mem?.companyLogo && !isBlackLogo(mem.companyLogo)) return mem.companyLogo;
     } catch {}
     return "/ceo1983-official-logo.png";
   });
 
   useEffect(() => {
-    if (!coverPhoto && (member?.coverUrl || (member as any)?.cover_url)) {
+    if (member?.coverUrl || (member as any)?.cover_url) {
       setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
     }
-    if (!companyLogo && ((member as any)?.companyLogoUrl || (member as any)?.companyLogo)) {
-      setCompanyLogo((member as any)?.companyLogoUrl || (member as any)?.companyLogo);
+    const serverLogo = (settings as any)?.companyLogoUrl || (member as any)?.companyLogoUrl || (member as any)?.companyLogo;
+    if (serverLogo && !isBlackLogo(serverLogo)) {
+      setCompanyLogo(serverLogo);
     }
-  }, [member?.coverUrl, (member as any)?.cover_url, (member as any)?.companyLogoUrl, (member as any)?.companyLogo, coverPhoto, companyLogo]);
+    const serverPhoto = settings?.photoUrl || member?.avatar || (member as any)?.avatarUrl;
+    if (serverPhoto) {
+      setCustomAvatar(serverPhoto);
+    }
+  }, [
+    settings?.photoUrl,
+    settings?.companyLogoUrl,
+    member?.avatar,
+    (member as any)?.avatarUrl,
+    member?.coverUrl,
+    (member as any)?.cover_url,
+    (member as any)?.companyLogoUrl,
+    (member as any)?.companyLogo,
+  ]);
 
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -1024,35 +1011,20 @@ function EditCardModal({
   const save = useServerFn(saveCardSettings);
   const fileRef = useRef<HTMLInputElement>(null);
   const logoFileRef = useRef<HTMLInputElement>(null);
+  const avatarBlobRef = useRef<Blob | null>(null);
+  const logoBlobRef = useRef<Blob | null>(null);
 
   const [name, setName] = useState(() => {
-    try {
-      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
-      return cp.name || current.name;
-    } catch {
-      return current.name;
-    }
+    return current.name || member.name || "";
   });
   const [company, setCompany] = useState(() => {
-    try {
-      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
-      return cp.company || current.company;
-    } catch {
-      return current.company;
-    }
+    return current.company || (member as any)?.company || (member as any)?.companyName || member.title || "";
   });
   const [photo, setPhoto] = useState<string | null>(() => {
-    return localStorage.getItem("vba_member_avatar_photo") || current.photo;
+    return current.photo || member?.avatar || (member as any)?.avatarUrl || null;
   });
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
-    try {
-      const direct = localStorage.getItem("vba_member_company_logo");
-      if (direct) return direct;
-      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
-      return cp.companyLogo || null;
-    } catch {
-      return null;
-    }
+    return (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null;
   });
   const [showName, setShowName] = useState(current.showName);
   const [showCompany, setShowCompany] = useState(current.showCompany);
@@ -1173,17 +1145,16 @@ function EditCardModal({
     e.target.value = "";
     if (!file) return;
     try {
-      // Fast client-side image compression (<80KB) for instant responsiveness
       const { dataUrl, blob } = await compressImage(file, 400, 400, 0.82);
       setPhoto(dataUrl);
       setShowPhoto(true);
+      avatarBlobRef.current = blob;
 
-      // Upload in background to get permanent server URL
       uploadFileToNest(blob, file.name || "avatar.jpg")
         .then((uploadedUrl) => {
           if (uploadedUrl) {
             setPhoto(uploadedUrl);
-            localStorage.setItem("vba_member_avatar_photo", uploadedUrl);
+            avatarBlobRef.current = null;
           }
         })
         .catch(() => {});
@@ -1199,16 +1170,13 @@ function EditCardModal({
     try {
       const { dataUrl, blob } = await compressImage(file, 400, 400, 0.85);
       setCompanyLogo(dataUrl);
-      localStorage.setItem("vba_member_company_logo", dataUrl);
-      window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: dataUrl }));
+      logoBlobRef.current = blob;
 
       uploadFileToNest(blob, file.name || "company-logo.png")
         .then((uploadedUrl) => {
           if (uploadedUrl) {
-            fetchNestApi("/members/me", {
-              method: "PATCH",
-              body: JSON.stringify({ companyLogoUrl: uploadedUrl }),
-            }).catch(() => null);
+            setCompanyLogo(uploadedUrl);
+            logoBlobRef.current = null;
           }
         })
         .catch(() => {});
@@ -1221,7 +1189,62 @@ function EditCardModal({
   async function submit() {
     setBusy(true);
     try {
-      // 1. Prepare updated profile
+      // 1. Upload pending avatar & logo to MinIO to get permanent URLs
+      let finalPhoto = photo;
+      if (avatarBlobRef.current || (photo && photo.startsWith("data:"))) {
+        try {
+          const blobToUpload = avatarBlobRef.current || (await (await fetch(photo!)).blob());
+          finalPhoto = await uploadFileToNest(blobToUpload, "avatar.jpg");
+          avatarBlobRef.current = null;
+        } catch (uploadErr) {
+          console.warn("Avatar upload notice:", uploadErr);
+        }
+      }
+
+      let finalLogo = companyLogo;
+      if (logoBlobRef.current || (companyLogo && companyLogo.startsWith("data:"))) {
+        try {
+          const blobToUpload = logoBlobRef.current || (await (await fetch(companyLogo!)).blob());
+          finalLogo = await uploadFileToNest(blobToUpload, "company-logo.png");
+          logoBlobRef.current = null;
+        } catch (uploadErr) {
+          console.warn("Logo upload notice:", uploadErr);
+        }
+      }
+
+      // 2. Save directly to Server DB as the Single Source of Truth
+      await save({
+        data: {
+          displayName: name.trim() || null,
+          displayCompany: company.trim() || null,
+          photoUrl: finalPhoto || null,
+          companyLogoUrl: finalLogo || null,
+          showName,
+          showCompany,
+          showPhoto,
+          showEmail: privacyEmail,
+          showPhone: privacyPhone,
+          showAddress: privacyAddress,
+        },
+      });
+
+      // 3. Sync member profile on backend
+      await fetchNestApi("/members/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: name.trim() || undefined,
+          company: company.trim() || undefined,
+          avatar: finalPhoto || undefined,
+          companyLogo: finalLogo || undefined,
+          title: title.trim() || undefined,
+          phone: phone.trim() || undefined,
+          email: email.trim() || undefined,
+          address: address.trim() || undefined,
+          website: website.trim() || undefined,
+        }),
+      }).catch(() => null);
+
+      // 4. Update local memory state & dispatch events
       const updatedProfile = {
         name: name.trim() || member.name,
         company: company.trim() || (member as any)?.company || member.title || "",
@@ -1234,72 +1257,24 @@ function EditCardModal({
         featuredProducts: featuredProducts.trim(),
         address: address.trim(),
         website: website.trim(),
-        avatar: photo || undefined,
-        companyLogo: companyLogo || undefined,
+        avatar: finalPhoto || undefined,
+        companyLogo: finalLogo || undefined,
       };
 
-      // 2. Save locally FIRST so UI updates instantaneously without failing if server is unreachable
       try {
         localStorage.setItem("vba_custom_profile", JSON.stringify(updatedProfile));
-        if (photo) {
-          localStorage.setItem("vba_member_avatar_photo", photo);
-        }
-        if (companyLogo) {
-          localStorage.setItem("vba_member_company_logo", companyLogo);
-        }
-        if (title.trim()) {
-          localStorage.setItem("vba_member_title", title.trim());
-        }
-        if (phone.trim()) {
-          localStorage.setItem("vba_member_phone", phone.trim());
-        }
+        if (finalPhoto) localStorage.setItem("vba_member_avatar_photo", finalPhoto);
+        if (finalLogo) localStorage.setItem("vba_member_company_logo", finalLogo);
+      } catch {}
 
-        const updatedPrivacy = {
-          showPhone: privacyPhone,
-          showEmail: privacyEmail,
-          showAddress: privacyAddress,
-          showProducts: privacyProducts,
-        };
-        localStorage.setItem("vba_member_privacy_settings", JSON.stringify(updatedPrivacy));
-
-        const existingMem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
-        const newMem = {
-          ...existingMem,
-          name: updatedProfile.name || existingMem.name,
-          phone: updatedProfile.phone || existingMem.phone,
-          company: updatedProfile.company || existingMem.company,
-          companyName: updatedProfile.company || existingMem.companyName,
-          title: updatedProfile.title || existingMem.title,
-          avatar: photo || existingMem.avatar,
-          companyLogo: companyLogo || existingMem.companyLogo,
-          companyLogoUrl: companyLogo || existingMem.companyLogoUrl,
-        };
-        localStorage.setItem("vba_my_member", JSON.stringify(newMem));
-      } catch (storageErr) {
-        console.warn("Storage save error:", storageErr);
-      }
-
-      // 3. Dispatch global events
       window.dispatchEvent(new CustomEvent("profile-updated", { detail: updatedProfile }));
       window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: updatedProfile }));
-      window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: photo }));
-      window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: companyLogo }));
+      window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: finalPhoto }));
+      window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: finalLogo }));
       window.dispatchEvent(new Event("privacy-updated"));
       window.dispatchEvent(new Event("contract-updated"));
 
-      // 4. Server sync in background
-      save({
-        data: {
-          displayName: name.trim() || null,
-          displayCompany: company.trim() || null,
-          photoUrl: photo,
-          showName,
-          showCompany,
-          showPhoto,
-        },
-      }).catch(() => null);
-
-      toast.success("Đã cập nhật hồ sơ hội viên thành công!");
+      toast.success("Đã cập nhật hồ sơ và đồng bộ lên máy chủ thành công!");
       onSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("m.card.saveError"));

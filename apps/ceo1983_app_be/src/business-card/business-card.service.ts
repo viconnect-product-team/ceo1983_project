@@ -491,18 +491,25 @@ export class BusinessCardService {
 
   async getCardSettings(userId: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT display_name, display_company, photo_url, show_name, show_company, show_photo,
+      SELECT display_name, display_company, photo_url, company_logo_url, show_name, show_company, show_photo,
              show_email, show_phone, show_address
       FROM public.card_settings
       WHERE user_id = ${userId}::uuid
       LIMIT 1
     `.catch(() => []);
 
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT avatar, company_logo_url, company_name, name, about FROM public.members
+      WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    const m = memRows[0] || null;
+
     if (rows.length === 0) {
       return {
-        displayName: null,
-        displayCompany: null,
-        photoUrl: null,
+        displayName: m?.name ?? null,
+        displayCompany: m?.company_name ?? m?.about ?? null,
+        photoUrl: m?.avatar ?? null,
+        companyLogoUrl: m?.company_logo_url ?? null,
         showName: true,
         showCompany: true,
         showPhoto: true,
@@ -514,9 +521,10 @@ export class BusinessCardService {
 
     const data = rows[0];
     return {
-      displayName: data.display_name ?? null,
-      displayCompany: data.display_company ?? null,
-      photoUrl: data.photo_url ?? null,
+      displayName: data.display_name ?? m?.name ?? null,
+      displayCompany: data.display_company ?? m?.company_name ?? m?.about ?? null,
+      photoUrl: data.photo_url ?? m?.avatar ?? null,
+      companyLogoUrl: data.company_logo_url ?? m?.company_logo_url ?? null,
       showName: data.show_name !== false,
       showCompany: data.show_company !== false,
       showPhoto: data.show_photo !== false,
@@ -529,7 +537,7 @@ export class BusinessCardService {
   async saveCardSettings(userId: string, data: any) {
     await this.prisma.$executeRaw`
       INSERT INTO public.card_settings (
-        user_id, display_name, display_company, photo_url,
+        user_id, display_name, display_company, photo_url, company_logo_url,
         show_name, show_company, show_photo, show_email, show_phone, show_address, updated_at
       )
       VALUES (
@@ -537,6 +545,7 @@ export class BusinessCardService {
         ${data.displayName ?? null},
         ${data.displayCompany ?? null},
         ${data.photoUrl ?? null},
+        ${data.companyLogoUrl ?? null},
         ${data.showName ?? true},
         ${data.showCompany ?? true},
         ${data.showPhoto ?? true},
@@ -549,6 +558,7 @@ export class BusinessCardService {
         display_name = EXCLUDED.display_name,
         display_company = EXCLUDED.display_company,
         photo_url = EXCLUDED.photo_url,
+        company_logo_url = EXCLUDED.company_logo_url,
         show_name = EXCLUDED.show_name,
         show_company = EXCLUDED.show_company,
         show_photo = EXCLUDED.show_photo,
@@ -556,7 +566,104 @@ export class BusinessCardService {
         show_phone = EXCLUDED.show_phone,
         show_address = EXCLUDED.show_address,
         updated_at = now()
-    `.catch(() => null);
+    `.catch((err) => {
+      console.warn('saveCardSettings insert/update notice:', err?.message);
+    });
+
+    if (data.displayName && typeof data.displayName === 'string' && data.displayName.trim()) {
+      const newName = data.displayName.trim();
+      await this.prisma.$executeRaw`
+        UPDATE public.members SET name = ${newName}, updated_at = now()
+        WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.user_profiles SET display_name = ${newName}, updated_at = now()
+        WHERE user_id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.business_identities SET display_name = ${newName}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.member_business_cards SET display_name = ${newName}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+    }
+
+    if (data.photoUrl && typeof data.photoUrl === 'string' && data.photoUrl.trim()) {
+      const newPhoto = data.photoUrl.trim();
+      await this.prisma.$executeRaw`
+        UPDATE public.members SET avatar = ${newPhoto}, updated_at = now()
+        WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.user_profiles SET avatar_url = ${newPhoto}, updated_at = now()
+        WHERE user_id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.business_identities SET avatar_url = ${newPhoto}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.member_business_cards SET avatar_url = ${newPhoto}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+    }
+
+    if (data.companyLogoUrl && typeof data.companyLogoUrl === 'string' && data.companyLogoUrl.trim()) {
+      const newLogo = data.companyLogoUrl.trim();
+      await this.prisma.$executeRaw`
+        UPDATE public.members SET company_logo_url = ${newLogo}, updated_at = now()
+        WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.user_profiles SET company_logo_url = ${newLogo}, updated_at = now()
+        WHERE user_id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.business_identities SET company_logo_url = ${newLogo}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.member_business_cards SET company_logo_url = ${newLogo}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+    }
+
+    if (data.displayCompany && typeof data.displayCompany === 'string' && data.displayCompany.trim()) {
+      const newCompany = data.displayCompany.trim();
+      await this.prisma.$executeRaw`
+        UPDATE public.products
+        SET company = ${newCompany}, updated_at = now()
+        WHERE seller_id = ${userId}::text OR seller_id IN (
+          SELECT code FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
+        )
+      `.catch(() => null);
+
+      await this.prisma.$executeRaw`
+        UPDATE public.members
+        SET company_name = ${newCompany}, about = ${newCompany}, updated_at = now()
+        WHERE user_id = ${userId}::uuid OR id = ${userId}::uuid
+      `.catch(() => null);
+
+      await this.prisma.$executeRaw`
+        UPDATE public.business_identities
+        SET company_name = ${newCompany}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+
+      await this.prisma.$executeRaw`
+        UPDATE public.user_profiles
+        SET company_name = ${newCompany}, updated_at = now()
+        WHERE user_id = ${userId}::uuid
+      `.catch(() => null);
+
+      await this.prisma.$executeRaw`
+        UPDATE public.member_business_cards
+        SET company_name = ${newCompany}, updated_at = now()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+    }
 
     return { ok: true };
   }
@@ -736,6 +843,13 @@ export class BusinessCardService {
       ? (cardRow?.avatar_url || settings?.photo_url || m.avatar || userRow?.avatar_url || null)
       : null;
 
+    // Resolve Company Logo
+    const resolvedCompanyLogo =
+      cardRow?.company_logo_url ||
+      settings?.company_logo_url ||
+      m?.company_logo_url ||
+      null;
+
     // Resolve Phone & Email
     const resolvedPhone = showPhone
       ? (cardRow?.work_phone || m.phone || userRow?.phone || null)
@@ -774,6 +888,7 @@ export class BusinessCardService {
       address: resolvedAddress,
       website: resolvedWebsite,
       photoUrl: resolvedPhoto,
+      companyLogoUrl: resolvedCompanyLogo,
       userId: userId,
       headline: cardRow?.headline || null,
       bio: cardRow?.bio || null,

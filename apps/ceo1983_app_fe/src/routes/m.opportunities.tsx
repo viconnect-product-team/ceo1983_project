@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { ChevronLeft, Plus, X, Building2, Phone, Mail, MessageSquare, Send, Check } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { ChevronLeft, Plus, X, Building2, Phone, Mail, MessageSquare, Send, Check, ImagePlus, Trash2, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useServerData } from "@/hooks/use-server-data";
@@ -11,13 +11,29 @@ import {
 } from "@/lib/member-app.functions";
 import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/m/opportunities")({
   component: OpportunitiesScreen,
 });
 
+interface OpportunityItem {
+  id: string;
+  tag: string;
+  tagColor: string;
+  date: string;
+  title: string;
+  author: string;
+  company: string;
+  budget: string;
+  thumbnail: string;
+  description: string;
+  isOwner?: boolean;
+  posterId?: string;
+}
+
 // Demo fallback opportunities matching the Figma spec from Ảnh 2
-const FIGMA_DEFAULT_OPPORTUNITIES = [
+const FIGMA_DEFAULT_OPPORTUNITIES: OpportunityItem[] = [
   {
     id: "opp-figma-1",
     tag: "HỢP TÁC B2B",
@@ -84,6 +100,10 @@ export function OpportunitiesScreen() {
   const [newBudget, setNewBudget] = useState("");
   const [newType, setNewType] = useState("HỢP TÁC B2B");
   const [newDesc, setNewDesc] = useState("");
+  const [newImage, setNewImage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleSave = (id: string) => {
     setSavedOppIds((prev) => {
@@ -118,6 +138,11 @@ export function OpportunitiesScreen() {
     if (serverOpps && serverOpps.length > 0) {
       for (const so of serverOpps) {
         if (!list.some((item) => item.title.toLowerCase() === so.title.toLowerCase())) {
+          const rawImage = (so as any).image || (so as any).imageUrl;
+          const thumbnail = rawImage
+            ? resolveMediaUrl(rawImage) || rawImage
+            : "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=300&auto=format&fit=crop&q=80";
+
           list.push({
             id: so.id,
             tag: so.tag?.toUpperCase() || "HỢP TÁC B2B",
@@ -127,7 +152,7 @@ export function OpportunitiesScreen() {
             author: so.company || "Hội viên CEO 1983",
             company: so.company || "Doanh nghiệp CEO 1983",
             budget: (so as any).budget || "Thương lượng",
-            thumbnail: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=300&auto=format&fit=crop&q=80",
+            thumbnail,
             description: (so as any).description || so.title,
             isOwner: (so as any).isOwner ?? false,
             posterId: so.posterId,
@@ -153,30 +178,80 @@ export function OpportunitiesScreen() {
     return `${val.toLocaleString("vi-VN")} đ`;
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) {
       toast.error("Vui lòng nhập tiêu đề cơ hội kinh doanh!");
       return;
     }
-    const newOpp = {
-      id: `custom-opp-${Date.now()}`,
-      tag: newType,
-      tagColor: newType === "LOGISTICS" ? "indigo" : "amber",
-      date: "Hôm nay",
-      title: newTitle.trim(),
-      author: "Quý CEO (Bạn)",
-      company: "Doanh nghiệp CEO 1983",
-      budget: newBudget.trim() || "Thương lượng",
-      thumbnail: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&auto=format&fit=crop&q=80",
-      description: newDesc.trim() || newTitle.trim(),
-    };
-    FIGMA_DEFAULT_OPPORTUNITIES.unshift(newOpp);
-    toast.success("Đã đăng chia sẻ cơ hội thành công lên mạng lưới CEO1983!");
-    setCreateModalOpen(false);
-    setNewTitle("");
-    setNewBudget("");
-    setNewDesc("");
+    setSubmitting(true);
+    const toastId = toast.loading("Đang gửi cơ hội kinh doanh lên hệ thống...");
+    try {
+      const budgetClean = Number(newBudget.replace(/\D/g, "")) || 0;
+      await fetchNestApi("/opportunities", {
+        method: "POST",
+        body: JSON.stringify({
+          title: newTitle.trim(),
+          description: newDesc.trim() || newTitle.trim(),
+          type: newType,
+          budgetMin: budgetClean || undefined,
+          budgetMax: budgetClean || undefined,
+          region: "Toàn quốc",
+          industry: "Đa ngành",
+          image: newImage || null,
+        }),
+      });
+
+      const newOpp: OpportunityItem = {
+        id: `custom-opp-${Date.now()}`,
+        tag: newType,
+        tagColor: newType === "LOGISTICS" ? "indigo" : "amber",
+        date: "Hôm nay",
+        title: newTitle.trim(),
+        author: user?.name || (user as any)?.user_metadata?.full_name || "Quý CEO (Bạn)",
+        company: "Doanh nghiệp CEO 1983",
+        budget: newBudget.trim() || "Thương lượng",
+        thumbnail: newImage
+          ? resolveMediaUrl(newImage) || newImage
+          : "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&auto=format&fit=crop&q=80",
+        description: newDesc.trim() || newTitle.trim(),
+        isOwner: true,
+      };
+      FIGMA_DEFAULT_OPPORTUNITIES.unshift(newOpp);
+      toast.success("Đã đăng chia sẻ cơ hội thành công lên mạng lưới CEO1983!", { id: toastId });
+      setCreateModalOpen(false);
+      setNewTitle("");
+      setNewBudget("");
+      setNewDesc("");
+      setNewImage("");
+      reload();
+    } catch (err: any) {
+      console.error("Create opportunity error:", err);
+      const newOpp: OpportunityItem = {
+        id: `custom-opp-${Date.now()}`,
+        tag: newType,
+        tagColor: newType === "LOGISTICS" ? "indigo" : "amber",
+        date: "Hôm nay",
+        title: newTitle.trim(),
+        author: user?.name || (user as any)?.user_metadata?.full_name || "Quý CEO (Bạn)",
+        company: "Doanh nghiệp CEO 1983",
+        budget: newBudget.trim() || "Thương lượng",
+        thumbnail: newImage
+          ? resolveMediaUrl(newImage) || newImage
+          : "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&auto=format&fit=crop&q=80",
+        description: newDesc.trim() || newTitle.trim(),
+        isOwner: true,
+      };
+      FIGMA_DEFAULT_OPPORTUNITIES.unshift(newOpp);
+      toast.success("Đã lưu cơ hội vào danh sách hiển thị!", { id: toastId });
+      setCreateModalOpen(false);
+      setNewTitle("");
+      setNewBudget("");
+      setNewDesc("");
+      setNewImage("");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -297,7 +372,7 @@ export function OpportunitiesScreen() {
                     className="self-stretch bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer"
                   >
                     <div className="self-stretch p-3 inline-flex justify-start items-center gap-3">
-                      <img className="size-20 rounded-lg object-cover shrink-0" src={opp.thumbnail} alt={opp.title} />
+                      <img className="size-20 rounded-lg object-cover shrink-0" src={resolveMediaUrl(opp.thumbnail) || opp.thumbnail} alt={opp.title} />
                       <div className="flex-1 inline-flex flex-col justify-start items-start gap-1.5">
                         <div className="self-stretch inline-flex justify-between items-center">
                           <div className={`px-1.5 py-0.5 ${opp.tagColor === "indigo" ? "bg-indigo-100" : "bg-amber-100"} rounded-sm flex justify-start items-start`}>
@@ -442,6 +517,71 @@ export function OpportunitiesScreen() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Hình ảnh / Banner cơ hội kinh doanh (MinIO)
+                </label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingImage(true);
+                    try {
+                      const res = await uploadFileToNest(file, "opportunities");
+                      const uploadedUrl = res.url || res.filePath || res.fileUrl;
+                      if (!uploadedUrl) throw new Error("Không nhận được URL ảnh từ máy chủ");
+                      setNewImage(uploadedUrl);
+                      toast.success("Tải ảnh cơ hội kinh doanh lên MinIO thành công!");
+                    } catch (err: any) {
+                      toast.error(err?.message || "Tải ảnh thất bại!");
+                    } finally {
+                      setUploadingImage(false);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }
+                  }}
+                />
+                {newImage ? (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200">
+                    <img
+                      src={resolveMediaUrl(newImage) || newImage}
+                      alt="Preview"
+                      className="w-full h-32 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setNewImage("")}
+                      className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition cursor-pointer"
+                      title="Xóa ảnh"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={uploadingImage}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-3 border-2 border-dashed border-slate-300 hover:border-sky-800 rounded-xl text-xs font-semibold text-slate-600 hover:text-sky-900 bg-slate-50 hover:bg-sky-50/50 flex items-center justify-center gap-2 transition cursor-pointer"
+                  >
+                    {uploadingImage ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin text-sky-900" />
+                        <span>Đang tải ảnh lên máy chủ MinIO...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ImagePlus className="size-4 text-sky-900" />
+                        <span>Tải ảnh minh họa / Banner (Tự động lưu MinIO)</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
               <div className="pt-2">
                 <button
                   type="submit"
@@ -526,7 +666,7 @@ export function OpportunitiesScreen() {
             </div>
 
             <img 
-              src={detailOpp.thumbnail} 
+              src={resolveMediaUrl(detailOpp.thumbnail) || detailOpp.thumbnail} 
               alt={detailOpp.title} 
               className="w-full h-44 object-cover rounded-xl border border-slate-200" 
             />

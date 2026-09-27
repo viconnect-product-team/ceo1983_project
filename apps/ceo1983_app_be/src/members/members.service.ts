@@ -447,21 +447,32 @@ export class MembersService {
       `.catch(() => []);
     }
 
-    // Resolve unified avatar from vione_users, user_profiles, or business_identities
+    // Resolve unified avatar & logo & company from card_settings, members, vione_users, user_profiles, or business_identities
+    const cardSettingsRows = await this.prisma.$queryRaw<any[]>`
+      SELECT display_name, display_company, photo_url, company_logo_url
+      FROM public.card_settings
+      WHERE user_id = ${userId}::uuid
+      LIMIT 1
+    `.catch(() => [] as any[]);
+    const cardSetting = cardSettingsRows[0] || null;
+
     const profileAvatars = await this.prisma.$queryRaw<any[]>`
-      SELECT COALESCE(up.avatar_url, bi.avatar_url) as avatar
+      SELECT COALESCE(up.avatar_url, bi.avatar_url) as avatar,
+             COALESCE(up.company_logo_url, bi.company_logo_url) as company_logo
       FROM public.user_profiles up
       LEFT JOIN public.business_identities bi ON bi.owner_user_id = up.user_id
       WHERE up.user_id = ${userId}::uuid
       LIMIT 1
     `.catch(() => [] as any[]);
-    const unifiedAvatar = user?.avatar_url || profileAvatars[0]?.avatar || profile?.avatar_url || null;
+    const m = rows[0] || null;
+    const unifiedAvatar = cardSetting?.photo_url || m?.avatar || user?.avatar_url || profileAvatars[0]?.avatar || profile?.avatar_url || null;
+    const unifiedCompanyLogo = cardSetting?.company_logo_url || m?.company_logo_url || profileAvatars[0]?.company_logo || profile?.company_logo_url || null;
+    const unifiedCompanyName = cardSetting?.display_company || m?.company_name || profile?.company_name || m?.about || 'CLB Doanh Nhân CEO 1983';
 
     if (rows.length > 0) {
-      const m = rows[0];
       const memberName = (m.name && m.name !== 'Hội viên CEO 1983' && m.name !== 'Thành viên mới' && m.name !== 'Hội viên CEO 1983')
         ? m.name
-        : (user?.name || profile?.display_name || m.name || user?.username || 'Hội viên CEO 1983');
+        : (cardSetting?.display_name || user?.name || profile?.display_name || m.name || user?.username || 'Hội viên CEO 1983');
 
       return {
         id: m.id,
@@ -474,6 +485,8 @@ export class MembersService {
         verified: m.status === 'active',
         type: m.type === 'individual' ? 'individual' : 'company',
         title: m.executive_role || m.department || (m.contact && m.contact !== m.name ? m.contact : null) || profile?.professional_title || 'Hội viên chính thức',
+        company: unifiedCompanyName,
+        companyName: unifiedCompanyName,
         email: m.email ?? user?.email ?? '',
         phone: m.phone ?? userPhone ?? '',
         taxCode: m.tax_code ?? null,
@@ -484,13 +497,15 @@ export class MembersService {
         joinedAt: m.joined_at ? (m.joined_at instanceof Date ? m.joined_at.toISOString().slice(0, 10) : String(m.joined_at).slice(0, 10)) : null,
         avatar: unifiedAvatar,
         avatarUrl: unifiedAvatar,
+        companyLogo: unifiedCompanyLogo,
+        companyLogoUrl: unifiedCompanyLogo,
         coverUrl: m.cover_url || (user as any)?.cover_url || null,
         cover_url: m.cover_url || (user as any)?.cover_url || null,
       };
     }
 
     // Fallback: If no member row exists for this user, return non-member identity with real user name
-    const fallbackName = user?.name || profile?.display_name || user?.username || 'Thành viên mới';
+    const fallbackName = cardSetting?.display_name || user?.name || profile?.display_name || user?.username || 'Thành viên mới';
     return {
       id: null,
       memberId: null,
@@ -502,6 +517,8 @@ export class MembersService {
       verified: false,
       type: 'individual',
       title: profile?.professional_title || 'Chưa là hội viên chính thức',
+      company: unifiedCompanyName,
+      companyName: unifiedCompanyName,
       email: user?.email || '',
       phone: '',
       taxCode: null,
@@ -510,8 +527,10 @@ export class MembersService {
       address: '',
       website: null,
       joinedAt: null,
-      avatar: user?.avatar_url ?? null,
-      avatarUrl: user?.avatar_url ?? null,
+      avatar: unifiedAvatar,
+      avatarUrl: unifiedAvatar,
+      companyLogo: unifiedCompanyLogo,
+      companyLogoUrl: unifiedCompanyLogo,
       coverUrl: (user as any)?.cover_url || null,
       cover_url: (user as any)?.cover_url || null,
     };
@@ -569,6 +588,7 @@ export class MembersService {
     phone?: string;
     email?: string;
     avatar?: string;
+    companyLogo?: string;
     address?: string;
     website?: string;
     bio?: string;
@@ -577,7 +597,9 @@ export class MembersService {
       throw new BadRequestException('User ID is required');
     }
 
-    const { name, title, company, phone, email, avatar, address, website, bio } = data;
+    const { name, title, company, phone, email, address, website, bio } = data;
+    const avatar = data.avatar || (data as any)?.avatarUrl;
+    const companyLogo = data.companyLogo || (data as any)?.companyLogoUrl;
 
     // 1. Update vione_users
     try {
@@ -594,13 +616,14 @@ export class MembersService {
     // 2. Update user_profiles
     try {
       await this.prisma.$executeRaw`
-        INSERT INTO public.user_profiles (user_id, display_name, professional_title, company_name, avatar_url, updated_at)
-        VALUES (${userId}::uuid, ${name || null}, ${title || null}, ${company || null}, ${avatar || null}, NOW())
+        INSERT INTO public.user_profiles (user_id, display_name, professional_title, company_name, avatar_url, company_logo_url, updated_at)
+        VALUES (${userId}::uuid, ${name || null}, ${title || null}, ${company || null}, ${avatar || null}, ${companyLogo || null}, NOW())
         ON CONFLICT (user_id) DO UPDATE SET
           display_name = COALESCE(${name || null}, user_profiles.display_name),
           professional_title = COALESCE(${title || null}, user_profiles.professional_title),
           company_name = COALESCE(${company || null}, user_profiles.company_name),
           avatar_url = COALESCE(${avatar || null}, user_profiles.avatar_url),
+          company_logo_url = COALESCE(${companyLogo || null}, user_profiles.company_logo_url),
           updated_at = NOW()
       `.catch(() => null);
     } catch {}
@@ -613,18 +636,34 @@ export class MembersService {
           name = COALESCE(${name || null}, name),
           contact = COALESCE(${name || null}, contact),
           executive_role = COALESCE(${title || null}, executive_role),
+          company_name = COALESCE(${company || null}, company_name),
           about = COALESCE(${bio || company || null}, about),
           phone = COALESCE(${phone || null}, phone),
           email = COALESCE(${email || null}, email),
           address = COALESCE(${address || null}, address),
           website = COALESCE(${website || null}, website),
-          avatar_url = COALESCE(${avatar || null}, avatar_url),
+          avatar = COALESCE(${avatar || null}, avatar),
+          company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
           updated_at = NOW()
         WHERE user_id = ${userId}::uuid OR id = ${userId}
       `.catch(() => null);
     } catch {}
 
-    // 4. Also sync primary business card if exists
+    // 4. Update card_settings
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.card_settings (user_id, display_name, display_company, photo_url, company_logo_url, updated_at)
+        VALUES (${userId}::uuid, ${name || null}, ${company || null}, ${avatar || null}, ${companyLogo || null}, NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+          display_name = COALESCE(${name || null}, card_settings.display_name),
+          display_company = COALESCE(${company || null}, card_settings.display_company),
+          photo_url = COALESCE(${avatar || null}, card_settings.photo_url),
+          company_logo_url = COALESCE(${companyLogo || null}, card_settings.company_logo_url),
+          updated_at = NOW()
+      `.catch(() => null);
+    } catch {}
+
+    // 5. Also sync primary business card if exists
     try {
       await this.prisma.$executeRaw`
         UPDATE public.member_business_cards
@@ -633,13 +672,14 @@ export class MembersService {
           professional_title = COALESCE(${title || null}, professional_title),
           company_name = COALESCE(${company || null}, company_name),
           avatar_url = COALESCE(${avatar || null}, avatar_url),
+          company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
           work_phone = COALESCE(${phone || null}, work_phone),
           work_email = COALESCE(${email || null}, work_email),
           address = COALESCE(${address || null}, address),
           website = COALESCE(${website || null}, website),
           bio = COALESCE(${bio || null}, bio),
           updated_at = NOW()
-        WHERE user_id = ${userId}::uuid
+        WHERE owner_user_id = ${userId}::uuid
       `.catch(() => null);
     } catch {}
 

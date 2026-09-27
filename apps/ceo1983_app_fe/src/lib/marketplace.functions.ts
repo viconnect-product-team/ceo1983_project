@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Product, ProductCategoryKey, QuoteRequest } from "./marketplace-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth, optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer, NEST_API_URL } from "./api-client";
 import { resolveMemberId } from "./current-member";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Product, ProductCategoryKey, QuoteRequest } from "./marketplace-data";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 type Row = Record<string, unknown>;
@@ -116,7 +116,7 @@ function mapQuote(r: Row): QuoteRequest {
 }
 
 export const listProductsFn = createServerFn({ method: "GET" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .handler(async ({ context }): Promise<Product[]> => {
     const token = (context as any)?.token;
     try {
@@ -129,15 +129,23 @@ export const listProductsFn = createServerFn({ method: "GET" })
       console.warn("Fallback to db for listProducts:", e);
     }
 
-    const { data, error } = await getDb(context)
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return signProducts(
-      token,
-      (data ?? []).map((r: any) => mapProduct(r as Row)),
-    );
+    try {
+      const { data, error } = await getDb(context)
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.warn("Error fetching products from db:", error.message);
+        return [];
+      }
+      return signProducts(
+        token,
+        (data ?? []).map((r: any) => mapProduct(r as Row)),
+      );
+    } catch (err) {
+      console.warn("Failed to query products:", err);
+      return [];
+    }
   });
 
 export const getProductFn = createServerFn({ method: "GET" })

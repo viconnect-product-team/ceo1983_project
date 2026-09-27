@@ -131,22 +131,22 @@ export const Route = createRootRoute({
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "ViOne" },
-      { name: "application-name", content: "ViOne" },
-      { property: "og:title", content: "ViOne — Nền tảng Doanh nhân số & Kết nối B2B" },
+      { name: "apple-mobile-web-app-title", content: "CEO 1983" },
+      { name: "application-name", content: "CEO 1983" },
+      { property: "og:title", content: "CEO 1983 — Nền tảng Quản trị Hiệp hội & App Hội viên" },
       {
         property: "og:description",
         content:
-          "Quản lý hội viên, tổ chức sự kiện, kết nối doanh nghiệp và số hoá vận hành.",
+          "Quản lý hội viên, tổ chức sự kiện, kết nối doanh nghiệp và số hoá vận hành hiệp hội.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@vione" },
-      { name: "twitter:title", content: "ViOne — Nền tảng Doanh nhân số & Kết nối B2B" },
+      { name: "twitter:site", content: "@ceo1983" },
+      { name: "twitter:title", content: "CEO 1983 — Nền tảng Quản trị Hiệp hội & App Hội viên" },
       {
         name: "twitter:description",
         content:
-          "Quản lý hội viên, tổ chức sự kiện, tăng doanh thu tài trợ và số hoá vận hành.",
+          "Quản lý hội viên, tổ chức sự kiện, tăng doanh thu tài trợ và số hoá vận hành hiệp hội.",
       },
       {
         property: "og:image",
@@ -164,14 +164,13 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
-      { rel: "apple-touch-icon-precomposed", href: "/apple-touch-icon.png" },
-      { rel: "icon", type: "image/svg+xml", href: "/vione-gold-icon.svg" },
-      { rel: "icon", type: "image/png", sizes: "64x64", href: "/vione-gold-64.png" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/vione-gold-192.png" },
-      { rel: "icon", type: "image/png", sizes: "512x512", href: "/vione-gold-512.png" },
-      { rel: "shortcut icon", href: "/vione-gold-64.png" },
+      { rel: "manifest", href: "/manifest.webmanifest?v=2026-09-27.1" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=ceo1983_2" },
+      { rel: "apple-touch-icon-precomposed", href: "/apple-touch-icon.png?v=ceo1983_2" },
+      { rel: "icon", type: "image/png", sizes: "64x64", href: "/ceo1983-favicon.png?v=ceo1983_2" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/app-icon-192.png?v=ceo1983_2" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/ceo1983-emblem-8.png?v=ceo1983_2" },
+      { rel: "shortcut icon", href: "/ceo1983-favicon.png?v=ceo1983_2" },
       // Web fonts for Business Card industry templates.
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -414,9 +413,8 @@ function RootComponent() {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const isViOne = currentPath.startsWith("/connect-app") || currentPath.startsWith("/vione");
-    const targetFavicon = isViOne ? "/vione-gold-192.png?v=gold9" : "/ceo1983-favicon.png";
-    const targetApple = isViOne ? "/vione-gold-192.png?v=gold9" : "/ceo1983-favicon.png";
+    const targetFavicon = "/ceo1983-favicon.png?v=ceo1983_2";
+    const targetApple = "/apple-touch-icon.png?v=ceo1983_2";
 
     const iconLinks = document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']");
     if (iconLinks.length > 0) {
@@ -433,15 +431,6 @@ function RootComponent() {
     const appleLink = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
     if (appleLink) {
       appleLink.href = targetApple;
-    }
-
-    if (isViOne) {
-      if (document.title.includes("Business Connect")) {
-        document.title = document.title.replace(/Business Connect/g, "ViOne");
-      }
-      if (currentPath === "/connect-app" || currentPath === "/connect-app/") {
-        document.title = "Trang chủ — ViOne";
-      }
     }
   }, [currentPath]);
 

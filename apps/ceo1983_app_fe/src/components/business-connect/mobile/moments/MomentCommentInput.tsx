@@ -164,17 +164,9 @@ export function MomentCommentInput({
     try {
       if (attachedPhoto) {
         setUploadingPhoto(true);
-        try {
-          const uploadedUrl = await uploadFileToNest(attachedPhoto.file, "relationship-moments");
-          photoUrl = uploadedUrl || null;
-        } catch {
-          // Fallback to base64 if direct upload endpoint fails
-          const reader = new FileReader();
-          photoUrl = await new Promise<string>((resolve) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(attachedPhoto.file);
-          });
-        }
+        const uploadedUrl = await uploadFileToNest(attachedPhoto.file, "relationship-moments");
+        if (!uploadedUrl) throw new Error("Không nhận được URL ảnh từ máy chủ MinIO");
+        photoUrl = uploadedUrl;
       }
 
       await onSubmit({

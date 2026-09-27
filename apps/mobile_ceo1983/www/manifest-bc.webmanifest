@@ -1,16 +1,28 @@
 {
-  "name": "vione_app",
-  "short_name": "vione_app",
-  "description": "Nền tảng kết nối, ghi nhớ và phát triển các mối quan hệ kinh doanh.",
-  "id": "/connect-app",
-  "start_url": "/connect-app",
+  "name": "CEO1983",
+  "short_name": "CEO1983",
+  "description": "Nền tảng kết nối, ghi nhớ và phát triển các mối quan hệ kinh doanh CLB Doanh Nhân CEO1983.",
+  "id": "/association",
+  "start_url": "/association",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#050C15",
-  "theme_color": "#050C15",
+  "background_color": "#001D4A",
+  "theme_color": "#001D4A",
   "lang": "vi",
   "icons": [
+    {
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ceo1983-emblem-8.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/app-icon-192.png",
       "sizes": "192x192",
@@ -22,12 +34,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/app-icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }

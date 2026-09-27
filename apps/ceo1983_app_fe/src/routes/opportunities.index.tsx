@@ -23,7 +23,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
+import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, Card, Pill } from "@/components/dashboard/PageKit";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
@@ -49,7 +50,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
-import { toast } from "sonner";
 import { formatDisplayDate, formatDisplayDateTime } from "@/lib/date-format";
 
 function formatCurrencyInput(val: string): string {
@@ -279,16 +279,23 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
   const [contactTitle, setContactTitle] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setImageUrl(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    setUploadingImage(true);
+    const toastId = toast.loading("Đang tải ảnh cơ hội lên MinIO...");
+    try {
+      const uploadedUrl = await uploadFileToNest(file, `opp_${Date.now()}_${file.name}`);
+      setImageUrl(uploadedUrl);
+      toast.success("Đã tải ảnh lên hệ thống thành công!", { id: toastId });
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi tải ảnh lên hệ thống", { id: toastId });
+    } finally {
+      setUploadingImage(false);
+      if (e.target) e.target.value = "";
+    }
   };
 
   async function submit(e: React.FormEvent) {
@@ -338,11 +345,12 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
               ref={fileInputRef}
               accept="image/*"
               className="hidden"
+              disabled={uploadingImage}
               onChange={handleImageChange}
             />
             {imageUrl ? (
               <div className="relative rounded-xl overflow-hidden border border-border max-h-40 bg-muted/20">
-                <img src={imageUrl} alt="Poster" className="w-full h-40 object-cover" />
+                <img src={resolveMediaUrl(imageUrl) || imageUrl} alt="Poster" className="w-full h-40 object-cover" />
                 <button
                   type="button"
                   onClick={() => setImageUrl("")}
@@ -355,11 +363,12 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
                 className="w-full rounded-xl border-2 border-dashed border-border p-4 text-center hover:border-primary/50 hover:bg-muted/20 transition cursor-pointer flex flex-col items-center justify-center gap-1.5"
               >
                 <ImagePlus className="h-6 w-6 text-muted-foreground" />
                 <span className="text-xs font-semibold text-muted-foreground">
-                  Chọn ảnh tải lên từ thiết bị (JPG, PNG, WebP)
+                  {uploadingImage ? "Đang tải ảnh lên MinIO..." : "Chọn ảnh tải lên từ thiết bị (JPG, PNG, WebP)"}
                 </span>
               </button>
             )}

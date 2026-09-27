@@ -6,7 +6,7 @@ import {
   type EventItem,
   type QrField,
 } from "@/lib/events.functions";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { useT } from "@/lib/i18n";
 import { EVENT_TYPE_TEMPLATES, type EventTypeKey } from "@/lib/event-type-templates";
@@ -440,7 +440,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
         {info.imageUrl ? (
           <div className="relative overflow-hidden rounded-xl border border-border">
             <img
-              src={info.imageUrl}
+              src={resolveMediaUrl(info.imageUrl) || info.imageUrl}
               alt="Banner sự kiện"
               className="h-28 w-full object-cover"
             />
@@ -462,16 +462,17 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => {
-                  if (typeof reader.result === "string") {
-                    setInfo({ ...info, imageUrl: reader.result });
-                  }
-                };
-                reader.readAsDataURL(file);
+                const toastId = toast.loading("Đang tải ảnh sự kiện lên hệ thống...");
+                try {
+                  const uploadedUrl = await uploadFileToNest(file, `event_${Date.now()}_${file.name}`);
+                  setInfo({ ...info, imageUrl: uploadedUrl });
+                  toast.success("Đã tải ảnh sự kiện thành công!", { id: toastId });
+                } catch (err: any) {
+                  toast.error(err?.message || "Lỗi tải ảnh sự kiện", { id: toastId });
+                }
               }}
             />
           </label>

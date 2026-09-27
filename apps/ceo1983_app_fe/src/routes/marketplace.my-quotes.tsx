@@ -142,7 +142,7 @@ function MyQuotesPage() {
                     <div className="truncate text-sm font-semibold text-foreground">
                       {q.productTitle}
                     </div>
-                    <Pill color={STATUS_COLOR[q.status]}>{t(STATUS_KEY[q.status])}</Pill>
+                    <Pill color={(STATUS_COLOR as any)[q.status] ?? "neutral"}>{t((STATUS_KEY as any)[q.status] ?? "mk.qs.sent")}</Pill>
                   </div>
                   <p className="mt-1 text-sm text-foreground">{q.message}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">

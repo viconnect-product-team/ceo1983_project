@@ -77,6 +77,34 @@ export class UploadController {
   }
 
   @UseGuards(AuthGuard)
+  @Post('company-logo')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadCompanyLogo(
+    @UploadedFile() file: any,
+    @Request() req: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only images are allowed.');
+    }
+    const userId = req.user?.id || req.user?.sub;
+    if (!userId) {
+      throw new BadRequestException('User ID not identified in auth session');
+    }
+
+    try {
+      const url = await this.uploadService.saveCompanyLogo(file, userId);
+      return { url };
+    } catch (err: any) {
+      console.error('uploadCompanyLogo error:', err);
+      throw new BadRequestException(err?.message || 'Failed to process logo upload');
+    }
+  }
+
+  @UseGuards(AuthGuard)
   @Post('file')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
@@ -91,8 +119,10 @@ export class UploadController {
       throw new BadRequestException('User ID not identified in auth session');
     }
 
+    const folder = (req.query?.folder as string) || 'documents';
+
     try {
-      const url = await this.uploadService.saveFile(file, userId);
+      const url = await this.uploadService.saveFile(file, userId, folder);
       return { url };
     } catch (err: any) {
       console.error('uploadFile error:', err);
@@ -163,18 +193,27 @@ export class UploadController {
       const candidates = [
         path.join(tmpCeoUploads, filePathStr),
         path.join(tmpCeoUploads, 'avatars', filenameOnly),
+        path.join(tmpCeoUploads, 'logos', filenameOnly),
         path.join(tmpCeoUploads, 'documents', filenameOnly),
+        path.join(tmpCeoUploads, 'opportunities', filenameOnly),
+        path.join(tmpCeoUploads, 'products', filenameOnly),
+        path.join(tmpCeoUploads, 'events', filenameOnly),
         path.join('/app', 'uploads', filePathStr),
         path.join('/app', 'uploads', 'avatars', filenameOnly),
+        path.join('/app', 'uploads', 'logos', filenameOnly),
         path.join('/app', 'uploads', 'documents', filenameOnly),
+        path.join('/app', 'uploads', 'opportunities', filenameOnly),
+        path.join('/app', 'uploads', 'products', filenameOnly),
+        path.join('/app', 'uploads', 'events', filenameOnly),
         path.join(process.cwd(), 'uploads', filePathStr),
         path.join(process.cwd(), 'uploads', 'avatars', filenameOnly),
+        path.join(process.cwd(), 'uploads', 'logos', filenameOnly),
         path.join(process.cwd(), 'uploads', 'documents', filenameOnly),
         path.join('/tmp', 'uploads', filePathStr),
         path.join('/tmp', 'uploads', 'avatars', filenameOnly),
+        path.join('/tmp', 'uploads', 'logos', filenameOnly),
         path.join('/tmp', 'uploads', 'documents', filenameOnly),
         path.join(process.cwd(), 'dist', 'uploads', filePathStr),
-        path.join(process.cwd(), 'dist', 'uploads', 'avatars', filenameOnly),
         path.join(process.cwd(), filePathStr),
       ];
 
@@ -191,15 +230,29 @@ export class UploadController {
         filePathStr,
         filenameOnly,
         `avatars/${filenameOnly}`,
+        `logos/${filenameOnly}`,
         `documents/${filenameOnly}`,
+        `opportunities/${filenameOnly}`,
+        `products/${filenameOnly}`,
+        `events/${filenameOnly}`,
       ];
       if (!filePathStr.startsWith('avatars/')) {
         minioKeys.push(`avatars/${filePathStr}`);
-      } else {
-        minioKeys.push(filePathStr.replace(/^avatars\//, ''));
+      }
+      if (!filePathStr.startsWith('logos/')) {
+        minioKeys.push(`logos/${filePathStr}`);
       }
       if (!filePathStr.startsWith('documents/')) {
         minioKeys.push(`documents/${filePathStr}`);
+      }
+      if (!filePathStr.startsWith('opportunities/')) {
+        minioKeys.push(`opportunities/${filePathStr}`);
+      }
+      if (!filePathStr.startsWith('products/')) {
+        minioKeys.push(`products/${filePathStr}`);
+      }
+      if (!filePathStr.startsWith('events/')) {
+        minioKeys.push(`events/${filePathStr}`);
       }
 
       for (const key of minioKeys) {

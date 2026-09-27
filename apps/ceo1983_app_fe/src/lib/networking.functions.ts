@@ -15,7 +15,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ChatMessage, ConnectionStatus } from "./networking-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth, optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ function mapMessage(r: Row): ChatMessage {
  * - messages: ChatMessage[]
  */
 export const getNetworkStateFn = createServerFn({ method: "GET" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .handler(
     async ({ context }): Promise<{
       currentMemberId: string | null;
@@ -86,6 +86,14 @@ export const getNetworkStateFn = createServerFn({ method: "GET" })
       timestamps: Record<string, string>;
       messages: ChatMessage[];
     }> => {
+      if (!context.token) {
+        return {
+          currentMemberId: null,
+          statuses: {},
+          timestamps: {},
+          messages: [],
+        };
+      }
       // Gọi song song: connections + DM threads + requests + me
       const [connsRaw, threadsRaw, meRaw, incomingRaw, outgoingRaw] = await Promise.allSettled([
         fetchNestApiFromServer("/network/connections", context.token),

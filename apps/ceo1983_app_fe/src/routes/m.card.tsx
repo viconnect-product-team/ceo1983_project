@@ -44,6 +44,7 @@ import {
 import { buildMembershipPass } from "@/lib/membership-pass";
 import { walletCapabilities, walletAddUrl } from "@/lib/wallet-provider";
 import { getMyIdentityPassFn, type MyIdentityPass } from "@/lib/member-identity.functions";
+import { resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
 const appIcon = "/app-icon.png";
 const THEME_KEY = "vba-card-theme";
 
@@ -84,33 +85,6 @@ function buildVCard(member: MyMember | null, d: Display): string {
   lines.push(`NOTE:Mã hội viên ${member.code}`);
   lines.push("END:VCARD");
   return lines.join("\n");
-}
-
-/** Downscale an image file to a small JPEG data URL (max 256px). */
-function fileToThumbnail(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Không đọc được ảnh"));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("Ảnh không hợp lệ"));
-      img.onload = () => {
-        const max = 256;
-        const scale = Math.min(1, max / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return reject(new Error("Không xử lý được ảnh"));
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
 }
 
 function initials(name: string) {
@@ -275,7 +249,7 @@ function CardScreen() {
         memberName: d.name || member.name,
         organization: d.company || member.title,
         associationName: brand?.name ?? null,
-        associationLogoUrl: brand?.logoUrl ?? null,
+        associationLogoUrl: brand?.logoUrl ? (resolveMediaUrl(brand.logoUrl) || brand.logoUrl) : null,
         membershipLevel: member.type === "company" ? "Doanh nghiệp" : "Cá nhân",
         state,
         issuedAt: member.joinedAt,
@@ -283,7 +257,7 @@ function CardScreen() {
         themeId: theme.id,
         brandPrimary: brand?.brandPrimary ?? null,
         origin,
-        photoUrl: d.photo,
+        photoUrl: d.photo ? (resolveMediaUrl(d.photo) || d.photo) : null,
       })
     : null;
   const wallets = walletCapabilities();
@@ -413,7 +387,7 @@ function CardScreen() {
             {d.showPhoto &&
               (d.photo ? (
                 <img
-                  src={d.photo}
+                  src={resolveMediaUrl(d.photo) || d.photo}
                   alt={d.name}
                   className="h-12 w-12 rounded-full border border-white/20 object-cover shadow-sm"
                 />
@@ -734,12 +708,14 @@ function EditCardModal({
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    const tid = toast.loading("Đang tải ảnh đại diện lên MinIO...");
     try {
-      const thumb = await fileToThumbnail(file);
-      setPhoto(thumb);
+      const uploadedUrl = await uploadFileToNest(file, "avatars");
+      setPhoto(uploadedUrl);
       setShowPhoto(true);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("m.card.photoLoadError"));
+      toast.success("Tải ảnh đại diện lên MinIO thành công!", { id: tid });
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : t("m.card.photoLoadError"), { id: tid });
     }
   }
 
@@ -791,7 +767,7 @@ function EditCardModal({
         {/* Photo */}
         <div className="mb-4 flex items-center gap-3">
           {photo ? (
-            <img src={photo} alt="" className="h-16 w-16 rounded-full object-cover" />
+            <img src={resolveMediaUrl(photo) || photo} alt="" className="h-16 w-16 rounded-full object-cover" />
           ) : (
             <span className="grid h-16 w-16 place-items-center rounded-full bg-[var(--vba-gold-soft)] text-[16px] font-bold text-[var(--vba-gold)]">
               {initials(name || member.name)}

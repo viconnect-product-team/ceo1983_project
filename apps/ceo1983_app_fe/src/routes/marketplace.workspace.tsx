@@ -267,7 +267,7 @@ function WorkspacePage() {
                     <div className="truncate text-sm font-semibold text-foreground">
                       {q.productTitle}
                     </div>
-                    <Pill color={QUOTE_COLOR[q.status]}>{t(QUOTE_KEY[q.status])}</Pill>
+                    <Pill color={(QUOTE_COLOR as any)[q.status] ?? "neutral"}>{t((QUOTE_KEY as any)[q.status] ?? "mk.qs.sent")}</Pill>
                   </div>
                   <p className="mt-1 line-clamp-2 text-sm text-foreground">{q.message}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">

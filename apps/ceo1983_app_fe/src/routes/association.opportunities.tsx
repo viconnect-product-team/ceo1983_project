@@ -48,8 +48,7 @@ import {
   type MyMember,
   type MyProduct,
 } from "@/lib/member-app.functions";
-import { uploadChatAttachment } from "@/lib/upload-media";
-import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
 import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { formatDisplayDate } from "@/lib/date-format";
@@ -490,23 +489,15 @@ function OpportunitiesScreen() {
     if (!file) return;
     setUploadingImage(true);
     try {
-      const uploaded = await uploadChatAttachment(file);
+      const uploadedUrl = await uploadFileToNest(file, "opportunities");
       if (isEdit) {
-        setEditImage(uploaded.url);
+        setEditImage(uploadedUrl);
       } else {
-        setNewImage(uploaded.url);
+        setNewImage(uploadedUrl);
       }
-      toast.success("Đã tải ảnh lên thành công");
-    } catch {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (isEdit) {
-          setEditImage(reader.result as string);
-        } else {
-          setNewImage(reader.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      toast.success("Đã tải ảnh lên máy chủ MinIO thành công");
+    } catch (err: any) {
+      toast.error(err?.message || "Tải ảnh lên máy chủ thất bại!");
     } finally {
       setUploadingImage(false);
       if (e.target) e.target.value = "";

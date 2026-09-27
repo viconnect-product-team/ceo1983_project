@@ -1,0 +1,1 @@
+import{j as e,A as t}from"./index-BOMF4_3A.js";const o=({error:r})=>e.jsx(t,{children:e.jsx("div",{role:"alert",className:"p-6 text-sm text-destructive",children:r.message})});export{o as errorComponent};

@@ -8438,6 +8438,8 @@ export class ConnectAppService implements OnModuleInit {
         status: o.status,
         interested: interestMap.has(o.id),
         interestLevel: interestMap.get(o.id) || null,
+        image: o.image || null,
+        thumbnail: o.image || null,
       };
     });
 
@@ -8518,6 +8520,8 @@ export class ConnectAppService implements OnModuleInit {
         phone: o.claimed_phone,
         company: o.claimed_company,
       } : null,
+      image: o.image || null,
+      thumbnail: o.image || null,
     };
   }
 
@@ -8968,6 +8972,7 @@ export class ConnectAppService implements OnModuleInit {
           contactTitle: r.contact_title || undefined,
           company: r.company || undefined,
           image: r.image || undefined,
+          thumbnail: r.image || undefined,
         })),
         interests: interests.map(it => ({
           id: String(it.id),
@@ -9057,6 +9062,7 @@ export class ConnectAppService implements OnModuleInit {
           contactTitle: r.contact_title || undefined,
           company: r.company || undefined,
           image: r.image || undefined,
+          thumbnail: r.image || undefined,
         },
         interests: interests.map(it => ({
           id: String(it.id),
@@ -9099,6 +9105,7 @@ export class ConnectAppService implements OnModuleInit {
     const contactPhone = (data.contactPhone || mem[0]?.phone || vu[0]?.phone || '').trim();
     const contactTitle = (data.contactTitle || 'Đại diện hợp tác').trim();
     const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
+    const oppImage = data.image || data.thumbnail || null;
 
     try {
       await this.prisma.$executeRaw`
@@ -9114,7 +9121,7 @@ export class ConnectAppService implements OnModuleInit {
           ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
           'open', 0, ${data.emoji || '💡'},
-          ${data.image || null}, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
+          ${oppImage}, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
           now(), now()
         )
       `;
@@ -9149,6 +9156,7 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async updateOpportunity(userId: string, opportunityId: string, data: any) {
+    const oppImage = data.image !== undefined ? data.image : data.thumbnail;
     await this.prisma.$executeRaw`
       UPDATE public.opportunities
       SET
@@ -9164,7 +9172,7 @@ export class ConnectAppService implements OnModuleInit {
         contact_phone = COALESCE(${data.contactPhone}, contact_phone),
         contact_title = COALESCE(${data.contactTitle}, contact_title),
         company = COALESCE(${data.company}, company),
-        image = COALESCE(${data.image}, image),
+        image = COALESCE(${oppImage}, image),
         updated_at = now()
       WHERE id = ${opportunityId}
     `.catch(async () => {
@@ -9276,6 +9284,7 @@ export class ConnectAppService implements OnModuleInit {
           color: OPP_COLORS[i % OPP_COLORS.length],
           interested: myInterests.has(String(o.id)),
           image: o.image || o.cover_image || null,
+          thumbnail: o.image || o.cover_image || null,
           posterId: o.poster_id || o.poster_code || 'admin',
           posterCode: o.poster_code || o.poster_id || 'admin',
           posterName: o.contact_name || o.poster_name || o.poster_company || 'Hội viên CLB',

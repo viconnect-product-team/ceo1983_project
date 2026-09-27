@@ -48,6 +48,8 @@ export class DocumentsService {
       uploadedBy: r.uploaded_by || '',
       type: r.type,
       filePath: r.file_path || '',
+      url: r.file_path || '',
+      fileUrl: r.file_path || '',
     }));
   }
 
@@ -82,6 +84,8 @@ export class DocumentsService {
       uploadedBy: r.uploaded_by || '',
       type: r.type,
       filePath: r.file_path || '',
+      url: r.file_path || '',
+      fileUrl: r.file_path || '',
     };
   }
 
@@ -117,6 +121,8 @@ export class DocumentsService {
       uploadedBy: r.uploaded_by || '',
       type: r.type,
       filePath: r.file_path || '',
+      url: r.file_path || '',
+      fileUrl: r.file_path || '',
     };
   }
 

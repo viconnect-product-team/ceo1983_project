@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   Building2,
   Check,
   Clock,
@@ -75,13 +76,24 @@ export const Route = createFileRoute("/network")({
     return out;
   },
   loader: async () => {
-    const [products, network, members] = await Promise.all([
-      listProductsFn(),
-      getNetworkStateFn(),
-      listPeersFn(),
-    ]);
-    hydrateMembers(members ?? []);
-    return { products: products ?? [], network };
+    try {
+      const [productsRes, networkRes, membersRes] = await Promise.allSettled([
+        listProductsFn().catch(() => []),
+        getNetworkStateFn().catch(() => ({ currentMemberId: null, statuses: {}, timestamps: {}, messages: [] })),
+        listPeersFn().catch(() => []),
+      ]);
+      const products = productsRes.status === "fulfilled" && Array.isArray(productsRes.value) ? productsRes.value : [];
+      const network = networkRes.status === "fulfilled" && networkRes.value ? networkRes.value : { currentMemberId: null, statuses: {}, timestamps: {}, messages: [] };
+      const members = membersRes.status === "fulfilled" && Array.isArray(membersRes.value) ? membersRes.value : [];
+      hydrateMembers(members ?? []);
+      return { products, network };
+    } catch (e) {
+      console.warn("Error in network loader:", e);
+      return {
+        products: [],
+        network: { currentMemberId: null, statuses: {}, timestamps: {}, messages: [] },
+      };
+    }
   },
   component: NetworkPage,
 });
@@ -748,6 +760,16 @@ function NetworkPage() {
 
   return (
     <AppShell>
+      <div className="mb-3 flex items-center justify-between">
+        <Link
+          to="/association"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition hover:bg-secondary"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Về App Hiệp Hội</span>
+        </Link>
+      </div>
+
       <PageHeader title={t("net.title")} subtitle={t("net.subtitle")} />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">

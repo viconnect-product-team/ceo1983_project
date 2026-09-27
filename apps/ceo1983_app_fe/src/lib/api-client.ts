@@ -417,31 +417,79 @@ export async function fetchNestApiFromServer<T = any>(
   return handleResponse(response);
 }
 
-export async function uploadFileToNest(file: File | Blob, filename: string): Promise<string> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
+export async function uploadFileToNest(
+  file: File | Blob,
+  folderOrFilename?: string
+): Promise<string & { url: string; filePath: string; fileUrl: string }> {
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("vibe_token") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("sb-access-token")
+      : null;
   const headers = new Headers();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
+  let folder = "documents";
+  let filename = "file.bin";
+
+  if (folderOrFilename) {
+    if (folderOrFilename.includes(".")) {
+      filename = folderOrFilename;
+    } else {
+      folder = folderOrFilename;
+      if (file instanceof File && file.name) {
+        filename = file.name;
+      } else {
+        filename = `${folder}_${Date.now()}.bin`;
+      }
+    }
+  } else if (file instanceof File && file.name) {
+    filename = file.name;
+  }
+
   const formData = new FormData();
   formData.append("file", file, filename);
 
-  const response = await fetch(`${NEST_API_URL}/api/upload/file`, {
-    method: "POST",
-    body: formData,
-    headers,
-  });
+  const response = await fetch(
+    `${NEST_API_URL}/api/upload/file?folder=${encodeURIComponent(folder)}`,
+    {
+      method: "POST",
+      body: formData,
+      headers,
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Upload failed: ${response.statusText}`);
+    let errMsg = response.statusText;
+    try {
+      const errObj = await response.json();
+      if (errObj?.message) {
+        errMsg = Array.isArray(errObj.message) ? errObj.message.join(", ") : errObj.message;
+      }
+    } catch {
+      // fallback
+    }
+    throw new Error(`Upload failed (${response.status}): ${errMsg}`);
   }
 
   const text = await response.text();
   const data = JSON.parse(text);
   const transformed = transformUrls(data);
-  return transformed?.url || data.url;
+  const finalUrl: string = transformed?.url || data.url || "";
+
+  // Return a string object that satisfies both string consumers and { url, filePath, fileUrl } consumers
+  const ret = Object.assign(new String(finalUrl), {
+    url: finalUrl,
+    filePath: finalUrl,
+    fileUrl: finalUrl,
+  });
+  return ret as any;
 }
 
 export const uploadFile = uploadFileToNest;
+
 

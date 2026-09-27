@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyEvents, registerForEvent, cancelEventRegistration, type MyEvent } from "@/lib/member-app.functions";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/m/events")({
@@ -103,10 +104,18 @@ function EventsScreen() {
         )}
         {events.map((e: any) => (
           <div key={e.id} role="listitem" className="vba-card flex gap-3 p-3">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-xl vba-gold-grad text-[#1a1206]">
-              <span className="text-[22px] font-extrabold leading-none">{e.day}</span>
-              <span className="text-[10px] font-bold">{e.month}</span>
-            </div>
+            {(e.image || e.imageUrl) ? (
+              <img
+                src={resolveMediaUrl(e.image || e.imageUrl) || (e.image || e.imageUrl)}
+                alt={e.title}
+                className="h-16 w-16 shrink-0 rounded-xl object-cover border border-amber-500/20"
+              />
+            ) : (
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-xl vba-gold-grad text-[#1a1206]">
+                <span className="text-[22px] font-extrabold leading-none">{e.day}</span>
+                <span className="text-[10px] font-bold">{e.month}</span>
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="line-clamp-2 text-[13px] font-semibold text-[var(--vba-text)]">
                 {e.title}

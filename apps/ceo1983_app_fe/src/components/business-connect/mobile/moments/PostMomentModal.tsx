@@ -163,19 +163,9 @@ export function PostMomentModal({
       // 1. Upload photos if any
       const uploadedUrls: string[] = [];
       for (const p of photos) {
-        try {
-          const res = await uploadFileToNest(p.file, "relationship-moments");
-          if (res) {
-            uploadedUrls.push(res);
-          }
-        } catch {
-          // Fallback base64
-          const reader = new FileReader();
-          const b64 = await new Promise<string>((resolve) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(p.file);
-          });
-          uploadedUrls.push(b64);
+        const res = await uploadFileToNest(p.file, "relationship-moments");
+        if (res) {
+          uploadedUrls.push(res);
         }
       }
 

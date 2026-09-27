@@ -25,7 +25,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadFileToNest } from "@/lib/api-client";
+import { uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
 
 export function isVideoMedia(url?: string | null): boolean {
   if (!url) return false;
@@ -154,37 +154,20 @@ export function MarketplaceAdsManager() {
 
     const isVideo = file.type.startsWith("video/") || /\.(mp4|webm|ogg|mov|m4v)$/i.test(file.name);
     setIsUploading(true);
+    const tid = toast.loading(`Đang tải ${isVideo ? "video" : "ảnh"} quảng cáo lên MinIO...`);
 
     try {
-      const uploadedUrl = await uploadFileToNest(file, file.name);
+      const uploadedUrl = await uploadFileToNest(file, "advertisements");
       if (uploadedUrl) {
         setFormBanner(uploadedUrl);
-        toast.success(`Đã tải lên ${isVideo ? "video" : "ảnh"} quảng cáo thành công!`);
-        setIsUploading(false);
-        if (e.target) e.target.value = "";
-        return;
+        toast.success(`Đã tải lên ${isVideo ? "video" : "ảnh"} quảng cáo lên MinIO thành công!`, { id: tid });
       }
     } catch (err: any) {
-      console.warn("Upload to backend failed, using local preview/data URL:", err);
+      toast.error(err?.message || "Tải tệp tin lên máy chủ MinIO thất bại!", { id: tid });
+    } finally {
+      setIsUploading(false);
+      if (e.target) e.target.value = "";
     }
-
-    // Fallback nếu server upload báo lỗi hoặc offline
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      if (result) {
-        setFormBanner(result);
-        toast.success(`Đã thêm ${isVideo ? "video" : "ảnh"} quảng cáo từ thiết bị!`);
-      }
-      setIsUploading(false);
-      if (e.target) e.target.value = "";
-    };
-    reader.onerror = () => {
-      toast.error("Không thể đọc tệp từ thiết bị");
-      setIsUploading(false);
-      if (e.target) e.target.value = "";
-    };
-    reader.readAsDataURL(file);
   };
 
   const loadData = () => {
@@ -369,7 +352,7 @@ export function MarketplaceAdsManager() {
                 <div className="relative h-32 w-full overflow-hidden bg-slate-900 group">
                   {isVideoMedia(ad.bannerUrl) ? (
                     <video
-                      src={ad.bannerUrl}
+                      src={resolveMediaUrl(ad.bannerUrl) || ad.bannerUrl}
                       autoPlay
                       loop
                       muted
@@ -378,7 +361,7 @@ export function MarketplaceAdsManager() {
                     />
                   ) : (
                     <img
-                      src={ad.bannerUrl}
+                      src={resolveMediaUrl(ad.bannerUrl) || ad.bannerUrl}
                       alt={ad.title}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -811,7 +794,7 @@ export function MarketplaceAdsManager() {
                     {isVideoMedia(formBanner) ? (
                       <div className="relative">
                         <video
-                          src={formBanner}
+                          src={resolveMediaUrl(formBanner) || formBanner}
                           controls
                           autoPlay
                           muted
@@ -827,7 +810,7 @@ export function MarketplaceAdsManager() {
                     ) : (
                       <div className="relative">
                         <img
-                          src={formBanner}
+                          src={resolveMediaUrl(formBanner) || formBanner}
                           alt="Banner Preview"
                           className="h-44 w-full rounded-lg object-cover"
                         />

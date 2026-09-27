@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState, useRef } from "react";
 import { X, ImagePlus, Trash2, Upload, Loader2 } from "lucide-react";
 import { uploadFile, resolveMediaUrl } from "@/lib/api-client";
+import { toast } from "sonner";
 
 export type CrudField =
   | {
@@ -142,12 +143,9 @@ export function CrudModal({
                             if (uploadedUrl) {
                               set(f.name, uploadedUrl);
                             }
-                          } catch (err) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              if (typeof reader.result === "string") set(f.name, reader.result);
-                            };
-                            reader.readAsDataURL(file);
+                          } catch (err: any) {
+                            console.error("CrudModal upload error:", err);
+                            toast.error("Không thể tải ảnh lên hệ thống MinIO: " + (err?.message || "Lỗi kết nối"));
                           } finally {
                             setUploadingImage((prev) => ({ ...prev, [f.name]: false }));
                           }

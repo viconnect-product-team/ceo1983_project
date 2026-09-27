@@ -8,6 +8,7 @@ import { listMyProducts, requestQuote, type MyProduct } from "@/lib/member-app.f
 import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { isUserProductOwner } from "@/lib/marketplace-data";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 export const Route = createFileRoute("/m/products")({
   component: ProductsScreen,
@@ -179,7 +180,7 @@ function ProductsScreen() {
             price: typeof sp.price === "number" ? sp.price : 0,
             priceDisplay: formatPriceDisplay(sp),
             isVip: true,
-            imageUrl: sp.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80",
+            imageUrl: sp.imageUrl ? (resolveMediaUrl(sp.imageUrl) || sp.imageUrl) : "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80",
             description: (sp as any).description || "Sản phẩm & dịch vụ chất lượng cao từ doanh nghiệp thành viên CLB CEO 1983.",
           });
         }
@@ -388,7 +389,7 @@ function ProductsScreen() {
                     onClick={() => { trackRecentlyViewed(p); setSelectedProduct(p); }}
                     className={`${showAllProducts ? "w-full" : "w-44 shrink-0"} bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex flex-col justify-start items-start overflow-hidden cursor-pointer shadow-xs hover:shadow-md transition`}
                   >
-                    <img className="self-stretch h-24 object-cover" src={p.imageUrl} alt={p.name} />
+                    <img className="self-stretch h-24 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl} alt={p.name} />
                     <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
                       <div className="self-stretch inline-flex justify-between items-center">
                         <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
@@ -449,7 +450,7 @@ function ProductsScreen() {
                     onClick={() => { trackRecentlyViewed(p); setSelectedProduct(p); }}
                     className="w-44 bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex flex-col justify-start items-start overflow-hidden cursor-pointer shadow-xs hover:shadow-md transition shrink-0"
                   >
-                    <img className="self-stretch h-24 object-cover" src={p.imageUrl} alt={p.name} />
+                    <img className="self-stretch h-24 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl} alt={p.name} />
                     <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
                       <div className="self-stretch inline-flex justify-between items-center">
                         <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
@@ -550,7 +551,7 @@ function ProductsScreen() {
             </div>
 
             <img 
-              src={selectedProduct.imageUrl} 
+              src={resolveMediaUrl(selectedProduct.imageUrl) || selectedProduct.imageUrl} 
               alt={selectedProduct.name} 
               className="w-full h-44 object-cover rounded-xl border border-slate-200" 
             />

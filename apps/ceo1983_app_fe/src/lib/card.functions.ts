@@ -7,6 +7,7 @@ export type CardSettings = {
   displayName: string | null;
   displayCompany: string | null;
   photoUrl: string | null;
+  companyLogoUrl: string | null;
   showName: boolean;
   showCompany: boolean;
   showPhoto: boolean;
@@ -19,6 +20,7 @@ const DEFAULTS: CardSettings = {
   displayName: null,
   displayCompany: null,
   photoUrl: null,
+  companyLogoUrl: null,
   showName: true,
   showCompany: true,
   showPhoto: true,
@@ -46,6 +48,7 @@ export const saveCardSettings = createServerFn({ method: "POST" })
         displayName: z.string().max(120).nullable().optional(),
         displayCompany: z.string().max(160).nullable().optional(),
         photoUrl: z.string().max(400000).nullable().optional(),
+        companyLogoUrl: z.string().max(400000).nullable().optional(),
         showName: z.boolean(),
         showCompany: z.boolean(),
         showPhoto: z.boolean(),
@@ -81,6 +84,7 @@ export type PublicCard = {
   address: string | null;
   website: string | null;
   photoUrl: string | null;
+  companyLogoUrl?: string | null;
   headline?: string | null;
   bio?: string | null;
   zaloUrl?: string | null;
@@ -127,6 +131,7 @@ export const getPublicCard = createServerFn({ method: "GET" })
           address: memberRes.address || "Hà Nội, Việt Nam",
           website: memberRes.website || "https://ceo1983.vn",
           photoUrl: memberRes.avatar || memberRes.avatarUrl || null,
+          companyLogoUrl: memberRes.companyLogoUrl || memberRes.companyLogo || null,
           headline: memberRes.title || "Hội viên chính thức CLB Doanh Nhân CEO 1983",
           bio: memberRes.bio || memberRes.about || "Hội viên tích cực CLB Doanh Nhân CEO 1983, sẵn sàng giao lưu kết nối và hợp tác giao thương.",
         };

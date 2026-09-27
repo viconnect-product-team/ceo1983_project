@@ -90,7 +90,7 @@ const T = {
   region: { vi: "Khu vực hoạt động", en: "Region" },
   address: { vi: "Trụ sở / Địa chỉ", en: "Address" },
   website: { vi: "Website doanh nghiệp", en: "Website" },
-  back: { vi: "Về ứng dụng", en: "Back to App" },
+  back: { vi: "Về App Hiệp Hội", en: "Back to Association App" },
   saveContact: { vi: "Lưu danh bạ", en: "Save Contact" },
   shareCard: { vi: "Chia sẻ", en: "Share" },
   flipCard: { vi: "Lật thẻ", en: "Flip Card" },

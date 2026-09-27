@@ -70,37 +70,6 @@ import heroImg from "@/assets/vba-hero.jpg";
 import eventImg from "@/assets/vba-event.jpg";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
-async function compressImage(file: File, maxWidth = 1200, quality = 0.82): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL("image/jpeg", quality));
-        } else {
-          resolve((e.target?.result as string) || "");
-        }
-      };
-      img.onerror = () => resolve((e.target?.result as string) || "");
-      img.src = (e.target?.result as string) || "";
-    };
-    reader.onerror = () => resolve("");
-    reader.readAsDataURL(file);
-  });
-}
-
 export const Route = createFileRoute("/association/profile")({
   component: ProfileScreen,
 });
@@ -270,44 +239,30 @@ export default function ProfileScreen() {
       return;
     }
     setUploadingCover(true);
+    const tid = toast.loading(isEn ? "Uploading cover to MinIO..." : "Đang tải ảnh bìa lên MinIO...");
     try {
-      // 1. Nén ảnh qua Canvas để kích thước vừa vặn và không gây quá tải storage (tối đa 1200px)
-      const compressedUrl = await compressImage(file, 1200, 0.82);
-      let finalCover = compressedUrl;
+      const uploadUrl = await uploadFileToNest(file, "covers");
+      if (!uploadUrl) throw new Error("Không nhận được URL ảnh từ máy chủ MinIO");
 
-      // 2. Upload file lên Nest nếu khả dụng
+      setCoverPhoto(uploadUrl);
+      setCoverError(false);
       try {
-        const uploadUrl = await uploadFileToNest(file, file.name || "cover.jpg");
-        if (uploadUrl && typeof uploadUrl === "string") {
-          finalCover = uploadUrl;
-        }
-      } catch (uploadErr) {
-        console.warn("Nest upload media not reachable, fallback to compressed image:", uploadErr);
-      }
+        localStorage.setItem("vba_member_cover_photo", uploadUrl);
+      } catch {}
 
-      // 3. Cập nhật state & lưu localStorage
-      setCoverPhoto(finalCover);
-      try {
-        localStorage.setItem("vba_member_cover_photo", finalCover);
-      } catch (stErr) {
-        console.warn("Storage full:", stErr);
-      }
+      window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: uploadUrl }));
 
-      // 4. Phát event để toàn app (Home banner, Card điện tử) cập nhật ngay
-      window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: finalCover }));
-
-      // 5. Lưu vĩnh viễn vào backend DB
       await fetchNestApi("/members/me/cover", {
         method: "PATCH",
-        body: JSON.stringify({ coverUrl: finalCover }),
+        body: JSON.stringify({ coverUrl: uploadUrl }),
       }).catch((apiErr) => {
         console.warn("API /members/me/cover PATCH error:", apiErr);
       });
 
-      toast.success(isEn ? "Cover photo updated successfully!" : "Cập nhật ảnh bìa thành công!");
-    } catch (err) {
+      toast.success(isEn ? "Cover photo updated successfully!" : "Cập nhật ảnh bìa thành công!", { id: tid });
+    } catch (err: any) {
       console.error("Error updating cover photo:", err);
-      toast.error(isEn ? "Failed to update cover photo" : "Không thể cập nhật ảnh bìa. Vui lòng thử lại!");
+      toast.error(err?.message || (isEn ? "Failed to update cover photo" : "Không thể cập nhật ảnh bìa. Vui lòng thử lại!"), { id: tid });
     } finally {
       setUploadingCover(false);
       if (e.target) e.target.value = "";
@@ -322,48 +277,22 @@ export default function ProfileScreen() {
       return;
     }
     setUploadingAvatar(true);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const res = ev.target?.result as string;
-      if (res) {
-        setCustomAvatar(res);
-        setAvatarError(false);
-        try {
-          localStorage.setItem("vba_member_avatar_photo", res);
-          window.dispatchEvent(new Event("vba_member_avatar_updated"));
-        } catch {}
-      }
-    };
-    reader.readAsDataURL(file);
-
+    const tid = toast.loading(isEn ? "Uploading avatar to MinIO..." : "Đang tải ảnh đại diện lên MinIO...");
     try {
-      const token = localStorage.getItem("vibe_token") || localStorage.getItem("token") || localStorage.getItem("access_token");
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload/avatar", {
-        method: "POST",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.url) {
-          setCustomAvatar(json.url);
-          setAvatarError(false);
-          localStorage.setItem("vba_member_avatar_photo", json.url);
-          window.dispatchEvent(new Event("vba_member_avatar_updated"));
-          toast.success(isEn ? "Avatar updated successfully!" : "Cập nhật ảnh đại diện thành công!");
-        }
-      } else {
-        const err = await res.json().catch(() => ({}));
-        console.warn("Avatar upload rejected:", res.status, err);
-        toast.error(isEn ? "Failed to upload avatar" : "Không thể tải ảnh đại diện lên máy chủ");
-      }
-    } catch (err) {
+      const uploadUrl = await uploadFileToNest(file, "avatars");
+      if (!uploadUrl) throw new Error("Không nhận được URL ảnh từ máy chủ MinIO");
+
+      setCustomAvatar(uploadUrl);
+      setAvatarError(false);
+      try {
+        localStorage.setItem("vba_member_avatar_photo", uploadUrl);
+        window.dispatchEvent(new Event("vba_member_avatar_updated"));
+      } catch {}
+
+      toast.success(isEn ? "Avatar updated successfully!" : "Cập nhật ảnh đại diện thành công!", { id: tid });
+    } catch (err: any) {
       console.error("Avatar upload exception:", err);
-      toast.error(isEn ? "Failed to upload avatar" : "Lỗi khi tải ảnh đại diện lên máy chủ");
+      toast.error(err?.message || (isEn ? "Failed to upload avatar" : "Lỗi khi tải ảnh đại diện lên máy chủ"), { id: tid });
     } finally {
       setUploadingAvatar(false);
       if (e.target) e.target.value = "";
@@ -556,22 +485,23 @@ export default function ProfileScreen() {
       return;
     }
     setUploadingModalAvatar(true);
+    const tid = toast.loading("Đang tải ảnh đại diện lên MinIO...");
     try {
-      const compressedUrl = await compressImage(file, 800, 0.85);
-      setModalAvatarPreview(compressedUrl);
-      setCustomAvatar(compressedUrl);
+      const uploadUrl = await uploadFileToNest(file, "avatars");
+      if (!uploadUrl) throw new Error("Không nhận được URL ảnh từ máy chủ");
+      setModalAvatarPreview(uploadUrl);
+      setCustomAvatar(uploadUrl);
+      setAvatarError(false);
       try {
-        const uploadUrl = await uploadFileToNest(file, file.name || "avatar.jpg");
-        if (uploadUrl && typeof uploadUrl === "string") {
-          setCustomAvatar(uploadUrl);
-          setModalAvatarPreview(uploadUrl);
-        }
+        localStorage.setItem("vba_member_avatar_photo", uploadUrl);
+        window.dispatchEvent(new Event("vba_member_avatar_updated"));
       } catch {}
-      toast.success(isEn ? "Avatar selected" : "Đã chọn ảnh đại diện mới");
-    } catch {
-      toast.error(isEn ? "Failed to process image" : "Lỗi xử lý hình ảnh");
+      toast.success(isEn ? "Avatar updated" : "Đã cập nhật ảnh đại diện trên MinIO", { id: tid });
+    } catch (err: any) {
+      toast.error(err?.message || (isEn ? "Failed to process image" : "Lỗi xử lý hình ảnh"), { id: tid });
     } finally {
       setUploadingModalAvatar(false);
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -758,12 +688,12 @@ export default function ProfileScreen() {
   };
 
   const rawCurrentAvatar =
-    customAvatar ||
-    (typeof window !== "undefined" ? localStorage.getItem("vba_member_avatar_photo") : null) ||
     member?.avatar ||
     (member as any)?.avatarUrl ||
     (user as any)?.avatar_url ||
     (user as any)?.user_metadata?.avatar_url ||
+    customAvatar ||
+    (typeof window !== "undefined" ? localStorage.getItem("vba_member_avatar_photo") : null) ||
     null;
   const resolvedAvatar = rawCurrentAvatar && !isDeadAvatar(rawCurrentAvatar)
     ? (resolveMediaUrl(rawCurrentAvatar) || rawCurrentAvatar)

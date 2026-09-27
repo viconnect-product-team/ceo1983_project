@@ -55,7 +55,7 @@ import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyProducts, requestQuote, getMyMember, type MyProduct, type MyMember } from "@/lib/member-app.functions";
-import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
 import { isUserProductOwner } from "@/lib/marketplace-data";
 import { useT, useFmt, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
@@ -118,37 +118,6 @@ function formatSmartProductPrice(rawPrice: string | number | undefined | null): 
     return `${millions % 1 === 0 ? millions : millions.toFixed(1).replace(".0", "")} Tr đ`;
   }
   return `${num.toLocaleString("vi-VN")} đ`;
-}
-
-async function compressImage(file: File, maxWidth = 1024, quality = 0.82): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL("image/jpeg", quality));
-        } else {
-          resolve((e.target?.result as string) || "");
-        }
-      };
-      img.onerror = () => resolve((e.target?.result as string) || "");
-      img.src = (e.target?.result as string) || "";
-    };
-    reader.onerror = () => resolve("");
-    reader.readAsDataURL(file);
-  });
 }
 
 export const Route = createFileRoute("/association/products")({
@@ -494,7 +463,7 @@ function ProductsScreen() {
         status: "active",
         imageUrl: item.imageUrl || null,
         imageUrls: item.imageUrl ? [item.imageUrl] : [],
-        company: item.company || (viewingCompany ? viewingCompany.name : member?.title) || "CLB Doanh Nhân CEO 1983",
+        company: item.company || (viewingCompany ? viewingCompany.name : resolvedProfileCompany) || "CLB Doanh Nhân CEO 1983",
         sellerId: user?.id || (member as any)?.userId || (member as any)?.id || "ceo1983",
       };
       try {
@@ -519,9 +488,58 @@ function ProductsScreen() {
   }, [quoteProduct, postModalOpen, editingProduct, viewingQuotesProduct, wishlistCartOpen, excelImportOpen]);
 
   // Form states for posting product with full CRM pricing fields & Company storefront
+  const [customProfile, setCustomProfile] = useState<any>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
+    } catch {
+      return null;
+    }
+  });
+
+  const resolvedProfileCompany = useMemo(() => {
+    const fromCustom = customProfile?.company?.trim() || customProfile?.companyName?.trim();
+    if (fromCustom) return fromCustom;
+    const fromMember = (member as any)?.company?.trim() || (member as any)?.companyName?.trim();
+    if (fromMember) return fromMember;
+    if (typeof window !== "undefined") {
+      try {
+        const mem = JSON.parse(localStorage.getItem("vba_my_member") || "null");
+        if (mem?.company?.trim()) return mem.company.trim();
+        if (mem?.companyName?.trim()) return mem.companyName.trim();
+      } catch {}
+    }
+    return "CLB Doanh Nhân CEO 1983";
+  }, [customProfile, member]);
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      try {
+        setCustomProfile(JSON.parse(localStorage.getItem("vba_custom_profile") || "null"));
+      } catch {}
+      reload();
+    };
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    window.addEventListener("vba_profile_updated", handleProfileUpdate);
+    window.addEventListener("storage", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+      window.removeEventListener("vba_profile_updated", handleProfileUpdate);
+      window.removeEventListener("storage", handleProfileUpdate);
+    };
+  }, [reload]);
+
   const [formPhoto, setFormPhoto] = useState("");
   const [formName, setFormName] = useState("");
-  const [formCompany, setFormCompany] = useState("");
+  const [formCompany, setFormCompany] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        if (cp?.company?.trim()) return cp.company.trim();
+      } catch {}
+    }
+    return "";
+  });
   const [formCompanyIntro, setFormCompanyIntro] = useState("");
   const [formCompanySize, setFormCompanySize] = useState("10 - 50 nhân sự");
   const [formCategory, setFormCategory] = useState("Công nghệ & Phần mềm");
@@ -531,6 +549,18 @@ function ProductsScreen() {
   const [formCurrency, setFormCurrency] = useState("VND");
   const [formDesc, setFormDesc] = useState("");
   const [creatingProduct, setCreatingProduct] = useState(false);
+
+  useEffect(() => {
+    if (resolvedProfileCompany && resolvedProfileCompany !== "CLB Doanh Nhân CEO 1983" && (!formCompany || formCompany === "CLB Doanh Nhân CEO 1983")) {
+      setFormCompany(resolvedProfileCompany);
+    }
+  }, [resolvedProfileCompany, formCompany]);
+
+  useEffect(() => {
+    if (postModalOpen && resolvedProfileCompany && resolvedProfileCompany !== "CLB Doanh Nhân CEO 1983") {
+      setFormCompany(resolvedProfileCompany);
+    }
+  }, [postModalOpen, resolvedProfileCompany]);
 
   // Form states for editing product
   const [editPhoto, setEditPhoto] = useState("");
@@ -544,16 +574,20 @@ function ProductsScreen() {
   const [editDesc, setEditDesc] = useState("");
   const [updatingProduct, setUpdatingProduct] = useState(false);
 
-
   const allProducts = useMemo(() => {
-    const arr = [...(initialProducts || [])];
+    const arr = (initialProducts || []).map((p) => {
+      if (checkIsProductOwner(p) && resolvedProfileCompany && resolvedProfileCompany !== "CLB Doanh Nhân CEO 1983") {
+        return { ...p, company: resolvedProfileCompany };
+      }
+      return p;
+    });
     arr.sort((a, b) => {
       const timeA = a.time ? new Date(a.time).getTime() : 0;
       const timeB = b.time ? new Date(b.time).getTime() : 0;
       return timeB - timeA;
     });
     return arr;
-  }, [initialProducts]);
+  }, [initialProducts, resolvedProfileCompany, user, member]);
 
   const totalProducts = allProducts.length;
   const totalInterested = interestedIds.length;
@@ -829,7 +863,7 @@ function ProductsScreen() {
       status: "active",
       imageUrl: formPhoto || null,
       imageUrls: formPhoto ? [formPhoto] : [],
-      company: formCompany.trim() || member?.title || "CLB Doanh Nhân CEO 1983",
+      company: formCompany.trim() || resolvedProfileCompany || "CLB Doanh Nhân CEO 1983",
       companyIntro: formCompanyIntro.trim(),
       companySize: formCompanySize,
       sellerId: user?.id || (member as any)?.userId || (member as any)?.id || "ceo1983",
@@ -852,7 +886,7 @@ function ProductsScreen() {
       setPostModalOpen(false);
       setFormPhoto("");
       setFormName("");
-      setFormCompany("");
+      setFormCompany(resolvedProfileCompany || "");
       setFormCompanyIntro("");
       setFormCompanySize("10 - 50 nhân sự");
       setFormOriginalPrice("");
@@ -2345,7 +2379,7 @@ function ProductsScreen() {
                     {formPhoto ? (
                       <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                         <img
-                          src={formPhoto}
+                          src={resolveMediaUrl(formPhoto) || formPhoto}
                           alt="Ảnh sản phẩm"
                           className="h-36 w-full object-cover"
                         />
@@ -2361,7 +2395,7 @@ function ProductsScreen() {
                       <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-4 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
                         <ImagePlus className="h-6 w-6 text-[#2E3192] dark:text-amber-400 mb-1" />
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                          {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên"}
+                          {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên (Lưu MinIO)"}
                         </span>
                         <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP</span>
                         <input
@@ -2371,15 +2405,17 @@ function ProductsScreen() {
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
+                            const tid = toast.loading("Đang tải ảnh sản phẩm lên MinIO...");
                             try {
-                              const compressed = await compressImage(file);
-                              if (compressed) setFormPhoto(compressed);
-                            } catch {
-                              const reader = new FileReader();
-                              reader.onload = () => {
-                                if (typeof reader.result === "string") setFormPhoto(reader.result);
-                              };
-                              reader.readAsDataURL(file);
+                              const uploadedUrl = await uploadFileToNest(file, "products");
+                              if (uploadedUrl) {
+                                setFormPhoto(uploadedUrl);
+                                toast.success("Đã tải ảnh sản phẩm lên MinIO thành công!", { id: tid });
+                              }
+                            } catch (err: any) {
+                              toast.error(err?.message || "Tải ảnh sản phẩm thất bại!", { id: tid });
+                            } finally {
+                              if (e.target) e.target.value = "";
                             }
                           }}
                         />
@@ -2730,15 +2766,17 @@ function ProductsScreen() {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
+                      const tid = toast.loading("Đang tải ảnh sản phẩm lên MinIO...");
                       try {
-                        const compressed = await compressImage(file);
-                        if (compressed) setEditPhoto(compressed);
-                      } catch {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          if (typeof reader.result === "string") setEditPhoto(reader.result);
-                        };
-                        reader.readAsDataURL(file);
+                        const uploadedUrl = await uploadFileToNest(file, "products");
+                        if (uploadedUrl) {
+                          setEditPhoto(uploadedUrl);
+                          toast.success("Đã tải ảnh sản phẩm lên MinIO thành công!", { id: tid });
+                        }
+                      } catch (err: any) {
+                        toast.error(err?.message || "Tải ảnh sản phẩm thất bại!", { id: tid });
+                      } finally {
+                        if (e.target) e.target.value = "";
                       }
                     }}
                   />
