@@ -7,7 +7,7 @@ import { CardScanFlow } from "@/components/business-connect/mobile/card-scan/Car
 export const Route = createFileRoute("/connect-app/card-scan")({
   head: () => ({
     meta: [
-      { title: "Chụp danh thiếp — Business Connect" },
+      { title: "Chụp danh thiếp — ViOne" },
       {
         name: "description",
         content: "Số hoá danh thiếp giấy bằng AI — bạn xác nhận trước khi lưu.",

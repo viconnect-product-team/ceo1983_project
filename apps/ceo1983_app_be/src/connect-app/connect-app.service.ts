@@ -8598,6 +8598,20 @@ export class ConnectAppService implements OnModuleInit {
     const claimantPhone = member[0]?.phone || '';
     const claimantCompany = member[0]?.company || userProfile[0]?.company_name || '';
 
+    // 0. Fetch opportunity title & poster_id first to validate ownership
+    const oppRow = await this.prisma.$queryRaw<any[]>`
+      SELECT id, title, poster_id, association_id FROM public.opportunities WHERE id = ${opportunityRef} LIMIT 1
+    `.catch(() => [] as any[]);
+    if (!oppRow || oppRow.length === 0) {
+      throw new NotFoundException('Không tìm thấy thông tin cơ hội giao thương này trên hệ thống!');
+    }
+    const posterId = oppRow[0]?.poster_id;
+    if (posterId && (posterId.toString() === userId.toString() || posterId.toString() === member[0]?.id?.toString() || posterId.toString() === member[0]?.code?.toString())) {
+      throw new BadRequestException('Bạn là người đăng cơ hội này nên không thể tự nhận hoặc tự ứng tuyển cho chính mình!');
+    }
+    const oppTitle = oppRow[0]?.title || 'Cơ hội kết nối';
+    const assocId = (communityId && communityId.trim().length > 10) ? communityId.trim() : (oppRow[0]?.association_id || null);
+
     // 1. Update opportunity claim record
     await this.prisma.$executeRaw`
       UPDATE public.opportunities
@@ -8609,14 +8623,6 @@ export class ConnectAppService implements OnModuleInit {
         claimed_company = ${claimantCompany}
       WHERE id = ${opportunityRef}
     `;
-
-    // 2. Fetch opportunity title & poster_id
-    const oppRow = await this.prisma.$queryRaw<any[]>`
-      SELECT id, title, poster_id, association_id FROM public.opportunities WHERE id = ${opportunityRef} LIMIT 1
-    `.catch(() => [] as any[]);
-    const oppTitle = oppRow[0]?.title || 'Cơ hội kết nối';
-    const posterId = oppRow[0]?.poster_id;
-    const assocId = (communityId && communityId.trim().length > 10) ? communityId.trim() : (oppRow[0]?.association_id || null);
 
     // 3. Record interest in opportunity_interests
     const intId = `INT-${Date.now().toString(36).toUpperCase()}`;
@@ -8744,8 +8750,14 @@ export class ConnectAppService implements OnModuleInit {
     const oppRow = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, poster_id, association_id FROM public.opportunities WHERE id = ${opportunityRef} LIMIT 1
     `.catch(() => [] as any[]);
-    const oppTitle = oppRow[0]?.title || 'Cơ hội kết nối';
+    if (!oppRow || oppRow.length === 0) {
+      throw new NotFoundException('Không tìm thấy thông tin cơ hội giao thương này trên hệ thống!');
+    }
     const posterId = oppRow[0]?.poster_id;
+    if (posterId && (posterId.toString() === userId.toString() || posterId.toString() === member[0]?.id?.toString() || posterId.toString() === member[0]?.code?.toString())) {
+      throw new BadRequestException('Bạn là người đăng cơ hội này nên không thể tự gửi yêu cầu quan tâm cho chính mình!');
+    }
+    const oppTitle = oppRow[0]?.title || 'Cơ hội kết nối';
     const assocId = (communityId && communityId.trim().length > 10) ? communityId.trim() : (oppRow[0]?.association_id || null);
 
     await this.prisma.$executeRaw`
@@ -9211,6 +9223,17 @@ export class ConnectAppService implements OnModuleInit {
 
       const OPP_COLORS = ['#D97706', '#F59E0B', '#B45309', '#D8B282', '#EDB028'];
 
+      const myMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, user_id FROM public.members
+        WHERE user_id::text = ${userId} OR id = ${userId}
+      `.catch(() => [] as any[]);
+      const myIds = new Set<string>([
+        String(userId).toLowerCase(),
+        ...(myMembers[0]?.id ? [String(myMembers[0].id).toLowerCase()] : []),
+        ...(myMembers[0]?.code ? [String(myMembers[0].code).toLowerCase()] : []),
+        ...(myMembers[0]?.user_id ? [String(myMembers[0].user_id).toLowerCase()] : []),
+      ]);
+
       if (opportunities.length === 0) {
         return [];
       }
@@ -9270,6 +9293,7 @@ export class ConnectAppService implements OnModuleInit {
           claimedPhone: o.claimed_phone || undefined,
           claimedCompany: o.claimed_company || undefined,
           status: o.status || 'open',
+          isOwner: myIds.has(String(o.poster_id || '').toLowerCase()) || (Boolean(o.poster_code) && myIds.has(String(o.poster_code).toLowerCase())),
         };
       });
     } catch {
@@ -11881,6 +11905,42 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async requestProductQuote(userId: string, data: any) {
+    if (!data?.productId) {
+      throw new BadRequestException('Vui lòng chỉ định sản phẩm cần gửi yêu cầu báo giá!');
+    }
+
+    // 0. Ownership check: Sellers cannot quote/bid on their own products
+    let prodRows: any[] = [];
+    let prodTitle = 'Sản phẩm Marketplace';
+    let assocId = 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d';
+    try {
+      prodRows = await this.prisma.$queryRaw<any[]>`
+        SELECT p.title, p.seller_id, p.association_id, m.user_id as seller_user_id, m.id as member_id
+        FROM public.products p
+        LEFT JOIN public.members m ON (m.user_id::text = p.seller_id::text OR m.id::text = p.seller_id::text)
+        WHERE p.id = ${data.productId} LIMIT 1
+      `.catch((err) => {
+        console.warn('Error querying product for quote ownership check:', err?.message);
+        return [];
+      });
+
+      if (prodRows && prodRows.length > 0) {
+        const prod = prodRows[0];
+        if (prod.title) prodTitle = prod.title;
+        if (prod.association_id) assocId = prod.association_id;
+        const uid = String(userId || '').trim().toLowerCase();
+        const sellerId = String(prod.seller_id || '').trim().toLowerCase();
+        const sellerUserId = String(prod.seller_user_id || '').trim().toLowerCase();
+        const memberId = String(prod.member_id || '').trim().toLowerCase();
+
+        if (uid && (uid === sellerId || uid === sellerUserId || uid === memberId)) {
+          throw new BadRequestException('Bạn là người đăng sản phẩm này nên không thể tự gửi yêu cầu báo giá cho chính mình!');
+        }
+      }
+    } catch (checkErr: any) {
+      if (checkErr instanceof BadRequestException) throw checkErr;
+    }
+
     const id = `quote-${Date.now()}`;
     let q: any = {
       id,
@@ -11922,22 +11982,7 @@ export class ConnectAppService implements OnModuleInit {
       }
     } catch {}
 
-    // 2. Query product & seller info
-    let prodRows: any[] = [];
-    let prodTitle = 'Sản phẩm Marketplace';
-    let assocId = 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d';
-    try {
-      prodRows = await this.prisma.$queryRaw<any[]>`
-        SELECT p.title, p.seller_id, p.association_id, m.user_id as seller_user_id, m.id as member_id
-        FROM public.products p
-        LEFT JOIN public.members m ON (m.user_id = p.seller_id OR m.id::text = p.seller_id::text)
-        WHERE p.id = ${data.productId} LIMIT 1
-      `.catch(() => []);
-      if (prodRows.length > 0) {
-        prodTitle = prodRows[0].title || prodTitle;
-        if (prodRows[0].association_id) assocId = prodRows[0].association_id;
-      }
-    } catch {}
+    // 2. Product & seller info already resolved above
 
     // 3. PUSH TO CRM SYSTEM: Dispatch to Association Staff / CRM Notification Center
     try {

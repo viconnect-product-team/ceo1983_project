@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyProducts, requestQuote, type MyProduct } from "@/lib/member-app.functions";
 import { useT, useFmt } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { isUserProductOwner } from "@/lib/marketplace-data";
 
 export const Route = createFileRoute("/m/products")({
   component: ProductsScreen,
@@ -74,6 +76,7 @@ function formatPriceDisplay(p: MyProduct | any): string {
 }
 
 function ProductsScreen() {
+  const { user } = useAuth();
   const t = useT();
   const fmt = useFmt();
   const fetchProducts = useServerFn(listMyProducts);
@@ -573,28 +576,39 @@ function ProductsScreen() {
               {selectedProduct.description}
             </p>
 
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  toast.success(`Đã mở kết nối trò chuyện với đại diện ${selectedProduct.company}!`);
-                  setSelectedProduct(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-slate-50"
-              >
-                <MessageSquare className="size-4" />
-                <span>Nhắn tin</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuote(selectedProduct.id)}
-                disabled={busy === selectedProduct.id}
-                className="flex-1 py-2.5 rounded-xl bg-sky-950 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-sky-900 transition disabled:opacity-50"
-              >
-                <Mail className="size-4" />
-                <span>Nhận báo giá VIP</span>
-              </button>
-            </div>
+            {isUserProductOwner(selectedProduct as any, user) ? (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-center space-y-1">
+                <p className="text-xs font-bold text-blue-900">
+                  Đây là sản phẩm do chính bạn đăng bán
+                </p>
+                <p className="text-[11px] text-blue-700/80">
+                  Bạn có thể quản trị, chỉnh sửa hoặc đánh dấu trạng thái trong CRM Hiệp hội
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.success(`Đã mở kết nối trò chuyện với đại diện ${selectedProduct.company}!`);
+                    setSelectedProduct(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-slate-50"
+                >
+                  <MessageSquare className="size-4" />
+                  <span>Nhắn tin</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuote(selectedProduct.id)}
+                  disabled={busy === selectedProduct.id}
+                  className="flex-1 py-2.5 rounded-xl bg-sky-950 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-sky-900 transition disabled:opacity-50"
+                >
+                  <Mail className="size-4" />
+                  <span>Nhận báo giá VIP</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

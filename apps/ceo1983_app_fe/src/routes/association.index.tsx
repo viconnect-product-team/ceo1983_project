@@ -36,6 +36,8 @@ import {
   Pencil,
   Headphones,
   Briefcase,
+  Palette,
+  Cake,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/context/AuthContext";
@@ -43,8 +45,11 @@ import { SeasonalEventHeader } from "@/components/member/SeasonalEventHeader";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
+import { AppThemeSelectorModal } from "@/components/member/AppThemeSelectorModal";
+import { BirthdayCelebrationModal } from "@/components/member/BirthdayCelebrationModal";
 import { toast } from "sonner";
 import { GuidedTourModal, type TourStep } from "@/components/common/GuidedTourModal";
+import { PersonalProfileBottomSheet, type PersonalProfileData } from "@/components/common/PersonalProfileBottomSheet";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { EventCountdownMiniBadge } from "@/components/events/EventCountdownTimer";
 import heroImg from "@/assets/vba-hero.jpg";
@@ -213,20 +218,16 @@ function Home() {
   const [tourOpen, setTourOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Auto-start guided tour on first visit or when triggered from profile tab
+  // Guided tour is triggered explicitly from profile/user guide center
   useEffect(() => {
     try {
       const triggerTour = localStorage.getItem("ceo1983_trigger_tour_on_mount");
       if (triggerTour === "1") {
         localStorage.removeItem("ceo1983_trigger_tour_on_mount");
         const timer = setTimeout(() => setTourOpen(true), 400);
-        return () => clearTimeout(timer);
-      }
-      const hasSeen = localStorage.getItem("ceo1983_guided_tour_completed");
-      if (!hasSeen) {
-        const timer = setTimeout(() => setTourOpen(true), 800);
         return () => clearTimeout(timer);
       }
     } catch {}
@@ -340,6 +341,7 @@ function Home() {
   const [avatarError, setAvatarError] = useState(false);
 
   const [quickEditOpen, setQuickEditOpen] = useState(false);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -578,9 +580,9 @@ function Home() {
     (user as any)?.phone ||
     (user as any)?.user_metadata?.phone ||
     (typeof window !== "undefined" ? localStorage.getItem("vba_member_phone") : null) ||
-    "0983 198 383";
-  const totalOpportunitiesCount = Math.max(opportunities.length, 36);
-  const totalProductsCount = Math.max(products.length, 128);
+    "";
+  const totalOpportunitiesCount = opportunities.length;
+  const totalProductsCount = products.length;
 
   // Tính tổng giá trị cơ hội giao thương & tổng giá trị sản phẩm sàn thương mại
   const totalOpportunitiesValue = useMemo(() => {
@@ -602,8 +604,8 @@ function Home() {
         }
       }
     }
-    if (sum < 100_000_000) {
-      return "32.5 Tỷ đ";
+    if (sum === 0) {
+      return "0 đ";
     }
     if (sum >= 1_000_000_000) {
       return `${(sum / 1_000_000_000).toFixed(1).replace(".0", "")} Tỷ đ`;
@@ -625,12 +627,13 @@ function Home() {
         }
       }
     }
-    if (sum < 50_000_000) {
-      return "18.2 Tỷ đ";
+    if (sum === 0) {
+      return "0 đ";
     }
     if (sum >= 1_000_000_000) {
       return `${(sum / 1_000_000_000).toFixed(1).replace(".0", "")} Tỷ đ`;
     }
+    return `${(sum / 1_000_000).toFixed(0)} Tr đ`;
   }, [products]);
 
   // Quyền quét mã QR sự kiện: Admin & Ban Quản Trị full quyền; hoặc người thuộc Ban Truyền Thông được chỉ định
@@ -724,7 +727,7 @@ function Home() {
           />
         </div>
 
-        {/* Thông báo (Đã bỏ nút Hướng dẫn & Gọi hỗ trợ theo yêu cầu) */}
+        {/* Thông báo */}
         <div className="flex items-center gap-1.5">
           <Link
             to="/association/notifications"
@@ -767,11 +770,9 @@ function Home() {
 
       {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE (ĐÃ TINH GỌN CHUẨN YÊU CẦU) ── */}
       <div id="tour-member-card" className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md transition hover:border-[#003B95]/40">
-        {/* Ảnh bìa to rộng (Click để đổi ảnh bìa trực tiếp) */}
+        {/* Ảnh bìa to rộng */}
         <div 
-          onClick={() => coverFileInputRef.current?.click()}
-          className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A] cursor-pointer"
-          title="Bấm vào ảnh bìa để thay đổi ảnh bìa"
+          className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]"
         >
           {coverPhoto && !coverError ? (
             <img
@@ -849,8 +850,12 @@ function Home() {
 
           </div>
 
-          {/* Thông tin hội viên & doanh nghiệp */}
-          <div className="space-y-1">
+          {/* Thông tin hội viên & doanh nghiệp — Bấm mở popup hồ sơ từ dưới lên */}
+          <div
+            onClick={() => setProfileSheetOpen(true)}
+            className="space-y-1 cursor-pointer transition hover:opacity-90 active:scale-[0.99] rounded-xl p-1 -m-1"
+            title="Bấm để xem hồ sơ cá nhân chi tiết (Ảnh, Profile, Facebook...)"
+          >
             {/* Tên công ty của hội viên (không có logo phụ cạnh tên công ty) */}
             <div className="text-xs sm:text-[13px] font-extrabold uppercase tracking-wide text-[#003B95] dark:text-blue-400 truncate">
               {displayCompany}
@@ -877,21 +882,27 @@ function Home() {
             </div>
           </div>
 
-          {/* Footer của thẻ hội viên: Nút Chỉnh sửa đặt ở gần footer thẻ */}
+          {/* Footer của thẻ hội viên: Chỉ để DUY NHẤT icon chỉnh sửa nhanh gọn gàng */}
           <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <span
+              onClick={() => setProfileSheetOpen(true)}
+              className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer hover:text-[#003B95] dark:hover:text-blue-400 transition-colors"
+            >
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              CLB CEO 1983 Official
+              <span>Xem hồ sơ & liên kết cá nhân →</span>
             </span>
             <button
               id="tour-quick-edit-btn"
               type="button"
-              onClick={() => setQuickEditOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-700 dark:text-slate-200 hover:text-[#003B95] dark:hover:text-blue-300 hover:border-blue-300 px-3.5 py-1.5 text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-95"
-              title="Chỉnh sửa hồ sơ"
+              onClick={(e) => {
+                e.stopPropagation();
+                setQuickEditOpen(true);
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-700 dark:text-slate-200 hover:text-[#003B95] dark:hover:text-blue-300 hover:border-blue-300 shadow-2xs transition-all cursor-pointer active:scale-95"
+              title="Chỉnh sửa nhanh hồ sơ"
+              aria-label="Chỉnh sửa nhanh hồ sơ"
             >
-              <Pencil className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" />
-              <span>Chỉnh sửa hồ sơ</span>
+              <Pencil className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
             </button>
           </div>
         </div>
@@ -1436,6 +1447,52 @@ function Home() {
         memberAvatar={displayAvatar}
       />
 
+      {/* ── POPUP THÔNG TIN CÁ NHÂN TỪ DƯỚI LÊN (ẢNH, PROFILE, LINK FACEBOOK...) ── */}
+      <PersonalProfileBottomSheet
+        open={profileSheetOpen}
+        onClose={() => setProfileSheetOpen(false)}
+        profile={{
+          displayName: displayName || "Hội viên CEO 1983",
+          jobTitle: displayTitle || null,
+          companyName: displayCompany || null,
+          companyLogo: companyLogo || null,
+          avatarUrl: displayAvatar || null,
+          coverUrl: coverPhoto || null,
+          phone: displayPhone || null,
+          email: member?.email || user?.email || null,
+          address: member?.address || (member as any)?.city || "Hà Nội, Việt Nam",
+          bio:
+            (member as any)?.bio ||
+            (member as any)?.about ||
+            (customProfile as any)?.bio ||
+            "Hội viên chính thức CLB Doanh Nhân CEO 1983, tích cực giao lưu kết nối và hợp tác giao thương.",
+          facebookUrl:
+            (customProfile as any)?.facebook ||
+            (member as any)?.facebookUrl ||
+            (member as any)?.facebook ||
+            null,
+          linkedinUrl:
+            (customProfile as any)?.linkedin ||
+            (member as any)?.linkedinUrl ||
+            (member as any)?.linkedin ||
+            null,
+          website:
+            (customProfile as any)?.website ||
+            (member as any)?.website ||
+            "https://ceo1983.vn",
+          memberCode: member?.code || "CEO1983-VIP",
+          isOwner: true,
+        }}
+        onEdit={() => {
+          setProfileSheetOpen(false);
+          setQuickEditOpen(true);
+        }}
+        onOpenQr={() => {
+          setProfileSheetOpen(false);
+          window.location.href = "/association/card";
+        }}
+      />
+
       {/* ── MODAL CHỈNH SỬA NHANH NHƯ FACEBOOK (Req 1) ── */}
       <QuickProfileEditModal
         open={quickEditOpen}
@@ -1470,6 +1527,15 @@ function Home() {
         onClose={() => setTourOpen(false)}
         storageKey="ceo1983_guided_tour_completed"
       />
+
+      {/* ── BẬT / TẮT & CHỌN CHỦ ĐỀ LỄ HỘI TRÊN APP (Req 6) ── */}
+      <AppThemeSelectorModal
+        open={themeModalOpen}
+        onClose={() => setThemeModalOpen(false)}
+      />
+
+      {/* ── POPUP CHÚC MỪNG SINH NHẬT & TẶNG ƯU ĐÃI VIP (Req 4) ── */}
+      <BirthdayCelebrationModal member={member} />
     </div>
   );
 }

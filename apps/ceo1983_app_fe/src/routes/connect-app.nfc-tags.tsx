@@ -22,12 +22,12 @@ import type { IdentityNfcTagInfo } from "@/lib/business-connect/mobile/nfc-tags.
 export const Route = createFileRoute("/connect-app/nfc-tags")({
   head: () => ({
     meta: [
-      { title: "Quản lý thẻ NFC — Business Connect" },
+      { title: "Quản lý thẻ NFC — ViOne" },
       {
         name: "description",
         content: "Danh sách thẻ NFC đã ghi, trạng thái và lượt chạm gần nhất.",
       },
-      { property: "og:title", content: "Quản lý thẻ NFC — Business Connect" },
+      { property: "og:title", content: "Quản lý thẻ NFC — ViOne" },
       {
         property: "og:description",
         content: "Danh sách thẻ NFC đã ghi, trạng thái và lượt chạm gần nhất.",

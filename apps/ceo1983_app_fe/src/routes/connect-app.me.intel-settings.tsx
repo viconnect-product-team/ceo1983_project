@@ -6,7 +6,7 @@ import { IntelPersonalizationSettings } from "@/components/business-connect/mobi
 export const Route = createFileRoute("/connect-app/me/intel-settings")({
   head: () => ({
     meta: [
-      { title: "V · Gợi ý & cá nhân hóa — Business Connect" },
+      { title: "V · Gợi ý & cá nhân hóa — ViOne" },
       { name: "robots", content: "noindex" },
     ],
   }),

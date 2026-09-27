@@ -27,7 +27,7 @@ export function sanitizePersonId(personId: string): string {
 
 export const Route = createFileRoute("/connect-app/moment/$personId")({
   head: () => ({
-    meta: [{ title: "Lưu khoảnh khắc — Business Connect" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Lưu khoảnh khắc — ViOne" }, { name: "robots", content: "noindex" }],
   }),
   component: MomentComposerPage,
 });

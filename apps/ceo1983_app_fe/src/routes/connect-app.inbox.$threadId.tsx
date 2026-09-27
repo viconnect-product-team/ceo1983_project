@@ -87,7 +87,7 @@ export const Route = createFileRoute("/connect-app/inbox/$threadId")({
         <button
           type="button"
           onClick={() => reset()}
-          className="rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] px-5 py-2.5 text-xs font-bold text-slate-950 shadow-sm hover:brightness-105 transition-all cursor-pointer"
+          className="rounded-full bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:brightness-105 transition-all cursor-pointer"
         >
           Thử lại
         </button>

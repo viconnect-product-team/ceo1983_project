@@ -5,7 +5,7 @@ export const Route = createFileRoute(
 )({
   head: () => ({
     meta: [
-      { title: "Cơ hội kinh doanh — Business Connect" },
+      { title: "Cơ hội kinh doanh — ViOne" },
       { name: "robots", content: "noindex" },
     ],
   }),

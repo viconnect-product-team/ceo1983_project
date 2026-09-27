@@ -668,14 +668,6 @@ function OpportunitiesScreen() {
           </div>
         </div>
         <div className="flex justify-start items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setCreateModalOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-950 text-white text-xs font-bold hover:bg-sky-900 transition cursor-pointer active:scale-95"
-          >
-            <Plus className="size-3.5" />
-            <span>Đăng cơ hội</span>
-          </button>
           <div className="size-9 bg-sky-950 rounded-2xl flex justify-center items-center shadow-xs">
             <div className="justify-start text-white text-xs font-bold font-['Inter']">HN</div>
           </div>
@@ -691,7 +683,7 @@ function OpportunitiesScreen() {
               CƠ HỘI KẾT NỐI
             </div>
             <div className="justify-start text-sky-950 text-lg font-extrabold font-['Inter']">
-              {totalOppCount > 0 ? `${totalOppCount.toLocaleString()} tin` : "1,248 tin"}
+              {totalOppCount > 0 ? `${totalOppCount.toLocaleString()} tin` : "0 tin"}
             </div>
           </div>
           <div className="w-10 h-0 origin-top-left rotate-90 border border-slate-200 self-center"></div>
@@ -702,29 +694,54 @@ function OpportunitiesScreen() {
             <div className="justify-start text-amber-600 text-lg font-extrabold font-['Inter']">
               {totalOpportunitiesValue > 0
                 ? formatSmartPrice(totalOpportunitiesValue)
-                : "428.5 Tỷ đ"}
+                : "0 đ"}
             </div>
           </div>
         </div>
 
-        {/* 2. FEATURED OPPORTUNITY CARD (ẢNH 2 FIGMA SPEC) */}
+        {/* 2. FEATURED OPPORTUNITY CARD */}
         {(() => {
           const cur = featuredList[0] || list[0];
+          if (!cur) {
+            return (
+              <div className="self-stretch p-5 bg-gradient-to-br from-sky-950 via-blue-900 to-slate-900 rounded-2xl outline outline-1 outline-offset-[-1px] outline-blue-700/30 flex flex-col justify-start items-start gap-3 shadow-md text-white">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 bg-amber-500/20 border border-amber-400/40 rounded-lg text-amber-300 text-[10px] font-bold">
+                    KẾT NỐI B2B
+                  </span>
+                  <span className="text-xs text-blue-200">CLB Doanh Nhân CEO 1983</span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-white">
+                  Chưa có cơ hội nổi bật nào được đăng tải
+                </h3>
+                <p className="text-xs text-blue-100/80 leading-relaxed">
+                  Hãy là người tiên phong chia sẻ nhu cầu mua sắm, dự án hợp tác hoặc chào hàng B2B tới mạng lưới 1983+ lãnh đạo doanh nghiệp.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(true)}
+                  className="mt-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm flex items-center gap-1.5"
+                >
+                  <Plus className="size-4" />
+                  <span>Đăng cơ hội ngay</span>
+                </button>
+              </div>
+            );
+          }
+
           const curImage =
             (cur?.image ? resolveMediaUrl(cur.image) || cur.image : null) ||
             "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&auto=format&fit=crop&q=80";
-          const curTag = cur ? normalizeTag(cur.tag) : "Hợp tác B2B";
-          const curBudget = cur ? formatSmartPrice(cur.value) : "500M - 1.2 Tỷ VNĐ";
-          const curTitle =
-            cur?.title ||
-            "Cần tìm nhà thầu cung cấp giải pháp chuyển đổi số & CRM ERP cho chuỗi 20 showroom";
-          const curAuthor = cur?.posterName || cur?.contactName || "Lê Thị Dung";
-          const curCompany = cur?.company || "Công ty CP Đầu tư GoldLand";
+          const curTag = normalizeTag(cur.tag);
+          const curBudget = formatSmartPrice(cur.value);
+          const curTitle = cur.title;
+          const curAuthor = cur.posterName || cur.contactName || "Hội viên CEO 1983";
+          const curCompany = cur.company || "CLB Doanh Nhân CEO 1983";
           const curDeadline =
-            cur?.deadline || cur?.time
-              ? new Date(cur?.deadline || cur?.time || "").toLocaleDateString("vi-VN")
-              : "20/9/2026";
-          const curViews = cur?.views || 3240;
+            cur.deadline || cur.time
+              ? new Date(cur.deadline || cur.time || "").toLocaleDateString("vi-VN")
+              : "Đang mở tiếp nhận";
+          const curViews = cur.views || 0;
 
           return (
             <div className="self-stretch bg-sky-950 rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start overflow-hidden shadow-md">
@@ -739,11 +756,13 @@ function OpportunitiesScreen() {
                         {curTag.toUpperCase()}
                       </div>
                     </div>
-                    <div className="px-2 py-1 bg-black/40 rounded-md flex justify-start items-start backdrop-blur-xs">
-                      <div className="justify-start text-white text-[10px] font-semibold font-['Inter']">
-                        👁 {curViews.toLocaleString()} lượt xem
+                    {curViews > 0 && (
+                      <div className="px-2 py-1 bg-black/40 rounded-md flex justify-start items-start backdrop-blur-xs">
+                        <div className="justify-start text-white text-[10px] font-semibold font-['Inter']">
+                          👁 {curViews.toLocaleString()} lượt xem
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   <div className="px-2.5 py-1.5 left-[12px] top-[115px] absolute bg-amber-100 rounded-md flex justify-start items-start shadow-xs">
                     <div className="justify-start text-amber-600 text-xs font-bold font-['Inter']">
@@ -781,23 +800,14 @@ function OpportunitiesScreen() {
                       Hạn chót: {curDeadline}
                     </div>
                   </div>
-                  <div className="self-stretch pt-1 inline-flex justify-start items-start gap-2">
+                  <div className="self-stretch pt-1 inline-flex justify-start items-start">
                     <button
                       type="button"
                       onClick={() => cur && handleOpenOppDetail(cur)}
-                      className="flex-1 px-3 py-2.5 bg-white rounded-lg flex justify-center items-center gap-1.5 hover:bg-slate-100 transition active:scale-95 cursor-pointer"
+                      className="w-full px-3 py-2.5 bg-white rounded-lg flex justify-center items-center gap-1.5 hover:bg-slate-100 transition active:scale-95 cursor-pointer shadow-xs"
                     >
                       <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">
                         Liên hệ ngay
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => cur && toggleSave(cur.id)}
-                      className="flex-1 px-3 py-2.5 bg-white/10 rounded-lg flex justify-center items-center gap-1.5 hover:bg-white/20 transition active:scale-95 cursor-pointer"
-                    >
-                      <div className="justify-start text-white text-xs font-bold font-['Inter']">
-                        {cur && savedOppIds.includes(cur.id) ? "Đã lưu ✓" : "Lưu tin"}
                       </div>
                     </button>
                   </div>
@@ -850,7 +860,7 @@ function OpportunitiesScreen() {
           <div className="self-stretch pt-2 flex flex-col justify-start items-start gap-3">
             <div className="self-stretch px-1 inline-flex justify-between items-center">
               <div className="justify-start text-blue-900 text-sm font-extrabold font-['Inter'] uppercase">
-                DANH SÁCH CHIA SẺ CƠ HỘI ({list.length > 0 ? list.length : 12})
+                DANH SÁCH CHIA SẺ CƠ HỘI ({list.length})
               </div>
               <div className="flex justify-start items-center gap-1">
                 <span className="justify-start text-sky-950 text-xs font-semibold font-['Inter']">
@@ -878,23 +888,23 @@ function OpportunitiesScreen() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-1">
                     <span className="text-[11px] text-slate-500 font-medium">Tổng cơ hội đã đăng</span>
-                    <span className="text-lg font-black text-sky-950">{totalOppCount || 12} tin</span>
-                    <span className="text-[10px] text-emerald-600 font-semibold">↑ +18% tháng này</span>
+                    <span className="text-lg font-black text-sky-950">{totalOppCount} tin</span>
+                    <span className="text-[10px] text-slate-500 font-semibold">Dữ liệu thực tế</span>
                   </div>
                   <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex flex-col gap-1">
                     <span className="text-[11px] text-amber-700 font-medium">Tổng giá trị giao dịch</span>
-                    <span className="text-lg font-black text-amber-600">{formatSmartPrice(totalOpportunitiesValue || 428500000000)}</span>
+                    <span className="text-lg font-black text-amber-600">{formatSmartPrice(totalOpportunitiesValue)}</span>
                     <span className="text-[10px] text-amber-700 font-semibold">Cam kết nội khối</span>
                   </div>
                   <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex flex-col gap-1">
-                    <span className="text-[11px] text-blue-700 font-medium">Lượt đại biểu quan tâm</span>
-                    <span className="text-lg font-black text-[#003B95]">342 lượt</span>
-                    <span className="text-[10px] text-blue-600 font-semibold">Tỷ lệ phản hồi 89%</span>
+                    <span className="text-[11px] text-blue-700 font-medium">Lượt quan tâm đã gửi</span>
+                    <span className="text-lg font-black text-[#003B95]">{interestedIds.length} lượt</span>
+                    <span className="text-[10px] text-blue-600 font-semibold">Ghi nhận realtime</span>
                   </div>
                   <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col gap-1">
-                    <span className="text-[11px] text-emerald-700 font-medium">Thương vụ thành công</span>
-                    <span className="text-lg font-black text-emerald-700">28 dự án</span>
-                    <span className="text-[10px] text-emerald-600 font-semibold">Đã ký kết hợp tác</span>
+                    <span className="text-[11px] text-emerald-700 font-medium">Cơ hội đang mở</span>
+                    <span className="text-lg font-black text-emerald-700">{list.length} tin</span>
+                    <span className="text-[10px] text-emerald-600 font-semibold">Sẵn sàng hợp tác</span>
                   </div>
                 </div>
 
@@ -904,28 +914,19 @@ function OpportunitiesScreen() {
                     <div>
                       <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
                         <span>Hợp tác B2B & Chuyển giao</span>
-                        <span>45%</span>
+                        <span>{list.filter(x => normalizeTag(x.tag).toLowerCase().includes("b2b")).length > 0 ? Math.round((list.filter(x => normalizeTag(x.tag).toLowerCase().includes("b2b")).length / (list.length || 1)) * 100) : 0}%</span>
                       </div>
                       <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                        <div className="h-full bg-sky-950 rounded-full" style={{ width: "45%" }} />
+                        <div className="h-full bg-sky-950 rounded-full" style={{ width: `${list.filter(x => normalizeTag(x.tag).toLowerCase().includes("b2b")).length > 0 ? Math.round((list.filter(x => normalizeTag(x.tag).toLowerCase().includes("b2b")).length / (list.length || 1)) * 100) : 0}%` }} />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
                         <span>Logistics & Chuỗi cung ứng</span>
-                        <span>30%</span>
+                        <span>{list.filter(x => normalizeTag(x.tag).toLowerCase().includes("logistics")).length > 0 ? Math.round((list.filter(x => normalizeTag(x.tag).toLowerCase().includes("logistics")).length / (list.length || 1)) * 100) : 0}%</span>
                       </div>
                       <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: "30%" }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                        <span>Đầu tư & Vốn liên kết</span>
-                        <span>25%</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                        <div className="h-full bg-teal-600 rounded-full" style={{ width: "25%" }} />
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: `${list.filter(x => normalizeTag(x.tag).toLowerCase().includes("logistics")).length > 0 ? Math.round((list.filter(x => normalizeTag(x.tag).toLowerCase().includes("logistics")).length / (list.length || 1)) * 100) : 0}%` }} />
                       </div>
                     </div>
                   </div>
@@ -934,41 +935,30 @@ function OpportunitiesScreen() {
             ) : (
             <div className="self-stretch flex flex-col justify-start items-start gap-3">
               {(() => {
-                const displayItems: (MyOpportunity & { description?: string })[] =
-                  list.length > 0
-                    ? list
-                    : [
-                        {
-                          id: "demo-b2b",
-                          title: "Cần tìm nhà thầu cung cấp giải pháp chuyển đổi số & CRM...",
-                          company: "Lê Thị Dung",
-                          tag: "HỢP TÁC B2B",
-                          value: "500 Triệu - 1.2 Tỷ",
-                          time: "2026-09-20T00:00:00.000Z",
-                          image:
-                            "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=300&auto=format&fit=crop&q=80",
-                          posterName: "Lê Thị Dung",
-                          contactName: "Lê Thị Dung",
-                          interested: false,
-                          description:
-                            "Cần tìm đối tác phát triển hệ sinh thái chuyển đổi số và CRM doanh nghiệp.",
-                        },
-                        {
-                          id: "demo-logistics",
-                          title: "Tìm đối tác vận chuyển đường biển tuyến Hải Phòng - Hamburg",
-                          company: "An Phát Log",
-                          tag: "LOGISTICS",
-                          value: "Thương lượng",
-                          time: "2026-09-18T00:00:00.000Z",
-                          image:
-                            "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=300&auto=format&fit=crop&q=80",
-                          posterName: "An Phát Log",
-                          contactName: "An Phát Log",
-                          interested: false,
-                          description:
-                            "Tìm kiếm đối tác vận chuyển đường biển, thời gian dài hạn và giá ưu đãi.",
-                        },
-                      ];
+                const displayItems = list;
+                if (displayItems.length === 0) {
+                  return (
+                    <div className="self-stretch py-10 px-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col items-center justify-center text-center gap-3 shadow-xs">
+                      <div className="size-12 rounded-2xl bg-blue-50 grid place-items-center">
+                        <Handshake className="size-6 text-[#003B95]" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">Chưa có cơ hội kinh doanh nào</h4>
+                        <p className="text-xs text-slate-500 max-w-xs mt-1">
+                          Các cơ hội kết nối và giao thương từ hội viên sẽ hiển thị tại đây khi được thêm vào hệ thống.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCreateModalOpen(true)}
+                        className="mt-1 px-4 py-2 bg-sky-950 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-sky-900 transition cursor-pointer shadow-xs active:scale-95"
+                      >
+                        <Plus className="size-4" />
+                        <span>Chia sẻ cơ hội mới</span>
+                      </button>
+                    </div>
+                  );
+                }
 
                 return displayItems
                   .slice((pageOpps - 1) * OPP_PAGE_SIZE, pageOpps * OPP_PAGE_SIZE)
@@ -1020,7 +1010,7 @@ function OpportunitiesScreen() {
                               <div className="justify-start text-zinc-600 text-[10px] font-normal font-['Inter']">
                                 {o.time
                                   ? new Date(o.time).toLocaleDateString("vi-VN")
-                                  : "20/9/2026"}
+                                  : "Đang mở"}
                               </div>
                             </div>
                             <div className="self-stretch justify-start text-black text-xs font-bold font-['Inter'] leading-4 line-clamp-2">
@@ -1028,7 +1018,7 @@ function OpportunitiesScreen() {
                             </div>
                             <div className="justify-start text-zinc-600 text-xs font-normal font-['Inter'] truncate w-full">
                               Đăng bởi:{" "}
-                              {o.posterName || o.contactName || o.company || "Lê Thị Dung"}
+                              {o.posterName || o.contactName || o.company || "Hội viên CLB CEO 1983"}
                             </div>
                           </div>
                         </div>
@@ -1082,7 +1072,7 @@ function OpportunitiesScreen() {
             className="self-stretch px-4 py-3 bg-sky-950 hover:bg-sky-900 rounded-[100px] inline-flex justify-center items-center transition cursor-pointer active:scale-95 shadow-sm"
           >
             <div className="justify-start text-white text-xs font-bold font-['Inter']">
-              Đăng kết nối ngay →
+              Đăng cơ hội ngay →
             </div>
           </button>
         </div>

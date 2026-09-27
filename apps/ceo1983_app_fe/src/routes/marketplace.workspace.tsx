@@ -6,10 +6,11 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, Pill, StatCard } from "@/components/dashboard/PageKit";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/dashboard/StateKit";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
-import type { Product, ProductStatus, QuoteStatus } from "@/lib/marketplace-data";
+import { isUserProductOwner, type Product, type ProductStatus, type QuoteStatus } from "@/lib/marketplace-data";
 import { listMyQuotesFn, listProductsFn } from "@/lib/marketplace.functions";
 import { getNetworkStateFn } from "@/lib/networking.functions";
 import { useSessionStatus } from "@/hooks/use-session-status";
+import { useAuth } from "@/context/AuthContext";
 
 const STATUS_COLOR: Record<ProductStatus, "success" | "neutral" | "warning"> = {
   active: "success",
@@ -51,6 +52,7 @@ type MyQuote = Awaited<ReturnType<typeof listMyQuotesFn>>[number];
 type Tab = "listings" | "quotes";
 
 function WorkspacePage() {
+  const { user } = useAuth();
   const t = useT();
   const fmt = useFmt();
   const listProducts = useServerFn(listProductsFn);
@@ -90,8 +92,8 @@ function WorkspacePage() {
   }, [sessionStatus, refresh]);
 
   const myListings = useMemo(
-    () => (memberId ? products.filter((p) => p.sellerId === memberId) : []),
-    [products, memberId],
+    () => (memberId || user ? products.filter((p) => isUserProductOwner(p, user, { id: memberId })) : []),
+    [products, memberId, user],
   );
 
   const stats = useMemo(() => {

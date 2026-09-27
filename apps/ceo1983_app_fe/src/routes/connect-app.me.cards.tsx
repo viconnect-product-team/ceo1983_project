@@ -19,12 +19,12 @@ import {
 export const Route = createFileRoute("/connect-app/me/cards")({
   head: () => ({
     meta: [
-      { title: "Danh thiếp đã lưu — Business Connect" },
+      { title: "Danh thiếp đã lưu — ViOne" },
       {
         name: "description",
         content: "Quản lý danh thiếp số đã lưu và danh thiếp giấy đã quét: nhãn, ghi chú, xoá.",
       },
-      { property: "og:title", content: "Danh thiếp đã lưu — Business Connect" },
+      { property: "og:title", content: "Danh thiếp đã lưu — ViOne" },
       {
         property: "og:description",
         content: "Quản lý danh thiếp số đã lưu và danh thiếp giấy đã quét: nhãn, ghi chú, xoá.",

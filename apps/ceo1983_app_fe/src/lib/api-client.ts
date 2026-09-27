@@ -33,62 +33,8 @@ export const NEST_API_URL = getBaseApiUrl();
 function mapEndpoint(endpoint: string): string {
   let mapped = endpoint;
 
-  if (mapped === "/connect-app/briefing") {
-    mapped = "/me/briefing";
-  } else if (mapped === "/connect-app/me/profile" || mapped === "/profile") {
+  if (mapped === "/profile") {
     mapped = "/me/profile";
-  } else if (mapped === "/connect-app/me/identity") {
-    mapped = "/me/identity";
-  } else if (mapped === "/connect-app/me/identity/visibility") {
-    mapped = "/me/identity/visibility";
-  } else if (mapped === "/connect-app/me/identity/share-link") {
-    mapped = "/me/identity/share-link";
-  } else if (mapped === "/connect-app/me/identity/share-link/rotate") {
-    mapped = "/me/identity/share-link/rotate";
-  } else if (mapped.startsWith("/connect-app/me/showcase")) {
-    mapped = mapped.replace("/connect-app/me/showcase", "/me/showcase");
-  } else if (mapped === "/connect-app/abuse/report") {
-    mapped = "/network/abuse/report";
-  } else if (
-    mapped === "/connect-app/community" ||
-    mapped.startsWith("/connect-app/community/") ||
-    mapped.startsWith("/connect-app/community?")
-  ) {
-    mapped = mapped.replace("/connect-app/community", "/communities");
-  } else if (
-    mapped === "/connect-app/network" ||
-    mapped.startsWith("/connect-app/network/") ||
-    mapped.startsWith("/connect-app/network?")
-  ) {
-    mapped = mapped.replace("/connect-app/network", "/network");
-  } else if (mapped.startsWith("/connect-app/me/")) {
-    mapped = mapped.replace("/connect-app/me/", "/me/");
-  } else if (mapped.startsWith("/connect-app/dm/")) {
-    mapped = mapped.replace("/connect-app/dm/", "/dm/");
-  } else if (
-    mapped === "/connect-app/customer" ||
-    mapped.startsWith("/connect-app/customer/") ||
-    mapped.startsWith("/connect-app/customer?")
-  ) {
-    mapped = mapped.replace("/connect-app/customer", "/customers");
-  } else if (
-    mapped === "/connect-app/card-scan" ||
-    mapped.startsWith("/connect-app/card-scan/") ||
-    mapped.startsWith("/connect-app/card-scan?")
-  ) {
-    mapped = mapped.replace("/connect-app/card-scan", "/card-scans");
-  } else if (mapped.startsWith("/connect-app/public/identity/")) {
-    mapped = mapped.replace("/connect-app/public/identity/", "/public/identity/");
-  } else if (mapped.startsWith("/connect-app/notifications")) {
-    mapped = mapped.replace("/connect-app/notifications", "/me/notifications");
-  } else if (
-    mapped === "/connect-app/moment" ||
-    mapped.startsWith("/connect-app/moment/") ||
-    mapped.startsWith("/connect-app/moment?")
-  ) {
-    mapped = mapped.replace("/connect-app/moment", "/moments");
-  } else if (mapped.startsWith("/public/")) {
-    // Public endpoints pass through as-is
   }
 
   const clean = mapped.startsWith("/") ? mapped : `/${mapped}`;
@@ -110,7 +56,7 @@ export function getPublicBackendUrl(): string {
     ) {
       return window.location.origin;
     }
-    return "http://localhost:4000";
+    return "http://127.0.0.1:4000";
   }
   return (
     (typeof process !== "undefined" &&
@@ -230,15 +176,15 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
     return publicBase ? `${publicBase}/api/upload/file/${cleanPath}` : `/api/upload/file/${cleanPath}`;
   }
 
-  // 8. Nếu là bare filename (không chứa /) có đuôi file ảnh/tài liệu
-  if (!trimmed.includes("/") && /\.(jpg|jpeg|png|webp|gif|svg|pdf|docx|xlsx)$/i.test(trimmed)) {
+  // 8. Nếu là bare filename (không chứa /) có đuôi file ảnh/tài liệu/video
+  if (!trimmed.includes("/") && /\.(jpg|jpeg|png|webp|gif|svg|pdf|docx|xlsx|mp4|webm|mov|m4v|ogg)$/i.test(trimmed)) {
     return publicBase ? `${publicBase}/api/upload/file/avatars/${trimmed}` : `/api/upload/file/avatars/${trimmed}`;
   }
 
   return trimmed;
 }
 
-const MEDIA_EXT_REGEX = /\.(jpg|jpeg|png|webp|gif|svg|pdf|docx|xlsx)$/i;
+const MEDIA_EXT_REGEX = /\.(jpg|jpeg|png|webp|gif|svg|pdf|docx|xlsx|mp4|webm|mov|m4v|ogg)$/i;
 
 function transformUrls(obj: any, parentKey?: string): any {
   if (obj === null || obj === undefined) return obj;

@@ -29,6 +29,11 @@ function getContentType(filename: string): string {
     '.svg': 'image/svg+xml',
     '.txt': 'text/plain',
     '.json': 'application/json',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.ogg': 'video/ogg',
+    '.mov': 'video/quicktime',
+    '.m4v': 'video/x-m4v',
   };
   return map[ext] || 'application/octet-stream';
 }
@@ -134,6 +139,7 @@ export class UploadController {
     } catch {}
     filePathStr = filePathStr.replace(/^\/+/, '');
 
+    const filenameOnly = path.basename(filePathStr);
     const contentType = getContentType(filePathStr);
 
     const pipeSafe = (readable: any) => {
@@ -152,8 +158,12 @@ export class UploadController {
     try {
       // 1. Thử tìm tệp trên ổ đĩa cục bộ (disk fallback)
       const fs = await import('fs');
-      const filenameOnly = path.basename(filePathStr);
+      const os = await import('os');
+      const tmpCeoUploads = path.join(os.tmpdir(), 'ceo1983_uploads');
       const candidates = [
+        path.join(tmpCeoUploads, filePathStr),
+        path.join(tmpCeoUploads, 'avatars', filenameOnly),
+        path.join(tmpCeoUploads, 'documents', filenameOnly),
         path.join('/app', 'uploads', filePathStr),
         path.join('/app', 'uploads', 'avatars', filenameOnly),
         path.join('/app', 'uploads', 'documents', filenameOnly),

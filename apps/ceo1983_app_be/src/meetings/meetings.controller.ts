@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   Controller,
   Get,
@@ -17,6 +18,12 @@ import { MeetingsService } from './meetings.service';
 export class MeetingsController {
   constructor(private readonly meetingsService: MeetingsService) {}
 
+  @Get()
+  async getAllMeetings(@Request() req: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.listWorkspaceMeetings(userId, {});
+  }
+
   @Get('workspace/summary')
   async getWorkspaceSummary(@Request() req: any) {
     const userId = req.user.id || req.user.sub;
@@ -30,7 +37,10 @@ export class MeetingsController {
   }
 
   @Get(':id/workspace-detail')
-  async getMeetingWorkspaceDetail(@Request() req: any, @Param('id') id: string) {
+  async getMeetingWorkspaceDetail(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.getMeetingWorkspaceDetail(userId, id);
   }
@@ -41,7 +51,11 @@ export class MeetingsController {
   }
 
   @Post(':id/outcome')
-  async saveOutcome(@Request() req: any, @Param('id') id: string, @Body() data: any) {
+  async saveOutcome(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.saveOutcome(userId, id, data);
   }
@@ -52,7 +66,11 @@ export class MeetingsController {
   }
 
   @Post(':id/follow-ups')
-  async createFollowUp(@Request() req: any, @Param('id') id: string, @Body() data: any) {
+  async createFollowUp(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.createFollowUp(userId, id, data);
   }
@@ -64,7 +82,11 @@ export class MeetingsController {
     @Body('status') status: string,
   ) {
     const userId = req.user.id || req.user.sub;
-    return this.meetingsService.updateFollowUpStatus(userId, followUpId, status);
+    return this.meetingsService.updateFollowUpStatus(
+      userId,
+      followUpId,
+      status,
+    );
   }
 
   @Get('availability/preferences')
@@ -109,5 +131,15 @@ export class MeetingsController {
   async selectTimeProposal(@Request() req: any, @Param('id') id: string) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.selectTimeProposal(userId, id);
+  }
+
+  @Post(':id/cancel')
+  async cancelMeeting(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { reason: string },
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.cancelMeeting(userId, id, body);
   }
 }

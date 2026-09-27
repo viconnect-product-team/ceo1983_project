@@ -53,7 +53,7 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
-import { isEventThemeEnabled, setEventThemeEnabled } from "@/components/member/SeasonalEventHeader";
+import { isEventThemeEnabled, setEventThemeEnabled, getCrmAppliedTheme, FESTIVAL_THEMES } from "@/components/member/SeasonalEventHeader";
 import { isVoiceAiEnabled, setVoiceAiEnabled } from "@/components/ai/VoiceNavAssistant";
 import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
@@ -152,6 +152,7 @@ export default function ProfileScreen() {
   const [postLikes, setPostLikes] = useState<Record<string, number>>({ post1: 24, post2: 41 });
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [eventThemeEnabled, setEventThemeState] = useState(() => isEventThemeEnabled());
+  const [crmThemeId, setCrmThemeId] = useState<string | null>(() => getCrmAppliedTheme());
   const [voiceAiEnabled, setVoiceAiState] = useState(() => isVoiceAiEnabled());
   const [userGuideOpen, setUserGuideOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
@@ -237,16 +238,27 @@ export default function ProfileScreen() {
       if (e?.detail?.avatar) setCustomAvatar(e.detail.avatar);
     };
 
+    const handleThemeSync = () => {
+      setCrmThemeId(getCrmAppliedTheme());
+      setEventThemeState(isEventThemeEnabled());
+    };
+
     window.addEventListener("vba_member_cover_updated", handleCoverUpdate);
     window.addEventListener("vba_member_avatar_updated", handleAvatarUpdate);
     window.addEventListener("profile-updated", handleProfileUpdate);
+    window.addEventListener("vba-event-theme-changed", handleThemeSync);
+    window.addEventListener("ceo1983-theme-changed", handleThemeSync);
     window.addEventListener("storage", syncLocalMedia);
+    window.addEventListener("storage", handleThemeSync);
 
     return () => {
       window.removeEventListener("vba_member_cover_updated", handleCoverUpdate);
       window.removeEventListener("vba_member_avatar_updated", handleAvatarUpdate);
       window.removeEventListener("profile-updated", handleProfileUpdate);
+      window.removeEventListener("vba-event-theme-changed", handleThemeSync);
+      window.removeEventListener("ceo1983-theme-changed", handleThemeSync);
       window.removeEventListener("storage", syncLocalMedia);
+      window.removeEventListener("storage", handleThemeSync);
     };
   }, [member?.coverUrl, (member as any)?.cover_url]);
 
@@ -704,10 +716,10 @@ export default function ProfileScreen() {
       desc: isEn ? "Messages & connection approvals" : "Cập nhật tin nhắn & phê duyệt kết nối",
     },
     {
-      label: isEn ? "App User Guide & Interactive Tour" : "Hướng dẫn sử dụng ứng dụng",
-      icon: Sparkles,
+      label: isEn ? "App User Guide Center (10 Features)" : "Hướng dẫn sử dụng ứng dụng (10 chức năng)",
+      icon: BookOpen,
       onClick: () => setUserGuideOpen(true),
-      desc: isEn ? "Interactive interface tour & official feature handbook" : "Chỉ dẫn từng bước trên giao diện (kiểu ngân hàng) & cẩm nang PDF/Word",
+      desc: isEn ? "Full visual walkthrough of 10 core features & official PDF handbook" : "Chỉ dẫn chi tiết 10 tính năng cốt lõi, quét card AI, NFC & cẩm nang PDF",
     },
     {
       label: isEn ? "Secretariat & Support Contact" : "Liên hệ Ban Thư Ký CLB CEO 1983",
@@ -1049,61 +1061,68 @@ export default function ProfileScreen() {
         </div>
       </div>
 
-      {/* ── SEASONAL FESTIVAL THEME SWITCH (Nút Bật / Tắt Chủ Đề Trung Thu) ── */}
-      <div className="mx-4 mt-6 rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-[#14223E]/80 p-4 shadow-xs">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-              <span className="text-xl select-none">🏮</span>
-            </div>
-            <div>
-              <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>{isEn ? "Mid-Autumn Festival Theme" : "Chủ đề Lễ hội Trung Thu"}</span>
-                {eventThemeEnabled ? (
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-[#EA580C] text-white">
-                    {isEn ? "Active" : "Đang bật"}
-                  </span>
-                ) : (
-                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    {isEn ? "Default Off" : "Đang tắt"}
-                  </span>
-                )}
+      {/* ── SEASONAL FESTIVAL THEME SWITCH (Chỉ hiển thị khi CRM đã áp dụng chủ đề) ── */}
+      {(() => {
+        const appliedTheme = crmThemeId ? FESTIVAL_THEMES.find((t) => t.id === crmThemeId) : null;
+        if (!appliedTheme) return null;
+
+        return (
+          <div className="mx-4 mt-6 rounded-2xl border border-blue-500/30 bg-blue-50/50 dark:bg-[#14223E]/80 p-4 shadow-xs">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#003B95]/15 text-[#003B95] dark:text-blue-400 border border-[#003B95]/30">
+                  <span className="text-xl select-none">{appliedTheme.iconEmoji}</span>
+                </div>
+                <div>
+                  <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>{appliedTheme.name}</span>
+                    {eventThemeEnabled ? (
+                      <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-[#003B95] text-white">
+                        {isEn ? "Active" : "Đang bật"}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                        {isEn ? "Default Off" : "Đang tắt"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                    {eventThemeEnabled
+                      ? appliedTheme.tagline
+                      : (isEn ? "Switched to standard executive theme" : "Giao diện Doanh nhân Chuẩn CEO 1983")}
+                  </p>
+                </div>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                {eventThemeEnabled
-                  ? (isEn ? "Displaying star lanterns, golden moon & festive decorations" : "Đang hiển thị đèn lồng ông sao, trăng rằm & hiệu ứng lễ hội")
-                  : (isEn ? "Standard CEO 1983 Classic Navy & Gold executive styling" : "Giao diện Doanh nhân Chuẩn CEO 1983 (Classic Navy & Gold)")}
-              </p>
+
+              {/* Switch Toggle */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={eventThemeEnabled}
+                onClick={() => {
+                  const next = !eventThemeEnabled;
+                  setEventThemeEnabled(next);
+                  setEventThemeState(next);
+                  toast.success(
+                    next
+                      ? `Đã kích hoạt ${appliedTheme.name}!`
+                      : (isEn ? "Switched to Standard CEO 1983 Theme" : "Đã chuyển về Giao diện Chuẩn CEO 1983")
+                  );
+                }}
+                className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                  eventThemeEnabled ? "bg-[#003B95]" : "bg-slate-300 dark:bg-slate-700"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    eventThemeEnabled ? "translate-x-5.5" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
           </div>
-
-          {/* Switch Toggle */}
-          <button
-            type="button"
-            role="switch"
-            aria-checked={eventThemeEnabled}
-            onClick={() => {
-              const next = !eventThemeEnabled;
-              setEventThemeEnabled(next);
-              setEventThemeState(next);
-              toast.success(
-                next
-                  ? (isEn ? "Festival Theme Activated! 🏮🥮" : "Đã kích hoạt Chủ đề Lễ hội Trung Thu! 🏮🥮")
-                  : (isEn ? "Switched to Standard CEO 1983 Theme" : "Đã chuyển về Giao diện Chuẩn CEO 1983")
-              );
-            }}
-            className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-              eventThemeEnabled ? "bg-[#EA580C]" : "bg-slate-300 dark:bg-slate-700"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                eventThemeEnabled ? "translate-x-5.5" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ── TRỢ LÝ ĐIỀU KHIỂN GIỌNG NÓI AI (VOICE AI NAVIGATION ASSISTANT SWITCH) ── */}
       <div className="mx-4 mt-4 rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-50/70 to-indigo-50/50 dark:from-[#0f1d38]/80 dark:to-[#16203a]/80 p-4 shadow-xs">

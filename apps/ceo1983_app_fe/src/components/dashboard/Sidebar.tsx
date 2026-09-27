@@ -67,6 +67,8 @@ const members: Item[] = [
 const events: Item[] = [
   { key: "nav.events", icon: Calendar, to: "/events" },
   { key: "eventsOverview.title", icon: Calendar, to: "/events-overview" },
+  { key: "nav.meeting", icon: Users2, to: "/meetings" },
+  { key: "nav.governance", icon: Vote, to: "/voting" },
   { key: "nav.eventReg", icon: ClipboardList, to: "/event-registrations" },
   { key: "nav.checkin", icon: ScanLine, to: "/checkin" },
   { key: "checkinQr.title", icon: QrCodeIcon, to: "/checkin-qr" },
@@ -89,23 +91,16 @@ const comm: Item[] = [
   { key: "nav.perks", icon: Gift, to: "/perks" },
   { key: "nav.benefits", icon: Award, to: "/benefits" },
 ];
-const governance: Item[] = [
-  { key: "nav.governance", icon: Vote, to: "/voting" },
-  { key: "nav.meeting", icon: Users2, to: "/meetings" },
-  { key: "nav.documents", icon: FolderOpen, to: "/documents" },
-];
 const network: Item[] = [
   { key: "nav.network", icon: MessageSquare, to: "/network" },
-  { key: "nav.businessCards", icon: IdCard, to: "/business-cards" },
+  { key: "nav.bc.meetings" as TKey, icon: Users2, to: "/business-connect/meetings", label: "Cuộc gặp" },
+  { key: "nav.bc.saved" as TKey, icon: Bookmark, to: "/business-connect/saved-cards", label: "Danh thiếp đã lưu" },
   { key: "nav.marketplace", icon: Store, to: "/marketplace" },
   { key: "nav.opportunities", icon: Sparkles, to: "/opportunities" },
 ];
-const businessConnect: Item[] = [
-  { key: "nav.bc.overview", icon: LayoutDashboard, to: "/business-connect" },
-  { key: "nav.bc.myCard", icon: IdCard, to: "/business-connect/my-card" },
-  { key: "nav.bc.saved", icon: Bookmark, to: "/business-connect/saved-cards" },
-  { key: "nav.bc.connections", icon: Handshake, to: "/business-connect/connections" },
-  { key: "nav.bc.meetings", icon: Users2, to: "/business-connect/meetings" },
+const system: Item[] = [
+  { key: "nav.settings", icon: Settings, to: "/settings" },
+  { key: "nav.activity", icon: History, to: "/activity" },
   {
     key: "nav.themeManagement" as TKey,
     icon: Palette,
@@ -113,23 +108,14 @@ const businessConnect: Item[] = [
     label: "Quản lý chủ đề",
   },
 ];
-const system: Item[] = [
-  { key: "nav.settings", icon: Settings, to: "/settings" },
-  { key: "nav.activity", icon: History, to: "/activity" },
-];
 const platform: Item[] = [{ key: "nav.platform", icon: ShieldCheck, to: "/platform" }];
 const admin: Item[] = [
+  { key: "nav.documents", icon: FolderOpen, to: "/documents" },
   {
     key: "nav.bcAdmin",
     icon: IdCard,
     to: "/admin/business-cards",
     label: "Quản lý Thẻ Doanh Nhân",
-  },
-  {
-    key: "nav.themeManagement" as TKey,
-    icon: Palette,
-    to: "/admin/landing-templates",
-    label: "Quản lý chủ đề",
   },
 ];
 
@@ -291,7 +277,6 @@ export function Sidebar({
   const canViewSponsors = isBQT || isBTC; // Finance & sponsorship management
   const canViewFinance = isBQT || isBTC; // Finance ONLY for ADM, BQT, BTC. Hidden from HVT, BTV, BTT!
   const canViewComm = isBQT || isBTT || isHVT; // News & media
-  const canViewGovernance = isBQT || isBTV || isHVT; // Voting & meetings
   const canViewNetwork = true; // B2B Marketplace & networking
   const canViewBusinessConnect = true; // Card & 1-on-1 connections
   const canViewSystem = canManageSystem; // System settings ONLY for ADM and BQT
@@ -404,6 +389,14 @@ export function Sidebar({
     // Broadcast notifications and email marketing restricted to BTT, BQT, ADM
     if (it.to === "/email-marketing") {
       return canManageMedia;
+    }
+    return true;
+  });
+
+  const filteredAdmin = admin.filter((it) => {
+    // Business card management restricted to ADM, PlatformAdmin, BQT
+    if (it.to === "/admin/business-cards") {
+      return isAdmin || isPlatformAdmin || isBQT;
     }
     return true;
   });
@@ -555,28 +548,10 @@ export function Sidebar({
             badges={badges}
           />
         )}
-        {canViewGovernance && (
-          <Group
-            label="nav.group.governance"
-            items={governance}
-            pathname={pathname}
-            collapsed={isCollapsed}
-            onNavigate={onNavigate}
-          />
-        )}
         {canViewNetwork && (
           <Group
             label="nav.group.network"
             items={network}
-            pathname={pathname}
-            collapsed={isCollapsed}
-            onNavigate={onNavigate}
-          />
-        )}
-        {canViewBusinessConnect && (
-          <Group
-            label="nav.group.bc"
-            items={businessConnect}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
@@ -591,10 +566,10 @@ export function Sidebar({
             onNavigate={onNavigate}
           />
         )}
-        {(isAdmin || isPlatformAdmin) && (
+        {filteredAdmin.length > 0 && (
           <Group
             label="nav.group.admin"
-            items={admin}
+            items={filteredAdmin}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}

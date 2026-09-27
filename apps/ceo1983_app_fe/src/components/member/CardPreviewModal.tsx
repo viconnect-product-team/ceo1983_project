@@ -31,6 +31,10 @@ export function CardPreviewModal({
   onClose: () => void;
 }) {
   const t = useT();
+  const nfc: "supported" | "insecure" | "unsupported" =
+    typeof window !== "undefined" && "NDEFReader" in window
+      ? (window.isSecureContext ? "supported" : "insecure")
+      : "unsupported";
 
   const url = useMemo(() => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";

@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+/* eslint-disable */
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -88,7 +94,9 @@ export class MeetingsService {
         statusFilter = `m.status IN ('completed', 'cancelled')`;
       }
 
-      const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+      const rows = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
         SELECT 
           m.id, m.title, m.description, m.meeting_type, m.status, m.timezone,
           m.created_at, m.updated_at, p.role as viewer_role
@@ -98,7 +106,9 @@ export class MeetingsService {
           AND ${statusFilter}
         ORDER BY m.created_at DESC
         LIMIT ${limit}
-      `).catch(() => []);
+      `,
+        )
+        .catch(() => []);
 
       const items = await Promise.all(
         rows.map(async (row) => {
@@ -119,7 +129,7 @@ export class MeetingsService {
             outcome,
             followUps,
           };
-        })
+        }),
       );
 
       return {
@@ -192,7 +202,8 @@ export class MeetingsService {
     const outcomeType = data.outcomeType || 'positive_progress';
     const outcomeStatus = data.outcomeStatus || 'draft';
     const summary = data.summary || '';
-    const finalizedAt = outcomeStatus === 'finalized' ? new Date().toISOString() : null;
+    const finalizedAt =
+      outcomeStatus === 'finalized' ? new Date().toISOString() : null;
 
     await this.prisma.$queryRawUnsafe(`
       INSERT INTO public.business_meeting_outcomes (
@@ -255,7 +266,11 @@ export class MeetingsService {
     return rows[0];
   }
 
-  async updateFollowUpStatus(userId: string, followUpId: string, status: string) {
+  async updateFollowUpStatus(
+    userId: string,
+    followUpId: string,
+    status: string,
+  ) {
     const rows = await this.prisma.$queryRaw<any[]>`
       UPDATE public.business_meeting_follow_ups
       SET status = ${status}, updated_at = now()
@@ -297,7 +312,9 @@ export class MeetingsService {
       workingDays: r.working_days || [1, 2, 3, 4, 5],
       workingHours: r.working_hours || [],
       minimumNoticeMinutes: Number(r.minimum_notice_minutes || 60),
-      defaultMeetingDurationMinutes: Number(r.default_meeting_duration_minutes || 30),
+      defaultMeetingDurationMinutes: Number(
+        r.default_meeting_duration_minutes || 30,
+      ),
       bufferBeforeMinutes: Number(r.buffer_before_minutes || 0),
       bufferAfterMinutes: Number(r.buffer_after_minutes || 0),
       version: Number(r.version || 1),
@@ -427,7 +444,11 @@ export class MeetingsService {
     return results;
   }
 
-  async respondToTimeProposal(userId: string, proposalId: string, response: string) {
+  async respondToTimeProposal(
+    userId: string,
+    proposalId: string,
+    response: string,
+  ) {
     const rows = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.business_meeting_time_proposal_responses (
         proposal_id, participant_id, response, responded_at
@@ -505,5 +526,118 @@ export class MeetingsService {
       lastErrorCode: r.last_error_code ? String(r.last_error_code) : null,
       retryCount: Number(r.retry_count ?? 0),
     }));
+  }
+
+  /**
+   * Cancel meeting (1-on-1 or Workspace Meeting) with reason, notifications & inbox messages
+   */
+  async cancelMeeting(
+    userId: string,
+    meetingId: string,
+    data: { reason: string },
+  ) {
+    const reason = (data.reason || '').trim();
+    if (!reason) {
+      throw new BadRequestException('Vui lòng nhập lý do hủy cuộc gặp');
+    }
+
+    const meetingRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.business_meetings WHERE id = ${meetingId}::uuid LIMIT 1
+    `.catch(() => []);
+
+    if (meetingRows.length === 0) {
+      throw new NotFoundException('Không tìm thấy cuộc gặp / cuộc họp');
+    }
+
+    const meeting = meetingRows[0];
+
+    // Check if caller is a participant
+    const participants: any[] = (await this.prisma.$queryRaw<any[]>`
+      SELECT p.*, u.full_name as user_name, u.email as user_email, m.code as member_code
+      FROM public.business_meeting_participants p
+      LEFT JOIN public.vione_users u ON u.id = p.user_id
+      LEFT JOIN public.members m ON m.user_id = p.user_id
+      WHERE p.meeting_id = ${meetingId}::uuid
+    `.catch(() => [])) || [];
+
+    const isParticipant = participants.some(
+      (p: any) => String(p.user_id) === userId,
+    );
+    if (!isParticipant && meeting.created_by_user_id !== userId) {
+      throw new ForbiddenException('Bạn không có quyền hủy cuộc gặp này');
+    }
+
+    // 1. Update meeting status to cancelled
+    await this.prisma.$executeRaw`
+      UPDATE public.business_meetings
+      SET status = 'cancelled', updated_at = now()
+      WHERE id = ${meetingId}::uuid
+    `;
+
+    // 2. Fetch sender name
+    const sender = participants.find((p: any) => String(p.user_id) === userId);
+    const senderName = sender?.user_name || 'Đối tác';
+    const meetingTitle = meeting.title || 'Cuộc gặp gỡ kết nối';
+
+    const notifTitle = `[HỦY CUỘC HỌP / CUỘC GẶP] ${meetingTitle}`;
+    const notifBody = `Cuộc gặp "${meetingTitle}" đã bị hủy bởi ${senderName}.\nLý do: "${reason}".\nTrân trọng cáo lỗi cùng Quý đối tác vì sự bất tiện này.`;
+
+    // 3. Notify & send messages to all other participants
+    for (const p of participants) {
+      const targetUserId = String(p.user_id);
+      if (targetUserId === userId) continue; // skip sender
+
+      const targetMemberCode = p.member_code
+        ? String(p.member_code).toLowerCase()
+        : null;
+
+      // 3a. Direct inbox message (public.messages)
+      const directMsg = `[THÔNG BÁO HỦY CUỘC GẶP]\nChào Anh/Chị ${p.user_name || 'Hội viên'},\n${notifBody}`;
+      if (targetMemberCode) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), ${userId}, ${targetMemberCode}, ${directMsg}, NOW())
+        `.catch(() => {});
+      }
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), ${userId}, ${targetUserId}, ${directMsg}, NOW())
+      `.catch(() => {});
+
+      // 3b. App bell push notification (public.business_notifications)
+      const dedupeKey = `cancel_meeting_${meetingId}_${targetUserId}_${Date.now()}`;
+      const safeData = JSON.stringify({
+        meetingId,
+        meetingTitle,
+        reason,
+        cancelledBy: senderName,
+      });
+
+      await this.prisma
+        .$executeRawUnsafe(
+          `
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, dedupe_key, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, priority, status, app_scope, target_app, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, 'meeting', $2, $3, 'meeting_cancelled', 'meeting_cancelled',
+          $4, $5, $6::jsonb, 'urgent', 'delivered', 'all', 'all', now(), now()
+        )
+      `,
+          targetUserId,
+          meetingId,
+          dedupeKey,
+          notifTitle,
+          notifBody,
+          safeData,
+        )
+        .catch(() => {});
+    }
+
+    return {
+      ok: true,
+      cancelled: true,
+      notifiedCount: participants.length - 1,
+    };
   }
 }

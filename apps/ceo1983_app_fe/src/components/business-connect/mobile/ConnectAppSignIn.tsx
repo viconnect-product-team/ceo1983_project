@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import authBg from "@/assets/connect-auth-bg.jpg";
-import { Ceo1983Logo } from "./Ceo1983Logo";
+import { ViOneLogo } from "./ViOneLogo";
 import { LuxuryLangSwitcher } from "@/components/LuxuryLangSwitcher";
 
 type Props = {
@@ -139,12 +139,12 @@ export function ConnectAppSignIn({
 
         {/* Brand Header */}
         <div className="flex flex-col items-center justify-center text-center py-2 shrink-0">
-          <Ceo1983Logo className="h-8.5 w-auto sm:h-9.5 transition-transform hover:scale-105 duration-300 drop-shadow-[0_4px_24px_rgba(216,178,130,0.6)]" />
+          <ViOneLogo className="h-8.5 w-auto sm:h-9.5 transition-transform hover:scale-105 duration-300 drop-shadow-[0_4px_24px_rgba(216,178,130,0.6)]" />
           <div className="mt-1 text-[9.5px] font-bold tracking-[0.28em] text-[#D8B282] uppercase">
             BUSINESS CONNECT
           </div>
           <h1 className="mt-2 font-serif text-[21px] sm:text-[23px] font-medium tracking-wide text-[#F6E1C3]">
-            Đăng nhập CEO 1983
+            Đăng nhập ViOne
           </h1>
           <p className="mt-0.5 text-[12px] text-[#D4C3A3]/80">
             Cộng đồng doanh nhân tinh hoa & Kết nối giao thương
@@ -365,11 +365,11 @@ export function ConnectAppSignIn({
           </button>
         </form>
 
-        {/* Sign up */}
+        {/* Sign up -> Chuyển đến Landing Page ViOne Connect theo Figma */}
         <div className="shrink-0 my-1">
           <Link
-            to="/register"
-            search={{ email: email.trim() || undefined }}
+            to="/landing"
+            search={{ apply: "true" }}
             className="relative flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-[13.5px] font-semibold transition-all active:scale-[0.99] cursor-pointer border-[#D8B282]/40 bg-zinc-900/60 backdrop-blur-md text-[#E2D3B3] hover:bg-zinc-800/80"
           >
             <Shield className="h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />
@@ -378,14 +378,14 @@ export function ConnectAppSignIn({
           </Link>
         </div>
 
-        {/* Khám phá Web Landing Business Connect */}
+        {/* Khám phá Web Landing ViOne Connect (Figma) */}
         <div className="shrink-0 my-1">
           <Link
-            to="/landing/business-connect"
+            to="/landing"
             className="relative flex h-9.5 w-full items-center justify-center gap-2 rounded-xl border border-[#D8B282]/30 bg-[#0A0A0B]/80 px-3 text-[12.5px] font-medium transition-all hover:border-[#D8B282]/60 hover:bg-[#D8B282]/10 active:scale-[0.99] cursor-pointer text-[#F6E1C3]"
           >
             <Globe2 className="h-4 w-4 text-[#D8B282]" aria-hidden="true" />
-            <span>Khám phá Business Connect (Web)</span>
+            <span>Khám phá ViOne Connect (Web Landing)</span>
             <ArrowRight className="absolute right-4 h-3.5 w-3.5 text-[#D8B282]" aria-hidden="true" />
           </Link>
         </div>

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/connect-app/network/$personId")({
   validateSearch: (search: Record<string, unknown>): { momentSaved?: true } =>
     search.momentSaved === true ? { momentSaved: true } : {},
   head: () => ({
-    meta: [{ title: "Hồ sơ — Business Connect" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Hồ sơ — ViOne" }, { name: "robots", content: "noindex" }],
   }),
   component: ConnectAppPersonPage,
 });

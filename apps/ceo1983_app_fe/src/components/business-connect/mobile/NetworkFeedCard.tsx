@@ -1,4 +1,4 @@
-// BC-Mobile-7E — One Network feed card (Executive Minimal Luxury, CEO 1983).
+// BC-Mobile-7E — One Network feed card (Executive Minimal Luxury, ViOne).
 //
 // Presentation only over the canonical Moment domain: avatar ảnh, huy hiệu V,
 // "chức danh · công ty", "ngày · địa điểm", ảnh lớn / lưới ảnh kèm "+N", và
@@ -16,6 +16,7 @@ import {
   Lock,
   MapPin,
   MoreHorizontal,
+  Trash2,
   UserPlus,
   Users,
   X,
@@ -28,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useNetworkRowConnect } from "@/hooks/use-network-row-connect";
 import { ConnectConfirmDialog } from "./ConnectConfirmDialog";
 import { networkFeedKeys } from "@/hooks/use-network-feed";
@@ -71,8 +72,9 @@ function PhotoGrid({
   onImageClick?: (index: number) => void;
 }) {
   if (urls.length === 0) return null;
+  const resolved = urls.map((u) => resolveMediaUrl(u) || u);
 
-  if (urls.length === 1) {
+  if (resolved.length === 1) {
     return (
       <button
         type="button"
@@ -80,7 +82,7 @@ function PhotoGrid({
         className="mt-3 block w-full text-left cursor-pointer overflow-hidden rounded-xl group focus:outline-none"
       >
         <img
-          src={urls[0]}
+          src={resolved[0]}
           alt={alt}
           loading="lazy"
           className="aspect-[16/10] w-full rounded-xl object-cover ring-1 ring-[var(--bc-mobile-border)] transition-transform duration-200 group-hover:scale-[1.01] active:scale-[0.99]"
@@ -89,8 +91,8 @@ function PhotoGrid({
     );
   }
 
-  const shown = urls.slice(0, 3);
-  const extra = urls.length - shown.length;
+  const shown = resolved.slice(0, 3);
+  const extra = resolved.length - shown.length;
   return (
     <div className="mt-3 grid grid-cols-3 gap-1.5">
       {shown.map((url, i) => (
@@ -388,7 +390,7 @@ function FeedActionRow({
       try {
         await navigator.share({
           title: item.eventName || "Khoảnh khắc Business Connect",
-          text: item.note || "Khoảnh khắc giao thương trên CEO 1983",
+          text: item.note || "Khoảnh khắc giao thương trên ViOne",
           url: shareUrl,
         });
         return;
@@ -564,9 +566,10 @@ function FeedActionRow({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => setDeleteConfirmOpen(true)}
-                  className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
+                  className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer flex items-center gap-2"
                 >
-                  Xoá khoảnh khắc
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  <span>Xoá khoảnh khắc</span>
                 </DropdownMenuItem>
               </>
             ) : null}
@@ -614,17 +617,22 @@ function FeedActionRow({
 
       {/* Dialog xác nhận xoá khoảnh khắc */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent className="border border-[#2a364a] bg-[#0c131f]/95 backdrop-blur-xl text-[#f1f5f9]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-[#f87171]">Xác nhận xoá khoảnh khắc</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#94a3b8]">
+        <AlertDialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl text-foreground">
+          <AlertDialogHeader className="space-y-2">
+            <AlertDialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              <span>Xác nhận xoá khoảnh khắc</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               Bạn có chắc chắn muốn xoá khoảnh khắc này? Hành động này sẽ xoá vĩnh viễn hình ảnh, bình luận và lượt thích đi kèm.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="mt-4 flex gap-2 sm:justify-end">
             <AlertDialogCancel
               disabled={deleting}
-              className="border-[#334155] bg-[#1e293b] text-[#cbd5e1] hover:bg-[#334155]"
+              className="rounded-xl border border-border bg-secondary/50 text-foreground hover:bg-secondary text-xs sm:text-sm font-semibold px-4 py-2"
             >
               Huỷ
             </AlertDialogCancel>
@@ -634,7 +642,7 @@ function FeedActionRow({
                 e.preventDefault();
                 void handleDeleteMoment();
               }}
-              className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs sm:text-sm font-semibold px-4 py-2 shadow-xs"
             >
               {deleting ? "Đang xoá..." : "Xoá vĩnh viễn"}
             </AlertDialogAction>

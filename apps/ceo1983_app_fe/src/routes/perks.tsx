@@ -18,6 +18,7 @@ import {
   type AdminPerk,
 } from "@/lib/perks.functions";
 import { useT } from "@/lib/i18n";
+import { BirthdayPromoManager } from "@/components/perks/BirthdayPromoManager";
 
 export const Route = createFileRoute("/perks")({
   component: PerksAdminPage,
@@ -194,6 +195,9 @@ function PerksAdminPage() {
           </div>
         }
       />
+
+      {/* Birthday Promotion & Perks Policy Managed by Association CRM */}
+      <BirthdayPromoManager />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatCard

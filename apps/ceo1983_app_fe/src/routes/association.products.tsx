@@ -45,6 +45,8 @@ import {
   ShieldCheck,
   Mail,
   Package,
+  Megaphone,
+  QrCode,
 } from "lucide-react";
 import { exportProductsToExcel, type ParsedProductItem } from "@/lib/marketplace-excel";
 import { ProductExcelModal } from "@/components/dashboard/ProductExcelModal";
@@ -54,8 +56,10 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyProducts, requestQuote, getMyMember, type MyProduct, type MyMember } from "@/lib/member-app.functions";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { isUserProductOwner } from "@/lib/marketplace-data";
 import { useT, useFmt, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { isVideoMedia } from "@/components/marketplace/MarketplaceAdsManager";
 
 function normalizeCategory(str: string): string {
   return str
@@ -178,6 +182,7 @@ function ProductsScreen() {
 
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [marketplaceTab, setMarketplaceTab] = useState<"market" | "interested" | "my_store">(() => (search?.action === "manage" || search?.action === "create") ? "my_store" : "market");
   const [postModalOpen, setPostModalOpen] = useState(() => search?.action === "create");
   const [editingProduct, setEditingProduct] = useState<MyProduct | null>(null);
   const [activeProductMenuId, setActiveProductMenuId] = useState<string | null>(null);
@@ -192,14 +197,29 @@ function ProductsScreen() {
   // Category & User-isolated Interested state (prevents new accounts from inheriting old favorites)
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showAllProducts, setShowAllProducts] = useState(false);
-  const userStorageKey = `vba_interested_products_${(member as any)?.userId || (member as any)?.id || member?.code || "user"}`;
+  const resolvedUserId = user?.id || (member as any)?.userId || (member as any)?.user_id || (member as any)?.id || member?.code || null;
+  const userStorageKey = resolvedUserId ? `vba_interested_products_${resolvedUserId}` : null;
   const [interestedIds, setInterestedIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Clear legacy unisolated keys that may contain mock/seed data
+    try {
+      localStorage.removeItem("vba_interested_products_user");
+    } catch {}
+
+    if (!userStorageKey) {
+      setInterestedIds([]);
+      return;
+    }
     try {
       const stored = localStorage.getItem(userStorageKey);
-      setInterestedIds(stored ? JSON.parse(stored) : []);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setInterestedIds(Array.isArray(parsed) ? parsed : []);
+      } else {
+        setInterestedIds([]);
+      }
     } catch {
       setInterestedIds([]);
     }
@@ -210,6 +230,10 @@ function ProductsScreen() {
       e.preventDefault();
       e.stopPropagation();
     }
+    if (!userStorageKey) {
+      toast.error(isEn ? "Please log in to save products" : "Vui lòng đăng nhập để lưu sản phẩm quan tâm");
+      return;
+    }
     setInterestedIds((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
       try {
@@ -218,6 +242,108 @@ function ProductsScreen() {
       toast.success(next.includes(id) ? (isEn ? "Added to interested list" : "Đã thêm vào danh mục Đã quan tâm") : (isEn ? "Removed from interested list" : "Đã bỏ khỏi danh mục Đã quan tâm"));
       return next;
     });
+  };
+
+  // Marketplace Ads & Affiliate Registration Flow (CRM Sync)
+  const [adRegistrationModalOpen, setAdRegistrationModalOpen] = useState(false);
+  const [activeMarketplaceAds, setActiveMarketplaceAds] = useState<any[]>([]);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+
+  const [adCompany, setAdCompany] = useState("");
+  const [adContactPerson, setAdContactPerson] = useState("");
+  const [adPhone, setAdPhone] = useState("");
+  const [adEmail, setAdEmail] = useState("");
+  const [adGoal, setAdGoal] = useState("Quảng bá sản phẩm / dịch vụ nổi bật tới toàn thể hội viên");
+  const [adDurationMonths, setAdDurationMonths] = useState(3);
+  const [adBudget, setAdBudget] = useState("10,000,000 đ");
+  const [adProductLink, setAdProductLink] = useState("");
+  const [adNotes, setAdNotes] = useState("");
+  const [adSubmitting, setAdSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (member) {
+      const memberCompany = (member as any).companyName || (member as any).company || "";
+      const memberName = (member as any).fullName || (member as any).name || "";
+      if (memberCompany && !adCompany) setAdCompany(memberCompany);
+      if (memberName && !adContactPerson) setAdContactPerson(memberName);
+      if (member.phone && !adPhone) setAdPhone(member.phone);
+      if (member.email && !adEmail) setAdEmail(member.email);
+    }
+  }, [member, adCompany, adContactPerson, adPhone, adEmail]);
+
+  const loadMarketplaceAds = () => {
+    try {
+      const raw = localStorage.getItem("ceo1983_marketplace_ads");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const now = new Date().toISOString().split("T")[0];
+          const activeOnly = parsed.filter(
+            (c: any) => c.status === "active" && (!c.endDate || c.endDate >= now)
+          );
+          setActiveMarketplaceAds(activeOnly);
+        }
+      }
+    } catch {
+      setActiveMarketplaceAds([]);
+    }
+  };
+
+  useEffect(() => {
+    loadMarketplaceAds();
+    const handleAdsChanged = () => loadMarketplaceAds();
+    window.addEventListener("ceo1983-ads-changed", handleAdsChanged);
+    window.addEventListener("storage", handleAdsChanged);
+    return () => {
+      window.removeEventListener("ceo1983-ads-changed", handleAdsChanged);
+      window.removeEventListener("storage", handleAdsChanged);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeMarketplaceAds.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentAdIndex((prev) => (prev + 1) % activeMarketplaceAds.length);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [activeMarketplaceAds.length]);
+
+  const handleSubmitAdRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adCompany.trim() || !adContactPerson.trim() || !adPhone.trim()) {
+      toast.error("Vui lòng điền đầy đủ tên công ty, người liên hệ và số điện thoại!");
+      return;
+    }
+    setAdSubmitting(true);
+    try {
+      const newReq = {
+        id: `adreq-${Date.now()}`,
+        companyName: adCompany.trim(),
+        contactPerson: adContactPerson.trim(),
+        phone: adPhone.trim(),
+        email: adEmail.trim() || (member?.email || ""),
+        goal: adGoal,
+        durationMonths: adDurationMonths,
+        budgetEst: adBudget,
+        productLink: adProductLink.trim() || undefined,
+        notes: adNotes.trim() || undefined,
+        status: "pending" as const,
+        createdAt: new Date().toISOString(),
+      };
+      const raw = localStorage.getItem("ceo1983_ad_requests");
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift(newReq);
+      localStorage.setItem("ceo1983_ad_requests", JSON.stringify(list));
+      window.dispatchEvent(new Event("ceo1983-ad-requests-changed"));
+      
+      toast.success("Đã gửi yêu cầu đăng ký quảng cáo thành công tới Quản trị viên hệ thống!");
+      setAdRegistrationModalOpen(false);
+      setAdNotes("");
+    } catch {
+      toast.error("Không thể gửi yêu cầu. Vui lòng thử lại!");
+    } finally {
+      setAdSubmitting(false);
+    }
   };
 
   // Quote Request Modal state
@@ -243,37 +369,7 @@ function ProductsScreen() {
         }
       } catch {}
     }
-    return [
-      {
-        id: "prod-figma-1",
-        name: "Cung cấp chuỗi vận tải Logistics Xuyên Biên Giới",
-        company: "An Phát Log",
-        category: "Logistics",
-        priceDisplay: "Thương lượng",
-        imageUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80",
-        description: "Dịch vụ vận tải đường biển, đường bộ đa phương thức tuyến Đông Nam Á, Trung Quốc và Châu Âu với thủ tục hải quan trọn gói.",
-      },
-      {
-        id: "prod-figma-2",
-        name: "Phần mềm HRM quản trị nhân sự thế hệ mới",
-        company: "ABC Tech",
-        category: "Công nghệ",
-        priceDisplay: "120 Triệu đ",
-        isVip: true,
-        imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80",
-        description: "Giải pháp chuyển đổi số nhân sự: chấm công AI, tính lương tự động, đánh giá KPI và quản trị nhân tài toàn diện trên Cloud.",
-      },
-      {
-        id: "prod-figma-0",
-        name: "Gói tư vấn pháp lý & đầu tư trọn gói",
-        company: "Pháp lý Việt",
-        category: "Dịch vụ doanh nghiệp",
-        priceDisplay: "45 Triệu đ",
-        isVip: true,
-        imageUrl: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80",
-        description: "Tư vấn hợp đồng kinh tế, thủ tục cấp phép đầu tư, bảo hộ thương hiệu và cấu trúc vốn cho doanh nghiệp hội viên CEO 1983.",
-      },
-    ];
+    return [];
   });
 
   const trackRecentlyViewed = (p: any) => {
@@ -288,7 +384,38 @@ function ProductsScreen() {
     });
   };
 
+  const isAdmin = Boolean(
+    (user as any)?.role === "admin" ||
+    (user as any)?.role === "platform_admin" ||
+    (member as any)?.role === "admin" ||
+    (member as any)?.role === "association_admin" ||
+    (member as any)?.executiveRole
+  );
+
+  // Check if current user is the actual creator/author of this product
+  const checkIsProductAuthor = (p: MyProduct) => {
+    if (!p) return false;
+    if (isUserProductOwner(p as any, user, member)) return true;
+    if (!member && !user) return false;
+    const currentUserId = String(user?.id || (member as any)?.userId || (member as any)?.user_id || (member as any)?.id || "").trim().toLowerCase();
+    const prodSellerId = String(p.sellerId || (p as any).seller_id || (p as any).userId || (p as any).user_id || "").trim().toLowerCase();
+    if (currentUserId && prodSellerId && currentUserId === prodSellerId) return true;
+    if (member?.code && prodSellerId && String(member.code).toLowerCase() === prodSellerId) return true;
+    return false;
+  };
+
+  const checkCanManageProduct = (p: MyProduct) => {
+    return checkIsProductAuthor(p) || isAdmin;
+  };
+
+  const checkIsProductOwner = checkIsProductAuthor;
+
   const handleOpenQuoteModal = (p: MyProduct) => {
+    if (checkIsProductOwner(p)) {
+      toast.info(isEn ? "This is your product. Opening received quote requests." : "Đây là sản phẩm của bạn. Đang mở danh sách yêu cầu báo giá từ khách hàng.");
+      handleOpenProductQuotes(p);
+      return;
+    }
     trackRecentlyViewed(p);
     setQuoteProduct(p);
     setQuoteQty("1");
@@ -417,36 +544,6 @@ function ProductsScreen() {
   const [editDesc, setEditDesc] = useState("");
   const [updatingProduct, setUpdatingProduct] = useState(false);
 
-  const isAdmin = Boolean(
-    (user as any)?.role === "admin" ||
-    (user as any)?.role === "platform_admin" ||
-    (member as any)?.role === "admin" ||
-    (member as any)?.role === "association_admin" ||
-    (member as any)?.executiveRole
-  );
-
-  // Check if current user is the actual creator/author of this product
-  const checkIsProductAuthor = (p: MyProduct) => {
-    if (!member && !user) return false;
-    const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
-    return Boolean(
-      (currentUserId && p.sellerId && String(p.sellerId).toLowerCase() === String(currentUserId).toLowerCase()) ||
-      ((member as any)?.userId && p.sellerId && String(p.sellerId).toLowerCase() === String((member as any).userId).toLowerCase()) ||
-      ((member as any)?.id && p.sellerId && String(p.sellerId).toLowerCase() === String((member as any).id).toLowerCase()) ||
-      (member?.code && p.sellerId && String(p.sellerId).toLowerCase() === String(member.code).toLowerCase()) ||
-      (member?.name && p.sellerName && p.sellerName.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
-      ((user as any)?.name && p.sellerName && p.sellerName.toLowerCase().trim() === (user as any).name.toLowerCase().trim()) ||
-      ((user as any)?.user_metadata?.full_name && p.sellerName && p.sellerName.toLowerCase().trim() === (user as any).user_metadata.full_name.toLowerCase().trim()) ||
-      (member?.name && p.company && p.company.toLowerCase().trim() === member.name.toLowerCase().trim()) ||
-      (member?.title && p.company && p.company.toLowerCase().trim() === member.title.toLowerCase().trim())
-    );
-  };
-
-  const checkCanManageProduct = (p: MyProduct) => {
-    return checkIsProductAuthor(p) || isAdmin;
-  };
-
-  const checkIsProductOwner = checkIsProductAuthor;
 
   const allProducts = useMemo(() => {
     const arr = [...(initialProducts || [])];
@@ -465,6 +562,10 @@ function ProductsScreen() {
   }, [allProducts]);
   const totalMarketplaceValue = useMemo(() => {
     return allProducts.reduce((sum, p) => sum + (Number(p.memberPrice || p.price) || 0), 0);
+  }, [allProducts]);
+
+  const featuredCompanyProduct = useMemo(() => {
+    return allProducts.find((p) => p.company && p.company.trim().length > 0) || null;
   }, [allProducts]);
 
   // B2B Company Storefront derived states
@@ -609,44 +710,7 @@ function ProductsScreen() {
     if (allProducts.length > 0) {
       return allProducts.slice(0, 5);
     }
-    return [
-      {
-        id: "sp-default-1",
-        name: "Giải pháp ERP & Số hóa Quản trị Doanh nghiệp Toàn diện",
-        company: "Tập Đoàn Công Nghệ Uranus",
-        category: "Công nghệ & Phần mềm",
-        price: 45000000,
-        memberPrice: 38000000,
-        originalPrice: 55000000,
-        imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80",
-        description: "Tích hợp quản lý CRM, tài chính, chuỗi cung ứng và nhân sự trên nền tảng Cloud hiện đại.",
-        sellerName: "Phạm Văn Vũ",
-      },
-      {
-        id: "sp-default-2",
-        name: "Gói Dịch Vụ Tư Vấn Pháp Lý & Tái Cấu Trúc Doanh Nghiệp M&A",
-        company: "Viconnect Law & Partners",
-        category: "Tài chính & Đầu tư",
-        price: 30000000,
-        memberPrice: 24000000,
-        originalPrice: 40000000,
-        imageUrl: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=800&auto=format&fit=crop&q=80",
-        description: "Bảo trợ pháp lý, rà soát hợp đồng thương mại quốc tế và xúc tiến đầu tư an toàn cho CEO.",
-        sellerName: "Nguyễn Minh Châu",
-      },
-      {
-        id: "sp-default-3",
-        name: "Hệ Thống Điện Mặt Trời Áp Mái Cho Nhà Xưởng & Khu Công Nghiệp",
-        company: "Green Energy Corporation",
-        category: "Sản xuất & Công nghiệp",
-        price: 250000000,
-        memberPrice: 215000000,
-        originalPrice: 280000000,
-        imageUrl: "https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&auto=format&fit=crop&q=80",
-        description: "Tiết kiệm 40% chi phí điện năng, đạt chứng chỉ Net-Zero xanh cho doanh nghiệp xuất khẩu.",
-        sellerName: "Trần Đức Nam",
-      },
-    ] as unknown as MyProduct[];
+    return [] as unknown as MyProduct[];
   }, [allProducts]);
 
   useEffect(() => {
@@ -995,15 +1059,26 @@ function ProductsScreen() {
               >
                 <MessageSquare className="h-4 w-4" />
               </button>
-              <button
-                type="button"
-                onClick={() => handleOpenQuoteModal(p)}
-                className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>Nhận báo giá VIP</span>
-                <ArrowRight className="h-3.5 w-3.5 text-white shrink-0" />
-              </button>
-              {isAdmin && (
+              {checkIsProductOwner(p) ? (
+                <button
+                  type="button"
+                  onClick={() => handleOpenProductQuotes(p)}
+                  className="flex-1 h-8.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Users className="h-3.5 w-3.5 text-white shrink-0" />
+                  <span>Yêu cầu báo giá ({p.quoteRequestsCount || 0})</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleOpenQuoteModal(p)}
+                  className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>Nhận báo giá VIP</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-white shrink-0" />
+                </button>
+              )}
+              {isAdmin && !checkIsProductOwner(p) && (
                 <button
                   type="button"
                   onClick={() => handleOpenProductQuotes(p)}
@@ -1402,7 +1477,7 @@ function ProductsScreen() {
         renderCompanyStorefront()
       ) : (
         <>
-          {/* ── TOP HEADER (Chợ B2B CEO1983 + HN Badge) ── */}
+          {/* ── TOP HEADER (Chợ Marketplace) ── */}
           <div className="sticky top-0 z-30 self-stretch px-5 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-xs">
             <div className="flex justify-start items-center gap-2.5">
               <button 
@@ -1414,26 +1489,281 @@ function ProductsScreen() {
                 <ChevronLeft className="size-5 text-sky-950 dark:text-white" />
               </button>
               <div className="justify-start text-sky-950 dark:text-white text-lg font-bold font-['Inter']">
-                Chợ B2B CEO1983
-              </div>
-            </div>
-            <div className="flex justify-start items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setPostModalOpen(true)}
-                className="size-9 bg-sky-950 hover:bg-sky-900 text-white rounded-2xl flex justify-center items-center transition cursor-pointer shadow-xs"
-                title="Đăng sản phẩm mới"
-              >
-                <Plus className="size-4.5" />
-              </button>
-              <div className="size-9 bg-sky-950 rounded-2xl flex justify-center items-center shadow-xs shrink-0">
-                <div className="justify-start text-white text-xs font-bold font-['Inter']">HN</div>
+                Chợ Marketplace
               </div>
             </div>
           </div>
 
-          {/* ── SCROLLABLE CONTENT (390px spec according to Figma) ── */}
-          <div className="self-stretch px-4 pt-4 pb-6 flex flex-col justify-start items-start gap-5">
+          {/* ── SUB-HEADER TABS: Chợ Marketplace vs Đã quan tâm vs Mục của tôi ── */}
+          <div className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setMarketplaceTab("market")}
+              className={`flex-1 py-2 px-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                marketplaceTab === "market"
+                  ? "bg-[#003B95] text-white shadow-xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Store className="size-3.5" />
+              <span>Chợ Marketplace</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMarketplaceTab("interested")}
+              className={`flex-1 py-2 px-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                marketplaceTab === "interested"
+                  ? "bg-rose-600 text-white shadow-xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Heart className={`size-3.5 ${marketplaceTab === "interested" ? "fill-white text-white" : "fill-rose-500 text-rose-500"}`} />
+              <span>Đã quan tâm ({interestedIds.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMarketplaceTab("my_store")}
+              className={`flex-1 py-2 px-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                marketplaceTab === "my_store"
+                  ? "bg-[#003B95] text-white shadow-xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Package className="size-3.5" />
+              <span>Mục của tôi ({myProductsCount})</span>
+            </button>
+          </div>
+
+          {marketplaceTab === "interested" ? (
+            <div className="self-stretch px-4 pt-4 pb-6 flex flex-col justify-start items-start gap-4">
+              <div className="w-full flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Heart className="size-4 fill-rose-500 text-rose-500" />
+                    <span>Sản Phẩm Đã Quan Tâm ({interestedIds.length})</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">Danh mục các sản phẩm / dịch vụ bạn đã lưu để theo dõi và kết nối giao thương</p>
+                </div>
+              </div>
+
+              {allProducts.filter((p) => interestedIds.includes(p.id)).length === 0 ? (
+                <div className="w-full py-12 px-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center flex flex-col items-center justify-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+                  <div className="size-12 rounded-full bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center text-rose-500">
+                    <Heart className="size-6 text-rose-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Chưa có sản phẩm quan tâm nào</p>
+                    <p className="text-xs text-slate-500 max-w-xs">Nhấn biểu tượng trái tim ở các sản phẩm trên Chợ Marketplace để lưu vào danh mục này.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMarketplaceTab("market")}
+                    className="px-4 py-2 bg-[#003B95] hover:bg-blue-900 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer"
+                  >
+                    Khám phá Chợ Marketplace
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 w-full">
+                  {allProducts
+                    .filter((p) => interestedIds.includes(p.id))
+                    .map((p) => {
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => {
+                            trackRecentlyViewed(p);
+                            handleOpenQuoteModal(p);
+                          }}
+                          className="w-full bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer"
+                        >
+                          <img className="self-stretch h-28 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"} alt={p.name} />
+                          <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
+                            <div className="self-stretch inline-flex justify-between items-center">
+                              <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
+                                {p.category || "Hội viên"}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => toggleInterest(p.id, e)}
+                                className="size-5 inline-flex flex-col justify-center items-center text-rose-500 hover:scale-110 transition cursor-pointer"
+                                title="Bỏ quan tâm"
+                              >
+                                <Heart className="size-4 fill-rose-500 text-rose-500" />
+                              </button>
+                            </div>
+                            <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
+                              {p.name}
+                            </div>
+                            <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
+                              {p.company || "CEO 1983"}
+                            </div>
+                            <div className="self-stretch inline-flex justify-between items-center pt-0.5 border-t border-slate-100 dark:border-slate-700/60 mt-1">
+                              <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
+                                {formatSmartProductPrice(p.memberPrice || p.price)}
+                              </div>
+                              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Báo giá</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          ) : marketplaceTab === "my_store" ? (
+            <div className="self-stretch px-4 pt-4 pb-6 flex flex-col justify-start items-start gap-4">
+              {/* Action Banner for Companies */}
+              <div className="w-full bg-gradient-to-br from-slate-900 via-[#003B95] to-blue-950 text-white rounded-2xl p-4 shadow-md">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="size-9 rounded-xl bg-white/10 flex items-center justify-center">
+                      <Building2 className="size-5 text-blue-200" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Gian Hàng & Tiếp Thị Doanh Nghiệp</h4>
+                      <p className="text-[11px] text-blue-200">Quản lý sản phẩm và quảng bá thương hiệu B2B</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/15">
+                  <button
+                    type="button"
+                    onClick={() => setPostModalOpen(true)}
+                    className="py-2.5 px-3 bg-white text-[#003B95] hover:bg-blue-50 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                  >
+                    <Plus className="size-4" />
+                    <span>Đăng sản phẩm mới</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdRegistrationModalOpen(true)}
+                    className="py-2.5 px-3 bg-blue-500/30 hover:bg-blue-500/40 border border-blue-400/30 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                  >
+                    <Megaphone className="size-4 text-amber-300" />
+                    <span>Liên hệ quảng cáo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Excel and Quick tools */}
+              <div className="w-full flex items-center justify-between gap-2 px-1">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Sản phẩm đã đăng ({myProductsCount})
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExcelImportOpen(true)}
+                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 flex items-center gap-1 transition cursor-pointer"
+                  >
+                    <Download className="size-3" />
+                    <span>Nhập Excel</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const mine = allProducts.filter((p) => checkIsProductOwner(p));
+                      exportProductsToExcel(mine);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 flex items-center gap-1 transition cursor-pointer"
+                  >
+                    <FileSpreadsheet className="size-3 text-emerald-600" />
+                    <span>Xuất Excel</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* List of user's products */}
+              {allProducts.filter((p) => checkIsProductOwner(p)).length === 0 ? (
+                <div className="w-full py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-center gap-3">
+                  <div className="size-14 rounded-2xl bg-blue-50 dark:bg-slate-800 grid place-items-center">
+                    <Package className="size-7 text-[#003B95] dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Bạn chưa đăng sản phẩm nào</h4>
+                    <p className="text-xs text-slate-500 max-w-xs mt-1">
+                      Đăng ngay sản phẩm hoặc dịch vụ để tiếp cận 1983+ lãnh đạo doanh nghiệp và nhận chào giá trực tiếp.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPostModalOpen(true)}
+                    className="mt-2 px-4 py-2 bg-[#003B95] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-blue-900 transition cursor-pointer shadow-xs active:scale-95"
+                  >
+                    <Plus className="size-4" />
+                    <span>Đăng sản phẩm ngay</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="w-full space-y-3">
+                  {allProducts
+                    .filter((p) => checkIsProductOwner(p))
+                    .map((p) => (
+                      <div
+                        key={p.id}
+                        className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-xs"
+                      >
+                        <img
+                          src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
+                          alt={p.name}
+                          className="size-16 rounded-xl object-cover shrink-0 border border-slate-100 dark:border-slate-700"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded">
+                              {p.category || "Dịch vụ"}
+                            </span>
+                            {(p as any).isVip && (
+                              <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded">
+                                VIP
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate mt-0.5">
+                            {p.name}
+                          </h4>
+                          <div className="text-xs font-bold text-[#003B95] dark:text-blue-400 mt-0.5">
+                            {formatSmartProductPrice(p.memberPrice || p.price)}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => startEditProduct(p)}
+                            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Pencil className="size-3" />
+                            <span>Sửa</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenProductQuotes(p)}
+                            className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-700 dark:text-amber-300 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                            title="Xem các yêu cầu báo giá từ khách hàng"
+                          >
+                            <Users className="size-3" />
+                            <span>Yêu cầu báo giá ({p.quoteRequestsCount || 0})</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteProduct(p.id, e)}
+                            className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-300 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Trash2 className="size-3" />
+                            <span>Xóa</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* ── SCROLLABLE CONTENT (390px spec according to Figma) ── */}
+              <div className="self-stretch px-4 pt-4 pb-6 flex flex-col justify-start items-start gap-5">
             
             {/* 1. SEARCH ROW */}
             <div className="self-stretch inline-flex justify-start items-center gap-2">
@@ -1497,6 +1827,7 @@ function ProductsScreen() {
             <div className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-1">
               {[
                 { id: "all", label: "Tất cả" },
+                { id: "interested", label: `Đã quan tâm (${interestedIds.length})` },
                 { id: "tech", label: "Công nghệ" },
                 { id: "realestate", label: "Xây dựng" },
                 { id: "services", label: "Dịch vụ doanh nghiệp" },
@@ -1522,44 +1853,93 @@ function ProductsScreen() {
               })}
             </div>
 
-            {/* 3. STRATEGIC PARTNER AD */}
-            <div 
-              onClick={() => handleOpenQuoteModal({
-                id: "strategic-erp-abc",
-                name: "Giải pháp ERP Chuyển đổi số doanh nghiệp quy mô lớn",
-                company: "Công ty Cổ phần Công nghệ ABC",
-                category: "Công nghệ & Phần mềm",
-                price: 150000000,
-                memberPrice: 120000000,
-                imageUrl: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
-                description: "Hệ thống quản trị tài nguyên doanh nghiệp toàn diện: quản trị chuỗi cung ứng, tài chính kế toán tự động, tích hợp mạng lưới số hóa và quản trị nhân sự ERP đám mây bảo mật cao cho doanh nghiệp quy mô vừa và lớn.",
-              } as any)}
-              className="self-stretch bg-sky-950 rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start overflow-hidden cursor-pointer hover:shadow-lg transition shadow-sm group"
-            >
-              <img 
-                className="self-stretch h-36 object-cover group-hover:scale-105 transition-transform duration-500" 
-                src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80" 
-                alt="Giải pháp ERP Chuyển đổi số"
-              />
-              <div className="self-stretch p-4 flex flex-col justify-start items-start gap-2.5">
-                <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="px-2 py-1 bg-amber-100 rounded-sm flex justify-start items-start">
-                    <div className="justify-start text-amber-600 text-[10px] font-extrabold font-['Inter']">
-                      ĐỐI TÁC CHIẾN LƯỢC
+            {/* 3. DYNAMIC SPONSORED ADS (CRM Sync) */}
+            {activeMarketplaceAds.length > 0 ? (
+              (() => {
+                const ad = activeMarketplaceAds[currentAdIndex] || activeMarketplaceAds[0];
+                const animClass =
+                  ad.animation === "gradient-wave"
+                    ? "bg-gradient-to-r from-amber-600 via-indigo-900 to-amber-700 animate-pulse"
+                    : ad.animation === "pulse-glow"
+                    ? "border-2 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.35)] bg-slate-900"
+                    : "relative overflow-hidden bg-slate-900 border border-amber-400/40";
+
+                return (
+                  <div
+                    onClick={() => {
+                      try {
+                        const raw = localStorage.getItem("ceo1983_marketplace_ads");
+                        if (raw) {
+                          const list = JSON.parse(raw);
+                          const idx = list.findIndex((x: any) => x.id === ad.id);
+                          if (idx !== -1) {
+                            list[idx].clicks = (list[idx].clicks || 0) + 1;
+                            localStorage.setItem("ceo1983_marketplace_ads", JSON.stringify(list));
+                          }
+                        }
+                      } catch {}
+
+                      if (ad.targetUrl && (ad.targetUrl.startsWith("http://") || ad.targetUrl.startsWith("https://"))) {
+                        window.open(ad.targetUrl, "_blank");
+                      } else {
+                        toast.info(`Quảng cáo từ ${ad.companyName}: ${ad.title}`);
+                      }
+                    }}
+                    className={`self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden cursor-pointer hover:shadow-xl transition group ${animClass}`}
+                  >
+                    {ad.animation === "floating-shine" && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+                    )}
+                    <div className="relative w-full h-36 overflow-hidden bg-slate-950">
+                      {isVideoMedia(ad.bannerUrl) ? (
+                        <video
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          src={ad.bannerUrl}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          src={ad.bannerUrl || "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80"}
+                          alt={ad.title}
+                        />
+                      )}
+                      {activeMarketplaceAds.length > 1 && (
+                        <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] text-white">
+                          <span>{currentAdIndex + 1}/{activeMarketplaceAds.length}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="self-stretch p-4 flex flex-col justify-start items-start gap-2 bg-slate-900/90 backdrop-blur-sm text-white">
+                      <div className="self-stretch inline-flex justify-between items-center">
+                        <div className="px-2 py-0.5 bg-amber-400/20 border border-amber-400/40 rounded-sm flex items-center gap-1">
+                          <Megaphone className="h-3 w-3 text-amber-400" />
+                          <span className="text-amber-300 text-[10px] font-extrabold uppercase tracking-wide">
+                            {ad.badgeText || "TÀI TRỢ / QUẢNG CÁO"}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-300 font-medium">
+                          {ad.companyName}
+                        </span>
+                      </div>
+                      <div className="self-stretch text-white text-base font-bold leading-snug">
+                        {ad.title}
+                      </div>
+                      <div className="self-stretch flex items-center justify-between text-xs text-blue-200">
+                        <span className="text-[11px] text-slate-400">Kích hoạt từ Quản trị CRM Hiệp hội</span>
+                        <span className="font-semibold text-amber-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                          <span>Khám phá ngay</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="opacity-60 justify-start text-white text-xs font-normal font-['Inter']">
-                    Công nghệ &amp; Phần mềm
-                  </div>
-                </div>
-                <div className="self-stretch justify-start text-white text-base font-bold font-['Inter'] leading-snug">
-                  Giải pháp ERP Chuyển đổi số doanh nghiệp quy mô lớn
-                </div>
-                <div className="self-stretch opacity-80 justify-start text-white text-xs font-normal font-['Inter']">
-                  Được bảo trợ bởi Công ty Cổ phần Công nghệ ABC.
-                </div>
-              </div>
-            </div>
+                );
+              })()
+            ) : null}
 
             {/* 4. SẢN PHẨM MỚI ĐĂNG (HORIZONTAL CAROUSEL) */}
             <div className="self-stretch flex flex-col justify-start items-start gap-3">
@@ -1579,134 +1959,12 @@ function ProductsScreen() {
 
                 {/* Horizontal carousel */}
                 <div className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
-                  {/* Card 0: Gói tư vấn pháp lý & đầu tư trọn gói */}
-                  <div 
-                    onClick={() => handleOpenQuoteModal({
-                      id: "prod-figma-0",
-                      name: "Gói tư vấn pháp lý & đầu tư trọn gói",
-                      company: "Pháp lý Việt",
-                      category: "Dịch vụ doanh nghiệp",
-                      price: 45000000,
-                      memberPrice: 45000000,
-                      imageUrl: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80",
-                    } as any)}
-                    className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
-                  >
-                    <img className="self-stretch h-24 object-cover" src="https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80" alt="Pháp lý" />
-                    <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
-                      <div className="self-stretch inline-flex justify-between items-center">
-                        <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
-                          Dịch vụ doanh nghiệp
-                        </div>
-                        <div className="px-1 py-0.5 bg-amber-100 rounded-[3px] flex justify-start items-start shrink-0">
-                          <div className="justify-start text-amber-600 text-[9px] font-bold font-['Inter']">VIP</div>
-                        </div>
-                      </div>
-                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
-                        Gói tư vấn pháp lý &amp; đầu tư trọn gói
-                      </div>
-                      <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
-                        Pháp lý Việt
-                      </div>
-                      <div className="self-stretch inline-flex justify-between items-center pt-0.5">
-                        <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
-                          45 Triệu đ
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => toggleInterest("prod-figma-0", e)}
-                          className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
-                        >
-                          <Heart className={`size-3.5 ${interestedIds.includes("prod-figma-0") ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
-                        </button>
-                      </div>
+                  {/* Dynamic Products from Database */}
+                  {allProducts.length === 0 ? (
+                    <div className="py-6 px-4 text-center w-full">
+                      <p className="text-xs text-slate-400">Chưa có sản phẩm nào trên hệ thống</p>
                     </div>
-                  </div>
-
-                  {/* Card 1: Cung cấp chuỗi vận tải Logistics Xuyên Biên Giới */}
-                  <div 
-                    onClick={() => handleOpenQuoteModal({
-                      id: "prod-figma-1",
-                      name: "Cung cấp chuỗi vận tải Logistics Xuyên Biên Giới",
-                      company: "An Phát Log",
-                      category: "Logistics",
-                      price: 0,
-                      memberPrice: 0,
-                      imageUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80",
-                    } as any)}
-                    className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
-                  >
-                    <img className="self-stretch h-24 object-cover" src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80" alt="Logistics" />
-                    <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
-                      <div className="self-stretch inline-flex justify-between items-center">
-                        <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
-                          Logistics
-                        </div>
-                      </div>
-                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
-                        Cung cấp chuỗi vận tải Logistics Xuyên Biên Giới
-                      </div>
-                      <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
-                        An Phát Log
-                      </div>
-                      <div className="self-stretch inline-flex justify-between items-center pt-0.5">
-                        <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
-                          Thương lượng
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => toggleInterest("prod-figma-1", e)}
-                          className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
-                        >
-                          <Heart className={`size-3.5 ${interestedIds.includes("prod-figma-1") ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Phần mềm HRM quản trị nhân sự thế hệ mới */}
-                  <div 
-                    onClick={() => handleOpenQuoteModal({
-                      id: "prod-figma-2",
-                      name: "Phần mềm HRM quản trị nhân sự thế hệ mới",
-                      company: "ABC Tech",
-                      category: "Công nghệ",
-                      price: 120000000,
-                      memberPrice: 120000000,
-                      imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80",
-                    } as any)}
-                    className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
-                  >
-                    <img className="self-stretch h-24 object-cover" src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80" alt="HRM" />
-                    <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
-                      <div className="self-stretch inline-flex justify-between items-center">
-                        <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
-                          Công nghệ
-                        </div>
-                        <div className="px-1 py-0.5 bg-amber-100 rounded-[3px] flex justify-start items-start shrink-0">
-                          <div className="justify-start text-amber-600 text-[9px] font-bold font-['Inter']">VIP</div>
-                        </div>
-                      </div>
-                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
-                        Phần mềm HRM quản trị nhân sự thế hệ mới
-                      </div>
-                      <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
-                        ABC Tech
-                      </div>
-                      <div className="self-stretch inline-flex justify-between items-center pt-0.5">
-                        <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
-                          120 Triệu đ
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => toggleInterest("prod-figma-2", e)}
-                          className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
-                        >
-                          <Heart className={`size-3.5 ${interestedIds.includes("prod-figma-2") ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  ) : null}
 
                   {/* Dynamic Products from Database */}
                   {allProducts.slice(0, 8).map((p) => {
@@ -1755,108 +2013,112 @@ function ProductsScreen() {
 
             
             {/* 5. SẢN PHẨM MỚI XEM (RECENTLY VIEWED PRODUCTS CAROUSEL) */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-3">
-              <div className="self-stretch px-4 inline-flex justify-between items-center">
-                <div className="justify-start text-sky-950 dark:text-white text-base font-bold font-['Inter'] uppercase tracking-tight flex items-center gap-2">
-                  <Eye className="size-4 text-[#003B95] dark:text-blue-400" />
-                  <span>SẢN PHẨM MỚI XEM</span>
+            {recentlyViewed.length > 0 && (
+              <div className="self-stretch flex flex-col justify-start items-start gap-3">
+                <div className="self-stretch px-4 inline-flex justify-between items-center">
+                  <div className="justify-start text-sky-950 dark:text-white text-base font-bold font-['Inter'] uppercase tracking-tight flex items-center gap-2">
+                    <Eye className="size-4 text-[#003B95] dark:text-blue-400" />
+                    <span>SẢN PHẨM MỚI XEM</span>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium font-mono">
+                    {recentlyViewed.length} sản phẩm
+                  </span>
                 </div>
-                <span className="text-xs text-slate-500 font-medium font-mono">
-                  {recentlyViewed.length} sản phẩm
-                </span>
-              </div>
 
-              {/* Horizontal scroll carousel */}
-              <div className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
-                {recentlyViewed.map((p) => {
-                  const isLiked = interestedIds.includes(p.id);
-                  return (
-                    <div
-                      key={p.id || p._id}
-                      onClick={() => {
-                        trackRecentlyViewed(p);
-                        handleOpenQuoteModal(p);
-                      }}
-                      className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
-                    >
-                      <img className="self-stretch h-24 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"} alt={p.name} />
-                      <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
-                        <div className="self-stretch inline-flex justify-between items-center">
-                          <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
-                            {p.category || "Hội viên"}
-                          </div>
-                          {p.isVip && (
-                            <div className="px-1 py-0.5 bg-amber-100 rounded-[3px] flex justify-start items-start shrink-0">
-                              <div className="justify-start text-amber-600 text-[9px] font-bold font-['Inter']">VIP</div>
+                {/* Horizontal scroll carousel */}
+                <div className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
+                  {recentlyViewed.map((p) => {
+                    const isLiked = interestedIds.includes(p.id);
+                    return (
+                      <div
+                        key={p.id || p._id}
+                        onClick={() => {
+                          trackRecentlyViewed(p);
+                          handleOpenQuoteModal(p);
+                        }}
+                        className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
+                      >
+                        <img className="self-stretch h-24 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"} alt={p.name} />
+                        <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
+                          <div className="self-stretch inline-flex justify-between items-center">
+                            <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
+                              {p.category || "Hội viên"}
                             </div>
-                          )}
-                        </div>
-                        <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
-                          {p.name}
-                        </div>
-                        <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
-                          {p.company || "CEO 1983"}
-                        </div>
-                        <div className="self-stretch inline-flex justify-between items-center pt-0.5">
-                          <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
-                            {p.priceDisplay || formatSmartProductPrice(p.memberPrice || p.price)}
+                            {p.isVip && (
+                              <div className="px-1 py-0.5 bg-amber-100 rounded-[3px] flex justify-start items-start shrink-0">
+                                <div className="justify-start text-amber-600 text-[9px] font-bold font-['Inter']">VIP</div>
+                              </div>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            onClick={(e) => toggleInterest(p.id, e)}
-                            className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
-                          >
-                            <Heart className={`size-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
-                          </button>
+                          <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
+                            {p.name}
+                          </div>
+                          <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
+                            {p.company || "CEO 1983"}
+                          </div>
+                          <div className="self-stretch inline-flex justify-between items-center pt-0.5">
+                            <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
+                              {p.priceDisplay || formatSmartProductPrice(p.memberPrice || p.price)}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => toggleInterest(p.id, e)}
+                              className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
+                            >
+                              <Heart className={`size-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 6. DOANH NGHIỆP NỔI BẬT */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-3">
-              <div className="justify-start text-sky-950 dark:text-white text-sm font-bold font-['Inter']">
-                DOANH NGHIỆP NỔI BẬT
-              </div>
-              <div className="self-stretch p-4 bg-white dark:bg-slate-800 rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start gap-3 shadow-xs">
-                <div className="self-stretch inline-flex justify-start items-center gap-3">
-                  <div className="size-11 bg-sky-950 rounded-full flex justify-center items-center text-amber-400 font-bold overflow-hidden shrink-0 shadow-inner">
-                    <Building2 className="size-5 text-amber-400" />
-                  </div>
-                  <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5">
-                    <div className="self-stretch justify-start text-sky-950 dark:text-white text-sm font-bold font-['Inter'] line-clamp-1">
-                      Tập đoàn Cơ điện Thăng Long
-                    </div>
-                    <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter']">
-                      Xây lắp công nghiệp &amp; hạ tầng cơ điện
-                    </div>
-                  </div>
+            {featuredCompanyProduct && (
+              <div className="self-stretch flex flex-col justify-start items-start gap-3">
+                <div className="justify-start text-sky-950 dark:text-white text-sm font-bold font-['Inter']">
+                  DOANH NGHIỆP NỔI BẬT
                 </div>
-                <div className="self-stretch inline-flex justify-between items-start">
-                  <div className="justify-start text-slate-500 text-xs font-normal font-['Inter']">Xếp hạng:</div>
-                  <div className="justify-start text-emerald-500 text-xs font-bold font-['Inter']">
-                    ★★★★★ Elite Partner
+                <div className="self-stretch p-4 bg-white dark:bg-slate-800 rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start gap-3 shadow-xs">
+                  <div className="self-stretch inline-flex justify-start items-center gap-3">
+                    <div className="size-11 bg-sky-950 rounded-full flex justify-center items-center text-amber-400 font-bold overflow-hidden shrink-0 shadow-inner">
+                      <Building2 className="size-5 text-amber-400" />
+                    </div>
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5">
+                      <div className="self-stretch justify-start text-sky-950 dark:text-white text-sm font-bold font-['Inter'] line-clamp-1">
+                        {featuredCompanyProduct.company}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter']">
+                        {featuredCompanyProduct.category || "Hội viên CLB CEO 1983"}
+                      </div>
+                    </div>
                   </div>
+                  <div className="self-stretch inline-flex justify-between items-start">
+                    <div className="justify-start text-slate-500 text-xs font-normal font-['Inter']">Xếp hạng:</div>
+                    <div className="justify-start text-emerald-500 text-xs font-bold font-['Inter']">
+                      ★★★★★ Elite Partner
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setViewingCompany({
+                      name: featuredCompanyProduct.company || "Hội viên CLB CEO 1983",
+                      bio: featuredCompanyProduct.description || "Doanh nghiệp hội viên trực thuộc CLB CEO 1983.",
+                      avatarUrl: resolveMediaUrl(featuredCompanyProduct.imageUrl) || featuredCompanyProduct.imageUrl || "",
+                      industry: featuredCompanyProduct.category || "Doanh nghiệp",
+                    })}
+                    className="self-stretch px-4 py-2.5 bg-sky-950 rounded-[100px] inline-flex justify-center items-center cursor-pointer hover:bg-sky-900 transition active:scale-[0.98] shadow-xs"
+                  >
+                    <div className="justify-start text-white text-xs font-bold font-['Inter']">
+                      Ghé thăm gian hàng
+                    </div>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setViewingCompany({
-                    name: "Tập đoàn Cơ điện Thăng Long",
-                    bio: "Tập đoàn Cơ điện Thăng Long là đơn vị tổng thầu MEP hàng đầu miền Bắc, chuyên tư vấn thiết kế và thi công hệ thống cơ điện, thông gió, PCCC và trạm biến áp cho các khu công nghiệp, tòa nhà văn phòng và nhà xưởng công nghệ cao.",
-                    avatarUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb1861564?w=400&auto=format&fit=crop&q=80",
-                    industry: "Xây lắp công nghiệp & hạ tầng cơ điện",
-                  })}
-                  className="self-stretch px-4 py-2.5 bg-sky-950 rounded-[100px] inline-flex justify-center items-center cursor-pointer hover:bg-sky-900 transition active:scale-[0.98] shadow-xs"
-                >
-                  <div className="justify-start text-white text-xs font-bold font-['Inter']">
-                    Ghé thăm gian hàng
-                  </div>
-                </button>
               </div>
-            </div>
+            )}
 
           </div>
 
@@ -1936,6 +2198,8 @@ function ProductsScreen() {
           )}
         </div>
       )}
+            </>
+          )}
 
       {/* ── FOOTER BANNER: COMPACT MODERN STRIP ── */}
       <div className="mt-6 mb-4 px-4">
@@ -2739,6 +3003,207 @@ function ProductsScreen() {
         onClose={() => setExcelImportOpen(false)}
         onImportProducts={handleImportExcelProducts}
       />
+
+      {/* Modal Đăng Ký Chạy Quảng Cáo & Affiliate B2B */}
+      {adRegistrationModalOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+              onClick={() => !adSubmitting && setAdRegistrationModalOpen(false)}
+            />
+            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-amber-500/30 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-white max-h-[90vh] flex flex-col">
+              <div className="mb-4 flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 shadow-md">
+                    <Megaphone className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Đăng Ký Quảng Cáo & Affiliate B2B
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Gửi yêu cầu tới Admin Quản trị hệ thống CRM Hiệp hội
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAdRegistrationModalOpen(false)}
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmitAdRequest} className="space-y-3.5 overflow-y-auto pr-1 flex-1">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Tên doanh nghiệp / Công ty <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={adCompany}
+                    onChange={(e) => setAdCompany(e.target.value)}
+                    placeholder="VD: Tập Đoàn Công Nghệ ViConnect"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Người đại diện liên hệ <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={adContactPerson}
+                      onChange={(e) => setAdContactPerson(e.target.value)}
+                      placeholder="VD: Nguyễn Văn A"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Số điện thoại nhận QR <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={adPhone}
+                      onChange={(e) => setAdPhone(e.target.value)}
+                      placeholder="0912 345 678"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Email tiếp nhận
+                    </label>
+                    <input
+                      type="email"
+                      value={adEmail}
+                      onChange={(e) => setAdEmail(e.target.value)}
+                      placeholder="contact@company.com"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Thời lượng chiến dịch
+                    </label>
+                    <select
+                      value={adDurationMonths}
+                      onChange={(e) => setAdDurationMonths(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    >
+                      <option value={1}>1 Tháng (Thử nghiệm)</option>
+                      <option value={3}>3 Tháng (Khuyên dùng)</option>
+                      <option value={6}>6 Tháng (Ưu đãi 15%)</option>
+                      <option value={12}>12 Tháng (Đối tác VIP)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Mục tiêu quảng cáo
+                  </label>
+                  <select
+                    value={adGoal}
+                    onChange={(e) => setAdGoal(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                  >
+                    <option value="Quảng bá sản phẩm / dịch vụ nổi bật tới toàn thể hội viên">
+                      Quảng bá sản phẩm / dịch vụ nổi bật
+                    </option>
+                    <option value="Chiến dịch liên kết Affiliate chia sẻ doanh thu B2B">
+                      Chiến dịch Affiliate chia sẻ doanh thu B2B
+                    </option>
+                    <option value="Banner Top vị trí số 1 Chợ Giao Thương">
+                      Banner Top vị trí số 1 Chợ Giao Thương
+                    </option>
+                    <option value="Ra mắt dòng sản phẩm hoặc dịch vụ thương hiệu mới">
+                      Ra mắt sản phẩm / dịch vụ mới
+                    </option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Ngân sách dự kiến
+                    </label>
+                    <input
+                      type="text"
+                      value={adBudget}
+                      onChange={(e) => setAdBudget(e.target.value)}
+                      placeholder="VD: 10,000,000 đ"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Link sản phẩm / Website
+                    </label>
+                    <input
+                      type="text"
+                      value={adProductLink}
+                      onChange={(e) => setAdProductLink(e.target.value)}
+                      placeholder="https://company.vn/san-pham"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Ghi chú / Yêu cầu cụ thể
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={adNotes}
+                    onChange={(e) => setAdNotes(e.target.value)}
+                    placeholder="Mô tả thông điệp quảng cáo, khuyến mãi hoặc thời gian muốn kích hoạt..."
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300/60 p-3 text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
+                  <div className="flex items-center gap-1.5 font-bold mb-1">
+                    <QrCode className="h-3.5 w-3.5" />
+                    <span>Quy trình thanh toán & duyệt tự động:</span>
+                  </div>
+                  Sau khi bạn gửi thông tin, Admin quản trị hệ thống CRM sẽ nhận được yêu cầu, liên hệ chốt hợp đồng và gửi mã QR thanh toán VietQR. Sau khi thanh toán thành công, Admin sẽ thiết lập banner có hiệu ứng animation hiển thị ngay tại Chợ B2B!
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setAdRegistrationModalOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={adSubmitting}
+                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {adSubmitting ? "Đang gửi..." : "Gửi yêu cầu đến Admin CRM"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

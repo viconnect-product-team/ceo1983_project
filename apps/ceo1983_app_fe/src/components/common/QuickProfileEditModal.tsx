@@ -318,15 +318,15 @@ export function QuickProfileEditModal({
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
-                className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-lg bg-black/60 hover:bg-black/80 text-white text-[10.5px] font-bold backdrop-blur-md flex items-center gap-1 transition cursor-pointer"
+                className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 text-[10.5px] font-bold backdrop-blur-md border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 shadow-xs transition cursor-pointer"
               >
-                <Camera className="h-3 w-3" />
+                <Camera className="h-3 w-3 text-[#003B95] dark:text-blue-400" />
                 <span>Đổi ảnh bìa</span>
               </button>
 
               {/* Company Logo Overlay on Cover Banner (Top-Left or Bottom-Right) */}
-              <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-xl p-1.5 border border-white/20">
-                <div className="h-9 w-9 rounded-lg bg-white/95 grid place-items-center overflow-hidden shrink-0 shadow-xs">
+              <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md rounded-xl p-1.5 border border-slate-200/80 dark:border-slate-700 shadow-xs">
+                <div className="h-9 w-9 rounded-lg bg-white grid place-items-center overflow-hidden shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-800">
                   {companyLogo ? (
                     <img
                       src={resolveMediaUrl(companyLogo) || companyLogo}
@@ -340,7 +340,7 @@ export function QuickProfileEditModal({
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
-                  className="px-2 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-extrabold uppercase transition cursor-pointer"
+                  className="px-2.5 py-1 rounded-md bg-[#003B95] hover:bg-[#002b6e] text-white text-[10px] font-bold uppercase tracking-wider transition cursor-pointer shadow-xs"
                 >
                   {uploadingLogo ? "..." : "Logo công ty"}
                 </button>

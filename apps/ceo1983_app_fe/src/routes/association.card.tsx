@@ -378,17 +378,30 @@ function CardScreen() {
     return localStorage.getItem("vba_member_cover_photo");
   });
   const [coverError, setCoverError] = useState(false);
+  const isBlackLogo = (url?: string | null) => {
+    if (!url) return false;
+    return (
+      url.includes("1lfhzi") ||
+      url.includes("fskz6f") ||
+      url.includes("brand-header-logo-white")
+    );
+  };
+
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     try {
       const direct = localStorage.getItem("vba_member_company_logo");
-      if (direct) return direct;
+      if (direct && !isBlackLogo(direct)) return direct;
+      if (direct && isBlackLogo(direct)) {
+        localStorage.removeItem("vba_member_company_logo");
+      }
       const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
-      if (cp?.companyLogo) return cp.companyLogo;
+      if (cp?.companyLogo && !isBlackLogo(cp.companyLogo)) return cp.companyLogo;
       const mem = JSON.parse(localStorage.getItem("vba_my_member") || "null");
-      if (mem?.companyLogoUrl || mem?.companyLogo) return mem.companyLogoUrl || mem.companyLogo;
+      if (mem?.companyLogoUrl && !isBlackLogo(mem.companyLogoUrl)) return mem.companyLogoUrl;
+      if (mem?.companyLogo && !isBlackLogo(mem.companyLogo)) return mem.companyLogo;
     } catch {}
-    return null;
+    return "/ceo1983-official-logo.png";
   });
 
   useEffect(() => {
@@ -488,6 +501,8 @@ function CardScreen() {
     };
     window.addEventListener("profile-updated", handleProfileUpdate);
     window.addEventListener("vba_profile_updated", handleProfileUpdate);
+    window.addEventListener("avatar-updated", handleProfileUpdate);
+    window.addEventListener("vba_member_avatar_updated", handleProfileUpdate);
     window.addEventListener("contract-updated", handleSyncContractAndPrivacy);
     window.addEventListener("privacy-updated", handleSyncContractAndPrivacy);
     window.addEventListener("vba_member_cover_updated", handleCoverUpdate);
@@ -496,6 +511,8 @@ function CardScreen() {
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
       window.removeEventListener("vba_profile_updated", handleProfileUpdate);
+      window.removeEventListener("avatar-updated", handleProfileUpdate);
+      window.removeEventListener("vba_member_avatar_updated", handleProfileUpdate);
       window.removeEventListener("contract-updated", handleSyncContractAndPrivacy);
       window.removeEventListener("privacy-updated", handleSyncContractAndPrivacy);
       window.removeEventListener("vba_member_cover_updated", handleCoverUpdate);

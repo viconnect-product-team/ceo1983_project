@@ -87,7 +87,19 @@ export function Ceo1983BusinessCardVisit({
   const companyLogoInputRef = useRef<HTMLInputElement>(null);
 
   // User-uploaded logo takes absolute precedence, with companyLogoUrl fallback
-  const displayCompanyLogo = localCompanyLogo || companyLogoUrl;
+  // Reject any stale black-background images and default to transparent official logo
+  const isBlackBackgroundLogo = (url?: string | null) => {
+    if (!url) return false;
+    return (
+      url.includes("1lfhzi") ||
+      url.includes("fskz6f") ||
+      url.includes("brand-header-logo-white")
+    );
+  };
+
+  const validLocalLogo = isBlackBackgroundLogo(localCompanyLogo) ? null : localCompanyLogo;
+  const validCompanyLogoUrl = isBlackBackgroundLogo(companyLogoUrl) ? null : companyLogoUrl;
+  const displayCompanyLogo = validLocalLogo || validCompanyLogoUrl || "/ceo1983-official-logo.png";
   const effectiveQr = qrValue || (cardCode ? `https://ceo1983club.com/card/${cardCode}` : `https://ceo1983club.com`);
 
   const handleCopyLink = async () => {
@@ -207,9 +219,9 @@ export function Ceo1983BusinessCardVisit({
                   setCustomBgImage(null);
                   toast.info("Đã khôi phục nền gốc");
                 }}
-                className="absolute top-2.5 left-2.5 z-20 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] text-white hover:bg-black/80 transition-colors cursor-pointer"
+                className="absolute top-2.5 left-2.5 z-20 px-2.5 py-1 rounded-md bg-white/90 dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700 backdrop-blur-md text-[10px] font-bold shadow-xs hover:bg-white dark:hover:bg-slate-900 transition-colors cursor-pointer"
               >
-                Xóa nền tùy chỉnh
+                Khôi phục nền gốc
               </button>
             </div>
           )}
@@ -237,10 +249,7 @@ export function Ceo1983BusinessCardVisit({
                     src={resolveMediaUrl(displayCompanyLogo) || displayCompanyLogo}
                     alt={company}
                     onError={(e) => {
-                      const fallback = localStorage.getItem("vba_member_company_logo");
-                      if (fallback && fallback !== displayCompanyLogo) {
-                        (e.target as HTMLImageElement).src = fallback;
-                      }
+                      (e.target as HTMLImageElement).src = "/ceo1983-official-logo.png";
                     }}
                     className="max-h-full max-w-full object-contain"
                   />

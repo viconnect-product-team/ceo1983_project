@@ -132,18 +132,52 @@ export function setEventThemeEnabled(enabled: boolean) {
   window.dispatchEvent(new CustomEvent("vba-event-theme-changed", { detail: { enabled } }));
 }
 
+function normalizeTheme(t?: string | null): EventThemeType {
+  if (!t) return "classic";
+  if (t === "noel") return "christmas";
+  if (t === "default") return "classic";
+  if (t === "mid-autumn" || t === "national-day" || t === "christmas" || t === "tet" || t === "none") {
+    return t as EventThemeType;
+  }
+  return "classic";
+}
+
+export function getCrmAppliedTheme(): EventThemeType | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw =
+      localStorage.getItem("ceo1983_active_theme") ||
+      localStorage.getItem("vba_crm_applied_theme") ||
+      localStorage.getItem("vba_app_theme");
+    const normalized = normalizeTheme(raw);
+    return normalized === "classic" || normalized === "none" ? null : normalized;
+  } catch {
+    return null;
+  }
+}
+
 export function getActiveEventThemeType(): EventThemeType {
   if (typeof window === "undefined") return "classic";
-  return (localStorage.getItem(EVENT_THEME_TYPE_KEY) as EventThemeType) || "classic";
+  const crmTheme = getCrmAppliedTheme();
+  if (!crmTheme) return "classic";
+  return isEventThemeEnabled() ? crmTheme : "classic";
 }
 
 export function setActiveEventThemeType(type: EventThemeType) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(EVENT_THEME_TYPE_KEY, type);
-  localStorage.setItem(EVENT_THEME_ENABLED_KEY, "true");
-  localStorage.removeItem(EVENT_THEME_STORAGE_KEY);
+  const crmId = type === "christmas" ? "noel" : type === "classic" ? "default" : type;
+  try {
+    localStorage.setItem(EVENT_THEME_TYPE_KEY, type);
+    localStorage.setItem("ceo1983_active_theme", crmId);
+    localStorage.setItem("vba_crm_applied_theme", crmId);
+    localStorage.setItem("vba_app_theme", crmId);
+    localStorage.setItem(EVENT_THEME_ENABLED_KEY, "true");
+    localStorage.removeItem(EVENT_THEME_STORAGE_KEY);
+  } catch {}
   applyThemeAttributes(type);
   window.dispatchEvent(new CustomEvent("vba-event-theme-changed", { detail: { type } }));
+  window.dispatchEvent(new CustomEvent("ceo1983-theme-changed", { detail: crmId }));
+  window.dispatchEvent(new Event("storage"));
 }
 
 function applyThemeAttributes(theme: EventThemeType) {
@@ -172,10 +206,17 @@ export function SeasonalEventHeader() {
       applyThemeAttributes(current);
     };
     window.addEventListener("vba-event-theme-changed", handleThemeChange);
-    return () => window.removeEventListener("vba-event-theme-changed", handleThemeChange);
+    window.addEventListener("ceo1983-theme-changed", handleThemeChange);
+    window.addEventListener("storage", handleThemeChange);
+    return () => {
+      window.removeEventListener("vba-event-theme-changed", handleThemeChange);
+      window.removeEventListener("ceo1983-theme-changed", handleThemeChange);
+      window.removeEventListener("storage", handleThemeChange);
+    };
   }, [themeType]);
 
-  if (!enabled || themeType === "none" || themeType === "classic") return null;
+  const crmTheme = getCrmAppliedTheme();
+  if (!crmTheme || !enabled || themeType === "none" || themeType === "classic") return null;
 
   // 1. CHỦ ĐỀ TRUNG THU
   if (themeType === "mid-autumn") {

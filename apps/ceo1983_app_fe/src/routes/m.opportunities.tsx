@@ -10,6 +10,7 @@ import {
   type MyOpportunity,
 } from "@/lib/member-app.functions";
 import { useT, useFmt } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
 
 export const Route = createFileRoute("/m/opportunities")({
   component: OpportunitiesScreen,
@@ -44,6 +45,7 @@ const FIGMA_DEFAULT_OPPORTUNITIES = [
 ];
 
 export function OpportunitiesScreen() {
+  const { user } = useAuth();
   const t = useT();
   const fmt = useFmt();
   const fetchOpps = useServerFn(listMyOpportunities);
@@ -53,6 +55,19 @@ export function OpportunitiesScreen() {
     loading,
     reload,
   } = useServerData<MyOpportunity[]>(() => fetchOpps(), []);
+
+  const isOppOwner = (opp: any) => {
+    if (!opp) return false;
+    if (opp.isOwner) return true;
+    if (!user) return false;
+    const uId = String(user.id || "").toLowerCase();
+    const uName = String(user.name || (user as any).fullName || (user as any).user_metadata?.full_name || "").toLowerCase().trim();
+    const posterId = String(opp.posterId || "").toLowerCase();
+    const oppAuthor = String(opp.author || opp.posterName || "").toLowerCase().trim();
+    if (posterId && uId && posterId === uId) return true;
+    if (uName && oppAuthor && uName === oppAuthor) return true;
+    return false;
+  };
 
   const [busy, setBusy] = useState<string | null>(null);
   const [savedOppIds, setSavedOppIds] = useState<string[]>([]);
@@ -114,12 +129,29 @@ export function OpportunitiesScreen() {
             budget: (so as any).budget || "Thương lượng",
             thumbnail: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=300&auto=format&fit=crop&q=80",
             description: (so as any).description || so.title,
+            isOwner: (so as any).isOwner ?? false,
+            posterId: so.posterId,
           });
         }
       }
     }
     return list;
   }, [serverOpps, fmt]);
+
+  const totalCount = combinedOpps.length;
+  const totalValue = useMemo(() => {
+    return combinedOpps.reduce((acc, curr) => {
+      const bStr = (curr.budget || "").replace(/[^0-9]/g, "");
+      const num = parseInt(bStr, 10);
+      return acc + (isNaN(num) ? 0 : num);
+    }, 0);
+  }, [combinedOpps]);
+
+  const formatVnd = (val: number) => {
+    if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)} tỷ đ`;
+    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)} tr đ`;
+    return `${val.toLocaleString("vi-VN")} đ`;
+  };
 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,16 +206,16 @@ export function OpportunitiesScreen() {
       {/* ── SCROLLABLE CONTENT (390px spec according to Figma) ── */}
       <div className="self-stretch px-4 pt-4 pb-28 flex flex-col justify-start items-start gap-5">
         
-        {/* 1. STATS CARD: CƠ HỘI KẾT NỐI (1,248 tin) | TỔNG GIÁ TRỊ (428.5 Tỷ đ) */}
+        {/* 1. STATS CARD */}
         <div className="self-stretch p-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex justify-start items-start gap-4 shadow-xs">
           <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
             <div className="justify-start text-slate-500 text-[10px] font-bold font-['Inter']">CƠ HỘI KẾT NỐI</div>
-            <div className="justify-start text-sky-950 text-lg font-extrabold font-['Inter']">1,248 tin</div>
+            <div className="justify-start text-sky-950 text-lg font-extrabold font-['Inter']">{totalCount > 0 ? `${totalCount} tin` : "0 tin"}</div>
           </div>
           <div className="w-px h-10 bg-slate-200 self-center"></div>
           <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
             <div className="justify-start text-slate-500 text-[10px] font-bold font-['Inter']">TỔNG GIÁ TRỊ</div>
-            <div className="justify-start text-amber-600 text-lg font-extrabold font-['Inter']">428.5 Tỷ đ</div>
+            <div className="justify-start text-amber-600 text-lg font-extrabold font-['Inter']">{totalValue > 0 ? formatVnd(totalValue) : "0 đ"}</div>
           </div>
         </div>
 
@@ -201,49 +233,36 @@ export function OpportunitiesScreen() {
                 <div className="px-2 py-1 bg-amber-600 rounded-md flex justify-start items-start shadow-xs">
                   <div className="justify-start text-white text-[10px] font-extrabold font-['Inter']">HỢP TÁC B2B</div>
                 </div>
-                <div className="px-2 py-1 bg-black/40 backdrop-blur-xs rounded-md flex justify-start items-start">
-                  <div className="justify-start text-white text-[10px] font-semibold font-['Inter']">👁 3,240 lượt xem</div>
-                </div>
               </div>
               <div className="px-2.5 py-1.5 left-[12px] bottom-[12px] absolute bg-amber-100 rounded-md flex justify-start items-start shadow-xs">
-                <div className="justify-start text-amber-600 text-xs font-bold font-['Inter']">Budget: 500M - 1.2 Tỷ VNĐ</div>
+                <div className="justify-start text-amber-600 text-xs font-bold font-['Inter']">Cơ hội kết nối hội viên</div>
               </div>
             </div>
             <div className="self-stretch p-4 flex flex-col justify-start items-start gap-3">
               <div className="self-stretch justify-start text-white text-base font-bold font-['Inter'] leading-5">
-                Cần tìm nhà thầu cung cấp giải pháp chuyển đổi số &amp; CRM ERP cho chuỗi 20 showroom
+                Cơ hội cung cấp giải pháp và hợp tác chuỗi bán lẻ
               </div>
               <div className="self-stretch h-0 border border-white/10"></div>
               <div className="self-stretch inline-flex justify-between items-center">
                 <div className="flex justify-start items-center gap-2">
-                  <img className="size-6 rounded-full object-cover border border-white/30" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80" alt="Avatar" />
+                  <div className="size-6 rounded-full bg-blue-800 text-white flex items-center justify-center text-xs font-bold">CEO</div>
                   <div className="inline-flex flex-col justify-start items-start gap-0.5">
-                    <div className="justify-start text-white text-xs font-bold font-['Inter']">Lê Thị Dung</div>
-                    <div className="justify-start text-indigo-100 text-[10px] font-normal font-['Inter']">Công ty CP Đầu tư GoldLand</div>
+                    <div className="justify-start text-white text-xs font-bold font-['Inter']">Hội viên CEO 1983</div>
+                    <div className="justify-start text-indigo-100 text-[10px] font-normal font-['Inter']">Doanh nghiệp thành viên</div>
                   </div>
                 </div>
-                <div className="justify-start text-indigo-100 text-xs font-normal font-['Inter']">Hạn chót: 20/9/2026</div>
               </div>
-              <div className="self-stretch pt-1 inline-flex justify-start items-start gap-2">
+              <div className="self-stretch pt-1 inline-flex justify-start items-start">
                 <button 
                   type="button"
                   onClick={() => setContactModalOpp({
-                    author: "Lê Thị Dung",
-                    company: "Công ty CP Đầu tư GoldLand",
-                    title: "Cần tìm nhà thầu cung cấp giải pháp chuyển đổi số & CRM ERP cho chuỗi 20 showroom",
+                    author: "Hội viên CEO 1983",
+                    company: "CLB Doanh Nhân CEO 1983",
+                    title: "Cơ hội cung cấp giải pháp và hợp tác chuỗi bán lẻ",
                   })}
-                  className="flex-1 px-3 py-2.5 bg-white rounded-lg flex justify-center items-center gap-1.5 cursor-pointer hover:bg-slate-100 transition active:scale-[0.98]"
+                  className="w-full px-3 py-2.5 bg-white rounded-lg flex justify-center items-center gap-1.5 cursor-pointer hover:bg-slate-100 transition active:scale-[0.98]"
                 >
                   <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">Liên hệ ngay</div>
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => toggleSave("opp-featured")}
-                  className="flex-1 px-3 py-2.5 bg-white/10 rounded-lg flex justify-center items-center gap-1.5 cursor-pointer hover:bg-white/20 transition active:scale-[0.98]"
-                >
-                  <div className="justify-start text-white text-xs font-bold font-['Inter']">
-                    {savedOppIds.includes("opp-featured") ? "Đã lưu tin" : "Lưu tin"}
-                  </div>
                 </button>
               </div>
             </div>
@@ -302,18 +321,24 @@ export function OpportunitiesScreen() {
                       <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">
                         {opp.budget}
                       </div>
-                      <button 
-                        type="button"
-                        onClick={(e) => handleInterest(opp.id, e)}
-                        disabled={busy === opp.id}
-                        className={`px-4 py-1.5 rounded-md flex justify-start items-start cursor-pointer transition active:scale-95 ${
-                          isInterested ? "bg-emerald-600 text-white" : "bg-sky-950 text-white hover:bg-sky-900"
-                        }`}
-                      >
-                        <div className="justify-start text-white text-xs font-bold font-['Inter']">
-                          {isInterested ? "✓ Đã quan tâm" : "Quan tâm"}
+                      {isOppOwner(opp) ? (
+                        <div className="px-3 py-1.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-1">
+                          <span>Cơ hội của bạn</span>
                         </div>
-                      </button>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={(e) => handleInterest(opp.id, e)}
+                          disabled={busy === opp.id}
+                          className={`px-4 py-1.5 rounded-md flex justify-start items-start cursor-pointer transition active:scale-95 ${
+                            isInterested ? "bg-emerald-600 text-white" : "bg-sky-950 text-white hover:bg-sky-900"
+                          }`}
+                        >
+                          <div className="justify-start text-white text-xs font-bold font-['Inter']">
+                            {isInterested ? "✓ Đã quan tâm" : "Quan tâm"}
+                          </div>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -527,30 +552,41 @@ export function OpportunitiesScreen() {
               {detailOpp.description}
             </p>
 
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setContactModalOpp(detailOpp);
-                  setDetailOpp(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-slate-50"
-              >
-                <Phone className="size-4" />
-                <span>Liên hệ đối tác</span>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  handleInterest(detailOpp.id, e);
-                  setDetailOpp(null);
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-sky-950 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-sky-900 transition"
-              >
-                <Check className="size-4" />
-                <span>Gửi quan tâm</span>
-              </button>
-            </div>
+            {isOppOwner(detailOpp) ? (
+              <div className="w-full p-3 bg-amber-50 border border-amber-200 rounded-xl text-center space-y-1">
+                <p className="text-xs font-bold text-amber-900">
+                  Đây là cơ hội kinh doanh do chính Quý CEO đăng tải
+                </p>
+                <p className="text-[11px] text-amber-700/90">
+                  Hệ thống tự động tiếp nhận hồ sơ quan tâm từ các đối tác nội khối và thông báo đến Quý CEO.
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContactModalOpp(detailOpp);
+                    setDetailOpp(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-slate-50"
+                >
+                  <Phone className="size-4" />
+                  <span>Liên hệ đối tác</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    handleInterest(detailOpp.id, e);
+                    setDetailOpp(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-sky-950 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-sky-900 transition"
+                >
+                  <Check className="size-4" />
+                  <span>Gửi quan tâm</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

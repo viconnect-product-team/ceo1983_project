@@ -17,6 +17,9 @@ import {
   CheckCircle2,
   Sparkles,
   Download,
+  XCircle,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -29,6 +32,7 @@ import { EventAgenda } from "@/components/dashboard/EventAgenda";
 import { EventSponsors } from "@/components/dashboard/EventSponsors";
 import { EventFeed } from "@/components/dashboard/EventFeed";
 import { EventQrConfigModal } from "@/components/dashboard/EventQrConfigModal";
+import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGatekeeperModal";
 import {
   type EventItem,
   type Registration,
@@ -57,37 +61,7 @@ export const Route = createFileRoute("/events/$eventId")({
     }
 
     if (!resolvedEvent) throw notFound();
-    let finalRegistrations = Array.isArray(registrations) ? registrations : [];
-    if (finalRegistrations.length === 0 && (resolvedEvent?.registered ?? 0) > 0) {
-      const defaultMembers = [
-        { code: "M1983-001", name: "Platform Administrator", email: "admin1@connect.vn", phone: "0901000001", seat: "Bàn VIP 01 - Ghế 01", ticket: "VIP" },
-        { code: "M1983-002", name: "Quản trị viên Hệ thống", email: "admin@connect.vn", phone: "0901000002", seat: "Bàn VIP 01 - Ghế 02", ticket: "VIP" },
-        { code: "M1983-003", name: "James Nguyễn", email: "jamesnguyen@uranustech.vn", phone: "0901000003", seat: "Bàn VIP 01 - Ghế 03", ticket: "VIP" },
-        { code: "M1983-004", name: "Demo User", email: "demo.user@ceo1983.com", phone: "0901000004", seat: "Bàn VIP 01 - Ghế 04", ticket: "VIP" },
-        { code: "M1983-005", name: "Nguyen Hoang Nam", email: "peer1@ceo1983.com", phone: "0901000005", seat: "Bàn VIP 01 - Ghế 05", ticket: "VIP" },
-        { code: "M1983-006", name: "Tran Thu Thao", email: "peer2@ceo1983.com", phone: "0901000006", seat: "Bàn Giao Thương 02 - Ghế 01", ticket: "Tiêu chuẩn" },
-        { code: "M1983-007", name: "Lê Hoàng Long", email: "ceo.tongthuky@ceo1983.com", phone: "0983000001", seat: "Bàn Giao Thương 02 - Ghế 02", ticket: "Tiêu chuẩn" },
-        { code: "M1983-008", name: "Nguyễn Văn Cường", email: "ceo.thanhvien@ceo1983.com", phone: "0983000002", seat: "Bàn Giao Thương 02 - Ghế 03", ticket: "Tiêu chuẩn" },
-        { code: "M1983-009", name: "Vũ Thu Trang", email: "ceo.taichinh@ceo1983.com", phone: "0983000003", seat: "Bàn Giao Thương 02 - Ghế 04", ticket: "Tiêu chuẩn" },
-        { code: "M1983-010", name: "Phạm Quang Huy", email: "ceo.truyenthong@ceo1983.com", phone: "0983000004", seat: "Bàn Giao Thương 02 - Ghế 05", ticket: "Tiêu chuẩn" },
-      ];
-      finalRegistrations = defaultMembers.map((m, idx) => ({
-        id: `REG-1983-${String(idx + 1).padStart(3, "0")}`,
-        eventId: resolvedEvent.id,
-        memberCode: m.code,
-        memberName: m.name,
-        email: m.email,
-        phone: m.phone,
-        registeredAt: new Date(Date.now() - (10 - idx) * 86400000).toISOString().slice(0, 10),
-        status: "confirmed",
-        ticketType: m.ticket,
-        seatAssignment: m.seat,
-        paymentStatus: "paid",
-        paymentMethod: "bank",
-        paymentAmount: m.ticket === "VIP" ? 2000000 : 1000000,
-        checkedInAt: idx < 4 ? new Date().toISOString() : null,
-      }));
-    }
+    const finalRegistrations = Array.isArray(registrations) ? registrations : [];
 
     return {
       event: resolvedEvent,
@@ -178,18 +152,64 @@ function EventDetailPage() {
   const canManage = isAdmin || isPlatformAdmin;
 
   const [editOpen, setEditOpen] = useState(false);
+  const [gatekeeperOpen, setGatekeeperOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [refundPolicy, setRefundPolicy] = useState(
+    "Hoàn tiền 100% cho đại biểu qua tài khoản ngân hàng trong vòng 3 - 5 ngày làm việc."
+  );
+  const [cancelling, setCancelling] = useState(false);
 
   const countdown = useCountdown(event.date, event.status);
   const s = STATUS_TONE[event.status] ?? STATUS_TONE.upcoming;
   const cancelled = event.status === "cancelled";
 
+  const isPaidEvent = useMemo(() => {
+    if (tickets && tickets.some((tk) => Number(tk.price || 0) > 0)) return true;
+    if (registrations && registrations.some((r) => Number(r.paymentAmount || 0) > 0)) return true;
+    return false;
+  }, [tickets, registrations]);
+
+  const onCancelEvent = async () => {
+    if (!cancelReason.trim()) {
+      toast.error("Vui lòng nhập lý do hủy sự kiện");
+      return;
+    }
+    setCancelling(true);
+    try {
+      await fetchNestApi(`/events/${event.id}/cancel-event`, {
+        method: "POST",
+        body: JSON.stringify({
+          reason: cancelReason.trim(),
+          refundPolicy: isPaidEvent ? refundPolicy.trim() : undefined,
+        }),
+      });
+      toast.success("Đã hủy sự kiện và gửi thông báo, tin nhắn đến tất cả người tham dự!");
+      setCancelModalOpen(false);
+      await router.invalidate();
+    } catch (err: any) {
+      console.error("[EventDetail] Cancel error:", err);
+      toast.error(err?.message || "Không thể hủy sự kiện. Vui lòng thử lại!");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const fields: CrudField[] = [
     { name: "name", label: t("events.col.event"), type: "text", required: true },
+    { name: "image", label: "Ảnh banner sự kiện (URL / Upload)", type: "image" },
     { name: "date", label: t("events.col.date"), type: "date", required: true },
     { name: "location", label: t("events.col.location"), type: "text" },
     { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
+    {
+      name: "qrStaff",
+      label: "Người thực hiện quét mã QR tại sự kiện",
+      type: "text",
+      placeholder: "VD: Ban Lễ Tân — 0983 198 383",
+    },
+    { name: "description", label: "Mô tả / Thông tin sự kiện", type: "textarea" },
     {
       name: "type",
       label: t("events.col.type"),
@@ -220,6 +240,9 @@ function EventDetailPage() {
       const payload = {
         ...v,
         capacity: v.capacity ? Number(v.capacity) : 0,
+        imageUrl: v.image || (v as any).imageUrl,
+        qrStaff: v.qrStaff || (v as any).qrStaff,
+        description: v.description || (v as any).description,
       };
       await fetchNestApi(`/events/${event.id}`, {
         method: "PUT",
@@ -275,15 +298,56 @@ function EventDetailPage() {
         <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t("edetail.back")}
       </Link>
 
+      {/* Cancellation Alert Banner */}
+      {cancelled && (
+        <div className="mb-5 rounded-2xl border-2 border-red-500/50 bg-red-50 dark:bg-red-950/40 p-4 text-red-900 dark:text-red-200 shadow-sm flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="font-bold text-sm text-red-900 dark:text-red-200">
+              Sự kiện này đã bị hủy bỏ bởi Ban Tổ Chức
+            </h4>
+            {(event as any).cancelReason && (
+              <p className="text-xs text-red-800 dark:text-red-300">
+                <span className="font-semibold">Lý do hủy:</span> {(event as any).cancelReason}
+              </p>
+            )}
+            {(event as any).refundPolicy && (
+              <p className="text-xs text-red-700 dark:text-red-400">
+                <span className="font-semibold">Chính sách hoàn tiền:</span> {(event as any).refundPolicy}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-border shadow-[var(--shadow-card)]">
-        <div className="relative p-5 md:p-10" style={{ background: TYPE_COVER[event.type] }}>
-          <div
-            className="absolute inset-0 opacity-25"
-            style={{ background: "radial-gradient(circle at 85% 12%, white, transparent 55%)" }}
-            aria-hidden="true"
-          />
-          <div className="relative">
+      <section className="relative overflow-hidden rounded-3xl border border-border shadow-[var(--shadow-card)] min-w-0 w-full">
+        <div className="relative min-h-[240px] md:min-h-[300px] p-5 md:p-10 flex flex-col justify-end">
+          {(() => {
+            const typeFallbacks: Record<string, string> = {
+              forum: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=80",
+              workshop: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1600&q=80",
+              networking: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1600&q=80",
+              training: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1600&q=80",
+            };
+            const fallback = typeFallbacks[event.type] || typeFallbacks.forum;
+            const cover = (event as any).imageUrl || (event as any).image || (event as any).bannerUrl || (event as any).coverUrl || fallback;
+            return (
+              <>
+                <img
+                  src={cover}
+                  alt={event.name}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                  onError={(ev) => {
+                    const target = ev.target as HTMLImageElement;
+                    if (target.src !== fallback) target.src = fallback;
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/65 to-slate-950/35" />
+              </>
+            );
+          })()}
+          <div className="relative z-10">
             <div className="mb-3 flex flex-wrap items-center gap-2 md:mb-4">
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
@@ -299,21 +363,26 @@ function EventDetailPage() {
               <span className="inline-flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground backdrop-blur">
                 <Tag className="h-3.5 w-3.5" aria-hidden="true" /> {t(TYPE_KEY[event.type])}
               </span>
+              {(event as any).qrStaff && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 px-3 py-1 text-xs font-semibold text-amber-300 backdrop-blur">
+                  <QrCode className="h-3.5 w-3.5" aria-hidden="true" /> Gatekeeper: {(event as any).qrStaff}
+                </span>
+              )}
             </div>
-            <h1 className="max-w-3xl text-xl font-bold text-primary-foreground drop-shadow-sm sm:text-2xl md:text-4xl">
+            <h1 className="max-w-3xl text-xl font-bold text-white drop-shadow-md sm:text-2xl md:text-4xl break-words">
               {event.name}
             </h1>
-            <div className="mt-3 flex flex-col gap-1.5 text-sm font-medium text-primary-foreground/90 sm:flex-row sm:flex-wrap sm:gap-4 md:mt-4">
+            <div className="mt-3 flex flex-col gap-1.5 text-sm font-medium text-white/90 sm:flex-row sm:flex-wrap sm:gap-4 md:mt-4">
               <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />{" "}
+                <CalendarDays className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />{" "}
                 {fmt.date(event.date)}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />{" "}
-                <span className="truncate">{event.location || "—"}</span>
+                <MapPin className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />{" "}
+                <span className="truncate max-w-xs">{event.location || "—"}</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Users className="h-4 w-4 shrink-0" aria-hidden="true" /> {event.registered}/
+                <Users className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" /> {event.registered}/
                 {event.capacity}
               </span>
             </div>
@@ -357,6 +426,14 @@ function EventDetailPage() {
             </button>
             {canManage && (
               <>
+                <button
+                  type="button"
+                  onClick={() => setGatekeeperOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-500/20 transition"
+                >
+                  <QrCode className="h-4 w-4" aria-hidden="true" />
+                  Quản lý QR Gatekeeper
+                </button>
                 <Link
                   to="/checkin"
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
@@ -372,13 +449,23 @@ function EventDetailPage() {
                   {t("edetail.cta.manageReg")}
                 </Link>
                 {!cancelled && (
-                  <button
-                    onClick={onDelete}
-                    disabled={deleting}
-                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" /> {t("events.delete")}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setCancelModalOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/20 transition cursor-pointer"
+                    >
+                      <XCircle className="h-4 w-4" aria-hidden="true" />
+                      Hủy sự kiện
+                    </button>
+                    <button
+                      onClick={onDelete}
+                      disabled={deleting}
+                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" /> {t("events.delete")}
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => setEditOpen(true)}
@@ -394,7 +481,7 @@ function EventDetailPage() {
       </section>
 
       {/* Summary cards */}
-      <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <SummaryCard
           icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
           label={t("edetail.summary.datetime")}
@@ -416,6 +503,11 @@ function EventDetailPage() {
           value={String(event.capacity)}
         />
         <SummaryCard
+          icon={<QrCode className="h-4 w-4 text-amber-500" aria-hidden="true" />}
+          label="Phụ trách QR Cổng"
+          value={(event as any).qrStaff || "Chưa phân công"}
+        />
+        <SummaryCard
           icon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
           label={t("edetail.summary.status")}
           value={t(STATUS_KEY[event.status])}
@@ -428,9 +520,9 @@ function EventDetailPage() {
       </div>
 
       {/* Main content */}
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr] min-w-0 w-full overflow-hidden">
         {/* Left: overview + attendees */}
-        <div className="space-y-5">
+        <div className="space-y-5 min-w-0 w-full overflow-hidden">
           <section className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
             <h2 className="mb-3 text-base font-semibold text-foreground">
               {t("edetail.overview.title")}
@@ -450,7 +542,7 @@ function EventDetailPage() {
         </div>
 
         {/* Right: registration + check-in panels */}
-        <aside className="space-y-5">
+        <aside className="space-y-5 min-w-0 w-full overflow-hidden">
           <EventRegistrationPanel
             event={event}
             registrations={registrations}
@@ -463,6 +555,14 @@ function EventDetailPage() {
       {/* Sticky mobile action bar (sits above the bottom tab bar) */}
       {canManage && (
         <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-2 border-t border-border bg-card/95 p-3 backdrop-blur md:hidden">
+          <button
+            type="button"
+            onClick={() => setGatekeeperOpen(true)}
+            aria-label="Quản lý QR Gatekeeper"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-600 transition active:scale-95"
+          >
+            <QrCode className="h-5 w-5" aria-hidden="true" />
+          </button>
           <Link
             to="/event-registrations"
             aria-label={t("edetail.cta.manageReg")}
@@ -499,6 +599,90 @@ function EventDetailPage() {
         onSubmit={onSubmit}
         onClose={() => setEditOpen(false)}
       />
+
+      <EventCheckinGatekeeperModal
+        open={gatekeeperOpen}
+        event={event}
+        onClose={() => setGatekeeperOpen(false)}
+        onUpdateEvent={() => router.invalidate()}
+      />
+
+      {/* Event Cancel Confirmation Modal */}
+      {cancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl bg-card border border-border p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                <h3 className="text-base font-bold">Xác nhận hủy sự kiện</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelModalOpen(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-muted cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Khi hủy sự kiện, trạng thái sự kiện sẽ chuyển thành <b>Đã hủy (Cancelled)</b>. Hệ thống sẽ tự động{" "}
+              <b>gửi thông báo đẩy (push notifications)</b> và <b>gửi tin nhắn trực tiếp vào hộp thư (inbox messages)</b> đến
+              toàn bộ đại biểu / người đã đăng ký tham dự.
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">
+                Lý do hủy sự kiện <span className="text-destructive">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Nhập lý do chi tiết để thông báo cho người tham dự (VD: Thay đổi kế hoạch của Ban Điều Hành, lý do bất khả kháng...)"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:border-destructive focus:outline-none"
+              />
+            </div>
+
+            {isPaidEvent && (
+              <div className="space-y-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3 text-amber-900 dark:text-amber-200">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+                  <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+                  <span>Chính sách hoàn tiền (Sự kiện có thu phí)</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  Sự kiện này có người tham gia có phí. Theo quy chế của Hiệp hội, các khoản phí đã thanh toán sẽ được
+                  hoàn trả trong vòng 3 - 5 ngày làm việc.
+                </p>
+                <input
+                  type="text"
+                  value={refundPolicy}
+                  onChange={(e) => setRefundPolicy(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-amber-400/50 bg-background px-3 py-1.5 text-xs font-semibold text-foreground focus:outline-none"
+                />
+              </div>
+            )}
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setCancelModalOpen(false)}
+                className="flex-1 rounded-xl border border-border py-2.5 text-xs font-bold text-foreground hover:bg-muted cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                disabled={cancelling || !cancelReason.trim()}
+                onClick={onCancelEvent}
+                className="flex-1 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground py-2.5 text-xs font-bold disabled:opacity-50 cursor-pointer"
+              >
+                {cancelling ? "Đang xử lý..." : "Xác nhận hủy sự kiện"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

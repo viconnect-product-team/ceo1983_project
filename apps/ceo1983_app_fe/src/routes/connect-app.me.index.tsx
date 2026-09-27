@@ -24,7 +24,9 @@ import {
   Trophy,
   Upload,
   X,
+  BookOpen,
 } from "lucide-react";
+import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { useT, useLang } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
@@ -72,15 +74,15 @@ import type {
 export const Route = createFileRoute("/connect-app/me/")({
   head: () => ({
     meta: [
-      { title: "Tôi — Business Connect" },
+      { title: "Tôi — ViOne" },
       {
         name: "description",
-        content: "Danh tính số và danh thiếp điện tử của bạn trên Business Connect.",
+        content: "Danh tính số và danh thiếp điện tử của bạn trên ViOne.",
       },
-      { property: "og:title", content: "Tôi — Business Connect" },
+      { property: "og:title", content: "Tôi — ViOne" },
       {
         property: "og:description",
-        content: "Danh tính số và danh thiếp điện tử của bạn trên Business Connect.",
+        content: "Danh tính số và danh thiếp điện tử của bạn trên ViOne.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -218,6 +220,7 @@ function ConnectAppMePage() {
   const [rotating, setRotating] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoadFailed(false);
@@ -748,6 +751,38 @@ function ConnectAppMePage() {
               <ThemeSettingRow />
             </SectionCard>
 
+            {/* Hướng dẫn sử dụng & Trợ giúp */}
+            <SectionCard title={lang === "en" ? "Help & User Guide" : "Hướng dẫn & Trợ giúp"}>
+              <button
+                type="button"
+                onClick={() => setGuideOpen(true)}
+                className={rowClass}
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <BookOpen
+                    aria-hidden="true"
+                    className="h-4.5 w-4.5 shrink-0 text-[var(--bc-mobile-muted)]"
+                    strokeWidth={1.8}
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-semibold">
+                      {lang === "en" ? "App User Guide (10 Features)" : "Hướng dẫn sử dụng ứng dụng (10 chức năng)"}
+                    </span>
+                    <span className="block truncate text-[12px] font-normal text-[var(--bc-mobile-muted)]">
+                      {lang === "en"
+                        ? "AI card scan, NFC tap, B2B trading & walkthrough"
+                        : "Quét danh thiếp AI, chạm NFC, giao thương B2B & chỉ dẫn chi tiết"}
+                    </span>
+                  </span>
+                </span>
+                <ChevronRight
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 text-[var(--bc-mobile-muted)]"
+                  strokeWidth={1.8}
+                />
+              </button>
+            </SectionCard>
+
             <SectionCard title={t("bc.mobile.me.accountSection.title")}>
               <Link to="/connect-app/me/security" className={rowClass}>
                 <span className="flex items-center gap-3">{t("bc.mobile.me.accountSecurity")}</span>
@@ -906,6 +941,9 @@ function ConnectAppMePage() {
           canAdd
         />
       )}
+
+      {/* Trung tâm Hướng dẫn sử dụng (10 chức năng) */}
+      <UserGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </MobilePage>
   );
 }

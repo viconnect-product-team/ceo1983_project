@@ -346,7 +346,16 @@ function BusinessCardsScreen() {
       <CardEditor
         draft={editing}
         onClose={handleCloseEditor}
-        onSaved={() => {
+        onSaved={(savedDraft) => {
+          if (savedDraft) {
+            setCards((prev) =>
+              prev.map((c) =>
+                (savedDraft.id && c.id === savedDraft.id) || (savedDraft.slug && c.slug === savedDraft.slug)
+                  ? ({ ...c, ...savedDraft } as BusinessCardSummary)
+                  : c
+              )
+            );
+          }
           handleCloseEditor();
           void refresh();
         }}
@@ -1577,9 +1586,10 @@ function CardRow({
       ? localStorage.getItem(`vba_card_avatar_${card.id}`) ||
         localStorage.getItem(`vba_card_avatar_${card.slug}`) ||
         localStorage.getItem(`vba_secondary_card_avatar_${card.id}`) ||
-        localStorage.getItem(`vba_secondary_card_avatar_${card.slug}`)
+        localStorage.getItem(`vba_secondary_card_avatar_${card.slug}`) ||
+        ((card as any).isPrimary ? localStorage.getItem("vba_member_avatar_photo") : null)
       : null;
-  const effectiveAvatar = card.avatarUrl || cachedCardAvatar || null;
+  const effectiveAvatar = cachedCardAvatar || card.avatarUrl || null;
   const resolvedAvatar = effectiveAvatar
     ? (effectiveAvatar.startsWith("data:") || effectiveAvatar.startsWith("blob:")
         ? effectiveAvatar
@@ -1805,7 +1815,7 @@ function CardEditor({
 }: {
   draft: Draft;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (savedDraft?: Draft) => void;
 }) {
   const t = useT();
   const save = useServerFn(saveBusinessCardFn);
@@ -1885,7 +1895,7 @@ function CardEditor({
         }
       } catch {}
       toast.success(t("bc.saved"));
-      onSaved();
+      onSaved(d);
     } catch (e) {
       toast.error(t(cardPermissionErrorKey(e)));
     } finally {

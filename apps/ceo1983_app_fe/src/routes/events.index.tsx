@@ -8,6 +8,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  QrCode,
   Search,
   Sparkles,
   Star,
@@ -22,6 +23,7 @@ import { PageHeader, StatCard } from "@/components/dashboard/PageKit";
 import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { EventWizard } from "@/components/dashboard/EventWizard";
+import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGatekeeperModal";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
@@ -40,6 +42,8 @@ import {
 } from "@/lib/event-prefs";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv";
+import { useServerFn } from "@tanstack/react-start";
+import { createNotificationFn } from "@/lib/notifications.functions";
 
 export const Route = createFileRoute("/events/")({
   ssr: false,
@@ -111,6 +115,7 @@ function EventsPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
+  const createNotif = useServerFn(createNotificationFn);
   const events = Route.useLoaderData() as EventItem[];
 
   const [q, setQ] = useState("");
@@ -124,6 +129,7 @@ function EventsPage() {
   const [open, setOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editing, setEditing] = useState<EventItem | null>(null);
+  const [qrGatekeeperEvent, setQrGatekeeperEvent] = useState<EventItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -142,6 +148,13 @@ function EventsPage() {
     { name: "date", label: t("events.col.date"), type: "date", required: true },
     { name: "location", label: t("events.col.location"), type: "text" },
     { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
+    {
+      name: "qrStaff",
+      label: "Người thực hiện quét mã QR tại sự kiện",
+      type: "text",
+      placeholder: "VD: Ban Lễ Tân — 0983 198 383",
+    },
+    { name: "description", label: "Mô tả / Thông tin sự kiện", type: "textarea" },
     {
       name: "type",
       label: t("events.col.type"),
@@ -184,6 +197,24 @@ function EventsPage() {
           method: "POST",
           body: JSON.stringify(payload),
         });
+        // Phát thông báo in-app đồng bộ tới Member App
+        try {
+          await createNotif({
+            data: {
+              title: `[Sự kiện mới] ${(payload as any).name || "Sự kiện Hiệp hội CEO 1983"}`,
+              body: `Sự kiện "${(payload as any).name || ""}" diễn ra vào ${(payload as any).startDate || (payload as any).date || "sắp tới"} tại ${(payload as any).location || "Hội trường CLB CEO 1983"}. Kính mời toàn thể Quý Hội viên đăng ký tham gia!`,
+              category: "event",
+              audience: "all",
+              channel: "inapp",
+              appScope: "all",
+              targetApp: "all",
+              status: "sent",
+              actionUrl: `/association/events`,
+            },
+          });
+        } catch (notifErr) {
+          console.warn("[Events] Could not dispatch notification:", notifErr);
+        }
         toast.success(t("common.created"));
       }
       setOpen(false);
@@ -647,8 +678,20 @@ function EventsPage() {
                           {t(STATUS_KEY[e.status as EventItem["status"]] ?? "events.status.upcoming")}
                         </span>
                       </td>
-                      <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                      <td className="sticky right-0 z-10 min-w-[170px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                         <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            title="Quản lý Check-in & QR Gatekeeper"
+                            onClick={(evt) => {
+                              evt.stopPropagation();
+                              setQrGatekeeperEvent(e);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 transition"
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                            <span className="hidden xl:inline text-[11px]">QR Gate</span>
+                          </button>
                           <Link
                             to="/events/$eventId"
                             params={{ eventId: e.id }}
@@ -704,6 +747,7 @@ function EventsPage() {
                   setOpen(true);
                 }}
                 onDelete={() => onDelete(e)}
+                onQrGatekeeper={() => setQrGatekeeperEvent(e)}
               />
             ))}
           </div>
@@ -745,6 +789,13 @@ function EventsPage() {
           router.invalidate();
           router.navigate({ to: "/events/$eventId", params: { eventId: ev.id } });
         }}
+      />
+
+      <EventCheckinGatekeeperModal
+        open={!!qrGatekeeperEvent}
+        event={qrGatekeeperEvent}
+        onClose={() => setQrGatekeeperEvent(null)}
+        onUpdateEvent={() => router.invalidate()}
       />
     </AppShell>
   );
@@ -801,11 +852,13 @@ function EventCard({
   deleting,
   onEdit,
   onDelete,
+  onQrGatekeeper,
 }: {
   event: EventItem;
   deleting: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onQrGatekeeper?: () => void;
 }) {
   const t = useT();
   const fmt = useFmt();
@@ -854,6 +907,15 @@ function EventCard({
             {e.name}
           </Link>
           <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={onQrGatekeeper}
+              aria-label="Quản lý Check-in & Gatekeeper QR"
+              title="Quản lý Check-in & Gatekeeper QR"
+              className="rounded-lg p-1.5 text-amber-600 transition hover:bg-amber-500/15 hover:text-amber-700"
+            >
+              <QrCode className="h-4 w-4" aria-hidden="true" />
+            </button>
             <button
               type="button"
               onClick={onEdit}

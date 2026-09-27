@@ -15,17 +15,17 @@ export const Route = createFileRoute("/connect-app/network/")({
   }),
   head: () => ({
     meta: [
-      { title: "Network — Business Connect" },
+      { title: "Network — ViOne" },
       {
         name: "description",
         content:
-          "Những người bạn có quan hệ trên Business Connect — tìm kiếm nhanh, kết nối lại dễ dàng.",
+          "Những người bạn có quan hệ trên ViOne — tìm kiếm nhanh, kết nối lại dễ dàng.",
       },
-      { property: "og:title", content: "Network — Business Connect" },
+      { property: "og:title", content: "Network — ViOne" },
       {
         property: "og:description",
         content:
-          "Những người bạn có quan hệ trên Business Connect — tìm kiếm nhanh, kết nối lại dễ dàng.",
+          "Những người bạn có quan hệ trên ViOne — tìm kiếm nhanh, kết nối lại dễ dàng.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

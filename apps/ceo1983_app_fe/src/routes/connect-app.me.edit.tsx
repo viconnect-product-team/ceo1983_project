@@ -7,12 +7,12 @@ export const Route = createFileRoute("/connect-app/me/edit")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Chỉnh sửa danh tính — Business Connect" },
+      { title: "Chỉnh sửa danh tính — ViOne" },
       {
         name: "description",
         content: "Cập nhật chức danh, công ty và thông tin liên hệ trên danh tính số của bạn.",
       },
-      { property: "og:title", content: "Chỉnh sửa danh tính — Business Connect" },
+      { property: "og:title", content: "Chỉnh sửa danh tính — ViOne" },
       {
         property: "og:description",
         content: "Cập nhật chức danh, công ty và thông tin liên hệ trên danh tính số của bạn.",

@@ -2370,7 +2370,29 @@ html:has([contenteditable="true"]:focus) .vba-bottom-bar {
   animation: robot-listening 1.4s ease-in-out infinite;
 }
 
-
-
-
+/* Custom tokens for Vione CRM Figma import */
+.bg-Secondary-600 {
+  background-color: #2563eb;
+}
+.text-Secondary-600 {
+  color: #2563eb;
+}
+.outline-Secondary-600 {
+  outline-color: #2563eb;
+}
+.border-Secondary-600 {
+  border-color: #2563eb;
+}
+.bg-Primary-400 {
+  background-color: #38bdf8;
+}
+.text-Primary-400 {
+  color: #38bdf8;
+}
+.outline-Primary-400 {
+  outline-color: #38bdf8;
+}
+.border-Primary-400 {
+  border-color: #38bdf8;
+}
 

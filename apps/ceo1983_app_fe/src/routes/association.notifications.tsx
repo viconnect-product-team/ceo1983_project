@@ -85,7 +85,7 @@ export const Route = createFileRoute("/association/notifications")({
 });
 
 const iconFor = (t: MyNotification["type"]) =>
-  t === "event"
+  t === "event" || (t as any) === "meeting"
     ? Calendar
     : t === "fee"
       ? Wallet
@@ -645,10 +645,10 @@ function NotificationsScreen() {
     .filter((n) => {
       if (filter === "dismissed") return n.dismissed;
       if (n.dismissed) return false;
-      if (filter === "lead") return n.type === "lead";
-      if (filter === "event") return n.type === "event";
-      if (filter === "fee") return n.type === "fee";
-      if (filter === "opportunity") return n.type === "opportunity" || n.type === "lead";
+      if (filter === "lead") return n.type === "lead" || (n as any).category === "lead";
+      if (filter === "event") return n.type === "event" || (n as any).type === "meeting" || (n as any).category === "meeting" || (n as any).category === "event";
+      if (filter === "fee") return n.type === "fee" || (n as any).category === "fee";
+      if (filter === "opportunity") return n.type === "opportunity" || n.type === "lead" || (n as any).category === "opportunity";
       if (filter === "unread") return n.unread;
       if (filter === "read") return !n.unread;
       return true;

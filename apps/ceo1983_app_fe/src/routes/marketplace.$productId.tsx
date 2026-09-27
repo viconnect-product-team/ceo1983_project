@@ -39,6 +39,7 @@ import { useFmt, useT, type TKey } from "@/lib/i18n";
 import { useServerData } from "@/hooks/use-server-data";
 import {
   getSeller,
+  isUserProductOwner,
   type Product,
   type ProductStatus,
   type QuoteRequest,
@@ -56,6 +57,7 @@ import {
 } from "@/lib/marketplace.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { resolveMediaUrl } from "@/lib/api-client";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/marketplace/$productId")({
@@ -150,6 +152,7 @@ function QuoteModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const { user } = useAuth();
   const t = useT();
   const fmt = useFmt();
   const createQuote = useServerFn(createQuoteRequestFn);
@@ -196,7 +199,7 @@ function QuoteModal({
       await createQuote({
         data: {
           productId: product.id,
-          buyerId: CURRENT_USER_ID,
+          buyerId: user?.id || CURRENT_USER_ID,
           quantity: Number(qty) || 1,
           contact,
           message,
@@ -502,6 +505,7 @@ function ProductDetailContent({
   allProducts: Product[];
   reload: () => void;
 }) {
+  const { user } = useAuth();
   const t = useT();
   const fmt = useFmt();
   const navigate = useNavigate();
@@ -557,7 +561,7 @@ function ProductDetailContent({
   const onToggleSold = async () => {
     setBusy(true);
     try {
-      await toggleSold({ data: { id: product.id, sellerId: CURRENT_USER_ID } });
+      await toggleSold({ data: { id: product.id, sellerId: user?.id || CURRENT_USER_ID || product.sellerId } });
       reload();
       toast.success(t("mk.form.updated"));
     } finally {
@@ -569,7 +573,7 @@ function ProductDetailContent({
     if (!confirm(t("mk.delete.desc"))) return;
     setBusy(true);
     try {
-      await deleteProduct({ data: { id: product.id, sellerId: CURRENT_USER_ID } });
+      await deleteProduct({ data: { id: product.id, sellerId: user?.id || CURRENT_USER_ID || product.sellerId } });
       toast.success(t("mk.deleted"));
       navigate({ to: "/marketplace" });
     } finally {
@@ -585,7 +589,7 @@ function ProductDetailContent({
 
 
   const seller = getSeller(product.sellerId);
-  const isMine = product.sellerId === CURRENT_USER_ID;
+  const isMine = isUserProductOwner(product, user);
 
   // Related listings derived from the already-loaded product list (no new API):
   // same category, excluding this one, active listings first.
@@ -609,7 +613,7 @@ function ProductDetailContent({
   // A buyer's own pending request (if RLS surfaces it) drives the "already requested" state.
   const myQuote = !isMine
     ? quotes.find(
-        (q) => q.buyerId === CURRENT_USER_ID && q.status !== "cancelled" && q.status !== "rejected",
+        (q) => (q.buyerId === (user?.id || CURRENT_USER_ID)) && q.status !== "cancelled" && q.status !== "rejected",
       )
     : undefined;
   const alreadyRequested = Boolean(myQuote);

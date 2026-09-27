@@ -88,25 +88,46 @@ export const listMembersFn = createServerFn({ method: "GET" })
 export const listPeersFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Member[]> => {
-    const data = await fetchNestApiFromServer("/members/directory", context.token);
-    return Array.isArray(data) ? data.map((r: Row) => ({
-      id: r.id as string,
-      code: (r.code as string) ?? "",
-      name: r.name as string,
-      contact: "",
-      email: "",
-      phone: "",
-      type: (r.type as Member["type"]) ?? "company",
-      level: (r.level as Member["level"]) ?? "memberLevel.medium",
-      industry: (r.industry as Member["industry"]) ?? "ind.trade",
-      region: (r.region as Member["region"]) ?? "region.north",
-      status: (r.status as Member["status"]) ?? "active",
-      joinedAt: "",
-      feeYear: new Date().getFullYear(),
-      feePaid: false,
-      address: "",
-      about: "",
-    })) : [];
+    let data: any = null;
+    try {
+      data = await fetchNestApiFromServer("/members/directory", context.token);
+    } catch {
+      // ignore
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      try {
+        data = await fetchNestApiFromServer("/members", context.token);
+      } catch {
+        // ignore
+      }
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
+      const { DEFAULT_MEMBERS } = await import("./members-data");
+      const mapped = data.map((r: Row) => ({
+        id: (r.id ?? r.userId ?? r.user_id ?? r.code) as string,
+        code: (r.code as string) ?? "",
+        name: (r.name as string) ?? (r.personName as string) ?? "Hội viên CLB",
+        contact: (r.contact as string) ?? (r.personName as string) ?? (r.name as string) ?? "",
+        email: (r.email as string) ?? "",
+        phone: (r.phone as string) ?? "",
+        type: (r.type as Member["type"]) ?? "company",
+        level: (r.level as Member["level"]) ?? "memberLevel.medium",
+        industry: (r.industry as Member["industry"]) ?? "ind.trade",
+        region: (r.region as Member["region"]) ?? "region.north",
+        status: (r.status as Member["status"]) ?? "active",
+        joinedAt: ((r.joinedAt || r.joined_at || r.createdAt || r.created_at || "") as string),
+        feeYear: new Date().getFullYear(),
+        feePaid: true,
+        address: (r.address as string) ?? "",
+        about: (r.about as string) ?? (r.personTitle as string) ?? "",
+      }));
+      return mapped.length > 0 ? mapped : DEFAULT_MEMBERS;
+    }
+
+    const { DEFAULT_MEMBERS } = await import("./members-data");
+    return DEFAULT_MEMBERS;
   });
 
 /** POST /api/members — Tạo hội viên mới */

@@ -21,12 +21,12 @@ import type { DeviceSessionInfo } from "@/lib/business-connect/mobile/device-ses
 export const Route = createFileRoute("/connect-app/me/sessions")({
   head: () => ({
     meta: [
-      { title: "Phiên & thiết bị — Business Connect" },
+      { title: "Phiên & thiết bị — ViOne" },
       {
         name: "description",
         content: "Xem các thiết bị đang đăng nhập và ngắt phiên từ xa khi cần.",
       },
-      { property: "og:title", content: "Phiên & thiết bị — Business Connect" },
+      { property: "og:title", content: "Phiên & thiết bị — ViOne" },
       {
         property: "og:description",
         content: "Xem các thiết bị đang đăng nhập và ngắt phiên từ xa khi cần.",

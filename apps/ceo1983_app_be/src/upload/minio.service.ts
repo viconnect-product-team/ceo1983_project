@@ -15,24 +15,39 @@ export class MinioService implements OnModuleInit {
 
     const candidateConfigs: { name: string; endPoint: string; port: number }[] = [];
 
-    // 1. Docker container aliases in association-network (Fastest & direct inside docker container network)
-    candidateConfigs.push({
-      name: 'docker-alias(association-minio-prod:9000)',
-      endPoint: 'association-minio-prod',
-      port: 9000,
-    });
-    candidateConfigs.push({
-      name: 'docker-alias(minio:9000)',
-      endPoint: 'minio',
-      port: 9000,
-    });
-
-    // 2. Env configured endpoint
+    // 1. Env configured endpoint
     if (envEndpoint) {
       candidateConfigs.push({
         name: `env(${envEndpoint}:${envPort || 9000})`,
         endPoint: envEndpoint,
         port: envPort || 9000,
+      });
+    }
+
+    // 2. Localhost on port 9050 or 9000 (Fastest for local development)
+    candidateConfigs.push({
+      name: 'local(127.0.0.1:9050)',
+      endPoint: '127.0.0.1',
+      port: 9050,
+    });
+    candidateConfigs.push({
+      name: 'local(127.0.0.1:9000)',
+      endPoint: '127.0.0.1',
+      port: 9000,
+    });
+
+    // 3. Docker container aliases only in Linux/Docker environment (never on Windows host to avoid DNS resolution hangs)
+    const isInsideDocker = process.platform === 'linux' && (Boolean(process.env.DOCKER_CONTAINER) || Boolean(process.env.KUBERNETES_SERVICE_HOST));
+    if (isInsideDocker) {
+      candidateConfigs.push({
+        name: 'docker-alias(association-minio-prod:9000)',
+        endPoint: 'association-minio-prod',
+        port: 9000,
+      });
+      candidateConfigs.push({
+        name: 'docker-alias(minio:9000)',
+        endPoint: 'minio',
+        port: 9000,
       });
     }
 

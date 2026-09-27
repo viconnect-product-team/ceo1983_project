@@ -560,7 +560,7 @@ function ConnectAppNotificationsPage() {
                                 <Link
                                   to="/connect-app/inbox/$threadId"
                                   params={{ threadId: senderUserId }}
-                                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] px-3.5 text-[12px] font-bold text-slate-950 shadow-xs hover:brightness-105 active:scale-95 transition-all"
+                                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-blue-600 hover:bg-blue-700 px-3.5 text-[12px] font-bold text-white shadow-xs hover:brightness-105 active:scale-95 transition-all"
                                 >
                                   <MessageSquare className="size-3.5" />
                                   <span>Nhắn tin</span>
@@ -568,7 +568,7 @@ function ConnectAppNotificationsPage() {
                               )}
                               <Link
                                 to={profileRoute}
-                                className="inline-flex min-h-8 items-center rounded-full border border-slate-300 dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] px-3 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-400 dark:hover:border-[#D8B282] transition-colors"
+                                className="inline-flex min-h-8 items-center rounded-full border border-slate-300 dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] px-3 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
                               >
                                 Xem hồ sơ
                               </Link>
@@ -585,7 +585,7 @@ function ConnectAppNotificationsPage() {
                               <button
                                 type="button"
                                 onClick={() => handleAcceptConnection(n.id, connectionId)}
-                                className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] px-3.5 text-[12px] font-bold text-slate-950 shadow-xs hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                                className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-blue-600 hover:bg-blue-700 px-3.5 text-[12px] font-bold text-white shadow-xs hover:brightness-105 active:scale-95 transition-all cursor-pointer"
                               >
                                 <Check className="size-3.5" strokeWidth={2.5} />
                                 <span>Đồng ý kết bạn</span>

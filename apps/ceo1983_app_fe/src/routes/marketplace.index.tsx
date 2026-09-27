@@ -24,8 +24,10 @@ import {
   Upload,
   Download,
   FileSpreadsheet,
+  Megaphone,
   X,
 } from "lucide-react";
+import { MarketplaceAdsManager } from "@/components/marketplace/MarketplaceAdsManager";
 import { exportProductsToExcel, type ParsedProductItem } from "@/lib/marketplace-excel";
 import { ProductExcelModal } from "@/components/dashboard/ProductExcelModal";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -43,6 +45,7 @@ import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   CATEGORIES,
   getSeller,
+  isUserProductOwner,
   type Product,
   type ProductCategoryKey,
   type ProductStatus,
@@ -148,6 +151,7 @@ const ICON_OPTIONS = ["🛍️", "💼", "💻", "📊", "🏢", "⚙️", "🌾
 
 function ProductCard({
   product,
+  isMine: isMineProp,
   onContact,
   onQuote,
   onEdit,
@@ -160,6 +164,7 @@ function ProductCard({
   onTogglePin,
 }: {
   product: Product;
+  isMine?: boolean;
   onContact: () => void;
   onQuote: () => void;
   onEdit: () => void;
@@ -175,7 +180,7 @@ function ProductCard({
 
   const fmt = useFmt();
   const seller = getSeller(product.sellerId);
-  const isMine = product.sellerId === CURRENT_USER_ID;
+  const isMine = isMineProp ?? (product.sellerId === CURRENT_USER_ID);
 
   return (
     <Card className={`flex flex-col overflow-hidden ${selected ? "ring-2 ring-destructive" : ""}`}>
@@ -346,6 +351,7 @@ function ProductCard({
 
 function ProductRow({
   product,
+  isMine: isMineProp,
   onContact,
   onQuote,
   onEdit,
@@ -355,6 +361,7 @@ function ProductRow({
   onTogglePin,
 }: {
   product: Product;
+  isMine?: boolean;
   onContact: () => void;
   onQuote: () => void;
   onEdit: () => void;
@@ -366,7 +373,7 @@ function ProductRow({
   const t = useT();
   const fmt = useFmt();
   const seller = getSeller(product.sellerId);
-  const isMine = product.sellerId === CURRENT_USER_ID;
+  const isMine = isMineProp ?? (product.sellerId === CURRENT_USER_ID);
 
   return (
     <Card className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
@@ -982,6 +989,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
   const bulkDeleteFn = useServerFn(deleteProductsFn);
   const toggleFn = useServerFn(toggleSoldFn);
 
+  const [adminSection, setAdminSection] = useState<"catalog" | "ads">("catalog");
   const [tab, setTab] = useState<"browse" | "mine">("browse");
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<ProductCategoryKey | "all">("all");
@@ -1058,12 +1066,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
     setSelected(new Set());
   };
 
-  const isMyProduct = (p: Product) => {
-    if (user?.id && (p.sellerId === user.id || (p as any).seller_id === user.id)) return true;
-    if (user?.email && p.sellerPhone === user.email) return true;
-    if (user?.user_metadata?.full_name && p.sellerName === user.user_metadata.full_name) return true;
-    return p.sellerId === CURRENT_USER_ID;
-  };
+  const isMyProduct = (p: Product) => isUserProductOwner(p, user);
   const mine = all.filter(isMyProduct);
   const active = all.filter((p) => p.status === "active");
 
@@ -1105,43 +1108,33 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
     initialSortDir: "desc",
   });
 
-  // Discovery sections show only on the browse tab with no active filters.
-  const browsePool = useMemo(() => all.filter((p) => p.sellerId !== CURRENT_USER_ID), [all]);
-  const showDiscovery = tab === "browse" && !hasFilters;
-  const featured = useMemo(
-    () =>
-      sortProducts(
-        browsePool.filter((p) => p.status === "active"),
-        "viewed",
-      ).slice(0, 4),
-    [browsePool],
-  );
-  const recent = useMemo(() => sortProducts(browsePool, "newest").slice(0, 4), [browsePool]);
-  const popular = useMemo(() => sortProducts(browsePool, "viewed").slice(0, 4), [browsePool]);
-
   const totalValue = active.reduce((s, p) => s + p.price, 0);
 
-  const bindCardActions = (p: Product) => ({
-    onContact: () => navigate({ to: "/marketplace/$productId", params: { productId: p.id } }),
-    onQuote: () =>
-      navigate({
-        to: "/marketplace/$productId",
-        params: { productId: p.id },
-        search: { quote: true },
-      }),
-    onEdit: () => setEditing(p),
-    onDelete: () => setDeleting(p),
-    onToggleSold: async () => {
-      await toggleFn({ data: { id: p.id, sellerId: CURRENT_USER_ID } });
-      reload();
-    },
-  });
+  const bindCardActions = (p: Product) => {
+    const isMine = isMyProduct(p);
+    return {
+      isMine,
+      onContact: () => navigate({ to: "/marketplace/$productId", params: { productId: p.id } }),
+      onQuote: () =>
+        navigate({
+          to: "/marketplace/$productId",
+          params: { productId: p.id },
+          search: { quote: true },
+        }),
+      onEdit: () => setEditing(p),
+      onDelete: () => setDeleting(p),
+      onToggleSold: async () => {
+        await toggleFn({ data: { id: p.id, sellerId: user?.id || CURRENT_USER_ID || p.sellerId } });
+        reload();
+      },
+    };
+  };
 
   return (
     <AppShell>
       <PageHeader
         title={t("mk.title")}
-        subtitle={t("mk.subtitle")}
+        subtitle="Quản trị gian hàng giao thương, danh mục sản phẩm và chiến dịch quảng cáo affiliate của hiệp hội"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -1159,9 +1152,15 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
               {t("mk.myq.nav")}
             </Link>
             <button
+              onClick={() => setShowExcelModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-secondary"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+              Excel
+            </button>
+            <button
               onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-              style={{ background: "var(--gradient-primary)" }}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               {t("mk.action.new")}
@@ -1170,6 +1169,36 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
         }
       />
 
+      {/* Top-level Admin Section Switcher */}
+      <div className="mb-6 flex items-center gap-3 border-b border-border">
+        <button
+          onClick={() => setAdminSection("catalog")}
+          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition cursor-pointer ${
+            adminSection === "catalog"
+              ? "border-blue-600 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Store className="h-4 w-4" />
+          Quản Lý Gian Hàng & Sản Phẩm
+        </button>
+        <button
+          onClick={() => setAdminSection("ads")}
+          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition cursor-pointer ${
+            adminSection === "ads"
+              ? "border-blue-600 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Megaphone className="h-4 w-4" />
+          Quản Lý Quảng Cáo & Affiliate
+        </button>
+      </div>
+
+      {adminSection === "ads" ? (
+        <MarketplaceAdsManager />
+      ) : (
+        <>
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label={t("mk.kpi.total")}
@@ -1364,35 +1393,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
         </div>
       </div>
 
-      {showDiscovery && browsePool.length > 0 && (
-        <div className="mb-8 space-y-8">
-          <DiscoverySection
-            title={t("mk.section.featured")}
-            products={featured}
-            pinned={pinned}
-            onTogglePin={togglePin}
-            bind={bindCardActions}
-          />
-          <DiscoverySection
-            title={t("mk.section.recent")}
-            products={recent}
-            pinned={pinned}
-            onTogglePin={togglePin}
-            bind={bindCardActions}
-          />
-          <DiscoverySection
-            title={t("mk.section.popular")}
-            products={popular}
-            pinned={pinned}
-            onTogglePin={togglePin}
-            bind={bindCardActions}
-          />
-        </div>
-      )}
-
-      {(!showDiscovery || browsePool.length === 0) && (
-        <>
-          <p className="mb-3 text-xs font-medium text-muted-foreground" aria-live="polite">
+      <p className="mb-3 text-xs font-medium text-muted-foreground" aria-live="polite">
             {t("mk.results", { n: visible.length })}
           </p>
           {visible.length === 0 ? (
@@ -1429,7 +1430,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
                   <tbody>
                     {tc.pageRows.map((p, idx) => {
                       const seller = getSeller(p.sellerId);
-                      const isMine = p.sellerId === CURRENT_USER_ID;
+                      const isMine = isMyProduct(p);
                       return (
                         <tr
                           key={p.id}
@@ -1609,7 +1610,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
                 if (!deleting) return;
                 setDeletePending(true);
                 try {
-                  await deleteFn({ data: { id: deleting.id, sellerId: CURRENT_USER_ID } });
+                  await deleteFn({ data: { id: deleting.id, sellerId: user?.id || CURRENT_USER_ID || deleting.sellerId } });
                   toast.success(t("mk.deleted"));
                   setDeleting(null);
                   reload();
@@ -1641,7 +1642,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
                 if (!ids.length) return;
                 setBulkPending(true);
                 try {
-                  await bulkDeleteFn({ data: { ids, sellerId: CURRENT_USER_ID } });
+                  await bulkDeleteFn({ data: { ids, sellerId: user?.id || CURRENT_USER_ID } });
                   toast.success(t("mk.bulkDeleted", { n: ids.length }));
                   setBulkConfirm(false);
                   exitSelect();

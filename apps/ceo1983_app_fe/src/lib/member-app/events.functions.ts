@@ -59,9 +59,17 @@ export const registerForEvent = createServerFn({ method: "POST" })
 
 export const cancelEventRegistration = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) => z.object({ eventId: z.string().min(1).max(64) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        eventId: z.string().min(1).max(64),
+        reason: z.string().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     return fetchNestApiFromServer(`/events/${encodeURIComponent(data.eventId)}/cancel`, context.token, {
       method: "POST",
+      body: JSON.stringify({ reason: data.reason }),
     });
   });

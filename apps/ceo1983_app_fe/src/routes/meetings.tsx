@@ -65,10 +65,7 @@ import {
   type NotificationTemplate,
   type TemplateCategory,
 } from "@/lib/notification-templates";
-import {
-  DataPipelineService,
-  type PipelineEventLog,
-} from "@/lib/data-pipeline-architecture";
+import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
 
 export const Route = createFileRoute("/meetings")({
   ssr: false,
@@ -131,7 +128,7 @@ const DEPARTMENT_MEMBERS: Record<
   ],
 };
 
-type ActiveMeetingTab = "meetings" | "room_bookings" | "templates" | "data_pipeline";
+type ActiveMeetingTab = "meetings" | "room_bookings" | "templates";
 
 function MeetingsPage() {
   const t: any = useT();
@@ -237,25 +234,8 @@ function MeetingsPage() {
     return renderNotificationTemplate(selectedTemplate, sampleVars);
   }, [selectedTemplate, sampleVars]);
 
-  // --- TAB 4: Data Pipeline State ---
-  const [pipelineMetrics] = useState(() => DataPipelineService.getMetrics());
-  const [pipelineTopics] = useState(() => DataPipelineService.getTopics());
-  const [redisSpec] = useState(() => DataPipelineService.getRedisConfig());
-  const [pipelineLogs, setPipelineLogs] = useState<PipelineEventLog[]>(() => DataPipelineService.getLogs());
-
-  const handleTestPublish = () => {
-    const log = DataPipelineService.publishEvent(
-      "crm_to_mobile",
-      "ceo1983:crm:to:mobile",
-      JSON.stringify({
-        event: "ADMIN_BROADCAST_SYNC",
-        association: "CEO 1983",
-        timestamp: new Date().toISOString(),
-      })
-    );
-    setPipelineLogs([...DataPipelineService.getLogs()]);
-    toast.success("Đã bắn gói tin đồng bộ thời gian thực qua Redis Pub/Sub xuống ứng dụng Hiệp hội CEO 1983!");
-  };
+  // Modal tạo cuộc gặp kết nối 1-on-1
+  const [create1on1Open, setCreate1on1Open] = useState(false);
 
   // --- Handlers for TAB 1 (Meetings) ---
   const handleOpenCreate = () => {
@@ -327,6 +307,24 @@ function MeetingsPage() {
         toast.success(t("common.updated"));
       } else {
         await createFn({ data: payload });
+        // Phát thông báo in-app đồng bộ tới Member App và CRM
+        try {
+          await createNotif({
+            data: {
+              title: `[Lịch họp mới] ${payload.title}`,
+              body: `Cuộc họp ${payload.department} diễn ra vào ${payload.time} ngày ${payload.date} (${(payload as any).type === "online" ? "Trực tuyến: " + payload.zoomUrl : "Trực tiếp: " + payload.location}). Kính mời các đại biểu tham gia đúng giờ.`,
+              category: "meeting",
+              audience: "all",
+              channel: "inapp",
+              appScope: "all",
+              targetApp: "all",
+              status: "sent",
+              actionUrl: (payload as any).type === "online" ? payload.zoomUrl : "/association/meetings",
+            },
+          });
+        } catch (notifErr) {
+          console.warn("Could not dispatch in-app notification for new meeting:", notifErr);
+        }
         toast.success(
           `Đã tạo cuộc họp và gửi thông báo & link Zoom tới ${selectedMembers.length} thành viên ${formDepartment}!`
         );
@@ -551,14 +549,13 @@ function MeetingsPage() {
       {/* Header */}
       <PageHeader
         title="Quản Lý Cuộc Họp & Đặt Phòng Họp Thông Minh"
-        subtitle="Hệ thống đăng ký book phòng Online/Offline, quy trình duyệt email tự động, kho mẫu template và hạ tầng đồng bộ Redis-Kafka"
+        subtitle="Hệ thống đăng ký book phòng Online/Offline, quy trình duyệt email tự động, kho mẫu template và quản lý kết nối"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {activeTab === "meetings" && (
               <button
                 onClick={handleOpenCreate}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] transition hover:opacity-95"
-                style={{ background: "var(--gradient-primary)" }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[#003B95] hover:bg-blue-900 transition shadow-sm cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 Tạo Cuộc Họp Ban
@@ -567,20 +564,10 @@ function MeetingsPage() {
             {activeTab === "room_bookings" && (
               <button
                 onClick={() => setBookRoomModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] transition hover:opacity-95"
-                style={{ background: "linear-gradient(135deg, #059669 0%, #10b981 100%)" }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 transition shadow-sm cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 Đăng Ký Đặt Phòng Họp
-              </button>
-            )}
-            {activeTab === "data_pipeline" && (
-              <button
-                onClick={handleTestPublish}
-                className="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20 transition"
-              >
-                <Radio className="h-4 w-4 animate-pulse text-emerald-500" />
-                Bắn Gói Tin Thử Nghiệm
               </button>
             )}
           </div>
@@ -626,19 +613,6 @@ function MeetingsPage() {
         >
           <Mail className="h-4 w-4" />
           <span>Mẫu Email & Tin Nhắn Cố Định ({NOTIFICATION_TEMPLATES.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("data_pipeline")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
-            activeTab === "data_pipeline"
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
-          }`}
-        >
-          <Database className="h-4 w-4" />
-          <span>Hạ Tầng Redis & Message Queue</span>
-          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
         </button>
       </div>
 
@@ -951,10 +925,30 @@ function MeetingsPage() {
                     <MapPin className="h-3.5 w-3.5 text-primary" />
                     <span className="truncate">{m.location}</span>
                   </div>
+
+                  {/* Bản đồ định vị Google Maps kích thước nhỏ cho cuộc họp trực tiếp */}
+                  {m.location && !m.location.toLowerCase().includes("online") && (
+                    <div className="overflow-hidden rounded-xl border border-border shadow-xs my-1.5">
+                      <iframe
+                        title={`Bản đồ ${m.title}`}
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                          m.location || "Văn phòng Hiệp hội CEO 1983, Hà Nội"
+                        )}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                        className="w-full h-28 border-0"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+
                   {m.zoomUrl && (
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Video className="h-3.5 w-3.5" />
-                      <a href={m.zoomUrl} target="_blank" rel="noreferrer" className="truncate hover:underline">
+                    <div className="flex items-center gap-2 text-blue-600 font-medium">
+                      <Video className="h-3.5 w-3.5 text-blue-600" />
+                      <a
+                        href={m.zoomUrl.startsWith("http") ? m.zoomUrl : `https://${m.zoomUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate hover:underline"
+                      >
                         {m.zoomUrl}
                       </a>
                     </div>
@@ -990,6 +984,24 @@ function MeetingsPage() {
 
                 {/* Action buttons */}
                 <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/50 pt-3">
+                  {/* Nút vào họp online */}
+                  {m.zoomUrl && (
+                    <button
+                      onClick={() => {
+                        let link = m.zoomUrl?.trim() || "";
+                        if (!link.startsWith("http://") && !link.startsWith("https://")) {
+                          link = `https://${link}`;
+                        }
+                        window.open(link, "_blank", "noopener,noreferrer");
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-500/20 transition cursor-pointer"
+                      title="Mở phòng họp trực tuyến"
+                    >
+                      <Video className="h-3.5 w-3.5 text-blue-600" />
+                      <span>Vào Họp Online</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleOpenOfflineInvite(m)}
                     className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition cursor-pointer"
@@ -1001,20 +1013,20 @@ function MeetingsPage() {
                   {m.status === "upcoming" && (
                     <button
                       onClick={() => handleOpenCancel(m)}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
                     >
                       Hủy họp
                     </button>
                   )}
                   <button
                     onClick={() => handleOpenEdit(m)}
-                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 cursor-pointer"
                   >
                     Chỉnh sửa
                   </button>
                   <button
                     onClick={() => onDelete(m)}
-                    className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -1173,131 +1185,7 @@ function MeetingsPage() {
         </div>
       )}
 
-      {/* ==================================================================== */}
-      {/* TAB 4: HẠ TẦNG REDIS & MESSAGE QUEUE PIPELINE                         */}
-      {/* ==================================================================== */}
-      {activeTab === "data_pipeline" && (
-        <div className="space-y-6">
-          {/* Telemetry Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {pipelineMetrics.map((m, idx) => (
-              <Card key={idx} className="p-4 border border-border/80">
-                <div className="text-xs font-semibold text-muted-foreground">{m.name}</div>
-                <div className="text-2xl font-extrabold text-foreground mt-1">
-                  {m.value} <span className="text-xs font-normal text-muted-foreground">{m.unit}</span>
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  {m.description}
-                </div>
-              </Card>
-            ))}
-          </div>
 
-          {/* Architecture Overview */}
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2 mb-3">
-              <Server className="h-4 w-4 text-primary" /> Sơ Đồ Luồng Dữ Liệu 2 Chiều: CRM Admin &lt;-&gt; Mobile App
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 rounded-xl border border-border bg-secondary/30 space-y-2">
-                <div className="font-bold text-primary flex items-center gap-1.5">
-                  <Smartphone className="h-4 w-4" /> 1. CEO 1983 Mobile App (Hội viên)
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  Ứng dụng dành cho hội viên hiệp hội CEO 1983. Đăng ký phòng họp, gửi phiếu đăng ký sự kiện (Google Form), thanh toán VietQR và nhận vé mời có mã QR.
-                </p>
-                <div className="font-mono text-[10px] bg-background p-2 rounded border border-border">
-                  Emitter: REST API / WebSocket client
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2">
-                <div className="font-bold text-amber-600 flex items-center gap-1.5">
-                  <Zap className="h-4 w-4" /> 2. Redis & Kafka Event Bus
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  Trục xử lý bất đồng bộ chống nghẽn database: Redis Pub/Sub đồng bộ tức thì, Distributed Lock chống trùng phòng họp, Kafka Topics xếp hàng xử lý email & push worker.
-                </p>
-                <div className="font-mono text-[10px] bg-background p-2 rounded border border-border">
-                  Throughput: 2,410 msg/s | Latency: 4.6ms
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-secondary/30 space-y-2">
-                <div className="font-bold text-emerald-600 flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4" /> 3. Web CRM Admin Portal
-                </div>
-                <p className="text-muted-foreground leading-relaxed">
-                  Hệ thống quản trị tập trung: Kiểm soát đặt phòng họp, phê duyệt hoặc từ chối, xuất hoá đơn, quản lý bàn tiệc Gala và gửi thông báo đa kênh 2 chiều.
-                </p>
-                <div className="font-mono text-[10px] bg-background p-2 rounded border border-border">
-                  Receiver: Auto WebSocket & Event Dispatcher
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Topics & Live Event Logs */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Kafka Topics Table */}
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" /> Các Event Topics Trong Message Queue
-              </h3>
-              <div className="space-y-2.5">
-                {pipelineTopics.map((tp, idx) => (
-                  <div key={idx} className="rounded-xl border border-border/70 p-3 text-xs bg-background/50">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono font-bold text-primary">{tp.topic}</span>
-                      <span className="text-emerald-600 font-semibold">{tp.messagesPerSec} msg/s</span>
-                    </div>
-                    <div className="flex items-center justify-between text-muted-foreground text-[11px]">
-                      <span>Partitions: {tp.partitions} | Replicas: {tp.replicationFactor}</span>
-                      <span>Độ trễ: {tp.avgLatencyMs} ms</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Live Event Stream Logs */}
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-emerald-500 animate-pulse" /> Luồng Dữ Liệu 2 Chiều Trực Tuyến
-                </h3>
-                <span className="text-[10px] text-muted-foreground">Live Telemetry</span>
-              </div>
-              <div className="space-y-2 max-h-[380px] overflow-y-auto">
-                {pipelineLogs.map((log) => (
-                  <div key={log.id} className="rounded-xl border border-border/60 p-2.5 text-xs bg-secondary/30">
-                    <div className="flex items-center justify-between text-[11px] mb-1">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        {log.direction === "crm_to_mobile" ? (
-                          <span className="text-blue-600 flex items-center gap-1">
-                            CRM &rarr; Mobile
-                          </span>
-                        ) : (
-                          <span className="text-emerald-600 flex items-center gap-1">
-                            Mobile &rarr; CRM
-                          </span>
-                        )}
-                        <span className="text-muted-foreground font-mono font-normal">[{log.channel}]</span>
-                      </div>
-                      <span className="text-muted-foreground">{log.timestamp}</span>
-                    </div>
-                    <div className="font-mono text-[11px] text-foreground/90 truncate">{log.topicOrKey}</div>
-                    <div className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
-                      {log.payloadSnippet}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ==================================================================== */}
       {/* MODALS SECTION                                                       */}
@@ -1853,29 +1741,31 @@ function MeetingsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3 rounded-xl border border-sky-500/20 bg-sky-500/5 p-3">
+                <div className="space-y-3.5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-900 p-4 shadow-xs">
                   <div>
-                    <label className="font-bold text-foreground block mb-1 flex items-center gap-1.5">
-                      <Video className="h-3.5 w-3.5 text-sky-600" />
-                      Link họp Zoom / Google Meet trực tuyến *
+                    <label className="font-bold text-slate-800 dark:text-slate-100 block mb-1.5 text-xs flex items-center gap-1.5">
+                      <Video className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+                      <span>Link họp Zoom / Google Meet trực tuyến *</span>
                     </label>
                     <input
                       type="url"
                       required
                       value={formZoomUrl}
                       onChange={(e) => setFormZoomUrl(e.target.value)}
-                      placeholder="https://zoom.us/j/88819839999"
-                      className="w-full rounded-xl border border-border bg-background p-2.5 text-sm font-mono text-sky-600"
+                      placeholder="Ví dụ: https://zoom.us/j/88819839999 hoặc https://meet.google.com/abc-xyz"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95] transition"
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-foreground block mb-1">Mô tả hiển thị phòng họp trực tuyến</label>
+                    <label className="font-bold text-slate-800 dark:text-slate-100 block mb-1.5 text-xs">
+                      Mô tả hiển thị phòng họp trực tuyến (Meeting ID & Mật khẩu)
+                    </label>
                     <input
                       type="text"
                       value={formLocation}
                       onChange={(e) => setFormLocation(e.target.value)}
-                      placeholder="Zoom Meeting ID: 888 1983 9999 (Passcode: 1983)"
-                      className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
+                      placeholder="Ví dụ: Zoom ID: 888 1983 9999 • Mật khẩu: 1983"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95] transition"
                     />
                   </div>
                 </div>
@@ -1892,8 +1782,7 @@ function MeetingsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold text-primary-foreground shadow-[var(--shadow-glow)] transition hover:opacity-95 cursor-pointer"
-                  style={{ background: "var(--gradient-primary)" }}
+                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold text-white bg-[#003B95] hover:bg-blue-900 transition shadow-sm cursor-pointer"
                 >
                   {submitting ? "Đang lưu..." : selectedMeeting ? t("common.save") : "Lên Lịch & Phát Thông Báo"}
                 </button>
@@ -2022,8 +1911,19 @@ function MeetingsPage() {
                     </div>
                   </div>
 
-                  {/* Google Maps link preview */}
-                  <div className="text-center pt-2">
+                  {/* Google Maps link preview & embedded compact map */}
+                  <div className="overflow-hidden rounded-xl border border-slate-300 shadow-xs my-2">
+                    <iframe
+                      title="Bản đồ định vị họp offline"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                        offlineInviteMeeting.location || "Văn phòng Hiệp hội CEO 1983, Tòa nhà V-Tower, 649 Kim Mã, Hà Nội"
+                      )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      className="w-full h-36 border-0"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  <div className="text-center pt-1">
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                         offlineInviteMeeting.location || "Văn phòng Hiệp hội CEO 1983, Hà Nội"
@@ -2033,11 +1933,11 @@ function MeetingsPage() {
                       className="inline-flex items-center gap-2 rounded-xl bg-[#001B54] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#00277a] transition cursor-pointer"
                     >
                       <MapPin className="h-4 w-4 text-amber-400" />
-                      <span>Xem Định Vị Google Maps & Chỉ Đường</span>
+                      <span>Xem Định Vị Google Maps Ngoài Trình Duyệt</span>
                       <ExternalLink className="h-3.5 w-3.5 opacity-80" />
                     </a>
                     <p className="mt-1.5 text-[11px] text-slate-500">
-                      * Bấm nút để mở Google Maps dẫn đường chính xác đến địa điểm họp
+                      * Bản đồ GPS dẫn đường chính xác đến điểm họp trực tiếp
                     </p>
                   </div>
 

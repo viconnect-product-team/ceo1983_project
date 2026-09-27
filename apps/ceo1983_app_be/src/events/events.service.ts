@@ -891,7 +891,7 @@ export class EventsService {
 
 
   // Mobile API: Cancel registration for an event
-  async cancelEventRegistration(userId: string, eventId: string) {
+  async cancelEventRegistration(userId: string, eventId: string, reason?: string) {
     const eventRows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
     `.catch(() => []);
@@ -934,8 +934,9 @@ export class EventsService {
     `.catch(() => null);
 
     try {
+      const cancelReasonText = reason ? ` Lý do: "${reason}".` : '';
       const notifTitle = 'Hủy tham gia sự kiện thành công';
-      const notifBody = `Bạn đã hủy tham gia sự kiện "${event.title || event.name || 'Sự kiện'}".`;
+      const notifBody = `Bạn đã hủy tham gia sự kiện "${event.title || event.name || 'Sự kiện'}".${cancelReasonText}`;
       const notifId = require('crypto').randomUUID();
       const dedupeKey = `event-cancel-${eventId}-${userId}-${Date.now()}`;
       const safeData = JSON.stringify({
@@ -963,11 +964,151 @@ export class EventsService {
           gen_random_uuid(), $1, $2, $3, false, false, 'event', $4, NOW()
         )
       `, memberRows[0]?.id || userId, notifTitle, notifBody, eventId).catch(() => {});
+
+      // Dispatch inbox message
+      const inboxMsg = `[XÁC NHẬN HỦY VÉ SỰ KIỆN]\nKính gửi Anh/Chị,\nHệ thống đã ghi nhận việc hủy tham gia sự kiện "${event.title || event.name || 'Sự kiện'}".${cancelReasonText}\nTrạng thái vé của Anh/Chị đã được chuyển thành 'Đã hủy'.`;
+      if (memberCode) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${inboxMsg}, NOW())
+        `.catch(() => {});
+      }
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'ADMIN', ${userId}, ${inboxMsg}, NOW())
+      `.catch(() => {});
     } catch (e: any) {
       console.warn('Failed to send event cancellation notification:', e?.message);
     }
 
     return { ok: true, cancelled: true };
+  }
+
+  // Cancel an entire event (by Organizer or Admin)
+  async cancelEvent(userId: string, eventId: string, data: { reason: string; refundPolicy?: string }) {
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+    `.catch(() => []);
+
+    if (eventRows.length === 0) {
+      throw new NotFoundException('Không tìm thấy sự kiện');
+    }
+
+    const event = eventRows[0];
+    const assocId = event.association_id || 'c1983000-0000-4000-8000-000000001983';
+    const isAdmin = await this.checkIsAdmin(userId, assocId);
+    if (!isAdmin && event.created_by !== userId) {
+      throw new ForbiddenException('Chỉ Ban Tổ Chức hoặc Quản trị viên mới có quyền hủy sự kiện');
+    }
+
+    const reason = (data.reason || '').trim();
+    if (!reason) {
+      throw new BadRequestException('Vui lòng nhập lý do hủy sự kiện chuẩn nghiệp vụ');
+    }
+
+    // 1. Update event status in DB
+    await this.prisma.$executeRaw`
+      UPDATE public.events
+      SET status = 'cancelled', updated_at = now()
+      WHERE id = ${eventId}
+    `;
+
+    // 2. Fetch all registered attendees
+    const regRows = await this.prisma.$queryRaw<any[]>`
+      SELECT r.*, m.user_id as member_user_id
+      FROM public.event_registrations r
+      LEFT JOIN public.members m ON m.code = r.member_code
+      WHERE r.event_id = ${eventId} AND r.status != 'cancelled'
+    `.catch(() => []);
+
+    // 3. Mark all registrations as cancelled
+    await this.prisma.$executeRaw`
+      UPDATE public.event_registrations
+      SET status = 'cancelled', updated_at = now()
+      WHERE event_id = ${eventId} AND status != 'cancelled'
+    `.catch(() => {});
+
+    // 4. Distinguish FREE vs PAID event
+    const ticketPrice = Number(event.ticket_price || event.fee || 0);
+    const isPaidEvent = Boolean(event.is_paid || ticketPrice > 0);
+    const eventTitle = event.title || event.name || 'Sự kiện';
+    const eventDateStr = event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date)) : 'Sắp diễn ra';
+    const eventLocationStr = event.location || 'Địa điểm tổ chức';
+
+    const notifTitle = isPaidEvent 
+      ? `[HỦY SỰ KIỆN CÓ PHÍ] ${eventTitle}`
+      : `[HỦY SỰ KIỆN] ${eventTitle}`;
+
+    const refundPolicyText = data.refundPolicy || 'Ban Tổ Chức sẽ liên hệ và thực hiện hoàn trả 100% lệ phí tham gia vào số tài khoản của Quý Hội viên trong vòng 3 - 5 ngày làm việc.';
+
+    const notifBody = isPaidEvent
+      ? `Sự kiện "${eventTitle}" dự kiến tổ chức ngày ${eventDateStr} đã bị hủy.\nLý do: "${reason}".\nCHÍNH SÁCH HOÀN TIỀN: ${refundPolicyText}\nHotline hỗ trợ: Ban Tài chính & Thư ký CLB CEO 1983.`
+      : `Sự kiện "${eventTitle}" dự kiến tổ chức ngày ${eventDateStr} tại ${eventLocationStr} đã bị hủy vì lý do: "${reason}". Ban Tổ Chức trân trọng cáo lỗi cùng Quý Hội viên vì sự bất tiện này.`;
+
+    // 5. Broadcast to each registered attendee
+    for (const reg of regRows) {
+      const targetUserId = reg.member_user_id || reg.user_id || null;
+      const targetMemberCode = reg.member_code ? String(reg.member_code).toLowerCase() : null;
+
+      // 5a. Direct inbox message (messages)
+      const directMsgText = `[THÔNG BÁO TỪ BAN TỔ CHỨC]\nKính gửi Anh/Chị ${reg.member_name || 'Hội viên'},\n\n${notifBody}`;
+      if (targetMemberCode) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'ADMIN', ${targetMemberCode}, ${directMsgText}, NOW())
+        `.catch(() => {});
+      }
+      if (targetUserId) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'ADMIN', ${targetUserId}, ${directMsgText}, NOW())
+        `.catch(() => {});
+
+        // 5b. App bell push notification (business_notifications)
+        const dedupeKey = `cancel_evt_${eventId}_${targetUserId}_${Date.now()}`;
+        const safeData = JSON.stringify({
+          eventId,
+          eventTitle,
+          reason,
+          isPaidEvent,
+          refundPolicy: isPaidEvent ? refundPolicyText : undefined,
+        });
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, dedupe_key, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1::uuid, 'event', $2, $3, 'event_cancelled', 'event_cancelled',
+            $4, $5, $6::jsonb, 'urgent', 'delivered', 'all', 'all', now(), now()
+          )
+        `, targetUserId, eventId, dedupeKey, notifTitle, notifBody, safeData).catch(() => {});
+      }
+
+      // 5c. Member in-app notifications (member_notifications)
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, false, false, 'event', $4, NOW()
+        )
+      `, reg.member_id || targetUserId || reg.id, notifTitle, notifBody, eventId).catch(() => {});
+    }
+
+    // 6. Log into CRM Notification Center (public.notifications)
+    const crmNotifCode = `CANCEL-EVT-${Date.now().toString().slice(-6)}`;
+    await this.prisma.$executeRaw`
+      INSERT INTO public.notifications (
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), ${crmNotifCode},
+        ${notifTitle},
+        ${`Đã hủy sự kiện "${eventTitle}". Lý do: ${reason}. Đã gửi thông báo & tin nhắn đến ${regRows.length} đại biểu đăng ký.`},
+        'all', 'inapp', 'sent', now(), ${regRows.length}, ${event.association_id ? event.association_id : null}::uuid, 'all', 'all', now(), now()
+      )
+    `.catch(() => {});
+
+    return { ok: true, cancelled: true, notifiedAttendees: regRows.length, isPaidEvent };
   }
 
   async updateRegistrationSeating(userId: string, registrationId: string, seatAssignment: string) {

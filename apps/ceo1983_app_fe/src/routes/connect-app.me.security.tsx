@@ -24,7 +24,7 @@ import { BusinessConnectTopBar } from "@/components/business-connect/mobile/Busi
 export const Route = createFileRoute("/connect-app/me/security")({
   head: () => ({
     meta: [
-      { title: "Tài khoản & Bảo mật — Business Connect" },
+      { title: "Tài khoản & Bảo mật — ViOne" },
       {
         name: "description",
         content: "Quản lý bảo mật, mật khẩu và phiên đăng nhập tài khoản CEO 1983.",

@@ -1031,9 +1031,11 @@ function EventsScreen() {
 
   async function unregister(id: string, evt?: React.MouseEvent) {
     if (evt) evt.stopPropagation();
+    const reasonPrompt = window.prompt("Vui lòng nhập lý do hủy tham dự sự kiện (nếu có):", "Có việc bận đột xuất");
+    if (reasonPrompt === null) return;
     setBusy(id);
     try {
-      await doCancel({ data: { eventId: id } });
+      await doCancel({ data: { eventId: id, reason: reasonPrompt.trim() || undefined } });
       setLocalRegistered((prev) => ({ ...prev, [id]: false }));
       if (selectedEvent?.id === id) {
         setSelectedEvent((prev) => prev ? { ...prev, registered: false } : null);

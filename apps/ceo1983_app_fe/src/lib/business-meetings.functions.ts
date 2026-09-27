@@ -188,6 +188,20 @@ export const cancelMeetingFn = createServerFn({ method: "POST" })
       expectedVersion: data.expectedVersion,
       mutationKey: data.mutationKey,
     });
+
+    // Broadcast in-app push notifications, CRM notifications, and direct inbox messages
+    try {
+      const { fetchNestApiFromServer } = await import("@/lib/api-client");
+      await fetchNestApiFromServer(
+        `/meetings/${encodeURIComponent(data.meetingId)}/cancel`,
+        (context as any).token,
+        {
+          method: "POST",
+          body: JSON.stringify({ reason: data.reason }),
+        }
+      ).catch(() => null);
+    } catch {}
+
     try {
       const { logActivity } = await import("./crud.server");
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

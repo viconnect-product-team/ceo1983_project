@@ -138,7 +138,16 @@ export const cancelMeetingFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const { error } = await getDb(context)
+    const db = getDb(context);
+
+    // Fetch meeting details before updating
+    const { data: meetingRow } = await db
+      .from("meetings")
+      .select("*")
+      .eq("code", data.id)
+      .single();
+
+    const { error } = await db
       .from("meetings")
       .update({
         status: "cancelled",
@@ -146,11 +155,62 @@ export const cancelMeetingFn = createServerFn({ method: "POST" })
       })
       .eq("code", data.id);
     if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
+
+    await logActivity(db, {
       action: "Hủy cuộc họp và phát thông báo",
       target: data.id,
       category: "meeting",
     });
+
+    // Dispatch notifications and inbox messages to target members
+    try {
+      const title = meetingRow?.title || "Cuộc họp Ban";
+      const dateStr = meetingRow?.date || "";
+      const timeStr = meetingRow?.time || "";
+      const locationStr = meetingRow?.location || "";
+      const targetMembers = (meetingRow?.target_members as any[]) || [];
+
+      const notifTitle = `[HỦY CUỘC HỌP] ${title}`;
+      const notifBody = `Cuộc họp "${title}" dự kiến diễn ra vào ${timeStr ? timeStr + ' ' : ''}${dateStr} tại ${locationStr || 'Trụ sở CLB'} ĐÃ BỊ HỦY.\n- Lý do: "${data.reason}".\nBan Thư Ký CLB CEO 1983 trân trọng thông báo đến Quý Anh/Chị.`;
+
+      // 1. Log into CRM notifications
+      const crmNotifCode = `CANCEL-MT-${Date.now().toString().slice(-6)}`;
+      await db.from("notifications").insert({
+        code: crmNotifCode,
+        title: notifTitle,
+        body: notifBody,
+        audience: "all",
+        channel: "inapp",
+        status: "sent",
+        reach: Math.max(targetMembers.length, 1),
+      }).catch(() => {});
+
+      // 2. Direct message and in-app alert to each target member
+      for (const m of targetMembers) {
+        const targetCode = typeof m === "string" ? m : m?.code || m?.id || m?.memberCode;
+        if (targetCode) {
+          const directMsg = `[THÔNG BÁO HỦY CUỘC HỌP BAN]\nKính gửi Anh/Chị,\n${notifBody}`;
+          await db.from("messages").insert({
+            from_id: "ADMIN",
+            to_id: String(targetCode).toLowerCase(),
+            text: directMsg,
+          }).catch(() => {});
+
+          await db.from("member_notifications").insert({
+            recipient_id: String(targetCode),
+            title: notifTitle,
+            body: notifBody,
+            read: false,
+            dismissed: false,
+            ref_type: "meeting",
+            ref_id: data.id,
+          }).catch(() => {});
+        }
+      }
+    } catch (e: any) {
+      console.warn("Failed to dispatch meeting cancellation alerts:", e?.message);
+    }
+
     return { ok: true };
   });
 

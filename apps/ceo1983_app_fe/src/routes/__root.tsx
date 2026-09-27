@@ -46,6 +46,7 @@ function makeQueryClient() {
 import { Toaster } from "@/components/ui/sonner";
 import { MockModeBanner } from "@/components/MockModeBanner";
 import { VoiceNavAssistant } from "@/components/ai/VoiceNavAssistant";
+import { ViOneVoiceAssistant } from "@/components/ai/ViOneVoiceAssistant";
 
 import appCss from "../styles.css?url";
 
@@ -130,21 +131,22 @@ export const Route = createRootRoute({
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "CEO1983" },
-      { property: "og:title", content: "CEO 1983 — Nền tảng Quản trị Hiệp hội & App Hội viên" },
+      { name: "apple-mobile-web-app-title", content: "ViOne" },
+      { name: "application-name", content: "ViOne" },
+      { property: "og:title", content: "ViOne — Nền tảng Doanh nhân số & Kết nối B2B" },
       {
         property: "og:description",
         content:
-          "Quản lý hội viên, tổ chức sự kiện, kết nối doanh nghiệp và số hoá vận hành hiệp hội.",
+          "Quản lý hội viên, tổ chức sự kiện, kết nối doanh nghiệp và số hoá vận hành.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@ceo1983" },
-      { name: "twitter:title", content: "CEO 1983 — Nền tảng Quản trị Hiệp hội & App Hội viên" },
+      { name: "twitter:site", content: "@vione" },
+      { name: "twitter:title", content: "ViOne — Nền tảng Doanh nhân số & Kết nối B2B" },
       {
         name: "twitter:description",
         content:
-          "Quản lý hội viên, tổ chức sự kiện, tăng doanh thu tài trợ và số hoá vận hành hiệp hội.",
+          "Quản lý hội viên, tổ chức sự kiện, tăng doanh thu tài trợ và số hoá vận hành.",
       },
       {
         property: "og:image",
@@ -165,8 +167,11 @@ export const Route = createRootRoute({
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
       { rel: "apple-touch-icon-precomposed", href: "/apple-touch-icon.png" },
-      { rel: "icon", type: "image/png", sizes: "64x64", href: "/favicon.png" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/app-icon-192.png" },
+      { rel: "icon", type: "image/svg+xml", href: "/vione-gold-icon.svg" },
+      { rel: "icon", type: "image/png", sizes: "64x64", href: "/vione-gold-64.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/vione-gold-192.png" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/vione-gold-512.png" },
+      { rel: "shortcut icon", href: "/vione-gold-64.png" },
       // Web fonts for Business Card industry templates.
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -245,11 +250,23 @@ function GlobalVoiceNavAssistant() {
 
   if (status !== "in" || !user) return null;
 
-  // Robot chỉ xuất hiện trong mỗi app hiệp hội (/association/* hoặc /m/*), không xuất hiện ở CRM hệ thống
+  // Robot chỉ xuất hiện trong mỗi app hiệp hội (/association/* hoặc /m/*), không xuất hiện ở CRM hệ thống hay app ViOne
   const isAssociationApp = pathname.startsWith("/association") || pathname.startsWith("/m");
   if (!isAssociationApp) return null;
 
   return <VoiceNavAssistant />;
+}
+
+function GlobalViOneVoiceAssistant() {
+  const { status, user } = useAuth();
+  const routerState = useRouterState();
+  const pathname = routerState?.location?.pathname || (typeof window !== "undefined" ? window.location.pathname : "");
+
+  // Con AI ViOne CHỈ xuất hiện khi ĐÃ ĐĂNG NHẬP ở app ViOne (/connect-app/*), TUYỆT ĐỐI KHÔNG xuất hiện ở bất kỳ chỗ khác
+  if (status !== "in" || !user) return null;
+  if (!pathname.startsWith("/connect-app")) return null;
+
+  return <ViOneVoiceAssistant />;
 }
 
 function RootComponent() {
@@ -397,8 +414,9 @@ function RootComponent() {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const targetFavicon = "/ceo1983-favicon.png";
-    const targetApple = "/ceo1983-favicon.png";
+    const isViOne = currentPath.startsWith("/connect-app") || currentPath.startsWith("/vione");
+    const targetFavicon = isViOne ? "/vione-gold-192.png?v=gold9" : "/ceo1983-favicon.png";
+    const targetApple = isViOne ? "/vione-gold-192.png?v=gold9" : "/ceo1983-favicon.png";
 
     const iconLinks = document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']");
     if (iconLinks.length > 0) {
@@ -416,6 +434,15 @@ function RootComponent() {
     if (appleLink) {
       appleLink.href = targetApple;
     }
+
+    if (isViOne) {
+      if (document.title.includes("Business Connect")) {
+        document.title = document.title.replace(/Business Connect/g, "ViOne");
+      }
+      if (currentPath === "/connect-app" || currentPath === "/connect-app/") {
+        document.title = "Trang chủ — ViOne";
+      }
+    }
   }, [currentPath]);
 
   return (
@@ -431,6 +458,7 @@ function RootComponent() {
           <AuthProvider>
             <GlobalRealtimeNotifications />
             <GlobalVoiceNavAssistant />
+            <GlobalViOneVoiceAssistant />
             <AuthGate>
               <Outlet />
             </AuthGate>
