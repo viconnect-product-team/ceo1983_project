@@ -771,7 +771,7 @@ export default function ProfileScreen() {
       />
 
       {/* ── COMPACT MEMBER IDENTITY CARD (Liên kết trực tiếp tới Thẻ Hội Viên & Hồ Sơ) ── */}
-      <div className="mx-4 mt-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-xs">
+      <div id="tour-profile-card" className="mx-4 mt-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-xs">
         <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#00224F] via-[#003B95] to-[#0A1A3A]">
           {displayCover && !coverError ? (
             <img
@@ -848,10 +848,17 @@ export default function ProfileScreen() {
         <div className="divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-xs">
           {menu.map((m: any) => {
             const Icon = m.icon;
+            const itemTourId =
+              m.icon === BookOpen
+                ? "tour-profile-guide-btn"
+                : m.icon === Headphones
+                ? "tour-profile-hotline-btn"
+                : undefined;
             if (m.onClick) {
               return (
                 <button
                   key={m.label}
+                  id={itemTourId}
                   type="button"
                   onClick={m.onClick}
                   className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-amber-50/50 dark:hover:bg-slate-800/60 cursor-pointer"
@@ -919,7 +926,7 @@ export default function ProfileScreen() {
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5">
+        <div id="tour-profile-theme" className="grid grid-cols-3 gap-2.5">
           {themeOptions.map((opt) => {
             const Icon = opt.icon;
             const active = theme === opt.mode;

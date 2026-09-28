@@ -239,7 +239,7 @@ export function BirthdayPromoManager() {
               <button
                 type="button"
                 onClick={() => setPreviewOpen(false)}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-200 text-slate-950 text-xs font-bold shadow-md hover:brightness-105 transition"
+                className="w-full py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md transition"
               >
                 Đóng Bản Xem Trước
               </button>

@@ -897,7 +897,7 @@ export function RegPage() {
                       type="button"
                       disabled={submitting}
                       onClick={() => handleProcessQrCode()}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-4 py-2 text-sm font-semibold text-white shadow-sm transition disabled:opacity-50"
                     >
                       {submitting ? "Đang xử lý..." : "Điểm danh"}
                     </button>
@@ -1053,7 +1053,7 @@ export function RegPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-2 font-semibold text-white shadow-sm transition disabled:opacity-50"
+                    className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-5 py-2 font-semibold text-white shadow-sm transition disabled:opacity-50"
                   >
                     {submitting ? "Đang lưu..." : "Xác nhận thêm & Điểm danh"}
                   </button>

@@ -668,7 +668,7 @@ function OpportunitiesScreen() {
       {/* ── SCROLLABLE CONTENT (ẢNH 2 FIGMA SPEC) ── */}
       <div className="self-stretch px-4 pt-4 pb-28 flex flex-col justify-start items-start gap-5">
         {/* 1. STATS CARD: CƠ HỘI KẾT NỐI (1,248 tin) | TỔNG GIÁ TRỊ (428.5 Tỷ đ) */}
-        <div className="self-stretch p-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex justify-start items-start gap-4 shadow-xs">
+        <div id="tour-opps-stats" className="self-stretch p-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex justify-start items-start gap-4 shadow-xs">
           <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
             <div className="justify-start text-slate-500 text-[10px] font-bold font-['Inter']">
               CƠ HỘI KẾT NỐI
@@ -825,7 +825,7 @@ function OpportunitiesScreen() {
             )}
           </div>
 
-          <div className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-0.5">
+          <div id="tour-opps-type-filter" className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-0.5">
             {tabs.map((tItem) => {
               const isActive = tab === tItem;
               return (
@@ -972,6 +972,7 @@ function OpportunitiesScreen() {
                     return (
                       <div
                         key={o.id}
+                        id={idx === 0 ? "tour-opps-card-item" : undefined}
                         className="self-stretch bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:border-[#001B54]/30 transition-all"
                       >
                         <div
@@ -1058,11 +1059,12 @@ function OpportunitiesScreen() {
             trong cộng đồng nội khối.
           </div>
           <button
+            id="tour-opps-create-btn"
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="self-stretch px-4 py-3 bg-sky-950 hover:bg-sky-900 rounded-[100px] inline-flex justify-center items-center transition cursor-pointer active:scale-95 shadow-sm"
+            className="self-stretch px-4 py-3 bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold hover:brightness-105 rounded-[100px] inline-flex justify-center items-center transition cursor-pointer active:scale-95 shadow-md"
           >
-            <div className="justify-start text-white text-xs font-bold font-['Inter']">
+            <div className="justify-start text-slate-950 text-xs font-bold font-['Inter']">
               Đăng cơ hội ngay →
             </div>
           </button>

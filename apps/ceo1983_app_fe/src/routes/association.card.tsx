@@ -656,7 +656,7 @@ function CardScreen() {
 
       <div className="px-4 pt-4">
         {/* Visit Card CEO 1983 (100% thay thế hoàn toàn thẻ cứng theo yêu cầu) */}
-        <div className="mb-4">
+        <div id="tour-card-visit" className="mb-4">
           <Ceo1983BusinessCardVisit
             name={d.name || "NGUYỄN VĂN A"}
             title={customProfile?.title || (member as any)?.position || (member as any)?.title || "Director"}
@@ -690,6 +690,7 @@ function CardScreen() {
           {/* Cặp nút Hành động chính: Quét QR & Chụp danh thiếp nằm cạnh nhau */}
           <div className="grid grid-cols-2 gap-2.5 w-full">
             <button
+              id="tour-card-qr-scan"
               type="button"
               onClick={() => setScanModalOpen(true)}
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] px-4 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 hover:opacity-95 transition cursor-pointer"
@@ -698,6 +699,7 @@ function CardScreen() {
               <span>Quét QR</span>
             </button>
             <button
+              id="tour-card-capture"
               type="button"
               onClick={() => setCardCaptureOpen(true)}
               className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-[13px] font-bold text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition cursor-pointer"
@@ -707,20 +709,31 @@ function CardScreen() {
             </button>
           </div>
 
-          {/* 3 nút tiện ích kích thước cố định bằng nhau, nền trắng text đen */}
-          <div className="grid grid-cols-3 gap-2 w-full">
+          {/* 4 nút tiện ích: Chỉnh sửa, Ghi NFC, Chia sẻ, Sao chép */}
+          <div className="grid grid-cols-4 gap-1.5 w-full">
             <button
+              id="tour-card-edit-action"
               type="button"
               onClick={() => setEditOpen(true)}
-              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
             >
               <Pencil className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
-              <span>Chỉnh sửa</span>
+              <span>Sửa</span>
+            </button>
+            <button
+              id="tour-card-nfc-action"
+              type="button"
+              onClick={shareNfc}
+              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition cursor-pointer shadow-xs"
+              title="Chạm thẻ thông minh NFC để ghi dữ liệu"
+            >
+              <Nfc className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Ghi NFC</span>
             </button>
             <button
               type="button"
               onClick={handleShareProfile}
-              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
             >
               <Share2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
               <span>Chia sẻ</span>
@@ -728,7 +741,7 @@ function CardScreen() {
             <button
               type="button"
               onClick={handleCopyLink}
-              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
             >
               {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />}
               <span>{copiedLink ? "Đã chép" : "Sao chép"}</span>

@@ -1526,10 +1526,22 @@ function ProductsScreen() {
                 Chợ Marketplace
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                id="tour-market-post-btn"
+                type="button"
+                onClick={() => setPostModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold text-xs shadow-xs hover:brightness-105 transition cursor-pointer flex items-center gap-1 active:scale-95"
+              >
+                <Plus className="size-3.5 stroke-[2.5]" />
+                <span>Đăng bán</span>
+              </button>
+            </div>
           </div>
 
           {/* ── SUB-HEADER TABS: Chợ Marketplace vs Đã quan tâm vs Mục của tôi ── */}
-          <div className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
+          <div id="tour-market-tabs" className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setMarketplaceTab("market")}
@@ -1992,7 +2004,7 @@ function ProductsScreen() {
                 </div>
 
                 {/* Horizontal carousel */}
-                <div className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
+                <div id="tour-market-grid" className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
                   {/* Dynamic Products from Database */}
                   {allProducts.length === 0 ? (
                     <div className="py-6 px-4 text-center w-full">
@@ -2001,11 +2013,12 @@ function ProductsScreen() {
                   ) : null}
 
                   {/* Dynamic Products from Database */}
-                  {allProducts.slice(0, 8).map((p) => {
+                  {allProducts.slice(0, 8).map((p, pIdx) => {
                     const isLiked = interestedIds.includes(p.id);
                     return (
                       <div
                         key={p.id}
+                        id={pIdx === 0 ? "tour-market-detail-quote" : undefined}
                         onClick={() => handleOpenQuoteModal(p)}
                         className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
                       >

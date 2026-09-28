@@ -1,0 +1,534 @@
+{
+  "totalCeo1983Memberships": 41,
+  "departments": {
+    "Ban Công Nghệ & Chuyển Đổi Số": [
+      {
+        "department": "Ban Công Nghệ & Chuyển Đổi Số",
+        "executive_role": "Thành viên Ban Điều Hành",
+        "membership_role": "member",
+        "email": "vupv090120@gmail.com",
+        "name": "Vũ Văn A",
+        "phone": "098307777777",
+        "company_name": "ViOne Holdings & Technology",
+        "professional_title": "Tổng Giám Đốc • Thành viên Ban Điều Hành",
+        "member_code": "CEO1983-000003"
+      },
+      {
+        "department": "Ban Công Nghệ & Chuyển Đổi Số",
+        "executive_role": "Thành viên Ban Điều Hành",
+        "membership_role": "member",
+        "email": "vupv090120@gmail.com",
+        "name": "Vũ Văn A",
+        "phone": "0988090120",
+        "company_name": "ViOne Holdings & Technology",
+        "professional_title": "Tổng Giám Đốc • Thành viên Ban Điều Hành",
+        "member_code": "M1983-028"
+      }
+    ],
+    "Ban Quản Trị": [
+      {
+        "department": "Ban Quản Trị",
+        "executive_role": "admin",
+        "membership_role": "admin",
+        "email": "admin@connect.vn",
+        "name": "Phạm Văn Vũ (Admin)",
+        "phone": "0983000000",
+        "company_name": "Công ty TNHH TechMeia",
+        "professional_title": "CEO",
+        "member_code": "M1983-268"
+      }
+    ],
+    "Ban Thành viên": [
+      {
+        "department": "Ban Thành viên",
+        "executive_role": "Hội viên Ban Thành viên",
+        "membership_role": "member",
+        "email": "ceo.member1@ceo1983.com",
+        "name": "Đỗ Thị Mai",
+        "phone": "0983000006",
+        "company_name": "EcoClean Vietnam",
+        "professional_title": "Hội viên Ban Thành viên",
+        "member_code": "M1983-TV02"
+      },
+      {
+        "department": "Ban Thành viên",
+        "executive_role": "Trưởng Ban Thành Viên",
+        "membership_role": "admin",
+        "email": "ceo.thanhvien@ceo1983.com",
+        "name": "Nguyễn Văn Cường",
+        "phone": "0983000002",
+        "company_name": "Cường Thịnh Corp",
+        "professional_title": "Trưởng Ban Thành Viên",
+        "member_code": "M1983-TV01"
+      }
+    ],
+    "Ban Thư ký": [
+      {
+        "department": "Ban Thư ký",
+        "executive_role": "Hội viên Ban Thư ký",
+        "membership_role": "member",
+        "email": "ceo.member5@ceo1983.com",
+        "name": "Trịnh Kim Oanh",
+        "phone": "0983000010",
+        "company_name": "An Phát Holding",
+        "professional_title": "Hội viên Ban Thư ký",
+        "member_code": "M1983-TK02"
+      },
+      {
+        "department": "Ban Thư ký",
+        "executive_role": "Tổng Thư Ký",
+        "membership_role": "admin",
+        "email": "ceo.tongthuky@ceo1983.com",
+        "name": "Lê Hoàng Long",
+        "phone": "0983000001",
+        "company_name": "Tập Đoàn Hoàng Long",
+        "professional_title": "Tổng Thư Ký CLB CEO 1983",
+        "member_code": "M1983-TK01"
+      }
+    ],
+    "Ban Truyền thông": [
+      {
+        "department": "Ban Truyền thông",
+        "executive_role": "Hội viên Ban Truyền thông",
+        "membership_role": "member",
+        "email": "ceo.member3@ceo1983.com",
+        "name": "Ngô Bảo Anh",
+        "phone": "0983000008",
+        "company_name": "MediaPro Solution",
+        "professional_title": "Hội viên Ban Truyền thông",
+        "member_code": "M1983-TT02"
+      },
+      {
+        "department": "Ban Truyền thông",
+        "executive_role": "Trưởng Ban Truyền Thông",
+        "membership_role": "admin",
+        "email": "ceo.truyenthong@ceo1983.com",
+        "name": "Phạm Quang Huy",
+        "phone": "0983000004",
+        "company_name": "Huy Hoàng Media Group",
+        "professional_title": "Trưởng Ban Truyền Thông",
+        "member_code": "M1983-TT01"
+      }
+    ],
+    "Ban Tài chính": [
+      {
+        "department": "Ban Tài chính",
+        "executive_role": "Hội viên Ban Tài chính",
+        "membership_role": "member",
+        "email": "ceo.member4@ceo1983.com",
+        "name": "Đinh Trọng Hiếu",
+        "phone": "0983000009",
+        "company_name": "Tài Chính Việt An",
+        "professional_title": "Hội viên Ban Tài chính",
+        "member_code": "M1983-TC02"
+      },
+      {
+        "department": "Ban Tài chính",
+        "executive_role": "Trưởng Ban Tài Chính",
+        "membership_role": "admin",
+        "email": "ceo.taichinh@ceo1983.com",
+        "name": "Vũ Thu Trang",
+        "phone": "0983000003",
+        "company_name": "Kiến Vàng Capital",
+        "professional_title": "Trưởng Ban Tài Chính",
+        "member_code": "M1983-TC01"
+      }
+    ],
+    "Ban Xúc tiến thương mại": [
+      {
+        "department": "Ban Xúc tiến thương mại",
+        "executive_role": "Hội viên Ban Xúc tiến thương mại",
+        "membership_role": "member",
+        "email": "ceo.member2@ceo1983.com",
+        "name": "Bùi Đức Thắng",
+        "phone": "0983000007",
+        "company_name": "Thắng Lợi XNK JSC",
+        "professional_title": "Hội viên Ban Xúc tiến thương mại",
+        "member_code": "M1983-XT02"
+      },
+      {
+        "department": "Ban Xúc tiến thương mại",
+        "executive_role": "Trưởng Ban Xúc Tiến Thương Mại",
+        "membership_role": "admin",
+        "email": "ceo.xuctien@ceo1983.com",
+        "name": "Hoàng Minh Tuấn",
+        "phone": "0983000005",
+        "company_name": "Tuấn Minh Global Trade",
+        "professional_title": "Trưởng Ban Xúc Tiến Thương Mại",
+        "member_code": "M1983-XT01"
+      }
+    ],
+    "Ban Điều Hành Hệ Thống": [
+      {
+        "department": "Ban Điều Hành Hệ Thống",
+        "executive_role": "platform_admin",
+        "membership_role": "admin",
+        "email": "admin1@connect.vn",
+        "name": "Trần Tuấn Anh (Platform Admin)",
+        "phone": null,
+        "company_name": "ViConnect Holdings",
+        "professional_title": "Platform Administrator",
+        "member_code": null
+      }
+    ],
+    "Chủ tịch": [
+      {
+        "department": "Chủ tịch",
+        "executive_role": "Chủ tịch",
+        "membership_role": "admin",
+        "email": "ledung22183@gmail.com",
+        "name": "Lê Thị Dung",
+        "phone": "0988870888",
+        "company_name": "Công ty CP Đào tạo và phát triển nhân lực DGroup",
+        "professional_title": "Viện trưởng, Tổng giám đốc • Chủ tịch",
+        "member_code": "M1983-001"
+      }
+    ],
+    "Phó chủ tịch": [
+      {
+        "department": "Phó chủ tịch",
+        "executive_role": "Phó chủ tịch",
+        "membership_role": "member",
+        "email": "tuanht.vb@gmail.com",
+        "name": "Hoàng Thanh Tuấn",
+        "phone": "0983988999",
+        "company_name": "Thẩm mỹ Hoàng Tuấn",
+        "professional_title": "Chủ tịch Hội đồng cố vấn • Phó chủ tịch",
+        "member_code": "M1983-002"
+      },
+      {
+        "department": "Phó chủ tịch",
+        "executive_role": "Phó chủ tịch",
+        "membership_role": "member",
+        "email": "tuannt@saokim.com.vn",
+        "name": "Nguyễn Thanh Tuấn",
+        "phone": "0964699499",
+        "company_name": "Công ty CP tư vấn thương hiệu Sao Kim",
+        "professional_title": "Chủ tịch HĐQT • Phó chủ tịch",
+        "member_code": "M1983-003"
+      },
+      {
+        "department": "Phó chủ tịch",
+        "executive_role": "Phó chủ tịch",
+        "membership_role": "member",
+        "email": "theduan.pvn@gmail.com",
+        "name": "Nguyễn Thế Duẩn",
+        "phone": "0984247726",
+        "company_name": "Công ty cổ phần PVN",
+        "professional_title": "Giám Đốc • Phó chủ tịch",
+        "member_code": "M1983-008"
+      },
+      {
+        "department": "Phó chủ tịch",
+        "executive_role": "Phó chủ tịch",
+        "membership_role": "member",
+        "email": "ceo.acmholdings@gmail.com",
+        "name": "Nguyễn Trung Kiên",
+        "phone": "0767313314",
+        "company_name": "Công ty cổ phần ACM HOLDINGS/ Viện chiến lược công nghệ và đổi mới sáng tạo (STI)",
+        "professional_title": "Viện trưởng • Phó chủ tịch",
+        "member_code": "M1983-004"
+      },
+      {
+        "department": "Phó chủ tịch",
+        "executive_role": "Phó chủ tịch",
+        "membership_role": "member",
+        "email": "congtycophanvietphu@gmail.com",
+        "name": "Triệu Văn Ba",
+        "phone": "0973256686",
+        "company_name": "Công ty Cổ phần Đầu tư phát triển xây dựng Việt Phú",
+        "professional_title": "Chủ tịch HĐQT • Phó chủ tịch",
+        "member_code": "M1983-015"
+      },
+      {
+        "department": "Phó chủ tịch",
+        "executive_role": "Phó chủ tịch",
+        "membership_role": "member",
+        "email": "thanh.dm@valis.vn",
+        "name": "Đỗ Minh Thành",
+        "phone": "0948396888",
+        "company_name": "Công ty Cổ phần Valis Corporation",
+        "professional_title": "CEO • Phó chủ tịch",
+        "member_code": "M1983-005"
+      }
+    ],
+    "Phó chủ tịch, Trưởng đại diện KV phía Nam - Thành viên HCM": [
+      {
+        "department": "Phó chủ tịch, Trưởng đại diện KV phía Nam - Thành viên HCM",
+        "executive_role": "Phó chủ tịch, Trưởng đại diện KV phía Nam - Thành viên HCM",
+        "membership_role": "admin",
+        "email": "tuan.nguyen@haseca.com",
+        "name": "Nguyễn Anh Tuấn",
+        "phone": "0915062564",
+        "company_name": "Công ty Cổ phần Quốc tế Haseca mekong / Công ty Cổ phần Quốc tế Alpha food",
+        "professional_title": "Giám Đốc • Phó chủ tịch, Trưởng đại diện KV phía Nam - Thành viên HCM",
+        "member_code": "M1983-018"
+      }
+    ],
+    "Thành viên, UV BCH": [
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "huedohoa@gmail.com",
+        "name": "Dương Thị Huệ",
+        "phone": "0983971783",
+        "company_name": "Công ty Cổ phần Đại Khánh Holding",
+        "professional_title": "Giám Đốc • Thành viên, UV BCH",
+        "member_code": "M1983-016"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "hoanganh@avtravel.com.vn",
+        "name": "Hoàng Thị Ngọc Ánh",
+        "phone": "0941272222",
+        "company_name": "Công ty cổ phần thương mại AV",
+        "professional_title": "CEO • Thành viên, UV BCH",
+        "member_code": "M1983-014"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "admin@vietpromotion.vn",
+        "name": "Nguyễn Phi Hồng Nguyên",
+        "phone": "0908898475",
+        "company_name": "Công Ty TNHH Dịch Vụ Và Du Lịch Việt Promotion",
+        "professional_title": "Giám Đốc • Thành viên, UV BCH",
+        "member_code": "M1983-021"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "vptdl.prudential.q10@gmail.com",
+        "name": "Nguyễn Thế Tư",
+        "phone": "0813946888",
+        "company_name": "Công ty bảo hiểm nhân thọ Prudential",
+        "professional_title": "Giám Đốc • Thành viên, UV BCH",
+        "member_code": "M1983-024"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "nasakivn@gmail.com",
+        "name": "Nguyễn Thị Khuyên",
+        "phone": "0982695550",
+        "company_name": "Công ty TNHH NASAKI Việt Nam",
+        "professional_title": "Giám Đốc • Thành viên, UV BCH",
+        "member_code": "M1983-017"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "vanhuongplvn@gmail.com",
+        "name": "Nguyễn Vân Hương",
+        "phone": "0904157755",
+        "company_name": "Phó Ban Doanh nhân & Pháp luật Truyền thông, hỗ trợ pháp lý cho doanh nghiệp - Báo Pháp luật Việt Nam",
+        "professional_title": "Lãnh đạo Doanh nghiệp • Thành viên, UV BCH",
+        "member_code": "M1983-012"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "thuynv@minhdunggroup.vn",
+        "name": "Nguyễn Văn Thuy",
+        "phone": "0913968388",
+        "company_name": "Công ty CP Tập đoàn Minh Dũng",
+        "professional_title": "Chủ tịch HĐQT • Thành viên, UV BCH",
+        "member_code": "M1983-025"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "thanhphamphd@visionviet.vn",
+        "name": "Phạm Trung Thành",
+        "phone": "0911859969",
+        "company_name": "Công ty CP Vision Việt",
+        "professional_title": "Giám Đốc • Thành viên, UV BCH",
+        "member_code": "M1983-027"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "hungpham@hoangsaviet.com",
+        "name": "Phạm Văn Hùng",
+        "phone": "0942222075",
+        "company_name": "Công ty CP Đầu tư và Phát triển Hoàng Sa Việt",
+        "professional_title": "CEO • Thành viên, UV BCH",
+        "member_code": "M1983-019"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "phuong.trananh83@gmail.com",
+        "name": "Trần Ánh Phương",
+        "phone": "0903299616",
+        "company_name": "Công ty TNHH T’imex",
+        "professional_title": "CEO • Thành viên, UV BCH",
+        "member_code": "M1983-010"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "thaitq@tcsoft.vn",
+        "name": "Trịnh Quang Thái",
+        "phone": "0912841157",
+        "company_name": "Công ty TNHH Thương mại và Phát triển công nghệ phần mềm TCSOFT",
+        "professional_title": "Giám Đốc • Thành viên, UV BCH",
+        "member_code": "M1983-023"
+      },
+      {
+        "department": "Thành viên, UV BCH",
+        "executive_role": "Thành viên, UV BCH",
+        "membership_role": "admin",
+        "email": "hoanggiangpt44b@gmail.com",
+        "name": "Đặng Văn Giang",
+        "phone": "0974788686",
+        "company_name": "Công ty TNHH Nonifarm",
+        "professional_title": "Giám Đốc • Thành viên, UV BCH",
+        "member_code": "M1983-022"
+      }
+    ],
+    "UV BCH": [
+      {
+        "department": "UV BCH",
+        "executive_role": "UV BCH",
+        "membership_role": "admin",
+        "email": "master@hoaduong.vn",
+        "name": "Cao Văn Mạnh",
+        "phone": "0982848884",
+        "company_name": "Hoa Dương Entertainment(Công ty CP Nghệ thuật Giải trí Hoa Dương)",
+        "professional_title": "CEO • UV BCH",
+        "member_code": "M1983-013"
+      }
+    ],
+    "UV BCH, Thành viên": [
+      {
+        "department": "UV BCH, Thành viên",
+        "executive_role": "UV BCH, Thành viên",
+        "membership_role": "admin",
+        "email": "kevin.nam@globalcom.vn",
+        "name": "Hoàng Văn Nam",
+        "phone": "0988311882",
+        "company_name": "Công Ty TNHH Kho Vận Globalcom",
+        "professional_title": "Giám Đốc • UV BCH, Thành viên",
+        "member_code": "M1983-011"
+      },
+      {
+        "department": "UV BCH, Thành viên",
+        "executive_role": "UV BCH, Thành viên",
+        "membership_role": "admin",
+        "email": "toannd2910@gmail.com",
+        "name": "Nguyễn Đình Toản",
+        "phone": "0989310558",
+        "company_name": "Công ty Cổ phần Địa ốc Tân Hưng Gia",
+        "professional_title": "Chủ tịch HĐQT • UV BCH, Thành viên",
+        "member_code": "M1983-006"
+      },
+      {
+        "department": "UV BCH, Thành viên",
+        "executive_role": "UV BCH, Thành viên",
+        "membership_role": "admin",
+        "email": "nguyentrang021083@gmail.com",
+        "name": "Nguyễn Thị Hồng Trang",
+        "phone": "0983126918",
+        "company_name": "Công ty TNHH sản xuất thương mại và dịch vụ Việt An Phát",
+        "professional_title": "Giám Đốc • UV BCH, Thành viên",
+        "member_code": "M1983-009"
+      },
+      {
+        "department": "UV BCH, Thành viên",
+        "executive_role": "UV BCH, Thành viên",
+        "membership_role": "admin",
+        "email": "trangnguyentrangh84@gmail.com",
+        "name": "Nguyễn Thị Phượng (Trang Nguyễn)",
+        "phone": "0907117118",
+        "company_name": "Công ty TNHH TMDV Nhà hàng SOS",
+        "professional_title": "Giám Đốc • UV BCH, Thành viên",
+        "member_code": "M1983-020"
+      },
+      {
+        "department": "UV BCH, Thành viên",
+        "executive_role": "UV BCH, Thành viên",
+        "membership_role": "admin",
+        "email": "thanh.pq@quyettienco.com",
+        "name": "Phùng Quyết Thanh",
+        "phone": "0987879689",
+        "company_name": "Công ty TNHH Thiết bị và Công nghệ Quyết Tiến",
+        "professional_title": "Giám Đốc • UV BCH, Thành viên",
+        "member_code": "M1983-007"
+      },
+      {
+        "department": "UV BCH, Thành viên",
+        "executive_role": "UV BCH, Thành viên",
+        "membership_role": "admin",
+        "email": "vpct@vtgroup.com.vn",
+        "name": "Trần Đức Tuân",
+        "phone": "0909588136",
+        "company_name": "Công ty CP Việt Thái Group",
+        "professional_title": "Chủ tịch HĐQT • UV BCH, Thành viên",
+        "member_code": "M1983-026"
+      }
+    ]
+  },
+  "demoSystemUsers": [
+    {
+      "email": "admin1@connect.vn",
+      "name": "Trần Tuấn Anh (Platform Admin)"
+    },
+    {
+      "email": "admin@connect.vn",
+      "name": "Phạm Văn Vũ (Admin)"
+    },
+    {
+      "email": "ceo.tongthuky@ceo1983.com",
+      "name": "Lê Hoàng Long"
+    },
+    {
+      "email": "ceo.thanhvien@ceo1983.com",
+      "name": "Nguyễn Văn Cường"
+    },
+    {
+      "email": "ceo.taichinh@ceo1983.com",
+      "name": "Vũ Thu Trang"
+    },
+    {
+      "email": "ceo.truyenthong@ceo1983.com",
+      "name": "Phạm Quang Huy"
+    },
+    {
+      "email": "ceo.xuctien@ceo1983.com",
+      "name": "Hoàng Minh Tuấn"
+    },
+    {
+      "email": "ceo.member1@ceo1983.com",
+      "name": "Đỗ Thị Mai"
+    },
+    {
+      "email": "ceo.member2@ceo1983.com",
+      "name": "Bùi Đức Thắng"
+    },
+    {
+      "email": "ceo.member3@ceo1983.com",
+      "name": "Ngô Bảo Anh"
+    },
+    {
+      "email": "ceo.member4@ceo1983.com",
+      "name": "Đinh Trọng Hiếu"
+    },
+    {
+      "email": "ceo.member5@ceo1983.com",
+      "name": "Trịnh Kim Oanh"
+    }
+  ]
+}

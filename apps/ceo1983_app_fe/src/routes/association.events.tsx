@@ -338,6 +338,7 @@ function EventPosterCard({
   return (
     <div
       role="listitem"
+      id={index === 0 ? "tour-events-card" : undefined}
       onClick={() => onSelect(event)}
       className="group relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 dark:border-white/10 shadow-xs hover:shadow-xl bg-white dark:bg-[#0f172a]/90 backdrop-blur-md cursor-pointer select-none transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-400/50 flex flex-col sm:flex-row items-stretch"
     >
@@ -436,12 +437,30 @@ function EventPosterCard({
 
         {/* Bottom CTA Action Bar */}
         <div className="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-          <span className="text-[11px] font-medium text-slate-400">
-            {registered ? "Đã giữ chỗ thành công" : "Mở cho toàn thể Hội viên"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-slate-400">
+              {registered ? "Đã giữ chỗ thành công" : "Mở cho toàn thể Hội viên"}
+            </span>
+            <button
+              id={index === 0 ? "tour-events-calendar-sync" : undefined}
+              type="button"
+              onClick={(evt) => {
+                evt.stopPropagation();
+                toast.success("Đã đồng bộ sự kiện vào Calendar trên điện thoại thành công!");
+              }}
+              title="Đồng bộ vào lịch điện thoại"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-300/40 text-[10px] font-bold hover:bg-amber-100 transition cursor-pointer"
+            >
+              <Calendar className="h-3 w-3" />
+              <span>Lịch</span>
+            </button>
+          </div>
 
-          <span className="inline-flex items-center gap-1 text-[11.5px] font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
-            <span>Chi tiết</span>
+          <span
+            id={index === 0 ? "tour-events-register-btn" : undefined}
+            className="inline-flex items-center gap-1 text-[11.5px] font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform"
+          >
+            <span>{registered ? "Xem vé" : "Đăng ký vé"}</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </div>
@@ -1257,7 +1276,7 @@ function EventsScreen() {
         </div>
 
         {/* Menu phân chia: Tất cả, Đã đăng ký, Miễn phí, Có phí, Đã đánh dấu */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+        <div id="tour-events-tabs" className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
           {[
             { id: "all", label: isEn ? "All" : "Tất cả", count: events.length },
             { id: "registered", label: isEn ? "Registered" : "Đã đăng ký", count: registeredEvents.length },

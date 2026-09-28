@@ -334,7 +334,7 @@ function VotingPage() {
             </button>
             <button
               onClick={() => setLuckyDrawOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-95"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-95"
             >
               <Gift className="h-4 w-4" />
               Bốc Thăm Trúng Thưởng
@@ -1002,7 +1002,7 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
             <button
               onClick={spin}
               disabled={spinning}
-              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Sparkles className="h-4 w-4" />
               {spinning ? "Đang quay số..." : "QUAY SỐ NGẪU NHIÊN"}

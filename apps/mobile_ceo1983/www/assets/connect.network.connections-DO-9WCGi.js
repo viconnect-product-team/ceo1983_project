@@ -1,0 +1,1 @@
+import{j as o}from"./index-7E76FxQV.js";import{N as t}from"./NetworkSectionView-Bfv8r5Qk.js";import"./error-messages-D_YS79uH.js";import"./user-round-DYqqw9sP.js";const p=()=>o.jsx(t,{section:"connections"});export{p as component};

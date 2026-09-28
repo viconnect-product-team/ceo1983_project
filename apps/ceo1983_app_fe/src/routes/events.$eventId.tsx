@@ -429,7 +429,7 @@ function EventDetailPage() {
                 <button
                   type="button"
                   onClick={() => setGatekeeperOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-500/20 transition"
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20 transition"
                 >
                   <QrCode className="h-4 w-4" aria-hidden="true" />
                   Quản lý QR Gatekeeper

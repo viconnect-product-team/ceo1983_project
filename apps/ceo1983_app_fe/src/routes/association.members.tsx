@@ -521,7 +521,7 @@ function MembersScreen() {
 
       {/* Search Input & Invite Button */}
       <div className="px-4 pt-3 flex items-center gap-2">
-        <div className="flex-1 flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 shadow-none">
+        <div id="tour-members-search" className="flex-1 flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 shadow-none">
           <Search className="h-4 w-4 text-slate-400 shrink-0" />
           <input
             value={q}
@@ -553,7 +553,7 @@ function MembersScreen() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 px-4 pt-3 overflow-x-auto no-scrollbar">
+      <div id="tour-members-filter" className="flex gap-2 px-4 pt-3 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setTab("all")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
@@ -749,7 +749,7 @@ function MembersScreen() {
               </div>
             )}
 
-            {filtered.map((m) => {
+            {filtered.map((m, mIndex) => {
           const targetId = (m.userId || m.code).toLowerCase();
           const isFriend = checkIsFriend(m);
           const isOutgoing = Boolean(
@@ -768,6 +768,7 @@ function MembersScreen() {
             <div
               key={m.code}
               role="listitem"
+              id={mIndex === 0 ? "tour-members-card-item" : undefined}
               className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-[#001B54]/40 bg-white dark:bg-[#131a26] shadow-xs"
             >
               <div className="flex items-center gap-3">
@@ -863,7 +864,7 @@ function MembersScreen() {
                 </div>
 
                 {/* Connection Lifecycle: Primary Action */}
-                <div className="flex items-center gap-1.5">
+                <div id={mIndex === 0 ? "tour-members-connect-btn" : undefined} className="flex items-center gap-1.5">
                   {isFriend ? (
                     <button
                       type="button"

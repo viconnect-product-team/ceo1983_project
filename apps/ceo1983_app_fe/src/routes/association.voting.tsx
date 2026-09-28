@@ -251,8 +251,36 @@ function AssociationVotingScreen() {
         </div>
       </div>
 
+      {/* Lucky Draw Gala Banner */}
+      <div
+        id="tour-voting-lucky-draw"
+        className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-amber-600/10 p-3.5 border border-amber-400/30 flex items-center justify-between gap-3 shadow-xs"
+      >
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500 text-slate-950 font-black shrink-0 shadow-sm text-lg">
+            🎁
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                GALA DINNER
+              </span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white">
+                Vòng Quay May Mắn Realtime
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              Tự động khớp mã vé của bạn với lồng quay số sân khấu đại hội
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 px-2.5 py-1 rounded-lg bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 text-[11px] font-bold shadow-xs">
+          Sẵn sàng
+        </span>
+      </div>
+
       {/* Tabs Switcher */}
-      <div className="mx-4 mt-4 flex rounded-2xl bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200 dark:border-slate-700/60 shadow-xs">
+      <div id="tour-voting-tabs" className="mx-4 mt-4 flex rounded-2xl bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200 dark:border-slate-700/60 shadow-xs">
         <button
           type="button"
           onClick={() => setActiveTab("active")}
@@ -318,7 +346,7 @@ function AssociationVotingScreen() {
             </p>
           </div>
         ) : (
-          filteredSessions.map((session) => {
+          filteredSessions.map((session, sIdx) => {
             const hasVoted = Boolean(session.myVoteOptionId);
             const totalVotes = session.options.reduce((sum, o) => sum + o.voteCount, 0) || 1;
             const turnOutPercent = Math.round((session.totalVoted / session.totalEligibleMembers) * 100);
@@ -326,6 +354,7 @@ function AssociationVotingScreen() {
             return (
               <div
                 key={session.id}
+                id={sIdx === 0 ? "tour-voting-poll-card" : undefined}
                 className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-4 sm:p-5 shadow-sm space-y-3.5 transition hover:border-[#003B95]/40"
               >
                 {/* Meeting Context Header */}
@@ -481,9 +510,10 @@ function AssociationVotingScreen() {
                         </div>
                       ) : (
                         <button
+                          id={sIdx === 0 ? "tour-voting-submit-btn" : undefined}
                           type="button"
                           onClick={() => handleCastVote(session.id)}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-5 py-2 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-95 transition cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] hover:brightness-105 px-5 py-2 text-xs font-bold text-slate-950 shadow-md active:scale-95 transition cursor-pointer"
                         >
                           <Vote className="h-3.5 w-3.5" />
                           <span>Xác nhận biểu quyết</span>

@@ -812,7 +812,7 @@ function CheckinScreen() {
 
         <div className="p-4 sm:p-6 max-w-lg mx-auto space-y-4">
           {/* Official Event Ticket Pass Card */}
-          <div className="overflow-hidden rounded-3xl border-2 border-[#003B95] bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl">
+          <div id="tour-checkin-ticket" className="overflow-hidden rounded-3xl border-2 border-[#003B95] bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl">
             {/* Header ribbon */}
             <div className="bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#2E3192] px-4 py-3 text-center text-xs font-black text-amber-300 tracking-wider uppercase flex items-center justify-center gap-2 border-b border-amber-400/40">
               <Sparkles className="h-4 w-4 text-amber-400" />
@@ -867,7 +867,7 @@ function CheckinScreen() {
               </div>
 
               {/* Attendee Details Card */}
-              <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-4 text-left space-y-2.5">
+              <div id="tour-checkin-seat" className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-4 text-left space-y-2.5">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
                   <span className="text-xs text-slate-500 dark:text-slate-400">Đại biểu:</span>
                   <span className="text-xs font-bold text-slate-900 dark:text-white">{attendeeName}</span>
@@ -967,7 +967,7 @@ function CheckinScreen() {
       <MemberHeader title="Soát Vé Sự Kiện (Ban Truyền Thông)" back />
 
       {/* Media Department Active Badge */}
-      <div className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#2E3192] p-3 text-white shadow-md border border-amber-400/40 flex items-center justify-between gap-2">
+      <div id="tour-checkin-media-badge" className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#2E3192] p-3 text-white shadow-md border border-amber-400/40 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-slate-950 shrink-0 font-black">
             <ShieldCheck className="h-5 w-5" />
@@ -996,7 +996,7 @@ function CheckinScreen() {
 
       {/* 2 hình thức Check-in: 1 là quét Standee/Vé, 2 là xuất trình QR vé của tôi */}
       <div className="px-4 pt-3">
-        <div className="flex rounded-2xl bg-slate-100 dark:bg-slate-900/60 p-1 border border-slate-200 dark:border-white/10">
+        <div id="tour-checkin-mode-toggle" className="flex rounded-2xl bg-slate-100 dark:bg-slate-900/60 p-1 border border-slate-200 dark:border-white/10">
           <button
             type="button"
             onClick={() => setCheckinMethod("scan")}
