@@ -4,6 +4,9 @@ import { fetchNestApiFromServer } from "@/lib/api-client";
 
 // ---------- Types returned to the PWA ----------
 export type MyMember = {
+  id?: string;
+  userId?: string;
+  user_id?: string;
   code: string;
   name: string;
   status: string;

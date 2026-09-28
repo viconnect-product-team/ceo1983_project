@@ -78,7 +78,7 @@ export const listConversations = createServerFn({ method: "GET" })
 export const listMessages = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
-    z.object({ peerCode: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/) }).parse(d),
+    z.object({ peerCode: z.string().min(1).max(255) }).parse(d),
   )
   .handler(async ({ data, context }: any): Promise<{ peerName: string; avatarUrl?: string | null; isSystem?: boolean; messages: ChatMessage[] }> => {
     try {
@@ -110,7 +110,7 @@ export const sendMessage = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
     z
-      .object({ peerCode: z.string().min(1).max(64), text: z.string().trim().min(1).max(2000) })
+      .object({ peerCode: z.string().min(1).max(255), text: z.string().trim().min(1).max(5000) })
       .parse(d),
   )
   .handler(async ({ data, context }: any): Promise<{ ok: boolean }> => {
@@ -138,7 +138,7 @@ export const retractMemberMessage = createServerFn({ method: "POST" })
 export const requestMemberConnectionFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
-    z.object({ targetUserId: z.string().uuid(), message: z.string().optional() }).parse(d),
+    z.object({ targetUserId: z.string().min(1), message: z.string().optional() }).parse(d),
   )
   .handler(async ({ data, context }: any): Promise<any> => {
     const token = context?.token;
@@ -151,7 +151,7 @@ export const requestMemberConnectionFn = createServerFn({ method: "POST" })
 export const respondMemberConnectionFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
-    z.object({ connectionId: z.string().uuid(), action: z.enum(["accept", "decline"]) }).parse(d),
+    z.object({ connectionId: z.string().min(1), action: z.enum(["accept", "decline"]) }).parse(d),
   )
   .handler(async ({ data, context }: any): Promise<any> => {
     const token = context?.token;
@@ -164,7 +164,7 @@ export const respondMemberConnectionFn = createServerFn({ method: "POST" })
 export const disconnectMemberConnectionFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
-    z.object({ connectionId: z.string().uuid() }).parse(d),
+    z.object({ connectionId: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data, context }: any): Promise<any> => {
     const token = context?.token;

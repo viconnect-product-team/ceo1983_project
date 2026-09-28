@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchNestApi } from "@/lib/api-client";
+import { isTokenValid, decodeJwt } from "@/context/AuthContext";
 
 export type SrsRole = "ADM" | "BQT" | "BTV" | "BTC" | "BTT" | "HVT";
 export type AppRole = "platform_admin" | "admin" | "moderator" | "member" | string;
@@ -34,18 +35,20 @@ export function useRole(): RoleState {
   const [loading, setLoading] = useState(true);
 
   const resolveSrsRole = (rawRoles: string[], user: any, member: any): SrsRole => {
-    // 1. Check local override for testing
-    if (typeof window !== "undefined") {
+    const rList = rawRoles.map((r) => String(r).toLowerCase());
+    const primaryRole = String(user?.role || member?.role || "").toLowerCase();
+    const isActualAdmin = rList.includes("platform_admin") || rList.includes("admin") || primaryRole === "admin" || primaryRole === "platform_admin";
+
+    // 1. Check local override for testing (chỉ cho phép nếu tài khoản có quyền admin)
+    if (typeof window !== "undefined" && isActualAdmin) {
       const savedOverride = localStorage.getItem("vba_crm_role_override") as SrsRole;
       if (savedOverride && ["ADM", "BQT", "BTV", "BTC", "BTT", "HVT"].includes(savedOverride)) {
         return savedOverride;
       }
     }
 
-    const rList = rawRoles.map((r) => String(r).toLowerCase());
     const execRole = String(member?.executiveRole || user?.executiveRole || "").toLowerCase();
     const dept = String(member?.department || user?.department || "").toLowerCase();
-    const primaryRole = String(user?.role || member?.role || "").toLowerCase();
 
     // ADM (Super Admin / Platform Admin)
     if (rList.includes("platform_admin") || rList.includes("superadmin") || primaryRole === "platform_admin" || primaryRole === "superadmin") {
@@ -109,21 +112,51 @@ export function useRole(): RoleState {
 
   useEffect(() => {
     let active = true;
-    (async () => {
+
+    const loadRoles = async () => {
       try {
         let me: any = null;
         let member: any = null;
 
-        try {
-          me = await fetchNestApi("/users/me");
-        } catch {
-          // ignore
+        const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
+        if (token && isTokenValid(token)) {
+          try {
+            me = await fetchNestApi("/users/me");
+          } catch {
+            // Token hợp lệ nhưng API lỗi, giải mã trực tiếp từ payload JWT
+            const decoded = decodeJwt(token);
+            if (decoded) {
+              me = {
+                id: decoded.sub || decoded.id,
+                email: decoded.email,
+                role: decoded.role || decoded.user_role,
+                roles: decoded.roles || (decoded.role ? [decoded.role] : []),
+              };
+            }
+          }
+        } else if (token) {
+          // Token không còn hợp lệ, không gọi API để tránh lỗi 401
+          const decoded = decodeJwt(token);
+          if (decoded) {
+            me = {
+              id: decoded.sub || decoded.id,
+              email: decoded.email,
+              role: decoded.role || decoded.user_role,
+              roles: decoded.roles || (decoded.role ? [decoded.role] : []),
+            };
+          }
         }
 
         if (typeof window !== "undefined") {
           try {
             const rawMem = localStorage.getItem("vba_my_member");
-            if (rawMem) member = JSON.parse(rawMem);
+            if (rawMem) {
+              const parsedMem = JSON.parse(rawMem);
+              // Chỉ sử dụng cached member nếu userId khớp với tài khoản hiện tại
+              if (!me?.id || !parsedMem?.userId || parsedMem.userId === me.id) {
+                member = parsedMem;
+              }
+            }
           } catch {}
         }
 
@@ -155,9 +188,25 @@ export function useRole(): RoleState {
       } finally {
         if (active) setLoading(false);
       }
-    })();
+    };
+
+    loadRoles();
+
+    const handleAuthChange = () => {
+      loadRoles();
+    };
+
+    window.addEventListener("vba_auth_changed", handleAuthChange);
+    window.addEventListener("role-changed", handleAuthChange);
+    window.addEventListener("profile-updated", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
     return () => {
       active = false;
+      window.removeEventListener("vba_auth_changed", handleAuthChange);
+      window.removeEventListener("role-changed", handleAuthChange);
+      window.removeEventListener("profile-updated", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
     };
   }, []);
 

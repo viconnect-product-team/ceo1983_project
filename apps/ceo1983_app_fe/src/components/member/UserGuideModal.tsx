@@ -168,18 +168,18 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative flex h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border-2 border-amber-400/40 bg-white dark:bg-[#071228] text-slate-900 dark:text-white shadow-2xl animate-scale-in">
-        {/* Header Bar: Executive Navy & Champagne Gold Accents */}
-        <div className="shrink-0 flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3.5 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] text-white">
+      <div className="relative flex h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border-2 border-[#003B95]/40 bg-white dark:bg-[#071228] text-slate-900 dark:text-white shadow-2xl animate-scale-in">
+        {/* Header Bar: Executive Navy & CEO 1983 Blue Accents */}
+        <div className="shrink-0 flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3.5 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#19194D] text-white">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-400/20 border border-amber-400/40 text-amber-300 shadow-xs">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-white shadow-xs">
               <Compass className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-black tracking-tight text-white flex items-center gap-1.5">
                   <span>HƯỚNG DẪN THAO TÁC TỪNG MÀN HÌNH</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/50 uppercase font-black">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/40 uppercase font-black">
                     Chuẩn Mobile Banking
                   </span>
                 </h3>
@@ -194,10 +194,10 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             <button
               type="button"
               onClick={() => handleLaunchLiveTour(currentScreen)}
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-slate-950 bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] hover:brightness-105 px-3.5 py-1.5 rounded-xl transition shadow-md cursor-pointer border border-amber-300/60 active:scale-95"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-white bg-gradient-to-r from-[#003B95] to-[#19194D] hover:brightness-110 px-3.5 py-1.5 rounded-xl transition shadow-md cursor-pointer border border-blue-400/40 active:scale-95"
               title="Khởi động chỉ dẫn trực tiếp trên màn hình này"
             >
-              <Sparkles className="h-3.5 w-3.5 text-slate-950" />
+              <Sparkles className="h-3.5 w-3.5 text-sky-300" />
               <span>Chạy Tour Trực Tiếp</span>
             </button>
             <button
@@ -218,7 +218,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             onClick={() => setActiveTab("screens")}
             className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === "screens"
-                ? "border-[#003B95] text-[#003B95] dark:border-amber-400 dark:text-amber-300"
+                ? "border-[#003B95] text-[#003B95] dark:border-sky-400 dark:text-sky-300"
                 : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
@@ -231,7 +231,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             onClick={() => setActiveTab("pdf")}
             className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === "pdf"
-                ? "border-[#003B95] text-[#003B95] dark:border-amber-400 dark:text-amber-300"
+                ? "border-[#003B95] text-[#003B95] dark:border-sky-400 dark:text-sky-300"
                 : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
@@ -254,7 +254,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                     placeholder="Tìm màn hình hoặc thao tác..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/60 pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#003B95] dark:focus:border-amber-400"
+                    className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/60 pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#003B95] dark:focus:border-sky-400"
                   />
                 </div>
               </div>
@@ -274,7 +274,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                       }}
                       className={`w-full text-left p-2.5 rounded-2xl transition cursor-pointer flex items-center justify-between gap-2.5 border ${
                         isSelected
-                          ? "bg-amber-500/10 dark:bg-amber-400/15 border-amber-400/60 shadow-sm"
+                          ? "bg-[#003B95]/10 dark:bg-[#003B95]/25 border-[#003B95]/60 shadow-sm"
                           : "border-transparent hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                       }`}
                     >
@@ -282,7 +282,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                         <div
                           className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 border transition ${
                             isSelected
-                              ? "bg-gradient-to-br from-[#003B95] to-[#0A1A3A] text-amber-300 border-amber-400/60"
+                              ? "bg-gradient-to-br from-[#003B95] to-[#19194D] text-white border-blue-400/40"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10"
                           }`}
                         >
@@ -292,7 +292,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                           <div className="flex items-center gap-1.5">
                             <span
                               className={`text-[9.5px] font-black uppercase tracking-wider ${
-                                isSelected ? "text-[#003B95] dark:text-amber-300" : "text-slate-400"
+                                isSelected ? "text-[#003B95] dark:text-sky-300" : "text-slate-400"
                               }`}
                             >
                               {screen.badge}
@@ -312,7 +312,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                       </div>
                       <ChevronRight
                         className={`h-4 w-4 shrink-0 transition ${
-                          isSelected ? "text-amber-500 translate-x-0.5" : "text-slate-300 dark:text-slate-600"
+                          isSelected ? "text-[#003B95] dark:text-sky-400 translate-x-0.5" : "text-slate-300 dark:text-slate-600"
                         }`}
                       />
                     </button>
@@ -325,9 +325,9 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                 <button
                   type="button"
                   onClick={() => handleLaunchLiveTour(currentScreen)}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-sm hover:brightness-105 active:scale-95 transition cursor-pointer border border-amber-300/60"
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm hover:brightness-110 active:scale-95 transition cursor-pointer border border-blue-400/40"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-slate-950" />
+                  <Sparkles className="h-3.5 w-3.5 text-sky-300" />
                   <span>Trải Nghiệm Màn Này Ngay →</span>
                 </button>
               </div>
@@ -338,12 +338,12 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
               {/* Screen Banner Card */}
               <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c1836] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#001D4A] to-[#003B95] text-amber-300 border border-amber-400/40 shadow-sm shrink-0">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#001D4A] to-[#003B95] text-white border border-blue-400/40 shadow-sm shrink-0">
                     <ScreenIcon className="h-6 w-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-400/30 text-[10px] font-black uppercase">
+                      <span className="px-2 py-0.5 rounded-full bg-[#003B95]/10 text-[#003B95] dark:text-sky-300 border border-[#003B95]/30 text-[10px] font-black uppercase">
                         {currentScreen.badge}
                       </span>
                       <span className="text-[11px] font-mono text-slate-400">
@@ -375,7 +375,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Quy trình 4 thao tác cốt lõi trên màn hình này:
                   </span>
-                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                  <span className="text-xs font-bold text-[#003B95] dark:text-sky-400">
                     Bước {activeStepIndex + 1} / {currentScreen.steps.length}
                   </span>
                 </div>
@@ -390,7 +390,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                         onClick={() => setActiveStepIndex(idx)}
                         className={`p-2.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1 shadow-xs ${
                           isStepActive
-                            ? "bg-amber-500/10 dark:bg-amber-400/15 border-amber-400 text-slate-900 dark:text-white"
+                            ? "bg-[#003B95]/10 dark:bg-[#003B95]/20 border-[#003B95] text-slate-900 dark:text-white"
                             : "bg-white dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300"
                         }`}
                       >
@@ -398,7 +398,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                           <span
                             className={`h-5 w-5 rounded-full grid place-items-center text-[10px] font-black ${
                               isStepActive
-                                ? "bg-amber-400 text-slate-950 font-black shadow-xs"
+                                ? "bg-[#003B95] text-white font-black shadow-xs"
                                 : "bg-slate-100 dark:bg-slate-800 text-slate-500"
                             }`}
                           >
@@ -416,10 +416,10 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
               </div>
 
               {/* Detailed Active Step Card (Bank-Style Coach Mark Detail) */}
-              <div className="rounded-3xl border-2 border-amber-400/40 bg-white dark:bg-[#0A1428] p-5 shadow-lg space-y-3.5">
+              <div className="rounded-3xl border-2 border-[#003B95]/30 bg-white dark:bg-[#071228] p-5 shadow-lg space-y-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-white/10 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#001D4A] to-[#003B95] text-amber-300 border border-amber-400/40 text-xs font-black uppercase tracking-wider">
+                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#003B95] to-[#19194D] text-white border border-blue-400/40 text-xs font-black uppercase tracking-wider">
                       BƯỚC {activeStepIndex + 1}: {activeStep.title}
                     </span>
                     <span className="text-lg">{activeStep.icon}</span>
@@ -446,11 +446,11 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300/40 dark:border-amber-400/20 p-3 space-y-1">
-                    <span className="text-[10.5px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-400 block">
+                  <div className="rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 p-3 space-y-1">
+                    <span className="text-[10.5px] font-black uppercase tracking-wider text-[#003B95] dark:text-sky-400 block">
                       👉 Thao tác cụ thể:
                     </span>
-                    <p className="text-xs font-semibold text-slate-800 dark:text-amber-100">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
                       {activeStep.instruction}
                     </p>
                   </div>
@@ -481,8 +481,8 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   )}
 
                   {activeStep.proTip && (
-                    <div className="rounded-2xl bg-amber-500/10 border border-amber-400/40 p-3 flex items-start gap-2 text-xs text-amber-900 dark:text-amber-200">
-                      <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="rounded-2xl bg-sky-500/10 border border-sky-400/30 p-3 flex items-start gap-2 text-xs text-sky-950 dark:text-sky-200">
+                      <Sparkles className="h-4 w-4 text-sky-500 shrink-0 mt-0.5" />
                       <div>
                         <strong>Mẹo Doanh Nhân (VIP Pro Tip):</strong> {activeStep.proTip}
                       </div>
@@ -507,18 +507,18 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                       <button
                         type="button"
                         onClick={() => setActiveStepIndex((prev) => prev + 1)}
-                        className="px-4 py-2 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-black text-xs shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer border border-amber-300/60 flex items-center gap-1.5"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] text-white font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer border border-blue-400/40 flex items-center gap-1.5"
                       >
                         <span>Bước tiếp theo</span>
-                        <ArrowRight className="h-3.5 w-3.5 text-slate-950" />
+                        <ArrowRight className="h-3.5 w-3.5 text-white" />
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={() => handleLaunchLiveTour(currentScreen)}
-                        className="px-5 py-2 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-black text-xs shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer border border-amber-300/60 flex items-center gap-1.5"
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] text-white font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer border border-blue-400/40 flex items-center gap-1.5"
                       >
-                        <Sparkles className="h-3.5 w-3.5 text-slate-950" />
+                        <Sparkles className="h-3.5 w-3.5 text-white" />
                         <span>Chạy thử ngay trên màn này</span>
                       </button>
                     )}
@@ -535,7 +535,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             {/* Left Column: 5 Ban Hotline Contacts */}
             <div className="w-full md:w-80 lg:w-96 shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 flex flex-col bg-white dark:bg-[#0a152d]/90 p-4 space-y-3 overflow-y-auto [scrollbar-width:thin]">
               <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#003B95] dark:text-sky-400">
                   HỖ TRỢ TRỰC TIẾP TỪ CÁC BAN
                 </span>
                 <h3 className="text-sm font-black text-slate-900 dark:text-white">
@@ -549,12 +549,12 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
               {/* Committee Contacts List */}
               <div className="space-y-2 pt-1">
                 {/* 1. Ban Truyền Thông */}
-                <div className="rounded-2xl border border-amber-400/40 bg-amber-50/50 dark:bg-amber-950/20 p-3 space-y-1">
+                <div className="rounded-2xl border border-[#003B95]/30 bg-blue-50/50 dark:bg-blue-950/20 p-3 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase text-amber-700 dark:text-amber-300">
+                    <span className="text-[10px] font-black uppercase text-[#003B95] dark:text-sky-300">
                       Ban Truyền Thông & Sự Kiện
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-[#003B95] dark:text-sky-300 font-bold">
                       Soát vé & Gala
                     </span>
                   </div>
@@ -563,12 +563,12 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   </h4>
                   <p className="text-[11px] text-slate-500">Huy Hoàng Media Group</p>
                   <div className="pt-1.5 flex items-center justify-between text-xs">
-                    <span className="font-mono font-bold text-[#003B95] dark:text-amber-400">
+                    <span className="font-mono font-bold text-[#003B95] dark:text-sky-400">
                       0983 000 004
                     </span>
                     <a
                       href="tel:0983000004"
-                      className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[11px] hover:bg-amber-400 transition"
+                      className="px-2.5 py-1 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-[11px] transition shadow-xs"
                     >
                       Gọi ngay
                     </a>
@@ -590,12 +590,12 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   </h4>
                   <p className="text-[11px] text-slate-500">Tập Đoàn Hoàng Long</p>
                   <div className="pt-1.5 flex items-center justify-between text-xs">
-                    <span className="font-mono font-bold text-[#003B95] dark:text-amber-400">
+                    <span className="font-mono font-bold text-[#003B95] dark:text-sky-400">
                       0983 000 001
                     </span>
                     <a
                       href="tel:0983000001"
-                      className="px-2.5 py-1 rounded-lg bg-[#003B95] text-white font-bold text-[11px] hover:bg-blue-800 transition"
+                      className="px-2.5 py-1 rounded-lg bg-[#003B95] text-white font-bold text-[11px] hover:bg-[#002B70] transition shadow-xs"
                     >
                       Gọi ngay
                     </a>
@@ -617,12 +617,12 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   </h4>
                   <p className="text-[11px] text-slate-500">Cường Thịnh Corp</p>
                   <div className="pt-1.5 flex items-center justify-between text-xs">
-                    <span className="font-mono font-bold text-[#003B95] dark:text-amber-400">
+                    <span className="font-mono font-bold text-[#003B95] dark:text-sky-400">
                       0983 000 002
                     </span>
                     <a
                       href="tel:0983000002"
-                      className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition"
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition shadow-xs"
                     >
                       Gọi ngay
                     </a>
@@ -644,12 +644,12 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   </h4>
                   <p className="text-[11px] text-slate-500">Kiến Vàng Capital</p>
                   <div className="pt-1.5 flex items-center justify-between text-xs">
-                    <span className="font-mono font-bold text-[#003B95] dark:text-amber-400">
+                    <span className="font-mono font-bold text-[#003B95] dark:text-sky-400">
                       0983 000 003
                     </span>
                     <a
                       href="tel:0983000003"
-                      className="px-2.5 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px] hover:bg-purple-700 transition"
+                      className="px-2.5 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px] hover:bg-purple-700 transition shadow-xs"
                     >
                       Gọi ngay
                     </a>
@@ -671,12 +671,12 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   </h4>
                   <p className="text-[11px] text-slate-500">Tuấn Minh Global Trade</p>
                   <div className="pt-1.5 flex items-center justify-between text-xs">
-                    <span className="font-mono font-bold text-[#003B95] dark:text-amber-400">
+                    <span className="font-mono font-bold text-[#003B95] dark:text-sky-400">
                       0983 000 005
                     </span>
                     <a
                       href="tel:0983000005"
-                      className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[11px] hover:bg-rose-700 transition"
+                      className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[11px] hover:bg-rose-700 transition shadow-xs"
                     >
                       Gọi ngay
                     </a>
@@ -689,7 +689,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-amber-500" />
+                  <FileText className="h-5 w-5 text-[#003B95] dark:text-sky-400" />
                   <h3 className="text-sm font-black text-slate-900 dark:text-white">
                     Tài Liệu Hướng Dẫn Sử Dụng Chính Thức (.PDF)
                   </h3>
@@ -708,7 +708,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                   </a>
 
                   {hasAdminPrivilege && (
-                    <label className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+                    <label className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs">
                       <Upload className="h-3.5 w-3.5" />
                       <span>{uploading ? "Đang tải..." : "Cập Nhật PDF"}</span>
                       <input

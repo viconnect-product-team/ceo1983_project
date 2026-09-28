@@ -9380,7 +9380,7 @@ export class ConnectAppService implements OnModuleInit {
 
       // 2. Kiểm tra trong public.vione_users (tài khoản đăng nhập chính thức của NestJS)
       const userAccount = await this.prisma.$queryRaw<any[]>`
-        SELECT email, username, phone, name FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
+        SELECT email, username, name FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
       `.catch(() => []);
 
       if (userAccount && userAccount[0]) {
@@ -9388,7 +9388,6 @@ export class ConnectAppService implements OnModuleInit {
         const byUser = await this.prisma.$queryRaw<any[]>`
           SELECT code FROM public.members 
           WHERE (email IS NOT NULL AND LOWER(email) = LOWER(${u.email}))
-             OR (phone IS NOT NULL AND phone = ${u.phone})
              OR (code IS NOT NULL AND LOWER(code) = LOWER(${u.username}))
           LIMIT 1
         `.catch(() => []);
@@ -9411,8 +9410,8 @@ export class ConnectAppService implements OnModuleInit {
             user_id, association_id, created_at, updated_at
           ) VALUES (
             ${userId}::text, ${newCode}, ${u.name || 'Hội viên CEO 1983'}, ${u.name || 'Hội viên CEO 1983'},
-            ${userEmail}, ${u.phone || '0983000000'}, 'corporate', 'standard', 'Kinh doanh & Quản lý', 'Hà Nội',
-            'active', CURRENT_DATE, 2026, true, 'Hà Nội', 'Hội viên CLB Doanh Nh\u00e2n CEO 1983', 'paid',
+            ${userEmail}, '0983000000', 'corporate', 'standard', 'Kinh doanh & Quản lý', 'Hà Nội',
+            'active', CURRENT_DATE, 2026, true, 'Hà Nội', 'Hội viên CLB Doanh Nhân CEO 1983', 'paid',
             ${userId}::uuid, 'c1983000-0000-4000-8000-000000001983'::uuid, now(), now()
           ) ON CONFLICT (id) DO UPDATE SET user_id = ${userId}::uuid
         `.catch(() => null);
@@ -9433,60 +9432,62 @@ export class ConnectAppService implements OnModuleInit {
         }
       }
 
-      const first = await this.prisma.$queryRaw<any[]>`
-        SELECT code FROM public.members WHERE code IS NOT NULL ORDER BY updated_at DESC LIMIT 1
-      `.catch(() => []);
-      return first[0]?.code || 'm1983-002';
+      return `M1983-${String(userId).replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase()}`;
     } catch {
-      return 'm1983-002';
+      return `M1983-${String(userId).replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase()}`;
     }
   }
 
   async listMemberConversations(userId: string) {
     const myCode = await this.resolveMemberCodeForUser(userId);
     const mine = myCode.toLowerCase();
+    const myUserId = userId.toLowerCase();
+    const myKeys = [mine, myUserId];
 
     const msgs = await this.prisma.$queryRaw<any[]>`
       SELECT id, from_id, to_id, text, created_at, read_at
       FROM public.messages
       WHERE LOWER(from_id) = ${mine} OR LOWER(to_id) = ${mine}
-         OR LOWER(from_id) = LOWER(${userId}) OR LOWER(to_id) = LOWER(${userId})
+         OR LOWER(from_id) = ${myUserId} OR LOWER(to_id) = ${myUserId}
       ORDER BY created_at DESC
     `.catch(() => []);
 
-    const byPeer = new Map<string, any[]>();
-    for (const m of msgs) {
-      const from = String(m.from_id).toLowerCase();
-      const to = String(m.to_id).toLowerCase();
-      const peer = (from === mine || from === userId.toLowerCase()) ? to : from;
-      if (!byPeer.has(peer)) byPeer.set(peer, []);
-      byPeer.get(peer)!.push(m);
-    }
-
-    const peers = [...byPeer.keys()];
     const members = await this.prisma.$queryRaw<any[]>`
-      SELECT m.code, m.name, m.contact,
+      SELECT m.id, m.code, m.user_id, m.name, m.contact,
              COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as display_name,
-             COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar
+             COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url, m.avatar) as avatar
       FROM public.members m
       LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
       LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
       LEFT JOIN public.vione_users vu ON vu.id = m.user_id
     `.catch(() => []);
-    const userByCode = new Map<string, string>();
-    const nameByCode = new Map<string, string>();
-    const avatarByCode = new Map<string, string>();
+
+    const memberByCode = new Map<string, any>();
+    const memberByUserId = new Map<string, any>();
     for (const mem of members) {
-      if (mem.code) {
-        if (mem.user_id) userByCode.set(String(mem.code).toLowerCase(), String(mem.user_id));
-        const resolvedName = mem.display_name || mem.name || mem.contact;
-        if (resolvedName) nameByCode.set(String(mem.code).toLowerCase(), resolvedName);
-        if (mem.avatar) avatarByCode.set(String(mem.code).toLowerCase(), mem.avatar);
-      }
+      if (mem.code) memberByCode.set(String(mem.code).toLowerCase(), mem);
+      if (mem.user_id) memberByUserId.set(String(mem.user_id).toLowerCase(), mem);
+      if (mem.id) memberByCode.set(String(mem.id).toLowerCase(), mem);
     }
 
+    const byPeer = new Map<string, any[]>();
+    for (const m of msgs) {
+      const from = String(m.from_id).toLowerCase();
+      const to = String(m.to_id).toLowerCase();
+      const rawPeer = myKeys.includes(from) ? to : from;
+
+      // Chuẩn hóa định danh peer về member code nếu tìm thấy trong members
+      const mem = memberByUserId.get(rawPeer) || memberByCode.get(rawPeer);
+      const peerKey = mem?.code ? String(mem.code).toLowerCase() : rawPeer;
+
+      if (!byPeer.has(peerKey)) byPeer.set(peerKey, []);
+      byPeer.get(peerKey)!.push(m);
+    }
+
+    const peers = [...byPeer.keys()];
+
     // Tra cứu kết nối thực tế trong public.user_connections để phân loại: Đã kết nối hay Tin nhắn chờ
-    const peerUserIds = Array.from(userByCode.values()).filter(Boolean);
+    const peerUserIds = Array.from(memberByUserId.keys()).filter(Boolean);
     const connMap = new Map<string, { status: string; requesterId: string; connectionId: string }>();
     if (peerUserIds.length > 0) {
       try {
@@ -9515,9 +9516,10 @@ export class ConnectAppService implements OnModuleInit {
     for (const peer of peers) {
       const list = byPeer.get(peer)!;
       const latest = list[0];
-      const unread = list.filter((m) => (String(m.to_id).toLowerCase() === mine || String(m.to_id).toLowerCase() === userId.toLowerCase()) && m.read_at == null).length;
+      const unread = list.filter((m) => (myKeys.includes(String(m.to_id).toLowerCase())) && m.read_at == null).length;
       const isSystem = peer === 'admin' || peer === 'system';
-      const peerUserId = userByCode.get(peer);
+      const mem = memberByCode.get(peer) || memberByUserId.get(peer);
+      const peerUserId = mem?.user_id ? String(mem.user_id) : null;
 
       // ĐẢM BẢO: Hễ có tin nhắn giữa 2 bên là hiển thị 100%, không lọc bỏ!
       const hasMessages = Boolean(latest && latest.text && String(latest.text).trim().length > 0);
@@ -9535,11 +9537,11 @@ export class ConnectAppService implements OnModuleInit {
       const isStranger = !isSystem && !isConnected;
 
       resList.push({
-        peerCode: peer,
+        peerCode: mem?.code || peer,
         userId: peerUserId ?? null,
         isOnline,
-        name: isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (nameByCode.get(peer) ?? peer.toUpperCase()),
-        avatarUrl: isSystem ? '/ceo1983-logo.png' : (avatarByCode.get(peer) ?? null),
+        name: isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (mem?.display_name || mem?.name || mem?.contact || peer.toUpperCase()),
+        avatarUrl: isSystem ? '/ceo1983-logo.png' : (mem?.avatar ?? null),
         last: latest.text,
         time: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
         rawTime: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
@@ -9556,14 +9558,14 @@ export class ConnectAppService implements OnModuleInit {
     }
 
     if (!byPeer.has('admin')) {
-      resList.unshift({
+      resList.push({
         peerCode: 'admin',
         name: 'Ban Thư Ký CLB Doanh Nhân CEO 1983',
         avatarUrl: '/ceo1983-logo.png',
         last: '[action:payment|amount:20000000|invoice:HD-2026-001|qr:https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=20000000&addInfo=HD-2026-001|due:31/03/2026|desc:H%E1%BB%99i%20ph%C3%AD%20th%C6%B0%E1%BB%9Dng%20ni%C3%AAn%202026%20-%20CLB%20Doanh%20Nh%C3%A2n%20CEO%201983]',
-        time: new Date().toISOString(),
-        rawTime: new Date().toISOString(),
-        unread: 1,
+        time: new Date(Date.now() - 3600000).toISOString(),
+        rawTime: new Date(Date.now() - 3600000).toISOString(),
+        unread: 0,
         isSystem: true,
         isOnline: true,
         isConnected: true,
@@ -9576,11 +9578,11 @@ export class ConnectAppService implements OnModuleInit {
       });
     }
 
-    // Đưa hội thoại có tin nhắn mới nhất lên đầu danh sách (giữ admin ở vị trí ưu tiên nếu cần)
+    // Đưa hội thoại có tin nhắn mới nhất lên đầu danh sách chuẩn Messenger
     resList.sort((a, b) => {
-      if (a.isSystem && !b.isSystem) return -1;
-      if (!a.isSystem && b.isSystem) return 1;
-      return new Date(b.rawTime || b.time).getTime() - new Date(a.rawTime || a.time).getTime();
+      const timeA = new Date(a.rawTime || a.time).getTime() || 0;
+      const timeB = new Date(b.rawTime || b.time).getTime() || 0;
+      return timeB - timeA;
     });
 
     return resList;
@@ -9594,7 +9596,32 @@ export class ConnectAppService implements OnModuleInit {
     const isGroup = peer.startsWith('group_');
     const isChannel = peer.startsWith('channel_');
 
-    const [rawMsgs, peerMem] = await Promise.all([
+    // Tra cứu hội viên đối tác để lấy tất cả các alias (code, user_id, id)
+    const peerMemRows = await this.prisma.$queryRaw<any[]>`
+      SELECT m.id, m.code, m.user_id, m.name, m.contact,
+             COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as name,
+             COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url, m.avatar) as avatar
+      FROM public.members m
+      LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
+      LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
+      LEFT JOIN public.vione_users vu ON vu.id = m.user_id
+      WHERE LOWER(m.code) = ${peer}
+         OR m.user_id::text = ${peer}
+         OR m.id = ${peer}
+      LIMIT 1
+    `.catch((): any[] => []);
+
+    const peerMem = peerMemRows[0];
+    const peerAliases = new Set<string>([peer]);
+    if (peerMem?.code) peerAliases.add(String(peerMem.code).toLowerCase());
+    if (peerMem?.user_id) peerAliases.add(String(peerMem.user_id).toLowerCase());
+    if (peerMem?.id) peerAliases.add(String(peerMem.id).toLowerCase());
+
+    const myAliases = new Set<string>([mine, userId.toLowerCase()]);
+    const peerList = Array.from(peerAliases);
+    const myList = Array.from(myAliases);
+
+    const rawMsgs = await (
       (isGroup || isChannel)
         ? this.prisma.$queryRaw<any[]>`
             SELECT id, from_id, to_id, text, created_at, read_at
@@ -9605,23 +9632,11 @@ export class ConnectAppService implements OnModuleInit {
         : this.prisma.$queryRaw<any[]>`
             SELECT id, from_id, to_id, text, created_at, read_at
             FROM public.messages
-            WHERE (LOWER(from_id) = ${mine} AND LOWER(to_id) = ${peer})
-               OR (LOWER(from_id) = ${peer} AND LOWER(to_id) = ${mine})
-               OR (LOWER(from_id) = LOWER(${userId}) AND LOWER(to_id) = ${peer})
-               OR (LOWER(from_id) = ${peer} AND LOWER(to_id) = LOWER(${userId}))
+            WHERE (LOWER(from_id) = ANY(${myList}::text[]) AND LOWER(to_id) = ANY(${peerList}::text[]))
+               OR (LOWER(from_id) = ANY(${peerList}::text[]) AND LOWER(to_id) = ANY(${myList}::text[]))
             ORDER BY created_at ASC
-          `.catch((): any[] => []),
-      this.prisma.$queryRaw<any[]>`
-        SELECT m.code, m.name, m.contact,
-               COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as name,
-               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url, m.avatar) as avatar
-        FROM public.members m
-        LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
-        LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
-        LEFT JOIN public.vione_users vu ON vu.id = m.user_id
-        WHERE LOWER(m.code) = ${peer} LIMIT 1
-      `.catch((): any[] => []),
-    ]);
+          `.catch((): any[] => [])
+    );
 
     const msgs: any[] = Array.isArray(rawMsgs) ? [...rawMsgs] : [];
 
@@ -9715,38 +9730,76 @@ export class ConnectAppService implements OnModuleInit {
 
     const resolvedPeerName = isChannel
       ? (channelNames[peer] || `Kênh ${peerCode}`)
-      : (isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (peerMem[0]?.name ?? peerCode.toUpperCase()));
+      : (isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (peerMem?.name || peerMem?.contact || peerCode.toUpperCase()));
 
     return {
+      peerCode: peerMem?.code || peer,
       peerName: resolvedPeerName,
-      avatarUrl: isSystem ? '/ceo1983-logo.png' : (peerMem[0]?.avatar ?? null),
+      avatarUrl: isSystem ? '/ceo1983-logo.png' : (peerMem?.avatar ?? null),
       isSystem: isSystem || isChannel,
-      messages: msgs.map((m) => ({
-        id: m.id,
-        text: m.text,
-        mine: String(m.from_id).toLowerCase() === mine,
-        time: m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString(),
-        createdAt: m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString(),
-        seen: m.read_at != null,
-      })),
+      messages: msgs.map((m) => {
+        const fromLower = String(m.from_id).toLowerCase();
+        const isMine = myList.includes(fromLower);
+        return {
+          id: String(m.id),
+          text: m.text,
+          mine: isMine,
+          time: formatVNTime(new Date(m.created_at)),
+          createdAt: m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString(),
+          seen: m.read_at != null,
+          isRetracted: m.text === '[retracted]',
+        };
+      }),
     };
   }
 
   async sendMemberMessage(userId: string, peerCode: string, text: string) {
     const myCode = await this.resolveMemberCodeForUser(userId);
+    const mine = myCode.toLowerCase();
+    const isGroup = peerCode.toLowerCase().startsWith('group_');
+    const isChannel = peerCode.toLowerCase().startsWith('channel_');
+
+    // Chuẩn hóa peerCode: nếu người gửi truyền user_id hoặc code viết hoa, phân giải về code hội viên
+    let targetPeerCode = peerCode.toLowerCase();
+    let targetUserId: string | null = null;
+    if (!isGroup && !isChannel && targetPeerCode !== 'admin' && targetPeerCode !== 'system') {
+      const peerMemRows = await this.prisma.$queryRaw<any[]>`
+        SELECT m.code, m.user_id FROM public.members m 
+        WHERE LOWER(m.code) = ${targetPeerCode} OR m.user_id::text = ${targetPeerCode} OR m.id = ${targetPeerCode}
+        LIMIT 1
+      `.catch((): any[] => []);
+      if (peerMemRows[0]) {
+        targetPeerCode = String(peerMemRows[0].code).toLowerCase();
+        targetUserId = peerMemRows[0].user_id ? String(peerMemRows[0].user_id) : null;
+      }
+    }
 
     await this.prisma.$executeRaw`
       INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-      VALUES (gen_random_uuid(), ${myCode.toLowerCase()}, ${peerCode.toLowerCase()}, ${text}, now())
+      VALUES (gen_random_uuid(), ${mine}, ${targetPeerCode}, ${text}, now())
     `;
 
     if (this.gateway && this.gateway.server) {
       this.gateway.server.emit('member:message_received', {
-        fromCode: myCode.toLowerCase(),
-        toCode: peerCode.toLowerCase(),
+        fromCode: mine,
+        toCode: targetPeerCode,
+        fromUserId: userId,
+        toUserId: targetUserId,
         text,
       });
-      this.gateway.server.emit('dm:thread_updated', {});
+      this.gateway.server.emit('dm:message_received', {
+        fromCode: mine,
+        toCode: targetPeerCode,
+        fromUserId: userId,
+        toUserId: targetUserId,
+        text,
+      });
+      this.gateway.server.emit('dm:thread_updated', {
+        fromCode: mine,
+        toCode: targetPeerCode,
+        fromUserId: userId,
+        toUserId: targetUserId,
+      });
     }
 
     return { ok: true, myCode };
@@ -11047,10 +11100,12 @@ export class ConnectAppService implements OnModuleInit {
       // Sync to auth.users for compatibility & mark onboarding_status = 'new' (must change password)
       if (userId) {
         await this.prisma.$executeRaw`
-          INSERT INTO auth.users (id, email, encrypted_password, role)
-          VALUES (${userId}::uuid, ${email.toLowerCase()}, ${hashedPassword}, 'authenticated')
-          ON CONFLICT (id) DO UPDATE SET email = ${email.toLowerCase()}, encrypted_password = ${hashedPassword}
-        `.catch(() => null);
+          INSERT INTO auth.users (id, email, role)
+          VALUES (${userId}::uuid, ${email.toLowerCase()}, 'authenticated')
+          ON CONFLICT (id) DO UPDATE SET email = ${email.toLowerCase()}
+        `.catch((aErr) => {
+          console.warn('auth.users upsert warning:', aErr);
+        });
 
         await this.prisma.$executeRaw`
           INSERT INTO public.user_profiles (user_id, display_name, onboarding_status, created_at, updated_at)
@@ -11062,10 +11117,23 @@ export class ConnectAppService implements OnModuleInit {
       console.warn('User account provisioning note:', uErr);
     }
 
+    // Verify if userId actually exists in auth.users to satisfy members_user_id_fkey
+    let verifiedUserId: string | null = null;
+    if (userId) {
+      const authUserCheck = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM auth.users WHERE id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+      if (authUserCheck.length > 0) {
+        verifiedUserId = userId;
+      }
+    }
+
     const detailedNotes = `${notesContent} | TÀI KHOẢN ĐĂNG NHẬP: Email=${email} / Pass=[Random đã gửi qua Email]`;
 
+    const targetAssocUuid = assocId || (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations LIMIT 1`.then(r => r[0]?.id).catch(() => null));
+
     try {
-      if (assocId) {
+      if (targetAssocUuid) {
         await this.prisma.$executeRaw`
           INSERT INTO public.members (
             id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, association_id, created_at, updated_at
@@ -11085,8 +11153,8 @@ export class ConnectAppService implements OnModuleInit {
             ${feeYear},
             false,
             ${detailedNotes},
-            ${userId ? userId : null}::uuid,
-            ${assocId}::uuid,
+            ${verifiedUserId ? verifiedUserId : null}::uuid,
+            ${targetAssocUuid}::uuid,
             now(),
             now()
           )
@@ -11111,7 +11179,7 @@ export class ConnectAppService implements OnModuleInit {
             ${feeYear},
             false,
             ${detailedNotes},
-            ${userId ? userId : null}::uuid,
+            ${verifiedUserId ? verifiedUserId : null}::uuid,
             now(),
             now()
           )

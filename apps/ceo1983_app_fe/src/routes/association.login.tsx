@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, clearUserSessionData } from "@/context/AuthContext";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import { classifyAuthError, type AuthErrorInfo } from "@/lib/business-connect/mobile/auth-error";
@@ -56,7 +56,7 @@ function safeRedirect(target?: string): string | null {
 function AssociationLoginPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, reason, username, email: searchEmail, registered, reset } = Route.useSearch();
-  const { user, setAuthData } = useAuth();
+  const { user, logout, setAuthData } = useAuth();
 
   const [identifier, setIdentifier] = useState(""); // Email or Member Code
   const [password, setPassword] = useState("");
@@ -98,12 +98,13 @@ function AssociationLoginPage() {
     }
   }, [reason]);
 
+  // Nếu đã đăng nhập và người dùng truy cập trang này, chỉ redirect nếu không có yêu cầu đổi tài khoản
   useEffect(() => {
-    if (user) {
-      const target = safeRedirect(redirectTo) || "/association";
-      navigate({ to: target as any, replace: true });
+    // Nếu có tham số lý do expired hoặc switch, xóa phiên cũ
+    if (reason === "expired") {
+      logout?.();
     }
-  }, [user, redirectTo, navigate]);
+  }, [reason, logout]);
 
   const handleSubmit = async () => {
     const cleanId = identifier.trim();
@@ -126,6 +127,8 @@ function AssociationLoginPage() {
       });
 
       if (res?.access_token && res?.user) {
+        // Dọn dẹp sạch toàn bộ cache và storage của phiên trước đó
+        clearUserSessionData();
         setAuthData(res);
         applyRememberPreference(remember, cleanId);
 
@@ -141,7 +144,8 @@ function AssociationLoginPage() {
           return;
         }
 
-        toast.success(`Chào mừng hội viên ${res.user.user_metadata?.full_name || cleanId} trở lại!`);
+        const memberWelcomeName = res.user?.name || res.user?.user_metadata?.full_name || cleanId;
+        toast.success(`Chào mừng hội viên ${memberWelcomeName} trở lại!`);
         const target = safeRedirect(redirectTo) || "/association";
         navigate({ to: target as any, replace: true });
         return;
@@ -181,6 +185,12 @@ function AssociationLoginPage() {
         onScanCard={() => setScanOpen(true)}
         remember={remember}
         onRememberChange={setRemember}
+        currentSessionUser={user ? { name: user.name, email: user.email } : null}
+        onSwitchAccount={() => {
+          clearUserSessionData();
+          logout?.();
+          toast.info("Đã xóa phiên làm việc cũ. Quý CEO vui lòng nhập tài khoản mới.");
+        }}
       />
 
       <AuthCardScanSheet

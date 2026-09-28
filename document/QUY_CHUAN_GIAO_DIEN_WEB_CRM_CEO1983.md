@@ -76,9 +76,8 @@ Hệ thống thanh menu bên trái (Sidebar) của Web CRM được chuẩn hóa
 ```
 
 > **Ghi chú thay đổi cấu trúc Sidebar quan trọng:**
-> - **Đã loại bỏ vĩnh viễn nhóm "BUSINESS CONNECT" độc lập** khỏi Sidebar để gom gọn vào nhóm "KẾT NỐI".
-> - Trong nhóm "KẾT NỐI": Đã gỡ bỏ menu "Danh thiếp của tôi" (vì danh thiếp của cá nhân thao tác trên App Hiệp hội), đồng thời bổ sung 2 mục cốt lõi: **"Cuộc gặp"** (`/business-connect/meetings`) và **"Danh thiếp đã lưu"** (`/business-connect/saved-cards`).
-> - Menu **"Quản lý chủ đề"** (`/admin/landing-templates`) đã được chuyển từ nhóm "Quản trị" xuống nhóm "Hệ thống" để đúng bản chất cấu hình giao diện.
+> - **Loại bỏ vĩnh viễn nhóm "BUSINESS CONNECT" độc lập** 
+> - Menu xây dựng chức năgn **"Quản lý chủ đề"** (`/admin/landing-templates`) .
 
 ---
 

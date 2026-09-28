@@ -341,7 +341,7 @@ async function handleResponse(response: Response, endpoint = "") {
 
 export async function fetchNestApi<T = any>(
   endpoint: string,
-  options: RequestInit = {},
+  options: Omit<RequestInit, "body"> & { body?: any } = {},
 ): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
   const headers = new Headers(options.headers);
@@ -381,7 +381,7 @@ export async function fetchNestApi<T = any>(
 export async function fetchNestApiFromServer<T = any>(
   endpoint: string,
   token?: string | null,
-  options: RequestInit = {},
+  options: Omit<RequestInit, "body"> & { body?: any } = {},
 ): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");

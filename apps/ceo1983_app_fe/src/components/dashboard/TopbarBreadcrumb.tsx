@@ -7,9 +7,10 @@ import { useT, type TKey } from "@/lib/i18n";
 type Crumb = { label: string; to?: string };
 
 /** Resolve the nav item + owning group for a base path (e.g. "/members"). */
-function findNav(base: string): { group: NavGroup; item: NavItem } | null {
+/** Resolve the nav item + owning group for a base path (e.g. "/members", "/business-connect/meetings"). */
+function findNav(path: string): { group: NavGroup; item: NavItem } | null {
   for (const group of navGroups) {
-    const item = group.items.find((it) => it.to === base);
+    const item = group.items.find((it) => it.to === path);
     if (item) return { group, item };
   }
   return null;
@@ -26,6 +27,15 @@ function useCrumbs(): Crumb[] {
   // Home / dashboard.
   if (pathname === "/") return [{ label: t("nav.dashboard") }];
 
+  // 1. Try exact match first (e.g. /business-connect/meetings)
+  const exactMatch = findNav(pathname);
+  if (exactMatch) {
+    const crumbs: Crumb[] = [];
+    if (exactMatch.group.label) crumbs.push({ label: t(exactMatch.group.label) });
+    crumbs.push({ label: t(exactMatch.item.key), to: exactMatch.item.to });
+    return crumbs;
+  }
+
   const segments = pathname.split("/").filter(Boolean);
   const base = "/" + segments[0];
   const match = findNav(base);
@@ -37,11 +47,27 @@ function useCrumbs(): Crumb[] {
     // The section item links back to its list/root route.
     crumbs.push({ label: t(match.item.key), to: base });
   } else {
-    // Fallback: Title-case the first segment for routes outside the registry.
-    crumbs.push({
-      label: segments[0].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      to: base,
-    });
+    // Check if it's a known nested namespace like /business-connect
+    if (segments[0] === "business-connect") {
+      crumbs.push({ label: t("nav.group.network") });
+      if (segments[1] === "meetings") {
+        crumbs.push({ label: t("nav.bc.meetings" as TKey), to: "/business-connect/meetings" });
+      } else if (segments[1] === "saved-cards") {
+        crumbs.push({ label: t("nav.bc.saved" as TKey), to: "/business-connect/saved-cards" });
+      } else {
+        crumbs.push({
+          label: (segments[1] || segments[0]).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          to: pathname,
+        });
+      }
+      return crumbs;
+    } else {
+      // Fallback: Title-case the first segment for routes outside the registry.
+      crumbs.push({
+        label: segments[0].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        to: base,
+      });
+    }
   }
 
   // Nested detail / sub-page crumb (Members > Detail, Opportunities > Edit, ...).

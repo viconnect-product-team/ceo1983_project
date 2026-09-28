@@ -172,14 +172,14 @@ export function GuidedTourModal({
             : "30%",
         }}
       >
-        <div className="rounded-3xl border-2 border-amber-400/40 bg-white/95 dark:bg-[#071228]/95 backdrop-blur-2xl p-4 sm:p-5 shadow-[0_16px_50px_rgba(0,0,0,0.35)] text-slate-900 dark:text-white relative animate-scale-in">
+        <div className="rounded-3xl border-2 border-[#003B95]/40 bg-white/95 dark:bg-[#071228]/95 backdrop-blur-2xl p-4 sm:p-5 shadow-[0_16px_50px_rgba(0,0,0,0.35)] text-slate-900 dark:text-white relative animate-scale-in">
           {/* Header Row: Screen title + Step counter badge + Close */}
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-white/10 pb-2.5">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-[#001D4A] to-[#003B95] text-amber-300 border border-amber-400/40 shadow-xs">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-[#19194D] to-[#003B95] text-white border border-blue-400/40 shadow-xs">
                 BƯỚC {currentStep + 1} / {steps.length}
               </span>
-              <span className="text-[11px] font-bold text-slate-600 dark:text-amber-200/90 truncate max-w-[190px]">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-blue-200/90 truncate max-w-[190px]">
                 {screenTitle}
               </span>
             </div>
@@ -205,7 +205,7 @@ export function GuidedTourModal({
             </div>
 
             {step.actionGesture && (
-              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-500/10 dark:bg-amber-400/15 border border-amber-400/30 text-[11px] font-extrabold text-amber-800 dark:text-amber-300">
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-500/10 dark:bg-blue-400/15 border border-blue-400/30 text-[11px] font-extrabold text-[#003B95] dark:text-blue-300">
                 <span>{step.actionGesture}</span>
                 {step.touchPoint && <span className="text-slate-500 dark:text-slate-400 font-normal">• {step.touchPoint}</span>}
               </div>
@@ -221,7 +221,7 @@ export function GuidedTourModal({
             <div className="rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/70 dark:border-white/10 p-2.5 mb-3 text-[11px] space-y-1.5">
               {step.instruction && (
                 <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-200">
-                  <span className="font-black text-[#003B95] dark:text-amber-400 shrink-0">👉 Thao tác:</span>
+                  <span className="font-black text-[#003B95] dark:text-blue-400 shrink-0">👉 Thao tác:</span>
                   <span>{step.instruction}</span>
                 </div>
               )}
@@ -232,8 +232,8 @@ export function GuidedTourModal({
                 </div>
               )}
               {step.roleNote && (
-                <div className="flex items-start gap-1.5 text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded-xl border border-amber-400/30">
-                  <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-500" />
+                <div className="flex items-start gap-1.5 text-blue-900 dark:text-blue-200 bg-blue-50 dark:bg-blue-950/40 p-1.5 rounded-xl border border-blue-400/30">
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#003B95] dark:text-blue-400" />
                   <span><strong>Phân quyền:</strong> {step.roleNote}</span>
                 </div>
               )}
@@ -257,7 +257,7 @@ export function GuidedTourModal({
                   onClick={() => setCurrentStep(idx)}
                   className={`h-2 rounded-full transition-all duration-200 cursor-pointer ${
                     idx === currentStep
-                      ? "w-6 bg-gradient-to-r from-amber-400 to-[#D8B282]"
+                      ? "w-6 bg-gradient-to-r from-[#003B95] to-[#2563EB]"
                       : "w-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300"
                   }`}
                   title={`Bước ${idx + 1}`}
@@ -265,7 +265,7 @@ export function GuidedTourModal({
               ))}
             </div>
 
-            {/* Action Buttons: Following Skill color rule (Champagne Gold Gradient primary button in light theme, never black!) */}
+            {/* Action Buttons: Pure CEO 1983 Blue Button */}
             <div className="flex items-center gap-2">
               {currentStep > 0 && (
                 <button
@@ -281,17 +281,17 @@ export function GuidedTourModal({
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-4 py-2 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 text-xs font-black uppercase tracking-wider shadow-md hover:brightness-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer border border-amber-300/40"
+                className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002F77] text-white text-xs font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer border border-blue-400/40"
               >
                 {currentStep === steps.length - 1 ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-slate-950" />
+                    <Check className="w-3.5 h-3.5 text-white" />
                     <span>Đã hiểu • Bắt đầu</span>
                   </>
                 ) : (
                   <>
                     <span>Bước tiếp</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
+                    <ArrowRight className="w-3.5 h-3.5 text-white" />
                   </>
                 )}
               </button>

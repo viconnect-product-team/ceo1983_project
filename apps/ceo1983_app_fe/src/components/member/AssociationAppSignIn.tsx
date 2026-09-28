@@ -33,6 +33,8 @@ interface Props {
   onScanCard?: () => void;
   remember?: boolean;
   onRememberChange?: (val: boolean) => void;
+  currentSessionUser?: { name?: string; email?: string } | null;
+  onSwitchAccount?: () => void;
 }
 
 export function AssociationAppSignIn({
@@ -51,6 +53,8 @@ export function AssociationAppSignIn({
   onScanCard,
   remember: rememberProp,
   onRememberChange,
+  currentSessionUser,
+  onSwitchAccount,
 }: Props) {
   const t = useT();
   const { lang } = useLang();
@@ -117,6 +121,35 @@ export function AssociationAppSignIn({
             className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_25px_rgba(0,75,145,0.15)] transition-transform hover:scale-105 duration-300"
           />
         </div>
+
+        {/* Active Session Notice & Switch Account Button */}
+        {currentSessionUser && (
+          <div className="my-2 rounded-xl border border-blue-200 bg-blue-50/90 p-3 text-[12.5px] text-blue-900 leading-snug shrink-0 shadow-xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="truncate">
+                <span className="text-[11px] uppercase tracking-wide text-blue-700 font-semibold block">Đang đăng nhập:</span>
+                <span className="font-bold text-[#003B95] truncate">{currentSessionUser.name || currentSessionUser.email}</span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {onSwitchAccount && (
+                  <button
+                    type="button"
+                    onClick={onSwitchAccount}
+                    className="px-2.5 py-1 text-[11.5px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition cursor-pointer"
+                  >
+                    Đổi tài khoản
+                  </button>
+                )}
+                <Link
+                  to="/association"
+                  className="px-2.5 py-1 text-[11.5px] font-bold text-white bg-[#003B95] hover:bg-[#002B70] rounded-lg transition shadow-xs"
+                >
+                  Vào App →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error Banner */}
         {errorMessage && (

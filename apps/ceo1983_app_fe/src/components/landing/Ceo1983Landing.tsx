@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { LangSwitcher } from "@/components/LangSwitcher";
 import { submitClubApplication } from "@/lib/club-application.functions";
+import { fetchNestApi } from "@/lib/api-client";
 import { useLang } from "@/lib/i18n";
 import { Ceo1983OrbitalHero } from "./Ceo1983OrbitalHero";
 import { KineticGoldHeading, KineticTextFadeUp } from "./KineticTypography";
@@ -772,6 +773,7 @@ export function Ceo1983Landing() {
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
+    email: "",
     company: "",
     industry: "",
   });
@@ -826,17 +828,38 @@ export function Ceo1983Landing() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.fullName.trim() || !formData.phone.trim()) {
+      toast.error("Vui lòng điền họ tên và số điện thoại.");
+      return;
+    }
+    if (!formData.email.trim() || !formData.email.includes("@")) {
+      toast.error("Vui lòng nhập địa chỉ email hợp lệ để nhận thông tin tài khoản.");
+      return;
+    }
+
     setSubmitting(true);
+    const regPayload = {
+      fullName: formData.fullName.trim(),
+      name: formData.fullName.trim(),
+      phone: formData.phone.trim(),
+      email: formData.email.trim().toLowerCase(),
+      company: formData.company.trim() || "Doanh nghiệp CEO 1983",
+      companyName: formData.company.trim() || "Doanh nghiệp CEO 1983",
+      industry: formData.industry.trim() || "Doanh nhân đa ngành",
+      clubSlug: "ceo-1983",
+      source: "landing_ceo1983",
+    };
+
     try {
+      await fetchNestApi("/public/club-registration", {
+        method: "POST",
+        body: JSON.stringify(regPayload),
+      }).catch(() => null);
+
       await submitClubApplication({
-        data: {
-          fullName: formData.fullName,
-          phone: formData.phone,
-          company: formData.company,
-          industry: formData.industry,
-          clubSlug: "ceo-1983",
-        },
-      });
+        data: regPayload,
+      }).catch(() => null);
+
       toast.success(t.formSuccessTitle);
     } catch (err) {
       console.error("[Ceo1983Landing] Submit application error", err);
@@ -3816,6 +3839,23 @@ export function Ceo1983Landing() {
                       placeholder={t.formPhonePlh}
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${themeClass(
+                        "bg-black/50 border-[#D8B282]/30 text-white placeholder:text-slate-500",
+                        "bg-white border-[#D8B282]/40 text-[#181512] placeholder:text-slate-400 shadow-xs",
+                        "bg-zinc-900 border-yellow-400 text-yellow-300 placeholder:text-yellow-600"
+                      )
+                        }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-xs font-bold mb-1 ${themeClass("text-slate-200", "text-[#181512]", "text-yellow-200")}`}>Email liên hệ *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="ceo@doanhnghiep.vn"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className={`w-full px-4 py-2.5 rounded-xl border text-xs focus:outline-none focus:border-[#D8B282] ${themeClass(
                         "bg-black/50 border-[#D8B282]/30 text-white placeholder:text-slate-500",
                         "bg-white border-[#D8B282]/40 text-[#181512] placeholder:text-slate-400 shadow-xs",

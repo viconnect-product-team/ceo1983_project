@@ -23,7 +23,8 @@ export const Route = createFileRoute("/platform/")({
 
 function PlatformAssociationsPage() {
   const t = useT();
-  const { isPlatformAdmin, loading: roleLoading } = useRole();
+  const { isPlatformAdmin, isBQT, loading: roleLoading } = useRole();
+  const hasAccess = isPlatformAdmin || isBQT;
 
   const fetchAssocs = useServerFn(listAssociationsFn);
   const createAssoc = useServerFn(createAssociationFn);
@@ -35,7 +36,7 @@ function PlatformAssociationsPage() {
     loading: aLoading,
     reload: reloadAssocs,
   } = useServerData<PlatformAssociation[]>(
-    () => (isPlatformAdmin ? fetchAssocs() : Promise.resolve([])),
+    () => (hasAccess ? fetchAssocs() : Promise.resolve([])),
     [],
   );
 
@@ -44,11 +45,11 @@ function PlatformAssociationsPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isPlatformAdmin) reloadAssocs();
+    if (hasAccess) reloadAssocs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlatformAdmin]);
+  }, [hasAccess]);
 
-  if (!roleLoading && !isPlatformAdmin) {
+  if (!roleLoading && !hasAccess) {
     return (
       <PlatformShell>
         <Card className="p-10 text-center text-sm text-muted-foreground">

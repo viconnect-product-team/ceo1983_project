@@ -15,7 +15,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import type { DirectoryMember, MyConversation } from "@/lib/member-app.functions";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { isSelfUser } from "@/routes/association.messages";
@@ -91,15 +91,47 @@ export function CreateGroupChatModal({
     }
   });
 
+  const [liveConnectedIds, setLiveConnectedIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<"connected" | "all">("connected");
+
+  // Fetch live network connections from backend API
+  useEffect(() => {
+    if (!open) return;
+    fetchNestApi<any[]>("/network/connections")
+      .then((conns) => {
+        if (Array.isArray(conns)) {
+          const accepted = conns.filter((c) => c.status === "accepted");
+          const ids = accepted.flatMap((c) => [
+            c.initiatorUserId,
+            c.targetUserId,
+            c.initiatorMemberCode,
+            c.targetMemberCode,
+            c.initiatorId,
+            c.targetId,
+          ]).filter(Boolean);
+          if (ids.length > 0) {
+            setLiveConnectedIds(new Set(ids.map((id: string) => String(id).toLowerCase())));
+          }
+        }
+      })
+      .catch(() => {});
+  }, [open]);
+
+  // Read from BOTH vba_connected_members AND vba.connected_members
   const connectedMemberCodes = useMemo(() => {
     if (typeof window === "undefined") return new Set<string>();
+    const res = new Set<string>();
     try {
-      const stored = JSON.parse(localStorage.getItem("vba_connected_members") || "[]");
-      if (Array.isArray(stored)) {
-        return new Set(stored.map((s: string) => String(s).toLowerCase()));
+      const stored1 = JSON.parse(localStorage.getItem("vba_connected_members") || "[]");
+      if (Array.isArray(stored1)) {
+        stored1.forEach((s) => res.add(String(s).toLowerCase()));
+      }
+      const stored2 = JSON.parse(localStorage.getItem("vba.connected_members") || "[]");
+      if (Array.isArray(stored2)) {
+        stored2.forEach((s) => res.add(String(s).toLowerCase()));
       }
     } catch {}
-    return new Set<string>();
+    return res;
   }, [open]);
 
   const isMemberConnected = (m: DirectoryMember) => {
@@ -107,7 +139,17 @@ export function CreateGroupChatModal({
     if ((m as any).isConnected || (m as any).connected || (m as any).isFriend) return true;
     const mCode = (m.code || "").toLowerCase();
     const mUserId = (m.userId || "").toLowerCase();
-    if (connectedMemberCodes.has(mCode) || (mUserId && connectedMemberCodes.has(mUserId))) return true;
+    const mId = ((m as any).id || "").toLowerCase();
+    if (
+      (mCode && connectedMemberCodes.has(mCode)) ||
+      (mUserId && connectedMemberCodes.has(mUserId)) ||
+      (mId && connectedMemberCodes.has(mId)) ||
+      (mCode && liveConnectedIds.has(mCode)) ||
+      (mUserId && liveConnectedIds.has(mUserId)) ||
+      (mId && liveConnectedIds.has(mId))
+    ) {
+      return true;
+    }
     return false;
   };
 
@@ -148,13 +190,24 @@ export function CreateGroupChatModal({
     toast.success("Đã chọn ảnh đại diện cho nhóm!");
   };
 
+  const availableMembers = useMemo(() => {
+    return members.filter((m) => !isSelfUser(m, user, myMember));
+  }, [members, user, myMember]);
+
+  const connectedCount = useMemo(() => {
+    return availableMembers.filter((m) => isMemberConnected(m)).length;
+  }, [availableMembers, connectedMemberCodes, liveConnectedIds]);
+
   const filteredMembers = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    // Strictly only connected members, excluding self
-    const connectedOnly = members.filter((m) => isMemberConnected(m));
+    const connected = availableMembers.filter((m) => isMemberConnected(m));
 
-    if (!q) return connectedOnly;
-    return connectedOnly.filter(
+    // Nếu chọn tab "connected" nhưng danh sách connected trống, hiển thị toàn bộ hội viên
+    // để không bao giờ bị tình trạng trắng danh sách
+    const baseList = activeTab === "connected" && connected.length > 0 ? connected : availableMembers;
+
+    if (!q) return baseList;
+    return baseList.filter(
       (m) =>
         m.name.toLowerCase().includes(q) ||
         m.code.toLowerCase().includes(q) ||
@@ -162,7 +215,7 @@ export function CreateGroupChatModal({
         (m.industry && m.industry.toLowerCase().includes(q)) ||
         (m.personTitle && m.personTitle.toLowerCase().includes(q))
     );
-  }, [members, searchTerm, connectedMemberCodes, user, myMember]);
+  }, [availableMembers, searchTerm, activeTab, connectedMemberCodes, liveConnectedIds]);
 
   const handleCreate = () => {
     if (selectedMembers.length === 0) {
@@ -484,13 +537,43 @@ export function CreateGroupChatModal({
             </div>
           </div>
 
-          {/* Section Indicator: Connected Members Only */}
+          {/* Section Indicator: Connected vs All Tabs */}
           <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#003B95] dark:text-amber-400">
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Hội viên đã kết nối giao thương ({filteredMembers.length})</span>
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-white/[0.05] rounded-xl border border-slate-200/80 dark:border-white/5">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic();
+                  setActiveTab("connected");
+                }}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "connected"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Đã kết nối ({connectedCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic();
+                  setActiveTab("all");
+                }}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "all"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Tất cả hội viên ({availableMembers.length})</span>
+              </button>
             </div>
-            <span className="text-[10px] text-slate-400">Chỉ người đã kết nối</span>
+            <span className="text-[10px] text-slate-400 font-medium">
+              {activeTab === "connected" && connectedCount === 0 ? "Tự động hiển thị danh bạ" : `${filteredMembers.length} hội viên`}
+            </span>
           </div>
 
           {/* Section 4: Members List with Messenger-style Circle Checkbox */}
@@ -534,13 +617,18 @@ export function CreateGroupChatModal({
 
                       {/* Info */}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[13.5px] font-bold text-slate-900 dark:text-white truncate">
                             {m.name}
                           </span>
                           <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
                             {m.code}
                           </span>
+                          {isMemberConnected(m) && (
+                            <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shrink-0">
+                              ✓ Đã kết nối
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                           {m.personTitle || m.company || m.industry || "Hội viên CEO 1983"}

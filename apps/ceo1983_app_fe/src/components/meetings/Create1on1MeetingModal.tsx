@@ -13,6 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { fetchNestApi } from "@/lib/api-client";
 
 export interface Create1on1MeetingModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export function Create1on1MeetingModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !partnerName.trim()) {
       toast.error("Vui lòng nhập đầy đủ tiêu đề và tên đối tác kết nối!");
@@ -77,6 +78,16 @@ export function Create1on1MeetingModal({
       isAgreed: true,
       createdAt: new Date().toISOString(),
     };
+
+    // Gọi API backend để lưu cuộc gặp vào CSDL hiệp hội & bắn thông báo tới đối tác
+    try {
+      await fetchNestApi("/meetings", {
+        method: "POST",
+        body: newRecord,
+      });
+    } catch (e: any) {
+      console.warn("Lưu cuộc gặp lên server lỗi hoặc đang offline:", e?.message);
+    }
 
     try {
       // 1. Lưu vào lịch sử cuộc gặp CEO 1983
@@ -141,7 +152,7 @@ export function Create1on1MeetingModal({
       window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
 
       toast.success(
-        `✓ Đã lên lịch cuộc gặp kết nối với "${partnerName.trim()}" thành công!`
+        `✓ Đã lên lịch cuộc gặp kết nối với "${partnerName.trim()}" và gửi thông báo tới đối tác thành công!`
       );
       onSuccess?.();
       onClose();

@@ -24,6 +24,15 @@ export interface Ceo1983BusinessCardVisitProps {
   onCompanyLogoUpdated?: (url: string) => void;
 }
 
+export function isBlackBackgroundLogo(url?: string | null) {
+  if (!url) return false;
+  return (
+    url.includes("1lfhzi") ||
+    url.includes("fskz6f") ||
+    url.includes("brand-header-logo-white")
+  );
+}
+
 export function Ceo1983BusinessCardVisit({
   name = "NGUYỄN VĂN A",
   title = "Director",
@@ -46,21 +55,26 @@ export function Ceo1983BusinessCardVisit({
   const [customBgImage, setCustomBgImage] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [localCompanyLogo, setLocalCompanyLogo] = useState<string | null>(() => {
+    if (companyLogoUrl && !isBlackBackgroundLogo(companyLogoUrl)) {
+      return companyLogoUrl;
+    }
     if (typeof window !== "undefined") {
       try {
         const direct = localStorage.getItem("vba_member_company_logo");
-        if (direct) return direct;
+        if (direct && !isBlackBackgroundLogo(direct)) return direct;
         const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
-        if (cp?.companyLogo) return cp.companyLogo;
+        if (cp?.companyLogo && !isBlackBackgroundLogo(cp.companyLogo)) return cp.companyLogo;
         const mem = JSON.parse(localStorage.getItem("vba_my_member") || "null");
-        if (mem?.companyLogoUrl || mem?.companyLogo) return mem.companyLogoUrl || mem.companyLogo;
+        if ((mem?.companyLogoUrl || mem?.companyLogo) && !isBlackBackgroundLogo(mem?.companyLogoUrl || mem?.companyLogo)) {
+          return mem.companyLogoUrl || mem.companyLogo;
+        }
       } catch {}
     }
     return companyLogoUrl || null;
   });
 
   useEffect(() => {
-    if (companyLogoUrl) {
+    if (companyLogoUrl && !isBlackBackgroundLogo(companyLogoUrl)) {
       setLocalCompanyLogo(companyLogoUrl);
     }
   }, [companyLogoUrl]);
@@ -68,11 +82,11 @@ export function Ceo1983BusinessCardVisit({
   useEffect(() => {
     const handleLogoUpdate = (e?: any) => {
       const url = e?.detail || localStorage.getItem("vba_member_company_logo");
-      if (url) setLocalCompanyLogo(url);
+      if (url && !isBlackBackgroundLogo(url)) setLocalCompanyLogo(url);
     };
     const handleProfileUpdate = (e?: any) => {
       const logo = e?.detail?.companyLogo || e?.detail?.companyLogoUrl;
-      if (logo) setLocalCompanyLogo(logo);
+      if (logo && !isBlackBackgroundLogo(logo)) setLocalCompanyLogo(logo);
     };
     window.addEventListener("vba_member_company_logo_updated", handleLogoUpdate);
     window.addEventListener("profile-updated", handleProfileUpdate);
@@ -85,17 +99,6 @@ export function Ceo1983BusinessCardVisit({
   }, []);
 
   const companyLogoInputRef = useRef<HTMLInputElement>(null);
-
-  // User-uploaded logo takes absolute precedence, with companyLogoUrl fallback
-  // Reject any stale black-background images and default to transparent official logo
-  const isBlackBackgroundLogo = (url?: string | null) => {
-    if (!url) return false;
-    return (
-      url.includes("1lfhzi") ||
-      url.includes("fskz6f") ||
-      url.includes("brand-header-logo-white")
-    );
-  };
 
   const validLocalLogo = isBlackBackgroundLogo(localCompanyLogo) ? null : localCompanyLogo;
   const validCompanyLogoUrl = isBlackBackgroundLogo(companyLogoUrl) ? null : companyLogoUrl;
@@ -166,11 +169,28 @@ export function Ceo1983BusinessCardVisit({
         onCompanyLogoUpdated(dataUrl);
       }
 
-      // Background upload to server (non-blocking)
+      // Background upload to server (non-blocking) and replace with clean MinIO URL
       uploadFileToNest(blob, file.name || "company-logo.png")
-        .then((uploadedUrl) => {
+        .then(async (uploadedUrl) => {
           if (uploadedUrl) {
-            fetchNestApi("/members/me", {
+            setLocalCompanyLogo(uploadedUrl);
+            try {
+              localStorage.setItem("vba_member_company_logo", uploadedUrl);
+              const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+              cp.companyLogo = uploadedUrl;
+              localStorage.setItem("vba_custom_profile", JSON.stringify(cp));
+              const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
+              mem.companyLogo = uploadedUrl;
+              mem.companyLogoUrl = uploadedUrl;
+              localStorage.setItem("vba_my_member", JSON.stringify(mem));
+            } catch {}
+            window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: uploadedUrl }));
+            window.dispatchEvent(new CustomEvent("profile-updated", { detail: { companyLogo: uploadedUrl } }));
+            window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: { companyLogo: uploadedUrl } }));
+            if (onCompanyLogoUpdated) {
+              onCompanyLogoUpdated(uploadedUrl);
+            }
+            await fetchNestApi("/members/me", {
               method: "PATCH",
               body: JSON.stringify({ companyLogoUrl: uploadedUrl }),
             }).catch(() => null);

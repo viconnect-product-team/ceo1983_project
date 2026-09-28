@@ -6,17 +6,40 @@ const memoryCache = new Map<string, any>();
  * Lightweight client-side fetch for PWA pages with instant in-memory cache (SWR).
  * When cacheKey is provided, returns cached data immediately on mount (loading = false),
  * eliminating layout shifts and flashes when switching tabs.
+ * Supports reactive dependencies (deps) to automatically invalidate and re-fetch when user/context changes.
  */
-export function useServerData<T>(fn: () => Promise<T>, fallback: T, cacheKey?: string) {
+export function useServerData<T>(
+  fn: () => Promise<T>,
+  fallback: T,
+  cacheKey?: string,
+  deps: any[] = []
+) {
   const cached = cacheKey ? memoryCache.get(cacheKey) : undefined;
   const [data, setData] = useState<T>(cached !== undefined ? cached : fallback);
   const [loading, setLoading] = useState<boolean>(cached === undefined);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
+  // Khi cacheKey hoặc deps thay đổi: cập nhật data ngay từ cache mới hoặc fallback
+  useEffect(() => {
+    if (cacheKey) {
+      const currentCache = memoryCache.get(cacheKey);
+      if (currentCache !== undefined) {
+        setData(currentCache);
+        setLoading(false);
+      } else {
+        setData(fallback);
+        setLoading(true);
+      }
+    } else {
+      setData(fallback);
+      setLoading(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey, ...deps]);
+
   useEffect(() => {
     let active = true;
-    // If we have cached data, don't set loading to true (stale-while-revalidate)
     if (!cacheKey || !memoryCache.has(cacheKey)) {
       setLoading(true);
     }
@@ -40,7 +63,18 @@ export function useServerData<T>(fn: () => Promise<T>, fallback: T, cacheKey?: s
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick]);
+  }, [tick, cacheKey, ...deps]);
+
+  // Lắng nghe sự kiện chuyển đổi tài khoản để tự động reload
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setTick((t) => t + 1);
+    };
+    window.addEventListener("vba_auth_changed", handleAuthChange);
+    return () => {
+      window.removeEventListener("vba_auth_changed", handleAuthChange);
+    };
+  }, []);
 
   return {
     data,
@@ -53,3 +87,8 @@ export function useServerData<T>(fn: () => Promise<T>, fallback: T, cacheKey?: s
     },
   };
 }
+
+export function clearServerDataCache() {
+  memoryCache.clear();
+}
+

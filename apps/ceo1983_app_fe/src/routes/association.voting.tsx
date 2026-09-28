@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Vote,
   Calendar,
@@ -22,6 +22,7 @@ import { useServerData } from "@/hooks/use-server-data";
 import { listMyEvents, type MyEvent } from "@/lib/member-app.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/association/voting")({
   component: AssociationVotingScreen,
@@ -167,11 +168,83 @@ function AssociationVotingScreen() {
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
-  const handleCastVote = (sessionId: string) => {
+  const loadCrmPolls = useCallback(async () => {
+    try {
+      const polls = await fetchNestApi<any[]>("/voting/polls");
+      if (Array.isArray(polls) && polls.length > 0) {
+        const crmSessions: MeetingVoteSession[] = polls.map((p) => {
+          const isClosed = p.status === "closed";
+          const rawOpts = p.options || [];
+          const opts: VoteOption[] = rawOpts.map((o: any) => ({
+            id: String(o.id),
+            label: o.title || o.label || "Phương án",
+            voteCount: Number(o.votesCount || o.votes_count || 0),
+            percentage: Number(o.percentage || 0),
+          }));
+
+          const totalVoted =
+            p.calculated_total_votes ??
+            opts.reduce((sum, o) => sum + o.voteCount, 0);
+
+          return {
+            id: p.id,
+            eventId: p.event_id || p.eventId,
+            meetingTitle: p.event_name
+              ? `Sự kiện: ${p.event_name}`
+              : p.title || "Kỳ Họp Hiệp Hội CEO 1983",
+            meetingType: "dai-hoi",
+            meetingTypeName: p.event_name ? "Sự Kiện Hiệp Hội" : "Biểu Quyết Trực Tuyến",
+            meetingDate: p.created_at
+              ? new Date(p.created_at).toLocaleDateString("vi-VN")
+              : "28/09/2026",
+            meetingTime: "Toàn phiên",
+            meetingLocation: "Hội nghị Hiệp hội & Trực tuyến qua App",
+            organizer: "Ban Quản Trị Hiệp Hội CEO 1983",
+            voteTitle: p.title,
+            voteDescription:
+              p.description ||
+              "Nghị quyết và nội dung biểu quyết được công bố chính thức từ Ban Quản Trị.",
+            status: isClosed ? "closed" : "active",
+            totalEligibleMembers: p.totalEligibleMembers || 320,
+            totalVoted: totalVoted,
+            options: opts,
+            myVoteOptionId: p.my_vote || undefined,
+            closedAt: p.end_date || p.endDate || undefined,
+            resolutionResult: isClosed
+              ? `ĐÃ KẾT THÚC: ${opts[0]?.label || "Nghị quyết"} (${opts[0]?.percentage || 0}% biểu quyết)`
+              : undefined,
+          };
+        });
+
+        // Kết hợp crmSessions lên đầu danh sách
+        setVoteSessions((prev) => {
+          const nonCrm = prev.filter((s) => !crmSessions.some((c) => c.id === s.id));
+          return [...crmSessions, ...nonCrm];
+        });
+      }
+    } catch {
+      // Offline fallback to cached
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCrmPolls();
+  }, [loadCrmPolls]);
+
+  const handleCastVote = async (sessionId: string) => {
     const chosenOptionId = selectedOptions[sessionId];
     if (!chosenOptionId) {
       toast.error("Vui lòng chọn một phương án biểu quyết trước khi xác nhận");
       return;
+    }
+
+    try {
+      await fetchNestApi(`/voting/polls/${sessionId}/vote`, {
+        method: "POST",
+        body: JSON.stringify({ optionId: chosenOptionId, sourceApp: "association_app" }),
+      });
+    } catch (e: any) {
+      console.warn("Backend vote failed or offline:", e?.message);
     }
 
     setVoteSessions((prev) => {
@@ -195,8 +268,12 @@ function AssociationVotingScreen() {
     });
 
     toast.success("Hội viên đã biểu quyết thành công!", {
-      description: "Ý kiến của Quý CEO đã được ghi nhận trực tiếp vào hệ thống kiểm phiếu realtime.",
+      description: "Ý kiến của Quý CEO đã được ghi nhận trực tiếp vào hệ thống CRM Hiệp hội.",
     });
+
+    setTimeout(() => {
+      loadCrmPolls();
+    }, 500);
   };
 
   const filteredSessions = useMemo(() => {

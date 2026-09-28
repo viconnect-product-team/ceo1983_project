@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, Component, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, Component, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -82,7 +82,7 @@ import {
 import { CeoWebRtcCallModal } from "@/components/common/CeoWebRtcCallModal";
 import { uploadChatAttachment } from "@/lib/upload-media";
 import { toast } from "sonner";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import {
   ZaloTransactionCard,
@@ -660,6 +660,7 @@ class MessagesErrorBoundary extends Component<MessagesErrorBoundaryProps, Messag
 }
 
 function MessagesScreen() {
+  const { user } = useAuth();
   const search = Route.useSearch();
   const fetchMembers = useServerFn(listMembers);
   const { data: members = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), [], "vba_directory_members");
@@ -693,7 +694,8 @@ function MessagesScreen() {
     if (!c) return;
     c.unread = 0;
     try {
-      const raw = localStorage.getItem("vba.recent_conversations");
+      const userRecentsKey = user?.id ? `vba.recent_conversations_${user.id}` : "vba.recent_conversations";
+      const raw = localStorage.getItem(userRecentsKey) || localStorage.getItem("vba.recent_conversations");
       if (raw) {
         const list = JSON.parse(raw);
         if (Array.isArray(list)) {
@@ -702,7 +704,9 @@ function MessagesScreen() {
               ? { ...item, unread: 0 }
               : item
           );
-          localStorage.setItem("vba.recent_conversations", JSON.stringify(updated));
+          const serialized = JSON.stringify(updated);
+          localStorage.setItem(userRecentsKey, serialized);
+          localStorage.setItem("vba.recent_conversations", serialized);
         }
       }
     } catch {}
@@ -738,12 +742,13 @@ function getNormalizedFirstChar(str: string): string {
   return "#";
 }
 
-function saveRecentConversation(peer: MyConversation, lastText: string) {
+function saveRecentConversation(peer: MyConversation, lastText: string, currentUserId?: string) {
   if (typeof window === "undefined" || !peer) return;
   const peerCode = String(peer.peerCode || "");
   if (!peerCode) return;
   try {
-    const raw = localStorage.getItem("vba.recent_conversations");
+    const userRecentsKey = currentUserId ? `vba.recent_conversations_${currentUserId}` : "vba.recent_conversations";
+    const raw = localStorage.getItem(userRecentsKey) || localStorage.getItem("vba.recent_conversations");
     const list: MyConversation[] = raw ? JSON.parse(raw) : [];
     const existing = Array.isArray(list) ? list.find((c) => c?.peerCode && String(c.peerCode).toLowerCase() === peerCode.toLowerCase()) : undefined;
     const nowIso = new Date().toISOString();
@@ -766,7 +771,9 @@ function saveRecentConversation(peer: MyConversation, lastText: string) {
       groupAvatar: peer.groupAvatar || existing?.groupAvatar,
     };
     const next = [item, ...(Array.isArray(list) ? list.filter((c) => c?.peerCode && String(c.peerCode).toLowerCase() !== peerCode.toLowerCase()) : [])];
-    localStorage.setItem("vba.recent_conversations", JSON.stringify(next.slice(0, 50)));
+    const serialized = JSON.stringify(next.slice(0, 50));
+    localStorage.setItem(userRecentsKey, serialized);
+    localStorage.setItem("vba.recent_conversations", serialized);
 
     if (isGroup) {
       const rawGroups = localStorage.getItem("vba.group_conversations");
@@ -790,7 +797,12 @@ function saveRecentConversation(peer: MyConversation, lastText: string) {
 
 function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConversation) => void; members?: DirectoryMember[] }) {
   const { user } = useAuth();
-  const { data: myMember } = useServerData<MyMember | null>(() => getMyMember(), null, "vba_my_member");
+  const { data: myMember } = useServerData<MyMember | null>(
+    () => getMyMember(),
+    null,
+    user?.id ? `vba_my_member_${user.id}` : undefined,
+    [user?.id],
+  );
   const t = useT();
   const fmt = useFmt();
   const {
@@ -798,17 +810,82 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
     loading,
     error,
     reload,
-  } = useServerData<MyConversation[]>(() => listConversations(), [], "vba_conversations");
+  } = useServerData<MyConversation[]>(
+    () => listConversations(),
+    [],
+    user?.id ? `vba_conversations_${user.id}` : undefined,
+    [user?.id],
+  );
 
+  // Client-side direct fetch từ NestJS /dm/member/conversations bằng Bearer token
+  const [directConversations, setDirectConversations] = useState<MyConversation[] | null>(null);
+
+  const fetchDirectConversations = useCallback(() => {
+    if (!user?.id) return;
+    fetchNestApi<any[]>("/dm/member/conversations")
+      .then((items) => {
+        if (Array.isArray(items)) {
+          setDirectConversations(items.map((c: any) => ({
+            peerCode: c.peerCode,
+            name: c.name,
+            last: c.last,
+            time: c.time,
+            rawTime: c.rawTime || c.time,
+            unread: c.unread ?? 0,
+            avatarUrl: c.avatarUrl ?? null,
+            isSystem: Boolean(c.isSystem),
+            isOnline: Boolean(c.isOnline),
+            userId: c.userId ?? null,
+            isConnected: Boolean(c.isConnected),
+            connectionStatus: c.connectionStatus || (c.isSystem ? "accepted" : "none"),
+            isPending: Boolean(c.isPending),
+            isOutgoingPending: Boolean(c.isOutgoingPending),
+            isIncomingPending: Boolean(c.isIncomingPending),
+            isStranger: Boolean(c.isStranger),
+            connectionId: c.connectionId ?? null,
+            isGroup: Boolean(c.isGroup),
+            memberCount: c.memberCount,
+            members: c.members,
+            groupAvatar: c.groupAvatar,
+          })));
+        }
+      })
+      .catch(() => {});
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setDirectConversations(null);
+      return;
+    }
+    fetchDirectConversations();
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        fetchDirectConversations();
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [user?.id, fetchDirectConversations]);
+
+  const effectiveConversations = (directConversations && directConversations.length > 0) ? directConversations : conversations;
+
+  const userRecentsKey = user?.id ? `vba.recent_conversations_${user.id}` : "vba.recent_conversations";
   const [localRecents, setLocalRecents] = useState<MyConversation[]>(() => {
     if (typeof window === "undefined") return [];
     try {
-      const raw = localStorage.getItem("vba.recent_conversations");
+      const raw = localStorage.getItem(userRecentsKey) || localStorage.getItem("vba.recent_conversations");
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
     }
   });
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(userRecentsKey) || localStorage.getItem("vba.recent_conversations");
+      if (raw) setLocalRecents(JSON.parse(raw));
+    } catch {}
+  }, [userRecentsKey]);
 
   const [localGroups, setLocalGroups] = useState<MyConversation[]>(() => {
     if (typeof window === "undefined") return [];
@@ -922,6 +999,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
     setLocalRecents((prev) => {
       const next = prev.filter((c) => c?.peerCode && String(c.peerCode).toLowerCase() !== targetKey);
       try {
+        localStorage.setItem(userRecentsKey, JSON.stringify(next));
         localStorage.setItem("vba.recent_conversations", JSON.stringify(next));
       } catch {}
       return next;
@@ -945,10 +1023,11 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   useEffect(() => {
     const syncLocal = () => {
       try {
-        const raw = localStorage.getItem("vba.recent_conversations");
+        const raw = localStorage.getItem(userRecentsKey) || localStorage.getItem("vba.recent_conversations");
         if (raw) setLocalRecents(JSON.parse(raw));
         const rawGroups = localStorage.getItem("vba.group_conversations");
         if (rawGroups) setLocalGroups(JSON.parse(rawGroups));
+        fetchDirectConversations();
         reload();
       } catch {}
     };
@@ -960,7 +1039,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       window.removeEventListener("storage", syncLocal);
       window.removeEventListener("vba:conversation_updated", syncLocal);
     };
-  }, []);
+  }, [userRecentsKey, fetchDirectConversations, reload]);
 
   const fetchMembers = useServerFn(listMembers);
   const { data: fetchedMembers = [] } = useServerData<DirectoryMember[]>(() => fetchMembers(), [], "vba_directory_members");
@@ -1004,10 +1083,10 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   const [onlineUserMap, setOnlineUserMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!conversations || conversations.length === 0) return;
+    if (!effectiveConversations || effectiveConversations.length === 0) return;
     setOnlineUserMap((prev) => {
       const next = { ...prev };
-      for (const c of conversations) {
+      for (const c of effectiveConversations) {
         if (c?.userId) {
           if (next[c.userId] === undefined) next[c.userId] = Boolean(c.isOnline);
         }
@@ -1018,7 +1097,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       }
       return next;
     });
-  }, [conversations]);
+  }, [effectiveConversations]);
 
   useEffect(() => {
     const socket = getConnectAppSocket();
@@ -1027,8 +1106,9 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
     }
     const handleUpdate = () => {
       reload();
+      fetchDirectConversations();
       try {
-        const raw = localStorage.getItem("vba.recent_conversations");
+        const raw = localStorage.getItem(userRecentsKey) || localStorage.getItem("vba.recent_conversations");
         if (raw) setLocalRecents(JSON.parse(raw));
       } catch {}
     };
@@ -1060,16 +1140,18 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
 
     const handleFocus = () => handleUpdate();
     window.addEventListener("focus", handleFocus);
+    window.addEventListener("vba:conversation_updated", handleUpdate);
 
     return () => {
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("vba:conversation_updated", handleUpdate);
       socket.off("dm:message_received", handleUpdate);
       socket.off("dm:thread_updated", handleUpdate);
       socket.off("member:message_received", handleUpdate);
       socket.off("presence:user_online", handleOnline);
       socket.off("presence:user_offline", handleOffline);
     };
-  }, [reload]);
+  }, [reload, userRecentsKey, fetchDirectConversations]);
 
   const checkOnline = (c: MyConversation) => {
     if (c.isSystem || c.peerCode === "admin" || c.peerCode === "system") return false;
@@ -1104,8 +1186,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
 
     const map = new Map<string, MyConversation>();
     // First, map server conversations enriched with directory member details
-    if (Array.isArray(conversations)) {
-      for (const c of conversations) {
+    if (Array.isArray(effectiveConversations)) {
+      for (const c of effectiveConversations) {
         if (!c) continue;
         const cPeer = String(c.peerCode || "");
         if (!cPeer) continue;
@@ -1247,14 +1329,14 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       }
     } catch {}
 
-    // CÁC KÊNH THÔNG TIN CHÍNH THỨC HIỆP HỘI (Req 7: Kênh truyền thông, xúc tiến, thư ký, deal B2B, sự kiện)
+    // CÁC KÊNH THÔNG TIN CHÍNH THỨC HIỆP HỘI (Thời gian lịch sử để tin nhắn hội viên mới luôn lên đầu)
     const officialChannels: MyConversation[] = [
       {
         peerCode: "channel_media",
         name: "📢 Kênh Truyền Thông Hiệp Hội",
         last: "Bản tin hoạt động CLB CEO 1983, thông cáo báo chí & sự kiện mới",
-        time: "Hôm nay",
-        rawTime: new Date().toISOString(),
+        time: "3 ngày trước",
+        rawTime: new Date(Date.now() - 259200000).toISOString(),
         unread: 0,
         isSystem: true,
         avatarUrl: null,
@@ -1263,8 +1345,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         peerCode: "channel_promotion",
         name: "🤝 Kênh Xúc Tiến Giao Thương",
         last: "Cơ hội giao thương B2B, liên kết chuỗi cung ứng doanh nghiệp",
-        time: "Hôm nay",
-        rawTime: new Date().toISOString(),
+        time: "3 ngày trước",
+        rawTime: new Date(Date.now() - 259200000).toISOString(),
         unread: 0,
         isSystem: true,
         avatarUrl: null,
@@ -1273,8 +1355,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         peerCode: "channel_secretariat",
         name: "🏛️ Kênh Ban Thư Ký & Ban Điều Hành",
         last: "Văn bản chỉ đạo, nghị quyết, thông báo hội phí & điều lệ CLB",
-        time: "Hôm qua",
-        rawTime: new Date(Date.now() - 86400000).toISOString(),
+        time: "4 ngày trước",
+        rawTime: new Date(Date.now() - 345600000).toISOString(),
         unread: 0,
         isSystem: true,
         avatarUrl: null,
@@ -1283,8 +1365,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         peerCode: "channel_deals",
         name: "🎯 Kênh Cơ Hội & Deal B2B",
         last: "Đơn hàng B2B độc quyền, chào mua cung ứng vật tư & dịch vụ",
-        time: "Hôm qua",
-        rawTime: new Date(Date.now() - 86400000).toISOString(),
+        time: "4 ngày trước",
+        rawTime: new Date(Date.now() - 345600000).toISOString(),
         unread: 0,
         isSystem: true,
         avatarUrl: null,
@@ -1293,8 +1375,8 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         peerCode: "channel_events",
         name: "🌟 Kênh Sự Kiện & Hội Nghị",
         last: "Lễ hội giao thương, Gala thường niên & các giải đấu thể thao CLB",
-        time: "2 ngày trước",
-        rawTime: new Date(Date.now() - 172800000).toISOString(),
+        time: "5 ngày trước",
+        rawTime: new Date(Date.now() - 432000000).toISOString(),
         unread: 0,
         isSystem: true,
         avatarUrl: null,
@@ -1388,7 +1470,7 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       console.error("Critical error in allConversations:", err);
       return [];
     }
-  }, [conversations, localRecents, localGroups, members, user, myMember, pinnedConvs]);
+  }, [directConversations, effectiveConversations, conversations, localRecents, localGroups, members, user, myMember, pinnedConvs]);
 
   const filteredMembers = (members || []).filter((m) => {
     if (!m) return false;
@@ -2457,12 +2539,53 @@ function ChatThread({
   onBack: () => void;
   members?: DirectoryMember[];
 }) {
+  const { user } = useAuth();
   const t = useT();
   const fmt = useFmt();
   const { data, loading, error, reload } = useServerData(
     () => listMessages({ data: { peerCode: peer.peerCode } }),
     { peerName: peer.name, messages: [] as Awaited<ReturnType<typeof listMessages>>["messages"] },
   );
+
+  // Client-side direct fetch từ NestJS /dm/member/messages bằng Bearer token
+  const [directData, setDirectData] = useState<{ peerName: string; messages: ChatMessage[] } | null>(null);
+
+  const fetchDirectMessages = useCallback(() => {
+    if (!peer.peerCode) return;
+    fetchNestApi<{ peerName: string; avatarUrl?: string; isSystem?: boolean; messages: any[] }>(
+      "/dm/member/messages?peerCode=" + encodeURIComponent(peer.peerCode)
+    )
+      .then((res) => {
+        if (res && Array.isArray(res.messages)) {
+          setDirectData({
+            peerName: res.peerName || peer.name,
+            messages: res.messages.map((m: any) => ({
+              id: m.id,
+              text: m.text,
+              mine: Boolean(m.mine),
+              time: m.time || m.createdAt,
+              createdAt: m.createdAt,
+              seen: Boolean(m.seen),
+              retracted: m.text === "[retracted]" || Boolean(m.retracted || m.isRetracted),
+            })),
+          });
+        }
+      })
+      .catch(() => {});
+  }, [peer.peerCode, peer.name]);
+
+  useEffect(() => {
+    if (!peer.peerCode) return;
+    fetchDirectMessages();
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        fetchDirectMessages();
+      }
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [peer.peerCode, fetchDirectMessages]);
+
+  const effectiveData = directData || data;
   const send = useServerFn(sendMessage);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -2706,7 +2829,7 @@ function ChatThread({
             seen: true,
           };
           setLocalMessages((prev) => [...prev, newMsg]);
-          saveRecentConversation(peer, payload.text);
+          saveRecentConversation(peer, payload.text, user?.id);
         }
         try {
           reload();
@@ -2738,7 +2861,7 @@ function ChatThread({
       ? peer.name || "Nhóm trò chuyện"
       : peer.name && String(peer.name).trim().toLowerCase() !== peerCodeLower
         ? peer.name
-        : matchedMember?.personName || matchedMember?.contact || matchedMember?.name || data.peerName || peer.name || peer.peerCode;
+        : matchedMember?.personName || matchedMember?.contact || matchedMember?.name || effectiveData?.peerName || peer.name || peer.peerCode;
 
   const handleOpenPeerProfile = () => {
     if (isGroup) {
@@ -2800,8 +2923,9 @@ function ChatThread({
 
   const mergedMessages = useMemo(() => {
     const map = new Map<string, ChatMessage>();
-    for (const m of data.messages) {
-      map.set(m.id, m);
+    const list = effectiveData?.messages || [];
+    for (const m of list) {
+      if (m && m.id) map.set(m.id, m);
     }
     for (const m of localMessages) {
       if (!map.has(m.id)) {
@@ -2873,7 +2997,7 @@ function ChatThread({
     }
 
     return deduped.filter((m) => !deletedForMeMsgIds.has(m.id));
-  }, [data.messages, localMessages, deletedForMeMsgIds, peer.peerCode, peer.name]);
+  }, [effectiveData?.messages, localMessages, deletedForMeMsgIds, peer.peerCode, peer.name]);
 
   const handleToggleReaction = (msgId: string, emoji: string) => {
     setMsgReactions((prev) => {
@@ -2907,7 +3031,7 @@ function ChatThread({
     setLocalMessages((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, retracted: true, text: "[retracted]" } : m))
     );
-    saveRecentConversation(peer, "Bạn đã thu hồi một tin nhắn");
+    saveRecentConversation(peer, "Bạn đã thu hồi một tin nhắn", user?.id);
     setActiveMenuMsgId(null);
     toast.success("Đã thu hồi tin nhắn");
     try {
@@ -3030,7 +3154,10 @@ function ChatThread({
     if (!socket.connected) {
       socket.connect();
     }
-    const handleUpdate = () => reload();
+    const handleUpdate = () => {
+      reload();
+      fetchDirectMessages();
+    };
     socket.on("dm:message_received", handleUpdate);
     socket.on("dm:thread_updated", handleUpdate);
     socket.on("dm:message_retracted", (data: any) => {
@@ -3042,12 +3169,16 @@ function ChatThread({
         });
       }
       reload();
+      fetchDirectMessages();
     });
     socket.on("dm:read_receipt", handleUpdate);
     socket.on("dm:reaction_updated", handleUpdate);
     socket.on("member:message_received", handleUpdate);
 
-    const handleFocus = () => reload();
+    const handleFocus = () => {
+      reload();
+      fetchDirectMessages();
+    };
     window.addEventListener("focus", handleFocus);
 
     return () => {
@@ -3059,7 +3190,7 @@ function ChatThread({
       socket.off("dm:reaction_updated", handleUpdate);
       socket.off("member:message_received", handleUpdate);
     };
-  }, [reload, peer.peerCode]);
+  }, [reload, peer.peerCode, fetchDirectMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -3105,9 +3236,11 @@ function ChatThread({
       } catch {}
       setText("");
 
-      saveRecentConversation(peer, payload);
+      saveRecentConversation(peer, payload, user?.id);
       await send({ data: { peerCode: peer.peerCode, text: payload } });
+      window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
       reload();
+      fetchDirectMessages();
     } catch {
       toast.error("Tải tệp đính kèm thất bại");
     } finally {
@@ -3145,11 +3278,13 @@ function ChatThread({
           localStorage.setItem(`vba.chat.${peer.peerCode}`, JSON.stringify(nextLocal.slice(-50)));
         } catch {}
 
-        saveRecentConversation(peer, "📍 [Vị trí hiện tại]");
+        saveRecentConversation(peer, "📍 [Vị trí hiện tại]", user?.id);
         try {
           await send({ data: { peerCode: peer.peerCode, text: payload } });
           toast.success("Đã chia sẻ vị trí hiện tại thành công!");
+          window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
           reload();
+          fetchDirectMessages();
         } catch {
           toast.error("Không thể gửi tin nhắn vị trí");
         }
@@ -3177,10 +3312,12 @@ function ChatThread({
       localStorage.setItem(`vba.chat.${peer.peerCode}`, JSON.stringify(nextLocal.slice(-50)));
     } catch {}
 
-    saveRecentConversation(peer, callPayload);
+    saveRecentConversation(peer, callPayload, user?.id);
     try {
       await send({ data: { peerCode: peer.peerCode, text: callPayload } });
+      window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
       reload();
+      fetchDirectMessages();
     } catch (e) {
       console.warn("sendCallLogMessage fallback:", e);
     }
@@ -3214,11 +3351,13 @@ function ChatThread({
       localStorage.setItem(`vba.chat.${peer.peerCode}`, JSON.stringify(nextLocal.slice(-50)));
     } catch {}
     setText("");
-    saveRecentConversation(peer, finalPayload);
+    saveRecentConversation(peer, finalPayload, user?.id);
 
     try {
       await send({ data: { peerCode: peer.peerCode, text: finalPayload } });
+      window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
       reload();
+      fetchDirectMessages();
     } catch (err) {
       console.warn("Send message sync notice:", err);
       // Still kept in local messages

@@ -254,6 +254,7 @@ function Home() {
     });
   };
 
+  const userKey = user?.id || "guest";
   const fetchMember = useServerFn(getMyMember);
   const fetchEvents = useServerFn(listMyEvents);
   const fetchBrand = useServerFn(getMyAssociationBrand);
@@ -263,18 +264,82 @@ function Home() {
   const fetchDirectory = useServerFn(listMembers);
   const fetchNews = useServerFn(listNews);
 
-  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
-  const { data: serverEvents = [] } = useServerData<MyEvent[]>(() => fetchEvents(), [], "vba_events");
-  const { data: brand } = useServerData<MyAssociationBrand | null>(() => fetchBrand(), null, "vba_brand");
-  const { data: opportunities = [] } = useServerData<MyOpportunity[]>(() => fetchOpps(), [], "vba_opportunities");
-  const { data: products = [] } = useServerData<MyProduct[]>(() => fetchProducts(), [], "vba_products");
-  const { data: notifications = [], reload: reloadNotifs } = useServerData<MyNotification[]>(() => fetchNotifs(), [], "vba_notifications_list");
+  const { data: member } = useServerData<MyMember | null>(
+    () => fetchMember(),
+    null,
+    user?.id ? `vba_my_member_${user.id}` : undefined,
+    [user?.id]
+  );
+  const { data: serverEvents = [] } = useServerData<MyEvent[]>(
+    () => fetchEvents(),
+    [],
+    user?.id ? `vba_events_${user.id}` : "vba_events",
+    [user?.id]
+  );
+  const { data: brand } = useServerData<MyAssociationBrand | null>(
+    () => fetchBrand(),
+    null,
+    user?.id ? `vba_brand_${user.id}` : "vba_brand",
+    [user?.id]
+  );
+  const { data: opportunities = [] } = useServerData<MyOpportunity[]>(
+    () => fetchOpps(),
+    [],
+    user?.id ? `vba_opps_${user.id}` : "vba_opps",
+    [user?.id]
+  );
+  const { data: products = [] } = useServerData<MyProduct[]>(
+    () => fetchProducts(),
+    [],
+    user?.id ? `vba_products_${user.id}` : "vba_products",
+    [user?.id]
+  );
+  const { data: notifications = [], reload: reloadNotifs } = useServerData<MyNotification[]>(
+    () => fetchNotifs(),
+    [],
+    user?.id ? `vba_notifs_${user.id}` : "vba_notifs",
+    [user?.id]
+  );
   const { data: directoryMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
   const { data: newsItems = [] } = useServerData<NewsItem[]>(() => fetchNews(), [], "vba_news");
 
+  // Client-side fetch trực tiếp từ NestJS /members/me bằng Bearer token của user hiện tại
+  const [directMember, setDirectMember] = useState<MyMember | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setDirectMember(null);
+      return;
+    }
+    let active = true;
+    fetchNestApi<any>("/members/me")
+      .then((live) => {
+        if (active && live) {
+          setDirectMember(live);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
+  // Ưu tiên: directMember (tươi mới từ API trực tiếp) > member (từ SSR Server Function)
+  const effectiveMember = useMemo(() => {
+    const dm = directMember as any;
+    const m = member as any;
+    if (dm && (dm.userId === user?.id || dm.id === user?.id || !dm.userId)) {
+      return directMember;
+    }
+    if (m && (m.userId === user?.id || m.id === user?.id || !m.userId)) {
+      return member;
+    }
+    return directMember || member;
+  }, [directMember, member, user?.id]);
+
   const unreadNotifCount = notifications.filter((n) => n.unread).length;
 
-  // User-scoped custom profile (with fallback to global custom profile)
+  // User-scoped custom profile (STRICTLY FOR CURRENT LOGGED IN USER)
   const userProfileStorageKey = user?.id ? `vba_custom_profile_${user.id}` : null;
   const [customProfile, setCustomProfile] = useState<{
     name?: string;
@@ -286,15 +351,14 @@ function Home() {
     phone?: string;
     userId?: string;
   } | null>(() => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined" || !user?.id) return null;
     try {
       if (userProfileStorageKey) {
         const scoped = localStorage.getItem(userProfileStorageKey);
-        if (scoped) return JSON.parse(scoped);
-      }
-      const generic = localStorage.getItem("vba_custom_profile");
-      if (generic) {
-        return JSON.parse(generic);
+        if (scoped) {
+          const parsed = JSON.parse(scoped);
+          if (parsed && (parsed.userId === user.id || !parsed.userId)) return parsed;
+        }
       }
       return null;
     } catch {
@@ -304,38 +368,50 @@ function Home() {
 
   // Re-sync user-scoped profile
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !user?.id) {
+      setCustomProfile(null);
+      return;
+    }
     try {
-      if (user?.id) {
-        const scoped = localStorage.getItem(`vba_custom_profile_${user.id}`);
-        if (scoped) {
-          setCustomProfile(JSON.parse(scoped));
+      const scoped = localStorage.getItem(`vba_custom_profile_${user.id}`);
+      if (scoped) {
+        const parsed = JSON.parse(scoped);
+        if (parsed && (parsed.userId === user.id || !parsed.userId)) {
+          setCustomProfile(parsed);
           return;
         }
       }
+      // Dọn dẹp cache rác nếu không đúng user
       const generic = localStorage.getItem("vba_custom_profile");
       if (generic) {
-        setCustomProfile(JSON.parse(generic));
+        const parsedGen = JSON.parse(generic);
+        if (parsedGen?.userId && parsedGen.userId !== user.id) {
+          localStorage.removeItem("vba_custom_profile");
+        }
       }
+      setCustomProfile(null);
     } catch {
       /* ignore */
     }
   }, [user?.id]);
 
   const [coverPhoto, setCoverPhoto] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("vba_member_cover_photo");
+    return effectiveMember?.coverUrl || (effectiveMember as any)?.cover_url || null;
   });
   const [coverError, setCoverError] = useState(false);
 
   useEffect(() => {
-    if (!coverPhoto && (member?.coverUrl || (member as any)?.cover_url)) {
-      setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
+    const rawCover = effectiveMember?.coverUrl || (effectiveMember as any)?.cover_url;
+    if (rawCover) {
+      setCoverPhoto(rawCover);
+    } else if (user?.id) {
+      const userCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
+      if (userCover) setCoverPhoto(userCover);
     }
-  }, [member?.coverUrl, (member as any)?.cover_url]);
+  }, [effectiveMember?.coverUrl, (effectiveMember as any)?.cover_url, user?.id]);
 
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(() => {
-    return member?.avatar || (member as any)?.avatarUrl || null;
+    return effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || user?.avatar_url || (user as any)?.user_metadata?.avatar_url || null;
   });
   const [avatarError, setAvatarError] = useState(false);
 
@@ -343,15 +419,20 @@ function Home() {
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
-    return (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null;
+    return (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo || null;
   });
 
   useEffect(() => {
-    const sLogo = (member as any)?.companyLogoUrl || (member as any)?.companyLogo;
-    if (sLogo) setCompanyLogo(sLogo);
-    const sAvatar = member?.avatar || (member as any)?.avatarUrl;
+    const sLogo = (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo;
+    if (sLogo) {
+      setCompanyLogo(sLogo);
+    } else if (user?.id) {
+      const userLogo = localStorage.getItem(`vba_member_company_logo_${user.id}`);
+      if (userLogo) setCompanyLogo(userLogo);
+    }
+    const sAvatar = effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || user?.avatar_url || (user as any)?.user_metadata?.avatar_url;
     if (sAvatar) setAvatarPhoto(sAvatar);
-  }, [(member as any)?.companyLogoUrl, (member as any)?.companyLogo, member?.avatar, (member as any)?.avatarUrl]);
+  }, [(effectiveMember as any)?.companyLogoUrl, (effectiveMember as any)?.companyLogo, effectiveMember?.avatar, (effectiveMember as any)?.avatarUrl, user?.avatar_url, (user as any)?.user_metadata?.avatar_url, user?.id]);
 
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -437,11 +518,13 @@ function Home() {
       setCompanyLogo(dataUrl);
 
       try {
-        localStorage.setItem("vba_member_company_logo", dataUrl);
-
-        const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
-        cp.companyLogo = dataUrl;
-        localStorage.setItem("vba_custom_profile", JSON.stringify(cp));
+        if (user?.id) {
+          localStorage.setItem(`vba_member_company_logo_${user.id}`, dataUrl);
+          const cp = JSON.parse(localStorage.getItem(`vba_custom_profile_${user.id}`) || "{}");
+          cp.companyLogo = dataUrl;
+          cp.userId = user.id;
+          localStorage.setItem(`vba_custom_profile_${user.id}`, JSON.stringify(cp));
+        }
 
         const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
         mem.companyLogo = dataUrl;
@@ -461,7 +544,7 @@ function Home() {
           if (uploadedUrl) {
             fetchNestApi("/members/me", {
               method: "PATCH",
-              body: JSON.stringify({ companyLogoUrl: uploadedUrl }),
+              body: JSON.stringify({ companyLogo: uploadedUrl, companyLogoUrl: uploadedUrl }),
             }).catch(() => null);
           }
         })
@@ -486,22 +569,23 @@ function Home() {
           if (detail.cover) setCoverPhoto(detail.cover);
           if (detail.companyLogo) {
             setCompanyLogo(detail.companyLogo);
-            try { localStorage.setItem("vba_member_company_logo", detail.companyLogo); } catch {}
+            if (user?.id) {
+              try { localStorage.setItem(`vba_member_company_logo_${user.id}`, detail.companyLogo); } catch {}
+            }
           }
           return;
         }
         if (user?.id) {
           const scoped = localStorage.getItem(`vba_custom_profile_${user.id}`);
           if (scoped) {
-            setCustomProfile(JSON.parse(scoped));
-            return;
+            const parsed = JSON.parse(scoped);
+            if (parsed && (parsed.userId === user.id || !parsed.userId)) {
+              setCustomProfile(parsed);
+              return;
+            }
           }
         }
-        const generic = localStorage.getItem("vba_custom_profile");
-        if (generic) {
-          setCustomProfile(JSON.parse(generic));
-          return;
-        }
+        setCustomProfile(null);
       } catch {}
     };
     const handleCoverUpdate = (e?: any) => {
@@ -509,8 +593,9 @@ function Home() {
         const detailUrl = e?.detail;
         if (detailUrl && typeof detailUrl === "string") {
           setCoverPhoto(detailUrl);
-        } else {
-          setCoverPhoto(localStorage.getItem("vba_member_cover_photo"));
+        } else if (user?.id) {
+          const userCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
+          if (userCover) setCoverPhoto(userCover);
         }
       } catch {}
     };
@@ -519,8 +604,9 @@ function Home() {
         const detailUrl = e?.detail;
         if (detailUrl && typeof detailUrl === "string") {
           setAvatarPhoto(detailUrl);
-        } else {
-          setAvatarPhoto(localStorage.getItem("vba_member_avatar_photo"));
+        } else if (user?.id) {
+          const userAvatar = localStorage.getItem(`vba_member_avatar_photo_${user.id}`);
+          if (userAvatar) setAvatarPhoto(userAvatar);
         }
       } catch {}
     };
@@ -529,8 +615,9 @@ function Home() {
         const detailUrl = e?.detail;
         if (detailUrl && typeof detailUrl === "string") {
           setCompanyLogo(detailUrl);
-        } else {
-          setCompanyLogo(localStorage.getItem("vba_member_company_logo"));
+        } else if (user?.id) {
+          const userLogo = localStorage.getItem(`vba_member_company_logo_${user.id}`);
+          if (userLogo) setCompanyLogo(userLogo);
         }
       } catch {}
     };
@@ -552,21 +639,21 @@ function Home() {
     };
   }, [reloadNotifs, user?.id]);
 
-  // Priority-driven resolution: Edited Custom Profile > Real Member Name > Auth User Name > Fallback
+  // Priority-driven resolution: Real Member Record from DB > Real Auth User Name > Custom Profile (scoped) > Fallback
   const realUserName = (user as any)?.name || (user as any)?.user_metadata?.full_name;
-  const isGenericMemberName = !member?.name || member.name === "Thành viên mới" || member.name === "Hội viên CLB CEO 1983";
-  const customName = customProfile?.name?.trim();
-  const displayName = customName || ((!isGenericMemberName && member?.name)
-    ? member.name
-    : (realUserName || member?.name || (user as any)?.username || "Hội viên CLB CEO 1983"));
+  const isGenericMemberName = !effectiveMember?.name || effectiveMember.name === "Thành viên mới" || effectiveMember.name === "Hội viên CLB CEO 1983";
+  const validCustomName = (customProfile?.userId === user?.id || !customProfile?.userId) ? customProfile?.name?.trim() : undefined;
+  
+  const displayName = (!isGenericMemberName && effectiveMember?.name)
+    ? effectiveMember.name
+    : (realUserName || validCustomName || effectiveMember?.name || (user as any)?.username || "Hội viên CLB CEO 1983");
 
-  const displayTitle = customProfile?.title?.trim() || member?.title || (member as any)?.position || member?.industry || (isEn ? "Official Member" : "Hội viên chính thức");
+  const displayTitle = effectiveMember?.title || (effectiveMember as any)?.position || effectiveMember?.industry || customProfile?.title?.trim() || (isEn ? "Official Member" : "Hội viên chính thức");
   const displayPhone =
-    (customProfile as any)?.phone?.trim() ||
-    member?.phone ||
+    effectiveMember?.phone ||
     (user as any)?.phone ||
     (user as any)?.user_metadata?.phone ||
-    (typeof window !== "undefined" ? localStorage.getItem("vba_member_phone") : null) ||
+    (customProfile as any)?.phone?.trim() ||
     "";
   const totalOpportunitiesCount = opportunities.length;
   const totalProductsCount = products.length;
@@ -667,13 +754,13 @@ function Home() {
     return isMedia && isAssigned;
   }, [user, customProfile]);
 
-  const rawCompany = customProfile?.company?.trim() || (member as any)?.companyName || (member as any)?.company;
+  const rawCompany = customProfile?.company?.trim() || (effectiveMember as any)?.companyName || (effectiveMember as any)?.company || (effectiveMember as any)?.businessName;
   const isOldSeedCompany = rawCompany && ((rawCompany.includes("Phạm Văn Vũ") && !displayName.includes("Phạm Văn Vũ")));
   const displayCompany = (!rawCompany || isOldSeedCompany) ? "CLB Doanh Nhân CEO 1983" : rawCompany;
   const rawAvatar =
     avatarPhoto ||
     customProfile?.avatar ||
-    member?.avatar ||
+    effectiveMember?.avatar ||
     (user as any)?.avatar_url ||
     (user as any)?.user_metadata?.avatar_url ||
     null;
@@ -682,8 +769,8 @@ function Home() {
   const handleCopyCode = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!member?.code) return;
-    navigator.clipboard.writeText(member.code);
+    if (!effectiveMember?.code) return;
+    navigator.clipboard.writeText(effectiveMember.code);
     setCopied(true);
     toast.success(isEn ? "Member code copied!" : "Đã sao chép mã hội viên!");
     setTimeout(() => setCopied(false), 2000);

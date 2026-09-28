@@ -327,6 +327,40 @@ function NotificationsScreen() {
         [n.id]: "accepted",
         ...(connId ? { [connId]: "accepted" } : {}),
       }));
+
+      // Ghi nhận định danh đối tác vào CẢ 2 key LocalStorage để CreateGroupChatModal nhận diện ngay tức thì
+      try {
+        const ids = [
+          n.senderId,
+          n.senderCode,
+          n.safeDisplayData?.senderCode,
+          n.safeDisplayData?.senderId,
+          n.safeDisplayData?.memberCode,
+          n.safeDisplayData?.userId,
+          n.refId,
+          n.sourceRecordId,
+        ].filter(Boolean).map(String);
+
+        // 1. vba_connected_members
+        const raw1 = localStorage.getItem("vba_connected_members");
+        const list1: string[] = raw1 ? JSON.parse(raw1) : [];
+        for (const id of ids) {
+          if (!list1.includes(id)) list1.push(id);
+        }
+        localStorage.setItem("vba_connected_members", JSON.stringify(list1));
+
+        // 2. vba.connected_members
+        const raw2 = localStorage.getItem("vba.connected_members");
+        const list2: string[] = raw2 ? JSON.parse(raw2) : [];
+        for (const id of ids) {
+          if (!list2.includes(id)) list2.push(id);
+        }
+        localStorage.setItem("vba.connected_members", JSON.stringify(list2));
+      } catch {}
+
+      window.dispatchEvent(new CustomEvent("vba:connection_accepted"));
+      window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
+
       toast.success("Đã đồng ý kết bạn thành công!");
       await markRead({ data: { id: n.id } }).catch(() => {});
       reload();

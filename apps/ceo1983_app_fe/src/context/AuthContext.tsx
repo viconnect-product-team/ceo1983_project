@@ -1,4 +1,63 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { clearServerDataCache } from '@/hooks/use-server-data';
+
+export function clearUserSessionData() {
+  if (typeof window === 'undefined') return;
+  try {
+    // 1. Tokens and cookies
+    localStorage.removeItem('vibe_token');
+    localStorage.removeItem('vibe_refresh_token');
+    localStorage.removeItem('vibe_user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
+    clearSessionCookies();
+
+    // 2. Member profile caches
+    localStorage.removeItem('vba_custom_profile');
+    localStorage.removeItem('vba_my_member');
+    localStorage.removeItem('vba_member_company_logo');
+    localStorage.removeItem('vba_member_avatar_photo');
+    localStorage.removeItem('vba_member_cover_photo');
+    localStorage.removeItem('vba_member_phone');
+    localStorage.removeItem('vba_user_email');
+    localStorage.removeItem('vibe_user_email');
+    localStorage.removeItem('vba_current_role');
+    localStorage.removeItem('vba_user_role');
+    localStorage.removeItem('vba_is_admin');
+    localStorage.removeItem('vba_admin_role_override');
+    localStorage.removeItem('vba_crm_role_override');
+    localStorage.removeItem('vba_cleared_badges');
+    localStorage.removeItem('vba_user_posts');
+    localStorage.removeItem('vba_is_media_department_member');
+    localStorage.removeItem('vba_assigned_event_scanner');
+
+    // 3. User-scoped and module keys (xoá sạch toàn bộ key vba_, sb-, bc.)
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith('vba_') ||
+          key.startsWith('sb-') ||
+          key.startsWith('bc.auth') ||
+          key.startsWith('vibe_'))
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+    // 4. Wipe RAM cache
+    clearServerDataCache();
+
+    // 5. Broadcast to all open components
+    window.dispatchEvent(new Event('vba_auth_changed'));
+    window.dispatchEvent(new Event('profile-updated'));
+    window.dispatchEvent(new Event('role-changed'));
+  } catch (err) {
+    console.error('Error clearing user session data:', err);
+  }
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +99,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // ── JWT Helpers ───────────────────────────────────────────────────────────────
 
-function decodeJwt(token: string): Record<string, any> | null {
+export function decodeJwt(token: string): Record<string, any> | null {
   try {
     const base64Url = token.split('.')[1];
     if (!base64Url) return null;
@@ -57,7 +116,7 @@ function decodeJwt(token: string): Record<string, any> | null {
   }
 }
 
-function isTokenValid(token: string): boolean {
+export function isTokenValid(token: string): boolean {
   const decoded = decodeJwt(token);
   if (!decoded || !decoded.exp) return false;
   // hết hạn trước 30 giây
@@ -99,14 +158,19 @@ function buildSession(accessToken: string, refreshToken: string, user: AppUser):
 }
 
 function setSessionCookies(session: AppSession) {
-  const secure =
-    typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; secure' : '';
-  document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in ?? 3600}; SameSite=Lax${secure}`;
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const secure = isHttps ? '; secure' : '';
+  const maxAge = session.expires_in ?? 3600;
+  document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+  document.cookie = `vibe_token=${session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+  document.cookie = `access_token=${session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
   document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=604800; SameSite=Lax${secure}`;
 }
 
 function clearSessionCookies() {
   document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'vibe_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 
@@ -190,11 +254,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function applySession(sess: AppSession) {
     localStorage.setItem('vibe_token', sess.access_token);
     localStorage.setItem('vibe_refresh_token', sess.refresh_token);
+    try {
+      localStorage.setItem('vibe_user', JSON.stringify(sess.user));
+      if (sess.user?.email) localStorage.setItem('vba_user_email', sess.user.email);
+      if (sess.user?.role) localStorage.setItem('vba_current_role', sess.user.role);
+    } catch {}
     setSession(sess);
     setUser(sess.user);
     setStatus('in');
     setSessionCookies(sess);
     scheduleRefresh(sess.access_token, sess.refresh_token);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('vba_auth_changed'));
+      window.dispatchEvent(new Event('profile-updated'));
+      window.dispatchEvent(new Event('role-changed'));
+    }
   }
 
   useEffect(() => {
@@ -231,9 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    localStorage.removeItem('vibe_token');
-    localStorage.removeItem('vibe_refresh_token');
-    clearSessionCookies();
+    clearUserSessionData();
     setUser(null);
     setSession(null);
     setStatus('out');
@@ -242,6 +314,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Gọi sau khi login thành công — nhận response từ NestJS /auth/login */
   const setAuthData = (data: any) => {
     if (!data?.access_token) return;
+    // Dọn dẹp cache của phiên đăng nhập trước trước khi kích hoạt phiên mới
+    clearUserSessionData();
+
     const appUser = mapApiUser(data.user, data.access_token);
     const sess = buildSession(
       data.access_token,

@@ -7,12 +7,13 @@ import type { MeetingWorkspaceBucket } from "@/lib/meeting/workspace/types";
 import { MEETING_WORKSPACE_BUCKETS } from "@/lib/meeting/workspace/types";
 import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
 import { Calendar, Clock, MapPin, Video, User, Phone, Plus, Sparkles, Building2 } from "lucide-react";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/business-connect/meetings/")({
   head: () => ({
     meta: [
       { title: "Cuộc Gặp Kết Nối — Business Connect" },
-      { name: "description", content: "Quản lý và lên lịch cuộc gặp kết nối 1-on-1 giữa các hội viên doanh nghiệp." },
+      { name: "description", content: "Quản lý và lên lịch cuộc gặp kết nối giữa các hội viên doanh nghiệp." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -49,12 +50,48 @@ function MeetingsWorkspacePage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [localMeetings, setLocalMeetings] = useState<ConnectionMeetingItem[]>([]);
 
-  const loadMeetings = () => {
+  const loadMeetings = async () => {
+    let local: ConnectionMeetingItem[] = [];
     try {
-      const stored = localStorage.getItem("ceo1983_meetings_history") || localStorage.getItem("vione_meetings_history") || "[]";
-      setLocalMeetings(JSON.parse(stored));
+      const stored =
+        localStorage.getItem("ceo1983_meetings_history") ||
+        localStorage.getItem("vione_meetings_history") ||
+        "[]";
+      local = JSON.parse(stored);
     } catch {
-      setLocalMeetings([]);
+      local = [];
+    }
+
+    try {
+      const serverData = await fetchNestApi<any>("/meetings");
+      const serverList = Array.isArray(serverData)
+        ? serverData
+        : serverData?.items || [];
+      const remoteMeetings: ConnectionMeetingItem[] = serverList.map((m: any) => {
+        const tm = m.target_members || {};
+        return {
+          id: String(m.id),
+          title: m.title || "Cuộc gặp kết nối",
+          hostName: tm.hostName || "Hội viên chủ trì",
+          partnerName: tm.partnerName || "Đối tác kết nối",
+          partnerPhone: tm.partnerPhone || undefined,
+          partnerCompany: tm.partnerCompany || undefined,
+          date: m.date ? new Date(m.date).toLocaleDateString("vi-VN") : "Hôm nay",
+          time: m.time || "09:00",
+          venueType: (m.type === "online" || m.zoom_url || tm.venueType === "online") ? "online" : "offline",
+          venue: m.location || tm.venue || "Văn phòng Hiệp hội CEO 1983",
+          onlineUrl: m.zoom_url || tm.onlineUrl,
+          notes: tm.notes,
+          status: m.status || "scheduled",
+        };
+      });
+
+      const map = new Map<string, ConnectionMeetingItem>();
+      for (const m of remoteMeetings) map.set(m.id, m);
+      for (const m of local) map.set(m.id, m);
+      setLocalMeetings(Array.from(map.values()));
+    } catch {
+      setLocalMeetings(local);
     }
   };
 
@@ -75,7 +112,7 @@ function MeetingsWorkspacePage() {
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            <span>Quản Lý Cuộc Gặp Kết Nối 1-on-1</span>
+            <span>Quản Lý Cuộc Gặp</span>
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Lịch gặp gỡ kết nối, cơ hội hợp tác kinh doanh và trao đổi giao thương đồng bộ đa nền tảng
@@ -88,20 +125,21 @@ function MeetingsWorkspacePage() {
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-md cursor-pointer transition hover:bg-blue-700 bg-blue-600 text-white"
         >
           <Plus className="h-4 w-4" />
-          <span>Tạo Cuộc Gặp Kết Nối</span>
+          <span>Tạo Cuộc Gặp</span>
         </button>
       </div>
 
       <WorkspaceSummaryCards />
 
-      {/* Danh sách các cuộc gặp kết nối 1-on-1 được tạo */}
-      {localMeetings.length > 0 && (
-        <div className="space-y-3">
+      {/* Danh sách các cuộc gặp kết nối */}
+      {localMeetings.length > 0 ? (
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">
-              Cuộc Gặp Kết Nối Đã Lên Lịch Gần Đây ({localMeetings.length})
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>Danh Sách Cuộc Gặp ({localMeetings.length})</span>
             </h3>
-            <span className="text-xs text-muted-foreground">Đồng bộ từ App CEO 1983 & ViOne</span>
+            <span className="text-xs text-muted-foreground">Đồng bộ từ App CEO 1983 & CRM Hiệp Hội</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -187,41 +225,27 @@ function MeetingsWorkspacePage() {
             ))}
           </div>
         </div>
-      )}
-
-      {/* Tabs Phân loại Workspace */}
-      <div
-        role="tablist"
-        aria-label={t("bc.meetings.workspace.title")}
-        className="flex flex-wrap gap-1 border-b"
-      >
-        {MEETING_WORKSPACE_BUCKETS.map((b) => {
-          const selected = bucket === b;
-          return (
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border bg-card/60 p-12 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+            <Calendar className="h-7 w-7" />
+          </div>
+          <h3 className="text-base font-bold text-foreground">Chưa có cuộc gặp nào</h3>
+          <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
+            Lịch gặp gỡ kết nối 1-on-1 giữa các hội viên doanh nghiệp. Hãy bắt đầu lên lịch cuộc gặp để mở rộng cơ hội hợp tác kinh doanh.
+          </p>
+          <div className="mt-6">
             <button
-              key={b}
-              role="tab"
               type="button"
-              aria-selected={selected}
-              aria-controls={`ws-panel-${b}`}
-              id={`ws-tab-${b}`}
-              onClick={() => setBucket(b)}
-              className={
-                "whitespace-nowrap rounded-t-lg px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
-                (selected
-                  ? "border-b-2 border-primary text-foreground"
-                  : "text-muted-foreground hover:text-foreground")
-              }
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold shadow-md cursor-pointer transition hover:bg-blue-700 bg-blue-600 text-white"
             >
-              {t(TAB_LABEL[b])}
+              <Plus className="h-4 w-4" />
+              <span>Tạo Cuộc Gặp Ngay</span>
             </button>
-          );
-        })}
-      </div>
-
-      <div role="tabpanel" id={`ws-panel-${bucket}`} aria-labelledby={`ws-tab-${bucket}`}>
-        <WorkspaceBucketList bucket={bucket} />
-      </div>
+          </div>
+        </div>
+      )}
 
       <Create1on1MeetingModal
         isOpen={isCreateOpen}

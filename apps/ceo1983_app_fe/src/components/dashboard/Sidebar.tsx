@@ -279,24 +279,40 @@ export function Sidebar({
   const canViewComm = isBQT || isBTT || isHVT; // News & media
   const canViewNetwork = true; // B2B Marketplace & networking
   const canViewBusinessConnect = true; // Card & 1-on-1 connections
-  const canViewSystem = canManageSystem; // System settings ONLY for ADM and BQT
+  const canViewSystem = isPlatformAdmin || srsRole === "BQT"; // System settings ONLY for ADM and BQT
+  const canViewPlatform = isPlatformAdmin || srsRole === "BQT"; // Permissions ONLY for ADM and BQT
 
   const pathname = useRouterState({ select: (s) => s?.location?.pathname });
 
   const fetchMine = useServerFn(listMyAssociationsFn);
   const { data: myAssocs, reload } = useServerData<MyAssociation[]>(() => fetchMine(), []);
   const activeAssoc = myAssocs?.find((a) => a.isActive) ?? myAssocs?.[0];
-  const brandName = activeAssoc?.name ?? t("brand.name");
 
   const unreadNotify = useUnreadNotifications();
   const badges: Record<string, number> = { "/notifications": unreadNotify };
 
+  const [overrideBrandName, setOverrideBrandName] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("vba_active_assoc_name");
+    }
+    return null;
+  });
+
   useEffect(() => {
-    const onChange = () => reload();
+    const onChange = (e: any) => {
+      reload();
+      if (e?.detail?.name) {
+        setOverrideBrandName(e.detail.name);
+      } else if (typeof window !== "undefined") {
+        setOverrideBrandName(localStorage.getItem("vba_active_assoc_name"));
+      }
+    };
     window.addEventListener("association-changed", onChange);
     return () => window.removeEventListener("association-changed", onChange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const brandName = overrideBrandName || activeAssoc?.name || t("brand.name");
 
   // Collapse only applies to the desktop sidebar; the mobile drawer is always full.
   const [collapsed, setCollapsed] = useState(false);
@@ -575,7 +591,7 @@ export function Sidebar({
             onNavigate={onNavigate}
           />
         )}
-        {isPlatformAdmin && (
+        {canViewPlatform && (
           <Group
             label="nav.group.platform"
             items={platform}

@@ -30,6 +30,7 @@ import {
   Store,
   ShieldCheck,
   UserCog,
+  Bookmark,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
@@ -105,6 +106,8 @@ export const navGroups: NavGroup[] = [
     label: "nav.group.network",
     items: [
       { key: "nav.network", icon: MessageSquare, to: "/network" },
+      { key: "nav.bc.meetings" as TKey, icon: Users2, to: "/business-connect/meetings" },
+      { key: "nav.bc.saved" as TKey, icon: Bookmark, to: "/business-connect/saved-cards" },
       { key: "nav.marketplace", icon: Store, to: "/marketplace" },
       { key: "nav.opportunities", icon: Sparkles, to: "/opportunities" },
     ],

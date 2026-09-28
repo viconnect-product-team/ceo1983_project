@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Heart,
@@ -54,7 +54,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { QrCanvas } from "@/components/member/QrCanvas";
-import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
+import { Ceo1983BusinessCardVisit, isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVisit";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { AssociationQrScanModal } from "@/components/member/AssociationQrScanModal";
 import { AssociationCardCaptureModal } from "@/components/member/AssociationCardCaptureModal";
@@ -204,7 +204,12 @@ function CardScreen() {
   const fetchBenefits = useServerFn(getMyBenefits);
   const fetchAssocId = useServerFn(getActiveAssociationId);
   const fetchBrand = useServerFn(getMyAssociationBrand);
-  const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
+  const { data: member } = useServerData<MyMember | null>(
+    () => fetchMember(),
+    null,
+    user?.id ? `vba_my_member_${user.id}` : undefined,
+    [user?.id],
+  );
   const { data: brand } = useServerData<MyAssociationBrand | null>(() => fetchBrand(), null, "vba_brand");
   const fetchIdentity = useServerFn(getMyIdentityPassFn);
   const { data: identity } = useServerData<MyIdentityPass | null>(() => fetchIdentity(), null, "vba_identity_pass");
@@ -214,6 +219,40 @@ function CardScreen() {
     "vba_benefits",
   );
   const { data: activeAssocId } = useServerData<string | null>(() => fetchAssocId(), null, "vba_active_assoc_id");
+
+  // Client-side fetch trực tiếp từ NestJS /members/me bằng Bearer token của user hiện tại
+  const [directMember, setDirectMember] = useState<MyMember | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setDirectMember(null);
+      return;
+    }
+    let active = true;
+    fetchNestApi<any>("/members/me")
+      .then((live) => {
+        if (active && live) {
+          setDirectMember(live);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
+  // Ưu tiên: directMember (tươi mới từ API trực tiếp) > member (từ SSR Server Function)
+  const effectiveMember = useMemo(() => {
+    const dm = directMember as any;
+    const m = member as any;
+    if (dm && (dm.userId === user?.id || dm.id === user?.id || !dm.userId)) {
+      return directMember;
+    }
+    if (m && (m.userId === user?.id || m.id === user?.id || !m.userId)) {
+      return member;
+    }
+    return directMember || member;
+  }, [directMember, member, user?.id]);
 
   // Auto-refresh benefits when the active association changes, or when an admin
   // updates the benefits list — but only when the update targets the association
@@ -283,7 +322,8 @@ function CardScreen() {
   const { data: settings, reload: reloadSettings } = useServerData<CardSettings | null>(
     () => fetchSettings(),
     null,
-    "vba_card_settings",
+    user?.id ? `vba_card_settings_${user.id}` : undefined,
+    [user?.id],
   );
 
   const [qrOpen, setQrOpen] = useState(false);
@@ -332,8 +372,8 @@ function CardScreen() {
     };
   }, []);
   useEffect(() => {
-    if (member) setLastSync(Date.now());
-  }, [member]);
+    if (effectiveMember) setLastSync(Date.now());
+  }, [effectiveMember]);
 
   const [customProfile, setCustomProfile] = useState<any>(() => {
     if (typeof window === "undefined") return null;
@@ -352,52 +392,44 @@ function CardScreen() {
     return localStorage.getItem("vba_member_cover_photo");
   });
   const [coverError, setCoverError] = useState(false);
-  const isBlackLogo = (url?: string | null) => {
-    if (!url) return false;
-    return (
-      url.includes("1lfhzi") ||
-      url.includes("fskz6f") ||
-      url.includes("brand-header-logo-white")
-    );
-  };
 
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
-    const serverLogo = (settings as any)?.companyLogoUrl || (member as any)?.companyLogoUrl || (member as any)?.companyLogo;
-    if (serverLogo && !isBlackLogo(serverLogo)) return serverLogo;
+    const serverLogo = (settings as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo;
+    if (serverLogo && !isBlackBackgroundLogo(serverLogo)) return serverLogo;
     if (typeof window === "undefined") return "/ceo1983-official-logo.png";
     try {
       const direct = localStorage.getItem("vba_member_company_logo");
-      if (direct && !isBlackLogo(direct)) return direct;
-      if (direct && isBlackLogo(direct)) {
+      if (direct && !isBlackBackgroundLogo(direct)) return direct;
+      if (direct && isBlackBackgroundLogo(direct)) {
         localStorage.removeItem("vba_member_company_logo");
       }
       const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
-      if (cp?.companyLogo && !isBlackLogo(cp.companyLogo)) return cp.companyLogo;
+      if (cp?.companyLogo && !isBlackBackgroundLogo(cp.companyLogo)) return cp.companyLogo;
     } catch {}
     return "/ceo1983-official-logo.png";
   });
 
   useEffect(() => {
-    if (member?.coverUrl || (member as any)?.cover_url) {
-      setCoverPhoto(member?.coverUrl || (member as any)?.cover_url);
+    if (effectiveMember?.coverUrl || (effectiveMember as any)?.cover_url) {
+      setCoverPhoto(effectiveMember?.coverUrl || (effectiveMember as any)?.cover_url);
     }
-    const serverLogo = (settings as any)?.companyLogoUrl || (member as any)?.companyLogoUrl || (member as any)?.companyLogo;
-    if (serverLogo && !isBlackLogo(serverLogo)) {
+    const serverLogo = (settings as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo;
+    if (serverLogo && !isBlackBackgroundLogo(serverLogo)) {
       setCompanyLogo(serverLogo);
     }
-    const serverPhoto = settings?.photoUrl || member?.avatar || (member as any)?.avatarUrl;
+    const serverPhoto = settings?.photoUrl || effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl;
     if (serverPhoto) {
       setCustomAvatar(serverPhoto);
     }
   }, [
     settings?.photoUrl,
     settings?.companyLogoUrl,
-    member?.avatar,
-    (member as any)?.avatarUrl,
-    member?.coverUrl,
-    (member as any)?.cover_url,
-    (member as any)?.companyLogoUrl,
-    (member as any)?.companyLogo,
+    effectiveMember?.avatar,
+    (effectiveMember as any)?.avatarUrl,
+    effectiveMember?.coverUrl,
+    (effectiveMember as any)?.cover_url,
+    (effectiveMember as any)?.companyLogoUrl,
+    (effectiveMember as any)?.companyLogo,
   ]);
 
   const [copiedCode, setCopiedCode] = useState(false);
@@ -511,22 +543,23 @@ function CardScreen() {
   const handleCopyCode = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!member?.code) return;
-    navigator.clipboard.writeText(member.code);
+    const code = effectiveMember?.code || currentMemberCode;
+    if (!code) return;
+    navigator.clipboard.writeText(code);
     setCopiedCode(true);
     toast.success(lang === "en" ? "Member code copied!" : "Đã sao chép mã hội viên!");
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const d = resolveDisplay(member, settings, customProfile, customAvatar, user);
-  const vcard = buildVCard(member, d);
+  const d = resolveDisplay(effectiveMember, settings, customProfile, customAvatar, user);
+  const vcard = buildVCard(effectiveMember, d);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const currentMemberCode =
-    member?.code ||
+    effectiveMember?.code ||
     (typeof window !== "undefined"
       ? (() => {
           try {
-            const m = JSON.parse(localStorage.getItem("vba_my_member") || "null");
+            const m = JSON.parse(localStorage.getItem(user?.id ? `vba_my_member_${user.id}` : "vba_my_member") || "null");
             return m?.code || null;
           } catch {
             return null;
@@ -536,23 +569,23 @@ function CardScreen() {
     "M1983-292";
 
   // URL danh thiếp số công khai - khi quét từ bất kỳ ứng dụng nào (Zalo, Camera iOS/Android) đều mở ra hồ sơ hội viên
-  const resolvedCardCode = member?.code || currentMemberCode || "M1983-001";
+  const resolvedCardCode = effectiveMember?.code || currentMemberCode || "M1983-001";
   const qrValue = `${origin}/card/${encodeURIComponent(resolvedCardCode)}`;
 
   const theme: CardTheme = resolveTheme(themeId, brand?.brandPrimary ?? null);
-  const state = resolveState(member?.status, member?.validUntil ?? null);
+  const state = resolveState(effectiveMember?.status, effectiveMember?.validUntil ?? null);
   const stateStyle = STATE_STYLES[state];
-  const pass = member
+  const pass = effectiveMember
     ? buildMembershipPass({
-        memberCode: member.code,
-        memberName: d.name || member.name,
-        organization: d.company || member.title,
+        memberCode: effectiveMember.code,
+        memberName: d.name || effectiveMember.name,
+        organization: d.company || effectiveMember.title,
         associationName: brand?.name ?? null,
         associationLogoUrl: brand?.logoUrl ?? null,
-        membershipLevel: member.type === "company" ? "Doanh nghiệp" : "Cá nhân",
+        membershipLevel: effectiveMember.type === "company" ? "Doanh nghiệp" : "Cá nhân",
         state,
-        issuedAt: member.joinedAt,
-        expiresAt: member.validUntil,
+        issuedAt: effectiveMember.joinedAt,
+        expiresAt: effectiveMember.validUntil,
         themeId: theme.id,
         brandPrimary: brand?.brandPrimary ?? null,
         origin,
@@ -568,7 +601,7 @@ function CardScreen() {
   ];
 
   async function shareNfc() {
-    if (!member) return;
+    if (!effectiveMember) return;
     if (typeof window === "undefined") {
       toast.error(t("m.card.nfcNotSupported"));
       return;
@@ -595,7 +628,7 @@ function CardScreen() {
       const ndef = new NDEFReader();
       await ndef.write({
         records: [
-          { recordType: "url", data: `${window.location.origin}/card/${member.code}` },
+          { recordType: "url", data: `${window.location.origin}/card/${effectiveMember.code}` },
           { recordType: "text", data: vcard },
         ],
       });
@@ -617,8 +650,8 @@ function CardScreen() {
 
   const [copiedLink, setCopiedLink] = useState(false);
   const handleCopyLink = async () => {
-    if (!member) return;
-    const url = typeof window !== "undefined" ? `${window.location.origin}/card/${member.code}` : "";
+    if (!effectiveMember) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/card/${effectiveMember.code}` : "";
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
@@ -628,13 +661,13 @@ function CardScreen() {
   };
 
   const handleShareProfile = async () => {
-    if (!member) return;
-    const url = typeof window !== "undefined" ? `${window.location.origin}/card/${member.code}` : "";
+    if (!effectiveMember) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/card/${effectiveMember.code}` : "";
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: `Hồ sơ Hội viên CEO 1983 - ${d.name || member.name}`,
-          text: `Danh thiếp & Hồ sơ Doanh nhân ${d.name || member.name} - ${d.company || member.title}`,
+          title: `Hồ sơ Hội viên CEO 1983 - ${d.name || effectiveMember.name}`,
+          text: `Danh thiếp & Hồ sơ Doanh nhân ${d.name || effectiveMember.name} - ${d.company || effectiveMember.title}`,
           url,
         });
         return;
@@ -659,9 +692,9 @@ function CardScreen() {
         <div id="tour-card-visit" className="mb-4">
           <Ceo1983BusinessCardVisit
             name={d.name || "NGUYỄN VĂN A"}
-            title={customProfile?.title || (member as any)?.position || (member as any)?.title || "Director"}
-            phone={customProfile?.phone || member?.phone || "036xxxxxxx"}
-            email={customProfile?.email || member?.email || "username@gmail.com"}
+            title={customProfile?.title || (effectiveMember as any)?.position || (effectiveMember as any)?.title || "Director"}
+            phone={customProfile?.phone || effectiveMember?.phone || "036xxxxxxx"}
+            email={customProfile?.email || effectiveMember?.email || "username@gmail.com"}
             company={d.company || "CÂU LẠC BỘ CEO1983"}
             companyLogoUrl={companyLogo}
             website="https://ceo1983club.com"
@@ -680,7 +713,7 @@ function CardScreen() {
           <span>
             Thời gian hiệu lực:{" "}
             <strong className="text-slate-900 dark:text-white font-bold">
-              {contractData.validUntil || (member as any)?.validUntil || "15/08/2027"}
+              {contractData.validUntil || (effectiveMember as any)?.validUntil || "15/08/2027"}
             </strong>
           </span>
         </div>
@@ -768,7 +801,7 @@ function CardScreen() {
               onClick={handleCopyCode}
               className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300"
             >
-              <span>{member?.code || currentMemberCode}</span>
+              <span>{effectiveMember?.code || currentMemberCode}</span>
               {copiedCode ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3 text-slate-400" />}
             </button>
           </div>
@@ -777,82 +810,82 @@ function CardScreen() {
             {/* Tách riêng hàng Hội viên và hàng Chức vụ */}
             <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
               <span className="font-semibold text-slate-500 dark:text-slate-400">Hội viên:</span>
-              <span className="font-bold text-slate-900 dark:text-white">{d.name || member?.name || "Hội viên CEO 1983"}</span>
+              <span className="font-bold text-slate-900 dark:text-white">{d.name || effectiveMember?.name || "Hội viên CEO 1983"}</span>
             </div>
             <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
               <span className="font-semibold text-slate-500 dark:text-slate-400">Chức vụ:</span>
-              <span className="font-bold text-[#003B95] dark:text-blue-400">{customProfile?.title || member?.title || (member as any)?.position || "Hội viên chính thức"}</span>
+              <span className="font-bold text-[#003B95] dark:text-blue-400">{customProfile?.title || effectiveMember?.title || (effectiveMember as any)?.position || "Hội viên chính thức"}</span>
             </div>
             {/* Đã bỏ trường Hotline / Số điện thoại liên hệ theo yêu cầu */}
 
-            {cardPrivacy.showEmail && (customProfile?.email || member?.email) && (
+            {cardPrivacy.showEmail && (customProfile?.email || effectiveMember?.email) && (
               <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
                 <span className="font-semibold text-slate-500 flex items-center gap-1">
                   <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Email:
                 </span>
-                <span className="text-slate-800 dark:text-slate-200">{customProfile?.email || member?.email}</span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.email || effectiveMember?.email}</span>
               </div>
             )}
 
-            {(customProfile?.industry || member?.industry) && (
+            {(customProfile?.industry || effectiveMember?.industry) && (
               <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
                 <span className="font-semibold text-slate-500 flex items-center gap-1">
                   <Tag className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Lĩnh vực:
                 </span>
-                <span className="text-slate-800 dark:text-slate-200">{customProfile?.industry || member?.industry}</span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.industry || effectiveMember?.industry}</span>
               </div>
             )}
 
-            {(customProfile?.industryDetail || (member as any)?.industryDetail) && (
+            {(customProfile?.industryDetail || (effectiveMember as any)?.industryDetail) && (
               <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
                 <span className="font-semibold text-slate-500 flex items-center gap-1">
                   <Briefcase className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Chuyên ngành:
                 </span>
-                <span className="text-slate-800 dark:text-slate-200">{customProfile?.industryDetail || (member as any)?.industryDetail}</span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.industryDetail || (effectiveMember as any)?.industryDetail}</span>
               </div>
             )}
 
-            {(customProfile?.companySize || (member as any)?.companySize) && (
+            {(customProfile?.companySize || (effectiveMember as any)?.companySize) && (
               <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
                 <span className="font-semibold text-slate-500 flex items-center gap-1">
                   <Users className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Quy mô:
                 </span>
-                <span className="text-slate-800 dark:text-slate-200">{customProfile?.companySize || (member as any)?.companySize}</span>
+                <span className="text-slate-800 dark:text-slate-200">{customProfile?.companySize || (effectiveMember as any)?.companySize}</span>
               </div>
             )}
 
-            {cardPrivacy.showProducts && (customProfile?.featuredProducts || (member as any)?.featuredProducts) && (
+            {cardPrivacy.showProducts && (customProfile?.featuredProducts || (effectiveMember as any)?.featuredProducts) && (
               <div className="pt-2 border-b border-slate-50 dark:border-slate-850 pb-2">
                 <div className="font-semibold text-slate-500 flex items-center gap-1 text-[11px] uppercase tracking-wider mb-1">
                   <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Sản phẩm / dịch vụ chủ lực:
                 </div>
                 <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2 text-slate-700 dark:text-slate-300">
-                  {customProfile?.featuredProducts || (member as any)?.featuredProducts}
+                  {customProfile?.featuredProducts || (effectiveMember as any)?.featuredProducts}
                 </div>
               </div>
             )}
 
-            {cardPrivacy.showAddress && (customProfile?.address || member?.address) && (
+            {cardPrivacy.showAddress && (customProfile?.address || effectiveMember?.address) && (
               <div className="flex items-start justify-between gap-2 py-1 border-b border-slate-50 dark:border-slate-850">
                 <span className="font-semibold text-slate-500 flex items-center gap-1 shrink-0">
                   <MapPin className="h-3.5 w-3.5 text-rose-500" /> Địa chỉ:
                 </span>
-                <span className="text-right text-slate-800 dark:text-slate-200 text-[12px]">{customProfile?.address || member?.address}</span>
+                <span className="text-right text-slate-800 dark:text-slate-200 text-[12px]">{customProfile?.address || effectiveMember?.address}</span>
               </div>
             )}
 
-            {(customProfile?.website || member?.website) && (
+            {(customProfile?.website || effectiveMember?.website) && (
               <div className="flex items-center justify-between py-1">
                 <span className="font-semibold text-slate-500 flex items-center gap-1">
                   <Globe className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Website:
                 </span>
                 <a
-                  href={(customProfile?.website || member?.website).startsWith("http") ? (customProfile?.website || member?.website) : `https://${customProfile?.website || member?.website}`}
+                  href={(customProfile?.website || effectiveMember?.website).startsWith("http") ? (customProfile?.website || effectiveMember?.website) : `https://${customProfile?.website || effectiveMember?.website}`}
                   target="_blank"
                   rel="noreferrer"
                   className="font-bold text-[#003B95] dark:text-blue-400 hover:underline flex items-center gap-1"
                 >
-                  <span>{customProfile?.website || member?.website}</span>
+                  <span>{customProfile?.website || effectiveMember?.website}</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
