@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VotingRouteImport } from './routes/voting'
 import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SponsorsRouteImport } from './routes/sponsors'
 import { Route as SponsorReportRouteImport } from './routes/sponsor-report'
 import { Route as SponsorPackagesRouteImport } from './routes/sponsor-packages'
@@ -191,6 +192,7 @@ import { Route as MRenewAuditRouteImport } from './routes/m.renew.audit'
 import { Route as MPerksIdRouteImport } from './routes/m.perks.$id'
 import { Route as LandingCeo1983CinematicRouteImport } from './routes/landing.ceo1983.cinematic'
 import { Route as LandingCeoV1RouteImport } from './routes/landing.ceo.v1'
+import { Route as EventsEventIdRegisterRouteImport } from './routes/events.$eventId.register'
 import { Route as ConnectNetworkNotificationsRouteImport } from './routes/connect.network.notifications'
 import { Route as ConnectNetworkConnectionsRouteImport } from './routes/connect.network.connections'
 import { Route as ConnectMeetingsSectionRouteImport } from './routes/connect.meetings.$section'
@@ -253,6 +255,11 @@ const VotingRoute = VotingRouteImport.update({
 const VerifyRoute = VerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SponsorsRoute = SponsorsRouteImport.update({
@@ -1167,6 +1174,11 @@ const LandingCeoV1Route = LandingCeoV1RouteImport.update({
   path: '/ceo/v1',
   getParentRoute: () => LandingRoute,
 } as any)
+const EventsEventIdRegisterRoute = EventsEventIdRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => EventsEventIdRoute,
+} as any)
 const ConnectNetworkNotificationsRoute =
   ConnectNetworkNotificationsRouteImport.update({
     id: '/notifications',
@@ -1519,6 +1531,7 @@ export interface FileRoutesByFullPath {
   '/sponsor-packages': typeof SponsorPackagesRoute
   '/sponsor-report': typeof SponsorReportRoute
   '/sponsors': typeof SponsorsRoute
+  '/tasks': typeof TasksRoute
   '/verify': typeof VerifyRoute
   '/voting': typeof VotingRoute
   '/account-settings/notifications': typeof AccountSettingsNotificationsRoute
@@ -1583,7 +1596,7 @@ export interface FileRoutesByFullPath {
   '/connect/network': typeof ConnectNetworkRouteWithChildren
   '/connect/saved-cards': typeof ConnectSavedCardsRoute
   '/documents/$docId': typeof DocumentsDocIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
+  '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
   '/landing/business-connect': typeof LandingBusinessConnectRoute
@@ -1661,6 +1674,7 @@ export interface FileRoutesByFullPath {
   '/connect/meetings/$section': typeof ConnectMeetingsSectionRoute
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
+  '/events/$eventId/register': typeof EventsEventIdRegisterRoute
   '/landing/ceo/v1': typeof LandingCeoV1Route
   '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
@@ -1744,6 +1758,7 @@ export interface FileRoutesByTo {
   '/sponsor-packages': typeof SponsorPackagesRoute
   '/sponsor-report': typeof SponsorReportRoute
   '/sponsors': typeof SponsorsRoute
+  '/tasks': typeof TasksRoute
   '/verify': typeof VerifyRoute
   '/voting': typeof VotingRoute
   '/account-settings/notifications': typeof AccountSettingsNotificationsRoute
@@ -1796,7 +1811,7 @@ export interface FileRoutesByTo {
   '/connect/connections': typeof ConnectConnectionsRoute
   '/connect/saved-cards': typeof ConnectSavedCardsRoute
   '/documents/$docId': typeof DocumentsDocIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
+  '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
   '/landing/business-connect': typeof LandingBusinessConnectRoute
@@ -1871,6 +1886,7 @@ export interface FileRoutesByTo {
   '/connect/meetings/$section': typeof ConnectMeetingsSectionRoute
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
+  '/events/$eventId/register': typeof EventsEventIdRegisterRoute
   '/landing/ceo/v1': typeof LandingCeoV1Route
   '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
@@ -1963,6 +1979,7 @@ export interface FileRoutesById {
   '/sponsor-packages': typeof SponsorPackagesRoute
   '/sponsor-report': typeof SponsorReportRoute
   '/sponsors': typeof SponsorsRoute
+  '/tasks': typeof TasksRoute
   '/verify': typeof VerifyRoute
   '/voting': typeof VotingRoute
   '/account-settings/notifications': typeof AccountSettingsNotificationsRoute
@@ -2027,7 +2044,7 @@ export interface FileRoutesById {
   '/connect/network': typeof ConnectNetworkRouteWithChildren
   '/connect/saved-cards': typeof ConnectSavedCardsRoute
   '/documents/$docId': typeof DocumentsDocIdRoute
-  '/events/$eventId': typeof EventsEventIdRoute
+  '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
   '/landing/business-connect': typeof LandingBusinessConnectRoute
@@ -2105,6 +2122,7 @@ export interface FileRoutesById {
   '/connect/meetings/$section': typeof ConnectMeetingsSectionRoute
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
+  '/events/$eventId/register': typeof EventsEventIdRegisterRoute
   '/landing/ceo/v1': typeof LandingCeoV1Route
   '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
@@ -2202,6 +2220,7 @@ export interface FileRouteTypes {
     | '/sponsor-packages'
     | '/sponsor-report'
     | '/sponsors'
+    | '/tasks'
     | '/verify'
     | '/voting'
     | '/account-settings/notifications'
@@ -2344,6 +2363,7 @@ export interface FileRouteTypes {
     | '/connect/meetings/$section'
     | '/connect/network/connections'
     | '/connect/network/notifications'
+    | '/events/$eventId/register'
     | '/landing/ceo/v1'
     | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
@@ -2427,6 +2447,7 @@ export interface FileRouteTypes {
     | '/sponsor-packages'
     | '/sponsor-report'
     | '/sponsors'
+    | '/tasks'
     | '/verify'
     | '/voting'
     | '/account-settings/notifications'
@@ -2554,6 +2575,7 @@ export interface FileRouteTypes {
     | '/connect/meetings/$section'
     | '/connect/network/connections'
     | '/connect/network/notifications'
+    | '/events/$eventId/register'
     | '/landing/ceo/v1'
     | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
@@ -2645,6 +2667,7 @@ export interface FileRouteTypes {
     | '/sponsor-packages'
     | '/sponsor-report'
     | '/sponsors'
+    | '/tasks'
     | '/verify'
     | '/voting'
     | '/account-settings/notifications'
@@ -2787,6 +2810,7 @@ export interface FileRouteTypes {
     | '/connect/meetings/$section'
     | '/connect/network/connections'
     | '/connect/network/notifications'
+    | '/events/$eventId/register'
     | '/landing/ceo/v1'
     | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
@@ -2883,6 +2907,7 @@ export interface RootRouteChildren {
   SponsorPackagesRoute: typeof SponsorPackagesRoute
   SponsorReportRoute: typeof SponsorReportRoute
   SponsorsRoute: typeof SponsorsRoute
+  TasksRoute: typeof TasksRoute
   VerifyRoute: typeof VerifyRoute
   VotingRoute: typeof VotingRoute
   AdminBusinessCardsRoute: typeof AdminBusinessCardsRouteWithChildren
@@ -2928,6 +2953,13 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sponsors': {
@@ -4190,6 +4222,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LandingCeoV1RouteImport
       parentRoute: typeof LandingRoute
     }
+    '/events/$eventId/register': {
+      id: '/events/$eventId/register'
+      path: '/register'
+      fullPath: '/events/$eventId/register'
+      preLoaderRoute: typeof EventsEventIdRegisterRouteImport
+      parentRoute: typeof EventsEventIdRoute
+    }
     '/connect/network/notifications': {
       id: '/connect/network/notifications'
       path: '/notifications'
@@ -5057,13 +5096,25 @@ const DocumentsRouteWithChildren = DocumentsRoute._addFileChildren(
   DocumentsRouteChildren,
 )
 
+interface EventsEventIdRouteChildren {
+  EventsEventIdRegisterRoute: typeof EventsEventIdRegisterRoute
+}
+
+const EventsEventIdRouteChildren: EventsEventIdRouteChildren = {
+  EventsEventIdRegisterRoute: EventsEventIdRegisterRoute,
+}
+
+const EventsEventIdRouteWithChildren = EventsEventIdRoute._addFileChildren(
+  EventsEventIdRouteChildren,
+)
+
 interface EventsRouteChildren {
-  EventsEventIdRoute: typeof EventsEventIdRoute
+  EventsEventIdRoute: typeof EventsEventIdRouteWithChildren
   EventsIndexRoute: typeof EventsIndexRoute
 }
 
 const EventsRouteChildren: EventsRouteChildren = {
-  EventsEventIdRoute: EventsEventIdRoute,
+  EventsEventIdRoute: EventsEventIdRouteWithChildren,
   EventsIndexRoute: EventsIndexRoute,
 }
 
@@ -5292,6 +5343,7 @@ const rootRouteChildren: RootRouteChildren = {
   SponsorPackagesRoute: SponsorPackagesRoute,
   SponsorReportRoute: SponsorReportRoute,
   SponsorsRoute: SponsorsRoute,
+  TasksRoute: TasksRoute,
   VerifyRoute: VerifyRoute,
   VotingRoute: VotingRoute,
   AdminBusinessCardsRoute: AdminBusinessCardsRouteWithChildren,

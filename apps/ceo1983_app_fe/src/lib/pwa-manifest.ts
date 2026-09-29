@@ -6,11 +6,11 @@
 // Bumping BC_MANIFEST_VERSION changes the manifest URL, forcing a fresh fetch.
 //
 // IMPORTANT: bump this whenever public/manifest-bc.webmanifest changes.
-export const BC_MANIFEST_VERSION = "2026-09-27.1";
+export const BC_MANIFEST_VERSION = "2026-09-29.2";
 
 /** Versioned href for the CEO 1983 App (Connect-app) manifest. */
 export const BC_MANIFEST_HREF = `/manifest-bc.webmanifest?v=${BC_MANIFEST_VERSION}`;
 
 // Legacy member app (/m) manifest — same cache-busting contract.
-export const MEMBER_MANIFEST_VERSION = "2026-09-27.1";
+export const MEMBER_MANIFEST_VERSION = "2026-09-29.2";
 export const MEMBER_MANIFEST_HREF = `/manifest.webmanifest?v=${MEMBER_MANIFEST_VERSION}`;

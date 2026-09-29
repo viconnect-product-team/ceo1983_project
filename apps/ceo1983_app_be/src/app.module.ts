@@ -20,6 +20,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { VotingModule } from './voting/voting.module';
 import { MeetingsModule } from './meetings/meetings.module';
 import { AdvertisementsModule } from './advertisements/advertisements.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AdvertisementsModule } from './advertisements/advertisements.module';
     ReviewsModule,
     VotingModule,
     AdvertisementsModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

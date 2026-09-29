@@ -54,6 +54,7 @@ const BOARD_OPTIONS = [
   "Ban Phát Triển Hội Viên & Thẩm Định",
   "Ban Truyền Thông & Sự Kiện",
   "Ban Tài Chính & Pháp Chế",
+  "Ban Thiện Nguyện",
   "Ban Đào Tạo & Chuyển Đổi Số",
   "Hội viên CLB CEO 1983",
 ];

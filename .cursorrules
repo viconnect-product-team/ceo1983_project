@@ -1,30 +1,149 @@
 # ==============================================================================
-# BỘ LUẬT KỶ LUẬT LÕI (CORE RULES) - DỰ ÁN HỆ SINH THÁI HIỆP HỘI CEO 1983
+# BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
+# Vai trò: Tech Lead | Định dạng: .cursorrules
 # ==============================================================================
 
-# ĐIỀU 0: CÁCH LY TUYỆT ĐỐI GIỮA HAI DỰ ÁN (PROJECT ISOLATION)
-- Tuyệt đối KHÔNG ĐƯỢC CHỈNH SỬA bất kỳ tệp tin, giao diện, logic, hay cơ sở dữ liệu nào của thư mục `vione_project/`.
-- Mọi công việc sửa lỗi, tính năng, nâng cấp giao diện, DTO, API phải 100% nằm trong phạm vi thư mục `ceo1983_project/`.
-- Không import chéo qua lại giữa `vione_project` và `ceo1983_project`.
+# ------------------------------------------------------------------------------
+# 1. TECH STACK CHÍNH (CORE TECHNOLOGIES)
+# ------------------------------------------------------------------------------
+# - Monorepo Tooling: Turborepo, Bun / npm workspaces.
+# - Backend Framework: NestJS 11.x (Node.js runtime, Express platform).
+# - Database & ORM: PostgreSQL 15+, Prisma ORM (@vibe/db), Raw SQL queries ($queryRaw) với Tagged Template Literals.
+# - Authentication & Security: JWT (@nestjs/jwt, passport-jwt), bcrypt, Custom Guards (JwtAuthGuard, RolesGuard), DataScopeInterceptor.
+# - Realtime & Socket: Socket.IO (@nestjs/websockets, @nestjs/platform-socket.io).
+# - Storage: MinIO / S3 SDK (Object Storage).
+# - Frontend Framework: React 18, Vite 7, TanStack Router (File-based Routing, Nitro/TanStack Start).
+# - Data Fetching & State: TanStack React Query (@tanstack/react-query), React Context (AuthContext).
+# - Styling & UI Components: Tailwind CSS, Radix UI Primitives, Lucide React, Framer Motion, Sonner Toast.
+# - PWA & Mobile: Progressive Web App (manifest.webmanifest, Service Worker, Apple Touch Icons), Capacitor / Cordova wrapper (mobile_ceo1983).
 
-# ĐIỀU 1: TYPE-SAFETY TUYỆT ĐỐI (100% TYPESCRIPT)
-- Tuyệt đối KHÔNG SỬ DỤNG kiểu `any`. Mọi biến, tham số hàm, giá trị trả về, props của React component và DTO backend phải được khai báo Type hoặc Interface tường minh.
-- Nếu dữ liệu chưa xác định rõ cấu trúc, sử dụng `unknown`, Generics `<T>`, hoặc `Record<string, unknown>` kèm type guards / validation.
-- Mọi API Response từ Backend phải có TypeScript interface tương ứng ở Frontend.
+# ------------------------------------------------------------------------------
+# 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)
+# ------------------------------------------------------------------------------
+# apps/
+# ├── ceo1983_app_be/              # NestJS Backend API
+# │   └── src/
+# │       ├── common/              # Global Filters, Interceptors, Decorators, Utilities
+# │       ├── prisma/              # PrismaService (Database connection & raw runner)
+# │       ├── auth/                # AuthModule, JWT Strategy, RolesGuard, DataScope
+# │       ├── <feature-module>/    # Domain Modules (events, members, voting, sponsors, reviews, documents, etc.)
+# │       │   ├── <name>.controller.ts  # Thin Controller: Routes, HTTP Status, DTO binding
+# │       │   ├── <name>.service.ts     # Fat Service: Business logic, Prisma queries, transactions
+# │       │   ├── <name>.module.ts      # Module bundle definition
+# │       │   └── dto/                  # Input validation DTOs (Zod / TypeScript Classes)
+# │       ├── app.module.ts        # Root NestJS Module
+# │       └── main.ts              # Server entry point (CORS, Pipes, Listeners)
+# ├── ceo1983_app_fe/              # React 18 + TanStack Router Frontend
+# │   └── src/
+# │       ├── routes/              # File-based routes (__root.tsx, association.*, admin.*, m.*)
+# │       ├── components/
+# │       │   ├── member/          # App Hiệp Hội (Mobile-first view for CEOs)
+# │       │   ├── dashboard/       # Web CRM Quản trị (Admin CMS, BQT, BTC)
+# │       │   ├── ui/              # Design System primitives (Buttons, Dialogs, Tables)
+# │       │   └── ai/              # AI Assistant, Voice Nav
+# │       ├── lib/                 # API Client (fetchNestApi), formatters, session helpers
+# │       └── context/             # AuthContext, ThemeProvider
+# └── mobile_ceo1983/              # iOS / Android Capacitor Native App Wrapper
+# packages/
+# └── db/                          # Prisma Schema, Database Seeds & Migrations (@vibe/db)
 
-# ĐIỀU 2: STRICT FILE PLACEMENT (KHÔNG FILE RÁC - ĐẶT ĐÚNG THƯ MỤC)
-- Code Backend (NestJS): Chỉ đặt trong `ceo1983_project/apps/ceo1983_app_be/src/<module-name>/`.
-- Code Frontend Web CRM: Đặt trong `ceo1983_project/apps/ceo1983_app_fe/src/` (components/dashboard, routes, lib).
-- Code App Hiệp Hội (Mobile): Đặt trong `ceo1983_project/apps/ceo1983_app_fe/src/routes/association*` và `components/member/`.
-- Code Wrapper Di Động: Đặt trong `ceo1983_project/apps/mobile_ceo1983/`.
-- BẮT BUỘC tìm kiếm các Component/Service/Hook có sẵn trong dự án trước khi tạo mới để tránh trùng lặp mã nguồn (DRY).
+# ------------------------------------------------------------------------------
+# 3. QUY ƯỚC ĐẶT TÊN (NAMING CONVENTIONS)
+# ------------------------------------------------------------------------------
+# - File Names:
+#   + Backend: Kebab-case kèm hậu tố layer: `<name>.controller.ts`, `<name>.service.ts`, `<name>.module.ts`, `<name>.dto.ts`.
+#   + Frontend Components: PascalCase: `MemberCard.tsx`, `EventTimeline.tsx`, `Sidebar.tsx`.
+#   + Frontend Hooks: camelCase bắt đầu bằng use: `useAuth.ts`, `useEvents.ts`.
+#   + Frontend Routes: kebab-case hoặc dot-notation: `association.tsx`, `association.login.tsx`.
+# - Class & Types:
+#   + Classes: PascalCase (`VotingController`, `SponsorsService`, `CreatePollDto`).
+#   + Interfaces & Types: PascalCase (`MemberRecord`, `EventRegistrationStatus`).
+#   + Enums: PascalCase hoặc SCREAMING_SNAKE_CASE cho members.
+# - Functions & Variables:
+#   + Functions & Methods: camelCase (`listPolls`, `castVote`, `resolveAssociationId`).
+#   + Variables & Properties: camelCase (`userId`, `pollStatus`, `totalVotes`).
+#   + Database Columns & SQL: snake_case (`user_id`, `created_at`, `source_app`, `is_active`).
 
-# ĐIỀU 3: ZERO DEAD CODE (KHÔNG CODE THỪA - KHÔNG COMMENT RÁC)
-- Khi refactor hoặc sửa code, XÓA HẲN đoạn code cũ không còn sử dụng. Tuyệt đối KHÔNG comment out các khối code cũ dài dòng gây rối mắt.
-- Tự động xóa các `import` thừa, biến không dùng (`unused variables`), và các file tạm/test sau khi hoàn thành nhiệm vụ.
+# ------------------------------------------------------------------------------
+# 4. TIÊU CHUẨN LẬP TRÌNH (CODING STANDARDS)
+# ------------------------------------------------------------------------------
+# [BẮT BUỘC 1] Cách ly tuyệt đối (Project Isolation):
+#   - Tuyệt đối KHÔNG chỉnh sửa hoặc import code từ `vione_project/`.
+#   - 100% code thay đổi chỉ được phép nằm trong `ceo1983_project/`.
+#
+# [BẮT BUỘC 2] Type-Safety (100% TypeScript):
+#   - Tuyệt đối KHÔNG dùng kiểu `any`. Mọi DTO, request, response, state và props phải có Type/Interface rõ ràng.
+#   - Nếu kiểu dữ liệu chưa xác định, dùng `unknown`, Generics `<T>`, hoặc `Record<string, unknown>`.
+#
+# [BẮT BUỘC 3] Kiến trúc Controller - Service:
+#   - Controller phải MỎNG (Thin Controller): Chỉ làm nhiệm vụ điều hướng, map params/body sang DTO, gọi Service và trả về kết quả.
+#   - Service chứa toàn bộ Business Logic: Thống kê, validate dữ liệu, bọc try-catch, ném NestJS HttpException (`NotFoundException`, `BadRequestException`, `ForbiddenException`).
+#
+# [BẮT BUỘC 4] Bảo mật & Phân quyền (Security & Permissions):
+#   - Mọi Controller endpoint cần bảo vệ phải gắn `@UseGuards(JwtAuthGuard, RolesGuard)`.
+#   - Phân quyền theo chức danh: `@Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')`.
+#   - Endpoint liên quan đến dữ liệu phạm vi sử dụng `@UseInterceptors(DataScopeInterceptor)` và `@DataScope('entity')`.
+#   - Trích xuất định danh người dùng chuẩn: `req.user.id || req.user.sub`.
+#
+# [BẮT BUỘC 5] Giao tiếp Cơ sở dữ liệu:
+#   - Khi dùng `$queryRaw`, luôn dùng tagged template strings của Prisma: `this.prisma.$queryRaw\`SELECT ... WHERE id = \${id}::uuid\``.
+#   - Tuyệt đối KHÔNG nối chuỗi SQL thủ công (tránh triệt để SQL Injection).
+#
+# [BẮT BUỘC 6] UI/UX & Theme Chuẩn CEO 1983:
+#   - Màu sắc bắt buộc theo chuẩn CEO 1983:
+#     + Màu chủ đạo (Primary): Deep Cobalt Navy (`#003B95` / `#00224F`) cho Nút chính, Header, Thanh điều hướng, Huy hiệu (`bg-[#003B95]`, `text-white`).
+#     + Màu nhấn hoàng gia (Accent): Warm Amber Gold (`#F59E0B` / `#D97706`) cho Huy hiệu VIP, Viền nổi bật, Sao danh dự, Trạng thái đặc biệt.
+#     + Tuyệt đối KHÔNG sử dụng màu vàng sâm banh gradient của ViOne cho ứng dụng CEO 1983.
+#     + Tuyệt đối KHÔNG sử dụng nút màu đen đặc u ám ở Chế độ sáng (Light mode).
+#
+# [BẮT BUỘC 7] Kiến trúc Thư mục Đóng gói theo Chức năng (Feature-First / Domain Co-location Architecture):
+#   - Khi phát triển chức năng mới hoặc sửa chức năng có sẵn: Bắt buộc gom toàn bộ mã nguồn của chức năng đó vào ĐÚNG thư mục mang tên chức năng (`features/<ten-chuc-nang>/` hoặc module tương ứng).
+#   - Trong thư mục chức năng bắt buộc phải chứa đầy đủ và quy củ:
+#     + `api.ts` (hoặc `api/`): Toàn bộ code gọi API, tương tác endpoints chuẩn RESTful APIs (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`).
+#     + `components/`: Toàn bộ các UI component trực thuộc chức năng (Card, Board, Table, Modal, Drawer, ...).
+#     + `types.ts`: Định nghĩa TypeScript Interface, Types, DTOs, Enums của chức năng.
+#     + `index.ts`: File barrel export xuất khẩu gọn gàng toàn bộ API, Types, Components để route/screen bên ngoài import đồng nhất.
+#   - Backend NestJS tương tự: Gom trong `src/<ten-chuc-nang>/` gồm controller, service, module, dto chuẩn RESTful.
+#
+# [BẮT BUỘC 8] Nghiêm cấm Fake Dữ liệu và Tự ý Sửa Màu Thương Hiệu:
+#   - Tuyệt đối KHÔNG tự động fake dữ liệu linh tinh; luôn tôn trọng cấu trúc thực tế của hệ sinh thái CEO 1983.
+#   - Tuyệt đối KHÔNG tự động thay đổi bảng màu nếu không có sự cho phép. Bắt buộc tuân thủ:
+#     + Deep Cobalt Navy (`#003B95` / `#002D73`) cho Nút chính, Header, Sidebar, Card tiêu điểm.
+#     + Warm Amber Gold (`#F59E0B` / `#D97706`) cho Icon nhấn, Badge nổi bật, Trạng thái VIP, Sao danh dự.
+#
+# [BẮT BUỘC 9] Quy trình Cập nhật Đầy đủ 5 File Tài liệu AI khi Phát triển Mới hoặc Sửa Lỗi:
+#   - Bất cứ khi nào tạo chức năng mới hoặc sửa đổi kiến trúc, AI agent BẮT BUỘC cập nhật đồng bộ đủ 5 file sau:
+#     1. `.cursorrules`: Bộ luật và tiêu chuẩn cốt lõi dự án.
+#     2. `docs/tech-spec.md`: Tài liệu đặc tả kỹ thuật chi tiết.
+#     3. `skills/create-crud.md`: Quy trình chuẩn 6 bước phát triển CRUD & binding frontend.
+#     4. `docs/developer-checklist.md`: Bảng kiểm nghiệm thu developer & tiêu chuẩn code.
+#     5. `project-memory.md`: Nhật ký tiến độ, lịch sử quyết định và bộ nhớ dự án.
+#
+# [BẮT BUỘC 10] Chuẩn Hóa Ma Trận Phân Quyền RBAC (5 Rows x Feature Columns) & Nâng Cấp Quản Lý Cuộc Họp:
+#   - Phân quyền:
+#     + Tách biệt 2 Tab độc lập, tuyệt đối KHÔNG gộp chung quản trị tài khoản vào ma trận vai trò:
+#       * Tab 1: Ma Trận Phân Quyền 5 Cấp Bậc (Vai Trò x Chức Năng):
+#         - Dòng bên trái (Rows): Đúng 5 vai trò chuẩn:
+#           1. Quản trị: Toàn quyền (Xem, Sửa, Xóa, Phân quyền).
+#           2. Admin: Quản trị vận hành (Xem, Sửa, Phân quyền).
+#           3. Tổng thư ký: Điều hành & Thư ký (Xem, Sửa).
+#           4. Trưởng ban: Quản lý chuyên ban (Xem, Sửa - gồm cả Ban Thiện Nguyện & An Sinh Xã Hội mới).
+#           5. Hội viên: Thành viên chính thức (Chỉ Xem).
+#         - Cột bên trên (Columns): Từng chức năng riêng lẻ (Hội viên, Sự kiện, Cuộc họp, Công việc, Thiện nguyện & An sinh, Tài chính, Giao thương, Bầu cử, Truyền thông, Hệ thống...).
+#         - Ô giao điểm: Render pill/checkbox thao tác trực quan tuân thủ đúng giới hạn quyền của từng vai trò.
+#       * Tab 2: Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản Cá Nhân.
+#   - Quản lý cuộc họp & công việc:
+#     + 3 Nền tảng họp trực tuyến chuẩn: Zoom Meeting, Google Meet, UniWork Meet.
+#     + Thẩm quyền tạo cuộc họp: Giới hạn đúng 4 vai trò (Chủ tịch, Tổng thư ký, Admin, Trưởng ban) kèm thông tin người triệu tập (Tên, SĐT, Email).
+#     + 5 Dạng hiển thị công việc: Bảng (Table), Lưới (Kanban với điều khiển Zoom to / Zoom nhỏ 3 cấp độ: Thu nhỏ 280px, Tiêu chuẩn 345px, Phóng to 410px chống dính chùm), Lịch (Calendar), Biểu đồ thống kê (Recharts Statistics Dashboard: Donut cơ cấu trạng thái, Bar chart theo ban, Area chart tiến độ TB, Bảng xếp hạng và sub-tab Timeline Gantt), Cây đơn vị (Org Tree).
 
-# ĐIỀU 4: SELF-CORRECTION (CHECK CHÉO DATA TYPES GIỮA BACKEND & FRONTEND)
-- Trước khi trả kết quả cho người dùng, BẮT BUỘC kiểm tra tính tương thích giữa:
-  + DTO của Backend (tên trường, kiểu số/chuỗi, validation constraint).
-  + Payload gửi lên từ Frontend và Interface hứng dữ liệu.
-- Đảm bảo các trường lưu trong PostgreSQL (đặc biệt các trường JSONB như scanners, sponsors, options) khớp 100% với định dạng mà Frontend xử lý.
+# ------------------------------------------------------------------------------
+# 5. ANTI-PATTERNS (CÁC ĐIỀU CẤM KỴ TUYỆT ĐỐI)
+# ------------------------------------------------------------------------------
+# ❌ KHÔNG để lại code thừa, code comment out hoặc import không sử dụng (Zero Dead Code).
+# ❌ KHÔNG hardcode secret keys, token, password hoặc DB URL vào source code; luôn dùng biến môi trường.
+# ❌ KHÔNG query database trực tiếp trong Controller; toàn bộ phải thông qua Service.
+# ❌ KHÔNG bỏ qua xử lý lỗi: Mọi Promise/Async function phải được catch hoặc để ExceptionFilter xử lý.
+# ❌ KHÔNG dùng kênh Alpha trong suốt cho Apple Touch Icons trên iOS PWA (iOS sẽ tô đen hoặc chụp screenshot trang web).
+# ❌ KHÔNG thay đổi logic/schema của database mà không đồng bộ giữa DTO backend và FE type definition.
+# ❌ KHÔNG tự động fake dữ liệu linh tinh hoặc sửa màu thương hiệu ngoài chuẩn CEO 1983.

@@ -6,6 +6,7 @@ import {
   RefreshCw,
   Calendar,
   ClipboardList,
+  CheckSquare,
   ScanLine,
   QrCode,
 
@@ -116,6 +117,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "nav.group.system",
     items: [
+      { key: "nav.tasks" as TKey, icon: CheckSquare, to: "/tasks" },
       { key: "nav.account", icon: UserCog, to: "/account-settings" },
       { key: "nav.settings", icon: Settings, to: "/settings" },
       { key: "nav.activity", icon: History, to: "/activity" },

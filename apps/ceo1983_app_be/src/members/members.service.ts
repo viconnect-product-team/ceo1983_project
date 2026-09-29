@@ -56,7 +56,7 @@ export class UpdateMemberContactDto {
 export class MembersService {
   constructor(
     private prisma: PrismaService,
-    private mailService?: MailService,
+    private mailService: MailService,
   ) {}
 
   private async checkIsPlatformAdmin(userId: string): Promise<boolean> {
@@ -1928,6 +1928,269 @@ export class MembersService {
     }
 
     return { ok: true, memberId };
+  }
+
+  /**
+   * Đăng ký hội viên công khai dạng Google Form (dành cho người nhận link đăng ký công ty)
+   */
+  async publicRegister(data: {
+    fullName: string;
+    phone: string;
+    email: string;
+    position?: string;
+    birthYear?: string | number;
+    companyName: string;
+    taxCode?: string;
+    industry?: string;
+    address?: string;
+    website?: string;
+    staffSize?: string;
+    boardWish?: string;
+    needs?: string;
+    offers?: string;
+    notes?: string;
+  }) {
+    const {
+      fullName,
+      phone,
+      email,
+      position,
+      birthYear,
+      companyName,
+      taxCode,
+      industry,
+      address,
+      website,
+      staffSize,
+      boardWish,
+      needs,
+      offers,
+      notes,
+    } = data;
+
+    if (!fullName || !phone || !email || !companyName) {
+      throw new BadRequestException('Vui lòng điền đầy đủ Họ tên, Số điện thoại, Email và Tên doanh nghiệp');
+    }
+
+    // Association CEO 1983
+    const assocRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.associations ORDER BY landing_published DESC, created_at DESC LIMIT 1
+    `.catch(() => []);
+    const assocId = assocRows[0]?.id || null;
+
+    const now = new Date();
+    const id = `MB${now.getTime().toString(36).toUpperCase()}`;
+    const feeYear = now.getFullYear();
+    const joinedAt = now.toISOString().slice(0, 10);
+
+    const aboutMeta = JSON.stringify({
+      representative: fullName,
+      position: position || '',
+      birthYear: birthYear || '',
+      boardWish: boardWish || 'Ban Thiện Nguyện & An Sinh Xã Hội',
+      needs: needs || '',
+      offers: offers || '',
+      notes: notes || '',
+    });
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.members (
+        id, code, name, contact, email, phone, type, level, industry, region, status,
+        joined_at, fee_year, fee_paid, address, website, tax_code, about,
+        executive_role, department, company_size, company_name,
+        association_id, created_at, updated_at
+      ) VALUES (
+        ${id},
+        '',
+        ${companyName},
+        ${fullName},
+        ${email.trim().toLowerCase()},
+        ${phone.trim()},
+        'company',
+        'memberLevel.medium',
+        ${industry || 'ind.trade'},
+        'region.north',
+        'pending',
+        ${joinedAt}::date,
+        ${feeYear},
+        false,
+        ${address || ''},
+        ${website || null},
+        ${taxCode || null},
+        ${aboutMeta},
+        ${position || 'Đại diện Doanh nghiệp'},
+        ${boardWish || 'Ban Thành Viên & Kết Nối'},
+        ${staffSize || null},
+        ${companyName},
+        ${assocId}::uuid,
+        NOW(),
+        NOW()
+      )
+    `;
+
+    // Thông báo cho Ban Quản Trị & Ban Thành Viên
+    const notifCode = `REG-${Date.now().toString().slice(-6)}`;
+    await this.prisma.$executeRaw`
+      INSERT INTO public.notifications (
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(),
+        ${notifCode},
+        ${`Hồ sơ đăng ký hội viên mới: ${companyName}`},
+        ${`Doanh nghiệp ${companyName} (${fullName} - ${phone}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983. Ban Thành Viên vui lòng kiểm tra và phê duyệt.`},
+        'admin', 'inapp', 'sent', NOW(), 1, ${assocId ? assocId : null}::uuid, 'all', 'all', NOW(), NOW()
+      )
+    `.catch(() => {});
+
+    return {
+      ok: true,
+      memberId: id,
+      companyName,
+      representative: fullName,
+      message: 'Hồ sơ đã được gửi thành công. Ban Thành Viên sẽ xét duyệt và cấp tài khoản qua email!',
+    };
+  }
+
+  /**
+   * Phê duyệt hội viên mới và gửi email chứa thông tin tài khoản đăng nhập (Email + Mật khẩu ngẫu nhiên)
+   */
+  async approveMemberAndSendCredentials(adminUserId: string, memberId: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.members WHERE id = ${memberId} LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length === 0) {
+      throw new NotFoundException('Không tìm thấy thông tin hội viên');
+    }
+
+    const member = rows[0];
+    const isAdmin = await this.checkIsAdmin(adminUserId, member.association_id);
+    if (!isAdmin) {
+      throw new ForbiddenException('Chỉ Quản trị viên hoặc thành viên Ban Thành Viên mới có quyền phê duyệt');
+    }
+
+    if (!member.email || !member.email.includes('@')) {
+      throw new BadRequestException('Hội viên chưa có địa chỉ email hợp lệ để cấp phát tài khoản');
+    }
+
+    // 1. Sinh mật khẩu ngẫu nhiên cho hội viên (vd: CEO1983@9482)
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const passwordRaw = `CEO1983@${randomSuffix}`;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(passwordRaw, salt);
+
+    // 2. Tìm hoặc tạo tài khoản trong vione_users
+    let userRecord = await this.prisma.vione_users.findFirst({
+      where: {
+        OR: [
+          { email: member.email },
+          { username: member.email },
+        ],
+      },
+    }).catch(() => null);
+
+    let assignedUserId: string;
+    if (userRecord) {
+      assignedUserId = userRecord.id;
+      await this.prisma.vione_users.update({
+        where: { id: userRecord.id },
+        data: {
+          password: hashedPassword,
+          name: member.contact || member.name,
+          updated_at: new Date(),
+        },
+      }).catch(() => null);
+    } else {
+      assignedUserId = crypto.randomUUID();
+      await this.prisma.vione_users.create({
+        data: {
+          id: assignedUserId,
+          username: member.email,
+          email: member.email,
+          name: member.contact || member.name,
+          password: hashedPassword,
+          email_verified: true,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      });
+    }
+
+    // 3. Tạo mã hội viên nếu chưa có
+    const memberCode = (member.code && member.code.trim() !== '')
+      ? member.code
+      : `M1983-${Math.floor(100 + Math.random() * 900)}`;
+
+    // 4. Kích hoạt trạng thái hội viên trong bảng members
+    await this.prisma.$executeRaw`
+      UPDATE public.members SET
+        status = 'active',
+        code = ${memberCode},
+        user_id = ${assignedUserId}::uuid,
+        fee_paid = true,
+        payment_status = 'paid',
+        updated_at = NOW()
+      WHERE id = ${memberId}
+    `;
+
+    // 5. Gắn quyền membership nếu có association_id
+    if (member.association_id) {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.memberships (id, user_id, association_id, role, status, created_at, updated_at)
+        VALUES (gen_random_uuid(), ${assignedUserId}::uuid, ${member.association_id}::uuid, 'member', 'active', NOW(), NOW())
+        ON CONFLICT DO NOTHING
+      `.catch(() => {});
+    }
+
+    // 6. Gửi email tài khoản đăng nhập chính thức
+    let emailSent = false;
+    let emailMessage = '';
+    try {
+      const emailResult = await this.mailService.sendRegistrationAccountEmail({
+        to: member.email,
+        fullName: member.contact || member.name,
+        username: member.email,
+        passwordRaw,
+        companyName: member.company_name || member.name,
+        memberCode,
+        portalUrl: 'https://14.225.217.232:5444/association/login',
+      });
+      emailSent = emailResult.ok;
+      emailMessage = emailResult.message || '';
+    } catch (err: any) {
+      emailMessage = err?.message || 'Lỗi gửi mail';
+      console.warn('Lỗi khi gửi email tài khoản:', err?.message);
+    }
+
+    // 7. Ghi nhật ký hoạt động
+    await this.prisma.$executeRaw`
+      INSERT INTO public.activity_log (
+        id, code, "user", action, target, category, at, ip, association_id, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(),
+        ${memberId},
+        ${adminUserId},
+        'Phê duyệt hội viên & Cấp tài khoản',
+        ${member.name},
+        'member',
+        to_char(NOW(), 'YYYY-MM-DD HH24:MI:SS'),
+        '127.0.0.1',
+        ${member.association_id ? member.association_id : null}::uuid,
+        NOW(),
+        NOW()
+      )
+    `.catch(() => null);
+
+    return {
+      ok: true,
+      memberId,
+      memberCode,
+      username: member.email,
+      temporaryPassword: passwordRaw,
+      emailSent,
+      emailMessage,
+      message: `Đã phê duyệt thành công hội viên ${member.name} (${memberCode}) và gửi email tài khoản!`,
+    };
   }
 }
 

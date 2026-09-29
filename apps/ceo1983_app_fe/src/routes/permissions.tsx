@@ -1,11 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  Check,
-  Minus,
   ShieldCheck,
   Users,
-  Briefcase,
   Save,
   RefreshCw,
   Search,
@@ -13,122 +10,30 @@ import {
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { useRole } from "@/hooks/use-role";
-import { baseLang, useLang, useT } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMembersFn, updateMemberRoleAndDeptFn } from "@/lib/members.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
-import { fetchNestApi } from "@/lib/api-client";
+import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
 
 export const Route = createFileRoute("/permissions")({
   component: PermissionsPage,
 });
 
-type Access = "full" | "scoped" | "own" | "none";
-
-type Row = {
-  feature: { vi: string; en: string };
-  platform_admin: Access;
-  admin: Access;
-  tong_thu_ky: Access;
-  truong_ban_thanh_vien: Access;
-  truong_ban_tai_chinh: Access;
-  truong_ban_truyen_thong: Access;
-  truong_ban_xuc_tien: Access;
-  member: Access;
-};
-
-const ROWS: Row[] = [
-  {
-    feature: { vi: "Quản trị hệ thống & Cấu hình nền tảng", en: "Platform & system management" },
-    platform_admin: "full",
-    admin: "scoped",
-    tong_thu_ky: "none",
-    truong_ban_thanh_vien: "none",
-    truong_ban_tai_chinh: "none",
-    truong_ban_truyen_thong: "none",
-    truong_ban_xuc_tien: "none",
-    member: "none",
-  },
-  {
-    feature: { vi: "Họp phòng ban & Lịch Zoom", en: "Department meetings & Zoom" },
-    platform_admin: "full",
-    admin: "full",
-    tong_thu_ky: "full",
-    truong_ban_thanh_vien: "scoped",
-    truong_ban_tai_chinh: "scoped",
-    truong_ban_truyen_thong: "scoped",
-    truong_ban_xuc_tien: "scoped",
-    member: "own",
-  },
-  {
-    feature: { vi: "Quản lý hội viên & Phân ban", en: "Members & committee assignment" },
-    platform_admin: "full",
-    admin: "full",
-    tong_thu_ky: "scoped",
-    truong_ban_thanh_vien: "full",
-    truong_ban_tai_chinh: "scoped",
-    truong_ban_truyen_thong: "scoped",
-    truong_ban_xuc_tien: "scoped",
-    member: "own",
-  },
-  {
-    feature: { vi: "Thu chi, Tạm ứng & Hóa đơn", en: "Finance, advances & invoices" },
-    platform_admin: "full",
-    admin: "full",
-    tong_thu_ky: "scoped",
-    truong_ban_thanh_vien: "scoped",
-    truong_ban_tai_chinh: "full",
-    truong_ban_truyen_thong: "scoped",
-    truong_ban_xuc_tien: "scoped",
-    member: "own",
-  },
-  {
-    feature: { vi: "Sự kiện, Điểm danh QR & Xếp chỗ VIP", en: "Events, check-in QR & VIP seating" },
-    platform_admin: "full",
-    admin: "full",
-    tong_thu_ky: "scoped",
-    truong_ban_thanh_vien: "scoped",
-    truong_ban_tai_chinh: "scoped",
-    truong_ban_truyen_thong: "full",
-    truong_ban_xuc_tien: "scoped",
-    member: "own",
-  },
-  {
-    feature: { vi: "Sàn cơ hội kinh doanh & Matching", en: "Opportunities marketplace & matching" },
-    platform_admin: "full",
-    admin: "full",
-    tong_thu_ky: "scoped",
-    truong_ban_thanh_vien: "scoped",
-    truong_ban_tai_chinh: "scoped",
-    truong_ban_truyen_thong: "scoped",
-    truong_ban_xuc_tien: "full",
-    member: "own",
-  },
-  {
-    feature: { vi: "Biểu quyết & Bốc thăm trúng thưởng", en: "Voting & Lucky draw" },
-    platform_admin: "full",
-    admin: "full",
-    tong_thu_ky: "full",
-    truong_ban_thanh_vien: "scoped",
-    truong_ban_tai_chinh: "scoped",
-    truong_ban_truyen_thong: "scoped",
-    truong_ban_xuc_tien: "scoped",
-    member: "own",
-  },
-];
-
 const ROLE_OPTIONS = [
-  { value: "platform_admin", label: "Platform Admin (Toàn quyền hệ thống)" },
-  { value: "admin", label: "Quản trị (Admin Hiệp hội)" },
-  { value: "tong_thu_ky", label: "Tổng thư ký" },
-  { value: "truong_ban_thanh_vien", label: "Trưởng ban thành viên" },
-  { value: "truong_ban_tai_chinh", label: "Trưởng ban tài chính" },
-  { value: "truong_ban_truyen_thong", label: "Trưởng ban truyền thông" },
-  { value: "truong_ban_xuc_tien", label: "Trưởng ban xúc tiến" },
-  { value: "member", label: "Hội viên" },
+  { value: "platform_admin", label: "Quản trị (Xem, Sửa, Xóa, Phân quyền)" },
+  { value: "admin", label: "Admin (Xem, Sửa, Phân quyền)" },
+  { value: "tong_thu_ky", label: "Tổng thư ký (Xem, Sửa)" },
+  { value: "truong_ban", label: "Trưởng ban (Xem, Sửa)" },
+  { value: "truong_ban_thanh_vien", label: "Trưởng ban thành viên (Xem, Sửa)" },
+  { value: "truong_ban_tai_chinh", label: "Trưởng ban tài chính (Xem, Sửa)" },
+  { value: "truong_ban_truyen_thong", label: "Trưởng ban truyền thông (Xem, Sửa)" },
+  { value: "truong_ban_xuc_tien", label: "Trưởng ban xúc tiến (Xem, Sửa)" },
+  { value: "truong_ban_thien_nguyen", label: "Trưởng ban thiện nguyện (Xem, Sửa)" },
+  { value: "member", label: "Hội viên (Xem)" },
 ];
 
 const DEPARTMENT_OPTIONS = [
@@ -139,6 +44,7 @@ const DEPARTMENT_OPTIONS = [
   "Ban Tài chính",
   "Ban Truyền thông",
   "Ban Xúc tiến thương mại",
+  "Ban Thiện Nguyện",
   "Hội viên CEO 1983",
 ];
 
@@ -146,54 +52,8 @@ const ASSOCIATION_OPTIONS: { id: string; name: string; shortName: string }[] = [
   { id: "c1983000-0000-4000-8000-000000001983", name: "CLB Doanh Nhân CEO 1983", shortName: "CEO 1983" },
 ];
 
-const TONE: Record<Access, { bg: string; fg: string }> = {
-  full: { bg: "oklch(0.93 0.07 155)", fg: "oklch(0.40 0.16 155)" },
-  scoped: { bg: "oklch(0.94 0.05 220)", fg: "oklch(0.42 0.15 220)" },
-  own: { bg: "oklch(0.94 0.09 75)", fg: "oklch(0.45 0.14 65)" },
-  none: { bg: "oklch(0.94 0.01 250)", fg: "oklch(0.55 0.02 250)" },
-};
-
-function Cell({
-  access,
-  label,
-  onClick,
-  title,
-}: {
-  access: Access;
-  label: string;
-  onClick?: () => void;
-  title?: string;
-}) {
-  const s = TONE[access];
-  return (
-    <td className="px-3 py-2.5 text-center">
-      {onClick ? (
-        <button
-          type="button"
-          onClick={onClick}
-          title={title || "Bấm để chuyển đổi quyền"}
-          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs hover:ring-2 hover:ring-primary/30"
-          style={{ background: s.bg, color: s.fg }}
-        >
-          {access === "none" ? <Minus className="h-2.5 w-2.5" /> : <Check className="h-2.5 w-2.5 stroke-[2.5]" />}
-          {label}
-        </button>
-      ) : (
-        <span
-          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
-          style={{ background: s.bg, color: s.fg }}
-        >
-          {access === "none" ? <Minus className="h-2.5 w-2.5" /> : <Check className="h-2.5 w-2.5 stroke-[2.5]" />}
-          {label}
-        </span>
-      )}
-    </td>
-  );
-}
-
 function PermissionsPage() {
   const t = useT();
-  const { lang } = useLang();
   const { isPlatformAdmin, isBQT, isAdmin, srsRole, loading } = useRole();
   const hasAccess = isPlatformAdmin || isBQT || isAdmin || srsRole === "BQT" || srsRole === "ADM";
 
@@ -208,67 +68,6 @@ function PermissionsPage() {
   const [q, setQ] = useState("");
   const [filterAssoc, setFilterAssoc] = useState("all");
   const [filterRole, setFilterRole] = useState("all");
-
-  // Persistent 8-Role Permission Matrix State
-  const [matrixRows, setMatrixRows] = useState<Row[]>(ROWS);
-  const [matrixLoading, setMatrixLoading] = useState(true);
-  const [savingMatrix, setSavingMatrix] = useState(false);
-  const [matrixModified, setMatrixModified] = useState(false);
-
-  // Fetch persisted permission matrix from backend API
-  const loadMatrix = useCallback(async () => {
-    try {
-      setMatrixLoading(true);
-      const res = await fetchNestApi<{ rows: Row[] }>("/admin/permission-matrix");
-      if (res?.rows && Array.isArray(res.rows) && res.rows.length > 0) {
-        setMatrixRows(res.rows);
-      }
-    } catch (e) {
-      console.warn("Could not load permission matrix from API, fallback to defaults:", e);
-    } finally {
-      setMatrixLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadMatrix();
-  }, [loadMatrix]);
-
-  const cycleAccess = (current: Access): Access => {
-    const order: Access[] = ["full", "scoped", "own", "none"];
-    const nextIdx = (order.indexOf(current) + 1) % order.length;
-    return order[nextIdx];
-  };
-
-  const handleCellClick = (rowIndex: number, roleKey: keyof Omit<Row, "feature">) => {
-    setMatrixRows((prev) => {
-      const next = prev.map((row, idx) => {
-        if (idx !== rowIndex) return row;
-        return {
-          ...row,
-          [roleKey]: cycleAccess(row[roleKey]),
-        };
-      });
-      return next;
-    });
-    setMatrixModified(true);
-  };
-
-  const handleSaveMatrix = async () => {
-    try {
-      setSavingMatrix(true);
-      await fetchNestApi("/admin/permission-matrix", {
-        method: "PUT",
-        body: JSON.stringify({ rows: matrixRows }),
-      });
-      toast.success("Đã lưu ma trận phân quyền hệ thống thành công!");
-      setMatrixModified(false);
-    } catch (e: any) {
-      toast.error(e?.message || "Lỗi khi lưu ma trận phân quyền.");
-    } finally {
-      setSavingMatrix(false);
-    }
-  };
 
   const filteredMembers = useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -377,6 +176,8 @@ function PermissionsPage() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<"matrix" | "user_actions">("matrix");
+
   if (!loading && !hasAccess) {
     return (
       <AppShell>
@@ -390,28 +191,57 @@ function PermissionsPage() {
     );
   }
 
-  const legend: { key: Access; label: string }[] = [
-    { key: "full", label: "Toàn quyền (Full)" },
-    { key: "scoped", label: "Phạm vi ban (Scoped)" },
-    { key: "own", label: "Chỉ cá nhân (Own)" },
-    { key: "none", label: "Không có quyền (None)" },
-  ];
-
   return (
     <AppShell>
-      <div className="p-6 max-w-7xl mx-auto space-y-8">
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
         <PageHeader
-          title="Ma Trận & Phân Quyền Quản Trị"
-          subtitle="Phân quyền thao tác chi tiết cho từng tài khoản và cấu hình ma trận phân quyền 8 cấp bậc vai trò"
+          title="Hệ Thống Phân Quyền & Quản Trị Thao Tác"
+          subtitle="Tách biệt rõ ràng: Ma trận quyền theo 5 vai trò cốt lõi và Phân quyền thao tác trực tiếp cho từng tài khoản hội viên CEO 1983"
         />
 
-        {/* Section 1: Phân Quyền Thao Tác Trực Tiếp Cho Tài Khoản */}
+        {/* Tab Switcher: Không gộp chung */}
+        <div className="flex items-center gap-2 border-b border-border/80 pb-3">
+          <button
+            onClick={() => setActiveTab("matrix")}
+            className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
+              activeTab === "matrix"
+                ? "bg-[#003B95] text-white shadow-sm"
+                : "bg-card text-muted-foreground border border-border hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span>1. Ma Trận Phân Quyền 5 Cấp Bậc (Vai Trò x Chức Năng)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("user_actions")}
+            className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
+              activeTab === "user_actions"
+                ? "bg-[#003B95] text-white shadow-sm"
+                : "bg-card text-muted-foreground border border-border hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            <span>2. Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản</span>
+            <span className="rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 text-[10px] px-2 py-0.5">
+              {filteredMembers.length}
+            </span>
+          </button>
+        </div>
+
+        {/* TAB 1: Ma Trận Phân Quyền 5 Cấp Bậc (5 Roles on Left, Features at Column Headers) */}
+        {activeTab === "matrix" && (
+          <RbacPermissionMatrix />
+        )}
+
+        {/* TAB 2: Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản */}
+        {activeTab === "user_actions" && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#003B95]" />
-                Phân Quyền Thao Tác Trực Tiếp Cho Tài Khoản
+                Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Chỉ định vai trò điều hành, phòng ban chuyên môn và phạm vi hiệp hội trực tiếp cho từng thành viên
@@ -603,106 +433,7 @@ function PermissionsPage() {
             />
           </Card>
         </section>
-
-        {/* Section 2: Ma Trận Chi Tiết Phân Quyền 8 Cấp Bậc */}
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-[#003B95]" />
-                Ma Trận Chi Tiết Phân Quyền 8 Cấp Bậc
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Bấm trực tiếp vào từng ô để chuyển đổi cấp độ phân quyền theo nhu cầu, sau đó bấm &quot;Lưu ma trận phân quyền&quot;
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                {legend.map((l) => {
-                  const s = TONE[l.key];
-                  return (
-                    <span
-                      key={l.key}
-                      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                      style={{ background: s.bg, color: s.fg }}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.fg }} />
-                      {l.label}
-                    </span>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                onClick={() => void loadMatrix()}
-                disabled={matrixLoading}
-                title="Tải lại ma trận"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border bg-card hover:bg-secondary transition-all"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${matrixLoading ? "animate-spin" : ""}`} />
-                <span>Tải lại</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveMatrix}
-                disabled={savingMatrix || !matrixModified}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
-                  matrixModified
-                    ? "bg-[#003B95] hover:bg-[#002b6d] text-white shadow-md cursor-pointer active:scale-95"
-                    : "bg-secondary text-muted-foreground opacity-60 cursor-not-allowed"
-                }`}
-              >
-                <Save className="w-4 h-4" />
-                <span>{savingMatrix ? "Đang lưu..." : "Lưu ma trận phân quyền"}</span>
-              </button>
-            </div>
-          </div>
-
-          <Card className="overflow-hidden border border-border shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-secondary/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <th className="px-4 py-3 text-left">Chức năng hệ thống</th>
-                    <th className="px-3 py-3 text-center">Platform Admin</th>
-                    <th className="px-3 py-3 text-center">Quản trị</th>
-                    <th className="px-3 py-3 text-center">Tổng thư ký</th>
-                    <th className="px-3 py-3 text-center">TB Thành viên</th>
-                    <th className="px-3 py-3 text-center">TB Tài chính</th>
-                    <th className="px-3 py-3 text-center">TB T.Thông</th>
-                    <th className="px-3 py-3 text-center">TB Xúc tiến</th>
-                    <th className="px-3 py-3 text-center">Hội viên</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {matrixLoading ? (
-                    <tr>
-                      <td colSpan={9} className="py-8 text-center text-xs text-muted-foreground">
-                        Đang tải ma trận phân quyền từ hệ thống...
-                      </td>
-                    </tr>
-                  ) : (
-                    matrixRows.map((r, i) => (
-                      <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                        <td className="px-4 py-3 font-medium text-foreground text-xs">
-                          {r.feature[baseLang(lang)]}
-                        </td>
-                        <Cell access={r.platform_admin} label="Toàn quyền" title="Platform Admin luôn toàn quyền" />
-                        <Cell access={r.admin} label={legend.find((l) => l.key === r.admin)!.label} onClick={() => handleCellClick(i, "admin")} />
-                        <Cell access={r.tong_thu_ky} label={legend.find((l) => l.key === r.tong_thu_ky)!.label} onClick={() => handleCellClick(i, "tong_thu_ky")} />
-                        <Cell access={r.truong_ban_thanh_vien} label={legend.find((l) => l.key === r.truong_ban_thanh_vien)!.label} onClick={() => handleCellClick(i, "truong_ban_thanh_vien")} />
-                        <Cell access={r.truong_ban_tai_chinh} label={legend.find((l) => l.key === r.truong_ban_tai_chinh)!.label} onClick={() => handleCellClick(i, "truong_ban_tai_chinh")} />
-                        <Cell access={r.truong_ban_truyen_thong} label={legend.find((l) => l.key === r.truong_ban_truyen_thong)!.label} onClick={() => handleCellClick(i, "truong_ban_truyen_thong")} />
-                        <Cell access={r.truong_ban_xuc_tien} label={legend.find((l) => l.key === r.truong_ban_xuc_tien)!.label} onClick={() => handleCellClick(i, "truong_ban_xuc_tien")} />
-                        <Cell access={r.member} label={legend.find((l) => l.key === r.member)!.label} onClick={() => handleCellClick(i, "member")} />
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </section>
+        )}
       </div>
     </AppShell>
   );

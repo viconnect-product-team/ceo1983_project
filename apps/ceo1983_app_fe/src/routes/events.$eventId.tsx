@@ -35,6 +35,7 @@ import { EventQrConfigModal } from "@/components/dashboard/EventQrConfigModal";
 import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGatekeeperModal";
 import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
 import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
+import { EventGuestQrPresenterModal } from "@/components/events/EventGuestQrPresenterModal";
 import {
   type EventItem,
   type Registration,
@@ -163,6 +164,7 @@ function EventDetailPage() {
     "Hoàn tiền 100% cho đại biểu qua tài khoản ngân hàng trong vòng 3 - 5 ngày làm việc."
   );
   const [cancelling, setCancelling] = useState(false);
+  const [guestQrOpen, setGuestQrOpen] = useState(false);
 
   const countdown = useCountdown(event.date, event.status);
   const s = STATUS_TONE[event.status] ?? STATUS_TONE.upcoming;
@@ -441,6 +443,14 @@ function EventDetailPage() {
               <>
                 <button
                   type="button"
+                  onClick={() => setGuestQrOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-500/20 transition cursor-pointer"
+                >
+                  <QrCode className="h-4 w-4 text-amber-600" aria-hidden="true" />
+                  QR Đón Tiếp & Thanh Toán (BTT)
+                </button>
+                <button
+                  type="button"
                   onClick={() => setGatekeeperOpen(true)}
                   className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20 transition"
                 >
@@ -706,6 +716,19 @@ function EventDetailPage() {
           </div>
         </div>
       )}
+
+      <EventGuestQrPresenterModal
+        open={guestQrOpen}
+        onClose={() => setGuestQrOpen(false)}
+        event={{
+          id: event.id,
+          name: event.name,
+          date: event.date ? fmt.date(event.date) : undefined,
+          location: event.location,
+          ticketPrice: (event as any).ticketPrice ?? (event as any).ticket_price ?? event.fee,
+          fee: event.fee,
+        }}
+      />
     </AppShell>
   );
 }

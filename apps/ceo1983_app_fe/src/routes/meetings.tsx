@@ -39,6 +39,9 @@ import {
   X,
   XCircle,
   Zap,
+  Phone,
+  AlertTriangle,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -51,6 +54,8 @@ import {
   listMeetingsFn,
   updateMeetingFn,
   type Meeting,
+  type MeetingPlatform,
+  type MeetingCreatorRole,
 } from "@/lib/meetings.functions";
 import { createNotificationFn } from "@/lib/notifications.functions";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
@@ -161,8 +166,30 @@ function MeetingsPage() {
   const [formLocation, setFormLocation] = useState("Văn phòng CLB CEO 1983 & Trực tuyến Zoom");
   const [formZoomUrl, setFormZoomUrl] = useState("https://zoom.us/j/88819839999");
   const [formStatus, setFormStatus] = useState<Meeting["status"]>("upcoming");
-  const [formMeetingMode, setFormMeetingMode] = useState<"offline" | "online">("offline");
+  const [formMeetingMode, setFormMeetingMode] = useState<"offline" | "online">("online");
   const [formGpsUrl, setFormGpsUrl] = useState("https://www.google.com/maps/search/?api=1&query=T%C3%B2a+nh%C3%A0+V-Tower+Kim+M%C3%A3+H%C3%A0+N%E1%BB%99i");
+
+  // Enhanced fields: 3 platforms, 4 creator roles, urgent meeting flag
+  const [formPlatform, setFormPlatform] = useState<MeetingPlatform>("ZOOM");
+  const [formCreatorRole, setFormCreatorRole] = useState<MeetingCreatorRole>("TỔNG_THƯ_KÝ");
+  const [formCreatorName, setFormCreatorName] = useState("Lê Hoàng Long (Tổng thư ký)");
+  const [formCreatorPhone, setFormCreatorPhone] = useState("0983 000 001");
+  const [formCreatorEmail, setFormCreatorEmail] = useState("ceo.tongthuky@ceo1983.com");
+  const [formIsUrgent, setFormIsUrgent] = useState(false);
+  const [formUrgentReason, setFormUrgentReason] = useState("");
+
+  // Modals for Urgent Case & Delete
+  const [contactHostModalOpen, setContactHostModalOpen] = useState(false);
+  const [contactHostMeeting, setContactHostMeeting] = useState<Meeting | null>(null);
+
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [rescheduleMeeting, setRescheduleMeeting] = useState<Meeting | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleReason, setRescheduleReason] = useState("");
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingMeeting, setDeletingMeeting] = useState<Meeting | null>(null);
 
   // Offline invite template modal state
   const [offlineInviteModalOpen, setOfflineInviteModalOpen] = useState(false);
@@ -270,6 +297,28 @@ function MeetingsPage() {
   // Modal tạo cuộc gặp kết nối 1-on-1
   const [create1on1Open, setCreate1on1Open] = useState(false);
 
+  const applyCreatorRolePreset = (role: MeetingCreatorRole, dept: string = formDepartment) => {
+    setFormCreatorRole(role);
+    if (role === "CHỦ_TỊCH") {
+      setFormCreatorName("Chủ tịch CLB CEO 1983");
+      setFormCreatorPhone("0983 198 383");
+      setFormCreatorEmail("chutich@ceo1983.com");
+    } else if (role === "TỔNG_THƯ_KÝ") {
+      setFormCreatorName("Lê Hoàng Long (Tổng thư ký)");
+      setFormCreatorPhone("0983 000 001");
+      setFormCreatorEmail("ceo.tongthuky@ceo1983.com");
+    } else if (role === "ADMIN") {
+      setFormCreatorName("Ban Quản Trị Hệ Thống CEO 1983");
+      setFormCreatorPhone("0983 999 999");
+      setFormCreatorEmail("admin@ceo1983.com");
+    } else if (role === "TRƯỞNG_BAN") {
+      const firstMem = (DEPARTMENT_MEMBERS[dept] || [])[0];
+      setFormCreatorName(firstMem ? `${firstMem.name} (${firstMem.role})` : `Trưởng ban ${dept}`);
+      setFormCreatorPhone(firstMem?.phone || "0983 000 002");
+      setFormCreatorEmail(firstMem?.email || "ceo.truongban@ceo1983.com");
+    }
+  };
+
   // --- Handlers for TAB 1 (Meetings) ---
   const handleOpenCreate = () => {
     setSelectedMeeting(null);
@@ -280,9 +329,17 @@ function MeetingsPage() {
     setSelectedMembers(initialEmails);
     setFormDate(new Date().toISOString().slice(0, 10));
     setFormTime("14:30");
-    setFormLocation("Zoom Meeting ID: 888 1983 9999 (Pass: 1983)");
+    setFormLocation("Trực tuyến qua Zoom Meeting");
     setFormZoomUrl("https://zoom.us/j/88819839999");
+    setFormPlatform("ZOOM");
+    setFormCreatorRole("TỔNG_THƯ_KÝ");
+    setFormCreatorName("Lê Hoàng Long (Tổng thư ký)");
+    setFormCreatorPhone("0983 000 001");
+    setFormCreatorEmail("ceo.tongthuky@ceo1983.com");
+    setFormIsUrgent(false);
+    setFormUrgentReason("");
     setFormStatus("upcoming");
+    setFormMeetingMode("online");
     setModalOpen(true);
   };
 
@@ -299,8 +356,109 @@ function MeetingsPage() {
     setFormTime(m.time);
     setFormLocation(m.location);
     setFormZoomUrl(m.zoomUrl || "https://zoom.us/j/88819839999");
+    setFormPlatform(m.platform || "ZOOM");
+    setFormCreatorRole(m.creatorRole || "TỔNG_THƯ_KÝ");
+    setFormCreatorName(m.creatorName || "Lê Hoàng Long (Tổng thư ký)");
+    setFormCreatorPhone(m.creatorPhone || "0983 000 001");
+    setFormCreatorEmail(m.creatorEmail || "ceo.tongthuky@ceo1983.com");
+    setFormIsUrgent(m.isUrgent ?? false);
+    setFormUrgentReason(m.urgentReason || "");
     setFormStatus(m.status);
+    setFormMeetingMode(m.zoomUrl ? "online" : "offline");
     setModalOpen(true);
+  };
+
+  const handleOpenContactHost = (m: Meeting) => {
+    setContactHostMeeting(m);
+    setContactHostModalOpen(true);
+  };
+
+  const handleOpenReschedule = (m: Meeting) => {
+    setRescheduleMeeting(m);
+    setRescheduleDate(m.date);
+    setRescheduleTime(m.time);
+    setRescheduleReason("Sắp xếp lại lịch để ưu tiên cuộc họp đột xuất quan trọng");
+    setRescheduleModalOpen(true);
+  };
+
+  const handleRescheduleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rescheduleMeeting || !rescheduleDate || !rescheduleTime) {
+      toast.error("Vui lòng chọn ngày và giờ mới cho cuộc họp");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await updateFn({
+        data: {
+          id: rescheduleMeeting.id,
+          title: rescheduleMeeting.title,
+          type: rescheduleMeeting.type,
+          date: rescheduleDate,
+          time: rescheduleTime,
+          location: rescheduleMeeting.location,
+          attendees: rescheduleMeeting.attendees,
+          status: "upcoming",
+          department: rescheduleMeeting.department || "",
+          targetMembers: rescheduleMeeting.targetMembers || [],
+          zoomUrl: rescheduleMeeting.zoomUrl || "",
+          platform: rescheduleMeeting.platform || "ZOOM",
+          creatorRole: rescheduleMeeting.creatorRole || "TỔNG_THƯ_KÝ",
+          creatorName: rescheduleMeeting.creatorName || "",
+          creatorPhone: rescheduleMeeting.creatorPhone || "",
+          creatorEmail: rescheduleMeeting.creatorEmail || "",
+          isUrgent: rescheduleMeeting.isUrgent ?? false,
+          urgentReason: rescheduleReason.trim() || rescheduleMeeting.urgentReason || "Điều chỉnh lịch do cuộc họp quan trọng đột xuất",
+        },
+      });
+
+      // Phát thông báo dời lịch
+      try {
+        await createNotif({
+          data: {
+            title: `[ĐIỀU CHỈNH LỊCH HỌP] ${rescheduleMeeting.title}`,
+            body: `Cuộc họp "${rescheduleMeeting.title}" đã được dời sang thời gian mới: ${rescheduleTime} ngày ${rescheduleDate}.\nLý do: "${rescheduleReason.trim()}".\nKính đề nghị các thành viên cập nhật lại lịch công tác!`,
+            category: "meeting",
+            audience: "all",
+            channel: "inapp",
+            appScope: "all",
+            targetApp: "all",
+            status: "sent",
+          },
+        });
+      } catch (err) {}
+
+      toast.success(`✓ Đã sắp xếp lại lịch cuộc họp sang ${rescheduleTime} ngày ${rescheduleDate} và phát thông báo!`);
+      setRescheduleModalOpen(false);
+      setContactHostModalOpen(false);
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi sắp xếp lại lịch họp");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenDelete = (m: Meeting) => {
+    setDeletingMeeting(m);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingMeeting) return;
+    setSubmitting(true);
+    try {
+      await deleteFn({ data: { id: deletingMeeting.id } });
+      toast.success(`✓ Đã xóa hoàn toàn cuộc họp "${deletingMeeting.title}" khỏi hệ thống!`);
+      setDeleteModalOpen(false);
+      setDeletingMeeting(null);
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi xóa cuộc họp");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const toggleMemberSelection = (email: string) => {
@@ -333,6 +491,13 @@ function MeetingsPage() {
         department: formDepartment,
         targetMembers: selectedMembers,
         zoomUrl: formZoomUrl.trim(),
+        platform: formPlatform,
+        creatorRole: formCreatorRole,
+        creatorName: formCreatorName.trim(),
+        creatorPhone: formCreatorPhone.trim(),
+        creatorEmail: formCreatorEmail.trim(),
+        isUrgent: formIsUrgent,
+        urgentReason: formUrgentReason.trim(),
       };
 
       if (selectedMeeting) {
@@ -344,22 +509,24 @@ function MeetingsPage() {
         try {
           await createNotif({
             data: {
-              title: `[Lịch họp mới] ${payload.title}`,
-              body: `Cuộc họp ${payload.department} diễn ra vào ${payload.time} ngày ${payload.date} (${(payload as any).type === "online" ? "Trực tuyến: " + payload.zoomUrl : "Trực tiếp: " + payload.location}). Kính mời các đại biểu tham gia đúng giờ.`,
+              title: payload.isUrgent
+                ? `[🔥 CUỘC HỌP KHẨN CẤP ĐỘT XUẤT] ${payload.title}`
+                : `[Lịch họp mới] ${payload.title}`,
+              body: `Cuộc họp ${payload.department} do ${payload.creatorName} (${payload.creatorRole}) chủ trì diễn ra vào ${payload.time} ngày ${payload.date} (${formMeetingMode === "online" ? `Trực tuyến ${payload.platform}: ` + payload.zoomUrl : "Trực tiếp: " + payload.location}). ${payload.isUrgent ? "Đề nghị các đồng chí có mặt đầy đủ để xử lý việc khẩn cấp." : "Kính mời các đại biểu tham gia đúng giờ."}`,
               category: "meeting",
               audience: "all",
               channel: "inapp",
               appScope: "all",
               targetApp: "all",
               status: "sent",
-              actionUrl: (payload as any).type === "online" ? payload.zoomUrl : "/association/meetings",
+              actionUrl: formMeetingMode === "online" ? payload.zoomUrl : "/association/meetings",
             },
           });
         } catch (notifErr) {
           console.warn("Could not dispatch in-app notification for new meeting:", notifErr);
         }
         toast.success(
-          `Đã tạo cuộc họp và gửi thông báo & link Zoom tới ${selectedMembers.length} thành viên ${formDepartment}!`
+          `Đã tạo cuộc họp và gửi thông báo tới ${selectedMembers.length} thành viên ${formDepartment}!`
         );
       }
       setModalOpen(false);
@@ -447,15 +614,8 @@ function MeetingsPage() {
     }
   };
 
-  const onDelete = async (m: Meeting) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa cuộc họp "${m.title}" không? Dữ liệu cuộc họp sẽ bị xóa hoàn toàn khỏi hệ thống.`)) return;
-    try {
-      await deleteFn({ data: { id: m.id } });
-      toast.success("✓ Đã xóa cuộc họp thành công!");
-      await router.invalidate();
-    } catch (err: any) {
-      toast.error(err?.message || "Lỗi khi xóa cuộc họp");
-    }
+  const onDelete = (m: Meeting) => {
+    handleOpenDelete(m);
   };
 
   // --- Handlers for TAB 2 (Room Bookings) ---
@@ -1004,13 +1164,41 @@ function MeetingsPage() {
           {/* Meetings Grid */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {MEETINGS.map((m) => (
-              <Card key={m.id} className="p-5 transition hover:shadow-[var(--shadow-glow)]">
-                <div className="mb-3 flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
+              <Card key={m.id} className="p-5 transition hover:shadow-[var(--shadow-glow)] relative">
+                {/* Urgent Meeting Banner if marked */}
+                {m.isUrgent && (
+                  <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-700 dark:text-rose-400">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <AlertTriangle className="h-4 w-4 text-rose-600 animate-pulse" />
+                      <span>🔥 CUỘC HỌP ĐỘT XUẤT KHẨN CẤP</span>
+                    </div>
+                    {m.urgentReason && (
+                      <span className="text-[11px] font-medium text-rose-600/90 italic truncate max-w-xs">
+                        {m.urgentReason}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Pill color={STATUS_COLOR[m.status]}>{t(STATUS_KEY[m.status])}</Pill>
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t(TYPE_KEY[m.type])}
                     </span>
+                    {m.zoomUrl && (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase border ${
+                          m.platform === "GOOGLE_MEET"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : m.platform === "UNIWORK"
+                            ? "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300"
+                            : "bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300"
+                        }`}
+                      >
+                        {m.platform || "ZOOM"}
+                      </span>
+                    )}
                   </div>
                   {m.department && (
                     <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
@@ -1019,7 +1207,18 @@ function MeetingsPage() {
                   )}
                 </div>
 
-                <h3 className="mb-2 text-base font-bold text-foreground">{m.title}</h3>
+                <h3 className="mb-1 text-base font-bold text-foreground">{m.title}</h3>
+
+                {/* Creator Information Badge */}
+                <div className="mb-2.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="font-semibold text-foreground">Người chủ trì / tạo:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">
+                    {m.creatorName || "Lê Hoàng Long"}
+                  </span>
+                  <span className="rounded bg-secondary/80 px-1.5 py-0.2 text-[10px] font-bold text-primary">
+                    ({m.creatorRole || "Tổng thư ký"})
+                  </span>
+                </div>
 
                 {m.status === "cancelled" && m.cancelReason && (
                   <div className="mb-3 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs text-rose-700 dark:text-rose-400">
@@ -1117,9 +1316,29 @@ function MeetingsPage() {
                       title="Mở phòng họp trực tuyến"
                     >
                       <Video className="h-3.5 w-3.5 text-blue-600" />
-                      <span>Vào Họp Online</span>
+                      <span>Vào Họp ({m.platform || "Online"})</span>
                     </button>
                   )}
+
+                  {/* Nút liên hệ người tạo khi có họp đột ngột quan trọng */}
+                  <button
+                    onClick={() => handleOpenContactHost(m)}
+                    className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
+                    title="Liên hệ người tạo cuộc họp để trao đổi hoặc sắp xếp lại lịch khi có việc đột xuất"
+                  >
+                    <Phone className="h-3.5 w-3.5 text-amber-600" />
+                    <span>Liên Hệ Điều Phối</span>
+                  </button>
+
+                  {/* Nút sắp xếp lại lịch */}
+                  <button
+                    onClick={() => handleOpenReschedule(m)}
+                    className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition cursor-pointer"
+                    title="Sắp xếp lại ngày, giờ hoặc hình thức cuộc họp"
+                  >
+                    <CalendarClock className="h-3.5 w-3.5 text-primary" />
+                    <span>Đổi Lịch</span>
+                  </button>
 
                   <button
                     onClick={() => handleOpenOfflineInvite(m)}
@@ -1127,8 +1346,9 @@ function MeetingsPage() {
                     title="Gửi giấy mời họp kèm bản đồ GPS Google Maps cho người tham gia"
                   >
                     <MapPin className="h-3.5 w-3.5 text-primary" />
-                    <span>Gửi Mời Offline & GPS</span>
+                    <span>Mời Offline</span>
                   </button>
+
                   {m.status === "upcoming" && (
                     <button
                       onClick={() => handleOpenCancel(m)}
@@ -1141,12 +1361,12 @@ function MeetingsPage() {
                     onClick={() => handleOpenEdit(m)}
                     className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 cursor-pointer"
                   >
-                    Chỉnh sửa
+                    Sửa
                   </button>
                   <button
-                    onClick={() => onDelete(m)}
-                    className="flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer transition shadow-2xs"
-                    title="Xóa cuộc họp này"
+                    onClick={() => handleOpenDelete(m)}
+                    className="flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer transition shadow-2xs"
+                    title="Xóa cuộc họp này hoàn toàn"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     <span>Xóa</span>
@@ -1670,6 +1890,106 @@ function MeetingsPage() {
                 />
               </div>
 
+              {/* Thẩm quyền người tạo cuộc họp (4 Cấp Bậc Được Phép Tạo Cuộc Họp) */}
+              <div className="rounded-xl border border-border bg-secondary/20 p-3.5 space-y-2.5 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-1">
+                  <label className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+                    Thẩm Quyền Người Tạo Cuộc Họp (Bắt buộc 1 trong 4 quyền) *
+                  </label>
+                  <span className="text-[10px] text-muted-foreground font-medium">Chủ tịch • Tổng thư ký • Admin • Trưởng ban</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { role: "CHỦ_TỊCH", label: "Chủ tịch", color: "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-300" },
+                    { role: "TỔNG_THƯ_KÝ", label: "Tổng thư ký", color: "border-blue-500 bg-blue-500/10 text-blue-900 dark:text-blue-300" },
+                    { role: "ADMIN", label: "Admin hệ thống", color: "border-purple-500 bg-purple-500/10 text-purple-900 dark:text-purple-300" },
+                    { role: "TRƯỞNG_BAN", label: "Trưởng ban", color: "border-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-300" },
+                  ].map((item) => (
+                    <button
+                      key={item.role}
+                      type="button"
+                      onClick={() => applyCreatorRolePreset(item.role as MeetingCreatorRole)}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-2 px-2 text-xs font-bold transition border cursor-pointer ${
+                        formCreatorRole === item.role
+                          ? `${item.color} shadow-xs ring-1 ring-primary/40 font-extrabold`
+                          : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <div>
+                    <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Người tạo cuộc họp *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formCreatorName}
+                      onChange={(e) => setFormCreatorName(e.target.value)}
+                      placeholder="Lê Hoàng Long"
+                      className="w-full rounded-lg border border-border bg-background p-2 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Số điện thoại liên hệ *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={formCreatorPhone}
+                      onChange={(e) => setFormCreatorPhone(e.target.value)}
+                      placeholder="0983 000 001"
+                      className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Email liên hệ điều phối</label>
+                    <input
+                      type="email"
+                      value={formCreatorEmail}
+                      onChange={(e) => setFormCreatorEmail(e.target.value)}
+                      placeholder="ceo.tongthuky@ceo1983.com"
+                      className="w-full rounded-lg border border-border bg-background p-2 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Cờ Cuộc Họp Đột Xuất / Khẩn Cấp */}
+              <div className={`rounded-xl border p-3 transition ${
+                formIsUrgent ? "border-red-400 bg-red-500/10" : "border-border bg-secondary/20"
+              }`}>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formIsUrgent}
+                    onChange={(e) => setFormIsUrgent(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-red-600 focus:ring-red-500"
+                  />
+                  <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                    <AlertTriangle className={`h-4 w-4 ${formIsUrgent ? "text-red-600 animate-pulse" : "text-muted-foreground"}`} />
+                    Cuộc họp đột xuất quan trọng / Khẩn cấp (Cần ưu tiên & điều phối sắp xếp lại lịch)
+                  </span>
+                </label>
+                {formIsUrgent && (
+                  <div className="mt-2.5 space-y-1 animate-in fade-in">
+                    <label className="text-[11px] font-semibold text-red-600 block">
+                      Lý do triệu tập đột xuất & yêu cầu điều phối:
+                    </label>
+                    <input
+                      type="text"
+                      value={formUrgentReason}
+                      onChange={(e) => setFormUrgentReason(e.target.value)}
+                      placeholder="Ví dụ: Họp giải quyết xung đột lịch / Biểu quyết nhân sự khẩn cấp..."
+                      className="w-full rounded-lg border border-red-300 dark:border-red-800 bg-background p-2 text-xs text-foreground"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-foreground block mb-1">{t("meet.fields.type")} *</label>
@@ -1864,28 +2184,81 @@ function MeetingsPage() {
               ) : (
                 <div className="space-y-3.5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-900 p-4 shadow-xs">
                   <div>
+                    <label className="font-bold text-slate-800 dark:text-slate-100 block mb-2 text-xs flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Video className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+                        Chọn Nền Tảng Họp Trực Tuyến (3 Tùy Chọn) *
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">Zoom • Google Meet • UniWork</span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: "ZOOM", label: "Zoom Meeting", desc: "Bảo mật cao", color: "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" },
+                        { id: "GOOGLE_MEET", label: "Google Meet", desc: "Trực tiếp trình duyệt", color: "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
+                        { id: "UNIWORK", label: "UniWork Meet", desc: "Hệ sinh thái UniWork", color: "border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300" },
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setFormPlatform(p.id as MeetingPlatform);
+                            if (p.id === "ZOOM" && (!formZoomUrl || formZoomUrl.includes("meet.google") || formZoomUrl.includes("uniwork"))) {
+                              setFormZoomUrl("https://zoom.us/j/88819839999");
+                            } else if (p.id === "GOOGLE_MEET" && (!formZoomUrl || formZoomUrl.includes("zoom.us") || formZoomUrl.includes("uniwork"))) {
+                              setFormZoomUrl("https://meet.google.com/ceo-1983-vip");
+                            } else if (p.id === "UNIWORK" && (!formZoomUrl || formZoomUrl.includes("zoom.us") || formZoomUrl.includes("meet.google"))) {
+                              setFormZoomUrl("https://uni-hrm.ubos.vn/meet/ceo1983");
+                            }
+                          }}
+                          className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition cursor-pointer ${
+                            formPlatform === p.id
+                              ? `${p.color} ring-2 ring-primary/40 font-bold shadow-xs`
+                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750"
+                          }`}
+                        >
+                          <span className="text-xs">{p.label}</span>
+                          <span className="text-[10px] opacity-75">{p.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
                     <label className="font-bold text-slate-800 dark:text-slate-100 block mb-1.5 text-xs flex items-center gap-1.5">
-                      <Video className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
-                      <span>Link họp Zoom / Google Meet trực tuyến *</span>
+                      <Video className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" />
+                      <span>Link tham gia {formPlatform === "ZOOM" ? "Zoom" : formPlatform === "GOOGLE_MEET" ? "Google Meet" : "UniWork Meet"} *</span>
                     </label>
                     <input
                       type="url"
                       required
                       value={formZoomUrl}
                       onChange={(e) => setFormZoomUrl(e.target.value)}
-                      placeholder="Ví dụ: https://zoom.us/j/88819839999 hoặc https://meet.google.com/abc-xyz"
+                      placeholder={
+                        formPlatform === "ZOOM"
+                          ? "https://zoom.us/j/88819839999"
+                          : formPlatform === "GOOGLE_MEET"
+                          ? "https://meet.google.com/abc-xyz"
+                          : "https://uni-hrm.ubos.vn/meet/room-id"
+                      }
                       className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95] transition"
                     />
                   </div>
+
                   <div>
                     <label className="font-bold text-slate-800 dark:text-slate-100 block mb-1.5 text-xs">
-                      Mô tả hiển thị phòng họp trực tuyến (Meeting ID & Mật khẩu)
+                      Mã phòng họp / Passcode / Mô tả thêm
                     </label>
                     <input
                       type="text"
                       value={formLocation}
                       onChange={(e) => setFormLocation(e.target.value)}
-                      placeholder="Ví dụ: Zoom ID: 888 1983 9999 • Mật khẩu: 1983"
+                      placeholder={
+                        formPlatform === "ZOOM"
+                          ? "Zoom ID: 888 1983 9999 • Mật khẩu: 1983"
+                          : formPlatform === "GOOGLE_MEET"
+                          ? "Google Meet ID: ceo-1983-vip"
+                          : "UniWork ID: UNI-1983 • PIN: 8888"
+                      }
                       className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95] transition"
                     />
                   </div>
@@ -2119,6 +2492,256 @@ function MeetingsPage() {
                     Phát Thư Mời Đến Đại Biểu
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal 7: Liên Hệ Người Tạo Cuộc Họp (Điều phối khi có họp đột xuất quan trọng) */}
+      {contactHostModalOpen && contactHostMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Phone className="h-5 w-5 text-[#003B95] dark:text-blue-400" />
+                Liên Hệ Người Triệu Tập Cuộc Họp
+              </h3>
+              <button
+                onClick={() => setContactHostModalOpen(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-900 p-3.5 space-y-1">
+                <p className="text-[11px] text-muted-foreground">Cuộc họp đang xét:</p>
+                <p className="font-bold text-sm text-foreground">{contactHostMeeting.title}</p>
+                <p className="text-slate-600 dark:text-slate-300">
+                  {contactHostMeeting.time} • Ngày {contactHostMeeting.date} • {contactHostMeeting.department}
+                </p>
+              </div>
+
+              {contactHostMeeting.isUrgent && (
+                <div className="rounded-xl border border-red-300 dark:border-red-800 bg-red-500/10 p-3 text-red-700 dark:text-red-300 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <AlertTriangle className="h-4 w-4 text-red-600 animate-pulse" />
+                    CUỘC HỌP ĐỘT XUẤT QUAN TRỌNG
+                  </div>
+                  {contactHostMeeting.urgentReason && (
+                    <p className="text-[11px] text-red-800 dark:text-red-200">
+                      <strong>Lý do:</strong> {contactHostMeeting.urgentReason}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="rounded-xl border border-border bg-secondary/20 p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-foreground">Thông tin Người Triệu Tập / Phụ trách:</span>
+                  <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase">
+                    {contactHostMeeting.creatorRole || "TỔNG_THƯ_KÝ"}
+                  </span>
+                </div>
+                <div className="space-y-1 text-slate-700 dark:text-slate-300">
+                  <p>
+                    <strong>Họ tên:</strong> {contactHostMeeting.creatorName || "Ban Thường Trực CEO 1983"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <strong>Số điện thoại:</strong>
+                    <a
+                      href={`tel:${contactHostMeeting.creatorPhone || "0983000001"}`}
+                      className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {contactHostMeeting.creatorPhone || "0983 000 001"}
+                    </a>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <strong>Email:</strong>
+                    <a
+                      href={`mailto:${contactHostMeeting.creatorEmail || "ceo.tongthuky@ceo1983.com"}`}
+                      className="text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <Mail className="h-3 w-3" />
+                      {contactHostMeeting.creatorEmail || "ceo.tongthuky@ceo1983.com"}
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-500/10 p-3 text-amber-900 dark:text-amber-200 text-[11px] leading-relaxed">
+                💡 <strong>Quy trình xử lý lịch họp đột xuất:</strong> Khi có cuộc họp đột ngột quan trọng, các bên chủ động liên hệ trực tiếp với người đã tạo cuộc họp này qua điện thoại/email để trao đổi giải pháp ưu tiên. Người tạo cuộc họp có thể vào bấm nút <strong>"Sắp Xếp Lại Lịch"</strong> bên dưới để đổi ngày/giờ mà không làm gián đoạn kế hoạch chung.
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setContactHostModalOpen(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`tel:${contactHostMeeting.creatorPhone || "0983000001"}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600 bg-blue-50 dark:bg-blue-950 px-3.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition cursor-pointer"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    Gọi Điện Ngay
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContactHostModalOpen(false);
+                      handleOpenReschedule(contactHostMeeting);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition cursor-pointer"
+                  >
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    Sắp Xếp Lại Lịch Họp
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 8: Sắp Xếp Lại Lịch Họp (Reschedule do họp đột xuất hoặc xung đột) */}
+      {rescheduleModalOpen && rescheduleMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <CalendarClock className="h-5 w-5 text-amber-500" />
+                Sắp Xếp Lại Lịch Cuộc Họp (Reschedule)
+              </h3>
+              <button
+                onClick={() => setRescheduleModalOpen(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRescheduleSubmit} className="space-y-4 text-xs">
+              <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-1">
+                <p className="text-[11px] text-muted-foreground">Cuộc họp:</p>
+                <p className="font-bold text-foreground">{rescheduleMeeting.title}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Lịch hiện tại: <strong>{rescheduleMeeting.time}</strong> ngày <strong>{rescheduleMeeting.date}</strong>
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-foreground block mb-1">Ngày họp mới *</label>
+                  <input
+                    type="date"
+                    required
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-foreground block mb-1">Giờ họp mới *</label>
+                  <input
+                    type="time"
+                    required
+                    value={rescheduleTime}
+                    onChange={(e) => setRescheduleTime(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-foreground block mb-1">
+                  Lý do điều chỉnh lịch (sẽ phát thông báo đến tất cả thành viên) *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="Ví dụ: Ưu tiên cuộc họp đột xuất của Ban Thường trực / Thay đổi theo thỏa thuận với chủ tọa..."
+                  className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setRescheduleModalOpen(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition cursor-pointer"
+                >
+                  {submitting ? "Đang cập nhật..." : "Lưu & Phát Thông Báo Đổi Lịch"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 9: Xác Nhận Xóa Cuộc Họp Vĩnh Viễn */}
+      {deleteModalOpen && deletingMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-card p-6 shadow-2xl animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+              <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Xác Nhận Xóa Cuộc Họp Vĩnh Viễn
+              </h3>
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="rounded-xl border border-red-200 dark:border-red-950 bg-red-50/50 dark:bg-red-950/20 p-3.5 space-y-1 text-red-900 dark:text-red-200">
+                <p className="font-bold text-sm">{deletingMeeting.title}</p>
+                <p className="text-[11px]">
+                  Thời gian: {deletingMeeting.time} • Ngày {deletingMeeting.date}
+                </p>
+                <p className="text-[11px]">
+                  Phòng ban: {deletingMeeting.department} ({deletingMeeting.attendees} người tham gia)
+                </p>
+              </div>
+
+              <p className="text-muted-foreground leading-relaxed">
+                ⚠️ <strong>Cảnh báo:</strong> Thao tác này sẽ xóa hoàn toàn cuộc họp khỏi hệ thống CEO 1983. Hành động này không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleConfirmDelete}
+                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 transition cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {submitting ? "Đang xóa..." : "Xác Nhận Xóa Vĩnh Viễn"}
+                </button>
               </div>
             </div>
           </div>

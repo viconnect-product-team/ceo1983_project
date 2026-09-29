@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
+  CheckCircle2,
   ChevronDown,
   Download,
   Eye,
@@ -392,11 +393,37 @@ function MembersPage() {
       await fetchNestApi(`/members/${deleting.id}`, { method: "DELETE" });
       toast.success(t("members.deleted"));
       setDeleting(null);
-      await refetch();
     } catch (err: any) {
       toast.error(err?.message || t("common.deleteError"));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const pendingCount = useMemo(() => members.filter((m) => m.status === "pending").length, [members]);
+
+  const handleApproveAndSendCredentials = async (m: Member) => {
+    if (
+      !confirm(
+        `Xác nhận phê duyệt hội viên "${m.name}"?\n\nHệ thống sẽ cấp mã hội viên, sinh mật khẩu ngẫu nhiên và tự động gửi email tài khoản chính thức đến: ${m.email || "email hội viên"}`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      toast.loading("Đang phê duyệt và gửi email tài khoản...", { id: "approve-member" });
+      const res = await fetchNestApi<any>(`/members/${m.id}/approve-and-send-credentials`, {
+        method: "POST",
+      });
+      toast.success(
+        `Đã phê duyệt thành công! Mã: ${res.memberCode} · Mật khẩu tạm: ${res.temporaryPassword}. Đã gửi email tới ${res.username}`,
+        { id: "approve-member", duration: 8000 }
+      );
+      await refetch();
+      qc.invalidateQueries({ queryKey: ["member-account-statuses"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Phê duyệt thất bại", { id: "approve-member" });
     }
   };
 
@@ -641,6 +668,55 @@ function MembersPage() {
         </div>
       )}
 
+      {/* Quick status tabs */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+        <button
+          onClick={() => setStatus("all")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            status === "all"
+              ? "bg-[#003B95] text-white shadow-sm"
+              : "bg-card border border-border text-foreground hover:bg-muted"
+          }`}
+        >
+          Tất cả ({members.length})
+        </button>
+        <button
+          onClick={() => setStatus("pending")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer ${
+            status === "pending"
+              ? "bg-amber-600 text-white shadow-sm"
+              : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+          }`}
+        >
+          <span>Chờ phê duyệt</span>
+          {pendingCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white">
+              {pendingCount}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setStatus("active")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            status === "active"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-card border border-border text-foreground hover:bg-muted"
+          }`}
+        >
+          Đang hoạt động ({members.filter((m) => m.status === "active").length})
+        </button>
+        <button
+          onClick={() => setStatus("expired")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            status === "expired"
+              ? "bg-rose-600 text-white shadow-sm"
+              : "bg-card border border-border text-foreground hover:bg-muted"
+          }`}
+        >
+          Hết hạn ({members.filter((m) => m.status === "expired").length})
+        </button>
+      </div>
+
       {/* Sticky search + filters */}
       <div className="sm:sticky sm:top-18 z-20 mb-5 rounded-2xl border border-border bg-card/95 p-4 shadow-[var(--shadow-card)] backdrop-blur">
         <div className="flex flex-wrap items-center gap-3">
@@ -815,6 +891,7 @@ function MembersPage() {
               onEdit={() => (isAdmin ? setEditing(m) : denyPermission())}
               onAccount={() => (isAdmin ? setAccountFor(m) : denyPermission())}
               onDelete={() => (isAdmin ? setDeleting(m) : denyPermission())}
+              onApprove={() => handleApproveAndSendCredentials(m)}
             />
           ))}
         </div>
@@ -948,6 +1025,16 @@ function MembersPage() {
                     )}
                     <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                       <div className="inline-flex items-center gap-1.5">
+                        {m.status === "pending" && (
+                          <button
+                            onClick={() => handleApproveAndSendCredentials(m)}
+                            title="Phê duyệt hồ sơ & Gửi email tài khoản"
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white px-2.5 py-1.5 text-xs font-bold shadow-sm transition-all whitespace-nowrap cursor-pointer"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
+                            <span>Duyệt & Gửi Email</span>
+                          </button>
+                        )}
                         <Link
                           to="/members/$memberId"
                           params={{ memberId: m.id }}
@@ -1154,6 +1241,7 @@ function MemberCard({
   onEdit,
   onAccount,
   onDelete,
+  onApprove,
 }: {
   m: Member;
   t: ReturnType<typeof useT>;
@@ -1170,6 +1258,7 @@ function MemberCard({
   onEdit: () => void;
   onAccount: () => void;
   onDelete: () => void;
+  onApprove?: () => void;
 }) {
   return (
     <div
@@ -1253,6 +1342,17 @@ function MemberCard({
         </span>
         {isAdmin && accountStatus && <AccountStatusBadge status={accountStatus} />}
       </div>
+
+      {/* pending approval action banner */}
+      {m.status === "pending" && onApprove && (
+        <button
+          onClick={onApprove}
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-2 text-xs font-bold shadow-sm transition-all cursor-pointer"
+        >
+          <CheckCircle2 className="h-4 w-4 text-amber-400" />
+          Phê duyệt & Gửi Email Tài Khoản
+        </button>
+      )}
 
       {/* actions */}
       <div className="mt-4 flex items-center gap-1.5 border-t border-border pt-3">

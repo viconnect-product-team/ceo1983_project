@@ -5,6 +5,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
+export type MeetingPlatform = "ZOOM" | "GOOGLE_MEET" | "UNIWORK";
+export type MeetingCreatorRole = "CHỦ_TỊCH" | "TỔNG_THƯ_KÝ" | "ADMIN" | "TRƯỞNG_BAN";
+
 export type Meeting = {
   id: string;
   title: string;
@@ -18,11 +21,69 @@ export type Meeting = {
   targetMembers?: any[];
   zoomUrl?: string;
   cancelReason?: string | null;
+  // Enhanced Fields
+  platform?: MeetingPlatform;
+  creatorRole?: MeetingCreatorRole;
+  creatorName?: string;
+  creatorPhone?: string;
+  creatorEmail?: string;
+  isUrgent?: boolean;
+  urgentReason?: string;
 };
 
 type Row = Record<string, unknown>;
 
 function mapMeeting(m: Row): Meeting {
+  const rawTarget = (m.target_members as any[]) ?? [];
+  const metaObj = rawTarget.find((item: any) => item && typeof item === "object" && item._creatorMeta)?._creatorMeta;
+  const zoomUrl = (m.zoom_url as string) ?? "";
+
+  let platform: MeetingPlatform = metaObj?.platform || "ZOOM";
+  if (!metaObj?.platform) {
+    if (zoomUrl.includes("meet.google.com")) platform = "GOOGLE_MEET";
+    else if (zoomUrl.includes("uniwork")) platform = "UNIWORK";
+    else platform = "ZOOM";
+  }
+
+  // Fallback defaults
+  const dept = (m.department as string) ?? "";
+  let defRole: MeetingCreatorRole = "TỔNG_THƯ_KÝ";
+  let defName = "Lê Hoàng Long (Tổng thư ký)";
+  let defPhone = "0983 000 001";
+  let defEmail = "ceo.tongthuky@ceo1983.com";
+
+  if (m.type === "board") {
+    defRole = "CHỦ_TỊCH";
+    defName = "Chủ tịch CLB CEO 1983";
+    defPhone = "0983 198 383";
+    defEmail = "chutich@ceo1983.com";
+  } else if (dept.includes("Thành viên")) {
+    defRole = "TRƯỞNG_BAN";
+    defName = "Nguyễn Văn Cường (Trưởng ban thành viên)";
+    defPhone = "0983 000 002";
+    defEmail = "ceo.thanhvien@ceo1983.com";
+  } else if (dept.includes("Tài chính")) {
+    defRole = "TRƯỞNG_BAN";
+    defName = "Vũ Thu Trang (Trưởng ban tài chính)";
+    defPhone = "0983 000 003";
+    defEmail = "ceo.taichinh@ceo1983.com";
+  } else if (dept.includes("Truyền thông")) {
+    defRole = "TRƯỞNG_BAN";
+    defName = "Phạm Quang Huy (Trưởng ban truyền thông)";
+    defPhone = "0983 000 004";
+    defEmail = "ceo.truyenthong@ceo1983.com";
+  } else if (dept.includes("Xúc tiến")) {
+    defRole = "TRƯỞNG_BAN";
+    defName = "Hoàng Minh Tuấn (Trưởng ban xúc tiến)";
+    defPhone = "0983 000 005";
+    defEmail = "ceo.xuctien@ceo1983.com";
+  } else if (dept.includes("Thiện nguyện")) {
+    defRole = "TRƯỞNG_BAN";
+    defName = "Trần Bích Thủy (Trưởng ban thiện nguyện)";
+    defPhone = "0983 000 011";
+    defEmail = "ceo.thiennguyen@ceo1983.com";
+  }
+
   return {
     id: m.code as string,
     title: m.title as string,
@@ -33,9 +94,16 @@ function mapMeeting(m: Row): Meeting {
     attendees: Number(m.attendees ?? 0),
     status: m.status as Meeting["status"],
     department: (m.department as string) ?? "",
-    targetMembers: (m.target_members as any[]) ?? [],
-    zoomUrl: (m.zoom_url as string) ?? "",
+    targetMembers: rawTarget.filter((item: any) => !(item && typeof item === "object" && item._creatorMeta)),
+    zoomUrl: zoomUrl,
     cancelReason: (m.cancel_reason as string) ?? null,
+    platform,
+    creatorRole: metaObj?.creatorRole || defRole,
+    creatorName: metaObj?.creatorName || defName,
+    creatorPhone: metaObj?.creatorPhone || defPhone,
+    creatorEmail: metaObj?.creatorEmail || defEmail,
+    isUrgent: metaObj?.isUrgent ?? false,
+    urgentReason: metaObj?.urgentReason ?? "",
   };
 }
 
@@ -62,6 +130,14 @@ const meetingInput = z.object({
   targetMembers: z.array(z.any()).default([]),
   zoomUrl: z.string().default(""),
   cancelReason: z.string().nullable().optional(),
+  // Extended fields
+  platform: z.enum(["ZOOM", "GOOGLE_MEET", "UNIWORK"]).default("ZOOM"),
+  creatorRole: z.enum(["CHỦ_TỊCH", "TỔNG_THƯ_KÝ", "ADMIN", "TRƯỞNG_BAN"]).default("TỔNG_THƯ_KÝ"),
+  creatorName: z.string().default(""),
+  creatorPhone: z.string().default(""),
+  creatorEmail: z.string().default(""),
+  isUrgent: z.boolean().default(false),
+  urgentReason: z.string().default(""),
 });
 
 export const createMeetingFn = createServerFn({ method: "POST" })
@@ -70,6 +146,23 @@ export const createMeetingFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Meeting> => {
     const { genCode, logActivity } = await import("./crud.server");
     const code = genCode("MT");
+
+    // Package creator meta into target_members safely
+    const enrichedTargetMembers = [
+      ...data.targetMembers.filter((item: any) => !(item && typeof item === "object" && item._creatorMeta)),
+      {
+        _creatorMeta: {
+          platform: data.platform,
+          creatorRole: data.creatorRole,
+          creatorName: data.creatorName,
+          creatorPhone: data.creatorPhone,
+          creatorEmail: data.creatorEmail,
+          isUrgent: data.isUrgent,
+          urgentReason: data.urgentReason,
+        },
+      },
+    ];
+
     const dbPayload = {
       code,
       title: data.title,
@@ -80,7 +173,7 @@ export const createMeetingFn = createServerFn({ method: "POST" })
       attendees: data.attendees,
       status: data.status,
       department: data.department,
-      target_members: data.targetMembers,
+      target_members: enrichedTargetMembers,
       zoom_url: data.zoomUrl,
       cancel_reason: data.cancelReason,
     };
@@ -91,7 +184,7 @@ export const createMeetingFn = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     await logActivity(getDb(context), {
-      action: "Tạo cuộc họp ban",
+      action: data.isUrgent ? "Tạo cuộc họp khẩn cấp đột xuất" : "Tạo cuộc họp ban",
       target: code,
       category: "meeting",
     });
@@ -103,10 +196,26 @@ export const updateMeetingFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => meetingInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<Meeting> => {
     const { logActivity } = await import("./crud.server");
-    const { id, targetMembers, zoomUrl, cancelReason, ...rest } = data;
+    const { id, targetMembers, zoomUrl, cancelReason, platform, creatorRole, creatorName, creatorPhone, creatorEmail, isUrgent, urgentReason, ...rest } = data;
+
+    const enrichedTargetMembers = [
+      ...targetMembers.filter((item: any) => !(item && typeof item === "object" && item._creatorMeta)),
+      {
+        _creatorMeta: {
+          platform,
+          creatorRole,
+          creatorName,
+          creatorPhone,
+          creatorEmail,
+          isUrgent,
+          urgentReason,
+        },
+      },
+    ];
+
     const dbUpdate = {
       ...rest,
-      target_members: targetMembers,
+      target_members: enrichedTargetMembers,
       zoom_url: zoomUrl,
       cancel_reason: cancelReason,
     };
@@ -118,7 +227,7 @@ export const updateMeetingFn = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     await logActivity(getDb(context), {
-      action: "Cập nhật cuộc họp",
+      action: "Cập nhật / Sắp xếp lại lịch cuộc họp",
       target: id,
       category: "meeting",
     });

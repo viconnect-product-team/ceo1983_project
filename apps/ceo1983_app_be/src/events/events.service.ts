@@ -854,9 +854,7 @@ export class EventsService {
       }
     }
 
-    // Thông báo vé sự kiện đẩy trực tiếp về App Hiệp Hội (E-Ticket, QR Check-in, Tin nhắn Action Card)
-    // Tạm thời chỉ gửi mail khi đăng ký tài khoản theo yêu cầu hệ thống.
-    /*
+    // Gửi email vé sự kiện điện tử (E-Ticket) có mã QR và mã số quay thưởng Lucky Draw
     if (email && email.includes('@')) {
       this.mailService.sendEventTicketEmail({
         to: email,
@@ -865,7 +863,7 @@ export class EventsService {
         company,
         position,
         eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
-        eventDate: event.date ? (event.date instanceof Date ? event.date.toISOString().slice(0, 10) : String(event.date).slice(0, 10)) : 'Xem chi tiết trong app',
+        eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
         eventLocation: event.location || 'Hà Nội',
         registrationId: regId,
         ticketType,
@@ -878,7 +876,6 @@ export class EventsService {
         this.logger.warn(`Failed to dispatch event ticket email to ${email}: ${err?.message}`);
       });
     }
-    */
 
     return {
       ok: true,
@@ -1686,5 +1683,143 @@ export class EventsService {
     `;
 
     return { success: true, id };
+  }
+
+  /**
+   * Đăng ký tham gia sự kiện dành cho khách vãng lai (quét mã QR đón tiếp tại sự kiện do Ban Truyền Thông đưa)
+   * Tự động gửi email:
+   * - Sự kiện có phí: Gửi email thanh toán phí sự kiện (VietQR, thông tin chuyển khoản, mã quay thưởng Lucky Draw, mã vé)
+   * - Sự kiện miễn phí: Gửi email xác nhận vé điện tử, mã QR check-in, và mã quay thưởng Lucky Draw
+   */
+  async guestRegister(eventId: string, guestData: any) {
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+    `.catch(() => []);
+
+    if (eventRows.length === 0) {
+      throw new NotFoundException('Không tìm thấy sự kiện');
+    }
+
+    const event = eventRows[0];
+    const fullName = (guestData?.fullName || '').trim();
+    const phone = (guestData?.phone || '').trim();
+    const email = (guestData?.email || '').trim().toLowerCase();
+    const company = (guestData?.company || '').trim();
+    const position = (guestData?.position || '').trim();
+    const ticketCount = Math.max(1, Number(guestData?.ticketCount) || 1);
+    const note = (guestData?.note || '').trim();
+
+    if (!fullName || !phone || !email) {
+      throw new BadRequestException('Vui lòng điền đầy đủ Họ tên, Số điện thoại và Email để nhận vé');
+    }
+
+    const ticketPrice = (event.ticket_price !== undefined && event.ticket_price !== null)
+      ? Number(event.ticket_price)
+      : ((event.fee !== undefined && event.fee !== null) ? Number(event.fee) : 0);
+    const isFree = ticketPrice === 0;
+    const totalAmount = ticketPrice * ticketCount;
+    const paymentStatus = isFree ? 'free' : 'pending';
+
+    // Sinh ID đăng ký liên tiếp
+    const lastReg = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.event_registrations WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+    `.catch(() => []);
+    const regId = lastReg.length > 0 ? (BigInt(lastReg[0].id) + 1n).toString() : `4${Math.floor(1000 + Math.random() * 9000)}`;
+    const luckyNum = String(Math.floor(1000 + Math.random() * 9000));
+    const memberCode = `GUEST-${luckyNum}`;
+    const ticketType = isFree ? 'Vé Mời Miễn Phí' : 'Vé Tiêu Chuẩn';
+
+    const qrPayload = JSON.stringify({
+      regId,
+      eventId,
+      fullName,
+      phone,
+      email,
+      company,
+      position,
+      ticketCount,
+      luckyNum,
+      isFree,
+      totalAmount,
+      note,
+    });
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.event_registrations (
+        id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, lucky_number, qr_payload, created_at, updated_at
+      ) VALUES (
+        ${regId},
+        ${eventId},
+        ${memberCode},
+        ${fullName},
+        ${email},
+        now()::date,
+        'confirmed',
+        ${ticketType},
+        ${event.association_id}::uuid,
+        ${paymentStatus},
+        ${totalAmount},
+        ${luckyNum},
+        ${qrPayload},
+        now(),
+        now()
+      )
+    `;
+
+    // Cập nhật số lượng người đăng ký
+    await this.prisma.$executeRaw`
+      UPDATE public.events SET registered = registered + ${ticketCount}, updated_at = now() WHERE id = ${eventId}
+    `.catch(() => null);
+
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
+    const invoiceNo = `EV${regId}`;
+    const vietQrUrl = isFree
+      ? ''
+      : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}&accountName=${encodeURIComponent('CLB CEO 1983')}`;
+
+    // Gửi email vé / thanh toán ngay lập tức cho người tham dự
+    try {
+      await this.mailService.sendEventTicketEmail({
+        to: email,
+        fullName,
+        phone,
+        company,
+        position,
+        eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+        eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
+        eventTime: event.time || '08:30 - 12:00',
+        eventLocation: event.location || 'Hà Nội',
+        registrationId: regId,
+        ticketType,
+        ticketCount,
+        luckyNumber: luckyNum,
+        isFree,
+        totalAmount,
+        qrCodeUrl,
+      });
+      this.logger.log(`Guest registration ticket email dispatched to ${email} (Lucky #${luckyNum})`);
+    } catch (err: any) {
+      this.logger.warn(`Failed to dispatch event ticket email to guest ${email}: ${err?.message}`);
+    }
+
+    return {
+      ok: true,
+      registered: true,
+      registrationId: regId,
+      luckyNumber: luckyNum,
+      isFree,
+      totalAmount,
+      vietQrUrl,
+      eventTitle: event.title || event.name,
+      eventDate: event.date,
+      eventLocation: event.location,
+      fullName,
+      email,
+      phone,
+      qrCodeUrl,
+      message: isFree
+        ? `Đăng ký vé miễn phí thành công! Mã quay thưởng của bạn là #${luckyNum}. Email vé đã được gửi tới ${email}.`
+        : `Đăng ký vé thành công! Mã quay thưởng là #${luckyNum}. Vui lòng thanh toán qua VietQR. Thông tin đã được gửi tới email ${email}.`,
+    };
   }
 }

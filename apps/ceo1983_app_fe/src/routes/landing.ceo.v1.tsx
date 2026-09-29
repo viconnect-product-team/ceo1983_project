@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Ceo1983LandingV1 } from "@/components/landing/Ceo1983LandingV1";
+import { Ceo1983MemberRegistrationForm } from "@/components/landing/Ceo1983MemberRegistrationForm";
 
-const TITLE = "CLB Doanh Nhân CEO 1983 — Nền Tảng Giao Thương Thượng Đỉnh";
-const DESC = "Hệ sinh thái kết nối giao thương B2B, quản trị mối quan hệ chiến lược và định danh số độc quyền dành riêng cho Doanh nhân Quý Hợi 1983 (HanoiBA).";
+const TITLE = "Đăng Ký Gia Nhập CLB Doanh Nhân CEO 1983 — ceo1983.com";
+const DESC = "Đơn đăng ký gia nhập CLB Doanh Nhân CEO 1983. Điền thông tin doanh nghiệp để kết nối giao thương và gia nhập cộng đồng doanh nhân 1983.";
 
 export const Route = createFileRoute("/landing/ceo/v1")({
   ssr: true,
@@ -23,6 +23,6 @@ export const Route = createFileRoute("/landing/ceo/v1")({
 });
 
 function Ceo1983CinematicRoute() {
-  return <Ceo1983LandingV1 />;
+  return <Ceo1983MemberRegistrationForm />;
 }
 

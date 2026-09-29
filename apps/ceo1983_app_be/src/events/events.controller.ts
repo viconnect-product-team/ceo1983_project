@@ -93,6 +93,14 @@ export class EventsController {
     return this.eventsService.registerForEvent(req.user.id, id, body);
   }
 
+  /**
+   * Đăng ký tham gia sự kiện công khai dành cho khách vãng lai quét mã QR tại bàn đón tiếp
+   */
+  @Post(':id/guest-register')
+  async guestRegister(@Param('id') id: string, @Body() body: any) {
+    return this.eventsService.guestRegister(id, body);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post(':id/cancel')
   async cancelEventRegistration(@Request() req: any, @Param('id') id: string, @Body('reason') reason?: string) {

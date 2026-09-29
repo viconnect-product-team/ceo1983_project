@@ -133,3 +133,56 @@ VITE_ENABLE_NFC=true
 1. Khi Admin thay đổi ma trận quyền trên CRM, Frontend gửi payload chuẩn `PUT /api/admin/permissions-matrix`.
 2. Backend cập nhật `roles` & `permissions` vào bảng `public.app_permissions` với transaction commit an toàn.
 3. Khi tải lại trang (mount), Frontend gọi `GET /api/admin/permissions-matrix` để nạp dữ liệu thực tế từ DB, tuyệt đối không dùng state tạm thời đè lên dữ liệu đã lưu.
+
+### Luồng 6: Quản lý Công Việc Đa Dạng (5 View Modes), Điều Khiển Zoom & Biểu Đồ Thống Kê
+1. Kiến trúc: Toàn bộ mã nguồn đặt tại `apps/ceo1983_app_fe/src/features/tasks/`.
+2. 5 Chế độ hiển thị:
+   - **Bảng (Table)**: Cột STT, mã CV, tiêu đề + link họp, ban phụ trách, người thực hiện, độ ưu tiên, hạn chót, tiến độ %, trạng thái, thao tác.
+   - **Lưới (Kanban)**: 5 cột trạng thái chuẩn với thanh điều khiển **Zoom to / Zoom nhỏ (Kích thước)** 3 cấp độ:
+     + *Thu nhỏ (Compact - 280px)*: Thu nhỏ để nhìn bao quát toàn bộ 5 cột trên màn hình.
+     + *Tiêu chuẩn (Standard - 345px)*: Kích thước tiêu chuẩn thoáng đãng, cân đối.
+     + *Phóng to (Spacious - 410px)*: Phóng to thẻ card, hiển thị chi tiết mô tả và nút vào họp.
+     + Bố cục flex trượt ngang mượt mà, loại bỏ triệt để lỗi co cụm dính chùm thẻ card.
+   - **Lịch (Calendar)**: Lưới 7 ngày/tuần dạng tháng, hiển thị badge việc theo ngày hết hạn kèm ký hiệu video meeting và nút thêm nhanh việc.
+   - **Biểu đồ Thống kê (Statistics & Analytics Dashboard)**:
+     + Dashboard phân tích điều hành chuyên sâu với Recharts.
+     + Biểu đồ tròn Donut: Cơ cấu phân bổ 5 trạng thái công việc kèm tỷ lệ hoàn thành %.
+     + Biểu đồ cột nhóm (Grouped Bar): So sánh việc đã xong vs đang làm vs quá hạn của từng Ban chuyên môn CEO 1983.
+     + Biểu đồ tiến độ trung bình (Area Chart) và phân bổ mức độ ưu tiên (Hỏa tốc, Cao, Trung bình).
+     + Bảng xếp hạng chi tiết hiệu suất các ban và sub-tab chuyển đổi sang Timeline Gantt 14 ngày.
+   - **Cây đơn vị (Org Tree)**: Phân cấp theo cơ cấu Ban Hiệp hội (CEO 1983 -> Ban Thiện Nguyện & An Sinh, Ban Xúc Tiến, Ban Truyền Thông, Ban Thành Viên...), tính % tiến độ trung bình ban, số lượng việc, và nút "Giao việc" theo từng ban.
+3. Tích hợp cuộc họp trực tuyến:
+   - Chọn 1 trong 3 nền tảng: **Zoom**, **Google Meet**, **UniWork**.
+   - Lưu trữ URL cuộc họp, thời gian bắt đầu, mã phòng/mật khẩu họp.
+   - Badge tham gia họp xuất hiện trên Thẻ việc (Kanban), Bảng (Table), Lịch (Calendar), Biểu đồ, và Drawer Chi tiết.
+
+### Luồng 7: Ma Trận Phân Quyền Chuẩn RBAC & Tách Biệt Chức Năng (RBAC Matrix Overhaul)
+1. Tách biệt 2 Tab chức năng độc lập (Không gộp chung quản trị tài khoản vào ma trận quyền):
+   - **Tab 1**: Ma Trận Phân Quyền 5 Cấp Bậc (Vai Trò x Chức Năng).
+   - **Tab 2**: Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản Cá Nhân.
+2. Cấu trúc Ma Trận Tab 1:
+   - **Dòng bên trái (Rows)**: Đúng 5 Vai trò chuẩn mực của Hiệp hội CEO 1983 kèm phạm vi quyền tối đa:
+     - `Quản trị`: Toàn quyền (Xem, Sửa, Xóa, Phân quyền).
+     - `Admin`: Quản trị vận hành (Xem, Sửa, Phân quyền).
+     - `Tổng thư ký`: Điều hành & Thư ký (Xem, Sửa).
+     - `Trưởng ban`: Quản lý chuyên ban bao gồm cả Ban Thiện Nguyện & An Sinh Xã Hội mới (Xem, Sửa).
+     - `Hội viên`: Thành viên chính thức (Chỉ Xem).
+   - **Cột bên trên (Columns)**: Từng chức năng riêng lẻ (Hội viên, Sự kiện, Cuộc họp, Công việc, Ban Thiện nguyện & An sinh, Tài chính, Giao thương, Bầu cử, Truyền thông, Hệ thống...).
+   - **Ô giao điểm (Cells)**: Render trực quan các pill/checkbox thao tác tương ứng (Xem, Sửa, Xóa, Phân quyền) được bật/tắt theo giới hạn từng vai trò.
+   - Hỗ trợ thêm chức năng mới, sửa tên chức năng, xóa chức năng động và thống kê KPI trực quan.
+
+### Luồng 8: Nâng Cấp Quản Lý Cuộc Họp & Xử Lý Khẩn Cấp (Meetings Refactoring)
+1. Hỗ trợ **3 Nền tảng họp trực tuyến**:
+   - **Zoom Meeting**: Phòng họp bảo mật cao, nhập Zoom URL + Passcode.
+   - **Google Meet**: Họp trực tiếp qua trình duyệt web không cần cài app.
+   - **UniWork Meet**: Họp bảo mật nội bộ trong hệ sinh thái UniWork.
+2. Thẩm quyền tạo cuộc họp:
+   - Giới hạn đúng 4 vai trò có thẩm quyền triệu tập: **Chủ tịch**, **Tổng thư ký**, **Admin**, **Trưởng ban**.
+   - Lưu trữ đầy đủ danh tính người triệu tập: Tên, Chức vụ, SĐT liên hệ, Email.
+3. Cơ chế xử lý **Cuộc họp đột ngột quan trọng (Khẩn cấp)** & Xung đột lịch:
+   - Cờ đánh dấu cuộc họp khẩn cấp (`isUrgent`) kèm lý do triệu tập đột xuất (`urgentReason`).
+   - Nút **"Liên Hệ Điều Phối"**: Mở modal hiển thị ngay thông tin người tạo cuộc họp kèm nút gọi điện thoại nhanh (`tel:`) và gửi email (`mailto:`) để thống nhất ưu tiên.
+   - Chức năng **"Sắp Xếp Lại Lịch Họp (Reschedule)"**: Người tạo cuộc họp hoặc quản trị viên có thể vào điều chỉnh ngày/giờ mới, hệ thống tự động phát thông báo broadcast dời lịch đến toàn thể thành viên.
+   - Chức năng **"Xóa Cuộc Họp"**: Nút xóa cuộc họp màu đỏ kèm modal xác nhận an toàn, xóa vĩnh viễn dữ liệu và thông báo thu hồi lịch họp.
+
+

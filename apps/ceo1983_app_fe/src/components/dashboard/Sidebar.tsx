@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Calendar,
   ClipboardList,
+  CheckSquare,
   ScanLine,
   QrCode as QrCodeIcon,
   Handshake,
@@ -98,6 +99,12 @@ const network: Item[] = [
   { key: "nav.opportunities", icon: Sparkles, to: "/opportunities" },
 ];
 const system: Item[] = [
+  {
+    key: "nav.tasks" as TKey,
+    icon: CheckSquare,
+    to: "/tasks",
+    label: "Quản lý công việc",
+  },
   { key: "nav.settings", icon: Settings, to: "/settings" },
   { key: "nav.activity", icon: History, to: "/activity" },
   {
