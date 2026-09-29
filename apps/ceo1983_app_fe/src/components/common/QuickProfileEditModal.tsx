@@ -14,8 +14,14 @@ import {
   Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { uploadFileToNest, fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { compressImage } from "@/lib/image";
+
+const quickProfileSchema = z.object({
+  name: z.string().trim().min(1, "Họ và tên không được phép để trống"),
+  phone: z.string().trim().min(1, "Số điện thoại không được phép để trống"),
+});
 
 export interface QuickProfileEditModalProps {
   open: boolean;
@@ -64,6 +70,7 @@ export function QuickProfileEditModal({
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +89,7 @@ export function QuickProfileEditModal({
       setAvatar(initialAvatar);
       setCover(initialCover);
       setCompanyLogo(initialCompanyLogo || null);
+      setErrors({});
     }
   }, [open, initialName, initialPhone, initialCompany, initialTitle, initialAvatar, initialCover, initialCompanyLogo]);
 
@@ -140,10 +148,17 @@ export function QuickProfileEditModal({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      toast.error("Vui lòng nhập họ và tên");
+    const result = quickProfileSchema.safeParse({ name, phone });
+    if (!result.success) {
+      const errMap: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errMap[key]) errMap[key] = issue.message;
+      }
+      setErrors(errMap);
       return;
     }
+    setErrors({});
 
     setSaving(true);
     try {
@@ -422,12 +437,23 @@ export function QuickProfileEditModal({
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                  }}
                   placeholder="Nhập họ và tên..."
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
-                  required
+                  className={`w-full rounded-xl border bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none transition ${
+                    errors.name
+                      ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
+                      : "border-slate-200 dark:border-slate-700 focus:border-[#003B95] dark:focus:border-amber-400"
+                  }`}
                 />
               </div>
+              {errors.name && (
+                <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                  {errors.name}
+                </p>
+              )}
             </div>
 
             <div>
@@ -439,12 +465,23 @@ export function QuickProfileEditModal({
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
+                  }}
                   placeholder="Số điện thoại / Hotline..."
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
-                  required
+                  className={`w-full rounded-xl border bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none transition ${
+                    errors.phone
+                      ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"
+                      : "border-slate-200 dark:border-slate-700 focus:border-[#003B95] dark:focus:border-amber-400"
+                  }`}
                 />
               </div>
+              {errors.phone && (
+                <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                  {errors.phone}
+                </p>
+              )}
             </div>
 
             <div>

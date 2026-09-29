@@ -421,14 +421,19 @@ function Home() {
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
     return (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo || null;
   });
+  const [companyLogoError, setCompanyLogoError] = useState(false);
 
   useEffect(() => {
     const sLogo = (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo;
     if (sLogo) {
       setCompanyLogo(sLogo);
+      setCompanyLogoError(false);
     } else if (user?.id) {
       const userLogo = localStorage.getItem(`vba_member_company_logo_${user.id}`);
-      if (userLogo) setCompanyLogo(userLogo);
+      if (userLogo) {
+        setCompanyLogo(userLogo);
+        setCompanyLogoError(false);
+      }
     }
     const sAvatar = effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || user?.avatar_url || (user as any)?.user_metadata?.avatar_url;
     if (sAvatar) setAvatarPhoto(sAvatar);
@@ -516,6 +521,7 @@ function Home() {
     try {
       const { dataUrl, blob } = await compressImage(file, 400, 400, 0.85);
       setCompanyLogo(dataUrl);
+      setCompanyLogoError(false);
 
       try {
         if (user?.id) {
@@ -874,16 +880,13 @@ function Home() {
             className="absolute top-2.5 right-3 z-10 cursor-pointer"
             title="Bấm vào để tải lên hoặc đổi Logo công ty"
           >
-            {companyLogo ? (
+            {companyLogo && !companyLogoError ? (
               <div className="flex items-center gap-1.5 p-1 transition group hover:opacity-90">
                 <img
                   src={resolveMediaUrl(companyLogo) || companyLogo}
-                  alt="Company Logo"
-                  onError={(e) => {
-                    const fallback = localStorage.getItem("vba_member_company_logo");
-                    if (fallback && fallback !== companyLogo) {
-                      (e.target as HTMLImageElement).src = fallback;
-                    }
+                  alt=""
+                  onError={() => {
+                    setCompanyLogoError(true);
                   }}
                   className="h-7 sm:h-8 w-auto max-w-[120px] object-contain drop-shadow filter"
                 />

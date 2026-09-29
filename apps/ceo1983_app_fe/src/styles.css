@@ -835,14 +835,14 @@ html.hc .bc-app {
   --bc-gold-600: #C29B69;
   --bc-gold-700: #9E7445;
 
-  --bc-mobile-accent: #D8B282;
-  --bc-mobile-accent-strong: #F6E1C3;
-  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.22);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #E6C59E 30%, #D8B282 65%, #C29B69 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FCF3E7 0%, #EED5B3 30%, #E2C095 65%, #CCA777 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #E6C59E 0%, #D8B282 35%, #C29B69 70%, #9E7445 100%);
-  --bc-mobile-accent-on: #000000;
-  --bc-mobile-shadow-cta: 0 4px 20px rgba(216, 178, 130, 0.35);
+  --bc-mobile-accent: #0047AB;
+  --bc-mobile-accent-strong: #3B82F6;
+  --bc-mobile-accent-soft: rgba(0, 71, 171, 0.18);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #0056D2 0%, #0047AB 45%, #003B95 75%, #002B70 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #1D6AE5 0%, #0056D2 45%, #0047AB 75%, #003B95 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #0047AB 0%, #003B95 45%, #002B70 75%, #001F52 100%);
+  --bc-mobile-accent-on: #ffffff;
+  --bc-mobile-shadow-cta: 0 4px 18px rgba(0, 59, 149, 0.32);
   --bc-mobile-success: #10B981;
   --bc-mobile-danger: #F43F5E;
 
@@ -1209,13 +1209,13 @@ html:not(.dark) .bc-app {
   --bc-gold-600: #C29B69;
   --bc-gold-700: #9E7445;
 
-  --bc-mobile-accent: #C29B69;
-  --bc-mobile-accent-strong: #9E7445;
-  --bc-mobile-accent-soft: rgba(216, 178, 130, 0.20);
-  --bc-mobile-accent-grad: linear-gradient(135deg, #F6E1C3 0%, #E6C59E 30%, #D8B282 65%, #C29B69 100%);
-  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #FCF3E7 0%, #EED5B3 30%, #E2C095 65%, #CCA777 100%);
-  --bc-mobile-accent-grad-active: linear-gradient(135deg, #E6C59E 0%, #D8B282 35%, #C29B69 70%, #9E7445 100%);
-  --bc-mobile-accent-on: #000000;
+  --bc-mobile-accent: #003B95;
+  --bc-mobile-accent-strong: #002B70;
+  --bc-mobile-accent-soft: rgba(0, 59, 149, 0.12);
+  --bc-mobile-accent-grad: linear-gradient(135deg, #0056D2 0%, #0047AB 45%, #003B95 75%, #002B70 100%);
+  --bc-mobile-accent-grad-hover: linear-gradient(135deg, #1D6AE5 0%, #0056D2 45%, #0047AB 75%, #003B95 100%);
+  --bc-mobile-accent-grad-active: linear-gradient(135deg, #0047AB 0%, #003B95 45%, #002B70 75%, #001F52 100%);
+  --bc-mobile-accent-on: #ffffff;
 
   --bc-mobile-shadow-surface: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
   --bc-mobile-shadow-gold: 0 4px 16px rgba(216, 178, 130, 0.30);
@@ -1225,7 +1225,7 @@ html:not(.dark) .bc-app {
 }
 
 /* Button & Active Tab Contrast Rules:
-   Buttons with gold gradient/accent must ALWAYS display crisp black text (#000000) and bold font in both light and dark themes */
+   Buttons with royal blue gradient/accent must ALWAYS display crisp white text (#ffffff) and bold font */
 .bc-app .bc-cta-gold,
 .bc-app button.bc-cta-gold,
 .bc-app a.bc-cta-gold,
@@ -1233,13 +1233,8 @@ html:not(.dark) .bc-app {
 .bc-app button.bc-cta-gold *,
 .bc-app a.bc-cta-gold *,
 .bc-app :not([class*="bg-clip-text"]):not(.text-transparent)[class*="bg-[var(--bc-mobile-accent-grad)]"],
-.bc-app :not([class*="bg-clip-text"]):not(.text-transparent)[class*="bg-[var(--bc-mobile-accent-grad)]"] :not([class*="bg-clip-text"]):not(.text-transparent),
-.bc-app .bg-gradient-to-r.from-amber-400,
-.bc-app .bg-amber-400,
-.bc-app .bg-amber-500,
-.bc-app [aria-pressed="true"].gold-active,
-.bc-app [aria-selected="true"].gold-active {
-  color: #000000 !important;
+.bc-app :not([class*="bg-clip-text"]):not(.text-transparent)[class*="bg-[var(--bc-mobile-accent-grad)]"] :not([class*="bg-clip-text"]):not(.text-transparent) {
+  color: #ffffff !important;
   font-weight: 700 !important;
 }
 

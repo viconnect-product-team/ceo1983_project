@@ -3324,6 +3324,8 @@ enum alert_severity {
 }
 
 enum app_role {
+  admin
+  member
   platform_admin
   tenant_admin
   staff

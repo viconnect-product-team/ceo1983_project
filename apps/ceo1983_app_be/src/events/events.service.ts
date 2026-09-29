@@ -21,6 +21,10 @@ export class CreateEventDto {
   banner?: string;
   ticketPrice?: number;
   fee?: number;
+  qrStaff?: any;
+  qrScanners?: any;
+  sponsors?: any;
+  description?: string;
   tickets?: {
     name: string;
     price?: number;
@@ -40,6 +44,10 @@ export class UpdateEventDto {
   banner?: string;
   ticketPrice?: number;
   fee?: number;
+  qrStaff?: any;
+  qrScanners?: any;
+  sponsors?: any;
+  description?: string;
 }
 
 @Injectable()
@@ -199,6 +207,10 @@ export class EventsService {
       status,
       type,
       qrFields: r.qr_fields ?? ['registration_code'],
+      description: r.description ?? '',
+      qrStaff: r.qr_scanners ?? [],
+      qrScanners: r.qr_scanners ?? [],
+      sponsors: r.sponsors ?? [],
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       associationId: r.association_id,
@@ -435,21 +447,38 @@ export class EventsService {
     }
 
     const timestamp = Date.now().toString(36).toUpperCase();
-    const eventId = `EV-${timestamp}`;
+    const lastRow = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.events WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+    `.catch(() => []);
+    const eventId = lastRow.length > 0 ? (BigInt(lastRow[0].id) + 1n).toString() : `EV-${timestamp}`;
     const qrFields = Array.from(new Set(data.qrFields && data.qrFields.length > 0 ? data.qrFields : ['registration_code']));
 
-    const evImg = data.image || data.banner || '';
-    const ticketPrice = Number(data.ticketPrice ?? data.fee ?? 0);
+    const maxTicketPrice = Array.isArray(data.tickets) && data.tickets.length > 0
+      ? Math.max(0, ...data.tickets.map((t: any) => Number(t.price) || 0))
+      : 0;
+    const ticketPrice = data.ticketPrice !== undefined && data.ticketPrice !== null && !isNaN(Number(data.ticketPrice))
+      ? Number(data.ticketPrice)
+      : (data.fee !== undefined && data.fee !== null && !isNaN(Number(data.fee)) ? Number(data.fee) : maxTicketPrice);
+    const rawScanners = data.qrScanners || data.qrStaff || [];
+    const scannersJson = JSON.stringify(Array.isArray(rawScanners) ? rawScanners : (rawScanners ? [rawScanners] : []));
+    const rawSponsors = data.sponsors || [];
+    const sponsorsJson = JSON.stringify(Array.isArray(rawSponsors) ? rawSponsors : (rawSponsors ? [rawSponsors] : []));
+    const desc = data.description ?? '';
+    const evImg = data.image || data.banner || null;
+
+    const rawDate = data.date ? String(data.date).trim() : '';
+    const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : new Date().toISOString().slice(0, 10);
+    const safeCapacity = Number.isFinite(Number(data.capacity)) ? Number(data.capacity) : 0;
 
     await this.prisma.$executeRaw`
       INSERT INTO public.events (
-        id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, created_at, updated_at
+        id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, qr_scanners, sponsors, created_at, updated_at
       ) VALUES (
         ${eventId},
         ${data.name},
-        ${data.date}::date,
+        ${safeDate}::date,
         ${data.location ?? ''},
-        ${data.capacity ?? 0},
+        ${safeCapacity},
         0,
         ${data.status ?? 'upcoming'},
         ${data.type ?? 'forum'},
@@ -459,6 +488,9 @@ export class EventsService {
         ${evImg},
         ${ticketPrice},
         ${ticketPrice},
+        ${desc},
+        ${scannersJson}::jsonb,
+        ${sponsorsJson}::jsonb,
         now(),
         now()
       )
@@ -469,7 +501,7 @@ export class EventsService {
     if (data.tickets && data.tickets.length > 0) {
       for (let i = 0; i < data.tickets.length; i++) {
         const t = data.tickets[i];
-        const ticketId = `TK-${timestamp}-${i}`;
+        const ticketId = `${eventId}-${i + 1}`;
         await this.prisma.$executeRaw`
           INSERT INTO public.event_ticket_types (
             id, event_id, association_id, name, price, quantity, description, sort_order, created_at, updated_at
@@ -547,19 +579,32 @@ export class EventsService {
     const status = data.status !== undefined ? data.status : current.status;
     const evImg = data.image !== undefined ? data.image : (data.banner !== undefined ? data.banner : current.image);
     const ticketPrice = data.ticketPrice !== undefined ? Number(data.ticketPrice) : (data.fee !== undefined ? Number(data.fee) : Number(current.ticket_price ?? 0));
+    const rawScanners = data.qrScanners !== undefined ? data.qrScanners : (data.qrStaff !== undefined ? data.qrStaff : current.qr_scanners);
+    const scannersJson = JSON.stringify(Array.isArray(rawScanners) ? rawScanners : (rawScanners ? [rawScanners] : []));
+    const rawSponsors = data.sponsors !== undefined ? data.sponsors : current.sponsors;
+    const sponsorsJson = JSON.stringify(Array.isArray(rawSponsors) ? rawSponsors : (rawSponsors ? [rawSponsors] : []));
+    const desc = data.description !== undefined ? data.description : (current.description ?? '');
+
+    const rawDate = date ? String(date).trim() : '';
+    const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : (current.date ? (current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10)) : new Date().toISOString().slice(0, 10));
+    const safeCapacity = Number.isFinite(Number(capacity)) ? Number(capacity) : (Number(current.capacity) || 0);
+    const safeTicketPrice = Number.isFinite(Number(ticketPrice)) ? Number(ticketPrice) : (Number(current.ticket_price) || 0);
 
     await this.prisma.$executeRaw`
       UPDATE public.events SET
         name = ${name},
-        date = ${date}::date,
+        date = ${safeDate}::date,
         location = ${location},
-        capacity = ${capacity},
+        capacity = ${safeCapacity},
         type = ${type},
         status = ${status},
         image = ${evImg},
         banner = ${evImg},
-        ticket_price = ${ticketPrice},
-        fee = ${ticketPrice},
+        ticket_price = ${safeTicketPrice},
+        fee = ${safeTicketPrice},
+        description = ${desc},
+        qr_scanners = ${scannersJson}::jsonb,
+        sponsors = ${sponsorsJson}::jsonb,
         updated_at = now()
       WHERE id = ${id}
     `;
@@ -591,41 +636,6 @@ export class EventsService {
     `;
 
     return this.getEventById(userId, id);
-  }
-
-  async deleteEvent(userId: string, id: string) {
-    const existing = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${id} LIMIT 1
-    `.catch(() => []);
-
-    if (existing.length === 0) {
-      throw new NotFoundException('Không tìm thấy sự kiện');
-    }
-
-    const current = existing[0];
-    const isAdmin = await this.checkIsAdmin(userId, current.association_id);
-    if (!isAdmin) {
-      throw new ForbiddenException('Chỉ quản trị viên mới có quyền xóa sự kiện');
-    }
-
-    // Cancel registrations
-    const cancelled = await this.prisma.$executeRaw`
-      UPDATE public.event_registrations
-      SET status = 'cancelled', updated_at = now()
-      WHERE event_id = ${id} AND status = 'confirmed'
-    `.catch(() => 0);
-
-    // Delete ticket types
-    await this.prisma.$executeRaw`
-      DELETE FROM public.event_ticket_types WHERE event_id = ${id}
-    `.catch(() => null);
-
-    // Delete event
-    await this.prisma.$executeRaw`
-      DELETE FROM public.events WHERE id = ${id}
-    `;
-
-    return { ok: true, cancelledRegistrations: cancelled };
   }
 
   // Mobile API: List events for mobile PWA
@@ -743,8 +753,10 @@ export class EventsService {
     const isFree = ticketPrice === 0;
     const totalAmount = ticketPrice * ticketCount;
     const paymentStatus = isFree ? 'free' : 'pending';
-
-    const regId = `REG-${Date.now().toString(36).toUpperCase()}`;
+    const lastReg = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.event_registrations WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+    `.catch(() => []);
+    const regId = lastReg.length > 0 ? (BigInt(lastReg[0].id) + 1n).toString() : '40001';
     const luckyNum = String(Math.floor(1000 + Math.random() * 9000));
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
@@ -1637,5 +1649,42 @@ export class EventsService {
       checkedIn,
       message: checkedIn ? 'Đã thêm và điểm danh sự kiện thành công!' : 'Đã thêm người tham gia thành công!',
     };
+  }
+
+  async deleteEvent(userId: string, id: string): Promise<{ success: boolean; id: string }> {
+    const events = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.events WHERE id = ${id} LIMIT 1
+    `;
+    if (!events.length) {
+      throw new NotFoundException(`Không tìm thấy sự kiện với mã: ${id}`);
+    }
+
+    // Cascade cleanups
+    await this.prisma.$executeRaw`
+      DELETE FROM public.member_checkins WHERE event_id = ${id}
+    `.catch(() => {});
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.event_registrations WHERE event_id = ${id}
+    `.catch(() => {});
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.event_ticket_types WHERE event_id = ${id}
+    `.catch(() => {});
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.event_feedback WHERE event_id = ${id}
+    `.catch(() => {});
+
+    await this.prisma.$executeRaw`
+      DELETE FROM public.event_materials WHERE event_id = ${id}
+    `.catch(() => {});
+
+    // Delete event record
+    await this.prisma.$executeRaw`
+      DELETE FROM public.events WHERE id = ${id}
+    `;
+
+    return { success: true, id };
   }
 }

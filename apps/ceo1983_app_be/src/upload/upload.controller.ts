@@ -105,6 +105,35 @@ export class UploadController {
   }
 
   @UseGuards(AuthGuard)
+  @Post('association-logo')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAssociationLogo(
+    @UploadedFile() file: any,
+    @Request() req: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only images are allowed.');
+    }
+    const userId = req.user?.id || req.user?.sub;
+    if (!userId) {
+      throw new BadRequestException('User ID not identified in auth session');
+    }
+    const associationId = req.body?.associationId || req.query?.associationId;
+
+    try {
+      const url = await this.uploadService.saveAssociationLogo(file, userId, associationId);
+      return { url };
+    } catch (err: any) {
+      console.error('uploadAssociationLogo error:', err);
+      throw new BadRequestException(err?.message || 'Failed to process association logo upload');
+    }
+  }
+
+  @UseGuards(AuthGuard)
   @Post('file')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
@@ -157,6 +186,29 @@ export class UploadController {
       filePathStr = req.url.replace(/^.*\/file\//, '').split('?')[0];
     }
     return this.serveFile(filePathStr, res);
+  }
+
+  @Get(':folder/:file')
+  async getFileDirectFolder(
+    @Param('folder') folder: string,
+    @Param('file') file: string,
+    @Res() res: any,
+  ) {
+    if (folder === 'file') {
+      return this.serveFile(file, res);
+    }
+    return this.serveFile(`${folder}/${file}`, res);
+  }
+
+  @Get(':file')
+  async getFileDirectSingle(
+    @Param('file') file: string,
+    @Res() res: any,
+  ) {
+    if (file === 'file') {
+      return res.status(404).send('Filename is missing');
+    }
+    return this.serveFile(file, res);
   }
 
   private async serveFile(rawPath: any, res: any) {

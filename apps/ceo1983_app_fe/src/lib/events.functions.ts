@@ -9,6 +9,18 @@ const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 export const QR_FIELDS = ["registration_code", "verify_url", "ticket_code"] as const;
 export type QrField = (typeof QR_FIELDS)[number];
 
+export type EventSponsorItem = {
+  sponsorId: string;
+  sponsorName: string;
+  packageId?: string;
+  packageName?: string;
+  tier?: "platinum" | "gold" | "silver" | "bronze";
+  packageType?: "cash" | "in_kind";
+  amount?: number;
+  inKindDescription?: string;
+  benefits?: string[];
+};
+
 export type EventItem = {
   id: string;
   name: string;
@@ -22,6 +34,8 @@ export type EventItem = {
   image?: string | null;
   banner?: string | null;
   ticketPrice?: number | null;
+  sponsors?: EventSponsorItem[];
+  qrScanners?: string[];
 };
 
 export type TicketType = {

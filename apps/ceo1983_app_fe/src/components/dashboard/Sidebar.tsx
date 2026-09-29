@@ -94,7 +94,6 @@ const comm: Item[] = [
 const network: Item[] = [
   { key: "nav.network", icon: MessageSquare, to: "/network" },
   { key: "nav.bc.meetings" as TKey, icon: Users2, to: "/business-connect/meetings", label: "Cuộc gặp" },
-  { key: "nav.bc.saved" as TKey, icon: Bookmark, to: "/business-connect/saved-cards", label: "Danh thiếp đã lưu" },
   { key: "nav.marketplace", icon: Store, to: "/marketplace" },
   { key: "nav.opportunities", icon: Sparkles, to: "/opportunities" },
 ];
@@ -108,8 +107,13 @@ const system: Item[] = [
     label: "Quản lý chủ đề",
   },
 ];
-const platform: Item[] = [{ key: "nav.platform", icon: ShieldCheck, to: "/platform" }];
 const admin: Item[] = [
+  {
+    key: "nav.permissions" as TKey,
+    icon: ShieldCheck,
+    to: "/permissions",
+    label: "Ma trận phân quyền",
+  },
   { key: "nav.documents", icon: FolderOpen, to: "/documents" },
   {
     key: "nav.bcAdmin",
@@ -410,6 +414,10 @@ export function Sidebar({
   });
 
   const filteredAdmin = admin.filter((it) => {
+    // Permissions restricted to ADM, PlatformAdmin, BQT
+    if (it.to === "/permissions") {
+      return isAdmin || isPlatformAdmin || isBQT || srsRole === "BQT" || srsRole === "ADM";
+    }
     // Business card management restricted to ADM, PlatformAdmin, BQT
     if (it.to === "/admin/business-cards") {
       return isAdmin || isPlatformAdmin || isBQT;
@@ -463,34 +471,6 @@ export function Sidebar({
           </button>
         )}
       </div>
-
-      {/* SRS Role Switcher Pill for Testing / RBAC Enforcement */}
-      {!isCollapsed && (
-        <div className="border-b border-sidebar-border/80 px-3 py-2 bg-sidebar-accent/25">
-          <div className="flex items-center justify-between gap-1 mb-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-sidebar-foreground/80">
-              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-              <span>Phân quyền SRS:</span>
-            </div>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">
-              {srsRole}
-            </span>
-          </div>
-          <select
-            value={srsRole}
-            onChange={(e) => setRoleOverride(e.target.value as any)}
-            className="w-full rounded-md border border-sidebar-border bg-sidebar px-2 py-1 text-[11px] font-medium text-sidebar-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-            title="Chuyển đổi vai trò để kiểm thử phân quyền CRM theo SRS"
-          >
-            <option value="HVT">HVT - Hội viên thường (Chỉ xem cơ bản)</option>
-            <option value="BTT">BTT - Ban Truyền thông & Soát vé QR</option>
-            <option value="BTC">BTC - Ban Tài chính & Dòng tiền</option>
-            <option value="BTV">BTV - Ban Thành viên & Gia hạn</option>
-            <option value="BQT">BQT - Ban Quản Trị Hiệp hội</option>
-            <option value="ADM">ADM - Quản trị viên Kỹ thuật</option>
-          </select>
-        </div>
-      )}
 
       {/* Collapsed expand button */}
       {!mobile && isCollapsed && (
@@ -586,15 +566,6 @@ export function Sidebar({
           <Group
             label="nav.group.admin"
             items={filteredAdmin}
-            pathname={pathname}
-            collapsed={isCollapsed}
-            onNavigate={onNavigate}
-          />
-        )}
-        {canViewPlatform && (
-          <Group
-            label="nav.group.platform"
-            items={platform}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}

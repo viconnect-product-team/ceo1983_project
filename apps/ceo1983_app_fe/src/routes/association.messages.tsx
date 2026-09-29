@@ -102,8 +102,8 @@ export function isSelfUser(
   const candidateUserId = (candidate.userId || "").trim().toLowerCase();
   const candidateName = (candidate.name || "").trim().toLowerCase();
 
-  // If group or system, never self
-  if (candidateCode.startsWith("group_") || candidateCode === "admin" || candidateCode === "system") {
+  // If group, channel or system, never self
+  if (candidateCode.startsWith("group_") || candidateCode.startsWith("channel_") || candidateCode === "admin" || candidateCode === "system") {
     return false;
   }
 
@@ -817,11 +817,10 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
     [user?.id],
   );
 
-  // Client-side direct fetch từ NestJS /dm/member/conversations bằng Bearer token
+  // Client-side direct fetch từ NestJS /dm/member/conversations bằng Bearer token cho môi trường Mobile APK
   const [directConversations, setDirectConversations] = useState<MyConversation[] | null>(null);
 
   const fetchDirectConversations = useCallback(() => {
-    if (!user?.id) return;
     fetchNestApi<any[]>("/dm/member/conversations")
       .then((items) => {
         if (Array.isArray(items)) {
@@ -851,23 +850,32 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         }
       })
       .catch(() => {});
-  }, [user?.id]);
+  }, []);
 
   useEffect(() => {
-    if (!user?.id) {
-      setDirectConversations(null);
-      return;
-    }
     fetchDirectConversations();
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && !document.hidden) {
         fetchDirectConversations();
       }
-    }, 3000);
+    }, 4000);
     return () => clearInterval(interval);
-  }, [user?.id, fetchDirectConversations]);
+  }, [fetchDirectConversations]);
 
-  const effectiveConversations = (directConversations && directConversations.length > 0) ? directConversations : conversations;
+  const effectiveConversations = useMemo(() => {
+    const listA = Array.isArray(directConversations) ? directConversations : [];
+    const listB = Array.isArray(conversations) ? conversations : [];
+    if (listA.length === 0) return listB;
+    if (listB.length === 0) return listA;
+    const map = new Map<string, MyConversation>();
+    for (const c of listB) {
+      if (c?.peerCode) map.set(String(c.peerCode).toLowerCase(), c);
+    }
+    for (const c of listA) {
+      if (c?.peerCode) map.set(String(c.peerCode).toLowerCase(), c);
+    }
+    return Array.from(map.values());
+  }, [directConversations, conversations]);
 
   const userRecentsKey = user?.id ? `vba.recent_conversations_${user.id}` : "vba.recent_conversations";
   const [localRecents, setLocalRecents] = useState<MyConversation[]>(() => {
@@ -902,14 +910,16 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
   const [selectedConvForAction, setSelectedConvForAction] = useState<MyConversation | null>(null);
   const [pinnedConvs, setPinnedConvs] = useState<Record<string, boolean>>(() => {
     try {
-      return JSON.parse(localStorage.getItem("vba_pinned_convs") || "{}");
+      const parsed = JSON.parse(localStorage.getItem("vba_pinned_convs") || "{}");
+      return (parsed && typeof parsed === "object") ? parsed : {};
     } catch {
       return {};
     }
   });
   const [mutedConvs, setMutedConvs] = useState<Record<string, boolean>>(() => {
     try {
-      return JSON.parse(localStorage.getItem("vba_muted_convs") || "{}");
+      const parsed = JSON.parse(localStorage.getItem("vba_muted_convs") || "{}");
+      return (parsed && typeof parsed === "object") ? parsed : {};
     } catch {
       return {};
     }
@@ -1434,15 +1444,16 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
       if (!pCode) return false;
       // 1. Loại bỏ chính tài khoản của mình khỏi danh sách tin nhắn
       if (isSelfUser(c, user, myMember)) return false;
-      if (c.isSystem || pCode === "admin" || pCode === "system" || c.isGroup || pCode.startsWith("group_")) return true;
+      if (c.isSystem || pCode === "admin" || pCode === "system" || c.isGroup || pCode.startsWith("group_") || pCode.startsWith("channel_")) return true;
       if (c.isConnected) return true;
       return Boolean(c.last && String(c.last).trim().length > 0);
     });
 
     list.sort((a, b) => {
-      // Cuộc trò chuyện được ghim luôn nằm trên cùng
-      const isPinnedA = Boolean(a?.peerCode && pinnedConvs[a.peerCode]);
-      const isPinnedB = Boolean(b?.peerCode && pinnedConvs[b.peerCode]);
+      // Cuộc trò chuyện được ghim luôn nằm trên cùng (bảo vệ an toàn không crash nếu pinnedConvs là null/undefined)
+      const safePinned = (pinnedConvs && typeof pinnedConvs === "object") ? pinnedConvs : {};
+      const isPinnedA = Boolean(a?.peerCode && safePinned[a.peerCode]);
+      const isPinnedB = Boolean(b?.peerCode && safePinned[b.peerCode]);
       if (isPinnedA && !isPinnedB) return -1;
       if (!isPinnedA && isPinnedB) return 1;
 
@@ -1533,9 +1544,9 @@ function ConversationList({ onOpen, members: propMembers }: { onOpen: (c: MyConv
         // Chưa đọc
         list = list.filter((c) => (c?.unread || 0) > 0);
       } else {
-        // "all" (Tất cả): Có tất cả tin nhắn đã rep lại hoặc tin nhắn hệ thống hoặc nhóm hoặc người đã kết nối
+        // "all" (Tất cả): Có tất cả tin nhắn đã rep lại hoặc tin nhắn hệ thống hoặc nhóm hoặc người đã kết nối hoặc Kênh Hiệp Hội
         list = list.filter(
-          (c) => isGroupConv(c) || c?.isSystem || c?.peerCode === "admin" || c?.peerCode === "system" || c?.isConnected || Boolean(c?.last && String(c.last).trim())
+          (c) => isGroupConv(c) || isChannelConv(c) || c?.isSystem || c?.peerCode === "admin" || c?.peerCode === "system" || c?.isConnected || Boolean(c?.last && String(c.last).trim())
         );
       }
 

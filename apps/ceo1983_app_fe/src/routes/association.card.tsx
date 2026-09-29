@@ -52,6 +52,7 @@ import {
 import heroImg from "@/assets/vba-hero.jpg";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { z } from "zod";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { Ceo1983BusinessCardVisit, isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVisit";
@@ -742,31 +743,21 @@ function CardScreen() {
             </button>
           </div>
 
-          {/* 4 nút tiện ích: Chỉnh sửa, Ghi NFC, Chia sẻ, Sao chép */}
-          <div className="grid grid-cols-4 gap-1.5 w-full">
+          {/* 3 nút tiện ích: Chỉnh sửa, Chia sẻ, Sao chép (Bỏ NFC per Req 5) */}
+          <div className="grid grid-cols-3 gap-2 w-full">
             <button
               id="tour-card-edit-action"
               type="button"
               onClick={() => setEditOpen(true)}
-              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
             >
               <Pencil className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
-              <span>Sửa</span>
-            </button>
-            <button
-              id="tour-card-nfc-action"
-              type="button"
-              onClick={shareNfc}
-              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition cursor-pointer shadow-xs"
-              title="Chạm thẻ thông minh NFC để ghi dữ liệu"
-            >
-              <Nfc className="h-3.5 w-3.5 text-emerald-500" />
-              <span>Ghi NFC</span>
+              <span>Sửa thẻ</span>
             </button>
             <button
               type="button"
               onClick={handleShareProfile}
-              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
             >
               <Share2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
               <span>Chia sẻ</span>
@@ -774,7 +765,7 @@ function CardScreen() {
             <button
               type="button"
               onClick={handleCopyLink}
-              className="flex h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11.5px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[12px] font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer shadow-xs"
             >
               {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />}
               <span>{copiedLink ? "Đã chép" : "Sao chép"}</span>
@@ -1042,6 +1033,11 @@ function CardScreen() {
   );
 }
 
+const cardProfileSchema = z.object({
+  name: z.string().trim().min(1, "Họ và tên không được phép để trống"),
+  phone: z.string().trim().min(1, "Số điện thoại không được phép để trống"),
+});
+
 function EditCardModal({
   member,
   current,
@@ -1060,6 +1056,7 @@ function EditCardModal({
   const avatarBlobRef = useRef<Blob | null>(null);
   const logoBlobRef = useRef<Blob | null>(null);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [name, setName] = useState(() => {
     return current.name || member.name || "";
   });
@@ -1233,6 +1230,18 @@ function EditCardModal({
   }
 
   async function submit() {
+    const result = cardProfileSchema.safeParse({ name, phone });
+    if (!result.success) {
+      const errMap: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errMap[key]) errMap[key] = issue.message;
+      }
+      setErrors(errMap);
+      return;
+    }
+    setErrors({});
+
     setBusy(true);
     try {
       // 1. Upload pending avatar & logo to MinIO to get permanent URLs
@@ -1445,14 +1454,24 @@ function EditCardModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
-                Họ và tên hội viên
+                Họ và tên hội viên <span className="text-rose-500">*</span>
               </label>
               <input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={member.name}
-                className={inputCls}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                }}
+                placeholder="Nhập họ và tên..."
+                className={`${inputCls} ${
+                  errors.name ? "border-rose-500 ring-1 ring-rose-500/30 focus:border-rose-500" : ""
+                }`}
               />
+              {errors.name && (
+                <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                  {errors.name}
+                </p>
+              )}
             </div>
 
             <div>
@@ -1462,7 +1481,7 @@ function EditCardModal({
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Tổng Giám Đốc / Founder"
+                placeholder="VD: Tổng Giám Đốc / Founder"
                 className={inputCls}
               />
             </div>
@@ -1474,21 +1493,31 @@ function EditCardModal({
               <input
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                placeholder={(member as any).company || member.title || "Tên công ty"}
+                placeholder="Nhập tên doanh nghiệp..."
                 className={inputCls}
               />
             </div>
 
             <div>
               <label className="mb-1 block text-[11.5px] font-medium text-slate-600 dark:text-slate-400">
-                Số điện thoại / Hotline
+                Số điện thoại / Hotline <span className="text-rose-500">*</span>
               </label>
               <input
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder={member.phone || "09xxxxxxx"}
-                className={inputCls}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
+                }}
+                placeholder="Nhập số điện thoại..."
+                className={`${inputCls} ${
+                  errors.phone ? "border-rose-500 ring-1 ring-rose-500/30 focus:border-rose-500" : ""
+                }`}
               />
+              {errors.phone && (
+                <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                  {errors.phone}
+                </p>
+              )}
             </div>
 
             <div>
@@ -1498,7 +1527,7 @@ function EditCardModal({
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={member.email || "email@company.com"}
+                placeholder="Nhập địa chỉ email..."
                 className={inputCls}
               />
             </div>

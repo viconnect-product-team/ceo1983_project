@@ -102,13 +102,29 @@ const TIER_META: Record<
 /**
  * Sponsors / partners showcase section for the event detail page.
  */
-export function EventSponsors({ sponsors: propSponsors }: { sponsors?: Sponsor[] }) {
+export function EventSponsors({ sponsors: propSponsors }: { sponsors?: any[] }) {
   const t = useT();
   const fmt = useFmt();
   const { data: rawSponsors } = useServerData<Sponsor[]>(() => listSponsorsFn(), []);
 
   const allSponsors = useMemo(() => {
-    if (propSponsors && propSponsors.length > 0) return propSponsors;
+    if (propSponsors && propSponsors.length > 0) {
+      return propSponsors.map((s: any) => ({
+        id: s.id || s.sponsorId || "",
+        name: s.name || s.sponsorName || "",
+        tier: s.tier || "bronze",
+        sponsorType: s.sponsorType || "regular",
+        packageType: s.packageType || "cash",
+        inKindDescription: s.inKindDescription || "",
+        contact: s.contact || "Đại diện Doanh nghiệp",
+        email: s.email || "",
+        phone: s.phone || "",
+        amount: Number(s.amount || 0),
+        events: s.events || 1,
+        since: s.since || "",
+        status: s.status || "active",
+      })) as Sponsor[];
+    }
     if (Array.isArray(rawSponsors) && rawSponsors.length > 0) return rawSponsors;
     return FALLBACK_EVENT_SPONSORS;
   }, [propSponsors, rawSponsors]);

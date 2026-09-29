@@ -23,6 +23,7 @@ import {
   Trash2,
   Ticket,
   QrCode,
+  MessageSquare,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -139,6 +140,30 @@ function formatNotifBody(n: any): string {
     return "Yêu cầu gia nhập cộng đồng của bạn chưa được phê duyệt.";
   }
   return b;
+}
+
+function getChannelOrPeerForNotif(n: any): string {
+  const kind = String(n.notificationKind || n.type || '').toLowerCase();
+  const text = `${n.title || ''} ${n.body || ''}`.toLowerCase();
+  if (kind.includes('event') || text.includes('sự kiện') || text.includes('hội nghị') || text.includes('cuộc họp')) {
+    return 'channel_events';
+  }
+  if (kind.includes('opportunity') || kind.includes('deal') || text.includes('b2b') || text.includes('giao thương')) {
+    return 'channel_deals';
+  }
+  if (text.includes('xúc tiến') || text.includes('thương mại')) {
+    return 'channel_promotion';
+  }
+  if (kind.includes('fee') || text.includes('hội phí') || text.includes('ban thư ký') || text.includes('điều lệ')) {
+    return 'channel_secretariat';
+  }
+  if (text.includes('truyền thông') || text.includes('báo chí') || text.includes('tin tức')) {
+    return 'channel_media';
+  }
+  if (n.fromId && n.fromId !== 'admin') {
+    return n.fromId;
+  }
+  return 'channel_media';
 }
 
 const LEAD_STATUS_LABEL: Record<LeadWorkflowStatus, TKey> = {
@@ -534,6 +559,51 @@ function NotificationsScreen() {
   const [query, setQuery] = useState(search.q ?? "");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<MyNotification | null>(null);
+
+  const [pushedMessageIds, setPushedMessageIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const saved = localStorage.getItem("pushed_to_messages_notif_ids");
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {}
+    return new Set();
+  });
+
+  useEffect(() => {
+    const handlePushed = () => {
+      try {
+        const saved = localStorage.getItem("pushed_to_messages_notif_ids");
+        if (saved) setPushedMessageIds(new Set(JSON.parse(saved)));
+      } catch {}
+    };
+    window.addEventListener("vba:notification_pushed_to_messages", handlePushed);
+    window.addEventListener("storage", handlePushed);
+    return () => {
+      window.removeEventListener("vba:notification_pushed_to_messages", handlePushed);
+      window.removeEventListener("storage", handlePushed);
+    };
+  }, []);
+
+  const canViewInMessages = (n: any): boolean => {
+    if (!n) return false;
+    const idStr = String(n.id || "");
+    const codeStr = String(n.code || "");
+    const refIdStr = String(n.refId || "");
+
+    const isPushed =
+      pushedMessageIds.has(idStr) ||
+      pushedMessageIds.has(codeStr) ||
+      pushedMessageIds.has(refIdStr) ||
+      n.pushedToMessages === true ||
+      n.pushed_to_messages === true ||
+      n.inMessages === true ||
+      n.in_messages === true ||
+      (n.targetChannel && n.targetChannel !== "none") ||
+      (n.target_channel && n.target_channel !== "none") ||
+      (n.actionUrl && n.actionUrl.includes("/messages"));
+
+    return Boolean(isPushed);
+  };
 
   const isLuckyDrawNotification = (n: any): boolean => {
     if (!n) return false;
@@ -1067,259 +1137,13 @@ function NotificationsScreen() {
                   )}
                 </div>
 
-                <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--vba-text-muted)] line-clamp-2">
+                {/* Đoạn preview ngắn (1 dòng rút gọn) */}
+                <p className="mt-1 text-[11.5px] leading-snug text-[var(--vba-text-muted)] line-clamp-1 truncate">
                   {formatNotifBody(n)}
                 </p>
 
-                {/* Thao tác Lời mời kết bạn */}
-                {isFriendReq && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80">
-                    {connStatus === "accepted" ? (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 border-2 border-emerald-500 text-emerald-800 dark:text-emerald-200 text-xs font-black shadow-xs">
-                        <Check className="size-4 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
-                        <span>Đã đồng ý kết bạn</span>
-                      </div>
-                    ) : connStatus === "declined" ? (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-400 text-rose-700 dark:text-rose-300 text-xs font-bold shadow-xs">
-                        <X className="size-4 text-rose-500" />
-                        <span>Đã từ chối lời mời</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <button
-                          type="button"
-                          disabled={actionBusy === n.id}
-                          onClick={() => handleAcceptFriend(n)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-black shadow-md transition-all cursor-pointer disabled:opacity-50"
-                        >
-                          {actionBusy === n.id ? (
-                            <Loader2 className="size-4 animate-spin" />
-                          ) : (
-                            <UserCheck className="size-4 stroke-[2.5]" />
-                          )}
-                          <span>Đồng ý kết bạn</span>
-                        </button>
-                        <button
-                          type="button"
-                          disabled={actionBusy === n.id}
-                          onClick={() => handleDeclineFriend(n)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 active:scale-95 border-2 border-rose-400 dark:border-rose-600 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                        >
-                          <UserX className="size-4 stroke-[2.5]" />
-                          <span>Từ chối</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Thẻ biểu quyết tương tác trực tiếp (Đang mở) */}
-                {((n.type === "voting" || n.notificationKind === "interactive_poll" || n.refType === "voting" || Boolean(n.safeDisplayData?.pollId)) &&
-                  n.safeDisplayData?.options &&
-                  !(n.notificationKind === "poll_result" || (n as any).eventKind === "poll_closed" || (n.safeDisplayData as any)?.isClosed)) && (
-                  <div className="mt-3 p-3 rounded-xl bg-amber-500/10 dark:bg-amber-500/10 border border-amber-500/25 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="text-[11.5px] font-bold text-[#2E3192] dark:text-amber-300">
-                        Bình chọn ý kiến của bạn:
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30">
-                        🏛️ Bỏ phiếu qua Hiệp hội App
-                      </span>
-                    </div>
-                    <div className="space-y-1.5">
-                      {n.safeDisplayData.options.map((opt: any) => {
-                        const pollId = n.safeDisplayData.pollId || n.refId;
-                        const isSelected = votedPolls[pollId] === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            onClick={() => handleQuickVote(pollId, opt.id)}
-                            className={`w-full p-2.5 rounded-lg text-left text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
-                              isSelected
-                                ? "bg-[var(--vba-gold)] text-[#071322] border-[var(--vba-gold)] shadow-sm"
-                                : "bg-white dark:bg-[#151f2e] border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-amber-400"
-                            }`}
-                          >
-                            <span>{opt.title}</span>
-                            {isSelected ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold">
-                                <Check className="size-3.5" />
-                                <span>Đã chọn</span>
-                              </span>
-                            ) : (
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">Bình chọn</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {votedPolls[n.safeDisplayData.pollId || n.refId] && (
-                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 pt-1">
-                        <CheckCircle2 className="size-3.5" />
-                        <span>Đã ghi nhận biểu quyết thành công qua Hiệp hội App.</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Thẻ kết quả biểu quyết đã kết thúc */}
-                {(n.notificationKind === "poll_result" || (n as any).eventKind === "poll_closed" || (n.safeDisplayData as any)?.isClosed) && n.safeDisplayData?.options && (
-                  <div className="mt-3 p-3.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-[12px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                        <Trophy className="size-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>Kết quả biểu quyết (Đã kết thúc)</span>
-                      </div>
-                      <span className="text-[10.5px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">
-                        {n.safeDisplayData.totalVotes || 0} lượt bầu
-                      </span>
-                    </div>
-
-                    {n.safeDisplayData.winner && (
-                      <div className="p-2.5 rounded-lg bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/30 flex items-center justify-between">
-                        <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                          🏆 Phương án chiến thắng: {n.safeDisplayData.winner.title}
-                        </span>
-                        <span className="text-xs font-black text-emerald-700 dark:text-emerald-300">
-                          {n.safeDisplayData.winner.percentage}%
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="space-y-2 pt-1">
-                      {n.safeDisplayData.options.map((opt: any) => {
-                        const isWinner = n.safeDisplayData.winner?.id === opt.id || opt.isLeading;
-                        return (
-                          <div key={opt.id} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className={`font-medium ${isWinner ? "font-bold text-emerald-800 dark:text-emerald-300" : "text-slate-700 dark:text-slate-300"}`}>
-                                {opt.title} {isWinner && "✓"}
-                              </span>
-                              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
-                                {opt.votesCount || opt.votes_count || 0} phiếu ({opt.percentage || 0}%)
-                              </span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${isWinner ? "bg-emerald-500" : "bg-slate-400 dark:bg-slate-500"}`}
-                                style={{ width: `${Math.max(Number(opt.percentage || 0), 2)}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {n.safeDisplayData.sourceStats && (
-                      <div className="pt-2 border-t border-emerald-500/20 flex flex-wrap items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300">
-                        <span className="font-semibold">Nguồn tham gia:</span>
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium">
-                          🏛️ App Hiệp hội: {n.safeDisplayData.sourceStats.associationApp || 0}
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300 font-medium">
-                          💻 CRM: {n.safeDisplayData.sourceStats.crm || 0}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Thẻ chúc mừng trúng thưởng Vòng Quay May Mắn (Lucky Draw Winner) */}
-                {(n.notificationKind === "lucky_draw_winner" ||
-                  (n as any).notification_kind === "lucky_draw_winner" ||
-                  n.title?.toLowerCase().includes("trúng thưởng") ||
-                  n.body?.toLowerCase().includes("trúng thưởng") ||
-                  Boolean(n.safeDisplayData?.luckyNumber)) && (
-                  <div className="mt-3 p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 via-rose-500/15 to-amber-500/10 border-2 border-amber-500/50 shadow-md space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-white shadow-sm animate-bounce">
-                          <Trophy className="h-4 w-4" />
-                        </span>
-                        <div>
-                          <h4 className="text-xs font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                            🎉 CHÚC MỪNG TRÚNG THƯỞNG!
-                          </h4>
-                          <span className="text-[10px] text-muted-foreground font-semibold">
-                            {n.safeDisplayData?.eventName || "Vòng quay may mắn sự kiện"}
-                          </span>
-                        </div>
-                      </div>
-                      {n.safeDisplayData?.luckyNumber && (
-                        <span className="px-2.5 py-1 rounded-full bg-amber-500/25 border border-amber-500/40 text-xs font-mono font-black text-amber-700 dark:text-amber-300">
-                          Mã vé: {n.safeDisplayData.luckyNumber}
-                        </span>
-                      )}
-                    </div>
-
-                    {n.safeDisplayData?.prizeName && (
-                      <div className="p-2.5 rounded-xl bg-white/70 dark:bg-slate-900/80 border border-amber-500/30 text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
-                        <span>Phần thưởng: {n.safeDisplayData.prizeName}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-slate-600 dark:text-slate-400">
-                        Liên hệ Ban Tổ Chức tại quầy lễ tân để nhận quà
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void markRead({ data: { id: n.id } }).catch(() => {});
-                          navigate({ to: "/association/messages", search: { peerCode: "admin" } });
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-[11px] font-bold shadow-xs transition cursor-pointer"
-                      >
-                        Nhắn tin BTC
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Thẻ nhắc nhở thanh toán quá hạn */}
-                {(n.type === "fee" || n.notificationKind === "overdue_payment_reminder" || Boolean(n.safeDisplayData?.invoiceId)) && n.safeDisplayData?.amount && (
-                  <div className="mt-3 p-3 rounded-xl bg-red-500/10 dark:bg-red-500/15 border border-red-500/30 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-red-700 dark:text-red-300">
-                        Số tiền cần thanh toán:
-                      </span>
-                      <span className="text-sm font-extrabold text-red-600 dark:text-red-400">
-                        {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(n.safeDisplayData.amount))}
-                      </span>
-                    </div>
-                    {n.safeDisplayData.dueDate && !isNaN(new Date(n.safeDisplayData.dueDate).getTime()) && (
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Hạn chót: {new Date(n.safeDisplayData.dueDate).toLocaleDateString("vi-VN")}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handlePayNotification(n)}
-                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-[0.99]"
-                    >
-                      <Wallet className="size-3.5 text-white" />
-                      <span>Thanh toán ngay</span>
-                    </button>
-                  </div>
-                )}
-
-                {n.refType === "renewal_audit" && n.refId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void markRead({ data: { id: n.id } }).catch(() => {});
-                      void navigate({ to: "/association/renew/audit", search: { ref: n.refId as string } });
-                    }}
-                    className="mt-2 inline-flex items-center gap-1 rounded-xl border border-[var(--vba-border)] px-2.5 py-1 text-[11px] font-semibold text-[var(--vba-gold)] transition hover:bg-[var(--vba-gold-soft)] cursor-pointer"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    {t("m.notifications.renewal.openAudit")}
-                  </button>
-                )}
-
-                <div className="mt-3 flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                {/* Thanh Action rút gọn */}
+                <div className="mt-2.5 flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
                   {n.dismissed ? (
                     <button
                       type="button"
@@ -1336,46 +1160,68 @@ function NotificationsScreen() {
                     </button>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedNotif(n);
-                          if (n.unread && n.personal) onMarkOneRead(n);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3.5 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                        style={{ color: "#ffffff" }}
-                      >
-                        <Eye className="h-3.5 w-3.5 text-white" />
-                        <span className="text-white font-bold">Xem chi tiết</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {/* Nút Action 1: Xem trong Tin nhắn (Chỉ hiển thị khi đã được bấm Đưa vào tin nhắn ở CRM) */}
+                        {canViewInMessages(n) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (n.unread && n.personal) onMarkOneRead(n);
+                              const targetChannel = getChannelOrPeerForNotif(n);
+                              void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                            style={{ color: "#ffffff" }}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5 text-white" />
+                            <span>Xem tin nhắn</span>
+                          </button>
+                        )}
 
-                      <button
-                        type="button"
-                        disabled={rowBusy === n.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          dismissTriggerRef.current = e.currentTarget;
-                          setConfirmDismiss(n);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                      >
-                        <EyeOff className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
-                        <span>Ẩn</span>
-                      </button>
-                      <button
-                        type="button"
-                        disabled={rowBusy === n.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteTriggerRef.current = e.currentTarget;
-                          setConfirmDelete(n);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 px-3 py-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                        <span>Xóa</span>
-                      </button>
+                        {/* Nút Action 2: Xem chi tiết (mở modal hiển thị toàn bộ nội dung & thẻ tương tác) */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedNotif(n);
+                            if (n.unread && n.personal) onMarkOneRead(n);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-slate-500" />
+                          <span>Chi tiết</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={rowBusy === n.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismissTriggerRef.current = e.currentTarget;
+                            setConfirmDismiss(n);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[10.5px] font-bold text-slate-600 dark:text-slate-300 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                        >
+                          <EyeOff className="h-3.5 w-3.5 text-slate-500" />
+                          <span>Ẩn</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={rowBusy === n.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTriggerRef.current = e.currentTarget;
+                            setConfirmDelete(n);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 px-2 py-1.5 text-[10.5px] font-bold text-rose-600 dark:text-rose-400 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                          <span>Xóa</span>
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

@@ -33,6 +33,8 @@ import { EventSponsors } from "@/components/dashboard/EventSponsors";
 import { EventFeed } from "@/components/dashboard/EventFeed";
 import { EventQrConfigModal } from "@/components/dashboard/EventQrConfigModal";
 import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGatekeeperModal";
+import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
+import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
 import {
   type EventItem,
   type Registration,
@@ -205,11 +207,21 @@ function EventDetailPage() {
     { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
     {
       name: "qrStaff",
-      label: "Người thực hiện quét mã QR tại sự kiện",
-      type: "text",
-      placeholder: "VD: Ban Lễ Tân — 0983 198 383",
+      label: "Người thực hiện quét mã QR (Ban Truyền Thông)",
+      type: "custom",
+      render: (val, onChange) => (
+        <EventQrStaffSelector value={val || []} onChange={onChange} />
+      ),
     },
     { name: "description", label: "Mô tả / Thông tin sự kiện", type: "textarea" },
+    {
+      name: "sponsors",
+      label: "Nhà tài trợ & Gói đồng hành",
+      type: "custom",
+      render: (val, onChange) => (
+        <EventSponsorPackageSelector eventId={event?.id} value={val || []} onChange={onChange} />
+      ),
+    },
     {
       name: "type",
       label: t("events.col.type"),
@@ -241,7 +253,8 @@ function EventDetailPage() {
         ...v,
         capacity: v.capacity ? Number(v.capacity) : 0,
         imageUrl: v.image || (v as any).imageUrl,
-        qrStaff: v.qrStaff || (v as any).qrStaff,
+        qrStaff: v.qrStaff || [],
+        qrScanners: v.qrStaff || [],
         description: v.description || (v as any).description,
       };
       await fetchNestApi(`/events/${event.id}`, {
@@ -363,9 +376,9 @@ function EventDetailPage() {
               <span className="inline-flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground backdrop-blur">
                 <Tag className="h-3.5 w-3.5" aria-hidden="true" /> {t(TYPE_KEY[event.type])}
               </span>
-              {(event as any).qrStaff && (
+              {(event as any).qrStaff && (Array.isArray((event as any).qrStaff) ? (event as any).qrStaff.length > 0 : true) && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 px-3 py-1 text-xs font-semibold text-amber-300 backdrop-blur">
-                  <QrCode className="h-3.5 w-3.5" aria-hidden="true" /> Gatekeeper: {(event as any).qrStaff}
+                  <QrCode className="h-3.5 w-3.5" aria-hidden="true" /> Gatekeeper: {Array.isArray((event as any).qrStaff) ? (event as any).qrStaff.join(", ") : (event as any).qrStaff}
                 </span>
               )}
             </div>
@@ -505,7 +518,13 @@ function EventDetailPage() {
         <SummaryCard
           icon={<QrCode className="h-4 w-4 text-amber-500" aria-hidden="true" />}
           label="Phụ trách QR Cổng"
-          value={(event as any).qrStaff || "Chưa phân công"}
+          value={
+            Array.isArray((event as any).qrStaff)
+              ? (event as any).qrStaff.length > 0
+                ? (event as any).qrStaff.join(", ")
+                : "Chưa phân công"
+              : (event as any).qrStaff || "Chưa phân công"
+          }
         />
         <SummaryCard
           icon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
@@ -534,7 +553,7 @@ function EventDetailPage() {
 
           <EventAgenda event={event} />
 
-          <EventSponsors />
+          <EventSponsors sponsors={event.sponsors as any} />
 
           <EventAttendees registrations={registrations} canManage={canManage} />
 
@@ -592,7 +611,11 @@ function EventDetailPage() {
         open={editOpen}
         title={t("common.editTitle")}
         fields={fields}
-        initial={event as unknown as CrudValues}
+        initial={({
+          ...event,
+          sponsors: event.sponsors || [],
+          qrStaff: (event as any).qrStaff || (event as any).qrScanners || [],
+        }) as unknown as CrudValues}
         submitting={submitting}
         submitLabel={t("common.save")}
         cancelLabel={t("common.cancel")}

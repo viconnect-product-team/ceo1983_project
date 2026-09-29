@@ -24,19 +24,26 @@ export class MinioService implements OnModuleInit {
       });
     }
 
-    // 2. Localhost on port 9050 or 9000 (Fastest for local development)
+    // 2. Direct server public IP on port 9000 (Primary MinIO for dev and local)
     candidateConfigs.push({
-      name: 'local(127.0.0.1:9050)',
-      endPoint: '127.0.0.1',
-      port: 9050,
+      name: 'server-dev(14.225.217.232:9000)',
+      endPoint: '14.225.217.232',
+      port: 9000,
     });
+
+    // 3. Localhost on port 9000 or 9050
     candidateConfigs.push({
       name: 'local(127.0.0.1:9000)',
       endPoint: '127.0.0.1',
       port: 9000,
     });
+    candidateConfigs.push({
+      name: 'local(127.0.0.1:9050)',
+      endPoint: '127.0.0.1',
+      port: 9050,
+    });
 
-    // 3. Docker container aliases only in Linux/Docker environment (never on Windows host to avoid DNS resolution hangs)
+    // 4. Docker container aliases only in Linux/Docker environment (never on Windows host to avoid DNS resolution hangs)
     const isInsideDocker = process.platform === 'linux' && (Boolean(process.env.DOCKER_CONTAINER) || Boolean(process.env.KUBERNETES_SERVICE_HOST));
     if (isInsideDocker) {
       candidateConfigs.push({
@@ -51,14 +58,7 @@ export class MinioService implements OnModuleInit {
       });
     }
 
-    // 3. Direct server public IP on port 9050
-    candidateConfigs.push({
-      name: 'host-public(14.225.217.232:9050)',
-      endPoint: '14.225.217.232',
-      port: 9050,
-    });
-
-    // 4. Docker bridge host gateway
+    // 5. Docker bridge host gateway
     candidateConfigs.push({
       name: 'docker-bridge(172.17.0.1:9050)',
       endPoint: '172.17.0.1',
@@ -150,23 +150,26 @@ export class MinioService implements OnModuleInit {
   }
 
   async getFileStream(filename: string): Promise<any> {
-    for (let i = 0; i < this.clients.length; i++) {
-      const entry = this.clients[i];
-      try {
-        const getPromise = entry.client.getObject(this.bucketName, filename);
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`MinIO getObject timeout on ${entry.name}`)), 2000),
-        );
-        const stream = await Promise.race([getPromise, timeoutPromise]);
-        if (stream) {
-          if (i > 0) {
-            this.clients.splice(i, 1);
-            this.clients.unshift(entry);
+    const candidateBuckets = [this.bucketName, 'vione-bucket', 'vione-standalone-bucket'];
+    for (const bucket of candidateBuckets) {
+      for (let i = 0; i < this.clients.length; i++) {
+        const entry = this.clients[i];
+        try {
+          const getPromise = entry.client.getObject(bucket, filename);
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`MinIO getObject timeout on ${entry.name}`)), 3000),
+          );
+          const stream = await Promise.race([getPromise, timeoutPromise]);
+          if (stream) {
+            if (i > 0) {
+              this.clients.splice(i, 1);
+              this.clients.unshift(entry);
+            }
+            return stream;
           }
-          return stream;
+        } catch {
+          // try next client or bucket
         }
-      } catch {
-        // try next client
       }
     }
     return null;

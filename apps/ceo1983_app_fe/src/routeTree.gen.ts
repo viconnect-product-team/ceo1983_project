@@ -21,6 +21,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RenewalRouteImport } from './routes/renewal'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PermissionsRouteImport } from './routes/permissions'
 import { Route as PerksRouteImport } from './routes/perks'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -302,6 +303,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PermissionsRoute = PermissionsRouteImport.update({
+  id: '/permissions',
+  path: '/permissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerksRoute = PerksRouteImport.update({
@@ -1502,6 +1508,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/opportunities': typeof OpportunitiesRouteWithChildren
   '/perks': typeof PerksRoute
+  '/permissions': typeof PermissionsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/renewal': typeof RenewalRoute
@@ -1726,6 +1733,7 @@ export interface FileRoutesByTo {
   '/news': typeof NewsRoute
   '/notifications': typeof NotificationsRoute
   '/perks': typeof PerksRoute
+  '/permissions': typeof PermissionsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/renewal': typeof RenewalRoute
@@ -1944,6 +1952,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/opportunities': typeof OpportunitiesRouteWithChildren
   '/perks': typeof PerksRoute
+  '/permissions': typeof PermissionsRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/renewal': typeof RenewalRoute
@@ -2182,6 +2191,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/opportunities'
     | '/perks'
+    | '/permissions'
     | '/profile'
     | '/register'
     | '/renewal'
@@ -2406,6 +2416,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/notifications'
     | '/perks'
+    | '/permissions'
     | '/profile'
     | '/register'
     | '/renewal'
@@ -2623,6 +2634,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/opportunities'
     | '/perks'
+    | '/permissions'
     | '/profile'
     | '/register'
     | '/renewal'
@@ -2860,6 +2872,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   OpportunitiesRoute: typeof OpportunitiesRouteWithChildren
   PerksRoute: typeof PerksRoute
+  PermissionsRoute: typeof PermissionsRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   RenewalRoute: typeof RenewalRoute
@@ -2985,6 +2998,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/permissions': {
+      id: '/permissions'
+      path: '/permissions'
+      fullPath: '/permissions'
+      preLoaderRoute: typeof PermissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perks': {
@@ -5261,6 +5281,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   OpportunitiesRoute: OpportunitiesRouteWithChildren,
   PerksRoute: PerksRoute,
+  PermissionsRoute: PermissionsRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   RenewalRoute: RenewalRoute,

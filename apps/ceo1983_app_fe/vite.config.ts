@@ -34,8 +34,9 @@ export default defineConfig({
       },
       proxy: {
         '/upload': {
-          target: 'http://127.0.0.1:4000/api',
+          target: 'http://127.0.0.1:4000',
           changeOrigin: true,
+          rewrite: (path: string) => '/api' + path,
         },
         '/api': {
           target: 'http://127.0.0.1:4000',

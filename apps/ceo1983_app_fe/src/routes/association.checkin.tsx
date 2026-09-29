@@ -6,6 +6,7 @@ import {
   Wifi,
   ScanLine,
   CheckCircle2,
+  Calendar,
   AlertTriangle,
   XCircle,
   Clock,
@@ -42,7 +43,6 @@ import { useServerData } from "@/hooks/use-server-data";
 import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
 import { extractScanCode } from "@/lib/scan";
-import { extractNdefPayload, type NdefReadingEventLike } from "@/hooks/use-nfc-scanner";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -73,9 +73,9 @@ function CheckinScreen() {
   const fetchMember = useServerFn(getMyMember);
   const { data: member } = useServerData<any>(() => fetchMember(), null, "vba_my_member");
 
-  // Mode and camera
+  // Mode and camera (pure QR, no NFC)
   const [checkinMethod, setCheckinMethod] = useState<"scan" | "ticket">("scan");
-  const [mode, setMode] = useState<"qr" | "nfc">("qr");
+  const mode = "qr";
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<MyCheckinRecord | null>(null);
   const [history, setHistory] = useState<MyCheckinRecord[]>([]);
@@ -153,52 +153,63 @@ function CheckinScreen() {
     return localStorage.getItem("vba_is_media_department_member") === "true";
   });
 
-  // Check if current user belongs to Media Department (Ban Truyền Thông)
-  const isMediaDepartment = useMemo(() => {
-    if (mediaOverride) return true;
-    if (
+  const isAdmin = useMemo(() => {
+    return Boolean(
       user?.role === "admin" ||
       user?.role === "superadmin" ||
       user?.role === "platform_admin" ||
-      user?.role === "truong_ban_truyen_thong"
-    ) {
-      return true;
-    }
-
-    let customProfile: any = null;
-    try {
-      if (typeof window !== "undefined") {
-        customProfile = JSON.parse(
-          localStorage.getItem(`vba_custom_profile_${user?.id}`) ||
-            localStorage.getItem("vba_custom_profile") ||
-            "{}"
-        );
-      }
-    } catch {}
-
-    const textToMatch = [
-      user?.role,
-      user?.department,
-      user?.boardName,
-      user?.title,
-      member?.role,
-      member?.department,
-      member?.title,
-      customProfile?.department,
-      customProfile?.boardName,
-      customProfile?.role,
-      customProfile?.title,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    return (
-      textToMatch.includes("truyền thông") ||
-      textToMatch.includes("media") ||
-      textToMatch.includes("truong_ban_truyen_thong")
+      user?.role === "bqt"
     );
-  }, [user, member, mediaOverride]);
+  }, [user]);
+
+  // Events where current user is assigned as QR scanner in qr_scanners
+  const assignedEvents = useMemo(() => {
+    if (!serverEventsData || serverEventsData.length === 0) return [];
+    if (isAdmin || mediaOverride) return serverEventsData;
+    return serverEventsData.filter((ev: any) => {
+      const scanners = ev.qrScanners || ev.qrStaff || [];
+      if (!Array.isArray(scanners)) return false;
+      return scanners.some((s: any) => {
+        if (typeof s === "string") {
+          return (
+            (member?.code && s.includes(member.code)) ||
+            (member?.name && s.includes(member.name)) ||
+            (member?.phone && s.includes(member.phone)) ||
+            (user?.id && s.includes(user.id))
+          );
+        }
+        if (typeof s === "object" && s !== null) {
+          return (
+            (member?.id && s.id === member.id) ||
+            (member?.code && s.code === member.code) ||
+            (user?.id && (s.id === user.id || s.userId === user.id)) ||
+            (member?.phone && s.phone === member.phone)
+          );
+        }
+        return false;
+      });
+    });
+  }, [serverEventsData, member, user, isAdmin, mediaOverride]);
+
+  const [selectedScannerEventId, setSelectedScannerEventId] = useState<string>("");
+
+  useEffect(() => {
+    if (assignedEvents.length > 0) {
+      if (!selectedScannerEventId || !assignedEvents.some((e: any) => e.id === selectedScannerEventId)) {
+        setSelectedScannerEventId(assignedEvents[0].id);
+      }
+    }
+  }, [assignedEvents, selectedScannerEventId]);
+
+  const currentScanningEvent = useMemo(() => {
+    return assignedEvents.find((e: any) => e.id === selectedScannerEventId) || assignedEvents[0] || null;
+  }, [assignedEvents, selectedScannerEventId]);
+
+  // Check if current user is allowed to scan (must be assigned to >= 1 event or be admin/tester)
+  const isMediaDepartment = useMemo(() => {
+    if (isAdmin || mediaOverride) return true;
+    return assignedEvents.length > 0;
+  }, [isAdmin, mediaOverride, assignedEvents]);
 
   const toggleMediaOverride = () => {
     const next = !mediaOverride;
@@ -709,58 +720,12 @@ function CheckinScreen() {
     } catch {}
   };
 
-  const startScan = useCallback(async () => {
+  const startScan = useCallback(() => {
     if (!isMediaDepartment) return;
     setError(null);
     setResult(null);
-    if (mode === "qr") {
-      setScanning(true);
-    } else {
-      if (typeof window === "undefined") {
-        setError(t("m.checkin.nfcNotSupported"));
-        return;
-      }
-
-      const isLocal =
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1" ||
-        Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor);
-      if (!window.isSecureContext && !isLocal) {
-        setError("Chạm NFC yêu cầu kết nối bảo mật HTTPS hoặc ứng dụng di động CEO 1983.");
-        return;
-      }
-
-      const NDEFReader = (window as unknown as { NDEFReader?: new () => any }).NDEFReader;
-      if (!NDEFReader || typeof NDEFReader !== "function") {
-        setError("Thiết bị hoặc trình duyệt chưa hỗ trợ Web NFC. Vui lòng mở bằng Google Chrome trên Android hoặc chuyển sang quét QR.");
-        return;
-      }
-
-      try {
-        const reader = new NDEFReader();
-        const abort = new AbortController();
-        nfcAbort.current = abort;
-        await reader.scan({ signal: abort.signal });
-        reader.onreading = (ev: NdefReadingEventLike) => {
-          const payload = extractNdefPayload(ev);
-          if (payload) {
-            void handlePayload(payload);
-          }
-        };
-        reader.onreadingerror = () => {
-          /* tag moved or partial read */
-        };
-        setScanning(true);
-      } catch (e: any) {
-        if (e?.name === "NotAllowedError" || e?.message?.includes("not allowed") || e?.message?.includes("permission")) {
-          setError("Quyền NFC bị từ chối. Hãy cho phép quyền NFC trong cài đặt trình duyệt Chrome.");
-        } else {
-          setError("Không thể bật NFC. Hãy kiểm tra xem NFC đã được bật trong Cài đặt của máy và mở khóa màn hình.");
-        }
-        setScanning(false);
-      }
-    }
-  }, [mode, handlePayload, t, isMediaDepartment]);
+    setScanning(true);
+  }, [isMediaDepartment]);
 
   function toggleScan() {
     if (scanning) stopScan();
@@ -1106,33 +1071,47 @@ function CheckinScreen() {
             <span>Quét mã Standee đặt tại cổng sự kiện hoặc quét mã vé của đại biểu để check-in.</span>
           </div>
 
-          {/* Mode toggle */}
-          <div className="px-4 pt-3">
-            <div className="relative grid grid-cols-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900/60 p-1">
-              <span
-                className="absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-xl transition-transform duration-300 bg-[#2E3192] shadow-sm"
-                style={{
-                  transform: mode === "qr" ? "translateX(0)" : "translateX(calc(100% + 0.5rem))",
-                }}
-              />
-              <button
-                onClick={() => setMode("qr")}
-                className="relative z-10 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-bold transition cursor-pointer"
-                style={{ color: mode === "qr" ? "#FFFFFF" : "#64748B" }}
-              >
-                <QrCode className="h-4 w-4" style={{ color: mode === "qr" ? "#FFFFFF" : "#64748B" }} />
-                <span>{t("m.checkin.modeQr")}</span>
-              </button>
-              <button
-                onClick={() => setMode("nfc")}
-                className="relative z-10 flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-bold transition cursor-pointer"
-                style={{ color: mode === "nfc" ? "#FFFFFF" : "#64748B" }}
-              >
-                <Wifi className="h-4 w-4" style={{ color: mode === "nfc" ? "#FFFFFF" : "#64748B" }} />
-                <span>{t("m.checkin.modeNfc")}</span>
-              </button>
+          {/* Assigned Event Selector or Active Event Indicator */}
+          {assignedEvents.length > 1 ? (
+            <div className="px-4 pt-3">
+              <div className="rounded-2xl border-2 border-[#003B95] bg-white dark:bg-slate-900 p-3 shadow-md">
+                <div className="flex items-center justify-between text-xs font-bold text-[#003B95] dark:text-blue-400 mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4" />
+                    <span>Sự kiện đang soát vé ({assignedEvents.length} sự kiện được phân công):</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 font-extrabold">
+                    Chuyển sự kiện
+                  </span>
+                </div>
+                <select
+                  value={currentScanningEvent?.id || ""}
+                  onChange={(e) => setSelectedScannerEventId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-[#003B95]"
+                >
+                  {assignedEvents.map((ev: any) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.name} ({ev.date})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          ) : currentScanningEvent ? (
+            <div className="px-4 pt-3">
+              <div className="rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/40 p-2.5 flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Calendar className="h-4 w-4 text-[#003B95] shrink-0" />
+                  <span className="font-bold text-foreground truncate">
+                    {currentScanningEvent.name}
+                  </span>
+                </div>
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-[#003B95] text-white font-bold shrink-0">
+                  {currentScanningEvent.date}
+                </span>
+              </div>
+            </div>
+          ) : null}
 
           {/* Scanner viewport */}
           <div className="px-4 pt-4">
@@ -1145,49 +1124,26 @@ function CheckinScreen() {
                   backgroundSize: "26px 26px",
                 }}
               />
-              {mode === "qr" ? (
-                <>
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    className="absolute inset-0 h-full w-full object-cover"
-                    style={{ opacity: scanning ? 1 : 0 }}
-                    muted
-                    playsInline
-                  />
-                  <div className="relative h-[64%] w-[64%] pointer-events-none">
-                    <span className="absolute -left-1 -top-1 h-10 w-10 rounded-tl-2xl border-l-[4px] border-t-[4px] border-amber-400" />
-                    <span className="absolute -right-1 -top-1 h-10 w-10 rounded-tr-2xl border-r-[4px] border-t-[4px] border-amber-400" />
-                    <span className="absolute -bottom-1 -left-1 h-10 w-10 rounded-bl-2xl border-b-[4px] border-l-[4px] border-amber-400" />
-                    <span className="absolute -bottom-1 -right-1 h-10 w-10 rounded-br-2xl border-b-[4px] border-r-[4px] border-amber-400" />
-                    {scanning && (
-                      <span className="absolute inset-x-2 top-2 h-1 animate-[mscan_1.4s_ease-in-out_infinite] rounded-full bg-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.9)]" />
-                    )}
-                    {!scanning && (
-                      <ScanLine className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 text-amber-400/80" />
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="relative grid place-items-center">
-                  {scanning &&
-                    [0, 1, 2].map((i) => (
-                      <span
-                        key={i}
-                        className="absolute h-28 w-28 animate-ping rounded-full border-2 border-amber-400 opacity-40"
-                        style={{ animationDelay: `${i * 0.4}s`, animationDuration: "1.8s" }}
-                      />
-                    ))}
-                  <span className="grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[#003B95] to-[#2E3192] text-white shadow-lg border-2 border-amber-400/60">
-                    <Wifi className="h-10 w-10 -rotate-90 text-amber-300" />
-                  </span>
-                  {scanning && (
-                    <p className="mt-3 text-center text-[12px] font-bold text-amber-300">
-                      Áp thẻ VIP đại biểu vào vị trí giữa lưng điện thoại
-                    </p>
-                  )}
-                </div>
-              )}
+              <video
+                ref={videoRef}
+                autoPlay
+                className="absolute inset-0 h-full w-full object-cover"
+                style={{ opacity: scanning ? 1 : 0 }}
+                muted
+                playsInline
+              />
+              <div className="relative h-[64%] w-[64%] pointer-events-none">
+                <span className="absolute -left-1 -top-1 h-10 w-10 rounded-tl-2xl border-l-[4px] border-t-[4px] border-amber-400" />
+                <span className="absolute -right-1 -top-1 h-10 w-10 rounded-tr-2xl border-r-[4px] border-t-[4px] border-amber-400" />
+                <span className="absolute -bottom-1 -left-1 h-10 w-10 rounded-bl-2xl border-b-[4px] border-l-[4px] border-amber-400" />
+                <span className="absolute -bottom-1 -right-1 h-10 w-10 rounded-br-2xl border-b-[4px] border-r-[4px] border-amber-400" />
+                {scanning && (
+                  <span className="absolute inset-x-2 top-2 h-1 animate-[mscan_1.4s_ease-in-out_infinite] rounded-full bg-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.9)]" />
+                )}
+                {!scanning && (
+                  <ScanLine className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 text-amber-400/80" />
+                )}
+              </div>
             </div>
 
             {error && (
@@ -1206,11 +1162,7 @@ function CheckinScreen() {
             >
               <ScanLine className="h-4 w-4 text-white" />
               <span className="text-white">
-                {scanning
-                  ? t("m.checkin.stopScan")
-                  : mode === "qr"
-                    ? "Bắt Đầu Quét Mã QR"
-                    : "Bắt Đầu Chạm Thẻ NFC"}
+                {scanning ? t("m.checkin.stopScan") : "Bắt Đầu Quét Mã QR"}
               </span>
             </button>
 
@@ -1327,7 +1279,7 @@ function CheckinScreen() {
                       {r.eventTitle}
                     </div>
                     <div className="flex items-center justify-between gap-1.5 text-[11px] text-[var(--vba-text-muted)]">
-                      <span>{r.method === "qr" ? "QR Code" : "NFC"} · {fmtTime(r.at)}</span>
+                      <span>Quét mã QR · {fmtTime(r.at)}</span>
                       {r.luckyNumber && (
                         <span className="inline-flex items-center rounded-md bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 font-mono">
                           🎟️ Số vé: {r.luckyNumber}

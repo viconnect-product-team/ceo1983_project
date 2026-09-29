@@ -24,12 +24,13 @@ import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { EventWizard } from "@/components/dashboard/EventWizard";
 import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGatekeeperModal";
+import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
+import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
-import {
-  type EventItem,
-} from "@/lib/events.functions";
+import { type EventItem } from "@/lib/events.functions";
 import { fetchNestApi } from "@/lib/api-client";
 import {
   getEventView,
@@ -102,7 +103,10 @@ function bucketOf(iso: string): Exclude<Bucket, "all"> {
   return "upcoming";
 }
 
-function getEffectiveStatus(e: { status?: EventItem["status"]; date: string }): EventItem["status"] {
+function getEffectiveStatus(e: {
+  status?: EventItem["status"];
+  date: string;
+}): EventItem["status"] {
   if (e.status === "cancelled") return "cancelled";
   if (e.status === "ongoing") return "ongoing";
   const today = startOfDay(new Date()).getTime();
@@ -117,6 +121,7 @@ function EventsPage() {
   const router = useRouter();
   const createNotif = useServerFn(createNotificationFn);
   const events = Route.useLoaderData() as EventItem[];
+  const { can } = useRole();
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<EventItem["status"] | "all">("all");
@@ -150,11 +155,21 @@ function EventsPage() {
     { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
     {
       name: "qrStaff",
-      label: "Người thực hiện quét mã QR tại sự kiện",
-      type: "text",
-      placeholder: "VD: Ban Lễ Tân — 0983 198 383",
+      label: "Người thực hiện quét mã QR (Ban Truyền Thông)",
+      type: "custom",
+      render: (val, onChange) => (
+        <EventQrStaffSelector value={val || []} onChange={onChange} />
+      ),
     },
     { name: "description", label: "Mô tả / Thông tin sự kiện", type: "textarea" },
+    {
+      name: "sponsors",
+      label: "Nhà tài trợ & Gói đồng hành",
+      type: "custom",
+      render: (val, onChange) => (
+        <EventSponsorPackageSelector eventId={editing?.id} value={val || []} onChange={onChange} />
+      ),
+    },
     {
       name: "type",
       label: t("events.col.type"),
@@ -185,6 +200,8 @@ function EventsPage() {
       const payload = {
         ...v,
         capacity: v.capacity ? Number(v.capacity) : 0,
+        qrStaff: v.qrStaff || [],
+        qrScanners: v.qrStaff || [],
       };
       if (editing) {
         await fetchNestApi(`/events/${editing.id}`, {
@@ -294,7 +311,9 @@ function EventsPage() {
   const featured = useMemo(() => {
     const today = startOfDay(new Date()).getTime();
     return events
-      .filter((e: any) => e.status !== "cancelled" && startOfDay(new Date(e.date)).getTime() >= today)
+      .filter(
+        (e: any) => e.status !== "cancelled" && startOfDay(new Date(e.date)).getTime() >= today,
+      )
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
   }, [events]);
 
@@ -371,16 +390,18 @@ function EventsPage() {
               <Download className="h-4 w-4 text-muted-foreground" />
               {t("common.export")}
             </button>
-            <button
-              onClick={() => {
-                setWizardOpen(true);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <Plus className="h-4 w-4" />
-              {t("events.create")}
-            </button>
+            {can(PERMISSIONS.EVENT_CREATE) && (
+              <button
+                onClick={() => {
+                  setWizardOpen(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Plus className="h-4 w-4" />
+                {t("events.create")}
+              </button>
+            )}
           </>
         }
       />
@@ -621,7 +642,8 @@ function EventsPage() {
               </thead>
               <tbody>
                 {tc.pageRows.map((e: any, idx: number) => {
-                  const tone = STATUS_TONE[e.status as keyof typeof STATUS_TONE] ?? STATUS_TONE.upcoming;
+                  const tone =
+                    STATUS_TONE[e.status as keyof typeof STATUS_TONE] ?? STATUS_TONE.upcoming;
                   const d = new Date(e.date);
                   return (
                     <tr
@@ -639,8 +661,16 @@ function EventsPage() {
                         EV-{e.id.slice(0, 6).toUpperCase()}
                       </td>
                       <td className="px-4 py-3 border-b border-border whitespace-nowrap">
-                        <TruncatedText text={e.name} maxWidth="max-w-[260px]" className="font-semibold text-foreground text-xs" />
-                        <TruncatedText text={e.description} maxWidth="max-w-[260px]" className="text-[11px] text-muted-foreground" />
+                        <TruncatedText
+                          text={e.name}
+                          maxWidth="max-w-[260px]"
+                          className="font-semibold text-foreground text-xs"
+                        />
+                        <TruncatedText
+                          text={e.description}
+                          maxWidth="max-w-[260px]"
+                          className="text-[11px] text-muted-foreground"
+                        />
                       </td>
                       <td className="px-4 py-3 text-xs border-b border-border whitespace-nowrap">
                         <div className="font-medium text-foreground">
@@ -674,8 +704,13 @@ function EventsPage() {
                           className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                           style={{ background: tone.bg, color: tone.fg }}
                         >
-                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone.fg }} />
-                          {t(STATUS_KEY[e.status as EventItem["status"]] ?? "events.status.upcoming")}
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ background: tone.fg }}
+                          />
+                          {t(
+                            STATUS_KEY[e.status as EventItem["status"]] ?? "events.status.upcoming",
+                          )}
                         </span>
                       </td>
                       <td className="sticky right-0 z-10 min-w-[170px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
@@ -699,22 +734,26 @@ function EventsPage() {
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </Link>
-                          <button
-                            onClick={() => {
-                              setEditing(e);
-                              setOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => onDelete(e)}
-                            disabled={deletingId === e.id}
-                            className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-background px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {can(PERMISSIONS.EVENT_EDIT) && (
+                            <button
+                              onClick={() => {
+                                setEditing(e);
+                                setOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {can(PERMISSIONS.EVENT_DELETE) && (
+                            <button
+                              onClick={() => onDelete(e)}
+                              disabled={deletingId === e.id}
+                              className="inline-flex items-center gap-1 rounded-lg border border-destructive/20 bg-background px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -770,7 +809,15 @@ function EventsPage() {
         open={open}
         title={editing ? t("common.editTitle") : t("events.create")}
         fields={fields}
-        initial={editing ? (editing as unknown as CrudValues) : undefined}
+        initial={
+          editing
+            ? ({
+                ...editing,
+                sponsors: editing.sponsors || [],
+                qrStaff: (editing as any).qrStaff || (editing as any).qrScanners || [],
+              } as unknown as CrudValues)
+            : { sponsors: [], qrStaff: [] }
+        }
         submitting={submitting}
         submitLabel={editing ? t("common.save") : t("common.create")}
         cancelLabel={t("common.cancel")}
@@ -832,8 +879,7 @@ function CapacityBar({ registered, capacity }: { registered: number; capacity: n
 
 function StatusPill({ status }: { status?: EventItem["status"] }) {
   const t = useT();
-  const validStatus: EventItem["status"] =
-    status && STATUS_TONE[status] ? status : "upcoming";
+  const validStatus: EventItem["status"] = status && STATUS_TONE[status] ? status : "upcoming";
   const s = STATUS_TONE[validStatus] ?? STATUS_TONE.upcoming;
   const labelKey = STATUS_KEY[validStatus] ?? "events.status.upcoming";
   return (
@@ -862,18 +908,27 @@ function EventCard({
 }) {
   const t = useT();
   const fmt = useFmt();
+  const { can } = useRole();
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
-      <div className="relative h-48 w-full aspect-[16/9] overflow-hidden" style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}>
+      <div
+        className="relative h-48 w-full aspect-[16/9] overflow-hidden"
+        style={{ background: TYPE_COVER[e.type] ?? TYPE_COVER.forum }}
+      >
         {(() => {
           const typeFallbacks: Record<string, string> = {
-            forum: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
-            workshop: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
-            networking: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
-            training: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
+            forum:
+              "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+            workshop:
+              "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
+            networking:
+              "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
+            training:
+              "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
           };
           const fallback = typeFallbacks[e.type] || typeFallbacks.forum;
-          const raw = (e as any).imageUrl || (e as any).image || (e as any).bannerUrl || (e as any).coverUrl;
+          const raw =
+            (e as any).imageUrl || (e as any).image || (e as any).bannerUrl || (e as any).coverUrl;
           const resolved = raw || fallback;
           return (
             <img
@@ -907,25 +962,29 @@ function EventCard({
             {e.name}
           </Link>
           <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={onQrGatekeeper}
-              aria-label="Quản lý Check-in & Gatekeeper QR"
-              title="Quản lý Check-in & Gatekeeper QR"
-              className="rounded-lg p-1.5 text-amber-600 transition hover:bg-amber-500/15 hover:text-amber-700"
-            >
-              <QrCode className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={onEdit}
-              aria-label={t("common.edit")}
-              title={t("common.edit")}
-              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            >
-              <Pencil className="h-4 w-4" aria-hidden="true" />
-            </button>
-            {e.status !== "cancelled" && (
+            {can(PERMISSIONS.EVENT_CHECKIN_MANAGE) && (
+              <button
+                type="button"
+                onClick={onQrGatekeeper}
+                aria-label="Quản lý Check-in & Gatekeeper QR"
+                title="Quản lý Check-in & Gatekeeper QR"
+                className="rounded-lg p-1.5 text-amber-600 transition hover:bg-amber-500/15 hover:text-amber-700"
+              >
+                <QrCode className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+            {can(PERMISSIONS.EVENT_EDIT) && (
+              <button
+                type="button"
+                onClick={onEdit}
+                aria-label={t("common.edit")}
+                title={t("common.edit")}
+                className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
+            {can(PERMISSIONS.EVENT_DELETE) && e.status !== "cancelled" && (
               <button
                 type="button"
                 onClick={onDelete}
@@ -965,16 +1024,27 @@ function FeaturedCard({ event: e, onOpen }: { event: EventItem; onOpen: () => vo
       className="mb-5 block w-full overflow-hidden rounded-3xl border border-border text-left shadow-[var(--shadow-card)] transition hover:shadow-[var(--shadow-glow)]"
     >
       <div className="relative grid gap-0 md:grid-cols-[1.1fr_1fr]">
-        <div className="relative min-h-[180px] p-6 overflow-hidden" style={{ background: TYPE_COVER[e.type] }}>
+        <div
+          className="relative min-h-[180px] p-6 overflow-hidden"
+          style={{ background: TYPE_COVER[e.type] }}
+        >
           {(() => {
             const typeFallbacks: Record<string, string> = {
-              forum: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
-              workshop: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
-              networking: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
-              training: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
+              forum:
+                "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+              workshop:
+                "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
+              networking:
+                "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
+              training:
+                "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
             };
             const fallback = typeFallbacks[e.type] || typeFallbacks.forum;
-            const raw = (e as any).imageUrl || (e as any).image || (e as any).bannerUrl || (e as any).coverUrl;
+            const raw =
+              (e as any).imageUrl ||
+              (e as any).image ||
+              (e as any).bannerUrl ||
+              (e as any).coverUrl;
             const resolved = raw || fallback;
             return (
               <img

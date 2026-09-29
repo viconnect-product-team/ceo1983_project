@@ -7,9 +7,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { PrismaModule } from '../prisma/prisma.module';
+import { RolesGuard } from './roles.guard';
+import { DataScopeInterceptor } from './data-scope.interceptor';
 
 @Module({
   imports: [
+    PrismaModule,
     UsersModule,
     MailModule,
     PassportModule,
@@ -18,8 +22,8 @@ import { PassportModule } from '@nestjs/passport';
       signOptions: { expiresIn: '60m' },
     }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, RolesGuard, DataScopeInterceptor],
   controllers: [AuthController],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, JwtModule, RolesGuard, DataScopeInterceptor],
 })
 export class AuthModule {}

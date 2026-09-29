@@ -41,6 +41,7 @@ import type { Opportunity } from "@/lib/opportunities-data";
 import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
 import type { ActivityLog } from "@/lib/extra-data";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
+import { useRole } from "@/hooks/use-role";
 import { EmptyState, ErrorState, ListSkeleton, Skeleton } from "@/components/dashboard/StateKit";
 
 /* ----------------------------- helpers ----------------------------- */
@@ -225,6 +226,8 @@ function GrowthArea({ data }: { data: DashboardStats["growth"] }) {
 
 export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   const t = useT();
+  const roleState = useRole();
+  const { canManageFinance, canManageMembers, canManageEvents, canManageMedia, isBQT, isPlatformAdmin } = roleState;
   const getStats = useServerFn(getDashboardStatsFn);
   const getOpps = useServerFn(listOpportunitiesFn);
   const getActivity = useServerFn(listActivityLogFn);
@@ -521,20 +524,24 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
             </span>
           }
         />
-        <ExecKpi
-          label={t("exec.kpi.pendingRenewals")}
-          value={s.pendingRenewals.toLocaleString("vi-VN")}
-          icon={RefreshCw}
-          tone="amber"
-          to="/renewal"
-        />
-        <ExecKpi
-          label={t("exec.kpi.overdueFees")}
-          value={s.unpaidInvoices.toLocaleString("vi-VN")}
-          icon={FileWarning}
-          tone="rose"
-          to="/fees"
-        />
+        {(canManageMembers || canManageFinance || isBQT || isPlatformAdmin) && (
+          <ExecKpi
+            label={t("exec.kpi.pendingRenewals")}
+            value={s.pendingRenewals.toLocaleString("vi-VN")}
+            icon={RefreshCw}
+            tone="amber"
+            to="/renewal"
+          />
+        )}
+        {(canManageFinance || isBQT || isPlatformAdmin) && (
+          <ExecKpi
+            label={t("exec.kpi.overdueFees")}
+            value={s.unpaidInvoices.toLocaleString("vi-VN")}
+            icon={FileWarning}
+            tone="rose"
+            to="/fees"
+          />
+        )}
         <ExecKpi
           label={t("exec.kpi.upcomingEvents")}
           value={s.upcomingEvents.toLocaleString("vi-VN")}
@@ -826,20 +833,24 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
 
         <Panel title={t("exec.queue.title")}>
           <ul className="space-y-2">
-            <QueueRow
-              to="/renewal"
-              icon={RefreshCw}
-              tone="amber"
-              label={t("exec.queue.renewals")}
-              count={s.pendingRenewals}
-            />
-            <QueueRow
-              to="/fees"
-              icon={FileWarning}
-              tone="rose"
-              label={t("exec.queue.unpaid")}
-              count={s.unpaidInvoices}
-            />
+            {(canManageMembers || canManageFinance || isBQT || isPlatformAdmin) && (
+              <QueueRow
+                to="/renewal"
+                icon={RefreshCw}
+                tone="amber"
+                label={t("exec.queue.renewals")}
+                count={s.pendingRenewals}
+              />
+            )}
+            {(canManageFinance || isBQT || isPlatformAdmin) && (
+              <QueueRow
+                to="/fees"
+                icon={FileWarning}
+                tone="rose"
+                label={t("exec.queue.unpaid")}
+                count={s.unpaidInvoices}
+              />
+            )}
             <QueueRow
               to="/marketplace/my-quotes"
               icon={DollarSign}
@@ -861,10 +872,20 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
       {/* Quick actions */}
       <Panel title={t("exec.quick.title")}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <QuickAction to="/members" icon={Plus} label={t("exec.quick.addMember")} />
-          <QuickAction to="/events" icon={CalendarPlus} label={t("exec.quick.newEvent")} />
-          <QuickAction to="/fees" icon={DollarSign} label={t("exec.quick.collectFee")} />
-          <QuickAction to="/notifications" icon={Send} label={t("exec.quick.sendNotif")} />
+          {(canManageMembers || isBQT || isPlatformAdmin) && (
+            <QuickAction to="/members" icon={Plus} label={t("exec.quick.addMember")} />
+          )}
+          {(canManageEvents || isBQT || isPlatformAdmin) && (
+            <QuickAction to="/events" icon={CalendarPlus} label={t("exec.quick.newEvent")} />
+          )}
+          {(canManageFinance || isBQT || isPlatformAdmin) && (
+            <QuickAction to="/fees" icon={DollarSign} label={t("exec.quick.collectFee")} />
+          )}
+          {(canManageMedia || isBQT || isPlatformAdmin) && (
+            <QuickAction to="/notifications" icon={Send} label={t("exec.quick.sendNotif")} />
+          )}
+          <QuickAction to="/opportunities" icon={Handshake} label="Cơ hội kết nối" />
+          <QuickAction to="/marketplace" icon={DollarSign} label="Sàn giao thương" />
         </div>
       </Panel>
     </div>

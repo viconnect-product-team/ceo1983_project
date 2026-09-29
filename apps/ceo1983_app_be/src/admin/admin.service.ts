@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
 
@@ -493,7 +493,10 @@ export class AdminService implements OnModuleInit {
     const year = data.year || new Date().getFullYear();
     const amount = BigInt(Math.round(data.amount || 15000000));
     const dueDate = data.dueDate || `${year}-12-31`;
-    const id = `INV-${year}-${Date.now().toString(36).toUpperCase()}`;
+    const lastInv = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.invoices WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+    `.catch(() => []);
+    const id = lastInv.length > 0 ? (BigInt(lastInv[0].id) + 1n).toString() : '50001';
 
     await this.prisma.$executeRaw`
       INSERT INTO public.invoices (id, member_id, invoice_no, year, amount, due_date, status, created_at, updated_at)
@@ -561,7 +564,7 @@ export class AdminService implements OnModuleInit {
       let rows: any[] = [];
       if (filterScope) {
         rows = await this.prisma.$queryRaw<any[]>`
-          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at
+          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
           FROM public.notifications
           WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
             AND (app_scope = ${filterScope} OR target_app = ${filterScope})
@@ -570,7 +573,7 @@ export class AdminService implements OnModuleInit {
         `.catch(() => []);
       } else {
         rows = await this.prisma.$queryRaw<any[]>`
-          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at
+          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
           FROM public.notifications
           WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
           ORDER BY created_at DESC
@@ -591,12 +594,16 @@ export class AdminService implements OnModuleInit {
 
         const item = {
           id: r.code || r.id,
+          code: r.code,
+          rawId: r.id,
           title: r.title,
           body: r.body || '',
           audience: r.audience || 'all',
           channel: r.channel || 'inapp',
           appScope: r.app_scope || r.target_app || 'crm',
           targetApp: r.target_app || r.app_scope || 'crm',
+          targetChannel: r.target_channel || null,
+          pushedToMessages: Boolean(r.pushed_to_messages || (r.target_channel && r.target_channel !== 'none')),
           sentAt: r.sent_at ? new Date(r.sent_at).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
           reach: r.reach || 0,
           status: r.status || 'sent',
@@ -740,20 +747,33 @@ export class AdminService implements OnModuleInit {
     const appScope = String(data.appScope || data.targetApp || 'all');
     const status = String(data.status || 'sent');
     const assocId = data.associationId || null;
+    const targetUserId = data.targetUserId || data.userId || null;
+    const department = String(data.department || data.committee || data.channelCode || '').trim();
+    const targetChannel = String(data.targetChatChannel || data.targetChannel || '').trim();
+    const pushedToMessages = Boolean(data.pushedToMessages || (targetChannel && targetChannel !== 'none'));
 
     const sentAtStr = status === 'sent' ? now.toISOString() : null;
 
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.notifications (
-        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12, NOW(), NOW()
       )
-    `, code, title, body, audience, channel, status, sentAtStr, assocId, appScope, appScope);
+    `, code, title, body, audience, channel, status, sentAtStr, assocId, appScope, appScope, targetChannel || null, pushedToMessages);
 
     if (status === 'sent') {
       try {
-        await this.dispatchBroadcastToMembersAndUsers(code, title, body, audience, appScope, assocId);
+        await this.dispatchBroadcastToMembersAndUsers(
+          code,
+          title,
+          body,
+          audience,
+          appScope,
+          assocId,
+          targetUserId,
+          department,
+        );
       } catch (err) {
         console.warn('Failed to broadcast CRM notification:', err);
       }
@@ -767,6 +787,10 @@ export class AdminService implements OnModuleInit {
       channel,
       appScope,
       targetApp: appScope,
+      targetUserId,
+      department,
+      targetChannel: targetChannel || null,
+      pushedToMessages,
       sentAt: status === 'sent' ? now.toISOString() : null,
       reach: 0,
       status,
@@ -780,41 +804,132 @@ export class AdminService implements OnModuleInit {
     audience: string,
     appScope: string,
     associationId?: string | null,
+    targetUserId?: string | null,
+    department?: string | null,
   ) {
     const userIdsSet = new Set<string>();
     const memberRecipientIds = new Set<string>();
+    const nowIso = new Date().toISOString();
 
-    // 1. Collect from public.members (id, code, user_id)
-    try {
-      const members = await this.prisma.$queryRaw<any[]>`
-        SELECT id, code, user_id FROM public.members
-        WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
-      `.catch(() => []);
-      for (const m of members) {
-        if (m.id) memberRecipientIds.add(String(m.id));
-        if (m.code) memberRecipientIds.add(String(m.code));
-        if (m.user_id) {
-          userIdsSet.add(String(m.user_id));
-          memberRecipientIds.add(String(m.user_id));
-        }
-      }
-    } catch (e) {
-      console.warn('dispatchBroadcast: failed querying members:', e);
+    // Xác định kênh chuyên trách theo phân luồng tác vụ CRM
+    let targetChannel = 'channel_media';
+    let channelLabel = 'Kênh Truyền Thông Hiệp Hội';
+    const deptLower = `${department || ''} ${audience || ''}`.toLowerCase();
+
+    if (deptLower.includes('thu_ky') || deptLower.includes('secretariat') || deptLower.includes('dieu_hanh') || deptLower.includes('bch')) {
+      targetChannel = 'channel_secretariat';
+      channelLabel = 'Kênh Ban Thư Ký & Ban Điều Hành';
+    } else if (deptLower.includes('xuc_tien') || deptLower.includes('promotion')) {
+      targetChannel = 'channel_promotion';
+      channelLabel = 'Kênh Xúc Tiến Giao Thương';
+    } else if (deptLower.includes('deal') || deptLower.includes('b2b') || deptLower.includes('co_hoi')) {
+      targetChannel = 'channel_deals';
+      channelLabel = 'Kênh Cơ Hội & Deal B2B';
+    } else if (deptLower.includes('event') || deptLower.includes('su_kien') || deptLower.includes('hoi_nghi')) {
+      targetChannel = 'channel_events';
+      channelLabel = 'Kênh Sự Kiện & Hội Nghị';
     }
 
-    // 2. Collect from public.profiles if broadcasting to all
-    if (appScope !== 'association_app') {
+    // 1. NẾU LÀ THÔNG BÁO CÁ NHÂN (TARGETED)
+    if (targetUserId) {
+      userIdsSet.add(targetUserId);
+      memberRecipientIds.add(targetUserId);
+
+      // Tra cứu member code nếu có
+      const memRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, user_id FROM public.members WHERE user_id = ${targetUserId}::uuid OR id::text = ${targetUserId} LIMIT 1
+      `.catch(() => []);
+      const memCode = memRows[0]?.code;
+
+      const directMsgText = `🔔 [THÔNG BÁO HỆ THỐNG] ${title}\n\n${body}`;
+
+      // Bắn trực tiếp vào public.messages của user
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
+      `, targetUserId, directMsgText).catch(() => {});
+
+      if (memCode && memCode !== targetUserId) {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
+        `, String(memCode).toLowerCase(), directMsgText).catch(() => {});
+      }
+
+      // Realtime push notification & message event
+      this.gateway.emitToRoom(`user:${targetUserId}`, 'dm:message_received', {
+        id: `msg-${Date.now()}`,
+        from_id: 'admin',
+        to_id: targetUserId,
+        text: directMsgText,
+        created_at: nowIso,
+      });
+      this.gateway.emitNotification(targetUserId, {
+        id: code,
+        title,
+        body,
+        sentAt: nowIso,
+        targetApp: appScope,
+      });
+    } else {
+      // 2. NẾU LÀ THÔNG BÁO CHUNG (BROADCAST) HOẶC PHÂN BAN
+      const broadcastMsgText = `📢 [${channelLabel.toUpperCase()}] ${title}\n\n${body}`;
+
+      // Ghi vào kênh chuyên trách trong public.messages
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
+      `, targetChannel, broadcastMsgText).catch(() => {});
+
+      // Ghi thêm vào kênh chung group_ceo1983_broadcast
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'admin', 'group_ceo1983_broadcast', $1, NOW())
+      `, broadcastMsgText).catch(() => {});
+
+      // Phát realtime socket cho toàn bộ app
+      this.gateway.emitToAll('dm:message_received', {
+        id: `msg-${Date.now()}`,
+        from_id: 'admin',
+        to_id: targetChannel,
+        text: broadcastMsgText,
+        created_at: nowIso,
+      });
+      this.gateway.emitToAll('dm:thread_updated', {
+        peerCode: targetChannel,
+        last: broadcastMsgText,
+        time: nowIso,
+      });
+
+      // Thu thập danh sách hội viên nhận thông báo
       try {
-        const profiles = await this.prisma.$queryRaw<any[]>`
-          SELECT id FROM public.profiles LIMIT 2000
+        const members = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, user_id FROM public.members
+          WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
         `.catch(() => []);
-        for (const p of profiles) {
-          if (p.id) {
-            userIdsSet.add(String(p.id));
+        for (const m of members) {
+          if (m.id) memberRecipientIds.add(String(m.id));
+          if (m.code) memberRecipientIds.add(String(m.code));
+          if (m.user_id) {
+            userIdsSet.add(String(m.user_id));
+            memberRecipientIds.add(String(m.user_id));
           }
         }
       } catch (e) {
-        console.warn('dispatchBroadcast: failed querying profiles:', e);
+        console.warn('dispatchBroadcast: failed querying members:', e);
+      }
+
+      if (appScope !== 'association_app') {
+        try {
+          const profiles = await this.prisma.$queryRaw<any[]>`
+            SELECT id FROM public.profiles LIMIT 2000
+          `.catch(() => []);
+          for (const p of profiles) {
+            if (p.id) userIdsSet.add(String(p.id));
+          }
+        } catch (e) {
+          console.warn('dispatchBroadcast: failed querying profiles:', e);
+        }
       }
     }
 
@@ -842,15 +957,15 @@ export class AdminService implements OnModuleInit {
           gen_random_uuid(), $1::uuid, 'crm', $2, 'crm_broadcast', 'system_broadcast',
           $3, $4, $5::jsonb, 'normal', 'delivered', $6, $7, $8, NOW(), NOW()
         ) ON CONFLICT (dedupe_key) DO NOTHING
-      `, uId, code, title, body, JSON.stringify({ title, body, crmNotificationCode: code }), dedupeKey, appScope, appScope).catch(() => {});
+      `, uId, code, title, body, JSON.stringify({ title, body, crmNotificationCode: code, channel: targetChannel }), dedupeKey, appScope, appScope).catch(() => {});
     }
 
-    const nowIso = new Date().toISOString();
     this.gateway.emitToAll('notification:new', {
       id: code,
       title,
       body,
       audience,
+      channel: targetChannel,
       appScope,
       targetApp: appScope,
       sentAt: nowIso,
@@ -860,6 +975,7 @@ export class AdminService implements OnModuleInit {
       id: code,
       title,
       body,
+      channel: targetChannel,
       appScope,
       sentAt: nowIso,
     });
@@ -969,6 +1085,86 @@ export class AdminService implements OnModuleInit {
     `, id).catch(() => null);
 
     return { ok: true };
+  }
+
+  async pushNotificationToMessages(userId: string, id: string, channelCode?: string) {
+    const isAdmin = await this.checkIsAdmin(userId);
+    if (!isAdmin) {
+      throw new ForbiddenException('Chỉ quản trị viên mới có quyền đẩy thông báo vào tin nhắn');
+    }
+    const targetChannel = channelCode || 'channel_media';
+
+    // Find notification
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, title, body FROM public.notifications
+      WHERE id::text = ${id} OR code = ${id}
+      LIMIT 1
+    `.catch(() => []);
+
+    let title = 'Thông báo Ban Điều Hành';
+    let body = '';
+    let notifCode = id;
+    if (rows.length > 0) {
+      title = rows[0].title || title;
+      body = rows[0].body || '';
+      notifCode = rows[0].code || rows[0].id;
+    }
+
+    // Update notifications table
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.notifications
+      SET pushed_to_messages = true, target_channel = $1, updated_at = NOW()
+      WHERE id::text = $2 OR code = $2
+    `, targetChannel, id).catch(() => {});
+
+    // Also update business_notifications if matching
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.business_notifications
+      SET pushed_to_messages = true, updated_at = NOW()
+      WHERE id::text = $1 OR source_record_id = $1
+    `, id).catch(() => {});
+
+    // Post to public.messages
+    const channelLabelMap: Record<string, string> = {
+      channel_media: 'Kênh Truyền Thông Hiệp Hội',
+      channel_promotion: 'Kênh Xúc Tiến Giao Thương',
+      channel_secretariat: 'Kênh Ban Thư Ký & Ban Điều Hành',
+      channel_deals: 'Kênh Cơ Hội & Deal B2B',
+      channel_events: 'Kênh Sự Kiện & Hội Nghị',
+    };
+    const channelLabel = channelLabelMap[targetChannel] || 'Kênh Chính Thức CLB';
+    const broadcastMsgText = `📢 [${channelLabel.toUpperCase()}] ${title}\n\n${body}`;
+
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+      VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
+    `, targetChannel, broadcastMsgText).catch(() => {});
+
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+      VALUES (gen_random_uuid(), 'admin', 'group_ceo1983_broadcast', $1, NOW())
+    `, broadcastMsgText).catch(() => {});
+
+    const nowIso = new Date().toISOString();
+    this.gateway.emitToAll('dm:message_received', {
+      id: `msg-${Date.now()}`,
+      from_id: 'admin',
+      to_id: targetChannel,
+      text: broadcastMsgText,
+      created_at: nowIso,
+    });
+    this.gateway.emitToAll('dm:thread_updated', {
+      peerCode: targetChannel,
+      last: broadcastMsgText,
+      time: nowIso,
+    });
+
+    return {
+      ok: true,
+      id: notifCode,
+      pushedToMessages: true,
+      targetChannel,
+    };
   }
 
   // ── Email Marketing Campaigns ─────────────────────────────────────
@@ -1154,5 +1350,178 @@ export class AdminService implements OnModuleInit {
     `;
     return { ok: true };
   }
+
+  // ── CRM PERMISSION MATRIX (RBAC) ──────────────────────────────────────────
+
+  async getPermissionMatrix() {
+    const rows = await this.prisma.$queryRaw<{ value: any }[]>`
+      SELECT value FROM public.app_settings WHERE key = 'crm_permission_matrix' LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length && rows[0]?.value) {
+      const val = rows[0].value;
+      if (Array.isArray(val) && val.length > 0) return { rows: val };
+      if (val?.rows && Array.isArray(val.rows) && val.rows.length > 0) return val;
+    }
+
+    // Default 8-role permission matrix if not configured in DB
+    return {
+      rows: [
+        {
+          feature: { vi: 'Quản trị hệ thống & Cấu hình nền tảng', en: 'Platform & system management' },
+          platform_admin: 'full',
+          admin: 'scoped',
+          tong_thu_ky: 'none',
+          truong_ban_thanh_vien: 'none',
+          truong_ban_tai_chinh: 'none',
+          truong_ban_truyen_thong: 'none',
+          truong_ban_xuc_tien: 'none',
+          member: 'none',
+        },
+        {
+          feature: { vi: 'Họp phòng ban & Lịch Zoom', en: 'Department meetings & Zoom' },
+          platform_admin: 'full',
+          admin: 'full',
+          tong_thu_ky: 'full',
+          truong_ban_thanh_vien: 'scoped',
+          truong_ban_tai_chinh: 'scoped',
+          truong_ban_truyen_thong: 'scoped',
+          truong_ban_xuc_tien: 'scoped',
+          member: 'own',
+        },
+        {
+          feature: { vi: 'Quản lý hội viên & Phân ban', en: 'Members & committee assignment' },
+          platform_admin: 'full',
+          admin: 'full',
+          tong_thu_ky: 'scoped',
+          truong_ban_thanh_vien: 'full',
+          truong_ban_tai_chinh: 'scoped',
+          truong_ban_truyen_thong: 'scoped',
+          truong_ban_xuc_tien: 'scoped',
+          member: 'own',
+        },
+        {
+          feature: { vi: 'Thu chi, Tạm ứng & Hóa đơn', en: 'Finance, advances & invoices' },
+          platform_admin: 'full',
+          admin: 'full',
+          tong_thu_ky: 'scoped',
+          truong_ban_thanh_vien: 'scoped',
+          truong_ban_tai_chinh: 'full',
+          truong_ban_truyen_thong: 'scoped',
+          truong_ban_xuc_tien: 'scoped',
+          member: 'own',
+        },
+        {
+          feature: { vi: 'Sự kiện, Điểm danh QR & Xếp chỗ VIP', en: 'Events, check-in QR & VIP seating' },
+          platform_admin: 'full',
+          admin: 'full',
+          tong_thu_ky: 'scoped',
+          truong_ban_thanh_vien: 'scoped',
+          truong_ban_tai_chinh: 'scoped',
+          truong_ban_truyen_thong: 'full',
+          truong_ban_xuc_tien: 'scoped',
+          member: 'own',
+        },
+        {
+          feature: { vi: 'Sàn cơ hội kinh doanh & Matching', en: 'Opportunities marketplace & matching' },
+          platform_admin: 'full',
+          admin: 'full',
+          tong_thu_ky: 'scoped',
+          truong_ban_thanh_vien: 'scoped',
+          truong_ban_tai_chinh: 'scoped',
+          truong_ban_truyen_thong: 'scoped',
+          truong_ban_xuc_tien: 'full',
+          member: 'own',
+        },
+        {
+          feature: { vi: 'Biểu quyết & Bốc thăm trúng thưởng', en: 'Voting & Lucky draw' },
+          platform_admin: 'full',
+          admin: 'full',
+          tong_thu_ky: 'full',
+          truong_ban_thanh_vien: 'scoped',
+          truong_ban_tai_chinh: 'scoped',
+          truong_ban_truyen_thong: 'scoped',
+          truong_ban_xuc_tien: 'scoped',
+          member: 'own',
+        },
+      ],
+    };
+  }
+
+  async savePermissionMatrix(payload: any, userId?: string) {
+    const rows = Array.isArray(payload) ? payload : payload?.rows;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new BadRequestException('Ma trận phân quyền không hợp lệ');
+    }
+
+    const jsonValue = JSON.stringify({ rows, updatedAt: new Date().toISOString() });
+
+    await this.prisma.$executeRawUnsafe(
+      `
+      INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+      VALUES ('crm_permission_matrix', $1::jsonb, NOW(), ${userId ? `'${userId}'::uuid` : 'NULL'})
+      ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
+    `,
+      jsonValue,
+    );
+
+    return {
+      success: true,
+      message: 'Cập nhật ma trận phân quyền CRM thành công',
+      rows,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getActiveTheme() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT value FROM public.app_settings WHERE key = 'active_association_theme' LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length > 0 && rows[0].value) {
+      const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+      return {
+        themeId: val.themeId || 'classic',
+        enabled: val.enabled !== false,
+        updatedAt: val.updatedAt || null,
+      };
+    }
+
+    return {
+      themeId: 'classic',
+      enabled: true,
+      updatedAt: null,
+    };
+  }
+
+  async saveActiveTheme(payload: any, userId?: string) {
+    const themeId = payload?.themeId || 'classic';
+    const enabled = payload?.enabled !== false;
+    const jsonValue = JSON.stringify({
+      themeId,
+      enabled,
+      updatedAt: new Date().toISOString(),
+    });
+
+    await this.prisma.$executeRawUnsafe(
+      `
+      INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+      VALUES ('active_association_theme', $1::jsonb, NOW(), ${userId ? `'${userId}'::uuid` : 'NULL'})
+      ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
+    `,
+      jsonValue,
+    );
+
+    return {
+      success: true,
+      themeId,
+      enabled,
+      updatedAt: new Date().toISOString(),
+    };
+  }
 }
+
+
 

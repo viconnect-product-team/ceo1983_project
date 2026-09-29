@@ -12,8 +12,18 @@ export class MeController {
     return this.connectAppService.getMyProfile(req.user.id);
   }
 
+  @Post('profile')
+  async postMyProfile(@Request() req, @Body() data: any) {
+    return this.connectAppService.updateMyProfile(req.user.id, data);
+  }
+
   @Put('profile')
   async updateMyProfile(@Request() req, @Body() data: any) {
+    return this.connectAppService.updateMyProfile(req.user.id, data);
+  }
+
+  @Patch('profile')
+  async patchMyProfile(@Request() req, @Body() data: any) {
     return this.connectAppService.updateMyProfile(req.user.id, data);
   }
 

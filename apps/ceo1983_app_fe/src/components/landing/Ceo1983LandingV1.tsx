@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -21,16 +21,39 @@ import { fetchNestApi } from "@/lib/api-client";
 export function Ceo1983LandingV1() {
   const [form, setForm] = useState({
     fullName: "",
-    companyAndTitle: "",
+    company: "",
+    industry: "",
     phone: "",
     email: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const search = window.location.search;
+      if (search.includes("apply")) {
+        setTimeout(() => {
+          const el = document.getElementById("contact-section");
+          if (el) el.scrollIntoView({ behavior: "smooth" });
+        }, 300);
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.fullName.trim() || !form.phone.trim()) {
       toast.error("Vui lòng nhập họ và tên cùng số điện thoại liên hệ.");
+      return;
+    }
+
+    if (!form.company.trim()) {
+      toast.error("Vui lòng nhập tên công ty / doanh nghiệp của bạn.");
+      return;
+    }
+
+    if (!form.industry.trim()) {
+      toast.error("Vui lòng nhập lĩnh vực hoạt động.");
       return;
     }
 
@@ -43,27 +66,31 @@ export function Ceo1983LandingV1() {
     const regData = {
       fullName: form.fullName.trim(),
       name: form.fullName.trim(),
-      company: form.companyAndTitle.trim() || "Doanh nghiệp CEO 1983",
-      companyName: form.companyAndTitle.trim() || "Doanh nghiệp CEO 1983",
+      company: form.company.trim() || "Doanh nghiệp CEO 1983",
+      companyName: form.company.trim() || "Doanh nghiệp CEO 1983",
+      industry: form.industry.trim() || "Doanh nghiệp",
       phone: form.phone.trim(),
       email: form.email.trim().toLowerCase(),
-      title: form.companyAndTitle.trim() || "CEO / Nhà sáng lập",
+      title: "Lãnh đạo Doanh nghiệp",
       clubSlug: "ceo-1983",
       source: "landing_ceo_v1",
       createdAt: new Date().toISOString(),
     };
 
     try {
-      // 1. Direct API call to backend public/club-registration (saves to CRM members with status=pending)
-      const res = await fetchNestApi<any>("/public/club-registration", {
-        method: "POST",
-        body: JSON.stringify(regData),
-      }).catch(() => null);
+      // Chỉ gửi request 1 lần duy nhất để chống lỗi duplicate
+      let res: any = null;
+      try {
+        res = await fetchNestApi<any>("/public/club-registration", {
+          method: "POST",
+          body: JSON.stringify(regData),
+        });
+      } catch (directErr) {
+        console.warn("Direct fetchNestApi failed, trying serverFn fallback:", directErr);
+        res = await submitClubApplication({ data: regData }).catch(() => null);
+      }
 
-      // 2. Submit through club application server function as fallback
-      await submitClubApplication({ data: regData }).catch(() => null);
-
-      // 3. Store lead in localStorage for immediate sync & alert
+      // Store lead in localStorage for immediate sync & alert
       try {
         const existing = JSON.parse(localStorage.getItem("vba_registered_leads") || "[]");
         existing.unshift(regData);
@@ -72,10 +99,10 @@ export function Ceo1983LandingV1() {
       } catch {}
 
       toast.success(res?.message || "Đăng ký thành công! Ban Thư Ký CLB CEO 1983 đã tiếp nhận hồ sơ trên hệ thống CRM và sẽ liên hệ với Quý CEO sớm nhất.");
-      setForm({ fullName: "", companyAndTitle: "", phone: "", email: "" });
+      setForm({ fullName: "", company: "", industry: "", phone: "", email: "" });
     } catch {
       toast.success("Đã ghi nhận yêu cầu của Quý CEO! Ban Thư Ký sẽ liên hệ sớm nhất.");
-      setForm({ fullName: "", companyAndTitle: "", phone: "", email: "" });
+      setForm({ fullName: "", company: "", industry: "", phone: "", email: "" });
     } finally {
       setSubmitting(false);
     }
@@ -184,13 +211,15 @@ export function Ceo1983LandingV1() {
       {/* ── 1. HEADER CHUẨN FIGMA CEO1983 ── */}
       <header className="self-stretch px-6 sm:px-12 lg:px-20 py-4 bg-white border-b border-slate-100 flex justify-between items-center sticky top-0 z-50 shadow-2xs">
         {/* Brand Logo chuẩn CEO1983 */}
-        <Link to="/landing/ceo/v1" className="flex justify-start items-center gap-3 group">
-          <div className="size-9 bg-[#002087] rounded-md flex justify-center items-center shadow-xs">
-            <span className="text-white text-base font-black font-['Outfit']">83</span>
-          </div>
+        <Link to="/" className="flex justify-start items-center gap-3 group">
+          <img
+            src="/ceo1983-official-logo.png"
+            alt="CLB Doanh Nhân CEO 1983"
+            className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-xs"
+          />
           <div className="inline-flex flex-col justify-start items-start gap-0.5">
-            <span className="text-slate-900 text-base font-extrabold font-['Outfit'] tracking-tight">CEO1983</span>
-            <span className="text-slate-500 text-[8px] font-bold font-['Inter'] uppercase tracking-wider">CÂU LẠC BỘ DOANH NHÂN</span>
+            <span className="text-[#003B95] text-sm sm:text-base font-black font-['Outfit'] tracking-tight">CLB DOANH NHÂN CEO 1983</span>
+            <span className="text-slate-500 text-[9px] font-semibold font-['Inter'] uppercase tracking-wider">Hội Doanh Nhân Trẻ Hà Nội</span>
           </div>
         </Link>
 
@@ -590,9 +619,21 @@ export function Ceo1983LandingV1() {
             <div>
               <input
                 type="text"
-                placeholder="Tên Doanh nghiệp & Chức vụ"
-                value={form.companyAndTitle}
-                onChange={(e) => setForm({ ...form, companyAndTitle: e.target.value })}
+                required
+                placeholder="Tên công ty / Doanh nghiệp"
+                value={form.company}
+                onChange={(e) => setForm({ ...form, company: e.target.value })}
+                className="w-full p-3 bg-slate-50 rounded-md border border-slate-200 text-xs font-normal font-['Inter'] text-slate-900 outline-none focus:border-blue-600"
+              />
+            </div>
+
+            <div>
+              <input
+                type="text"
+                required
+                placeholder="Lĩnh vực hoạt động (VD: Xây dựng, Công nghệ, Bất động sản...)"
+                value={form.industry}
+                onChange={(e) => setForm({ ...form, industry: e.target.value })}
                 className="w-full p-3 bg-slate-50 rounded-md border border-slate-200 text-xs font-normal font-['Inter'] text-slate-900 outline-none focus:border-blue-600"
               />
             </div>
@@ -636,8 +677,12 @@ export function Ceo1983LandingV1() {
           {/* Logo & Description */}
           <div className="w-full lg:w-96 flex flex-col justify-start items-start gap-5">
             <div className="flex justify-start items-center gap-3">
-              <div className="size-9 bg-white rounded-md flex justify-center items-center shadow-xs">
-                <span className="text-[#002087] text-base font-black font-['Outfit']">83</span>
+              <div className="bg-white rounded-lg p-1.5 shadow-sm flex items-center justify-center">
+                <img
+                  src="/ceo1983-official-logo.png"
+                  alt="CLB Doanh Nhân CEO 1983"
+                  className="h-10 w-auto object-contain"
+                />
               </div>
               <div className="flex flex-col justify-start items-start gap-0.5">
                 <span className="text-white text-base font-extrabold font-['Outfit'] tracking-tight">CEO1983</span>

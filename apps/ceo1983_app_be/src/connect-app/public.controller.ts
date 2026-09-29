@@ -61,5 +61,12 @@ export class PublicController {
   async searchRenewalAuditLog(@Request() req, @Body() body: any) {
     return this.connectAppService.searchRenewalAuditLog(req.user.id, body);
   }
+
+  /** Public active theme endpoint for apps and web clients */
+  @Get('active-theme')
+  async getActiveTheme() {
+    return this.connectAppService.getActiveTheme();
+  }
 }
+
 

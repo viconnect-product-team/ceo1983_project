@@ -193,7 +193,7 @@ export class UsersService {
       throw new NotFoundException('Không tìm thấy thông tin tài khoản');
     }
 
-    const [profile, roles, memberships] = await Promise.all([
+    const [profile, roles, memberships, memberRows] = await Promise.all([
       this.prisma.user_profiles.findUnique({
         where: { user_id: userId },
       }).catch(() => null),
@@ -203,14 +203,36 @@ export class UsersService {
       this.prisma.$queryRaw<any[]>`
         SELECT role FROM public.memberships WHERE user_id = ${userId}::uuid
       `.catch(() => [] as any[]),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, code, role, executive_role, department, association_id FROM public.members 
+        WHERE user_id = ${userId}::uuid OR LOWER(email) = LOWER(${user.email || ''})
+        LIMIT 1
+      `.catch(() => [] as any[]),
     ]);
 
+    const memberRow = memberRows?.[0] || null;
     const roleList = roles.map((r) => r.role);
     const isAssocAdmin = (memberships ?? []).some(
       (m: any) => m.role === 'admin' || m.role === 'association_admin' || m.role === 'owner',
     );
     if (isAssocAdmin && !roleList.includes('admin')) {
       roleList.push('admin');
+    }
+
+    if (memberRow?.executive_role) {
+      const exec = String(memberRow.executive_role).toLowerCase();
+      if ((exec === 'president' || exec === 'vice_president' || exec === 'bqt' || exec === 'tong_thu_ky') && !roleList.includes('bqt')) {
+        roleList.push('bqt');
+      }
+      if (exec === 'truong_ban_thanh_vien' && !roleList.includes('btv')) {
+        roleList.push('btv');
+      }
+      if (exec === 'truong_ban_tai_chinh' && !roleList.includes('btc')) {
+        roleList.push('btc');
+      }
+      if (exec === 'truong_ban_truyen_thong' && !roleList.includes('btt')) {
+        roleList.push('btt');
+      }
     }
 
     if (
@@ -232,6 +254,11 @@ export class UsersService {
       has_password: !!user.password && user.password.length > 0,
       created_at: user.created_at,
       updated_at: user.updated_at,
+      executiveRole: memberRow?.executive_role || 'member',
+      executive_role: memberRow?.executive_role || 'member',
+      department: memberRow?.department || 'Hội viên CEO 1983',
+      memberCode: memberRow?.code || null,
+      memberId: memberRow?.id || null,
       profile: profile
         ? {
             display_name: profile.display_name,

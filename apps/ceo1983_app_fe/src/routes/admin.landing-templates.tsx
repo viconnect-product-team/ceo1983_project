@@ -20,6 +20,8 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader } from "@/components/dashboard/PageKit";
+import { setActiveEventThemeType } from "@/components/member/SeasonalEventHeader";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/admin/landing-templates")({
   component: AdminThemeManagementPage,
@@ -199,6 +201,17 @@ export function AdminThemeManagementPage() {
   useEffect(() => {
     setActiveThemeIdState(getActiveAppThemeId());
 
+    // Also fetch current active theme from backend API
+    void fetchNestApi<{ themeId: string; enabled: boolean }>("/admin/active-theme")
+      .then((res) => {
+        if (res?.themeId) {
+          const crmId = res.themeId === "christmas" ? "noel" : res.themeId === "classic" ? "default" : res.themeId;
+          setActiveThemeIdState(crmId);
+          setActiveAppThemeId(crmId);
+        }
+      })
+      .catch(() => {});
+
     const handleThemeChange = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail) {
@@ -220,9 +233,21 @@ export function AdminThemeManagementPage() {
   const activeTheme =
     APP_THEMES_CATALOG.find((t) => t.id === activeThemeId) || APP_THEMES_CATALOG[5];
 
-  const handleApplyTheme = (theme: AppThemeItem) => {
+  const handleApplyTheme = async (theme: AppThemeItem) => {
+    const targetType = theme.id === "noel" ? "christmas" : theme.id === "default" ? "classic" : theme.id;
+    setActiveEventThemeType(targetType as any);
     setActiveAppThemeId(theme.id);
     setActiveThemeIdState(theme.id);
+
+    try {
+      await fetchNestApi("/admin/active-theme", {
+        method: "PUT",
+        body: JSON.stringify({ themeId: targetType, enabled: true }),
+      });
+    } catch (e: any) {
+      console.warn("Could not save active theme to backend:", e);
+    }
+
     toast.success(`Đã kích hoạt thành công chủ đề "${theme.name}" cho App Hiệp hội!`, {
       description:
         "Tất cả hội viên mở App CEO 1983 sẽ thấy giao diện lễ hội, banner và màu sắc tương ứng.",

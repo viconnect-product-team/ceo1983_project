@@ -53,7 +53,7 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
-import { isEventThemeEnabled, setEventThemeEnabled, getCrmAppliedTheme, FESTIVAL_THEMES } from "@/components/member/SeasonalEventHeader";
+import { isEventThemeEnabled, setEventThemeEnabled, getCrmAppliedTheme, FESTIVAL_THEMES, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
 import { isVoiceAiEnabled, setVoiceAiEnabled } from "@/components/ai/VoiceNavAssistant";
 import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
@@ -103,8 +103,7 @@ export default function ProfileScreen() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { user, logout: authLogout } = useAuth();
-  const { isAdmin: isPlatformOrTenantAdmin, isPlatformAdmin } = useRole();
-  const hasAdminPrivilege = Boolean(isPlatformOrTenantAdmin || isPlatformAdmin);
+  const { isAdmin: isPlatformOrTenantAdmin, isPlatformAdmin, isBQT } = useRole();
   const fetchMember = useServerFn(getMyMember);
   const updateProfileFn = useServerFn(updateMyProfile);
   const fetchDirectory = useServerFn(listMembers);
@@ -112,6 +111,20 @@ export default function ProfileScreen() {
   const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
   const { data: realMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
   const { data: conversations = [] } = useServerData<MyConversation[]>(() => fetchConversations(), [], "vba_conversations");
+
+  const isBQTOrAdmin = Boolean(
+    (user as any)?.role === "admin" ||
+    (user as any)?.role === "platform_admin" ||
+    (member as any)?.role === "admin" ||
+    (member as any)?.role === "association_admin" ||
+    isPlatformAdmin ||
+    isBQT ||
+    (member as any)?.department === "Ban Quản Trị" ||
+    (member as any)?.department === "Ban Thường Trực CLB" ||
+    String((member as any)?.executiveRole || "").toLowerCase().includes("chủ tịch") ||
+    String((member as any)?.department || "").toLowerCase().includes("quản trị")
+  );
+  const hasAdminPrivilege = isBQTOrAdmin;
 
   const [copied, setCopied] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
@@ -145,6 +158,26 @@ export default function ProfileScreen() {
       setAvatarError(false);
     }
   }, [customAvatar]);
+
+  useEffect(() => {
+    void syncThemeFromBackend().then(() => {
+      setEventThemeState(isEventThemeEnabled());
+      setCrmThemeId(getCrmAppliedTheme());
+    });
+
+    const handleThemeChange = () => {
+      setEventThemeState(isEventThemeEnabled());
+      setCrmThemeId(getCrmAppliedTheme());
+    };
+    window.addEventListener("vba-event-theme-changed", handleThemeChange);
+    window.addEventListener("ceo1983-theme-changed", handleThemeChange);
+    window.addEventListener("storage", handleThemeChange);
+    return () => {
+      window.removeEventListener("vba-event-theme-changed", handleThemeChange);
+      window.removeEventListener("ceo1983-theme-changed", handleThemeChange);
+      window.removeEventListener("storage", handleThemeChange);
+    };
+  }, []);
 
   useEffect(() => {
     const syncLocalMedia = () => {
@@ -600,13 +633,7 @@ export default function ProfileScreen() {
     setCreatePostOpen(false);
   };
 
-  const isAdmin = Boolean(
-    (user as any)?.role === "admin" ||
-    (user as any)?.role === "platform_admin" ||
-    (member as any)?.role === "admin" ||
-    (member as any)?.role === "association_admin" ||
-    (member as any)?.executiveRole
-  );
+  const isAdmin = isBQTOrAdmin;
 
   const menu = [
     {
@@ -998,10 +1025,10 @@ export default function ProfileScreen() {
         </div>
       </div>
 
-      {/* ── SEASONAL FESTIVAL THEME SWITCH (Chỉ hiển thị khi CRM đã áp dụng chủ đề) ── */}
+      {/* ── SEASONAL FESTIVAL THEME SWITCH ── */}
       {(() => {
-        const appliedTheme = crmThemeId ? FESTIVAL_THEMES.find((t) => t.id === crmThemeId) : null;
-        if (!appliedTheme) return null;
+        const themeToDisplay = crmThemeId ? FESTIVAL_THEMES.find((t) => t.id === crmThemeId) : FESTIVAL_THEMES[0];
+        const appliedTheme = themeToDisplay || FESTIVAL_THEMES[0];
 
         return (
           <div className="mx-4 mt-6 rounded-2xl border border-blue-500/30 bg-blue-50/50 dark:bg-[#14223E]/80 p-4 shadow-xs">

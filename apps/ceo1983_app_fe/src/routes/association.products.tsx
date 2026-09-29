@@ -60,6 +60,7 @@ import { isUserProductOwner } from "@/lib/marketplace-data";
 import { useT, useFmt, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { isVideoMedia } from "@/components/marketplace/MarketplaceAdsManager";
+import { MarketplaceAdSlider } from "@/components/marketplace/MarketplaceAdSlider";
 
 function normalizeCategory(str: string): string {
   return str
@@ -94,10 +95,12 @@ function matchCategory(productCat: string, filterCat: string): boolean {
   return false;
 }
 
-function formatCurrencyInput(val: string): string {
-  const digits = val.replace(/\D/g, "");
+function formatCurrencyInput(val: string | number): string {
+  if (val === undefined || val === null) return "";
+  const digits = String(val).replace(/\D/g, "");
   if (!digits) return "";
-  return Number(digits).toLocaleString("vi-VN");
+  const clean = digits.replace(/^0+(?=\d)/, "");
+  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 function formatSmartProductPrice(rawPrice: string | number | undefined | null): string {
@@ -1526,18 +1529,6 @@ function ProductsScreen() {
                 Chợ Marketplace
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                id="tour-market-post-btn"
-                type="button"
-                onClick={() => setPostModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold text-xs shadow-xs hover:brightness-105 transition cursor-pointer flex items-center gap-1 active:scale-95"
-              >
-                <Plus className="size-3.5 stroke-[2.5]" />
-                <span>Đăng bán</span>
-              </button>
-            </div>
           </div>
 
           {/* ── SUB-HEADER TABS: Chợ Marketplace vs Đã quan tâm vs Mục của tôi ── */}
@@ -1899,93 +1890,10 @@ function ProductsScreen() {
               })}
             </div>
 
-            {/* 3. DYNAMIC SPONSORED ADS (CRM Sync) */}
-            {activeMarketplaceAds.length > 0 ? (
-              (() => {
-                const ad = activeMarketplaceAds[currentAdIndex] || activeMarketplaceAds[0];
-                const animClass =
-                  ad.animation === "gradient-wave"
-                    ? "bg-gradient-to-r from-amber-600 via-indigo-900 to-amber-700 animate-pulse"
-                    : ad.animation === "pulse-glow"
-                    ? "border-2 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.35)] bg-slate-900"
-                    : "relative overflow-hidden bg-slate-900 border border-amber-400/40";
-
-                return (
-                  <div
-                    onClick={() => {
-                      try {
-                        const raw = localStorage.getItem("ceo1983_marketplace_ads");
-                        if (raw) {
-                          const list = JSON.parse(raw);
-                          const idx = list.findIndex((x: any) => x.id === ad.id);
-                          if (idx !== -1) {
-                            list[idx].clicks = (list[idx].clicks || 0) + 1;
-                            localStorage.setItem("ceo1983_marketplace_ads", JSON.stringify(list));
-                          }
-                        }
-                      } catch {}
-
-                      if (ad.targetUrl && (ad.targetUrl.startsWith("http://") || ad.targetUrl.startsWith("https://"))) {
-                        window.open(ad.targetUrl, "_blank");
-                      } else {
-                        toast.info(`Quảng cáo từ ${ad.companyName}: ${ad.title}`);
-                      }
-                    }}
-                    className={`self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden cursor-pointer hover:shadow-xl transition group ${animClass}`}
-                  >
-                    {ad.animation === "floating-shine" && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
-                    )}
-                    <div className="relative w-full h-36 overflow-hidden bg-slate-950">
-                      {isVideoMedia(ad.bannerUrl) ? (
-                        <video
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          src={ad.bannerUrl}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                        />
-                      ) : (
-                        <img
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          src={ad.bannerUrl || "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80"}
-                          alt={ad.title}
-                        />
-                      )}
-                      {activeMarketplaceAds.length > 1 && (
-                        <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] text-white">
-                          <span>{currentAdIndex + 1}/{activeMarketplaceAds.length}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="self-stretch p-4 flex flex-col justify-start items-start gap-2 bg-slate-900/90 backdrop-blur-sm text-white">
-                      <div className="self-stretch inline-flex justify-between items-center">
-                        <div className="px-2 py-0.5 bg-amber-400/20 border border-amber-400/40 rounded-sm flex items-center gap-1">
-                          <Megaphone className="h-3 w-3 text-amber-400" />
-                          <span className="text-amber-300 text-[10px] font-extrabold uppercase tracking-wide">
-                            {ad.badgeText || "TÀI TRỢ / QUẢNG CÁO"}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-slate-300 font-medium">
-                          {ad.companyName}
-                        </span>
-                      </div>
-                      <div className="self-stretch text-white text-base font-bold leading-snug">
-                        {ad.title}
-                      </div>
-                      <div className="self-stretch flex items-center justify-between text-xs text-blue-200">
-                        <span className="text-[11px] text-slate-400">Kích hoạt từ Quản trị CRM Hiệp hội</span>
-                        <span className="font-semibold text-amber-400 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                          <span>Khám phá ngay</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()
-            ) : null}
+            {/* 3. DYNAMIC SPONSORED ADS SLIDER (CRM Sync) */}
+            <div className="self-stretch px-1">
+              <MarketplaceAdSlider />
+            </div>
 
             {/* 4. SẢN PHẨM MỚI ĐĂNG (HORIZONTAL CAROUSEL) */}
             <div className="self-stretch flex flex-col justify-start items-start gap-3">
@@ -2457,6 +2365,10 @@ function ProductsScreen() {
                       </label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                         value={formOriginalPrice}
                         onChange={(e) => setFormOriginalPrice(formatCurrencyInput(e.target.value))}
                         placeholder="Ví dụ: 20.000.000 đ"
@@ -2469,6 +2381,10 @@ function ProductsScreen() {
                       </label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                         required
                         value={formPrice}
                         onChange={(e) => setFormPrice(formatCurrencyInput(e.target.value))}
@@ -2875,6 +2791,10 @@ function ProductsScreen() {
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
                       value={editOriginalPrice}
                       onChange={(e) => setEditOriginalPrice(formatCurrencyInput(e.target.value))}
                       placeholder="VD: 50.000.000"
@@ -2887,6 +2807,10 @@ function ProductsScreen() {
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
                       value={editPrice}
                       onChange={(e) => setEditPrice(formatCurrencyInput(e.target.value))}
                       placeholder="VD: 35.000.000"

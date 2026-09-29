@@ -63,8 +63,19 @@ const STATUS_COLOR: Record<Vote["status"], "success" | "info" | "neutral"> = {
   closed: "neutral",
 };
 
-function deriveStatus(startsAt: string, endsAt: string): Vote["status"] {
+function deriveStatus(startsAt: string, endsAt: string, eventStatus?: string, eventDate?: string): Vote["status"] {
   const today = new Date().toISOString().slice(0, 10);
+  if (eventStatus) {
+    const s = eventStatus.toLowerCase();
+    if (s === "completed" || s === "cancelled") return "closed";
+  }
+  if (eventDate) {
+    const evD = new Date(eventDate);
+    evD.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    if (evD.getTime() < now.getTime()) return "closed";
+  }
   if (startsAt > today) return "scheduled";
   if (endsAt < today) return "closed";
   return "open";
@@ -401,7 +412,7 @@ function VotingPage() {
         )}
         {paged.map((v) => {
           const pct = v.eligible > 0 ? Math.round((v.voted / v.eligible) * 100) : 0;
-          const status = deriveStatus(v.startsAt, v.endsAt);
+          const status = deriveStatus(v.startsAt, v.endsAt, v.eventStatus, v.eventDate);
           const isClosed = v.status === "closed" || status === "closed";
           return (
             <Card key={v.id} className={`p-5 transition-all ${isClosed ? "border-emerald-500/30 bg-card/80" : ""}`}>
@@ -414,6 +425,11 @@ function VotingPage() {
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t(TYPE_KEY[v.type])}
                     </span>
+                    {v.eventName && (
+                      <span className="rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
+                        📅 {v.eventName}
+                      </span>
+                    )}
                     <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-400 border border-blue-500/20">
                       🌐 Đẩy thông báo: App Hiệp hội & CRM
                     </span>
@@ -649,13 +665,28 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
   const [title, setTitle] = useState(vote?.title ?? "");
   const [type, setType] = useState<Vote["type"]>(vote?.type ?? "policy");
   const [targetAudience, setTargetAudience] = useState("all");
-  const [startsAt, setStartsAt] = useState(vote?.startsAt ?? "");
-  const [endsAt, setEndsAt] = useState(vote?.endsAt ?? "");
+  const [eventId, setEventId] = useState(vote?.eventId ?? "");
+  const [eventsList, setEventsList] = useState<Array<{ id: string; title: string; eventDate?: string; status?: string }>>([]);
+  const [startsAt, setStartsAt] = useState(
+    vote?.startsAt ? vote.startsAt.slice(0, 10) : "",
+  );
+  const [endsAt, setEndsAt] = useState(
+    vote?.endsAt ? vote.endsAt.slice(0, 10) : "",
+  );
   const [options, setOptions] = useState<string[]>(
     vote && vote.options.length >= 2 ? vote.options : ["", ""],
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchNestApi<any>("/events?page=1&size=100")
+      .then((res) => {
+        const items = Array.isArray(res) ? res : res?.items || [];
+        setEventsList(items);
+      })
+      .catch(() => {});
+  }, []);
 
   function setOpt(i: number, val: string) {
     setOptions((prev) => prev.map((o, idx) => (idx === i ? val : o)));
@@ -665,10 +696,21 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
     setError(null);
     setSaving(true);
     try {
+      const cleanStartsAt = startsAt ? startsAt.slice(0, 10) : "";
+      const cleanEndsAt = endsAt ? endsAt.slice(0, 10) : "";
+      const finalStartsAt = cleanStartsAt || cleanEndsAt || new Date().toISOString().slice(0, 10);
+      const finalEndsAt = cleanEndsAt || cleanStartsAt || finalStartsAt;
+
+      if (finalEndsAt < finalStartsAt) {
+        setError("Ngày kết thúc không được trước ngày bắt đầu");
+        setSaving(false);
+        return;
+      }
+
       if (vote) {
-        await updateVote({ data: { id: vote.id, title, type, startsAt, endsAt, options } });
+        await updateVote({ data: { id: vote.id, title, type, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId: eventId || null } });
       } else {
-        await createVote({ data: { title, type, targetAudience, startsAt, endsAt, options } });
+        await createVote({ data: { title, type, targetAudience, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId: eventId || null } });
       }
       await router.invalidate();
       onClose();
@@ -687,7 +729,7 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-card p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto overflow-x-hidden rounded-2xl bg-card p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -713,6 +755,62 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
               placeholder="Nội dung bình chọn..."
               className={inputCls}
             />
+          </div>
+
+          <div className="min-w-0 max-w-full">
+            <label className="mb-1 block text-sm font-medium text-foreground">Gán sự kiện liên kết (Tùy chọn)</label>
+            <div className="relative w-full min-w-0 max-w-full">
+              <select
+                value={eventId}
+                onChange={(e) => {
+                  const evId = e.target.value;
+                  setEventId(evId);
+                  if (evId) {
+                    const ev = eventsList.find((x) => String(x.id) === String(evId));
+                    if (ev) {
+                      const evDate = (ev as any).date || (ev as any).eventDate || (ev as any).startDate;
+                      if (evDate) {
+                        const dStr = typeof evDate === "string" ? evDate.slice(0, 10) : new Date(evDate).toISOString().slice(0, 10);
+                        if (!startsAt) setStartsAt(dStr);
+                        if (!endsAt) setEndsAt(dStr);
+                      }
+                    }
+                  }
+                }}
+                className={`${inputCls} w-full max-w-full min-w-0 truncate text-ellipsis pr-6 text-xs sm:text-sm`}
+              >
+                <option value="">-- Không gắn sự kiện (Biểu quyết độc lập) --</option>
+                {eventsList.map((ev) => {
+                  const evName = ev.title || (ev as any).name || "";
+                  const evDate = ev.eventDate || (ev as any).date;
+                  const dateStr = evDate ? ` (${new Date(evDate).toLocaleDateString("vi-VN")})` : "";
+                  const fullTitle = `${evName}${dateStr}`;
+                  const shortTitle = evName.length > 40 ? `${evName.slice(0, 38)}...${dateStr}` : fullTitle;
+                  return (
+                    <option key={ev.id} value={ev.id} title={fullTitle}>
+                      📅 {shortTitle}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            {(() => {
+              const selectedEvent = eventsList.find((ev) => String(ev.id) === String(eventId));
+              if (!selectedEvent) return null;
+              const evName = selectedEvent.title || (selectedEvent as any).name;
+              const evDate = selectedEvent.eventDate || (selectedEvent as any).date;
+              return (
+                <div className="mt-1.5 flex items-start gap-1.5 rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 p-2 text-xs text-blue-900 dark:text-blue-200">
+                  <span className="font-semibold shrink-0">Đã chọn:</span>
+                  <span className="break-words font-medium">
+                    {evName} {evDate ? `(${new Date(evDate).toLocaleDateString("vi-VN")})` : ""}
+                  </span>
+                </div>
+              );
+            })()}
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              * Biểu quyết sẽ tự động đóng lại khi sự kiện kết thúc.
+            </p>
           </div>
 
           <div>
@@ -765,6 +863,9 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
                 className={inputCls}
               />
             </div>
+            <p className="col-span-2 text-[11px] text-muted-foreground mt-0.5">
+              * Biểu quyết / sự kiện diễn ra trong 1 ngày: Ngày kết thúc có thể trùng với ngày bắt đầu (hệ thống cho phép bình chọn trọn vẹn trong cùng 1 ngày).
+            </p>
           </div>
 
           <div>

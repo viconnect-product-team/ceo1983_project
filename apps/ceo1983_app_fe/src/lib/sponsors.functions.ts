@@ -3,6 +3,18 @@ import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
+export type AssignedEvent = {
+  id: string;
+  name: string;
+  date: string;
+  status: string;
+  packageId?: string | null;
+  packageName?: string | null;
+  tier?: string;
+  packageType?: string;
+  amount?: number;
+};
+
 export type Sponsor = {
   id: string;
   name: string;
@@ -17,6 +29,8 @@ export type Sponsor = {
   events: number;
   since: string;
   status: "active" | "expired";
+  assignedEvent?: AssignedEvent | null;
+  isAssigned?: boolean;
 };
 
 export type SponsorPackage = {

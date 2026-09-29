@@ -12,7 +12,7 @@ This skill defines the technical standards, architectural patterns, and business
 The application serves business owners, founders, and C-level executives in the **CLB Doanh Nhân CEO 1983** (HanoiBA). It is not a generic social network; it is an executive digital ecosystem designed for:
 - **Executive Identity & Digital Card**: Luxury smart member card with company logo branding, personal QR code, and public digital visiting card (`/card/:code`).
 - **B2B Strategic Networking & Deals**: Targeted meeting requests (`[B2B_CONNECT_INVITE]`) with business purpose, contact info, and opportunity attachments.
-- **Internal B2B Marketplace**: Enterprise product directory with luxury Obsidian & Amber Gold sponsor carousels and direct in-app seller negotiation.
+- **Internal B2B Marketplace**: Enterprise product directory with luxury Obsidian & Amber sponsor carousels and direct in-app seller negotiation.
 - **Realtime Opportunities**: Aggregated supply, demand, and joint venture deals with live valuation metrics.
 - **Event & Meeting Governance**: Online voting directly tied to physical/virtual general assemblies, board meetings, and conventions.
 - **Administration & Committee RBAC**: Admin-controlled permission assignment across 7 specialized association committees.

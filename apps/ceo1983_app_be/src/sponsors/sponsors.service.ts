@@ -113,7 +113,10 @@ export class SponsorsService {
   }
 
   async createPackage(dto: CreateSponsorPackageDto & { associationId?: string }) {
-    const id = `PKG-${Date.now().toString(36).toUpperCase()}`;
+    const lastPkg = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.sponsor_packages WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+    `.catch(() => []);
+    const id = lastPkg.length > 0 ? (BigInt(lastPkg[0].id) + 1n).toString() : '30001';
     const tier = dto.tier || 'bronze';
     const price = BigInt(Math.round(dto.price || 0));
     const benefits = dto.benefits || [];
@@ -162,27 +165,77 @@ export class SponsorsService {
 
   async listSponsors() {
     try {
-      const rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.sponsors
-        ORDER BY amount DESC, created_at DESC
-      `;
-      return (rows || []).map((r) => ({
-        id: r.id,
-        name: r.name,
-        tier: r.tier || 'bronze',
-        sponsorType: (r.sponsor_type || 'new') as SponsorType,
-        packageType: (r.package_type || 'cash') as PackageType,
-        inKindDescription: r.in_kind_description || '',
-        contact: r.contact || '',
-        email: r.email || '',
-        phone: r.phone || '',
-        amount: Number(r.amount ?? 0),
-        events: Number(r.events ?? 0),
-        since: r.since instanceof Date ? r.since.toISOString().slice(0, 10) : String(r.since || ''),
-        status: r.status || 'active',
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-      }));
+      const [rows, events] = await Promise.all([
+        this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.sponsors
+          ORDER BY amount DESC, created_at DESC
+        `,
+        this.prisma.$queryRaw<any[]>`
+          SELECT id, name, date, sponsors, status FROM public.events
+          WHERE sponsors IS NOT NULL
+        `.catch(() => []),
+      ]);
+
+      return (rows || []).map((r) => {
+        let assignedEvent: any = null;
+        let matchedItem: any = null;
+
+        for (const evt of events) {
+          const rawSponsors = evt.sponsors;
+          let spList: any[] = [];
+          if (Array.isArray(rawSponsors)) {
+            spList = rawSponsors;
+          } else if (typeof rawSponsors === 'string') {
+            try {
+              spList = JSON.parse(rawSponsors);
+            } catch {}
+          }
+          if (Array.isArray(spList)) {
+            const found = spList.find(
+              (s: any) =>
+                s.sponsorId === r.id ||
+                s.id === r.id ||
+                (s.sponsorName && s.sponsorName.trim().toLowerCase() === r.name?.trim().toLowerCase()) ||
+                (s.name && s.name.trim().toLowerCase() === r.name?.trim().toLowerCase()),
+            );
+            if (found) {
+              matchedItem = found;
+              assignedEvent = {
+                id: evt.id,
+                name: evt.name,
+                date: evt.date instanceof Date ? evt.date.toISOString().slice(0, 10) : String(evt.date || '').slice(0, 10),
+                status: evt.status || 'upcoming',
+                packageId: found.packageId || null,
+                packageName: found.packageName || null,
+                tier: found.tier || r.tier,
+                packageType: found.packageType || r.package_type,
+                amount: Number(found.amount ?? r.amount ?? 0),
+              };
+              break;
+            }
+          }
+        }
+
+        return {
+          id: r.id,
+          name: r.name,
+          tier: r.tier || 'bronze',
+          sponsorType: (r.sponsor_type || 'new') as SponsorType,
+          packageType: (r.package_type || 'cash') as PackageType,
+          inKindDescription: r.in_kind_description || '',
+          contact: r.contact || '',
+          email: r.email || '',
+          phone: r.phone || '',
+          amount: Number(r.amount ?? 0),
+          events: assignedEvent ? Math.max(Number(r.events ?? 0), 1) : Number(r.events ?? 0),
+          since: r.since instanceof Date ? r.since.toISOString().slice(0, 10) : String(r.since || ''),
+          status: r.status || 'active',
+          assignedEvent,
+          isAssigned: Boolean(assignedEvent),
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        };
+      });
     } catch (err: any) {
       console.error('[SponsorsService] listSponsors error:', err);
       return [];
@@ -217,7 +270,10 @@ export class SponsorsService {
   }
 
   async createSponsor(dto: CreateSponsorDto) {
-    const id = `SP-${Date.now().toString(36).toUpperCase()}`;
+    const lastSp = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.sponsors WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+    `.catch(() => []);
+    const id = lastSp.length > 0 ? (BigInt(lastSp[0].id) + 1n).toString() : '20001';
     const name = dto.name;
     const tier = dto.tier || 'bronze';
     const sponsorType = dto.sponsorType || 'new';

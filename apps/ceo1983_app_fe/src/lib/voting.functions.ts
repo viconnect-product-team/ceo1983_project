@@ -24,6 +24,8 @@ export type Vote = {
   id: string;
   title: string;
   type: "policy" | "election" | "amendment";
+  eventId?: string | null;
+  eventName?: string | null;
   startsAt: string;
   endsAt: string;
   eligible: number;
@@ -63,6 +65,8 @@ export const listVotesFn = createServerFn({ method: "GET" })
             id: r.id,
             title: r.title,
             type: r.type || "policy",
+            eventId: r.eventId || r.event_id || null,
+            eventName: r.eventName || r.event_name || null,
             startsAt: r.startsAt || r.startDate || r.createdAt || new Date().toISOString(),
             endsAt: r.endsAt || r.endDate || new Date().toISOString(),
             eligible: Number(r.eligible || 100),
@@ -91,6 +95,8 @@ export const listVotesFn = createServerFn({ method: "GET" })
         id: p.id,
         title: p.title,
         type: "policy",
+        eventId: p.event_id || null,
+        eventName: null,
         startsAt: p.start_date || p.created_at || new Date().toISOString(),
         endsAt: p.end_date || new Date().toISOString(),
         eligible: 100,
@@ -133,17 +139,32 @@ export const createVoteFn = createServerFn({ method: "POST" })
     const targetAudience = String(d.targetAudience ?? "all");
     const startsAt = String(d.startsAt ?? "").trim();
     const endsAt = String(d.endsAt ?? "").trim();
+    const eventId = d.eventId ? String(d.eventId).trim() : null;
     const options = Array.isArray(d.options)
       ? (d.options as unknown[]).map((o: any) => String(o).trim()).filter(Boolean)
       : [];
+    let finalStartsAt = startsAt ? startsAt.slice(0, 10) : "";
+    let finalEndsAt = endsAt ? endsAt.slice(0, 10) : "";
+    if (!finalStartsAt && !finalEndsAt) {
+      const today = new Date().toISOString().slice(0, 10);
+      finalStartsAt = today;
+      finalEndsAt = today;
+    } else if (finalStartsAt && !finalEndsAt) {
+      finalEndsAt = finalStartsAt;
+    } else if (!finalStartsAt && finalEndsAt) {
+      finalStartsAt = finalEndsAt;
+    }
+
+    if (finalEndsAt < finalStartsAt) {
+      throw new Error("Ngày kết thúc không được trước ngày bắt đầu");
+    }
+
     if (!title) throw new Error("Vui lòng nhập câu hỏi bình chọn");
     if (title.length > 300) throw new Error("Câu hỏi quá dài");
-    if (!startsAt || !endsAt) throw new Error("Vui lòng chọn thời gian");
-    if (endsAt < startsAt) throw new Error("Ngày kết thúc phải sau ngày bắt đầu");
     if (options.length < 2) throw new Error("Cần ít nhất 2 lựa chọn");
     if (options.length > 20) throw new Error("Tối đa 20 lựa chọn");
     if (!["policy", "election", "amendment"].includes(type)) throw new Error("Loại không hợp lệ");
-    return { title, type, targetAudience, startsAt, endsAt, options };
+    return { title, type, targetAudience, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId };
   })
   .handler(async ({ data, context }) => {
     return fetchNestApiFromServer("/voting/polls", context.token, {
@@ -161,11 +182,21 @@ export const updateVoteFn = createServerFn({ method: "POST" })
     const type = String(d.type ?? "policy");
     const startsAt = String(d.startsAt ?? "").trim();
     const endsAt = String(d.endsAt ?? "").trim();
+    const eventId = d.eventId !== undefined ? (d.eventId ? String(d.eventId).trim() : null) : undefined;
     const options = Array.isArray(d.options)
       ? (d.options as unknown[]).map((o: any) => String(o).trim()).filter(Boolean)
       : [];
     if (!id) throw new Error("Thiếu mã bình chọn");
-    return { id, title, type, startsAt, endsAt, options };
+
+    let finalStartsAt = startsAt ? startsAt.slice(0, 10) : "";
+    let finalEndsAt = endsAt ? endsAt.slice(0, 10) : "";
+    if (finalStartsAt && !finalEndsAt) finalEndsAt = finalStartsAt;
+    if (!finalStartsAt && finalEndsAt) finalStartsAt = finalEndsAt;
+    if (finalStartsAt && finalEndsAt && finalEndsAt < finalStartsAt) {
+      throw new Error("Ngày kết thúc không được trước ngày bắt đầu");
+    }
+
+    return { id, title, type, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId };
   })
   .handler(async ({ data, context }) => {
     const { id, ...body } = data;

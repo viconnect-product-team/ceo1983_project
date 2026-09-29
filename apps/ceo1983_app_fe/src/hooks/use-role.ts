@@ -1,8 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { fetchNestApi } from "@/lib/api-client";
-import { isTokenValid, decodeJwt } from "@/context/AuthContext";
+import { isTokenValid, decodeJwt, useAuth } from "@/context/AuthContext";
+import {
+  PERMISSIONS,
+  SRS_ROLES,
+  ROLE_PERMISSIONS,
+  type Permission,
+  type SrsRole,
+} from "@/constants/permissions";
 
-export type SrsRole = "ADM" | "BQT" | "BTV" | "BTC" | "BTT" | "HVT";
+export { PERMISSIONS, SRS_ROLES, ROLE_PERMISSIONS };
+export type { Permission, SrsRole };
 export type AppRole = "platform_admin" | "admin" | "moderator" | "member" | string;
 
 export type RoleState = {
@@ -24,34 +32,44 @@ export type RoleState = {
   canManageEvents: boolean;
   canScanQR: boolean;
   canManageSystem: boolean;
+  can: (permission: Permission) => boolean;
+  hasPermission: (permission: Permission) => boolean;
+  hasAnyPermission: (...permissions: Permission[]) => boolean;
+  hasAllPermissions: (...permissions: Permission[]) => boolean;
+  hasRole: (role: SrsRole) => boolean;
   loading: boolean;
   setRoleOverride: (role: SrsRole) => void;
 };
 
-// Fetches current user's roles from NestJS /users/me and member profile per SRS specification.
+// Fetches current user's roles from NestJS /users/me and member profile per real database permissions.
 export function useRole(): RoleState {
+  const { user } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [srsRole, setSrsRole] = useState<SrsRole>("HVT");
   const [loading, setLoading] = useState(true);
 
-  const resolveSrsRole = (rawRoles: string[], user: any, member: any): SrsRole => {
-    const rList = rawRoles.map((r) => String(r).toLowerCase());
-    const primaryRole = String(user?.role || member?.role || "").toLowerCase();
-    const isActualAdmin = rList.includes("platform_admin") || rList.includes("admin") || primaryRole === "admin" || primaryRole === "platform_admin";
-
-    // 1. Check local override for testing (chỉ cho phép nếu tài khoản có quyền admin)
-    if (typeof window !== "undefined" && isActualAdmin) {
-      const savedOverride = localStorage.getItem("vba_crm_role_override") as SrsRole;
-      if (savedOverride && ["ADM", "BQT", "BTV", "BTC", "BTT", "HVT"].includes(savedOverride)) {
-        return savedOverride;
-      }
+  const resolveSrsRole = (rawRoles: string[], userObj: any, member: any): SrsRole => {
+    // Luôn dọn sạch override cũ trong localStorage nếu có
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("vba_crm_role_override");
+      } catch {}
     }
+
+    const rList = rawRoles.map((r) => String(r).toLowerCase());
+    const primaryRole = String(userObj?.role || member?.role || "").toLowerCase();
+
 
     const execRole = String(member?.executiveRole || user?.executiveRole || "").toLowerCase();
     const dept = String(member?.department || user?.department || "").toLowerCase();
 
     // ADM (Super Admin / Platform Admin)
-    if (rList.includes("platform_admin") || rList.includes("superadmin") || primaryRole === "platform_admin" || primaryRole === "superadmin") {
+    if (
+      rList.includes("platform_admin") ||
+      rList.includes("superadmin") ||
+      primaryRole === "platform_admin" ||
+      primaryRole === "superadmin"
+    ) {
       return "ADM";
     }
 
@@ -157,7 +175,9 @@ export function useRole(): RoleState {
                 member = parsedMem;
               }
             }
-          } catch {}
+          } catch (err) {
+            void err;
+          }
         }
 
         if (!active) return;
@@ -208,12 +228,14 @@ export function useRole(): RoleState {
       window.removeEventListener("profile-updated", handleAuthChange);
       window.removeEventListener("storage", handleAuthChange);
     };
-  }, []);
+  }, [user?.id, user?.role, user?.department, user?.executiveRole]);
 
   const setRoleOverride = (newRole: SrsRole) => {
+    setSrsRole(newRole);
     if (typeof window !== "undefined") {
-      localStorage.setItem("vba_crm_role_override", newRole);
-      setSrsRole(newRole);
+      try {
+        localStorage.removeItem("vba_crm_role_override");
+      } catch {}
       window.dispatchEvent(new Event("role-changed"));
     }
   };
@@ -228,14 +250,53 @@ export function useRole(): RoleState {
   const isModerator = isAdmin || isBTV || isBTC || isBTT;
 
   // Granular RBAC Matrix per SRS Part 2.2
-  const canManageMembers = isBQT || srsRole === "BTV";
-  const canApproveMembers = isBQT;
-  const canRenewMembers = isBQT || srsRole === "BTV";
-  const canManageFinance = isBQT || srsRole === "BTC";
-  const canManageMedia = isBQT || srsRole === "BTT";
-  const canManageEvents = isBQT || srsRole === "BTT";
-  const canScanQR = isBQT || srsRole === "BTT";
-  const canManageSystem = isBQT;
+  const grantedPermissions = useMemo(() => {
+    return new Set<Permission>(ROLE_PERMISSIONS[srsRole] || []);
+  }, [srsRole]);
+
+  const can = useCallback(
+    (permission: Permission): boolean => {
+      if (isPlatformAdmin) return true;
+      return grantedPermissions.has(permission);
+    },
+    [isPlatformAdmin, grantedPermissions],
+  );
+
+  const hasPermission = can;
+
+  const hasAnyPermission = useCallback(
+    (...permissions: Permission[]): boolean => {
+      if (isPlatformAdmin) return true;
+      return permissions.some((p) => grantedPermissions.has(p));
+    },
+    [isPlatformAdmin, grantedPermissions],
+  );
+
+  const hasAllPermissions = useCallback(
+    (...permissions: Permission[]): boolean => {
+      if (isPlatformAdmin) return true;
+      return permissions.every((p) => grantedPermissions.has(p));
+    },
+    [isPlatformAdmin, grantedPermissions],
+  );
+
+  const hasRole = useCallback(
+    (role: SrsRole): boolean => {
+      if (isPlatformAdmin) return true;
+      return srsRole === role;
+    },
+    [isPlatformAdmin, srsRole],
+  );
+
+  // Backward-compatible shortcut flags
+  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT) || isBQT || srsRole === "BTV";
+  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE) || isBQT;
+  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW) || isBQT || srsRole === "BTV";
+  const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE) || isBQT || srsRole === "BTC";
+  const canManageMedia = can(PERMISSIONS.MEDIA_MANAGE) || isBQT || srsRole === "BTT";
+  const canManageEvents = can(PERMISSIONS.EVENT_CREATE) || isBQT || srsRole === "BTT";
+  const canScanQR = can(PERMISSIONS.EVENT_CHECKIN_MANAGE) || isBQT || srsRole === "BTT";
+  const canManageSystem = can(PERMISSIONS.SYSTEM_MANAGE) || isBQT;
 
   return {
     roles,
@@ -256,8 +317,12 @@ export function useRole(): RoleState {
     canManageEvents,
     canScanQR,
     canManageSystem,
+    can,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    hasRole,
     loading,
     setRoleOverride,
   };
 }
-

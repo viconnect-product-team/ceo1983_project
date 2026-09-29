@@ -64,6 +64,7 @@ import { formatCurrencyInput, parseCurrencyInput, formatDisplayDate } from "@/li
 import { resolveMediaUrl } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -507,6 +508,15 @@ function ProductRow({
   );
 }
 
+const productSchema = z.object({
+  title: z.string().trim().min(1, "Tên sản phẩm không được phép để trống"),
+  description: z.string().trim().min(1, "Mô tả sản phẩm không được phép để trống"),
+  price: z.string().trim().min(1, "Giá sản phẩm không được phép để trống").refine((val) => {
+    const num = parseCurrencyInput(val);
+    return !isNaN(num) && num > 0;
+  }, "Giá sản phẩm không được phép để trống"),
+});
+
 function ProductModal({
   product,
   onClose,
@@ -521,6 +531,7 @@ function ProductModal({
   const isEdit = !!product;
   const createFn = useServerFn(createProductFn);
   const updateFn = useServerFn(updateProductFn);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [title, setTitle] = useState(product?.title ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [price, setPrice] = useState(product?.price ? formatCurrencyInput(product.price) : "");
@@ -608,11 +619,18 @@ function ProductModal({
   };
 
   const submit = async () => {
-    const numPrice = parseCurrencyInput(price);
-    if (!title.trim() || !description.trim() || !numPrice) {
-      toast.error("Vui lòng nhập tên sản phẩm, mô tả và giá sản phẩm");
+    const result = productSchema.safeParse({ title, description, price });
+    if (!result.success) {
+      const errMap: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errMap[key]) errMap[key] = issue.message;
+      }
+      setErrors(errMap);
       return;
     }
+    setErrors({});
+    const numPrice = parseCurrencyInput(price);
     const numOrig = originalPrice ? parseCurrencyInput(originalPrice) : undefined;
     setBusy(true);
     try {
@@ -689,10 +707,22 @@ function ProductModal({
             </label>
             <input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errors.title) setErrors((prev) => ({ ...prev, title: "" }));
+              }}
               placeholder={t("mk.form.titlePh")}
-              className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+              className={`w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition ${
+                errors.title
+                  ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                  : "border-input focus:ring-1 focus:ring-ring"
+              }`}
             />
+            {errors.title && (
+              <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                {errors.title}
+              </p>
+            )}
           </div>
 
           <div>
@@ -701,11 +731,23 @@ function ProductModal({
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (errors.description) setErrors((prev) => ({ ...prev, description: "" }));
+              }}
               placeholder={t("mk.form.descPh")}
               rows={3}
-              className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+              className={`w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none transition ${
+                errors.description
+                  ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                  : "border-input focus:ring-1 focus:ring-ring"
+              }`}
             />
+            {errors.description && (
+              <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                {errors.description}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -764,17 +806,39 @@ function ProductModal({
                 Giá ưu đãi (VND) <span className="text-destructive">*</span>
               </label>
               <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={price}
-                onChange={(e) => setPrice(formatCurrencyInput(e.target.value))}
+                onChange={(e) => {
+                  setPrice(formatCurrencyInput(e.target.value));
+                  if (errors.price) setErrors((prev) => ({ ...prev, price: "" }));
+                }}
                 placeholder="VD: 10.000.000"
-                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring font-mono"
+                className={`w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none font-mono transition ${
+                  errors.price
+                    ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                    : "border-input focus:ring-1 focus:ring-ring"
+                }`}
               />
+              {errors.price && (
+                <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                  {errors.price}
+                </p>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-foreground">
                 Giá niêm yết (VND)
               </label>
               <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={originalPrice}
                 onChange={(e) => setOriginalPrice(formatCurrencyInput(e.target.value))}
                 placeholder="VD: 12.000.000"

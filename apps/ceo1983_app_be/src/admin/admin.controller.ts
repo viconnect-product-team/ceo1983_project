@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Body,
@@ -132,6 +133,15 @@ export class AdminController {
     return this.adminService.sendNotification(id);
   }
 
+  @Post('notifications/:id/push-messages')
+  async pushNotificationToMessages(
+    @Request() req,
+    @Param('id') id: string,
+    @Body('channel') channel?: string,
+  ) {
+    return this.adminService.pushNotificationToMessages(req.user.id, id, channel);
+  }
+
   @Delete('notifications/:id')
   async deleteNotification(
     @Param('id') id: string,
@@ -177,7 +187,32 @@ export class AdminController {
   async deleteTransaction(@Param('id') id: string) {
     return this.adminService.deleteTransaction(id);
   }
+
+  // ── CRM PERMISSION MATRIX (RBAC) ──────────────────────────────────────────
+
+  @Get('permission-matrix')
+  async getPermissionMatrix() {
+    return this.adminService.getPermissionMatrix();
+  }
+
+  @Put('permission-matrix')
+  async savePermissionMatrix(@Request() req: any, @Body() body: any) {
+    return this.adminService.savePermissionMatrix(body, req.user?.id);
+  }
+
+  // ── ACTIVE ASSOCIATION THEME ──────────────────────────────────────────
+
+  @Get('active-theme')
+  async getActiveTheme() {
+    return this.adminService.getActiveTheme();
+  }
+
+  @Put('active-theme')
+  async saveActiveTheme(@Request() req: any, @Body() body: any) {
+    return this.adminService.saveActiveTheme(body, req.user?.id);
+  }
 }
+
 
 
 

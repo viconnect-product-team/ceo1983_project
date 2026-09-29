@@ -762,17 +762,16 @@ function EventsScreen() {
     });
   };
 
-  const isEventFree = (e: MyEvent) => {
-    const rawPrice = (e as any).ticketPrice !== undefined && (e as any).ticketPrice !== null
-      ? Number((e as any).ticketPrice)
-      : ((e as any).fee !== undefined ? Number((e as any).fee) : 0);
-    return rawPrice === 0;
+  const getEventPrice = (e: MyEvent | any) => {
+    if (!e) return 0;
+    const rawPrice = e.ticketPrice !== undefined && e.ticketPrice !== null
+      ? Number(e.ticketPrice)
+      : (e.fee !== undefined && e.fee !== null ? Number(e.fee) : 0);
+    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
   };
 
-  const getEventPrice = (e: MyEvent) => {
-    return (e as any).ticketPrice !== undefined && (e as any).ticketPrice !== null
-      ? Number((e as any).ticketPrice)
-      : ((e as any).fee !== undefined ? Number((e as any).fee) : 0);
+  const isEventFree = (e: MyEvent | any) => {
+    return getEventPrice(e) <= 0;
   };
 
   // Modals state
@@ -1213,7 +1212,7 @@ function EventsScreen() {
                 luckyNumber: lucky,
                 ticketType: "Standard VIP",
                 ticketCount: 1,
-                isFree: Boolean((regEvt as any).ticketPrice === 0 || (regEvt as any).fee === 0 || (regEvt as any).isFree),
+                isFree: isEventFree(regEvt),
                 date: regEvt.date || "",
                 time: regEvt.time || "",
                 location: regEvt.place || "Hà Nội",
@@ -2195,8 +2194,8 @@ function EventsScreen() {
                     <>
                       <Send className="h-3.5 w-3.5" />
                       <span>
-                        {(registeringEvent as any)?.ticketPrice === 0 || (registeringEvent as any)?.fee === 0
-                          ? "Xác nhận đăng ký vé miễn phí"
+                        {isEventFree(registeringEvent)
+                          ? "Xác nhận đăng ký vé miễn phí (0đ)"
                           : "Xác nhận & Gửi đăng ký"}
                       </span>
                     </>

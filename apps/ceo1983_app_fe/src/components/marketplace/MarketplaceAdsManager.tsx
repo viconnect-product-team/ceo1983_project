@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { fetchNestApi } from "@/lib/api-client";
 import {
   Megaphone,
   QrCode,
@@ -170,26 +171,41 @@ export function MarketplaceAdsManager() {
     }
   };
 
-  const loadData = () => {
+  const loadData = async () => {
     try {
-      const storedReq = localStorage.getItem("ceo1983_ad_requests");
-      if (storedReq) {
-        setRequests(JSON.parse(storedReq));
+      const [adsRes, reqsRes] = await Promise.allSettled([
+        fetchNestApi<ActiveAdCampaign[]>("/advertisements"),
+        fetchNestApi<AdRequestItem[]>("/advertisements/requests"),
+      ]);
+
+      if (adsRes.status === "fulfilled" && Array.isArray(adsRes.value) && adsRes.value.length > 0) {
+        setActiveAds(adsRes.value);
+        localStorage.setItem("ceo1983_marketplace_ads", JSON.stringify(adsRes.value));
       } else {
-        localStorage.setItem("ceo1983_ad_requests", JSON.stringify(DEFAULT_AD_REQUESTS));
-        setRequests(DEFAULT_AD_REQUESTS);
+        const storedAds = localStorage.getItem("ceo1983_marketplace_ads");
+        if (storedAds) {
+          setActiveAds(JSON.parse(storedAds));
+        } else {
+          setActiveAds(DEFAULT_ACTIVE_ADS);
+        }
       }
 
-      const storedAds = localStorage.getItem("ceo1983_marketplace_ads");
-      if (storedAds) {
-        setActiveAds(JSON.parse(storedAds));
+      if (reqsRes.status === "fulfilled" && Array.isArray(reqsRes.value) && reqsRes.value.length > 0) {
+        setRequests(reqsRes.value);
+        localStorage.setItem("ceo1983_ad_requests", JSON.stringify(reqsRes.value));
       } else {
-        localStorage.setItem("ceo1983_marketplace_ads", JSON.stringify(DEFAULT_ACTIVE_ADS));
-        setActiveAds(DEFAULT_ACTIVE_ADS);
+        const storedReq = localStorage.getItem("ceo1983_ad_requests");
+        if (storedReq) {
+          setRequests(JSON.parse(storedReq));
+        } else {
+          setRequests(DEFAULT_AD_REQUESTS);
+        }
       }
     } catch {
-      setRequests(DEFAULT_AD_REQUESTS);
-      setActiveAds(DEFAULT_ACTIVE_ADS);
+      const storedAds = localStorage.getItem("ceo1983_marketplace_ads");
+      if (storedAds) setActiveAds(JSON.parse(storedAds));
+      const storedReq = localStorage.getItem("ceo1983_ad_requests");
+      if (storedReq) setRequests(JSON.parse(storedReq));
     }
   };
 
@@ -211,13 +227,23 @@ export function MarketplaceAdsManager() {
     setQrModalOpen(true);
   };
 
-  const handleConfirmPaid = () => {
+  const handleConfirmPaid = async () => {
     if (!selectedReq) return;
     const updated = requests.map((r) =>
       r.id === selectedReq.id ? { ...r, status: "paid" as const } : r
     );
     setRequests(updated);
     localStorage.setItem("ceo1983_ad_requests", JSON.stringify(updated));
+
+    try {
+      await fetchNestApi(`/advertisements/requests/${selectedReq.id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status: "paid" }),
+      });
+    } catch (e: any) {
+      console.warn("Cập nhật trạng thái yêu cầu lên backend:", e?.message);
+    }
+
     window.dispatchEvent(new CustomEvent("ceo1983:ad-requests-updated"));
     toast.success(`✓ Đã xác nhận thanh toán thành công cho ${selectedReq.companyName}!`);
     setQrModalOpen(false);
@@ -232,16 +258,20 @@ export function MarketplaceAdsManager() {
     setFormCompany(req.companyName);
     setFormBanner(
       req.productLink ||
-        "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80"
+      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80"
     );
     setFormTargetUrl(req.productLink || "https://ceo1983.com/marketplace");
     setSetupModalOpen(true);
   };
 
-  const handleSaveCampaign = (e: React.FormEvent) => {
+  const handleSaveCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formTitle.trim() || !formCompany.trim()) {
-      toast.error("Vui lòng nhập đầy đủ tiêu đề và tên công ty!");
+    if (!formTitle.trim()) {
+      toast.error("Tiêu đề không được phép để trống");
+      return;
+    }
+    if (!formCompany.trim()) {
+      toast.error("Tên công ty không được phép để trống");
       return;
     }
 
@@ -264,9 +294,20 @@ export function MarketplaceAdsManager() {
       createdAt: new Date().toISOString(),
     };
 
+    // 1. Ghi nhận tức thì vào state & localStorage
     const nextAds = [newAd, ...activeAds];
     setActiveAds(nextAds);
     localStorage.setItem("ceo1983_marketplace_ads", JSON.stringify(nextAds));
+
+    // 2. Gửi API lên NestJS Backend để lưu DB thật
+    try {
+      await fetchNestApi("/advertisements", {
+        method: "POST",
+        body: JSON.stringify(newAd),
+      });
+    } catch (apiErr: any) {
+      console.warn("Lưu quảng cáo lên API backend:", apiErr?.message);
+    }
 
     // Update request status to active
     if (selectedReq) {
@@ -282,23 +323,43 @@ export function MarketplaceAdsManager() {
     setSetupModalOpen(false);
   };
 
-  const handleToggleAdStatus = (adId: string) => {
+  const handleToggleAdStatus = async (adId: string) => {
+    const current = activeAds.find((a) => a.id === adId);
+    const nextStatus = current?.status === "active" ? "paused" : "active";
+
     const updated = activeAds.map((a) =>
-      a.id === adId
-        ? { ...a, status: (a.status === "active" ? "paused" : "active") as "active" | "paused" }
-        : a
+      a.id === adId ? { ...a, status: nextStatus as "active" | "paused" } : a
     );
     setActiveAds(updated);
     localStorage.setItem("ceo1983_marketplace_ads", JSON.stringify(updated));
+
+    try {
+      await fetchNestApi(`/advertisements/${adId}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: nextStatus }),
+      });
+    } catch (e: any) {
+      console.warn("Toggle ad status API:", e?.message);
+    }
+
     window.dispatchEvent(new CustomEvent("ceo1983:ads-updated"));
     toast.success("Đã thay đổi trạng thái chiến dịch quảng cáo!");
   };
 
-  const handleDeleteAd = (adId: string) => {
+  const handleDeleteAd = async (adId: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn gỡ chiến dịch quảng cáo này?")) return;
     const updated = activeAds.filter((a) => a.id !== adId);
     setActiveAds(updated);
     localStorage.setItem("ceo1983_marketplace_ads", JSON.stringify(updated));
+
+    try {
+      await fetchNestApi(`/advertisements/${adId}`, {
+        method: "DELETE",
+      });
+    } catch (e: any) {
+      console.warn("Delete ad API:", e?.message);
+    }
+
     window.dispatchEvent(new CustomEvent("ceo1983:ads-updated"));
     toast.success("Đã gỡ quảng cáo khỏi hệ thống!");
   };
@@ -379,11 +440,10 @@ export function MarketplaceAdsManager() {
                     )}
                   </div>
                   <span
-                    className={`absolute top-2.5 right-2.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      ad.status === "active"
+                    className={`absolute top-2.5 right-2.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${ad.status === "active"
                         ? "bg-emerald-500/80 text-white"
                         : "bg-amber-500/80 text-white"
-                    }`}
+                      }`}
                   >
                     {ad.status === "active" ? "Đang chạy" : "Tạm dừng"}
                   </span>
@@ -567,11 +627,10 @@ export function MarketplaceAdsManager() {
               {/* VietQR Dynamic Code Preview */}
               <div className="mx-auto w-52 overflow-hidden rounded-2xl border-2 border-blue-500/30 bg-white p-3 shadow-md">
                 <img
-                  src={`https://api.vietqr.io/image/970422-0983001983-compact2.jpg?amount=${
-                    selectedReq.paymentAmount || 15000000
-                  }&addInfo=${encodeURIComponent(
-                    selectedReq.paymentCode || `QC-CEO1983-${selectedReq.id}`
-                  )}&accountName=HIEP%20HOI%20DOANH%20NHAN%20CEO%201983`}
+                  src={`https://api.vietqr.io/image/970422-0983001983-compact2.jpg?amount=${selectedReq.paymentAmount || 15000000
+                    }&addInfo=${encodeURIComponent(
+                      selectedReq.paymentCode || `QC-CEO1983-${selectedReq.id}`
+                    )}&accountName=HIEP%20HOI%20DOANH%20NHAN%20CEO%201983`}
                   alt="VietQR"
                   className="w-full h-auto object-contain"
                 />
@@ -741,11 +800,10 @@ export function MarketplaceAdsManager() {
                       key={an.id}
                       type="button"
                       onClick={() => setFormAnimation(an.id as any)}
-                      className={`p-2 rounded-xl border text-center transition cursor-pointer font-medium ${
-                        formAnimation === an.id
+                      className={`p-2 rounded-xl border text-center transition cursor-pointer font-medium ${formAnimation === an.id
                           ? "border-blue-600 bg-blue-500/10 text-blue-600 font-bold"
                           : "border-border bg-secondary/40 text-muted-foreground hover:bg-secondary"
-                      }`}
+                        }`}
                     >
                       {an.label}
                     </button>

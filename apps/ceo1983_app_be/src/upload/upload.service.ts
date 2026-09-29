@@ -214,6 +214,84 @@ export class UploadService {
     return url;
   }
 
+  async saveAssociationLogo(file: any, userId: string, associationId?: string): Promise<string> {
+    const fileExt = path.extname(file.originalname).toLowerCase() || '.png';
+    const baseFilename = `${associationId || 'assoc'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
+    const safeFilename = `association-logos/${baseFilename}`;
+
+    let saved = false;
+    let url: string | null = null;
+
+    try {
+      const minioUrl = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
+      if (minioUrl) {
+        url = minioUrl;
+        saved = true;
+      }
+    } catch (minioErr: any) {
+      console.warn('MinIO upload unreachable/failed for association logo, fallback to disk storage:', minioErr?.message);
+    }
+
+    if (!saved) {
+      try {
+        url = await this.saveToLocalDisk('association-logos', baseFilename, file.buffer);
+        saved = true;
+      } catch (diskErr: any) {
+        console.warn('Local disk write notice in saveAssociationLogo:', diskErr?.message);
+      }
+    }
+
+    if (!saved || !url) {
+      throw new InternalServerErrorException('Không thể lưu trữ tệp logo lên hệ thống. Vui lòng thử lại sau.');
+    }
+
+    // Save upload metadata
+    try {
+      const uploadId = randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.user_uploads (id, user_id, file_path, filename, original_name, mime_type, size, created_at, updated_at)
+        VALUES (${uploadId}::uuid, ${userId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
+      `;
+    } catch {}
+
+    // Update public.associations
+    try {
+      if (associationId && /^[0-9a-fA-F-]{36}$/.test(associationId)) {
+        await this.prisma.$executeRaw`
+          UPDATE public.associations
+          SET logo_url = ${url}, updated_at = NOW()
+          WHERE id = ${associationId}::uuid
+        `;
+      } else {
+        await this.prisma.$executeRaw`
+          UPDATE public.associations
+          SET logo_url = ${url}, updated_at = NOW()
+          WHERE id = (SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1)
+        `;
+      }
+    } catch (e) {
+      console.warn('Failed to update association logo_url:', e);
+    }
+
+    // Record in public.association_logo_history
+    try {
+      const user = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+      const actorName = user?.name || user?.email || 'Quản trị viên';
+      const targetAssoc = associationId && /^[0-9a-fA-F-]{36}$/.test(associationId)
+        ? associationId
+        : (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1`.then(r => r[0]?.id).catch(() => null));
+
+      if (targetAssoc) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.association_logo_history (id, association_id, changed_by, changed_by_name, new_logo_url, action, created_at)
+          VALUES (gen_random_uuid(), ${targetAssoc}::uuid, ${userId}::uuid, ${actorName}, ${url}, 'change', NOW())
+        `;
+      }
+    } catch {}
+
+    return url;
+  }
+
   async saveFile(file: any, userId: string, folder = 'documents'): Promise<string> {
     const fileExt = path.extname(file.originalname).toLowerCase() || '.bin';
     const baseFilename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;

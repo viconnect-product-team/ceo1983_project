@@ -2,8 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Award,
+  CalendarDays,
+  Check,
   Download,
   Handshake,
+  Lock,
   Pencil,
   Plus,
   Search,
@@ -28,6 +31,7 @@ import {
   type Sponsor,
 } from "@/lib/sponsors.functions";
 import { SponsorOnboardWizard } from "@/components/dashboard/SponsorOnboardWizard";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/sponsors")({
@@ -50,11 +54,15 @@ const TIER_COLOR: Record<Sponsor["tier"], string> = {
 function SponsorsPage() {
   const t = useT();
   const fmt = useFmt();
+  const { can } = useRole();
   const { data: SPONSORS, reload } = useServerData<Sponsor[]>(() => listSponsorsFn(), []);
   const [q, setQ] = useUrlState<string>("q", "");
   const [tier, setTier] = useState<Sponsor["tier"] | "all">("all");
   const [sponsorTypeFilter, setSponsorTypeFilter] = useState<"all" | "regular" | "new">("all");
   const [packageTypeFilter, setPackageTypeFilter] = useState<"all" | "cash" | "in_kind">("all");
+  const [eventAssignedFilter, setEventAssignedFilter] = useState<"all" | "assigned" | "available">(
+    "all",
+  );
 
   const createFn = useServerFn(createSponsorFn);
   const updateFn = useServerFn(updateSponsorFn);
@@ -129,7 +137,10 @@ function SponsorsPage() {
     setSubmitting(true);
     const payload = {
       ...v,
-      since: v.since && String(v.since).trim() ? String(v.since).trim() : new Date().toISOString().slice(0, 10),
+      since:
+        v.since && String(v.since).trim()
+          ? String(v.since).trim()
+          : new Date().toISOString().slice(0, 10),
     };
     try {
       if (editing) {
@@ -165,10 +176,14 @@ function SponsorsPage() {
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return SPONSORS
-      .filter((s) => (tier === "all" ? true : s.tier === tier))
+    return SPONSORS.filter((s) => (tier === "all" ? true : s.tier === tier))
       .filter((s) => (sponsorTypeFilter === "all" ? true : s.sponsorType === sponsorTypeFilter))
       .filter((s) => (packageTypeFilter === "all" ? true : s.packageType === packageTypeFilter))
+      .filter((s) => {
+        if (eventAssignedFilter === "assigned") return Boolean(s.isAssigned || s.assignedEvent);
+        if (eventAssignedFilter === "available") return !s.isAssigned && !s.assignedEvent;
+        return true;
+      })
       .filter(
         (s) =>
           !ql ||
@@ -176,7 +191,7 @@ function SponsorsPage() {
           s.contact.toLowerCase().includes(ql) ||
           (s.inKindDescription && s.inKindDescription.toLowerCase().includes(ql)),
       );
-  }, [q, tier, sponsorTypeFilter, packageTypeFilter, SPONSORS]);
+  }, [q, tier, sponsorTypeFilter, packageTypeFilter, eventAssignedFilter, SPONSORS]);
 
   const tc = useTableControls<Sponsor>(
     filtered,
@@ -215,17 +230,19 @@ function SponsorsPage() {
               <UserPlus className="h-4 w-4 text-primary" />
               {t("onb.open")}
             </button>
-            <button
-              onClick={() => {
-                setEditing(null);
-                setOpen(true);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <Plus className="h-4 w-4" />
-              {t("sponsors.add")}
-            </button>
+            {can(PERMISSIONS.SPONSOR_CREATE) && (
+              <button
+                onClick={() => {
+                  setEditing(null);
+                  setOpen(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Plus className="h-4 w-4" />
+                {t("sponsors.add")}
+              </button>
+            )}
           </>
         }
       />
@@ -298,6 +315,15 @@ function SponsorsPage() {
           <option value="silver">{t("sponsors.tier.silver")}</option>
           <option value="bronze">{t("sponsors.tier.bronze")}</option>
         </select>
+        <select
+          value={eventAssignedFilter}
+          onChange={(e) => setEventAssignedFilter(e.target.value as any)}
+          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+        >
+          <option value="all">Tất cả sự kiện</option>
+          <option value="assigned">🔒 Đang tài trợ (Đã khóa)</option>
+          <option value="available">✓ Chưa gán sự kiện (Khả dụng)</option>
+        </select>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -305,28 +331,41 @@ function SponsorsPage() {
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
-                <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">{t("sponsors.col.code")}</th>
+                <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">
+                  STT
+                </th>
+                <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">
+                  {t("sponsors.col.code")}
+                </th>
                 <th className="px-4 py-3 border-b border-border">{t("sponsors.col.name")}</th>
                 <th className="px-4 py-3 border-b border-border">Phân loại đối tác</th>
                 <th className="px-4 py-3 border-b border-border">Hình thức gói</th>
                 <th className="px-4 py-3 border-b border-border">{t("sponsors.col.tier")}</th>
                 <th className="px-4 py-3 border-b border-border">{t("sponsors.col.contact")}</th>
                 <th className="px-4 py-3 border-b border-border">{t("sponsors.col.value")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.events")}</th>
+                <th className="px-4 py-3 border-b border-border">Sự kiện & Trạng thái tài trợ</th>
                 <th className="px-4 py-3 border-b border-border">{t("sponsors.col.since")}</th>
                 <th className="px-4 py-3 border-b border-border">{t("sponsors.col.status")}</th>
-                <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">{t("common.actions")}</th>
+                <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">
+                  {t("common.actions")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {tc.pageRows.map((s, idx) => (
-                <tr key={s.id} className="group border-b border-border/50 transition hover:bg-secondary/40">
+                <tr
+                  key={s.id}
+                  className="group border-b border-border/50 transition hover:bg-secondary/40"
+                >
                   <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
                     {(tc.page - 1) * tc.pageSize + idx + 1}
                   </td>
-                  <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-semibold text-primary group-hover:bg-muted/70 border-b border-border/50">{s.id}</td>
-                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">{s.name}</td>
+                  <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-semibold text-primary group-hover:bg-muted/70 border-b border-border/50">
+                    {s.id}
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">
+                    {s.name}
+                  </td>
                   <td className="px-4 py-3 border-b border-border/50">
                     {s.sponsorType === "regular" ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 shadow-sm whitespace-nowrap">
@@ -346,7 +385,10 @@ function SponsorsPage() {
                           🎁 Hiện vật
                         </span>
                         {s.inKindDescription && (
-                          <span className="text-[11px] text-muted-foreground truncate" title={s.inKindDescription}>
+                          <span
+                            className="text-[11px] text-muted-foreground truncate"
+                            title={s.inKindDescription}
+                          >
                             {s.inKindDescription}
                           </span>
                         )}
@@ -369,32 +411,71 @@ function SponsorsPage() {
                     <div className="text-foreground">{s.contact}</div>
                     <div className="text-[11px] text-muted-foreground">{s.email}</div>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">{fmt.money(s.amount)}</td>
-                  <td className="px-4 py-3 text-foreground border-b border-border/50">{s.events}</td>
-                  <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{fmt.date(s.since)}</td>
+                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">
+                    {fmt.money(s.amount)}
+                  </td>
+                  <td className="px-4 py-3 border-b border-border/50">
+                    {s.assignedEvent ? (
+                      <div className="flex flex-col gap-1 max-w-[260px]">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-primary">
+                          <CalendarDays className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span className="truncate" title={s.assignedEvent.name}>
+                            {s.assignedEvent.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                            <Lock className="h-2.5 w-2.5" /> Gói{" "}
+                            {s.assignedEvent.packageName || s.assignedEvent.tier?.toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                          🔒 Đã khóa — Không áp dụng cho sự kiện khác
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="inline-flex items-center gap-1 w-fit rounded px-2 py-0.5 text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <Check className="h-3 w-3" /> Sẵn sàng tài trợ
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {s.events} sự kiện đã đồng hành
+                        </span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground border-b border-border/50">
+                    {fmt.date(s.since)}
+                  </td>
                   <td className="px-4 py-3 border-b border-border/50">
                     <Pill color={s.status === "active" ? "success" : "neutral"}>
-                      {s.status === "active" ? t("sponsors.status.active") : t("sponsors.status.expired")}
+                      {s.status === "active"
+                        ? t("sponsors.status.active")
+                        : t("sponsors.status.expired")}
                     </Pill>
                   </td>
                   <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
                     <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => {
-                          setEditing(s);
-                          setOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(s)}
-                        disabled={deletingId === s.id}
-                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {can(PERMISSIONS.SPONSOR_EDIT) && (
+                        <button
+                          onClick={() => {
+                            setEditing(s);
+                            setOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {can(PERMISSIONS.SPONSOR_DELETE) && (
+                        <button
+                          onClick={() => onDelete(s)}
+                          disabled={deletingId === s.id}
+                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

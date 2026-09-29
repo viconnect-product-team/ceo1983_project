@@ -17,13 +17,7 @@ export const Route = createFileRoute("/business-connect")({
 type Tab = { key: TKey; to: string; exact?: boolean };
 
 const TABS: Tab[] = [
-  { key: "bc.tab.overview", to: "/business-connect", exact: true },
-  { key: "bc.tab.myCard", to: "/business-connect/my-card" },
-  { key: "bc.tab.saved", to: "/business-connect/saved-cards" },
-  { key: "bc.tab.connections", to: "/business-connect/connections" },
   { key: "bc.tab.meetings", to: "/business-connect/meetings" },
-  { key: "bc.tab.timeline", to: "/business-connect/relationship-timeline" },
-  { key: "bc.memory.tab", to: "/business-connect/memory" },
 ];
 
 function BusinessConnectLayout() {
@@ -43,27 +37,13 @@ function BusinessConnectLayout() {
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-6">
         <header className="mb-5">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {t("bc.surface.title")}
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Cuộc Gặp Kết Nối
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("bc.surface.subtitle")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Quản lý và thống kê các cuộc gặp gỡ, giao thương 1-on-1 giữa các hội viên CLB Doanh Nhân CEO 1983
+          </p>
         </header>
-
-        <nav
-          aria-label={t("bc.surface.title")}
-          className="mb-6 flex gap-1 overflow-x-auto border-b"
-        >
-          {TABS.map((tab) => (
-            <Link
-              key={tab.to}
-              to={tab.to}
-              activeOptions={{ exact: tab.exact }}
-              className="whitespace-nowrap rounded-t-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[status=active]:border-b-2 data-[status=active]:border-primary data-[status=active]:text-foreground"
-            >
-              {t(tab.key)}
-            </Link>
-          ))}
-        </nav>
 
         <Outlet />
       </div>

@@ -6,7 +6,8 @@ import { WorkspaceBucketList } from "@/components/business-connect/meeting/works
 import type { MeetingWorkspaceBucket } from "@/lib/meeting/workspace/types";
 import { MEETING_WORKSPACE_BUCKETS } from "@/lib/meeting/workspace/types";
 import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
-import { Calendar, Clock, MapPin, Video, User, Phone, Plus, Sparkles, Building2 } from "lucide-react";
+import { Calendar, Clock, MapPin, Video, User, Phone, Plus, Sparkles, Building2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/business-connect/meetings/")({
@@ -106,6 +107,31 @@ function MeetingsWorkspacePage() {
     };
   }, []);
 
+  const handleDeleteMeeting = async (id: string, title: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa cuộc gặp "${title}" không? Hành động này không thể hoàn tác.`)) return;
+    try {
+      // 1. Remove from local storage
+      const keys = ["ceo1983_meetings_history", "vione_meetings_history"];
+      for (const k of keys) {
+        try {
+          const list = JSON.parse(localStorage.getItem(k) || "[]");
+          const next = list.filter((x: any) => String(x.id) !== String(id));
+          localStorage.setItem(k, JSON.stringify(next));
+        } catch {}
+      }
+      // 2. Call backend DELETE
+      try {
+        await fetchNestApi(`/meetings/${id}`, { method: "DELETE" });
+      } catch {}
+
+      toast.success("✓ Đã xóa cuộc gặp thành công!");
+      window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
+      await loadMeetings();
+    } catch {
+      toast.error("Lỗi khi xóa cuộc gặp");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -129,7 +155,7 @@ function MeetingsWorkspacePage() {
         </button>
       </div>
 
-      <WorkspaceSummaryCards />
+      <WorkspaceSummaryCards meetings={localMeetings} />
 
       {/* Danh sách các cuộc gặp kết nối */}
       {localMeetings.length > 0 ? (
@@ -200,6 +226,15 @@ function MeetingsWorkspacePage() {
                 )}
 
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMeeting(item.id, item.title)}
+                    className="rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1 cursor-pointer"
+                    title="Xóa cuộc gặp này"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Xóa cuộc gặp</span>
+                  </button>
                   {item.venueType === "online" && item.onlineUrl && (
                     <a
                       href={item.onlineUrl.startsWith("http") ? item.onlineUrl : `https://${item.onlineUrl}`}

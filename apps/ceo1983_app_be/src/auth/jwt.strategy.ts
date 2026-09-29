@@ -18,7 +18,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid user ID format');
     }
     const id = payload.sub === 'mock-admin-id' ? '00000000-0000-0000-0000-000000000000' : payload.sub;
-    return { id, username: payload.username };
+    return {
+      id,
+      userId: id,
+      username: payload.username,
+      email: payload.email,
+      roles: Array.isArray(payload.roles) ? payload.roles : (payload.role ? [payload.role] : []),
+      role: payload.role,
+      srsRole: payload.srsRole,
+      ...payload,
+    };
   }
 }
 

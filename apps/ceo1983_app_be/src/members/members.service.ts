@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 export class CreateMemberDto {
   name!: string;
@@ -235,6 +237,10 @@ export class MembersService {
       about: r.about ?? '',
       associationId: r.association_id,
       userId: r.user_id,
+      executiveRole: r.executive_role || 'member',
+      executive_role: r.executive_role || 'member',
+      department: r.department || 'Hội viên CEO 1983',
+      role: r.executive_role || 'member',
       coverUrl: r.cover_url || null,
       cover_url: r.cover_url || null,
       avatarUrl: r.avatar_url || null,
@@ -367,6 +373,10 @@ export class MembersService {
       type: m.type === 'individual' ? 'individual' : 'company',
       verified: m.status === 'active',
       userId: m.user_id ?? null,
+      executiveRole: m.executive_role || 'member',
+      executive_role: m.executive_role || 'member',
+      department: m.department || 'Hội viên CEO 1983',
+      role: m.executive_role || 'member',
       avatar: m.avatar ?? null,
     }));
   }
@@ -495,6 +505,10 @@ export class MembersService {
         address: m.address ?? '',
         website: m.website ?? null,
         joinedAt: m.joined_at ? (m.joined_at instanceof Date ? m.joined_at.toISOString().slice(0, 10) : String(m.joined_at).slice(0, 10)) : null,
+        executiveRole: m.executive_role || 'member',
+        executive_role: m.executive_role || 'member',
+        department: m.department || 'Hội viên CEO 1983',
+        role: m.executive_role || 'member',
         avatar: unifiedAvatar,
         avatarUrl: unifiedAvatar,
         companyLogo: unifiedCompanyLogo,
@@ -1066,7 +1080,32 @@ export class MembersService {
           const memberEmail = (email || current.email || '').trim();
           if (memberEmail && memberEmail.includes('@')) {
             const passMatch = (current.about || '').match(/Pass=([^\s|]+)/);
-            const rawPass = passMatch ? passMatch[1] : undefined;
+            let rawPass = passMatch ? passMatch[1].trim() : undefined;
+            if (rawPass && (rawPass.startsWith('[') || rawPass.toLowerCase().includes('random'))) {
+              rawPass = undefined;
+            }
+
+            // Nếu chưa có mật khẩu hoặc mật khẩu là placeholder [Random], tự động sinh mật khẩu ngẫu nhiên 6 ký tự
+            if (!rawPass) {
+              const randomChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+              rawPass = Array.from(crypto.randomBytes(6))
+                .map((byte) => randomChars[byte % randomChars.length])
+                .join('');
+              try {
+                const newHash = await bcrypt.hash(rawPass, 10);
+                if (current.user_id) {
+                  await this.prisma.$executeRaw`
+                    UPDATE public.vione_users SET password = ${newHash}, updated_at = now() WHERE id = ${current.user_id}::uuid
+                  `.catch(() => {});
+                }
+                const updatedAbout = `${current.about || ''} | Pass=${rawPass}`;
+                await this.prisma.$executeRaw`
+                  UPDATE public.members SET about = ${updatedAbout}, updated_at = now() WHERE id = ${id}
+                `.catch(() => {});
+              } catch (hErr) {
+                console.warn('Password hash error:', hErr);
+              }
+            }
 
             void this.mailService.sendMemberApprovedEmail({
               to: memberEmail,

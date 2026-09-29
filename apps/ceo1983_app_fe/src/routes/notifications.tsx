@@ -8,6 +8,7 @@ import {
   Info,
   Mail,
   Megaphone,
+  MessageSquare,
   Pencil,
   Plus,
   Search,
@@ -26,6 +27,7 @@ import {
   createNotificationFn,
   deleteNotificationFn,
   listNotificationsFn,
+  pushNotificationToMessagesFn,
   sendNotificationFn,
   updateNotificationFn,
 } from "@/lib/notifications.functions";
@@ -116,10 +118,98 @@ function NotifyPage() {
   const updateFn = useServerFn(updateNotificationFn);
   const deleteFn = useServerFn(deleteNotificationFn);
   const sendFn = useServerFn(sendNotificationFn);
+  const pushToMessagesFn = useServerFn(pushNotificationToMessagesFn);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Notification | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pushingId, setPushingId] = useState<string | null>(null);
+
+  const [pushedMessageIds, setPushedMessageIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const saved = localStorage.getItem("pushed_to_messages_notif_ids");
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {}
+    return new Set();
+  });
+
+  useEffect(() => {
+    setPushedMessageIds((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const item of items) {
+        if ((item as any).pushedToMessages || ((item as any).targetChannel && (item as any).targetChannel !== "none")) {
+          if (!next.has(item.id)) {
+            next.add(item.id);
+            changed = true;
+          }
+          if ((item as any).code && !next.has((item as any).code)) {
+            next.add((item as any).code);
+            changed = true;
+          }
+        }
+      }
+      if (changed) {
+        try {
+          localStorage.setItem("pushed_to_messages_notif_ids", JSON.stringify(Array.from(next)));
+        } catch {}
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
+
+  const handlePushToMessages = async (n: Notification, targetChannel = "channel_media") => {
+    setPushingId(n.id);
+    try {
+      await pushToMessagesFn({ data: { id: n.id, channel: targetChannel } }).catch(() => null);
+
+      const channelList =
+        targetChannel === "all_channels"
+          ? ["channel_media", "channel_promotion", "channel_secretariat", "channel_deals", "channel_events"]
+          : [targetChannel];
+
+      for (const ch of channelList) {
+        const chatKey = `vba.chat.${ch}`;
+        try {
+          const history = JSON.parse(localStorage.getItem(chatKey) || "[]");
+          const newMsg = {
+            id: `crm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            text: `📢 THÔNG BÁO TỪ BAN ĐIỀU HÀNH:\n\n*${n.title}*\n\n${n.body || ""}`,
+            mine: false,
+            time: "Vừa xong",
+            createdAt: new Date().toISOString(),
+            seen: false,
+          };
+          history.push(newMsg);
+          localStorage.setItem(chatKey, JSON.stringify(history));
+        } catch {}
+      }
+
+      setPushedMessageIds((prev) => {
+        const next = new Set(prev).add(n.id);
+        if ((n as any).code) next.add((n as any).code);
+        try {
+          localStorage.setItem("pushed_to_messages_notif_ids", JSON.stringify(Array.from(next)));
+        } catch {}
+        return next;
+      });
+
+      window.dispatchEvent(
+        new CustomEvent("vba:notification_pushed_to_messages", {
+          detail: { id: n.id, code: (n as any).code, channel: targetChannel },
+        }),
+      );
+      window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
+
+      toast.success("Đã đưa thông báo vào Kênh tin nhắn Hiệp hội thành công!");
+      await router.invalidate();
+    } catch (e: any) {
+      toast.error(e?.message || "Không thể đưa thông báo vào tin nhắn");
+    } finally {
+      setPushingId(null);
+    }
+  };
 
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -267,6 +357,17 @@ function NotifyPage() {
             localStorage.setItem(chatKey, JSON.stringify(history));
           } catch {}
         }
+
+        if (editing?.id) {
+          setPushedMessageIds((prev) => {
+            const next = new Set(prev).add(editing.id);
+            try {
+              localStorage.setItem("pushed_to_messages_notif_ids", JSON.stringify(Array.from(next)));
+            } catch {}
+            return next;
+          });
+        }
+        window.dispatchEvent(new CustomEvent("vba:notification_pushed_to_messages"));
         window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
         toast.success("Đã đẩy thông báo tới các kênh tin nhắn Hiệp hội!");
       }
@@ -331,6 +432,11 @@ function NotifyPage() {
     const Icon = audienceIcon(n.audience);
     const scopeKey = n.appScope || n.targetApp || "crm";
     const scopeConf = SCOPE_CONFIG[scopeKey] || SCOPE_CONFIG.crm;
+    const isPushed =
+      pushedMessageIds.has(n.id) ||
+      Boolean((n as any).code && pushedMessageIds.has((n as any).code)) ||
+      Boolean((n as any).pushedToMessages) ||
+      Boolean((n as any).targetChannel && (n as any).targetChannel !== "none");
 
     return (
       <div
@@ -367,12 +473,30 @@ function NotifyPage() {
             {n.status === "sent" && <span>{rel(n.sentAt)}</span>}
           </div>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          {/* NÚT ĐƯA VÀO TIN NHẮN (Theo yêu cầu: Chỉ khi nào bấm đưa vào tin nhắn ở CRM thì app hiệp hội mới hiện xem ở tin nhắn) */}
+          {isPushed ? (
+            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+              <MessageSquare className="h-3 w-3 stroke-[2.5]" />
+              <span>Đã trong tin nhắn</span>
+            </span>
+          ) : (
+            <button
+              onClick={() => handlePushToMessages(n)}
+              disabled={pushingId === n.id}
+              title="Đưa thông báo này vào Kênh tin nhắn Hiệp Hội để hội viên xem trong mục Tin nhắn"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#2E3192]/30 bg-[#2E3192]/10 hover:bg-[#2E3192] hover:text-white px-2.5 py-1 text-xs font-bold text-[#2E3192] dark:text-indigo-300 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>{pushingId === n.id ? "Đang đẩy..." : "Đưa vào tin nhắn"}</span>
+            </button>
+          )}
+
           {n.status !== "sent" && (
             <button
               onClick={() => onSend(n)}
               disabled={busyId === n.id}
-              className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Send className="h-3.5 w-3.5" aria-hidden="true" />
               {t("notif.send")}

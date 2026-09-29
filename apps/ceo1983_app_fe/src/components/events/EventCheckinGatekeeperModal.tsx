@@ -16,10 +16,15 @@ import {
   Calendar,
   Trash2,
   UserCheck,
+  Check,
+  Phone,
+  Save,
+  Loader2,
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { toast } from "sonner";
 import type { EventItem, Registration } from "@/lib/events.functions";
+import { fetchNestApi } from "@/lib/api-client";
 
 interface EventCheckinGatekeeperModalProps {
   open: boolean;
@@ -36,10 +41,12 @@ export function EventCheckinGatekeeperModal({
 }: EventCheckinGatekeeperModalProps) {
   const [activeTab, setActiveTab] = useState<"qr_standee" | "gatekeepers" | "attendees">("qr_standee");
 
-  // Gatekeepers
-  const [gatekeepers, setGatekeepers] = useState<string[]>([]);
-  const [newGatekeeperName, setNewGatekeeperName] = useState("");
-  const [newGatekeeperPhone, setNewGatekeeperPhone] = useState("");
+  // Gatekeepers & Ban Truyền Thông members from real DB
+  const [bttMembers, setBttMembers] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [savingScanners, setSavingScanners] = useState(false);
+  const [selectedScanners, setSelectedScanners] = useState<any[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
 
   // Quick Attendee
   const [attendees, setAttendees] = useState<any[]>([]);
@@ -53,114 +60,131 @@ export function EventCheckinGatekeeperModal({
   const [attTicketType, setAttTicketType] = useState("VIP");
   const [attLuckyNumber, setAttLuckyNumber] = useState(() => `#${Math.floor(1000 + Math.random() * 9000)}`);
 
+  // Load real members of Ban Truyền Thông from backend
+  useEffect(() => {
+    if (!open) return;
+    let isMounted = true;
+    setLoadingMembers(true);
+    fetchNestApi<any[]>("/members")
+      .then((mems) => {
+        if (!isMounted) return;
+        const list = Array.isArray(mems) ? mems : [];
+        // Filter members belonging to Ban Truyền Thông & Sự Kiện
+        const commMembers = list.filter((m) => {
+          const dept = (m.department || "").toLowerCase();
+          const role = (m.role || "").toLowerCase();
+          const execRole = (m.executiveRole || m.executive_role || "").toLowerCase();
+          return (
+            dept.includes("truyền thông") ||
+            role.includes("truyền thông") ||
+            role.includes("media") ||
+            execRole.includes("truyền thông") ||
+            execRole === "btt" ||
+            execRole === "truong_ban_truyen_thong"
+          );
+        });
+        setBttMembers(commMembers.length > 0 ? commMembers : list);
+      })
+      .catch(() => {
+        if (isMounted) setBttMembers([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingMembers(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open]);
+
+  // Sync initial scanners from event
   useEffect(() => {
     if (!event) return;
-    try {
-      // Load gatekeepers for this event
-      const gkRaw = localStorage.getItem(`ceo1983_event_gatekeepers_${event.id}`);
-      if (gkRaw) {
-        setGatekeepers(JSON.parse(gkRaw));
-      } else {
-        const initial = (event as any).qrStaff
-          ? [(event as any).qrStaff]
-          : ["Ban Thư Ký Sự Kiện — 0983 198 383", "Trưởng Ban Lễ Tân — 0901 000 002"];
-        setGatekeepers(initial);
-      }
+    const rawScanners = (event as any).qrScanners || (event as any).qrStaff || [];
+    if (Array.isArray(rawScanners)) {
+      setSelectedScanners(rawScanners);
+    } else if (rawScanners) {
+      setSelectedScanners([rawScanners]);
+    } else {
+      setSelectedScanners([]);
+    }
 
-      // Load attendees
-      const attRaw = localStorage.getItem(`ceo1983_event_attendees_${event.id}`);
-      if (attRaw) {
-        setAttendees(JSON.parse(attRaw));
-      } else {
-        const demoAttendees = [
-          {
-            id: `att-1`,
-            memberCode: "M1983-001",
-            memberName: "Platform Administrator",
-            phone: "0901 000 001",
-            table: "Bàn VIP 01",
-            seat: "Ghế 01",
-            ticketType: "VIP",
-            luckyNumber: "#7821",
-            checkedIn: true,
-            checkedInAt: new Date(Date.now() - 3600000).toLocaleTimeString("vi-VN"),
-          },
-          {
-            id: `att-2`,
-            memberCode: "M1983-002",
-            memberName: "Quản trị viên Hệ thống",
-            phone: "0901 000 002",
-            table: "Bàn VIP 01",
-            seat: "Ghế 02",
-            ticketType: "VIP",
-            luckyNumber: "#5519",
-            checkedIn: true,
-            checkedInAt: new Date(Date.now() - 1800000).toLocaleTimeString("vi-VN"),
-          },
-          {
-            id: `att-3`,
-            memberCode: "M1983-003",
-            memberName: "James Nguyễn",
-            phone: "0901 000 003",
-            table: "Bàn VIP 01",
-            seat: "Ghế 03",
-            ticketType: "VIP",
-            luckyNumber: "#8892",
-            checkedIn: false,
-          },
-          {
-            id: `att-4`,
-            memberCode: "M1983-004",
-            memberName: "Demo User",
-            phone: "0901 000 004",
-            table: "Bàn Giao Thương 02",
-            seat: "Ghế 01",
-            ticketType: "Tiêu chuẩn",
-            luckyNumber: "#3412",
-            checkedIn: false,
-          },
-          {
-            id: `att-5`,
-            memberCode: "M1983-007",
-            memberName: "Lê Hoàng Long",
-            phone: "0983 000 001",
-            table: "Bàn Giao Thương 02",
-            seat: "Ghế 02",
-            ticketType: "Tiêu chuẩn",
-            luckyNumber: "#6731",
-            checkedIn: true,
-            checkedInAt: new Date(Date.now() - 600000).toLocaleTimeString("vi-VN"),
-          },
-        ];
-        setAttendees(demoAttendees);
-        localStorage.setItem(`ceo1983_event_attendees_${event.id}`, JSON.stringify(demoAttendees));
-      }
-    } catch {}
+    // Load attendees from registrations or cache
+    fetchNestApi<any[]>(`/events/registrations?eventId=${event.id}`)
+      .then((regs) => {
+        if (Array.isArray(regs) && regs.length > 0) {
+          setAttendees(
+            regs.map((r: any) => ({
+              id: r.id,
+              memberCode: r.memberCode || "M1983",
+              memberName: r.memberName || r.name || "Hội viên",
+              phone: r.phone || "—",
+              table: r.table || "Bàn VIP 01",
+              seat: r.seat || "Ghế 01",
+              ticketType: r.ticketType || "VIP",
+              luckyNumber: r.luckyNumber || "#1983",
+              checkedIn: Boolean(r.checkedInAt),
+              checkedInAt: r.checkedInAt,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
   }, [event]);
 
   if (!open || !event) return null;
 
   const qrPayload = `event_checkin:${event.id}`;
 
-  const handleAddGatekeeper = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newGatekeeperName.trim()) return;
-    const item = newGatekeeperPhone.trim()
-      ? `${newGatekeeperName.trim()} — ${newGatekeeperPhone.trim()}`
-      : newGatekeeperName.trim();
-    const updated = [...gatekeepers, item];
-    setGatekeepers(updated);
-    localStorage.setItem(`ceo1983_event_gatekeepers_${event.id}`, JSON.stringify(updated));
-    setNewGatekeeperName("");
-    setNewGatekeeperPhone("");
-    toast.success(`Đã phân quyền soát vé cho: ${item}`);
+  const isMemberSelected = (m: any) => {
+    return selectedScanners.some((s: any) => {
+      if (typeof s === "string") {
+        return s.includes(m.code) || s.includes(m.name) || s.includes(m.id);
+      }
+      return s.id === m.id || s.code === m.code;
+    });
   };
 
-  const handleRemoveGatekeeper = (idx: number) => {
-    const updated = gatekeepers.filter((_, i) => i !== idx);
-    setGatekeepers(updated);
-    localStorage.setItem(`ceo1983_event_gatekeepers_${event.id}`, JSON.stringify(updated));
-    toast.success("Đã xóa người soát vé khỏi sự kiện!");
+  const handleToggleScanner = (m: any) => {
+    if (isMemberSelected(m)) {
+      setSelectedScanners(
+        selectedScanners.filter((s: any) => {
+          if (typeof s === "string") {
+            return !s.includes(m.code) && !s.includes(m.id);
+          }
+          return s.id !== m.id && s.code !== m.code;
+        })
+      );
+    } else {
+      const newScanner = {
+        id: m.id,
+        code: m.code,
+        name: m.name,
+        phone: m.phone || "",
+        department: m.department || "Ban Truyền Thông & Sự Kiện",
+        executiveRole: m.executiveRole || m.role || "Thành viên",
+      };
+      setSelectedScanners([...selectedScanners, newScanner]);
+    }
+  };
+
+  const handleSaveScanners = async () => {
+    if (!event) return;
+    setSavingScanners(true);
+    try {
+      await fetchNestApi(`/events/${event.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          qrScanners: selectedScanners,
+        }),
+      });
+      toast.success("Đã lưu danh sách người quét vé sự kiện thành công!");
+      onUpdateEvent?.();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể cập nhật danh sách người quét vé");
+    } finally {
+      setSavingScanners(false);
+    }
   };
 
   const handleAddAttendee = (e: React.FormEvent) => {
@@ -182,7 +206,6 @@ export function EventCheckinGatekeeperModal({
     };
     const updated = [newAtt, ...attendees];
     setAttendees(updated);
-    localStorage.setItem(`ceo1983_event_attendees_${event.id}`, JSON.stringify(updated));
     setShowAddAttendeeForm(false);
     setAttName("");
     setAttPhone("");
@@ -203,9 +226,15 @@ export function EventCheckinGatekeeperModal({
       return a;
     });
     setAttendees(updated);
-    localStorage.setItem(`ceo1983_event_attendees_${event.id}`, JSON.stringify(updated));
     toast.success("Đã cập nhật trạng thái điểm danh!");
   };
+
+  const filteredBttMembers = bttMembers.filter(
+    (m) =>
+      (m.name || "").toLowerCase().includes(memberSearch.toLowerCase()) ||
+      (m.code || "").toLowerCase().includes(memberSearch.toLowerCase()) ||
+      (m.phone || "").toLowerCase().includes(memberSearch.toLowerCase())
+  );
 
   const filteredAttendees = attendees.filter(
     (a) =>
@@ -222,7 +251,7 @@ export function EventCheckinGatekeeperModal({
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-md">
+            <div className="h-11 w-11 rounded-2xl bg-[#003B95] text-white flex items-center justify-center shadow-md">
               <QrCode className="h-6 w-6" />
             </div>
             <div>
@@ -242,7 +271,7 @@ export function EventCheckinGatekeeperModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-1.5 text-muted-foreground hover:bg-secondary transition"
+            className="rounded-xl p-1.5 text-muted-foreground hover:bg-secondary transition cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -253,9 +282,9 @@ export function EventCheckinGatekeeperModal({
           <button
             type="button"
             onClick={() => setActiveTab("qr_standee")}
-            className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
               activeTab === "qr_standee"
-                ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                ? "border-[#003B95] text-[#003B95] dark:text-blue-400"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -265,21 +294,21 @@ export function EventCheckinGatekeeperModal({
           <button
             type="button"
             onClick={() => setActiveTab("gatekeepers")}
-            className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
               activeTab === "gatekeepers"
-                ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                ? "border-[#003B95] text-[#003B95] dark:text-blue-400"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <ShieldCheck className="h-4 w-4" />
-            <span>Ban Soát Vé Tại Cửa ({gatekeepers.length})</span>
+            <span>Ban Soát Vé (Ban Truyền Thông: {selectedScanners.length})</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("attendees")}
-            className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
               activeTab === "attendees"
-                ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                ? "border-[#003B95] text-[#003B95] dark:text-blue-400"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -317,7 +346,7 @@ export function EventCheckinGatekeeperModal({
                   onClick={() => {
                     window.print();
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground hover:bg-secondary shadow-xs transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground hover:bg-secondary shadow-xs transition cursor-pointer"
                 >
                   <Printer className="h-4 w-4 text-primary" />
                   <span>In Standee A4 / Roll-up</span>
@@ -328,11 +357,7 @@ export function EventCheckinGatekeeperModal({
                     navigator.clipboard.writeText(qrPayload);
                     toast.success("Đã sao chép mã QR sự kiện!");
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-900 shadow-xs transition"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
-                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shadow-xs transition cursor-pointer"
                 >
                   <Download className="h-4 w-4" />
                   <span>Tải / Sao chép Mã</span>
@@ -341,75 +366,158 @@ export function EventCheckinGatekeeperModal({
             </div>
           )}
 
-          {/* TAB 2: GATEKEEPER ASSIGNMENT */}
+          {/* TAB 2: GATEKEEPER ASSIGNMENT (MULTI-SELECT FROM BAN TRUYỀN THÔNG) */}
           {activeTab === "gatekeepers" && (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300/60 text-xs text-amber-900 dark:text-amber-300 leading-relaxed">
-                <div className="font-bold flex items-center gap-1.5 mb-1">
-                  <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <span>Phân quyền người quét mã QR tại cửa sự kiện:</span>
+              <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 leading-relaxed flex items-start gap-2.5">
+                <ShieldCheck className="h-4 w-4 text-[#003B95] dark:text-blue-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold mb-0.5">
+                    Phân quyền người quét mã QR sự kiện (Ban Truyền Thông):
+                  </div>
+                  <div>
+                    Chọn các thành viên Ban Truyền Thông được quyền dùng App Hiệp hội để quét vé cho sự kiện này. Nếu một người được chọn ở nhiều sự kiện, App Hiệp hội sẽ cho phép chuyển đổi giữa các sự kiện đó.
+                  </div>
                 </div>
-                Những người có tên trong danh sách này khi đăng nhập App Hiệp hội sẽ có quyền dùng Camera quét mã vé tham dự của người tham gia để soát vé và cho vào hội trường.
               </div>
 
-              {/* Add Gatekeeper Form */}
-              <form onSubmit={handleAddGatekeeper} className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  required
-                  placeholder="Tên người soát vé (VD: Nguyễn Thu Trang)"
-                  value={newGatekeeperName}
-                  onChange={(e) => setNewGatekeeperName(e.target.value)}
-                  className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-amber-500"
-                />
-                <input
-                  type="tel"
-                  placeholder="Số điện thoại"
-                  value={newGatekeeperPhone}
-                  onChange={(e) => setNewGatekeeperPhone(e.target.value)}
-                  className="sm:w-36 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-amber-500"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-900 shrink-0"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
-                  }}
-                >
-                  Thêm Người Soát Vé
-                </button>
-              </form>
-
-              {/* Gatekeeper List */}
-              <div className="space-y-2">
-                {gatekeepers.map((gk, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-xl border border-border bg-card shadow-xs text-xs"
+              {/* Search & Actions Bar */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Tìm thành viên Ban Truyền Thông theo tên, mã, SĐT..."
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-2 rounded-xl border border-border bg-background text-xs text-foreground outline-none focus:ring-1 focus:ring-[#003B95]"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScanners(bttMembers.map((m) => ({
+                      id: m.id,
+                      code: m.code,
+                      name: m.name,
+                      phone: m.phone || "",
+                      department: m.department || "Ban Truyền Thông & Sự Kiện",
+                      executiveRole: m.executiveRole || m.role || "Thành viên",
+                    })))}
+                    className="px-2.5 py-1.5 rounded-xl border border-border text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
-                        {idx + 1}
-                      </div>
-                      <div>
-                        <div className="font-bold text-foreground">{gk}</div>
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                          <span>Quyền Quét Vé & Điểm Danh Hoạt Động</span>
+                    Chọn tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScanners([])}
+                    className="px-2.5 py-1.5 rounded-xl border border-border text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+
+              {/* Multi-Select Members List */}
+              {loadingMembers ? (
+                <div className="py-8 flex flex-col items-center justify-center text-muted-foreground text-xs gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-[#003B95]" />
+                  <span>Đang tải danh sách thành viên Ban Truyền Thông...</span>
+                </div>
+              ) : filteredBttMembers.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-xs">
+                  Không tìm thấy thành viên phù hợp trong Ban Truyền Thông
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                  {filteredBttMembers.map((m) => {
+                    const selected = isMemberSelected(m);
+                    return (
+                      <div
+                        key={m.id || m.code}
+                        onClick={() => handleToggleScanner(m)}
+                        className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${
+                          selected
+                            ? "border-[#003B95] bg-blue-50/60 dark:bg-blue-950/30 text-foreground"
+                            : "border-border bg-card hover:bg-secondary/40 text-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`h-5 w-5 rounded-lg border flex items-center justify-center transition ${
+                              selected
+                                ? "bg-[#003B95] border-[#003B95] text-white"
+                                : "border-slate-300 dark:border-slate-600 bg-background"
+                            }`}
+                          >
+                            {selected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs">{m.name}</span>
+                              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-secondary text-muted-foreground font-semibold">
+                                {m.code}
+                              </span>
+                              {(m.executiveRole || m.executive_role) && (
+                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 font-bold">
+                                  {m.executiveRole || m.executive_role}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
+                              {m.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  <span>{m.phone}</span>
+                                </span>
+                              )}
+                              <span>•</span>
+                              <span>{m.department || "Ban Truyền Thông & Sự Kiện"}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          {selected ? (
+                            <span className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              <span>Được quét</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground font-medium">
+                              Chưa cấp quyền
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveGatekeeper(idx)}
-                      className="p-1 text-muted-foreground hover:text-destructive transition"
-                      title="Xóa quyền"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Save Scanners Button */}
+              <div className="pt-2 flex items-center justify-between border-t border-border">
+                <span className="text-xs text-muted-foreground font-medium">
+                  Đã chọn: <b className="text-foreground">{selectedScanners.length}</b> người soát vé
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveScanners}
+                  disabled={savingScanners}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shadow-sm transition disabled:opacity-50 cursor-pointer"
+                >
+                  {savingScanners ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Đang lưu...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span>Lưu Phân Công Soát Vé</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           )}
@@ -431,11 +539,7 @@ export function EventCheckinGatekeeperModal({
                 <button
                   type="button"
                   onClick={() => setShowAddAttendeeForm(!showAddAttendeeForm)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-900 shrink-0"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
-                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shrink-0 transition cursor-pointer"
                 >
                   <UserPlus className="h-3.5 w-3.5" />
                   <span>{showAddAttendeeForm ? "Đóng Form" : "Thêm Người Tham Gia"}</span>
@@ -446,9 +550,9 @@ export function EventCheckinGatekeeperModal({
               {showAddAttendeeForm && (
                 <form
                   onSubmit={handleAddAttendee}
-                  className="p-4 rounded-2xl border border-amber-300 dark:border-amber-700/60 bg-amber-50/50 dark:bg-amber-950/20 space-y-3"
+                  className="p-4 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 space-y-3"
                 >
-                  <div className="font-bold text-xs text-amber-900 dark:text-amber-300">
+                  <div className="font-bold text-xs text-[#003B95] dark:text-blue-300">
                     Thêm Nhanh Hội Viên Tham Gia Sự Kiện:
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -531,17 +635,13 @@ export function EventCheckinGatekeeperModal({
                     <button
                       type="button"
                       onClick={() => setShowAddAttendeeForm(false)}
-                      className="px-3 py-1.5 rounded-lg border border-border text-xs text-foreground hover:bg-secondary"
+                      className="px-3 py-1.5 rounded-lg border border-border text-xs text-foreground hover:bg-secondary cursor-pointer"
                     >
                       Hủy
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-900"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
-                      }}
+                      className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] cursor-pointer"
                     >
                       Lưu Người Tham Gia
                     </button>
@@ -562,7 +662,7 @@ export function EventCheckinGatekeeperModal({
                         <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-secondary text-muted-foreground">
                           {a.memberCode}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
                           {a.ticketType}
                         </span>
                       </div>
@@ -571,7 +671,7 @@ export function EventCheckinGatekeeperModal({
                         <span>•</span>
                         <span className="text-primary font-semibold">{a.table} - {a.seat}</span>
                         <span>•</span>
-                        <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">Mã: {a.luckyNumber}</span>
+                        <span className="font-mono text-[#003B95] dark:text-blue-400 font-bold">Mã: {a.luckyNumber}</span>
                       </div>
                     </div>
 
@@ -579,7 +679,7 @@ export function EventCheckinGatekeeperModal({
                       <button
                         type="button"
                         onClick={() => handleToggleCheckin(a.id)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                           a.checkedIn
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300"
                             : "bg-secondary text-muted-foreground hover:text-foreground border border-border"
@@ -610,11 +710,7 @@ export function EventCheckinGatekeeperModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-bold text-slate-900 shadow-sm"
-            style={{
-              background:
-                "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
-            }}
+            className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shadow-sm transition cursor-pointer"
           >
             Đóng
           </button>
@@ -623,3 +719,5 @@ export function EventCheckinGatekeeperModal({
     </div>
   );
 }
+
+

@@ -37,7 +37,14 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { z } from "zod";
 import { MemberHeader } from "@/components/member/MemberShell";
+
+const opportunitySchema = z.object({
+  title: z.string().trim().min(1, "Tiêu đề cơ hội không được phép để trống"),
+  contactName: z.string().trim().min(1, "Họ tên người liên hệ không được phép để trống"),
+  contactPhone: z.string().trim().min(1, "Số điện thoại không được phép để trống"),
+});
 import { useServerData } from "@/hooks/use-server-data";
 import {
   listMyOpportunities,
@@ -53,11 +60,14 @@ import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { formatDisplayDate } from "@/lib/date-format";
 
-function formatCurrencyInput(val: string): string {
-  const digits = val.replace(/\D/g, "");
+function formatCurrencyInput(val: string | number): string {
+  if (val === undefined || val === null) return "";
+  const digits = String(val).replace(/\D/g, "");
   if (!digits) return "";
-  return Number(digits).toLocaleString("vi-VN");
+  const cleanDigits = digits.replace(/^0+(?=\d)/, "");
+  return cleanDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
+
 
 export const Route = createFileRoute("/association/opportunities")({
   component: OpportunitiesScreen,
@@ -222,6 +232,7 @@ function OpportunitiesScreen() {
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactTitle, setNewContactTitle] = useState("");
+  const [newErrors, setNewErrors] = useState<Record<string, string>>({});
   const [uploadingImage, setUploadingImage] = useState(false);
   const [creating, setCreating] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -240,6 +251,7 @@ function OpportunitiesScreen() {
   const [editContactName, setEditContactName] = useState("");
   const [editContactPhone, setEditContactPhone] = useState("");
   const [editContactTitle, setEditContactTitle] = useState("");
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [updating, setUpdating] = useState(false);
   const editImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -271,6 +283,7 @@ function OpportunitiesScreen() {
   }, [member, user]);
 
   const allTab = "Tất cả";
+  const interestsTab = "Quan tâm nhận được";
   const myOppsTab = "Cơ hội của tôi";
   const publishedTab = "Đã xuất bản";
   const statsTab = "Thống kê";
@@ -418,7 +431,7 @@ function OpportunitiesScreen() {
   }, [isCarouselHovered, featuredList.length]);
 
   const tabs = useMemo(() => {
-    const defaultTabs = [allTab, publishedTab, myOppsTab, statsTab];
+    const defaultTabs = [allTab, interestsTab, myOppsTab, publishedTab, statsTab];
     allOpportunities.forEach((o) => {
       const tag = normalizeTag(o.tag);
       if (!defaultTabs.includes(tag)) {
@@ -437,6 +450,13 @@ function OpportunitiesScreen() {
       let matchTab = true;
       if (tab === myOppsTab) {
         matchTab = Boolean(isMine);
+      } else if (tab === interestsTab) {
+        const hasInterests =
+          Number((o as any).interestedCount) > 0 ||
+          Boolean((o as any).interested) ||
+          (Array.isArray((o as any).interests) && (o as any).interests.length > 0) ||
+          (Array.isArray((o as any).interestedMembers) && (o as any).interestedMembers.length > 0);
+        matchTab = Boolean((isMine && hasInterests) || hasInterests || (!isMine && ((o as any).views > 0 || (o as any).interestedCount > 0)));
       } else if (tab === publishedTab) {
         matchTab = o.status !== "draft" && o.status !== "archived";
       } else if (tab === statsTab) {
@@ -541,10 +561,21 @@ function OpportunitiesScreen() {
   const handleUpdateOpp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOpp) return;
-    if (!editTitle.trim()) {
-      toast.error("Vui lòng nhập tiêu đề cơ hội");
+    const result = opportunitySchema.safeParse({
+      title: editTitle,
+      contactName: editContactName,
+      contactPhone: editContactPhone,
+    });
+    if (!result.success) {
+      const errMap: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errMap[key]) errMap[key] = issue.message;
+      }
+      setEditErrors(errMap);
       return;
     }
+    setEditErrors({});
     setUpdating(true);
     const cleanBudgetMin = Number(editBudgetMin.replace(/\D/g, "")) || 0;
     const cleanBudgetMax = Number(editBudgetMax.replace(/\D/g, "")) || 0;
@@ -583,10 +614,21 @@ function OpportunitiesScreen() {
 
   async function handleCreateOpp(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim()) {
-      toast.error("Vui lòng nhập tiêu đề cơ hội");
+    const result = opportunitySchema.safeParse({
+      title: newTitle,
+      contactName: newContactName,
+      contactPhone: newContactPhone,
+    });
+    if (!result.success) {
+      const errMap: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errMap[key]) errMap[key] = issue.message;
+      }
+      setNewErrors(errMap);
       return;
     }
+    setNewErrors({});
     const finalContactName =
       newContactName.trim() || member?.name || (user as any)?.name || "Ban Quản Trị";
     const finalContactPhone =
@@ -711,7 +753,7 @@ function OpportunitiesScreen() {
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(true)}
-                  className="mt-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm flex items-center gap-1.5"
+                  className="mt-1 px-4 py-2.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-md shadow-[#003B95]/20 flex items-center gap-1.5"
                 >
                   <Plus className="size-4" />
                   <span>Đăng cơ hội ngay</span>
@@ -1062,9 +1104,9 @@ function OpportunitiesScreen() {
             id="tour-opps-create-btn"
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="self-stretch px-4 py-3 bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 font-bold hover:brightness-105 rounded-[100px] inline-flex justify-center items-center transition cursor-pointer active:scale-95 shadow-md"
+            className="self-stretch px-4 py-3 bg-[#003B95] hover:bg-[#002B70] text-white font-bold rounded-[100px] inline-flex justify-center items-center transition cursor-pointer active:scale-95 shadow-md shadow-[#003B95]/20"
           >
-            <div className="justify-start text-slate-950 text-xs font-bold font-['Inter']">
+            <div className="justify-start text-white text-xs font-bold font-['Inter']">
               Đăng cơ hội ngay →
             </div>
           </button>
@@ -1484,11 +1526,22 @@ function OpportunitiesScreen() {
                     </label>
                     <input
                       value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
+                      onChange={(e) => {
+                        setNewTitle(e.target.value);
+                        if (newErrors.title) setNewErrors((prev) => ({ ...prev, title: "" }));
+                      }}
                       placeholder="Ví dụ: Tìm đối tác cung ứng bao bì giấy số lượng lớn..."
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                      required
+                      className={`w-full rounded-2xl border bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 transition ${
+                        newErrors.title
+                          ? "border-rose-500 ring-1 ring-rose-500/30"
+                          : "border-transparent focus:border-amber-500"
+                      }`}
                     />
+                    {newErrors.title && (
+                      <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                        {newErrors.title}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2.5">
@@ -1528,6 +1581,11 @@ function OpportunitiesScreen() {
                         Ngân sách tối thiểu (VNĐ)
                       </label>
                       <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                         value={newBudgetMin}
                         onChange={(e) => setNewBudgetMin(formatCurrencyInput(e.target.value))}
                         placeholder="VD: 500.000.000"
@@ -1539,6 +1597,11 @@ function OpportunitiesScreen() {
                         Ngân sách tối đa (VNĐ)
                       </label>
                       <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                         value={newBudgetMax}
                         onChange={(e) => setNewBudgetMax(formatCurrencyInput(e.target.value))}
                         placeholder="VD: 2.000.000.000"
@@ -1612,32 +1675,50 @@ function OpportunitiesScreen() {
                         <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
                           Họ tên người liên hệ <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
+                          newErrors.contactName ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
+                        }`}>
                           <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           <input
                             value={newContactName}
-                            onChange={(e) => setNewContactName(e.target.value)}
+                            onChange={(e) => {
+                              setNewContactName(e.target.value);
+                              if (newErrors.contactName) setNewErrors((prev) => ({ ...prev, contactName: "" }));
+                            }}
                             placeholder="VD: Nguyễn Văn A"
                             className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                            required
                           />
                         </div>
+                        {newErrors.contactName && (
+                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                            {newErrors.contactName}
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
                           Số điện thoại <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
+                          newErrors.contactPhone ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
+                        }`}>
                           <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           <input
                             value={newContactPhone}
-                            onChange={(e) => setNewContactPhone(e.target.value)}
+                            onChange={(e) => {
+                              setNewContactPhone(e.target.value);
+                              if (newErrors.contactPhone) setNewErrors((prev) => ({ ...prev, contactPhone: "" }));
+                            }}
                             placeholder="VD: 0912345678"
                             className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                            required
                           />
                         </div>
+                        {newErrors.contactPhone && (
+                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                            {newErrors.contactPhone}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -1683,9 +1764,9 @@ function OpportunitiesScreen() {
                     type="submit"
                     disabled={creating}
                     style={{ color: "#ffffff" }}
-                    className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-50"
+                    className="flex-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#003B95]/25 cursor-pointer disabled:opacity-50"
                   >
-                    {creating ? "Đang đăng..." : "Đăng cơ hội"}
+                    {creating ? "Đang đăng..." : "Đăng cơ hội ngay"}
                   </button>
                 </div>
               </form>
@@ -1770,11 +1851,22 @@ function OpportunitiesScreen() {
                     </label>
                     <input
                       value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
+                      onChange={(e) => {
+                        setEditTitle(e.target.value);
+                        if (editErrors.title) setEditErrors((prev) => ({ ...prev, title: "" }));
+                      }}
                       placeholder="VD: Cần tìm đối tác cung ứng dịch vụ phần mềm..."
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                      required
+                      className={`w-full rounded-2xl border bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 transition ${
+                        editErrors.title
+                          ? "border-rose-500 ring-1 ring-rose-500/30"
+                          : "border-transparent focus:border-amber-500"
+                      }`}
                     />
+                    {editErrors.title && (
+                      <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                        {editErrors.title}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1814,6 +1906,11 @@ function OpportunitiesScreen() {
                         Ngân sách từ (VNĐ)
                       </label>
                       <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                         value={editBudgetMin}
                         onChange={(e) => setEditBudgetMin(formatCurrencyInput(e.target.value))}
                         placeholder="VD: 50.000.000"
@@ -1825,6 +1922,11 @@ function OpportunitiesScreen() {
                         Đến (VNĐ)
                       </label>
                       <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                         value={editBudgetMax}
                         onChange={(e) => setEditBudgetMax(formatCurrencyInput(e.target.value))}
                         placeholder="VD: 200.000.000"
@@ -1898,32 +2000,50 @@ function OpportunitiesScreen() {
                         <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
                           Họ tên người liên hệ <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
+                          editErrors.contactName ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
+                        }`}>
                           <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           <input
                             value={editContactName}
-                            onChange={(e) => setEditContactName(e.target.value)}
+                            onChange={(e) => {
+                              setEditContactName(e.target.value);
+                              if (editErrors.contactName) setEditErrors((prev) => ({ ...prev, contactName: "" }));
+                            }}
                             placeholder="VD: Nguyễn Văn A"
                             className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                            required
                           />
                         </div>
+                        {editErrors.contactName && (
+                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                            {editErrors.contactName}
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
                           Số điện thoại <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
+                          editErrors.contactPhone ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
+                        }`}>
                           <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           <input
                             value={editContactPhone}
-                            onChange={(e) => setEditContactPhone(e.target.value)}
+                            onChange={(e) => {
+                              setEditContactPhone(e.target.value);
+                              if (editErrors.contactPhone) setEditErrors((prev) => ({ ...prev, contactPhone: "" }));
+                            }}
                             placeholder="VD: 0912345678"
                             className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                            required
                           />
                         </div>
+                        {editErrors.contactPhone && (
+                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                            {editErrors.contactPhone}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -1969,7 +2089,7 @@ function OpportunitiesScreen() {
                     type="submit"
                     disabled={updating}
                     style={{ color: "#ffffff" }}
-                    className="flex-1 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-50"
+                    className="flex-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#003B95]/25 cursor-pointer disabled:opacity-50"
                   >
                     {updating ? "Đang lưu..." : "Lưu thay đổi"}
                   </button>

@@ -4,12 +4,174 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
 
 @Injectable()
 export class MeetingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly gateway?: ConnectAppGateway,
+  ) {}
+
+  /**
+   * Tạo cuộc gặp / cuộc họp 1-on-1 từ CRM và kích hoạt Push Notification nếu là Offline
+   */
+  async createMeeting(userId: string, data: any) {
+    const title = (data.title || 'Gặp gỡ kết nối & Trao đổi cơ hội hợp tác').trim();
+    const hostName = (data.hostName || 'Lãnh đạo Hiệp hội').trim();
+    const partnerName = (data.partnerName || '').trim();
+    const partnerPhone = (data.partnerPhone || '').trim();
+    const partnerCompany = (data.partnerCompany || '').trim();
+    const date = data.date || new Date().toISOString().split('T')[0];
+    const time = data.time || '09:30';
+    const venueType = data.venueType || 'offline';
+    const venue = (data.venue || 'Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội').trim();
+    const notes = (data.notes || '').trim();
+
+    // 1. Tìm thông tin đối tác trong danh bạ hội viên
+    let partnerUserId: string | null = null;
+    let partnerMemberCode: string | null = null;
+    if (partnerPhone) {
+      const foundMember = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, user_id, phone, name FROM public.members 
+        WHERE phone = ${partnerPhone} OR phone = ${partnerPhone.replace(/^0/, '+84')} LIMIT 1
+      `.catch(() => []);
+      if (foundMember.length > 0) {
+        partnerUserId = foundMember[0].user_id ? String(foundMember[0].user_id) : null;
+        partnerMemberCode = foundMember[0].code || null;
+      }
+    }
+
+    if (!partnerUserId && partnerName) {
+      const foundByName = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, user_id, name FROM public.members 
+        WHERE LOWER(name) = LOWER(${partnerName}) LIMIT 1
+      `.catch(() => []);
+      if (foundByName.length > 0) {
+        partnerUserId = foundByName[0].user_id ? String(foundByName[0].user_id) : null;
+        partnerMemberCode = foundByName[0].code || null;
+      }
+    }
+
+    // 2. Tạo bản ghi cuộc họp trong public.business_meetings
+    const meetingRows = await this.prisma.$queryRawUnsafe<any[]>(`
+      INSERT INTO public.business_meetings (
+        id, title, description, meeting_type, status, timezone, created_by_user_id, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, '1on1', 'scheduled', 'Asia/Ho_Chi_Minh', $3::uuid, NOW(), NOW()
+      ) RETURNING id
+    `, title, `Đối tác: ${partnerName} (${partnerCompany}). Địa điểm: ${venue}. Ghi chú: ${notes}`, userId).catch(() => []);
+
+    const meetingId = meetingRows[0]?.id ? String(meetingRows[0].id) : `meet_${Date.now()}`;
+
+    // 3. Ghi nhận người tổ chức (host)
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.business_meeting_participants (
+        id, meeting_id, user_id, role, response_status, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1::uuid, $2::uuid, 'host', 'accepted', NOW(), NOW()
+      )
+    `, meetingId, userId).catch(() => {});
+
+    // 4. Ghi nhận người được mời (invitee)
+    if (partnerUserId) {
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.business_meeting_participants (
+          id, meeting_id, user_id, role, response_status, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, 'invitee', 'pending', NOW(), NOW()
+        )
+      `, meetingId, partnerUserId).catch(() => {});
+    }
+
+    // 5. TRIGGER PUSH NOTIFICATION CHO CUỘC HỌP OFFLINE
+    const isOffline = venueType === 'offline' || (venue && !venue.toLowerCase().startsWith('http'));
+    if (isOffline) {
+      const notifTitle = `[LỊCH HỌP TRỰC TIẾP OFFLINE] ${title}`;
+      const notifBody = `Bạn có lịch hẹn gặp mặt trực tiếp với ${hostName} vào lúc ${time} ngày ${date} tại: ${venue}.${notes ? ` Ghi chú: "${notes}"` : ''}`;
+
+      // 5a. Gửi tin nhắn trực tiếp vào hộp thư (public.messages)
+      const directMsg = `[THÔNG BÁO LỊCH HỌP TRỰC TIẾP OFFLINE]\nChào Bạn,\nBạn có lịch hẹn gặp mặt trực tiếp: "${title}".\n- Thời gian: ${time} ngày ${date}\n- Địa điểm: ${venue}\n- Người kết nối: ${hostName}\n- Ghi chú: ${notes || 'Gặp gỡ giao thương kết nối B2B'}`;
+      
+      if (partnerUserId) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), ${userId}, ${partnerUserId}, ${directMsg}, NOW())
+        `.catch(() => {});
+      }
+      if (partnerMemberCode) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+          VALUES (gen_random_uuid(), ${userId}, ${partnerMemberCode}, ${directMsg}, NOW())
+        `.catch(() => {});
+      }
+
+      // Lưu tin nhắn xác nhận cho người tạo
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'system', ${userId}, ${`[ĐÃ TẠO LỊCH HỌP OFFLINE]\nBạn đã lên lịch gặp trực tiếp với ${partnerName} lúc ${time} ngày ${date} tại ${venue}.`}, NOW())
+      `.catch(() => {});
+
+      // 5b. Bắn notification vào chuông thông báo (public.business_notifications & member_notifications)
+      const dedupeKey = `offline_meeting_${meetingId}_${Date.now()}`;
+      if (partnerUserId) {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, dedupe_key, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1::uuid, 'meeting', $2, $3, 'meeting_offline_invite', 'meeting_invite',
+            $4, $5, $6::jsonb, 'urgent', 'delivered', 'all', 'all', NOW(), NOW()
+          )
+        `, partnerUserId, meetingId, dedupeKey, notifTitle, notifBody, JSON.stringify({ meetingId, title, venue, time, date, hostName })).catch(() => {});
+      }
+
+      const recipientCode = partnerMemberCode || partnerUserId || 'M1983-001';
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, false, false, 'meeting', $4, NOW()
+        )
+      `, recipientCode, notifTitle, notifBody, meetingId).catch(() => {});
+
+      // 5c. Phát tín hiệu Push Notification tức thì qua Socket Gateway tới thiết bị Mobile
+      if (this.gateway) {
+        this.gateway.emitToAll('notification:new', {
+          id: meetingId,
+          title: notifTitle,
+          body: notifBody,
+          type: 'meeting',
+          venueType: 'offline',
+          venue,
+          time,
+          date,
+          createdAt: new Date().toISOString(),
+        });
+        this.gateway.emitToAll('member:notification_new', {
+          id: meetingId,
+          title: notifTitle,
+          body: notifBody,
+          refType: 'meeting',
+        });
+      }
+    }
+
+    return {
+      success: true,
+      id: meetingId,
+      title,
+      date,
+      time,
+      venueType,
+      venue,
+      status: 'scheduled',
+      isOffline,
+    };
+  }
 
   /**
    * Summary view for Meeting Workspace
@@ -639,5 +801,58 @@ export class MeetingsService {
       cancelled: true,
       notifiedCount: participants.length - 1,
     };
+  }
+
+  async deleteMeeting(userId: string, id: string) {
+    if (!id) throw new BadRequestException('ID is required');
+
+    // 1. Delete associated business meeting child records
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_follow_ups WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_agenda_items WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_shared_notes WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_private_notes WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_outcomes WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_calendar_projections WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_time_proposal_responses WHERE proposal_id IN (
+        SELECT id FROM public.business_meeting_time_proposals WHERE meeting_id = ${id}::uuid
+      )
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_time_proposals WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_events WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_proposals WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meeting_participants WHERE meeting_id = ${id}::uuid
+    `.catch(() => {});
+
+    // 2. Delete from business_meetings
+    await this.prisma.$executeRaw`
+      DELETE FROM public.business_meetings WHERE id = ${id}::uuid
+    `.catch(() => {});
+
+    // 3. Delete from public.meetings where code = id or id::text = id
+    await this.prisma.$executeRaw`
+      DELETE FROM public.meetings WHERE code = ${id} OR id::text = ${id}
+    `.catch(() => {});
+
+    return { ok: true, id, deleted: true };
   }
 }

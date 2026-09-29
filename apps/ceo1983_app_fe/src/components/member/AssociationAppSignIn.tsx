@@ -336,25 +336,6 @@ export function AssociationAppSignIn({
           </Link>
         </div>
 
-        {/* NFC / QR Smart Member Card Scan */}
-        {onScanCard && (
-          <button
-            type="button"
-            onClick={onScanCard}
-            className="flex w-full flex-col items-center justify-center py-2.5 px-3.5 rounded-xl border border-dashed border-amber-500/50 bg-white hover:bg-amber-50/50 transition-colors text-center shrink-0 cursor-pointer active:opacity-80 shadow-2xs group"
-          >
-            <div className="flex items-center justify-center gap-2">
-              <QrCode className="h-4.5 w-4.5 shrink-0 text-[#003B95]" aria-hidden="true" />
-              <span className="text-[13px] font-bold text-[#003B95]">
-                {lang === "en" ? "Tap NFC Card or Scan QR" : "Chạm thẻ NFC hoặc Quét mã QR"}
-              </span>
-            </div>
-            <span className="block text-[11px] leading-tight text-slate-500 mt-0.5 text-center">
-              {lang === "en" ? "Quick 1-tap sign in with Smart VIP Card" : "Đăng nhập nhanh 1 chạm bằng Thẻ Hội Viên Thông Minh"}
-            </span>
-          </button>
-        )}
-
         {/* Minimal Footer Spacer */}
         <div className="shrink-0 py-1" />
       </div>

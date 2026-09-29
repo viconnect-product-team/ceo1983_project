@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus, Sparkles, MapPin, Users } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus, Sparkles, MapPin, Users, Award } from "lucide-react";
 import { toast } from "sonner";
 import {
   QR_FIELDS,
   type EventItem,
   type QrField,
+  type EventSponsorItem,
 } from "@/lib/events.functions";
 import { fetchNestApi, uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { useT } from "@/lib/i18n";
 import { EVENT_TYPE_TEMPLATES, type EventTypeKey } from "@/lib/event-type-templates";
+import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
+import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
 
 type EventType = EventItem["type"];
 type EventStatus = EventItem["status"];
@@ -29,9 +32,20 @@ type Info = {
   type: EventType;
   status: EventStatus;
   imageUrl?: string;
+  description?: string;
+  qrStaff: string[];
+  sponsors: EventSponsorItem[];
 };
 
 const emptyTicket = (): TicketDraft => ({ name: "", price: "", quantity: "", description: "" });
+
+function formatVndInput(val: string | number): string {
+  if (val === undefined || val === null) return "";
+  const digits = String(val).replace(/\D/g, "");
+  if (!digits) return "";
+  const clean = digits.replace(/^0+(?=\d)/, "");
+  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
 
 const TYPE_OPTS: EventType[] = ["forum", "workshop", "networking", "training"];
 const STATUS_OPTS: EventStatus[] = ["upcoming", "ongoing", "completed", "cancelled"];
@@ -51,44 +65,35 @@ export function EventWizard({
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [submitting, setSubmitting] = useState(false);
   const [info, setInfo] = useState<Info>({
-    name: defaultTpl.name,
-    date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-    location: defaultTpl.defaultLocation,
-    capacity: defaultTpl.defaultCapacity,
+    name: "",
+    date: "",
+    location: "",
+    capacity: "",
     type: "forum",
     status: "upcoming",
     imageUrl: defaultTpl.bgImage,
+    description: "",
+    qrStaff: [],
+    sponsors: [],
   });
-  const [tickets, setTickets] = useState<TicketDraft[]>([
-    {
-      name: defaultTpl.defaultTicketName,
-      price: defaultTpl.defaultTicketPrice,
-      quantity: defaultTpl.defaultCapacity,
-      description: defaultTpl.description,
-    },
-  ]);
+  const [tickets, setTickets] = useState<TicketDraft[]>([]);
   const [qrFields, setQrFields] = useState<QrField[]>(["registration_code"]);
 
   const reset = () => {
     setStep(0);
-    const forumTpl = EVENT_TYPE_TEMPLATES.forum;
     setInfo({
-      name: forumTpl.name,
-      date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-      location: forumTpl.defaultLocation,
-      capacity: forumTpl.defaultCapacity,
+      name: "",
+      date: "",
+      location: "",
+      capacity: "",
       type: "forum",
       status: "upcoming",
-      imageUrl: forumTpl.bgImage,
+      imageUrl: defaultTpl.bgImage,
+      description: "",
+      qrStaff: [],
+      sponsors: [],
     });
-    setTickets([
-      {
-        name: forumTpl.defaultTicketName,
-        price: forumTpl.defaultTicketPrice,
-        quantity: forumTpl.defaultCapacity,
-        description: forumTpl.description,
-      },
-    ]);
+    setTickets([]);
     setQrFields(["registration_code"]);
   };
 
@@ -102,7 +107,13 @@ export function EventWizard({
     const parts: string[] = [];
     if (qrFields.includes("registration_code")) parts.push("REG-XXXXXX");
     if (qrFields.includes("verify_url")) parts.push(`${originSafe()}/verify?c=REG-XXXXXX`);
-    if (qrFields.includes("ticket_code")) parts.push(tickets[0]?.name.trim() || "TK-STANDARD");
+    if (qrFields.includes("ticket_code")) {
+      const activeTicketName =
+        tickets.slice().reverse().find((t) => t.name.trim())?.name.trim() ||
+        tickets[0]?.name.trim() ||
+        "TK-STANDARD";
+      parts.push(activeTicketName);
+    }
     return parts.join("|") || "REG-XXXXXX";
   }, [qrFields, tickets]);
 
@@ -148,6 +159,10 @@ export function EventWizard({
     }
     setSubmitting(true);
     try {
+      const computedTicketPrice = tickets.length > 0
+        ? Math.max(0, ...tickets.map((tk) => Number(String(tk.price).replace(/\D/g, "")) || 0))
+        : 0;
+
       const res = await fetchNestApi<{ event: EventItem }>("/events", {
         method: "POST",
         body: JSON.stringify({
@@ -158,11 +173,19 @@ export function EventWizard({
           type: info.type,
           status: info.status,
           imageUrl: info.imageUrl,
+          image: info.imageUrl,
+          banner: info.imageUrl,
+          ticketPrice: computedTicketPrice,
+          fee: computedTicketPrice,
+          description: info.description || "",
+          qrStaff: info.qrStaff,
+          qrScanners: info.qrStaff,
+          sponsors: info.sponsors,
           qrFields,
           tickets: tickets.map((tk) => ({
             name: tk.name.trim(),
-            price: Number(tk.price) || 0,
-            quantity: Number(tk.quantity) || 0,
+            price: Number(String(tk.price).replace(/\D/g, "")) || 0,
+            quantity: Number(String(tk.quantity).replace(/\D/g, "")) || 0,
             description: tk.description.trim(),
           })),
         }),
@@ -202,7 +225,7 @@ export function EventWizard({
         {announcement}
       </p>
       <div
-        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]"
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header + stepper */}
@@ -320,6 +343,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
       location: tpl.defaultLocation,
       capacity: tpl.defaultCapacity,
       imageUrl: tpl.bgImage,
+      description: tpl.description,
     });
     toast.info(`Đã áp dụng bố cục nội dung & banner: ${tpl.label}`);
   };
@@ -555,6 +579,43 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
           </select>
         </div>
       </div>
+
+      {/* Mô tả / Nội dung chi tiết sự kiện */}
+      <div>
+        <label className={labelCls} htmlFor="ewz-description">
+          Mô tả / Thông tin sự kiện
+        </label>
+        <textarea
+          id="ewz-description"
+          rows={3}
+          className="w-full rounded-lg border border-border bg-background p-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+          value={info.description || ""}
+          onChange={(e) => setInfo({ ...info, description: e.target.value })}
+          placeholder="Nhập nội dung tóm tắt, lịch trình hoặc lưu ý tham gia..."
+        />
+      </div>
+
+      {/* MULTISELECT 1: Chọn người thực hiện quét mã QR (Ban Truyền Thông) */}
+      <div className="pt-3 border-t border-border">
+        <label className="mb-2 block text-xs font-semibold text-foreground">
+          Người thực hiện quét mã QR (Ban Truyền Thông)
+        </label>
+        <EventQrStaffSelector
+          value={info.qrStaff}
+          onChange={(staffList) => setInfo({ ...info, qrStaff: staffList })}
+        />
+      </div>
+
+      {/* MULTISELECT 2: Chọn nhà tài trợ & Gói đồng hành đi kèm */}
+      <div className="pt-3 border-t border-border">
+        <label className="mb-2 block text-xs font-semibold text-foreground">
+          Nhà tài trợ & Gói tài trợ đồng hành đi kèm
+        </label>
+        <EventSponsorPackageSelector
+          value={info.sponsors}
+          onChange={(sponsors) => setInfo({ ...info, sponsors })}
+        />
+      </div>
     </div>
   );
 }
@@ -590,7 +651,11 @@ function TicketStep({
         {tickets.map((tk, i) => (
           <div key={i} className="rounded-xl border border-border bg-background p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
+              <label htmlFor={`ewz-ticket-name-${i}`} className="sr-only">
+                {t("ewz.tickets.name")}
+              </label>
               <input
+                id={`ewz-ticket-name-${i}`}
                 className={`${inputCls} font-medium`}
                 placeholder={t("ewz.tickets.namePh")}
                 aria-label={t("ewz.tickets.name")}
@@ -608,29 +673,64 @@ function TicketStep({
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className={labelCls}>{t("ewz.tickets.price")}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className={labelCls} htmlFor={`ewz-ticket-price-${i}`}>
+                    {t("ewz.tickets.price")} (VNĐ)
+                  </label>
+                  {(() => {
+                    const num = Number(String(tk.price).replace(/\D/g, "")) || 0;
+                    return num <= 0 ? (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
+                        Miễn phí (0đ)
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
+                        Có phí: {num.toLocaleString("vi-VN")} đ
+                      </span>
+                    );
+                  })()}
+                </div>
                 <input
-                  type="number"
-                  min={0}
+                  id={`ewz-ticket-price-${i}`}
+                  aria-label={t("ewz.tickets.price")}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="0 đ (nhập 0 là miễn phí)"
                   className={inputCls}
-                  value={tk.price}
-                  onChange={(e) => update(i, { price: e.target.value })}
+                  value={formatVndInput(tk.price)}
+                  onChange={(e) => update(i, { price: formatVndInput(e.target.value) })}
                 />
+                <p className="mt-1 text-[10.5px] text-muted-foreground">
+                  {Number(String(tk.price).replace(/\D/g, "")) <= 0
+                    ? "Vé 0 đồng = Miễn phí tham dự."
+                    : "Từ 1 đ trở lên = Vé có phí bắt buộc thanh toán."}
+                </p>
               </div>
               <div>
-                <label className={labelCls}>{t("ewz.tickets.qty")}</label>
+                <label className={labelCls} htmlFor={`ewz-ticket-qty-${i}`}>
+                  {t("ewz.tickets.qty")}
+                </label>
                 <input
-                  type="number"
-                  min={0}
+                  id={`ewz-ticket-qty-${i}`}
+                  aria-label={t("ewz.tickets.qty")}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="Số lượng vé"
                   className={inputCls}
-                  value={tk.quantity}
-                  onChange={(e) => update(i, { quantity: e.target.value })}
+                  value={formatVndInput(tk.quantity)}
+                  onChange={(e) => update(i, { quantity: formatVndInput(e.target.value) })}
                 />
               </div>
             </div>
             <div className="mt-2">
-              <label className={labelCls}>{t("ewz.tickets.desc")}</label>
+              <label className={labelCls} htmlFor={`ewz-ticket-desc-${i}`}>
+                {t("ewz.tickets.desc")}
+              </label>
               <input
+                id={`ewz-ticket-desc-${i}`}
+                aria-label={t("ewz.tickets.desc")}
                 className={inputCls}
                 value={tk.description}
                 onChange={(e) => update(i, { description: e.target.value })}

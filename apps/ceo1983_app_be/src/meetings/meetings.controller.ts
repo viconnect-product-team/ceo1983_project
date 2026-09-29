@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -22,6 +23,12 @@ export class MeetingsController {
   async getAllMeetings(@Request() req: any) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.listWorkspaceMeetings(userId, {});
+  }
+
+  @Post()
+  async createMeeting(@Request() req: any, @Body() data: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.createMeeting(userId, data);
   }
 
   @Get('workspace/summary')
@@ -141,5 +148,14 @@ export class MeetingsController {
   ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.cancelMeeting(userId, id, body);
+  }
+
+  @Delete(':id')
+  async deleteMeeting(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.deleteMeeting(userId, id);
   }
 }

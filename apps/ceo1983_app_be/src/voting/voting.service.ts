@@ -10,6 +10,7 @@ export class CreatePollDto {
   startDate?: string;
   endDate?: string;
   targetAudience?: string; // 'all' | 'members' | 'non_members'
+  eventId?: string;
 }
 
 export class CastVoteDto {
@@ -45,6 +46,9 @@ export class VotingService {
   async listPolls(userId: string, associationId?: string) {
     const rows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT p.*,
+        e.name as event_name,
+        e.date as event_date,
+        e.status as event_status,
         (SELECT json_agg(json_build_object(
           'id', o.id,
           'title', o.title,
@@ -61,10 +65,14 @@ export class VotingService {
           'crm', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND pv.source_app = 'crm')
         ) as source_stats
       FROM public.polls p
+      LEFT JOIN public.events e ON p.event_id = e.id
       ORDER BY p.created_at DESC
     `.catch(async () => {
       return this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.polls ORDER BY created_at DESC
+        SELECT p.*, e.name as event_name, e.date as event_date, e.status as event_status
+        FROM public.polls p
+        LEFT JOIN public.events e ON p.event_id = e.id
+        ORDER BY p.created_at DESC
       `.catch(() => [] as any[]);
     });
 
@@ -76,17 +84,39 @@ export class VotingService {
         crm: options.reduce((sum, o) => sum + o.crmVotes, 0),
       };
 
+      // Tự động đóng biểu quyết nếu sự kiện liên kết đã hoàn thành hoặc qua ngày
+      let pollStatus = r.status || 'open';
+      if (r.event_id) {
+        const evStatus = String(r.event_status || '').toLowerCase();
+        let evEnded = evStatus === 'completed' || evStatus === 'cancelled';
+        if (!evEnded && r.event_date) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const evDate = new Date(r.event_date);
+          evDate.setHours(0, 0, 0, 0);
+          if (evDate.getTime() < today.getTime()) {
+            evEnded = true;
+          }
+        }
+        if (evEnded) {
+          pollStatus = 'closed';
+        }
+      }
+
       return {
         id: r.id,
         title: r.title,
         description: r.description || '',
-        status: r.status || 'open',
+        status: pollStatus,
+        eventId: r.event_id || null,
+        eventName: r.event_name || null,
         options,
         myVote: r.my_vote || null,
         myVoteSource: r.my_vote_source || null,
         totalVotes,
         sourceStats,
         createdAt: r.created_at,
+        startDate: r.start_date || null,
         endDate: r.end_date || null,
       };
     });
@@ -95,6 +125,9 @@ export class VotingService {
   async getPollById(userId: string, id: string) {
     const rows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT p.*,
+        e.name as event_name,
+        e.date as event_date,
+        e.status as event_status,
         (SELECT json_agg(json_build_object(
           'id', o.id,
           'title', o.title,
@@ -111,6 +144,7 @@ export class VotingService {
           'crm', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND pv.source_app = 'crm')
         ) as source_stats
       FROM public.polls p
+      LEFT JOIN public.events e ON p.event_id = e.id
       WHERE p.id = ${id}::uuid
       LIMIT 1
     `.catch(() => [] as any[]);
@@ -124,11 +158,31 @@ export class VotingService {
       crm: options.reduce((sum, o) => sum + o.crmVotes, 0),
     };
 
+    let pollStatus = r.status || 'open';
+    if (r.event_id) {
+      const evStatus = String(r.event_status || '').toLowerCase();
+      let evEnded = evStatus === 'completed' || evStatus === 'cancelled';
+      if (!evEnded && r.event_date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const evDate = new Date(r.event_date);
+        evDate.setHours(0, 0, 0, 0);
+        if (evDate.getTime() < today.getTime()) {
+          evEnded = true;
+        }
+      }
+      if (evEnded) {
+        pollStatus = 'closed';
+      }
+    }
+
     return {
       id: r.id,
       title: r.title,
       description: r.description || '',
-      status: r.status || 'open',
+      status: pollStatus,
+      eventId: r.event_id || null,
+      eventName: r.event_name || null,
       options,
       myVote: r.my_vote || null,
       myVoteSource: r.my_vote_source || null,
@@ -174,24 +228,39 @@ export class VotingService {
 
   async createPoll(userId: string, data: CreatePollDto) {
     if (!data.title || !Array.isArray(data.options) || data.options.length < 2) {
-      throw new BadRequestException('Title and at least 2 options are required');
+      throw new BadRequestException('Tiêu đề và ít nhất 2 phương án bình chọn là bắt buộc');
     }
 
     const pollId = crypto.randomUUID();
-    const startDate = (data as any).startsAt || data.startDate || null;
-    const endDate = (data as any).endsAt || data.endDate || null;
+    let startDate = (data as any).startsAt || data.startDate || null;
+    let endDate = (data as any).endsAt || data.endDate || null;
+    const eventId = data.eventId || (data as any).event_id || null;
 
-    try {
-      await this.prisma.$executeRaw`
-        INSERT INTO public.polls (id, title, description, status, start_date, end_date, created_at, updated_at)
-        VALUES (${pollId}::uuid, ${data.title}, ${data.description || null}, 'open', ${startDate ? new Date(startDate) : null}, ${endDate ? new Date(endDate) : null}, now(), now())
-      `;
-    } catch (e: any) {
-      await this.prisma.$executeRaw`
-        INSERT INTO public.polls (id, title, description, status, created_at, updated_at)
-        VALUES (${pollId}::uuid, ${data.title}, ${data.description || null}, 'open', now(), now())
-      `.catch(() => {});
+    if (!startDate && !endDate && eventId) {
+      const ev = await this.prisma.$queryRaw<any[]>`
+        SELECT date FROM public.events WHERE id = ${eventId} LIMIT 1
+      `.catch(() => []);
+      if (ev.length > 0 && ev[0].date) {
+        const evDateStr = ev[0].date instanceof Date ? ev[0].date.toISOString().slice(0, 10) : String(ev[0].date).slice(0, 10);
+        startDate = evDateStr;
+        endDate = evDateStr;
+      }
     }
+
+    if (startDate && !endDate) endDate = startDate;
+    if (!startDate && endDate) startDate = endDate;
+
+    let startDt = startDate ? new Date(startDate) : new Date();
+    let endDt = endDate ? new Date(endDate) : new Date(startDt);
+    // Nếu sự kiện hoặc biểu quyết diễn ra cùng 1 ngày, đặt endDt vào cuối ngày 23:59:59 để biểu quyết mở trọn vẹn ngày đó
+    if (startDate && endDate && String(startDate).slice(0, 10) === String(endDate).slice(0, 10)) {
+      endDt.setHours(23, 59, 59, 999);
+    }
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.polls (id, title, description, status, start_date, end_date, event_id, created_at, updated_at)
+      VALUES (${pollId}::uuid, ${data.title}, ${data.description || null}, 'open', ${startDt}, ${endDt}, ${eventId}, now(), now())
+    `;
 
     const createdOptions: Array<{ id: string; title: string }> = [];
     for (const optTitle of data.options) {
@@ -339,14 +408,42 @@ export class VotingService {
 
   async updatePoll(userId: string, id: string, data: any) {
     if (!id) throw new BadRequestException('ID is required');
-    await this.prisma.$executeRaw`
-      UPDATE public.polls
-      SET title = COALESCE(${data.title}, title),
-          description = COALESCE(${data.description || null}, description),
-          status = COALESCE(${data.status || null}, status),
-          updated_at = now()
-      WHERE id = ${id}::uuid
-    `.catch(() => {});
+    const eventId = data.eventId !== undefined ? data.eventId : (data.event_id !== undefined ? data.event_id : null);
+    let startDate = (data as any).startsAt || data.startDate || null;
+    let endDate = (data as any).endsAt || data.endDate || null;
+    if (startDate && !endDate) endDate = startDate;
+    if (!startDate && endDate) startDate = endDate;
+
+    let startDt = startDate ? new Date(startDate) : null;
+    let endDt = endDate ? new Date(endDate) : null;
+    if (startDt && endDt && String(startDate).slice(0, 10) === String(endDate).slice(0, 10)) {
+      endDt.setHours(23, 59, 59, 999);
+    }
+
+    if (eventId !== null) {
+      await this.prisma.$executeRaw`
+        UPDATE public.polls
+        SET title = COALESCE(${data.title}, title),
+            description = COALESCE(${data.description || null}, description),
+            status = COALESCE(${data.status || null}, status),
+            event_id = ${eventId},
+            start_date = COALESCE(${startDt}, start_date),
+            end_date = COALESCE(${endDt}, end_date),
+            updated_at = now()
+        WHERE id = ${id}::uuid
+      `.catch(() => {});
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE public.polls
+        SET title = COALESCE(${data.title}, title),
+            description = COALESCE(${data.description || null}, description),
+            status = COALESCE(${data.status || null}, status),
+            start_date = COALESCE(${startDt}, start_date),
+            end_date = COALESCE(${endDt}, end_date),
+            updated_at = now()
+        WHERE id = ${id}::uuid
+      `.catch(() => {});
+    }
     return this.getPollById(userId, id);
   }
 

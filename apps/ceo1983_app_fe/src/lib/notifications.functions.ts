@@ -74,3 +74,17 @@ export const deleteNotificationFn = createServerFn({ method: "POST" })
       method: "DELETE",
     });
   });
+
+export const pushNotificationToMessagesFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128), channel: z.string().optional() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; id: string; pushedToMessages: boolean; targetChannel: string }> => {
+    return fetchNestApiFromServer<{ ok: boolean; id: string; pushedToMessages: boolean; targetChannel: string }>(
+      `/admin/notifications/${encodeURIComponent(data.id)}/push-messages`,
+      context.token,
+      {
+        method: "POST",
+        body: JSON.stringify({ channel: data.channel }),
+      },
+    );
+  });

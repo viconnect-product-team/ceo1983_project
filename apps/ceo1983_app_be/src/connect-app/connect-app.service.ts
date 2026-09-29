@@ -95,6 +95,18 @@ export class ConnectAppService implements OnModuleInit {
         ALTER TABLE public.associations ADD COLUMN IF NOT EXISTS banner_url text;
       `).catch(() => {});
       await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.association_logo_history (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          association_id UUID NOT NULL,
+          changed_by UUID,
+          changed_by_name TEXT,
+          old_logo_url TEXT,
+          new_logo_url TEXT,
+          action TEXT NOT NULL DEFAULT 'change',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+      `).catch(() => {});
+      await this.prisma.$executeRawUnsafe(`
         ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'crm';
       `).catch(() => {});
       await this.prisma.$executeRawUnsafe(`
@@ -642,56 +654,176 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async getMyProfile(userId: string) {
-    const rows = await this.prisma.$queryRaw<any[]>`
+    const profileRows = await this.prisma.$queryRaw<any[]>`
       SELECT 
         user_id, display_name, avatar_url, professional_title, company_name, 
         industry, region, bio, locale, timezone, 
         onboarding_status::text as onboarding_status, 
         account_status::text as account_status, 
-        created_at, updated_at
+        created_at, updated_at, company_logo_url
       FROM public.user_profiles
       WHERE user_id = ${userId}::uuid
       LIMIT 1
     `.catch(() => []);
-    return rows[0] || null;
+    const profile = profileRows[0] || null;
+
+    const memberRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, name, phone, email, avatar, company_name, executive_role, region, address, about, company_logo_url
+      FROM public.members
+      WHERE user_id = ${userId}::uuid OR id = ${userId}
+      LIMIT 1
+    `.catch(() => []);
+    const member = memberRows[0] || null;
+
+    const user = await this.prisma.vione_users.findUnique({
+      where: { id: userId },
+    }).catch(() => null);
+
+    if (!profile && !member && !user) return null;
+
+    const displayName = profile?.display_name || member?.name || user?.name || '';
+    const phone = member?.phone || '';
+    const professionalTitle = profile?.professional_title || member?.executive_role || '';
+    const companyName = profile?.company_name || member?.company_name || '';
+    const region = profile?.region || member?.region || member?.address || '';
+    const bio = profile?.bio || member?.about || '';
+    const avatarUrl = profile?.avatar_url || member?.avatar || user?.avatar_url || '';
+    const companyLogoUrl = profile?.company_logo_url || member?.company_logo_url || '';
+
+    return {
+      user_id: userId,
+      display_name: displayName,
+      phone,
+      professional_title: professionalTitle,
+      company_name: companyName,
+      region,
+      bio,
+      avatar_url: avatarUrl,
+      company_logo_url: companyLogoUrl,
+      email: member?.email || user?.email || '',
+      member_id: member?.id || null,
+      member_code: member?.code || null,
+      onboarding_status: profile?.onboarding_status || 'completed',
+      account_status: profile?.account_status || 'active',
+      locale: profile?.locale || 'vi',
+      timezone: profile?.timezone || 'Asia/Ho_Chi_Minh',
+      created_at: profile?.created_at || member?.created_at || new Date(),
+      updated_at: profile?.updated_at || member?.updated_at || new Date(),
+    };
   }
 
   async updateMyProfile(userId: string, data: any) {
-    const onboardingStatus = data.onboarding_status || 'new';
+    const onboardingStatus = data.onboarding_status || 'completed';
     const accountStatus = data.account_status || 'active';
+    const displayName = (data.display_name || data.name || data.full_name || '').trim();
+    const phone = (data.phone || '').trim();
+    const professionalTitle = (data.professional_title || data.title || '').trim();
+    const companyName = (data.company_name || data.company || '').trim();
+    const region = (data.region || data.location || '').trim();
+    const bio = (data.bio || '').trim();
+    const avatarUrl = (data.avatar_url || data.avatar || '').trim() || null;
+    const companyLogoUrl = (data.company_logo_url || data.companyLogo || '').trim() || null;
+
+    // 1. user_profiles
     await this.prisma.$executeRaw`
       INSERT INTO public.user_profiles (
         user_id, display_name, avatar_url, professional_title, company_name, 
-        industry, region, bio, locale, timezone, onboarding_status, account_status
+        industry, region, bio, locale, timezone, onboarding_status, account_status, company_logo_url, updated_at
       )
       VALUES (
         ${userId}::uuid, 
-        ${data.display_name || null}, 
-        ${data.avatar_url || null}, 
-        ${data.professional_title || null}, 
-        ${data.company_name || null}, 
+        ${displayName || null}, 
+        ${avatarUrl}, 
+        ${professionalTitle || null}, 
+        ${companyName || null}, 
         ${data.industry || null}, 
-        ${data.region || null}, 
-        ${data.bio || null}, 
+        ${region || null}, 
+        ${bio || null}, 
         ${data.locale || 'vi'}, 
         ${data.timezone || 'Asia/Ho_Chi_Minh'}, 
         ${onboardingStatus}, 
-        ${accountStatus}
+        ${accountStatus},
+        ${companyLogoUrl},
+        NOW()
       )
       ON CONFLICT (user_id) DO UPDATE SET
-        display_name = EXCLUDED.display_name,
-        avatar_url = EXCLUDED.avatar_url,
-        professional_title = EXCLUDED.professional_title,
-        company_name = EXCLUDED.company_name,
-        industry = EXCLUDED.industry,
-        region = EXCLUDED.region,
-        bio = EXCLUDED.bio,
+        display_name = COALESCE(EXCLUDED.display_name, user_profiles.display_name),
+        avatar_url = COALESCE(EXCLUDED.avatar_url, user_profiles.avatar_url),
+        professional_title = COALESCE(EXCLUDED.professional_title, user_profiles.professional_title),
+        company_name = COALESCE(EXCLUDED.company_name, user_profiles.company_name),
+        industry = COALESCE(EXCLUDED.industry, user_profiles.industry),
+        region = COALESCE(EXCLUDED.region, user_profiles.region),
+        bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
         locale = EXCLUDED.locale,
         timezone = EXCLUDED.timezone,
         onboarding_status = EXCLUDED.onboarding_status,
         account_status = EXCLUDED.account_status,
-        updated_at = now()
-    `;
+        company_logo_url = COALESCE(EXCLUDED.company_logo_url, user_profiles.company_logo_url),
+        updated_at = NOW()
+    `.catch(() => null);
+
+    // 2. vione_users
+    try {
+      const vioneUpdate: any = { updated_at: new Date() };
+      if (displayName) vioneUpdate.name = displayName;
+      if (avatarUrl) vioneUpdate.avatar_url = avatarUrl;
+      await this.prisma.vione_users.update({
+        where: { id: userId },
+        data: vioneUpdate,
+      }).catch(() => null);
+    } catch {}
+
+    // 3. members (App Hiệp hội CEO 1983)
+    try {
+      await this.prisma.$executeRaw`
+        UPDATE public.members
+        SET
+          name = COALESCE(${displayName || null}, name),
+          contact = COALESCE(${displayName || null}, contact),
+          phone = COALESCE(${phone || null}, phone),
+          executive_role = COALESCE(${professionalTitle || null}, executive_role),
+          company_name = COALESCE(${companyName || null}, company_name),
+          region = COALESCE(${region || null}, region),
+          address = COALESCE(${region || null}, address),
+          about = COALESCE(${bio || null}, about),
+          avatar = COALESCE(${avatarUrl}, avatar),
+          company_logo_url = COALESCE(${companyLogoUrl}, company_logo_url),
+          updated_at = NOW()
+        WHERE user_id = ${userId}::uuid OR id = ${userId}
+      `.catch(() => null);
+    } catch {}
+
+    // 4. card_settings & member_business_cards
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.card_settings (user_id, display_name, display_company, photo_url, company_logo_url, updated_at)
+        VALUES (${userId}::uuid, ${displayName || null}, ${companyName || null}, ${avatarUrl}, ${companyLogoUrl}, NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+          display_name = COALESCE(${displayName || null}, card_settings.display_name),
+          display_company = COALESCE(${companyName || null}, card_settings.display_company),
+          photo_url = COALESCE(${avatarUrl}, card_settings.photo_url),
+          company_logo_url = COALESCE(${companyLogoUrl}, card_settings.company_logo_url),
+          updated_at = NOW()
+      `.catch(() => null);
+    } catch {}
+
+    try {
+      await this.prisma.$executeRaw`
+        UPDATE public.member_business_cards
+        SET
+          display_name = COALESCE(${displayName || null}, display_name),
+          professional_title = COALESCE(${professionalTitle || null}, professional_title),
+          company_name = COALESCE(${companyName || null}, company_name),
+          avatar_url = COALESCE(${avatarUrl}, avatar_url),
+          company_logo_url = COALESCE(${companyLogoUrl}, company_logo_url),
+          work_phone = COALESCE(${phone || null}, work_phone),
+          address = COALESCE(${region || null}, address),
+          bio = COALESCE(${bio || null}, bio),
+          updated_at = NOW()
+        WHERE owner_user_id = ${userId}::uuid
+      `.catch(() => null);
+    } catch {}
+
     return this.getMyProfile(userId);
   }
 
@@ -4279,7 +4411,7 @@ export class ConnectAppService implements OnModuleInit {
 
     const [broadcast, personal, business] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
-        SELECT id, code, title, body, audience, sent_at, created_at, app_scope, target_app
+        SELECT id, code, title, body, audience, sent_at, created_at, app_scope, target_app, target_channel, pushed_to_messages
         FROM public.notifications
         WHERE (status = 'sent' OR status = 'active' OR status IS NULL)
           AND (app_scope = 'association_app' OR app_scope = 'all' OR app_scope IS NULL
@@ -4295,7 +4427,7 @@ export class ConnectAppService implements OnModuleInit {
         LIMIT 50
       `.catch(() => []),
       this.prisma.$queryRaw<any[]>`
-        SELECT id, title_key, body_key, safe_display_data, notification_kind, created_at, read_at, source_record_id
+        SELECT id, title_key, body_key, safe_display_data, notification_kind, created_at, read_at, source_record_id, pushed_to_messages
         FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid
           AND (app_scope = 'association_app' OR target_app = 'association_app' OR app_scope = 'all' OR target_app = 'all' OR app_scope IS NULL)
@@ -4354,6 +4486,7 @@ export class ConnectAppService implements OnModuleInit {
         const isDismissed = dismissedIds.has(n.id) || (n.code && dismissedIds.has(n.code));
         return {
           id: n.id,
+          code: n.code,
           title: n.title,
           body: n.body,
           time: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
@@ -4364,6 +4497,8 @@ export class ConnectAppService implements OnModuleInit {
           priority: !isDismissed ? 'high' : 'low',
           personal: false,
           notificationKind: 'system_broadcast',
+          targetChannel: n.target_channel || null,
+          pushedToMessages: Boolean(n.pushed_to_messages || (n.target_channel && n.target_channel !== 'none')),
         };
       });
 
@@ -4435,11 +4570,12 @@ export class ConnectAppService implements OnModuleInit {
         sourceRecordId: connId,
         safeDisplayData: safe,
         notificationKind: b.notification_kind,
+        pushedToMessages: Boolean(b.pushed_to_messages),
       };
     });
 
     // Thông báo chào mừng chính thức cho hội viên mới
-    const welcomeNotification = {
+    const welcomeNotification: any = {
       id: `welcome-${userId}`,
       title: 'Chào mừng bạn đến với CLB Doanh Nhân CEO 1983!',
       body: 'Chúc mừng bạn đã chính thức gia nhập CLB Doanh Nhân CEO 1983. Hãy hoàn thiện danh thiếp số và bắt đầu khám phá các sự kiện, cơ hội giao thương B2B độc quyền!',
@@ -4451,9 +4587,11 @@ export class ConnectAppService implements OnModuleInit {
       priority: 'high',
       personal: true,
       notificationKind: 'welcome_ceo1983',
+      targetChannel: null,
+      pushedToMessages: false,
     };
 
-    const combined = [...businessItems, ...personalItems, ...broadcastItems];
+    const combined: any[] = [...businessItems, ...personalItems, ...broadcastItems];
     if (combined.length === 0) {
       combined.push(welcomeNotification);
     }
@@ -11000,6 +11138,43 @@ export class ConnectAppService implements OnModuleInit {
       throw new BadRequestException('Họ tên và số điện thoại là bắt buộc');
     }
 
+    // 0. Chống double click / duplicate registration cho cùng SĐT hoặc Email trong vòng 60 phút
+    try {
+      const existingPending = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, email, name, contact
+        FROM public.members
+        WHERE (phone = ${phone} OR (email = ${email.toLowerCase()} AND email != ''))
+          AND status = 'pending'
+          AND created_at > now() - interval '60 minutes'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `.catch(() => []);
+
+      if (existingPending && existingPending.length > 0) {
+        const existing = existingPending[0];
+        await this.prisma.$executeRaw`
+          UPDATE public.members
+          SET name = COALESCE(${company}, name),
+              contact = COALESCE(${fullName}, contact),
+              industry = COALESCE(${industry || 'ind.it'}, industry),
+              updated_at = now()
+          WHERE id = ${existing.id}
+        `.catch(() => null);
+
+        return {
+          success: true,
+          ok: true,
+          memberId: existing.id,
+          username: existing.email || email,
+          email: existing.email || email,
+          reference: `APP-${existing.id}`,
+          message: 'Hồ sơ đăng ký gia nhập của Quý CEO đã được tiếp nhận trên CRM và đang được Ban Thư Ký xét duyệt!',
+        };
+      }
+    } catch (dupErr) {
+      console.warn('Deduplication check note:', dupErr);
+    }
+
     // 1. Resolve target association_id
     let assocId: string | null = null;
     try {
@@ -11057,9 +11232,9 @@ export class ConnectAppService implements OnModuleInit {
       console.warn('Demo request insert error:', e);
     }
 
-    // 3. Sinh chuỗi ký tự mật khẩu ngẫu nhiên (8 ký tự) & gửi qua email thông báo
-    const randomChars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    const rawPassword = Array.from(crypto.randomBytes(8))
+    // 3. Sinh chuỗi ký tự mật khẩu ngẫu nhiên (6 ký tự chuẩn dễ nhập) & gửi qua email thông báo
+    const randomChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+    const rawPassword = Array.from(crypto.randomBytes(6))
       .map((byte) => randomChars[byte % randomChars.length])
       .join('');
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
@@ -11128,7 +11303,7 @@ export class ConnectAppService implements OnModuleInit {
       }
     }
 
-    const detailedNotes = `${notesContent} | TÀI KHOẢN ĐĂNG NHẬP: Email=${email} / Pass=[Random đã gửi qua Email]`;
+    const detailedNotes = `${notesContent} | TÀI KHOẢN ĐĂNG NHẬP: Email=${email} | Pass=${rawPassword}`;
 
     const targetAssocUuid = assocId || (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations LIMIT 1`.then(r => r[0]?.id).catch(() => null));
 
@@ -11146,7 +11321,7 @@ export class ConnectAppService implements OnModuleInit {
             ${phone},
             'company',
             'memberLevel.medium',
-            'ind.it',
+            ${industry || 'ind.it'},
             'region.north',
             'pending',
             ${joinedAt}::date,
@@ -11172,7 +11347,7 @@ export class ConnectAppService implements OnModuleInit {
             ${phone},
             'company',
             'memberLevel.medium',
-            'ind.it',
+            ${industry || 'ind.it'},
             'region.north',
             'pending',
             ${joinedAt}::date,
@@ -12271,6 +12446,123 @@ export class ConnectAppService implements OnModuleInit {
     if (rows.length === 0) return null;
     return { id, status: 'cancelled', cancelReason: reason };
   }
+
+  async getActiveTheme() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT value FROM public.app_settings WHERE key = 'active_association_theme' LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length > 0 && rows[0].value) {
+      const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+      return {
+        themeId: val.themeId || 'classic',
+        enabled: val.enabled !== false,
+        updatedAt: val.updatedAt || null,
+      };
+    }
+
+    return {
+      themeId: 'classic',
+      enabled: true,
+      updatedAt: null,
+    };
+  }
+
+  async getActiveAssociationDetails(userId?: string) {
+    let assoc: any = null;
+    if (userId) {
+      const userAssocs = await this.prisma.$queryRaw<any[]>`
+        SELECT a.id, a.name, a.slug, a.logo_url, m.role
+        FROM public.memberships m
+        JOIN public.associations a ON m.association_id = a.id
+        WHERE m.user_id = ${userId}::uuid
+        ORDER BY m.is_default DESC, m.created_at ASC
+        LIMIT 1
+      `.catch(() => []);
+      if (userAssocs.length > 0) assoc = userAssocs[0];
+    }
+    if (!assoc) {
+      const firstAssoc = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, slug, logo_url FROM public.associations ORDER BY created_at ASC LIMIT 1
+      `.catch(() => []);
+      if (firstAssoc.length > 0) assoc = firstAssoc[0];
+    }
+    if (!assoc) {
+      return {
+        associationId: 'c1983000-0000-4000-8000-000000001983',
+        name: 'CLB Doanh Nhân CEO 1983',
+        slug: 'ceo1983',
+        logoUrl: '/ceo1983-official-logo.png',
+        role: 'admin',
+        isAdmin: true,
+      };
+    }
+    return {
+      associationId: String(assoc.id),
+      name: String(assoc.name || 'CLB Doanh Nhân CEO 1983'),
+      slug: assoc.slug ? String(assoc.slug) : 'ceo1983',
+      logoUrl: assoc.logo_url || null,
+      role: assoc.role || 'admin',
+      isAdmin: assoc.role === 'admin' || !assoc.role,
+    };
+  }
+
+  async updateAssociationLogo(userId: string, associationId?: string, logoUrl?: string | null) {
+    let targetId = associationId;
+    if (!targetId || !/^[0-9a-fA-F-]{36}$/.test(targetId)) {
+      const first = await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1`.catch(() => []);
+      if (first.length > 0) targetId = first[0].id;
+    }
+    if (targetId) {
+      const prev = await this.prisma.$queryRaw<any[]>`SELECT logo_url FROM public.associations WHERE id = ${targetId}::uuid LIMIT 1`.catch(() => []);
+      const oldUrl = prev[0]?.logo_url || null;
+
+      await this.prisma.$executeRaw`
+        UPDATE public.associations
+        SET logo_url = ${logoUrl || null}, updated_at = NOW()
+        WHERE id = ${targetId}::uuid
+      `;
+
+      const user = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+      const actorName = user?.name || user?.email || 'Quản trị viên';
+
+      try {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.association_logo_history (id, association_id, changed_by, changed_by_name, old_logo_url, new_logo_url, action, created_at)
+          VALUES (gen_random_uuid(), ${targetId}::uuid, ${userId}::uuid, ${actorName}, ${oldUrl}, ${logoUrl || null}, ${!logoUrl ? 'remove' : !oldUrl ? 'set' : 'change'}, NOW())
+        `;
+      } catch {}
+    }
+    return { ok: true, logoUrl: logoUrl || null };
+  }
+
+  async getAssociationLogoHistory(associationId?: string) {
+    try {
+      let targetId = associationId;
+      if (!targetId || !/^[0-9a-fA-F-]{36}$/.test(targetId)) {
+        const first = await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1`.catch(() => []);
+        if (first.length > 0) targetId = first[0].id;
+      }
+      if (!targetId) return [];
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, action, changed_by_name, old_logo_url, new_logo_url, created_at
+        FROM public.association_logo_history
+        WHERE association_id = ${targetId}::uuid
+        ORDER BY created_at DESC
+        LIMIT 20
+      `.catch(() => []);
+      return (rows || []).map((r: any) => ({
+        id: String(r.id),
+        action: String(r.action || 'change'),
+        changedByName: r.changed_by_name || null,
+        oldLogoUrl: r.old_logo_url || null,
+        newLogoUrl: r.new_logo_url || null,
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      }));
+    } catch {
+      return [];
+    }
+  }
 }
 
 // ==========================================
@@ -12674,5 +12966,7 @@ Tráº£ vá» DUY NHáº¤T JSON dáº¡ng: {"suggestions":[{"name":"...","re
     return { ok: false, error: "unavailable" as const };
   }
 }
+
+
 
 

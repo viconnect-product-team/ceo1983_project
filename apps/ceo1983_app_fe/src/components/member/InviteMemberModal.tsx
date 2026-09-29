@@ -122,13 +122,13 @@ export function InviteMemberModal({
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-                Mã người giới thiệu
+                Mã hội viên
               </div>
               <div className="text-[16px] font-black text-[#003B95] dark:text-amber-400 tracking-wider">
                 {memberCode}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
-                Quét mã QR để mở trang đăng ký gia nhập có gắn mã của bạn.
+                Quét mã QR để mở trang kết nối hội viên CEO 1983.
               </p>
             </div>
           </div>

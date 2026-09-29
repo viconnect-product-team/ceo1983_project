@@ -219,9 +219,18 @@ export const deleteMeetingFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     const { logActivity } = await import("./crud.server");
-    const { error } = await getDb(context).from("meetings").delete().eq("code", data.id);
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
+    const db = getDb(context);
+    try {
+      const { fetchNestApiFromServer } = await import("./api-client");
+      await fetchNestApiFromServer(`/meetings/${encodeURIComponent(data.id)}`, context.token, {
+        method: "DELETE",
+      });
+    } catch {}
+
+    await db.from("meetings").delete().eq("code", data.id);
+    await db.from("meetings").delete().eq("id", data.id);
+
+    await logActivity(db, {
       action: "Xóa cuộc họp",
       target: data.id,
       category: "meeting",

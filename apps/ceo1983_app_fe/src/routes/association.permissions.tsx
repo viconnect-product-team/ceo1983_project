@@ -23,9 +23,10 @@ import {
 } from "lucide-react";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
-import { listMembers, type DirectoryMember } from "@/lib/member-app.functions";
+import { listMembers, getMyMember, type DirectoryMember, type MyMember } from "@/lib/member-app.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useRole } from "@/hooks/use-role";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { resolveMediaUrl } from "@/lib/api-client";
 
@@ -66,8 +67,24 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function AssociationPermissionsScreen() {
-  const { isAdmin: isPlatformOrTenantAdmin, isPlatformAdmin, loading: roleLoading } = useRole();
-  const hasAccess = Boolean(isPlatformOrTenantAdmin || isPlatformAdmin);
+  const { isBQT, isPlatformAdmin, loading: roleLoading } = useRole();
+  const { user } = useAuth();
+  const fetchMyMemberFn = useServerFn(getMyMember);
+  const { data: member } = useServerData<MyMember | null>(() => fetchMyMemberFn(), null, "vba_my_member");
+
+  const isBQTOrAdmin = Boolean(
+    (user as any)?.role === "admin" ||
+    (user as any)?.role === "platform_admin" ||
+    (member as any)?.role === "admin" ||
+    (member as any)?.role === "association_admin" ||
+    isPlatformAdmin ||
+    isBQT ||
+    (member as any)?.department === "Ban Quản Trị" ||
+    (member as any)?.department === "Ban Thường Trực CLB" ||
+    String((member as any)?.executiveRole || "").toLowerCase().includes("chủ tịch") ||
+    String((member as any)?.department || "").toLowerCase().includes("quản trị")
+  );
+  const hasAccess = isBQTOrAdmin;
 
   const fetchMembersFn = useServerFn(listMembers);
   const { data: directory = [] } = useServerData<DirectoryMember[]>(() => fetchMembersFn(), [], "vba_directory_members");

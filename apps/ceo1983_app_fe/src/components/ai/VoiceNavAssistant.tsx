@@ -27,9 +27,9 @@ export const VOICE_AI_STORAGE_KEY = "ceo1983_voice_ai_enabled";
 export const VOICE_AI_EVENT_NAME = "ceo1983-voice-ai-toggle";
 
 export function isVoiceAiEnabled(): boolean {
-  if (typeof window === "undefined") return true;
+  if (typeof window === "undefined") return false;
   const val = localStorage.getItem(VOICE_AI_STORAGE_KEY);
-  return val !== "false";
+  return val === "true";
 }
 
 export function setVoiceAiEnabled(enabled: boolean): void {
@@ -450,8 +450,11 @@ export function VoiceNavAssistant() {
     });
   };
 
-  // Chỉ hiển thị Trợ lý AI khi người dùng đã đăng nhập thành công vào app và không ở trang đăng nhập/auth
+  // Chỉ hiển thị Trợ lý AI khi người dùng đã đăng nhập thành công vào app hiệp hội và không ở CRM hay trang công khai
   const pathname = (currentPath || "").toLowerCase();
+  const isAssociationApp = pathname.startsWith("/association") || pathname.startsWith("/m");
+  if (!isAssociationApp) return null;
+
   const isAuthOrPublicPage =
     pathname.includes("/login") ||
     pathname === "/auth" ||

@@ -99,6 +99,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "nav.group.admin",
     items: [
+      { key: "nav.permissions" as TKey, icon: ShieldCheck, to: "/permissions" },
       { key: "nav.documents", icon: FolderOpen, to: "/documents" },
     ],
   },
@@ -119,10 +120,5 @@ export const navGroups: NavGroup[] = [
       { key: "nav.settings", icon: Settings, to: "/settings" },
       { key: "nav.activity", icon: History, to: "/activity" },
     ],
-  },
-  {
-    label: "nav.group.platform",
-    platformOnly: true,
-    items: [{ key: "nav.platform", icon: ShieldCheck, to: "/platform" }],
   },
 ];

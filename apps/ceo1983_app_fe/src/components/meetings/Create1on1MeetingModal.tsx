@@ -13,7 +13,13 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { fetchNestApi } from "@/lib/api-client";
+
+const meeting1on1Schema = z.object({
+  title: z.string().trim().min(1, "Tiêu đề không được phép để trống"),
+  partnerName: z.string().trim().min(1, "Tên đối tác kết nối không được phép để trống"),
+});
 
 export interface Create1on1MeetingModalProps {
   isOpen: boolean;
@@ -31,6 +37,7 @@ export function Create1on1MeetingModal({
   const [partnerName, setPartnerName] = useState("");
   const [partnerPhone, setPartnerPhone] = useState("");
   const [partnerCompany, setPartnerCompany] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -51,10 +58,17 @@ export function Create1on1MeetingModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !partnerName.trim()) {
-      toast.error("Vui lòng nhập đầy đủ tiêu đề và tên đối tác kết nối!");
+    const result = meeting1on1Schema.safeParse({ title, partnerName });
+    if (!result.success) {
+      const errMap: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0]);
+        if (!errMap[key]) errMap[key] = issue.message;
+      }
+      setErrors(errMap);
       return;
     }
+    setErrors({});
 
     const meetingId = `meet_1on1_${Date.now()}`;
     const newRecord = {
@@ -195,12 +209,23 @@ export function Create1on1MeetingModal({
             </label>
             <input
               type="text"
-              required
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errors.title) setErrors((prev) => ({ ...prev, title: "" }));
+              }}
               placeholder="VD: Trao đổi hợp tác chuỗi cung ứng vật tư..."
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-xs"
+              className={`w-full rounded-xl border bg-background px-3 py-2 text-foreground focus:outline-none text-xs transition ${
+                errors.title
+                  ? "border-destructive focus:border-destructive ring-1 ring-destructive/30"
+                  : "border-border focus:ring-2 focus:ring-primary"
+              }`}
             />
+            {errors.title && (
+              <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                {errors.title}
+              </p>
+            )}
           </div>
 
           {/* Người chủ trì & Đối tác */}
@@ -211,7 +236,6 @@ export function Create1on1MeetingModal({
               </label>
               <input
                 type="text"
-                required
                 value={hostName}
                 onChange={(e) => setHostName(e.target.value)}
                 placeholder="Tên hội viên chủ trì"
@@ -224,12 +248,23 @@ export function Create1on1MeetingModal({
               </label>
               <input
                 type="text"
-                required
                 value={partnerName}
-                onChange={(e) => setPartnerName(e.target.value)}
+                onChange={(e) => {
+                  setPartnerName(e.target.value);
+                  if (errors.partnerName) setErrors((prev) => ({ ...prev, partnerName: "" }));
+                }}
                 placeholder="Tên đối tác hoặc doanh nhân..."
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-xs"
+                className={`w-full rounded-xl border bg-background px-3 py-2 text-foreground focus:outline-none text-xs transition ${
+                  errors.partnerName
+                    ? "border-destructive focus:border-destructive ring-1 ring-destructive/30"
+                    : "border-border focus:ring-2 focus:ring-primary"
+                }`}
               />
+              {errors.partnerName && (
+                <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                  {errors.partnerName}
+                </p>
+              )}
             </div>
           </div>
 

@@ -351,7 +351,7 @@ function AssociationVotingScreen() {
             </p>
           </div>
         </div>
-        <span className="shrink-0 px-2.5 py-1 rounded-lg bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-slate-950 text-[11px] font-bold shadow-xs">
+        <span className="shrink-0 px-3 py-1 rounded-lg bg-[#003B95] text-white text-[11px] font-bold shadow-sm">
           Sẵn sàng
         </span>
       </div>
@@ -590,7 +590,7 @@ function AssociationVotingScreen() {
                           id={sIdx === 0 ? "tour-voting-submit-btn" : undefined}
                           type="button"
                           onClick={() => handleCastVote(session.id)}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] hover:brightness-105 px-5 py-2 text-xs font-bold text-slate-950 shadow-md active:scale-95 transition cursor-pointer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-95 transition cursor-pointer"
                         >
                           <Vote className="h-3.5 w-3.5" />
                           <span>Xác nhận biểu quyết</span>

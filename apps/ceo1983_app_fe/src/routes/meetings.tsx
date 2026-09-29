@@ -142,8 +142,8 @@ function MeetingsPage() {
   const deleteFn = useServerFn(deleteMeetingFn);
   const createNotif = useServerFn(createNotificationFn);
 
-  // Active Main Tab
-  const [activeTab, setActiveTab] = useState<ActiveMeetingTab>("room_bookings");
+  // Active Main Tab (Cuộc Họp & Hẹn Gặp Kết Nối làm mặc định)
+  const [activeTab, setActiveTab] = useState<ActiveMeetingTab>("meetings");
 
   // --- TAB 1: Meetings State ---
   const [modalOpen, setModalOpen] = useState(false);
@@ -175,6 +175,39 @@ function MeetingsPage() {
   // --- TAB 2: Room Bookings & Approval State ---
   const [rooms, setRooms] = useState<MeetingRoom[]>(() => RoomBookingService.getRooms());
   const [bookings, setBookings] = useState<RoomBookingRequest[]>(() => RoomBookingService.getBookings());
+
+  // Thống kê động số lượng phòng trống & phòng đã đặt
+  const roomStats = useMemo(() => {
+    const totalRooms = rooms.length;
+    const approvedBookingsByRoom = new Map<string, RoomBookingRequest[]>();
+    for (const b of bookings) {
+      if (b.status === "approved") {
+        const list = approvedBookingsByRoom.get(b.roomId) || [];
+        list.push(b);
+        approvedBookingsByRoom.set(b.roomId, list);
+      }
+    }
+
+    const occupiedRoomIds = new Set<string>();
+    for (const [roomId, bList] of approvedBookingsByRoom.entries()) {
+      if (bList.length > 0) {
+        occupiedRoomIds.add(roomId);
+      }
+    }
+
+    const occupiedRoomsCount = occupiedRoomIds.size;
+    const availableRoomsCount = Math.max(0, totalRooms - occupiedRoomsCount);
+    const pendingBookingsCount = bookings.filter((b) => b.status === "pending_admin").length;
+
+    return {
+      totalRooms,
+      occupiedRoomsCount,
+      availableRoomsCount,
+      pendingBookingsCount,
+      approvedBookingsByRoom,
+    };
+  }, [rooms, bookings]);
+
   const [bookingFilter, setBookingFilter] = useState<"all" | "pending_admin" | "approved" | "rejected">("all");
   const [bookRoomModalOpen, setBookRoomModalOpen] = useState(false);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
@@ -415,18 +448,18 @@ function MeetingsPage() {
   };
 
   const onDelete = async (m: Meeting) => {
-    if (!window.confirm(t("meet.deleteConfirm", { title: m.title }))) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa cuộc họp "${m.title}" không? Dữ liệu cuộc họp sẽ bị xóa hoàn toàn khỏi hệ thống.`)) return;
     try {
       await deleteFn({ data: { id: m.id } });
-      toast.success(t("common.deleted"));
+      toast.success("✓ Đã xóa cuộc họp thành công!");
       await router.invalidate();
     } catch (err: any) {
-      toast.error(err?.message || t("common.deleteError"));
+      toast.error(err?.message || "Lỗi khi xóa cuộc họp");
     }
   };
 
   // --- Handlers for TAB 2 (Room Bookings) ---
-  const handleCreateRoomBooking = (e: React.FormEvent) => {
+  const handleCreateRoomBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const { booking, dispatchedEmail } = RoomBookingService.requestBooking({
@@ -453,7 +486,24 @@ function MeetingsPage() {
         setEmailPreviewModalOpen(true);
       }
 
-      toast.success("Đã gửi yêu cầu mượn phòng họp tới Ban Quản Trị và gửi email thông báo!");
+      // Phát thông báo in-app tới BQT / Quản trị viên
+      try {
+        await createNotif({
+          data: {
+            title: `[Yêu cầu đặt phòng mới] ${booking.title} — ${booking.roomName}`,
+            body: `Đại biểu ${booking.organizerName} (${booking.organizerEmail} - ${booking.organizerPhone}) thuộc ${booking.department} đã gửi yêu cầu mượn phòng "${booking.roomName}" vào ${booking.startTime} - ${booking.endTime} ngày ${booking.date}. Quy mô: ${booking.attendeesCount} người. Vui lòng vào CRM phê duyệt.`,
+            audience: "all",
+            channel: "inapp",
+            appScope: "all",
+            targetApp: "all",
+            status: "sent",
+          },
+        });
+      } catch (notifErr) {
+        console.warn("Could not dispatch in-app notification for room booking request:", notifErr);
+      }
+
+      toast.success("Đã gửi yêu cầu mượn phòng họp tới Ban Quản Trị và phát thông báo!");
     } catch (err: any) {
       toast.error(err?.message || "Lỗi khi gửi yêu cầu book phòng");
     }
@@ -467,7 +517,7 @@ function MeetingsPage() {
     setApproveModalOpen(true);
   };
 
-  const handleConfirmApprove = () => {
+  const handleConfirmApprove = async () => {
     if (!selectedBooking) return;
     try {
       const { booking, dispatchedEmail } = RoomBookingService.approveBooking(selectedBooking.id, {
@@ -484,8 +534,25 @@ function MeetingsPage() {
         setEmailPreviewModalOpen(true);
       }
 
+      // Phát thông báo in-app tới người đặt phòng & các bên liên quan
+      try {
+        await createNotif({
+          data: {
+            title: `[Xác nhận duyệt đặt phòng] ${booking.title} — ${booking.roomName}`,
+            body: `Yêu cầu đặt phòng "${booking.roomName}" (${booking.startTime} - ${booking.endTime}, ngày ${booking.date}) của ${booking.organizerName} (${booking.organizerEmail}) đã ĐƯỢC PHÊ DUYỆT THÀNH CÔNG. Ghi chú BQT: "${adminNotes}". ${booking.onlineMeetingUrl ? `Link họp trực tuyến: ${booking.onlineMeetingUrl} (Passcode: ${booking.onlinePasscode || ''})` : 'Phòng họp đã được kích hoạt sử dụng.'}`,
+            audience: "all",
+            channel: "inapp",
+            appScope: "all",
+            targetApp: "all",
+            status: "sent",
+          },
+        });
+      } catch (notifErr) {
+        console.warn("Could not dispatch in-app notification for approved booking:", notifErr);
+      }
+
       toast.success(
-        `Đã phê duyệt phòng họp "${booking.roomName}"! Email xác nhận đã tự động gửi tới ${booking.organizerEmail}.`
+        `Đã phê duyệt phòng họp "${booking.roomName}"! Trạng thái phòng trống đã cập nhật và thông báo xác nhận đã gửi tới ${booking.organizerEmail}.`
       );
     } catch (err: any) {
       toast.error(err?.message || "Lỗi khi phê duyệt");
@@ -518,8 +585,8 @@ function MeetingsPage() {
       try {
         await createNotif({
           data: {
-            title: `[Huỷ đặt phòng họp] ${booking.title} — ${booking.roomName}`,
-            body: `Yêu cầu đặt phòng "${booking.roomName}" (${booking.startTime} - ${booking.endTime}, ngày ${booking.date}) của ${booking.organizerName} (${booking.organizerEmail}) đã bị từ chối/huỷ. Lý do: "${rejectionReason}". Quý hội viên vui lòng chọn khung giờ khác hoặc liên hệ Ban Thư Ký để được hỗ trợ sắp xếp lại.`,
+            title: `[Từ chối duyệt đặt phòng họp] ${booking.title} — ${booking.roomName}`,
+            body: `Yêu cầu đặt phòng "${booking.roomName}" (${booking.startTime} - ${booking.endTime}, ngày ${booking.date}) của ${booking.organizerName} (${booking.organizerEmail}) đã bị từ chối. Lý do: "${rejectionReason}". Quý hội viên vui lòng chọn khung giờ khác hoặc liên hệ Ban Thư Ký để được hỗ trợ sắp xếp lại.`,
             audience: "all",
             channel: "inapp",
             appScope: "all",
@@ -532,7 +599,7 @@ function MeetingsPage() {
       }
 
       toast.success(
-        `Đã từ chối/huỷ đặt phòng, gửi thông báo in-app và email hướng dẫn chọn khung giờ khác tới ${booking.organizerEmail}.`
+        `Đã từ chối đặt phòng, cập nhật trạng thái phòng trống và gửi thông báo tới ${booking.organizerEmail}.`
       );
     } catch (err: any) {
       toast.error(err?.message || "Lỗi khi từ chối");
@@ -621,63 +688,113 @@ function MeetingsPage() {
       {/* ==================================================================== */}
       {activeTab === "room_bookings" && (
         <div className="space-y-6">
+          {/* KPI Dashboard: Thống Kê Tổng Số Phòng & Trạng Thái Phòng Trống */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard
+              label="Tổng Số Phòng Họp"
+              value={roomStats.totalRooms}
+              icon={<MapPin className="h-4 w-4" />}
+            />
+            <StatCard
+              label="Phòng Trống (Khả Dụng)"
+              value={roomStats.availableRoomsCount}
+              tone="success"
+              icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+            />
+            <StatCard
+              label="Phòng Đã Đặt / Sử Dụng"
+              value={roomStats.occupiedRoomsCount}
+              tone={roomStats.occupiedRoomsCount > 0 ? "warning" : "neutral"}
+              icon={<Clock className="h-4 w-4 text-amber-600" />}
+            />
+            <StatCard
+              label="Đơn Chờ Quản Trị Duyệt"
+              value={roomStats.pendingBookingsCount}
+              tone={roomStats.pendingBookingsCount > 0 ? "danger" : "neutral"}
+              icon={<AlertCircle className="h-4 w-4 text-rose-600" />}
+            />
+          </div>
+
           {/* Rooms Grid */}
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" /> Các Phòng Họp Sẵn Có Trong Hệ Thống
+                <MapPin className="h-4 w-4 text-primary" /> Các Phòng Họp Sẵn Có Trong Hệ Thống ({roomStats.availableRoomsCount}/{roomStats.totalRooms} phòng trống)
               </h2>
               <span className="text-xs text-muted-foreground">Hỗ trợ đầy đủ Online, Offline & Hybrid</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {rooms.map((rm) => (
-                <Card key={rm.id} className="p-4 border border-border/80 hover:border-primary/50 transition shadow-sm">
-                  <div className="flex items-start justify-between mb-2">
-                    <span
-                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                        rm.type === "hybrid"
-                          ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
-                          : rm.type === "online"
-                          ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
-                          : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                      }`}
-                    >
-                      {rm.type === "hybrid" ? "Hybrid (Trực tiếp & Online)" : rm.type === "online" ? "Online Studio" : "Phòng Offline"}
-                    </span>
-                    <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3" /> {rm.capacity} chỗ
-                    </span>
-                  </div>
+              {rooms.map((rm) => {
+                const roomBookings = roomStats.approvedBookingsByRoom.get(rm.id) || [];
+                const isOccupied = roomBookings.length > 0;
+                return (
+                  <Card key={rm.id} className="p-4 border border-border/80 hover:border-primary/50 transition shadow-sm">
+                    <div className="flex items-start justify-between mb-2">
+                      <span
+                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                          rm.type === "hybrid"
+                            ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
+                            : rm.type === "online"
+                            ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
+                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                        }`}
+                      >
+                        {rm.type === "hybrid" ? "Hybrid" : rm.type === "online" ? "Online Studio" : "Phòng Offline"}
+                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                        <Users className="h-3 w-3" /> {rm.capacity} chỗ
+                      </span>
+                    </div>
 
-                  <h3 className="font-bold text-sm text-foreground line-clamp-1">{rm.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{rm.location}</p>
+                    <h3 className="font-bold text-sm text-foreground line-clamp-1">{rm.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{rm.location}</p>
 
-                  <div className="mt-3 pt-3 border-t border-border/60">
-                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Trang thiết bị:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {rm.equipment.slice(0, 3).map((eq, i) => (
-                        <span key={i} className="text-[10px] bg-secondary px-2 py-0.5 rounded-md text-foreground/80">
-                          {eq}
+                    {/* Trạng thái phòng trống / đã đặt thực tế */}
+                    <div className="mt-2.5 pt-2 border-t border-border/50 flex items-center justify-between">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${
+                          isOccupied
+                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${isOccupied ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
+                        {isOccupied ? `Đã có lịch đặt (${roomBookings.length})` : "Phòng trống • Sẵn sàng"}
+                      </span>
+                      {isOccupied && (
+                        <span className="text-[10px] text-muted-foreground font-semibold">
+                          {roomBookings[0].startTime} - {roomBookings[0].endTime}
                         </span>
-                      ))}
-                      {rm.equipment.length > 3 && (
-                        <span className="text-[10px] text-muted-foreground">+{rm.equipment.length - 3}</span>
                       )}
                     </div>
-                  </div>
 
-                  <button
-                    onClick={() => {
-                      setNewRoomId(rm.id);
-                      setBookRoomModalOpen(true);
-                    }}
-                    className="w-full mt-3 rounded-lg bg-secondary/80 hover:bg-primary hover:text-primary-foreground py-1.5 text-xs font-semibold transition"
-                  >
-                    Đặt phòng này
-                  </button>
-                </Card>
-              ))}
+                    <div className="mt-3 pt-2 border-t border-border/60">
+                      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Trang thiết bị:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {rm.equipment.slice(0, 3).map((eq, i) => (
+                          <span key={i} className="text-[10px] bg-secondary px-2 py-0.5 rounded-md text-foreground/80">
+                            {eq}
+                          </span>
+                        ))}
+                        {rm.equipment.length > 3 && (
+                          <span className="text-[10px] text-muted-foreground">+{rm.equipment.length - 3}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setNewRoomId(rm.id);
+                        setBookRoomModalOpen(true);
+                      }}
+                      className="w-full mt-3 rounded-lg bg-secondary/80 hover:bg-primary hover:text-primary-foreground py-1.5 text-xs font-semibold transition"
+                    >
+                      {isOccupied ? "Đặt thêm khung giờ khác" : "Đặt phòng này"}
+                    </button>
+                  </Card>
+                );
+              })}
             </div>
           </div>
 
@@ -961,16 +1078,18 @@ function MeetingsPage() {
 
                 {/* Target members tag cloud */}
                 {Array.isArray(m.targetMembers) && m.targetMembers.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1 border-t border-border/50 pt-2">
+                  <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/50 pt-2">
                     {m.targetMembers.slice(0, 4).map((tm: any, idx: number) => {
                       const emailStr = typeof tm === "string" ? tm : tm.email;
-                      const nameStr = typeof tm === "object" ? tm.name : emailStr.split("@")[0];
+                      const nameStr = typeof tm === "object" ? tm.name : (emailStr ? emailStr.split("@")[0] : "Thành viên");
+                      const roleStr = typeof tm === "object" ? tm.role || tm.company : "";
                       return (
                         <span
                           key={idx}
-                          className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground/80"
+                          className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1"
                         >
-                          {nameStr}
+                          <span>👤 {nameStr}</span>
+                          {roleStr && <span className="text-[10px] text-muted-foreground font-normal">({roleStr})</span>}
                         </span>
                       );
                     })}
@@ -1026,9 +1145,11 @@ function MeetingsPage() {
                   </button>
                   <button
                     onClick={() => onDelete(m)}
-                    className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                    className="flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer transition shadow-2xs"
+                    title="Xóa cuộc họp này"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
+                    <span>Xóa</span>
                   </button>
                 </div>
               </Card>

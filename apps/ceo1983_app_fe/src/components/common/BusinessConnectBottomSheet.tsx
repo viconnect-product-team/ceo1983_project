@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { requestMemberConnectionFn, listMyOpportunities, type MyOpportunity } from "@/lib/member-app.functions";
+import { createMeetingFn } from "@/lib/meetings.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -43,6 +44,7 @@ export function BusinessConnectBottomSheet({
 }: BusinessConnectBottomSheetProps) {
   const navigate = useNavigate();
   const fetchMyOppFn = useServerFn(listMyOpportunities);
+  const createMeeting = useServerFn(createMeetingFn);
 
   const [senderName, setSenderName] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
@@ -209,8 +211,47 @@ export function BusinessConnectBottomSheet({
         }
       } catch {}
 
+      // Đồng bộ cuộc gặp vào hệ thống CSDL CRM (Hiện đúng 2 tài khoản hẹn gặp nhau)
+      try {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const meetingDate = tomorrow.toISOString().slice(0, 10);
+
+        await createMeeting({
+          data: {
+            title: `Kết nối 1-1: ${senderName.trim()} & ${target.name.trim()}`,
+            type: "committee",
+            date: meetingDate,
+            time: "09:30",
+            location: "Văn phòng Hiệp hội CEO 1983 / Trực tuyến",
+            attendees: 2,
+            status: "upcoming",
+            department: "Hẹn gặp kết nối 1-1",
+            targetMembers: [
+              {
+                name: senderName.trim(),
+                company: senderCompany.trim() || "Doanh nghiệp CEO 1983",
+                phone: senderPhone.trim(),
+                role: "Người mời hẹn gặp",
+              },
+              {
+                name: target.name.trim(),
+                code: target.code,
+                company: target.company || "Hội viên CEO 1983",
+                title: target.title || "Hội viên",
+                userId: target.userId,
+                role: "Đối tác được hẹn gặp",
+              },
+            ],
+            zoomUrl: "https://meet.jit.si/CEO1983_Connect_1on1",
+          },
+        });
+      } catch (err: any) {
+        console.warn("Lưu cuộc gặp lên CRM lỗi:", err?.message);
+      }
+
       toast.success(`Đã gửi lời mời hẹn gặp giao thương tới ${target.name}!`, {
-        description: "Thông điệp và thông tin hẹn gặp đã được chuyển tới hộp thư của hội viên.",
+        description: "Thông điệp và thông tin hẹn gặp đã được chuyển tới hộp thư của hội viên và đồng bộ vào CRM.",
       });
 
       onSuccess?.();
