@@ -243,7 +243,12 @@ export class MembersService {
       role: r.executive_role || 'member',
       coverUrl: r.cover_url || null,
       cover_url: r.cover_url || null,
-      avatarUrl: r.avatar_url || null,
+      avatarUrl: r.avatar_url || r.avatar || null,
+      avatar: r.avatar || r.avatar_url || null,
+      companyLogo: r.company_logo_url || null,
+      companyLogoUrl: r.company_logo_url || null,
+      company: r.company_name || r.company || r.about || null,
+      companyName: r.company_name || r.company || r.about || null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     };
@@ -659,7 +664,7 @@ export class MembersService {
           avatar = COALESCE(${avatar || null}, avatar),
           company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
           updated_at = NOW()
-        WHERE user_id = ${userId}::uuid OR id = ${userId}
+        WHERE user_id = ${userId}::uuid OR id::text = ${userId}::text
       `.catch(() => null);
     } catch {}
 
@@ -701,13 +706,17 @@ export class MembersService {
   }
 
   async getAccountStatuses() {
-    const profiles = await this.prisma.user_profiles.findMany({
-      select: { user_id: true, account_status: true },
-    }).catch(() => [] as any[]);
+    const members = await this.prisma.$queryRaw<any[]>`
+      SELECT m.id, m.user_id, p.account_status
+      FROM public.members m
+      LEFT JOIN public.user_profiles p ON m.user_id = p.user_id
+    `.catch(() => []);
 
     const map: Record<string, string> = {};
-    for (const p of profiles) {
-      map[p.user_id] = p.account_status;
+    for (const m of members) {
+      const status = m.account_status || (m.user_id ? 'active' : 'none');
+      map[m.id] = status;
+      if (m.user_id) map[m.user_id] = status;
     }
     return map;
   }
@@ -1830,9 +1839,9 @@ export class MembersService {
     const userId = member.user_id;
     if (userId) {
       let membershipRole = 'member';
-      if (data.executiveRole === 'platform_admin' || data.executiveRole === 'admin') {
+      if (data.executiveRole === 'quan_tri' || data.executiveRole === 'platform_admin' || data.executiveRole === 'admin') {
         membershipRole = 'admin';
-      } else if (data.executiveRole.startsWith('truong_ban_') || data.executiveRole === 'tong_thu_ky') {
+      } else if (data.executiveRole.startsWith('truong_ban') || data.executiveRole === 'tong_thu_ky' || data.executiveRole === 'pho_ban' || data.executiveRole === 'uy_vien') {
         membershipRole = 'moderator';
       }
 
@@ -1850,7 +1859,7 @@ export class MembersService {
       `, userId, assocId, membershipRole, data.executiveRole, data.department);
 
       // Manage user_roles table
-      if (data.executiveRole === 'platform_admin') {
+      if (data.executiveRole === 'quan_tri' || data.executiveRole === 'platform_admin') {
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.user_roles (id, user_id, role)
           VALUES (gen_random_uuid(), $1::uuid, 'platform_admin')
@@ -1872,7 +1881,7 @@ export class MembersService {
             DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role = 'platform_admin'
           `, userId).catch(() => {});
         }
-      } else if (data.executiveRole.startsWith('truong_ban_') || data.executiveRole === 'tong_thu_ky') {
+      } else if (data.executiveRole.startsWith('truong_ban') || data.executiveRole === 'tong_thu_ky' || data.executiveRole === 'pho_ban' || data.executiveRole === 'uy_vien') {
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.user_roles (id, user_id, role)
           VALUES (gen_random_uuid(), $1::uuid, 'moderator')

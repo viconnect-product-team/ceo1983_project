@@ -1008,7 +1008,7 @@ export function AccountManagementPage() {
                     className="h-10 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-ring"
                   >
                     <option value="all">Tất cả vai trò</option>
-                    <option value="platform_admin">Platform Admin</option>
+                    <option value="platform_admin">Quản trị</option>
                     <option value="tenant_admin">Tenant Admin</option>
                     <option value="staff">Staff</option>
                     <option value="viewer">Viewer</option>
@@ -1349,7 +1349,7 @@ export function AccountManagementPage() {
                   >
                     <option value="staff">Staff (Nhân viên)</option>
                     <option value="tenant_admin">Tenant Admin (Quản trị hiệp hội)</option>
-                    <option value="platform_admin">Platform Admin (Toàn hệ thống)</option>
+                    <option value="platform_admin">Quản trị (Quyền cao nhất hệ thống)</option>
                     <option value="viewer">Viewer (Chỉ xem)</option>
                   </select>
                 </div>
@@ -1435,7 +1435,7 @@ export function AccountManagementPage() {
                   >
                     <option value="staff">Staff (Nhân viên)</option>
                     <option value="tenant_admin">Tenant Admin (Quản trị hiệp hội)</option>
-                    <option value="platform_admin">Platform Admin (Toàn hệ thống)</option>
+                    <option value="platform_admin">Quản trị (Quyền cao nhất hệ thống)</option>
                     <option value="viewer">Viewer (Chỉ xem)</option>
                   </select>
                 </div>

@@ -10,6 +10,8 @@ const {
   createCallout,
   createTable,
   createHeaderFooter,
+  createCoverPage,
+  createTableOfContents,
 } = require('./srs_docx_helpers');
 
 function buildDoc3() {
@@ -22,59 +24,38 @@ function buildDoc3() {
   }
 
   // ==========================================
-  // TRANG BÌA & THÔNG TIN QUẢN TRỊ
+  // 1. TRANG BÌA CHUYÊN NGHIỆP (COVER PAGE)
   // ==========================================
-  children.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 200, after: 100 },
-      children: [
-        new TextRun({
-          text: 'TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & THIẾT KẾ CƠ SỞ DỮ LIỆU',
-          font: 'Times New Roman',
-          size: 24,
-          bold: true,
-          color: 'D97706',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 80, after: 120 },
-      children: [
-        new TextRun({
-          text: 'ỨNG DỤNG MẠNG LƯỚI GIAO THƯƠNG VIONE CONNECT (BUSINESS CONNECT)',
-          font: 'Times New Roman',
-          size: 32,
-          bold: true,
-          color: '003B95',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 60, after: 200 },
-      children: [
-        new TextRun({
-          text: 'Danh Thiếp Số 3D Gyro, Chạm NFC 1-Chạm, Ghép Cặp AI Matchmaking, Thu Thập Leads B2B & Lên Lịch Hẹn Giao Thương',
-          font: 'Times New Roman',
-          size: 22,
-          italics: true,
-          color: '64748B',
-        }),
-      ],
-    })
-  );
+  const coverElements = createCoverPage({
+    systemName: 'ỨNG DỤNG MẠNG LƯỚI GIAO THƯƠNG VIONE CONNECT (BUSINESS CONNECT)',
+    subTitle: 'Danh Thiếp Số 3D Gyro, Chạm NFC 1-Chạm, Ghép Cặp AI Matchmaking, Thu Thập Leads B2B & Lên Lịch Hẹn Giao Thương',
+    docCode: 'SRS-VIONE-CONNECT-V3.5',
+    version: 'Version 3.5 — Master Production Specification (Bàn Giao Kỹ Thuật)',
+    date: '30/09/2026',
+    scope: 'Chủ tịch, CEO Doanh nghiệp B2B, Giám đốc Kinh doanh (CCO), Đại diện Thương mại'
+  });
+  children.push(...coverElements);
 
   addMd('# TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & THIẾT KẾ CƠ SỞ DỮ LIỆU');
   addMd('## ỨNG DỤNG MẠNG LƯỚI GIAO THƯƠNG VIONE CONNECT (BUSINESS CONNECT)');
-  addMd('*Phiên bản: Version 3.0 - Bản Chuẩn Hoá Toàn Diện Master BA*');
+  addMd('*Phiên bản: Version 3.5 - Bản Chuẩn Hoá Toàn Diện Master BA (Trang Bìa & Mục Lục Chuẩn)*');
+
+  // ==========================================
+  // 2. MỤC LỤC TÀI LIỆU (TABLE OF CONTENTS)
+  // ==========================================
+  const tocSections = [
+    { num: 'PHẦN 1', title: 'Giải Thích Bình Dân Các Khái Niệm Kỹ Thuật Cốt Lõi', scope: 'Nền tảng kiến trúc', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 2', title: 'Kiến Trúc Tổng Thể & Đặc Tả 6 Phân Hệ Cốt Lõi', scope: 'Nghiệp vụ chi tiết', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 3', title: 'Thiết Kế Cơ Sở Dữ Liệu PostgreSQL & Bảng Dữ Liệu Cốt Lõi', scope: 'Database & Schemas', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 4', title: 'Kịch Bản Kiểm Thử Nghiệm Thu Chấp Thuận (UAT Test Cases)', scope: 'Kiểm thử chất lượng', status: 'Hoàn tất 100%' },
+  ];
+  children.push(...createTableOfContents(tocSections));
 
   const metaHeaders = ['Mục Quản Trị', 'Thông Tin Chi Tiết'];
   const metaRows = [
     ['Tên Ứng Dụng', 'ViOne Connect (Business Connect Mobile App & PWA)'],
-    ['Mã Tài Liệu', 'SRS-VIONE-CONNECT-V3.0'],
-    ['Phiên Bản', 'Version 3.0 - Master BA Comprehensive Standard'],
+    ['Mã Tài Liệu', 'SRS-VIONE-CONNECT-V3.5'],
+    ['Phiên Bản', 'Version 3.5 - Master BA Comprehensive Standard (Trang Bìa & Mục Lục Chuẩn)'],
     ['Tác Giả & Thẩm Định', 'Master Business Analyst, Solution Architect & ViOne Ecosystem Core Team'],
     ['Đối Tượng Sử Dụng', 'Chủ tịch, CEO Doanh nghiệp B2B, Giám đốc Kinh doanh (CCO), Đại diện Thương mại'],
     ['Nền Tảng Triển Khai', 'PWA Mobile Web & Mobile App (Android APK, iOS qua Capacitor / React 19)'],

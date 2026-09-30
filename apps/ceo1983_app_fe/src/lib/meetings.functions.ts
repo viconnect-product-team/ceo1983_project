@@ -5,8 +5,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
-export type MeetingPlatform = "ZOOM" | "GOOGLE_MEET" | "UNIWORK";
-export type MeetingCreatorRole = "CHỦ_TỊCH" | "TỔNG_THƯ_KÝ" | "ADMIN" | "TRƯỞNG_BAN";
+export type MeetingPlatform = "ZOOM" | "GOOGLE_MEET" | "UNIWORK" | "OFFLINE_UNIWORK" | "OFFLINE_CUSTOM";
+export type MeetingCreatorRole = "QUẢN_TRỊ" | "ADMIN" | "TỔNG_THƯ_KÝ" | "TRƯỞNG_BAN" | "CHỦ_TỊCH";
 
 export type Meeting = {
   id: string;
@@ -16,7 +16,7 @@ export type Meeting = {
   time: string;
   location: string;
   attendees: number;
-  status: "upcoming" | "completed" | "cancelled";
+  status: "pending_approval" | "upcoming" | "completed" | "cancelled";
   department?: string;
   targetMembers?: any[];
   zoomUrl?: string;
@@ -125,14 +125,14 @@ const meetingInput = z.object({
   time: z.string().max(40).default(""),
   location: z.string().max(200).default(""),
   attendees: z.number().int().min(0).max(100000).default(0),
-  status: z.enum(["upcoming", "completed", "cancelled"]),
+  status: z.enum(["pending_approval", "upcoming", "completed", "cancelled"]).default("upcoming"),
   department: z.string().default(""),
   targetMembers: z.array(z.any()).default([]),
   zoomUrl: z.string().default(""),
   cancelReason: z.string().nullable().optional(),
   // Extended fields
-  platform: z.enum(["ZOOM", "GOOGLE_MEET", "UNIWORK"]).default("ZOOM"),
-  creatorRole: z.enum(["CHỦ_TỊCH", "TỔNG_THƯ_KÝ", "ADMIN", "TRƯỞNG_BAN"]).default("TỔNG_THƯ_KÝ"),
+  platform: z.enum(["ZOOM", "GOOGLE_MEET", "UNIWORK", "OFFLINE_UNIWORK", "OFFLINE_CUSTOM"]).default("ZOOM"),
+  creatorRole: z.enum(["QUẢN_TRỊ", "ADMIN", "TỔNG_THƯ_KÝ", "TRƯỞNG_BAN", "CHỦ_TỊCH"]).default("TỔNG_THƯ_KÝ"),
   creatorName: z.string().default(""),
   creatorPhone: z.string().default(""),
   creatorEmail: z.string().default(""),

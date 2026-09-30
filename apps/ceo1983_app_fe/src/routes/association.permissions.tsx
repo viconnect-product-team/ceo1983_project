@@ -48,14 +48,12 @@ export interface MemberPermissionProfile {
 }
 
 const BOARD_OPTIONS = [
-  "Ban Thường Trực CLB",
-  "Ban Thư Ký & Điều Phối",
-  "Ban Xúc Tiến Thương Mại & Đầu Tư B2B",
-  "Ban Phát Triển Hội Viên & Thẩm Định",
-  "Ban Truyền Thông & Sự Kiện",
-  "Ban Tài Chính & Pháp Chế",
-  "Ban Thiện Nguyện",
-  "Ban Đào Tạo & Chuyển Đổi Số",
+  "Ban Quản trị",
+  "Ban Thư ký",
+  "Ban Truyền thông",
+  "Ban Xúc tiến",
+  "Ban Thành viên",
+  "Ban Thiện nguyện",
   "Hội viên CLB CEO 1983",
 ];
 

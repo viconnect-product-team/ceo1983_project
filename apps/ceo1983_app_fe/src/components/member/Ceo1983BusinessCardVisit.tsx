@@ -271,7 +271,8 @@ export function Ceo1983BusinessCardVisit({
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/ceo1983-official-logo.png";
                     }}
-                    className="max-h-full max-w-full object-contain"
+                    className="max-h-full max-w-full object-contain mix-blend-screen opacity-90 transition hover:opacity-100 filter drop-shadow"
+                    style={{ mixBlendMode: "screen" }}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-[9px] font-bold text-slate-400 leading-none gap-0.5">

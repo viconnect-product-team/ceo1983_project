@@ -42,15 +42,33 @@ export const Route = createFileRoute("/checkin-qr")({
 function EventQrCard({ event }: { event: CheckinQrEvent }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
+  const [copiedReg, setCopiedReg] = useState(false);
   const [writing, setWriting] = useState(false);
+  const [qrMode, setQrMode] = useState<"register" | "checkin">("register");
 
-  const copy = async () => {
+  const registerUrl = typeof window !== "undefined" 
+    ? `${window.location.origin}/events/${event.id}/register` 
+    : `/events/${event.id}/register`;
+
+  const copyId = async () => {
     try {
       await navigator.clipboard.writeText(event.id);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
+      toast.success("Đã sao chép mã sự kiện: " + event.id);
     } catch {
       toast.error(t("checkinQr.copyFailed"));
+    }
+  };
+
+  const copyRegisterLink = async () => {
+    try {
+      await navigator.clipboard.writeText(registerUrl);
+      setCopiedReg(true);
+      setTimeout(() => setCopiedReg(false), 1600);
+      toast.success("Đã sao chép link quét mã đăng ký sự kiện cho khách mới!");
+    } catch {
+      toast.error("Không thể sao chép liên kết.");
     }
   };
 
@@ -64,8 +82,8 @@ function EventQrCard({ event }: { event: CheckinQrEvent }) {
       const Ctor = (window as unknown as { NDEFReader: new () => { write: (m: unknown) => Promise<void> } })
         .NDEFReader;
       const ndef = new Ctor();
-      await ndef.write({ records: [{ recordType: "text", data: event.id }] });
-      toast.success(t("checkinQr.nfcDone"));
+      await ndef.write({ records: [{ recordType: "url", data: registerUrl }] });
+      toast.success("Đã ghi thành công link đăng ký vào thẻ NFC!");
     } catch {
       toast.error(t("checkinQr.nfcFailed"));
     } finally {
@@ -73,43 +91,119 @@ function EventQrCard({ event }: { event: CheckinQrEvent }) {
     }
   };
 
+  const qrValue = qrMode === "register" ? registerUrl : event.id;
+
   return (
     <article className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm break-inside-avoid">
       <header className="min-w-0">
-        <h2 className="truncate text-base font-semibold text-foreground">{event.name}</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="truncate text-base font-bold text-foreground">{event.name}</h2>
+          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+            {event.ticketPrice && Number(event.ticketPrice) > 0 
+              ? `${new Intl.NumberFormat("vi-VN").format(Number(event.ticketPrice))} đ` 
+              : "Miễn phí (0đ)"}
+          </span>
+        </div>
         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5" />
+          <span className="inline-flex items-center gap-1 font-medium">
+            <CalendarDays aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
             {new Date(event.date).toLocaleDateString("vi-VN")}
           </span>
           {event.location ? (
             <span className="inline-flex min-w-0 items-center gap-1">
-              <MapPin aria-hidden="true" className="h-3.5 w-3.5" />
+              <MapPin aria-hidden="true" className="h-3.5 w-3.5 text-amber-500" />
               <span className="truncate">{event.location}</span>
             </span>
           ) : null}
-          <span className="inline-flex items-center gap-1">
-            <Users aria-hidden="true" className="h-3.5 w-3.5" />
-            {event.checkedIn}/{event.registered}
+          <span className="inline-flex items-center gap-1 font-medium">
+            <Users aria-hidden="true" className="h-3.5 w-3.5 text-emerald-500" />
+            {event.checkedIn}/{event.registered} đã check-in
           </span>
         </p>
       </header>
 
+      {/* Tabs chọn mục đích QR */}
+      <div className="flex rounded-lg bg-muted p-1 text-xs font-semibold print:hidden">
+        <button
+          type="button"
+          onClick={() => setQrMode("register")}
+          className={`flex-1 rounded-md py-1.5 transition-all cursor-pointer ${
+            qrMode === "register"
+              ? "bg-card text-primary shadow-sm font-bold"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          ✦ QR Khách Mới Quét Đăng Ký
+        </button>
+        <button
+          type="button"
+          onClick={() => setQrMode("checkin")}
+          className={`flex-1 rounded-md py-1.5 transition-all cursor-pointer ${
+            qrMode === "checkin"
+              ? "bg-card text-foreground shadow-sm font-bold"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          QR Check-in Mã Vé
+        </button>
+      </div>
+
       <div className="flex items-center gap-4">
-        <QrCanvas value={event.id} size={148} />
-        <div className="min-w-0 flex-1 text-xs">
-          <p className="text-muted-foreground">{t("checkinQr.payload")}</p>
-          <code className="mt-1 block truncate rounded-md bg-muted px-2 py-1 font-mono text-[12px] text-foreground">
-            {event.id}
-          </code>
-          <p className="mt-2 leading-relaxed text-muted-foreground">{t("checkinQr.cardHint")}</p>
+        <div className="p-2 bg-white rounded-xl border border-border shadow-sm shrink-0">
+          <QrCanvas value={qrValue} size={144} />
+        </div>
+        <div className="min-w-0 flex-1 text-xs space-y-1.5">
+          {qrMode === "register" ? (
+            <>
+              <span className="inline-block font-bold text-primary">
+                Standee / Màn hình đón tiếp
+              </span>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Người mới không thuộc hiệp hội dùng Camera hoặc Zalo quét mã QR này để mở phiếu đăng ký tham dự.
+              </p>
+              <code className="mt-1 block truncate rounded-md bg-muted px-2 py-1 font-mono text-[11px] text-primary">
+                {registerUrl}
+              </code>
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground font-semibold">Mã sự kiện check-in:</p>
+              <code className="block truncate rounded-md bg-muted px-2 py-1 font-mono text-[12px] text-foreground">
+                {event.id}
+              </code>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Dành cho hội viên đã có tài khoản quét check-in trực tiếp.
+              </p>
+            </>
+          )}
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2 print:hidden">
+        <a
+          href={registerUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <Users aria-hidden="true" className="h-3.5 w-3.5" />
+          Mở Form Đăng Ký Khách
+        </a>
         <button
           type="button"
-          onClick={copy}
+          onClick={copyRegisterLink}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+        >
+          {copiedReg ? (
+            <Check aria-hidden="true" className="h-3.5 w-3.5 text-emerald-500" />
+          ) : (
+            <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+          )}
+          {copiedReg ? "Đã chép Link QR" : "Chép Link Đăng Ký"}
+        </button>
+        <button
+          type="button"
+          onClick={copyId}
           className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent"
         >
           {copied ? (
@@ -117,7 +211,7 @@ function EventQrCard({ event }: { event: CheckinQrEvent }) {
           ) : (
             <Copy aria-hidden="true" className="h-3.5 w-3.5" />
           )}
-          {copied ? t("checkinQr.copied") : t("checkinQr.copy")}
+          {copied ? "Đã chép ID" : "Chép ID"}
         </button>
         <button
           type="button"
@@ -126,7 +220,7 @@ function EventQrCard({ event }: { event: CheckinQrEvent }) {
           className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-60"
         >
           <Nfc aria-hidden="true" className="h-3.5 w-3.5" />
-          {writing ? t("checkinQr.nfcWriting") : t("checkinQr.nfcWrite")}
+          {writing ? "Đang ghi NFC..." : "Ghi thẻ NFC"}
         </button>
       </div>
     </article>

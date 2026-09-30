@@ -55,12 +55,38 @@ function MembersScreen() {
   const { data: members, loading, reload: reloadMembers } = useServerData<DirectoryMember[]>(() => fetchMembers(), []);
   const { data: myMember } = useServerData<MyMember | null>(() => fetchMyMember(), null);
 
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("q") || params.get("company") || "";
+    }
+    return "";
+  });
   const [tab, setTab] = useState<FilterTab>("all");
   const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null);
   const [connectTarget, setConnectTarget] = useState<BusinessConnectTarget | null>(null);
   const [localPending, setLocalPending] = useState<Set<string>>(new Set());
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  // Tự động mở hồ sơ công ty khi được điều hướng từ banner quảng cáo Marketplace
+  useEffect(() => {
+    if (typeof window === "undefined" || !members || members.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const searchTarget = params.get("q") || params.get("company");
+    if (searchTarget) {
+      const targetLower = searchTarget.toLowerCase().trim();
+      const matched = members.find(
+        (m) =>
+          (m.name && m.name.toLowerCase().includes(targetLower)) ||
+          ((m as any).companyName && (m as any).companyName.toLowerCase().includes(targetLower)) ||
+          ((m as any).company && (m as any).company.toLowerCase().includes(targetLower)) ||
+          (m.code && m.code.toLowerCase() === targetLower)
+      );
+      if (matched) {
+        setSelectedMember(matched);
+      }
+    }
+  }, [members]);
 
   // Local storage connection synchronization
   const [disconnectedSet, setDisconnectedSet] = useState<Set<string>>(() => {

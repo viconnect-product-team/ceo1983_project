@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { TaskItem, TaskPriority, TaskStatus, TaskSubtask, MeetingPlatform } from '../types';
 import { TASK_DEPARTMENTS, TASK_PRIORITY_CONFIG, TASK_STATUS_CONFIG, MEETING_PLATFORMS } from '../types';
+import { fetchNestApi } from '@/lib/api-client';
 
 interface TaskFormModalProps {
   open: boolean;
@@ -41,9 +42,12 @@ export function TaskFormModal({
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [department, setDepartment] = useState<string>(defaultDepartment || TASK_DEPARTMENTS[0]);
+  const [assigneeId, setAssigneeId] = useState('');
+  const [assigneeEmail, setAssigneeEmail] = useState('');
   const [assigneeName, setAssigneeName] = useState('');
   const [assigneeRole, setAssigneeRole] = useState('Phụ trách ban');
   const [supervisorName, setSupervisorName] = useState('Ban Quản trị');
+  const [memberList, setMemberList] = useState<any[]>([]);
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
   const [startDate, setStartDate] = useState(defaultDate || new Date().toISOString().split('T')[0]);
@@ -66,10 +70,22 @@ export function TaskFormModal({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (open && memberList.length === 0) {
+      fetchNestApi<any[]>('/members')
+        .then((res) => {
+          if (Array.isArray(res)) setMemberList(res);
+        })
+        .catch(() => {});
+    }
+  }, [open, memberList.length]);
+
+  useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || '');
       setCode(initialData.code || '');
       setDepartment(initialData.department || TASK_DEPARTMENTS[0]);
+      setAssigneeId(initialData.assignee?.id || '');
+      setAssigneeEmail(initialData.assignee?.email || '');
       setAssigneeName(initialData.assignee?.name || '');
       setAssigneeRole(initialData.assignee?.role || '');
       setSupervisorName(initialData.supervisor?.name || 'Ban Quản trị');
@@ -100,6 +116,8 @@ export function TaskFormModal({
       setTitle('');
       setCode('');
       setDepartment(defaultDepartment || TASK_DEPARTMENTS[0]);
+      setAssigneeId('');
+      setAssigneeEmail('');
       setAssigneeName('');
       setAssigneeRole('Phụ trách');
       setSupervisorName('Ban Quản trị');
@@ -155,7 +173,9 @@ export function TaskFormModal({
         title: title.trim(),
         department,
         assignee: {
+          id: assigneeId || undefined,
           name: assigneeName.trim() || 'Người quản trị',
+          email: assigneeEmail.trim() || undefined,
           role: assigneeRole.trim(),
         },
         supervisor: {
@@ -261,17 +281,52 @@ export function TaskFormModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-slate-500" />
-                Người chịu trách nhiệm chính
-              </label>
-              <input
-                type="text"
-                placeholder="VD: Nguyễn Thị Hương..."
-                value={assigneeName}
-                onChange={(e) => setAssigneeName(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-500" />
+                  Người chịu trách nhiệm chính
+                </label>
+                {assigneeEmail && (
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium truncate max-w-[160px]" title={assigneeEmail}>
+                    {assigneeEmail}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {memberList.length > 0 && (
+                  <select
+                    value={assigneeId}
+                    onChange={(e) => {
+                      const selId = e.target.value;
+                      setAssigneeId(selId);
+                      const m = memberList.find((item) => item.id === selId);
+                      if (m) {
+                        setAssigneeName(m.name);
+                        setAssigneeEmail(m.email || '');
+                        setAssigneeRole(m.company || m.contact || 'Phụ trách');
+                      }
+                    }}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
+                  >
+                    <option value="">-- Chọn hội viên ({memberList.length}) --</option>
+                    {memberList.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.code ? `[${m.code}] ` : ''}{m.name} {m.email ? `(${m.email})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <input
+                  type="text"
+                  placeholder="Nhập tên người nhận việc..."
+                  value={assigneeName}
+                  onChange={(e) => {
+                    setAssigneeName(e.target.value);
+                    if (assigneeId) setAssigneeId('');
+                  }}
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
+                />
+              </div>
             </div>
 
             <div>

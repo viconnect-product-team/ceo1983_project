@@ -26,17 +26,13 @@ export function Ceo1983MemberRegistrationForm() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [position, setPosition] = useState("Tổng Giám Đốc / CEO");
-  const [birthYear, setBirthYear] = useState("1983");
+  const [birthDate, setBirthDate] = useState("1983-08-19");
   const [companyName, setCompanyName] = useState("");
-  const [taxCode, setTaxCode] = useState("");
   const [industry, setIndustry] = useState("ind.trade");
   const [customIndustry, setCustomIndustry] = useState("");
   const [address, setAddress] = useState("");
   const [website, setWebsite] = useState("");
   const [staffSize, setStaffSize] = useState("10 - 50 nhân sự");
-  const [boardWish, setBoardWish] = useState("Ban Thiện Nguyện & An Sinh Xã Hội");
-  const [needs, setNeeds] = useState("");
-  const [offers, setOffers] = useState("");
   const [notes, setNotes] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -56,40 +52,6 @@ export function Ceo1983MemberRegistrationForm() {
     { value: "ind.other", label: "Ngành nghề khác..." },
   ];
 
-  const boards = [
-    {
-      id: "Ban Thiện Nguyện & An Sinh Xã Hội",
-      title: "Ban Thiện Nguyện & An Sinh Xã Hội",
-      desc: "Tổ chức các hoạt động thiện nguyện, an sinh xã hội, xây cầu, trường học và lan tỏa giá trị nhân văn của CLB",
-      highlight: true,
-    },
-    {
-      id: "Ban Sự Kiện & Hội Nghị",
-      title: "Ban Sự Kiện & Hội Nghị",
-      desc: "Tổ chức diễn đàn, caravan, gala, các buổi kết nối giao lưu quy mô",
-    },
-    {
-      id: "Ban Xúc Tiến Thương Mại & Đầu Tư",
-      title: "Ban Xúc Tiến Thương Mại & Đầu Tư",
-      desc: "Xúc tiến chéo cơ hội kinh doanh B2B, gọi vốn, mở rộng thị trường",
-    },
-    {
-      id: "Ban Truyền Thông & Marketing",
-      title: "Ban Truyền Thông & Marketing",
-      desc: "Định vị thương hiệu hội viên, truyền thông đa kênh, sự kiện báo chí",
-    },
-    {
-      id: "Ban Thành Viên & Kết Nối",
-      title: "Ban Thành Viên & Kết Nối",
-      desc: "Thẩm định, tiếp đón và hỗ trợ hội viên mới hội nhập",
-    },
-    {
-      id: "Ban Tài Chính & Tài Trợ",
-      title: "Ban Tài Chính & Tài Trợ",
-      desc: "Quản lý nguồn lực tài chính và phát triển gói tài trợ đồng hành",
-    },
-  ];
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -106,23 +68,19 @@ export function Ceo1983MemberRegistrationForm() {
     setSubmitting(true);
     try {
       const finalIndustry = industry === "ind.other" && customIndustry ? customIndustry : industry;
-      const res = await fetchNestApi("/members/public-register", {
+      await fetchNestApi("/members/public-register", {
         method: "POST",
         body: JSON.stringify({
           fullName: fullName.trim(),
           phone: phone.trim(),
           email: email.trim().toLowerCase(),
           position,
-          birthYear,
+          birthYear: birthDate,
           companyName: companyName.trim(),
-          taxCode: taxCode.trim(),
           industry: finalIndustry,
           address: address.trim(),
           website: website.trim(),
           staffSize,
-          boardWish,
-          needs: needs.trim(),
-          offers: offers.trim(),
           notes: notes.trim(),
         }),
       });
@@ -132,7 +90,7 @@ export function Ceo1983MemberRegistrationForm() {
         companyName,
         email,
         phone,
-        boardWish,
+        notes,
       });
       setSubmitted(true);
       toast.success("Hồ sơ đăng ký gia nhập đã được tiếp nhận thành công!");
@@ -166,7 +124,7 @@ export function Ceo1983MemberRegistrationForm() {
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-lg mx-auto mb-8">
               Kính gửi Anh/Chị <strong>{registeredData?.fullName}</strong> (Đại diện cho{" "}
               <strong>{registeredData?.companyName}</strong>), đơn đăng ký gia nhập CLB Doanh Nhân
-              CEO 1983 của Anh/Chị đã được lưu vào hệ thống xét duyệt.
+              1983 của Anh/Chị đã được lưu vào hệ thống xét duyệt.
             </p>
 
             {/* Information Summary Card */}
@@ -187,22 +145,26 @@ export function Ceo1983MemberRegistrationForm() {
                 <span className="text-slate-500 font-medium">Số điện thoại:</span>
                 <span className="font-bold text-slate-800">{registeredData?.phone}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-medium">Nguyện vọng tham gia:</span>
-                <span className="font-bold text-amber-600">{registeredData?.boardWish}</span>
-              </div>
+              {registeredData?.notes && (
+                <div className="flex justify-between pt-1">
+                  <span className="text-slate-500 font-medium">Lời nhắn gửi:</span>
+                  <span className="font-medium text-slate-700 italic max-w-xs text-right truncate">
+                    {registeredData.notes}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Process Notice */}
             <div className="bg-blue-50 border-l-4 border-[#003B95] p-4 rounded-r-xl text-left text-xs sm:text-sm text-[#003B95] mb-8">
               <p className="font-bold mb-1">📌 Quy trình phê duyệt & cấp tài khoản:</p>
               <ul className="list-disc list-inside space-y-1 text-slate-700">
-                <li>Ban Thành Viên CLB CEO 1983 sẽ thẩm định hồ sơ trong vòng 24 giờ.</li>
+                <li>Ban Thành Viên CLB Doanh Nhân 1983 sẽ thẩm định hồ sơ trong vòng 24 giờ.</li>
                 <li>
                   Khi được phê duyệt, hệ thống sẽ <strong>tự động gửi email</strong> chứa tên đăng nhập
                   và mật khẩu ngẫu nhiên tới hòm thư <strong>{registeredData?.email}</strong>.
                 </li>
-                <li>Anh/Chị có thể sử dụng thông tin đó để đăng nhập vào App Hiệp Hội CEO 1983.</li>
+                <li>Anh/Chị có thể sử dụng thông tin đó để đăng nhập vào App Hiệp Hội.</li>
               </ul>
             </div>
 
@@ -243,17 +205,12 @@ export function Ceo1983MemberRegistrationForm() {
 
           <div className="p-6 sm:p-8">
             <div className="flex items-center justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#003B95] text-amber-400 font-black text-xl flex items-center justify-center shadow-md">
-                  83
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-amber-600 uppercase tracking-widest">
-                    HanoiBA · CLB Doanh Nhân 1983
-                  </div>
-                  <div className="text-sm font-semibold text-slate-500">
-                    Kết nối Đồng Niên — Gắn kết Thương Trường
-                  </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-[#003B95] tracking-tight">
+                  CLB Doanh Nhân 1983
+                </h2>
+                <div className="text-sm font-semibold text-slate-500 mt-0.5">
+                  Kết nối Đồng Niên — Gắn kết Thương Trường
                 </div>
               </div>
 
@@ -270,12 +227,12 @@ export function Ceo1983MemberRegistrationForm() {
               </a>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-[#003B95] tracking-tight mb-2">
-              Đơn Đăng Ký Gia Nhập CLB Doanh Nhân CEO 1983
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight mb-2">
+              Đơn Đăng Ký Gia Nhập CLB Doanh Nhân 1983
             </h1>
 
             <p className="text-slate-600 text-sm leading-relaxed mb-4">
-              Chào mừng Quý Doanh nhân quan tâm và mong muốn tham gia ngôi nhà chung CEO 1983. Vui lòng
+              Chào mừng Quý Doanh nhân quan tâm và mong muốn tham gia ngôi nhà chung CLB Doanh Nhân 1983. Vui lòng
               điền đầy đủ thông tin bên dưới để Ban Thành Viên tiếp nhận, thẩm định và cấp tài khoản
               thành viên chính thức.
             </p>
@@ -368,10 +325,10 @@ export function Ceo1983MemberRegistrationForm() {
                 </p>
               </div>
 
-              {/* Position */}
+              {/* Position - để mỗi label chức danh */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Chức danh / Vị trí <span className="text-rose-500">*</span>
+                  Chức danh <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={position}
@@ -387,17 +344,16 @@ export function Ceo1983MemberRegistrationForm() {
                 </select>
               </div>
 
-              {/* Birth Year */}
+              {/* Ngày tháng năm sinh - Sửa label và điền ngày tháng năm sinh */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Năm sinh <span className="text-slate-400 text-xs font-normal">(Ưu tiên đồng niên 1983)</span>
+                  Ngày tháng năm sinh
                 </label>
                 <input
-                  type="text"
-                  placeholder="1983"
-                  value={birthYear}
-                  onChange={(e) => setBirthYear(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50 text-slate-800"
                 />
               </div>
             </div>
@@ -431,22 +387,8 @@ export function Ceo1983MemberRegistrationForm() {
                 />
               </div>
 
-              {/* Tax Code */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Mã số thuế (MST)
-                </label>
-                <input
-                  type="text"
-                  placeholder="010xxxxxxx"
-                  value={taxCode}
-                  onChange={(e) => setTaxCode(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
-                />
-              </div>
-
               {/* Staff Size */}
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Quy mô nhân sự
                 </label>
@@ -524,102 +466,20 @@ export function Ceo1983MemberRegistrationForm() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* SECTION 3: Board Wish & Orientation */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-5">
-            <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-lg font-bold text-[#003B95] flex items-center gap-2">
-                <HeartHandshake className="w-5 h-5 text-amber-500" />
-                3. Nguyện vọng sinh hoạt Ban chuyên môn & Kết nối
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Lựa chọn Ban chuyên môn để sinh hoạt và định hướng chia sẻ giá trị trong CLB
-              </p>
-            </div>
-
-            {/* Board Selection Radios */}
-            <div className="space-y-3">
-              <label className="block text-sm font-semibold text-slate-700">
-                Nguyện vọng tham gia Ban chuyên môn: <span className="text-rose-500">*</span>
-              </label>
-
-              <div className="grid grid-cols-1 gap-2.5">
-                {boards.map((b) => (
-                  <label
-                    key={b.id}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                      boardWish === b.id
-                        ? "border-[#003B95] bg-blue-50/40 ring-1 ring-[#003B95]"
-                        : "border-slate-200 hover:bg-slate-50"
-                    } ${b.highlight ? "relative overflow-hidden" : ""}`}
-                  >
-                    <input
-                      type="radio"
-                      name="boardWish"
-                      value={b.id}
-                      checked={boardWish === b.id}
-                      onChange={(e) => setBoardWish(e.target.value)}
-                      className="mt-1 text-[#003B95] focus:ring-[#003B95]"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-800">{b.title}</span>
-                        {b.highlight && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300">
-                            ★ Ban Mới Đề Xuất
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{b.desc}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Offerings & Needs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div>
+              {/* Lời nhắn - không bắt buộc (not required) */}
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Sản phẩm / Dịch vụ thế mạnh cung cấp:
+                  Lời nhắn gửi tới CLB <span className="text-slate-400 text-xs font-normal">(Không bắt buộc)</span>
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Những giải pháp, sản phẩm doanh nghiệp có thể cung cấp cho hội viên CLB..."
-                  value={offers}
-                  onChange={(e) => setOffers(e.target.value)}
+                  placeholder="Gợi ý, mong muốn hoặc chia sẻ thêm với Ban Điều Hành CLB..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Nhu cầu tìm kiếm đối tác / Kết nối:
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Cần tìm đối tác trong ngành nghề nào, mở rộng thị trường ra sao..."
-                  value={needs}
-                  onChange={(e) => setNeeds(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
-                />
-              </div>
-            </div>
-
-            {/* Note */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Lời nhắn gửi tới Ban Điều Hành CLB CEO 1983:
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Gợi ý, mong muốn hoặc chia sẻ thêm với CLB..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
-              />
             </div>
           </div>
 
@@ -655,7 +515,7 @@ export function Ceo1983MemberRegistrationForm() {
 
         {/* Footer info */}
         <div className="text-center text-xs text-slate-400 pt-6 pb-12 space-y-1">
-          <p className="font-semibold text-slate-600">CLB DOANH NHÂN CEO 1983 (HanoiBA)</p>
+          <p className="font-semibold text-slate-600">CLB DOANH NHÂN 1983</p>
           <p>Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</p>
           <p>
             Cổng thông tin chính thức:{" "}

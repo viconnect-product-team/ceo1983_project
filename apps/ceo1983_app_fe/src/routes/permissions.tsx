@@ -23,30 +23,45 @@ export const Route = createFileRoute("/permissions")({
   component: PermissionsPage,
 });
 
-const ROLE_OPTIONS = [
-  { value: "platform_admin", label: "Quản trị (Xem, Sửa, Xóa, Phân quyền)" },
-  { value: "admin", label: "Admin (Xem, Sửa, Phân quyền)" },
-  { value: "tong_thu_ky", label: "Tổng thư ký (Xem, Sửa)" },
-  { value: "truong_ban", label: "Trưởng ban (Xem, Sửa)" },
-  { value: "truong_ban_thanh_vien", label: "Trưởng ban thành viên (Xem, Sửa)" },
-  { value: "truong_ban_tai_chinh", label: "Trưởng ban tài chính (Xem, Sửa)" },
-  { value: "truong_ban_truyen_thong", label: "Trưởng ban truyền thông (Xem, Sửa)" },
-  { value: "truong_ban_xuc_tien", label: "Trưởng ban xúc tiến (Xem, Sửa)" },
-  { value: "truong_ban_thien_nguyen", label: "Trưởng ban thiện nguyện (Xem, Sửa)" },
-  { value: "member", label: "Hội viên (Xem)" },
+export const ROLE_OPTIONS = [
+  { value: "quan_tri", label: "Quản trị" },
+  { value: "admin", label: "Admin" },
+  { value: "tong_thu_ky", label: "Tổng thư ký" },
+  { value: "truong_ban", label: "Trưởng ban" },
+  { value: "member", label: "Thành viên" },
 ];
 
-const DEPARTMENT_OPTIONS = [
-  "Ban Điều Hành",
-  "Ban Quản Trị",
+export function normalizeRole(r?: string): string {
+  if (!r) return "member";
+  const s = r.toLowerCase().trim();
+  if (s === "quan_tri" || s === "platform_admin" || s === "superadmin" || s.includes("hệ thống") || s === "quản trị") return "quan_tri";
+  if (s === "admin" || s === "adm" || s.includes("chủ tịch") || s === "bqt") return "admin";
+  if (s.includes("tổng thư ký") || s.includes("tong_thu_ky") || s === "ttk" || s.includes("thu_ky")) return "tong_thu_ky";
+  if (s.startsWith("trưởng ban") || s.startsWith("truong_ban") || s.startsWith("phó ban") || s.startsWith("pho_ban") || s === "truong_ban") return "truong_ban";
+  return "member";
+}
+
+export const DEPARTMENT_OPTIONS = [
+  "Ban Quản trị",
   "Ban Thư ký",
-  "Ban Thành viên",
-  "Ban Tài chính",
   "Ban Truyền thông",
-  "Ban Xúc tiến thương mại",
-  "Ban Thiện Nguyện",
+  "Ban Xúc tiến",
+  "Ban Thành viên",
+  "Ban Thiện nguyện",
   "Hội viên CEO 1983",
 ];
+
+export function normalizeDept(d?: string): string {
+  if (!d) return "Hội viên CEO 1983";
+  const s = d.toLowerCase().trim();
+  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("công nghệ")) return "Ban Quản trị";
+  if (s.includes("thư ký") || s.includes("điều phối")) return "Ban Thư ký";
+  if (s.includes("truyền thông") || s.includes("sự kiện")) return "Ban Truyền thông";
+  if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b")) return "Ban Xúc tiến";
+  if (s.includes("thành viên") && !s.includes("hội viên") && !s.includes("ceo")) return "Ban Thành viên";
+  if (s.includes("thiện nguyện") || s.includes("tài chính") || s.includes("đào tạo") || s.includes("an sinh")) return "Ban Thiện nguyện";
+  return "Hội viên CEO 1983";
+}
 
 const ASSOCIATION_OPTIONS: { id: string; name: string; shortName: string }[] = [
   { id: "c1983000-0000-4000-8000-000000001983", name: "CLB Doanh Nhân CEO 1983", shortName: "CEO 1983" },
@@ -75,7 +90,8 @@ function PermissionsPage() {
     return list.filter((m: any) => {
       const mAssoc = edits[m.id]?.associationId ?? savedEdits[m.id]?.associationId ?? m.associationId ?? m.association_id ?? "c1983000-0000-4000-8000-000000001983";
       if (filterAssoc !== "all" && mAssoc !== filterAssoc) return false;
-      const mRole = edits[m.id]?.role ?? savedEdits[m.id]?.role ?? m.executiveRole ?? m.role ?? "member";
+      const rawRole = edits[m.id]?.role ?? savedEdits[m.id]?.role ?? m.executiveRole ?? m.role ?? "member";
+      const mRole = normalizeRole(rawRole);
       if (filterRole !== "all" && mRole !== filterRole) return false;
       if (!ql) return true;
       return (
@@ -105,35 +121,24 @@ function PermissionsPage() {
     initialSortDir: "asc",
   });
 
-  const handleRoleChange = (memberId: string, currentRole: string, currentDept: string, currentAssoc: string, newRole: string) => {
+  const handleRoleChange = (memberId: string, currentRole: string, currentDept: string, newRole: string) => {
     setEdits((prev) => ({
       ...prev,
       [memberId]: {
         role: newRole,
-        department: prev[memberId]?.department || savedEdits[memberId]?.department || currentDept || "Hội viên CEO 1983",
-        associationId: prev[memberId]?.associationId || savedEdits[memberId]?.associationId || currentAssoc || "c1983000-0000-4000-8000-000000001983",
+        department: prev[memberId]?.department || savedEdits[memberId]?.department || normalizeDept(currentDept),
+        associationId: "c1983000-0000-4000-8000-000000001983",
       },
     }));
   };
 
-  const handleDeptChange = (memberId: string, currentRole: string, currentDept: string, currentAssoc: string, newDept: string) => {
+  const handleDeptChange = (memberId: string, currentRole: string, currentDept: string, newDept: string) => {
     setEdits((prev) => ({
       ...prev,
       [memberId]: {
-        role: prev[memberId]?.role || savedEdits[memberId]?.role || currentRole || "member",
+        role: prev[memberId]?.role || savedEdits[memberId]?.role || normalizeRole(currentRole),
         department: newDept,
-        associationId: prev[memberId]?.associationId || savedEdits[memberId]?.associationId || currentAssoc || "c1983000-0000-4000-8000-000000001983",
-      },
-    }));
-  };
-
-  const handleAssocChange = (memberId: string, currentRole: string, currentDept: string, currentAssoc: string, newAssoc: string) => {
-    setEdits((prev) => ({
-      ...prev,
-      [memberId]: {
-        role: prev[memberId]?.role || savedEdits[memberId]?.role || currentRole || "member",
-        department: prev[memberId]?.department || savedEdits[memberId]?.department || currentDept || "Hội viên CEO 1983",
-        associationId: newAssoc,
+        associationId: "c1983000-0000-4000-8000-000000001983",
       },
     }));
   };
@@ -149,7 +154,7 @@ function PermissionsPage() {
           memberId: m.id,
           executiveRole: edit.role,
           department: edit.department,
-          associationId: edit.associationId,
+          associationId: edit.associationId || "c1983000-0000-4000-8000-000000001983",
         },
       });
 
@@ -282,18 +287,9 @@ function PermissionsPage() {
                   ))}
                 </select>
 
-                <select
-                  value={filterAssoc}
-                  onChange={(e) => setFilterAssoc(e.target.value)}
-                  className="text-xs rounded-xl border border-border bg-background px-3 py-2 outline-none font-medium focus:border-primary"
-                >
-                  <option value="all">Tất cả hiệp hội</option>
-                  {ASSOCIATION_OPTIONS.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="text-xs rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/50 px-3 py-2 font-bold text-[#003B95] dark:text-blue-300">
+                  Hiệp hội: CEO 1983
+                </div>
 
                 <button
                   type="button"
@@ -316,8 +312,8 @@ function PermissionsPage() {
                     <th className="px-4 py-3 min-w-[100px]">Mã HV</th>
                     <th className="px-4 py-3 min-w-[180px]">Họ tên & Doanh nghiệp</th>
                     <th className="px-4 py-3 min-w-[180px]">Email & SĐT</th>
-                    <th className="px-4 py-3 min-w-[190px]">Hiệp hội trực thuộc</th>
-                    <th className="px-4 py-3 min-w-[210px]">Vai trò / Quyền hạn</th>
+                    <th className="px-4 py-3 min-w-[140px]">Hiệp hội trực thuộc</th>
+                    <th className="px-4 py-3 min-w-[160px]">Vai trò / Quyền hạn</th>
                     <th className="px-4 py-3 min-w-[170px]">Ban chuyên môn</th>
                     <th className="px-4 py-3 text-center min-w-[120px]">Thao tác</th>
                   </tr>
@@ -337,9 +333,8 @@ function PermissionsPage() {
                     </tr>
                   ) : (
                     (tc.paged || []).map((m: any, idx: number) => {
-                      const currentRole = edits[m.id]?.role ?? savedEdits[m.id]?.role ?? m.executiveRole ?? m.role ?? "member";
-                      const currentDept = edits[m.id]?.department ?? savedEdits[m.id]?.department ?? m.department ?? "Hội viên CEO 1983";
-                      const currentAssoc = edits[m.id]?.associationId ?? savedEdits[m.id]?.associationId ?? m.associationId ?? m.association_id ?? "c1983000-0000-4000-8000-000000001983";
+                      const currentRole = edits[m.id]?.role ?? savedEdits[m.id]?.role ?? normalizeRole(m.executiveRole ?? m.role);
+                      const currentDept = edits[m.id]?.department ?? savedEdits[m.id]?.department ?? normalizeDept(m.department);
                       const isChanged = !!edits[m.id];
                       const isSaving = savingId === m.id;
 
@@ -360,23 +355,15 @@ function PermissionsPage() {
                             <div className="text-[11px] text-foreground/70">{m.phone || "—"}</div>
                           </td>
                           <td className="px-4 py-3">
-                            <select
-                              value={currentAssoc}
-                              onChange={(e) => handleAssocChange(m.id, m.executiveRole, m.department, m.associationId || m.association_id, e.target.value)}
-                              className="w-full text-xs font-semibold rounded-lg border border-border bg-blue-50/50 dark:bg-blue-950/20 text-[#003B95] dark:text-blue-300 px-2.5 py-1.5 focus:border-primary outline-none"
-                            >
-                              {ASSOCIATION_OPTIONS.map((assoc) => (
-                                <option key={assoc.id} value={assoc.id}>
-                                  {assoc.name}
-                                </option>
-                              ))}
-                            </select>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold text-xs border border-blue-200/60 dark:border-blue-800/40">
+                              CEO 1983
+                            </span>
                           </td>
                           <td className="px-4 py-3">
                             <select
                               value={currentRole}
-                              onChange={(e) => handleRoleChange(m.id, m.executiveRole, m.department, m.associationId || m.association_id, e.target.value)}
-                              className="w-full text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1.5 focus:border-primary outline-none"
+                              onChange={(e) => handleRoleChange(m.id, m.executiveRole, m.department, e.target.value)}
+                              className="w-full text-xs font-semibold rounded-lg border border-border bg-background px-2.5 py-1.5 focus:border-primary outline-none"
                             >
                               {ROLE_OPTIONS.map((opt) => (
                                 <option key={opt.value} value={opt.value}>
@@ -388,7 +375,7 @@ function PermissionsPage() {
                           <td className="px-4 py-3">
                             <select
                               value={currentDept}
-                              onChange={(e) => handleDeptChange(m.id, m.executiveRole, m.department, m.associationId || m.association_id, e.target.value)}
+                              onChange={(e) => handleDeptChange(m.id, m.executiveRole, m.department, e.target.value)}
                               className="w-full text-xs font-medium rounded-lg border border-border bg-background px-2.5 py-1.5 focus:border-primary outline-none"
                             >
                               {DEPARTMENT_OPTIONS.map((d) => (

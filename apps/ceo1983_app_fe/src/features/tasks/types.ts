@@ -108,12 +108,12 @@ export interface TaskItem {
 }
 
 export const TASK_DEPARTMENTS = [
-  'Ban Thiện nguyện & An sinh Xã hội',
+  'Ban Quản trị',
+  'Ban Thư ký',
   'Ban Truyền thông',
+  'Ban Xúc tiến',
   'Ban Thành viên',
-  'Ban Sự kiện',
-  'Ban Tài chính',
-  'Ban Quản trị & Thư ký',
+  'Ban Thiện nguyện',
 ] as const;
 
 export const TASK_STATUS_CONFIG: Record<

@@ -28,6 +28,10 @@ export interface SendEventTicketEmailOptions {
   isFree?: boolean;
   totalAmount?: number;
   qrCodeUrl?: string;
+  vietQrUrl?: string;
+  bankAccount?: string;
+  bankName?: string;
+  bankOwner?: string;
 }
 
 export interface SendAppWelcomeEmailOptions {
@@ -237,6 +241,10 @@ export class MailService {
       isFree = true,
       totalAmount = 0,
       qrCodeUrl,
+      vietQrUrl,
+      bankAccount = '1983000000',
+      bankName = 'MB Bank (Quân Đội)',
+      bankOwner = 'CLB DOANH NHAN CEO 1983',
     } = options;
 
     const cleanTo = (to || '').trim();
@@ -247,8 +255,11 @@ export class MailService {
 
     const appEventsUrl = 'https://14.225.217.232:5444/association/events';
     const qrSrc = qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`;
+    const vietQrSrc = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB CEO 1983')}`;
 
-    const subject = `[CLB CEO 1983] Vé Tham Dự Sự Kiện: ${eventTitle} — ${fullName} (#${registrationId})`;
+    const subject = isFree
+      ? `[CLB CEO 1983] Vé Điện Tử & Mã QR Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
+      : `[CLB CEO 1983] Hướng Dẫn Thanh Toán VietQR & Vé Tham Dự: ${eventTitle} — ${fullName} (#${registrationId})`;
 
     const html = `
 <!DOCTYPE html>
@@ -274,9 +285,13 @@ export class MailService {
     .event-meta { font-size: 13px; color: #64748b; }
     
     .qr-container { text-align: center; margin: 24px 0 16px 0; padding: 18px; background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; }
-    .qr-img { width: 200px; height: 200px; border-radius: 10px; border: 3px solid #003B95; padding: 6px; background: #ffffff; }
+    .qr-img { width: 220px; height: 220px; border-radius: 10px; border: 3px solid #003B95; padding: 6px; background: #ffffff; object-fit: contain; }
     .qr-caption { font-size: 13px; font-weight: 800; color: #003B95; margin-top: 10px; font-family: monospace; letter-spacing: 1px; }
     .qr-hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    .price-tag { font-size: 24px; font-weight: 900; color: #D97706; margin: 6px 0; }
+    .bank-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px; margin-top: 12px; text-align: left; font-size: 13px; }
+    .bank-card p { margin: 4px 0; }
 
     .info-grid { display: table; width: 100%; font-size: 13.5px; margin-top: 12px; }
     .info-row { display: table-row; }
@@ -284,6 +299,7 @@ export class MailService {
     .info-cell-value { display: table-cell; padding: 6px 0; color: #0f172a; font-weight: 700; text-align: right; }
     
     .badge-status { display: inline-block; background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 800; border: 1px solid #86efac; }
+    .badge-status-pending { display: inline-block; background: #fef3c7; color: #b45309; padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 800; border: 1px solid #fde68a; }
     .badge-lucky { display: inline-block; background: #fef3c7; color: #b45309; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 900; border: 1px solid #fde68a; font-family: monospace; }
     
     .btn-wrap { text-align: center; margin: 28px 0 10px 0; }
@@ -297,7 +313,7 @@ export class MailService {
 <body>
   <div class="container">
     <div class="header">
-      <div class="gold-badge">✦ VÉ THAM DỰ SỰ KIỆN ĐIỆN TỬ (E-TICKET) ✦</div>
+      <div class="gold-badge">${isFree ? '✦ VÉ THAM DỰ SỰ KIỆN ĐIỆN TỬ (E-TICKET) ✦' : '✦ HƯỚNG DẪN THANH TOÁN PHÍ THAM DỰ ✦'}</div>
       <h1 class="title">CLB DOANH NHÂN CEO 1983</h1>
       <p class="subtitle">Hệ Sinh Thái Kết Nối & Giao Thương Doanh Nhân Đẳng Cấp</p>
     </div>
@@ -305,7 +321,10 @@ export class MailService {
     <div class="content">
       <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
       <div class="intro">
-        Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã <strong>đăng ký thành công</strong> vé tham dự sự kiện dưới đây. Dưới đây là thông tin vé điện tử và <strong>Mã QR Check-in</strong> chính thức của Anh/Chị:
+        ${isFree 
+          ? `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã <strong>đăng ký thành công</strong> vé tham dự sự kiện. Dưới đây là thông tin vé điện tử và <strong>Mã QR Check-in</strong> chính thức của Anh/Chị:`
+          : `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng cảm ơn Anh/Chị đã đăng ký tham gia sự kiện. Dưới đây là <strong>Mã VietQR thanh toán phí tham dự</strong> và thông tin tài khoản chuyển khoản chính thức:`
+        }
       </div>
 
       <div class="ticket-card">
@@ -315,12 +334,31 @@ export class MailService {
           <div class="event-meta">🗓️ Thời gian: <strong>${eventDate || ''} ${eventTime ? '· ' + eventTime : ''}</strong></div>
         </div>
 
-        <!-- MÃ QR CHECK-IN DÀNH CHO BAN TỔ CHỨC QUÉT -->
+        ${!isFree ? `
+        <!-- TEMPLATE MÃ VIETQR THANH TOÁN DÀNH CHO SỰ KIỆN CÓ PHÍ -->
+        <div class="qr-container">
+          <div style="font-weight: 800; color: #003B95; font-size: 14px; text-transform: uppercase;">MÃ VIETQR THANH TOÁN PHÍ THAM DỰ</div>
+          <div class="price-tag">${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ</div>
+          <img src="${vietQrSrc}" alt="Mã VietQR Thanh Toán" class="qr-img" />
+          <div class="qr-caption">NỘI DUNG CK: EV${registrationId}</div>
+          <div class="qr-hint">Mở ứng dụng Ngân hàng bất kỳ (MB, Vietcombank, Techcombank...) để quét mã chuyển khoản</div>
+
+          <div class="bank-card">
+            <p><strong>Ngân hàng thụ hưởng:</strong> Ngân hàng Quân Đội (MB Bank)</p>
+            <p><strong>Số tài khoản:</strong> <span style="font-family: monospace; font-size: 15px; font-weight: 800; color: #003B95;">1983000000</span></p>
+            <p><strong>Chủ tài khoản:</strong> CLB DOANH NHÂN CEO 1983</p>
+            <p><strong>Số tiền:</strong> <strong style="color: #D97706;">${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ</strong></p>
+            <p><strong>Cú pháp chuyển khoản:</strong> <strong style="color: #003B95; font-family: monospace;">EV${registrationId} ${phone || ''}</strong></p>
+          </div>
+        </div>
+        ` : `
+        <!-- TEMPLATE MÃ QR CHECK-IN DÀNH CHO SỰ KIỆN MIỄN PHÍ -->
         <div class="qr-container">
           <img src="${qrSrc}" alt="Mã QR Check-in" class="qr-img" />
           <div class="qr-caption">MÃ VÉ: ${registrationId}</div>
-          <div class="qr-hint">Xuất trình mã QR này tại bàn đón tiếp để Ban Tổ Chức quét check-in</div>
+          <div class="qr-hint">Xuất trình mã QR này tại bàn tiếp đón để Ban Tổ Chức quét check-in</div>
         </div>
+        `}
 
         <div class="info-grid">
           <div class="info-row">
@@ -352,20 +390,29 @@ export class MailService {
           <div class="info-row">
             <div class="info-cell-label">Trạng thái vé:</div>
             <div class="info-cell-value">
-              <span class="badge-status">${isFree ? '✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)' : '✓ ĐÃ TIẾP NHẬN'}</span>
+              ${isFree 
+                ? '<span class="badge-status">✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)</span>' 
+                : '<span class="badge-status-pending">⏳ CHỜ THANH TOÁN VIETQR</span>'
+              }
             </div>
           </div>
         </div>
       </div>
 
       <div class="checkin-guide">
+        ${isFree ? `
         <strong>📌 Hướng dẫn Check-in tại sự kiện:</strong>
-        <br>1. Khi đến địa điểm tổ chức, Anh/Chị vui lòng mở email này hoặc truy cập ứng dụng App Hiệp Hội.
-        <br>2. Xuất trình <strong>Mã QR vé</strong> trên cho Ban Thư Ký / Ban Tổ Chức tại bàn đón tiếp để quét check-in và nhận thẻ đại biểu cùng tài liệu sự kiện.
+        <br>1. Khi đến địa điểm tổ chức, Anh/Chị vui lòng mở email này xuất trình <strong>Mã QR vé</strong> trên cho Ban Thư Ký tại bàn đón tiếp.
+        <br>2. Ban Tổ Chức sẽ quét mã check-in trong 1 giây và trao thẻ đại biểu, tài liệu cùng quà tặng tham gia sự kiện.
+        ` : `
+        <strong>📌 Hướng dẫn sau khi chuyển khoản:</strong>
+        <br>1. Sau khi Anh/Chị chuyển khoản thành công, hệ thống đối soát Napas 24/7 sẽ tự động kích hoạt vé chính thức.
+        <br>2. Ban Thư Ký sẽ gửi email thông báo vé đã kích hoạt kèm mã QR check-in vào cửa chính thức cho Anh/Chị.
+        `}
       </div>
 
       <div class="btn-wrap">
-        <a href="${appEventsUrl}" class="btn-primary" target="_blank">📲 Mở Thẻ Vé Trên App Hiệp Hội</a>
+        <a href="${appEventsUrl}" class="btn-primary" target="_blank">📲 Mở Thẻ Vé Trên Cổng Sự Kiện</a>
       </div>
     </div>
 

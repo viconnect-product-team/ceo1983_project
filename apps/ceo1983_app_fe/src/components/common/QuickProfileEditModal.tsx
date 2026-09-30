@@ -66,6 +66,7 @@ export function QuickProfileEditModal({
   const [avatar, setAvatar] = useState<string | null>(initialAvatar);
   const [cover, setCover] = useState<string | null>(initialCover);
   const [companyLogo, setCompanyLogo] = useState<string | null>(initialCompanyLogo);
+  const [modalLogoError, setModalLogoError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -89,6 +90,7 @@ export function QuickProfileEditModal({
       setAvatar(initialAvatar);
       setCover(initialCover);
       setCompanyLogo(initialCompanyLogo || null);
+      setModalLogoError(false);
       setErrors({});
     }
   }, [open, initialName, initialPhone, initialCompany, initialTitle, initialAvatar, initialCover, initialCompanyLogo]);
@@ -115,7 +117,10 @@ export function QuickProfileEditModal({
       // Instant preview
       if (type === "avatar") setAvatar(dataUrl);
       if (type === "cover") setCover(dataUrl);
-      if (type === "logo") setCompanyLogo(dataUrl);
+      if (type === "logo") {
+        setCompanyLogo(dataUrl);
+        setModalLogoError(false);
+      }
 
       // 2. Upload compressed blob in background (completes in <300ms)
       try {
@@ -123,7 +128,10 @@ export function QuickProfileEditModal({
         if (uploadedUrl) {
           if (type === "avatar") setAvatar(uploadedUrl);
           if (type === "cover") setCover(uploadedUrl);
-          if (type === "logo") setCompanyLogo(uploadedUrl);
+          if (type === "logo") {
+            setCompanyLogo(uploadedUrl);
+            setModalLogoError(false);
+          }
         }
       } catch {
         // Fallback to compressed dataUrl; safe because it's only ~50KB
@@ -187,12 +195,21 @@ export function QuickProfileEditModal({
         }
         if (cover) {
           localStorage.setItem("vba_member_cover_photo", cover);
+          if (userId) {
+            localStorage.setItem(`vba_member_cover_photo_${userId}`, cover);
+          }
         }
         if (avatar) {
           localStorage.setItem("vba_member_avatar_photo", avatar);
+          if (userId) {
+            localStorage.setItem(`vba_member_avatar_photo_${userId}`, avatar);
+          }
         }
         if (companyLogo) {
           localStorage.setItem("vba_member_company_logo", companyLogo);
+          if (userId) {
+            localStorage.setItem(`vba_member_company_logo_${userId}`, companyLogo);
+          }
         }
 
         // Also sync vba_my_member so all components relying on server cache update immediately
@@ -210,6 +227,9 @@ export function QuickProfileEditModal({
           companyLogoUrl: updatedData.companyLogo || existingMem.companyLogoUrl,
         };
         localStorage.setItem("vba_my_member", JSON.stringify(newMem));
+        if (userId) {
+          localStorage.setItem(`vba_my_member_${userId}`, JSON.stringify(newMem));
+        }
       } catch (storageErr) {
         console.warn("Storage save error:", storageErr);
       }
@@ -301,17 +321,8 @@ export function QuickProfileEditModal({
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-4 [scrollbar-width:thin]">
           {/* 1. Cover Photo & Company Logo Upload */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
               <span>Ảnh Bìa & Logo Doanh Nghiệp Trên Trang Chủ</span>
-              <button
-                type="button"
-                onClick={() => coverInputRef.current?.click()}
-                disabled={uploadingCover}
-                className="text-[11px] text-[#003B95] dark:text-amber-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Camera className="h-3 w-3" />
-                <span>{uploadingCover ? "Đang tải..." : "Đổi ảnh bìa"}</span>
-              </button>
             </div>
 
             {/* Banner preview with company logo overlay */}
@@ -329,23 +340,25 @@ export function QuickProfileEditModal({
               )}
               <div className="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition-colors" />
 
-              {/* Upload cover overlay button */}
+              {/* Upload cover overlay button - 1 nút duy nhất trên banner */}
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
                 className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 text-[10.5px] font-bold backdrop-blur-md border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 shadow-xs transition cursor-pointer"
               >
                 <Camera className="h-3 w-3 text-[#003B95] dark:text-blue-400" />
-                <span>Đổi ảnh bìa</span>
+                <span>{uploadingCover ? "Đang tải..." : "Đổi ảnh bìa"}</span>
               </button>
 
               {/* Company Logo Overlay on Cover Banner (Top-Left or Bottom-Right) */}
               <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md rounded-xl p-1.5 border border-slate-200/80 dark:border-slate-700 shadow-xs">
                 <div className="h-9 w-9 rounded-lg bg-white grid place-items-center overflow-hidden shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-800">
-                  {companyLogo ? (
+                  {companyLogo && !modalLogoError ? (
                     <img
                       src={resolveMediaUrl(companyLogo) || companyLogo}
                       alt="Logo công ty"
+                      onError={() => setModalLogoError(true)}
                       className="h-full w-full object-contain p-0.5"
                     />
                   ) : (

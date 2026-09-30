@@ -48,6 +48,7 @@ import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { AppThemeSelectorModal } from "@/components/member/AppThemeSelectorModal";
 import { BirthdayCelebrationModal } from "@/components/member/BirthdayCelebrationModal";
 import { toast } from "sonner";
+import { isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVisit";
 import { GuidedTourModal, type TourStep } from "@/components/common/GuidedTourModal";
 import { PersonalProfileBottomSheet, type PersonalProfileData } from "@/components/common/PersonalProfileBottomSheet";
 import { QrCanvas } from "@/components/member/QrCanvas";
@@ -387,9 +388,11 @@ function Home() {
         const parsedGen = JSON.parse(generic);
         if (parsedGen?.userId && parsedGen.userId !== user.id) {
           localStorage.removeItem("vba_custom_profile");
+        } else if (parsedGen) {
+          setCustomProfile(parsedGen);
+          return;
         }
       }
-      setCustomProfile(null);
     } catch {
       /* ignore */
     }
@@ -419,25 +422,60 @@ function Home() {
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const uId = user?.id;
+      const userLogo = uId ? localStorage.getItem(`vba_member_company_logo_${uId}`) : null;
+      const genLogo = localStorage.getItem("vba_member_company_logo");
+      const customProf = uId ? localStorage.getItem(`vba_custom_profile_${uId}`) : localStorage.getItem("vba_custom_profile");
+      let cpLogo = null;
+      try { cpLogo = customProf ? JSON.parse(customProf)?.companyLogo : null; } catch {}
+      const myMem = localStorage.getItem("vba_my_member");
+      let mmLogo = null;
+      try { mmLogo = myMem ? (JSON.parse(myMem)?.companyLogoUrl || JSON.parse(myMem)?.companyLogo) : null; } catch {}
+
+      return (
+        userLogo ||
+        genLogo ||
+        cpLogo ||
+        mmLogo ||
+        (effectiveMember as any)?.companyLogoUrl ||
+        (effectiveMember as any)?.companyLogo ||
+        null
+      );
+    }
     return (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo || null;
   });
-  const [companyLogoError, setCompanyLogoError] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const uId = user?.id;
+    const userLogo = uId ? localStorage.getItem(`vba_member_company_logo_${uId}`) : null;
+    const genLogo = localStorage.getItem("vba_member_company_logo");
+    const cpLogo = customProfile?.companyLogo;
     const sLogo = (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo;
-    if (sLogo) {
-      setCompanyLogo(sLogo);
-      setCompanyLogoError(false);
-    } else if (user?.id) {
-      const userLogo = localStorage.getItem(`vba_member_company_logo_${user.id}`);
-      if (userLogo) {
-        setCompanyLogo(userLogo);
-        setCompanyLogoError(false);
-      }
+
+    const resolved = userLogo || genLogo || cpLogo || sLogo;
+    if (resolved && !isBlackBackgroundLogo(resolved)) {
+      setCompanyLogo(resolved);
     }
     const sAvatar = effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || user?.avatar_url || (user as any)?.user_metadata?.avatar_url;
     if (sAvatar) setAvatarPhoto(sAvatar);
-  }, [(effectiveMember as any)?.companyLogoUrl, (effectiveMember as any)?.companyLogo, effectiveMember?.avatar, (effectiveMember as any)?.avatarUrl, user?.avatar_url, (user as any)?.user_metadata?.avatar_url, user?.id]);
+  }, [
+    (effectiveMember as any)?.companyLogoUrl,
+    (effectiveMember as any)?.companyLogo,
+    customProfile?.companyLogo,
+    effectiveMember?.avatar,
+    (effectiveMember as any)?.avatarUrl,
+    user?.avatar_url,
+    (user as any)?.user_metadata?.avatar_url,
+    user?.id,
+  ]);
+
+  const validLocalLogo = isBlackBackgroundLogo(companyLogo) ? null : companyLogo;
+  const validServerLogo = isBlackBackgroundLogo((effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo)
+    ? null
+    : ((effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo);
+  const displayCompanyLogo = validLocalLogo || validServerLogo || "/ceo1983-official-logo.png";
 
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -521,9 +559,9 @@ function Home() {
     try {
       const { dataUrl, blob } = await compressImage(file, 400, 400, 0.85);
       setCompanyLogo(dataUrl);
-      setCompanyLogoError(false);
 
       try {
+        localStorage.setItem("vba_member_company_logo", dataUrl);
         if (user?.id) {
           localStorage.setItem(`vba_member_company_logo_${user.id}`, dataUrl);
           const cp = JSON.parse(localStorage.getItem(`vba_custom_profile_${user.id}`) || "{}");
@@ -531,6 +569,10 @@ function Home() {
           cp.userId = user.id;
           localStorage.setItem(`vba_custom_profile_${user.id}`, JSON.stringify(cp));
         }
+
+        const cpGen = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        cpGen.companyLogo = dataUrl;
+        localStorage.setItem("vba_custom_profile", JSON.stringify(cpGen));
 
         const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
         mem.companyLogo = dataUrl;
@@ -548,6 +590,21 @@ function Home() {
       uploadFileToNest(blob, file.name || "company-logo.png")
         .then((uploadedUrl) => {
           if (uploadedUrl) {
+            setCompanyLogo(uploadedUrl);
+            try {
+              localStorage.setItem("vba_member_company_logo", uploadedUrl);
+              if (user?.id) {
+                localStorage.setItem(`vba_member_company_logo_${user.id}`, uploadedUrl);
+                const cp = JSON.parse(localStorage.getItem(`vba_custom_profile_${user.id}`) || "{}");
+                cp.companyLogo = uploadedUrl;
+                localStorage.setItem(`vba_custom_profile_${user.id}`, JSON.stringify(cp));
+              }
+              const cpGen = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+              cpGen.companyLogo = uploadedUrl;
+              localStorage.setItem("vba_custom_profile", JSON.stringify(cpGen));
+            } catch {}
+            window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: uploadedUrl }));
+            window.dispatchEvent(new CustomEvent("profile-updated", { detail: { companyLogo: uploadedUrl } }));
             fetchNestApi("/members/me", {
               method: "PATCH",
               body: JSON.stringify({ companyLogo: uploadedUrl, companyLogoUrl: uploadedUrl }),
@@ -569,17 +626,20 @@ function Home() {
     const handleProfileUpdate = (e?: any) => {
       try {
         const detail = e?.detail;
-        if (detail && typeof detail === "object" && (detail.name || detail.title || detail.company)) {
-          setCustomProfile(detail);
+        if (detail && typeof detail === "object") {
           if (detail.avatar) setAvatarPhoto(detail.avatar);
           if (detail.cover) setCoverPhoto(detail.cover);
-          if (detail.companyLogo) {
-            setCompanyLogo(detail.companyLogo);
+          const newLogo = detail.companyLogo || detail.companyLogoUrl;
+          if (newLogo && !isBlackBackgroundLogo(newLogo)) {
+            setCompanyLogo(newLogo);
             if (user?.id) {
-              try { localStorage.setItem(`vba_member_company_logo_${user.id}`, detail.companyLogo); } catch {}
+              try { localStorage.setItem(`vba_member_company_logo_${user.id}`, newLogo); } catch {}
             }
           }
-          return;
+          if (detail.name || detail.title || detail.company) {
+            setCustomProfile(detail);
+            return;
+          }
         }
         if (user?.id) {
           const scoped = localStorage.getItem(`vba_custom_profile_${user.id}`);
@@ -591,7 +651,13 @@ function Home() {
             }
           }
         }
-        setCustomProfile(null);
+        const generic = localStorage.getItem("vba_custom_profile");
+        if (generic) {
+          const parsedGen = JSON.parse(generic);
+          if (parsedGen && (!parsedGen.userId || parsedGen.userId === user?.id)) {
+            setCustomProfile(parsedGen);
+          }
+        }
       } catch {}
     };
     const handleCoverUpdate = (e?: any) => {
@@ -619,11 +685,15 @@ function Home() {
     const handleLogoUpdate = (e?: any) => {
       try {
         const detailUrl = e?.detail;
-        if (detailUrl && typeof detailUrl === "string") {
+        if (detailUrl && typeof detailUrl === "string" && !isBlackBackgroundLogo(detailUrl)) {
           setCompanyLogo(detailUrl);
-        } else if (user?.id) {
-          const userLogo = localStorage.getItem(`vba_member_company_logo_${user.id}`);
-          if (userLogo) setCompanyLogo(userLogo);
+        } else {
+          const userLogo = user?.id ? localStorage.getItem(`vba_member_company_logo_${user.id}`) : null;
+          const genLogo = localStorage.getItem("vba_member_company_logo");
+          const target = userLogo || genLogo;
+          if (target && !isBlackBackgroundLogo(target)) {
+            setCompanyLogo(target);
+          }
         }
       } catch {}
     };
@@ -871,7 +941,7 @@ function Home() {
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
 
-          {/* Logo công ty hội viên trên ảnh bìa ở góc phải: Clean, tinh tế không nền đen */}
+          {/* Logo công ty hội viên trên ảnh bìa ở góc phải: Sang trọng, rõ nét */}
           <div 
             onClick={(e) => {
               e.stopPropagation();
@@ -880,24 +950,20 @@ function Home() {
             className="absolute top-2.5 right-3 z-10 cursor-pointer"
             title="Bấm vào để tải lên hoặc đổi Logo công ty"
           >
-            {companyLogo && !companyLogoError ? (
-              <div className="flex items-center gap-1.5 p-1 transition group hover:opacity-90">
-                <img
-                  src={resolveMediaUrl(companyLogo) || companyLogo}
-                  alt=""
-                  onError={() => {
-                    setCompanyLogoError(true);
-                  }}
-                  className="h-7 sm:h-8 w-auto max-w-[120px] object-contain drop-shadow filter"
-                />
-                <span className="hidden group-hover:inline-block text-[10px] text-white/90 font-semibold drop-shadow">Đổi</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 px-2 py-1 text-white/80 hover:text-white text-[11px] font-bold transition active:scale-95 drop-shadow">
-                <Building2 className="h-3.5 w-3.5 text-white" />
-                <span>+ Logo Cty</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-white/70 dark:border-slate-700 shadow-sm transition group hover:bg-white dark:hover:bg-slate-900">
+              <img
+                src={resolveMediaUrl(displayCompanyLogo) || displayCompanyLogo}
+                alt="Company Logo"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/ceo1983-official-logo.png";
+                }}
+                className="h-6 sm:h-7 w-auto max-w-[110px] object-contain filter drop-shadow-xs"
+              />
+              <span className="text-[10px] text-slate-700 dark:text-slate-300 font-bold flex items-center gap-0.5">
+                <Camera className="h-2.5 w-2.5 text-amber-500" />
+                <span className="hidden group-hover:inline-block">Đổi</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1586,7 +1652,10 @@ function Home() {
           setCustomProfile((prev) => ({ ...(prev || {}), ...updated }));
           if (updated.avatar) setAvatarPhoto(updated.avatar);
           if (updated.cover) setCoverPhoto(updated.cover);
-          if (updated.companyLogo) setCompanyLogo(updated.companyLogo);
+          if (updated.companyLogo) {
+            setCompanyLogo(updated.companyLogo);
+            setCompanyLogoError(false);
+          }
           setQuickEditOpen(false);
         }}
       />

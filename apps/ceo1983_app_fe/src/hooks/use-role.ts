@@ -20,9 +20,12 @@ export type RoleState = {
   isAdmin: boolean;
   isModerator: boolean;
   isBQT: boolean;
-  isBTV: boolean;
-  isBTC: boolean;
+  isBTK: boolean;
   isBTT: boolean;
+  isBXT: boolean;
+  isBTV: boolean;
+  isBTN: boolean;
+  isBTC: boolean; // backward-compatibility alias
   isHVT: boolean;
   canManageMembers: boolean;
   canApproveMembers: boolean;
@@ -31,6 +34,9 @@ export type RoleState = {
   canManageMedia: boolean;
   canManageEvents: boolean;
   canScanQR: boolean;
+  canManageOpportunities: boolean;
+  canManageCharity: boolean;
+  canManageMeetings: boolean;
   canManageSystem: boolean;
   can: (permission: Permission) => boolean;
   hasPermission: (permission: Permission) => boolean;
@@ -59,9 +65,8 @@ export function useRole(): RoleState {
     const rList = rawRoles.map((r) => String(r).toLowerCase());
     const primaryRole = String(userObj?.role || member?.role || "").toLowerCase();
 
-
-    const execRole = String(member?.executiveRole || user?.executiveRole || "").toLowerCase();
-    const dept = String(member?.department || user?.department || "").toLowerCase();
+    const execRole = String(member?.executiveRole || userObj?.executiveRole || userObj?.executive_role || user?.executiveRole || "").toLowerCase();
+    const dept = String(member?.department || userObj?.department || user?.department || "").toLowerCase();
 
     // ADM (Super Admin / Platform Admin)
     if (
@@ -73,55 +78,76 @@ export function useRole(): RoleState {
       return "ADM";
     }
 
-    // BQT (Ban Quản Trị / Ban Chấp Hành / Chủ Tịch / Tổng Thư Ký)
+    // 1. BQT (Ban Quản Trị / Ban Thường Trực / Chủ Tịch / Phó Chủ Tịch)
     if (
       rList.includes("admin") ||
       rList.includes("bqt") ||
       rList.includes("board_director") ||
-      rList.includes("tong_thu_ky") ||
       primaryRole === "admin" ||
       primaryRole === "association_admin" ||
       execRole.includes("quản trị") ||
       execRole.includes("chủ tịch") ||
-      execRole.includes("tổng thư ký") ||
       execRole.includes("president") ||
       dept.includes("quản trị") ||
-      dept.includes("thường trực")
+      dept.includes("thường trực") ||
+      dept.includes("điều hành")
     ) {
       return "BQT";
     }
 
-    // BTV (Ban Thành Viên)
+    // 2. BTK (Ban Thư Ký)
     if (
-      rList.includes("btv") ||
-      rList.includes("truong_ban_thanh_vien") ||
-      rList.includes("ban_thanh_vien") ||
-      execRole.includes("thành viên") ||
-      dept.includes("thành viên")
+      rList.includes("btk") ||
+      rList.includes("tong_thu_ky") ||
+      rList.includes("thu_ky") ||
+      execRole.includes("thư ký") ||
+      dept.includes("thư ký")
     ) {
-      return "BTV";
+      return "BTK";
     }
 
-    // BTC (Ban Tài Chính)
-    if (
-      rList.includes("btc") ||
-      rList.includes("truong_ban_tai_chinh") ||
-      rList.includes("ban_tai_chinh") ||
-      execRole.includes("tài chính") ||
-      dept.includes("tài chính")
-    ) {
-      return "BTC";
-    }
-
-    // BTT (Ban Truyền Thông)
+    // 3. BTT (Ban Truyền Thông)
     if (
       rList.includes("btt") ||
-      rList.includes("truong_ban_truyen_thong") ||
-      rList.includes("ban_truyen_thong") ||
+      rList.includes("truyen_thong") ||
       execRole.includes("truyền thông") ||
       dept.includes("truyền thông")
     ) {
       return "BTT";
+    }
+
+    // 4. BXT (Ban Xúc Tiến)
+    if (
+      rList.includes("bxt") ||
+      rList.includes("xuc_tien") ||
+      rList.includes("thuong_mai") ||
+      execRole.includes("xúc tiến") ||
+      dept.includes("xúc tiến")
+    ) {
+      return "BXT";
+    }
+
+    // 5. BTV (Ban Thành Viên)
+    if (
+      rList.includes("btv") ||
+      rList.includes("ban_thanh_vien") ||
+      rList.includes("phat_trien_hoi_vien") ||
+      (dept.includes("thành viên") && !dept.includes("hội viên") && !dept.includes("ceo 1983")) ||
+      execRole.includes("ban thành viên") ||
+      execRole.includes("trưởng ban thành viên")
+    ) {
+      return "BTV";
+    }
+
+    // 6. BTN (Ban Thiện Nguyện)
+    if (
+      rList.includes("btn") ||
+      rList.includes("thien_nguyen") ||
+      rList.includes("an_sinh") ||
+      execRole.includes("thiện nguyện") ||
+      dept.includes("thiện nguyện")
+    ) {
+      return "BTN";
     }
 
     // Mặc định: HVT (Hội Viên Thường)
@@ -242,12 +268,15 @@ export function useRole(): RoleState {
 
   const isPlatformAdmin = srsRole === "ADM";
   const isBQT = srsRole === "BQT" || isPlatformAdmin;
-  const isBTV = srsRole === "BTV" || isBQT;
-  const isBTC = srsRole === "BTC" || isBQT;
+  const isBTK = srsRole === "BTK" || isBQT;
   const isBTT = srsRole === "BTT" || isBQT;
+  const isBXT = srsRole === "BXT" || isBQT;
+  const isBTV = srsRole === "BTV" || isBQT;
+  const isBTN = srsRole === "BTN" || isBQT;
+  const isBTC = isBQT; // backward compatibility fallback
   const isHVT = srsRole === "HVT";
   const isAdmin = isPlatformAdmin || isBQT;
-  const isModerator = isAdmin || isBTV || isBTC || isBTT;
+  const isModerator = isAdmin || isBTK || isBTT || isBXT || isBTV || isBTN;
 
   // Granular RBAC Matrix per SRS Part 2.2
   const grantedPermissions = useMemo(() => {
@@ -288,14 +317,17 @@ export function useRole(): RoleState {
     [isPlatformAdmin, srsRole],
   );
 
-  // Backward-compatible shortcut flags
-  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT) || isBQT || srsRole === "BTV";
-  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE) || isBQT;
-  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW) || isBQT || srsRole === "BTV";
-  const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE) || isBQT || srsRole === "BTC";
-  const canManageMedia = can(PERMISSIONS.MEDIA_MANAGE) || isBQT || srsRole === "BTT";
-  const canManageEvents = can(PERMISSIONS.EVENT_CREATE) || isBQT || srsRole === "BTT";
-  const canScanQR = can(PERMISSIONS.EVENT_CHECKIN_MANAGE) || isBQT || srsRole === "BTT";
+  // Granular shortcut flags for 6 Ban
+  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT) || isBQT || isBTK || isBTV;
+  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE) || isBQT || isBTK || isBTV;
+  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW) || isBQT || isBTK || isBTV;
+  const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE) || isBQT;
+  const canManageMedia = can(PERMISSIONS.MEDIA_MANAGE) || isBQT || isBTT || isBTN;
+  const canManageEvents = can(PERMISSIONS.EVENT_CREATE) || isBQT || isBTT || isBTK || isBTN;
+  const canScanQR = can(PERMISSIONS.EVENT_CHECKIN_MANAGE) || isBQT || isBTT || isBTV || isBTK || isBTN;
+  const canManageOpportunities = can(PERMISSIONS.OPPORTUNITY_MANAGE) || isBQT || isBXT;
+  const canManageCharity = can(PERMISSIONS.CHARITY_MANAGE) || isBQT || isBTN;
+  const canManageMeetings = can(PERMISSIONS.MEETING_MANAGE) || isBQT || isBTK;
   const canManageSystem = can(PERMISSIONS.SYSTEM_MANAGE) || isBQT;
 
   return {
@@ -305,9 +337,12 @@ export function useRole(): RoleState {
     isAdmin,
     isModerator,
     isBQT,
-    isBTV,
-    isBTC,
+    isBTK,
     isBTT,
+    isBXT,
+    isBTV,
+    isBTN,
+    isBTC,
     isHVT,
     canManageMembers,
     canApproveMembers,
@@ -316,6 +351,9 @@ export function useRole(): RoleState {
     canManageMedia,
     canManageEvents,
     canScanQR,
+    canManageOpportunities,
+    canManageCharity,
+    canManageMeetings,
     canManageSystem,
     can,
     hasPermission,

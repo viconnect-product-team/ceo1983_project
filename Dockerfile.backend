@@ -21,6 +21,7 @@ RUN npm ci --ignore-scripts=false && npm rebuild bcrypt
 COPY --from=builder /app/out/full/ .
 # Generate Prisma Client
 RUN cd packages/db && npx prisma generate
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npx turbo run build --filter=@ceo1983/app_be...
 
 FROM node:22-alpine AS runner

@@ -500,8 +500,8 @@ function MembersPage() {
     {
       code: (m) => m.code,
       name: (m) => m.name,
-      industry: (m) => t(m.industry),
-      region: (m) => t(m.region),
+      industry: (m) => t(m.industry as TKey),
+      region: (m) => t(m.region as TKey),
       type: (m) => m.type,
       status: (m) => m.status,
       joined: (m) => m.createdAt || m.joinedAt,
@@ -965,7 +965,9 @@ function MembersPage() {
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
                   />
-                  {isAdmin && <th className="px-4 py-3 text-left border-b border-border">{t("acctStatus.label")}</th>}
+                  <th className="px-4 py-3 text-left border-b border-border font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                    Tài khoản
+                  </th>
                   <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">{t("tbl.actions")}</th>
                 </tr>
               </thead>
@@ -998,16 +1000,15 @@ function MembersPage() {
                       <div className="flex items-center gap-3">
                         <Avatar m={m} className="h-9 w-9 text-[11px]" />
                         <div className="min-w-0">
-                          <TruncatedText text={m.name} maxWidth="max-w-[240px]" className="font-semibold text-foreground" />
-                          <TruncatedText text={m.email || m.contact || ""} maxWidth="max-w-[240px]" className="text-[11px] text-muted-foreground" />
+                          <TruncatedText text={m.name} maxWidth="max-w-[240px]" className="font-semibold text-foreground text-sm" />
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-foreground border-b border-border whitespace-nowrap">
-                      <TruncatedText text={t(m.industry)} maxWidth="max-w-[160px]" />
+                      <TruncatedText text={t(m.industry as TKey)} maxWidth="max-w-[160px]" />
                     </td>
                     <td className="px-4 py-3 text-foreground border-b border-border whitespace-nowrap">
-                      <TruncatedText text={t(m.region)} maxWidth="max-w-[140px]" />
+                      <TruncatedText text={t(m.region as TKey)} maxWidth="max-w-[140px]" />
                     </td>
                     <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                       <TypeChip type={m.type} />
@@ -1018,11 +1019,24 @@ function MembersPage() {
                     <td className="px-4 py-3 text-muted-foreground border-b border-border whitespace-nowrap">
                       {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString("vi-VN") : "—"}
                     </td>
-                    {isAdmin && (
-                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
-                        <AccountStatusBadge status={(acctStatuses[m.id] as MemberAccountStatus) ?? "none"} />
-                      </td>
-                    )}
+                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-mono text-xs font-semibold text-foreground">
+                          {m.email || m.phone || "—"}
+                        </span>
+                        {m.status === "pending" ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                            Chờ kích hoạt
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            Đã kích hoạt app
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                       <div className="inline-flex items-center gap-1.5">
                         {m.status === "pending" && (
@@ -1309,7 +1323,7 @@ function MemberCard({
           <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="font-mono font-semibold text-primary">{m.code}</span>
             <span aria-hidden>·</span>
-            <span className="truncate">{t(m.level)}</span>
+            <span className="truncate">{t(m.level as TKey)}</span>
           </div>
         </div>
       </button>
@@ -1320,8 +1334,8 @@ function MemberCard({
           icon={<Building2 className="h-3.5 w-3.5" />}
           value={m.type === "company" ? m.name : m.contact || "—"}
         />
-        <MetaRow icon={<MapPin className="h-3.5 w-3.5" />} value={t(m.region)} />
-        <MetaRow icon={<Filter className="h-3.5 w-3.5" />} value={t(m.industry)} />
+        <MetaRow icon={<MapPin className="h-3.5 w-3.5" />} value={t(m.region as TKey)} />
+        <MetaRow icon={<Filter className="h-3.5 w-3.5" />} value={t(m.industry as TKey)} />
         <MetaRow
           value={m.joinedAt ? new Date(m.joinedAt).toLocaleDateString("vi-VN") : "—"}
           icon={<Eye className="h-3.5 w-3.5" />}
@@ -1340,7 +1354,21 @@ function MemberCard({
         >
           {m.feePaid ? t("mlist.feePaid") : t("mlist.feeDue")}
         </span>
-        {isAdmin && accountStatus && <AccountStatusBadge status={accountStatus} />}
+        {m.status === "pending" ? (
+          <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Chờ kích hoạt
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Đã kích hoạt app
+          </span>
+        )}
+      </div>
+
+      {/* account pill */}
+      <div className="mt-3 flex items-center justify-between rounded-xl bg-secondary/50 border border-border/60 px-3 py-1.5 text-xs">
+        <span className="text-muted-foreground text-[11px] font-medium">Tài khoản:</span>
+        <span className="font-mono font-semibold text-foreground text-[11px] truncate max-w-[180px]">{m.email || m.phone || "—"}</span>
       </div>
 
       {/* pending approval action banner */}

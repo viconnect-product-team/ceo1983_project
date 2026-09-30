@@ -1360,7 +1360,8 @@ export class AdminService implements OnModuleInit {
 
     if (rows.length && rows[0]?.value) {
       const val = rows[0].value;
-      if (Array.isArray(val) && val.length > 0) return { rows: val };
+      if (val?.categories && Array.isArray(val.categories) && val.categories.length > 0) return val;
+      if (Array.isArray(val) && val.length > 0) return { rows: val, categories: val };
       if (val?.rows && Array.isArray(val.rows) && val.rows.length > 0) return val;
     }
 
@@ -1449,12 +1450,16 @@ export class AdminService implements OnModuleInit {
   }
 
   async savePermissionMatrix(payload: any, userId?: string) {
-    const rows = Array.isArray(payload) ? payload : payload?.rows;
-    if (!Array.isArray(rows) || rows.length === 0) {
+    const categories = payload?.categories || (Array.isArray(payload) ? payload : payload?.rows);
+    if (!Array.isArray(categories) || categories.length === 0) {
       throw new BadRequestException('Ma trận phân quyền không hợp lệ');
     }
 
-    const jsonValue = JSON.stringify({ rows, updatedAt: new Date().toISOString() });
+    const jsonValue = JSON.stringify({
+      categories,
+      rows: categories,
+      updatedAt: new Date().toISOString(),
+    });
 
     await this.prisma.$executeRawUnsafe(
       `
@@ -1469,7 +1474,8 @@ export class AdminService implements OnModuleInit {
     return {
       success: true,
       message: 'Cập nhật ma trận phân quyền CRM thành công',
-      rows,
+      categories,
+      rows: categories,
       updatedAt: new Date().toISOString(),
     };
   }

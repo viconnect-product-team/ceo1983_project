@@ -10,6 +10,8 @@ const {
   createCallout,
   createTable,
   createHeaderFooter,
+  createCoverPage,
+  createTableOfContents,
 } = require('./srs_docx_helpers');
 
 function buildDoc4() {
@@ -22,59 +24,38 @@ function buildDoc4() {
   }
 
   // ==========================================
-  // TRANG BÌA & THÔNG TIN QUẢN TRỊ
+  // 1. TRANG BÌA CHUYÊN NGHIỆP (COVER PAGE)
   // ==========================================
-  children.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 200, after: 100 },
-      children: [
-        new TextRun({
-          text: 'TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & THIẾT KẾ CƠ SỞ DỮ LIỆU',
-          font: 'Times New Roman',
-          size: 24,
-          bold: true,
-          color: 'D97706',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 80, after: 120 },
-      children: [
-        new TextRun({
-          text: 'HỆ ĐIỀU HÀNH QUẢN TRỊ DOANH NGHIỆP VIONE ENTERPRISE CRM',
-          font: 'Times New Roman',
-          size: 32,
-          bold: true,
-          color: '003B95',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 60, after: 200 },
-      children: [
-        new TextRun({
-          text: 'Kiến Trúc Đa Doanh Nghiệp (Multi-Tenant 163 Bảng), Phễu Bán Hàng B2B, Hợp Đồng Số & Trợ Lý AI Điều Hành',
-          font: 'Times New Roman',
-          size: 22,
-          italics: true,
-          color: '64748B',
-        }),
-      ],
-    })
-  );
+  const coverElements = createCoverPage({
+    systemName: 'HỆ ĐIỀU HÀNH QUẢN TRỊ DOANH NGHIỆP VIONE ENTERPRISE CRM',
+    subTitle: 'Kiến Trúc Đa Doanh Nghiệp (Multi-Tenant 163 Bảng), Phễu Bán Hàng B2B, Hợp Đồng Số & Trợ Lý AI Điều Hành',
+    docCode: 'SRS-VIONE-ENTERPRISE-CRM-V3.5',
+    version: 'Version 3.5 — Master Production Specification (Bàn Giao Kỹ Thuật)',
+    date: '30/09/2026',
+    scope: 'Tổng Giám Đốc, Giám Đốc Kinh Doanh (CCO), Quản Lý Bán Hàng, Đội Ngũ Sales B2B, Kế Toán Trưởng'
+  });
+  children.push(...coverElements);
 
   addMd('# TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & THIẾT KẾ CƠ SỞ DỮ LIỆU');
   addMd('## HỆ ĐIỀU HÀNH QUẢN TRỊ DOANH NGHIỆP VIONE ENTERPRISE CRM');
-  addMd('*Phiên bản: Version 3.0 - Bản Chuẩn Hoá Toàn Diện Master BA*');
+  addMd('*Phiên bản: Version 3.5 - Bản Chuẩn Hoá Toàn Diện Master BA (Trang Bìa & Mục Lục Chuẩn)*');
+
+  // ==========================================
+  // 2. MỤC LỤC TÀI LIỆU (TABLE OF CONTENTS)
+  // ==========================================
+  const tocSections = [
+    { num: 'PHẦN 1', title: 'Giải Thích Bình Dân Các Khái Niệm Kỹ Thuật Cốt Lõi (Multi-Tenant & ERP CRM)', scope: 'Nền tảng kiến trúc', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 2', title: 'Kiến Trúc 6 Khối Nghiệp Vụ Cốt Lõi Enterprise', scope: 'Nghiệp vụ chi tiết', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 3', title: 'Thiết Kế Cơ Sở Dữ Liệu PostgreSQL Đa Doanh Nghiệp (163 Bảng)', scope: 'Database & Schemas', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 4', title: 'Kịch Bản Kiểm Thử Nghiệm Thu Chấp Thuận (UAT Test Cases)', scope: 'Kiểm thử chất lượng', status: 'Hoàn tất 100%' },
+  ];
+  children.push(...createTableOfContents(tocSections));
 
   const metaHeaders = ['Mục Quản Trị', 'Thông Tin Chi Tiết'];
   const metaRows = [
     ['Tên Dự Án / Phân Hệ', 'Hệ Điều Hành Quản Trị Doanh Nghiệp ViOne Enterprise CRM'],
-    ['Mã Tài Liệu', 'SRS-VIONE-ENTERPRISE-CRM-V3.0'],
-    ['Phiên Bản', 'Version 3.0 - Master BA Comprehensive Standard'],
+    ['Mã Tài Liệu', 'SRS-VIONE-ENTERPRISE-CRM-V3.5'],
+    ['Phiên Bản', 'Version 3.5 - Master BA Comprehensive Standard (Trang Bìa & Mục Lục Chuẩn)'],
     ['Tác Giả & Thẩm Định', 'Master Business Analyst, Solution Architect & ViOne Enterprise Architecture Board'],
     ['Đối Tượng Sử Dụng', 'Tổng Giám Đốc, Giám Đốc Kinh Doanh (CCO), Quản Lý Bán Hàng, Đội Ngũ Sales B2B, Kế Toán Trưởng'],
     ['Nền Tảng Triển Khai', 'Web Application (React 19, TypeScript, TanStack Router, Nitro SSR), Port 5000 / 5001'],

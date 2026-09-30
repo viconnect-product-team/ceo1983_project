@@ -3,6 +3,7 @@ import { Megaphone, ExternalLink, Play, Sparkles, ChevronRight } from "lucide-re
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { isVideoMedia } from "@/components/marketplace/MarketplaceAdsManager";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 export interface ActiveAdCampaign {
   id: string;
@@ -44,6 +45,7 @@ const DEFAULT_SAMPLE_ADS: ActiveAdCampaign[] = [
 ];
 
 export function MarketplaceAdSlider() {
+  const navigate = useNavigate();
   const [ads, setAds] = useState<ActiveAdCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -108,6 +110,15 @@ export function MarketplaceAdSlider() {
   const handleAdClick = (ad: ActiveAdCampaign) => {
     // Report click to backend
     fetchNestApi(`/advertisements/${ad.id}/click`, { method: "POST" }).catch(() => {});
+
+    // Khi người dùng bấm Khám phá hoặc click quảng cáo, dẫn ngay vào công ty đăng sản phẩm/quảng cáo đó
+    if (ad.companyName) {
+      navigate({
+        to: "/association/members",
+        search: { q: ad.companyName } as any,
+      });
+      return;
+    }
 
     if (ad.targetUrl && (ad.targetUrl.startsWith("http://") || ad.targetUrl.startsWith("https://"))) {
       window.open(ad.targetUrl, "_blank");
@@ -211,11 +222,18 @@ export function MarketplaceAdSlider() {
                     {ad.title}
                   </div>
                   <div className="flex items-center justify-between pt-0.5 text-[10px] text-slate-300">
-                    <span className="text-slate-400 text-[9px]">CEO 1983 B2B Sàn giao thương</span>
-                    <span className="font-semibold text-amber-400 flex items-center gap-0.5">
+                    <span className="text-slate-400 text-[9px] truncate max-w-[130px]">CEO 1983 B2B Sàn giao thương</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAdClick(ad);
+                      }}
+                      className="pointer-events-auto font-bold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 bg-black/40 hover:bg-black/60 px-2 py-0.5 rounded-full border border-amber-400/40 transition active:scale-95 cursor-pointer"
+                    >
                       <span>Khám phá</span>
-                      <ChevronRight className="h-2.5 w-2.5" />
-                    </span>
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
                   </div>
                 </div>
               </div>

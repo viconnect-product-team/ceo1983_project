@@ -204,7 +204,7 @@ export class UsersService {
         SELECT role FROM public.memberships WHERE user_id = ${userId}::uuid
       `.catch(() => [] as any[]),
       this.prisma.$queryRaw<any[]>`
-        SELECT id, code, role, executive_role, department, association_id FROM public.members 
+        SELECT id, code, executive_role, department, association_id FROM public.members 
         WHERE user_id = ${userId}::uuid OR LOWER(email) = LOWER(${user.email || ''})
         LIMIT 1
       `.catch(() => [] as any[]),
@@ -221,17 +221,42 @@ export class UsersService {
 
     if (memberRow?.executive_role) {
       const exec = String(memberRow.executive_role).toLowerCase();
-      if ((exec === 'president' || exec === 'vice_president' || exec === 'bqt' || exec === 'tong_thu_ky') && !roleList.includes('bqt')) {
-        roleList.push('bqt');
+      if ((exec === 'platform_admin' || exec === 'superadmin' || exec.includes('hệ thống')) && !roleList.includes('platform_admin')) {
+        roleList.push('platform_admin');
+        if (!roleList.includes('admin')) roleList.push('admin');
       }
-      if (exec === 'truong_ban_thanh_vien' && !roleList.includes('btv')) {
+      if ((exec === 'president' || exec === 'vice_president' || exec === 'admin' || exec.includes('chủ tịch') || exec === 'bqt') && !roleList.includes('bqt')) {
+        roleList.push('bqt');
+        if (!roleList.includes('admin')) roleList.push('admin');
+      }
+      if ((exec === 'tong_thu_ky' || exec.includes('thư ký')) && !roleList.includes('btk')) {
+        roleList.push('btk');
+      }
+      if ((exec.startsWith('truong_ban') || exec.startsWith('phó ban') || exec.startsWith('pho_ban')) && !roleList.includes('moderator')) {
+        roleList.push('moderator');
+      }
+    }
+
+    if (memberRow?.department) {
+      const dept = String(memberRow.department).toLowerCase();
+      if ((dept.includes('quản trị') || dept.includes('điều hành')) && !roleList.includes('bqt')) {
+        roleList.push('bqt');
+        if (!roleList.includes('admin')) roleList.push('admin');
+      }
+      if (dept.includes('thư ký') && !roleList.includes('btk')) {
+        roleList.push('btk');
+      }
+      if (dept.includes('truyền thông') && !roleList.includes('btt')) {
+        roleList.push('btt');
+      }
+      if (dept.includes('xúc tiến') && !roleList.includes('bxt')) {
+        roleList.push('bxt');
+      }
+      if (dept.includes('thành viên') && !roleList.includes('btv')) {
         roleList.push('btv');
       }
-      if (exec === 'truong_ban_tai_chinh' && !roleList.includes('btc')) {
-        roleList.push('btc');
-      }
-      if (exec === 'truong_ban_truyen_thong' && !roleList.includes('btt')) {
-        roleList.push('btt');
+      if (dept.includes('thiện nguyện') && !roleList.includes('btn')) {
+        roleList.push('btn');
       }
     }
 
@@ -240,6 +265,7 @@ export class UsersService {
       !roleList.includes('platform_admin')
     ) {
       roleList.push('platform_admin');
+      if (!roleList.includes('admin')) roleList.push('admin');
     }
 
     return {
@@ -274,6 +300,7 @@ export class UsersService {
           }
         : null,
       roles: roleList,
+      role: roleList.includes('platform_admin') ? 'platform_admin' : (roleList.includes('admin') ? 'admin' : (roleList[0] || 'member')),
     };
   }
 

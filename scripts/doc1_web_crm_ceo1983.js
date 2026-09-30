@@ -10,6 +10,9 @@ const {
   createCallout,
   createTable,
   createHeaderFooter,
+  createCoverPage,
+  createTableOfContents,
+  formatMdTable,
 } = require('./srs_docx_helpers');
 
 function buildDoc1() {
@@ -21,78 +24,57 @@ function buildDoc1() {
     md += text + '\n\n';
   }
 
+  function addMdTableDirect(headers, rows) {
+    md += formatMdTable(headers, rows) + '\n';
+  }
+
   // ==========================================
-  // TRANG BÌA & THÔNG TIN QUẢN TRỊ
+  // 1. TRANG BÌA CHUYÊN NGHIỆP (COVER PAGE)
   // ==========================================
-  children.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 200, after: 100 },
-      children: [
-        new TextRun({
-          text: 'TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & THIẾT KẾ CƠ SỞ DỮ LIỆU',
-          font: 'Times New Roman',
-          size: 24,
-          bold: true,
-          color: 'D97706',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 80, after: 120 },
-      children: [
-        new TextRun({
-          text: 'CỔNG QUẢN TRỊ TRUNG TÂM CLB DOANH NHÂN CEO 1983 (WEB CRM & PORTAL)',
-          font: 'Times New Roman',
-          size: 32,
-          bold: true,
-          color: '003B95',
-        }),
-      ],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 60, after: 200 },
-      children: [
-        new TextRun({
-          text: 'Hệ thống Quản lý Hội viên, Phân quyền Đa tầng, Quản trị Sự kiện & Soát vé QR, Niên liễm, Cuộc họp Thông minh & Nhắn tin B2B',
-          font: 'Times New Roman',
-          size: 22,
-          italics: true,
-          color: '64748B',
-        }),
-      ],
-    })
-  );
+  const coverElements = createCoverPage({
+    systemName: 'CỔNG QUẢN TRỊ TRUNG TÂM CLB DOANH NHÂN CEO 1983 (WEB CRM & PORTAL)',
+    subTitle: 'Đặc tả chi tiết tuần tự các phân hệ nghiệp vụ quản trị, ma trận phân quyền 5 cấp bậc & cây phân cấp thao tác, quy trình phê duyệt cuộc họp tích hợp phòng họp và CSDL PostgreSQL ACID',
+    docCode: 'SRS-CEO1983-CRM-V4.5',
+    version: 'Version 4.5 — Master Production Specification (Bàn Giao Kỹ Thuật)',
+    date: '30/09/2026',
+    scope: 'Ban Quản Trị, Ban Thư Ký, Ban Chuyên Môn & Đội Ngũ Kỹ Thuật ViConnect'
+  });
+  children.push(...coverElements);
 
   addMd('# TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & THIẾT KẾ CƠ SỞ DỮ LIỆU');
   addMd('## CỔNG QUẢN TRỊ TRUNG TÂM CLB DOANH NHÂN CEO 1983 (WEB CRM & PORTAL)');
-  addMd('*Phiên bản: Version 3.0 - Bản Chuẩn Hoá Toàn Diện Master BA*');
+  addMd('*Phiên bản: Version 4.5 - Master Specification Chuẩn Hóa Bàn Giao Kỹ Thuật Toàn Diện*');
 
-  const metaHeaders = ['Mục Quản Trị', 'Thông Tin Chi Tiết'];
-  const metaRows = [
-    ['Tên Dự Án / Phân Hệ', 'Cổng Quản Trị Trung Tâm CLB Doanh Nhân CEO 1983 (Web Admin CRM & Business Portal)'],
-    ['Mã Tài Liệu', 'SRS-CEO1983-CRM-V3.0'],
-    ['Phiên Bản', 'Version 3.0 - Master BA Comprehensive Specification (Chuẩn hóa quy chế phân quyền)'],
-    ['Tác Giả & Thẩm Định', 'Master Business Analyst, Solution Architect & Ban Thư Ký CLB CEO 1983'],
-    ['Đối Tượng Sử Dụng', 'Super Admin, Ban Quản Trị (BQT), Ban Thành Viên, Ban Tài Chính, Ban Truyền Thông, Hội Viên'],
-    ['Nền Tảng Triển Khai', 'Web Application (React 19, TypeScript, Vite, TanStack Router, Nitro SSR Engine)'],
-    ['Hệ Quản Trị CSDL', 'PostgreSQL (Mô hình Quan Hệ RDBMS chuẩn ACID, Schema: public, Khóa ngoại toàn vẹn dữ liệu)'],
-    ['Phạm Vi Tích Hợp', 'Web Landing Page, App Hiệp Hội CEO 1983 Mobile, App ViOne Connect, Mail Server, VietQR Napas 24/7']
+  // ==========================================
+  // 2. MỤC LỤC TÀI LIỆU (TABLE OF CONTENTS)
+  // ==========================================
+  const tocSections = [
+    { num: 'PHẦN 1', title: 'Giải Thích Bình Dân Các Khái Niệm Kỹ Thuật Cốt Lõi & Mô Hình Tòa Nhà Chỉ Huy', scope: 'Nền tảng kiến trúc', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 2', title: 'Ma Trận Phân Quyền 5 Cấp Bậc & Cây Phân Cấp Thao Tác Chi Tiết (Dynamic RBAC Tree)', scope: 'Bảo mật & Cấp phép', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 3', title: 'Quy Trình Đăng Nhập, Xác Thực JWT Admin & Bảo Mật Phiên Làm Việc Xanh-Trắng', scope: 'Xác thực & Bảo mật', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 4', title: 'Hồ Sơ Hội Viên 360°, Quy Trình Thẩm Định Kết Nạp & Quản Trị Vòng Đời Niên Liễm', scope: 'Quản trị Hội viên', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 5', title: 'Quản Trị Sự Kiện, Phát Hành Vé Mời QR & Phân Công Soát Vé Check-in Thời Gian Thực', scope: 'Sự kiện & Vé mời', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 6', title: 'Điều Hành Cuộc Họp, Tích Hợp Phòng Họp (Zoom/Meet/UniWork) & Luồng Quản Trị Duyệt', scope: 'Cuộc họp & Phòng họp', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 7', title: 'Sàn Giao Thương B2B Marketplace Shopee Style, Đánh Giá Sản Phẩm & Điểm Sao Công Ty', scope: 'Sàn B2B Shopee', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 8', title: 'Sổ Quỹ Tài Chính Hiệp Hội, Quản Lý Hóa Đơn & Cổng Thanh Toán VietQR Tự Động', scope: 'Tài chính & Kế toán', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 9', title: 'Bầu Cử Đại Hội Hiệp Hội, Biểu Quyết Trực Tuyến & Mini-game Lucky Draw', scope: 'Đại hội & Dân chủ', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 10', title: 'Danh Thiếp Thông Minh NFC (Smart Business Card) & Nhật Ký Truy Vết Audit Trail', scope: 'Định danh số & Audit', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 11', title: 'Thiết Kế Cơ Sở Dữ Liệu PostgreSQL Chuẩn ACID, Từ Điển Dữ Liệu & Danh Mục API Endpoints', scope: 'Database & API Schema', status: 'Hoàn tất 100%' },
   ];
-  children.push(createTable(metaHeaders, metaRows, [30, 70]));
+  children.push(...createTableOfContents(tocSections));
 
-  addMd('| ' + metaHeaders.join(' | ') + ' |');
-  addMd('| ' + metaHeaders.map(() => '---').join(' | ') + ' |');
-  metaRows.forEach(r => addMd('| ' + r.join(' | ') + ' |'));
+  addMd('## MỤC LỤC TÀI LIỆU (TABLE OF CONTENTS)');
+  addMdTableDirect(
+    ['Mục', 'Phần / Phân Hệ Chức Năng', 'Phạm Vi Nghiệp Vụ', 'Trạng Thái'],
+    tocSections.map(s => [s.num, s.title, s.scope, s.status])
+  );
 
   // ==========================================
   // PHẦN 1: GIẢI THÍCH BÌNH DÂN CHO NGƯỜI KHÔNG HỌC IT
   // ==========================================
   children.push(createHeading1('PHẦN 1: GIẢI THÍCH BÌNH DÂN CÁC KHÁI NIỆM KỸ THUẬT CỐT LÕI'));
   children.push(
-    createPara('Để bất kỳ lãnh đạo doanh nghiệp, chủ tịch, hay nhân viên hành chính nào dù chưa từng học về công nghệ thông tin cũng có thể đọc hiểu, vận hành và giám sát 100% hoạt động của hệ thống phần mềm, hãy hình dung Web CRM CEO 1983 giống như Tòa Nhà Văn Phòng Bộ Chỉ Huy của Hiệp Hội:'),
+    createPara('Để bất kỳ lãnh đạo doanh nghiệp, chủ tịch, hay chuyên viên hành chính nào dù chưa từng học về công nghệ thông tin cũng có thể đọc hiểu, vận hành và giám sát 100% hoạt động của hệ thống phần mềm, hãy hình dung Web CRM CEO 1983 giống như Tòa Nhà Văn Phòng Bộ Chỉ Huy của Hiệp Hội:'),
     createCallout(
       'HÌNH TƯỢNG VÍ VON ĐỜI THƯỜNG DỄ HIỂU NHẤT:',
       '1. Cơ sở dữ liệu (Database): Giống như Phòng Lưu Trữ Hồ Sơ Trung Tâm tuyệt mật của hiệp hội.\n' +
@@ -100,352 +82,399 @@ function buildDoc1() {
       '3. Khóa chính (Primary Key - PK / id): Giống như Số Căn Cước Công Dân duy nhất của từng hồ sơ. Không bao giờ có 2 người trùng số nhau.\n' +
       '4. Khóa ngoại (Foreign Key - FK): Giống như dòng ghi chú "Hồ sơ này gắn liền với ai". Ví dụ: Trên cuống vé có ghi member_id để biết chiếc vé này thuộc về đại biểu nào.\n' +
       '5. Phân quyền (RBAC - Role-Based Access Control): Giống như Thẻ Ra Vào Tòa Nhà có gắn chip. Thẻ của Chủ tịch/Admin mở được mọi cánh cửa; thẻ của Ban Tài chính chỉ mở phòng Kế toán; thẻ của Ban Truyền thông mở được phòng Báo chí & Máy quét thẻ cổng tiệc; thẻ của Hội viên thường chỉ vào được sảnh chung xem thông tin và phòng làm việc riêng của mình.\n' +
-      '6. Phép JOIN (Ghép Bảng): Giống như thư ký lấy hồ sơ vé sự kiện ra, nhìn thấy mã hội viên, liền bước sang ngăn tủ lý lịch lấy tờ sơ yếu lý lịch kẹp ghim lại với nhau để lãnh đạo nhìn thấy đầy đủ: Tên đại biểu, Tên công ty, Chức vụ và Vị trí bàn tiệc VIP.',
+      '6. Phép JOIN (Ghép Bảng): Giống như thư ký lấy hồ sơ vé sự kiện ra, nhìn thấy mã hội viên, liền bước sang ngăn tủ lý lịch lấy tờ sơ yếu lý lịch kẹp ghim lại với nhau để lãnh đạo nhìn thấy đầy đủ: Tên đại biểu, Tên công ty, Chức vụ và Vị trí bàn tiệc VIP.\n' +
+      '7. API (Application Programming Interface): Giống như nhân viên giao nhận hỏa tốc chuyên chuyển hồ sơ giữa cổng Web CRM và App di động.',
       'info'
     )
   );
 
   addMd('## PHẦN 1: GIẢI THÍCH BÌNH DÂN CÁC KHÁI NIỆM KỸ THUẬT CỐT LÕI');
-  addMd('> **HÌNH TƯỢNG VÍ VON ĐỜI THƯỜNG:**\n' +
-    '> 1. Database = Phòng hồ sơ trung tâm.\n' +
-    '> 2. Table = Ngăn tủ chuyên biệt (hội viên, sự kiện, vé, cuộc họp, hóa đơn, tin nhắn).\n' +
-    '> 3. Primary Key (PK) = Số CCCD duy nhất không trùng lặp.\n' +
-    '> 4. Foreign Key (FK) = Dòng ghi chú liên kết (cuống vé này của ai, cuộc họp này do ai chủ trì).\n' +
-    '> 5. RBAC = Thẻ từ mở cửa từng phòng chuyên môn theo chức vụ.\n' +
-    '> 6. Phép JOIN = Thư ký lấy kẹp ghim kẹp tờ cuống vé với sơ yếu lý lịch để có báo cáo đầy đủ.');
+  addMd('> **HÌNH TƯỢNG VÍ VON ĐỜI THƯỜNG DỄ HIỂU:**\n' +
+    '> 1. **Cơ sở dữ liệu (Database):** Giống như Phòng Lưu Trữ Hồ Sơ Trung Tâm tuyệt mật của hiệp hội.\n' +
+    '> 2. **Bảng (Table):** Là các Ngăn Tủ Hồ Sơ chuyên biệt (members, events, event_registrations, invoices, chat_messages).\n' +
+    '> 3. **Khóa chính (Primary Key - PK):** Giống như Số CCCD duy nhất của từng hồ sơ, không bao giờ trùng lặp.\n' +
+    '> 4. **Khóa ngoại (Foreign Key - FK):** Dòng ghi chú liên kết (cuống vé này của ai, cuộc họp này do ai chủ trì).\n' +
+    '> 5. **Phân quyền (RBAC):** Thẻ từ thông minh mở cửa từng phòng ban chuyên môn theo đúng chức danh.\n' +
+    '> 6. **Phép JOIN:** Thư ký kẹp ghim cuống vé với sơ yếu lý lịch để xuất báo cáo đầy đủ thông tin đại biểu.\n' +
+    '> 7. **API:** Nhân viên chuyển phát nhanh chuyển dữ liệu đồng bộ tức thì giữa Web CRM và App di động.');
 
   // ==========================================
-  // PHẦN 2: QUY CHẾ PHÂN QUYỀN VAI TRÒ (RBAC 6 VAI TRÒ)
+  // PHẦN 2: QUY CHẾ PHÂN QUYỀN VAI TRÒ (RBAC 5 VAI TRÒ CỐT LÕI)
   // ==========================================
-  children.push(createHeading1('PHẦN 2: QUY CHẾ PHÂN QUYỀN HỆ THỐNG (RBAC - 6 VAI TRÒ QUẢN TRỊ)'));
+  children.push(createHeading1('PHẦN 2: QUY CHẾ PHÂN QUYỀN HỆ THỐNG (RBAC - 5 VAI TRÒ CỐT LÕI)'));
   children.push(
-    createPara('Hệ thống Web CRM CEO 1983 áp dụng nguyên tắc quản trị ma trận phân quyền nghiêm ngặt theo đúng điều lệ CLB Doanh Nhân CEO 1983, chia thành 6 nhóm chủ thể:'),
+    createPara('Hệ thống Web CRM CEO 1983 áp dụng nguyên tắc quản trị ma trận phân quyền chặt chẽ, tinh gọn theo đúng điều lệ CLB Doanh Nhân CEO 1983, chuẩn hóa duy nhất 5 vai trò cốt lõi:'),
     createCallout(
-      'QUY TẮC CỐT LÕI VỀ QUYỀN HẠN:',
-      '• Nguyên tắc 1 (Admin & Ban Quản Trị): Mặc định Admin hệ thống cùng các thành viên Ban Quản Trị sở hữu Full quyền hạn (Toàn quyền Tạo, Sửa, Xóa, Phê duyệt, Cấu hình) trên mọi phân hệ.\n' +
-      '• Nguyên tắc 2 (Gia hạn hội viên): Chỉ Ban Thành Viên và Admin được quyền thực hiện chức năng Gia hạn niên liễm hội viên.\n' +
-      '• Nguyên tắc 3 (Tài chính & Thu chi): Chỉ Ban Tài Chính cùng Admin và Ban Quản Trị mới được hiển thị và thao tác phân hệ Tài chính.\n' +
-      '• Nguyên tắc 4 (Truyền thông & Tin bài): Phân hệ Truyền thông chỉ mở cho Admin, Ban Quản Trị và Ban Truyền Thông.\n' +
-      '• Nguyên tắc 5 (Soát vé sự kiện QR): Không mở tự do cho mọi người. Khi có sự kiện diễn ra, Ban Quản Trị sẽ chỉ định danh sách nhân sự cụ thể thuộc Ban Truyền Thông mới được hiển thị camera quét mã QR.\n' +
-      '• Nguyên tắc 6 (Cuộc họp Online/Offline): Do Admin & Ban Quản Trị ban hành. Nếu là Offline, hệ thống tự động gửi thông báo push và tin nhắn phòng họp đến đại biểu tham gia.\n' +
-      '• Nguyên tắc 7 (Hội viên thường): Sở hữu quyền XEM đối với danh mục chung (Danh bạ hội viên, Doanh nghiệp, Sự kiện, Nhà tài trợ, Quyền lợi, Tin tức, Biểu quyết, Cuộc họp) nhưng KHÔNG có quyền thao tác quản trị. Hội viên chỉ THAO TÁC trên dữ liệu của chính mình (Đăng ký sự kiện, Danh thiếp số của tôi, Kết nối cuộc gặp, Nhắn tin, Nhật ký hoạt động).',
+      'QUY TẮC CỐT LÕI VỀ 5 VAI TRÒ VÀ LUỒNG PHÊ DUYỆT:',
+      '• Vai trò 1 (Quản Trị - Super Admin): Quyền hạn tối cao trên toàn bộ hệ thống. Thẩm quyền duy nhất phê duyệt cuộc họp, cấu hình ma trận phân quyền, quản lý tài khoản và phê duyệt hồ sơ hội viên mới.\n' +
+      '• Vai trò 2 (Admin - Ban Quản Trị / Ban Thư Ký): Điều hành toàn diện các nghiệp vụ hiệp hội; Đồng thẩm quyền phê duyệt cuộc họp, khởi tạo sự kiện & gala, xuất bản tin tức, đối soát tài chính và gạch nợ VietQR.\n' +
+      '• Vai trò 3 (Tổng Thư Ký): Thường trực Ban điều hành; Được phép tạo cuộc họp ban / hiệp hội (ở trạng thái Chờ Quản trị duyệt); Quản lý danh bạ hội viên; Giám sát tiến độ công tác các ban chuyên môn.\n' +
+      '• Vai trò 4 (Trưởng Ban): Lãnh đạo các ban chuyên môn (Ban Thành Viên, Ban Tài Chính, Ban Truyền Thông, Ban Xúc Tiến Thương Mại); Được phép tạo cuộc họp chuyên trách của ban (ở trạng thái Chờ Quản trị duyệt); Quản lý nhân sự và dữ liệu chuyên môn thuộc ban.\n' +
+      '• Vai trò 5 (Thành Viên): Hội viên chính thức CLB CEO 1983; Xem thông tin chung (Lịch họp, Danh bạ 360°, Sự kiện, Tin tức, Sàn B2B); Xác nhận tham dự họp (RSVP); Đăng ký sự kiện; Kết nối giao thương; Quản lý danh thiếp số của mình. TUYỆT ĐỐI KHÔNG CÓ QUYỀN TẠO CUỘC HỌP.',
       'tip'
     )
   );
 
-  const roleHeaders = ['Vai Trò (Role Code)', 'Tên Vai Trò Thực Tế', 'Phạm Vi Quyền Hạn', 'Trách Nhiệm Nghiệp Vụ'];
+  const roleHeaders = ['Vai Trò (Role Code)', 'Tên Vai Trò Chuẩn Hóa', 'Phạm Vi Quyền Hạn', 'Trách Nhiệm Nghiệp Vụ'];
   const roleRows = [
-    ['ADMIN', 'Quản Trị Viên Kỹ Thuật (Super Admin)', 'Full Quyền (Toàn quyền hệ thống)', 'Quản lý tài khoản, cấu hình tham số, phân quyền nhân sự, giám sát log an ninh CSDL.'],
-    ['BAN_QUAN_TRI', 'Ban Quản Trị CLB (Chủ Tịch, Phó Chủ Tịch)', 'Full Quyền Quản Trị Hiệp Hội', 'Phê duyệt hội viên mới, tạo cuộc họp, chỉ định nhân sự soát vé, xem toàn bộ báo cáo tài chính & truyền thông.'],
-    ['BAN_THANH_VIEN', 'Ban Thành Viên (Ban Hội Viên)', 'Quản Trị Hồ Sơ & Gia Hạn Hội Viên', 'Thẩm định hồ sơ kết nạp, thực hiện gia hạn niên liễm, theo dõi biến động hội viên, quản lý quyền lợi.'],
-    ['BAN_TAI_CHINH', 'Ban Tài Chính & Kế Toán CLB', 'Quản Trị Dòng Tiền & Thu Chi', 'Xem và thao tác phân hệ Tài chính, theo dõi hóa đơn hội phí VietQR, báo cáo tài trợ, lập quỹ hiệp hội.'],
-    ['BAN_TRUYEN_THONG', 'Ban Truyền Thông & Sự Kiện', 'Quản Trị Tin Tức & Soát Vé QR', 'Đăng tải bài viết tin tức, quản lý truyền thông sự kiện, quét mã QR soát vé đại biểu khi được BQT chỉ định.'],
-    ['HOI_VIEN_THUONG', 'Hội Viên Doanh Nhân Chính Thức', 'Xem Chung + Thao Tác Cá Nhân', 'Xem danh bạ, doanh nghiệp, sự kiện, cuộc họp; Thao tác đăng ký sự kiện, danh thiếp số, đặt lịch hẹn bàn, nhắn tin.']
+    ['QUẢN_TRỊ', 'Quản Trị Viên Tối Cao (Super Admin)', 'Full Quyền Tối Cao Hệ Thống', 'Toàn quyền phê duyệt cuộc họp, cấu hình ma trận phân quyền, cấp quyền tài khoản, duyệt hội viên mới và giám sát log kiểm toán.'],
+    ['ADMIN', 'Admin Hệ Thống (Ban Thư Ký Điều Hành)', 'Toàn Quyền Nghiệp Vụ Hiệp Hội', 'Phê duyệt cuộc họp, khởi tạo sự kiện & Gala, xuất bản tin tức, quản lý hợp đồng tài trợ, đối soát tài chính và gạch nợ hóa đơn.'],
+    ['TỔNG_THƯ_KÝ', 'Tổng Thư Ký CLB CEO 1983', 'Thường Trực Điều Hành & Tạo Cuộc Họp', 'Khởi tạo cuộc họp toàn thể / liên ban (chờ Quản trị duyệt), quản lý hồ sơ hội viên, điều phối công tác phối hợp giữa các ban.'],
+    ['TRƯỞNG_BAN', 'Trưởng Các Ban Chuyên Môn', 'Quản Trị Chuyên Sâu Ban & Tạo Cuộc Họp Ban', 'Khởi tạo cuộc họp ban chuyên trách (chờ Quản trị duyệt), quản lý nhân sự thuộc ban, thẩm định hồ sơ hội viên / tin tức / tài chính theo ban.'],
+    ['THÀNH_VIÊN', 'Hội Viên Doanh Nhân Chính Thức', 'Xem Danh Mục Chung + Thao Tác Dữ Liệu Cá Nhân', 'Xem lịch họp & bấm xác nhận tham dự (RSVP); Xem danh bạ hội viên 360°; Đăng ký sự kiện; Trao đổi cơ hội B2B; Quản lý danh thiếp số cá nhân.']
   ];
   children.push(createTable(roleHeaders, roleRows, [18, 25, 25, 32]));
 
-  addMd('## PHẦN 2: QUY CHẾ PHÂN QUYỀN HỆ THỐNG (RBAC - 6 VAI TRÒ)');
-  addMd('| ' + roleHeaders.join(' | ') + ' |');
-  addMd('| ' + roleHeaders.map(() => '---').join(' | ') + ' |');
-  roleRows.forEach(r => addMd('| ' + r.join(' | ') + ' |'));
+  addMd('## PHẦN 2: QUY CHẾ PHÂN QUYỀN HỆ THỐNG (RBAC - 5 VAI TRÒ CỐT LÕI)');
+  addMdTableDirect(roleHeaders, roleRows);
 
   // ==========================================
-  // PHẦN 3: MA TRẬN PHÂN QUYỀN CHỨC NĂNG CHI TIẾT
+  // PHẦN 3: MA TRẬN PHÂN QUYỀN CHỨC NĂNG CHI TIẾT (CHUẨN SIDEBAR)
   // ==========================================
-  children.push(createHeading1('PHẦN 3: MA TRẬN PHÂN QUYỀN CHỨC NĂNG CHI TIẾT (GRANULAR RBAC MATRIX)'));
+  children.push(createHeading1('PHẦN 3: MA TRẬN PHÂN QUYỀN 5 CẤP BẬC & THAO TÁC CHI TIẾT (LẤY ĐÚNG TÊN CHỨC NĂNG SIDEBAR)'));
   children.push(
-    createPara('Đặc tả chi tiết đến từng thao tác: Xem (View), Thêm (Create), Sửa (Update), Xóa (Delete), Phê duyệt (Approve), Xuất dữ liệu (Export), Quét mã QR (Scan QR) cho từng phân hệ cha và chức năng con:')
+    createPara('Đặc tả ma trận phân quyền chuẩn xác theo đúng 8 nhóm chức năng tại Sidebar của Cổng Quản Trị Web CRM, phân định rành mạch thẩm quyền trên 5 vai trò cốt lõi (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên):')
   );
 
-  const matrixHeaders = ['Phân Hệ Cha', 'Chức Năng Con', 'Thao Tác Cụ Thể', 'Admin', 'Ban Quản Trị', 'Ban Thành Viên', 'Ban Tài Chính', 'Ban Truyền Thông', 'Hội Viên'];
+  const matrixHeaders = ['Nhóm Sidebar', 'Chức Năng Sidebar', 'Thao Tác Cụ Thể', 'Quản Trị', 'Admin', 'Tổng Thư Ký', 'Trưởng Ban', 'Thành Viên'];
   const matrixRows = [
-    // 1. Quản lý Hội viên
-    ['1. Quản Trị Hội Viên', 'Hồ sơ Chờ Duyệt (từ Landing)', 'Xem, Thẩm định, Từ chối', 'Có', 'Có', 'Có', 'Không', 'Không', 'Không'],
-    ['1. Quản Trị Hội Viên', 'Phê Duyệt Kết Nạp (Approve)', 'Duyệt -> Cấp mã M1983 & Gửi mail', 'Có', 'Có', 'Không', 'Không', 'Không', 'Không'],
-    ['1. Quản Trị Hội Viên', 'Danh Bạ Toàn Bộ Hội Viên', 'Xem danh sách & Hồ sơ 360°', 'Có', 'Có', 'Có', 'Có', 'Có', 'Chỉ Xem'],
-    ['1. Quản Trị Hội Viên', 'Chỉnh Sửa Hồ Sơ Hội Viên', 'Cập nhật chức vụ, công ty, ngành', 'Có', 'Có', 'Có', 'Không', 'Không', 'Chỉ hồ sơ mình'],
-    ['1. Quản Trị Hội Viên', 'Gia Hạn Hội Viên (Renewal)', 'Gia hạn niên liễm +365 ngày', 'Có', 'Không', 'Có', 'Không', 'Không', 'Không'],
-    ['1. Quản Trị Hội Viên', 'Xuất File Excel Danh Bạ', 'Export danh sách hội viên VIP', 'Có', 'Có', 'Có', 'Không', 'Không', 'Không'],
+    // 1. Tổng Quan
+    ['1. Tổng Quan', 'Dashboard Điều Hành', 'Xem chỉ số KPI tổng quan, biểu đồ tăng trưởng, doanh thu', 'Có', 'Có', 'Có', 'Có', 'Không'],
+    ['1. Tổng Quan', 'Báo Cáo Hoạt Động', 'Xuất báo cáo tổng hợp tiến độ hiệp hội', 'Có', 'Có', 'Có', 'Ban mình', 'Không'],
 
-    // 2. Tài chính & Quỹ hội
-    ['2. Quản Trị Tài Chính', 'Tổng Quan Thu Chi Quỹ', 'Xem biểu đồ doanh thu, số dư quỹ', 'Có', 'Có', 'Không', 'Có', 'Không', 'Không'],
-    ['2. Quản Trị Tài Chính', 'Hóa Đơn Hội Phí VietQR', 'Tạo hóa đơn, gạch nợ thủ công', 'Có', 'Có', 'Không', 'Có', 'Không', 'Không'],
-    ['2. Quản Trị Tài Chính', 'Quản Lý Nhà Tài Trợ & Gói', 'Tạo gói tài trợ, theo dõi giải ngân', 'Có', 'Có', 'Không', 'Có', 'Không', 'Chỉ Xem'],
-    ['2. Quản Trị Tài Chính', 'Báo Cáo Quyết Toán Sự Kiện', 'Lập báo cáo tài chính gala đại hội', 'Có', 'Có', 'Không', 'Có', 'Không', 'Chỉ Xem'],
+    // 2. Quản Trị Hội Viên
+    ['2. Hội Viên', 'Danh Sách Hội Viên', 'Tra cứu danh bạ 360°, lọc ngành nghề, xuất Excel', 'Có', 'Có', 'Có', 'Có', 'Chỉ xem chung'],
+    ['2. Hội Viên', 'Hồ Sơ Chờ Duyệt', 'Thẩm định hồ sơ đăng ký từ Web Landing Page', 'Có', 'Có', 'Có', 'Ban TV duyệt', 'Không'],
+    ['2. Hội Viên', 'Phê Duyệt Kết Nạp', 'Duyệt cấp mã M1983-xxx & tự động gửi email chào mừng', 'Có', 'Có', 'Không', 'Đề xuất', 'Không'],
+    ['2. Hội Viên', 'Gia Hạn Niên Liễm', 'Gia hạn thẻ hội viên +365 ngày sau khi đóng hội phí', 'Có', 'Có', 'Không', 'Ban TV duyệt', 'Không'],
+    ['2. Hội Viên', 'Bản Đồ Hội Viên', 'Xem phân bố địa lý doanh nghiệp trên bản đồ số', 'Có', 'Có', 'Có', 'Có', 'Chỉ xem'],
+    ['2. Hội Viên', 'Danh Thiếp Số Thông Minh', 'Cấp mã slug /card/:code, tạo danh thiếp doanh nhân', 'Có', 'Có', 'Có', 'Có', 'Của chính mình'],
 
-    // 3. Truyền thông & Tin tức
-    ['3. Truyền Thông', 'Đăng Bài Viết Tin Tức CLB', 'Tạo bài viết, tải ảnh banner', 'Có', 'Có', 'Không', 'Không', 'Có', 'Không'],
-    ['3. Truyền Thông', 'Kiểm Duyệt & Xuất Bản Tin', 'Phê duyệt hiển thị lên App Mobile', 'Có', 'Có', 'Không', 'Không', 'Có', 'Không'],
-    ['3. Truyền Thông', 'Bảng Tin Hoạt Động & Sự Kiện', 'Xem tin tức hiệp hội', 'Có', 'Có', 'Có', 'Có', 'Có', 'Chỉ Xem'],
+    // 3. Sự Kiện & Hoạt Động
+    ['3. Sự Kiện & Hoạt Động', 'Danh Sách Sự Kiện', 'Xem chi tiết lịch trình gala, đại hội, hội thảo', 'Có', 'Có', 'Có', 'Có', 'Chỉ xem'],
+    ['3. Sự Kiện & Hoạt Động', 'Khởi Tạo Sự Kiện Mới', 'Tạo sự kiện, cấu hình vé điện tử, sơ đồ bàn VIP', 'Có', 'Có', 'Có', 'Ban SK duyệt', 'Không'],
+    ['3. Sự Kiện & Hoạt Động', 'Phân Công & Soát Vé QR', 'Chỉ định nhân sự quét QR, kiểm soát đại biểu vào cửa', 'Có', 'Có', 'Có', 'Khi được gán', 'Không'],
+    ['3. Sự Kiện & Hoạt Động', 'Vòng Quay Lucky Draw', 'Cấu hình giải thưởng, kích hoạt quay số may mắn', 'Có', 'Có', 'Không', 'Ban SK duyệt', 'Chỉ xem'],
 
-    // 4. Quản lý Sự kiện & Soát vé
-    ['4. Quản Trị Sự Kiện', 'Khởi Tạo Sự Kiện Mới', 'Tạo gala, đại hội, sơ đồ bàn VIP', 'Có', 'Có', 'Không', 'Không', 'Có', 'Không'],
-    ['4. Quản Trị Sự Kiện', 'Chỉ Định Nhân Sự Soát Vé', 'Gán quyền quét QR cho nhân sự BTT', 'Có', 'Có', 'Không', 'Không', 'Không', 'Không'],
-    ['4. Quản Trị Sự Kiện', 'Quét Mã QR Soát Vé (Camera)', 'Soát vé đại biểu tại cổng vào', 'Có', 'Có', 'Không', 'Không', 'Khi được gán', 'Không'],
-    ['4. Quản Trị Sự Kiện', 'Đăng Ký Tham Dự Sự Kiện', 'Đăng ký vé và nhận cuống vé QR', 'Có', 'Có', 'Có', 'Có', 'Có', 'Vé của mình'],
-    ['4. Quản Trị Sự Kiện', 'Bốc Thăm May Mắn (Lucky Draw)', 'Quay số trúng thưởng đêm gala', 'Có', 'Có', 'Không', 'Không', 'Có', 'Chỉ Xem'],
+    // 4. Nhà Tài Trợ
+    ['4. Nhà Tài Trợ', 'Danh Sách Nhà Tài Trợ', 'Xem hồ sơ đơn vị tài trợ kim cương, vàng, bạc', 'Có', 'Có', 'Có', 'Có', 'Chỉ xem'],
+    ['4. Nhà Tài Trợ', 'Hợp Đồng & Quyền Lợi', 'Theo dõi tiến độ giải ngân, kiểm soát trả quyền lợi', 'Có', 'Có', 'Có', 'Ban TC duyệt', 'Không'],
+    ['4. Nhà Tài Trợ', 'Quản Lý Gói Tài Trợ', 'Khởi tạo gói tài trợ sự kiện, định mức kinh phí', 'Có', 'Có', 'Có', 'Ban TC duyệt', 'Không'],
 
-    // 5. Cuộc họp & Nghị quyết
-    ['5. Quản Trị Cuộc Họp', 'Tạo Cuộc Họp Online / Offline', 'Lập lịch họp, chọn hình thức', 'Có', 'Có', 'Không', 'Không', 'Không', 'Không'],
-    ['5. Quản Trị Cuộc Họp', 'Gửi Địa Chỉ, Ngày Giờ Offline', 'Tự động gửi push & tin nhắn SMS/App', 'Có', 'Có', 'Không', 'Không', 'Không', 'Không'],
-    ['5. Quản Trị Cuộc Họp', 'Điểm Danh & Biên Bản Cuộc Họp', 'Ghi nhận đại biểu có mặt, kết luận', 'Có', 'Có', 'Không', 'Không', 'Không', 'Chỉ Xem'],
+    // 5. Tài Chính & Quỹ
+    ['5. Tài Chính & Quỹ', 'Tổng Quan Thu Chi Quỹ', 'Theo dõi số dư tài khoản quỹ, dòng tiền thực tế', 'Có', 'Có', 'Có', 'Ban TC duyệt', 'Không'],
+    ['5. Tài Chính & Quỹ', 'Sổ Quỹ Thu Chi', 'Lập phiếu thu, phiếu chi, lưu chứng từ thanh toán', 'Có', 'Có', 'Không', 'Ban TC duyệt', 'Không'],
+    ['5. Tài Chính & Quỹ', 'Hóa Đơn & VietQR', 'Tạo hóa đơn hội phí, đối soát gạch nợ tự động 24/7', 'Có', 'Có', 'Không', 'Ban TC duyệt', 'Hóa đơn mình'],
+    ['5. Tài Chính & Quỹ', 'Báo Cáo Tài Chính', 'Xuất báo cáo tài chính đại hội, quyết toán sự kiện', 'Có', 'Có', 'Không', 'Ban TC duyệt', 'Không'],
 
-    // 6. Kết nối & Nhắn tin B2B
-    ['6. Kết Nối & Nhắn Tin', 'Nhắn Tin 1-1 Trên Web CRM', 'Gửi tin nhắn văn bản, danh thiếp B2B', 'Có', 'Có', 'Có', 'Có', 'Có', 'Tin nhắn mình'],
-    ['6. Kết Nối & Nhắn Tin', 'Hẹn Gặp Bàn Tròn (1-on-1)', 'Lên lịch hẹn bàn giao thương', 'Có', 'Có', 'Có', 'Có', 'Có', 'Lịch hẹn mình'],
+    // 6. Truyền Thông & Tin Tức
+    ['6. Truyền Thông', 'Bài Viết & Tin Tức CLB', 'Soạn thảo tin tức, tải ảnh banner, bài phóng sự', 'Có', 'Có', 'Có', 'Ban TT duyệt', 'Chỉ đọc'],
+    ['6. Truyền Thông', 'Kiểm Duyệt Xuất Bản', 'Phê duyệt tin tức hiển thị lên App Mobile & Landing', 'Có', 'Có', 'Không', 'Ban TT duyệt', 'Không'],
+    ['6. Truyền Thông', 'Danh Mục Tin Tức', 'Quản lý cây danh mục chuyên trang hoạt động', 'Có', 'Có', 'Không', 'Ban TT duyệt', 'Không'],
+    ['6. Truyền Thông', 'Bảng Tin Nội Bộ', 'Đăng thông báo nội bộ, thông điệp ban điều hành', 'Có', 'Có', 'Có', 'Đăng tin ban', 'Chỉ đọc'],
 
-    // 7. Sàn Thương Mại & Cơ Hội B2B
-    ['7. Giao Thương B2B', 'Đăng Bài Sản Phẩm / Nhu Cầu', 'Đăng chào mua/chào bán B2B', 'Có', 'Có', 'Có', 'Có', 'Có', 'Bài của mình'],
-    ['7. Giao Thương B2B', 'Kiểm Duyệt Sản Phẩm', 'Duyệt bài hiển thị sàn thương mại', 'Có', 'Có', 'Không', 'Không', 'Không', 'Không'],
+    // 7. Giao Thương & Kết Nối
+    ['7. Giao Thương & Kết Nối', 'Cuộc Họp & Giao Ban', 'Tạo họp (4 role), Duyệt (Quản trị), Dropdown phòng họp', 'Có (Duyệt)', 'Có (Duyệt)', 'Tạo (Chờ duyệt)', 'Tạo (Chờ duyệt)', 'Tham gia (RSVP)'],
+    ['7. Giao Thương & Kết Nối', 'Hẹn Gặp Bàn Tròn 1-1', 'Đặt lịch hẹn giao thương, gửi thiệp mời kết nối', 'Có', 'Có', 'Có', 'Có', 'Lịch hẹn mình'],
+    ['7. Giao Thương & Kết Nối', 'Sàn Thương Mại B2B', 'Kiểm duyệt bài đăng mua bán, quản lý gian hàng B2B', 'Có', 'Có', 'Có', 'Ban XT duyệt', 'Đăng bài mình'],
+    ['7. Giao Thương & Kết Nối', 'Biểu Quyết & Bầu Cử', 'Khởi tạo phiên bầu cử đại hội, mở hòm phiếu điện tử', 'Có', 'Có', 'Có', 'Không', 'Bỏ phiếu 1 lần'],
 
-    // 8. Biểu quyết & Bầu cử
-    ['8. Biểu Quyết Trực Tuyến', 'Tạo Phiếu Biểu Quyết Mới', 'Tạo câu hỏi bầu cử, thăm dò ý kiến', 'Có', 'Có', 'Không', 'Không', 'Không', 'Không'],
-    ['8. Biểu Quyết Trực Tuyến', 'Thực Hiện Bỏ Phiếu (Vote)', 'Chọn phương án và bấm xác nhận', 'Có', 'Có', 'Có', 'Có', 'Có', 'Bỏ phiếu mình']
+    // 8. Hệ Thống & Điều Hành
+    ['8. Hệ Thống & Điều Hành', 'Phân Quyền 5 Vai Trò', 'Cấu hình ma trận phân quyền, phân bổ quyền tài khoản', 'Có', 'Có', 'Không', 'Không', 'Không'],
+    ['8. Hệ Thống & Điều Hành', 'Quản Trị Tài Khoản', 'Cấp tài khoản, đổi mật khẩu, kích hoạt/khóa nick', 'Có', 'Có', 'Không', 'Không', 'Không'],
+    ['8. Hệ Thống & Điều Hành', 'Cấu Hình Hệ Thống', 'Cài đặt tham số CLB, cấu hình cổng VietQR, thông báo', 'Có', 'Có', 'Không', 'Không', 'Không'],
+    ['8. Hệ Thống & Điều Hành', 'Nhật Ký Kiểm Toán (Audit)', 'Truy vết IP, thời gian, lịch sử sửa/xóa dữ liệu', 'Có', 'Có', 'Không', 'Không', 'Không']
   ];
-  children.push(createTable(matrixHeaders, matrixRows, [16, 20, 20, 7, 9, 8, 8, 9, 11]));
+  children.push(createTable(matrixHeaders, matrixRows, [16, 20, 20, 9, 9, 9, 9, 8]));
 
-  addMd('## PHẦN 3: MA TRẬN PHÂN QUYỀN CHỨC NĂNG CHI TIẾT');
-  addMd('| ' + matrixHeaders.join(' | ') + ' |');
-  addMd('| ' + matrixHeaders.map(() => '---').join(' | ') + ' |');
-  matrixRows.forEach(r => addMd('| ' + r.join(' | ') + ' |'));
+  addMd('## PHẦN 3: MA TRẬN PHÂN QUYỀN 5 CẤP BẬC & THAO TÁC CHI TIẾT');
+  addMdTableDirect(matrixHeaders, matrixRows);
 
   // ==========================================
   // PHẦN 4: BẢN ĐỒ NGHIỆP VỤ & LUỒNG XỬ LÝ DỮ LIỆU
   // ==========================================
-  children.push(createHeading1('PHẦN 4: BẢN ĐỒ NGHIỆP VỤ & LUỒNG XỬ LÝ DỮ LIỆU (DATA FLOWS)'));
+  children.push(createHeading1('PHẦN 4: BẢN ĐỒ NGHIỆP VỤ & CÁC LUỒNG XỬ LÝ DỮ LIỆU CHI TIẾT (STEP-BY-STEP DATA FLOWS)'));
 
+  // 4.1 Luồng Xét duyệt hội viên
   children.push(createHeading2('4.1 Luồng Xét Duyệt Hội Viên Mới Từ Web Landing (Không Còn Mục Doanh Thu)'));
-  children.push(
-    createPara('• Bối cảnh: Đơn vị tổ chức đã tinh gọn thủ tục đăng ký trên Web Landing bằng cách loại bỏ hoàn toàn trường nhập "Doanh thu công ty", giúp tăng tỷ lệ chuyển đổi nộp hồ sơ.\n' +
-      '• Bước 1: Ứng viên truy cập Web Landing CEO 1983, điền form gồm: Họ và Tên, Số điện thoại / Zalo, Doanh nghiệp & Chức vụ, Lĩnh vực hoạt động. (Không có mục Doanh thu).\n' +
-      '• Bước 2: Dữ liệu gửi qua API POST /api/members/apply và lưu vào bảng members với trạng thái status = "pending".\n' +
-      '• Bước 3: Hồ sơ xuất hiện trong mục "Hồ sơ chờ phê duyệt" trên Web CRM. Ban Thành Viên kiểm tra tính xác thực pháp nhân của doanh nghiệp.\n' +
-      '• Bước 4: Duyệt kết nạp (Chỉ Admin hoặc Ban Quản Trị có quyền bấm "Phê duyệt"):\n' +
-      '  - Hệ thống cập nhật members.status = "active".\n' +
-      '  - Tự động sinh mã hội viên độc quyền (Ví dụ: M1983-099).\n' +
-      '  - Tự động tạo bản ghi tài khoản người dùng trong bảng vione_users với mật khẩu ngẫu nhiên an toàn.\n' +
-      '  - Tự động kích hoạt dịch vụ Mailer gửi email thông báo kết nạp chính thức kèm tài khoản và mật khẩu đăng nhập App cho hội viên.\n' +
-      '  - Tự động khởi tạo Danh thiếp số thông minh trong member_business_cards.')
-  );
+  const flow1Text = 
+    '• Mục tiêu nghiệp vụ: Tiếp nhận hồ sơ đăng ký gia nhập CLB CEO 1983 trực tuyến từ Web Landing, thẩm định tư cách doanh nhân và kích hoạt tự động tài khoản.\n' +
+    '• Tác nhân tham gia (Actors): Ứng viên mới, Ban Thành Viên (Thẩm định), Ban Quản Trị / Super Admin (Phê duyệt).\n' +
+    '• Điều kiện tiên quyết (Preconditions): Ứng viên truy cập Web Landing Page chính thức của CLB.\n' +
+    '• Quy trình thực hiện chi tiết (Step-by-step Flow):\n' +
+    '  - Bước 1: Ứng viên mở form đăng ký tại Landing Page, điền đầy đủ các thông tin bắt buộc: Họ và Tên, Số điện thoại / Zalo, Email liên hệ, Tên doanh nghiệp đại diện, Chức vụ trong doanh nghiệp, Ngành nghề lĩnh vực hoạt động, Nhu cầu kết nối giao thương. (Lưu ý: Đã loại bỏ hoàn toàn trường doanh thu công ty để tối ưu hóa tỷ lệ chuyển đổi).\n' +
+    '  - Bước 2: Ứng viên bấm "Gửi Đơn Đăng Ký". Hệ thống gọi API POST /api/members/apply. Dữ liệu được ghi nhận vào bảng members với trạng thái status = "pending".\n' +
+    '  - Bước 3: Hồ sơ mới xuất hiện tại danh sách "Hồ sơ chờ duyệt" trên Web CRM. Ban Thành Viên kiểm tra tính xác thực của số điện thoại và pháp nhân doanh nghiệp qua Tổng cục Thuế.\n' +
+    '  - Bước 4: Ban Thành Viên chuyển trạng thái hồ sơ sang "verified" (Đã thẩm định) và trình Ban Quản Trị xem xét.\n' +
+    '  - Bước 5: Ban Quản Trị hoặc Admin bấm nút "Phê Duyệt Kết Nạp" (Approve):\n' +
+    '    + Hệ thống cập nhật members.status = "active".\n' +
+    '    + Tự động sinh mã hội viên độc quyền theo cú pháp chuẩn: M1983-xxx (Ví dụ: M1983-099).\n' +
+    '    + Tự động tạo bản ghi tài khoản người dùng trong bảng vione_users với mật khẩu ngẫu nhiên an toàn (được băm mã hóa bcrypt).\n' +
+    '    + Tự động khởi tạo Danh thiếp số thông minh trong bảng member_business_cards với mã slug /card/:code.\n' +
+    '    + Tự động kích hoạt dịch vụ Mailer gửi thư chúc mừng kết nạp kèm thông tin tài khoản và mật khẩu đăng nhập App di động.\n' +
+    '• Luồng ngoại lệ (Exception Flow):\n' +
+    '  - Nếu hồ sơ không đạt tiêu chuẩn (doanh nghiệp giải thể, thông tin giả mạo), Ban Quản Trị bấm nút "Từ chối" kèm lý do. Hệ thống cập nhật status = "rejected" và gửi email thông báo từ chối lịch sự đến ứng viên.\n' +
+    '• Kết quả đầu ra (Postconditions): Hội viên mới có mã M1983, có tài khoản hoạt động và nhận được email hướng dẫn tải App di động.';
+  children.push(createPara(flow1Text));
 
+  addMd('## PHẦN 4: BẢN ĐỒ NGHIỆP VỤ & CÁC LUỒNG XỬ LÝ DỮ LIỆU CHI TIẾT');
+  addMd('### 4.1 Luồng Xét Duyệt Hội Viên Mới Từ Web Landing (Không Còn Mục Doanh Thu)\n' + flow1Text);
+
+  // 4.2 Luồng Phân công soát vé
   children.push(createHeading2('4.2 Luồng Phân Công & Kiểm Soát Soát Vé QR Sự Kiện'));
-  children.push(
-    createPara('• Bối cảnh: Tránh tình trạng lộn xộn hoặc lộ lọt quyền kiểm soát vé tại cửa ra vào các đại hội gala lớn.\n' +
-      '• Bước 1: Ban Quản Trị hoặc Admin mở Web CRM tại chi tiết sự kiện, vào tab "Phân công Soát vé".\n' +
-      '• Bước 2: Hệ thống chỉ cho phép lựa chọn những nhân sự có vai trò thuộc Ban Truyền Thông (role = "BAN_TRUYEN_THONG"). BQT tích chọn các thành viên được phân công làm nhiệm vụ soát vé và bấm Lưu.\n' +
-      '• Bước 3: Dữ liệu ghi vào bảng event_scanners (event_id, user_id, assigned_by, status = "active").\n' +
-      '• Bước 4: Trên App Mobile của nhân sự Ban Truyền Thông được chỉ định, giao diện tự động xuất hiện nút quét camera "Soát vé sự kiện". Đối với tất cả hội viên và nhân sự khác không được gán, nút này hoàn toàn bị ẩn.\n' +
-      '• Bước 5: Khi khách đến, nhân sự quét mã QR trên vé đại biểu. Hệ thống tra cứu bảng event_registrations, kiểm tra tính hợp lệ, vị trí bàn VIP, đổi is_checked_in = true, lưu scanned_by_user_id và đồng bộ realtime lên màn hình Web CRM của Ban Tổ Chức.')
-  );
+  const flow2Text = 
+    '• Mục tiêu nghiệp vụ: Đảm bảo an ninh trật tự và tính chuẩn xác tại cửa đón tiếp đại biểu của các đại hội, gala lớn; ngăn chặn việc nhân sự không có phận sự tự ý soát vé.\n' +
+    '• Tác nhân tham gia (Actors): Ban Quản Trị (Phân công), Nhân sự Ban Truyền Thông (Thực hiện quét QR), Đại biểu tham dự.\n' +
+    '• Điều kiện tiên quyết (Preconditions): Sự kiện đã được khởi tạo trên Web CRM và đang ở trạng thái công bố (published).\n' +
+    '• Quy trình thực hiện chi tiết (Step-by-step Flow):\n' +
+    '  - Bước 1: Ban Quản Trị hoặc Admin mở trang chi tiết sự kiện trên Web CRM, chuyển sang tab "Phân công Soát vé".\n' +
+    '  - Bước 2: Hệ thống truy vấn danh sách thành viên có vai trò BAN_TRUYEN_THONG. BQT tích chọn các thành viên cụ thể được giao nhiệm vụ trực cổng và bấm "Lưu Phân Công".\n' +
+    '  - Bước 3: Dữ liệu được ghi vào bảng event_scanners với status = "active".\n' +
+    '  - Bước 4: Ứng dụng di động của các nhân sự được chỉ định tự động xuất hiện tiện ích "Soát vé sự kiện" tại Trang chủ (/association). Đối với tất cả hội viên và tài khoản khác, tiện ích này hoàn toàn bị ẩn.\n' +
+    '  - Bước 5: Khi đại biểu đến cửa, nhân sự mở camera quét mã QR trên vé của khách. Hệ thống gọi API GET /api/events/checkin/lookup để kiểm tra tính hợp lệ của vé, số bàn VIP và ghế ngồi.\n' +
+    '  - Bước 6: Nhân sự bấm "Xác nhận vào cửa". Hệ thống cập nhật bảng event_registrations: is_checked_in = true, lưu thời điểm check-in và scanned_by_user_id, đồng thời phát WebSocket cập nhật realtime số lượng khách đã đến lên màn hình Dashboard của Ban Tổ Chức trên Web CRM.\n' +
+    '• Luồng ngoại lệ (Exception Flow):\n' +
+    '  - Trường hợp vé đã được quét trước đó: Hệ thống cảnh báo đỏ "Vé này đã được check-in lúc [HH:mm] bởi [Nhân sự]".\n' +
+    '  - Trường hợp vé không tồn tại hoặc sai sự kiện: Hệ thống cảnh báo "Mã vé không hợp lệ".\n' +
+    '• Kết quả đầu ra (Postconditions): Đại biểu được hướng dẫn vào đúng bàn tiệc; Ban Tổ Chức nắm bắt chính xác 100% tỷ lệ tham dự theo thời gian thực.';
+  children.push(createPara(flow2Text));
 
-  children.push(createHeading2('4.3 Luồng Gia Hạn Niên Liễm Hội Viên'));
-  children.push(
-    createPara('• Bối cảnh: Hội viên cần gia hạn thẻ thường niên sau mỗi 365 ngày.\n' +
-      '• Quyền thực hiện: Chỉ có Ban Thành Viên và Admin mới được cấp quyền thực hiện gia hạn hội viên trên Web CRM.\n' +
-      '• Bước 1: Ban Thành Viên lọc danh sách hội viên sắp hết hạn hoặc đã hết hạn niên liễm (status = "expired").\n' +
-      '• Bước 2: Khi nhận được ủy nhiệm chi hoặc đối soát thành công từ Ban Tài Chính, Ban Thành Viên mở hồ sơ và bấm nút "Gia hạn niên liễm".\n' +
-      '• Bước 3: Hệ thống tạo bản ghi mới trong bảng memberships, cập nhật ngày bắt đầu (start_date) và ngày kết thúc mới (expires_at = hiện tại + 365 ngày), đồng thời cập nhật invoices.status = "paid".\n' +
-      '• Bước 4: Ứng dụng di động của hội viên tự động đổi màu thẻ từ xám tạm khóa sang Vàng ánh kim Navy chính thức.')
-  );
+  addMd('### 4.2 Luồng Phân Công & Kiểm Soát Soát Vé QR Sự Kiện\n' + flow2Text);
 
-  children.push(createHeading2('4.4 Luồng Tổ Chức Cuộc Họp Thông Minh (Online / Offline)'));
-  children.push(
-    createPara('• Quyền hạn: Chỉ Admin và Ban Quản Trị mới có quyền tạo và điều hành cuộc họp.\n' +
-      '• Bước 1: BQT vào Web CRM mục "Quản trị Cuộc họp" -> Bấm "Tạo cuộc họp mới".\n' +
-      '• Bước 2: Thiết lập thông tin: Tiêu đề cuộc họp, Chương trình nghị sự, Ngày giờ bắt đầu, Ngày giờ kết thúc, Thành phần tham gia (Toàn thể CLB, hoặc Ban chuyên môn).\n' +
-      '• Bước 3: Chọn Hình Thức Cuộc Họp:\n' +
-      '  - Trường hợp 1: Họp Online -> Nhập đường link phòng họp trực tuyến (Google Meet / Zoom) kèm mật khẩu phòng.\n' +
-      '  - Trường hợp 2: Họp Offline -> Bắt buộc nhập: Địa chỉ địa điểm tổ chức, Tên phòng họp, Bản đồ chỉ đường và Ghi chú trang phục.\n' +
-      '• Bước 4: Khi BQT bấm "Ban hành cuộc họp":\n' +
-      '  - Nếu là cuộc họp Offline: Hệ thống tự động kích hoạt luồng thông báo đa kênh, bắn Notification đẩy xuống điện thoại đại biểu và tự động tạo 1 Tin nhắn trực tiếp gửi địa chỉ ngày giờ vào Hộp thư nội bộ của từng hội viên tham gia.\n' +
-      '• Bước 5: Hội viên mở thông báo để xác nhận tham dự (Có mặt / Vắng mặt có lý do) và theo dõi tài liệu cuộc họp.')
-  );
+  // 4.3 Luồng Gia hạn niên liễm
+  children.push(createHeading2('4.3 Luồng Gia Hạn Niên Liễm Hội Viên (+365 Ngày)'));
+  const flow3Text = 
+    '• Mục tiêu nghiệp vụ: Quản lý vòng đời thẻ hội viên hàng năm theo quy chế CLB CEO 1983.\n' +
+    '• Quyền thực hiện: Chỉ có Ban Thành Viên và Super Admin mới có quyền bấm nút gia hạn.\n' +
+    '• Quy trình thực hiện chi tiết (Step-by-step Flow):\n' +
+    '  - Bước 1: Ban Thành Viên lọc danh sách hội viên sắp đến hạn hoặc đã quá hạn thẻ (status = "expired") trên Web CRM.\n' +
+    '  - Bước 2: Khi hội viên đóng hội phí năm mới (được Ban Tài Chính đối soát hoặc hệ thống VietQR gạch nợ tự động), Ban Thành Viên mở hồ sơ hội viên và bấm nút "Gia hạn niên liễm".\n' +
+    '  - Bước 3: Hệ thống mở popup xác nhận kỳ hạn mới. Ban Thành Viên kiểm tra số tiền và bấm "Xác Nhận Gia Hạn".\n' +
+    '  - Bước 4: Hệ thống tạo bản ghi mới trong bảng memberships, cập nhật start_date = ngày gia hạn, expires_at = ngày hiện tại + 365 ngày (hoặc ngày hết hạn cũ + 365 ngày nếu gia hạn sớm).\n' +
+    '  - Bước 5: Hóa đơn liên quan trong bảng invoices được cập nhật status = "paid".\n' +
+    '  - Bước 6: Thẻ hội viên trên App di động của CEO lập tức chuyển trạng thái sang "Đang hoạt động" với dải băng màu vàng kim sang trọng, đồng thời mở lại toàn bộ quyền lợi VIP.\n' +
+    '• Kết quả đầu ra (Postconditions): Thời hạn thẻ được cộng thêm 1 năm; dữ liệu tài chính ghi nhận doanh thu hội phí.';
+  children.push(createPara(flow3Text));
 
-  children.push(createHeading2('4.5 Luồng Kết Nối & Nhắn Tin Giao Thương B2B Trực Tiếp Trên Web CRM'));
-  children.push(
-    createPara('• Bối cảnh: Cho phép hội viên khi sử dụng Web CRM trên máy tính vẫn có thể nhắn tin trao đổi kinh doanh liền mạch với các doanh nhân khác mà không cần cầm điện thoại.\n' +
-      '• Bước 1: Hội viên truy cập phân hệ "Tin Nhắn & Kết Nối" trên Web CRM.\n' +
-      '• Bước 2: Chọn một doanh nhân từ danh bạ hoặc từ danh sách cơ hội giao thương B2B -> Bấm "Nhắn tin kết nối".\n' +
-      '• Bước 3: Giao diện mở cửa sổ chat 2 cột: Danh sách hội thoại bên trái, Nội dung chat thời gian thực bên phải. Hỗ trợ gửi tin nhắn văn bản, chia sẻ danh thiếp số điện tử, gửi đường link sản phẩm và lên lịch hẹn bàn 1-on-1.\n' +
-      '• Bước 4: Dữ liệu tin nhắn lưu trữ mã hóa trong bảng chat_messages và đồng bộ tức thì với App Hiệp Hội CEO 1983 trên di động qua giao thức WebSocket.')
-  );
+  addMd('### 4.3 Luồng Gia Hạn Niên Liễm Hội Viên (+365 Ngày)\n' + flow3Text);
 
-  addMd('## PHẦN 4: BẢN ĐỒ NGHIỆP VỤ & CÁC LUỒNG XỬ LÝ DỮ LIỆU CHÍNH\n' +
-    '1. Luồng Xét duyệt Hội viên (Đã bỏ doanh thu trên Landing, BQT/Admin duyệt sinh mã M1983-xxx và gửi email tài khoản).\n' +
-    '2. Luồng Phân công Soát vé QR (Chỉ định nhân sự Ban Truyền thông, gạch vé thời gian thực).\n' +
-    '3. Luồng Gia hạn Niên liễm (Ban Thành viên và Admin thực hiện, gia hạn 365 ngày).\n' +
-    '4. Luồng Cuộc họp Online/Offline (Admin/BQT tạo; Offline tự động gửi thông báo push và tin nhắn địa chỉ ngày giờ).\n' +
-    '5. Luồng Kết nối & Nhắn tin B2B trên Web CRM (Đồng bộ tức thì với App di động).');
+  // 4.4 Luồng Cuộc họp Online/Offline (Thiết kế mới: Phân quyền 4 vai trò tạo, Quản trị duyệt, Dropdown phòng họp tích hợp)
+  children.push(createHeading2('4.4 Luồng Khởi Tạo & Điều Hành Cuộc Họp Online / Offline (Quy Trình Mới)'));
+  const flow4Text = 
+    '• Mục tiêu nghiệp vụ: Tổ chức các cuộc họp Ban Quản Trị, Họp Thường trực, Đại hội thành viên hoặc họp giao ban các ban ngành chuyên môn với cơ chế kiểm soát tập trung, chống trùng lịch phòng họp.\n' +
+    '• Tác nhân tham gia (Actors):\n' +
+    '  - Tác nhân khởi tạo: Chỉ có 4 vai trò có thẩm quyền tạo cuộc họp gồm Quản trị, Admin, Tổng thư ký, Trưởng ban. Thành viên thông thường tuyệt đối không có quyền tạo cuộc họp.\n' +
+    '  - Tác nhân phê duyệt: Quản trị (Super Admin / Platform Admin).\n' +
+    '  - Tác nhân tham dự: Toàn bộ đại biểu được triệu tập (Xác nhận tham gia / Báo vắng).\n' +
+    '• Quy trình thực hiện chi tiết (Step-by-step Flow):\n' +
+    '  - Bước 1: Người dùng có thẩm quyền (Quản trị, Admin, Tổng thư ký, Trưởng ban) truy cập phân hệ "Quản lý cuộc họp" trên Web CRM và nhấn "Tạo Cuộc Họp Mới". Người dùng chọn vai trò khởi tạo tương ứng.\n' +
+    '  - Bước 2: Điền thông tin cuộc họp và lựa chọn nền tảng / phòng họp thông qua Dropdown duy nhất (Hệ thống đã gộp toàn bộ việc đăng ký phòng họp vào form tạo cuộc họp, không còn chức năng đăng ký phòng họp riêng biệt):\n' +
+    '    + Tiêu đề cuộc họp và nội dung chương trình nghị sự (Agenda chi tiết).\n' +
+    '    + Thời gian: Ngày họp, giờ bắt đầu và giờ kết thúc dự kiến.\n' +
+    '    + Nền tảng & Phòng họp (Dropdown tích hợp): Lựa chọn một trong các phương án:\n' +
+    '      * "Zoom Meetings": Nhập liên kết phòng Zoom và Passcode bảo mật.\n' +
+    '      * "Google Meet": Nhập URL phòng họp Google Meet chính thức.\n' +
+    '      * "UniWork Meet": Tích hợp nền tảng họp trực tuyến bảo mật nội bộ UniWork.\n' +
+    '      * "Phòng Họp Trực Tiếp - Sapphire UniWork Hub": Phòng họp vật lý tại trụ sở hiệp hội (Sức chứa 40 đại biểu, trang bị màn hình LED P2 và hệ thống micro hội nghị).\n' +
+    '      * "Địa Điểm Offline Khác": Nhập địa chỉ cụ thể, tên phòng họp và liên kết bản đồ Google Maps.\n' +
+    '    + Thành phần triệu tập: Chọn "Toàn bộ CLB", "Ban Quản Trị", hoặc "Ban chuyên môn cụ thể".\n' +
+    '  - Bước 3: Phân luồng phê duyệt tự động theo thẩm quyền:\n' +
+    '    + Trường hợp 1: Nếu người tạo là Quản trị hoặc Admin, cuộc họp tự động được duyệt ngay lập tức (status = "upcoming" - Sắp diễn ra).\n' +
+    '    + Trường hợp 2: Nếu người tạo là Tổng thư ký hoặc Trưởng ban, cuộc họp được lưu với trạng thái status = "pending_approval" ("Chờ Quản trị duyệt") và hiển thị trong danh sách chờ duyệt của Quản trị viên.\n' +
+    '  - Bước 4: Phê duyệt cuộc họp bởi Quản trị (Super Admin):\n' +
+    '    + Quản trị viên truy cập màn hình Cuộc họp, lọc danh sách "Chờ Quản trị duyệt" (hoặc xem thẻ KPI Chờ duyệt).\n' +
+    '    + Quản trị viên xem xét nội dung, kiểm tra xung đột phòng họp và nhấn nút "Duyệt Cuộc Họp" (chuyển sang status = "upcoming") hoặc "Từ chối" kèm lý do phản hồi.\n' +
+    '  - Bước 5: Kích hoạt thông báo tự động khi cuộc họp được phê duyệt:\n' +
+    '    + Cơ chế 1: Bắn thông báo đẩy (Push Notification) đến App di động của tất cả đại biểu có tên trong danh sách triệu tập.\n' +
+    '    + Cơ chế 2: Tự động gửi tin nhắn trực tiếp từ tài khoản Hệ thống [CEO1983_SYSTEM] vào hộp thư chat cá nhân của từng đại biểu, ghi rõ tiêu đề, thời gian, hình thức phòng họp và liên kết truy cập/bản đồ chỉ đường.\n' +
+    '  - Bước 6: Đại biểu mở App di động, bấm nút "Xác nhận tham gia (RSVP)" hoặc "Báo vắng có lý do".\n' +
+    '  - Bước 7: Ban Thư Ký và Quản trị viên theo dõi danh sách điểm danh realtime trên Web CRM để chốt số lượng đại biểu.\n' +
+    '• Luồng ngoại lệ (Exception Flow):\n' +
+    '  - Nếu cuộc họp bị Quản trị từ chối phê duyệt: Trạng thái chuyển sang "cancelled", người tạo (Tổng thư ký/Trưởng ban) nhận thông báo lý do để điều chỉnh lại lịch họp.\n' +
+    '• Kết quả đầu ra (Postconditions): Cuộc họp được ban hành chuẩn xác, kiểm soát 100% việc sử dụng phòng họp và thông báo đồng bộ đến toàn bộ đại biểu.';
+  children.push(createPara(flow4Text));
+
+  addMd('### 4.4 Luồng Khởi Tạo & Điều Hành Cuộc Họp Online / Offline (Quy Trình Mới)\n' + flow4Text);
+
+  // 4.5 Luồng Sàn Marketplace & Duyệt sản phẩm
+  children.push(createHeading2('4.5 Luồng Quản Trị Sàn Giao Thương B2B, Kiểm Duyệt Sản Phẩm & Banner Tài Trợ'));
+  const flow5Text = 
+    '• Mục tiêu nghiệp vụ: Xúc tiến thương mại nội khối giữa các doanh nghiệp hội viên CEO 1983, đảm bảo chất lượng hàng hóa dịch vụ uy tín và an toàn.\n' +
+    '• Tác nhân tham gia (Actors): Doanh nghiệp hội viên (Đăng sản phẩm/quảng cáo), Ban Quản Trị / Ban Xúc Tiến Thương Mại (Kiểm duyệt).\n' +
+    '• Quy trình thực hiện chi tiết (Step-by-step Flow):\n' +
+    '  - Bước 1: Doanh nghiệp hội viên đăng sản phẩm hoặc gửi hồ sơ đăng ký quảng cáo banner trên App di động.\n' +
+    '  - Bước 2: Dữ liệu được chuyển về phân hệ "Quản lý Sàn B2B" trên Web CRM với trạng thái status = "pending".\n' +
+    '  - Bước 3: Cán bộ Ban Xúc Tiến kiểm tra nội dung hình ảnh, giá ưu đãi B2B dành riêng cho hội viên CLB, và chứng nhận pháp lý sản phẩm.\n' +
+    '  - Bước 4: Ban Quản Trị bấm "Phê duyệt" (Approve):\n' +
+    '    + Sản phẩm chuyển status = "approved", lập tức xuất hiện trang trọng trên sàn Marketplace của App di động.\n' +
+    '    + Đối với gói tài trợ quảng cáo banner: Sau khi đối soát phí tài trợ, banner được kích hoạt hiển thị ở Top Carousel đầu trang sàn thương mại với huy hiệu "Được Tài Trợ / Sponsored" màu vàng ánh kim.\n' +
+    '  - Bước 5: Hội viên trên App có thể bấm nút "Liên hệ người bán" để mở ngay luồng chat B2B trao đổi thương thảo hợp đồng.\n' +
+    '• Luồng ngoại lệ (Exception Flow):\n' +
+    '  - Nếu sản phẩm vi phạm quy chế hoặc hình ảnh kém chất lượng: Quản trị viên bấm "Từ chối" kèm ghi chú chỉnh sửa. Người bán nhận được thông báo để cập nhật lại.\n' +
+    '• Kết quả đầu ra (Postconditions): Sản phẩm chất lượng cao được lưu thông an toàn trong hệ sinh thái doanh nhân CEO 1983.';
+  children.push(createPara(flow5Text));
+
+  addMd('### 4.5 Luồng Quản Trị Sàn Giao Thương B2B, Kiểm Duyệt Sản Phẩm & Banner Tài Trợ\n' + flow5Text);
+
+  // 4.6 Luồng Bầu cử & Biểu quyết
+  children.push(createHeading2('4.6 Luồng Tổ Chức Bầu Cử Đại Hội & Biểu Quyết Trực Tuyến'));
+  const flow6Text = 
+    '• Mục tiêu nghiệp vụ: Thực hiện dân chủ, minh bạch trong các kỳ đại hội hiệp hội, bầu cử nhân sự Ban Chấp hành hoặc biểu quyết các nghị quyết quan trọng.\n' +
+    '• Tác nhân tham gia (Actors): Ban Quản Trị (Tạo phiên biểu quyết), Toàn thể Hội viên chính thức (Bỏ phiếu).\n' +
+    '• Quy trình thực hiện chi tiết (Step-by-step Flow):\n' +
+    '  - Bước 1: Ban Quản Trị tạo phiên biểu quyết trên Web CRM: Tiêu đề phiên họp, danh sách ứng viên hoặc các phương án biểu quyết (Đồng ý / Không đồng ý / Ý kiến khác), thời gian mở và đóng hòm phiếu điện tử.\n' +
+    '  - Bước 2: BQT bấm "Mở Phiếu Bầu". Hệ thống phát tín hiệu realtime đến toàn bộ App di động của hội viên.\n' +
+    '  - Bước 3: Hội viên mở tab Biểu quyết, xem thông tin và tích chọn phương án -> Bấm "Xác nhận bỏ phiếu".\n' +
+    '  - Bước 4: Hệ thống ghi nhận lá phiếu vào bảng ballots, kiểm tra tính hợp lệ và chặn việc bỏ phiếu lần 2 (mỗi hội viên chỉ bỏ phiếu 1 lần duy nhất).\n' +
+    '  - Bước 5: Màn hình Web CRM hiển thị biểu đồ tỷ lệ % phiếu bầu theo thời gian thực và tự động khóa hòm phiếu khi hết giờ quy định.\n' +
+    '• Kết quả đầu ra (Postconditions): Kết quả bầu cử minh bạch, có thể trích xuất biên bản kiểm phiếu PDF ngay tại đại hội.';
+  children.push(createPara(flow6Text));
+
+  addMd('### 4.6 Luồng Tổ Chức Bầu Cử Đại Hội & Biểu Quyết Trực Tuyến\n' + flow6Text);
 
   // ==========================================
-  // PHẦN 5: ĐẶC TẢ CHI TIẾT TỪNG PHÂN HỆ, APIS & CSDL
+  // PHẦN 5: CƠ SỞ DỮ LIỆU POSTGRESQL & TỪ ĐIỂN DỮ LIỆU
   // ==========================================
-  children.push(createHeading1('PHẦN 5: ĐẶC TẢ CHI TIẾT APIS, BẢNG CSDL & PHÉP JOIN'));
+  children.push(createHeading1('PHẦN 5: THIẾT KẾ CƠ SỞ DỮ LIỆU POSTGRESQL & TỪ ĐIỂN DỮ LIỆU (DATA DICTIONARY)'));
+  children.push(
+    createPara('Toàn bộ CSDL Web CRM CEO 1983 được thiết kế theo mô hình quan hệ RDBMS chuẩn ACID, schema "public", đảm bảo tính toàn vẹn dữ liệu với các bảng nghiệp vụ cốt lõi sau:')
+  );
 
-  // 5.1 Quản trị Tài khoản & Phân quyền
-  children.push(createHeading2('5.1 Quản Trị Tài Khoản & Phân Quyền Vai Trò (Authentication & RBAC APIs)'));
-  const authApiHeaders = ['API Endpoint', 'Phương Thức', 'Mô Tả Chức Năng', 'Phân Quyền Cho Phép', 'Bảng CSDL Xử Lý'];
-  const authApiRows = [
-    ['/api/auth/login', 'POST', 'Đăng nhập vào hệ thống CRM', 'Mọi người dùng', 'vione_users, auth_sessions'],
-    ['/api/auth/me', 'GET', 'Lấy thông tin tài khoản và danh sách quyền', 'Đã đăng nhập', 'vione_users, user_roles'],
-    ['/api/admin/users', 'GET', 'Danh sách cán bộ quản trị và hội viên', 'ADMIN, BAN_QUAN_TRI', 'vione_users JOIN user_roles'],
-    ['/api/admin/users/:id/role', 'PUT', 'Phân bổ hoặc thay đổi ban chuyên môn', 'ADMIN', 'user_roles, audit_logs']
-  ];
-  children.push(createTable(authApiHeaders, authApiRows, [24, 12, 28, 18, 18]));
+  addMd('## PHẦN 5: THIẾT KẾ CƠ SỞ DỮ LIỆU POSTGRESQL & TỪ ĐIỂN DỮ LIỆU');
 
-  children.push(createHeading3('Cấu Trúc Bảng CSDL Chính: vione_users (Tủ Tài Khoản Quản Trị & Hội Viên)'));
-  const userColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Dễ Hiểu'];
-  const userColRows = [
-    ['id', 'UUID', 'Có', 'PK', 'Mã định danh duy nhất của tài khoản người dùng.'],
-    ['email', 'VARCHAR(255)', 'Có', 'UNIQUE', 'Địa chỉ email dùng để đăng nhập và nhận thông báo.'],
-    ['password_hash', 'VARCHAR(255)', 'Có', 'None', 'Mật khẩu đã được mã hóa bảo mật Bcrypt một chiều.'],
-    ['full_name', 'VARCHAR(255)', 'Có', 'None', 'Họ và tên đầy đủ của cán bộ hoặc hội viên.'],
-    ['phone', 'VARCHAR(20)', 'Không', 'None', 'Số điện thoại liên lạc cá nhân / Zalo.'],
-    ['role', 'VARCHAR(50)', 'Có', 'None', 'Vai trò: "ADMIN", "BAN_QUAN_TRI", "BAN_THANH_VIEN", "BAN_TAI_CHINH", "BAN_TRUYEN_THONG", "HOI_VIEN".'],
-    ['department', 'VARCHAR(100)', 'Không', 'None', 'Ban chuyên môn: Ban Quản Trị, Ban Thành Viên, Ban Tài Chính, Ban Truyền Thông.'],
-    ['is_active', 'BOOLEAN', 'Có', 'None', 'Trạng thái hoạt động (true = Đang mở, false = Tạm khóa).'],
-    ['created_at', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm tài khoản được tạo trong hệ thống.']
-  ];
-  children.push(createTable(userColHeaders, userColRows, [20, 18, 12, 18, 32]));
-
-  // 5.2 Quản trị Hội viên & Xét duyệt
-  children.push(createHeading2('5.2 Quản Trị Hội Viên & Quy Trình Xét Duyệt Gia Nhập (Members Management)'));
-  const memApiHeaders = ['API Endpoint', 'Phương Thức', 'Mô Tả Chức Năng', 'Phân Quyền Cho Phép', 'Bảng CSDL Xử Lý'];
-  const memApiRows = [
-    ['/api/members/apply', 'POST', 'Ứng viên nộp hồ sơ từ Web Landing (Không có doanh thu)', 'Công khai (Public)', 'members (status = pending)'],
-    ['/api/admin/members/pending', 'GET', 'Danh sách hồ sơ chờ thẩm định', 'ADMIN, BAN_QUAN_TRI, BAN_THANH_VIEN', 'members WHERE status = pending'],
-    ['/api/admin/members/:id/approve', 'POST', 'Phê duyệt kết nạp, cấp mã M1983-xxx & gửi email mật khẩu', 'ADMIN, BAN_QUAN_TRI', 'members, vione_users, mail_logs'],
-    ['/api/admin/members/:id/renew', 'POST', 'Gia hạn niên liễm hội viên thêm 365 ngày', 'ADMIN, BAN_THANH_VIEN', 'memberships, invoices, members'],
-    ['/api/admin/members', 'GET', 'Danh bạ toàn bộ hội viên hiệp hội', 'Tất cả các vai trò', 'members JOIN memberships']
-  ];
-  children.push(createTable(memApiHeaders, memApiRows, [26, 12, 26, 18, 18]));
-
-  children.push(createHeading3('Cấu Trúc Bảng CSDL Chính: members (Tủ Hồ Sơ Lý Lịch Hội Viên)'));
-  const memColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Dễ Hiểu'];
+  // 5.1 Bảng members
+  children.push(createHeading2('5.1 Bảng members (Ngăn Tủ Hồ Sơ Hội Viên Doanh Nhân)'));
+  const memColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Chi Tiết'];
   const memColRows = [
-    ['id', 'UUID', 'Có', 'PK', 'Mã hồ sơ hội viên duy nhất.'],
-    ['user_id', 'UUID', 'Không', 'FK -> vione_users.id', 'Liên kết sang tài khoản đăng nhập khi đã duyệt.'],
-    ['member_code', 'VARCHAR(50)', 'Không', 'UNIQUE', 'Mã hội viên chính thức (Ví dụ: M1983-001, M1983-088).'],
-    ['full_name', 'VARCHAR(255)', 'Có', 'None', 'Họ và tên của CEO doanh nghiệp.'],
-    ['company_name', 'VARCHAR(255)', 'Có', 'None', 'Tên doanh nghiệp / Công ty đại diện.'],
-    ['position_title', 'VARCHAR(150)', 'Không', 'None', 'Chức danh quản lý (Chủ tịch, Tổng Giám Đốc, CEO).'],
-    ['industry', 'VARCHAR(100)', 'Có', 'None', 'Ngành nghề hoạt động kinh doanh.'],
-    ['status', 'VARCHAR(30)', 'Có', 'None', 'Trạng thái: "pending" (Chờ duyệt), "active" (Chính thức), "expired" (Hết hạn).'],
-    ['joined_at', 'TIMESTAMPTZ', 'Không', 'None', 'Ngày chính thức được Ban Thường Vụ phê duyệt gia nhập.']
+    ['id', 'UUID', 'Có', 'PK', 'Khóa chính, định danh duy nhất của hội viên.'],
+    ['member_code', 'VARCHAR(20)', 'Có', 'UNIQUE', 'Mã hội viên độc quyền (Ví dụ: M1983-001, M1983-099).'],
+    ['user_id', 'UUID', 'Không', 'FK -> vione_users.id', 'Liên kết tài khoản đăng nhập hệ thống.'],
+    ['full_name', 'VARCHAR(150)', 'Có', 'None', 'Họ và tên đầy đủ của doanh nhân.'],
+    ['phone', 'VARCHAR(20)', 'Có', 'UNIQUE', 'Số điện thoại di động chính thức, nhận OTP và thông báo.'],
+    ['email', 'VARCHAR(100)', 'Không', 'None', 'Email công việc dùng để nhận tài khoản và thư mời họp.'],
+    ['company_name', 'VARCHAR(255)', 'Có', 'None', 'Tên doanh nghiệp / pháp nhân đại diện.'],
+    ['position', 'VARCHAR(100)', 'Có', 'None', 'Chức vụ lãnh đạo (Chủ tịch HĐQT, CEO, Tổng Giám đốc).'],
+    ['industry', 'VARCHAR(100)', 'Có', 'None', 'Ngành nghề lĩnh vực hoạt động sản xuất kinh doanh.'],
+    ['tax_code', 'VARCHAR(30)', 'Không', 'None', 'Mã số thuế doanh nghiệp phục vụ xuất hóa đơn VAT.'],
+    ['connection_needs', 'TEXT', 'Không', 'None', 'Nhu cầu kết nối giao thương B2B trong CLB.'],
+    ['status', 'VARCHAR(30)', 'Có', 'None', 'Trạng thái: "pending" (Chờ duyệt), "active" (Hoạt động), "expired" (Hết hạn), "suspended" (Tạm khóa).'],
+    ['avatar_url', 'TEXT', 'Không', 'None', 'Đường dẫn ảnh đại diện chất lượng cao của CEO.'],
+    ['cover_url', 'TEXT', 'Không', 'None', 'Đường dẫn ảnh bìa trang cá nhân.'],
+    ['created_at', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm đăng ký hồ sơ vào hệ thống.']
   ];
-  children.push(createTable(memColHeaders, memColRows, [20, 18, 12, 18, 32]));
+  children.push(createTable(memColHeaders, memColRows, [18, 18, 12, 18, 34]));
+  addMdTableDirect(memColHeaders, memColRows);
 
-  // 5.3 Quản trị Cuộc họp Thông minh (Online / Offline)
-  children.push(createHeading2('5.3 Quản Trị Cuộc Họp Thông Minh (Online / Offline Meetings)'));
-  const meetApiHeaders = ['API Endpoint', 'Phương Thức', 'Mô Tả Chức Năng', 'Phân Quyền Cho Phép', 'Bảng CSDL Xử Lý'];
-  const meetApiRows = [
-    ['/api/meetings', 'POST', 'Tạo cuộc họp mới (Online hoặc Offline)', 'ADMIN, BAN_QUAN_TRI', 'meetings, meeting_attendees'],
-    ['/api/meetings/:id/broadcast', 'POST', 'Gửi địa chỉ, ngày giờ họp Offline qua thông báo và tin nhắn', 'ADMIN, BAN_QUAN_TRI', 'notifications, chat_messages'],
-    ['/api/meetings', 'GET', 'Xem lịch danh sách các cuộc họp CLB', 'Tất cả các vai trò (Hội viên chỉ xem)', 'meetings JOIN meeting_attendees'],
-    ['/api/meetings/:id/rsvp', 'POST', 'Hội viên xác nhận tham gia hoặc báo vắng', 'HOI_VIEN, BAN CHUYÊN MÔN', 'meeting_attendees']
+  // 5.2 Bảng events
+  children.push(createHeading2('5.2 Bảng events (Ngăn Tủ Sự Kiện, Đại Hội & Gala)'));
+  const evColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Chi Tiết'];
+  const evColRows = [
+    ['id', 'UUID', 'Có', 'PK', 'Mã sự kiện duy nhất.'],
+    ['title', 'VARCHAR(255)', 'Có', 'None', 'Tên sự kiện (Ví dụ: Gala Doanh Nhân CEO 1983 - Hội Tụ Tinh Hoa).'],
+    ['description', 'TEXT', 'Không', 'None', 'Nội dung chi tiết, kịch bản chương trình và quyền lợi đại biểu.'],
+    ['banner_url', 'TEXT', 'Không', 'None', 'Ảnh banner chính tràn viền của sự kiện (16:9).'],
+    ['event_date', 'TIMESTAMPTZ', 'Có', 'None', 'Ngày giờ khai mạc chính thức của sự kiện.'],
+    ['location', 'VARCHAR(255)', 'Có', 'None', 'Địa chỉ địa điểm tổ chức (Khách sạn, Trung tâm hội nghị).'],
+    ['map_link', 'TEXT', 'Không', 'None', 'Link Google Maps định vị chính xác dẫn đường.'],
+    ['dresscode', 'VARCHAR(100)', 'Không', 'None', 'Quy định trang phục đại biểu tham dự.'],
+    ['status', 'VARCHAR(30)', 'Có', 'None', 'Trạng thái: "draft" (Bản nháp), "published" (Đã công bố), "completed" (Đã xong).'],
+    ['created_by', 'UUID', 'Có', 'FK -> vione_users.id', 'Người tạo sự kiện (Admin hoặc BQT).']
   ];
-  children.push(createTable(meetApiHeaders, meetApiRows, [26, 12, 26, 18, 18]));
+  children.push(createTable(evColHeaders, evColRows, [18, 18, 12, 18, 34]));
+  addMdTableDirect(evColHeaders, evColRows);
 
-  children.push(createHeading3('Cấu Trúc Bảng CSDL Chính: meetings (Tủ Hồ Sơ Cuộc Họp CLB)'));
-  const meetColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Dễ Hiểu'];
-  const meetColRows = [
-    ['id', 'UUID', 'Có', 'PK', 'Mã cuộc họp duy nhất.'],
-    ['title', 'VARCHAR(255)', 'Có', 'None', 'Tiêu đề cuộc họp (Ví dụ: Họp Ban Quản Trị Quý 1/2026).'],
-    ['meeting_type', 'VARCHAR(30)', 'Có', 'None', 'Hình thức: "online" (Họp từ xa), "offline" (Họp trực tiếp).'],
-    ['start_time', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm bắt đầu cuộc họp.'],
-    ['end_time', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm kết thúc cuộc họp.'],
-    ['location_address', 'TEXT', 'Không', 'None', 'Địa chỉ nơi tổ chức (Bắt buộc nếu meeting_type = offline).'],
-    ['online_link', 'TEXT', 'Không', 'None', 'Đường dẫn phòng họp Zoom / Google Meet (Nếu online).'],
-    ['created_by_user_id', 'UUID', 'Có', 'FK -> vione_users.id', 'Cán bộ Admin hoặc Ban Quản Trị ban hành cuộc họp.'],
-    ['status', 'VARCHAR(30)', 'Có', 'None', 'Trạng thái: "scheduled", "happening", "completed", "cancelled".']
+  // 5.3 Bảng event_registrations
+  children.push(createHeading2('5.3 Bảng event_registrations (Ngăn Tủ Vé Điện Tử & Check-in Đại Biểu)'));
+  const regColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Chi Tiết'];
+  const regColRows = [
+    ['id', 'UUID', 'Có', 'PK', 'Mã cuống vé điện tử duy nhất.'],
+    ['event_id', 'UUID', 'Có', 'FK -> events.id', 'Liên kết đến sự kiện tham dự.'],
+    ['member_id', 'UUID', 'Có', 'FK -> members.id', 'Hội viên đăng ký vé.'],
+    ['ticket_code', 'VARCHAR(30)', 'Có', 'UNIQUE', 'Mã vé QR duy nhất (Ví dụ: TIK-8319-099).'],
+    ['ticket_type', 'VARCHAR(50)', 'Có', 'None', 'Hạng vé: "STANDARD", "VIP", "VVIP Khách Mời".'],
+    ['table_number', 'VARCHAR(20)', 'Không', 'None', 'Số bàn tiệc phân bổ (Ví dụ: Bàn VIP 01).'],
+    ['seat_number', 'VARCHAR(20)', 'Không', 'None', 'Số ghế ngồi danh dự (Ví dụ: Ghế 08).'],
+    ['lucky_number', 'VARCHAR(20)', 'Không', 'None', 'Mã số quay thưởng may mắn bốc thăm đêm gala.'],
+    ['is_checked_in', 'BOOLEAN', 'Có', 'None', 'Trạng thái điểm danh (true: Đã vào cửa, false: Chưa đến).'],
+    ['checked_in_at', 'TIMESTAMPTZ', 'Không', 'None', 'Thời điểm quét mã QR soát vé thành công.'],
+    ['scanned_by_user_id', 'UUID', 'Không', 'FK -> vione_users.id', 'Nhân sự Ban Truyền Thông đã thực hiện quét vé.']
   ];
-  children.push(createTable(meetColHeaders, meetColRows, [20, 18, 12, 18, 32]));
+  children.push(createTable(regColHeaders, regColRows, [18, 18, 12, 18, 34]));
+  addMdTableDirect(regColHeaders, regColRows);
 
-  // 5.4 Quản trị Sự kiện & Soát vé QR
-  children.push(createHeading2('5.4 Quản Trị Sự Kiện & Phân Công Soát Vé QR (Events & QR Check-in)'));
-  const evtApiHeaders = ['API Endpoint', 'Phương Thức', 'Mô Tả Chức Năng', 'Phân Quyền Cho Phép', 'Bảng CSDL Xử Lý'];
-  const evtApiRows = [
-    ['/api/events', 'POST', 'Khởi tạo sự kiện đại hội gala mới', 'ADMIN, BAN_QUAN_TRI, BAN_TRUYEN_THONG', 'events, event_ticket_types'],
-    ['/api/events/:id/scanners/assign', 'POST', 'BQT chỉ định nhân sự Ban Truyền Thông quét QR', 'ADMIN, BAN_QUAN_TRI', 'event_scanners'],
-    ['/api/events/checkin/lookup', 'GET', 'Quét camera đọc mã QR vé đại biểu', 'Nhân sự BTT được chỉ định', 'event_registrations JOIN members'],
-    ['/api/events/checkin/confirm', 'POST', 'Xác nhận gạch vé vào cửa thành công', 'Nhân sự BTT được chỉ định', 'event_registrations, checkin_logs']
-  ];
-  children.push(createTable(evtApiHeaders, evtApiRows, [26, 12, 26, 18, 18]));
-
-  children.push(createHeading3('Cấu Trúc Bảng CSDL: event_scanners (Bảng Chỉ Định Nhân Sự Soát Vé)'));
-  const scColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Dễ Hiểu'];
+  // 5.4 Bảng event_scanners
+  children.push(createHeading2('5.4 Bảng event_scanners (Bảng Phân Quyền Soát Vé Ban Truyền Thông)'));
+  const scColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Chi Tiết'];
   const scColRows = [
-    ['id', 'UUID', 'Có', 'PK', 'Mã bản ghi chỉ định soát vé.'],
-    ['event_id', 'UUID', 'Có', 'FK -> events.id', 'Sự kiện diễn ra cần soát vé.'],
+    ['id', 'UUID', 'Có', 'PK', 'Mã bản ghi phân công soát vé.'],
+    ['event_id', 'UUID', 'Có', 'FK -> events.id', 'Sự kiện được phân công nhiệm vụ trực cổng.'],
     ['user_id', 'UUID', 'Có', 'FK -> vione_users.id', 'Nhân sự Ban Truyền Thông được Ban Quản Trị chỉ định.'],
-    ['assigned_by', 'UUID', 'Có', 'FK -> vione_users.id', 'Cán bộ BQT đã thực hiện gán quyền.'],
-    ['created_at', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm phê duyệt quyền quét QR.']
+    ['assigned_by', 'UUID', 'Có', 'FK -> vione_users.id', 'Lãnh đạo Ban Quản Trị đã thực hiện phân công.'],
+    ['status', 'VARCHAR(20)', 'Có', 'None', 'Trạng thái: "active" (Đang có quyền quét), "revoked" (Thu hồi quyền).'],
+    ['created_at', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm gán quyền soát vé cho nhân sự.']
   ];
-  children.push(createTable(scColHeaders, scColRows, [20, 18, 12, 18, 32]));
+  children.push(createTable(scColHeaders, scColRows, [18, 18, 12, 18, 34]));
+  addMdTableDirect(scColHeaders, scColRows);
 
-  // 5.5 Quản trị Tài chính & Hóa đơn VietQR
-  children.push(createHeading2('5.5 Quản Trị Tài Chính, Niên Liễm & Hóa Đơn VietQR (Finance Management)'));
-  children.push(createPara('Chỉ mở cho Admin, Ban Quản Trị và Ban Tài Chính. Tự động phát hành thông báo nộp hội phí và đối soát ngân hàng.'));
-  const finApiHeaders = ['API Endpoint', 'Phương Thức', 'Mô Tả Chức Năng', 'Phân Quyền Cho Phép', 'Bảng CSDL Xử Lý'];
-  const finApiRows = [
-    ['/api/fees/invoices/generate', 'POST', 'Phát hành thông báo hội phí niên khóa mới', 'ADMIN, BAN_TAI_CHINH', 'invoices (sinh mã VietQR 24/7)'],
-    ['/api/fees/invoices/unpaid', 'GET', 'Danh sách hội viên chưa hoàn thành đóng phí', 'ADMIN, BAN_QUAN_TRI, BAN_TAI_CHINH', 'invoices JOIN members'],
-    ['/api/admin/fees/:id/toggle', 'PUT', 'Gạch nợ thủ công khi đối soát dòng tiền', 'ADMIN, BAN_TAI_CHINH', 'invoices, bank_transactions'],
-    ['/api/sponsorships/reports', 'GET', 'Báo cáo tổng hợp tiền tài trợ từ các nhà tài trợ', 'ADMIN, BAN_QUAN_TRI, BAN_TAI_CHINH', 'sponsorships JOIN events']
+  // 5.5 Bảng invoices
+  children.push(createHeading2('5.5 Bảng invoices (Ngăn Tủ Quản Lý Hội Phí & Đối Soát VietQR)'));
+  const invColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Chi Tiết'];
+  const invColRows = [
+    ['id', 'UUID', 'Có', 'PK', 'Mã hóa đơn thu phí duy nhất.'],
+    ['invoice_code', 'VARCHAR(50)', 'Có', 'UNIQUE', 'Mã giao dịch kế toán (Ví dụ: INV-CEO1983-2026-088).'],
+    ['member_id', 'UUID', 'Có', 'FK -> members.id', 'Hội viên có nghĩa vụ đóng phí.'],
+    ['amount', 'NUMERIC(15,2)', 'Có', 'None', 'Số tiền hội phí niêm yết (Ví dụ: 10,000,000 VNĐ/năm).'],
+    ['type', 'VARCHAR(50)', 'Có', 'None', 'Loại phí: "ANNUAL_MEMBERSHIP" (Niên liễm), "EVENT_SPONSOR" (Tài trợ), "AD_BANNER" (Quảng cáo).'],
+    ['vietqr_code', 'TEXT', 'Không', 'None', 'Chuỗi mã VietQR Napas 24/7 sinh tự động chứa nội dung chuyển khoản.'],
+    ['status', 'VARCHAR(30)', 'Có', 'None', 'Trạng thái: "pending" (Chờ thanh toán), "paid" (Đã thanh toán), "cancelled" (Hủy).'],
+    ['paid_at', 'TIMESTAMPTZ', 'Không', 'None', 'Thời điểm ngân hàng gạch nợ thành công qua Webhook hoặc đối soát tay.'],
+    ['created_at', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm lập hóa đơn thu phí.']
   ];
-  children.push(createTable(finApiHeaders, finApiRows, [26, 12, 26, 18, 18]));
+  children.push(createTable(invColHeaders, invColRows, [18, 18, 12, 18, 34]));
+  addMdTableDirect(invColHeaders, invColRows);
 
-  // ==========================================
-  // PHẦN 6: MA TRẬN QUAN HỆ CSDL (ERD MATRIX) & SQL JOIN
-  // ==========================================
-  children.push(createHeading1('PHẦN 6: MA TRẬN QUAN HỆ THỰC THỂ CSDL (ERD MATRIX) & SQL JOIN MẪU'));
-  const erdHeaders = ['Bảng Gốc (Table A)', 'Bảng Đích (Table B)', 'Điều Kiện Khóa Ngoại (ON Clause)', 'Mối Quan Hệ', 'Ý Nghĩa Nghiệp Vụ'];
-  const erdRows = [
-    ['vione_users', 'members', 'vione_users.id = members.user_id', '1 - 1', 'Một tài khoản người dùng gắn liền với một lý lịch hội viên.'],
-    ['members', 'memberships', 'members.id = memberships.member_id', '1 - Nhiều', 'Hội viên sở hữu nhiều niên khóa hội viên qua các năm.'],
-    ['events', 'event_scanners', 'events.id = event_scanners.event_id', '1 - Nhiều', 'Một sự kiện có nhiều nhân sự Ban Truyền thông được chỉ định soát vé.'],
-    ['event_scanners', 'vione_users', 'event_scanners.user_id = vione_users.id', 'Nhiều - 1', 'Liên kết sang tài khoản nhân sự được trao quyền quét camera.'],
-    ['events', 'event_registrations', 'events.id = event_registrations.event_id', '1 - Nhiều', 'Một sự kiện phát hành hàng trăm cuống vé đại biểu có mã QR.'],
-    ['meetings', 'meeting_attendees', 'meetings.id = meeting_attendees.meeting_id', '1 - Nhiều', 'Một cuộc họp Online/Offline có danh sách nhiều đại biểu tham gia.'],
-    ['members', 'invoices', 'members.id = invoices.member_id', '1 - Nhiều', 'CLB phát hành các thông báo hội phí niên liễm cho hội viên.']
+  // 5.6 Bảng audit_logs
+  children.push(createHeading2('5.6 Bảng audit_logs (Nhật Ký Kiểm Toán & Truy Vết An Ninh Hệ Thống)'));
+  const audColHeaders = ['Tên Cột (Field)', 'Kiểu Dữ Liệu', 'Bắt Buộc?', 'Khóa (Key)', 'Giải Thích Chi Tiết'];
+  const audColRows = [
+    ['id', 'BIGSERIAL', 'Có', 'PK', 'Mã định danh nhật ký kiểm toán tăng tự động.'],
+    ['user_id', 'UUID', 'Không', 'FK -> vione_users.id', 'Tài khoản người dùng đã thực hiện hành động.'],
+    ['action', 'VARCHAR(100)', 'Có', 'None', 'Tên hành động: "MEMBER_APPROVE", "MEMBER_RENEW", "SCANNER_ASSIGN", "DELETE_PRODUCT".'],
+    ['target_table', 'VARCHAR(50)', 'Có', 'None', 'Bảng CSDL bị tác động (members, events, invoices).'],
+    ['target_id', 'VARCHAR(100)', 'Không', 'None', 'ID của bản ghi bị tác động.'],
+    ['ip_address', 'VARCHAR(50)', 'Không', 'None', 'Địa chỉ IP truy cập của người thực hiện.'],
+    ['user_agent', 'TEXT', 'Không', 'None', 'Thông tin trình duyệt và hệ điều hành của thiết bị.'],
+    ['details', 'JSONB', 'Không', 'None', 'Dữ liệu trước và sau khi thay đổi (Before/After snapshot).'],
+    ['created_at', 'TIMESTAMPTZ', 'Có', 'None', 'Thời điểm chính xác diễn ra thao tác kiểm toán.']
   ];
-  children.push(createTable(erdHeaders, erdRows, [16, 18, 28, 12, 26]));
-
-  children.push(
-    createCallout(
-      'CÂU LỆNH SQL JOIN MẪU: KIỂM TRA QUYỀN SOÁT VÉ BAN TRUYỀN THÔNG TẠI SỰ KIỆN:',
-      'SELECT esc.id AS assignment_id, u.full_name AS scanner_name, u.role, u.department, e.title AS event_title ' +
-      'FROM event_scanners esc ' +
-      'INNER JOIN vione_users u ON esc.user_id = u.id ' +
-      'INNER JOIN events e ON esc.event_id = e.id ' +
-      'WHERE esc.event_id = :current_event_id AND u.id = :logged_in_user_id;\n\n' +
-      '* Giải thích bình dân: Khi nhân sự mở chức năng quét mã QR trên điện thoại, máy tính soi vào tủ event_scanners xem người này có được Ban Quản Trị chỉ định cho sự kiện này hay không. Nếu có đúng dòng hồ sơ kẹp ghim, camera mới mở ra.',
-      'tip'
-    )
-  );
+  children.push(createTable(audColHeaders, audColRows, [18, 18, 12, 18, 34]));
+  addMdTableDirect(audColHeaders, audColRows);
 
   // ==========================================
-  // PHẦN 7: KỊCH BẢN KIỂM THỬ NGHIỆM THU (TEST CASES)
+  // PHẦN 6: KỊCH BẢN KIỂM THỬ UAT CHẤP THUẬN
   // ==========================================
-  children.push(createHeading1('PHẦN 7: KỊCH BẢN KIỂM THỬ NGHIỆM THU (ACCEPTANCE TEST CASES)'));
-  const tcHeaders = ['Mã TC', 'Tên Nghiệp Vụ', 'Vai Trò Thực Hiện', 'Thao Tác Thực Hiện', 'Kỳ Vọng Kỹ Thuật', 'Kỳ Vọng Giao Diện'];
-  const tcRows = [
+  children.push(createHeading1('PHẦN 6: KỊCH BẢN KIỂM THỬ NGHIỆM THU CHẤP THUẬN (UAT ACCEPTANCE TEST CASES)'));
+  const uatHeaders = ['Mã TC', 'Tên Nghiệp Vụ', 'Vai Trò Thực Hiện', 'Thao Tác Thực Hiện', 'Kỳ Vọng Kỹ Thuật (API/DB)', 'Kỳ Vọng Giao Diện (UI)'];
+  const uatRows = [
     ['TC_CRM_01', 'Đăng ký Landing không có doanh thu', 'Ứng viên mới', 'Điền đơn gia nhập trên Landing web', 'API POST /api/members/apply không gửi trường revenue; CSDL lưu status = pending', 'Hiển thị popup thông báo Nộp đơn thành công, chờ thẩm định'],
-    ['TC_CRM_02', 'BQT / Admin phê duyệt kết nạp', 'Ban Quản Trị / Admin', 'Nhấn nút "Phê duyệt" tại hồ sơ pending', 'status = active, cấp mã M1983-xxx, gửi mail mật khẩu qua mailer', 'Thẻ đổi sang màu xanh Hoạt động, hiển thị mã hội viên mới'],
+    ['TC_CRM_02', 'BQT / Admin phê duyệt kết nạp', 'Ban Quản Trị / Admin', 'Nhấn nút "Phê duyệt" tại hồ sơ pending', 'status = active, sinh mã M1983-xxx, tạo user bcrypt, gửi mail qua mailer', 'Thẻ đổi sang màu xanh Hoạt động, hiển thị mã hội viên mới'],
     ['TC_CRM_03', 'Chỉ định nhân sự quét QR sự kiện', 'Ban Quản Trị', 'Chọn sự kiện, gán nhân sự Ban Truyền thông', 'Lưu bản ghi vào bảng event_scanners với status active', 'Nhân sự BTT mở app thấy nút Soát vé; Hội viên thường không thấy'],
     ['TC_CRM_04', 'Ban Thành viên gia hạn hội viên', 'Ban Thành Viên', 'Bấm nút "Gia hạn" trên hồ sơ hội viên', 'Thêm 365 ngày vào memberships.expires_at, hóa đơn đổi paid', 'Thời hạn thẻ tự động cập nhật đến năm tiếp theo'],
     ['TC_CRM_05', 'Tạo cuộc họp Offline gửi tin nhắn', 'Ban Quản Trị / Admin', 'Tạo họp Offline -> Bấm Ban hành', 'Hệ thống push notification và insert tin nhắn vào chat_messages', 'Hội viên nhận thông báo đẩy và tin nhắn địa chỉ, ngày giờ họp'],
     ['TC_CRM_06', 'Phân quyền phân hệ Tài chính', 'Hội viên thường', 'Cố gắng truy cập menu Tài chính', 'Hệ thống chặn quyền (HTTP 403 Forbidden)', 'Menu Tài chính bị ẩn hoàn toàn trên thanh điều hướng'],
-    ['TC_CRM_07', 'Nhắn tin B2B trên Web CRM', 'Hội viên chính thức', 'Mở chat CRM, gửi tin nhắn cho hội viên khác', 'Lưu vào chat_messages, phát socket thời gian thực', 'Tin nhắn hiển thị ngay trong bong bóng chat của người nhận']
+    ['TC_CRM_07', 'Nhắn tin B2B trên Web CRM', 'Hội viên chính thức', 'Mở chat CRM, gửi tin nhắn cho hội viên khác', 'Lưu vào chat_messages, phát socket thời gian thực', 'Tin nhắn hiển thị ngay trong bong bóng chat của người nhận'],
+    ['TC_CRM_08', 'Kiểm duyệt sản phẩm Sàn B2B', 'Ban Quản Trị', 'Vào danh sách sản phẩm pending, bấm Duyệt', 'Cập nhật products.status = approved, xuất bản lên App', 'Sản phẩm xuất hiện trên sàn Marketplace di động'],
+    ['TC_CRM_09', 'Tạo phiên biểu quyết đại hội', 'Ban Quản Trị', 'Khởi tạo câu hỏi bầu cử và mở bình chọn', 'Lưu bảng votes status = active, phát Socket.io', 'Hội viên mở tab Biểu quyết trên App thấy câu hỏi ngay'],
+    ['TC_CRM_10', 'Truy vết an ninh Audit Log', 'Super Admin', 'Thực hiện thao tác nhạy cảm, mở trang Audit Log', 'CSDL ghi nhận bản ghi mới vào audit_logs kèm IP và User', 'Bảng Audit Log hiển thị dòng log mới nhất ở đầu trang']
   ];
-  children.push(createTable(tcHeaders, tcRows, [10, 18, 14, 20, 20, 18]));
+  children.push(createTable(uatHeaders, uatRows, [14, 20, 16, 20, 18, 12]));
 
-  addMd('## PHẦN 7: KỊCH BẢN KIỂM THỬ NGHIỆM THU CHẤP THUẬN (UAT)');
-  addMd('| ' + tcHeaders.join(' | ') + ' |');
-  addMd('| ' + tcHeaders.map(() => '---').join(' | ') + ' |');
-  tcRows.forEach(r => addMd('| ' + r.join(' | ') + ' |'));
+  addMd('## PHẦN 6: KỊCH BẢN KIỂM THỬ NGHIỆM THU CHẤP THUẬN (UAT)');
+  addMdTableDirect(uatHeaders, uatRows);
 
   const doc = new Document({
+    headers: hf.headers,
+    footers: hf.footers,
     sections: [
       {
         properties: {
@@ -453,8 +482,6 @@ function buildDoc1() {
             margin: { top: 1200, bottom: 1200, left: 1350, right: 1350 },
           },
         },
-        headers: hf.headers,
-        footers: hf.footers,
         children: children,
       },
     ],

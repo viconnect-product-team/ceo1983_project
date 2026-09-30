@@ -58,6 +58,7 @@ import {
   type MeetingCreatorRole,
 } from "@/lib/meetings.functions";
 import { createNotificationFn } from "@/lib/notifications.functions";
+import { useRole } from "@/hooks/use-role";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 import {
   RoomBookingService,
@@ -88,58 +89,64 @@ const TYPE_KEY: Record<Meeting["type"], TKey> = {
   committee: "meet.type.committee",
   general: "meet.type.general",
 };
-const STATUS_KEY: Record<Meeting["status"], TKey> = {
+const STATUS_KEY: Record<Meeting["status"], any> = {
+  pending_approval: "meet.status.pending_approval",
   upcoming: "meet.status.upcoming",
   completed: "meet.status.completed",
   cancelled: "meet.status.cancelled",
 };
-const STATUS_COLOR: Record<Meeting["status"], "info" | "success" | "danger"> = {
+const STATUS_COLOR: Record<Meeting["status"], "info" | "success" | "danger" | "warning"> = {
+  pending_approval: "warning",
   upcoming: "info",
   completed: "success",
   cancelled: "danger",
 };
 
-// Department member registry of CEO 1983
 const DEPARTMENT_MEMBERS: Record<
   string,
   Array<{ name: string; email: string; role: string; phone: string }>
 > = {
-  "Ban Thư ký": [
-    { name: "Lê Hoàng Long", email: "ceo.tongthuky@ceo1983.com", role: "Tổng thư ký", phone: "0983000001" },
-    { name: "Đỗ Thị Mai", email: "ceo.member1@ceo1983.com", role: "Ủy viên Thư ký", phone: "0983000006" },
+  "Ban quản trị": [
+    { name: "Lê Văn Hùng", email: "ceo.bantrith@ceo1983.com", role: "Trưởng ban quản trị", phone: "0983000001" },
+    { name: "Trần Anh Đức", email: "ceo.quantri2@ceo1983.com", role: "Ủy viên Ban quản trị", phone: "0983000006" },
   ],
-  "Ban Thành viên": [
-    { name: "Nguyễn Văn Cường", email: "ceo.thanhvien@ceo1983.com", role: "Trưởng ban thành viên", phone: "0983000002" },
-    { name: "Bùi Đức Thắng", email: "ceo.member2@ceo1983.com", role: "Phó ban thành viên", phone: "0983000007" },
+  "Ban thư ký": [
+    { name: "Lê Hoàng Long", email: "ceo.tongthuky@ceo1983.com", role: "Tổng thư ký", phone: "0983000002" },
+    { name: "Đỗ Thị Mai", email: "ceo.thuky1@ceo1983.com", role: "Ủy viên Ban thư ký", phone: "0983000007" },
   ],
-  "Ban Tài chính": [
-    { name: "Vũ Thu Trang", email: "ceo.taichinh@ceo1983.com", role: "Trưởng ban tài chính", phone: "0983000003" },
-    { name: "Ngô Bảo Anh", email: "ceo.member3@ceo1983.com", role: "Ủy viên Tài chính", phone: "0983000008" },
+  "Ban thành viên": [
+    { name: "Nguyễn Văn Cường", email: "ceo.thanhvien@ceo1983.com", role: "Trưởng ban thành viên", phone: "0983000003" },
+    { name: "Bùi Đức Thắng", email: "ceo.thanhvien2@ceo1983.com", role: "Phó ban thành viên", phone: "0983000008" },
   ],
-  "Ban Truyền thông": [
-    { name: "Phạm Quang Huy", email: "ceo.truyenthong@ceo1983.com", role: "Trưởng ban truyền thông", phone: "0983000004" },
-    { name: "Đinh Trọng Hiếu", email: "ceo.member4@ceo1983.com", role: "Ủy viên Truyền thông", phone: "0983000009" },
+  "Ban xúc tiến thương mại": [
+    { name: "Hoàng Minh Tuấn", email: "ceo.xuctien@ceo1983.com", role: "Trưởng ban xúc tiến thương mại", phone: "0983000004" },
+    { name: "Trịnh Kim Oanh", email: "ceo.xuctien2@ceo1983.com", role: "Ủy viên Xúc tiến", phone: "0983000009" },
   ],
-  "Ban Xúc tiến thương mại": [
-    { name: "Hoàng Minh Tuấn", email: "ceo.xuctien@ceo1983.com", role: "Trưởng ban xúc tiến", phone: "0983000005" },
-    { name: "Trịnh Kim Oanh", email: "ceo.member5@ceo1983.com", role: "Ủy viên Xúc tiến", phone: "0983000010" },
+  "Ban truyền thông": [
+    { name: "Phạm Quang Huy", email: "ceo.truyenthong@ceo1983.com", role: "Trưởng ban truyền thông", phone: "0983000005" },
+    { name: "Đinh Trọng Hiếu", email: "ceo.truyenthong2@ceo1983.com", role: "Ủy viên Truyền thông", phone: "0983000010" },
   ],
-  "Toàn thể Ban Chấp Hành": [
-    { name: "Lê Hoàng Long", email: "ceo.tongthuky@ceo1983.com", role: "Tổng thư ký", phone: "0983000001" },
-    { name: "Nguyễn Văn Cường", email: "ceo.thanhvien@ceo1983.com", role: "Trưởng ban thành viên", phone: "0983000002" },
-    { name: "Vũ Thu Trang", email: "ceo.taichinh@ceo1983.com", role: "Trưởng ban tài chính", phone: "0983000003" },
-    { name: "Phạm Quang Huy", email: "ceo.truyenthong@ceo1983.com", role: "Trưởng ban truyền thông", phone: "0983000004" },
-    { name: "Hoàng Minh Tuấn", email: "ceo.xuctien@ceo1983.com", role: "Trưởng ban xúc tiến", phone: "0983000005" },
+  "Ban thiện nguyện": [
+    { name: "Vũ Thu Trang", email: "ceo.thiennguyen@ceo1983.com", role: "Trưởng ban thiện nguyện", phone: "0983000011" },
+    { name: "Ngô Bảo Anh", email: "ceo.thiennguyen2@ceo1983.com", role: "Ủy viên Thiện nguyện", phone: "0983000012" },
   ],
 };
 
-type ActiveMeetingTab = "meetings" | "room_bookings" | "templates";
+type ActiveMeetingTab = "meetings" | "templates";
 
 function MeetingsPage() {
   const t: any = useT();
   const fmt = useFmt();
   const router = useRouter();
-  const MEETINGS = Route.useLoaderData() as Meeting[];
+  const MEETINGS = (Route.useLoaderData() || []) as Meeting[];
+  const roleState = useRole();
+  const { isPlatformAdmin, isAdmin, isBQT, srsRole } = roleState;
+  const isSuperAdmin = isPlatformAdmin || isBQT;
+  const role = (roleState.roles && roleState.roles[0]) || (srsRole as string);
+
+  // Role permissions
+  const canCreateMeeting = isSuperAdmin || isAdmin || srsRole === "BQT" || srsRole === "BTV" || srsRole === "BTC" || role === "tong_thu_ky" || role === "truong_ban";
+  const canApproveMeeting = isSuperAdmin || isAdmin;
 
   const createFn = useServerFn(createMeetingFn);
   const updateFn = useServerFn(updateMeetingFn);
@@ -163,13 +170,13 @@ function MeetingsPage() {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [formDate, setFormDate] = useState("");
   const [formTime, setFormTime] = useState("14:30");
-  const [formLocation, setFormLocation] = useState("Văn phòng CLB CEO 1983 & Trực tuyến Zoom");
+  const [formLocation, setFormLocation] = useState("Trực tuyến qua Zoom Meeting");
   const [formZoomUrl, setFormZoomUrl] = useState("https://zoom.us/j/88819839999");
   const [formStatus, setFormStatus] = useState<Meeting["status"]>("upcoming");
   const [formMeetingMode, setFormMeetingMode] = useState<"offline" | "online">("online");
   const [formGpsUrl, setFormGpsUrl] = useState("https://www.google.com/maps/search/?api=1&query=T%C3%B2a+nh%C3%A0+V-Tower+Kim+M%C3%A3+H%C3%A0+N%E1%BB%99i");
 
-  // Enhanced fields: 3 platforms, 4 creator roles, urgent meeting flag
+  // Enhanced fields: Platforms dropdown, 4 creator roles (Quản trị, Admin, Tổng thư ký, Trưởng ban)
   const [formPlatform, setFormPlatform] = useState<MeetingPlatform>("ZOOM");
   const [formCreatorRole, setFormCreatorRole] = useState<MeetingCreatorRole>("TỔNG_THƯ_KÝ");
   const [formCreatorName, setFormCreatorName] = useState("Lê Hoàng Long (Tổng thư ký)");
@@ -199,74 +206,7 @@ function MeetingsPage() {
     return DEPARTMENT_MEMBERS[formDepartment] || [];
   }, [formDepartment]);
 
-  // --- TAB 2: Room Bookings & Approval State ---
-  const [rooms, setRooms] = useState<MeetingRoom[]>(() => RoomBookingService.getRooms());
-  const [bookings, setBookings] = useState<RoomBookingRequest[]>(() => RoomBookingService.getBookings());
-
-  // Thống kê động số lượng phòng trống & phòng đã đặt
-  const roomStats = useMemo(() => {
-    const totalRooms = rooms.length;
-    const approvedBookingsByRoom = new Map<string, RoomBookingRequest[]>();
-    for (const b of bookings) {
-      if (b.status === "approved") {
-        const list = approvedBookingsByRoom.get(b.roomId) || [];
-        list.push(b);
-        approvedBookingsByRoom.set(b.roomId, list);
-      }
-    }
-
-    const occupiedRoomIds = new Set<string>();
-    for (const [roomId, bList] of approvedBookingsByRoom.entries()) {
-      if (bList.length > 0) {
-        occupiedRoomIds.add(roomId);
-      }
-    }
-
-    const occupiedRoomsCount = occupiedRoomIds.size;
-    const availableRoomsCount = Math.max(0, totalRooms - occupiedRoomsCount);
-    const pendingBookingsCount = bookings.filter((b) => b.status === "pending_admin").length;
-
-    return {
-      totalRooms,
-      occupiedRoomsCount,
-      availableRoomsCount,
-      pendingBookingsCount,
-      approvedBookingsByRoom,
-    };
-  }, [rooms, bookings]);
-
-  const [bookingFilter, setBookingFilter] = useState<"all" | "pending_admin" | "approved" | "rejected">("all");
-  const [bookRoomModalOpen, setBookRoomModalOpen] = useState(false);
-  const [approveModalOpen, setApproveModalOpen] = useState(false);
-  const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<RoomBookingRequest | null>(null);
-
-  // Approval form state
-  const [adminNotes, setAdminNotes] = useState("Ban Quản Trị đã kiểm tra lịch và chuẩn bị sẵn thiết bị.");
-  const [approvalZoomUrl, setApprovalZoomUrl] = useState("https://zoom.us/j/88819830002?pwd=CEO1983");
-  const [approvalPasscode, setApprovalPasscode] = useState("198302");
-  const [rejectionReason, setRejectionReason] = useState("Trùng lịch hội nghị của Ban Chấp Hành Hiệp hội.");
-
-  // New Booking Request Form State
-  const [newRoomId, setNewRoomId] = useState("room_sapphire");
-  const [newTitle, setNewTitle] = useState("Họp Ban Xúc Tiến Thương Mại");
-  const [newOrganizerName, setNewOrganizerName] = useState("Lê Hoàng Long");
-  const [newOrganizerEmail, setNewOrganizerEmail] = useState("long.le@ceo1983.com");
-  const [newOrganizerPhone, setNewOrganizerPhone] = useState("0983 000 001");
-  const [newDepartment, setNewDepartment] = useState("Ban Xúc tiến thương mại");
-  const [newMode, setNewMode] = useState<"offline" | "online" | "hybrid">("hybrid");
-  const [newDate, setNewDate] = useState(new Date().toISOString().slice(0, 10));
-  const [newStartTime, setNewStartTime] = useState("14:30");
-  const [newEndTime, setNewEndTime] = useState("16:30");
-  const [newAttendeesCount, setNewAttendeesCount] = useState(15);
-  const [newEquipment, setNewEquipment] = useState<string[]>(["TV tương tác 85 inch", "Camera Polycom 4K AI Tracking"]);
-  const [newPurpose, setNewPurpose] = useState("Bàn kế hoạch triển khai kết nối giao thương các hội viên quý tới.");
-
-  // Dispatched Email Preview Modal
-  const [emailPreviewModalOpen, setEmailPreviewModalOpen] = useState(false);
-  const [previewEmailData, setPreviewEmailData] = useState<{ subject: string; htmlBody: string } | null>(null);
-
-  // --- TAB 3: Templates State ---
+  // --- TAB 2: Templates State ---
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>("room_booking");
   const [selectedTemplate, setSelectedTemplate] = useState<NotificationTemplate>(
     () => NOTIFICATION_TEMPLATES.find((t) => t.category === "room_booking") || NOTIFICATION_TEMPLATES[0]
@@ -294,33 +234,42 @@ function MeetingsPage() {
     return renderNotificationTemplate(selectedTemplate, sampleVars);
   }, [selectedTemplate, sampleVars]);
 
-  // Modal tạo cuộc gặp kết nối 1-on-1
-  const [create1on1Open, setCreate1on1Open] = useState(false);
+  // Dispatched Email Preview Modal
+  const [emailPreviewModalOpen, setEmailPreviewModalOpen] = useState(false);
+  const [previewEmailData, setPreviewEmailData] = useState<{ subject: string; htmlBody: string } | null>(null);
 
-  const applyCreatorRolePreset = (role: MeetingCreatorRole, dept: string = formDepartment) => {
-    setFormCreatorRole(role);
-    if (role === "CHỦ_TỊCH") {
-      setFormCreatorName("Chủ tịch CLB CEO 1983");
-      setFormCreatorPhone("0983 198 383");
-      setFormCreatorEmail("chutich@ceo1983.com");
-    } else if (role === "TỔNG_THƯ_KÝ") {
+  const applyCreatorRolePreset = (r: MeetingCreatorRole, dept: string = formDepartment) => {
+    setFormCreatorRole(r);
+    if (r === "QUẢN_TRỊ") {
+      setFormCreatorName("Ban Quản Trị Hệ Thống (Super Admin)");
+      setFormCreatorPhone("0983 888 888");
+      setFormCreatorEmail("superadmin@ceo1983.com");
+      setFormStatus("upcoming");
+    } else if (r === "ADMIN") {
+      setFormCreatorName("Admin Ban Thư Ký CEO 1983");
+      setFormCreatorPhone("0983 999 999");
+      setFormCreatorEmail("admin@ceo1983.com");
+      setFormStatus("upcoming");
+    } else if (r === "TỔNG_THƯ_KÝ") {
       setFormCreatorName("Lê Hoàng Long (Tổng thư ký)");
       setFormCreatorPhone("0983 000 001");
       setFormCreatorEmail("ceo.tongthuky@ceo1983.com");
-    } else if (role === "ADMIN") {
-      setFormCreatorName("Ban Quản Trị Hệ Thống CEO 1983");
-      setFormCreatorPhone("0983 999 999");
-      setFormCreatorEmail("admin@ceo1983.com");
-    } else if (role === "TRƯỞNG_BAN") {
+      setFormStatus("pending_approval");
+    } else if (r === "TRƯỞNG_BAN") {
       const firstMem = (DEPARTMENT_MEMBERS[dept] || [])[0];
       setFormCreatorName(firstMem ? `${firstMem.name} (${firstMem.role})` : `Trưởng ban ${dept}`);
       setFormCreatorPhone(firstMem?.phone || "0983 000 002");
       setFormCreatorEmail(firstMem?.email || "ceo.truongban@ceo1983.com");
+      setFormStatus("pending_approval");
     }
   };
 
-  // --- Handlers for TAB 1 (Meetings) ---
+  // --- Handlers for Meetings ---
   const handleOpenCreate = () => {
+    if (!canCreateMeeting) {
+      toast.error("Chỉ Quản trị, Admin, Tổng thư ký và Trưởng ban mới có quyền tạo cuộc họp.");
+      return;
+    }
     setSelectedMeeting(null);
     setFormTitle("Họp Ban: Triển khai kế hoạch hoạt động");
     setFormType("committee");
@@ -332,15 +281,102 @@ function MeetingsPage() {
     setFormLocation("Trực tuyến qua Zoom Meeting");
     setFormZoomUrl("https://zoom.us/j/88819839999");
     setFormPlatform("ZOOM");
-    setFormCreatorRole("TỔNG_THƯ_KÝ");
-    setFormCreatorName("Lê Hoàng Long (Tổng thư ký)");
-    setFormCreatorPhone("0983 000 001");
-    setFormCreatorEmail("ceo.tongthuky@ceo1983.com");
+
+    // Gán role khởi tạo tương ứng
+    if (isSuperAdmin) {
+      setFormCreatorRole("QUẢN_TRỊ");
+      setFormCreatorName("Ban Quản Trị Hệ Thống (Super Admin)");
+      setFormCreatorPhone("0983 888 888");
+      setFormCreatorEmail("superadmin@ceo1983.com");
+      setFormStatus("upcoming");
+    } else if (isAdmin) {
+      setFormCreatorRole("ADMIN");
+      setFormCreatorName("Admin Ban Thư Ký CEO 1983");
+      setFormCreatorPhone("0983 999 999");
+      setFormCreatorEmail("admin@ceo1983.com");
+      setFormStatus("upcoming");
+    } else if (role === "tong_thu_ky") {
+      setFormCreatorRole("TỔNG_THƯ_KÝ");
+      setFormCreatorName("Lê Hoàng Long (Tổng thư ký)");
+      setFormCreatorPhone("0983 000 001");
+      setFormCreatorEmail("ceo.tongthuky@ceo1983.com");
+      setFormStatus("pending_approval");
+    } else {
+      setFormCreatorRole("TRƯỞNG_BAN");
+      setFormCreatorName("Trưởng ban Xúc tiến thương mại");
+      setFormCreatorPhone("0983 000 005");
+      setFormCreatorEmail("ceo.xuctien@ceo1983.com");
+      setFormStatus("pending_approval");
+    }
+
     setFormIsUrgent(false);
     setFormUrgentReason("");
-    setFormStatus("upcoming");
     setFormMeetingMode("online");
     setModalOpen(true);
+  };
+
+  // Duyệt cuộc họp (chỉ dành cho Quản trị/Admin)
+  const handleApproveMeeting = async (m: Meeting) => {
+    if (!canApproveMeeting) {
+      toast.error("Chỉ Ban Quản Trị mới có thẩm quyền phê duyệt cuộc họp.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await updateFn({
+        data: {
+          id: m.id,
+          title: m.title,
+          type: m.type,
+          date: m.date,
+          time: m.time,
+          location: m.location,
+          attendees: m.attendees,
+          status: "upcoming",
+          department: m.department || "",
+          targetMembers: m.targetMembers || [],
+          zoomUrl: m.zoomUrl || "",
+          platform: m.platform || "ZOOM",
+          creatorRole: m.creatorRole || "TRƯỞNG_BAN",
+          creatorName: m.creatorName || "",
+          creatorPhone: m.creatorPhone || "",
+          creatorEmail: m.creatorEmail || "",
+          isUrgent: m.isUrgent ?? false,
+          urgentReason: m.urgentReason || "",
+        },
+      });
+
+      // Gửi thông báo phê duyệt
+      try {
+        await createNotif({
+          data: {
+            title: `[ĐÃ DUYỆT CUỘC HỌP] ${m.title}`,
+            body: `Ban Quản Trị đã phê duyệt cuộc họp "${m.title}" do ${m.creatorName} (${m.creatorRole}) khởi tạo. Lịch họp chính thức: ${m.time} ngày ${m.date}. Địa điểm/Link: ${m.location || m.zoomUrl}`,
+            category: "meeting",
+            audience: "all",
+            channel: "inapp",
+            appScope: "all",
+            targetApp: "all",
+            status: "sent",
+          },
+        });
+      } catch {}
+
+      toast.success(`✓ Đã phê duyệt cuộc họp "${m.title}" thành công!`);
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi phê duyệt cuộc họp");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRejectMeeting = (m: Meeting) => {
+    if (!canApproveMeeting) {
+      toast.error("Chỉ Ban Quản Trị mới có thẩm quyền từ chối cuộc họp.");
+      return;
+    }
+    handleOpenCancel(m);
   };
 
   const handleOpenEdit = (m: Meeting) => {
@@ -618,522 +654,58 @@ function MeetingsPage() {
     handleOpenDelete(m);
   };
 
-  // --- Handlers for TAB 2 (Room Bookings) ---
-  const handleCreateRoomBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { booking, dispatchedEmail } = RoomBookingService.requestBooking({
-        roomId: newRoomId,
-        title: newTitle,
-        organizerName: newOrganizerName,
-        organizerEmail: newOrganizerEmail,
-        organizerPhone: newOrganizerPhone,
-        department: newDepartment,
-        mode: newMode,
-        date: newDate,
-        startTime: newStartTime,
-        endTime: newEndTime,
-        attendeesCount: Number(newAttendeesCount),
-        equipmentRequested: newEquipment,
-        purpose: newPurpose,
-      });
-
-      setBookings(RoomBookingService.getBookings());
-      setBookRoomModalOpen(false);
-
-      if (dispatchedEmail) {
-        setPreviewEmailData(dispatchedEmail);
-        setEmailPreviewModalOpen(true);
-      }
-
-      // Phát thông báo in-app tới BQT / Quản trị viên
-      try {
-        await createNotif({
-          data: {
-            title: `[Yêu cầu đặt phòng mới] ${booking.title} — ${booking.roomName}`,
-            body: `Đại biểu ${booking.organizerName} (${booking.organizerEmail} - ${booking.organizerPhone}) thuộc ${booking.department} đã gửi yêu cầu mượn phòng "${booking.roomName}" vào ${booking.startTime} - ${booking.endTime} ngày ${booking.date}. Quy mô: ${booking.attendeesCount} người. Vui lòng vào CRM phê duyệt.`,
-            audience: "all",
-            channel: "inapp",
-            appScope: "all",
-            targetApp: "all",
-            status: "sent",
-          },
-        });
-      } catch (notifErr) {
-        console.warn("Could not dispatch in-app notification for room booking request:", notifErr);
-      }
-
-      toast.success("Đã gửi yêu cầu mượn phòng họp tới Ban Quản Trị và phát thông báo!");
-    } catch (err: any) {
-      toast.error(err?.message || "Lỗi khi gửi yêu cầu book phòng");
-    }
-  };
-
-  const handleOpenApprove = (b: RoomBookingRequest) => {
-    setSelectedBooking(b);
-    setApprovalZoomUrl(b.onlineMeetingUrl || "https://zoom.us/j/88819830002?pwd=CEO1983");
-    setApprovalPasscode(b.onlinePasscode || "198302");
-    setAdminNotes("Ban Quản Trị đã duyệt lịch. Đã chuẩn bị sẵn màn hình LED, mic và kỹ thuật viên trực phòng.");
-    setApproveModalOpen(true);
-  };
-
-  const handleConfirmApprove = async () => {
-    if (!selectedBooking) return;
-    try {
-      const { booking, dispatchedEmail } = RoomBookingService.approveBooking(selectedBooking.id, {
-        adminNotes,
-        zoomUrl: approvalZoomUrl,
-        passcode: approvalPasscode,
-      });
-
-      setBookings(RoomBookingService.getBookings());
-      setApproveModalOpen(false);
-
-      if (dispatchedEmail) {
-        setPreviewEmailData(dispatchedEmail);
-        setEmailPreviewModalOpen(true);
-      }
-
-      // Phát thông báo in-app tới người đặt phòng & các bên liên quan
-      try {
-        await createNotif({
-          data: {
-            title: `[Xác nhận duyệt đặt phòng] ${booking.title} — ${booking.roomName}`,
-            body: `Yêu cầu đặt phòng "${booking.roomName}" (${booking.startTime} - ${booking.endTime}, ngày ${booking.date}) của ${booking.organizerName} (${booking.organizerEmail}) đã ĐƯỢC PHÊ DUYỆT THÀNH CÔNG. Ghi chú BQT: "${adminNotes}". ${booking.onlineMeetingUrl ? `Link họp trực tuyến: ${booking.onlineMeetingUrl} (Passcode: ${booking.onlinePasscode || ''})` : 'Phòng họp đã được kích hoạt sử dụng.'}`,
-            audience: "all",
-            channel: "inapp",
-            appScope: "all",
-            targetApp: "all",
-            status: "sent",
-          },
-        });
-      } catch (notifErr) {
-        console.warn("Could not dispatch in-app notification for approved booking:", notifErr);
-      }
-
-      toast.success(
-        `Đã phê duyệt phòng họp "${booking.roomName}"! Trạng thái phòng trống đã cập nhật và thông báo xác nhận đã gửi tới ${booking.organizerEmail}.`
-      );
-    } catch (err: any) {
-      toast.error(err?.message || "Lỗi khi phê duyệt");
-    }
-  };
-
-  const handleOpenReject = (b: RoomBookingRequest) => {
-    setSelectedBooking(b);
-    setRejectionReason("Trùng lịch hội nghị chuyên đề của Ban Chấp Hành Hiệp hội.");
-    setRejectModalOpen(true);
-  };
-
-  const handleConfirmReject = async () => {
-    if (!selectedBooking) return;
-    try {
-      const { booking, dispatchedEmail } = RoomBookingService.rejectBooking(
-        selectedBooking.id,
-        rejectionReason
-      );
-
-      setBookings(RoomBookingService.getBookings());
-      setRejectModalOpen(false);
-
-      if (dispatchedEmail) {
-        setPreviewEmailData(dispatchedEmail);
-        setEmailPreviewModalOpen(true);
-      }
-
-      // Đẩy thông báo in-app huỷ/từ chối đặt phòng kèm yêu cầu chọn khung giờ khác
-      try {
-        await createNotif({
-          data: {
-            title: `[Từ chối duyệt đặt phòng họp] ${booking.title} — ${booking.roomName}`,
-            body: `Yêu cầu đặt phòng "${booking.roomName}" (${booking.startTime} - ${booking.endTime}, ngày ${booking.date}) của ${booking.organizerName} (${booking.organizerEmail}) đã bị từ chối. Lý do: "${rejectionReason}". Quý hội viên vui lòng chọn khung giờ khác hoặc liên hệ Ban Thư Ký để được hỗ trợ sắp xếp lại.`,
-            audience: "all",
-            channel: "inapp",
-            appScope: "all",
-            targetApp: "all",
-            status: "sent",
-          },
-        });
-      } catch (notifErr) {
-        console.warn("Could not dispatch in-app notification for rejected booking:", notifErr);
-      }
-
-      toast.success(
-        `Đã từ chối đặt phòng, cập nhật trạng thái phòng trống và gửi thông báo tới ${booking.organizerEmail}.`
-      );
-    } catch (err: any) {
-      toast.error(err?.message || "Lỗi khi từ chối");
-    }
-  };
-
-  const filteredBookings = useMemo(() => {
-    if (bookingFilter === "all") return bookings;
-    return bookings.filter((b) => b.status === bookingFilter);
-  }, [bookings, bookingFilter]);
-
   return (
     <AppShell>
       {/* Header */}
       <PageHeader
-        title="Quản Lý Cuộc Họp & Đặt Phòng Họp Thông Minh"
-        subtitle="Hệ thống đăng ký book phòng Online/Offline, quy trình duyệt email tự động, kho mẫu template và quản lý kết nối"
+        title="Quản Lý Cuộc Họp & Lịch Công Tác"
+        subtitle="Khởi tạo cuộc họp, quản trị phê duyệt, chọn phòng họp Zoom/Google Meet/UniWork và phát thông báo đồng bộ"
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {activeTab === "meetings" && (
+            {canCreateMeeting && (
               <button
                 onClick={handleOpenCreate}
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[#003B95] hover:bg-blue-900 transition shadow-sm cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                Tạo Cuộc Họp Ban
-              </button>
-            )}
-            {activeTab === "room_bookings" && (
-              <button
-                onClick={() => setBookRoomModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 transition shadow-sm cursor-pointer"
-              >
-                <Plus className="h-4 w-4" />
-                Đăng Ký Đặt Phòng Họp
+                Tạo Cuộc Họp
               </button>
             )}
           </div>
         }
       />
 
-      {/* Modern 4-Tab Switcher */}
+      {/* Modern 2-Tab Switcher */}
       <div className="mb-6 flex flex-wrap gap-2 border-b border-border pb-3">
         <button
-          onClick={() => setActiveTab("room_bookings")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
-            activeTab === "room_bookings"
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
-          }`}
-        >
-          <MapPin className="h-4 w-4" />
-          <span>Đặt Phòng & Phê Duyệt Email</span>
-          <span className="ml-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400 font-extrabold">
-            {bookings.filter((b) => b.status === "pending_admin").length} Chờ Duyệt
-          </span>
-        </button>
-
-        <button
           onClick={() => setActiveTab("meetings")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${
             activeTab === "meetings"
               ? "bg-primary text-primary-foreground shadow-md"
               : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
           }`}
         >
           <Calendar className="h-4 w-4" />
-          <span>Lịch Họp Ban & Sự Kiện ({MEETINGS.length})</span>
+          <span>Lịch Họp & Giao Ban ({MEETINGS.length})</span>
+          {MEETINGS.filter((m) => m.status === "pending_approval").length > 0 && (
+            <span className="ml-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400 font-extrabold">
+              {MEETINGS.filter((m) => m.status === "pending_approval").length} Chờ Duyệt
+            </span>
+          )}
         </button>
 
         <button
           onClick={() => setActiveTab("templates")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer ${
             activeTab === "templates"
               ? "bg-primary text-primary-foreground shadow-md"
               : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
           }`}
         >
           <Mail className="h-4 w-4" />
-          <span>Mẫu Email & Tin Nhắn Cố Định ({NOTIFICATION_TEMPLATES.length})</span>
+          <span>Mẫu Thông Báo & Email Chuẩn Hoá ({NOTIFICATION_TEMPLATES.length})</span>
         </button>
       </div>
-
-      {/* ==================================================================== */}
-      {/* TAB 2: ĐẶT PHÒNG HỌP & PHÊ DUYỆT (ONLINE & OFFLINE)                   */}
-      {/* ==================================================================== */}
-      {activeTab === "room_bookings" && (
-        <div className="space-y-6">
-          {/* KPI Dashboard: Thống Kê Tổng Số Phòng & Trạng Thái Phòng Trống */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard
-              label="Tổng Số Phòng Họp"
-              value={roomStats.totalRooms}
-              icon={<MapPin className="h-4 w-4" />}
-            />
-            <StatCard
-              label="Phòng Trống (Khả Dụng)"
-              value={roomStats.availableRoomsCount}
-              tone="success"
-              icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />}
-            />
-            <StatCard
-              label="Phòng Đã Đặt / Sử Dụng"
-              value={roomStats.occupiedRoomsCount}
-              tone={roomStats.occupiedRoomsCount > 0 ? "warning" : "neutral"}
-              icon={<Clock className="h-4 w-4 text-amber-600" />}
-            />
-            <StatCard
-              label="Đơn Chờ Quản Trị Duyệt"
-              value={roomStats.pendingBookingsCount}
-              tone={roomStats.pendingBookingsCount > 0 ? "danger" : "neutral"}
-              icon={<AlertCircle className="h-4 w-4 text-rose-600" />}
-            />
-          </div>
-
-          {/* Rooms Grid */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" /> Các Phòng Họp Sẵn Có Trong Hệ Thống ({roomStats.availableRoomsCount}/{roomStats.totalRooms} phòng trống)
-              </h2>
-              <span className="text-xs text-muted-foreground">Hỗ trợ đầy đủ Online, Offline & Hybrid</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {rooms.map((rm) => {
-                const roomBookings = roomStats.approvedBookingsByRoom.get(rm.id) || [];
-                const isOccupied = roomBookings.length > 0;
-                return (
-                  <Card key={rm.id} className="p-4 border border-border/80 hover:border-primary/50 transition shadow-sm">
-                    <div className="flex items-start justify-between mb-2">
-                      <span
-                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                          rm.type === "hybrid"
-                            ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
-                            : rm.type === "online"
-                            ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
-                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                        }`}
-                      >
-                        {rm.type === "hybrid" ? "Hybrid" : rm.type === "online" ? "Online Studio" : "Phòng Offline"}
-                      </span>
-                      <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" /> {rm.capacity} chỗ
-                      </span>
-                    </div>
-
-                    <h3 className="font-bold text-sm text-foreground line-clamp-1">{rm.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{rm.location}</p>
-
-                    {/* Trạng thái phòng trống / đã đặt thực tế */}
-                    <div className="mt-2.5 pt-2 border-t border-border/50 flex items-center justify-between">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${
-                          isOccupied
-                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
-                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${isOccupied ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
-                        {isOccupied ? `Đã có lịch đặt (${roomBookings.length})` : "Phòng trống • Sẵn sàng"}
-                      </span>
-                      {isOccupied && (
-                        <span className="text-[10px] text-muted-foreground font-semibold">
-                          {roomBookings[0].startTime} - {roomBookings[0].endTime}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-border/60">
-                      <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Trang thiết bị:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {rm.equipment.slice(0, 3).map((eq, i) => (
-                          <span key={i} className="text-[10px] bg-secondary px-2 py-0.5 rounded-md text-foreground/80">
-                            {eq}
-                          </span>
-                        ))}
-                        {rm.equipment.length > 3 && (
-                          <span className="text-[10px] text-muted-foreground">+{rm.equipment.length - 3}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setNewRoomId(rm.id);
-                        setBookRoomModalOpen(true);
-                      }}
-                      className="w-full mt-3 rounded-lg bg-secondary/80 hover:bg-primary hover:text-primary-foreground py-1.5 text-xs font-semibold transition"
-                    >
-                      {isOccupied ? "Đặt thêm khung giờ khác" : "Đặt phòng này"}
-                    </button>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Bookings & Approvals Section */}
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-border/60">
-              <div>
-                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <FileCheck className="h-5 w-5 text-emerald-600" />
-                  Danh Sách Đăng Ký Đặt Phòng & Luồng Phê Duyệt Quản Trị
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Thành viên đăng ký -&gt; Chờ Admin phê duyệt -&gt; Hệ thống tự động gửi email xác nhận kèm link họp hoặc địa chỉ
-                </p>
-              </div>
-
-              {/* Status Filter */}
-              <div className="flex items-center gap-1.5 bg-secondary/50 p-1 rounded-xl">
-                {(["all", "pending_admin", "approved", "rejected"] as const).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setBookingFilter(st)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                      bookingFilter === st
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {st === "all"
-                      ? "Tất cả"
-                      : st === "pending_admin"
-                      ? "Chờ duyệt"
-                      : st === "approved"
-                      ? "Đã duyệt"
-                      : "Từ chối"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Bookings Table / Cards */}
-            <div className="space-y-3">
-              {filteredBookings.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground text-sm">
-                  Không tìm thấy yêu cầu đặt phòng nào phù hợp.
-                </div>
-              ) : (
-                filteredBookings.map((b) => (
-                  <div
-                    key={b.id}
-                    className="rounded-xl border border-border/80 bg-background/50 p-4 transition hover:border-border hover:shadow-sm"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded">
-                            {b.id}
-                          </span>
-                          <span
-                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                              b.status === "approved"
-                                ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                                : b.status === "rejected"
-                                ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
-                                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-                            }`}
-                          >
-                            {b.status === "approved"
-                              ? "✓ Đã Phê Duyệt"
-                              : b.status === "rejected"
-                              ? "✗ Từ Chối"
-                              : "⏳ Chờ Quản Trị Duyệt"}
-                          </span>
-                          <span className="text-xs font-semibold text-primary">
-                            {b.roomName}
-                          </span>
-                        </div>
-
-                        <h3 className="text-base font-bold text-foreground">{b.title}</h3>
-
-                        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">
-                          <span className="flex items-center gap-1 font-medium text-foreground">
-                            <Clock className="h-3.5 w-3.5 text-primary" /> {b.startTime} - {b.endTime} | Ngày {b.date}
-                          </span>
-                          <span>
-                            Người đặt: <strong>{b.organizerName}</strong> ({b.department})
-                          </span>
-                          <span>Email: {b.organizerEmail}</span>
-                          <span>Quy mô: {b.attendeesCount} đại biểu</span>
-                        </div>
-
-                        {b.onlineMeetingUrl && b.status === "approved" && (
-                          <div className="flex items-center gap-2 pt-1 text-xs">
-                            <Video className="h-3.5 w-3.5 text-blue-600" />
-                            <span className="text-muted-foreground">Link họp Online:</span>
-                            <a
-                              href={b.onlineMeetingUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-semibold text-blue-600 hover:underline flex items-center gap-1"
-                            >
-                              {b.onlineMeetingUrl} <ExternalLink className="h-3 w-3" />
-                            </a>
-                            {b.onlinePasscode && (
-                              <span className="text-muted-foreground">
-                                (Passcode: <strong className="text-foreground">{b.onlinePasscode}</strong>)
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {b.rejectionReason && b.status === "rejected" && (
-                          <p className="text-xs text-rose-600 pt-1 font-medium">
-                            Lý do từ chối: {b.rejectionReason}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        {b.status === "pending_admin" && (
-                          <>
-                            <button
-                              onClick={() => handleOpenApprove(b)}
-                              className="rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition flex items-center gap-1.5"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Phê Duyệt & Gửi Mail
-                            </button>
-                            <button
-                              onClick={() => handleOpenReject(b)}
-                              className="rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-400 transition flex items-center gap-1.5"
-                            >
-                              <XCircle className="h-3.5 w-3.5" /> Từ Chối
-                            </button>
-                          </>
-                        )}
-
-                        <button
-                          onClick={() => {
-                            const tmpl = NOTIFICATION_TEMPLATES.find((t) =>
-                              b.status === "approved"
-                                ? t.code === "MEETING_BOOKING_CONFIRMED"
-                                : b.status === "rejected"
-                                ? t.code === "MEETING_BOOKING_REJECTED"
-                                : t.code === "MEETING_BOOKING_REQUEST"
-                            );
-                            if (tmpl) {
-                              const rendered = renderNotificationTemplate(tmpl, {
-                                requesterName: b.organizerName,
-                                meetingTitle: b.title,
-                                roomName: b.roomName,
-                                locationAddress: "Tầng 5 Tòa nhà CEO Tower, Hà Nội",
-                                onlineMeetingUrl: b.onlineMeetingUrl || "https://zoom.us/j/88819830002",
-                                passcode: b.onlinePasscode || "198302",
-                                date: b.date,
-                                startTime: b.startTime,
-                                endTime: b.endTime,
-                                attendeesCount: `${b.attendeesCount} đại biểu`,
-                                rejectionReason: b.rejectionReason || "Trùng lịch họp Ban Chấp Hành",
-                                suggestedAlternative: "Chọn khung giờ khác hoặc liên hệ Ban Thư Ký",
-                                adminNotes: b.adminNotes || "Ban Quản Trị đã duyệt lịch.",
-                              });
-                              setPreviewEmailData(rendered);
-                              setEmailPreviewModalOpen(true);
-                            }
-                          }}
-                          className="rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition flex items-center gap-1"
-                        >
-                          <Eye className="h-3.5 w-3.5" /> Xem Mẫu Mail
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ==================================================================== */}
       {/* TAB 1: LỊCH HỌP BAN & SỰ KIỆN (EXISTING MEETINGS GRID)                 */}
@@ -1141,11 +713,17 @@ function MeetingsPage() {
       {activeTab === "meetings" && (
         <>
           {/* KPI Cards */}
-          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <StatCard
               label={t("meet.kpi.total")}
               value={MEETINGS.length}
               icon={<Users2 className="h-4 w-4" />}
+            />
+            <StatCard
+              label="Chờ Quản Trị Duyệt"
+              value={MEETINGS.filter((m) => m.status === "pending_approval").length}
+              tone={MEETINGS.filter((m) => m.status === "pending_approval").length > 0 ? "warning" : "info"}
+              icon={<Clock className="h-4 w-4 text-amber-600" />}
             />
             <StatCard
               label={t("meet.kpi.upcoming")}
@@ -1154,10 +732,10 @@ function MeetingsPage() {
               icon={<Calendar className="h-4 w-4" />}
             />
             <StatCard
-              label="Đã Hủy Hoặc Hoàn Tất"
-              value={MEETINGS.filter((m) => m.status !== "upcoming").length}
+              label="Đã Hoàn Tất / Đã Hủy"
+              value={MEETINGS.filter((m) => m.status === "completed" || m.status === "cancelled").length}
               tone="success"
-              icon={<Clock className="h-4 w-4" />}
+              icon={<CheckCircle2 className="h-4 w-4" />}
             />
           </div>
 
@@ -1182,7 +760,9 @@ function MeetingsPage() {
 
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Pill color={STATUS_COLOR[m.status]}>{t(STATUS_KEY[m.status])}</Pill>
+                    <Pill color={STATUS_COLOR[m.status]}>
+                      {m.status === "pending_approval" ? "Chờ Quản Trị Duyệt" : t(STATUS_KEY[m.status])}
+                    </Pill>
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t(TYPE_KEY[m.type])}
                     </span>
@@ -1302,6 +882,28 @@ function MeetingsPage() {
 
                 {/* Action buttons */}
                 <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/50 pt-3">
+                  {/* Quản trị viên duyệt hoặc từ chối cuộc họp chờ duyệt */}
+                  {m.status === "pending_approval" && canApproveMeeting && (
+                    <>
+                      <button
+                        onClick={() => handleApproveMeeting(m)}
+                        className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition cursor-pointer shadow-xs"
+                        title="Phê duyệt kích hoạt cuộc họp này"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                        <span>Duyệt Cuộc Họp</span>
+                      </button>
+                      <button
+                        onClick={() => handleRejectMeeting(m)}
+                        className="flex items-center gap-1.5 rounded-lg border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 transition cursor-pointer"
+                        title="Từ chối cuộc họp này"
+                      >
+                        <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                        <span>Từ Chối</span>
+                      </button>
+                    </>
+                  )}
+
                   {/* Nút vào họp online */}
                   {m.zoomUrl && (
                     <button
@@ -1532,334 +1134,7 @@ function MeetingsPage() {
       {/* MODALS SECTION                                                       */}
       {/* ==================================================================== */}
 
-      {/* Modal 1: Đăng Ký Đặt Phòng Họp */}
-      {bookRoomModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
-              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-emerald-600" /> Đăng Ký Sử Dụng Phòng Họp
-              </h3>
-              <button
-                onClick={() => setBookRoomModalOpen(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
 
-            <form onSubmit={handleCreateRoomBooking} className="space-y-4 text-xs">
-              <div>
-                <label className="font-bold text-foreground block mb-1">Chọn phòng họp *</label>
-                <select
-                  value={newRoomId}
-                  onChange={(e) => setNewRoomId(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm font-medium"
-                >
-                  {rooms.map((rm) => (
-                    <option key={rm.id} value={rm.id}>
-                      {rm.name} ({rm.capacity} chỗ - {rm.type.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-bold text-foreground block mb-1">Tiêu đề cuộc họp *</label>
-                <input
-                  type="text"
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Ví dụ: Họp Ban Xúc Tiến Thương Mại Quý 3"
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-foreground block mb-1">Người đăng ký *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newOrganizerName}
-                    onChange={(e) => setNewOrganizerName(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-foreground block mb-1">Số điện thoại *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={newOrganizerPhone}
-                    onChange={(e) => setNewOrganizerPhone(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-foreground block mb-1">Email nhận phê duyệt *</label>
-                  <input
-                    type="email"
-                    required
-                    value={newOrganizerEmail}
-                    onChange={(e) => setNewOrganizerEmail(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-foreground block mb-1">Hình thức cuộc họp *</label>
-                  <select
-                    value={newMode}
-                    onChange={(e) => setNewMode(e.target.value as any)}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                  >
-                    <option value="offline">Trực tiếp (Offline)</option>
-                    <option value="online">Trực tuyến (Online Zoom/Meet)</option>
-                    <option value="hybrid">Hybrid (Trực tiếp kết hợp Online)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="font-bold text-foreground block mb-1">Ngày họp *</label>
-                  <input
-                    type="date"
-                    required
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-foreground block mb-1">Giờ bắt đầu *</label>
-                  <input
-                    type="time"
-                    required
-                    value={newStartTime}
-                    onChange={(e) => setNewStartTime(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-foreground block mb-1">Giờ kết thúc *</label>
-                  <input
-                    type="time"
-                    required
-                    value={newEndTime}
-                    onChange={(e) => setNewEndTime(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-foreground block mb-1">Mục đích & Nội dung cuộc họp</label>
-                <textarea
-                  rows={2}
-                  value={newPurpose}
-                  onChange={(e) => setNewPurpose(e.target.value)}
-                  placeholder="Mô tả tóm tắt nội dung để Ban Quản Trị bố trí phòng hợp lý..."
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
-                <button
-                  type="button"
-                  onClick={() => setBookRoomModalOpen(false)}
-                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 transition"
-                >
-                  Gửi Yêu Cầu Đặt Phòng
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal 2: Quản Trị Viên Phê Duyệt Phòng Họp */}
-      {approveModalOpen && selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in">
-            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" /> Phê Duyệt Sử Dụng Phòng Họp
-              </h3>
-              <button
-                onClick={() => setApproveModalOpen(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 space-y-1">
-                <p className="font-bold text-emerald-700 dark:text-emerald-400">
-                  Cuộc họp: {selectedBooking.title}
-                </p>
-                <p className="text-muted-foreground">
-                  Phòng: <strong>{selectedBooking.roomName}</strong> | Thời gian: {selectedBooking.startTime} - {selectedBooking.endTime} ({selectedBooking.date})
-                </p>
-                <p className="text-muted-foreground">
-                  Người đăng ký: {selectedBooking.organizerName} ({selectedBooking.organizerEmail})
-                </p>
-              </div>
-
-              <div>
-                <label className="font-bold text-foreground block mb-1">Link họp Online (Zoom/Google Meet) cấp cho phòng:</label>
-                <input
-                  type="url"
-                  value={approvalZoomUrl}
-                  onChange={(e) => setApprovalZoomUrl(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-foreground block mb-1">Mật khẩu phòng (Passcode):</label>
-                <input
-                  type="text"
-                  value={approvalPasscode}
-                  onChange={(e) => setApprovalPasscode(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-foreground block mb-1">Ghi chú & Dặn dò của Ban Quản Trị:</label>
-                <textarea
-                  rows={2}
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
-                <button
-                  type="button"
-                  onClick={() => setApproveModalOpen(false)}
-                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary"
-                >
-                  Đóng
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmApprove}
-                  className="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 transition flex items-center gap-1.5"
-                >
-                  <CheckCircle2 className="h-4 w-4" /> Xác Nhận Duyệt & Gửi Email Xác Nhận
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal 3: Quản Trị Viên Từ Chối Phòng Họp */}
-      {rejectModalOpen && selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in">
-            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
-              <h3 className="text-base font-bold text-rose-600 flex items-center gap-2">
-                <XCircle className="h-5 w-5" /> Từ Chối Yêu Cầu Đặt Phòng
-              </h3>
-              <button
-                onClick={() => setRejectModalOpen(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <p className="text-muted-foreground">
-                Vui lòng nhập lý do từ chối để hệ thống tự động gửi email giải thích và hướng dẫn tới người đặt.
-              </p>
-
-              <div>
-                <label className="font-bold text-foreground block mb-1">Lý do từ chối *</label>
-                <textarea
-                  rows={3}
-                  required
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Ví dụ: Trùng lịch họp đột xuất của Hội đồng quản trị..."
-                  className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
-                <button
-                  type="button"
-                  onClick={() => setRejectModalOpen(false)}
-                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmReject}
-                  className="rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-rose-700 transition"
-                >
-                  Xác Nhận Từ Chối & Gửi Mail
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal 4: Xem Mẫu Email Tự Động Đã Gửi */}
-      {emailPreviewModalOpen && previewEmailData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-3 border-b border-border pb-3">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Mail className="h-5 w-5 text-primary" /> Mẫu Email Đã Được Phát Tự Động
-              </h3>
-              <button
-                onClick={() => setEmailPreviewModalOpen(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-secondary"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-xl bg-secondary/50 p-3 text-xs">
-                <span className="font-semibold text-muted-foreground">Tiêu đề (Subject):</span>
-                <p className="font-bold text-foreground mt-0.5">{previewEmailData.subject}</p>
-              </div>
-
-              <div className="border border-border/80 rounded-xl overflow-hidden p-2 bg-white">
-                <div dangerouslySetInnerHTML={{ __html: previewEmailData.htmlBody }} />
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={() => setEmailPreviewModalOpen(false)}
-                  className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow"
-                >
-                  Đóng Hộp Thoại
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal 5: Tạo / Sửa Cuộc Họp Ban Cũ */}
       {modalOpen && (
@@ -1890,21 +1165,21 @@ function MeetingsPage() {
                 />
               </div>
 
-              {/* Thẩm quyền người tạo cuộc họp (4 Cấp Bậc Được Phép Tạo Cuộc Họp) */}
+              {/* Thẩm quyền người tạo cuộc họp (Chỉ 4 Cấp Bậc Được Phép Tạo Cuộc Họp) */}
               <div className="rounded-xl border border-border bg-secondary/20 p-3.5 space-y-2.5 shadow-xs">
                 <div className="flex flex-wrap items-center justify-between gap-1">
                   <label className="font-bold text-foreground text-xs flex items-center gap-1.5">
                     <ShieldCheck className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
-                    Thẩm Quyền Người Tạo Cuộc Họp (Bắt buộc 1 trong 4 quyền) *
+                    Thẩm Quyền Người Tạo Cuộc Họp (Chỉ 4 role được phép tạo) *
                   </label>
-                  <span className="text-[10px] text-muted-foreground font-medium">Chủ tịch • Tổng thư ký • Admin • Trưởng ban</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">Quản trị • Admin • Tổng thư ký • Trưởng ban</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { role: "CHỦ_TỊCH", label: "Chủ tịch", color: "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-300" },
-                    { role: "TỔNG_THƯ_KÝ", label: "Tổng thư ký", color: "border-blue-500 bg-blue-500/10 text-blue-900 dark:text-blue-300" },
-                    { role: "ADMIN", label: "Admin hệ thống", color: "border-purple-500 bg-purple-500/10 text-purple-900 dark:text-purple-300" },
+                    { role: "QUẢN_TRỊ", label: "Quản trị", color: "border-blue-600 bg-blue-600/10 text-blue-900 dark:text-blue-300" },
+                    { role: "ADMIN", label: "Admin", color: "border-purple-500 bg-purple-500/10 text-purple-900 dark:text-purple-300" },
+                    { role: "TỔNG_THƯ_KÝ", label: "Tổng thư ký", color: "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-300" },
                     { role: "TRƯỞNG_BAN", label: "Trưởng ban", color: "border-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-300" },
                   ].map((item) => (
                     <button
@@ -1913,13 +1188,27 @@ function MeetingsPage() {
                       onClick={() => applyCreatorRolePreset(item.role as MeetingCreatorRole)}
                       className={`flex items-center justify-center gap-1.5 rounded-lg py-2 px-2 text-xs font-bold transition border cursor-pointer ${
                         formCreatorRole === item.role
-                          ? `${item.color} shadow-xs ring-1 ring-primary/40 font-extrabold`
+                          ? `${item.color} shadow-xs ring-2 ring-primary/40 font-extrabold`
                           : "border-border bg-card text-muted-foreground hover:bg-secondary"
                       }`}
                     >
                       {item.label}
                     </button>
                   ))}
+                </div>
+
+                {/* Ghi chú luồng duyệt */}
+                <div className="rounded-lg bg-background/80 border border-border/80 px-3 py-1.5 text-[11px] flex items-center justify-between">
+                  <span className="text-muted-foreground">Người duyệt cuộc họp: <strong className="text-foreground">Quản trị (Super Admin / Admin)</strong></span>
+                  {formCreatorRole === "QUẢN_TRỊ" || formCreatorRole === "ADMIN" ? (
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      ✓ Tự động duyệt ngay
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 font-bold flex items-center gap-1">
+                      ⏳ Sẽ gửi Ban Quản Trị phê duyệt
+                    </span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
@@ -2097,173 +1386,150 @@ function MeetingsPage() {
                 </div>
               </div>
 
-              {/* Mode Toggle: Online vs Offline */}
-              <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
-                <label className="font-bold text-foreground block">Hình thức cuộc họp *</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormMeetingMode("offline");
-                      if (formLocation.toLowerCase().includes("zoom")) {
-                        setFormLocation("Tòa nhà V-Tower, Số 649 Kim Mã, Ba Đình, Hà Nội");
-                      }
-                    }}
-                    className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition border ${
-                      formMeetingMode === "offline"
-                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                        : "bg-card text-muted-foreground border-border hover:bg-secondary"
-                    }`}
-                  >
-                    <MapPin className="h-4 w-4" />
-                    Họp Trực Tiếp (Offline)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormMeetingMode("online");
-                      if (!formLocation.toLowerCase().includes("zoom") && !formLocation.toLowerCase().includes("trực tuyến")) {
+              {/* Đăng Ký Phòng Họp & Nền Tảng Cuộc Họp (Dropdown gộp chung) */}
+              <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3.5 shadow-xs">
+                <div>
+                  <label className="font-bold text-foreground block mb-1.5 text-xs flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Video className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+                      Đăng Ký Phòng Họp & Nền Tảng Cuộc Họp *
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-semibold">Gộp đặt phòng & nền tảng trực tuyến</span>
+                  </label>
+                  <select
+                    value={formPlatform}
+                    onChange={(e) => {
+                      const val = e.target.value as MeetingPlatform;
+                      setFormPlatform(val);
+                      if (val === "ZOOM") {
+                        setFormMeetingMode("online");
                         setFormLocation("Trực tuyến qua Zoom Meeting");
+                        setFormZoomUrl("https://zoom.us/j/88819839999");
+                      } else if (val === "GOOGLE_MEET") {
+                        setFormMeetingMode("online");
+                        setFormLocation("Trực tuyến qua Google Meet");
+                        setFormZoomUrl("https://meet.google.com/ceo-1983-vip");
+                      } else if (val === "UNIWORK") {
+                        setFormMeetingMode("online");
+                        setFormLocation("Phòng họp số UniWork Online");
+                        setFormZoomUrl("https://uni-hrm.ubos.vn/meet/ceo1983");
+                      } else if (val === "OFFLINE_UNIWORK") {
+                        setFormMeetingMode("offline");
+                        setFormLocation("Phòng Họp Sapphire - Tầng 2 UniWork Hub, Hà Nội (TV 85 inch, Polycom 4K AI Tracking)");
+                        setFormZoomUrl("");
+                        setFormGpsUrl("https://www.google.com/maps/search/?api=1&query=T%C3%B2a+nh%C3%A0+V-Tower+Kim+M%C3%A3+H%C3%A0+N%E1%BB%99i");
+                      } else if (val === "OFFLINE_CUSTOM") {
+                        setFormMeetingMode("offline");
+                        setFormLocation("Văn phòng Hiệp hội CEO 1983, Hà Nội");
+                        setFormZoomUrl("");
+                        setFormGpsUrl("https://www.google.com/maps/search/?api=1&query=V%C4%83n+ph%C3%B2ng+Hi%E1%BB%87p+h%E1%BB%99i+CEO+1983");
                       }
                     }}
-                    className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition border ${
-                      formMeetingMode === "online"
-                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                        : "bg-card text-muted-foreground border-border hover:bg-secondary"
-                    }`}
+                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-bold text-foreground cursor-pointer focus:ring-1 focus:ring-primary"
                   >
-                    <Video className="h-4 w-4" />
-                    Họp Trực Tuyến (Online)
-                  </button>
+                    <option value="ZOOM">📹 Zoom Meeting (Trực tuyến - Bảo mật cao)</option>
+                    <option value="GOOGLE_MEET">📹 Google Meet (Trực tuyến - Họp nhanh qua trình duyệt)</option>
+                    <option value="UNIWORK">🏢 UniWork Meet (Hệ sinh thái UniWork - Tích hợp CRM)</option>
+                    <option value="OFFLINE_UNIWORK">🏛️ Đăng ký Phòng Họp Sapphire - Trụ sở UniWork Hub (25 chỗ, TV 85&quot; Polycom 4K)</option>
+                    <option value="OFFLINE_CUSTOM">📍 Địa điểm Offline khác (Nhập địa chỉ & định vị Google Maps)</option>
+                  </select>
                 </div>
-              </div>
 
-              {formMeetingMode === "offline" ? (
-                <div className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-                  <div>
-                    <label className="font-bold text-foreground block mb-1 flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-emerald-600" />
-                      Địa chỉ cụ thể phòng họp Offline *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formLocation}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormLocation(val);
-                        setFormGpsUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`);
-                      }}
-                      placeholder="Ví dụ: Hội Trường VIP Grand Sapphire, Tầng 5 Tòa nhà V-Tower, 649 Kim Mã, Hà Nội"
-                      className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-foreground block mb-1 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 text-blue-600" />
-                        Định vị GPS Google Maps (Tự động tạo link dẫn đường)
-                      </span>
-                      <a
-                        href={formGpsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
-                      >
-                        Mở thử bản đồ ↗
-                      </a>
-                    </label>
-                    <input
-                      type="url"
-                      value={formGpsUrl}
-                      onChange={(e) => setFormGpsUrl(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-mono text-blue-600"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3.5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-900 p-4 shadow-xs">
-                  <div>
-                    <label className="font-bold text-slate-800 dark:text-slate-100 block mb-2 text-xs flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Video className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
-                        Chọn Nền Tảng Họp Trực Tuyến (3 Tùy Chọn) *
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">Zoom • Google Meet • UniWork</span>
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: "ZOOM", label: "Zoom Meeting", desc: "Bảo mật cao", color: "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" },
-                        { id: "GOOGLE_MEET", label: "Google Meet", desc: "Trực tiếp trình duyệt", color: "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
-                        { id: "UNIWORK", label: "UniWork Meet", desc: "Hệ sinh thái UniWork", color: "border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300" },
-                      ].map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => {
-                            setFormPlatform(p.id as MeetingPlatform);
-                            if (p.id === "ZOOM" && (!formZoomUrl || formZoomUrl.includes("meet.google") || formZoomUrl.includes("uniwork"))) {
-                              setFormZoomUrl("https://zoom.us/j/88819839999");
-                            } else if (p.id === "GOOGLE_MEET" && (!formZoomUrl || formZoomUrl.includes("zoom.us") || formZoomUrl.includes("uniwork"))) {
-                              setFormZoomUrl("https://meet.google.com/ceo-1983-vip");
-                            } else if (p.id === "UNIWORK" && (!formZoomUrl || formZoomUrl.includes("zoom.us") || formZoomUrl.includes("meet.google"))) {
-                              setFormZoomUrl("https://uni-hrm.ubos.vn/meet/ceo1983");
-                            }
-                          }}
-                          className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition cursor-pointer ${
-                            formPlatform === p.id
-                              ? `${p.color} ring-2 ring-primary/40 font-bold shadow-xs`
-                              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750"
-                          }`}
-                        >
-                          <span className="text-xs">{p.label}</span>
-                          <span className="text-[10px] opacity-75">{p.desc}</span>
-                        </button>
-                      ))}
+                {/* Chi tiết theo nền tảng / phòng họp đã chọn */}
+                {(formPlatform === "ZOOM" || formPlatform === "GOOGLE_MEET" || formPlatform === "UNIWORK") ? (
+                  <div className="space-y-2.5 pt-1 border-t border-border/60">
+                    <div>
+                      <label className="text-[11px] font-semibold text-foreground flex items-center justify-between mb-1">
+                        <span>Đường dẫn phòng họp {formPlatform === "ZOOM" ? "Zoom" : formPlatform === "GOOGLE_MEET" ? "Google Meet" : "UniWork"} *</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">Tự động phát link tới đại biểu</span>
+                      </label>
+                      <input
+                        type="url"
+                        required
+                        value={formZoomUrl}
+                        onChange={(e) => setFormZoomUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono text-blue-600 focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                        Mã cuộc họp / Passcode / Mô tả bổ sung
+                      </label>
+                      <input
+                        type="text"
+                        value={formLocation}
+                        onChange={(e) => setFormLocation(e.target.value)}
+                        placeholder={
+                          formPlatform === "ZOOM"
+                            ? "Zoom ID: 888 1983 9999 • Mật khẩu: 1983"
+                            : formPlatform === "GOOGLE_MEET"
+                            ? "Google Meet ID: ceo-1983-vip"
+                            : "UniWork ID: UNI-1983 • PIN: 8888"
+                        }
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:ring-1 focus:ring-primary"
+                      />
                     </div>
                   </div>
-
-                  <div>
-                    <label className="font-bold text-slate-800 dark:text-slate-100 block mb-1.5 text-xs flex items-center gap-1.5">
-                      <Video className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" />
-                      <span>Link tham gia {formPlatform === "ZOOM" ? "Zoom" : formPlatform === "GOOGLE_MEET" ? "Google Meet" : "UniWork Meet"} *</span>
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={formZoomUrl}
-                      onChange={(e) => setFormZoomUrl(e.target.value)}
-                      placeholder={
-                        formPlatform === "ZOOM"
-                          ? "https://zoom.us/j/88819839999"
-                          : formPlatform === "GOOGLE_MEET"
-                          ? "https://meet.google.com/abc-xyz"
-                          : "https://uni-hrm.ubos.vn/meet/room-id"
-                      }
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95] transition"
-                    />
+                ) : formPlatform === "OFFLINE_UNIWORK" ? (
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2 text-xs border-t border-border/60">
+                    <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4 text-emerald-600" />
+                        Phòng Họp Sapphire - Trụ Sở UniWork Hub (Sẵn sàng)
+                      </span>
+                      <span className="rounded-full bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-extrabold uppercase">
+                        25 Chỗ Ngồi
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-foreground/80">
+                      Địa chỉ: <strong>Tầng 2, Tòa nhà V-Tower, Số 649 Kim Mã, Ba Đình, Hà Nội</strong>
+                    </p>
+                    <div className="pt-1 border-t border-emerald-500/20 text-[11px] text-muted-foreground">
+                      Trang thiết bị chuẩn bị sẵn: <strong>TV tương tác 85 inch, Hệ thống Polycom 4K AI Tracking, Micro đa hướng, Wifi 6 tốc độ cao.</strong>
+                    </div>
                   </div>
-
-                  <div>
-                    <label className="font-bold text-slate-800 dark:text-slate-100 block mb-1.5 text-xs">
-                      Mã phòng họp / Passcode / Mô tả thêm
-                    </label>
-                    <input
-                      type="text"
-                      value={formLocation}
-                      onChange={(e) => setFormLocation(e.target.value)}
-                      placeholder={
-                        formPlatform === "ZOOM"
-                          ? "Zoom ID: 888 1983 9999 • Mật khẩu: 1983"
-                          : formPlatform === "GOOGLE_MEET"
-                          ? "Google Meet ID: ceo-1983-vip"
-                          : "UniWork ID: UNI-1983 • PIN: 8888"
-                      }
-                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95] transition"
-                    />
+                ) : (
+                  <div className="space-y-2.5 pt-1 border-t border-border/60">
+                    <div>
+                      <label className="text-[11px] font-semibold text-foreground block mb-1">
+                        Địa chỉ cụ thể phòng họp Offline *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formLocation}
+                        onChange={(e) => {
+                          setFormLocation(e.target.value);
+                          setFormGpsUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.target.value)}`);
+                        }}
+                        placeholder="Ví dụ: Tòa nhà CEO Tower, Phạm Hùng, Cầu Giấy, Hà Nội"
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between mb-1">
+                        <span>Định vị Google Maps dẫn đường</span>
+                        <a
+                          href={formGpsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-primary font-bold hover:underline"
+                        >
+                          Mở thử vị trí ↗
+                        </a>
+                      </label>
+                      <input
+                        type="url"
+                        value={formGpsUrl}
+                        onChange={(e) => setFormGpsUrl(e.target.value)}
+                        placeholder="https://maps.google.com/..."
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono text-blue-600 focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
                 <button

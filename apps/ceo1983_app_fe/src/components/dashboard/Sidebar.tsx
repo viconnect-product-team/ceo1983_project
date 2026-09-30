@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { isRouteAllowedByMatrix, type SystemRoleKey } from "@/lib/rbac-permission-helpers";
 import { useT } from "@/lib/i18n";
 import { useRole } from "@/hooks/use-role";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -231,6 +232,7 @@ function Group({
   onNavigate?: () => void;
   badges?: Record<string, number>;
 }) {
+  if (!items || items.length === 0) return null;
   const t = useT();
   return (
     <div className={collapsed ? "px-2.5" : "px-3"}>
@@ -269,9 +271,12 @@ export function Sidebar({
     isAdmin,
     srsRole,
     isBQT,
-    isBTV,
-    isBTC,
+    isBTK,
     isBTT,
+    isBXT,
+    isBTV,
+    isBTN,
+    isBTC,
     isHVT,
     canManageMembers,
     canManageFinance,
@@ -281,6 +286,34 @@ export function Sidebar({
     canManageSystem,
     setRoleOverride,
   } = roleState;
+
+  // Xác định 1 trong 5 vai trò hệ thống CRM cốt lõi
+  const currentRoleKey: SystemRoleKey = useMemo(() => {
+    if (isPlatformAdmin) return "quan_tri";
+    if (isBQT) return "admin";
+    if (isBTK) return "tong_thu_ky";
+    if (isBTT || isBXT || isBTV || isBTN) return "truong_ban";
+    return "member";
+  }, [isPlatformAdmin, isBQT, isBTK, isBTT, isBXT, isBTV, isBTN]);
+
+  const [matrixRevision, setMatrixRevision] = useState(0);
+  useEffect(() => {
+    const handleUpdate = () => setMatrixRevision((v) => v + 1);
+    window.addEventListener("crm_permissions_updated", handleUpdate);
+    window.addEventListener("role-changed", handleUpdate);
+    return () => {
+      window.removeEventListener("crm_permissions_updated", handleUpdate);
+      window.removeEventListener("role-changed", handleUpdate);
+    };
+  }, []);
+
+  const isAllowed = useCallback(
+    (route?: string): boolean => {
+      if (!route) return true;
+      return isRouteAllowedByMatrix(route, currentRoleKey);
+    },
+    [currentRoleKey, matrixRevision]
+  );
 
   // Scoped permissions according to the SRS RBAC matrix:
   const canViewMembers = true; // All can view member directory (HVT is read-only)
@@ -383,51 +416,70 @@ export function Sidebar({
   const visibility = mobile ? "flex" : "hidden lg:flex";
   const width = isCollapsed ? "w-[72px]" : "w-[260px]";
 
-  // Filter individual items within groups according to permissions
+  // Lọc chi tiết từng mục menu kết hợp Ma Trận Quyền và vai trò 6 Ban
+  const filteredOverview = overview.filter((it) => isAllowed(it.to));
+
   const filteredMembers = members.filter((it) => {
-    // Only BTV, BQT, ADM can manage member segments and renewals
+    if (!isAllowed(it.to)) return false;
     if (it.to === "/segments" || it.to === "/renewal") {
-      return canManageMembers;
+      return canManageMembers || isBQT || isBTV || isBTK;
     }
     return true;
   });
 
   const filteredEvents = events.filter((it) => {
-    // Only BTT, BQT, ADM can scan QR codes
+    if (!isAllowed(it.to)) return false;
     if (it.to === "/checkin" || it.to === "/checkin-qr") {
-      return canScanQR;
+      return canScanQR || isBQT || isBTT || isBTK;
     }
-    // Only BTT, BQT, ADM can manage event attendee registrations
     if (it.to === "/event-registrations") {
-      return canManageEvents;
+      return canManageEvents || isBQT || isBTT || isBTK;
     }
     return true;
   });
 
   const filteredSponsors = sponsors.filter((it) => {
-    // Financial packages and reports restricted to BTC, BQT, ADM
+    if (!isAllowed(it.to)) return false;
     if (it.to === "/sponsor-report" || it.to === "/sponsor-packages") {
-      return canManageFinance;
+      return canManageFinance || isBQT || isBXT;
+    }
+    return isBQT || isBXT;
+  });
+
+  const filteredFinance = finance.filter((it) => {
+    if (!isAllowed(it.to)) return false;
+    return isBQT || isBTC;
+  });
+
+  const filteredComm = comm.filter((it) => {
+    if (!isAllowed(it.to)) return false;
+    if (it.to === "/email-marketing") {
+      return canManageMedia || isBQT || isBTT;
     }
     return true;
   });
 
-  const filteredComm = comm.filter((it) => {
-    // Broadcast notifications and email marketing restricted to BTT, BQT, ADM
-    if (it.to === "/email-marketing") {
-      return canManageMedia;
-    }
+  const filteredNetwork = network.filter((it) => isAllowed(it.to));
+
+  const filteredSystem = system.filter((it) => {
+    if (!isAllowed(it.to)) return false;
+    if (it.to === "/tasks") return true;
+    if (it.to === "/settings") return isPlatformAdmin || isBQT;
+    if (it.to === "/activity") return isPlatformAdmin || isBQT || isBTK;
+    if (it.to === "/admin/landing-templates") return isPlatformAdmin || isBQT || isBTT;
     return true;
   });
 
   const filteredAdmin = admin.filter((it) => {
-    // Permissions restricted to ADM, PlatformAdmin, BQT
+    if (!isAllowed(it.to)) return false;
     if (it.to === "/permissions") {
-      return isAdmin || isPlatformAdmin || isBQT || srsRole === "BQT" || srsRole === "ADM";
+      return isPlatformAdmin || isBQT;
     }
-    // Business card management restricted to ADM, PlatformAdmin, BQT
+    if (it.to === "/documents") {
+      return true;
+    }
     if (it.to === "/admin/business-cards") {
-      return isAdmin || isPlatformAdmin || isBQT;
+      return isPlatformAdmin || isBQT;
     }
     return true;
   });
@@ -500,7 +552,7 @@ export function Sidebar({
         className="sidebar-scroll flex-1 space-y-5 overflow-y-auto py-4"
       >
         <Group
-          items={overview}
+          items={filteredOverview}
           pathname={pathname}
           collapsed={isCollapsed}
           onNavigate={onNavigate}
@@ -535,7 +587,7 @@ export function Sidebar({
         {canViewFinance && (
           <Group
             label="nav.group.finance"
-            items={finance}
+            items={filteredFinance}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
@@ -554,7 +606,7 @@ export function Sidebar({
         {canViewNetwork && (
           <Group
             label="nav.group.network"
-            items={network}
+            items={filteredNetwork}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
@@ -563,7 +615,7 @@ export function Sidebar({
         {canViewSystem && (
           <Group
             label="nav.group.system"
-            items={system}
+            items={filteredSystem}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}

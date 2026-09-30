@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 export interface TaskSubtask {
   id: string;
@@ -82,7 +84,7 @@ export class TasksService {
   private readonly storageFilePath = path.join(process.cwd(), 'uploads', 'tasks_data.json');
   private tasks: TaskItem[] = [];
 
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     this.ensureInitialized();
   }
 
@@ -121,7 +123,7 @@ export class TasksService {
         id: 'task-1983-001',
         code: 'CV-1983-01',
         title: 'Tổ chức Chương trình Thiện nguyện “Áo Ấm Cho Em” Mùa Đông 2026',
-        department: 'Ban Thiện nguyện & An sinh Xã hội',
+        department: 'Ban Thiện nguyện',
         assignee: {
           id: 'user-tn-01',
           name: 'Nguyễn Thị Hương',
@@ -267,12 +269,12 @@ export class TasksService {
         id: 'task-1983-004',
         code: 'CV-1983-04',
         title: 'Đối soát Phí Niên Liễm và Báo cáo Thu Chi Quý 3/2026',
-        department: 'Ban Tài chính',
+        department: 'Ban Quản trị',
         assignee: {
           id: 'user-tc-01',
           name: 'Hoàng Bích Liên',
           avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-          role: 'Trưởng Ban Tài chính',
+          role: 'Ban Quản trị',
           email: 'lien.hoang@ceo1983.com',
         },
         supervisor: {
@@ -295,7 +297,7 @@ export class TasksService {
           {
             id: 'cm-4',
             authorName: 'Hoàng Bích Liên',
-            authorRole: 'Trưởng Ban Tài chính',
+            authorRole: 'Ban Quản trị',
             content: 'Đã hoàn thành và báo cáo tại buổi họp BQT hôm qua.',
             createdAt: '2026-09-25 16:30',
           },
@@ -310,12 +312,12 @@ export class TasksService {
         id: 'task-1983-005',
         code: 'CV-1983-05',
         title: 'Khảo sát Địa điểm Tổ chức Hội nghị Xúc tiến Thương mại Quốc tế',
-        department: 'Ban Sự kiện',
+        department: 'Ban Xúc tiến',
         assignee: {
           id: 'user-sk-01',
           name: 'Vũ Đức Thắng',
           avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150',
-          role: 'Trưởng Ban Sự kiện',
+          role: 'Trưởng Ban Xúc tiến',
           email: 'thang.vu@ceo1983.com',
         },
         supervisor: {
@@ -431,6 +433,12 @@ export class TasksService {
 
     this.tasks.unshift(newTask);
     this.saveToFile();
+
+    // Tự động bắn thông báo tức thì đến tài khoản người được giao việc
+    this.dispatchTaskAssignmentNotification(newTask, creatorName).catch((err) => {
+      this.logger.warn(`Task notification warning: ${err?.message}`);
+    });
+
     return newTask;
   }
 
@@ -472,7 +480,123 @@ export class TasksService {
 
     this.tasks[index] = updated;
     this.saveToFile();
+
+    // Bắn thông báo cập nhật công việc đến người phụ trách
+    if (data.assignee || (data.status && data.status !== current.status)) {
+      this.dispatchTaskAssignmentNotification(updated, updaterName).catch((err) => {
+        this.logger.warn(`Task notification warning: ${err?.message}`);
+      });
+    }
+
     return updated;
+  }
+
+  /**
+   * Bắn thông báo giao việc đến tài khoản PostgreSQL của người được giao việc (business_notifications & member_notifications)
+   */
+  async dispatchTaskAssignmentNotification(task: TaskItem, creatorName: string) {
+    try {
+      if (!task.assignee) return;
+      const { name, email, id: assigneeId } = task.assignee;
+
+      let targetUserId: string | null = null;
+      let targetMemberId: string | null = null;
+
+      // 1. Tìm theo Email
+      if (email && email.trim()) {
+        const u = await this.prisma.$queryRaw<any[]>`
+          SELECT u.id as user_id, m.id as member_id
+          FROM public.vione_users u
+          LEFT JOIN public.members m ON m.user_id = u.id OR lower(m.email) = lower(u.email)
+          WHERE lower(u.email) = lower(${email.trim()})
+          LIMIT 1
+        `.catch(() => []);
+        if (u.length && u[0].user_id) {
+          targetUserId = u[0].user_id;
+          targetMemberId = u[0].member_id;
+        }
+      }
+
+      // 2. Tìm theo assigneeId (nếu là UUID)
+      if (!targetUserId && assigneeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assigneeId)) {
+        const u = await this.prisma.$queryRaw<any[]>`
+          SELECT u.id as user_id, m.id as member_id
+          FROM public.members m
+          LEFT JOIN public.vione_users u ON m.user_id = u.id
+          WHERE m.id = ${assigneeId}::uuid OR m.user_id = ${assigneeId}::uuid OR u.id = ${assigneeId}::uuid
+          LIMIT 1
+        `.catch(() => []);
+        if (u.length && u[0].user_id) {
+          targetUserId = u[0].user_id;
+          targetMemberId = u[0].member_id;
+        }
+      }
+
+      // 3. Tìm theo Tên hội viên
+      if (!targetUserId && name && name.trim()) {
+        const u = await this.prisma.$queryRaw<any[]>`
+          SELECT u.id as user_id, m.id as member_id
+          FROM public.members m
+          LEFT JOIN public.vione_users u ON m.user_id = u.id
+          WHERE lower(m.name) ILIKE '%' || lower(${name.trim()}) || '%'
+             OR lower(u.name) ILIKE '%' || lower(${name.trim()}) || '%'
+          LIMIT 1
+        `.catch(() => []);
+        if (u.length && u[0].user_id) {
+          targetUserId = u[0].user_id;
+          targetMemberId = u[0].member_id;
+        }
+      }
+
+      if (!targetUserId) {
+        this.logger.warn(`Không tìm thấy user_id PostgreSQL cho người nhận việc: ${name} (${email})`);
+        return;
+      }
+
+      const notifId = crypto.randomUUID();
+      const notifTitle = `Bạn được giao công việc mới: ${task.title}`;
+      const notifBody = `Phòng ban: ${task.department}. Hạn hoàn thành: ${task.dueDate}. Người giao: ${creatorName}.`;
+      const dedupeKey = `task-assign-${task.id}-${targetUserId}-${Date.now()}`;
+      const safeData = JSON.stringify({
+        title: notifTitle,
+        body: notifBody,
+        taskId: task.id,
+        taskCode: task.code,
+        taskTitle: task.title,
+        department: task.department,
+        dueDate: task.dueDate,
+        priority: task.priority,
+        targetRoute: '/tasks',
+      });
+
+      // 1. Ghi vào public.business_notifications (hiển thị chuông thông báo Topbar CRM & App)
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, priority, status, delivered_at, dedupe_key, app_scope, target_app, created_at, updated_at
+        ) VALUES (
+          $1::uuid, $2::uuid, 'task', $3, 'task_assigned', 'task_created',
+          $4, $5, $6::jsonb, 'high', 'delivered', NOW(), $7, 'all', 'all', NOW(), NOW()
+        )
+      `, notifId, targetUserId, task.id, notifTitle, notifBody, safeData, dedupeKey).catch((err: any) => {
+        this.logger.warn(`Lỗi ghi business_notification: ${err.message}`);
+      });
+
+      // 2. Ghi vào public.member_notifications (hiển thị thông báo trên App di động hội viên)
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, type, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, 'task', $2, $3, false, false, 'task', $4, NOW()
+        )
+      `, targetMemberId || targetUserId, notifTitle, notifBody, task.id).catch((err: any) => {
+        this.logger.warn(`Lỗi ghi member_notification: ${err.message}`);
+      });
+
+      this.logger.log(`Đã gửi thông báo giao việc ${task.code} thành công đến user ${targetUserId}`);
+    } catch (e: any) {
+      this.logger.error(`Lỗi trong dispatchTaskAssignmentNotification: ${e?.message}`);
+    }
   }
 
   async updateStatus(id: string, status: TaskItem['status'], actorName = 'Người quản trị'): Promise<TaskItem> {

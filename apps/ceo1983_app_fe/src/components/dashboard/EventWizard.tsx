@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus, Sparkles, MapPin, Users, Award } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -45,6 +45,82 @@ function formatVndInput(val: string | number): string {
   if (!digits) return "";
   const clean = digits.replace(/^0+(?=\d)/, "");
   return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+function FormattedCurrencyInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  className,
+  ariaLabel,
+}: {
+  id?: string;
+  value: string | number;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  className?: string;
+  ariaLabel?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const cursor = e.target.selectionStart ?? raw.length;
+
+    // Đếm số chữ số thuần túy (0-9) trước vị trí con trỏ hiện tại
+    const digitsBeforeCursor = raw.slice(0, cursor).replace(/\D/g, "").length;
+
+    // Lọc chỉ lấy chữ số
+    const digitsOnly = raw.replace(/\D/g, "");
+    if (!digitsOnly) {
+      onChange("");
+      return;
+    }
+
+    const cleanDigits = digitsOnly.replace(/^0+(?=\d)/, "");
+    const formatted = cleanDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    // Tính toán lại vị trí con trỏ chuột chính xác sau khi chuỗi được format lại
+    let newCursor = 0;
+    let count = 0;
+    for (let idx = 0; idx < formatted.length; idx++) {
+      if (/\d/.test(formatted[idx])) {
+        count++;
+      }
+      if (count === digitsBeforeCursor) {
+        newCursor = idx + 1;
+        break;
+      }
+    }
+    if (count < digitsBeforeCursor) {
+      newCursor = formatted.length;
+    }
+
+    onChange(formatted);
+
+    // Khôi phục vị trí con trỏ chuột ở frame tiếp theo sau khi React cập nhật DOM
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.setSelectionRange(newCursor, newCursor);
+      }
+    });
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      id={id}
+      aria-label={ariaLabel}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder={placeholder}
+      className={className}
+      value={formatVndInput(value)}
+      onChange={handleChange}
+    />
+  );
 }
 
 const TYPE_OPTS: EventType[] = ["forum", "workshop", "networking", "training"];
@@ -690,16 +766,13 @@ function TicketStep({
                     );
                   })()}
                 </div>
-                <input
+                <FormattedCurrencyInput
                   id={`ewz-ticket-price-${i}`}
-                  aria-label={t("ewz.tickets.price")}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
+                  ariaLabel={t("ewz.tickets.price")}
                   placeholder="0 đ (nhập 0 là miễn phí)"
                   className={inputCls}
-                  value={formatVndInput(tk.price)}
-                  onChange={(e) => update(i, { price: formatVndInput(e.target.value) })}
+                  value={tk.price}
+                  onChange={(val) => update(i, { price: val })}
                 />
                 <p className="mt-1 text-[10.5px] text-muted-foreground">
                   {Number(String(tk.price).replace(/\D/g, "")) <= 0
@@ -711,16 +784,13 @@ function TicketStep({
                 <label className={labelCls} htmlFor={`ewz-ticket-qty-${i}`}>
                   {t("ewz.tickets.qty")}
                 </label>
-                <input
+                <FormattedCurrencyInput
                   id={`ewz-ticket-qty-${i}`}
-                  aria-label={t("ewz.tickets.qty")}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
+                  ariaLabel={t("ewz.tickets.qty")}
                   placeholder="Số lượng vé"
                   className={inputCls}
-                  value={formatVndInput(tk.quantity)}
-                  onChange={(e) => update(i, { quantity: formatVndInput(e.target.value) })}
+                  value={tk.quantity}
+                  onChange={(val) => update(i, { quantity: val })}
                 />
               </div>
             </div>

@@ -300,17 +300,17 @@ async function main() {
     },
     {
       id: 'c1983000-0000-4000-8000-000000000003',
-      username: 'ceo.taichinh@ceo1983.com',
-      email: 'ceo.taichinh@ceo1983.com',
+      username: 'ceo.thiennguyen@ceo1983.com',
+      email: 'ceo.thiennguyen@ceo1983.com',
       name: 'Vũ Thu Trang',
       passwordHash: hash123456,
       appRole: 'admin',
       assocRole: 'admin',
-      executiveRole: 'truong_ban_tai_chinh',
-      department: 'Ban Tài chính',
+      executiveRole: 'truong_ban_thien_nguyen',
+      department: 'Ban Thiện nguyện',
       phone: '0983000003',
-      company: 'Kiến Vàng Capital',
-      title: 'Trưởng Ban Tài Chính'
+      company: 'Quỹ Thiện Nguyện CEO 1983',
+      title: 'Trưởng Ban Thiện Nguyện'
     },
     {
       id: 'c1983000-0000-4000-8000-000000000004',
@@ -335,10 +335,10 @@ async function main() {
       appRole: 'admin',
       assocRole: 'admin',
       executiveRole: 'truong_ban_xuc_tien',
-      department: 'Ban Xúc tiến thương mại',
+      department: 'Ban Xúc tiến',
       phone: '0983000005',
       company: 'Tuấn Minh Global Trade',
-      title: 'Trưởng Ban Xúc Tiến Thương Mại'
+      title: 'Trưởng Ban Xúc Tiến'
     },
     {
       id: 'c1983000-0000-4000-8000-000000000006',
@@ -363,10 +363,10 @@ async function main() {
       appRole: 'member',
       assocRole: 'member',
       executiveRole: 'member',
-      department: 'Ban Xúc tiến thương mại',
+      department: 'Ban Xúc tiến',
       phone: '0983000007',
       company: 'Thắng Lợi XNK JSC',
-      title: 'Hội viên Ban Xúc tiến thương mại'
+      title: 'Hội viên Ban Xúc tiến'
     },
     {
       id: 'c1983000-0000-4000-8000-000000000008',
@@ -391,10 +391,10 @@ async function main() {
       appRole: 'member',
       assocRole: 'member',
       executiveRole: 'member',
-      department: 'Ban Tài chính',
+      department: 'Ban Thiện nguyện',
       phone: '0983000009',
-      company: 'Tài Chính Việt An',
-      title: 'Hội viên Ban Tài chính'
+      company: 'Quỹ Thiện Nguyện CEO 1983',
+      title: 'Hội viên Ban Thiện nguyện'
     },
     {
       id: 'c1983000-0000-4000-8000-000000000010',

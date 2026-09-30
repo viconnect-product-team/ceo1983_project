@@ -26,6 +26,10 @@ import {
   FileSpreadsheet,
   Megaphone,
   X,
+  Star,
+  SlidersHorizontal,
+  Sparkles,
+  Check,
 } from "lucide-react";
 import { MarketplaceAdsManager } from "@/components/marketplace/MarketplaceAdsManager";
 import { exportProductsToExcel, type ParsedProductItem } from "@/lib/marketplace-excel";
@@ -286,7 +290,19 @@ function ProductCard({
             </span>
           )}
         </div>
-        <div className="mb-3 border-t border-border pt-3 text-[11px] text-muted-foreground flex items-center justify-between">
+        {/* Shopee Style Product Rating & Company Satisfaction % */}
+        <div className="mb-2 flex items-center justify-between text-xs pt-2 border-t border-border/60">
+          <div className="flex items-center gap-1 text-[#EE4D2D] font-bold">
+            <Star className="h-3.5 w-3.5 fill-[#EE4D2D] text-[#EE4D2D]" />
+            <span>4.9</span>
+            <span className="text-[10px] text-muted-foreground font-normal">({Math.floor((product.views || 20) / 2) + 12})</span>
+          </div>
+          <div className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+            98% Hài lòng
+          </div>
+        </div>
+
+        <div className="mb-3 border-t border-border pt-2 text-[11px] text-muted-foreground flex items-center justify-between">
           <div className="truncate">
             <span className="font-semibold text-primary">Người đăng: </span>
             <span className="font-medium text-foreground">{product.sellerName || product.company || seller?.name || "Hội viên CLB"}</span>
@@ -1076,8 +1092,38 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
   const [cat, setCat] = useState<ProductCategoryKey | "all">("all");
   const [view, setView] = useState<"card" | "list">("card");
   const [sort, setSort] = useState<Sort>("newest");
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [pinned, setPinned] = useState<Set<string>>(new Set());
+
+  // Shopee-style Recent Categories State
+  const [recentCategories, setRecentCategories] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("ceo1983_recent_categories");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return ["mk.cat.tech", "mk.cat.service", "mk.cat.retail", "mk.cat.finance"];
+  });
+
+  const handleSelectCat = (categoryKey: any) => {
+    setCat(categoryKey);
+    if (categoryKey && categoryKey !== "all") {
+      setRecentCategories((prev) => {
+        const filtered = prev.filter((c) => c !== categoryKey);
+        const updated = [categoryKey, ...filtered].slice(0, 6);
+        try {
+          localStorage.setItem("ceo1983_recent_categories", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    }
+  };
+
   const [showModal, setShowModal] = useState(false);
   const [showExcelModal, setShowExcelModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -1377,6 +1423,56 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
 
       <div className="sm:sticky sm:top-18 z-20 -mx-4 mb-4 space-y-3 bg-background/90 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
         <div className="flex flex-wrap items-center gap-3">
+          {/* Icon dạng Menu bên trái thanh tìm kiếm có sắp xếp giá */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSortMenuOpen(!sortMenuOpen)}
+              className="h-10 px-3 rounded-xl border border-border bg-card hover:bg-secondary text-foreground flex items-center gap-2 text-xs font-bold transition shadow-xs cursor-pointer"
+              title="Menu sắp xếp giá và thứ tự hiển thị"
+            >
+              <SlidersHorizontal className="h-4 w-4 text-primary" />
+              <span className="hidden sm:inline">Sắp xếp</span>
+            </button>
+
+            {sortMenuOpen && (
+              <div className="absolute left-0 top-12 w-56 rounded-2xl border border-border bg-card p-2 shadow-2xl z-30 animate-in fade-in zoom-in-95">
+                <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground flex items-center justify-between">
+                  <span>Sắp xếp theo giá & thứ tự</span>
+                  <button onClick={() => setSortMenuOpen(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="space-y-1 pt-1">
+                  {[
+                    { key: "priceLow", label: "Giá: Thấp đến Cao (Tiết kiệm)" },
+                    { key: "priceHigh", label: "Giá: Cao đến Thấp (Cao cấp)" },
+                    { key: "viewed", label: "Xem nhiều / Bán chạy nhất" },
+                    { key: "newest", label: "Sản phẩm mới nhất" },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => {
+                        setSort(item.key as Sort);
+                        setSortMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
+                        sort === item.key
+                          ? "bg-primary text-primary-foreground font-bold"
+                          : "text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      {sort === item.key && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Ô tìm kiếm ở giữa */}
           <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-[var(--shadow-card)]">
             <Search className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <input
@@ -1386,23 +1482,14 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
               aria-label={t("mk.search")}
               className="flex-1 bg-transparent text-sm outline-none"
             />
+            {query && (
+              <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
+
           <div className="flex items-center gap-2">
-            <label className="sr-only" htmlFor="mk-sort">
-              {t("mk.sort.label")}
-            </label>
-            <select
-              id="mk-sort"
-              value={sort}
-              onChange={(e) => setSort(e.target.value as Sort)}
-              className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {SORT_KEYS.map((s) => (
-                <option key={s.key} value={s.key}>
-                  {t(s.label)}
-                </option>
-              ))}
-            </select>
             <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
               <button
                 onClick={() => setView("card")}
@@ -1429,6 +1516,49 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
                 <List className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Dưới tìm kiếm là danh mục gần đây đã chọn (Shopee Style recent categories chips) */}
+        <div className="flex flex-col gap-1.5 pt-0.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <span>Danh mục gần đây đã chọn:</span>
+            </span>
+            {recentCategories.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRecentCategories([]);
+                  try {
+                    localStorage.removeItem("ceo1983_recent_categories");
+                  } catch {}
+                }}
+                className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Xóa lịch sử
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {recentCategories.map((cKey) => {
+              const isSelected = cat === cKey;
+              return (
+                <button
+                  key={cKey}
+                  type="button"
+                  onClick={() => handleSelectCat(cKey)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer border ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-card border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+                >
+                  {t(cKey as any)}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5">

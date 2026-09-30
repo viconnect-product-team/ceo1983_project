@@ -785,6 +785,10 @@ export class EventsService {
     `.catch(() => null);
 
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
+    const invoiceNo = `EV${regId}`;
+    const vietQrUrl = isFree
+      ? ''
+      : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}&accountName=${encodeURIComponent('CLB CEO 1983')}`;
 
     if (memberCode) {
       if (isFree) {
@@ -834,8 +838,6 @@ export class EventsService {
         `.catch(() => {});
       } else {
         // Sự kiện có phí: Gửi tin nhắn thông báo tiếp nhận & thẻ thanh toán VietQR
-        const invoiceNo = `EV-${Date.now().toString(36).toUpperCase()}`;
-        const vietQrUrl = `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}`;
         const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN');
         const paymentDesc = encodeURIComponent(`Phí tham dự sự kiện "${event.title || event.name || 'Sự kiện'}" (${ticketCount} vé)`);
         const actionMsg = `[action:payment|amount:${totalAmount}|invoice:${invoiceNo}|qr:${vietQrUrl}|due:${dueDate}|desc:${paymentDesc}]`;
@@ -854,7 +856,7 @@ export class EventsService {
       }
     }
 
-    // Gửi email vé sự kiện điện tử (E-Ticket) có mã QR và mã số quay thưởng Lucky Draw
+    // Gửi email vé sự kiện điện tử (E-Ticket) có mã QR và mã số quay thưởng Lucky Draw hoặc VietQR thanh toán
     if (email && email.includes('@')) {
       this.mailService.sendEventTicketEmail({
         to: email,
@@ -872,6 +874,10 @@ export class EventsService {
         isFree,
         totalAmount,
         qrCodeUrl,
+        vietQrUrl,
+        bankAccount: '1983000000',
+        bankName: 'MB Bank (Quân Đội)',
+        bankOwner: 'CLB DOANH NHAN CEO 1983',
       }).catch((err: any) => {
         this.logger.warn(`Failed to dispatch event ticket email to ${email}: ${err?.message}`);
       });
@@ -1796,6 +1802,10 @@ export class EventsService {
         isFree,
         totalAmount,
         qrCodeUrl,
+        vietQrUrl,
+        bankAccount: '1983000000',
+        bankName: 'MB Bank (Quân Đội)',
+        bankOwner: 'CLB DOANH NHAN CEO 1983',
       });
       this.logger.log(`Guest registration ticket email dispatched to ${email} (Lucky #${luckyNum})`);
     } catch (err: any) {

@@ -11,6 +11,8 @@ export type CheckinQrEvent = {
   registered: number;
   capacity: number;
   checkedIn: number;
+  ticketPrice?: number;
+  ticket_price?: number;
 };
 
 export const getCheckinQrEventsFn = createServerFn({ method: "GET" })

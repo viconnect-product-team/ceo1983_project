@@ -80,8 +80,11 @@
 #   - Service chứa toàn bộ Business Logic: Thống kê, validate dữ liệu, bọc try-catch, ném NestJS HttpException (`NotFoundException`, `BadRequestException`, `ForbiddenException`).
 #
 # [BẮT BUỘC 4] Bảo mật & Phân quyền (Security & Permissions):
-#   - Mọi Controller endpoint cần bảo vệ phải gắn `@UseGuards(JwtAuthGuard, RolesGuard)`.
-#   - Phân quyền theo chức danh: `@Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')`.
+#   - Chuẩn hóa ĐÚNG 5 Vai trò hệ thống cố định trong Ma trận RBAC: Quản trị (`quan_tri` - Quyền to nhất hệ thống, loại bỏ `platform_admin`), Admin (`admin`), Tổng thư ký (`tong_thu_ky`), Trưởng ban (`truong_ban`), Thành viên (`member`).
+#   - Tuyệt đối không hiển thị hay sử dụng `Platform Admin` trên giao diện hay danh mục vai trò.
+#   - Phân quyền theo 6 Ban chức danh: BQT, BTK, BTT, BXT, BTV, BTN.
+#   - Lưu trữ Ma trận Phân quyền: Phải đồng bộ trực tiếp vào CSDL PostgreSQL (bảng `public.app_settings` với `key = 'crm_permission_matrix'`) thông qua API `/admin/permission-matrix`, kết hợp `localStorage` để tăng tốc độ load và fallback.
+#   - Luồng Công Việc (Tasks Notification): Khi tạo/giao việc cho hội viên, hệ thống phải tự động tra cứu tài khoản PostgreSQL và bắn thông báo trực tiếp vào `public.business_notifications` (chuông CRM & Web) và `public.member_notifications` (App Hiệp Hội).
 #   - Endpoint liên quan đến dữ liệu phạm vi sử dụng `@UseInterceptors(DataScopeInterceptor)` và `@DataScope('entity')`.
 #   - Trích xuất định danh người dùng chuẩn: `req.user.id || req.user.sub`.
 #
@@ -119,23 +122,39 @@
 #     4. `docs/developer-checklist.md`: Bảng kiểm nghiệm thu developer & tiêu chuẩn code.
 #     5. `project-memory.md`: Nhật ký tiến độ, lịch sử quyết định và bộ nhớ dự án.
 #
-# [BẮT BUỘC 10] Chuẩn Hóa Ma Trận Phân Quyền RBAC (5 Rows x Feature Columns) & Nâng Cấp Quản Lý Cuộc Họp:
+# [BẮT BUỘC 10] Chuẩn Hóa Phân Quyền 5 Cấp Bậc Theo Sidebar & Luồng Cuộc Họp Duyệt Tập Trung:
 #   - Phân quyền:
-#     + Tách biệt 2 Tab độc lập, tuyệt đối KHÔNG gộp chung quản trị tài khoản vào ma trận vai trò:
-#       * Tab 1: Ma Trận Phân Quyền 5 Cấp Bậc (Vai Trò x Chức Năng):
-#         - Dòng bên trái (Rows): Đúng 5 vai trò chuẩn:
-#           1. Quản trị: Toàn quyền (Xem, Sửa, Xóa, Phân quyền).
-#           2. Admin: Quản trị vận hành (Xem, Sửa, Phân quyền).
-#           3. Tổng thư ký: Điều hành & Thư ký (Xem, Sửa).
-#           4. Trưởng ban: Quản lý chuyên ban (Xem, Sửa - gồm cả Ban Thiện Nguyện & An Sinh Xã Hội mới).
-#           5. Hội viên: Thành viên chính thức (Chỉ Xem).
-#         - Cột bên trên (Columns): Từng chức năng riêng lẻ (Hội viên, Sự kiện, Cuộc họp, Công việc, Thiện nguyện & An sinh, Tài chính, Giao thương, Bầu cử, Truyền thông, Hệ thống...).
-#         - Ô giao điểm: Render pill/checkbox thao tác trực quan tuân thủ đúng giới hạn quyền của từng vai trò.
-#       * Tab 2: Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản Cá Nhân.
-#   - Quản lý cuộc họp & công việc:
-#     + 3 Nền tảng họp trực tuyến chuẩn: Zoom Meeting, Google Meet, UniWork Meet.
-#     + Thẩm quyền tạo cuộc họp: Giới hạn đúng 4 vai trò (Chủ tịch, Tổng thư ký, Admin, Trưởng ban) kèm thông tin người triệu tập (Tên, SĐT, Email).
-#     + 5 Dạng hiển thị công việc: Bảng (Table), Lưới (Kanban với điều khiển Zoom to / Zoom nhỏ 3 cấp độ: Thu nhỏ 280px, Tiêu chuẩn 345px, Phóng to 410px chống dính chùm), Lịch (Calendar), Biểu đồ thống kê (Recharts Statistics Dashboard: Donut cơ cấu trạng thái, Bar chart theo ban, Area chart tiến độ TB, Bảng xếp hạng và sub-tab Timeline Gantt), Cây đơn vị (Org Tree).
+#     + Tab 1: Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản: Cột "Quyền hạn" chỉ có đúng 5 role:
+#       1. Quản trị (`platform_admin`): Toàn quyền hệ thống.
+#       2. Admin (`admin`): Quản trị vận hành ban thư ký.
+#       3. Tổng thư ký (`tong_thu_ky`): Điều hành & Thư ký.
+#       4. Trưởng ban (`truong_ban`): Quản lý chuyên ban.
+#       5. Thành viên (`member`): Hội viên chính thức.
+#     + Tab 2: Ma Trận Phân Quyền 5 Cấp Bậc & Thao Tác Chi Tiết:
+#       - Bảng phẳng, tối giản, chuyên nghiệp, không làm màu mè.
+#       - Hàng (Rows): Lấy chính xác 30 chức năng chuẩn từ Sidebar.tsx phân loại theo đúng 8 nhóm danh mục Sidebar:
+#         1. Tổng quan (/dashboard)
+#         2. Hội viên (/members, /categories, /reviews, /scoring, /benefits)
+#         3. Sự kiện & Hoạt động (/events, /calendar, /attendance, /seating, /voting)
+#         4. Nhà tài trợ (/sponsors, /packages, /reports)
+#         5. Tài chính & Quỹ (/finance, /cashbook, /debts, /funds)
+#         6. Truyền thông & Tin tức (/news, /media, /documents, /feedback)
+#         7. Giao thương & Kết nối (/opportunities, /marketplace, /meetings, /tasks)
+#         8. Hệ thống & Điều hành (/audit-logs, /permissions, /settings)
+#       - Cột (Columns): Đúng 5 role cốt lõi (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên).
+#       - Giao điểm: Hiển thị ActionPill gọn gàng (Xem, Thêm, Sửa, Xóa, Duyệt, Điểm danh, Bỏ phiếu...).
+#   - Luồng Cuộc Họp & Phòng Họp:
+#     + Thẩm quyền tạo: Chỉ có 4 vai trò được phép khởi tạo (Quản trị, Admin, Tổng thư ký, Trưởng ban). Thành viên không có quyền tạo cuộc họp.
+#     + Người duyệt: Quản trị (Super Admin / Admin).
+#       * Cuộc họp do Tổng thư ký hoặc Trưởng ban tạo -> trạng thái `pending_approval` ("Chờ Quản trị duyệt").
+#       * Quản trị/Admin tạo -> tự động duyệt `upcoming`.
+#       * Quản trị bấm nút "Duyệt Cuộc Họp" trên card -> kích hoạt gửi thông báo đẩy và tin nhắn hệ thống [CEO1983_SYSTEM] cho toàn bộ đại biểu triệu tập.
+#     + Phòng họp: Loại bỏ hoàn toàn chức năng/tab đăng ký phòng họp riêng biệt; gộp trực tiếp vào Dropdown trong form tạo cuộc họp duy nhất:
+#       * "Zoom Meetings" (URL + Passcode).
+#       * "Google Meet" (URL phòng).
+#       * "UniWork Meet" (Họp trực tuyến nội bộ).
+#       * "Phòng Họp Trực Tiếp - Sapphire UniWork Hub" (Phòng họp vật lý tại trụ sở, sức chứa 40 đại biểu).
+#       * "Địa Điểm Offline Khác" (Địa chỉ cụ thể + link Google Maps).
 
 # ------------------------------------------------------------------------------
 # 5. ANTI-PATTERNS (CÁC ĐIỀU CẤM KỴ TUYỆT ĐỐI)

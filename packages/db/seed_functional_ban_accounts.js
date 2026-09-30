@@ -45,18 +45,18 @@ async function main() {
     },
     {
       id: 'c1983000-0000-4000-8000-000000000003',
-      username: 'ceo.taichinh@ceo1983.com',
-      email: 'ceo.taichinh@ceo1983.com',
+      username: 'ceo.thiennguyen@ceo1983.com',
+      email: 'ceo.thiennguyen@ceo1983.com',
       name: 'Vũ Thu Trang',
       passwordHash: hash123456,
       appRole: 'admin',
       assocRole: 'admin',
-      executiveRole: 'Trưởng Ban Tài Chính',
-      department: 'Ban Tài chính',
+      executiveRole: 'Trưởng Ban Thiện Nguyện',
+      department: 'Ban Thiện nguyện',
       phone: '0983000003',
-      company: 'Kiến Vàng Capital',
-      title: 'Trưởng Ban Tài Chính',
-      memberCode: 'M1983-TC01'
+      company: 'Quỹ Thiện Nguyện CEO 1983',
+      title: 'Trưởng Ban Thiện Nguyện',
+      memberCode: 'M1983-TN01'
     },
     {
       id: 'c1983000-0000-4000-8000-000000000004',
@@ -81,11 +81,11 @@ async function main() {
       passwordHash: hash123456,
       appRole: 'admin',
       assocRole: 'admin',
-      executiveRole: 'Trưởng Ban Xúc Tiến Thương Mại',
-      department: 'Ban Xúc tiến thương mại',
+      executiveRole: 'Trưởng Ban Xúc Tiến',
+      department: 'Ban Xúc tiến',
       phone: '0983000005',
       company: 'Tuấn Minh Global Trade',
-      title: 'Trưởng Ban Xúc Tiến Thương Mại',
+      title: 'Trưởng Ban Xúc Tiến',
       memberCode: 'M1983-XT01'
     },
     {
@@ -111,11 +111,11 @@ async function main() {
       passwordHash: hash123456,
       appRole: 'member',
       assocRole: 'member',
-      executiveRole: 'Hội viên Ban Xúc tiến thương mại',
-      department: 'Ban Xúc tiến thương mại',
+      executiveRole: 'Hội viên Ban Xúc tiến',
+      department: 'Ban Xúc tiến',
       phone: '0983000007',
       company: 'Thắng Lợi XNK JSC',
-      title: 'Hội viên Ban Xúc tiến thương mại',
+      title: 'Hội viên Ban Xúc tiến',
       memberCode: 'M1983-XT02'
     },
     {
@@ -141,12 +141,12 @@ async function main() {
       passwordHash: hash123456,
       appRole: 'member',
       assocRole: 'member',
-      executiveRole: 'Hội viên Ban Tài chính',
-      department: 'Ban Tài chính',
+      executiveRole: 'Hội viên Ban Thiện nguyện',
+      department: 'Ban Thiện nguyện',
       phone: '0983000009',
-      company: 'Tài Chính Việt An',
-      title: 'Hội viên Ban Tài chính',
-      memberCode: 'M1983-TC02'
+      company: 'Quỹ Thiện Nguyện CEO 1983',
+      title: 'Hội viên Ban Thiện nguyện',
+      memberCode: 'M1983-TN02'
     },
     {
       id: 'c1983000-0000-4000-8000-000000000010',

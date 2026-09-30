@@ -9,11 +9,11 @@
 ## 1. TỔNG QUAN HIỆN TRẠNG & TỶ LỆ HOÀN THIỆN TOÀN HỆ THỐNG
 
 - **Tổng số phân hệ chức năng hợp nhất:** **24 phân hệ** (13 Phân hệ App Hội Viên + 11 Phân hệ Web CRM Quản Trị)
-- **Tổng số hạng mục tính năng khảo sát & triển khai:** **127 tính năng**
+- **Tổng số hạng mục tính năng khảo sát & triển khai:** **131 tính năng**
 - **Phân bổ theo 3 trạng thái chuẩn:**
-  - 📋 **Khởi tạo:** **0 / 127 tính năng** (0%)
-  - ⏳ **Inprocess (Đang hoàn thiện / Chờ thiết bị ngoại vi & Sandbox):** **4 / 127 tính năng** (3%)
-  - ✅ **Done (Đã hoàn thành - Sẵn sàng nghiệm thu Production):** **123 / 127 tính năng** (**97%**)
+  - 📋 **Khởi tạo:** **0 / 131 tính năng** (0%)
+  - ⏳ **Inprocess (Đang hoàn thiện / Chờ thiết bị ngoại vi & Sandbox):** **4 / 131 tính năng** (3%)
+  - ✅ **Done (Đã hoàn thành - Sẵn sàng nghiệm thu Production):** **127 / 131 tính năng** (**97%**)
 - **Độ hoàn thiện mã nguồn trung bình:** **99%**
 
 > [!NOTE]
@@ -52,7 +52,8 @@
 | **CRM-09** | Quản Trị Pháp Nhân Doanh Nghiệp Thành Viên & Bản Đồ Chuỗi Cung Ứng | **Web CRM** | 3 | 0 | 0 | **3** | **100%** |
 | **CRM-10** | Quản Lý Sổ Quỹ Tài Chính, Đối Soát VietQR Tự Động & Niên Liễm | **Web CRM** | 4 | 0 | 0 | **4** | **100%** |
 | **CRM-11** | Nhật Ký Kiểm Toán (Audit Trail), HTTPS & Sao Lưu Dữ Liệu | **Web CRM** | 3 | 0 | 0 | **3** | **100%** |
-| **TỔNG CỘNG** | **Toàn Bộ 24 Phân Hệ App & CRM** | **All Platforms** | **127** | **0** | **4** | **123** | **97%** |
+| **CRM-12** | Quản Lý Cuộc Họp Trực Tuyến / Trực Tiếp, Phân Quyền Khởi Tạo & Phê Duyệt Cấp Quản Trị | **Web CRM** | 4 | 0 | 0 | **4** | **100%** |
+| **TỔNG CỘNG** | **Toàn Bộ 24 Phân Hệ App & CRM** | **All Platforms** | **131** | **0** | **4** | **127** | **97%** |
 
 ---
 
@@ -211,7 +212,7 @@
 
 | STT | Mã Task | Tên Chức Năng / Task | Người Thực Hiện | Mức Độ | Giao Diện (Màn Hình) | API Mapped | Khởi tạo | Inprocess | Done | Ghi Chú |
 |:---:|---|---|:---:|:---:|---|---|:---:|:---:|:---:|:---:|
-| 85 | **RBAC-01** | Ma trận 5 cấp bậc vai trò quản trị (Super Admin, Platform Admin, Executive Admin, Event Manager, Finance Manager) | Phạm Văn Vũ | **Cao** | Giao diện Phân quyền & Sidebar CRM | `GET /api/users/roles, PUT /api/users/:id/role` |  |  | ✅ | Đã hoàn thiện ma trận phân quyền 5 cấp bậc theo đúng quy chuẩn an ninh thông tin. |
+| 85 | **RBAC-01** | Phân quyền thao tác trực tiếp và Ma trận phân quyền 5 cấp bậc vai trò (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên) theo chuẩn Sidebar CRM | Phạm Văn Vũ | **Cao** | Giao diện Phân quyền & Sidebar CRM | `GET /api/users/roles, PUT /api/users/:id/role` |  |  | ✅ | Đã hoàn thiện giao diện phân quyền gọn gàng, phẳng và ma trận 5 role chuẩn theo 8 nhóm chức năng Sidebar. |
 | 86 | **RBAC-02** | Cấu hình Sidebar CRM theo vai trò: Ẩn "Quyền của tôi", chỉ hiển thị các module được cấp phép | Phạm Văn Vũ | **Cao** | Sidebar CRM (/dashboard, /members, /events, /marketplace, /opportunities) | `Sidebar role-based permission filter` |  |  | ✅ | Ẩn các menu không thuộc thẩm quyền, ngăn chặn truy cập trái phép. |
 | 87 | **RBAC-03** | Kiểm soát quyền thực thi API qua JwtAuthGuard & RoleGuard trên NestJS | Phạm Văn Vũ | **Cao** | Toàn bộ endpoint CRM Backend | `@Roles() Decorator, RolesGuard, JwtAuthGuard` |  |  | ✅ | Xác thực chặt chẽ token và quyền hạn trước khi cho phép thực thi API. |
 | 88 | **RBAC-04** | Phân quyền nhanh và khóa/mở khóa tài khoản trực tiếp trong Drawer chi tiết hội viên | Phạm Văn Vũ | **Cao** | Drawer Hội Viên CRM (/members) | `PATCH /api/members/:id/status, PUT /api/users/:id/role` |  |  | ✅ | Quản trị viên có thể đổi vai trò và khóa/mở tài khoản tức thì. |
@@ -304,4 +305,13 @@
 | 125 | **SEC-CRM-01** | Nhật ký kiểm toán an ninh bất biến (Audit Trail ghi nhận mọi thao tác create/update/delete) | Phạm Văn Vũ | **Cao** | Nhật Ký Kiểm Toán (/audit-logs) | `GET /api/crm/audit-logs, AuditInterceptor` |  |  | ✅ | Lưu trữ địa chỉ IP, thời gian, tài khoản thực hiện và nội dung thay đổi dữ liệu. |
 | 126 | **SEC-CRM-02** | Cấu hình HTTPS SSL Reverse Proxy Docker (:5443 CRM, :5444 App) bảo mật đường truyền | Phạm Văn Vũ | **Cao** | Hạ Tầng Mạng & Server Dev | `Nginx SSL Reverse Proxy, deploy-ssl.ps1` |  |  | ✅ | Mã hóa SSL/TLS 1.3 cho toàn bộ kết nối giữa trình duyệt và máy chủ. |
 | 127 | **SEC-CRM-03** | Lịch sao lưu cơ sở dữ liệu PostgreSQL tự động và cơ chế khôi phục thảm họa (Disaster Recovery) | Phạm Văn Vũ | **Cao** | Hạ Tầng CSDL | `Cron pg_dump, backup-db.ps1` |  |  | ✅ | Đảm bảo an toàn dữ liệu tuyệt đối, định kỳ backup và lưu trữ an toàn. |
+
+### CRM-12: Quản Lý Cuộc Họp Trực Tuyến / Trực Tiếp, Phân Quyền Khởi Tạo & Phê Duyệt Cấp Quản Trị (Web CRM)
+
+| STT | Mã Task | Tên Chức Năng / Task | Người Thực Hiện | Mức Độ | Giao Diện (Màn Hình) | API Mapped | Khởi tạo | Inprocess | Done | Ghi Chú |
+|:---:|---|---|:---:|:---:|---|---|:---:|:---:|:---:|:---:|
+| 128 | **MEET-CRM-01** | Phân quyền khởi tạo cuộc họp cho 4 vai trò (Quản trị, Admin, Tổng thư ký, Trưởng ban); chặn hoàn toàn vai trò Thành viên | Phạm Văn Vũ | **Cao** | Quản lý Cuộc họp CRM (/meetings) | `POST /api/meetings (Role Guard check)` |  |  | ✅ | Chỉ 4 vai trò cán bộ được phép khởi tạo; Thành viên chỉ có quyền xác nhận tham dự (RSVP). |
+| 129 | **MEET-CRM-02** | Luồng thẩm định & Phê duyệt cuộc họp bởi Quản trị (Super Admin); thẻ KPI Chờ duyệt và bộ lọc riêng | Phạm Văn Vũ | **Cao** | Quản lý Cuộc họp CRM (/meetings) | `PATCH /api/meetings/:id/status (Approve/Reject)` |  |  | ✅ | Cuộc họp do Tổng thư ký/Trưởng ban tạo ở trạng thái pending_approval; Quản trị duyệt thì chuyển sang upcoming. |
+| 130 | **MEET-CRM-03** | Gộp giao diện phòng họp vào Dropdown đa nền tảng tích hợp (Zoom, Google Meet, UniWork, Sapphire Hub, Offline khác) | Phạm Văn Vũ | **Cao** | Modal Tạo Cuộc Họp (/meetings) | `meetings.platform, CreateMeetingModal` |  |  | ✅ | Loại bỏ chức năng đăng ký phòng họp riêng lẻ, gộp trực tiếp vào Dropdown trong form tạo cuộc họp duy nhất. |
+| 131 | **MEET-CRM-04** | Tự động gửi thông báo đẩy (Push) và tin nhắn riêng [CEO1983_SYSTEM] tới toàn bộ đại biểu sau khi Quản trị duyệt | Phạm Văn Vũ | **Cao** | Cơ Chế Bắn Tin Tự Động | `POST /api/notifications/broadcast-meeting` |  |  | ✅ | Bắn tin nhắn riêng chứa link phòng họp hoặc định vị bản đồ tới từng đại biểu kèm nút xác nhận tham dự. |
 

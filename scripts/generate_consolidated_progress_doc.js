@@ -22,14 +22,14 @@ const crmModules = [
     features: [
       {
         id: 'RBAC-01',
-        name: 'Ma trận 5 cấp bậc vai trò quản trị (Super Admin, Platform Admin, Executive Admin, Event Manager, Finance Manager)',
+        name: 'Phân quyền thao tác trực tiếp và Ma trận phân quyền 5 cấp bậc vai trò (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên) theo chuẩn Sidebar CRM',
         screen: 'Giao diện Phân quyền & Sidebar CRM',
         api: 'GET /api/users/roles, PUT /api/users/:id/role',
         devDate: '10/09/2026',
         priority: 'Khẩn cấp (P0)',
         status: 'Done',
         pct: 100,
-        note: 'Đã hoàn thiện ma trận phân quyền 5 cấp bậc theo đúng quy chuẩn an ninh thông tin.'
+        note: 'Đã hoàn thiện giao diện phân quyền gọn gàng, phẳng và ma trận 5 role chuẩn theo 8 nhóm chức năng Sidebar.'
       },
       {
         id: 'RBAC-02',
@@ -564,6 +564,57 @@ const crmModules = [
         note: 'Đảm bảo an toàn dữ liệu tuyệt đối, định kỳ backup và lưu trữ an toàn.'
       }
     ]
+  },
+  {
+    moduleId: 'CRM-12',
+    moduleName: 'Quản Lý Cuộc Họp Trực Tuyến / Trực Tiếp, Phân Quyền Khởi Tạo & Phê Duyệt Cấp Quản Trị',
+    platform: 'Web CRM',
+    features: [
+      {
+        id: 'MEET-CRM-01',
+        name: 'Phân quyền khởi tạo cuộc họp cho 4 vai trò (Quản trị, Admin, Tổng thư ký, Trưởng ban); chặn hoàn toàn vai trò Thành viên',
+        screen: 'Quản lý Cuộc họp CRM (/meetings)',
+        api: 'POST /api/meetings (Role Guard check)',
+        devDate: '15/09/2026',
+        priority: 'Khẩn cấp (P0)',
+        status: 'Done',
+        pct: 100,
+        note: 'Chỉ 4 vai trò cán bộ được phép khởi tạo; Thành viên chỉ có quyền xác nhận tham dự (RSVP).'
+      },
+      {
+        id: 'MEET-CRM-02',
+        name: 'Luồng thẩm định & Phê duyệt cuộc họp bởi Quản trị (Super Admin); thẻ KPI Chờ duyệt và bộ lọc riêng',
+        screen: 'Quản lý Cuộc họp CRM (/meetings)',
+        api: 'PATCH /api/meetings/:id/status (Approve/Reject)',
+        devDate: '15/09/2026',
+        priority: 'Khẩn cấp (P0)',
+        status: 'Done',
+        pct: 100,
+        note: 'Cuộc họp do Tổng thư ký/Trưởng ban tạo ở trạng thái pending_approval; Quản trị duyệt thì chuyển sang upcoming.'
+      },
+      {
+        id: 'MEET-CRM-03',
+        name: 'Gộp giao diện phòng họp vào Dropdown đa nền tảng tích hợp (Zoom, Google Meet, UniWork, Sapphire Hub, Offline khác)',
+        screen: 'Modal Tạo Cuộc Họp (/meetings)',
+        api: 'meetings.platform, CreateMeetingModal',
+        devDate: '15/09/2026',
+        priority: 'Cao (P1)',
+        status: 'Done',
+        pct: 100,
+        note: 'Loại bỏ chức năng đăng ký phòng họp riêng lẻ, gộp trực tiếp vào Dropdown trong form tạo cuộc họp duy nhất.'
+      },
+      {
+        id: 'MEET-CRM-04',
+        name: 'Tự động gửi thông báo đẩy (Push) và tin nhắn riêng [CEO1983_SYSTEM] tới toàn bộ đại biểu sau khi Quản trị duyệt',
+        screen: 'Cơ Chế Bắn Tin Tự Động',
+        api: 'POST /api/notifications/broadcast-meeting',
+        devDate: '15/09/2026',
+        priority: 'Cao (P1)',
+        status: 'Done',
+        pct: 100,
+        note: 'Bắn tin nhắn riêng chứa link phòng họp hoặc định vị bản đồ tới từng đại biểu kèm nút xác nhận tham dự.'
+      }
+    ]
   }
 ];
 
@@ -685,9 +736,239 @@ const outDoc = path.join(__dirname, '..', 'document', 'TIEN_DO_CONG_VIEC_APP_HIE
 fs.writeFileSync(outDoc, md, 'utf8');
 console.log(`✓ Successfully written consolidated Markdown to: ${outDoc}`);
 
+// Sync to document/BỘ_TÀI_LIỆU_CEO1983/TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.md
+const boTaiLieuDir = path.join(__dirname, '..', 'document', 'BỘ_TÀI_LIỆU_CEO1983');
+if (!fs.existsSync(boTaiLieuDir)) fs.mkdirSync(boTaiLieuDir, { recursive: true });
+const outBoTaiLieuMd = path.join(boTaiLieuDir, 'TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.md');
+fs.writeFileSync(outBoTaiLieuMd, md, 'utf8');
+console.log(`✓ Successfully synced to BỘ_TÀI_LIỆU_CEO1983: ${outBoTaiLieuMd}`);
+
 // Sync to apps/vione_app_fe/public/docs/TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.md
 const publicDocDir = path.join(__dirname, '..', 'apps', 'vione_app_fe', 'public', 'docs');
 if (!fs.existsSync(publicDocDir)) fs.mkdirSync(publicDocDir, { recursive: true });
 const outPublicDoc = path.join(publicDocDir, 'TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.md');
 fs.writeFileSync(outPublicDoc, md, 'utf8');
 console.log(`✓ Successfully synced to public docs: ${outPublicDoc}`);
+
+// ════════════════════════════════════════════════════════════════════════════
+// GENERATE EXCEL WORKBOOK (XLSX) FOR ALL 127 TASKS (24 MODULES)
+// ════════════════════════════════════════════════════════════════════════════
+const ExcelJS = require('exceljs');
+
+async function generateExcel() {
+  console.log('Generating Consolidated Excel Workbook (127 tasks, 24 modules)...');
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Ban Thư Ký CLB Doanh Nhân CEO 1983';
+  wb.lastModifiedBy = 'Phạm Văn Vũ';
+  wb.created = new Date();
+  wb.modified = new Date();
+
+  const NAVY = '0A1A3A';
+  const BLUE_HEADER = '0084FF';
+  const GOLD = 'D97706';
+  const BORDER_COLOR = 'CBD5E1';
+  const BORDER = {
+    top: { style: 'thin', color: { argb: BORDER_COLOR } },
+    left: { style: 'thin', color: { argb: BORDER_COLOR } },
+    bottom: { style: 'thin', color: { argb: BORDER_COLOR } },
+    right: { style: 'thin', color: { argb: BORDER_COLOR } },
+  };
+
+  // SHEET 1: TỔNG QUAN TIẾN ĐỘ
+  const wsOverview = wb.addWorksheet('Tổng Quan Tiến Độ', { views: [{ showGridLines: true }] });
+  wsOverview.columns = [
+    { width: 4 },
+    { width: 36 },
+    { width: 22 },
+    { width: 18 },
+    { width: 16 },
+    { width: 16 },
+    { width: 16 },
+    { width: 22 },
+  ];
+
+  // Title Banner
+  wsOverview.mergeCells('B2:H2');
+  const titleCell = wsOverview.getCell('B2');
+  titleCell.value = 'BÁO CÁO TIẾN ĐỘ HỢP NHẤT HỆ THỐNG SỐ HÓA HIỆP HỘI CEO 1983';
+  titleCell.font = { name: 'Times New Roman', size: 16, bold: true, color: { argb: 'FFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  wsOverview.getRow(2).height = 40;
+
+  // Subtitle
+  wsOverview.mergeCells('B3:H3');
+  const subCell = wsOverview.getCell('B3');
+  subCell.value = 'Hợp Nhất 100% App Hội Viên (13 Phân hệ) & Web CRM Quản Trị (11 Phân hệ) · 127 Tính Năng';
+  subCell.font = { name: 'Times New Roman', size: 11, italic: true, color: { argb: '475569' } };
+  subCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  wsOverview.getRow(3).height = 24;
+
+  // KPIs
+  const kpis = [
+    { label: 'TỔNG PHÂN HỆ', val: '24 Phân Hệ', color: '0084FF' },
+    { label: 'TỔNG TÍNH NĂNG', val: `${totalTasks} Tính năng`, color: '6366F1' },
+    { label: 'ĐÃ HOÀN THÀNH (DONE)', val: `${totalDone} Tính năng (${overallPct}%)`, color: '10B981' },
+    { label: 'INPROCESS (CHỜ THIẾT BỊ/SANDBOX)', val: `${totalInprocess} Tính năng`, color: 'F59E0B' },
+  ];
+
+  kpis.forEach((k, i) => {
+    const colIdx = i < 2 ? i * 2 + 2 : (i === 2 ? 6 : 7);
+    // Add KPI cards
+  });
+
+  // Table summary
+  const sumStartRow = 6;
+  const sumHeaders = ['Mã Phân Hệ', 'Tên Phân Hệ Chức Năng', 'Nền Tảng', 'Tổng Task', 'Khởi Tạo', 'Inprocess', 'Done', 'Tỷ Lệ Hoàn Thành'];
+  const headerRow = wsOverview.getRow(sumStartRow);
+  sumHeaders.forEach((h, idx) => {
+    const cell = headerRow.getCell(idx + 2);
+    cell.value = h;
+    cell.font = { name: 'Times New Roman', size: 11, bold: true, color: { argb: 'FFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '003B95' } };
+    cell.alignment = { vertical: 'middle', horizontal: idx >= 3 ? 'center' : 'left' };
+    cell.border = BORDER;
+  });
+  headerRow.height = 28;
+
+  let curRowIdx = sumStartRow + 1;
+  allModules.forEach(mod => {
+    const r = wsOverview.getRow(curRowIdx);
+    const modTotal = mod.features.length;
+    let modDone = 0, modInp = 0, modInit = 0;
+    mod.features.forEach(f => {
+      const c = mapStatusColumns(f);
+      if (c.done) modDone++;
+      else if (c.inprocess) modInp++;
+      else modInit++;
+    });
+    const modPct = Math.round((modDone / modTotal) * 100);
+
+    r.getCell(2).value = mod.moduleId;
+    r.getCell(3).value = mod.moduleName;
+    r.getCell(4).value = mod.platform;
+    r.getCell(5).value = modTotal;
+    r.getCell(6).value = modInit;
+    r.getCell(7).value = modInp;
+    r.getCell(8).value = modDone;
+    r.getCell(9).value = `${modPct}%`;
+
+    for (let c = 2; c <= 9; c++) {
+      const cell = r.getCell(c);
+      cell.font = { name: 'Times New Roman', size: 10 };
+      cell.border = BORDER;
+      if (c >= 5) cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      if (curRowIdx % 2 === 0) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
+      }
+    }
+    r.height = 22;
+    curRowIdx++;
+  });
+
+  // Total row
+  const totalRow = wsOverview.getRow(curRowIdx);
+  totalRow.getCell(2).value = 'TỔNG CỘNG';
+  totalRow.getCell(3).value = 'Toàn Bộ 24 Phân Hệ Hợp Nhất';
+  totalRow.getCell(4).value = 'App & CRM';
+  totalRow.getCell(5).value = totalTasks;
+  totalRow.getCell(6).value = totalKhoiTao;
+  totalRow.getCell(7).value = totalInprocess;
+  totalRow.getCell(8).value = totalDone;
+  totalRow.getCell(9).value = `${overallPct}%`;
+  for (let c = 2; c <= 9; c++) {
+    const cell = totalRow.getCell(c);
+    cell.font = { name: 'Times New Roman', size: 11, bold: true, color: { argb: '003B95' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EFF6FF' } };
+    cell.border = BORDER;
+    if (c >= 5) cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  }
+  totalRow.height = 26;
+
+  // SHEET 2: CHI TIẾT 127 TÍNH NĂNG
+  const wsDetail = wb.addWorksheet('Chi Tiết 127 Tính Năng', { views: [{ showGridLines: true }] });
+  wsDetail.columns = [
+    { width: 6 },  // STT
+    { width: 14 }, // Mã Task
+    { width: 38 }, // Tên Chức Năng
+    { width: 18 }, // Phân Hệ
+    { width: 14 }, // Nền Tảng
+    { width: 16 }, // Người Thực Hiện
+    { width: 14 }, // Mức Độ
+    { width: 32 }, // Giao Diện
+    { width: 34 }, // API Mapped
+    { width: 12 }, // Khởi tạo
+    { width: 14 }, // Inprocess
+    { width: 10 }, // Done
+    { width: 45 }, // Ghi Chú
+  ];
+
+  const detailHeaders = [
+    'STT', 'Mã Task', 'Tên Chức Năng / Task', 'Phân Hệ', 'Nền Tảng',
+    'Người Thực Hiện', 'Mức Độ', 'Giao Diện (Màn Hình)', 'API Mapped',
+    'Khởi tạo', 'Inprocess', 'Done', 'Ghi Chú & Đánh Giá Kỹ Thuật'
+  ];
+
+  const dHeaderRow = wsDetail.getRow(1);
+  detailHeaders.forEach((h, idx) => {
+    const cell = dHeaderRow.getCell(idx + 1);
+    cell.value = h;
+    cell.font = { name: 'Times New Roman', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    cell.border = BORDER;
+  });
+  dHeaderRow.height = 28;
+
+  let dIdx = 2;
+  let taskStt = 1;
+  allModules.forEach(mod => {
+    mod.features.forEach(f => {
+      const r = wsDetail.getRow(dIdx);
+      const prio = normalizePriority(f.priority);
+      const cols = mapStatusColumns(f);
+
+      r.getCell(1).value = taskStt++;
+      r.getCell(2).value = f.id;
+      r.getCell(3).value = f.name;
+      r.getCell(4).value = mod.moduleId;
+      r.getCell(5).value = mod.platform;
+      r.getCell(6).value = 'Phạm Văn Vũ';
+      r.getCell(7).value = prio;
+      r.getCell(8).value = f.screen;
+      r.getCell(9).value = f.api;
+      r.getCell(10).value = cols.khoiTao;
+      r.getCell(11).value = cols.inprocess;
+      r.getCell(12).value = cols.done;
+      r.getCell(13).value = f.note || '';
+
+      for (let c = 1; c <= 13; c++) {
+        const cell = r.getCell(c);
+        cell.font = { name: 'Times New Roman', size: 9.5 };
+        cell.border = BORDER;
+        if (c === 1 || c === 2 || c === 4 || c === 5 || c === 6 || c === 7 || c === 10 || c === 11 || c === 12) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        } else {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        }
+        if (dIdx % 2 === 1) {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
+        }
+      }
+      r.height = 26;
+      dIdx++;
+    });
+  });
+
+  const outXlsx = path.join(__dirname, '..', 'document', 'TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.xlsx');
+  await wb.xlsx.writeFile(outXlsx);
+  console.log(`✓ Successfully written Excel progress file to: ${outXlsx}`);
+
+  const outBoTaiLieuXlsx = path.join(boTaiLieuDir, 'TIEN_DO_CONG_VIEC_APP_HIEP_HOI_CHI_TIET.xlsx');
+  await wb.xlsx.writeFile(outBoTaiLieuXlsx);
+  console.log(`✓ Successfully synced Excel progress file to: ${outBoTaiLieuXlsx}`);
+}
+
+generateExcel().catch(err => {
+  console.error('Lỗi khi tạo Excel:', err);
+});

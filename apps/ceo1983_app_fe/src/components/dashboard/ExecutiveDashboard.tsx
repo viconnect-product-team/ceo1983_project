@@ -40,10 +40,9 @@ import { listActivityLogFn } from "@/lib/activity.functions";
 import type { Opportunity } from "@/lib/opportunities-data";
 import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
 import type { ActivityLog } from "@/lib/extra-data";
-import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import { EmptyState, ErrorState, ListSkeleton, Skeleton } from "@/components/dashboard/StateKit";
-import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
 import { useRole } from "@/hooks/use-role";
+import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 
 /* ----------------------------- helpers ----------------------------- */
 
@@ -566,8 +565,6 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
         />
       </div>
 
-      {/* RBAC Operation & Feature Permissions Matrix */}
-      <RbacPermissionMatrix />
 
       {/* Growth + Fee collection */}
       <div className="grid gap-5 lg:grid-cols-3">
