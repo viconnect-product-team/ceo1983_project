@@ -858,29 +858,32 @@ export class EventsService {
 
     // Gửi email vé sự kiện điện tử (E-Ticket) có mã QR và mã số quay thưởng Lucky Draw hoặc VietQR thanh toán
     if (email && email.includes('@')) {
-      this.mailService.sendEventTicketEmail({
-        to: email,
-        fullName: memberName,
-        phone,
-        company,
-        position,
-        eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
-        eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
-        eventLocation: event.location || 'Hà Nội',
-        registrationId: regId,
-        ticketType,
-        ticketCount,
-        luckyNumber: luckyNum,
-        isFree,
-        totalAmount,
-        qrCodeUrl,
-        vietQrUrl,
-        bankAccount: '1983000000',
-        bankName: 'MB Bank (Quân Đội)',
-        bankOwner: 'CLB DOANH NHAN CEO 1983',
-      }).catch((err: any) => {
-        this.logger.warn(`Failed to dispatch event ticket email to ${email}: ${err?.message}`);
-      });
+      try {
+        await this.mailService.sendEventTicketEmail({
+          to: email,
+          fullName: memberName,
+          phone,
+          company,
+          position,
+          eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+          eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
+          eventLocation: event.location || 'Hà Nội',
+          registrationId: regId,
+          ticketType,
+          ticketCount,
+          luckyNumber: luckyNum,
+          isFree,
+          totalAmount,
+          qrCodeUrl,
+          vietQrUrl,
+          bankAccount: '1983000000',
+          bankName: 'MB Bank (Quân Đội)',
+          bankOwner: 'CLB DOANH NHAN CEO 1983',
+        });
+        this.logger.log(`Member event ticket email dispatched to ${email} (Registration: ${regId}, Lucky #${luckyNum})`);
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch event ticket email to member ${email}: ${err?.message}`);
+      }
     }
 
     return {

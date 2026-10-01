@@ -43,6 +43,8 @@ import {
   addReminderFn,
 } from "@/lib/fees.functions";
 import { fetchNestApi } from "@/lib/api-client";
+import { StandardDateInput } from "@/components/common/StandardDateInput";
+import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
 import type { Member } from "@/lib/members-data";
 
 export const Route = createFileRoute("/fees/")({
@@ -1164,34 +1166,35 @@ function CreateInvoiceModal({
               <input
                 type="number"
                 value={year}
+                placeholder="2026"
                 onChange={(e) => setYear(Number(e.target.value))}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               />
             </label>
-            <label className="block">
+            <div className="block">
               <span className="mb-1 block text-xs font-semibold text-muted-foreground">
-                {t("fees.form.due")}
+                {t("fees.form.due")} (dd/mm/yyyy)
               </span>
-              <input
-                type="date"
+              <StandardDateInput
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                placeholder="dd/mm/yyyy (VD: 31/12/2026)"
+                onChange={(iso) => setDueDate(iso)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               />
-            </label>
+            </div>
           </div>
-          <label className="block">
+          <div className="block">
             <span className="mb-1 block text-xs font-semibold text-muted-foreground">
               {t("fees.form.amount")}
             </span>
-            <input
-              type="number"
+            <FormattedCurrencyInput
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              allowCurrencySwitch={true}
+              onChange={(_formatted, num) => setAmount(String(num))}
+              placeholder="0 đ / $0"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold"
             />
-          </label>
+          </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button

@@ -248,7 +248,8 @@ function MembersPage() {
       return Array.isArray(res) ? res : [];
     },
   });
-  const { isAdmin, loading: roleLoading } = useRole();
+  const { isAdmin, canApproveMembers, isBTV, isBQT, isPlatformAdmin, loading: roleLoading } = useRole();
+  const canApprove = canApproveMembers || isBTV || isBQT || isPlatformAdmin;
   const { data: acctStatuses = {} } = useQuery({
     queryKey: ["member-account-statuses"],
     queryFn: async () => {
@@ -403,9 +404,13 @@ function MembersPage() {
   const pendingCount = useMemo(() => members.filter((m) => m.status === "pending").length, [members]);
 
   const handleApproveAndSendCredentials = async (m: Member) => {
+    if (!canApprove) {
+      toast.error("Thẩm quyền hạn chế: Chỉ Ban Thành Viên hoặc Ban Quản Trị mới có thẩm quyền kiểm duyệt và phê duyệt hội viên!");
+      return;
+    }
     if (
       !confirm(
-        `Xác nhận phê duyệt hội viên "${m.name}"?\n\nHệ thống sẽ cấp mã hội viên, sinh mật khẩu ngẫu nhiên và tự động gửi email tài khoản chính thức đến: ${m.email || "email hội viên"}`
+        `[Ban Thành Viên Thẩm Định]\n\nXác nhận phê duyệt kết nạp hội viên "${m.name}"?\n\nHệ thống sẽ cấp mã hội viên chính thức, kích hoạt tài khoản và tự động gửi email thông tin đăng nhập đến: ${m.email || "email hội viên"}`
       )
     ) {
       return;
@@ -891,7 +896,7 @@ function MembersPage() {
               onEdit={() => (isAdmin ? setEditing(m) : denyPermission())}
               onAccount={() => (isAdmin ? setAccountFor(m) : denyPermission())}
               onDelete={() => (isAdmin ? setDeleting(m) : denyPermission())}
-              onApprove={() => handleApproveAndSendCredentials(m)}
+              onApprove={canApprove ? () => handleApproveAndSendCredentials(m) : undefined}
             />
           ))}
         </div>
@@ -1039,15 +1044,23 @@ function MembersPage() {
                     </td>
                     <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                       <div className="inline-flex items-center gap-1.5">
-                        {m.status === "pending" && (
+                        {m.status === "pending" && canApprove && (
                           <button
                             onClick={() => handleApproveAndSendCredentials(m)}
-                            title="Phê duyệt hồ sơ & Gửi email tài khoản"
+                            title="Ban Thành Viên thẩm định: Phê duyệt hồ sơ & Gửi email tài khoản"
                             className="inline-flex items-center gap-1 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white px-2.5 py-1.5 text-xs font-bold shadow-sm transition-all whitespace-nowrap cursor-pointer"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
                             <span>Duyệt & Gửi Email</span>
                           </button>
+                        )}
+                        {m.status === "pending" && !canApprove && (
+                          <span
+                            title="Hồ sơ đang chờ Ban Thành Viên kiểm duyệt"
+                            className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-1 text-[11px] font-semibold whitespace-nowrap"
+                          >
+                            <span>Chờ BTV duyệt</span>
+                          </span>
                         )}
                         <Link
                           to="/members/$memberId"
@@ -1271,7 +1284,7 @@ function MemberCard({
   onTogglePin: () => void;
   onEdit: () => void;
   onAccount: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   onApprove?: () => void;
 }) {
   return (
@@ -1378,8 +1391,13 @@ function MemberCard({
           className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-2 text-xs font-bold shadow-sm transition-all cursor-pointer"
         >
           <CheckCircle2 className="h-4 w-4 text-amber-400" />
-          Phê duyệt & Gửi Email Tài Khoản
+          Ban Thành Viên: Phê duyệt & Gửi Email Tài Khoản
         </button>
+      )}
+      {m.status === "pending" && !onApprove && (
+        <div className="mt-3 w-full rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-300 font-medium text-center">
+          ⏳ Hồ sơ đang chờ Ban Thành Viên kiểm duyệt & phê duyệt kết nạp
+        </div>
       )}
 
       {/* actions */}

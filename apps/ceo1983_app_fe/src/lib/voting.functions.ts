@@ -26,6 +26,8 @@ export type Vote = {
   type: "policy" | "election" | "amendment";
   eventId?: string | null;
   eventName?: string | null;
+  eventStatus?: string | null;
+  eventDate?: string | null;
   startsAt: string;
   endsAt: string;
   eligible: number;
@@ -67,6 +69,8 @@ export const listVotesFn = createServerFn({ method: "GET" })
             type: r.type || "policy",
             eventId: r.eventId || r.event_id || null,
             eventName: r.eventName || r.event_name || null,
+            eventStatus: r.eventStatus || r.event_status || null,
+            eventDate: r.eventDate || r.event_date || null,
             startsAt: r.startsAt || r.startDate || r.createdAt || new Date().toISOString(),
             endsAt: r.endsAt || r.endDate || new Date().toISOString(),
             eligible: Number(r.eligible || 100),
@@ -97,6 +101,8 @@ export const listVotesFn = createServerFn({ method: "GET" })
         type: "policy",
         eventId: p.event_id || null,
         eventName: null,
+        eventStatus: null,
+        eventDate: null,
         startsAt: p.start_date || p.created_at || new Date().toISOString(),
         endsAt: p.end_date || new Date().toISOString(),
         eligible: 100,

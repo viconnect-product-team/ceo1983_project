@@ -166,3 +166,47 @@
 # ❌ KHÔNG dùng kênh Alpha trong suốt cho Apple Touch Icons trên iOS PWA (iOS sẽ tô đen hoặc chụp screenshot trang web).
 # ❌ KHÔNG thay đổi logic/schema của database mà không đồng bộ giữa DTO backend và FE type definition.
 # ❌ KHÔNG tự động fake dữ liệu linh tinh hoặc sửa màu thương hiệu ngoài chuẩn CEO 1983.
+# ❌ KHÔNG tạo vòng lặp import (Circular Dependency) giữa các module NestJS (ví dụ AuthModule <-> UsersModule <-> UploadModule).
+# ❌ KHÔNG dùng nút màu vàng ở màn hình Đăng nhập CRM 1983; chỉ sử dụng chuẩn xanh CEO 1983 (#003B95), text đen, nền trắng, tuyệt đối không chèn nút OAuth bên thứ ba khi không có yêu cầu.
+# ❌ KHÔNG dùng định dạng ngày tháng mm/dd/yyyy trên giao diện người dùng; bắt buộc 100% sử dụng format dd/mm/yyyy thông qua StandardDateInput.
+# ❌ KHÔNG để lỗi giật con trỏ chuột hay đúp số (nhảy con trỏ, tự sinh thêm số) khi nhập tiền tệ: Toàn bộ ô nhập giá phải dùng FormattedCurrencyInput với thuật toán neo khoảng cách con trỏ từ bên phải (digitsToRight) và bảo vệ isFocusedRef để không bị useEffect ghi đè khi đang gõ; parse giá an toàn bằng parsePriceToNumber (tránh lỗi Number("11.100.000") = NaN dẫn đến sai badge "Miễn phí"); tuyệt đối không bọc FormattedCurrencyInput cho ô nhập số lượng/suất vé.
+# ❌ KHÔNG bỏ sót luồng gửi email tự động: Khi ứng viên nộp form đăng ký trên Landing Page (publicRegister), BẮT BUỘC gọi mailService.sendRegistrationReceivedEmail gửi email xác nhận đã tiếp nhận hồ sơ ngay lập tức về email ứng viên; khi Admin phê duyệt (approveMemberAndSendCredentials), BẮT BUỘC gửi email cấp tài khoản và mật khẩu tạm; khi khách ngoài/hội viên đăng ký sự kiện, BẮT BUỘC gửi email cuống vé QR E-Ticket (hoặc hóa đơn thanh toán VietQR) đồng thời ghi log chi tiết.
+# ❌ KHÔNG cho phép Ban Thư Ký phê duyệt hồ sơ kết nạp hội viên: Thẩm quyền duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Nếu Ban Thư Ký hoặc ban khác thực hiện phê duyệt, backend BẮT BUỘC ném lỗi 403 Forbidden.
+# ❌ KHÔNG sử dụng từ "niên liễm" trong bất kỳ tài liệu, giao diện hay mã nguồn nào; bắt buộc thay bằng "hội phí" hoặc "hội phí thường niên".
+# ❌ KHÔNG sử dụng WidthType.PERCENTAGE trong thư viện docx khi tạo bảng mà không chỉ định rõ kích thước DXA của từng cột (tránh lỗi Microsoft Word render cột 100 twips thành 1 ký tự dọc). Bắt buộc dùng WidthType.DXA với TABLE_WIDTH_DXA = 9200.
+
+# ------------------------------------------------------------------------------
+# 6. QUY TẮC PHÂN QUYỀN 6 BAN VÀ DUYỆT HỘI VIÊN (COMMITTEE RBAC RULES)
+# ------------------------------------------------------------------------------
+# [BẮT BUỘC 11] Phân định Quyền Hạn Duyệt Hội Viên & 6 Ban Chức Năng Cốt Lõi:
+#   - Ban Thành Viên (ceo.thanhvien@ceo1983.com): Thẩm quyền độc quyền kiểm duyệt hồ sơ ứng viên đăng ký mới, thẩm định điều kiện doanh nghiệp, cấp mã số hội viên (CEO-83xxx) và phê duyệt kết nạp chính thức.
+#   - Ban Thư Ký (ceo.tongthuky@ceo1983.com): Phụ trách triệu tập đại biểu, khởi tạo cuộc họp, điểm danh QR, biên bản cuộc họp và lưu trữ nghị quyết. Tuyệt đối KHÔNG có quyền duyệt hội viên (bị chặn 403).
+#   - Ban Quản Trị (admin@connect.vn): Toàn quyền quản trị hệ thống, cấu hình tham số, phân quyền vai trò và phê duyệt cấp cao.
+#   - Ban Thiện Nguyện (ceo.thiennguyen@ceo1983.com): Điều hành quỹ an sinh, quản trị sổ quỹ thu chi 3 cấp duyệt, thanh toán VietQR 24/7.
+#   - Ban Truyền Thông (ceo.truyenthong@ceo1983.com): Quản lý banner marketing, truyền thông sự kiện, điểm danh soát vé an ninh QR cổng vào.
+#   - Ban Xúc Tiến (ceo.xuctien@ceo1983.com): Quản trị sàn B2B, kiểm duyệt sản phẩm thương mại, khớp nối cơ hội Cung - Cầu 1-on-1.
+#
+# [BẮT BUỘC 12] Chuẩn Hóa 52 Use Cases Toàn Diện, Tài Liệu BRD Word/MD, Báo Cáo Tiến Độ 42 Work Packages & Bộ Slide Master 28 Trang CRM / App:
+#   - Hệ thống UCs bao phủ đủ 52 Use Cases: 28 UCs cho Web CRM (Cuộc họp BQT, Event Wizard, Chi tiết hội viên 360°, Cinema Seating Map, Soát vé cổng, Lucky Draw, Nhà tài trợ, Sổ quỹ 3 cấp, VietQR Napas 24/7, RBAC 6 Ban) và 24 UCs cho App Hiệp Hội (Hẹn gặp 1-on-1, Chat realtime WebSocket 1-1 & nhóm, Quét QR WebRTC 0.1s, QuickProfileEditModal, Thẻ VIP Titanium 3D & NFC, Ví vé E-Ticket, Bầu cử 1 người 1 phiếu, Sàn Shopee-style, Cơ hội Cung-Cầu).
+#   - Tài liệu BRD: Lưu tại document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx & .md, đồng bộ public/docs/.
+#   - Báo cáo tiến độ công việc: 42 Work Packages lưu tại document/TIEN_DO_CONG_VIEC_CEO1983.xlsx, .docx, .md.
+#   - Slide Thuyết Trình: Bộ đôi 28 slide Master (document/SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.pptx/.html & document/SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.pptx/.html).
+#
+# [BẮT BUỘC 13] Chuẩn Hóa Danh Mục 138 Use Cases Toàn Diện & Quy Định Biên Soạn Tài Liệu Doanh Nghiệp (Non-IT Friendly, Zero Dev URLs, Zero Shopee/Tiki):
+#   - Toàn diện 138 Use Cases: 10 Cổng Thông Tin Công Khai (UC-PUB-01 -> UC-PUB-10), 78 Cổng Quản Trị Ban Chấp Hành 6 Ban (UC-CRM-01 -> UC-CRM-78), 50 Ứng Dụng Hội Viên Doanh Nhân (UC-APP-01 -> UC-APP-50).
+#   - Tương ứng 138 Test Cases (TC-001 -> TC-138) kiểm thử thực tế đạt 100% PASS.
+#   - 100% tài liệu bàn giao khách hàng (BRD, HDSD, SRS, Test Cases, Tiến Độ) TUYỆT ĐỐI KHÔNG chứa đường dẫn URL dev (localhost, 127.0.0.1, server dev), cổng port (5173, 4000, 5137), hoặc mã lỗi HTTP (403, 200). Ngôn từ chuẩn mực hành chính, điều hành hiệp hội (HanoiBA - CLB Doanh Nhân CEO 1983), lãnh đạo không biết về CNTT đọc vẫn hiểu rõ ràng.
+#   - TUYỆT ĐỐI KHÔNG dùng từ ngữ sàn bán lẻ generic như "Shopee", "Tiki"; bắt buộc dùng thuật ngữ độc quyền: "Gian hàng B2B Doanh nhân CEO 1983", "Sàn Giao thương B2B CEO 1983".
+#   - Email đăng ký và thẩm định mẫu duy nhất: vupv090120@gmail.com (Doanh nhân Phạm Văn Vũ - CEO Công ty CP Công nghệ VIO CONNECT, MST: 0109831983, SĐT: 0901201983, Mã hội viên: CEO-83007).
+#   - 100% Use Cases và Test Cases bắt buộc phải gắn kèm ảnh chụp minh chứng thực tế trên hệ thống (lưu tại document/images/evidence/), không dùng ảnh placeholder hay ảnh lỗi.
+#   - BẮT BUỘC kiểm tra type check (tsc --noEmit) và AST syntax validation đạt exit code 0 (0 errors) trước khi bàn giao.
+
+
+
+
+
+# [BẮT BUỘC 14] Quy Chuẩn Slide Thuyết Trình Đối Ngoại & Khung Mockup Mobile Titanium:
+#   - Slide thuyết trình (CRM & App) TUYỆT ĐỐI KHÔNG đưa màn hình đăng nhập tiện ích cơ bản. Bắt buộc tập trung 100% vào giá trị cốt lõi, đặc quyền hội viên, sàn giao thương B2B, sổ quỹ tài chính và công tác đại hội.
+#   - Bộ slide CRM gồm đúng 16 slides (CHỨC NĂNG QUẢN TRỊ 01 -> 16); Bộ slide App gồm đúng 20 slides (CHỨC NĂNG HỘI VIÊN 01 -> 20).
+#   - Giao diện minh họa di động trên Slide bắt buộc hiển thị dưới dạng Khung Smartphone Titanium sang trọng (Titanium chassis, dynamic island, home bar), không dùng khung hộp xám thô kệch để lộ khoảng trắng trống trải.
+#   - Màn hình quét QR phải hiển thị đúng giao diện Camera Scanner WebRTC (khung ngắm mạ vàng, tia laser quét động). Màn hình thẻ công khai phải hiển thị trọn vẹn 100% không cắt xén thông tin liên lạc hay bảng thẩm định.

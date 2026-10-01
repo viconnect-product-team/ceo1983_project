@@ -723,7 +723,7 @@ function CompanyCard({
 
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <span
-            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${levelBadge[m.level]}`}
+            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${levelBadge[m.level as MemberLevelKey] || "border-border bg-muted/30 text-muted-foreground"}`}
           >
             {t(m.level)}
           </span>

@@ -11,7 +11,7 @@
 | PHẦN 1 | Giải Thích Bình Dân Các Khái Niệm Kỹ Thuật Cốt Lõi & Mô Hình Tòa Nhà Chỉ Huy | Nền tảng kiến trúc | Hoàn tất 100% |
 | PHẦN 2 | Ma Trận Phân Quyền 5 Cấp Bậc & Cây Phân Cấp Thao Tác Chi Tiết (Dynamic RBAC Tree) | Bảo mật & Cấp phép | Hoàn tất 100% |
 | PHẦN 3 | Quy Trình Đăng Nhập, Xác Thực JWT Admin & Bảo Mật Phiên Làm Việc Xanh-Trắng | Xác thực & Bảo mật | Hoàn tất 100% |
-| PHẦN 4 | Hồ Sơ Hội Viên 360°, Quy Trình Thẩm Định Kết Nạp & Quản Trị Vòng Đời Niên Liễm | Quản trị Hội viên | Hoàn tất 100% |
+| PHẦN 4 | Hồ Sơ Hội Viên 360°, Quy Trình Thẩm Định Kết Nạp & Quản Trị Vòng Đời Hội Phí Thường Niên | Quản trị Hội viên | Hoàn tất 100% |
 | PHẦN 5 | Quản Trị Sự Kiện, Phát Hành Vé Mời QR & Phân Công Soát Vé Check-in Thời Gian Thực | Sự kiện & Vé mời | Hoàn tất 100% |
 | PHẦN 6 | Điều Hành Cuộc Họp, Tích Hợp Phòng Họp (Zoom/Meet/UniWork) & Luồng Quản Trị Duyệt | Cuộc họp & Phòng họp | Hoàn tất 100% |
 | PHẦN 7 | Sàn Giao Thương B2B Marketplace Shopee Style, Đánh Giá Sản Phẩm & Điểm Sao Công Ty | Sàn B2B Shopee | Hoàn tất 100% |
@@ -52,7 +52,7 @@
 | 2. Hội Viên | Danh Sách Hội Viên | Tra cứu danh bạ 360°, lọc ngành nghề, xuất Excel | Có | Có | Có | Có | Chỉ xem chung |
 | 2. Hội Viên | Hồ Sơ Chờ Duyệt | Thẩm định hồ sơ đăng ký từ Web Landing Page | Có | Có | Có | Ban TV duyệt | Không |
 | 2. Hội Viên | Phê Duyệt Kết Nạp | Duyệt cấp mã M1983-xxx & tự động gửi email chào mừng | Có | Có | Không | Đề xuất | Không |
-| 2. Hội Viên | Gia Hạn Niên Liễm | Gia hạn thẻ hội viên +365 ngày sau khi đóng hội phí | Có | Có | Không | Ban TV duyệt | Không |
+| 2. Hội Viên | Gia hạn hội phí | Gia hạn thẻ hội viên +365 ngày sau khi đóng hội phí | Có | Có | Không | Ban TV duyệt | Không |
 | 2. Hội Viên | Bản Đồ Hội Viên | Xem phân bố địa lý doanh nghiệp trên bản đồ số | Có | Có | Có | Có | Chỉ xem |
 | 2. Hội Viên | Danh Thiếp Số Thông Minh | Cấp mã slug /card/:code, tạo danh thiếp doanh nhân | Có | Có | Có | Có | Của chính mình |
 | 3. Sự Kiện & Hoạt Động | Danh Sách Sự Kiện | Xem chi tiết lịch trình gala, đại hội, hội thảo | Có | Có | Có | Có | Chỉ xem |
@@ -117,12 +117,12 @@
   - Trường hợp vé không tồn tại hoặc sai sự kiện: Hệ thống cảnh báo "Mã vé không hợp lệ".
 • Kết quả đầu ra (Postconditions): Đại biểu được hướng dẫn vào đúng bàn tiệc; Ban Tổ Chức nắm bắt chính xác 100% tỷ lệ tham dự theo thời gian thực.
 
-### 4.3 Luồng Gia Hạn Niên Liễm Hội Viên (+365 Ngày)
+### 4.3 Luồng Gia hạn hội phí Hội Viên (+365 Ngày)
 • Mục tiêu nghiệp vụ: Quản lý vòng đời thẻ hội viên hàng năm theo quy chế CLB CEO 1983.
 • Quyền thực hiện: Chỉ có Ban Thành Viên và Super Admin mới có quyền bấm nút gia hạn.
 • Quy trình thực hiện chi tiết (Step-by-step Flow):
   - Bước 1: Ban Thành Viên lọc danh sách hội viên sắp đến hạn hoặc đã quá hạn thẻ (status = "expired") trên Web CRM.
-  - Bước 2: Khi hội viên đóng hội phí năm mới (được Ban Tài Chính đối soát hoặc hệ thống VietQR gạch nợ tự động), Ban Thành Viên mở hồ sơ hội viên và bấm nút "Gia hạn niên liễm".
+  - Bước 2: Khi hội viên đóng hội phí năm mới (được Ban Tài Chính đối soát hoặc hệ thống VietQR gạch nợ tự động), Ban Thành Viên mở hồ sơ hội viên và bấm nút "Gia hạn hội phí".
   - Bước 3: Hệ thống mở popup xác nhận kỳ hạn mới. Ban Thành Viên kiểm tra số tiền và bấm "Xác Nhận Gia Hạn".
   - Bước 4: Hệ thống tạo bản ghi mới trong bảng memberships, cập nhật start_date = ngày gia hạn, expires_at = ngày hiện tại + 365 ngày (hoặc ngày hết hạn cũ + 365 ngày nếu gia hạn sớm).
   - Bước 5: Hóa đơn liên quan trong bảng invoices được cập nhật status = "paid".
@@ -254,7 +254,7 @@
 | invoice_code | VARCHAR(50) | Có | UNIQUE | Mã giao dịch kế toán (Ví dụ: INV-CEO1983-2026-088). |
 | member_id | UUID | Có | FK -> members.id | Hội viên có nghĩa vụ đóng phí. |
 | amount | NUMERIC(15,2) | Có | None | Số tiền hội phí niêm yết (Ví dụ: 10,000,000 VNĐ/năm). |
-| type | VARCHAR(50) | Có | None | Loại phí: "ANNUAL_MEMBERSHIP" (Niên liễm), "EVENT_SPONSOR" (Tài trợ), "AD_BANNER" (Quảng cáo). |
+| type | VARCHAR(50) | Có | None | Loại phí: "ANNUAL_MEMBERSHIP" (Hội phí thường niên), "EVENT_SPONSOR" (Tài trợ), "AD_BANNER" (Quảng cáo). |
 | vietqr_code | TEXT | Không | None | Chuỗi mã VietQR Napas 24/7 sinh tự động chứa nội dung chuyển khoản. |
 | status | VARCHAR(30) | Có | None | Trạng thái: "pending" (Chờ thanh toán), "paid" (Đã thanh toán), "cancelled" (Hủy). |
 | paid_at | TIMESTAMPTZ | Không | None | Thời điểm ngân hàng gạch nợ thành công qua Webhook hoặc đối soát tay. |

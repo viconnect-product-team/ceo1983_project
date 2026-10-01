@@ -445,6 +445,7 @@ function Home() {
     }
     return (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo || null;
   });
+  const [companyLogoError, setCompanyLogoError] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -64,7 +64,7 @@ import { useTheme, type Theme } from "@/lib/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/use-role";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
-import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
+import { resolveMediaUrl, uploadFileToNest, fetchNestApi, isDeadAvatarUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
 import eventImg from "@/assets/vba-event.jpg";
@@ -87,14 +87,12 @@ function initials(name?: string) {
 
 function isDeadAvatar(url?: string | null): boolean {
   if (!url || typeof url !== "string") return true;
-  const trimmed = url.trim();
-  return !trimmed || trimmed === "undefined" || trimmed === "null";
+  return isDeadAvatarUrl(url);
 }
 
 function isDeadCover(url?: string | null): boolean {
   if (!url || typeof url !== "string") return true;
-  const trimmed = url.trim();
-  return !trimmed || trimmed === "undefined" || trimmed === "null";
+  return isDeadAvatarUrl(url);
 }
 
 export default function ProfileScreen() {

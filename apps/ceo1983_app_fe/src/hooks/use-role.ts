@@ -47,6 +47,36 @@ export type RoleState = {
   setRoleOverride: (role: SrsRole) => void;
 };
 
+let cachedMeData: any = null;
+let cachedMeTimestamp = 0;
+let inFlightMePromise: Promise<any> | null = null;
+
+async function getOrFetchMe(): Promise<any> {
+  const now = Date.now();
+  if (cachedMeData && now - cachedMeTimestamp < 15000) {
+    return cachedMeData;
+  }
+  if (inFlightMePromise) {
+    return inFlightMePromise;
+  }
+  inFlightMePromise = fetchNestApi("/users/me")
+    .then((res) => {
+      cachedMeData = res;
+      cachedMeTimestamp = Date.now();
+      return res;
+    })
+    .finally(() => {
+      inFlightMePromise = null;
+    });
+  return inFlightMePromise;
+}
+
+export function clearMeCache() {
+  cachedMeData = null;
+  cachedMeTimestamp = 0;
+  inFlightMePromise = null;
+}
+
 // Fetches current user's roles from NestJS /users/me and member profile per real database permissions.
 export function useRole(): RoleState {
   const { user } = useAuth();
@@ -68,17 +98,82 @@ export function useRole(): RoleState {
     const execRole = String(member?.executiveRole || userObj?.executiveRole || userObj?.executive_role || user?.executiveRole || "").toLowerCase();
     const dept = String(member?.department || userObj?.department || user?.department || "").toLowerCase();
 
+    const userEmail = String(userObj?.email || member?.email || user?.email || "").toLowerCase();
+
     // ADM (Super Admin / Platform Admin)
     if (
       rList.includes("platform_admin") ||
       rList.includes("superadmin") ||
       primaryRole === "platform_admin" ||
-      primaryRole === "superadmin"
+      primaryRole === "superadmin" ||
+      userEmail === "admin@connect.vn" ||
+      userEmail === "admin1@connect.vn"
     ) {
       return "ADM";
     }
 
-    // 1. BQT (Ban Quản Trị / Ban Thường Trực / Chủ Tịch / Phó Chủ Tịch)
+    // 1. BTV (Ban Thành Viên) - Ban Thành Viên kiểm duyệt và thẩm định kết nạp hội viên
+    if (
+      rList.includes("btv") ||
+      rList.includes("ban_thanh_vien") ||
+      rList.includes("phat_trien_hoi_vien") ||
+      userEmail.includes("thanhvien") ||
+      (dept.includes("thành viên") && !dept.includes("hội viên") && !dept.includes("ceo 1983")) ||
+      execRole.includes("ban thành viên") ||
+      execRole.includes("thành viên")
+    ) {
+      return "BTV";
+    }
+
+    // 2. BTK (Ban Thư Ký - Điều phối họp & văn bản số)
+    if (
+      rList.includes("btk") ||
+      rList.includes("tong_thu_ky") ||
+      rList.includes("thu_ky") ||
+      userEmail.includes("tongthuky") ||
+      userEmail.includes("thuky") ||
+      execRole.includes("thư ký") ||
+      dept.includes("thư ký")
+    ) {
+      return "BTK";
+    }
+
+    // 3. BTT (Ban Truyền Thông & Sự Kiện)
+    if (
+      rList.includes("btt") ||
+      rList.includes("truyen_thong") ||
+      userEmail.includes("truyenthong") ||
+      execRole.includes("truyền thông") ||
+      dept.includes("truyền thông")
+    ) {
+      return "BTT";
+    }
+
+    // 4. BXT (Ban Xúc Tiến Thương Mại & Cơ Hội B2B)
+    if (
+      rList.includes("bxt") ||
+      rList.includes("xuc_tien") ||
+      rList.includes("thuong_mai") ||
+      userEmail.includes("xuctien") ||
+      execRole.includes("xúc tiến") ||
+      dept.includes("xúc tiến")
+    ) {
+      return "BXT";
+    }
+
+    // 5. BTN (Ban Thiện Nguyện & An Sinh Xã Hội)
+    if (
+      rList.includes("btn") ||
+      rList.includes("thien_nguyen") ||
+      rList.includes("an_sinh") ||
+      userEmail.includes("thiennguyen") ||
+      execRole.includes("thiện nguyện") ||
+      dept.includes("thiện nguyện")
+    ) {
+      return "BTN";
+    }
+
+    // 6. BQT (Ban Quản Trị / Ban Thường Trực / Chủ Tịch / Phó Chủ Tịch / Admin)
     if (
       rList.includes("admin") ||
       rList.includes("bqt") ||
@@ -95,61 +190,6 @@ export function useRole(): RoleState {
       return "BQT";
     }
 
-    // 2. BTK (Ban Thư Ký)
-    if (
-      rList.includes("btk") ||
-      rList.includes("tong_thu_ky") ||
-      rList.includes("thu_ky") ||
-      execRole.includes("thư ký") ||
-      dept.includes("thư ký")
-    ) {
-      return "BTK";
-    }
-
-    // 3. BTT (Ban Truyền Thông)
-    if (
-      rList.includes("btt") ||
-      rList.includes("truyen_thong") ||
-      execRole.includes("truyền thông") ||
-      dept.includes("truyền thông")
-    ) {
-      return "BTT";
-    }
-
-    // 4. BXT (Ban Xúc Tiến)
-    if (
-      rList.includes("bxt") ||
-      rList.includes("xuc_tien") ||
-      rList.includes("thuong_mai") ||
-      execRole.includes("xúc tiến") ||
-      dept.includes("xúc tiến")
-    ) {
-      return "BXT";
-    }
-
-    // 5. BTV (Ban Thành Viên)
-    if (
-      rList.includes("btv") ||
-      rList.includes("ban_thanh_vien") ||
-      rList.includes("phat_trien_hoi_vien") ||
-      (dept.includes("thành viên") && !dept.includes("hội viên") && !dept.includes("ceo 1983")) ||
-      execRole.includes("ban thành viên") ||
-      execRole.includes("trưởng ban thành viên")
-    ) {
-      return "BTV";
-    }
-
-    // 6. BTN (Ban Thiện Nguyện)
-    if (
-      rList.includes("btn") ||
-      rList.includes("thien_nguyen") ||
-      rList.includes("an_sinh") ||
-      execRole.includes("thiện nguyện") ||
-      dept.includes("thiện nguyện")
-    ) {
-      return "BTN";
-    }
-
     // Mặc định: HVT (Hội Viên Thường)
     return "HVT";
   };
@@ -161,11 +201,10 @@ export function useRole(): RoleState {
       try {
         let me: any = null;
         let member: any = null;
-
         const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
         if (token && isTokenValid(token)) {
           try {
-            me = await fetchNestApi("/users/me");
+            me = await getOrFetchMe();
           } catch {
             // Token hợp lệ nhưng API lỗi, giải mã trực tiếp từ payload JWT
             const decoded = decodeJwt(token);
@@ -239,6 +278,7 @@ export function useRole(): RoleState {
     loadRoles();
 
     const handleAuthChange = () => {
+      clearMeCache();
       loadRoles();
     };
 
@@ -318,9 +358,9 @@ export function useRole(): RoleState {
   );
 
   // Granular shortcut flags for 6 Ban
-  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT) || isBQT || isBTK || isBTV;
-  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE) || isBQT || isBTK || isBTV;
-  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW) || isBQT || isBTK || isBTV;
+  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT) || isBQT || isBTV;
+  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE) || isBQT || isBTV;
+  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW) || isBQT || isBTV;
   const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE) || isBQT;
   const canManageMedia = can(PERMISSIONS.MEDIA_MANAGE) || isBQT || isBTT || isBTN;
   const canManageEvents = can(PERMISSIONS.EVENT_CREATE) || isBQT || isBTT || isBTK || isBTN;

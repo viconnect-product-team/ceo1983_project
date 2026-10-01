@@ -391,7 +391,7 @@ async function generateAppDeck() {
 
     const voteFeats = [
       { t: 'Bỏ Phiếu Bầu Cử Trực Tuyến Minh Bạch', d: 'Bầu cử Ban Chấp Hành, biểu quyết nghị quyết đại hội trực tiếp trên điện thoại, thống kê kết quả % thời gian thực.' },
-      { t: 'Kiểm Soát Quyền Biểu Quyết Theo Tư Cách', d: 'Chỉ hội viên chính thức đã hoàn thành nghĩa vụ niên liễm và đã check-in vào sự kiện mới được bỏ phiếu.' },
+      { t: 'Kiểm Soát Quyền Biểu Quyết Theo Tư Cách', d: 'Chỉ hội viên chính thức đã hoàn thành nghĩa vụ hội phí thường niên và đã check-in vào sự kiện mới được bỏ phiếu.' },
       { t: 'Vòng Quay Lucky Draw Hồi Hộp', d: 'Hệ thống chọn ngẫu nhiên mã số hội viên may mắn, trình chiếu màn hình LED sân khấu và nổ chuông chúc mừng.' },
       { t: 'Lưu Trữ Biên Bản Điện Tử Bất Biến', d: 'Toàn bộ lịch sử biểu quyết được mã hóa lưu vết trên hệ thống để phục vụ đối soát nghị quyết chính thức.' },
     ];
@@ -622,7 +622,7 @@ async function generateCrmDeck() {
 
     const pillars = [
       { num: '01', title: 'Quản Trị Hồ Sơ Hội Viên', desc: 'Thẩm định hồ sơ gia nhập, kiểm duyệt thông tin doanh nghiệp và phân quyền vai trò quản trị đa cấp.' },
-      { num: '02', title: 'Minh Bạch Tài Chính Quỹ Hội', desc: 'Theo dõi niên liễm, nhắc phí hội viên tự động và đối soát giao dịch thu chi ngân quỹ theo thời gian thực.' },
+      { num: '02', title: 'Minh Bạch Tài Chính Quỹ Hội', desc: 'Theo dõi hội phí thường niên, nhắc phí hội viên tự động và đối soát giao dịch thu chi ngân quỹ theo thời gian thực.' },
       { num: '03', title: 'Điều Hành Sự Kiện & Sơ Đồ', desc: 'Khởi tạo vé đa tầng, sắp xếp sơ đồ rạp/bàn tiệc Gala và kiểm soát cổng check-in QR Code siêu tốc.' },
       { num: '04', title: 'Đồng Bộ Hai Chiều Tức Thì', desc: 'Tách biệt giao diện chuyên sâu cho Ban Quản Trị nhưng liên kết và đẩy dữ liệu tức thì xuống Mobile App hội viên.' },
     ];
@@ -677,7 +677,7 @@ async function generateCrmDeck() {
 
     const kpiFeats = [
       { t: 'Chỉ Số Tăng Trưởng Hội Viên', d: 'Biểu đồ trực quan theo dõi số lượng hội viên mới gia nhập, hội viên chờ duyệt và tỷ lệ gia hạn thẻ hàng năm.' },
-      { t: 'Đối Soát Dòng Tiền & Quỹ Hội', d: 'Thống kê tổng thu niên liễm, doanh thu bán vé sự kiện và các khoản tài trợ đã chuyển khoản về tài khoản CLB.' },
+      { t: 'Đối Soát Dòng Tiền & Quỹ Hội', d: 'Thống kê tổng thu hội phí thường niên, doanh thu bán vé sự kiện và các khoản tài trợ đã chuyển khoản về tài khoản CLB.' },
       { t: 'Đo Lường Hiệu Quả Giao Thương B2B', d: 'Tổng giá trị các Deal kinh doanh đã được chia sẻ và kết nối thành công giữa các doanh nghiệp thành viên.' },
       { t: 'Xuất Báo Cáo Ban Chấp Hành Tức Thì', d: 'Xuất báo cáo PDF/Excel chuẩn hóa chỉ với 1 click để phục vụ các kỳ họp Ban Chấp Hành định kỳ.' },
     ];
@@ -741,16 +741,16 @@ async function generateCrmDeck() {
     addSlideFooter(slide, pres, SYS_LABEL);
   }
 
-  // SLIDE 6: TÀI CHÍNH QUỸ HỘI & NIÊN LIỄM
+  // SLIDE 6: TÀI CHÍNH QUỸ HỘI & HỘI PHÍ THƯỜNG NIÊN
   {
     const slide = pres.addSlide();
-    addSlideHeader(slide, pres, 'MINH BẠCH TÀI CHÍNH', 'Quản Lý Niên Liễm Hội Phí & Kế Toán Quỹ Hội', 'Tự động hóa theo dõi hạn nộp hội phí, phát hành thông báo thu phí và ghi nhận dòng tiền đóng góp');
+    addSlideHeader(slide, pres, 'MINH BẠCH TÀI CHÍNH', 'Quản Lý Hội Phí Thường Niên Hội Phí & Kế Toán Quỹ Hội', 'Tự động hóa theo dõi hạn nộp hội phí, phát hành thông báo thu phí và ghi nhận dòng tiền đóng góp');
 
     const img = getImageBase64('crm_08_fees_management.png');
     if (img) slide.addImage({ data: img, x: 0.8, y: 2.0, w: 5.6, h: 4.8, rounding: true });
 
     const feeFeats = [
-      { t: 'Cấu Hình Kỳ Thu Phí Niên Liễm Linh Hoạt', d: 'Thiết lập mức phí theo năm cho Hội viên cá nhân và Hội viên doanh nghiệp kèm chính sách miễn giảm.' },
+      { t: 'Cấu Hình Kỳ Thu Phí Hội Phí Thường Niên Linh Hoạt', d: 'Thiết lập mức phí theo năm cho Hội viên cá nhân và Hội viên doanh nghiệp kèm chính sách miễn giảm.' },
       { t: 'Nhắc Nộp Hội Phí Tự Động Qua App/Email', d: 'Hệ thống tự động gửi thông báo trước 30 ngày và 7 ngày kèm link thanh toán VietQR chuyển khoản chính xác.' },
       { t: 'Ghi Nhận Thu Tiền & Xuất Phiếu Thu Số', d: 'Ban Tài chính xác nhận đóng phí -> Thẻ hội viên trên Mobile App tự động gia hạn thêm 12 tháng.' },
       { t: 'Báo Cáo Tài Chính Ngân Quỹ Công Khai', d: 'Tổng hợp thu chi quỹ hội rõ ràng, phục vụ báo cáo minh bạch trước toàn thể hội viên tại Đại hội thường niên.' },
@@ -1233,7 +1233,7 @@ function generateHtmlAndMarkdown() {
       <p class="text-sm text-slate-300">Lưu trữ hồ sơ pháp lý, mã số thuế, phân loại ngành nghề và liên kết tài khoản lãnh đạo doanh nghiệp chính xác.</p>
     </div>
     <div class="slide-card p-6">
-      <h2 class="text-lg font-bold text-amber-400 mb-2">Slide 06: Quản Trị Niên Liễm Hội Phí & Kế Toán Quỹ Hội</h2>
+      <h2 class="text-lg font-bold text-amber-400 mb-2">Slide 06: Quản Trị Hội Phí Thường Niên Hội Phí & Kế Toán Quỹ Hội</h2>
       <p class="text-sm text-slate-300">Cấu hình mức phí hàng năm, tự động gửi thông báo nhắc phí qua App/Email, xuất phiếu thu số và đối soát ngân quỹ minh bạch.</p>
     </div>
     <div class="slide-card p-6">
@@ -1384,8 +1384,8 @@ function generateHtmlAndMarkdown() {
 ### Slide 05: Quản Trị Doanh Nghiệp & Chuỗi Cung Ứng Thành Viên
 - **Dữ liệu**: Quản lý mã số thuế, đại diện pháp luật, phân loại ngành nghề chuỗi cung ứng nội bộ.
 
-### Slide 06: Quản Lý Niên Liễm Hội Phí & Kế Toán Quỹ Hội
-- **Minh bạch**: Tự động nhắc nộp niên liễm qua App/Email, xuất phiếu thu số, đối soát ngân quỹ rõ ràng.
+### Slide 06: Quản Lý Hội Phí Thường Niên Hội Phí & Kế Toán Quỹ Hội
+- **Minh bạch**: Tự động nhắc nộp hội phí thường niên qua App/Email, xuất phiếu thu số, đối soát ngân quỹ rõ ràng.
 
 ### Slide 07: Quản Trị Sự Kiện Hiệp Hội & Cấu Hình Vé Đa Tầng
 - **Tổ chức nhanh**: Cấu hình vé miễn phí / vé có phí trong 3 phút, tự động đồng bộ lên Mobile App.

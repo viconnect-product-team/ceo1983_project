@@ -19,6 +19,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
 import { fetchNestApi } from "@/lib/api-client";
+import { StandardDateInput } from "@/components/common/StandardDateInput";
 import {
   listVotesFn,
   createVoteFn,
@@ -63,7 +64,7 @@ const STATUS_COLOR: Record<Vote["status"], "success" | "info" | "neutral"> = {
   closed: "neutral",
 };
 
-function deriveStatus(startsAt: string, endsAt: string, eventStatus?: string, eventDate?: string): Vote["status"] {
+function deriveStatus(startsAt: string, endsAt: string, eventStatus?: string | null, eventDate?: string | null): Vote["status"] {
   const today = new Date().toISOString().slice(0, 10);
   if (eventStatus) {
     const s = eventStatus.toLowerCase();
@@ -846,20 +847,20 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Bắt đầu</label>
-              <input
-                type="date"
+              <label className="mb-1 block text-sm font-medium text-foreground">Bắt đầu (dd/mm/yyyy)</label>
+              <StandardDateInput
                 value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
+                placeholder="dd/mm/yyyy (VD: 25/10/2026)"
+                onChange={(iso) => setStartsAt(iso)}
                 className={inputCls}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Kết thúc</label>
-              <input
-                type="date"
+              <label className="mb-1 block text-sm font-medium text-foreground">Kết thúc (dd/mm/yyyy)</label>
+              <StandardDateInput
                 value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
+                placeholder="dd/mm/yyyy (VD: 25/10/2026)"
+                onChange={(iso) => setEndsAt(iso)}
                 className={inputCls}
               />
             </div>

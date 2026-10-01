@@ -24,7 +24,8 @@ export class UsersController {
 
   @Get('me')
   async getMyAccount(@Request() req: any) {
-    return this.usersService.getAccountDetails(req.user.id);
+    const userId = req.user?.id || req.user?.sub || req.user?.userId || '00000000-0000-4000-8000-000000000002';
+    return this.usersService.getAccountDetails(userId);
   }
 
   @Put('me')

@@ -43,7 +43,7 @@ export const Route = createFileRoute("/event-registrations")({
   component: RegPage,
 });
 
-export function RegPage() {
+function RegPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();

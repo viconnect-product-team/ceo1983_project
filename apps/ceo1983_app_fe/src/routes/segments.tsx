@@ -550,7 +550,7 @@ function SegmentsPage() {
                   <td className="px-4 py-3">
                     <span
                       className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold text-primary-foreground"
-                      style={{ background: LEVEL_COLORS[m.level] }}
+                      style={{ background: LEVEL_COLORS[m.level as MemberLevelKey] || "oklch(0.62 0.18 265)" }}
                     >
                       {t(m.level)}
                     </span>

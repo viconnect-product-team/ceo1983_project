@@ -98,7 +98,7 @@ CLB Doanh Nhân CEO 1983 quy tụ hàng trăm lãnh đạo doanh nghiệp sinh n
 
 | Thuật Ngữ | Tên Tiếng Anh | Định Nghĩa Nghiệp Vụ Chuẩn |
 | :--- | :--- | :--- |
-| **Hội Viên CEO 1983** | Regular Member | Doanh nhân sinh năm 1983, đã qua quy trình thẩm định hồ sơ, đóng niên liễm đầy đủ và được cấp mã định danh hội viên duy nhất (VD: `CEO-83001`). |
+| **Hội Viên CEO 1983** | Regular Member | Doanh nhân sinh năm 1983, đã qua quy trình thẩm định hồ sơ, đóng hội phí thường niên đầy đủ và được cấp mã định danh hội viên duy nhất (VD: `CEO-83001`). |
 | **Ban Quản Trị (BQT)** | Executive Board | Nhóm lãnh đạo cốt cán của CLB có quyền quản trị toàn diện hệ thống CRM và các thiết lập trên App. |
 | **Ban Soát Vé (Gatekeeper)** | Gatekeeper Staff | Nhân sự được Ban Quản Trị chỉ định cụ thể theo từng sự kiện, có quyền mở camera trên App để quét mã vé của người tham gia. |
 | **QR Standee Sự Kiện** | Event Standee QR | Mã QR tĩnh được in ấn đặt tại cổng đón khách hội nghị. Cú pháp: `event_checkin:{eventId}:{eventName}`. Hội viên quét mã này để tự động check-in. |
@@ -163,7 +163,7 @@ const navigation = [
     items: [
       { name: "Báo cáo thu chi", href: "/finance", icon: DollarSign },
       { name: "Quỹ CLB", href: "/finance/funds", icon: Wallet },
-      { name: "Niên liễm hội viên", href: "/membership-fees", icon: Receipt }
+      { name: "Hội phí thường niên hội viên", href: "/membership-fees", icon: Receipt }
     ] 
   },
   { 

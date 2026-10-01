@@ -11,6 +11,7 @@ import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { formatCurrencyInput, parseCurrencyInput } from "@/lib/date-format";
 import { uploadProductMedia } from "@/lib/upload-media";
 import { resolveMediaUrl } from "@/lib/api-client";
+import { StandardDateInput } from "@/components/common/StandardDateInput";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/opportunities/$id/edit")({
@@ -136,11 +137,11 @@ function EditOpportunityPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.deadline")}</label>
-              <input
-                type="date"
+              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.deadline")} (dd/mm/yyyy)</label>
+              <StandardDateInput
                 value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+                placeholder="dd/mm/yyyy (VD: 31/12/2026)"
+                onChange={(iso) => setDeadline(iso)}
                 required
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
@@ -152,6 +153,7 @@ function EditOpportunityPage() {
               <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.region")}</label>
               <input
                 value={region}
+                placeholder="VD: Hà Nội & Miền Bắc"
                 onChange={(e) => setRegion(e.target.value)}
                 required
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
@@ -161,6 +163,7 @@ function EditOpportunityPage() {
               <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.industry")}</label>
               <input
                 value={industry}
+                placeholder="VD: Bất động sản, CNTT, Xây dựng..."
                 onChange={(e) => setIndustry(e.target.value)}
                 required
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"

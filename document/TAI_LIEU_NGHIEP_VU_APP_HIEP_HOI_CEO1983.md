@@ -86,7 +86,7 @@ Khác với các ứng dụng mạng xã hội giải trí thông thường, ứ
   - **Bỏ lật mặt sau thẻ (No 3D Flip):** Tránh gây chóng mặt và bất tiện trên điện thoại.
 - **Bố cục dưới thẻ:**
   - **Nút quét mã QR tích hợp:** Quét nhanh thẻ của hội viên khác ngay tại chỗ.
-  - **Hồ sơ năng lực (Profile) & Hợp đồng hội viên (Contract):** Hiển thị rõ ràng ngày gia nhập, thời hạn niên liễm, quyền lợi hội viên và thông tin pháp lý doanh nghiệp.
+  - **Hồ sơ năng lực (Profile) & Hợp đồng hội viên (Contract):** Hiển thị rõ ràng ngày gia nhập, thời hạn hội phí, quyền lợi hội viên và thông tin pháp lý doanh nghiệp.
   - **Kiểm soát quyền riêng tư (Privacy Toggle):** Hội viên có quyền bật/tắt từng thông tin (Số điện thoại, Email, Zalo, Website) mà họ muốn người khác nhìn thấy khi quét mã QR của họ.
   - **Chỉnh sửa hồ sơ chuẩn màu hoàng gia:** Cửa sổ chỉnh sửa hiển thị chính giữa màn hình với nền tối mờ, phối màu Cobalt Navy & Amber Gold sang trọng.
 

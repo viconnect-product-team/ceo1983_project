@@ -43,6 +43,27 @@ export class MembersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id/approve-and-send-credentials')
+  async approveMemberAndSendCredentialsPatch(@Request() req: any, @Param('id') id: string) {
+    const adminUserId = req.user?.id || req.user?.sub || 'system';
+    return this.membersService.approveMemberAndSendCredentials(adminUserId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/approve-with-credentials')
+  async approveMemberWithCredentialsPost(@Request() req: any, @Param('id') id: string) {
+    const adminUserId = req.user?.id || req.user?.sub || 'system';
+    return this.membersService.approveMemberAndSendCredentials(adminUserId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/approve-with-credentials')
+  async approveMemberWithCredentialsPatch(@Request() req: any, @Param('id') id: string) {
+    const adminUserId = req.user?.id || req.user?.sub || 'system';
+    return this.membersService.approveMemberAndSendCredentials(adminUserId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('directory')
   async listDirectory(@Request() req: any) {
     return this.membersService.listDirectory(req.user.id);

@@ -52,7 +52,7 @@ function buildDoc1() {
     { num: 'PHẦN 1', title: 'Giải Thích Bình Dân Các Khái Niệm Kỹ Thuật Cốt Lõi & Mô Hình Tòa Nhà Chỉ Huy', scope: 'Nền tảng kiến trúc', status: 'Hoàn tất 100%' },
     { num: 'PHẦN 2', title: 'Ma Trận Phân Quyền 5 Cấp Bậc & Cây Phân Cấp Thao Tác Chi Tiết (Dynamic RBAC Tree)', scope: 'Bảo mật & Cấp phép', status: 'Hoàn tất 100%' },
     { num: 'PHẦN 3', title: 'Quy Trình Đăng Nhập, Xác Thực JWT Admin & Bảo Mật Phiên Làm Việc Xanh-Trắng', scope: 'Xác thực & Bảo mật', status: 'Hoàn tất 100%' },
-    { num: 'PHẦN 4', title: 'Hồ Sơ Hội Viên 360°, Quy Trình Thẩm Định Kết Nạp & Quản Trị Vòng Đời Niên Liễm', scope: 'Quản trị Hội viên', status: 'Hoàn tất 100%' },
+    { num: 'PHẦN 4', title: 'Hồ Sơ Hội Viên 360°, Quy Trình Thẩm Định Kết Nạp & Quản Trị Vòng Đời Hội Phí Thường Niên', scope: 'Quản trị Hội viên', status: 'Hoàn tất 100%' },
     { num: 'PHẦN 5', title: 'Quản Trị Sự Kiện, Phát Hành Vé Mời QR & Phân Công Soát Vé Check-in Thời Gian Thực', scope: 'Sự kiện & Vé mời', status: 'Hoàn tất 100%' },
     { num: 'PHẦN 6', title: 'Điều Hành Cuộc Họp, Tích Hợp Phòng Họp (Zoom/Meet/UniWork) & Luồng Quản Trị Duyệt', scope: 'Cuộc họp & Phòng họp', status: 'Hoàn tất 100%' },
     { num: 'PHẦN 7', title: 'Sàn Giao Thương B2B Marketplace Shopee Style, Đánh Giá Sản Phẩm & Điểm Sao Công Ty', scope: 'Sàn B2B Shopee', status: 'Hoàn tất 100%' },
@@ -146,7 +146,7 @@ function buildDoc1() {
     ['2. Hội Viên', 'Danh Sách Hội Viên', 'Tra cứu danh bạ 360°, lọc ngành nghề, xuất Excel', 'Có', 'Có', 'Có', 'Có', 'Chỉ xem chung'],
     ['2. Hội Viên', 'Hồ Sơ Chờ Duyệt', 'Thẩm định hồ sơ đăng ký từ Web Landing Page', 'Có', 'Có', 'Có', 'Ban TV duyệt', 'Không'],
     ['2. Hội Viên', 'Phê Duyệt Kết Nạp', 'Duyệt cấp mã M1983-xxx & tự động gửi email chào mừng', 'Có', 'Có', 'Không', 'Đề xuất', 'Không'],
-    ['2. Hội Viên', 'Gia Hạn Niên Liễm', 'Gia hạn thẻ hội viên +365 ngày sau khi đóng hội phí', 'Có', 'Có', 'Không', 'Ban TV duyệt', 'Không'],
+    ['2. Hội Viên', 'Gia hạn hội phí', 'Gia hạn thẻ hội viên +365 ngày sau khi đóng hội phí', 'Có', 'Có', 'Không', 'Ban TV duyệt', 'Không'],
     ['2. Hội Viên', 'Bản Đồ Hội Viên', 'Xem phân bố địa lý doanh nghiệp trên bản đồ số', 'Có', 'Có', 'Có', 'Có', 'Chỉ xem'],
     ['2. Hội Viên', 'Danh Thiếp Số Thông Minh', 'Cấp mã slug /card/:code, tạo danh thiếp doanh nhân', 'Có', 'Có', 'Có', 'Có', 'Của chính mình'],
 
@@ -241,14 +241,14 @@ function buildDoc1() {
 
   addMd('### 4.2 Luồng Phân Công & Kiểm Soát Soát Vé QR Sự Kiện\n' + flow2Text);
 
-  // 4.3 Luồng Gia hạn niên liễm
-  children.push(createHeading2('4.3 Luồng Gia Hạn Niên Liễm Hội Viên (+365 Ngày)'));
+  // 4.3 Luồng Gia hạn hội phí
+  children.push(createHeading2('4.3 Luồng Gia hạn hội phí Hội Viên (+365 Ngày)'));
   const flow3Text = 
     '• Mục tiêu nghiệp vụ: Quản lý vòng đời thẻ hội viên hàng năm theo quy chế CLB CEO 1983.\n' +
     '• Quyền thực hiện: Chỉ có Ban Thành Viên và Super Admin mới có quyền bấm nút gia hạn.\n' +
     '• Quy trình thực hiện chi tiết (Step-by-step Flow):\n' +
     '  - Bước 1: Ban Thành Viên lọc danh sách hội viên sắp đến hạn hoặc đã quá hạn thẻ (status = "expired") trên Web CRM.\n' +
-    '  - Bước 2: Khi hội viên đóng hội phí năm mới (được Ban Tài Chính đối soát hoặc hệ thống VietQR gạch nợ tự động), Ban Thành Viên mở hồ sơ hội viên và bấm nút "Gia hạn niên liễm".\n' +
+    '  - Bước 2: Khi hội viên đóng hội phí năm mới (được Ban Tài Chính đối soát hoặc hệ thống VietQR gạch nợ tự động), Ban Thành Viên mở hồ sơ hội viên và bấm nút "Gia hạn hội phí".\n' +
     '  - Bước 3: Hệ thống mở popup xác nhận kỳ hạn mới. Ban Thành Viên kiểm tra số tiền và bấm "Xác Nhận Gia Hạn".\n' +
     '  - Bước 4: Hệ thống tạo bản ghi mới trong bảng memberships, cập nhật start_date = ngày gia hạn, expires_at = ngày hiện tại + 365 ngày (hoặc ngày hết hạn cũ + 365 ngày nếu gia hạn sớm).\n' +
     '  - Bước 5: Hóa đơn liên quan trong bảng invoices được cập nhật status = "paid".\n' +
@@ -256,7 +256,7 @@ function buildDoc1() {
     '• Kết quả đầu ra (Postconditions): Thời hạn thẻ được cộng thêm 1 năm; dữ liệu tài chính ghi nhận doanh thu hội phí.';
   children.push(createPara(flow3Text));
 
-  addMd('### 4.3 Luồng Gia Hạn Niên Liễm Hội Viên (+365 Ngày)\n' + flow3Text);
+  addMd('### 4.3 Luồng Gia hạn hội phí Hội Viên (+365 Ngày)\n' + flow3Text);
 
   // 4.4 Luồng Cuộc họp Online/Offline (Thiết kế mới: Phân quyền 4 vai trò tạo, Quản trị duyệt, Dropdown phòng họp tích hợp)
   children.push(createHeading2('4.4 Luồng Khởi Tạo & Điều Hành Cuộc Họp Online / Offline (Quy Trình Mới)'));
@@ -424,7 +424,7 @@ function buildDoc1() {
     ['invoice_code', 'VARCHAR(50)', 'Có', 'UNIQUE', 'Mã giao dịch kế toán (Ví dụ: INV-CEO1983-2026-088).'],
     ['member_id', 'UUID', 'Có', 'FK -> members.id', 'Hội viên có nghĩa vụ đóng phí.'],
     ['amount', 'NUMERIC(15,2)', 'Có', 'None', 'Số tiền hội phí niêm yết (Ví dụ: 10,000,000 VNĐ/năm).'],
-    ['type', 'VARCHAR(50)', 'Có', 'None', 'Loại phí: "ANNUAL_MEMBERSHIP" (Niên liễm), "EVENT_SPONSOR" (Tài trợ), "AD_BANNER" (Quảng cáo).'],
+    ['type', 'VARCHAR(50)', 'Có', 'None', 'Loại phí: "ANNUAL_MEMBERSHIP" (Hội phí thường niên), "EVENT_SPONSOR" (Tài trợ), "AD_BANNER" (Quảng cáo).'],
     ['vietqr_code', 'TEXT', 'Không', 'None', 'Chuỗi mã VietQR Napas 24/7 sinh tự động chứa nội dung chuyển khoản.'],
     ['status', 'VARCHAR(30)', 'Có', 'None', 'Trạng thái: "pending" (Chờ thanh toán), "paid" (Đã thanh toán), "cancelled" (Hủy).'],
     ['paid_at', 'TIMESTAMPTZ', 'Không', 'None', 'Thời điểm ngân hàng gạch nợ thành công qua Webhook hoặc đối soát tay.'],

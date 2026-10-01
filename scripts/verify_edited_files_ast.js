@@ -31,6 +31,18 @@ const filesToVerify = [
   path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/dashboard/ProfileMenu.tsx'),
   path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/dashboard/AssociationSwitcher.tsx'),
   path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_be/src/mail/mail.service.ts'),
+  path.resolve(__dirname, '../apps/ceo1983_app_be/src/members/members.service.ts'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/common/FormattedCurrencyInput.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/common/StandardDateInput.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/lib/date-format.ts'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/association.profile.tsx'),
+  path.resolve(__dirname, 'build_master_user_guide_pdf.js'),
+  path.resolve(__dirname, 'build_master_srs_word_and_md.js'),
+  path.resolve(__dirname, 'build_master_brd_word_and_md.js'),
+  path.resolve(__dirname, 'build_master_hdsd_word.js'),
+  path.resolve(__dirname, 'build_all_master_slides.js'),
+  path.resolve(__dirname, 'test_live_smtp_dispatch.js'),
 ];
 
 let hasErrors = false;

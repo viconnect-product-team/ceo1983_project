@@ -8,7 +8,7 @@
     "i18n:check": "node scripts/check-i18n.mjs",
     "i18n:check:notifications": "node scripts/check-notification-i18n.mjs",
     "predev": "node scripts/gen-routes.mjs",
-    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite dev",
+    "dev": "vite dev",
     "prebuild": "node scripts/gen-routes.mjs",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "prebuild:dev": "node scripts/gen-routes.mjs",

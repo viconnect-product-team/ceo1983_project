@@ -389,7 +389,7 @@ async function generateCrmPptx() {
 
     const pillars = [
       { num: '01', title: 'Quản Trị Hội Viên 360°', desc: 'Thẩm định hồ sơ trực tuyến, phân bổ ban bệ và tự động cấp thông tin tài khoản qua email tức thì.' },
-      { num: '02', title: 'Tài Chính & Đối Soát VietQR', desc: 'Theo dõi niên liễm, gạch nợ hội phí tự động qua mã VietQR và minh bạch thu chi ngân quỹ.' },
+      { num: '02', title: 'Tài Chính & Đối Soát VietQR', desc: 'Theo dõi hội phí thường niên, gạch nợ hội phí tự động qua mã VietQR và minh bạch thu chi ngân quỹ.' },
       { num: '03', title: 'Sự Kiện, Bầu Cử & Lucky Draw', desc: 'Khởi tạo vé đa tầng, sắp đặt sơ đồ khán phòng VIP, bỏ phiếu đại hội và quay số VinFast VF3.' },
       { num: '04', title: 'Đồng Bộ Hai Chiều Realtime', desc: 'Tách biệt chuyên sâu cho Ban Quản Trị nhưng liên kết 100% dữ liệu xuống Mobile App của hội viên.' },
     ];
@@ -422,7 +422,7 @@ async function generateCrmPptx() {
       {
         icon: '⏳',
         title: 'Đối Soát Hội Phí Thủ Công Tốn Kém',
-        desc: 'Ban Tài chính phải kiểm tra từng giao dịch sao kê ngân hàng, nhắn tin nhắc nợ từng người và gạch nợ thủ công, mất hàng chục giờ làm việc mỗi kỳ niên liễm.'
+        desc: 'Ban Tài chính phải kiểm tra từng giao dịch sao kê ngân hàng, nhắn tin nhắc nợ từng người và gạch nợ thủ công, mất hàng chục giờ làm việc mỗi kỳ hội phí.'
       },
       {
         icon: '🚪',
@@ -582,7 +582,7 @@ async function generateCrmPptx() {
     '📊 Dữ liệu phản hồi trực tiếp từ Database với biểu đồ tiến độ & thống kê thời gian thực',
     [
       { title: 'Chỉ Số Tăng Trưởng Hội Viên', desc: 'Thống kê tổng số 31 doanh nhân chính thức đang hoạt động và số lượng hồ sơ mới đang chờ thẩm định.' },
-      { title: 'Theo Dõi Dòng Tiền & Quỹ Hội', desc: 'Đo lường nguồn thu niên liễm 435 triệu đồng, vé sự kiện và các khoản tài trợ chuyển khoản về tài khoản hiệp hội.' },
+      { title: 'Theo Dõi Dòng Tiền & Quỹ Hội', desc: 'Đo lường nguồn thu hội phí thường niên 435 triệu đồng, vé sự kiện và các khoản tài trợ chuyển khoản về tài khoản hiệp hội.' },
       { title: 'Đo Lường Hiệu Quả Sàn B2B', desc: 'Tổng hợp số lượng 30 hoạt động kết nối, sản phẩm niêm yết và số lượng Deal giao thương thành công.' },
       { title: 'Xuất Báo Cáo Ban Chấp Hành Tức Thì', desc: 'Tải dữ liệu chuẩn hóa phục vụ các kỳ họp Ban Chấp Hành định kỳ chỉ với một cú nhấp chuột.' }
     ],
@@ -731,7 +731,7 @@ async function generateCrmPptx() {
     'crm_step_10_finance_fees_cashbook.png',
     '💳 Gạch nợ tự động qua VietQR, xuất phiếu thu điện tử và lưu trữ sổ quỹ kế toán minh bạch',
     [
-      { title: 'Theo Dõi Niên Liễm Theo Năm Tài Chính', desc: 'Bảng theo dõi trạng thái hoàn thành hội phí: Đã thanh toán, Chưa nộp, Miễn giảm theo từng hội viên.' },
+      { title: 'Theo Dõi Hội Phí Thường Niên Theo Năm Tài Chính', desc: 'Bảng theo dõi trạng thái hoàn thành hội phí: Đã thanh toán, Chưa nộp, Miễn giảm theo từng hội viên.' },
       { title: 'Đối Soát Tự Động Qua Cổng VietQR', desc: 'Khi hội viên quét mã chuyển khoản trên App, hệ thống tự động gạch nợ và gia hạn thẻ số tức thì.' },
       { title: 'Quản Lý Sổ Quỹ Thu Chi Minh Bạch', desc: 'Ghi nhận chi tiết mọi dòng tiền: Thu hội phí, Thu vé sự kiện, Thu tài trợ và các khoản chi hoạt động.' },
       { title: 'Xuất Báo Cáo Kế Toán & Phiếu Thu Số', desc: 'Tự động tạo phiếu thu điện tử gửi về email hội viên và xuất file đối soát phục vụ ban kiểm soát.' }
@@ -1172,7 +1172,7 @@ async function generateAppPptx() {
       {
         icon: '💸',
         title: 'Đóng Phí Phức Tạp & Thiếu Xác Nhận',
-        desc: 'Chuyển khoản nộp hội phí niên liễm phải chụp màn hình gửi xác nhận qua lại, không có hóa đơn điện tử hay thẻ số để xuất trình quyền lợi ngay lập tức.'
+        desc: 'Chuyển khoản nộp hội phí thường niên phải chụp màn hình gửi xác nhận qua lại, không có hóa đơn điện tử hay thẻ số để xuất trình quyền lợi ngay lập tức.'
       }
     ];
 
@@ -1260,7 +1260,7 @@ async function generateAppPptx() {
       {
         num: '01',
         title: 'Mục Đích Phát Triển',
-        desc: 'Xây dựng một kênh kết nối thường trực 24/7 giúp hội viên dễ dàng tra cứu đối tác, chia sẻ cơ hội kinh doanh, đăng ký sự kiện và duy trì niên liễm chỉ với 1 chạm.'
+        desc: 'Xây dựng một kênh kết nối thường trực 24/7 giúp hội viên dễ dàng tra cứu đối tác, chia sẻ cơ hội kinh doanh, đăng ký sự kiện và duy trì hội phí thường niên chỉ với 1 chạm.'
       },
       {
         num: '02',
@@ -1275,7 +1275,7 @@ async function generateAppPptx() {
       {
         num: '04',
         title: 'Vé QR Check-in & VietQR Tự Động',
-        desc: 'Vé điện tử tự động gán vị trí Bàn VIP Gala Dinner, quét vào cửa trong 1 giây; nộp niên liễm qua VietQR tự động gạch nợ và nhận biên lai số về hòm thư.'
+        desc: 'Vé điện tử tự động gán vị trí Bàn VIP Gala Dinner, quét vào cửa trong 1 giây; nộp hội phí thường niên qua VietQR tự động gạch nợ và nhận biên lai số về hòm thư.'
       }
     ];
 
@@ -1546,7 +1546,7 @@ async function generateAppPptx() {
     'app_step_20_annual_fee_renewal.png',
     'Đóng hội phí VietQR',
     [
-      { title: 'Minh Bạch Niên Độ & Hạn Nộp Hội Phí', desc: 'Thông báo rõ ràng số tiền niên liễm, thời hạn gia hạn và quyền lợi duy trì sinh hoạt trong năm.' },
+      { title: 'Minh Bạch Niên Độ & Hạn Nộp Hội Phí', desc: 'Thông báo rõ ràng số tiền hội phí thường niên, thời hạn gia hạn và quyền lợi duy trì sinh hoạt trong năm.' },
       { title: 'Mã QR Động Chính Xác Tuyệt Đối', desc: 'Mã VietQR tự động điền số tiền và cú pháp chuyển khoản chính xác tới từng ký tự.' },
       { title: 'Gạch Nợ Tự Động Sau 3-5 Giây', desc: 'Ngay khi chuyển khoản thành công, hệ thống tự động gạch nợ và gia hạn hạn dùng thẻ số trên App.' },
       { title: 'Nhận Phiếu Thu Điện Tử Về Hòm Thư', desc: 'Biên lai xác nhận đóng hội phí có chữ ký số được gửi tự động về email doanh nghiệp lưu trữ.' }
@@ -2335,7 +2335,7 @@ function generateHtmlSlides() {
       subtitle: 'Kiểm Soát Toàn Diện: Hồ Sơ Hội Viên · Quỹ Hội VietQR · Bầu Cử & Lucky Draw · Sàn B2B',
       pillars: [
         { num: '01', title: 'Quản Trị Hội Viên 360°', desc: 'Thẩm định hồ sơ trực tuyến, phân bổ ban bệ và tự động cấp thông tin tài khoản qua email tức thì.' },
-        { num: '02', title: 'Tài Chính & Đối Soát VietQR', desc: 'Theo dõi niên liễm, gạch nợ hội phí tự động qua mã VietQR và minh bạch thu chi ngân quỹ.' },
+        { num: '02', title: 'Tài Chính & Đối Soát VietQR', desc: 'Theo dõi hội phí thường niên, gạch nợ hội phí tự động qua mã VietQR và minh bạch thu chi ngân quỹ.' },
         { num: '03', title: 'Sự Kiện, Bầu Cử & Lucky Draw', desc: 'Khởi tạo vé đa tầng, sắp đặt sơ đồ khán phòng VIP, bỏ phiếu đại hội và quay số VinFast VF3.' },
         { num: '04', title: 'Đồng Bộ Hai Chiều Realtime', desc: 'Tách biệt chuyên sâu cho Ban Quản Trị nhưng liên kết 100% dữ liệu xuống Mobile App của hội viên.' },
       ]
@@ -2347,7 +2347,7 @@ function generateHtmlSlides() {
       subtitle: 'Những rào cản lớn khiến hiệp hội tiêu tốn nguồn lực và giảm hiệu quả kết nối hội viên',
       items: [
         { icon: '📑', title: 'Hồ Sơ Rời Rạc & Thất Thoát Dữ Liệu', desc: 'Thông tin hội viên lưu trữ thủ công trên các file Excel, Zalo cá nhân. Khi thay đổi thư ký hoặc bàn giao nhiệm kỳ, dữ liệu dễ bị phân tán, thất lạc hoặc sai lệch.' },
-        { icon: '⏳', title: 'Đối Soát Hội Phí Thủ Công Tốn Kém', desc: 'Ban Tài chính phải kiểm tra từng giao dịch sao kê ngân hàng, nhắn tin nhắc nợ từng người và gạch nợ thủ công, mất hàng chục giờ làm việc mỗi kỳ niên liễm.' },
+        { icon: '⏳', title: 'Đối Soát Hội Phí Thủ Công Tốn Kém', desc: 'Ban Tài chính phải kiểm tra từng giao dịch sao kê ngân hàng, nhắn tin nhắc nợ từng người và gạch nợ thủ công, mất hàng chục giờ làm việc mỗi kỳ hội phí.' },
         { icon: '🚪', title: 'Check-in Sự Kiện Ùn Tắc & Dễ Trùng Lặp', desc: 'Tại các sự kiện lớn như Đại hội, Caravan, Gala Dinner, khâu soát vé giấy thủ công gây ùn tắc tại cửa ra vào, không kiểm soát được vé giả hoặc dùng chung vé.' },
         { icon: '📉', title: 'Giao Thương Nội Khối Thiếu Đo Lường', desc: 'Nhu cầu mua bán, hợp tác của các doanh nghiệp thành viên chia sẻ tự phát trong các nhóm chat, không có cơ chế thẩm định xuất xứ và không đo lường được quy mô giá trị Deals.' }
       ]
@@ -2399,7 +2399,7 @@ function generateHtmlSlides() {
       badgeText: '📊 Dữ liệu phản hồi trực tiếp từ Database với biểu đồ tiến độ & thống kê thời gian thực',
       features: [
       { title: 'Chỉ Số Tăng Trưởng Hội Viên', desc: 'Thống kê tổng số 31 doanh nhân chính thức đang hoạt động và số lượng hồ sơ mới đang chờ thẩm định.' },
-      { title: 'Theo Dõi Dòng Tiền & Quỹ Hội', desc: 'Đo lường nguồn thu niên liễm 435 triệu đồng, vé sự kiện và các khoản tài trợ chuyển khoản về tài khoản hiệp hội.' },
+      { title: 'Theo Dõi Dòng Tiền & Quỹ Hội', desc: 'Đo lường nguồn thu hội phí thường niên 435 triệu đồng, vé sự kiện và các khoản tài trợ chuyển khoản về tài khoản hiệp hội.' },
       { title: 'Đo Lường Hiệu Quả Sàn B2B', desc: 'Tổng hợp số lượng 30 hoạt động kết nối, sản phẩm niêm yết và số lượng Deal giao thương thành công.' },
       { title: 'Xuất Báo Cáo Ban Chấp Hành Tức Thì', desc: 'Tải dữ liệu chuẩn hóa phục vụ các kỳ họp Ban Chấp Hành định kỳ chỉ với một cú nhấp chuột.' }
     ]
@@ -2538,7 +2538,7 @@ function generateHtmlSlides() {
       imgFilename: 'crm_step_10_finance_fees_cashbook.png',
       badgeText: '💳 Gạch nợ tự động qua VietQR, xuất phiếu thu điện tử và lưu trữ sổ quỹ kế toán minh bạch',
       features: [
-      { title: 'Theo Dõi Niên Liễm Theo Năm Tài Chính', desc: 'Bảng theo dõi trạng thái hoàn thành hội phí: Đã thanh toán, Chưa nộp, Miễn giảm theo từng hội viên.' },
+      { title: 'Theo Dõi Hội Phí Thường Niên Theo Năm Tài Chính', desc: 'Bảng theo dõi trạng thái hoàn thành hội phí: Đã thanh toán, Chưa nộp, Miễn giảm theo từng hội viên.' },
       { title: 'Đối Soát Tự Động Qua Cổng VietQR', desc: 'Khi hội viên quét mã chuyển khoản trên App, hệ thống tự động gạch nợ và gia hạn thẻ số tức thì.' },
       { title: 'Quản Lý Sổ Quỹ Thu Chi Minh Bạch', desc: 'Ghi nhận chi tiết mọi dòng tiền: Thu hội phí, Thu vé sự kiện, Thu tài trợ và các khoản chi hoạt động.' },
       { title: 'Xuất Báo Cáo Kế Toán & Phiếu Thu Số', desc: 'Tự động tạo phiếu thu điện tử gửi về email hội viên và xuất file đối soát phục vụ ban kiểm soát.' }
@@ -2677,7 +2677,7 @@ function generateHtmlSlides() {
         { icon: '📇', title: 'Danh Thiếp Giấy Dễ Thất Lạc', desc: 'Sau các buổi giao lưu, danh thiếp giấy thường bị quên lãng, thất lạc hoặc thông tin liên lạc bị lỗi thời khi đối tác thay đổi số điện thoại hay công ty.' },
         { icon: '💬', title: 'Cơ Hội Giao Thương Bị Trôi Tin', desc: 'Nhu cầu mua hàng, tìm nhà cung ứng đăng trong nhóm chat Zalo bị tin nhắn chào hỏi làm trôi mất, không có bộ lọc ngành nghề để tìm lại đối tác phù hợp.' },
         { icon: '🎟️', title: 'Check-in Sự Kiện Thủ Công Phiền Hà', desc: 'Doanh nhân bận rộn dễ quên lịch họp, quên vé giấy. Khi đến sự kiện phải đứng xếp hàng chờ tìm tên trong danh sách giấy in gây cảm giác thiếu chuyên nghiệp.' },
-        { icon: '💸', title: 'Đóng Phí Phức Tạp & Thiếu Xác Nhận', desc: 'Chuyển khoản nộp hội phí niên liễm phải chụp màn hình gửi xác nhận qua lại, không có hóa đơn điện tử hay thẻ số để xuất trình quyền lợi ngay lập tức.' }
+        { icon: '💸', title: 'Đóng Phí Phức Tạp & Thiếu Xác Nhận', desc: 'Chuyển khoản nộp hội phí thường niên phải chụp màn hình gửi xác nhận qua lại, không có hóa đơn điện tử hay thẻ số để xuất trình quyền lợi ngay lập tức.' }
       ]
     },
     {
@@ -2936,7 +2936,7 @@ function generateHtmlSlides() {
       imgFilename: 'app_step_20_annual_fee_renewal.png',
       badgeText: 'Đóng hội phí VietQR',
       features: [
-      { title: 'Minh Bạch Niên Độ & Hạn Nộp Hội Phí', desc: 'Thông báo rõ ràng số tiền niên liễm, thời hạn gia hạn và quyền lợi duy trì sinh hoạt trong năm.' },
+      { title: 'Minh Bạch Niên Độ & Hạn Nộp Hội Phí', desc: 'Thông báo rõ ràng số tiền hội phí thường niên, thời hạn gia hạn và quyền lợi duy trì sinh hoạt trong năm.' },
       { title: 'Mã QR Động Chính Xác Tuyệt Đối', desc: 'Mã VietQR tự động điền số tiền và cú pháp chuyển khoản chính xác tới từng ký tự.' },
       { title: 'Gạch Nợ Tự Động Sau 3-5 Giây', desc: 'Ngay khi chuyển khoản thành công, hệ thống tự động gạch nợ và gia hạn hạn dùng thẻ số trên App.' },
       { title: 'Nhận Phiếu Thu Điện Tử Về Hòm Thư', desc: 'Biên lai xác nhận đóng hội phí có chữ ký số được gửi tự động về email doanh nghiệp lưu trữ.' }

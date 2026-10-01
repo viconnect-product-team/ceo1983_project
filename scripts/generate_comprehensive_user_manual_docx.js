@@ -186,6 +186,15 @@ async function generateManual() {
 
   function createTable(headers, rows, colWidths = []) {
     const tableRows = [];
+    const numCols = headers.length;
+    const TOTAL_WIDTH = 9200;
+    const sum = colWidths && colWidths.length > 0 ? colWidths.reduce((a, b) => a + Number(b), 0) : 0;
+    const colWidthsDxa = headers.map((_, i) => {
+      if (sum > 0 && colWidths[i] !== undefined) {
+        return Math.round((Number(colWidths[i]) / sum) * TOTAL_WIDTH);
+      }
+      return Math.round(TOTAL_WIDTH / numCols);
+    });
 
     // Header row
     const headerCells = headers.map((h, i) => {
@@ -208,7 +217,7 @@ async function generateManual() {
         shading: { fill: BLUE_HEADER, type: ShadingType.CLEAR },
         borders: BORDER_THIN,
         margins: { top: 100, bottom: 100, left: 120, right: 120 },
-        width: colWidths[i] ? { size: colWidths[i], type: WidthType.PERCENTAGE } : undefined,
+        width: { size: colWidthsDxa[i], type: WidthType.DXA },
       });
     });
     tableRows.push(new TableRow({ children: headerCells, tableHeader: true }));
@@ -239,7 +248,7 @@ async function generateManual() {
           },
           borders: BORDER_THIN,
           margins: { top: 80, bottom: 80, left: 120, right: 120 },
-          width: colWidths[i] ? { size: colWidths[i], type: WidthType.PERCENTAGE } : undefined,
+          width: { size: colWidthsDxa[i], type: WidthType.DXA },
         });
       });
       tableRows.push(new TableRow({ children: cells }));
@@ -247,7 +256,8 @@ async function generateManual() {
 
     return new Table({
       rows: tableRows,
-      width: { size: 100, type: WidthType.PERCENTAGE },
+      width: { size: TOTAL_WIDTH, type: WidthType.DXA },
+      columnWidths: colWidthsDxa,
     });
   }
 

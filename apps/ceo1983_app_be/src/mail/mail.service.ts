@@ -56,6 +56,18 @@ export interface SendMemberApprovedEmailOptions {
   passwordRaw?: string;
 }
 
+export interface SendRegistrationReceivedEmailOptions {
+  to: string;
+  fullName: string;
+  phone?: string;
+  companyName: string;
+  position?: string;
+  boardWish?: string;
+  industry?: string;
+  needs?: string;
+  offers?: string;
+  memberId?: string;
+}
 
 @Injectable()
 export class MailService {
@@ -725,6 +737,150 @@ export class MailService {
 
     this.logger.log(`[MEMBER_APPROVED_EMAIL_DISPATCHED] To: ${cleanTo} | Name: ${fullName} | Code: ${memberCode}`);
     return { ok: true, message: 'Member approved email logged to audit stream' };
+  }
+
+  /**
+   * Gửi email xác nhận tiếp nhận hồ sơ đăng ký gia nhập cho ứng viên (Landing page / Public Register)
+   */
+  async sendRegistrationReceivedEmail(options: SendRegistrationReceivedEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const { to, fullName, phone, companyName, position, boardWish, industry, needs, offers, memberId } = options;
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`Cannot send registration received email: invalid destination email "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const subject = `[CLB CEO 1983] Xác Nhận Tiếp Nhận Hồ Sơ Đăng Ký Gia Nhập — Anh/Chị ${fullName}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 55%, #0B192C 100%); padding: 34px 28px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff; line-height: 1.3; }
+    .subtitle { font-size: 12.5px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .content { padding: 30px 28px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 22px; }
+    
+    .card-box { background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #003B95; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #003B95; margin-bottom: 14px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    
+    .status-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px; margin: 20px 0; font-size: 13px; line-height: 1.6; color: #1e3a8a; }
+    .step-list { margin-top: 10px; padding-left: 18px; }
+    .step-list li { margin-bottom: 6px; }
+
+    .note { font-size: 12px; color: #64748b; line-height: 1.5; background: #f8fafc; padding: 12px 16px; border-radius: 10px; margin-top: 20px; border: 1px solid #e2e8f0; }
+    .footer { background: #0b1329; padding: 24px; text-align: center; color: rgba(255, 255, 255, 0.55); font-size: 11.5px; line-height: 1.6; }
+    .footer-brand { color: #F59E0B; font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ TIẾP NHẬN ĐĂNG KÝ HỘI VIÊN MỚI ✦</div>
+      <h1 class="title">CLB DOANH NHÂN CEO 1983</h1>
+      <p class="subtitle">Hội Doanh Nhân Trẻ Hà Nội (HanoiBA) — Kết Nối & Giao Thương</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
+      <div class="intro">
+        Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Hệ thống đã <strong>tiếp nhận thành công hồ sơ đăng ký gia nhập</strong> của Anh/Chị đại diện cho doanh nghiệp <strong>${companyName}</strong>.
+      </div>
+
+      <div class="card-box">
+        <div class="card-title">📋 Thông Tin Hồ Sơ Đăng Ký</div>
+        <div class="info-row">
+          <span class="info-label">Người đại diện:</span>
+          <span class="info-value">${fullName} ${position ? `(${position})` : ''}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Doanh nghiệp:</span>
+          <span class="info-value" style="color: #003B95;">${companyName}</span>
+        </div>
+        ${phone ? `
+        <div class="info-row">
+          <span class="info-label">Số điện thoại liên hệ:</span>
+          <span class="info-value">${phone}</span>
+        </div>
+        ` : ''}
+        <div class="info-row">
+          <span class="info-label">Email tiếp nhận:</span>
+          <span class="info-value" style="font-family: monospace;">${cleanTo}</span>
+        </div>
+        ${boardWish ? `
+        <div class="info-row">
+          <span class="info-label">Ban nguyện vọng:</span>
+          <span class="info-value" style="color: #d97706;">${boardWish}</span>
+        </div>
+        ` : ''}
+        ${industry ? `
+        <div class="info-row">
+          <span class="info-label">Lĩnh vực hoạt động:</span>
+          <span class="info-value">${industry}</span>
+        </div>
+        ` : ''}
+        ${memberId ? `
+        <div class="info-row">
+          <span class="info-label">Mã tham chiếu hồ sơ:</span>
+          <span class="info-value" style="font-family: monospace; color: #64748b;">${memberId}</span>
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="status-box">
+        <strong>📌 Quy trình xét duyệt tiếp theo:</strong>
+        <ol class="step-list">
+          <li><strong>Thẩm định hồ sơ:</strong> Ban Thành Viên & Ban Kiểm Soát CLB sẽ xem xét thông tin doanh nghiệp theo tiêu chí hội viên trong 24 giờ làm việc.</li>
+          <li><strong>Liên hệ xác nhận:</strong> Ban Thư Ký có thể liên hệ qua điện thoại/Zalo để trao đổi thêm về quyền lợi và cơ chế kết nối.</li>
+          <li><strong>Cấp tài khoản & Thẻ Doanh Nhân Số:</strong> Khi hồ sơ được phê duyệt chính thức, hệ thống sẽ tự động gửi email thông báo kèm tài khoản đăng nhập App Doanh Nhân CEO 1983 cho Anh/Chị.</li>
+        </ol>
+      </div>
+
+      <div class="note">
+        <strong>* Hỗ trợ hồ sơ:</strong> Nếu cần bổ sung thông tin hoặc hỗ trợ khẩn cấp, Anh/Chị vui lòng liên hệ Văn phòng Ban Thư Ký CLB qua Hotline: <strong>0983 1983 83</strong> hoặc phản hồi trực tiếp email này.
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Website chính thức: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    if (this.transporter) {
+      try {
+        const fromAddr = this.getCleanFromEmail();
+        const info = await this.transporter.sendMail({
+          from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
+          to: cleanTo,
+          subject,
+          html,
+        });
+        this.logger.log(`Registration received email sent to ${cleanTo}. MessageId: ${info.messageId}`);
+        return { ok: true, message: 'Registration received email sent via SMTP' };
+      } catch (err: any) {
+        this.logger.error(`Failed to send registration received email to ${cleanTo}: ${err.message}`, err.stack);
+      }
+    }
+
+    this.logger.log(`[REGISTRATION_RECEIVED_LOG] To: ${cleanTo} | Name: ${fullName} | Company: ${companyName}`);
+    return { ok: true, message: 'Registration received logged to audit stream' };
   }
 }
 

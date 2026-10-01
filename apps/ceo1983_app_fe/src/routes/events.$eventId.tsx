@@ -725,8 +725,8 @@ function EventDetailPage() {
           name: event.name,
           date: event.date ? fmt.date(event.date) : undefined,
           location: event.location,
-          ticketPrice: (event as any).ticketPrice ?? (event as any).ticket_price ?? event.fee,
-          fee: event.fee,
+          ticketPrice: (event as any).ticketPrice ?? (event as any).ticket_price ?? (event as any).fee,
+          fee: (event as any).fee,
         }}
       />
     </AppShell>

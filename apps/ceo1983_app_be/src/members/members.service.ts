@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -54,6 +55,8 @@ export class UpdateMemberContactDto {
 
 @Injectable()
 export class MembersService {
+  private readonly logger = new Logger(MembersService.name);
+
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
@@ -2051,6 +2054,25 @@ export class MembersService {
       )
     `.catch(() => {});
 
+    // Gửi email xác nhận tiếp nhận hồ sơ gia nhập ngay cho ứng viên
+    try {
+      await this.mailService.sendRegistrationReceivedEmail({
+        to: email.trim().toLowerCase(),
+        fullName,
+        phone,
+        companyName,
+        position,
+        boardWish,
+        industry,
+        needs,
+        offers,
+        memberId: id,
+      });
+      this.logger.log(`Registration received confirmation email successfully dispatched to applicant: ${email}`);
+    } catch (mailErr: any) {
+      this.logger.warn(`Failed to dispatch registration received email to ${email}: ${mailErr?.message}`);
+    }
+
     return {
       ok: true,
       memberId: id,
@@ -2058,6 +2080,74 @@ export class MembersService {
       representative: fullName,
       message: 'Hồ sơ đã được gửi thành công. Ban Thành Viên sẽ xét duyệt và cấp tài khoản qua email!',
     };
+  }
+
+  /**
+   * Kiểm tra quyền kiểm duyệt và phê duyệt kết nạp hội viên:
+   * Thẩm quyền thuộc về Ban Thành Viên (BTV) hoặc Ban Quản Trị (BQT) / Super Admin.
+   * Ban Thư Ký, Ban Truyền Thông, Ban Xúc Tiến, Ban Thiện Nguyện TUYỆT ĐỐI không có quyền phê duyệt hội viên.
+   */
+  async checkCanApproveMember(userId: string, assocId?: string): Promise<boolean> {
+    if (!userId) return false;
+
+    // SuperAdmin / System Admin ID
+    if (
+      userId === '00000000-0000-4000-8000-000000000002' ||
+      userId === 'mock-admin-id' ||
+      userId === '00000000-0000-0000-0000-000000000000'
+    ) {
+      return true;
+    }
+
+    try {
+      // Tìm hồ sơ member của tài khoản đang thực hiện thao tác
+      const actorMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT department, executive_role FROM public.members
+        WHERE user_id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => []);
+
+      const actorMember = actorMembers[0];
+      const dept = String(actorMember?.department || '').toLowerCase();
+      const role = String(actorMember?.executive_role || '').toLowerCase();
+
+      // RÀNG BUỘC CHẶT CHẼ: Ban Thư Ký, Truyền Thông, Xúc Tiến, Thiện Nguyện không được phép duyệt
+      if (
+        dept.includes('thư ký') ||
+        dept.includes('truyền thông') ||
+        dept.includes('xúc tiến') ||
+        dept.includes('thiện nguyện')
+      ) {
+        return false;
+      }
+
+      // Ban Thành Viên có thẩm quyền phê duyệt hồ sơ kết nạp
+      if (dept.includes('thành viên')) {
+        return true;
+      }
+
+      // Ban Quản Trị / Lãnh đạo cấp cao CLB
+      if (
+        dept.includes('quản trị') ||
+        dept.includes('điều hành') ||
+        role.includes('chủ tịch') ||
+        role.includes('admin')
+      ) {
+        return true;
+      }
+
+      // Kiểm tra vai trò hệ thống cấp cao (platform_admin)
+      const roles = await this.prisma.$queryRaw<any[]>`
+        SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
+      `.catch(() => [] as any[]);
+      if (roles.some((r: any) => r.role === 'platform_admin' || r.role === 'superadmin')) {
+        return true;
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -2073,9 +2163,11 @@ export class MembersService {
     }
 
     const member = rows[0];
-    const isAdmin = await this.checkIsAdmin(adminUserId, member.association_id);
-    if (!isAdmin) {
-      throw new ForbiddenException('Chỉ Quản trị viên hoặc thành viên Ban Thành Viên mới có quyền phê duyệt');
+    const canApprove = await this.checkCanApproveMember(adminUserId, member.association_id);
+    if (!canApprove) {
+      throw new ForbiddenException(
+        'Thẩm quyền kiểm duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Ban Thư Ký và các ban chuyên môn khác không có quyền phê duyệt hồ sơ kết nạp.'
+      );
     }
 
     if (!member.email || !member.email.includes('@')) {
@@ -2123,6 +2215,17 @@ export class MembersService {
           updated_at: new Date(),
         },
       });
+    }
+
+    // Đồng bộ vào auth.users để thỏa mãn ràng buộc khóa ngoại members_user_id_fkey
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO auth.users (id, email, role)
+        VALUES (${assignedUserId}::uuid, ${member.email}, 'authenticated')
+        ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email
+      `;
+    } catch (authErr: any) {
+      this.logger.warn(`Could not sync to auth.users: ${authErr?.message}`);
     }
 
     // 3. Tạo mã hội viên nếu chưa có

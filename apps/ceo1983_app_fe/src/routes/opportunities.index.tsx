@@ -45,6 +45,8 @@ import {
   expressInterestFn,
   toggleOpportunityStatusFn,
 } from "@/lib/opportunities.functions";
+import { StandardDateInput } from "@/components/common/StandardDateInput";
+import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { useAuth } from "@/context/AuthContext";
 import { useTableControls } from "@/hooks/use-table-controls";
@@ -411,11 +413,11 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.deadline")}</label>
-              <input
-                type="date"
+              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.deadline")} (dd/mm/yyyy)</label>
+              <StandardDateInput
                 value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+                placeholder="dd/mm/yyyy (VD: 31/12/2026)"
+                onChange={(iso) => setDeadline(iso)}
                 required
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
@@ -491,22 +493,24 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMin")} (VNĐ)
+                {t("opp.form.budgetMin")}
               </label>
-              <input
+              <FormattedCurrencyInput
                 value={budgetMin}
-                onChange={(e) => setBudgetMin(formatCurrencyInput(e.target.value))}
+                allowCurrencySwitch={true}
+                onChange={(val) => setBudgetMin(val)}
                 placeholder="VD: 50.000.000"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMax")} (VNĐ)
+                {t("opp.form.budgetMax")}
               </label>
-              <input
+              <FormattedCurrencyInput
                 value={budgetMax}
-                onChange={(e) => setBudgetMax(formatCurrencyInput(e.target.value))}
+                allowCurrencySwitch={true}
+                onChange={(val) => setBudgetMax(val)}
                 placeholder="VD: 200.000.000"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />

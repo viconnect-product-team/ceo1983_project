@@ -113,7 +113,7 @@ const crmModules = [
     features: [
       {
         id: 'DASH-01',
-        name: '4 Khối chỉ số KPI trọng điểm: Tổng hội viên, Niên liễm đã thu, Sự kiện đã tổ chức, Deals giao thương',
+        name: '4 Khối chỉ số KPI trọng điểm: Tổng hội viên, Hội phí thường niên đã thu, Sự kiện đã tổ chức, Deals giao thương',
         screen: 'Bảng điều khiển (/dashboard)',
         api: 'GET /api/crm/dashboard/kpi-summary',
         devDate: '12/09/2026',
@@ -476,13 +476,13 @@ const crmModules = [
   },
   {
     moduleId: 'CRM-10',
-    moduleName: 'Quản Lý Sổ Quỹ Tài Chính, Đối Soát VietQR Tự Động & Niên Liễm',
+    moduleName: 'Quản Lý Sổ Quỹ Tài Chính, Đối Soát VietQR Tự Động & Hội Phí Thường Niên',
     platform: 'Web CRM',
     features: [
       {
         id: 'FIN-01',
-        name: 'Bảng theo dõi niên liễm theo từng năm tài chính của toàn bộ hội viên (Đã nộp / Chưa nộp / Quá hạn)',
-        screen: 'Quản Lý Niên Liễm (/finance/membership-fees)',
+        name: 'Bảng theo dõi hội phí thường niên theo từng năm tài chính của toàn bộ hội viên (Đã nộp / Chưa nộp / Quá hạn)',
+        screen: 'Quản Lý Hội Phí Thường Niên (/finance/membership-fees)',
         api: 'GET /api/crm/finance/fees',
         devDate: '13/09/2026',
         priority: 'Khẩn cấp (P0)',

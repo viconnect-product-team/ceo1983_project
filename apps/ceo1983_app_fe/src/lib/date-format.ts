@@ -62,7 +62,8 @@ export function formatCurrencyInput(val: string | number | null | undefined): st
   if (val === null || val === undefined || val === "") return "";
   const digits = String(val).replace(/\D/g, "");
   if (!digits) return "";
-  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const cleanDigits = digits.replace(/^0+(?=\d)/, "");
+  return cleanDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 export function parseCurrencyInput(val: string | number | null | undefined): number {

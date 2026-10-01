@@ -80,7 +80,7 @@ export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
   ADM: Object.values(PERMISSIONS),
   BQT: Object.values(PERMISSIONS),
   BTK: [
-    // Ban Thư Ký
+    // Ban Thư Ký (Điều phối cuộc họp, quản lý văn bản, giám sát sự kiện & truyền thông)
     PERMISSIONS.MEETING_VIEW,
     PERMISSIONS.MEETING_MANAGE,
     PERMISSIONS.DOCUMENT_MANAGE,
@@ -89,10 +89,6 @@ export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
     PERMISSIONS.EVENT_EDIT,
     PERMISSIONS.EVENT_CHECKIN_MANAGE,
     PERMISSIONS.MEMBER_VIEW,
-    PERMISSIONS.MEMBER_CREATE,
-    PERMISSIONS.MEMBER_EDIT,
-    PERMISSIONS.MEMBER_APPROVE,
-    PERMISSIONS.MEMBER_RENEW,
     PERMISSIONS.MEDIA_VIEW,
     PERMISSIONS.MEDIA_MANAGE,
     PERMISSIONS.SPONSOR_VIEW,

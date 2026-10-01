@@ -7,13 +7,14 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { toast } from "sonner";
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowRight,
   Eye,
   EyeOff,
   Loader2,
-  ShieldCheck,
+  TrendingUp,
   X,
+  Lock,
+  Mail,
 } from "lucide-react";
 import { classifyAuthError, type AuthErrorInfo } from "@/lib/business-connect/mobile/auth-error";
 import {
@@ -40,29 +41,10 @@ export const Route = createFileRoute("/auth")({
     ...(search.portal === "crm" || search.portal === "admin" ? { portal: "crm" as const } : {}),
   }),
   head: () => ({
-    meta: [{ title: "Đăng nhập Hệ thống Quản trị CRM" }],
+    meta: [{ title: "Đăng nhập Hệ thống CRM | CLB Doanh nhân CEO 1983" }],
   }),
   component: CrmAdminAuthPage,
 });
-
-function GoogleMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor" aria-hidden="true">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-    </svg>
-  );
-}
-
-function AppleMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="currentColor" aria-hidden="true">
-      <path d="M16.36 12.72c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.21.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.6-.75 3-.75s1.79.75 3.01.72c1.24-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.54 1.26-2.6-.03-.01-2.42-.93-2.44-3.7ZM14.1 5.1c.64-.78 1.07-1.85.95-2.93-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.78-.97 2.83 1.03.08 2.07-.52 2.71-1.28Z" />
-    </svg>
-  );
-}
 
 function safeRedirect(target?: string): string | null {
   if (!target) return null;
@@ -81,24 +63,20 @@ function CrmAdminAuthPage() {
   const t = useT();
   const navigate = useNavigate();
   const { redirect: redirectTo, reason, portal: searchPortal } = Route.useSearch();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [oauthPending, setOauthPending] = useState<"google" | "apple" | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [authErrorInfo, setAuthErrorInfo] = useState<AuthErrorInfo | null>(null);
+  const [, setAuthErrorInfo] = useState<AuthErrorInfo | null>(null);
   const [remember, setRemember] = useState(true);
   const { user, setAuthData } = useAuth();
 
   const destPath = safeRedirect(redirectTo) ?? "";
 
-  // Tách biệt hoàn toàn: nếu truy cập sang cổng khác, tự động chuyển về đúng route chuyên biệt
+  // Tách biệt portal: nếu truy cập sang cổng khác, chuyển về route chuyên biệt
   useEffect(() => {
     if (searchPortal === "crm" || searchPortal === "admin") {
-      // Đang ở cổng CRM quản trị — không tự động redirect sang cổng khác
       return;
     }
     if (searchPortal === "association" || (destPath.startsWith("/association") || destPath.startsWith("/m"))) {
@@ -113,12 +91,10 @@ function CrmAdminAuthPage() {
 
   async function goPostLogin() {
     const target = safeRedirect(redirectTo);
-    // Nếu target hợp lệ và là trang nội bộ CRM, chuyển về target; nếu trỏ sang login, luôn về trang chủ CRM (/)
     if (target && !target.startsWith("/auth") && !target.startsWith("/association/login")) {
       navigate({ to: target as any, replace: true });
       return;
     }
-    // Default cho đăng nhập hệ thống CRM là trang chủ quản trị (/)
     navigate({ to: "/", replace: true });
   }
 
@@ -129,7 +105,8 @@ function CrmAdminAuthPage() {
   }, [reason, t]);
 
   useEffect(() => {
-    setRemember(getRememberPreference());
+    const pref = getRememberPreference();
+    setRemember(pref);
     const saved = getRememberedEmail();
     if (saved) setEmail((v) => v || saved);
   }, []);
@@ -142,15 +119,11 @@ function CrmAdminAuthPage() {
 
   async function submit() {
     if (!email.trim()) {
-      setAuthError("Vui lòng nhập email hoặc tên đăng nhập quản trị");
+      setAuthError("Vui lòng nhập địa chỉ email hoặc tên đăng nhập");
       return;
     }
     if (!password) {
       setAuthError("Vui lòng nhập mật khẩu");
-      return;
-    }
-    if (mode === "signup" && password !== confirmPassword) {
-      setAuthError("Mật khẩu xác nhận không khớp");
       return;
     }
 
@@ -159,25 +132,16 @@ function CrmAdminAuthPage() {
     setAuthErrorInfo(null);
 
     try {
-      if (mode === "signup") {
-        await fetchNestApi("/auth/register", {
-          method: "POST",
-          body: JSON.stringify({ username: email.trim(), password }),
-        });
-        toast.success(t("auth.signUpSuccess") || "Đăng ký thành công! Hãy đăng nhập");
-        setMode("signin");
-      } else {
-        const res = await fetchNestApi("/auth/login", {
-          method: "POST",
-          body: JSON.stringify({ email: email.trim(), password }),
-        });
-        if (!res?.access_token) {
-          throw new Error("Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.");
-        }
-        setAuthData(res);
-        applyRememberPreference(remember, email.trim());
-        await goPostLogin();
+      const res = await fetchNestApi("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      if (!res?.access_token) {
+        throw new Error("Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.");
       }
+      setAuthData(res);
+      applyRememberPreference(remember, email.trim());
+      await goPostLogin();
     } catch (e: any) {
       const info = classifyAuthError(e, { provider: "password" });
       setAuthErrorInfo(info);
@@ -189,391 +153,217 @@ function CrmAdminAuthPage() {
     }
   }
 
-  // Google Sign-In helper using GIS
-  const loginGoogleWeb = (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-google-client-id";
-
-      const initializeGis = () => {
-        try {
-          (window as any).google.accounts.id.initialize({
-            client_id: clientId,
-            ux_mode: "popup",
-            callback: (res: any) => {
-              if (res.credential) {
-                resolve(res.credential);
-              } else {
-                reject(new Error("No credential returned from Google"));
-              }
-            },
-          });
-
-          (window as any).google.accounts.id.prompt((notification: any) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              const btn = document.getElementById("hidden-google-btn")?.querySelector("div");
-              if (btn) btn.click();
-            }
-          });
-        } catch (err) {
-          reject(err);
-        }
-      };
-
-      if ((window as any).google?.accounts?.id) {
-        initializeGis();
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeGis;
-      script.onerror = () => reject(new Error("Failed to load Google GIS SDK"));
-      document.head.appendChild(script);
-    });
-  };
-
-  // Sign In with Apple helper
-  const loginAppleWeb = (): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      const clientId = import.meta.env.VITE_APPLE_CLIENT_ID || "your-apple-client-id";
-
-      const initializeApple = () => {
-        try {
-          (window as any).AppleID.auth.init({
-            clientId,
-            scope: "name email",
-            redirectURI: window.location.origin + "/auth",
-            usePopup: true,
-          });
-
-          (window as any).AppleID.auth
-            .signIn()
-            .then((res: any) => resolve(res))
-            .catch((err: any) => reject(err));
-        } catch (err) {
-          reject(err);
-        }
-      };
-
-      if ((window as any).AppleID?.auth) {
-        initializeApple();
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/auth.js";
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeApple;
-      script.onerror = () => reject(new Error("Failed to load Apple Sign In SDK"));
-      document.head.appendChild(script);
-    });
-  };
-
-  async function oauth(provider: "google" | "apple") {
-    setOauthPending(provider);
-    setAuthError(null);
-    setAuthErrorInfo(null);
-
-    try {
-      if (provider === "google") {
-        const idToken = await loginGoogleWeb();
-        const customSession = await fetchNestApi("/auth/google", {
-          method: "POST",
-          body: JSON.stringify({ token: idToken }),
-        });
-
-        setAuthData(customSession);
-        applyRememberPreference(remember, customSession.user.email);
-        await goPostLogin();
-      } else if (provider === "apple") {
-        const appleResult = await loginAppleWeb();
-        if (!appleResult || !appleResult.authorization?.id_token) {
-          throw new Error("Apple login failed - no token received");
-        }
-
-        const customSession = await fetchNestApi("/auth/apple", {
-          method: "POST",
-          body: JSON.stringify({
-            identityToken: appleResult.authorization.id_token,
-            authorizationCode: appleResult.authorization.code,
-            fullName: appleResult.user?.name,
-            email: appleResult.user?.email,
-          }),
-        });
-
-        setAuthData(customSession);
-        applyRememberPreference(remember, customSession.user.email);
-        await goPostLogin();
-      }
-    } catch (e: any) {
-      const info = classifyAuthError(e, { provider });
-      setAuthErrorInfo(info);
-      const msg = t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập OAuth thất bại";
-      setAuthError(msg);
-      toast.error(msg);
-    } finally {
-      setOauthPending(null);
-    }
-  }
-
-  const busy = loading || oauthPending !== null;
-
-  // Giao diện đăng nhập thuần túy dành cho Hệ thống Quản trị Web CRM
   return (
-    <main className="relative min-h-[100dvh] w-full overflow-x-hidden flex items-center justify-center p-4 sm:p-6 bg-background text-foreground transition-colors duration-200">
-      {/* Ambient Radial Depth Glow */}
-      <div
-        className="pointer-events-none fixed inset-0 opacity-40 dark:opacity-60"
-        style={{
-          background:
-            "radial-gradient(75% 55% at 50% 10%, color-mix(in oklab, var(--primary) 20%, transparent), transparent 70%)",
-        }}
-      />
+    <main className="min-h-screen w-full flex flex-col lg:grid lg:grid-cols-12 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      {/* ── LEFT PANEL: HERO & BRANDING BANNER (Per CEO 1983 Ecosystem) ────────── */}
+      <section className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-12 xl:p-16 overflow-hidden bg-gradient-to-br from-[#003B95] via-[#002B70] to-[#0A1A3A] text-white">
+        {/* Ambient subtle glow overlay */}
+        <div className="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-blue-500/20 blur-[120px]" />
+        <div className="pointer-events-none absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-sky-400/15 blur-[100px]" />
 
-      {/* Main Glassmorphism Card */}
-      <div className="relative z-10 w-full max-w-md rounded-3xl border border-border bg-card/95 p-6 sm:p-8 backdrop-blur-xl shadow-elevated text-card-foreground transition-colors duration-200">
-        {/* Top bar: Back to Landing & Theme/Lang Switchers */}
-        <div className="flex items-center justify-between pb-4 border-b border-border/40">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground hover:underline"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Quay lại Landing Page</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <ThemeSwitcher />
-            <LuxuryLangSwitcher />
+        {/* Top: Monogram App Badge */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md">
+            <span className="text-xl font-black text-[#003B95] tracking-tight">V</span>
+          </div>
+          <div className="text-sm font-bold tracking-wider uppercase text-blue-100">
+            CLB Doanh nhân CEO 1983
           </div>
         </div>
 
-        {/* Brand Crest & Headers */}
-        <div className="mt-5 flex flex-col items-center justify-center text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-500 text-white shadow-[0_8px_22px_rgba(2,132,199,0.35)]">
-            <ShieldCheck className="h-6 w-6 stroke-[2.2]" />
-          </div>
-          <div className="mt-3 text-[10.5px] font-bold tracking-[0.28em] uppercase text-sky-600 dark:text-sky-400">
-            HỆ THỐNG QUẢN TRỊ CRM
-          </div>
-          <h1 className="mt-2 text-[23px] sm:text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-white">
-            {mode === "signin" ? "Đăng nhập Hệ thống" : "Đăng ký Quản trị viên"}
+        {/* Center: Main Headline & Description tailored to CEO 1983 */}
+        <div className="relative z-10 max-w-xl my-auto py-10 space-y-5">
+          <h1 className="text-3xl xl:text-4xl 2xl:text-[42px] font-extrabold leading-[1.25] tracking-tight text-white">
+            Nền tảng Quản trị & Kết nối Giao thương Doanh nhân CEO 1983
           </h1>
-          <p className="mt-1.5 max-w-[20rem] text-center text-[12px] sm:text-[13px] leading-snug font-normal text-slate-500 dark:text-slate-400">
-            {mode === "signin"
-              ? "Cổng quản trị dành cho Ban Quản trị & Ban Thư ký Điều hành"
-              : "Đăng ký tài khoản quản trị hệ thống"}
+          <p className="text-base xl:text-lg leading-relaxed text-blue-100/90 font-normal">
+            Hội tụ tinh hoa cộng đồng doanh nhân bản lĩnh. Số hóa hồ sơ hội viên, mở rộng xúc tiến thương mại B2B, quản trị cơ hội và điều hành tổ chức chuyên nghiệp, bền vững.
           </p>
         </div>
 
-        {/* Error Alert */}
-        {authError && (
-          <div
-            role="alert"
-            className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive leading-relaxed"
-          >
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              <div className="flex-1">
-                <p className="font-medium">{authError}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAuthError(null)}
-                className="flex h-5 w-5 items-center justify-center rounded hover:bg-destructive/20 cursor-pointer"
-              >
-                <X className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
+        {/* Bottom: Modern Glassmorphism Analytics Card */}
+        <div className="relative z-10 max-w-md rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-md shadow-2xl space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs xl:text-sm font-semibold text-white/95 tracking-wide">
+              Chỉ số kết nối & giao thương hội viên
+            </span>
+            <div className="flex items-center gap-1 rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-xs font-bold text-emerald-300 border border-emerald-400/30">
+              <TrendingUp className="h-3 w-3" />
+              <span>+45.2%</span>
             </div>
           </div>
-        )}
 
-        {/* Scoped CSS */}
-        <style>{`
-          .auth-field:-webkit-autofill,
-          .auth-field:-webkit-autofill:hover, 
-          .auth-field:-webkit-autofill:focus, 
-          .auth-field:-webkit-autofill:active {
-            -webkit-text-fill-color: currentColor !important;
-            transition: background-color 5000s ease-in-out 0s !important;
-            caret-color: currentColor !important;
-            -webkit-box-shadow: 0 0 0px 1000px var(--card) inset !important;
-          }
-          .auth-field:hover {
-            border-color: #94a3b8 !important;
-            background-color: var(--card) !important;
-          }
-          .auth-field:focus {
-            border-color: #0284c7 !important;
-            background-color: var(--card) !important;
-          }
-        `}</style>
-
-        {/* Credentials Form */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void submit();
-          }}
-          className="mt-5 space-y-3.5"
-        >
-          <div>
-            <input
-              type="text"
-              autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@connect.vn"
-              className="auth-field h-12 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-card px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 shadow-xs"
-            />
+          {/* Minimalist Bar Chart Graphic */}
+          <div className="flex h-20 items-end gap-3 pt-2">
+            <div className="w-8 rounded-t-lg bg-white/30 h-[40%] transition-all duration-300" title="Sự kiện CLB" />
+            <div className="w-8 rounded-t-lg bg-white/50 h-[65%] transition-all duration-300" title="Hội viên kết nối" />
+            <div className="w-8 rounded-t-lg bg-white/40 h-[50%] transition-all duration-300" title="Giao thương B2B" />
+            <div className="w-8 rounded-t-lg bg-white/60 h-[80%] transition-all duration-300" title="Cơ hội xúc tiến" />
+            <div className="w-8 rounded-t-lg bg-white h-[100%] shadow-md transition-all duration-300" title="Hiệu quả điều hành" />
           </div>
 
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t("auth.passwordPlaceholder")}
-              className="auth-field h-12 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 shadow-xs"
+          <div className="flex items-center justify-between text-[11px] text-blue-200/90 pt-1 border-t border-white/10 font-medium">
+            <span>500+ Doanh nghiệp hội viên</span>
+            <span>100% Kết nối chính danh</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── RIGHT PANEL: AUTHENTICATION FORM ────────────────────────────────────────── */}
+      <section className="flex-1 lg:col-span-5 flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 bg-white dark:bg-slate-950 relative">
+        {/* Top bar: Theme & Language switchers */}
+        <div className="flex items-center justify-end gap-2 pb-2">
+          <ThemeSwitcher />
+          <LuxuryLangSwitcher />
+        </div>
+
+        {/* Central Auth Container */}
+        <div className="w-full max-w-md mx-auto my-auto py-4">
+          {/* Logo CEO 1983 */}
+          <div className="flex flex-col items-center justify-center text-center mb-7">
+            <img
+              src="/ceo1983-official-logo.png"
+              alt="CLB Doanh nhân CEO 1983"
+              className="h-16 w-auto object-contain mb-3 drop-shadow-sm"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = "none";
+              }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer"
-              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Đăng nhập Hệ thống
+            </h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Cổng quản trị thông tin CRM Hiệp hội Doanh nghiệp CEO 1983
+            </p>
+          </div>
+
+          {/* Error Message Box */}
+          {authError && (
+            <div
+              role="alert"
+              className="mb-5 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 p-3.5 text-xs text-red-600 dark:text-red-400 leading-relaxed"
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-
-          {mode === "signup" && (
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu"
-                className="auth-field h-12 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-card px-4 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 shadow-xs"
-              />
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <div className="flex-1">
+                  <p className="font-medium">{authError}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAuthError(null)}
+                  className="flex h-5 w-5 items-center justify-center rounded hover:bg-red-100 dark:hover:bg-red-900/50 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Primary Submit Button - Blue White System Gradient */}
-          <button
-            type="submit"
-            disabled={busy}
-            className="relative mt-2 flex h-12 w-full items-center justify-center rounded-xl text-[15px] sm:text-[16px] font-bold text-white transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-lg bg-gradient-to-r from-blue-600 via-sky-600 to-blue-700 hover:from-blue-700 hover:to-sky-700 shadow-[0_8px_25px_rgba(2,132,199,0.35)]"
+          {/* Login Form */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit();
+            }}
+            className="space-y-4"
           >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-white" /> {t("auth.processing")}
-              </span>
-            ) : mode === "signin" ? (
-              "Đăng nhập Hệ thống CRM"
-            ) : (
-              "Đăng ký Quản trị viên"
-            )}
-            {!loading && (
-              <ArrowRight
-                className="absolute right-5 sm:right-6 h-5 w-5 text-white"
-                aria-hidden="true"
-              />
-            )}
-          </button>
+            {/* Field: Email / Username */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Địa chỉ Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@connect.vn hoặc email@domain.com"
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 pl-10 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-all focus:border-[#003B95] focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-[#003B95]/15"
+                />
+              </div>
+            </div>
 
-          {/* Quên mật khẩu? */}
-          {mode === "signin" && (
-            <div className="pt-0.5 text-center">
+            {/* Field: Password */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Mật khẩu
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 pl-10 pr-11 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-all focus:border-[#003B95] focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-[#003B95]/15"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Action Row: Ghi nhớ tài khoản + Quên mật khẩu */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setRemember(checked);
+                    applyRememberPreference(checked, email.trim());
+                  }}
+                  className="h-4 w-4 rounded border-slate-300 text-[#003B95] focus:ring-[#003B95]/30 cursor-pointer accent-[#003B95]"
+                />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                  Ghi nhớ tài khoản
+                </span>
+              </label>
+
               <Link
                 to="/forgot-password"
                 search={{ email: email.trim() || undefined }}
-                className="text-xs sm:text-[13px] font-medium text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                className="text-xs font-semibold text-[#003B95] dark:text-sky-400 hover:underline"
               >
-                {t("auth.forgotPassword")}
+                Quên mật khẩu?
               </Link>
             </div>
-          )}
-        </form>
 
-        {/* Divider */}
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground/60">
-          <span className="h-px flex-1 bg-border/60" />
-          <span>{t("auth.divider")}</span>
-          <span className="h-px flex-1 bg-border/60" />
+            {/* Primary Action Button: STRICTLY CEO 1983 Blue `#003B95` - NO YELLOW */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-[#003B95] hover:bg-[#002B70] active:scale-[0.99] text-white text-sm font-bold transition-all duration-200 shadow-md shadow-blue-900/20 disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  <span>Đang đăng nhập...</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span>Đăng nhập vào Hệ thống</span>
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              )}
+            </button>
+          </form>
         </div>
 
-        {/* Social OAuth Buttons: Google + Apple */}
-        {mode === "signin" && (
-          <div className="space-y-2.5">
-            <button
-              type="button"
-              onClick={() => void oauth("google")}
-              disabled={busy}
-              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs sm:text-[13.5px] font-medium transition-all active:scale-[0.99] disabled:opacity-50 shadow-xs cursor-pointer"
-            >
-              {oauthPending === "google" ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <GoogleMark />
-              )}
-              <span>Đăng nhập với Google</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => void oauth("apple")}
-              disabled={busy}
-              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs sm:text-[13.5px] font-medium transition-all active:scale-[0.99] disabled:opacity-50 shadow-xs cursor-pointer"
-            >
-              {oauthPending === "apple" ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <AppleMark />
-              )}
-              <span>Đăng nhập với Apple</span>
-            </button>
-          </div>
-        )}
-
-        {/* Bottom Toggle Link: Chưa có tài khoản? Đăng ký */}
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
-              setAuthError(null);
-            }}
-            className="text-xs sm:text-[13px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
-          >
-            {(() => {
-              const fullText =
-                mode === "signin" ? t("auth.switchToSignUp") : t("auth.switchToSignIn");
-              const delimiter = fullText.includes("?") ? "?" : fullText.includes("။") ? "။" : null;
-              if (delimiter) {
-                const [question, action] = fullText.split(delimiter);
-                return (
-                  <>
-                    <span>
-                      {question}
-                      {delimiter}{" "}
-                    </span>
-                    <span className="font-semibold text-foreground underline underline-offset-4 decoration-muted-foreground/40 hover:decoration-foreground">
-                      {action.trim()}
-                    </span>
-                  </>
-                );
-              }
-              return <span className="font-medium hover:underline">{fullText}</span>;
-            })()}
-          </button>
+        {/* Bottom subtle copyright note */}
+        <div className="text-center text-[11px] text-slate-400 dark:text-slate-600 pt-4">
+          © {new Date().getFullYear()} CLB Doanh nhân CEO 1983. Bảo lưu mọi quyền.
         </div>
-      </div>
-
-      {/* Hidden container for Google Identity popup fallback */}
-      <div id="hidden-google-btn" className="hidden" />
+      </section>
     </main>
   );
 }

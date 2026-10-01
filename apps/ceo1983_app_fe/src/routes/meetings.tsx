@@ -145,7 +145,7 @@ function MeetingsPage() {
   const role = (roleState.roles && roleState.roles[0]) || (srsRole as string);
 
   // Role permissions
-  const canCreateMeeting = isSuperAdmin || isAdmin || srsRole === "BQT" || srsRole === "BTV" || srsRole === "BTC" || role === "tong_thu_ky" || role === "truong_ban";
+  const canCreateMeeting = isSuperAdmin || isAdmin || srsRole === "BQT" || srsRole === "BTV" || srsRole === "BTK" || role === "tong_thu_ky" || role === "truong_ban";
   const canApproveMeeting = isSuperAdmin || isAdmin;
 
   const createFn = useServerFn(createMeetingFn);

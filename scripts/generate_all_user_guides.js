@@ -440,10 +440,15 @@ async function generateDocx(outputPath, title, mdContent) {
     const l = lines[i].trim();
     if (!l) {
       if (inTable && tableRows.length > 0) {
+        const numCols = tableRows[0].length || 1;
+        const totalW = 9200;
+        const colW = Math.round(totalW / numCols);
+        const colWidths = Array(numCols).fill(colW);
         const docxRows = [
           new TableRow({
             tableHeader: true,
             children: tableRows[0].map(h => new TableCell({
+              width: { size: colW, type: WidthType.DXA },
               children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: "FFFFFF", size: 19 })] })],
               shading: { fill: "003B95" },
               margins: { top: 100, bottom: 100, left: 120, right: 120 }
@@ -451,6 +456,7 @@ async function generateDocx(outputPath, title, mdContent) {
           }),
           ...tableRows.slice(1).map((r, rIdx) => new TableRow({
             children: r.map(c => new TableCell({
+              width: { size: colW, type: WidthType.DXA },
               children: [new Paragraph({ children: parseFormattedRuns(c, { size: 19 }) })],
               shading: { fill: rIdx % 2 === 1 ? "F8FAFC" : "FFFFFF" },
               margins: { top: 80, bottom: 80, left: 120, right: 120 }
@@ -458,7 +464,8 @@ async function generateDocx(outputPath, title, mdContent) {
           }))
         ];
         children.push(new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
+          width: { size: totalW, type: WidthType.DXA },
+          columnWidths: colWidths,
           rows: docxRows
         }));
         children.push(new Paragraph({ spacing: { after: 120 } }));
@@ -481,10 +488,15 @@ async function generateDocx(outputPath, title, mdContent) {
     } else if (inTable) {
       inTable = false;
       if (tableRows.length > 0) {
+        const numCols = tableRows[0].length || 1;
+        const totalW = 9200;
+        const colW = Math.round(totalW / numCols);
+        const colWidths = Array(numCols).fill(colW);
         const docxRows = [
           new TableRow({
             tableHeader: true,
             children: tableRows[0].map(h => new TableCell({
+              width: { size: colW, type: WidthType.DXA },
               children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: "FFFFFF", size: 19 })] })],
               shading: { fill: "003B95" },
               margins: { top: 100, bottom: 100, left: 120, right: 120 }
@@ -492,6 +504,7 @@ async function generateDocx(outputPath, title, mdContent) {
           }),
           ...tableRows.slice(1).map((r, rIdx) => new TableRow({
             children: r.map(c => new TableCell({
+              width: { size: colW, type: WidthType.DXA },
               children: [new Paragraph({ children: parseFormattedRuns(c, { size: 19 }) })],
               shading: { fill: rIdx % 2 === 1 ? "F8FAFC" : "FFFFFF" },
               margins: { top: 80, bottom: 80, left: 120, right: 120 }
@@ -499,7 +512,8 @@ async function generateDocx(outputPath, title, mdContent) {
           }))
         ];
         children.push(new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
+          width: { size: totalW, type: WidthType.DXA },
+          columnWidths: colWidths,
           rows: docxRows
         }));
         children.push(new Paragraph({ spacing: { after: 120 } }));

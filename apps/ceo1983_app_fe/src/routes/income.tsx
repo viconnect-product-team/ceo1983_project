@@ -34,6 +34,8 @@ import { useFmt, useT } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { StandardDateInput } from "@/components/common/StandardDateInput";
+import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
 
 const DEFAULT_INCOME_TRANSACTIONS: Transaction[] = [
   {
@@ -657,12 +659,12 @@ function IncomePage() {
             <form onSubmit={onSubmit} className="mt-4 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground">Ngày thu</label>
-                  <input
-                    type="date"
+                  <label className="text-xs font-semibold text-foreground">Ngày thu (dd/mm/yyyy)</label>
+                  <StandardDateInput
                     required
                     value={formDate}
-                    onChange={(e) => setFormDate(e.target.value)}
+                    placeholder="dd/mm/yyyy (VD: 25/10/2026)"
+                    onChange={(iso) => setFormDate(iso)}
                     className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -708,16 +710,15 @@ function IncomePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-foreground">Số tiền thu (VND)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1000"
-                    required
-                    value={formAmount}
-                    onChange={(e) => setFormAmount(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary text-emerald-600"
-                  />
+                  <label className="text-xs font-semibold text-foreground">Số tiền thu</label>
+                  <div className="mt-1">
+                    <FormattedCurrencyInput
+                      value={formAmount}
+                      allowCurrencySwitch={true}
+                      onChange={(_formatted, num) => setFormAmount(num)}
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-primary text-emerald-600"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-foreground">Phương thức thanh toán</label>

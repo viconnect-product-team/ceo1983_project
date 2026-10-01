@@ -50,7 +50,7 @@
 | **CRM-07** | Quản Trị Sàn Marketplace, Kiểm Duyệt Sản Phẩm & Đẩy Lên App | **Web CRM** | 4 | 0 | 0 | **4** | **100%** |
 | **CRM-08** | Giám Sát Cơ Hội Giao Thương B2B & Báo Cáo Giá Trị Deals | **Web CRM** | 3 | 0 | 0 | **3** | **100%** |
 | **CRM-09** | Quản Trị Pháp Nhân Doanh Nghiệp Thành Viên & Bản Đồ Chuỗi Cung Ứng | **Web CRM** | 3 | 0 | 0 | **3** | **100%** |
-| **CRM-10** | Quản Lý Sổ Quỹ Tài Chính, Đối Soát VietQR Tự Động & Niên Liễm | **Web CRM** | 4 | 0 | 0 | **4** | **100%** |
+| **CRM-10** | Quản Lý Sổ Quỹ Tài Chính, Đối Soát VietQR Tự Động & Hội Phí Thường Niên | **Web CRM** | 4 | 0 | 0 | **4** | **100%** |
 | **CRM-11** | Nhật Ký Kiểm Toán (Audit Trail), HTTPS & Sao Lưu Dữ Liệu | **Web CRM** | 3 | 0 | 0 | **3** | **100%** |
 | **CRM-12** | Quản Lý Cuộc Họp Trực Tuyến / Trực Tiếp, Phân Quyền Khởi Tạo & Phê Duyệt Cấp Quản Trị | **Web CRM** | 4 | 0 | 0 | **4** | **100%** |
 | **TỔNG CỘNG** | **Toàn Bộ 24 Phân Hệ App & CRM** | **All Platforms** | **131** | **0** | **4** | **127** | **97%** |
@@ -229,7 +229,7 @@
 
 | STT | Mã Task | Tên Chức Năng / Task | Người Thực Hiện | Mức Độ | Giao Diện (Màn Hình) | API Mapped | Khởi tạo | Inprocess | Done | Ghi Chú |
 |:---:|---|---|:---:|:---:|---|---|:---:|:---:|:---:|:---:|
-| 92 | **DASH-01** | 4 Khối chỉ số KPI trọng điểm: Tổng hội viên, Niên liễm đã thu, Sự kiện đã tổ chức, Deals giao thương | Phạm Văn Vũ | **Cao** | Bảng điều khiển (/dashboard) | `GET /api/crm/dashboard/kpi-summary` |  |  | ✅ | Cập nhật realtime các chỉ số tăng trưởng trọng yếu của CLB CEO 1983. |
+| 92 | **DASH-01** | 4 Khối chỉ số KPI trọng điểm: Tổng hội viên, Hội phí thường niên đã thu, Sự kiện đã tổ chức, Deals giao thương | Phạm Văn Vũ | **Cao** | Bảng điều khiển (/dashboard) | `GET /api/crm/dashboard/kpi-summary` |  |  | ✅ | Cập nhật realtime các chỉ số tăng trưởng trọng yếu của CLB CEO 1983. |
 | 93 | **DASH-02** | Biểu đồ tăng trưởng hội viên theo tháng và phân bổ theo 7 Ban Ngành Chuyên Trách | Phạm Văn Vũ | **Cao** | Bảng điều khiển (/dashboard) | `GET /api/crm/dashboard/member-growth-chart` |  |  | ✅ | Biểu đồ trực quan hóa cơ cấu ngành nghề và xu hướng gia nhập của hội viên. |
 | 94 | **DASH-03** | Bảng xếp hạng doanh nghiệp tiêu biểu và top kết nối giao thương B2B thành công | Phạm Văn Vũ | **Trung bình** | Bảng điều khiển (/dashboard) | `GET /api/crm/dashboard/top-businesses` |  |  | ✅ | Tôn vinh các doanh nghiệp tích cực trao đổi cơ hội và tham gia sự kiện. |
 | 95 | **DASH-04** | Khối cảnh báo nhanh: Hồ sơ hội viên chờ duyệt, vé sự kiện sắp khai mạc và phản hồi cần xử lý | Phạm Văn Vũ | **Cao** | Bảng điều khiển (/dashboard) | `GET /api/crm/dashboard/action-alerts` |  |  | ✅ | Giúp ban thư ký không bỏ sót hồ sơ đăng ký hoặc sự kiện quan trọng. |
@@ -289,11 +289,11 @@
 | 119 | **CORP-02** | Bản đồ chuỗi cung ứng nội bộ và ma trận liên kết tiêu dùng chéo giữa 7 Ban Ngành Chuyên Trách | Phạm Văn Vũ | **Trung bình** | Bản Đồ Chuỗi Cung Ứng (/supply-chain) | `GET /api/crm/supply-chain-matrix` |  |  | ✅ | Nhận diện các mắt xích cung ứng tiềm năng giữa các thành viên CLB CEO 1983. |
 | 120 | **CORP-03** | Quản lý liên kết đa tài khoản lãnh đạo / nhân sự chủ chốt với cùng một pháp nhân doanh nghiệp | Phạm Văn Vũ | **Trung bình** | Chi Tiết Doanh Nghiệp (/businesses/:id) | `POST /api/crm/businesses/:id/link-member` |  |  | ✅ | Cho phép nhiều đại diện lãnh đạo cùng sinh hoạt trong CLB dưới một pháp nhân. |
 
-### CRM-10: Quản Lý Sổ Quỹ Tài Chính, Đối Soát VietQR Tự Động & Niên Liễm (Web CRM)
+### CRM-10: Quản Lý Sổ Quỹ Tài Chính, Đối Soát VietQR Tự Động & Hội Phí Thường Niên (Web CRM)
 
 | STT | Mã Task | Tên Chức Năng / Task | Người Thực Hiện | Mức Độ | Giao Diện (Màn Hình) | API Mapped | Khởi tạo | Inprocess | Done | Ghi Chú |
 |:---:|---|---|:---:|:---:|---|---|:---:|:---:|:---:|:---:|
-| 121 | **FIN-01** | Bảng theo dõi niên liễm theo từng năm tài chính của toàn bộ hội viên (Đã nộp / Chưa nộp / Quá hạn) | Phạm Văn Vũ | **Cao** | Quản Lý Niên Liễm (/finance/membership-fees) | `GET /api/crm/finance/fees` |  |  | ✅ | Theo dõi chi tiết hạn mức hội phí thường niên và trạng thái hoàn thành nghĩa vụ tài chính. |
+| 121 | **FIN-01** | Bảng theo dõi hội phí thường niên theo từng năm tài chính của toàn bộ hội viên (Đã nộp / Chưa nộp / Quá hạn) | Phạm Văn Vũ | **Cao** | Quản Lý Hội Phí Thường Niên (/finance/membership-fees) | `GET /api/crm/finance/fees` |  |  | ✅ | Theo dõi chi tiết hạn mức hội phí thường niên và trạng thái hoàn thành nghĩa vụ tài chính. |
 | 122 | **FIN-02** | Cơ chế đối soát giao dịch VietQR Napas 247 tự động, đối chiếu số tiền và cú pháp chuyển khoản | Phạm Văn Vũ | **Cao** | Đối Soát VietQR (/finance/reconciliation) | `POST /api/crm/finance/reconcile-vietqr` |  |  | ✅ | Tự động bắt khớp mã giao dịch Napas 247 và gạch nợ tức thì cho hội viên. |
 | 123 | **FIN-03** | Lập phiếu thu / phiếu chi và quản lý sổ quỹ thu chi kế toán minh bạch | Phạm Văn Vũ | **Cao** | Sổ Quỹ Kế Toán (/finance/cashbook) | `POST /api/crm/finance/cashbook/entry` |  |  | ✅ | Lưu trữ chứng từ số thu - chi, định khoản kế toán rõ ràng phục vụ kiểm toán. |
 | 124 | **FIN-04** | Xuất báo cáo tài chính định kỳ chuẩn mực phục vụ Ban Kiểm Soát CLB | Phạm Văn Vũ | **Cao** | Báo Cáo Tài Chính (/finance/reports) | `GET /api/crm/finance/export-financial-report` |  |  | ✅ | Trích xuất file Excel / PDF báo cáo tài chính minh bạch cho Ban Thường Trực. |

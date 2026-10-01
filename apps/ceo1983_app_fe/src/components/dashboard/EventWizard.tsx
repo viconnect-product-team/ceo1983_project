@@ -39,89 +39,8 @@ type Info = {
 
 const emptyTicket = (): TicketDraft => ({ name: "", price: "", quantity: "", description: "" });
 
-function formatVndInput(val: string | number): string {
-  if (val === undefined || val === null) return "";
-  const digits = String(val).replace(/\D/g, "");
-  if (!digits) return "";
-  const clean = digits.replace(/^0+(?=\d)/, "");
-  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-function FormattedCurrencyInput({
-  id,
-  value,
-  onChange,
-  placeholder,
-  className,
-  ariaLabel,
-}: {
-  id?: string;
-  value: string | number;
-  onChange: (val: string) => void;
-  placeholder?: string;
-  className?: string;
-  ariaLabel?: string;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    const cursor = e.target.selectionStart ?? raw.length;
-
-    // Đếm số chữ số thuần túy (0-9) trước vị trí con trỏ hiện tại
-    const digitsBeforeCursor = raw.slice(0, cursor).replace(/\D/g, "").length;
-
-    // Lọc chỉ lấy chữ số
-    const digitsOnly = raw.replace(/\D/g, "");
-    if (!digitsOnly) {
-      onChange("");
-      return;
-    }
-
-    const cleanDigits = digitsOnly.replace(/^0+(?=\d)/, "");
-    const formatted = cleanDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-
-    // Tính toán lại vị trí con trỏ chuột chính xác sau khi chuỗi được format lại
-    let newCursor = 0;
-    let count = 0;
-    for (let idx = 0; idx < formatted.length; idx++) {
-      if (/\d/.test(formatted[idx])) {
-        count++;
-      }
-      if (count === digitsBeforeCursor) {
-        newCursor = idx + 1;
-        break;
-      }
-    }
-    if (count < digitsBeforeCursor) {
-      newCursor = formatted.length;
-    }
-
-    onChange(formatted);
-
-    // Khôi phục vị trí con trỏ chuột ở frame tiếp theo sau khi React cập nhật DOM
-    requestAnimationFrame(() => {
-      if (inputRef.current) {
-        inputRef.current.setSelectionRange(newCursor, newCursor);
-      }
-    });
-  };
-
-  return (
-    <input
-      ref={inputRef}
-      id={id}
-      aria-label={ariaLabel}
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      placeholder={placeholder}
-      className={className}
-      value={formatVndInput(value)}
-      onChange={handleChange}
-    />
-  );
-}
+import { FormattedCurrencyInput, parsePriceToNumber } from "@/components/common/FormattedCurrencyInput";
+import { StandardDateInput, formatToDdmmyyyy } from "@/components/common/StandardDateInput";
 
 const TYPE_OPTS: EventType[] = ["forum", "workshop", "networking", "training"];
 const STATUS_OPTS: EventStatus[] = ["upcoming", "ongoing", "completed", "cancelled"];
@@ -236,7 +155,7 @@ export function EventWizard({
     setSubmitting(true);
     try {
       const computedTicketPrice = tickets.length > 0
-        ? Math.max(0, ...tickets.map((tk) => Number(String(tk.price).replace(/\D/g, "")) || 0))
+        ? Math.max(0, ...tickets.map((tk) => parsePriceToNumber(tk.price)))
         : 0;
 
       const res = await fetchNestApi<{ event: EventItem }>("/events", {
@@ -260,8 +179,8 @@ export function EventWizard({
           qrFields,
           tickets: tickets.map((tk) => ({
             name: tk.name.trim(),
-            price: Number(String(tk.price).replace(/\D/g, "")) || 0,
-            quantity: Number(String(tk.quantity).replace(/\D/g, "")) || 0,
+            price: parsePriceToNumber(tk.price),
+            quantity: parseInt(String(tk.quantity).replace(/\D/g, ""), 10) || 0,
             description: tk.description.trim(),
           })),
         }),
@@ -514,7 +433,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
               <span className="line-clamp-1 max-w-[220px]">{info.location || currentTpl.defaultLocation}</span>
             </div>
             <div className="flex items-center gap-2 font-mono">
-              <span>📅 {info.date || "2026-09-25"}</span>
+              <span>📅 {info.date ? formatToDdmmyyyy(info.date) : "25/09/2026"}</span>
               <span>👥 {info.capacity || currentTpl.defaultCapacity} khách</span>
             </div>
           </div>
@@ -529,6 +448,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
         <input
           id="ewz-name"
           className={inputCls}
+          placeholder="Nhập tên sự kiện (ví dụ: Gala Doanh Nhân CEO 1983 - Kỷ Niệm 10 Năm)..."
           value={info.name}
           onChange={(e) => setInfo({ ...info, name: e.target.value })}
         />
@@ -582,14 +502,14 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls} htmlFor="ewz-date">
-            {t("ewz.field.date")}
+            {t("ewz.field.date")} (dd/mm/yyyy)
           </label>
-          <input
+          <StandardDateInput
             id="ewz-date"
-            type="date"
             className={inputCls}
             value={info.date}
-            onChange={(e) => setInfo({ ...info, date: e.target.value })}
+            placeholder="dd/mm/yyyy (ví dụ: 25/10/2026)"
+            onChange={(isoVal) => setInfo({ ...info, date: isoVal })}
           />
         </div>
         <div>
@@ -601,6 +521,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
             type="number"
             min={0}
             className={inputCls}
+            placeholder="Ví dụ: 100 chỗ ngồi"
             value={info.capacity}
             onChange={(e) => setInfo({ ...info, capacity: e.target.value })}
           />
@@ -614,6 +535,7 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
         <input
           id="ewz-location"
           className={inputCls}
+          placeholder="Địa chỉ / Khách sạn tổ chức (ví dụ: Trung tâm Hội nghị Quốc gia, Hà Nội)..."
           value={info.location}
           onChange={(e) => setInfo({ ...info, location: e.target.value })}
         />
@@ -751,16 +673,16 @@ function TicketStep({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className={labelCls} htmlFor={`ewz-ticket-price-${i}`}>
-                    {t("ewz.tickets.price")} (VNĐ)
+                    {t("ewz.tickets.price")} (VNĐ / USD)
                   </label>
                   {(() => {
-                    const num = Number(String(tk.price).replace(/\D/g, "")) || 0;
+                    const num = parsePriceToNumber(tk.price);
                     return num <= 0 ? (
                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
-                        Miễn phí (0đ)
+                        Miễn phí (0đ / $0)
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
                         Có phí: {num.toLocaleString("vi-VN")} đ
                       </span>
                     );
@@ -769,29 +691,54 @@ function TicketStep({
                 <FormattedCurrencyInput
                   id={`ewz-ticket-price-${i}`}
                   ariaLabel={t("ewz.tickets.price")}
-                  placeholder="0 đ (nhập 0 là miễn phí)"
+                  placeholder="0 đ / $0 (0 là miễn phí)"
                   className={inputCls}
                   value={tk.price}
+                  allowCurrencySwitch={true}
                   onChange={(val) => update(i, { price: val })}
                 />
                 <p className="mt-1 text-[10.5px] text-muted-foreground">
-                  {Number(String(tk.price).replace(/\D/g, "")) <= 0
+                  {parsePriceToNumber(tk.price) <= 0
                     ? "Vé 0 đồng = Miễn phí tham dự."
-                    : "Từ 1 đ trở lên = Vé có phí bắt buộc thanh toán."}
+                    : "Từ 1 đ / $1 trở lên = Vé có phí bắt buộc thanh toán."}
                 </p>
               </div>
               <div>
-                <label className={labelCls} htmlFor={`ewz-ticket-qty-${i}`}>
-                  {t("ewz.tickets.qty")}
-                </label>
-                <FormattedCurrencyInput
-                  id={`ewz-ticket-qty-${i}`}
-                  ariaLabel={t("ewz.tickets.qty")}
-                  placeholder="Số lượng vé"
-                  className={inputCls}
-                  value={tk.quantity}
-                  onChange={(val) => update(i, { quantity: val })}
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className={labelCls} htmlFor={`ewz-ticket-qty-${i}`}>
+                    {t("ewz.tickets.qty")}
+                  </label>
+                  {(() => {
+                    const qNum = parseInt(String(tk.quantity).replace(/\D/g, ""), 10) || 0;
+                    return qNum > 0 ? (
+                      <span className="text-[10px] font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                        {qNum.toLocaleString("vi-VN")} suất
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                <div className="relative flex items-center w-full">
+                  <input
+                    id={`ewz-ticket-qty-${i}`}
+                    aria-label={t("ewz.tickets.qty")}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ví dụ: 100 vé (để trống: không giới hạn)"
+                    className={`${inputCls} pr-12 font-medium`}
+                    value={
+                      tk.quantity
+                        ? (parseInt(String(tk.quantity).replace(/\D/g, ""), 10) || "").toLocaleString("vi-VN")
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, "");
+                      update(i, { quantity: clean });
+                    }}
+                  />
+                  <span className="absolute right-3 z-10 text-xs font-semibold text-muted-foreground select-none pointer-events-none">
+                    vé
+                  </span>
+                </div>
               </div>
             </div>
             <div className="mt-2">
@@ -802,6 +749,7 @@ function TicketStep({
                 id={`ewz-ticket-desc-${i}`}
                 aria-label={t("ewz.tickets.desc")}
                 className={inputCls}
+                placeholder="Mô tả quyền lợi vé (ví dụ: Bao gồm tiệc tối Gala, tài liệu đại biểu, chỗ ngồi VIP)..."
                 value={tk.description}
                 onChange={(e) => update(i, { description: e.target.value })}
               />

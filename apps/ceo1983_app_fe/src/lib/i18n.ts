@@ -60,10 +60,10 @@ for (const key of allKeys) {
   };
 }
 
-export type TKey = keyof typeof vi;
+export type TKey = (keyof typeof vi) | (string & {});
 
 /** Safe presence check for a dynamically-derived translation key. */
-export function hasTKey(key: string): key is TKey {
+export function hasTKey(key: string): key is keyof typeof vi {
   return Object.prototype.hasOwnProperty.call(translations, key);
 }
 

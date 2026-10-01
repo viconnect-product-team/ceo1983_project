@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
+import { StandardDateInput } from "@/components/common/StandardDateInput";
 
 export function Ceo1983MemberRegistrationForm() {
   const [fullName, setFullName] = useState("");
@@ -347,12 +348,12 @@ export function Ceo1983MemberRegistrationForm() {
               {/* Ngày tháng năm sinh - Sửa label và điền ngày tháng năm sinh */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  Ngày tháng năm sinh
+                  Ngày tháng năm sinh (dd/mm/yyyy)
                 </label>
-                <input
-                  type="date"
+                <StandardDateInput
                   value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
+                  placeholder="dd/mm/yyyy (VD: 15/08/1983)"
+                  onChange={(iso) => setBirthDate(iso)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50 text-slate-800"
                 />
               </div>

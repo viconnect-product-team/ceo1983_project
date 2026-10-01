@@ -218,7 +218,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   })})();`;
 
   return (
-    <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
+    <html lang="vi" className="dark" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />
@@ -542,6 +542,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     pathname === "/reset-password" ||
     pathname === "/install" ||
     pathname.startsWith("/landing") ||
+    pathname.includes("/register") ||
+    (pathname.startsWith("/events/") && pathname.includes("/register")) ||
     pathname === "/demo" ||
     pathname.startsWith("/h/") ||
     pathname === "/m" ||

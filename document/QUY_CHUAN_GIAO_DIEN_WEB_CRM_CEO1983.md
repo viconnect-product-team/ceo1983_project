@@ -62,7 +62,7 @@ Hệ thống thanh menu bên trái (Sidebar) của Web CRM được chuẩn hóa
 ├── TÀI CHÍNH (Finance - Chỉ hiển thị cho Admin & Ban Tài Chính)
 │   ├── Báo cáo thu chi (/finance)
 │   ├── Quỹ CLB (/finance/funds)
-│   └── Niên liễm hội viên (/membership-fees)
+│   └── Hội phí thường niên hội viên (/membership-fees)
 │
 ├── HỆ THỐNG (System & Configuration)
 │   ├── Quản lý Chủ đề Landing & Giao diện (/admin/landing-templates) [CHUYỂN XUỐNG ĐÂY]

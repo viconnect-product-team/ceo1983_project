@@ -141,7 +141,7 @@ const crmProgressData = [
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
         tester: 'QA / BQT CLB CEO 1983',
-        note: 'Tra cứu nhanh theo từ khóa, lọc theo Ban chuyên môn và tình trạng niên liễm.'
+        note: 'Tra cứu nhanh theo từ khóa, lọc theo Ban chuyên môn và tình trạng hội phí thường niên.'
       },
       {
         name: 'Drawer xem chi tiết hồ sơ hội viên 360° (Thông tin CEO, Doanh nghiệp, Lịch sử tham gia)',
@@ -403,13 +403,13 @@ const crmProgressData = [
         note: 'Theo dõi chi tiết nguồn thu hội phí, tài trợ sự kiện và các khoản chi hoạt động CLB.'
       },
       {
-        name: 'Quản lý danh sách hóa đơn niên liễm của toàn bộ hội viên',
+        name: 'Quản lý danh sách hóa đơn hội phí thường niên của toàn bộ hội viên',
         status: 'Hoàn thành',
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
         tester: 'QA / BQT CLB CEO 1983',
-        note: 'Tự động tính ngày đến hạn niên liễm và gửi thông báo nhắc phí đến từng hội viên.'
+        note: 'Tự động tính ngày đến hạn hội phí và gửi thông báo nhắc phí đến từng hội viên.'
       },
       {
         name: 'Cổng thanh toán VietQR Napas 24/7 tự động sinh mã QR và gạch nợ tức thì',
@@ -879,19 +879,19 @@ const appProgressData = [
     ]
   },
   {
-    mainFeature: '8. Thu & Đóng Hội Phí Niên Liễm VietQR Napas 24/7 (Payments)',
+    mainFeature: '8. Thu & Đóng hội phí thường niên VietQR Napas 24/7 (Payments)',
     subFeatures: [
       {
-        name: 'Tra cứu trạng thái thẻ và hạn niên liễm trên trang cá nhân và thẻ VIP',
+        name: 'Tra cứu trạng thái thẻ và hạn hội phí trên trang cá nhân và thẻ VIP',
         status: 'Hoàn thành',
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
         tester: 'QA / BQT CLB CEO 1983',
-        note: 'Thông báo rõ ràng số ngày còn lại trước khi hết hạn niên liễm.'
+        note: 'Thông báo rõ ràng số ngày còn lại trước khi hết hạn hội phí.'
       },
       {
-        name: 'Nút "Đóng Hội Phí Niên Liễm" mở Popup hiển thị Mã VietQR động chuẩn Napas 24/7',
+        name: 'Nút "Đóng hội phí thường niên" mở Popup hiển thị Mã VietQR động chuẩn Napas 24/7',
         status: 'Hoàn thành',
         startDate: '21/09/2026',
         assignee: 'Dev Team ViConnect',
@@ -970,7 +970,7 @@ const appProgressData = [
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
         tester: 'QA / BQT CLB CEO 1983',
-        note: 'Nhận thông báo xét duyệt, nhắc lịch họp, hóa đơn niên liễm không bị trôi.'
+        note: 'Nhận thông báo xét duyệt, nhắc lịch họp, hóa đơn hội phí thường niên không bị trôi.'
       },
       {
         name: 'Luồng chúc mừng sinh nhật CEO tự động: Pháo hoa rực rỡ kèm tặng voucher ưu đãi dịch vụ B2B độc quyền',

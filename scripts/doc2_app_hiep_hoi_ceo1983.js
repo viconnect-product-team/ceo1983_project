@@ -133,7 +133,7 @@ function buildDoc2() {
     ['Tab 2: Sự Kiện (/association/events)', 'Events & Dual Check-in Pass', 'Tất cả (Hội viên xem chung + đăng ký vé)', 'Lịch đại hội gala, sơ đồ khán phòng bàn VIP, quét mã Standee tự động nhận bàn/ghế/mã may mắn, cuống vé điện tử QR cá nhân.'],
     ['Tab 3: Thẻ 83 (/association/card)', 'Smart NFC Card & Business Identity', 'Tất cả (Thao tác thẻ cá nhân)', 'Trọng tâm thanh điều hướng: Mở danh thiếp số 3D, mã QR định danh cá nhân, chạm kết nối NFC, chia sẻ link hồ sơ doanh nhân công khai /card/:code.'],
     ['Tab 4: Tin Nhắn (/association/messages)', 'Messages, Meetings & 1-on-1', 'Tất cả (Chat cá nhân + Xem họp)', 'Hộp thư doanh nhân VIP phong cách Messenger, chat 1-1, nhóm chat ban ngành, luồng cuộc gặp hẹn bàn 1-on-1, lịch cuộc họp Online/Offline.'],
-    ['Tab 5: Cá Nhân (/association/profile)', 'Profile, Settings & Invoices', 'Tất cả (Quản lý thông tin mình)', 'Chỉnh sửa nhanh hồ sơ CEO, quản lý doanh nghiệp, tra cứu hóa đơn niên liễm VietQR, danh bạ 7 ban ngành, hỗ trợ thư ký, đổi mật khẩu và bảo mật.']
+    ['Tab 5: Cá Nhân (/association/profile)', 'Profile, Settings & Invoices', 'Tất cả (Quản lý thông tin mình)', 'Chỉnh sửa nhanh hồ sơ CEO, quản lý doanh nghiệp, tra cứu hóa đơn hội phí thường niên VietQR, danh bạ 7 ban ngành, hỗ trợ thư ký, đổi mật khẩu và bảo mật.']
   ];
   children.push(createTable(tabHeaders, tabRows, [20, 25, 25, 30]));
 
@@ -295,8 +295,8 @@ function buildDoc2() {
   const mod08Text = 
     '• Mục tiêu: Tối giản thủ tục tài chính, giúp CEO hoàn thành nghĩa vụ hội phí chỉ trong 1 chạm chuyển khoản ngân hàng.\n' +
     '• Chức năng chi tiết:\n' +
-    '  - FEE-01: Tra cứu trạng thái thẻ và hạn niên liễm trên trang cá nhân và thẻ VIP.\n' +
-    '  - FEE-02: Nút "Đóng Hội Phí Niên Liễm" mở Popup hiển thị Mã VietQR động chuẩn Napas 24/7 (tự động điền số tiền, số tài khoản CLB và cú pháp chuyển khoản chính xác).\n' +
+    '  - FEE-01: Tra cứu trạng thái thẻ và hạn hội phí trên trang cá nhân và thẻ VIP.\n' +
+    '  - FEE-02: Nút "Đóng hội phí thường niên" mở Popup hiển thị Mã VietQR động chuẩn Napas 24/7 (tự động điền số tiền, số tài khoản CLB và cú pháp chuyển khoản chính xác).\n' +
     '  - FEE-03: Xem lịch sử hóa đơn thanh toán và xuất phiếu thu điện tử VAT.\n' +
     '• API Mapped: GET /api/invoices/me, POST /api/invoices/vietqr/generate, POST /api/invoices/webhook/napas.';
   children.push(createPara(mod08Text));
@@ -383,7 +383,7 @@ function buildDoc2() {
     ['Cuộc Gặp 1-on-1 Doanh Nhân', 'Xem toàn bộ lịch hẹn', 'Xem hỗ trợ kết nối', 'Tạo & Nhận cuộc gặp', 'Tạo & Nhận cuộc gặp', 'Tạo & Nhận cuộc gặp'],
     ['Quản Trị Sàn B2B & Duyệt Tin', 'Toàn quyền duyệt sản phẩm', 'Kiểm duyệt sản phẩm', 'Đăng bài doanh nghiệp', 'Đăng bài doanh nghiệp', 'Đăng bài doanh nghiệp'],
     ['Biểu Quyết Đại Hội', 'Tạo hòm phiếu & Khóa phiếu', 'Hỗ trợ tạo hòm phiếu', 'Bỏ phiếu đại biểu', 'Bỏ phiếu đại biểu', 'Bỏ phiếu 1 lần duy nhất'],
-    ['Đóng Phí Niên Liễm VietQR', 'Đối soát & Gạch nợ tự động', 'Hỗ trợ đối soát nợ', 'Đóng phí tài khoản mình', 'Đóng phí tài khoản mình', 'Đóng phí tài khoản mình']
+    ['Đóng Phí Hội Phí Thường Niên VietQR', 'Đối soát & Gạch nợ tự động', 'Hỗ trợ đối soát nợ', 'Đóng phí tài khoản mình', 'Đóng phí tài khoản mình', 'Đóng phí tài khoản mình']
   ];
   children.push(createTable(appMatrixHeaders, appMatrixRows, [22, 16, 16, 16, 15, 15]));
 
@@ -445,7 +445,7 @@ function buildDoc2() {
     ['TC_APP_07', 'Thu hồi tin nhắn đã gửi', 'Màn hình Chat (/association/messages)', 'Bấm menu ⋯ tại tin nhắn -> Chọn Thu hồi', 'DELETE /api/connect-app/dm/messages/:id', 'Bong bóng đổi thành: Bạn đã thu hồi một tin nhắn'],
     ['TC_APP_08', 'Nhận Popup Chúc Mừng Sinh Nhật', 'Trang Chủ (/association)', 'Mở app đúng ngày sinh nhật hội viên', 'Kiểm tra ngày sinh khớp ngày hiện tại', 'Nổ pháo hoa chúc mừng kèm Voucher quà tặng độc quyền'],
     ['TC_APP_09', 'Chuyển đổi chủ đề mùa lễ hội', 'Modal Cài đặt chủ đề', 'Chọn chủ đề "Tết" hoặc "Giáng sinh"', 'Lưu ceo1983_active_theme vào localStorage', 'Header, banner và nút bấm đổi áo mới ngay lập tức'],
-    ['TC_APP_10', 'Thanh toán hội phí VietQR', 'Trang Cá Nhân (/association/profile)', 'Bấm nút Đóng hội phí niên liễm', 'POST /api/invoices/vietqr sinh mã QR Napas 24/7', 'Hiển thị Popup VietQR chuẩn chứa số tiền và nội dung']
+    ['TC_APP_10', 'Thanh toán hội phí VietQR', 'Trang Cá Nhân (/association/profile)', 'Bấm nút Đóng hội phí thường niên', 'POST /api/invoices/vietqr sinh mã QR Napas 24/7', 'Hiển thị Popup VietQR chuẩn chứa số tiền và nội dung']
   ];
   children.push(createTable(appUatHeaders, appUatRows, [14, 20, 16, 20, 18, 12]));
 

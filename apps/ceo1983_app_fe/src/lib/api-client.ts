@@ -86,14 +86,25 @@ export function getPublicBackendUrl(): string {
 
 export function isDeadAvatarUrl(url: string | null | undefined): boolean {
   if (!url) return true;
-  const deadMarkers = ["i5o6ez", "d9ut5z", "4qjy8i", "undefined", "null"];
-  return deadMarkers.some((m) => url.includes(m));
+  const deadMarkers = ["i5o6ez", "d9ut5z", "4qjy8i", "undefined", "null", "placeholder", "mock"];
+  if (deadMarkers.some((m) => url.includes(m))) return true;
+
+  // Reject malformed or truncated data URIs that trigger ERR_INVALID_URL
+  if (url.startsWith("data:")) {
+    if (url.length < 150 || url.includes("..") || !url.includes(",")) return true;
+  }
+  return false;
 }
 
 export function resolveMediaUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   const trimmed = url.trim();
   if (!trimmed || isDeadAvatarUrl(trimmed)) return null;
+
+  // Trực tiếp trả về data URI hợp lệ hoặc blob URL, không parse qua new URL để tránh ERR_INVALID_URL
+  if (trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed;
+  }
 
   // Tự động chuyển đổi sang Origin hiện tại để tránh lỗi Mixed Content hoặc vỡ ảnh khi mang cổng nội bộ khác
   if (typeof window !== "undefined") {
