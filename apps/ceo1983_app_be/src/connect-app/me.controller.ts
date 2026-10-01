@@ -178,3 +178,29 @@ export class MeController {
     return this.connectAppService.getMediaSignedUrl(req.user.id, path);
   }
 }
+
+@Controller('profile')
+@UseGuards(JwtAuthGuard)
+export class ProfileController {
+  constructor(private readonly connectAppService: ConnectAppService) {}
+
+  @Get()
+  async getMyProfile(@Request() req: any) {
+    return this.connectAppService.getMyProfile(req.user.id);
+  }
+
+  @Post()
+  async postMyProfile(@Request() req: any, @Body() data: any) {
+    return this.connectAppService.updateMyProfile(req.user.id, data);
+  }
+
+  @Put()
+  async updateMyProfile(@Request() req: any, @Body() data: any) {
+    return this.connectAppService.updateMyProfile(req.user.id, data);
+  }
+
+  @Patch()
+  async patchMyProfile(@Request() req: any, @Body() data: any) {
+    return this.connectAppService.updateMyProfile(req.user.id, data);
+  }
+}

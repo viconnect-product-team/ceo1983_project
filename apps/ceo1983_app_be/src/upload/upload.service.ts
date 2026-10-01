@@ -39,6 +39,33 @@ export class UploadService {
     return `/upload/file/${subfolder}/${filename}`;
   }
 
+  async saveBase64Avatar(base64Data: string, userId: string, standalone = false): Promise<string> {
+    try {
+      const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        throw new Error('Invalid base64 data format');
+      }
+      const mimetype = matches[1];
+      const buffer = Buffer.from(matches[2], 'base64');
+      let ext = '.jpg';
+      if (mimetype.includes('png')) ext = '.png';
+      else if (mimetype.includes('webp')) ext = '.webp';
+      else if (mimetype.includes('svg')) ext = '.svg';
+      else if (mimetype.includes('gif')) ext = '.gif';
+
+      const file = {
+        originalname: `avatar-${Date.now()}${ext}`,
+        mimetype,
+        buffer,
+        size: buffer.length,
+      };
+      return await this.saveAvatar(file, userId, standalone);
+    } catch (err: any) {
+      console.warn('saveBase64Avatar notice, fallback directly:', err?.message);
+      return base64Data;
+    }
+  }
+
   async saveAvatar(file: any, userId: string, standalone = false): Promise<string> {
     const fileExt = path.extname(file.originalname).toLowerCase() || '.jpg';
     const baseFilename = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;

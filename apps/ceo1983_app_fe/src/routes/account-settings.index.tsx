@@ -35,7 +35,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader, StatCard } from "@/components/dashboard/PageKit";
 import { useT, type TKey } from "@/lib/i18n";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
 import { useRole } from "@/hooks/use-role";
 import {
   getVotingOpenPrefFn,
@@ -202,11 +203,28 @@ export function AccountManagementPage() {
     e.preventDefault();
     setProfileSaving(true);
     try {
+      const payload = {
+        name,
+        email,
+        avatar_url: avatarUrl,
+        professional_title: professionalTitle,
+        company_name: companyName,
+        industry,
+        region,
+        bio,
+      };
+
       const updated = await fetchNestApi("/users/me", {
         method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      // Synchronize with /profile as well
+      await fetchNestApi("/profile", {
+        method: "PUT",
         body: JSON.stringify({
+          display_name: name,
           name,
-          email,
           avatar_url: avatarUrl,
           professional_title: professionalTitle,
           company_name: companyName,
@@ -214,10 +232,13 @@ export function AccountManagementPage() {
           region,
           bio,
         }),
-      });
+      }).catch(() => null);
 
       if (updated && updated.id) {
         setAccount(updated);
+        if (updated.avatar_url) {
+          setAvatarUrl(updated.avatar_url);
+        }
         toast.success("Cập nhật thông tin tài khoản thành công!");
       } else {
         toast.error(updated?.message || "Không thể cập nhật hồ sơ");
@@ -477,7 +498,7 @@ export function AccountManagementPage() {
                 <div className="relative">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/20 text-xl font-bold text-primary shadow-inner border border-primary/20">
                     {account.avatar_url ? (
-                      <img src={account.avatar_url} alt={account.name} className="h-full w-full object-cover" />
+                      <img src={resolveMediaUrl(account.avatar_url) || account.avatar_url} alt={account.name} className="h-full w-full object-cover" />
                     ) : (
                       getInitials(account.name || account.username)
                     )}
@@ -637,17 +658,24 @@ export function AccountManagementPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                    URL Ảnh đại diện
+                    Ảnh đại diện tài khoản
                   </label>
-                  <input
-                    type="url"
+                  <AvatarUploadField
                     value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://example.com/avatar.jpg"
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-sm text-foreground focus:border-ring focus:ring-1 focus:ring-ring outline-none transition"
+                    onChange={(url) => setAvatarUrl(url)}
+                    disabled={profileSaving}
                   />
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder="Hoặc nhập đường dẫn URL ảnh (https://...)"
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:ring-1 focus:ring-ring outline-none transition"
+                    />
+                  </div>
                 </div>
 
                 <div>

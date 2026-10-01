@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, KeyRound, LogOut, User as UserIcon, UserCog } from "lucide-react";
-import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 
 function initials(name: string) {
   return (
@@ -82,7 +82,7 @@ export function ProfileMenu() {
         >
           {avatarUrl ? (
             <img
-              src={avatarUrl}
+              src={resolveMediaUrl(avatarUrl) || avatarUrl}
               alt={displayName}
               className="size-full object-cover"
             />

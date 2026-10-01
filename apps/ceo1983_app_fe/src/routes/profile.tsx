@@ -84,15 +84,17 @@ function ProfilePage() {
     }
 
     fetchNestApi("/profile")
+      .catch(() => fetchNestApi("/me/profile"))
+      .catch(() => fetchNestApi("/users/me"))
       .then((prof) => {
         if (!active) return;
         const p = prof || {};
         setForm({
-          full_name: p.display_name || decodedUser.name || "",
+          full_name: p.display_name || p.name || decodedUser.name || "",
           phone: p.phone || "",
-          title: p.professional_title || "",
-          location: p.region || "",
-          bio: p.bio || "",
+          title: p.professional_title || p.profile?.professional_title || "",
+          location: p.region || p.profile?.region || "",
+          bio: p.bio || p.profile?.bio || "",
           avatar_url: p.avatar_url || "",
         });
         setLoading(false);
@@ -138,17 +140,39 @@ function ProfilePage() {
 
     setSaving(true);
     try {
+      const payload = {
+        display_name: form.full_name.trim(),
+        name: form.full_name.trim(),
+        phone: form.phone.trim(),
+        professional_title: form.title.trim() || null,
+        region: form.location.trim() || null,
+        bio: form.bio.trim() || null,
+        avatar_url: form.avatar_url.trim() || null,
+      };
+
+      // Try updating /profile, fallback to /me/profile
       await fetchNestApi("/profile", {
         method: "PUT",
+        body: JSON.stringify(payload),
+      }).catch(() =>
+        fetchNestApi("/me/profile", {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        })
+      );
+
+      // Also synchronize account in /users/me
+      await fetchNestApi("/users/me", {
+        method: "PUT",
         body: JSON.stringify({
-          display_name: form.full_name.trim(),
-          phone: form.phone.trim(),
-          professional_title: form.title.trim() || null,
-          region: form.location.trim() || null,
-          bio: form.bio.trim() || null,
-          avatar_url: form.avatar_url.trim() || null,
+          name: payload.name,
+          avatar_url: payload.avatar_url,
+          professional_title: payload.professional_title,
+          region: payload.region,
+          bio: payload.bio,
         }),
-      });
+      }).catch(() => null);
+
       toast.success(t("profile.saved"));
     } catch (error: any) {
       toast.error(error.message || "Không thể lưu thông tin hồ sơ");

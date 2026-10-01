@@ -228,9 +228,13 @@ function transformUrls(obj: any, parentKey?: string): any {
       obj.startsWith("/avatars/") ||
       (!obj.includes("/") && MEDIA_EXT_REGEX.test(obj)) ||
       obj.includes("backend:4000") ||
+      obj.includes("127.0.0.1:4000") ||
+      obj.includes("127.0.0.1:") ||
+      obj.includes("localhost:4000") ||
+      obj.includes("localhost:") ||
       (typeof window !== "undefined" &&
         window.location.hostname !== "localhost" &&
-        obj.includes("localhost:4000"))
+        (obj.includes("localhost") || obj.includes("127.0.0.1")))
     ) {
       return resolveMediaUrl(obj) || obj;
     }
@@ -256,6 +260,9 @@ function cleanUrls(body: any): any {
   if (body === null || body === undefined) return body;
 
   if (typeof body === "string") {
+    if (/^https?:\/\/(localhost|127\.0\.0\.1|14\.225\.217\.232)(:[0-9]+)?\/(api\/)?(upload|uploads)\//.test(body)) {
+      return body.replace(/^https?:\/\/(localhost|127\.0\.0\.1|14\.225\.217\.232)(:[0-9]+)?(\/api)?/, "");
+    }
     const apiPrefix = `${NEST_API_URL}/api/upload/`;
     const cleanPrefix = `${NEST_API_URL}/upload/`;
     const uploadsPrefix = `${NEST_API_URL}/uploads/`;

@@ -28,6 +28,7 @@ export class UsersController {
   }
 
   @Put('me')
+  @Patch('me')
   async updateMyAccount(@Request() req: any, @Body() body: any) {
     return this.usersService.updateAccountProfile(req.user.id, body);
   }

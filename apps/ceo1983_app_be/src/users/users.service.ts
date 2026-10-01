@@ -3,14 +3,33 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Optional,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UploadService } from '../upload/upload.service';
 import { vione_users, app_role } from '@vibe/db';
 import * as bcrypt from 'bcrypt';
 
+function cleanStoredMediaUrl(url?: string | null): string | null {
+  if (!url) return null;
+  let cleaned = url.trim();
+  if (cleaned.startsWith('data:image/')) return cleaned;
+  cleaned = cleaned.replace(/^https?:\/\/(127\.0\.0\.1|localhost|14\.225\.217\.232)(:[0-9]+)?(\/api)?/, '');
+  if (!cleaned.startsWith('/') && !cleaned.startsWith('http')) {
+    cleaned = '/' + cleaned;
+  }
+  return cleaned;
+}
+
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(UsersService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    @Optional() private uploadService?: UploadService,
+  ) {}
 
   async findByUsername(username: string): Promise<vione_users | null> {
     const user = await this.prisma.vione_users
@@ -336,13 +355,32 @@ export class UsersService {
       }
     }
 
+    // Process avatar_url: handle base64 image or strip localhost/127.0.0.1
+    let finalAvatarUrl: string | undefined = undefined;
+    if (data.avatar_url !== undefined) {
+      if (data.avatar_url && data.avatar_url.startsWith('data:image/')) {
+        if (this.uploadService) {
+          try {
+            finalAvatarUrl = await this.uploadService.saveBase64Avatar(data.avatar_url, userId);
+          } catch (e: any) {
+            this.logger.warn(`Failed to convert base64 avatar: ${e?.message}`);
+            finalAvatarUrl = cleanStoredMediaUrl(data.avatar_url) || undefined;
+          }
+        } else {
+          finalAvatarUrl = cleanStoredMediaUrl(data.avatar_url) || undefined;
+        }
+      } else {
+        finalAvatarUrl = cleanStoredMediaUrl(data.avatar_url) || undefined;
+      }
+    }
+
     // Update vione_users
     await this.prisma.vione_users.update({
       where: { id: userId },
       data: {
         name: data.name !== undefined ? data.name : undefined,
         email: data.email !== undefined ? data.email : undefined,
-        avatar_url: data.avatar_url !== undefined ? data.avatar_url : undefined,
+        avatar_url: finalAvatarUrl !== undefined ? finalAvatarUrl : undefined,
         updated_at: new Date(),
       },
     });
@@ -353,7 +391,7 @@ export class UsersService {
       create: {
         user_id: userId,
         display_name: data.name || user.name || null,
-        avatar_url: data.avatar_url || user.avatar_url || null,
+        avatar_url: finalAvatarUrl || user.avatar_url || null,
         professional_title: data.professional_title || null,
         company_name: data.company_name || null,
         industry: data.industry || null,
@@ -366,7 +404,7 @@ export class UsersService {
       },
       update: {
         display_name: data.name !== undefined ? data.name : undefined,
-        avatar_url: data.avatar_url !== undefined ? data.avatar_url : undefined,
+        avatar_url: finalAvatarUrl !== undefined ? finalAvatarUrl : undefined,
         professional_title:
           data.professional_title !== undefined ? data.professional_title : undefined,
         company_name: data.company_name !== undefined ? data.company_name : undefined,
@@ -378,6 +416,62 @@ export class UsersService {
         updated_at: new Date(),
       },
     });
+
+    // Synchronize to members if exists
+    try {
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE public.members 
+         SET name = COALESCE($1, name),
+             avatar = COALESCE($2, avatar),
+             email = COALESCE($3, email),
+             industry = COALESCE($4, industry),
+             region = COALESCE($5, region),
+             updated_at = NOW()
+         WHERE user_id = $6::uuid OR id = $6::text`,
+        data.name || null,
+        finalAvatarUrl || null,
+        data.email || null,
+        data.industry || null,
+        data.region || null,
+        userId,
+      );
+    } catch (err: any) {
+      this.logger.warn(`Notice synchronizing members: ${err?.message}`);
+    }
+
+    // Synchronize to member_business_cards & card_settings if exist
+    try {
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE public.member_business_cards
+         SET display_name = COALESCE($1, display_name),
+             avatar_url = COALESCE($2, avatar_url),
+             professional_title = COALESCE($3, professional_title),
+             company_name = COALESCE($4, company_name),
+             bio = COALESCE($5, bio),
+             updated_at = NOW()
+         WHERE owner_user_id = $6::uuid`,
+        data.name || null,
+        finalAvatarUrl || null,
+        data.professional_title || null,
+        data.company_name || null,
+        data.bio || null,
+        userId,
+      );
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE public.card_settings
+         SET display_name = COALESCE($1, display_name),
+             photo_url = COALESCE($2, photo_url),
+             company_name = COALESCE($3, company_name),
+             updated_at = NOW()
+         WHERE user_id = $4::uuid`,
+        data.name || null,
+        finalAvatarUrl || null,
+        data.company_name || null,
+        userId,
+      );
+    } catch (err: any) {
+      this.logger.warn(`Notice synchronizing cards: ${err?.message}`);
+    }
 
     // Sync email to auth.users
     if (data.email) {

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { MeController } from './me.controller';
+import { MeController, ProfileController } from './me.controller';
 import { CommunityController } from './community.controller';
 import { NetworkController } from './network.controller';
 import { PublicController } from './public.controller';
@@ -21,6 +21,7 @@ import { MailModule } from '../mail/mail.module';
   imports: [PrismaModule, MailModule],
   controllers: [
     MeController,
+    ProfileController,
     CommunityController,
     OpportunityController,
     NetworkController,

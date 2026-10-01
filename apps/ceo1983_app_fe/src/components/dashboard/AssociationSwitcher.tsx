@@ -11,6 +11,7 @@ import {
   setActiveAssociationFn,
   type MyAssociation,
 } from "@/lib/associations.functions";
+import { resolveMediaUrl } from "@/lib/api-client";
 
 function roleBadgeKey(role: string, isPlatformAdmin: boolean): TKey {
   if (isPlatformAdmin) return "role.badge.platform";
@@ -24,7 +25,7 @@ function AssocAvatar({ assoc, size = "md" }: { assoc: MyAssociation; size?: "sm"
   const dim = size === "sm" ? "h-7 w-7 text-[10px]" : "h-8 w-8 text-[11px]";
   const initials = assoc.name.trim().slice(0, 2).toUpperCase();
   if (assoc.logoUrl) {
-    return <img src={assoc.logoUrl} alt="" className={`${dim} shrink-0 rounded-lg object-cover`} />;
+    return <img src={resolveMediaUrl(assoc.logoUrl) || assoc.logoUrl} alt="" className={`${dim} shrink-0 rounded-lg object-cover`} />;
   }
   return (
     <div

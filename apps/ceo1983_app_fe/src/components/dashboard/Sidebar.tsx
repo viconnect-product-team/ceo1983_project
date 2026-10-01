@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyAssociationsFn, type MyAssociation } from "@/lib/associations.functions";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
+import { resolveMediaUrl } from "@/lib/api-client";
 import {
   LayoutDashboard,
   Users,
@@ -497,7 +498,7 @@ export function Sidebar({
       >
         {activeAssoc?.logoUrl ? (
           <img
-            src={activeAssoc.logoUrl}
+            src={resolveMediaUrl(activeAssoc.logoUrl) || activeAssoc.logoUrl}
             alt={brandName}
             className="h-10 w-10 shrink-0 rounded-xl object-cover"
           />
