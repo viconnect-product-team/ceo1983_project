@@ -233,25 +233,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AppSession | null>(null);
   const [status, setStatus] = useState<AuthStatus>('loading');
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRefreshTimeRef = useRef<number>(0);
 
-  // Lên lịch auto-refresh token trước khi hết hạn
+  // Lên lịch auto-refresh token trước khi hết hạn (với cơ chế cooldown chống nháy màn hình)
   function scheduleRefresh(accessToken: string, refreshToken: string) {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
     const decoded = decodeJwt(accessToken);
     if (!decoded?.exp) return;
     const msUntilExpiry = decoded.exp * 1000 - Date.now();
-    const msUntilRefresh = Math.max(msUntilExpiry - 60_000, 10_000); // refresh 1 phút trước khi hết
+    
+    // Nếu token đã hết hạn hoặc thời gian còn lại không hợp lệ, không lên lịch ngắn hạn
+    if (msUntilExpiry <= 0) return;
+
+    // Refresh 2 phút trước khi hết hạn, nhưng tối thiểu 5 phút (300_000ms) để không bị spam liên tục
+    const msUntilRefresh = Math.max(msUntilExpiry - 120_000, 300_000);
+
     refreshTimerRef.current = setTimeout(async () => {
+      // Cooldown guard: không gọi refresh nếu vừa thực hiện trong vòng 2 phút
+      if (Date.now() - lastRefreshTimeRef.current < 120_000) {
+        return;
+      }
+      lastRefreshTimeRef.current = Date.now();
+
       const newSession = await apiRefresh(refreshToken);
       if (newSession) {
-        applySession(newSession);
+        applySession(newSession, true);
       } else {
-        logout();
+        // Token refresh thất bại nhưng không logout đột ngột nếu access token hiện tại vẫn chưa hết hạn
+        if (!isTokenValid(accessToken)) {
+          logout();
+        }
       }
     }, msUntilRefresh);
   }
 
-  function applySession(sess: AppSession) {
+  function applySession(sess: AppSession, isBackgroundRefresh = false) {
+    const prevUserId = user?.id;
+    const prevUserRole = user?.role;
+    const isIdentityChanged = !prevUserId || prevUserId !== sess.user?.id || prevUserRole !== sess.user?.role;
+
     localStorage.setItem('vibe_token', sess.access_token);
     localStorage.setItem('vibe_refresh_token', sess.refresh_token);
     try {
@@ -264,10 +287,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('in');
     setSessionCookies(sess);
     scheduleRefresh(sess.access_token, sess.refresh_token);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('vba_auth_changed'));
-      window.dispatchEvent(new Event('profile-updated'));
-      window.dispatchEvent(new Event('role-changed'));
+
+    // Chỉ phát sự kiện làm mới giao diện khi có thay đổi danh tính thực sự hoặc đăng nhập mới
+    // Tuyệt đối không broadcast trong quá trình refresh token nền định kỳ để tránh nhấp nháy UI
+    if (!isBackgroundRefresh || isIdentityChanged) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('vba_auth_changed'));
+        window.dispatchEvent(new Event('profile-updated'));
+        window.dispatchEvent(new Event('role-changed'));
+      }
     }
   }
 

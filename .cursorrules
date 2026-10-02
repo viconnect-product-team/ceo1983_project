@@ -210,3 +210,64 @@
 #   - Bộ slide CRM gồm đúng 16 slides (CHỨC NĂNG QUẢN TRỊ 01 -> 16); Bộ slide App gồm đúng 20 slides (CHỨC NĂNG HỘI VIÊN 01 -> 20).
 #   - Giao diện minh họa di động trên Slide bắt buộc hiển thị dưới dạng Khung Smartphone Titanium sang trọng (Titanium chassis, dynamic island, home bar), không dùng khung hộp xám thô kệch để lộ khoảng trắng trống trải.
 #   - Màn hình quét QR phải hiển thị đúng giao diện Camera Scanner WebRTC (khung ngắm mạ vàng, tia laser quét động). Màn hình thẻ công khai phải hiển thị trọn vẹn 100% không cắt xén thông tin liên lạc hay bảng thẩm định.
+
+# [BẮT BUỘC 15] Quy Chuẩn Hệ Thống ViOne (AI Copilot, Web Landing & Màn Đăng Nhập Hoàng Gia):
+#   - Hệ thống ViOne vận hành trên môi trường Cục bộ (Localhost BE :4001, FE :5173, DB :6432), không kiểm thử trên server dev remote khi gặp sự cố mạng.
+#   - Mọi truy vấn AI Copilot CRM bắt buộc kết nối trực tiếp endpoint POST /api/ai/chat trên NestJS backend, phân tích dữ liệu thực tế từ PostgreSQL và trả về evidence minh chứng kèm gợi ý kế hoạch hành động 3 bước.
+#   - Màn hình Đăng nhập ViOne (/auth & /vione/login) tuân thủ nghiêm ngặt nhận diện Hoàng gia ViOne: Tông màu đen Obsidian #09090B, ánh kim vàng đồng #EAB308/#CA8A04/#F59E0B, logo chữ V 5.0 AI, thẻ bảo mật AES-256.
+#   - Web Landing ViOne (landing_web_vione/index.html & ViOneLandingWebOfficial.tsx):
+#     + Hero Section tuân thủ chính xác Ảnh 1: Huy hiệu TRÍ TUỆ NHÂN TẠO THẾ HỆ MỚI, tiêu đề "Chạm đỉnh tương lai với Vione AI 5.0".
+#     + Hero Animation: Chu kỳ lặp 4.8 giây (4800ms) theo đúng keyframe bezier cubic-bezier(0.22, 1, 0.36, 1), ảnh chân dung phía sau nhảy vọt lên trước điện thoại (z-index: 10 -> 30, scale: 0.98 -> 1.05, translateX: 110 -> 20, translateY: 42 -> 0), sau đó lùi về sau nhịp nhàng.
+# # [BẮT BUỘC 16] Quy Chuẩn Soạn Thảo Bộ Tài Liệu Master ViOne (SRS 160 UCs, BRD 10 Chương, HDSD 14 Chương & Slides 20/20):
+#   - SRS Master (SRS_VIONE_HE_THONG_TOAN_DIEN.docx & .md): Bắt buộc bao phủ 160 Use Cases độc lập không trùng lặp thuộc 8 phân hệ cốt lõi (Cổng thông tin 15 UCs, CRM 35 UCs, Work 20 UCs, HRM 20 UCs, Finance 20 UCs, Mobile App 25 UCs, AI Copilot 15 UCs, Quản trị hệ thống 10 UCs). Tài liệu Word DOCX bắt buộc có Section 1 riêng cho Trang bìa (không số trang, không header/footer), mục lục chuẩn Word (features: { updateFields: true } + TableOfContents + bảng trực quan), nhúng bảng NFR và ảnh minh chứng thực tế.
+#   - BRD Master (BRD_VIONE_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx & .md): 10 chương chuyên sâu (Bối cảnh 2026, SMART ROI 3 năm, 6 Personas, BPMN 2.0 As-Is vs To-Be, 80 Quy tắc nghiệp vụ BR-01 -> BR-80, Ma trận RACI 25 hoạt động, ERD Specs, Enterprise NFR SLA 99.98%, Lộ trình 8 tuần, Nghiệm thu định lượng). Tuyệt đối không để giá cứng mà theo chính sách tư vấn doanh nghiệp.
+#   - HDSD Master (HDSD_HE_THONG_VIONE_TOAN_DIEN.docx, .html, .md): 14 chương hướng dẫn thực chiến. Mỗi chương gồm: Bảng trường dữ liệu (Tên trường, Kiểu dữ liệu, Bắt buộc, Mô tả), Hộp cảnh báo nghiệp vụ (Callout box), 6-8 bước thao tác cụ thể, Bảng xử lý sự cố (Troubleshooting: Hiện tượng, Nguyên nhân, Cách khắc phục) và ảnh chụp màn hình độ nét cao.
+#   - Master Slides (SLIDE_THUYET_TRINH_CRM_QUAN_TRI_VIONE & SLIDE_THUYET_TRINH_APP_VIONE_CONNECT): Đúng 20 slides/deck cho cả CRM và App. Bản trình chiếu HTML có thanh tiến độ, dropdown chọn slide tức thì, phím tắt (Mũi tên, Space, PageUp, PageDown, Home, End), cảm ứng vuốt chạm Mobile và chế độ toàn màn hình. Xuất bản đủ 3 định dạng: PPTX, HTML và Markdown.
+#   - Đồng bộ 100% 13 tệp Master sang cả 5 thư mục dự án và kiểm tra bằng scripts/verify_slides_and_docs.js đạt 0 missing files trước khi báo cáo.
+
+# [BẮT BUỘC 17] Quy Chuẩn Quản Lý Template Mail CRM, Phân Quyền Thao Tác & Ghế Khán Phòng Rạp Chiếu Phim CEO 1983:
+#   - Quản lý Template Mail CRM: Đặt tập trung tại phân hệ Tài liệu (/documents?tab=mail_templates), tuyệt đối không để tại Cuộc họp (/meetings). Hỗ trợ template dynamic (hội phí thường niên, cảm ơn hội viên mới, nhắc phí quá hạn, vé mời QR), Live Preview song hành Desktop & Mobile, hệ thống biến thay thế {{variable}}, và tính năng gửi email kiểm thử trực tiếp tới hòm thư Admin.
+#   - Phân quyền & Quản trị thao tác (Strict RBAC):
+#     + Quy tắc hiển thị: Tài khoản không có quyền thì ẩn triệt để (menu sidebar, button hành động), không hiển thị dạng disabled mờ gây nhầm lẫn.
+#     + Cột thao tác phân quyền từng tài khoản (/permissions): Bắt buộc có đủ bộ 3 hành động: Xem chi tiết quyền (Eye icon modal), Sửa vai trò & ban chuyên môn (Pencil icon modal), và Thu hồi/Xóa quyền đặc biệt về quyền Thành viên cơ bản (RotateCcw icon confirm).
+#     + Phân hệ Quản lý Nhóm quyền: Cho phép tạo mới và chỉnh sửa mã role, tên vai trò hiển thị, ban chuyên môn phụ trách và hiệp hội trực thuộc.
+#   - Quản lý hội viên (/members): Bắt buộc có cột "Ban chuyên môn" hiển thị badge phòng ban phụ trách (Ban Quản trị, Thư ký, Truyền thông, Xúc tiến, Thành viên, Thiện nguyện).
+#   - Sơ đồ xếp chỗ sự kiện (Cinema Seating Map): Bắt buộc chuẩn trải nghiệm rạp chiếu phim (CGV/BHD) - khi di chuột vào bất kỳ ghế nào đã có người ngồi, hiển thị floating tooltip popover nổi tại đầu chuột với đầy đủ thông tin: Mã ghế, Tên người ngồi, Mã HV, Tên công ty, Loại vé và Trạng thái xác nhận/check-in.
+#   - Đồng bộ dữ liệu & Realtime Call API: Các màn hình dữ liệu cốt lõi (Gia hạn hội viên /renewal, Hội phí /fees, Đăng ký sự kiện /event-registrations) bắt buộc trang bị cơ chế client-side fallback (fetchNestApi) với Bearer token từ localStorage để luôn đồng bộ dữ liệu tức thì từ PostgreSQL DB mà không phụ thuộc vào session cookie của SSR.
+#
+# [BẮT BUỘC 18] Tiêu Chuẩn RESTful API & Trải Nghiệm PWA 1-Chạm Trên iOS:
+#   - Tiêu chuẩn RESTful API:
+#     + Mọi tài nguyên mới (Hóa đơn, Vé sự kiện, Đăng ký, Template Mail, Vai trò) bắt buộc tuân thủ chuẩn danh từ số nhiều (/events/registrations/:id, /admin/invoices/:id, /mail/templates/:id).
+#     + Phương thức HTTP chuẩn: GET (tra cứu), POST (tạo mới/hành động), PUT/PATCH (cập nhật/sửa từng phần), DELETE (xóa tài nguyên trả về 200/204).
+#     + Quản lý Template Mail: Controller backend NestJS (`MailController`) cung cấp đầy đủ CRUD endpoint (/mail/templates) và endpoint hành động gửi thử nghiệm (/mail/templates/:id/send-test, /mail/send-test, /mail/send-dynamic).
+#   - Trải nghiệm PWA & Mobile UX iOS:
+#     + Tự động phát hiện trình duyệt In-App Webview (Zalo, Facebook, Messenger, TikTok): Hiển thị cảnh báo và hướng dẫn 2 bước bấm (•••) > "Mở bằng Safari" để không bị kẹt.
+#     + Cung cấp giải pháp Cài đặt 1-chạm qua Apple WebClip Profile (.mobileconfig): Tải về mở Settings > Cài đặt hồ sơ > App icon lập tức xuất hiện ngoài màn hình chính iPhone mà không cần qua menu Safari.
+#     + Hướng dẫn Safari trực quan: Hiển thị 3 bước kèm mũi tên động nhấp nháy chỉ thẳng xuống thanh công cụ Safari dưới cùng (nút Chia sẻ).
+#     + Nút truy cập nhanh "Cài App iOS (1 chạm)" được gắn trực tiếp trên Lưới Tính Năng Nhanh tại trang chủ Hội viên (/association).
+#
+# [BẮT BUỘC 19] Quy Chuẩn Đồng Bộ Ma Trận Phân Quyền UI, Bộ Soạn Thảo Mail Visual Blocks, Tối Ưu Tải Sự Kiện, Refresh Token Cooldown, Tương Tác Ghế Khán Phòng, Cuộc Hẹn 1-on-1 CRM & Header Đăng Ký Hội Viên:
+#   - Phân Quyền Ma Trận (RBAC UI Enforcement):
+#     + Tuyệt đối KHÔNG bypass quyền cứng bằng role check (`isBQT || isBTV`) trong hàm `can()`.
+#     + Mọi kiểm tra quyền UI phải đối chiếu qua `isActionAllowedByMatrix(actionOrPerm, roleKey)`. Nếu ma trận quy định `false` cho vai trò tương ứng, UI bắt buộc ẩn hành động ngay lập tức sau khi bấm Lưu.
+#     + Tab 3 Phân quyền chuẩn hóa thành Catalog 5 Vai trò Cốt lõi & 6 Ban Chuyên môn, hiển thị Thẩm quyền (✅), Giới hạn (🚫), số lượng hội viên và nút lọc tức thì sang Tab 2.
+#   - Bộ Soạn Thảo Template Mail CRM:
+#     + Bắt buộc hỗ trợ song song 2 chế độ: "Chế Độ Trực Quan Dễ Dùng (Không Cần Code)" và "Mã Nguồn HTML Nâng Cao".
+#     + Hỗ trợ các khối trực quan: Banner Tiêu Đề, Lời Chào & Thân Bài, Hộp Chi Tiết Điểm Nhấn (thêm/xóa dòng tùy biến), Mã QR Tự Động (VietQR / Vé QR), và Chân Trang / Ký Tên.
+#     + Thanh công cụ 1-Click Variable Pills: Bấm chèn biến tức thì kèm toast thông báo.
+#   - Tải Dữ Liệu Sự Kiện & Đăng Ký:
+#     + Backend `events.controller.ts` phải cấu hình `@Roles` cho phép các vai trò quản trị chuyên ban truy cập danh sách đăng ký.
+#     + Frontend `/event-registrations` phải kích hoạt `fetchLiveRegistrations()` ngay khi mount tới endpoint `/events/with-registrations`, tránh tình trạng màn hình trắng phải reload nhiều lần.
+#   - Quản Trị Session & Refresh Token:
+#     + Đặt lịch refresh định kỳ tối thiểu 5 phút (`Math.max(msUntilExpiry - 120_000, 300_000)`), tuyệt đối không để vòng lặp 10 giây gây re-render lag giật giao diện và mất quyền.
+#     + Bắt buộc có Cooldown Guard 120s và cờ `isBackgroundRefresh`.
+#   - Sơ Đồ Ghế Khán Phòng & Thẻ Thông Tin Người Ngồi (Cinema Seating Map):
+#     + Không khóa `disabled` đối với ghế đã có người ngồi. Cho phép click để hiển thị "Thẻ Thông Tin Chi Tiết Chỗ Ngồi & Người Tham Dự" (Mã ghế, Họ tên, Mã HV, Công ty, Loại vé, Trạng thái) kèm nút đổi/gán ghế 1 chạm.
+#     + Màu sắc tuân thủ Royal Navy (`#003B95`) và Amber Gold (`#D97706`).
+#   - Cuộc Hẹn Giao Thương 1-on-1 Trên CRM:
+#     + Màn hình `/meetings` có Tab Switcher 2 phân hệ: "Cuộc Họp Ban Điều Hành & Chuyên Ban" vs "Cuộc Hẹn Giao Thương 1-on-1 (App Hiệp Hội)".
+#     + Backend cung cấp endpoint `GET /meetings/connection-appointments` truy vấn dữ liệu từ `business_meetings` và `user_connections`.
+#   - Header Form Đăng Ký Hội Viên:
+#     + Loại bỏ hoàn toàn text rác ("cl doanh nghiệp", "CLB Doanh Nhân 1983"). Chỉ giữ lại Logo CEO 1983 trang trọng, tag "✦ HIỆP HỘI DOANH NGHIỆP CEO 1983 ✦", tiêu đề và subtitle chuẩn mực.
+#     + Thông báo xác nhận tự động gửi email biên nhận hồ sơ & cảm ơn ngay sau khi nộp đơn.
+

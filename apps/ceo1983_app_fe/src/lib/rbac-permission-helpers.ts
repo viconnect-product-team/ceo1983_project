@@ -161,3 +161,103 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
 
   return true;
 }
+
+const PERMISSION_TO_MATRIX_CODES: Record<string, string[]> = {
+  "event:view": ["EVT_VIEW", "act_evt_view"],
+  "event:create": ["EVT_ADD", "act_evt_add"],
+  "event:edit": ["EVT_EDIT", "act_evt_edit"],
+  "event:delete": ["EVT_DELETE", "act_evt_delete"],
+  "event:cancel": ["EVT_CANCEL", "act_evt_cancel"],
+  "event:checkin_manage": ["CHK_SCAN", "CHK_VIEW", "act_chk_scan", "CHKQ_VIEW"],
+  "sponsor:view": ["SPN_VIEW", "act_spn_view", "SPK_VIEW"],
+  "sponsor:create": ["SPN_ADD", "act_spn_add"],
+  "sponsor:edit": ["SPN_EDIT", "act_spn_edit"],
+  "sponsor:delete": ["SPN_DELETE", "act_spn_delete"],
+  "sponsor:package_manage": ["SPK_ADD", "SPK_EDIT", "SPK_DELETE"],
+  "sponsor:assign_event": ["SPN_APPROVE"],
+  "member:view": ["MEM_VIEW", "act_mem_view", "COM_VIEW"],
+  "member:create": ["MEM_ADD", "act_mem_add", "COM_ADD"],
+  "member:edit": ["MEM_EDIT", "act_mem_edit", "COM_EDIT"],
+  "member:delete": ["MEM_DELETE", "act_mem_delete", "COM_DELETE"],
+  "member:approve": ["MEM_APPROVE", "act_mem_approve", "COM_APPROVE"],
+  "member:renew": ["FEE_ADD", "MEM_EDIT"],
+  "opportunity:view": ["OPP_VIEW", "MKT_VIEW", "BCM_VIEW"],
+  "opportunity:manage": ["OPP_ADD", "OPP_EDIT", "OPP_DELETE", "OPP_APPROVE", "MKT_ADD", "MKT_EDIT", "BCM_ADD"],
+  "marketplace:manage": ["MKT_ADD", "MKT_EDIT", "MKT_DELETE"],
+  "charity:view": ["CHA_VIEW"],
+  "charity:manage": ["CHA_ADD", "CHA_EDIT", "CHA_DELETE", "CHA_APPROVE"],
+  "meeting:view": ["MEET_VIEW", "BCM_VIEW"],
+  "meeting:manage": ["MEET_ADD", "MEET_EDIT", "MEET_DELETE", "MEET_APPROVE", "BCM_ADD", "BCM_EDIT", "BCM_DELETE"],
+  "document:manage": ["DOC_VIEW", "DOC_ADD", "DOC_EDIT", "DOC_DELETE"],
+  "finance:view": ["FEE_VIEW", "INC_VIEW", "EXP_VIEW", "FRP_VIEW"],
+  "finance:manage": ["FEE_ADD", "FEE_EDIT", "FEE_DELETE", "INC_ADD", "INC_EDIT", "EXP_ADD", "EXP_EDIT"],
+  "finance:approve": ["EXP_APPROVE", "FEE_RECONCILE"],
+  "media:view": ["NTF_VIEW", "EML_VIEW", "NWS_VIEW"],
+  "media:manage": ["NTF_SEND", "NTF_EDIT", "EML_ADD", "EML_SEND", "NWS_ADD", "NWS_EDIT"],
+  "system:manage": ["PRM_EDIT", "SET_EDIT", "CRD_ADD", "CRD_EDIT", "CRD_DELETE"],
+  "system:audit_view": ["ACT_VIEW", "ACT_EXPORT"],
+};
+
+/**
+ * Kiểm tra xem một hành động / Permission có được cấp phép theo Ma Trận Phân Quyền (lưu trong CSDL / localStorage) hay không
+ * Nếu người quản trị đã BỎ TÍCH trong ma trận và lưu, hàm này trả về FALSE để ẩn ngay các nút/thao tác trên giao diện.
+ */
+export function isActionAllowedByMatrix(actionOrPerm: string, roleKey: string): boolean {
+  // Quản trị viên cấp cao (Super Admin) luôn có toàn quyền thao tác
+  if (roleKey === "quan_tri" || roleKey === "ADM" || roleKey === "platform_admin") {
+    return true;
+  }
+
+  if (typeof window === "undefined") return true;
+
+  try {
+    const raw = localStorage.getItem(RBAC_MATRIX_STORAGE_KEY);
+    if (!raw) return true; // Chưa tùy biến thì giữ quyền mặc định
+
+    const categories = JSON.parse(raw);
+    if (!Array.isArray(categories)) return true;
+
+    // Chuẩn hóa roleKey sang key trong ma trận
+    let targetRole = roleKey.toLowerCase();
+    if (targetRole === "bqt") targetRole = "admin";
+    else if (targetRole === "btk") targetRole = "tong_thu_ky";
+    else if (targetRole === "btv" || targetRole === "btt" || targetRole === "bxt" || targetRole === "btn") {
+      targetRole = "truong_ban";
+    } else if (targetRole === "hvt") {
+      targetRole = "member";
+    }
+
+    // Lấy danh sách các mã thao tác tương ứng
+    const codesToCheck = PERMISSION_TO_MATRIX_CODES[actionOrPerm] || [actionOrPerm.toUpperCase(), actionOrPerm.toLowerCase()];
+
+    for (const cat of categories) {
+      if (!cat?.features || !Array.isArray(cat.features)) continue;
+      for (const feat of cat.features) {
+        if (!feat?.actions || !Array.isArray(feat.actions)) continue;
+        for (const act of feat.actions) {
+          const actCode = (act.code || "").toUpperCase();
+          const actId = (act.id || "").toLowerCase();
+
+          const isMatch = codesToCheck.some(
+            (c) => c.toUpperCase() === actCode || c.toLowerCase() === actId
+          );
+
+          if (isMatch && act.roles) {
+            // Kiểm tra theo 5 system roles hoặc 6 ban roles
+            if (act.roles[targetRole] !== undefined) {
+              if (act.roles[targetRole] === false) return false;
+            }
+            if (act.roles[roleKey.toLowerCase()] !== undefined) {
+              if (act.roles[roleKey.toLowerCase()] === false) return false;
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    return true;
+  }
+
+  return true;
+}
+

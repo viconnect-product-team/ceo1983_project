@@ -16,6 +16,7 @@ import {
   Pin,
   Plus,
   Search,
+  Shield,
   Star,
   Trash2,
   UserCog,
@@ -72,6 +73,22 @@ const INDUSTRIES: IndustryKey[] = [
 const REGIONS: RegionKey[] = ["region.north", "region.central", "region.south"];
 const TYPES: MemberType[] = ["company", "individual"];
 const STATUSES: MemberStatus[] = ["active", "pending", "expired"];
+
+export function getMemberDepartment(m: any): string {
+  const d = m?.department || m?.boardWish || m?.board || "";
+  const s = String(d).toLowerCase().trim();
+  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("công nghệ")) return "Ban Quản trị";
+  if (s.includes("thư ký") || s.includes("điều phối")) return "Ban Thư ký";
+  if (s.includes("truyền thông") || s.includes("sự kiện")) return "Ban Truyền thông";
+  if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b")) return "Ban Xúc tiến";
+  if (s.includes("thành viên") && !s.includes("hội viên") && !s.includes("ceo")) return "Ban Thành viên";
+  if (s.includes("thiện nguyện") || s.includes("tài chính") || s.includes("an sinh")) return "Ban Thiện nguyện";
+  if (d && d !== "—" && d !== "undefined" && d !== "null") return String(d);
+  if (m?.industry === "ind.it") return "Ban Quản trị";
+  if (m?.industry === "ind.finance") return "Ban Thiện nguyện";
+  if (m?.industry === "ind.trade") return "Ban Xúc tiến";
+  return "Ban Thành viên";
+}
 
 /* ----------------------------- badges ----------------------------- */
 
@@ -505,6 +522,7 @@ function MembersPage() {
     {
       code: (m) => m.code,
       name: (m) => m.name,
+      department: (m) => getMemberDepartment(m),
       industry: (m) => t(m.industry as TKey),
       region: (m) => t(m.region as TKey),
       type: (m) => m.type,
@@ -526,6 +544,7 @@ function MembersPage() {
   const csvCols = [
     { header: "Code", value: (m: Member) => m.code },
     { header: "Name", value: (m: Member) => m.name },
+    { header: "Department", value: (m: Member) => getMemberDepartment(m) },
     { header: "Contact", value: (m: Member) => m.contact },
     { header: "Email", value: (m: Member) => m.email },
     { header: "Phone", value: (m: Member) => m.phone },
@@ -936,6 +955,13 @@ function MembersPage() {
                     onSort={tc.toggleSort}
                   />
                   <SortHeader
+                    label="Ban chuyên môn"
+                    columnKey="department"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                  />
+                  <SortHeader
                     label={t("tbl.industry")}
                     columnKey="industry"
                     sortKey={tc.sortKey}
@@ -1008,6 +1034,12 @@ function MembersPage() {
                           <TruncatedText text={m.name} maxWidth="max-w-[240px]" className="font-semibold text-foreground text-sm" />
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 shadow-2xs">
+                        <Shield className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <span>{getMemberDepartment(m)}</span>
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-foreground border-b border-border whitespace-nowrap">
                       <TruncatedText text={t(m.industry as TKey)} maxWidth="max-w-[160px]" />

@@ -99,6 +99,11 @@ export class AdminController {
     return this.adminService.addInvoiceReminder(id, body);
   }
 
+  @Delete('invoices/:id')
+  async deleteInvoice(@Param('id') id: string) {
+    return this.adminService.deleteInvoice(id);
+  }
+
   // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
 
   @Get('notifications')

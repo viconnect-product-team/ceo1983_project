@@ -77,9 +77,17 @@ const generateInitialFloorSeats = (): FloorSeat[] => {
   return list;
 };
 
+export type SeatOccupant = {
+  attendeeName: string;
+  attendeeCode?: string;
+  company?: string;
+  ticketType?: string;
+  status?: string;
+};
+
 type Props = {
   currentSeat?: string;
-  occupiedSeats?: Record<string, { attendeeName: string; attendeeCode?: string }>;
+  occupiedSeats?: Record<string, SeatOccupant>;
   onSelectSeat: (seatLabel: string) => void;
   initialMode?: "cinema" | "banquet";
 };
@@ -166,10 +174,34 @@ export function CinemaSeatingMap({
 }: Props) {
   const [mode, setMode] = useState<"cinema" | "banquet">(initialMode);
   const [selectedSeatId, setSelectedSeatId] = useState<string>(currentSeat);
+  const [inspectedSeat, setInspectedSeat] = useState<{
+    id: string;
+    label: string;
+    category?: string;
+    isOccupied: boolean;
+    occupant?: SeatOccupant;
+  } | null>(() => {
+    if (currentSeat) {
+      const occupant = occupiedSeats[currentSeat];
+      return {
+        id: currentSeat,
+        label: currentSeat,
+        category: "standard",
+        isOccupied: !!occupant,
+        occupant,
+      };
+    }
+    return null;
+  });
   const [hoveredSeat, setHoveredSeat] = useState<{
     id: string;
     label: string;
-    occupant?: string;
+    category?: string;
+    occupant?: SeatOccupant;
+    isOccupied: boolean;
+    isSelected: boolean;
+    clientX: number;
+    clientY: number;
   } | null>(null);
 
   // Cinema Dynamic Rows & Stage Seats
@@ -578,14 +610,28 @@ export function CinemaSeatingMap({
     setEditingTable(null);
   };
 
-  // --- Seat Selection Handler ---
-  const handleSeatClick = (seatLabel: string, seatId: string) => {
+  // --- Seat Selection & Attendee Inspection Handler ---
+  const handleSeatClick = (
+    seatLabel: string,
+    seatId: string,
+    category: string = "standard",
+  ) => {
     const occupant = occupiedSeats[seatId] || occupiedSeats[seatLabel];
     const isOccupied = !!occupant && seatLabel !== currentSeat && seatId !== currentSeat;
-    if (isOccupied) return;
+
+    // Always inspect this seat and display full occupant information on screen!
+    setInspectedSeat({
+      id: seatId,
+      label: seatLabel,
+      category,
+      isOccupied,
+      occupant,
+    });
 
     setSelectedSeatId(seatLabel);
-    onSelectSeat(seatLabel);
+    if (!isOccupied) {
+      onSelectSeat(seatLabel);
+    }
   };
 
   const getSeatStatus = (seatLabel: string, seatId: string) => {
@@ -600,56 +646,74 @@ export function CinemaSeatingMap({
     return { isSelected, isOccupied, occupant };
   };
 
+  const handleSeatMouseEnter = (
+    e: React.MouseEvent,
+    seatId: string,
+    seatLabel: string,
+    category: string = "standard",
+  ) => {
+    const { isSelected, isOccupied, occupant } = getSeatStatus(seatLabel, seatId);
+    setHoveredSeat({
+      id: seatId,
+      label: seatLabel,
+      category,
+      occupant,
+      isOccupied,
+      isSelected,
+      clientX: e.clientX,
+      clientY: e.clientY,
+    });
+  };
+
+  const handleSeatMouseMove = (e: React.MouseEvent) => {
+    if (hoveredSeat) {
+      setHoveredSeat((prev) => (prev ? { ...prev, clientX: e.clientX, clientY: e.clientY } : null));
+    }
+  };
+
   // --- Render Single Cinema Seat ---
   const renderCinemaSeatBtn = (seat: SeatInfo) => {
     const { isSelected, isOccupied, occupant } = getSeatStatus(seat.label, seat.id);
+    const isInspected = inspectedSeat?.id === seat.id || inspectedSeat?.label === seat.label;
 
     let bgClass =
-      "bg-muted text-muted-foreground border-border hover:border-primary/60 hover:bg-primary/10";
+      "bg-background text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-[#003B95] hover:bg-blue-50/60";
     if (seat.category === "vip") {
       bgClass =
-        "bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500";
+        "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/50 hover:bg-amber-500/25 hover:border-amber-600";
     }
 
     if (isOccupied) {
       bgClass =
-        "bg-rose-500/10 text-rose-500/70 dark:text-rose-400/60 border-rose-500/30 cursor-not-allowed opacity-60 line-through select-none";
+        "bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-400 dark:border-slate-600 hover:ring-2 hover:ring-[#003B95]/50 shadow-xs";
     }
 
-    if (isSelected) {
+    if (isSelected || isInspected) {
       bgClass =
-        "bg-emerald-600 text-white border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)] scale-105 ring-2 ring-emerald-400";
+        "bg-[#003B95] text-white border-[#003B95] shadow-[0_0_12px_rgba(0,59,149,0.5)] scale-105 ring-2 ring-amber-400 font-extrabold";
     }
 
     return (
       <button
         key={seat.id}
         type="button"
-        disabled={isOccupied}
-        onClick={() => handleSeatClick(seat.label, seat.id)}
-        onMouseEnter={() =>
-          setHoveredSeat({
-            id: seat.id,
-            label: seat.label,
-            occupant: occupant?.attendeeName,
-          })
-        }
+        onClick={() => handleSeatClick(seat.label, seat.id, seat.category)}
+        onMouseEnter={(e) => handleSeatMouseEnter(e, seat.id, seat.label, seat.category)}
+        onMouseMove={handleSeatMouseMove}
         onMouseLeave={() => setHoveredSeat(null)}
         title={
           isOccupied
-            ? `${seat.label} - [ĐÃ CÓ CHỦ: ${occupant?.attendeeName || "Hội viên"}] - Không thể chọn`
+            ? `${seat.label} - [ĐÃ CÓ CHỦ: ${occupant?.attendeeName || "Hội viên"}] - Click để xem thông tin`
             : isSelected
               ? `${seat.label} (Đang chọn)`
               : `${seat.label} (Còn trống - Click để chọn)`
         }
-        className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg border text-[10px] sm:text-xs font-bold transition-all duration-200 flex flex-col items-center justify-center ${
-          isOccupied ? "cursor-not-allowed" : "cursor-pointer"
-        } ${bgClass}`}
+        className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg border text-[10px] sm:text-xs font-bold transition-all duration-200 flex flex-col items-center justify-center cursor-pointer ${bgClass}`}
       >
         {isSelected ? (
           <Check className="w-4 h-4 stroke-[3]" />
         ) : isOccupied ? (
-          <Lock className="w-3.5 h-3.5 text-rose-500/80" />
+          <Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
         ) : (
           <span className="leading-none">{seat.number}</span>
         )}
@@ -808,19 +872,9 @@ export function CinemaSeatingMap({
                       <div
                         key={seat.id}
                         onPointerDown={(e) => handlePointerDownStageSeat(e, seat.id)}
-                        onClick={() => {
-                          if (!isOccupied) {
-                            setSelectedSeatId(seat.label);
-                            onSelectSeat(seat.label);
-                          }
-                        }}
-                        onMouseEnter={() =>
-                          setHoveredSeat({
-                            id: seat.id,
-                            label: seat.label,
-                            occupant: isOccupied?.attendeeName,
-                          })
-                        }
+                        onClick={() => handleSeatClick(seat.label, seat.id, "vip")}
+                        onMouseEnter={(e) => handleSeatMouseEnter(e, seat.id, seat.label, "vip")}
+                        onMouseMove={handleSeatMouseMove}
                         onMouseLeave={() => setHoveredSeat(null)}
                         style={{
                           left: `${seat.x}%`,
@@ -832,10 +886,10 @@ export function CinemaSeatingMap({
                             ? "scale-110 z-30 ring-2 ring-amber-400 shadow-2xl"
                             : "z-10 hover:scale-105 shadow-md"
                         } ${
-                          isSelected
-                            ? "bg-emerald-500 text-white font-bold ring-2 ring-white"
+                          isSelected || inspectedSeat?.id === seat.id
+                            ? "bg-[#003B95] text-white font-bold ring-2 ring-amber-400 shadow-lg"
                             : isOccupied
-                              ? "bg-rose-500/80 text-white border border-rose-400"
+                              ? "bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-400 shadow-xs"
                               : "bg-gradient-to-b from-amber-400 to-amber-600 text-slate-950 font-black border border-amber-300"
                         }`}
                         title={`${seat.label} - Kéo chuột để di chuyển vị trí`}
@@ -948,19 +1002,9 @@ export function CinemaSeatingMap({
                     <div
                       key={seat.id}
                       onPointerDown={(e) => handlePointerDownFloorSeat(e, seat.id)}
-                      onClick={() => {
-                        if (!isOccupied) {
-                          setSelectedSeatId(seat.label);
-                          onSelectSeat(seat.label);
-                        }
-                      }}
-                      onMouseEnter={() =>
-                        setHoveredSeat({
-                          id: seat.id,
-                          label: seat.label,
-                          occupant: isOccupied?.attendeeName,
-                        })
-                      }
+                      onClick={() => handleSeatClick(seat.label, seat.id, seat.category)}
+                      onMouseEnter={(e) => handleSeatMouseEnter(e, seat.id, seat.label, seat.category)}
+                      onMouseMove={handleSeatMouseMove}
                       onMouseLeave={() => setHoveredSeat(null)}
                       style={{
                         left: `${seat.x}%`,
@@ -972,13 +1016,13 @@ export function CinemaSeatingMap({
                           ? "scale-115 z-30 ring-2 ring-amber-400 shadow-2xl brightness-125"
                           : "z-10 hover:scale-105 shadow-md"
                       } ${
-                        isSelected
-                          ? "bg-emerald-600 text-white font-black ring-2 ring-emerald-300 shadow-emerald-500/50 shadow-lg"
+                        isSelected || inspectedSeat?.id === seat.id
+                          ? "bg-[#003B95] text-white font-black ring-2 ring-amber-400 shadow-lg"
                           : isOccupied
-                          ? "bg-rose-600/80 text-white border border-rose-400 opacity-60 line-through"
+                          ? "bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-400 shadow-xs"
                           : seat.category === "vip"
                           ? "bg-gradient-to-b from-amber-400 to-amber-600 text-slate-950 font-black border border-amber-300 shadow-amber-500/20"
-                          : "bg-slate-800 text-white font-bold border border-slate-700 hover:border-sky-400 shadow-xs"
+                          : "bg-slate-800 text-white font-bold border border-slate-700 hover:border-[#003B95] shadow-xs"
                       }`}
                       title={`${seat.label} - Giữ chuột để kéo sang vị trí khác`}
                     >
@@ -1371,44 +1415,45 @@ export function CinemaSeatingMap({
                         );
 
                         let seatClass =
-                          "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
+                          "bg-muted/90 text-foreground border-border hover:border-[#003B95] hover:bg-primary/20";
                         if (table.isVip) {
                           seatClass =
-                            "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
+                            "bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
                         }
                         if (isOccupied) {
                           seatClass =
-                            "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
+                            "bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-400 dark:border-slate-500 hover:ring-2 hover:ring-[#003B95]/50 shadow-xs";
                         }
-                        if (isSelected) {
+                        if (isSelected || inspectedSeat?.id === s.seatId) {
                           seatClass =
-                            "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.8)] scale-110";
+                            "bg-[#003B95] text-white border-[#003B95] ring-2 ring-amber-400 shadow-[0_0_10px_rgba(0,59,149,0.8)] scale-110 font-bold";
                         }
 
                         return (
                           <button
                             key={s.seatId}
                             type="button"
-                            disabled={isOccupied}
                             onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleSeatClick(s.seatLabel, s.seatId);
+                              handleSeatClick(s.seatLabel, s.seatId, table.isVip ? "vip" : "standard");
                             }}
-                            onMouseEnter={() =>
-                              setHoveredSeat({
-                                id: s.seatId,
-                                label: s.seatLabel,
-                                occupant: occupant?.attendeeName,
-                              })
+                            onMouseEnter={(e) =>
+                              handleSeatMouseEnter(
+                                e,
+                                s.seatId,
+                                s.seatLabel,
+                                table.isVip ? "vip" : "standard",
+                              )
                             }
+                            onMouseMove={handleSeatMouseMove}
                             onMouseLeave={() => setHoveredSeat(null)}
                             style={{
                               transform: `translate(${seatX}px, ${seatY}px)`,
                             }}
                             title={
                               isOccupied
-                                ? `${s.seatLabel} - Đã có: ${occupant?.attendeeName}`
+                                ? `${s.seatLabel} - [ĐÃ CÓ CHỦ: ${occupant?.attendeeName}] - Click để xem thông tin`
                                 : isSelected
                                   ? `${s.seatLabel} (Đang chọn)`
                                   : `${s.seatLabel} (Click để chọn)`
@@ -1431,38 +1476,39 @@ export function CinemaSeatingMap({
                             s.seatId,
                           );
                           let seatClass =
-                            "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
+                            "bg-muted/90 text-foreground border-border hover:border-[#003B95] hover:bg-primary/20";
                           if (table.isVip)
                             seatClass =
-                              "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
+                              "bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
                           if (isOccupied)
                             seatClass =
-                              "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
-                          if (isSelected)
+                              "bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-400 dark:border-slate-500 hover:ring-2 hover:ring-[#003B95]/50 shadow-xs";
+                          if (isSelected || inspectedSeat?.id === s.seatId)
                             seatClass =
-                              "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-md scale-110";
+                              "bg-[#003B95] text-white border-[#003B95] ring-2 ring-amber-400 shadow-md scale-110 font-bold";
 
                           return (
                             <button
                               key={s.seatId}
                               type="button"
-                              disabled={isOccupied}
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleSeatClick(s.seatLabel, s.seatId);
+                                handleSeatClick(s.seatLabel, s.seatId, table.isVip ? "vip" : "standard");
                               }}
-                              onMouseEnter={() =>
-                                setHoveredSeat({
-                                  id: s.seatId,
-                                  label: s.seatLabel,
-                                  occupant: occupant?.attendeeName,
-                                })
+                              onMouseEnter={(e) =>
+                                handleSeatMouseEnter(
+                                  e,
+                                  s.seatId,
+                                  s.seatLabel,
+                                  table.isVip ? "vip" : "standard",
+                                )
                               }
+                              onMouseMove={handleSeatMouseMove}
                               onMouseLeave={() => setHoveredSeat(null)}
                               title={
                                 isOccupied
-                                  ? `${s.seatLabel} - Đã có: ${occupant?.attendeeName}`
+                                  ? `${s.seatLabel} - [ĐÃ CÓ CHỦ: ${occupant?.attendeeName}] - Click để xem thông tin`
                                   : isSelected
                                     ? `${s.seatLabel} (Đang chọn)`
                                     : `${s.seatLabel} (Click để chọn)`
@@ -1506,38 +1552,39 @@ export function CinemaSeatingMap({
                             s.seatId,
                           );
                           let seatClass =
-                            "bg-muted/90 text-foreground border-border hover:border-primary hover:bg-primary/20";
+                            "bg-muted/90 text-foreground border-border hover:border-[#003B95] hover:bg-primary/20";
                           if (table.isVip)
                             seatClass =
-                              "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
+                              "bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/50 hover:bg-amber-500/30";
                           if (isOccupied)
                             seatClass =
-                              "bg-slate-700 text-slate-400 border-slate-600/30 cursor-not-allowed opacity-60";
-                          if (isSelected)
+                              "bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border-slate-400 dark:border-slate-500 hover:ring-2 hover:ring-[#003B95]/50 shadow-xs";
+                          if (isSelected || inspectedSeat?.id === s.seatId)
                             seatClass =
-                              "bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-300 shadow-md scale-110";
+                              "bg-[#003B95] text-white border-[#003B95] ring-2 ring-amber-400 shadow-md scale-110 font-bold";
 
                           return (
                             <button
                               key={s.seatId}
                               type="button"
-                              disabled={isOccupied}
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleSeatClick(s.seatLabel, s.seatId);
+                                handleSeatClick(s.seatLabel, s.seatId, table.isVip ? "vip" : "standard");
                               }}
-                              onMouseEnter={() =>
-                                setHoveredSeat({
-                                  id: s.seatId,
-                                  label: s.seatLabel,
-                                  occupant: occupant?.attendeeName,
-                                })
+                              onMouseEnter={(e) =>
+                                handleSeatMouseEnter(
+                                  e,
+                                  s.seatId,
+                                  s.seatLabel,
+                                  table.isVip ? "vip" : "standard",
+                                )
                               }
+                              onMouseMove={handleSeatMouseMove}
                               onMouseLeave={() => setHoveredSeat(null)}
                               title={
                                 isOccupied
-                                  ? `${s.seatLabel} - Đã có: ${occupant?.attendeeName}`
+                                  ? `${s.seatLabel} - [ĐÃ CÓ CHỦ: ${occupant?.attendeeName}] - Click để xem thông tin`
                                   : isSelected
                                     ? `${s.seatLabel} (Đang chọn)`
                                     : `${s.seatLabel} (Click để chọn)`
@@ -1567,8 +1614,8 @@ export function CinemaSeatingMap({
         {hoveredSeat ? (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-border">
             <span>{hoveredSeat.label}</span>
-            {hoveredSeat.occupant ? (
-              <span className="text-rose-600 font-bold">• Đã xếp: {hoveredSeat.occupant}</span>
+            {hoveredSeat.isOccupied ? (
+              <span className="text-rose-600 font-bold">• Đã xếp: {hoveredSeat.occupant?.attendeeName || "Hội viên"}</span>
             ) : (
               <span className="text-emerald-600 font-bold">• Ghế còn trống (Click để chọn)</span>
             )}
@@ -1585,23 +1632,177 @@ export function CinemaSeatingMap({
         )}
       </div>
 
-      {/* 5. Clean Geometric Legend (No random tacky icons) */}
+      {/* ── REAL CINEMA FLOATING HOVER TOOLTIP (CGV / BHD STYLE) ── */}
+      {hoveredSeat && (
+        <div
+          className="fixed z-[99999] pointer-events-none transition-all duration-75 -translate-x-1/2 -translate-y-full mb-3 select-none"
+          style={{
+            left: Math.max(140, Math.min(window.innerWidth - 140, hoveredSeat.clientX)),
+            top: hoveredSeat.clientY - 12,
+          }}
+        >
+          <div className="w-64 rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 text-left shadow-2xl backdrop-blur-md text-white animate-in fade-in zoom-in-95 duration-100">
+            {/* Header: Seat code & status pill */}
+            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2 mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono font-black text-amber-400 text-xs tracking-wider">
+                  {hoveredSeat.id}
+                </span>
+                <span className="text-[10px] text-slate-400 truncate max-w-[110px]">
+                  {hoveredSeat.label}
+                </span>
+              </div>
+              {hoveredSeat.isOccupied ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                  <Lock className="w-2.5 h-2.5" /> Đã có chủ
+                </span>
+              ) : hoveredSeat.isSelected ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                  <Check className="w-2.5 h-2.5 stroke-[3]" /> Đang chọn
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-400 border border-sky-500/40">
+                  Ghế trống
+                </span>
+              )}
+            </div>
+
+            {/* Content: Occupant details or prompt */}
+            {hoveredSeat.isOccupied ? (
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-slate-400 text-[10.5px] shrink-0">Hội viên:</span>
+                  <span className="font-bold text-white text-xs text-right truncate">
+                    {hoveredSeat.occupant?.attendeeName || "Hội viên đã đặt chỗ"}
+                  </span>
+                </div>
+                {hoveredSeat.occupant?.attendeeCode && (
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-slate-400 text-[10.5px] shrink-0">Mã HV:</span>
+                    <span className="font-mono text-amber-300 font-bold text-[11px]">
+                      {hoveredSeat.occupant.attendeeCode}
+                    </span>
+                  </div>
+                )}
+                {hoveredSeat.occupant?.company && (
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="text-slate-400 text-[10.5px] shrink-0">Doanh nghiệp:</span>
+                    <span className="text-slate-300 text-[11px] text-right truncate max-w-[140px]">
+                      {hoveredSeat.occupant.company}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-slate-800/80">
+                  <span className="text-slate-400 text-[10.5px]">Hạng vé:</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                    {hoveredSeat.occupant?.ticketType || (hoveredSeat.category === "vip" ? "VIP Pass" : "Standard")}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-300 flex items-center gap-1.5 py-0.5">
+                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Ghế trống · Click để xếp người vào vị trí này</span>
+              </div>
+            )}
+
+            {/* Tooltip downward triangle pointer */}
+            <div className="absolute left-1/2 -bottom-2 -translate-x-1/2 w-0 h-0 border-x-[6px] border-x-transparent border-t-[8px] border-t-slate-950" />
+          </div>
+        </div>
+      )}
+
+      {/* 4. Thẻ Thông Tin Chi Tiết Chỗ Ngồi & Người Tham Dự (Attendee Seat Detail Card) */}
+      {inspectedSeat && (
+        <div className="my-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/20 p-4 text-left transition-all animate-in fade-in shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-blue-500/20 pb-2.5 mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#003B95] text-white flex items-center justify-center font-extrabold text-xs shadow-xs">
+                {inspectedSeat.id.slice(0, 5)}
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <span>{inspectedSeat.label}</span>
+                  {inspectedSeat.category === "vip" && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-[10px] border border-amber-500/30">
+                      Hạng VIP Vàng
+                    </span>
+                  )}
+                </h4>
+                <p className="text-[11px] text-muted-foreground">
+                  Chi tiết vị trí chỗ ngồi & tình trạng đại biểu đã đăng ký tham gia sự kiện.
+                </p>
+              </div>
+            </div>
+
+            {inspectedSeat.isOccupied ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-300 dark:border-slate-600 shadow-xs">
+                <Lock className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                ĐÃ CÓ ĐẠI BIỂU ĐẶT CHỖ
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-500/30 shadow-xs">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                VỊ TRÍ CÒN TRỐNG
+              </span>
+            )}
+          </div>
+
+          {inspectedSeat.isOccupied && inspectedSeat.occupant ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+              <div className="bg-background/90 p-2.5 rounded-xl border border-border">
+                <span className="text-[10.5px] text-muted-foreground block mb-0.5">👤 Đại biểu tham dự:</span>
+                <span className="font-bold text-foreground text-sm">{inspectedSeat.occupant.attendeeName}</span>
+              </div>
+              <div className="bg-background/90 p-2.5 rounded-xl border border-border">
+                <span className="text-[10.5px] text-muted-foreground block mb-0.5">🏷️ Mã hội viên:</span>
+                <span className="font-mono font-bold text-[#003B95] dark:text-blue-400">{inspectedSeat.occupant.attendeeCode || "Chưa cấp"}</span>
+              </div>
+              <div className="bg-background/90 p-2.5 rounded-xl border border-border">
+                <span className="text-[10.5px] text-muted-foreground block mb-0.5">🏢 Doanh nghiệp:</span>
+                <span className="font-semibold text-foreground truncate block">{inspectedSeat.occupant.company || "Hội viên CEO 1983"}</span>
+              </div>
+              <div className="bg-background/90 p-2.5 rounded-xl border border-border">
+                <span className="text-[10.5px] text-muted-foreground block mb-0.5">🎫 Hạng vé & Trạng thái:</span>
+                <span className="font-bold text-amber-700 dark:text-amber-300 block">
+                  {inspectedSeat.occupant.ticketType || "VIP Pass"} • {inspectedSeat.occupant.status || "Đã xác nhận"}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+              <p className="text-emerald-800 dark:text-emerald-300 font-medium">
+                Vị trí <strong>{inspectedSeat.label}</strong> hiện đang còn trống và sẵn sàng tiếp nhận đại biểu. Bấm nút bên dưới để chọn chỗ này.
+              </p>
+              <button
+                type="button"
+                onClick={() => onSelectSeat(inspectedSeat.label)}
+                className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-blue-900 text-white font-bold text-xs shadow-sm cursor-pointer shrink-0 transition"
+              >
+                Xác Nhận Chọn Chỗ Này
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 5. Clean Geometric Legend (CEO 1983 Palette) */}
       <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center justify-center gap-5 text-xs">
         <div className="flex items-center gap-1.5">
           <span className="w-3.5 h-3.5 rounded-full bg-amber-500/20 border border-amber-500" />
-          <span className="text-muted-foreground">Bàn / Ghế VIP</span>
+          <span className="text-muted-foreground font-medium">Ghế / Bàn VIP</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3.5 h-3.5 rounded-full bg-muted border border-border" />
-          <span className="text-muted-foreground">Tiêu chuẩn</span>
+          <span className="w-3.5 h-3.5 rounded-full bg-background border border-slate-400" />
+          <span className="text-muted-foreground font-medium">Tiêu chuẩn (Trống)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3.5 h-3.5 rounded-full bg-slate-400 dark:bg-slate-700 border border-slate-500/20" />
-          <span className="text-muted-foreground">Đã có người</span>
+          <span className="w-3.5 h-3.5 rounded-full bg-slate-300 dark:bg-slate-700 border border-slate-500" />
+          <span className="text-muted-foreground font-medium">Đã có người (Click xem thông tin)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 border border-emerald-500 ring-1 ring-emerald-400" />
-          <span className="text-emerald-600 font-bold">Đang chọn</span>
+          <span className="w-3.5 h-3.5 rounded-full bg-[#003B95] border border-[#003B95] ring-2 ring-amber-400" />
+          <span className="text-[#003B95] dark:text-blue-400 font-bold">Đang chọn xếp chỗ</span>
         </div>
       </div>
 

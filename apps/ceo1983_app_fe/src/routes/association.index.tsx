@@ -172,6 +172,25 @@ const quickActionDefs = [
     badgeId: "voting",
     badgeText: "Mới",
   },
+  {
+    key: "m.index.qaFees",
+    icon: CreditCard,
+    to: "/renewal",
+    customLabel: "Hội phí",
+    enLabel: "Fees",
+    badgeId: "fees",
+    badgeText: "2026",
+  },
+  {
+    key: "m.index.qaIosInstall",
+    icon: Smartphone,
+    to: "#",
+    isIosInstall: true,
+    customLabel: "Cài App iOS",
+    enLabel: "Install iOS",
+    badgeId: "ios",
+    badgeText: "1 chạm",
+  },
 ] as const;
 
 // Fallback high-res business event photos with CEO 1983 blue lighting tone
@@ -1098,6 +1117,30 @@ function Home() {
                     )}
                   </span>
                   <span className="text-center text-[10.5px] font-semibold leading-tight text-[var(--vba-text)] transition-colors group-hover:text-[#2E3192]">
+                    {label}
+                  </span>
+                </button>
+              );
+            }
+
+            if (a.isIosInstall) {
+              return (
+                <button
+                  key={a.key}
+                  type="button"
+                  onClick={() => {
+                    handleActionClick(a.badgeId);
+                    window.dispatchEvent(new CustomEvent("open-ios-install-guide"));
+                  }}
+                  className="group relative flex flex-col items-center gap-1.5 transition cursor-pointer"
+                >
+                  <span className="relative flex h-13 w-13 items-center justify-center rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/20 to-blue-900/40 text-amber-400 shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-105 group-hover:border-amber-400 group-active:scale-95 ring-1 ring-amber-400/30">
+                    <Icon className="h-5.5 w-5.5 stroke-[2] text-amber-300 animate-pulse" />
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-1 text-[8px] font-black text-slate-950 shadow-xs">
+                      1 chạm
+                    </span>
+                  </span>
+                  <span className="text-center text-[10.5px] font-bold leading-tight text-amber-400 transition-colors group-hover:text-amber-300">
                     {label}
                   </span>
                 </button>

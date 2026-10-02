@@ -94,7 +94,9 @@ export function Ceo1983MemberRegistrationForm() {
         notes,
       });
       setSubmitted(true);
-      toast.success("Hồ sơ đăng ký gia nhập đã được tiếp nhận thành công!");
+      toast.success(
+        "✓ Hồ sơ đăng ký đã được tiếp nhận! Thư cảm ơn & biên nhận đã được gửi tới email của Quý Doanh nhân."
+      );
     } catch (err: any) {
       toast.error(err.message || "Không thể gửi hồ sơ. Vui lòng thử lại sau.");
     } finally {
@@ -115,18 +117,32 @@ export function Ceo1983MemberRegistrationForm() {
             </div>
 
             <span className="inline-block px-3 py-1 bg-amber-50 text-amber-700 border border-amber-300 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
-              ✦ Đăng Ký Gia Nhập Thành Công ✦
+              ✦ Đăng Ký Hội Viên Thành Công ✦
             </span>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#003B95] mb-3">
               Hồ Sơ Đã Được Tiếp Nhận
             </h1>
 
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-lg mx-auto mb-8">
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-lg mx-auto mb-6">
               Kính gửi Anh/Chị <strong>{registeredData?.fullName}</strong> (Đại diện cho{" "}
-              <strong>{registeredData?.companyName}</strong>), đơn đăng ký gia nhập CLB Doanh Nhân
-              1983 của Anh/Chị đã được lưu vào hệ thống xét duyệt.
+              <strong>{registeredData?.companyName}</strong>), đơn đăng ký gia nhập Hiệp hội CEO
+              1983 của Anh/Chị đã được tiếp nhận thành công vào hệ thống.
             </p>
+
+            {/* Email Dispatch Confirmation Highlight */}
+            <div className="bg-emerald-50/90 border border-emerald-200 rounded-xl p-4 mb-6 text-left flex items-start gap-3">
+              <Mail className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="text-xs sm:text-sm text-emerald-950 space-y-1">
+                <p className="font-bold text-emerald-900">
+                  ✉️ Thư Cảm Ơn & Xác Nhận Tiếp Nhận Đã Được Gửi!
+                </p>
+                <p className="text-emerald-800">
+                  Hệ thống đã tự động gửi email cảm ơn kèm mã biên nhận hồ sơ tới hòm thư{" "}
+                  <strong className="font-mono text-emerald-950">{registeredData?.email}</strong>. Quý Doanh nhân vui lòng kiểm tra hộp thư đến (Inbox / Spam).
+                </p>
+              </div>
+            </div>
 
             {/* Information Summary Card */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-8 text-left text-sm space-y-2">
@@ -158,12 +174,12 @@ export function Ceo1983MemberRegistrationForm() {
 
             {/* Process Notice */}
             <div className="bg-blue-50 border-l-4 border-[#003B95] p-4 rounded-r-xl text-left text-xs sm:text-sm text-[#003B95] mb-8">
-              <p className="font-bold mb-1">📌 Quy trình phê duyệt & cấp tài khoản:</p>
+              <p className="font-bold mb-1">📌 Quy trình thẩm định & cấp tài khoản hội viên:</p>
               <ul className="list-disc list-inside space-y-1 text-slate-700">
-                <li>Ban Thành Viên CLB Doanh Nhân 1983 sẽ thẩm định hồ sơ trong vòng 24 giờ.</li>
+                <li>Ban Thành Viên Hiệp hội CEO 1983 sẽ thẩm định hồ sơ trong vòng 24 giờ.</li>
                 <li>
                   Khi được phê duyệt, hệ thống sẽ <strong>tự động gửi email</strong> chứa tên đăng nhập
-                  và mật khẩu ngẫu nhiên tới hòm thư <strong>{registeredData?.email}</strong>.
+                  và mật khẩu kích hoạt tới hòm thư <strong>{registeredData?.email}</strong>.
                 </li>
                 <li>Anh/Chị có thể sử dụng thông tin đó để đăng nhập vào App Hiệp Hội.</li>
               </ul>
@@ -199,61 +215,56 @@ export function Ceo1983MemberRegistrationForm() {
   return (
     <div className="min-h-screen bg-[#F0F4F9] py-8 sm:py-12 px-3 sm:px-6 font-sans text-slate-800">
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header Branding Card - Google Form Style */}
+        {/* Header Branding Card - Clean CEO 1983 Brand */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
           {/* Top CEO1983 Navy Accent Strip */}
           <div className="h-3.5 bg-[#003B95]" />
 
           <div className="p-6 sm:p-8">
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#003B95] tracking-tight">
-                  CLB Doanh Nhân 1983
-                </h2>
-                <div className="text-sm font-semibold text-slate-500 mt-0.5">
-                  Kết nối Đồng Niên — Gắn kết Thương Trường
+            {/* Clean Brand Header: Logo + Title */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 mb-5 pb-5 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 text-center sm:text-left">
+                <img
+                  src="/ceo1983-logo.png"
+                  alt="CEO 1983"
+                  className="h-16 sm:h-20 w-auto object-contain drop-shadow-xs"
+                />
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-[#003B95] text-[11px] font-bold uppercase tracking-wider mb-1">
+                    <span>✦ Hiệp Hội Doanh Nghiệp CEO 1983 ✦</span>
+                  </div>
+                  <h1 className="text-xl sm:text-2xl font-black text-[#003B95] tracking-tight">
+                    Đơn Đăng Ký Hội Viên CEO 1983
+                  </h1>
+                  <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
+                    Cổng Tiếp Nhận Hồ Sơ Gia Nhập — Ban Thành Viên & Kết Nối
+                  </p>
                 </div>
               </div>
 
-              {/* Official Website Badge Link */}
+              {/* Official Website Link Badge */}
               <a
                 href="https://ceo1983.com"
                 target="_blank"
                 rel="noreferrer"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#003B95] text-xs font-bold border border-blue-200 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#003B95] text-xs font-bold border border-blue-200 transition-colors shrink-0 shadow-2xs"
               >
                 <Globe className="w-3.5 h-3.5 text-amber-500" />
-                ceo1983.com
-                <ExternalLink className="w-3 h-3" />
+                <span>ceo1983.com</span>
+                <ExternalLink className="w-3 h-3 opacity-70" />
               </a>
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight mb-2">
-              Đơn Đăng Ký Gia Nhập CLB Doanh Nhân 1983
-            </h1>
-
-            <p className="text-slate-600 text-sm leading-relaxed mb-4">
-              Chào mừng Quý Doanh nhân quan tâm và mong muốn tham gia ngôi nhà chung CLB Doanh Nhân 1983. Vui lòng
-              điền đầy đủ thông tin bên dưới để Ban Thành Viên tiếp nhận, thẩm định và cấp tài khoản
-              thành viên chính thức.
+            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-4">
+              Kính chào Quý Doanh nhân. Vui lòng cung cấp đầy đủ thông tin pháp nhân doanh nghiệp và người đại diện bên dưới để Ban Thành Viên tiếp nhận, thẩm định hồ sơ và cấp tài khoản hội viên chính thức.
             </p>
 
-            {/* Mobile Website Banner Link */}
-            <div className="sm:hidden mb-4">
-              <a
-                href="https://ceo1983.com"
-                target="_blank"
-                rel="noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-50 text-[#003B95] text-xs font-bold border border-blue-200"
-              >
-                <Globe className="w-3.5 h-3.5 text-amber-500" />
-                Xem cổng thông tin CLB: <strong>ceo1983.com</strong>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-
-            <div className="text-xs text-rose-500 font-medium flex items-center gap-1">
-              <span>* Mục bắt buộc</span>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+              <span className="text-rose-500 font-semibold">* Mục bắt buộc</span>
+              <span className="text-slate-500 flex items-center gap-1 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                Bảo mật thông tin doanh nghiệp theo tiêu chuẩn Hiệp hội
+              </span>
             </div>
           </div>
         </div>

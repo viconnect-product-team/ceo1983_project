@@ -38,7 +38,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'truong_ban', 'member')
   @Get('registrations')
   async listRegistrations(
     @Request() req: any,
@@ -49,7 +49,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'truong_ban', 'member')
   @Get('with-registrations')
   async listEventsWithRegistrations(
     @Request() req: any,
@@ -181,6 +181,14 @@ export class EventsController {
     @Body() body: any,
   ) {
     return this.eventsService.addOrCheckinAttendee(req.user.id, eventId, body);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt')
+  @Delete('registrations/:id')
+  async deleteRegistration(@Request() req: any, @Param('id') id: string) {
+    const userId = req.user?.id || req.user?.sub || 'system';
+    return this.eventsService.deleteRegistration(userId, id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

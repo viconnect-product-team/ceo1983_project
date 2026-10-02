@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -58,12 +58,19 @@ export const Route = createFileRoute("/fees/")({
     ],
   }),
   loader: async () => {
-    const [invoices, members] = await Promise.all([
-      listInvoicesFn().catch(() => []),
-      fetchNestApi<Member[]>("/members").then((res) => (Array.isArray(res) ? res : [])).catch(() => []),
-    ]);
-    const finalInvoices = Array.isArray(invoices) ? invoices : [];
-    return { invoices: finalInvoices, members };
+    let invoices: FeeRecord[] = [];
+    try {
+      const serverInvs = await listInvoicesFn().catch(() => []);
+      if (Array.isArray(serverInvs) && serverInvs.length > 0) invoices = serverInvs;
+    } catch {}
+    if (invoices.length === 0) {
+      try {
+        const clientInvs = await fetchNestApi<FeeRecord[]>("/admin/invoices");
+        if (Array.isArray(clientInvs) && clientInvs.length > 0) invoices = clientInvs;
+      } catch {}
+    }
+    const members = await fetchNestApi<Member[]>("/members").then((res) => (Array.isArray(res) ? res : [])).catch(() => []);
+    return { invoices, members };
   },
   component: FeesPage,
 });
@@ -158,10 +165,26 @@ function isDueSoon(r: FeeRecord) {
 function FeesPage() {
   const t = useT();
   const router = useRouter();
-  const { invoices: allRecords, members } = Route.useLoaderData() as {
+  const { invoices: loaderInvoices, members } = Route.useLoaderData() as {
     invoices: FeeRecord[];
     members: Member[];
   };
+  const [allRecords, setAllRecords] = useState<FeeRecord[]>(loaderInvoices || []);
+
+  useEffect(() => {
+    if (loaderInvoices && loaderInvoices.length > 0) {
+      setAllRecords(loaderInvoices);
+    } else {
+      fetchNestApi<FeeRecord[]>("/admin/invoices")
+        .then((res) => {
+          if (Array.isArray(res) && res.length > 0) {
+            setAllRecords(res);
+          }
+        })
+        .catch((err) => console.warn("Failed to fetch invoices fallback:", err));
+    }
+  }, [loaderInvoices]);
+
   const createFn = useServerFn(createInvoiceFn);
   const deleteFn = useServerFn(deleteInvoiceFn);
   const remindFn = useServerFn(addReminderFn);

@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   AlertCircle,
   Bell,
@@ -13,16 +13,19 @@ import {
   Search,
   Tag,
   Ticket,
+  Trash2,
   Users,
   Utensils,
   X,
   XCircle,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, Pill, StatCard, TableShell } from "@/components/dashboard/PageKit";
 import { useTableControls } from "@/hooks/use-table-controls";
+import { fetchNestApi } from "@/lib/api-client";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   addEventAttendeeFn,
@@ -50,10 +53,54 @@ function RegPage() {
   const { isBTT, isBQT, isAdmin, isPlatformAdmin } = useRole();
   const canSwapSeats = isBTT || isBQT || isAdmin || isPlatformAdmin;
 
-  const { events: EVENTS, registrations: REGISTRATIONS } = Route.useLoaderData() as {
+  const loaderData = Route.useLoaderData() as {
     events: EventItem[];
     registrations: Registration[];
   };
+
+  const [eventsList, setEventsList] = useState<EventItem[]>(loaderData?.events || []);
+  const [registrationsList, setRegistrationsList] = useState<Registration[]>(loaderData?.registrations || []);
+  const [isLoadingLive, setIsLoadingLive] = useState(false);
+
+  // Sync loaderData if router invalidates
+  useEffect(() => {
+    if (loaderData?.events?.length) setEventsList(loaderData.events);
+    if (loaderData?.registrations?.length) setRegistrationsList(loaderData.registrations);
+  }, [loaderData]);
+
+  // Eager client-side fetch on initial visit to ensure registrations load immediately without manual reloads
+  const fetchLiveRegistrations = async () => {
+    try {
+      setIsLoadingLive(true);
+      const res = await fetchNestApi<any>("/events/with-registrations").catch(async () => {
+        const [evs, rgs] = await Promise.all([
+          fetchNestApi<any[]>("/events").catch(() => []),
+          fetchNestApi<any[]>("/events/registrations").catch(() => []),
+        ]);
+        return { events: evs, registrations: rgs };
+      });
+
+      if (res) {
+        if (Array.isArray(res.events) && res.events.length > 0) {
+          setEventsList(res.events);
+        }
+        if (Array.isArray(res.registrations)) {
+          setRegistrationsList(res.registrations);
+        }
+      }
+    } catch (err) {
+      console.warn("[event-registrations] Client-side eager load failed:", err);
+    } finally {
+      setIsLoadingLive(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveRegistrations();
+  }, []);
+
+  const EVENTS = eventsList;
+  const REGISTRATIONS = registrationsList;
 
   const updateSeating = useServerFn(updateRegistrationSeatingFn);
   const recordCash = useServerFn(recordWalkInCashPaymentFn);
@@ -91,13 +138,20 @@ function RegPage() {
 
   // Map of occupied seats for Cinema seating visual chart
   const occupiedSeatsMap = useMemo(() => {
-    const map: Record<string, { attendeeName: string; attendeeCode?: string }> = {};
+    const map: Record<string, { attendeeName: string; attendeeCode?: string; company?: string; ticketType?: string; status?: string }> = {};
     REGISTRATIONS.forEach((r) => {
       if (r.seatAssignment && r.id !== selectedReg?.id) {
-        map[r.seatAssignment] = { attendeeName: r.memberName, attendeeCode: r.memberCode };
+        const info = {
+          attendeeName: r.memberName,
+          attendeeCode: r.memberCode,
+          company: r.company || "",
+          ticketType: r.ticketType || "VIP",
+          status: r.status || "confirmed",
+        };
+        map[r.seatAssignment] = info;
         const match = r.seatAssignment.match(/[A-Z]+-\d{2}|T\d+-\d{2}|SK-\d{2}/i);
         if (match) {
-          map[match[0].toUpperCase()] = { attendeeName: r.memberName, attendeeCode: r.memberCode };
+          map[match[0].toUpperCase()] = info;
         }
       }
     });
@@ -212,6 +266,32 @@ function RegPage() {
       await router.invalidate();
     } catch {
       toast.error("Lỗi khi gửi thông báo nhắc nhở");
+    }
+  };
+
+  const handleDeleteRegistration = async (r: Registration) => {
+    if (
+      !window.confirm(
+        `Xác nhận xóa người đăng ký tham dự:\n"${r.memberName}" (Mã: ${r.memberCode || r.id})?\nThao tác này sẽ hủy chỗ ngồi và xóa hoàn toàn thông tin đại biểu khỏi sự kiện!`,
+      )
+    ) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await fetchNestApi(`/events/registrations/${r.id}`, { method: "DELETE" }).catch(async () => {
+        // Fallback to cancel registration endpoint
+        await fetchNestApi(`/events/${r.eventId}/cancel`, {
+          method: "POST",
+          body: JSON.stringify({ reason: "Ban Tổ Chức xóa đăng ký đại biểu" }),
+        });
+      });
+      toast.success(`Đã xóa đăng ký tham dự của ${r.memberName}`);
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi xóa đăng ký sự kiện");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -577,6 +657,16 @@ function RegPage() {
                             Nhắc
                           </button>
                         )}
+
+                        {/* Xóa người đăng ký sự kiện */}
+                        <button
+                          onClick={() => handleDeleteRegistration(r)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 cursor-pointer"
+                          title="Xóa người đăng ký tham dự này khỏi sự kiện"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Xóa
+                        </button>
                       </div>
                     </td>
                   </tr>

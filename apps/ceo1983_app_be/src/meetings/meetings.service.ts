@@ -855,4 +855,208 @@ export class MeetingsService {
 
     return { ok: true, id, deleted: true };
   }
+
+  /**
+   * Lấy danh sách cuộc hẹn giao thương 1-on-1 từ CSDL (business_meetings & user_connections đã accepted)
+   * Phục vụ hiển thị trên tab CRM "Cuộc Hẹn Giao Thương 1-on-1"
+   */
+  async getConnectionAppointments(userId: string) {
+    try {
+      // 1. Lấy các cuộc họp 1-on-1 từ public.business_meetings
+      const meetingRows = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT 
+          m.id,
+          m.title,
+          m.description,
+          m.meeting_type,
+          m.status,
+          m.scheduled_start_at,
+          m.scheduled_end_at,
+          m.created_at,
+          m.updated_at,
+          m.created_by_user_id,
+          m.organizer_user_id,
+          h.name as host_name,
+          h.company as host_company,
+          h.phone as host_phone,
+          h.code as host_code,
+          h.avatar_url as host_avatar
+        FROM public.business_meetings m
+        LEFT JOIN public.members h ON (h.user_id = m.created_by_user_id OR h.user_id = m.organizer_user_id)
+        WHERE m.meeting_type = '1on1' 
+           OR m.meeting_type IS NULL 
+           OR m.title ILIKE '%kết nối%' 
+           OR m.title ILIKE '%1-on-1%' 
+           OR m.title ILIKE '%giao thương%'
+           OR m.description ILIKE '%Đối tác:%'
+        ORDER BY COALESCE(m.scheduled_start_at, m.created_at) DESC
+        LIMIT 100
+      `).catch(() => []);
+
+      const meetingItems: any[] = [];
+      const seenIds = new Set<string>();
+
+      for (const m of meetingRows) {
+        seenIds.add(String(m.id));
+
+        // Query participants
+        const participants = await this.prisma.$queryRawUnsafe<any[]>(`
+          SELECT 
+            p.role,
+            p.response_status,
+            mem.id as member_id,
+            mem.name,
+            mem.company,
+            mem.phone,
+            mem.code,
+            mem.avatar_url
+          FROM public.business_meeting_participants p
+          JOIN public.members mem ON mem.user_id = p.user_id
+          WHERE p.meeting_id = $1::uuid
+        `, m.id).catch(() => [] as any[]) as any[];
+
+        const hostPart = participants.find((p: any) => p.role === 'host' || p.role === 'organizer');
+        const inviteePart = participants.find((p: any) => p.role === 'invitee' || p.role === 'participant');
+
+        const hostName = hostPart?.name || m.host_name || 'Lãnh đạo Ban Điều Hành';
+        const hostCompany = hostPart?.company || m.host_company || 'Hiệp hội CEO 1983';
+        const hostPhone = hostPart?.phone || m.host_phone || '';
+        const hostCode = hostPart?.code || m.host_code || '';
+        const hostAvatar = hostPart?.avatar_url || m.host_avatar || '';
+
+        // Extract partner name / company / venue / notes from description if formatted
+        let partnerName = inviteePart?.name || '';
+        let partnerCompany = inviteePart?.company || '';
+        let partnerPhone = inviteePart?.phone || '';
+        let partnerCode = inviteePart?.code || '';
+        let partnerAvatar = inviteePart?.avatar_url || '';
+        let venue = 'Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội';
+        let notes = '';
+
+        if (m.description) {
+          const matchPartner = m.description.match(/Đối tác:\s*([^(.]+)(?:\(([^)]+)\))?/i);
+          if (matchPartner) {
+            if (!partnerName) partnerName = matchPartner[1]?.trim() || '';
+            if (!partnerCompany && matchPartner[2]) partnerCompany = matchPartner[2]?.trim() || '';
+          }
+          const matchVenue = m.description.match(/Địa điểm:\s*([^.]+)/i);
+          if (matchVenue) {
+            venue = matchVenue[1]?.trim() || venue;
+          }
+          const matchNotes = m.description.match(/Ghi chú:\s*(.+)$/i);
+          if (matchNotes) {
+            notes = matchNotes[1]?.trim() || '';
+          } else if (!matchPartner && !matchVenue) {
+            notes = m.description;
+          }
+        }
+
+        if (!partnerName) {
+          partnerName = 'Hội viên đối tác';
+        }
+
+        const scheduledDate = m.scheduled_start_at 
+          ? new Date(m.scheduled_start_at) 
+          : (m.created_at ? new Date(m.created_at) : new Date());
+        const dateStr = scheduledDate.toISOString().slice(0, 10);
+        const timeStr = scheduledDate.toTimeString().slice(0, 5);
+
+        const isOnline = venue.toLowerCase().includes('zoom') || 
+                         venue.toLowerCase().includes('http') || 
+                         venue.toLowerCase().includes('meet');
+
+        meetingItems.push({
+          id: String(m.id),
+          title: m.title || 'Cuộc gặp kết nối 1-on-1',
+          hostName,
+          hostCompany,
+          hostPhone,
+          hostCode,
+          hostAvatar,
+          partnerName,
+          partnerCompany,
+          partnerPhone,
+          partnerCode,
+          partnerAvatar,
+          date: dateStr,
+          time: timeStr,
+          venueType: isOnline ? 'online' : 'offline',
+          venue,
+          onlineUrl: isOnline ? venue : undefined,
+          notes: notes || 'Gặp gỡ trao đổi cơ hội hợp tác và giao thương B2B',
+          status: m.status || 'scheduled',
+          source: 'business_meeting',
+          createdAt: m.created_at || new Date().toISOString(),
+        });
+      }
+
+      // 2. Lấy các kết nối giao thương đã được chấp nhận (accepted) trong public.user_connections
+      const acceptedConnections = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT 
+          uc.id,
+          uc.requester_user_id,
+          uc.recipient_user_id,
+          uc.status,
+          uc.created_at,
+          uc.responded_at,
+          req.name as req_name,
+          req.company as req_company,
+          req.phone as req_phone,
+          req.code as req_code,
+          req.avatar_url as req_avatar,
+          rec.name as rec_name,
+          rec.company as rec_company,
+          rec.phone as rec_phone,
+          rec.code as rec_code,
+          rec.avatar_url as rec_avatar
+        FROM public.user_connections uc
+        LEFT JOIN public.members req ON req.user_id = uc.requester_user_id
+        LEFT JOIN public.members rec ON rec.user_id = uc.recipient_user_id
+        WHERE uc.status = 'accepted'::public.global_connection_status
+        ORDER BY COALESCE(uc.responded_at, uc.created_at) DESC
+        LIMIT 50
+      `).catch(() => []);
+
+      for (const conn of acceptedConnections) {
+        const connKey = `conn_${conn.id}`;
+        if (seenIds.has(connKey)) continue;
+
+        const dateObj = conn.responded_at ? new Date(conn.responded_at) : (conn.created_at ? new Date(conn.created_at) : new Date());
+        const dateStr = dateObj.toISOString().slice(0, 10);
+        const timeStr = dateObj.toTimeString().slice(0, 5);
+
+        meetingItems.push({
+          id: connKey,
+          title: `Kết nối giao thương B2B: ${conn.req_name || 'Hội viên'} 🤝 ${conn.rec_name || 'Đối tác'}`,
+          hostName: conn.req_name || 'Hội viên kết nối',
+          hostCompany: conn.req_company || 'Doanh nghiệp CEO 1983',
+          hostPhone: conn.req_phone || '',
+          hostCode: conn.req_code || '',
+          hostAvatar: conn.req_avatar || '',
+          partnerName: conn.rec_name || 'Hội viên đối tác',
+          partnerCompany: conn.rec_company || 'Doanh nghiệp đối tác',
+          partnerPhone: conn.rec_phone || '',
+          partnerCode: conn.rec_code || '',
+          partnerAvatar: conn.rec_avatar || '',
+          date: dateStr,
+          time: timeStr,
+          venueType: 'offline',
+          venue: 'Văn phòng Hiệp hội CEO 1983 / Trực tiếp',
+          notes: 'Kết nối 1-on-1 đã được đối tác chấp nhận trên App Hiệp hội',
+          status: 'confirmed',
+          source: 'user_connection',
+          createdAt: conn.created_at || new Date().toISOString(),
+        });
+      }
+
+      return {
+        items: meetingItems,
+        total: meetingItems.length,
+      };
+    } catch (err) {
+      console.error('getConnectionAppointments error:', err);
+      return { items: [], total: 0 };
+    }
+  }
 }
+

@@ -1835,4 +1835,29 @@ export class EventsService {
         : `Đăng ký vé thành công! Mã quay thưởng là #${luckyNum}. Vui lòng thanh toán qua VietQR. Thông tin đã được gửi tới email ${email}.`,
     };
   }
+
+  async deleteRegistration(userId: string, registrationId: string) {
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.event_registrations WHERE id = ${registrationId} LIMIT 1
+    `.catch(() => []);
+
+    if (existing.length === 0) {
+      throw new NotFoundException('Không tìm thấy thông tin đăng ký');
+    }
+
+    const reg = existing[0];
+    await this.prisma.$executeRaw`
+      DELETE FROM public.event_registrations WHERE id = ${registrationId}
+    `;
+
+    if (reg.event_id) {
+      await this.prisma.$executeRaw`
+        UPDATE public.events 
+        SET registered = GREATEST(0, registered - 1), updated_at = now()
+        WHERE id = ${reg.event_id}
+      `.catch(() => null);
+    }
+
+    return { ok: true, deleted: true, id: registrationId };
+  }
 }

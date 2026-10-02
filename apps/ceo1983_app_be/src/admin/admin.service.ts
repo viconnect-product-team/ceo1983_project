@@ -507,6 +507,16 @@ export class AdminService implements OnModuleInit {
     return created.invoice;
   }
 
+  async deleteInvoice(id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.invoice_reminders WHERE invoice_id = ${id}
+    `.catch(() => null);
+    await this.prisma.$executeRaw`
+      DELETE FROM public.invoices WHERE id = ${id}
+    `;
+    return { success: true, message: `Hóa đơn #${id} đã được xóa thành công` };
+  }
+
   async checkIsAdmin(userId: string, assocId?: string): Promise<boolean> {
     if (!userId) return false;
     if (userId === 'mock-admin-id' || userId === '00000000-0000-0000-0000-000000000000') {

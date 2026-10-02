@@ -140,6 +140,38 @@ Hệ thống thanh menu bên trái (Sidebar) của Web CRM được chuẩn hóa
 - **Lớp phủ Gradient Tối:** Phủ lớp `linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.6), transparent)` giúp tôn vinh tiêu đề sự kiện màu vàng kim và thông tin ngày giờ mà không bị chìm màu.
 - **Đầy đủ trường thông tin cập nhật:** Banner URL (`imageUrl`), Nhân sự phụ trách soát vé (`qrStaff`), Mô tả chi tiết, Số lượng vé tối đa, Địa điểm Google Maps.
 
+### 3.6. Phân hệ Quản Trị Phân Quyền & Catalog Vai Trò - Ban Chuyên Môn (`permissions.tsx`)
+- **Triết lý kiểm soát RBAC:** "Không có quyền thì ẩn triệt để". Bỏ tích quyền trong ma trận và bấm Lưu sẽ phản ánh ngay lập tức trên UI thông qua `isActionAllowedByMatrix`.
+- **Cấu trúc Tab 3 - Catalog Vai Trò & Ban Chuyên Môn Chính Thức:**
+  - 5 Vai trò Cốt lõi: Quản trị (`quan_tri`), Admin (`admin`), Tổng thư ký (`tong_thu_ky`), Trưởng ban (`truong_ban`), Thành viên (`member`).
+  - 6 Ban Chuyên môn Chính thức: Ban Quản trị (BQT), Ban Thư ký (BTK), Ban Truyền thông (BTT), Ban Xúc tiến Giao thương (BXT), Ban Phát triển Thành viên (BTV), Ban Thiện nguyện Xã hội (BTN).
+  - Từng thẻ trình bày: Phạm vi quản lý, Danh sách thẩm quyền được phép (✅), Danh sách giới hạn nghiêm ngặt (🚫), Thống kê số lượng hội viên thực tế, và nút bấm lọc tức thì sang Tab 2 "Phân Quyền Từng Tài Khoản".
+
+### 3.7. Bộ Soạn Thảo Mẫu Email Trực Quan Không Cần Code (`MailTemplateManager.tsx`)
+- **Chế độ kép (Dual Mode):**
+  - *Chế độ trực quan dễ dùng (Visual Blocks):* Dành cho người dùng thông thường, phân tách rõ 5 khối nội dung (Banner Tiêu Đề, Lời Chào & Thân Bài, Hộp Chi Tiết Điểm Nhấn Highlight Box với tính năng Thêm/Xóa dòng, Mã QR Tự Động VietQR / E-Ticket, và Chân Trang / Ký Tên).
+  - *Chế độ mã nguồn HTML nâng cao (Source Code):* Dành cho quản trị viên kỹ thuật muốn tinh chỉnh thẻ HTML và CSS inline.
+- **Thanh công cụ 1-Click Variable Pills:** Thanh công cụ phía trên hiển thị danh sách biến thay thế trực quan (`{{member_name}}`, `{{member_code}}`, `{{amount}}`, `{{event_name}}`, `{{qr_code}}`, ...). Click 1 chạm để chèn ngay lập tức vào vùng soạn thảo kèm toast thông báo phản hồi.
+- **Bảng màu email:** Chuẩn nhận diện CEO 1983 Navy Cobalt (`#003B95`) và Amber Gold (`#D4AF37`).
+
+### 3.8. Sơ Đồ Khán Phòng Tương Tác Chuẩn Cinema & Thẻ Thông Tin Người Tham Dự (`CinemaSeatingMap.tsx`)
+- **Tương tác ghế ngồi đa chế độ:** Cho phép click trực tiếp vào bất kỳ ghế nào trên sơ đồ (kể cả ghế đã có người ngồi / đã xác nhận).
+- **Thẻ Thông Tin Chi Tiết Chỗ Ngồi & Người Tham Dự:**
+  - Hiển thị góc dưới sơ đồ khi click vào ghế: Mã ghế, Họ tên người tham dự, Mã hội viên, Doanh nghiệp đại diện, Loại vé, Trạng thái (Đã xác nhận / Đã check-in).
+  - Nút bấm hành động 1 chạm: Cho phép đổi ghế, gán lại ghế hoặc chọn ghế cho người đăng ký mới.
+- **Bảng màu:** Ghế đã đặt màu Royal Navy (`#003B95`), Ghế đang chọn màu Amber Gold (`#F59E0B`), Ghế VIP màu Gold, Ghế trống màu Slate.
+
+### 3.9. Quản Lý Cuộc Hẹn Giao Thương 1-on-1 Trên Web CRM (`meetings.tsx` Tab 2)
+- **Tab Switcher điều phối:**
+  - Tab 1: Cuộc Họp Ban Điều Hành & Chuyên Ban.
+  - Tab 2: Cuộc Hẹn Giao Thương 1-on-1 (App Hiệp Hội) - Đồng bộ tự động từ database CSDL qua endpoint `GET /meetings/connection-appointments` kết hợp `public.business_meetings` và `public.user_connections`.
+- **Giao diện Tab 2:**
+  - 4 Thẻ KPI: Tổng cuộc hẹn, Sắp diễn ra, Hoàn thành, Đã hủy.
+  - Lưới hiển thị 2 cột đối ứng Host 🤝 Partner (kèm avatar, mã HV, công ty, SĐT).
+  - Trạng thái trực quan: Chờ xác nhận, Đã chấp nhận, Đã hoàn thành, Đã hủy.
+  - Thông tin địa điểm (Bản đồ offline / Zoom link online), ghi chú bí mật kinh doanh, nút Hoàn thành và nút Hủy hẹn.
+  - Nút mở modal `<Create1on1MeetingModal>` trực tiếp từ CRM.
+
 ---
 
 ## 4. BẢNG MÀU CHUẨN HỆ THỐNG WEB CRM CEO 1983

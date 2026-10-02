@@ -47,6 +47,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { MockModeBanner } from "@/components/MockModeBanner";
 import { VoiceNavAssistant } from "@/components/ai/VoiceNavAssistant";
 import { ViOneVoiceAssistant } from "@/components/ai/ViOneVoiceAssistant";
+import { IosInstallPrompt } from "@/components/member/IosInstallPrompt";
 
 import appCss from "../styles.css?url";
 
@@ -454,6 +455,7 @@ function RootComponent() {
             <AuthGate>
               <Outlet />
             </AuthGate>
+            <IosInstallPrompt />
           </AuthProvider>
           <Toaster position="top-right" />
         </ThemeProvider>

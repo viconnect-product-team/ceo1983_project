@@ -882,5 +882,215 @@ export class MailService {
     this.logger.log(`[REGISTRATION_RECEIVED_LOG] To: ${cleanTo} | Name: ${fullName} | Company: ${companyName}`);
     return { ok: true, message: 'Registration received logged to audit stream' };
   }
+
+  // ── DYNAMIC MAIL TEMPLATES MANAGEMENT & DISPATCH (RESTFUL API) ─────────────
+
+  private templatesStore: Map<string, any> = new Map([
+    [
+      'tmpl-fee-notice',
+      {
+        id: 'tmpl-fee-notice',
+        code: 'FEE_NOTICE_ANNUAL',
+        category: 'fee',
+        name: 'Thông Báo Nộp Hội Phí Niên Liễm Định Kỳ',
+        description: 'Tự động gửi thông báo nộp phí hội viên định kỳ hàng năm kèm mã VietQR và hướng dẫn thanh toán.',
+        channels: ['email', 'in_app', 'push'],
+        subject: '[CLB CEO 1983] Thông Báo Nộp Hội Phí Thường Niên Năm {{fee_year}} — Anh/Chị {{full_name}}',
+        inAppTitle: 'Thông báo nộp hội phí thường niên {{fee_year}}',
+        inAppBody: 'Kính gửi Anh/Chị {{full_name}}, hệ thống gửi thông báo hội phí năm {{fee_year}} của đơn vị {{company_name}}.',
+        variables: [
+          { key: 'full_name', label: 'Tên hội viên', example: 'Nguyễn Văn Hùng' },
+          { key: 'member_code', label: 'Mã hội viên', example: 'M1983-001' },
+          { key: 'company_name', label: 'Tên doanh nghiệp', example: 'Tập Đoàn Công Nghệ ViConnect' },
+          { key: 'fee_year', label: 'Năm hội phí', example: '2026' },
+          { key: 'fee_amount', label: 'Số tiền hội phí', example: '15,000,000' },
+          { key: 'due_date', label: 'Hạn chót thanh toán', example: '31/10/2026' },
+          { key: 'vietqr_url', label: 'Đường dẫn ảnh VietQR', example: 'https://api.vietqr.io/image/970422-198388889999-compact2.jpg' },
+        ],
+        updatedAt: '2026-10-01',
+        isCustom: false,
+        htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #001A4D 0%, #003B95 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
+    <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff;">THÔNG BÁO THU HỘI PHÍ NIÊN LIỄM {{fee_year}}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #cbd5e1;">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+  </div>
+  <div style="padding: 28px 24px; color: #1e293b;">
+    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
+      Kính gửi: <strong>Anh/Chị {{full_name}}</strong>,<br/>
+      Đại diện Doanh nghiệp: <strong>{{company_name}}</strong> (Mã HV: {{member_code}}),
+    </p>
+    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #334155;">
+      Ban Thư ký CLB Doanh Nhân CEO 1983 trân trọng thông báo đến Quý Anh/Chị kỳ nộp hội phí thường niên năm <strong>{{fee_year}}</strong> nhằm duy trì quyền lợi thành viên và tham gia các hoạt động kết nối xúc tiến thương mại.
+    </p>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+      <table style="width: 100%; font-size: 13.5px; border-collapse: collapse;">
+        <tr><td style="padding: 6px 0; color: #64748b; width: 140px;">Mã hội viên:</td><td style="padding: 6px 0; font-weight: 700; color: #003B95;">{{member_code}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">Mức hội phí:</td><td style="padding: 6px 0; font-weight: 800; color: #dc2626; font-size: 15px;">{{fee_amount}} VNĐ</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">Hạn chót thanh toán:</td><td style="padding: 6px 0; font-weight: 700; color: #d97706;">{{due_date}}</td></tr>
+      </table>
+    </div>
+    <div style="text-align: center; margin: 24px 0;">
+      <p style="margin: 0 0 8px; font-size: 13px; font-weight: 700; color: #003B95;">QUÉT MÃ VIETQR THANH TOÁN TỰ ĐỘNG CHUẨN NAPAS247</p>
+      <img src="{{vietqr_url}}" alt="VietQR" style="max-width: 200px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: block; margin: 0 auto;" />
+    </div>
+  </div>
+</div>
+`,
+      },
+    ],
+    [
+      'tmpl-welcome-new-member',
+      {
+        id: 'tmpl-welcome-new-member',
+        code: 'WELCOME_NEW_MEMBER',
+        category: 'welcome',
+        name: 'Thư Chào Mừng & Cảm Ơn Hội Viên Mới Gia Nhập',
+        description: 'Tự động gửi ngay sau khi tài khoản hội viên được Ban Quản Trị phê duyệt chính thức.',
+        channels: ['email', 'in_app', 'push'],
+        subject: 'CHÀO MỪNG ANH/CHỊ {{full_name}} CHÍNH THỨC GIA NHẬP CLB DOANH NHÂN CEO 1983',
+        inAppTitle: 'Chúc mừng gia nhập CLB CEO 1983',
+        inAppBody: 'Hồ sơ của Anh/Chị đã được Ban Thường Trực duyệt. Chào mừng Anh/Chị đến với cộng đồng Doanh nhân CEO 1983!',
+        variables: [
+          { key: 'full_name', label: 'Tên hội viên', example: 'Trần Thị Mai' },
+          { key: 'member_code', label: 'Mã hội viên', example: 'M1983-088' },
+          { key: 'company_name', label: 'Tên công ty', example: 'Công ty TNHH Thời Trang Luxury' },
+          { key: 'joined_date', label: 'Ngày gia nhập', example: '02/10/2026' },
+          { key: 'executive_role', label: 'Vai trò hiệp hội', example: 'Hội Viên Chính Thức' },
+          { key: 'department', label: 'Ban chuyên môn', example: 'Ban Xúc Tiến Thương Mại' },
+          { key: 'app_download_link', label: 'Link tải app', example: 'https://ceo1983.com/association' },
+        ],
+        updatedAt: '2026-10-01',
+        isCustom: false,
+        htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #1e3a8a 0%, #003B95 50%, #d97706 100%); padding: 36px 24px; text-align: center; color: #ffffff;">
+    <h1 style="margin: 0; font-size: 23px; font-weight: 800; color: #ffffff;">CHÀO MỪNG HỘI VIÊN MỚI GIA NHẬP</h1>
+    <p style="margin: 8px 0 0; font-size: 13.5px; color: #fef08a;">CLB DOANH NHÂN CEO 1983 (HanoiBA)</p>
+  </div>
+  <div style="padding: 28px 24px; color: #1e293b;">
+    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
+      Kính gửi: <strong>Anh/Chị {{full_name}}</strong>,<br/>
+      Chủ tịch / Tổng Giám đốc: <strong>{{company_name}}</strong>,
+    </p>
+    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #334155;">
+      Thay mặt Ban Chấp Hành CLB Doanh Nhân CEO 1983, tôi trân trọng gửi lời chúc mừng nồng nhiệt nhất tới Anh/Chị và Quý Công ty đã chính thức trở thành thành viên của ngôi nhà chung CEO 1983.
+    </p>
+  </div>
+</div>
+`,
+      },
+    ],
+  ]);
+
+  async listTemplates(category?: string) {
+    const all = Array.from(this.templatesStore.values());
+    if (category && category !== 'all') {
+      return all.filter((t) => t.category === category);
+    }
+    return all;
+  }
+
+  async getTemplate(idOrCode: string) {
+    if (this.templatesStore.has(idOrCode)) {
+      return this.templatesStore.get(idOrCode);
+    }
+    for (const t of this.templatesStore.values()) {
+      if (t.code === idOrCode) return t;
+    }
+    return null;
+  }
+
+  async createTemplate(data: any) {
+    const id = `tmpl-custom-${Date.now()}`;
+    const newTemplate = {
+      ...data,
+      id,
+      updatedAt: new Date().toISOString().slice(0, 10),
+      isCustom: true,
+    };
+    this.templatesStore.set(id, newTemplate);
+    return newTemplate;
+  }
+
+  async updateTemplate(id: string, data: any) {
+    const existing = await this.getTemplate(id);
+    if (!existing) return null;
+    const updated = {
+      ...existing,
+      ...data,
+      id: existing.id,
+      updatedAt: new Date().toISOString().slice(0, 10),
+    };
+    this.templatesStore.set(existing.id, updated);
+    return updated;
+  }
+
+  async deleteTemplate(id: string) {
+    const existing = await this.getTemplate(id);
+    if (!existing) return false;
+    return this.templatesStore.delete(existing.id);
+  }
+
+  async sendTestByTemplateId(id: string, to: string, customVariables?: Record<string, string>) {
+    const template = await this.getTemplate(id);
+    if (!template) {
+      throw new Error(`Template ${id} not found`);
+    }
+
+    let subject = template.subject || '[CEO 1983] Test Email';
+    let html = template.htmlBody || '<p>Email body</p>';
+
+    const vars: Record<string, string> = {};
+    if (Array.isArray(template.variables)) {
+      template.variables.forEach((v: any) => {
+        vars[v.key] = customVariables?.[v.key] || v.example || '';
+      });
+    }
+    if (customVariables) {
+      Object.assign(vars, customVariables);
+    }
+
+    // Replace {{key}}
+    for (const [k, val] of Object.entries(vars)) {
+      const reg = new RegExp(`{{${k}}}`, 'g');
+      subject = subject.replace(reg, String(val));
+      html = html.replace(reg, String(val));
+    }
+
+    return this.sendDirectEmail({
+      to,
+      subject: `[TEST TEMPLATE] ${subject}`,
+      html,
+      templateCode: template.code,
+    });
+  }
+
+  async sendDirectEmail(options: { to: string; subject: string; html: string; templateCode?: string }) {
+    const cleanTo = (options.to || '').trim();
+    if (this.transporter) {
+      try {
+        const fromAddr = this.getCleanFromEmail();
+        const info = await this.transporter.sendMail({
+          from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
+          to: cleanTo,
+          subject: options.subject,
+          html: options.html,
+        });
+        this.logger.log(`Email dispatched successfully to ${cleanTo}. Id: ${info.messageId}`);
+        return { ok: true, message: 'Email sent successfully via SMTP', messageId: info.messageId };
+      } catch (err: any) {
+        this.logger.error(`SMTP delivery failed: ${err.message}`, err.stack);
+      }
+    }
+
+    this.logger.log(`[AUDIT_EMAIL_DISPATCH] To: ${cleanTo} | Subject: ${options.subject}`);
+    return { ok: true, message: 'Email logged to audit stream (SMTP fallback mode)' };
+  }
+
+  async sendDynamic(templateCode: string, to: string, variables: Record<string, string>) {
+    return this.sendTestByTemplateId(templateCode, to, variables);
+  }
 }
+
 

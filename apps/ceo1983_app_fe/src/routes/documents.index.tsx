@@ -15,6 +15,7 @@ import {
   Trash2,
   Upload,
   X,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -23,6 +24,7 @@ import { getNestApiUrl } from "@/lib/api-client";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, TableShell } from "@/components/dashboard/PageKit";
 import { EmptyState, ListSkeleton, NoSearchResult } from "@/components/dashboard/StateKit";
+import { MailTemplateManager } from "@/components/documents/MailTemplateManager";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useRole } from "@/hooks/use-role";
@@ -137,6 +139,7 @@ function DocsPage() {
   const [view, setView] = useUrlState<"card" | "list">("view", "card");
   const [pinnedOnly, setPinnedOnly] = useUrlState<"0" | "1">("pinned", "0");
   const [group, setGroup] = useUrlState<"none" | "cat">("group", "none");
+  const [docTab, setDocTab] = useUrlState<"docs" | "mail_templates">("tab", "docs");
 
   const cats = useMemo(
     () => ["all", ...new Set(DOCUMENTS.map((d) => d.category).filter(Boolean))],
@@ -456,9 +459,10 @@ function DocsPage() {
   return (
     <AppShell>
       <PageHeader
-        title={t("doc.title")}
-        subtitle={t("doc.subtitle")}
+        title={docTab === "mail_templates" ? "Quản lý Template Mail & Thông báo" : t("doc.title")}
+        subtitle={docTab === "mail_templates" ? "Thiết lập mẫu email tự động CRM: hội phí, cảm ơn hội viên, vé sự kiện, nhắc nợ..." : t("doc.subtitle")}
         actions={
+          docTab === "docs" ? (
           <div className="flex items-center gap-2">
             <div
               className="flex items-center rounded-lg border border-border bg-card p-0.5 shadow-[var(--shadow-card)]"
@@ -528,10 +532,56 @@ function DocsPage() {
               </button>
             )}
           </div>
+          ) : undefined
         }
       />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* Tabs Switcher */}
+      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3">
+        <button
+          onClick={() => setDocTab("docs")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+            docTab === "docs"
+              ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+              : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          <FolderOpen className="h-4 w-4" />
+          <span>Kho Tài Liệu &amp; Văn Bản</span>
+          <span
+            className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+              docTab === "docs" ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {DOCUMENTS.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setDocTab("mail_templates")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+            docTab === "mail_templates"
+              ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+              : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          <Mail className="h-4 w-4" />
+          <span>Quản Lý Template Mail CRM</span>
+          <span
+            className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+              docTab === "mail_templates" ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+            }`}
+          >
+            Dynamic
+          </span>
+        </button>
+      </div>
+
+      {docTab === "mail_templates" ? (
+        <MailTemplateManager />
+      ) : (
+        <>
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label={t("doc.kpi.total")}
           value={DOCUMENTS.length}
@@ -901,6 +951,8 @@ function DocsPage() {
             )}
           </section>
         </div>
+      )}
+      </>
       )}
 
       <CrudModal

@@ -27,7 +27,7 @@
 | **TC-002** | **UC-PUB-02** | Cổng Thông Tin Công Khai | Xem Video Hoạt Động, Thư Viện Hình Ảnh Gala & Thông Điệp Từ Chủ Tịch CLB | Khách truy cập, Ứng viên gia nhập CLB | **PASS** | `02_landing_cinematic.png` |
 | **TC-003** | **UC-PUB-03** | Cổng Thông Tin Công Khai | Nộp Hồ Sơ Đăng Ký Gia Nhập Hội Viên Chính Thức CLB Doanh Nhân CEO 1983 Trực Tuyến | Doanh nhân ứng viên (Đại diện: Phạm Văn Vũ - vupv090120@gmail.com) | **PASS** | `live_02_member_registration_form_filled.png` |
 | **TC-004** | **UC-PUB-04** | Cổng Thông Tin Công Khai | Tự Động Phát Thư Điện Tử Xác Nhận Tiếp Nhận Đơn Đăng Ký Đến Hòm Thư Ứng Viên | Hệ thống Máy chủ Thư tín Điện tử Tự động (Mailer Service) | **PASS** | `live_09_email_template_credentials_sent_vu.png` |
-| **TC-005** | **UC-PUB-05** | Cổng Thông Tin Công Khai | Tra Cứu Trực Tuyến Tiến Độ Thẩm Định Hồ Sơ Gia Nhập CLB CEO 1983 | Ứng viên gia nhập CLB | **PASS** | `sub_04_landing_status_polling.png` |
+| **TC-005** | **UC-PUB-05** | Cổng Thông Tin Công Khai | Gửi Thành Công Đơn Đăng Ký Gia Nhập & Xác Nhận Tiếp Nhận Vào Hệ Thống Thẩm Định | Doanh nhân ứng viên (Đại diện: Doanh nhân Phạm Văn Vũ - vupv090120@gmail.com) | **PASS** | `sub_04_landing_status_polling.png` |
 | **TC-006** | **UC-PUB-06** | Cổng Thông Tin Công Khai | Khám Phá Danh Thiếp Điện Tử Công Khai Của Doanh Nhân 1983 Qua Chạm Thẻ NFC Hoặc Quét QR | Đối tác kinh doanh, Khách hàng, Hội viên khác | **PASS** | `live_27_public_digital_card_web.png` |
 | **TC-007** | **UC-PUB-07** | Cổng Thông Tin Công Khai | Lưu Thông Tin Danh Bạ Doanh Nhân (.vcf) Trực Tiếp Vào Điện Thoại Thông Minh Trong 1 Giây | Đối tác kinh doanh, Khách hàng | **PASS** | `app_visit_card_front.png` |
 | **TC-008** | **UC-PUB-08** | Cổng Thông Tin Công Khai | Gửi Lời Nhắn Kết Nối & Đặt Lịch Hẹn Gặp Kinh Doanh Trực Tiếp Từ Danh Thiếp Điện Tử | Đối tác kinh doanh, Doanh nhân ngoài CLB | **PASS** | `sub_15_app_public_digital_card.png` |
@@ -151,7 +151,7 @@
 | **TC-126** | **UC-APP-38** | Thông Báo & Sổ Tay Hướng Dẫn | Đăng Xuất Khỏi Ứng Dụng An Toàn Khi Sử Dụng Chung Thiết Bị | Hội viên hoàn tất phiên làm việc | **PASS** | `06_app_login_screen.png` |
 | **TC-127** | **UC-APP-39** | Giao Thương & Hợp Tác Doanh Nghiệp | Gửi Yêu Cầu Kết Nối Giao Thương 1-1 Với Doanh Nghiệp Thành Viên Kèm Lời Nhắn Hợp Tác | Hội viên chủ động tìm kiếm đối tác (Doanh nhân Phạm Văn Vũ) | **PASS** | `live_29_app_opportunities_feed_1on1.png` |
 | **TC-128** | **UC-APP-40** | Giao Thương & Hợp Tác Doanh Nghiệp | Tạo Phiếu Đặt Hàng B2B Trực Tiếp Cho Sản Phẩm Doanh Nghiệp Hội Viên Trên Ứng Dụng | Hội viên có nhu cầu mua sắm sản phẩm dịch vụ từ đồng nghiệp | **PASS** | `app_step_15_marketplace_grid.png` |
-| **TC-129** | **UC-APP-41** | Giao Thương & Hợp Tác Doanh Nghiệp | Đánh Giá Tín Nhiệm & Nhận Xét 5 Sao Cho Đối Tác Sau Khi Hoàn Thành Giao Thương | Hội viên đã hoàn tất giao dịch mua sắm / hợp tác | **PASS** | `app1983_10_marketplace_b2b.png` |
+| **TC-129** | **UC-APP-41** | Giao Thương & Hợp Tác Doanh Nghiệp | Đánh Giá Tín Nhiệm & Nhận Xét 5 Sao Cho Đối Tác Sau Khi Hoàn Thành Giao Thương | Hội viên đã hoàn tất giao dịch mua sắm / hợp tác | **PASS** | `app1983_10_marketplace_shopee.png` |
 | **TC-130** | **UC-APP-42** | Sự Kiện & Triển Lãm Doanh Nghiệp | Đăng Ký Gian Hàng Triển Lãm Doanh Nghiệp Tại Sự Kiện Gala & Diễn Đàn Kinh Tế | Hội viên mong muốn quảng bá sản phẩm tại sự kiện lớn | **PASS** | `live_18_crm_event_create_paid_modal.png` |
 | **TC-131** | **UC-APP-43** | Biểu Quyết & Sinh Hoạt Hiệp Hội | Bầu Chọn Doanh Nhân Tiêu Biểu & Biểu Quyết Nghị Quyết Đại Hội Trực Tuyến Trên App | Hội viên chính thức tham gia biểu quyết đại hội | **PASS** | `app_step_14_voting_luckydraw.png` |
 | **TC-132** | **UC-APP-44** | Biểu Quyết & Sinh Hoạt Hiệp Hội | Tham Gia Vòng Quay May Mắn (Lucky Draw) Nhận Quà Tài Trợ Tại Sự Kiện Gala | Hội viên và khách mời có mặt tại sự kiện Gala | **PASS** | `crm_12_voting_luckydraw.png` |
@@ -256,27 +256,24 @@
 
 ---
 
-### TC-005: Tra Cứu Trực Tuyến Tiến Độ Thẩm Định Hồ Sơ Gia Nhập CLB CEO 1983 (Tương ứng UC-PUB-05)
+### TC-005: Gửi Thành Công Đơn Đăng Ký Gia Nhập & Xác Nhận Tiếp Nhận Vào Hệ Thống Thẩm Định (Tương ứng UC-PUB-05)
 
 * **Mã Test Case:** TC-005
 * **Mã Use Case liên kết:** UC-PUB-05
 * **Phân hệ nghiệp vụ:** Cổng Thông Tin Công Khai
-* **Tác nhân thực hiện:** Ứng viên gia nhập CLB
-* **Tiền điều kiện:** Ứng viên đã nộp đơn đăng ký và có mã hồ sơ hoặc email đăng ký.
+* **Tác nhân thực hiện:** Doanh nhân ứng viên (Đại diện: Doanh nhân Phạm Văn Vũ - vupv090120@gmail.com)
+* **Tiền điều kiện:** Ứng viên đã điền đầy đủ thông tin biểu mẫu tại Cổng Đăng Ký Gia Nhập Trực Tuyến và nhấn nút nộp hồ sơ.
 * **Các bước thao tác kiểm thử:**
-1. Ứng viên truy cập mục "Tra Cứu Hồ Sơ" trên Cổng thông tin điện tử.
-2. Nhập địa chỉ email: vupv090120@gmail.com hoặc Số điện thoại: 0901201983.
-3. Bấm "Tra Cứu Tiến Độ".
-4. Màn hình hiển thị dòng thời gian xử lý trực quan:
-   - Bước 1: Tiếp nhận hồ sơ trực tuyến (Đã hoàn thành)
-   - Bước 2: Thẩm định hồ sơ doanh nghiệp bởi Ban Thành Viên (Đang thực hiện)
-   - Bước 3: Phê duyệt kết nạp & Cấp mã Hội viên CEO-83xxx
-   - Bước 4: Kích hoạt tài khoản và Thẻ Doanh nhân VIP 3D NFC.
-* **Kết quả kỳ vọng & Kết quả thực tế:** Ứng viên theo dõi được minh bạch tiến độ xét duyệt của Ban Điều Hành CLB.
+1. Ứng viên nhấn nút "Gửi Hồ Sơ Đăng Ký Gia Nhập" trên Cổng thông tin điện tử tiếp nhận hồ sơ.
+2. Hệ thống kiểm tra tính hợp lệ của dữ liệu: Định dạng email, số điện thoại, ngày sinh 1983, tên doanh nghiệp và mã số thuế.
+3. Hệ thống tạo bản ghi mới trong bảng dữ liệu thành viên với trạng thái Chờ thẩm định (pending).
+4. Màn hình hiển thị thông điệp xác nhận trang trọng: "Đăng Ký Thành Công! Hồ sơ của Quý Doanh Nhân đã được chuyển trực tiếp tới Ban Thành Viên CLB Doanh Nhân CEO 1983 để thẩm định theo Quy chế kết nạp".
+5. Dữ liệu hồ sơ tự động đồng bộ sang phân hệ Quản Trị Hội Viên (Tab Chờ thẩm định) trên Cổng Quản Trị CRM dành cho Ban Thành Viên và Ban Quản Trị.
+* **Kết quả kỳ vọng & Kết quả thực tế:** Hồ sơ đăng ký gia nhập được lưu trữ an toàn trong cơ sở dữ liệu và sẵn sàng để Ban Thành Viên thẩm định trên Cổng CRM.
 * **Đánh giá trạng thái:** **PASS (100% Hợp Lệ)**
 * **Tệp ảnh minh chứng:** *sub_04_landing_status_polling.png*
 
-![Tra Cứu Trực Tuyến Tiến Độ Thẩm Định Hồ Sơ Gia Nhập CLB CEO 1983](images/evidence/sub_04_landing_status_polling.png)
+![Gửi Thành Công Đơn Đăng Ký Gia Nhập & Xác Nhận Tiếp Nhận Vào Hệ Thống Thẩm Định](images/evidence/sub_04_landing_status_polling.png)
 
 ---
 
@@ -3089,9 +3086,9 @@
 6. Điểm tín nhiệm của doanh nghiệp đối tác được cập nhật trên Gian hàng B2B để toàn thể CLB cùng tham khảo.
 * **Kết quả kỳ vọng & Kết quả thực tế:** Xây dựng môi trường giao thương nội bộ trung thực, tôn vinh các doanh nghiệp uy tín hàng đầu trong CLB.
 * **Đánh giá trạng thái:** **PASS (100% Hợp Lệ)**
-* **Tệp ảnh minh chứng:** *app1983_10_marketplace_b2b.png*
+* **Tệp ảnh minh chứng:** *app1983_10_marketplace_shopee.png*
 
-![Đánh Giá Tín Nhiệm & Nhận Xét 5 Sao Cho Đối Tác Sau Khi Hoàn Thành Giao Thương](images/evidence/app1983_10_marketplace_b2b.png)
+![Đánh Giá Tín Nhiệm & Nhận Xét 5 Sao Cho Đối Tác Sau Khi Hoàn Thành Giao Thương](images/evidence/app1983_10_marketplace_shopee.png)
 
 ---
 

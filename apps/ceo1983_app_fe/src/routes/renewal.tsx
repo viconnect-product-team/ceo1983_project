@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -33,10 +33,24 @@ import {
   cancelRenewalFn,
   setPaymentStatusFn,
 } from "@/lib/renewals.functions";
+import { fetchNestApi } from "@/lib/api-client";
+import { toRecord, type Row } from "@/lib/renewals-calc";
 
 export const Route = createFileRoute("/renewal")({
   ssr: false,
-  loader: () => listRenewalsFn(),
+  loader: async () => {
+    try {
+      const serverRes = await listRenewalsFn().catch(() => []);
+      if (Array.isArray(serverRes) && serverRes.length > 0) return serverRes;
+    } catch {}
+    try {
+      const clientRes = await fetchNestApi<any[]>("/members");
+      if (Array.isArray(clientRes) && clientRes.length > 0) {
+        return clientRes.map((r) => toRecord(r as Row));
+      }
+    } catch {}
+    return [];
+  },
   component: RenewalPage,
 });
 
@@ -180,7 +194,23 @@ function RenewalPage() {
   const t = useT();
   const navigate = useNavigate();
   const router = useRouter();
-  const records = Route.useLoaderData() as RenewalRecord[];
+  const loaderRecords = (Route.useLoaderData() as RenewalRecord[]) || [];
+  const [records, setRecords] = useState<RenewalRecord[]>(loaderRecords);
+
+  useEffect(() => {
+    if (loaderRecords.length > 0) {
+      setRecords(loaderRecords);
+    } else {
+      fetchNestApi<any[]>("/members")
+        .then((res) => {
+          if (Array.isArray(res) && res.length > 0) {
+            setRecords(res.map((r) => toRecord(r as Row)));
+          }
+        })
+        .catch((err) => console.warn("Failed to fetch renewal members fallback:", err));
+    }
+  }, [loaderRecords]);
+
   const renewFn = useServerFn(renewMembershipFn);
   const bulkRenewFn = useServerFn(bulkRenewMembershipFn);
   const remindFn = useServerFn(sendRenewalReminderFn);

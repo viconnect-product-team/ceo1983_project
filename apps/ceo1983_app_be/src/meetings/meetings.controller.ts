@@ -37,6 +37,12 @@ export class MeetingsController {
     return this.meetingsService.getWorkspaceSummary(userId);
   }
 
+  @Get('connection-appointments')
+  async getConnectionAppointments(@Request() req: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.getConnectionAppointments(userId);
+  }
+
   @Post('workspace/list')
   async listWorkspaceMeetings(@Request() req: any, @Body() filters: any) {
     const userId = req.user.id || req.user.sub;

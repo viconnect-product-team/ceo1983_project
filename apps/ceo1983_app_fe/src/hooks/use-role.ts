@@ -8,6 +8,7 @@ import {
   type Permission,
   type SrsRole,
 } from "@/constants/permissions";
+import { isActionAllowedByMatrix } from "@/lib/rbac-permission-helpers";
 
 export { PERMISSIONS, SRS_ROLES, ROLE_PERMISSIONS };
 export type { Permission, SrsRole };
@@ -280,10 +281,12 @@ export function useRole(): RoleState {
     const handleAuthChange = () => {
       clearMeCache();
       loadRoles();
+      setMatrixVersion((v) => v + 1);
     };
 
     window.addEventListener("vba_auth_changed", handleAuthChange);
     window.addEventListener("role-changed", handleAuthChange);
+    window.addEventListener("crm_permissions_updated", handleAuthChange);
     window.addEventListener("profile-updated", handleAuthChange);
     window.addEventListener("storage", handleAuthChange);
 
@@ -291,10 +294,13 @@ export function useRole(): RoleState {
       active = false;
       window.removeEventListener("vba_auth_changed", handleAuthChange);
       window.removeEventListener("role-changed", handleAuthChange);
+      window.removeEventListener("crm_permissions_updated", handleAuthChange);
       window.removeEventListener("profile-updated", handleAuthChange);
       window.removeEventListener("storage", handleAuthChange);
     };
   }, [user?.id, user?.role, user?.department, user?.executiveRole]);
+
+  const [matrixVersion, setMatrixVersion] = useState(0);
 
   const setRoleOverride = (newRole: SrsRole) => {
     setSrsRole(newRole);
@@ -326,9 +332,15 @@ export function useRole(): RoleState {
   const can = useCallback(
     (permission: Permission): boolean => {
       if (isPlatformAdmin) return true;
+      // 1. Kiểm tra trực tiếp Ma Trận Quyền CSDL/localStorage:
+      // Nếu Admin đã BỎ TÍCH hành động này và lưu, lập tức thu hồi quyền (trả về false)
+      const allowedByMatrix = isActionAllowedByMatrix(permission, srsRole);
+      if (!allowedByMatrix) {
+        return false;
+      }
       return grantedPermissions.has(permission);
     },
-    [isPlatformAdmin, grantedPermissions],
+    [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion],
   );
 
   const hasPermission = can;
@@ -336,17 +348,17 @@ export function useRole(): RoleState {
   const hasAnyPermission = useCallback(
     (...permissions: Permission[]): boolean => {
       if (isPlatformAdmin) return true;
-      return permissions.some((p) => grantedPermissions.has(p));
+      return permissions.some((p) => can(p));
     },
-    [isPlatformAdmin, grantedPermissions],
+    [isPlatformAdmin, can],
   );
 
   const hasAllPermissions = useCallback(
     (...permissions: Permission[]): boolean => {
       if (isPlatformAdmin) return true;
-      return permissions.every((p) => grantedPermissions.has(p));
+      return permissions.every((p) => can(p));
     },
-    [isPlatformAdmin, grantedPermissions],
+    [isPlatformAdmin, can],
   );
 
   const hasRole = useCallback(
@@ -357,18 +369,18 @@ export function useRole(): RoleState {
     [isPlatformAdmin, srsRole],
   );
 
-  // Granular shortcut flags for 6 Ban
-  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT) || isBQT || isBTV;
-  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE) || isBQT || isBTV;
-  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW) || isBQT || isBTV;
-  const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE) || isBQT;
-  const canManageMedia = can(PERMISSIONS.MEDIA_MANAGE) || isBQT || isBTT || isBTN;
-  const canManageEvents = can(PERMISSIONS.EVENT_CREATE) || isBQT || isBTT || isBTK || isBTN;
-  const canScanQR = can(PERMISSIONS.EVENT_CHECKIN_MANAGE) || isBQT || isBTT || isBTV || isBTK || isBTN;
-  const canManageOpportunities = can(PERMISSIONS.OPPORTUNITY_MANAGE) || isBQT || isBXT;
-  const canManageCharity = can(PERMISSIONS.CHARITY_MANAGE) || isBQT || isBTN;
-  const canManageMeetings = can(PERMISSIONS.MEETING_MANAGE) || isBQT || isBTK;
-  const canManageSystem = can(PERMISSIONS.SYSTEM_MANAGE) || isBQT;
+  // Granular shortcut flags: Tuân thủ chặt chẽ can(), không bypass cứng để người dùng bỏ tích là ẩn ngay
+  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT);
+  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE);
+  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW);
+  const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE);
+  const canManageMedia = can(PERMISSIONS.MEDIA_MANAGE);
+  const canManageEvents = can(PERMISSIONS.EVENT_CREATE);
+  const canScanQR = can(PERMISSIONS.EVENT_CHECKIN_MANAGE);
+  const canManageOpportunities = can(PERMISSIONS.OPPORTUNITY_MANAGE);
+  const canManageCharity = can(PERMISSIONS.CHARITY_MANAGE);
+  const canManageMeetings = can(PERMISSIONS.MEETING_MANAGE);
+  const canManageSystem = can(PERMISSIONS.SYSTEM_MANAGE);
 
   return {
     roles,
