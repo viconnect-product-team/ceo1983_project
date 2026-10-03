@@ -2,7 +2,7 @@ import { type Member } from "@/lib/members-data";
 
 export type RenewalStatus = "upcoming" | "due" | "overdue" | "renewed";
 
-export type PaymentStatus = "unpaid" | "pending" | "paid";
+export type PaymentStatus = "unpaid" | "pending" | "paid" | "cash";
 
 export type RenewalRecord = {
   id: string;

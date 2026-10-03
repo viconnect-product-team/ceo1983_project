@@ -652,6 +652,11 @@ function AccountManagementPage() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onBlur={() => setEmail((v) => v.trim())}
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      autoComplete="email"
                       placeholder="ten@email.com"
                       className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm text-foreground focus:border-ring focus:ring-1 focus:ring-ring outline-none transition"
                     />

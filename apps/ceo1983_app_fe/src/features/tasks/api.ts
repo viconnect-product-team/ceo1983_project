@@ -216,6 +216,52 @@ export async function toggleSubtask(taskId: string, subtaskId: string): Promise<
   }
 }
 
+export async function acceptTask(id: string): Promise<TaskItem> {
+  return fetchNestApi<TaskItem>(`/tasks/${id}/accept`, {
+    method: 'POST',
+  });
+}
+
+export async function declineTask(id: string, reason: string): Promise<TaskItem> {
+  return fetchNestApi<TaskItem>(`/tasks/${id}/decline`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function submitTaskReview(
+  id: string,
+  payload: { deliverables?: string; note?: string },
+): Promise<TaskItem> {
+  return fetchNestApi<TaskItem>(`/tasks/${id}/submit-review`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function approveTask(
+  id: string,
+  payload: { rating?: number; feedback?: string },
+): Promise<TaskItem> {
+  return fetchNestApi<TaskItem>(`/tasks/${id}/approve`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function requestTaskRework(id: string, reason: string): Promise<TaskItem> {
+  return fetchNestApi<TaskItem>(`/tasks/${id}/rework`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function remindTask(id: string): Promise<TaskItem> {
+  return fetchNestApi<TaskItem>(`/tasks/${id}/remind`, {
+    method: 'POST',
+  });
+}
+
 export async function deleteTask(id: string): Promise<boolean> {
   try {
     const res = await fetchNestApi<{ success: boolean }>(`/tasks/${id}`, {

@@ -90,6 +90,58 @@ export class TasksController {
     return this.tasksService.toggleSubtask(id, subtaskId, actor);
   }
 
+  @Post(':id/accept')
+  async acceptTask(@Request() req: any, @Param('id') id: string) {
+    const actor = req?.user?.fullName || req?.user?.name || 'Người phụ trách';
+    return this.tasksService.acceptTask(id, actor);
+  }
+
+  @Post(':id/decline')
+  async declineTask(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+  ) {
+    const actor = req?.user?.fullName || req?.user?.name || 'Người phụ trách';
+    return this.tasksService.declineTask(id, reason || 'Không thể tiếp nhận vì lý do chuyên môn', actor);
+  }
+
+  @Post(':id/submit-review')
+  async submitReview(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { deliverables?: string; note?: string },
+  ) {
+    const actor = req?.user?.fullName || req?.user?.name || 'Người phụ trách';
+    return this.tasksService.submitTaskReview(id, body, actor);
+  }
+
+  @Post(':id/approve')
+  async approveTask(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { rating?: number; feedback?: string },
+  ) {
+    const actor = req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
+    return this.tasksService.approveTask(id, body, actor);
+  }
+
+  @Post(':id/rework')
+  async requestRework(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+  ) {
+    const actor = req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
+    return this.tasksService.requestTaskRework(id, reason || 'Yêu cầu hoàn thiện lại kết quả', actor);
+  }
+
+  @Post(':id/remind')
+  async remindTask(@Request() req: any, @Param('id') id: string) {
+    const actor = req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
+    return this.tasksService.remindTask(id, actor);
+  }
+
   @Delete(':id')
   async deleteTask(@Param('id') id: string) {
     return this.tasksService.deleteTask(id);

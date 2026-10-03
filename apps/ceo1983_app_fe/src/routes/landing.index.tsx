@@ -13,9 +13,9 @@ export const Route = createFileRoute("/landing/")({
       { property: "og:title", content: "Đăng Ký Gia Nhập CLB Doanh Nhân CEO 1983" },
     ],
   }),
-  component: Ceo1983LandingHubPage,
+  component: MemberRegistrationPage,
 });
 
-function Ceo1983LandingHubPage() {
+function MemberRegistrationPage() {
   return <Ceo1983MemberRegistrationForm />;
 }

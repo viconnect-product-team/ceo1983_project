@@ -95,10 +95,10 @@ const comm: Item[] = [
   { key: "nav.benefits", icon: Award, to: "/benefits" },
 ];
 const network: Item[] = [
-  { key: "nav.network", icon: MessageSquare, to: "/network" },
+  { key: "nav.network", icon: MessageSquare, to: "/network", label: "Tin nhắn & Trao đổi công việc" },
   { key: "nav.bc.meetings" as TKey, icon: Users2, to: "/business-connect/meetings", label: "Cuộc gặp" },
-  { key: "nav.marketplace", icon: Store, to: "/marketplace" },
-  { key: "nav.opportunities", icon: Sparkles, to: "/opportunities" },
+  { key: "nav.marketplace", icon: Store, to: "/marketplace", label: "Marketplace & Giao thương B2B" },
+  { key: "nav.opportunities", icon: Sparkles, to: "/opportunities", label: "Cơ hội hợp tác" },
 ];
 const system: Item[] = [
   {

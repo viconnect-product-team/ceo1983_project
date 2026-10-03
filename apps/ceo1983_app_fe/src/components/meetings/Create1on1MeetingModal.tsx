@@ -25,18 +25,28 @@ export interface Create1on1MeetingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  defaultTitle?: string;
+  defaultPartnerName?: string;
+  defaultPartnerCompany?: string;
+  defaultPartnerPhone?: string;
+  defaultNotes?: string;
 }
 
 export function Create1on1MeetingModal({
   isOpen,
   onClose,
   onSuccess,
+  defaultTitle,
+  defaultPartnerName,
+  defaultPartnerCompany,
+  defaultPartnerPhone,
+  defaultNotes,
 }: Create1on1MeetingModalProps) {
-  const [title, setTitle] = useState("Gặp gỡ kết nối & Trao đổi cơ hội hợp tác");
+  const [title, setTitle] = useState(defaultTitle || "Gặp gỡ kết nối & Trao đổi cơ hội hợp tác");
   const [hostName, setHostName] = useState("Nguyễn Văn Cường (Ban Thành Viên)");
-  const [partnerName, setPartnerName] = useState("");
-  const [partnerPhone, setPartnerPhone] = useState("");
-  const [partnerCompany, setPartnerCompany] = useState("");
+  const [partnerName, setPartnerName] = useState(defaultPartnerName || "");
+  const [partnerPhone, setPartnerPhone] = useState(defaultPartnerPhone || "");
+  const [partnerCompany, setPartnerCompany] = useState(defaultPartnerCompany || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [date, setDate] = useState(() => {
     const d = new Date();
@@ -51,8 +61,19 @@ export function Create1on1MeetingModal({
   const [onlineUrl, setOnlineUrl] = useState("https://meet.jit.si/CEO1983_Connect_1on1");
   const [reminderTier, setReminderTier] = useState<number>(2);
   const [notes, setNotes] = useState(
-    "Trao đổi nhu cầu cung ứng nguyên vật liệu & giới thiệu các đối tác tiềm năng trong Hiệp hội."
+    defaultNotes || "Trao đổi nhu cầu cung ứng nguyên vật liệu & giới thiệu các đối tác tiềm năng trong Hiệp hội."
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      if (defaultTitle) setTitle(defaultTitle);
+      if (defaultPartnerName) setPartnerName(defaultPartnerName);
+      if (defaultPartnerCompany) setPartnerCompany(defaultPartnerCompany);
+      if (defaultPartnerPhone) setPartnerPhone(defaultPartnerPhone);
+      if (defaultNotes) setNotes(defaultNotes);
+      setErrors({});
+    }
+  }, [isOpen, defaultTitle, defaultPartnerName, defaultPartnerCompany, defaultPartnerPhone, defaultNotes]);
 
   if (!isOpen) return null;
 

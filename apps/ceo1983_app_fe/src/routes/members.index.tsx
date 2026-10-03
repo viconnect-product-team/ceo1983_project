@@ -177,6 +177,53 @@ function RenewalBadge({ m }: { m: Member }) {
   );
 }
 
+export function MemberPaymentSelect({
+  member,
+  onChange,
+  disabled,
+}: {
+  member: Member;
+  onChange: (status: "paid" | "cash" | "unpaid") => Promise<void> | void;
+  disabled?: boolean;
+}) {
+  const rawStatus = (member as any).payment_status || (member as any).paymentStatus;
+  const currentStatus: "paid" | "cash" | "unpaid" =
+    rawStatus === "cash"
+      ? "cash"
+      : member.feePaid || rawStatus === "paid"
+        ? "paid"
+        : "unpaid";
+
+  const getStyle = () => {
+    switch (currentStatus) {
+      case "paid":
+        return "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
+      case "cash":
+        return "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700";
+      case "unpaid":
+      default:
+        return "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700";
+    }
+  };
+
+  return (
+    <div className="relative inline-flex items-center" onClick={(e) => e.stopPropagation()}>
+      <select
+        value={currentStatus}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as "paid" | "cash" | "unpaid")}
+        aria-label="Trạng thái thanh toán"
+        className={`h-7 appearance-none rounded-lg border pl-2 pr-6 text-xs font-semibold shadow-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer transition-colors ${getStyle()}`}
+      >
+        <option value="paid">✓ Đã TT (QR/CK)</option>
+        <option value="cash">💵 Đã TT (Tiền mặt)</option>
+        <option value="unpaid">✗ Chưa thanh toán</option>
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-1.5 h-3.5 w-3.5 opacity-60" />
+    </div>
+  );
+}
+
 function initials(name: string) {
   return name
     .trim()
@@ -353,6 +400,16 @@ function MembersPage() {
         { value: "expired", label: t("status.expired") },
       ],
     },
+    {
+      name: "paymentStatus",
+      label: "Trạng thái thanh toán phí",
+      type: "select",
+      options: [
+        { value: "unpaid", label: "Chưa thanh toán" },
+        { value: "paid", label: "Đã thanh toán (QR/Chuyển khoản)" },
+        { value: "cash", label: "Đã thanh toán (Tiền mặt)" },
+      ],
+    },
     { name: "address", label: t("members.f.address"), type: "text" },
     { name: "website", label: t("members.f.website"), type: "text" },
     { name: "taxCode", label: t("members.f.taxCode"), type: "text" },
@@ -363,6 +420,7 @@ function MembersPage() {
   const onSubmit = async (v: CrudValues) => {
     setSubmitting(true);
     try {
+      const pStatus = (v.paymentStatus as string) || "unpaid";
       const payload = {
         name: String(v.name || "").trim(),
         contact: v.contact ? String(v.contact).trim() : undefined,
@@ -373,6 +431,8 @@ function MembersPage() {
         industry: (v.industry as any) || "ind.trade",
         region: (v.region as any) || "region.north",
         status: (v.status as any) || "pending",
+        paymentStatus: pStatus,
+        feePaid: pStatus === "paid" || pStatus === "cash",
         address: v.address ? String(v.address).trim() : undefined,
         website: v.website ? String(v.website).trim() : undefined,
         taxCode: v.taxCode ? String(v.taxCode).trim() : undefined,
@@ -395,6 +455,8 @@ function MembersPage() {
         toast.success(t("members.created"));
         setOpen(false);
       }
+      await qc.invalidateQueries({ queryKey: ["members"] });
+      await qc.invalidateQueries({ queryKey: ["renewals"] });
       await refetch();
     } catch (err: any) {
       console.error("[Members] Submit error:", err);
@@ -407,14 +469,61 @@ function MembersPage() {
   const onConfirmDelete = async () => {
     if (!deleting) return;
     setSubmitting(true);
+    const targetId = deleting.id;
     try {
-      await fetchNestApi(`/members/${deleting.id}`, { method: "DELETE" });
+      await fetchNestApi(`/members/${targetId}`, { method: "DELETE" });
       toast.success(t("members.deleted"));
       setDeleting(null);
+      qc.setQueryData(["members"], (old: Member[] | undefined) =>
+        old ? old.filter((item) => item.id !== targetId) : [],
+      );
+      await qc.invalidateQueries({ queryKey: ["members"] });
+      await qc.invalidateQueries({ queryKey: ["renewals"] });
+      await refetch();
     } catch (err: any) {
       toast.error(err?.message || t("common.deleteError"));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (m: Member, newStatus: "paid" | "cash" | "unpaid") => {
+    try {
+      toast.loading("Đang cập nhật trạng thái thanh toán...", { id: `pay-${m.id}` });
+      await fetchNestApi(`/members/${m.id}/payment-status`, {
+        method: "POST",
+        body: JSON.stringify({
+          paymentStatus: newStatus,
+          feePaid: newStatus !== "unpaid",
+        }),
+      });
+      qc.setQueryData(["members"], (old: Member[] | undefined) =>
+        old
+          ? old.map((item) =>
+              item.id === m.id
+                ? {
+                    ...item,
+                    feePaid: newStatus !== "unpaid",
+                    payment_status: newStatus,
+                    paymentStatus: newStatus,
+                  }
+                : item,
+            )
+          : [],
+      );
+      await qc.invalidateQueries({ queryKey: ["members"] });
+      await qc.invalidateQueries({ queryKey: ["renewals"] });
+      await refetch();
+      toast.success(
+        newStatus === "unpaid"
+          ? `Đã cập nhật: "${m.name}" thành CHƯA THANH TOÁN (khôi phục phí chưa nộp)`
+          : newStatus === "cash"
+            ? `Đã cập nhật: "${m.name}" ĐÃ THANH TOÁN (Tiền mặt)`
+            : `Đã cập nhật: "${m.name}" ĐÃ THANH TOÁN (QR/Chuyển khoản)`,
+        { id: `pay-${m.id}` },
+      );
+    } catch (err: any) {
+      toast.error(err?.message || "Cập nhật thanh toán thất bại", { id: `pay-${m.id}` });
     }
   };
 
@@ -459,6 +568,7 @@ function MembersPage() {
     industry: m.industry,
     region: m.region,
     status: m.status,
+    paymentStatus: (m as any).payment_status || (m as any).paymentStatus || (m.feePaid ? "paid" : "unpaid"),
     address: m.address,
     website: m.website ?? "",
     taxCode: m.taxCode ?? "",
@@ -527,6 +637,7 @@ function MembersPage() {
       region: (m) => t(m.region as TKey),
       type: (m) => m.type,
       status: (m) => m.status,
+      payment: (m) => (m as any).payment_status || (m as any).paymentStatus || (m.feePaid ? "paid" : "unpaid"),
       joined: (m) => m.createdAt || m.joinedAt,
     },
     { initialPageSize: 24, initialSortKey: "joined", initialSortDir: "desc" },
@@ -916,6 +1027,7 @@ function MembersPage() {
               onAccount={() => (isAdmin ? setAccountFor(m) : denyPermission())}
               onDelete={() => (isAdmin ? setDeleting(m) : denyPermission())}
               onApprove={canApprove ? () => handleApproveAndSendCredentials(m) : undefined}
+              onPaymentChange={(s) => handleUpdatePaymentStatus(m, s)}
             />
           ))}
         </div>
@@ -990,6 +1102,13 @@ function MembersPage() {
                     onSort={tc.toggleSort}
                   />
                   <SortHeader
+                    label="Thanh toán"
+                    columnKey="payment"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                  />
+                  <SortHeader
                     label={t("tbl.joined")}
                     columnKey="joined"
                     sortKey={tc.sortKey}
@@ -1052,6 +1171,13 @@ function MembersPage() {
                     </td>
                     <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                       <StatusBadge status={m.status} />
+                    </td>
+                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                      <MemberPaymentSelect
+                        member={m}
+                        onChange={(s) => handleUpdatePaymentStatus(m, s)}
+                        disabled={!isAdmin}
+                      />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground border-b border-border whitespace-nowrap">
                       {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString("vi-VN") : "—"}
@@ -1301,6 +1427,7 @@ function MemberCard({
   onAccount,
   onDelete,
   onApprove,
+  onPaymentChange,
 }: {
   m: Member;
   t: ReturnType<typeof useT>;
@@ -1318,6 +1445,7 @@ function MemberCard({
   onAccount: () => void;
   onDelete?: () => void;
   onApprove?: () => void;
+  onPaymentChange?: (status: "paid" | "cash" | "unpaid") => void;
 }) {
   return (
     <div
@@ -1392,13 +1520,11 @@ function MemberCard({
         <StatusBadge status={m.status} />
         <RenewalBadge m={m} />
         <TypeChip type={m.type} />
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
-            m.feePaid ? "bg-success/15 text-success" : "bg-destructive/10 text-destructive"
-          }`}
-        >
-          {m.feePaid ? t("mlist.feePaid") : t("mlist.feeDue")}
-        </span>
+        <MemberPaymentSelect
+          member={m}
+          onChange={(s) => onPaymentChange?.(s)}
+          disabled={!isAdmin}
+        />
         {m.status === "pending" ? (
           <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Chờ kích hoạt

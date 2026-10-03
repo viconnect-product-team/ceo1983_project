@@ -45,6 +45,7 @@ export class UpdateMemberDto {
   about?: string;
   feePaid?: boolean;
   feeYear?: number;
+  paymentStatus?: string;
 }
 
 export class UpdateMemberContactDto {
@@ -953,8 +954,17 @@ export class MembersService {
     const taxCode = data.taxCode !== undefined ? data.taxCode : current.tax_code;
     const employees = data.employees !== undefined ? data.employees : current.employees;
     const about = data.about !== undefined ? data.about : current.about;
-    const feePaid = data.feePaid !== undefined ? data.feePaid : current.fee_paid;
-    const feeYear = data.feeYear !== undefined ? data.feeYear : current.fee_year;
+    const feeYear = data.feeYear !== undefined ? data.feeYear : (current.fee_year ?? new Date().getFullYear());
+    let paymentStatus = data.paymentStatus !== undefined
+      ? data.paymentStatus
+      : (data.feePaid !== undefined ? (data.feePaid ? 'paid' : 'unpaid') : (current.payment_status || (current.fee_paid ? 'paid' : 'unpaid')));
+    let finalFeePaid = data.feePaid !== undefined ? data.feePaid : current.fee_paid;
+    if (data.paymentStatus === 'unpaid') {
+      finalFeePaid = false;
+      paymentStatus = 'unpaid';
+    } else if (data.paymentStatus === 'cash' || data.paymentStatus === 'paid') {
+      finalFeePaid = true;
+    }
 
     await this.prisma.$executeRaw`
       UPDATE public.members SET
@@ -972,8 +982,9 @@ export class MembersService {
         tax_code = ${taxCode},
         employees = ${employees},
         about = ${about},
-        fee_paid = ${feePaid},
+        fee_paid = ${finalFeePaid},
         fee_year = ${feeYear},
+        payment_status = ${paymentStatus},
         updated_at = now()
       WHERE id = ${id}
     `;
@@ -1262,7 +1273,46 @@ export class MembersService {
     return this.getMemberById(userId, current.id);
   }
 
-  async sendRenewalReminder(userId: string, id: string) {
+  async updatePaymentStatus(
+    userId: string,
+    id: string,
+    body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
+  ) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.members WHERE id = ${id} OR code = ${id} LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
+    const current = rows[0];
+
+    const isAdmin = await this.checkIsAdmin(userId, current.association_id);
+    if (!isAdmin) throw new ForbiddenException('Chỉ quản trị viên mới có quyền cập nhật trạng thái thanh toán');
+
+    const paymentStatus = body.paymentStatus || 'unpaid';
+    const feePaid = paymentStatus === 'unpaid' ? false : (body.feePaid !== undefined ? body.feePaid : true);
+    const feeYear = body.feeYear ?? current.fee_year ?? new Date().getFullYear();
+
+    await this.prisma.$executeRaw`
+      UPDATE public.members SET
+        payment_status = ${paymentStatus},
+        fee_paid = ${feePaid},
+        fee_year = ${feeYear},
+        updated_at = now()
+      WHERE id = ${current.id}
+    `;
+
+    await this.logActivity(
+      'Cập nhật trạng thái thanh toán hội phí',
+      `${current.name} (${current.code || current.id}) -> ${paymentStatus}`,
+      'fee',
+      'admin@connect.vn',
+      current.association_id,
+    );
+
+    return this.getMemberById(userId, current.id);
+  }
+
+  async sendRenewalReminder(userId: string, id: string, isAuto = false) {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.members WHERE id = ${id} OR code = ${id} LIMIT 1
     `.catch(() => []);
@@ -1276,6 +1326,7 @@ export class MembersService {
     const today = new Date().toISOString().slice(0, 10);
     const newCount = ((current.reminder_count as number) ?? 0) + 1;
 
+    // Separate manual reminder vs automated system reminder
     await this.prisma.$executeRaw`
       UPDATE public.members SET
         reminder_count = ${newCount},
@@ -1284,7 +1335,99 @@ export class MembersService {
       WHERE id = ${current.id}
     `;
 
-    // Dispatch 2-way notification
+    // 1. Dispatch real email directly to member's actual email address
+    if (current.email && String(current.email).includes('@')) {
+      try {
+        const cleanEmail = String(current.email).trim();
+        const termEndStr = current.term_end
+          ? new Date(current.term_end).toLocaleDateString('vi-VN')
+          : 'Sắp tới hạn';
+        const reminderTag = isAuto ? 'HỆ THỐNG TỰ ĐỘNG NHẮC NHỞ' : 'BAN THƯ KÝ NHẮC NHỞ';
+        const subject = `[CLB CEO 1983] Nhắc Nhở Gia Hạn Niên Liễm — Hội Viên ${current.name}`;
+        const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b;">
+  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
+    <div style="background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 34px 24px; text-align: center; color: #ffffff;">
+      <div style="display: inline-block; background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.6); color: #FFD700; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 10px;">
+        ✦ ${reminderTag} ✦
+      </div>
+      <h1 style="font-size: 22px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff;">CLB DOANH NHÂN CEO 1983</h1>
+      <p style="font-size: 12.5px; color: rgba(255, 255, 255, 0.85); margin: 0;">Hội Doanh Nhân Trẻ Hà Nội (HanoiBA) — Kết Nối & Giao Thương B2B</p>
+    </div>
+
+    <div style="padding: 28px 24px;">
+      <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
+        Kính gửi Anh/Chị <strong>${current.name}</strong>,
+      </div>
+      <p style="font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px;">
+        Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Thời hạn niên liễm sinh hoạt hội viên của Quý Anh/Chị sắp kết thúc vào ngày <strong>${termEndStr}</strong>.
+      </p>
+
+      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #003B95;">
+        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #003B95; margin-bottom: 12px; letter-spacing: 0.5px;">
+          📋 Thông Tin Hội Viên & Kỳ Gia Hạn
+        </div>
+        <table style="width: 100%; font-size: 13.5px; border-collapse: collapse;">
+          <tr>
+            <td style="color: #64748b; padding: 6px 0;">Mã số Hội viên:</td>
+            <td style="font-weight: 700; color: #003B95; text-align: right; font-family: monospace;">${current.code || 'M1983'}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b; padding: 6px 0;">Thời hạn thẻ hiện tại:</td>
+            <td style="font-weight: 700; color: #d97706; text-align: right;">${termEndStr}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b; padding: 6px 0;">Hội phí niên liễm:</td>
+            <td style="font-weight: 800; color: #dc2626; font-size: 15px; text-align: right;">2,000,000 VNĐ / năm</td>
+          </tr>
+        </table>
+      </div>
+
+      <p style="font-size: 13.5px; line-height: 1.6; color: #334155;">
+        Để duy trì liên tục các quyền lợi đặc quyền: Danh thiếp số Titanium, gian hàng Marketplace B2B, quyền biểu quyết đại hội và cơ hội kết nối giao thương giữa các hội viên, Quý Anh/Chị vui lòng hoàn tất đóng phí niên liễm bằng cách:
+      </p>
+      <ul style="font-size: 13px; color: #475569; line-height: 1.6; padding-left: 20px; margin-bottom: 24px;">
+        <li><strong>Chuyển khoản VietQR:</strong> Quét mã VietQR trên App Hiệp Hội (hệ thống tự động gạch nợ sau 3-5 giây).</li>
+        <li><strong>Nộp tiền mặt:</strong> Đóng trực tiếp tại Văn phòng Ban Thư Ký CLB.</li>
+      </ul>
+
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="https://ceo1983.com/association/renew" style="display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14.5px; text-decoration: none; padding: 13px 32px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35);">
+          📲 Mở App & Gia Hạn Ngay
+        </a>
+      </div>
+
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.5; background: #f1f5f9; padding: 12px 16px; border-radius: 10px;">
+        * Lưu ý: Nếu Quý Anh/Chị đã hoàn thành thanh toán tiền mặt hoặc chuyển khoản gần đây, vui lòng bỏ qua thông báo này hoặc liên hệ Hotline: <strong>0983 1983 83</strong> để được hỗ trợ đối soát tức thì.
+      </div>
+    </div>
+
+    <div style="background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11.5px; line-height: 1.6;">
+      <div style="color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px;">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+        `;
+        await this.mailService.sendDirectEmail({
+          to: cleanEmail,
+          subject,
+          html,
+        });
+      } catch (mailErr: any) {
+        console.warn(`Failed to dispatch reminder email to ${current.email}:`, mailErr?.message);
+      }
+    }
+
+    // 2. Dispatch 2-way in-app notification
     if (current.user_id) {
       try {
         const notifTitle = 'Nhắc nhở gia hạn tư cách hội viên';

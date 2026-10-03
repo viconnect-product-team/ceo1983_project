@@ -319,15 +319,35 @@ export class MembersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id/payment-status')
+  async updatePaymentStatus(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
+  ) {
+    return this.membersService.updatePaymentStatus(req.user.id, id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/payment-status')
+  async updatePaymentStatusPost(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
+  ) {
+    return this.membersService.updatePaymentStatus(req.user.id, id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/remind')
-  async sendReminder(@Request() req: any, @Param('id') id: string) {
-    return this.membersService.sendRenewalReminder(req.user.id, id);
+  async sendReminder(@Request() req: any, @Param('id') id: string, @Body() body?: { isAuto?: boolean }) {
+    return this.membersService.sendRenewalReminder(req.user.id, id, Boolean(body?.isAuto));
   }
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/remind')
-  async sendReminderPost(@Request() req: any, @Param('id') id: string) {
-    return this.membersService.sendRenewalReminder(req.user.id, id);
+  async sendReminderPost(@Request() req: any, @Param('id') id: string, @Body() body?: { isAuto?: boolean }) {
+    return this.membersService.sendRenewalReminder(req.user.id, id, Boolean(body?.isAuto));
   }
 
   @UseGuards(JwtAuthGuard)

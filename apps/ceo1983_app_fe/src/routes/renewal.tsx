@@ -24,7 +24,8 @@ import {
   type PaymentStatus,
 } from "@/lib/renewal-data";
 import { useTableControls } from "@/hooks/use-table-controls";
-import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listRenewalsFn,
   renewMembershipFn,
@@ -34,19 +35,21 @@ import {
   setPaymentStatusFn,
 } from "@/lib/renewals.functions";
 import { fetchNestApi } from "@/lib/api-client";
-import { toRecord, type Row } from "@/lib/renewals-calc";
+import { toRecord, isApprovedMember, type Row } from "@/lib/renewals-calc";
 
 export const Route = createFileRoute("/renewal")({
   ssr: false,
   loader: async () => {
     try {
-      const serverRes = await listRenewalsFn().catch(() => []);
-      if (Array.isArray(serverRes) && serverRes.length > 0) return serverRes;
-    } catch {}
-    try {
       const clientRes = await fetchNestApi<any[]>("/members");
       if (Array.isArray(clientRes) && clientRes.length > 0) {
-        return clientRes.map((r) => toRecord(r as Row));
+        return clientRes.filter(isApprovedMember).map((r) => toRecord(r as Row));
+      }
+    } catch {}
+    try {
+      const serverRes = await listRenewalsFn().catch(() => []);
+      if (Array.isArray(serverRes) && serverRes.length > 0) {
+        return serverRes.filter((r) => isApprovedMember(r.member as any));
       }
     } catch {}
     return [];
@@ -95,17 +98,18 @@ function StatusPill({ status }: { status: RenewalStatus }) {
   );
 }
 
-const PAYMENT_STYLE: Record<PaymentStatus, { bg: string; fg: string; label: TKey }> = {
-  unpaid: { bg: "oklch(0.93 0.06 25)", fg: "oklch(0.50 0.20 25)", label: "renewal.payment.unpaid" },
+const PAYMENT_STYLE: Record<PaymentStatus, { bg: string; fg: string; label: string }> = {
+  unpaid: { bg: "oklch(0.93 0.06 25)", fg: "oklch(0.50 0.20 25)", label: "Chưa thanh toán" },
   pending: {
     bg: "oklch(0.94 0.09 75)",
     fg: "oklch(0.45 0.14 65)",
-    label: "renewal.payment.pending",
+    label: "Đang chờ thanh toán",
   },
-  paid: { bg: "oklch(0.93 0.07 155)", fg: "oklch(0.40 0.16 155)", label: "renewal.payment.paid" },
+  paid: { bg: "oklch(0.93 0.07 155)", fg: "oklch(0.40 0.16 155)", label: "Đã thanh toán (QR)" },
+  cash: { bg: "oklch(0.93 0.08 85)", fg: "oklch(0.42 0.15 85)", label: "Đã thanh toán (Tiền mặt)" },
 };
 
-const PAYMENT_ORDER: PaymentStatus[] = ["unpaid", "pending", "paid"];
+const PAYMENT_ORDER: PaymentStatus[] = ["unpaid", "pending", "paid", "cash"];
 
 function PaymentControl({
   status,
@@ -114,20 +118,19 @@ function PaymentControl({
   status: PaymentStatus;
   onChange: (s: PaymentStatus) => void;
 }) {
-  const t = useT();
-  const s = PAYMENT_STYLE[status];
+  const s = PAYMENT_STYLE[status] || PAYMENT_STYLE.unpaid;
   return (
     <select
       value={status}
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => onChange(e.target.value as PaymentStatus)}
-      aria-label={t("renewal.payment.set")}
+      aria-label="Chọn trạng thái thanh toán"
       className="cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-semibold focus:outline-none focus:ring-2 focus:ring-ring/30"
       style={{ background: s.bg, color: s.fg }}
     >
       {PAYMENT_ORDER.map((p) => (
         <option key={p} value={p}>
-          {t(PAYMENT_STYLE[p].label)}
+          {PAYMENT_STYLE[p].label}
         </option>
       ))}
     </select>
@@ -194,22 +197,21 @@ function RenewalPage() {
   const t = useT();
   const navigate = useNavigate();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const loaderRecords = (Route.useLoaderData() as RenewalRecord[]) || [];
-  const [records, setRecords] = useState<RenewalRecord[]>(loaderRecords);
 
-  useEffect(() => {
-    if (loaderRecords.length > 0) {
-      setRecords(loaderRecords);
-    } else {
-      fetchNestApi<any[]>("/members")
-        .then((res) => {
-          if (Array.isArray(res) && res.length > 0) {
-            setRecords(res.map((r) => toRecord(r as Row)));
-          }
-        })
-        .catch((err) => console.warn("Failed to fetch renewal members fallback:", err));
-    }
-  }, [loaderRecords]);
+  const { data: records = loaderRecords, refetch } = useQuery({
+    queryKey: ["renewals"],
+    queryFn: async () => {
+      const res = await fetchNestApi<any[]>("/members");
+      if (Array.isArray(res)) {
+        return res.filter(isApprovedMember).map((r) => toRecord(r as Row));
+      }
+      return loaderRecords;
+    },
+    initialData: loaderRecords,
+    refetchInterval: 8000,
+  });
 
   const renewFn = useServerFn(renewMembershipFn);
   const bulkRenewFn = useServerFn(bulkRenewMembershipFn);
@@ -253,41 +255,48 @@ function RenewalPage() {
 
   const tc = useTableControls(filtered, accessors, {
     initialPageSize: 10,
-    initialSortKey: "daysLeft",
-    initialSortDir: "asc",
+    initialSortKey: "termEnd",
+    initialSortDir: "desc",
   });
+
+  const invalidateAll = async () => {
+    queryClient.invalidateQueries({ queryKey: ["renewals"] });
+    queryClient.invalidateQueries({ queryKey: ["members"] });
+    await refetch();
+    router.invalidate();
+  };
 
   const handleRenew = async (rec: RenewalRecord) => {
     if (!confirm(t("renewal.confirmRenew"))) return;
     await renewFn({ data: { id: rec.id } });
     toast.success(t("renewal.toast.renewed"));
-    router.invalidate();
+    await invalidateAll();
   };
 
   const handleRemind = async (rec: RenewalRecord) => {
-    await remindFn({ data: { id: rec.id } });
-    toast.success(t("renewal.toast.reminded"));
-    router.invalidate();
+    await remindFn({ data: { id: rec.id, isAuto: false } });
+    toast.success(`${t("renewal.toast.reminded")} (Đã gửi email đến ${rec.member.email})`);
+    await invalidateAll();
   };
 
   const handleCancel = async (rec: RenewalRecord) => {
     if (!confirm(t("renewal.confirmCancel"))) return;
     await cancelFn({ data: { id: rec.id } });
     toast.success(t("renewal.toast.cancelled"));
-    router.invalidate();
+    await invalidateAll();
   };
 
   const handlePayment = async (rec: RenewalRecord, status: PaymentStatus) => {
     await paymentFn({ data: { id: rec.id, status } });
     toast.success(t("renewal.toast.payment"));
-    router.invalidate();
+    await invalidateAll();
   };
 
   const handleBulkRemind = async () => {
     const targets = filtered.filter((r) => r.status === "due" || r.status === "overdue");
-    await Promise.all(targets.map((r: any) => remindFn({ data: { id: r.id } })));
+    await Promise.all(targets.map((r: any) => remindFn({ data: { id: r.id, isAuto: false } })));
     toast.success(t("renewal.toast.bulk").replace("{n}", String(targets.length)));
-    router.invalidate();
+    await invalidateAll();
   };
 
   const handleBulkRenew = async () => {
@@ -299,7 +308,7 @@ function RenewalPage() {
     if (!confirm(t("renewal.confirmBulkRenew").replace("{n}", String(targets.length)))) return;
     const res = await bulkRenewFn({ data: { ids: targets.map((r: any) => r.id) } });
     toast.success(t("renewal.toast.bulkRenewed").replace("{n}", String(res.renewed)));
-    router.invalidate();
+    await invalidateAll();
   };
 
   const handleExport = () => {
@@ -445,16 +454,63 @@ function RenewalPage() {
                 <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
                   STT
                 </th>
-                <th className="sticky left-[56px] z-20 min-w-[110px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
-                  Mã
-                </th>
-                <th className="px-4 py-3 border-b border-border">{t("renewal.col.member")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("renewal.col.tier")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("renewal.col.termEnd")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("renewal.col.daysLeft")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("renewal.col.reminders")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("renewal.col.status")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("renewal.col.payment")}</th>
+                <SortHeader
+                  label="Mã"
+                  columnKey="code"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                  className="sticky left-[56px] z-20 min-w-[110px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]"
+                />
+                <SortHeader
+                  label={t("renewal.col.member")}
+                  columnKey="name"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                />
+                <SortHeader
+                  label={t("renewal.col.tier")}
+                  columnKey="level"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                />
+                <SortHeader
+                  label={t("renewal.col.termEnd")}
+                  columnKey="termEnd"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                />
+                <SortHeader
+                  label={t("renewal.col.daysLeft")}
+                  columnKey="daysLeft"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                />
+                <SortHeader
+                  label={t("renewal.col.reminders")}
+                  columnKey="reminders"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                />
+                <SortHeader
+                  label={t("renewal.col.status")}
+                  columnKey="status"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                />
+                <SortHeader
+                  label={t("renewal.col.payment")}
+                  columnKey="payment"
+                  sortKey={tc.sortKey}
+                  sortDir={tc.sortDir}
+                  onSort={tc.toggleSort}
+                />
                 <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
                   {t("renewal.col.actions")}
                 </th>

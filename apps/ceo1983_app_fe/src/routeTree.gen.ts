@@ -100,10 +100,6 @@ import { Route as MEventsRouteImport } from './routes/m.events'
 import { Route as MCheckinRouteImport } from './routes/m.checkin'
 import { Route as MCardRouteImport } from './routes/m.card'
 import { Route as MBusinessCardsRouteImport } from './routes/m.business-cards'
-import { Route as LandingVioneRouteImport } from './routes/landing.vione'
-import { Route as LandingCeo1983RouteImport } from './routes/landing.ceo1983'
-import { Route as LandingBussinessConnectRouteImport } from './routes/landing.bussiness-connect'
-import { Route as LandingBusinessConnectRouteImport } from './routes/landing.business-connect'
 import { Route as HSlugRouteImport } from './routes/h.$slug'
 import { Route as FeesInvoiceIdRouteImport } from './routes/fees.$invoiceId'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
@@ -125,17 +121,8 @@ import { Route as ConnectAppCalendarRouteImport } from './routes/connect-app.cal
 import { Route as ConnectAppActivateRouteImport } from './routes/connect-app.activate'
 import { Route as CompanySlugRouteImport } from './routes/company.$slug'
 import { Route as CompaniesCompanyIdRouteImport } from './routes/companies.$companyId'
-import { Route as CeoV1RouteImport } from './routes/ceo.v1'
 import { Route as CardCodeRouteImport } from './routes/card.$code'
 import { Route as CTokenRouteImport } from './routes/c.$token'
-import { Route as BusinessConnectV8RouteImport } from './routes/business-connect.v8'
-import { Route as BusinessConnectV7RouteImport } from './routes/business-connect.v7'
-import { Route as BusinessConnectV6RouteImport } from './routes/business-connect.v6'
-import { Route as BusinessConnectV5RouteImport } from './routes/business-connect.v5'
-import { Route as BusinessConnectV4RouteImport } from './routes/business-connect.v4'
-import { Route as BusinessConnectV3RouteImport } from './routes/business-connect.v3'
-import { Route as BusinessConnectV2RouteImport } from './routes/business-connect.v2'
-import { Route as BusinessConnectV1RouteImport } from './routes/business-connect.v1'
 import { Route as BusinessConnectSavedCardsRouteImport } from './routes/business-connect.saved-cards'
 import { Route as BusinessConnectRelationshipTimelineRouteImport } from './routes/business-connect.relationship-timeline'
 import { Route as BusinessConnectNotificationsRouteImport } from './routes/business-connect.notifications'
@@ -190,8 +177,6 @@ import { Route as MRenewPayRouteImport } from './routes/m.renew.pay'
 import { Route as MRenewHistoryRouteImport } from './routes/m.renew.history'
 import { Route as MRenewAuditRouteImport } from './routes/m.renew.audit'
 import { Route as MPerksIdRouteImport } from './routes/m.perks.$id'
-import { Route as LandingCeo1983CinematicRouteImport } from './routes/landing.ceo1983.cinematic'
-import { Route as LandingCeoV1RouteImport } from './routes/landing.ceo.v1'
 import { Route as EventsEventIdRegisterRouteImport } from './routes/events.$eventId.register'
 import { Route as ConnectNetworkNotificationsRouteImport } from './routes/connect.network.notifications'
 import { Route as ConnectNetworkConnectionsRouteImport } from './routes/connect.network.connections'
@@ -703,26 +688,6 @@ const MBusinessCardsRoute = MBusinessCardsRouteImport.update({
   path: '/business-cards',
   getParentRoute: () => MRoute,
 } as any)
-const LandingVioneRoute = LandingVioneRouteImport.update({
-  id: '/vione',
-  path: '/vione',
-  getParentRoute: () => LandingRoute,
-} as any)
-const LandingCeo1983Route = LandingCeo1983RouteImport.update({
-  id: '/ceo1983',
-  path: '/ceo1983',
-  getParentRoute: () => LandingRoute,
-} as any)
-const LandingBussinessConnectRoute = LandingBussinessConnectRouteImport.update({
-  id: '/bussiness-connect',
-  path: '/bussiness-connect',
-  getParentRoute: () => LandingRoute,
-} as any)
-const LandingBusinessConnectRoute = LandingBusinessConnectRouteImport.update({
-  id: '/business-connect',
-  path: '/business-connect',
-  getParentRoute: () => LandingRoute,
-} as any)
 const HSlugRoute = HSlugRouteImport.update({
   id: '/h/$slug',
   path: '/h/$slug',
@@ -828,11 +793,6 @@ const CompaniesCompanyIdRoute = CompaniesCompanyIdRouteImport.update({
   path: '/$companyId',
   getParentRoute: () => CompaniesRoute,
 } as any)
-const CeoV1Route = CeoV1RouteImport.update({
-  id: '/ceo/v1',
-  path: '/ceo/v1',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CardCodeRoute = CardCodeRouteImport.update({
   id: '/card/$code',
   path: '/card/$code',
@@ -842,46 +802,6 @@ const CTokenRoute = CTokenRouteImport.update({
   id: '/c/$token',
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
-} as any)
-const BusinessConnectV8Route = BusinessConnectV8RouteImport.update({
-  id: '/v8',
-  path: '/v8',
-  getParentRoute: () => BusinessConnectRoute,
-} as any)
-const BusinessConnectV7Route = BusinessConnectV7RouteImport.update({
-  id: '/v7',
-  path: '/v7',
-  getParentRoute: () => BusinessConnectRoute,
-} as any)
-const BusinessConnectV6Route = BusinessConnectV6RouteImport.update({
-  id: '/v6',
-  path: '/v6',
-  getParentRoute: () => BusinessConnectRoute,
-} as any)
-const BusinessConnectV5Route = BusinessConnectV5RouteImport.update({
-  id: '/v5',
-  path: '/v5',
-  getParentRoute: () => BusinessConnectRoute,
-} as any)
-const BusinessConnectV4Route = BusinessConnectV4RouteImport.update({
-  id: '/v4',
-  path: '/v4',
-  getParentRoute: () => BusinessConnectRoute,
-} as any)
-const BusinessConnectV3Route = BusinessConnectV3RouteImport.update({
-  id: '/v3',
-  path: '/v3',
-  getParentRoute: () => BusinessConnectRoute,
-} as any)
-const BusinessConnectV2Route = BusinessConnectV2RouteImport.update({
-  id: '/v2',
-  path: '/v2',
-  getParentRoute: () => BusinessConnectRoute,
-} as any)
-const BusinessConnectV1Route = BusinessConnectV1RouteImport.update({
-  id: '/v1',
-  path: '/v1',
-  getParentRoute: () => BusinessConnectRoute,
 } as any)
 const BusinessConnectSavedCardsRoute =
   BusinessConnectSavedCardsRouteImport.update({
@@ -1163,16 +1083,6 @@ const MPerksIdRoute = MPerksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => MPerksRoute,
-} as any)
-const LandingCeo1983CinematicRoute = LandingCeo1983CinematicRouteImport.update({
-  id: '/cinematic',
-  path: '/cinematic',
-  getParentRoute: () => LandingCeo1983Route,
-} as any)
-const LandingCeoV1Route = LandingCeoV1RouteImport.update({
-  id: '/ceo/v1',
-  path: '/ceo/v1',
-  getParentRoute: () => LandingRoute,
 } as any)
 const EventsEventIdRegisterRoute = EventsEventIdRegisterRouteImport.update({
   id: '/register',
@@ -1567,17 +1477,8 @@ export interface FileRoutesByFullPath {
   '/business-connect/notifications': typeof BusinessConnectNotificationsRoute
   '/business-connect/relationship-timeline': typeof BusinessConnectRelationshipTimelineRoute
   '/business-connect/saved-cards': typeof BusinessConnectSavedCardsRoute
-  '/business-connect/v1': typeof BusinessConnectV1Route
-  '/business-connect/v2': typeof BusinessConnectV2Route
-  '/business-connect/v3': typeof BusinessConnectV3Route
-  '/business-connect/v4': typeof BusinessConnectV4Route
-  '/business-connect/v5': typeof BusinessConnectV5Route
-  '/business-connect/v6': typeof BusinessConnectV6Route
-  '/business-connect/v7': typeof BusinessConnectV7Route
-  '/business-connect/v8': typeof BusinessConnectV8Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
-  '/ceo/v1': typeof CeoV1Route
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
   '/company/$slug': typeof CompanySlugRoute
   '/connect-app/activate': typeof ConnectAppActivateRoute
@@ -1599,10 +1500,6 @@ export interface FileRoutesByFullPath {
   '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
-  '/landing/business-connect': typeof LandingBusinessConnectRoute
-  '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
-  '/landing/ceo1983': typeof LandingCeo1983RouteWithChildren
-  '/landing/vione': typeof LandingVioneRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1675,8 +1572,6 @@ export interface FileRoutesByFullPath {
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
   '/events/$eventId/register': typeof EventsEventIdRegisterRoute
-  '/landing/ceo/v1': typeof LandingCeoV1Route
-  '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
   '/m/renew/audit': typeof MRenewAuditRoute
   '/m/renew/history': typeof MRenewHistoryRoute
@@ -1789,17 +1684,8 @@ export interface FileRoutesByTo {
   '/business-connect/notifications': typeof BusinessConnectNotificationsRoute
   '/business-connect/relationship-timeline': typeof BusinessConnectRelationshipTimelineRoute
   '/business-connect/saved-cards': typeof BusinessConnectSavedCardsRoute
-  '/business-connect/v1': typeof BusinessConnectV1Route
-  '/business-connect/v2': typeof BusinessConnectV2Route
-  '/business-connect/v3': typeof BusinessConnectV3Route
-  '/business-connect/v4': typeof BusinessConnectV4Route
-  '/business-connect/v5': typeof BusinessConnectV5Route
-  '/business-connect/v6': typeof BusinessConnectV6Route
-  '/business-connect/v7': typeof BusinessConnectV7Route
-  '/business-connect/v8': typeof BusinessConnectV8Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
-  '/ceo/v1': typeof CeoV1Route
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
   '/company/$slug': typeof CompanySlugRoute
   '/connect-app/activate': typeof ConnectAppActivateRoute
@@ -1814,10 +1700,6 @@ export interface FileRoutesByTo {
   '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
-  '/landing/business-connect': typeof LandingBusinessConnectRoute
-  '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
-  '/landing/ceo1983': typeof LandingCeo1983RouteWithChildren
-  '/landing/vione': typeof LandingVioneRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1887,8 +1769,6 @@ export interface FileRoutesByTo {
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
   '/events/$eventId/register': typeof EventsEventIdRegisterRoute
-  '/landing/ceo/v1': typeof LandingCeoV1Route
-  '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
   '/m/renew/audit': typeof MRenewAuditRoute
   '/m/renew/history': typeof MRenewHistoryRoute
@@ -2015,17 +1895,8 @@ export interface FileRoutesById {
   '/business-connect/notifications': typeof BusinessConnectNotificationsRoute
   '/business-connect/relationship-timeline': typeof BusinessConnectRelationshipTimelineRoute
   '/business-connect/saved-cards': typeof BusinessConnectSavedCardsRoute
-  '/business-connect/v1': typeof BusinessConnectV1Route
-  '/business-connect/v2': typeof BusinessConnectV2Route
-  '/business-connect/v3': typeof BusinessConnectV3Route
-  '/business-connect/v4': typeof BusinessConnectV4Route
-  '/business-connect/v5': typeof BusinessConnectV5Route
-  '/business-connect/v6': typeof BusinessConnectV6Route
-  '/business-connect/v7': typeof BusinessConnectV7Route
-  '/business-connect/v8': typeof BusinessConnectV8Route
   '/c/$token': typeof CTokenRoute
   '/card/$code': typeof CardCodeRoute
-  '/ceo/v1': typeof CeoV1Route
   '/companies/$companyId': typeof CompaniesCompanyIdRoute
   '/company/$slug': typeof CompanySlugRoute
   '/connect-app/activate': typeof ConnectAppActivateRoute
@@ -2047,10 +1918,6 @@ export interface FileRoutesById {
   '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/h/$slug': typeof HSlugRoute
-  '/landing/business-connect': typeof LandingBusinessConnectRoute
-  '/landing/bussiness-connect': typeof LandingBussinessConnectRoute
-  '/landing/ceo1983': typeof LandingCeo1983RouteWithChildren
-  '/landing/vione': typeof LandingVioneRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -2123,8 +1990,6 @@ export interface FileRoutesById {
   '/connect/network/connections': typeof ConnectNetworkConnectionsRoute
   '/connect/network/notifications': typeof ConnectNetworkNotificationsRoute
   '/events/$eventId/register': typeof EventsEventIdRegisterRoute
-  '/landing/ceo/v1': typeof LandingCeoV1Route
-  '/landing/ceo1983/cinematic': typeof LandingCeo1983CinematicRoute
   '/m/perks/$id': typeof MPerksIdRoute
   '/m/renew/audit': typeof MRenewAuditRoute
   '/m/renew/history': typeof MRenewHistoryRoute
@@ -2256,17 +2121,8 @@ export interface FileRouteTypes {
     | '/business-connect/notifications'
     | '/business-connect/relationship-timeline'
     | '/business-connect/saved-cards'
-    | '/business-connect/v1'
-    | '/business-connect/v2'
-    | '/business-connect/v3'
-    | '/business-connect/v4'
-    | '/business-connect/v5'
-    | '/business-connect/v6'
-    | '/business-connect/v7'
-    | '/business-connect/v8'
     | '/c/$token'
     | '/card/$code'
-    | '/ceo/v1'
     | '/companies/$companyId'
     | '/company/$slug'
     | '/connect-app/activate'
@@ -2288,10 +2144,6 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
-    | '/landing/business-connect'
-    | '/landing/bussiness-connect'
-    | '/landing/ceo1983'
-    | '/landing/vione'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -2364,8 +2216,6 @@ export interface FileRouteTypes {
     | '/connect/network/connections'
     | '/connect/network/notifications'
     | '/events/$eventId/register'
-    | '/landing/ceo/v1'
-    | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
     | '/m/renew/audit'
     | '/m/renew/history'
@@ -2478,17 +2328,8 @@ export interface FileRouteTypes {
     | '/business-connect/notifications'
     | '/business-connect/relationship-timeline'
     | '/business-connect/saved-cards'
-    | '/business-connect/v1'
-    | '/business-connect/v2'
-    | '/business-connect/v3'
-    | '/business-connect/v4'
-    | '/business-connect/v5'
-    | '/business-connect/v6'
-    | '/business-connect/v7'
-    | '/business-connect/v8'
     | '/c/$token'
     | '/card/$code'
-    | '/ceo/v1'
     | '/companies/$companyId'
     | '/company/$slug'
     | '/connect-app/activate'
@@ -2503,10 +2344,6 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
-    | '/landing/business-connect'
-    | '/landing/bussiness-connect'
-    | '/landing/ceo1983'
-    | '/landing/vione'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -2576,8 +2413,6 @@ export interface FileRouteTypes {
     | '/connect/network/connections'
     | '/connect/network/notifications'
     | '/events/$eventId/register'
-    | '/landing/ceo/v1'
-    | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
     | '/m/renew/audit'
     | '/m/renew/history'
@@ -2703,17 +2538,8 @@ export interface FileRouteTypes {
     | '/business-connect/notifications'
     | '/business-connect/relationship-timeline'
     | '/business-connect/saved-cards'
-    | '/business-connect/v1'
-    | '/business-connect/v2'
-    | '/business-connect/v3'
-    | '/business-connect/v4'
-    | '/business-connect/v5'
-    | '/business-connect/v6'
-    | '/business-connect/v7'
-    | '/business-connect/v8'
     | '/c/$token'
     | '/card/$code'
-    | '/ceo/v1'
     | '/companies/$companyId'
     | '/company/$slug'
     | '/connect-app/activate'
@@ -2735,10 +2561,6 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/fees/$invoiceId'
     | '/h/$slug'
-    | '/landing/business-connect'
-    | '/landing/bussiness-connect'
-    | '/landing/ceo1983'
-    | '/landing/vione'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -2811,8 +2633,6 @@ export interface FileRouteTypes {
     | '/connect/network/connections'
     | '/connect/network/notifications'
     | '/events/$eventId/register'
-    | '/landing/ceo/v1'
-    | '/landing/ceo1983/cinematic'
     | '/m/perks/$id'
     | '/m/renew/audit'
     | '/m/renew/history'
@@ -2917,7 +2737,6 @@ export interface RootRouteChildren {
   BSlugRoute: typeof BSlugRoute
   CTokenRoute: typeof CTokenRoute
   CardCodeRoute: typeof CardCodeRoute
-  CeoV1Route: typeof CeoV1Route
   CompanySlugRoute: typeof CompanySlugRoute
   HSlugRoute: typeof HSlugRoute
   MembersMemberIdRoute: typeof MembersMemberIdRoute
@@ -3578,34 +3397,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MBusinessCardsRouteImport
       parentRoute: typeof MRoute
     }
-    '/landing/vione': {
-      id: '/landing/vione'
-      path: '/vione'
-      fullPath: '/landing/vione'
-      preLoaderRoute: typeof LandingVioneRouteImport
-      parentRoute: typeof LandingRoute
-    }
-    '/landing/ceo1983': {
-      id: '/landing/ceo1983'
-      path: '/ceo1983'
-      fullPath: '/landing/ceo1983'
-      preLoaderRoute: typeof LandingCeo1983RouteImport
-      parentRoute: typeof LandingRoute
-    }
-    '/landing/bussiness-connect': {
-      id: '/landing/bussiness-connect'
-      path: '/bussiness-connect'
-      fullPath: '/landing/bussiness-connect'
-      preLoaderRoute: typeof LandingBussinessConnectRouteImport
-      parentRoute: typeof LandingRoute
-    }
-    '/landing/business-connect': {
-      id: '/landing/business-connect'
-      path: '/business-connect'
-      fullPath: '/landing/business-connect'
-      preLoaderRoute: typeof LandingBusinessConnectRouteImport
-      parentRoute: typeof LandingRoute
-    }
     '/h/$slug': {
       id: '/h/$slug'
       path: '/h/$slug'
@@ -3753,13 +3544,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompaniesCompanyIdRouteImport
       parentRoute: typeof CompaniesRoute
     }
-    '/ceo/v1': {
-      id: '/ceo/v1'
-      path: '/ceo/v1'
-      fullPath: '/ceo/v1'
-      preLoaderRoute: typeof CeoV1RouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/card/$code': {
       id: '/card/$code'
       path: '/card/$code'
@@ -3773,62 +3557,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/c/$token'
       preLoaderRoute: typeof CTokenRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/business-connect/v8': {
-      id: '/business-connect/v8'
-      path: '/v8'
-      fullPath: '/business-connect/v8'
-      preLoaderRoute: typeof BusinessConnectV8RouteImport
-      parentRoute: typeof BusinessConnectRoute
-    }
-    '/business-connect/v7': {
-      id: '/business-connect/v7'
-      path: '/v7'
-      fullPath: '/business-connect/v7'
-      preLoaderRoute: typeof BusinessConnectV7RouteImport
-      parentRoute: typeof BusinessConnectRoute
-    }
-    '/business-connect/v6': {
-      id: '/business-connect/v6'
-      path: '/v6'
-      fullPath: '/business-connect/v6'
-      preLoaderRoute: typeof BusinessConnectV6RouteImport
-      parentRoute: typeof BusinessConnectRoute
-    }
-    '/business-connect/v5': {
-      id: '/business-connect/v5'
-      path: '/v5'
-      fullPath: '/business-connect/v5'
-      preLoaderRoute: typeof BusinessConnectV5RouteImport
-      parentRoute: typeof BusinessConnectRoute
-    }
-    '/business-connect/v4': {
-      id: '/business-connect/v4'
-      path: '/v4'
-      fullPath: '/business-connect/v4'
-      preLoaderRoute: typeof BusinessConnectV4RouteImport
-      parentRoute: typeof BusinessConnectRoute
-    }
-    '/business-connect/v3': {
-      id: '/business-connect/v3'
-      path: '/v3'
-      fullPath: '/business-connect/v3'
-      preLoaderRoute: typeof BusinessConnectV3RouteImport
-      parentRoute: typeof BusinessConnectRoute
-    }
-    '/business-connect/v2': {
-      id: '/business-connect/v2'
-      path: '/v2'
-      fullPath: '/business-connect/v2'
-      preLoaderRoute: typeof BusinessConnectV2RouteImport
-      parentRoute: typeof BusinessConnectRoute
-    }
-    '/business-connect/v1': {
-      id: '/business-connect/v1'
-      path: '/v1'
-      fullPath: '/business-connect/v1'
-      preLoaderRoute: typeof BusinessConnectV1RouteImport
-      parentRoute: typeof BusinessConnectRoute
     }
     '/business-connect/saved-cards': {
       id: '/business-connect/saved-cards'
@@ -4207,20 +3935,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/m/perks/$id'
       preLoaderRoute: typeof MPerksIdRouteImport
       parentRoute: typeof MPerksRoute
-    }
-    '/landing/ceo1983/cinematic': {
-      id: '/landing/ceo1983/cinematic'
-      path: '/cinematic'
-      fullPath: '/landing/ceo1983/cinematic'
-      preLoaderRoute: typeof LandingCeo1983CinematicRouteImport
-      parentRoute: typeof LandingCeo1983Route
-    }
-    '/landing/ceo/v1': {
-      id: '/landing/ceo/v1'
-      path: '/ceo/v1'
-      fullPath: '/landing/ceo/v1'
-      preLoaderRoute: typeof LandingCeoV1RouteImport
-      parentRoute: typeof LandingRoute
     }
     '/events/$eventId/register': {
       id: '/events/$eventId/register'
@@ -4743,14 +4457,6 @@ interface BusinessConnectRouteChildren {
   BusinessConnectNotificationsRoute: typeof BusinessConnectNotificationsRoute
   BusinessConnectRelationshipTimelineRoute: typeof BusinessConnectRelationshipTimelineRoute
   BusinessConnectSavedCardsRoute: typeof BusinessConnectSavedCardsRoute
-  BusinessConnectV1Route: typeof BusinessConnectV1Route
-  BusinessConnectV2Route: typeof BusinessConnectV2Route
-  BusinessConnectV3Route: typeof BusinessConnectV3Route
-  BusinessConnectV4Route: typeof BusinessConnectV4Route
-  BusinessConnectV5Route: typeof BusinessConnectV5Route
-  BusinessConnectV6Route: typeof BusinessConnectV6Route
-  BusinessConnectV7Route: typeof BusinessConnectV7Route
-  BusinessConnectV8Route: typeof BusinessConnectV8Route
   BusinessConnectIndexRoute: typeof BusinessConnectIndexRoute
   BusinessConnectIntroductionsTargetPersonNodeIdRoute: typeof BusinessConnectIntroductionsTargetPersonNodeIdRoute
   BusinessConnectIntroductionsAnalyticsRoute: typeof BusinessConnectIntroductionsAnalyticsRoute
@@ -4769,14 +4475,6 @@ const BusinessConnectRouteChildren: BusinessConnectRouteChildren = {
   BusinessConnectRelationshipTimelineRoute:
     BusinessConnectRelationshipTimelineRoute,
   BusinessConnectSavedCardsRoute: BusinessConnectSavedCardsRoute,
-  BusinessConnectV1Route: BusinessConnectV1Route,
-  BusinessConnectV2Route: BusinessConnectV2Route,
-  BusinessConnectV3Route: BusinessConnectV3Route,
-  BusinessConnectV4Route: BusinessConnectV4Route,
-  BusinessConnectV5Route: BusinessConnectV5Route,
-  BusinessConnectV6Route: BusinessConnectV6Route,
-  BusinessConnectV7Route: BusinessConnectV7Route,
-  BusinessConnectV8Route: BusinessConnectV8Route,
   BusinessConnectIndexRoute: BusinessConnectIndexRoute,
   BusinessConnectIntroductionsTargetPersonNodeIdRoute:
     BusinessConnectIntroductionsTargetPersonNodeIdRoute,
@@ -5133,34 +4831,12 @@ const FeesRouteChildren: FeesRouteChildren = {
 
 const FeesRouteWithChildren = FeesRoute._addFileChildren(FeesRouteChildren)
 
-interface LandingCeo1983RouteChildren {
-  LandingCeo1983CinematicRoute: typeof LandingCeo1983CinematicRoute
-}
-
-const LandingCeo1983RouteChildren: LandingCeo1983RouteChildren = {
-  LandingCeo1983CinematicRoute: LandingCeo1983CinematicRoute,
-}
-
-const LandingCeo1983RouteWithChildren = LandingCeo1983Route._addFileChildren(
-  LandingCeo1983RouteChildren,
-)
-
 interface LandingRouteChildren {
-  LandingBusinessConnectRoute: typeof LandingBusinessConnectRoute
-  LandingBussinessConnectRoute: typeof LandingBussinessConnectRoute
-  LandingCeo1983Route: typeof LandingCeo1983RouteWithChildren
-  LandingVioneRoute: typeof LandingVioneRoute
   LandingIndexRoute: typeof LandingIndexRoute
-  LandingCeoV1Route: typeof LandingCeoV1Route
 }
 
 const LandingRouteChildren: LandingRouteChildren = {
-  LandingBusinessConnectRoute: LandingBusinessConnectRoute,
-  LandingBussinessConnectRoute: LandingBussinessConnectRoute,
-  LandingCeo1983Route: LandingCeo1983RouteWithChildren,
-  LandingVioneRoute: LandingVioneRoute,
   LandingIndexRoute: LandingIndexRoute,
-  LandingCeoV1Route: LandingCeoV1Route,
 }
 
 const LandingRouteWithChildren =
@@ -5353,7 +5029,6 @@ const rootRouteChildren: RootRouteChildren = {
   BSlugRoute: BSlugRoute,
   CTokenRoute: CTokenRoute,
   CardCodeRoute: CardCodeRoute,
-  CeoV1Route: CeoV1Route,
   CompanySlugRoute: CompanySlugRoute,
   HSlugRoute: HSlugRoute,
   MembersMemberIdRoute: MembersMemberIdRoute,

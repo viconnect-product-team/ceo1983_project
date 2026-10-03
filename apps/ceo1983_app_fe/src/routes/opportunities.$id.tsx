@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
+  Calendar,
   CalendarClock,
   CheckCircle2,
   Eye,
@@ -19,6 +20,8 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader, Pill } from "@/components/dashboard/PageKit";
+import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
+import { SellerReviewCard } from "@/components/marketplace/SellerReviewCard";
 import { useFmt, useT } from "@/lib/i18n";
 import { getPoster, type Opportunity, type OpportunityInterest } from "@/lib/opportunities-data";
 import {
@@ -148,6 +151,7 @@ function OpportunityDetailPage() {
   const router = useRouter();
   const { opportunity: opp, interests } = Route.useLoaderData();
   const [showInterest, setShowInterest] = useState(false);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
 
   const toggleStatus = useServerFn(toggleOpportunityStatusFn);
   const removeOpp = useServerFn(deleteOpportunityFn);
@@ -208,15 +212,25 @@ function OpportunityDetailPage() {
               <Trash2 className="h-4 w-4" /> {t("opp.action.delete")}
             </button>
             {!isOwner && (
-              <button
-                onClick={() => setShowInterest(true)}
-                disabled={opp.status === "closed"}
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                <Send className="h-4 w-4" />
-                {t("opp.action.interest")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowMeetingModal(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20 transition cursor-pointer"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Hẹn gặp 1-on-1
+                </button>
+                <button
+                  onClick={() => setShowInterest(true)}
+                  disabled={opp.status === "closed"}
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  <Send className="h-4 w-4" />
+                  {t("opp.action.interest")}
+                </button>
+              </>
             )}
           </>
         }
@@ -473,24 +487,50 @@ function OpportunityDetailPage() {
                   </div>
                 </div>
                 {!isOwner && (
-                  <Link
-                    to="/network"
-                    search={{ peer: poster.id }}
-                    className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium hover:bg-secondary"
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    {t("net.action.message")}
-                  </Link>
+                  <>
+                    <Link
+                      to="/network"
+                      search={{ peer: poster.id }}
+                      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium hover:bg-secondary"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      {t("net.action.message")}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setShowMeetingModal(true)}
+                      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition cursor-pointer"
+                    >
+                      <Calendar className="h-3.5 w-3.5" />
+                      Hẹn gặp đàm phán 1-on-1
+                    </button>
+                  </>
                 )}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">—</p>
             )}
           </Card>
+
+          <SellerReviewCard
+            sellerId={posterId}
+            sellerName={opp.contactName || poster?.name}
+            title="Đánh giá uy tín chủ cơ hội"
+          />
         </div>
       </div>
 
       {showInterest && <InterestModal opp={opp} onClose={() => setShowInterest(false)} />}
+
+      <Create1on1MeetingModal
+        isOpen={showMeetingModal}
+        onClose={() => setShowMeetingModal(false)}
+        defaultTitle={`Đàm phán hợp tác cơ hội: ${opp.title}`}
+        defaultPartnerName={opp.contactName || poster?.name || ""}
+        defaultPartnerCompany={opp.company || ""}
+        defaultPartnerPhone={opp.contactPhone || poster?.phone || ""}
+        defaultNotes={`Trao đổi & thương lượng hợp tác cho cơ hội: ${opp.title}. Ngân sách dự kiến: ${budget}.`}
+      />
     </AppShell>
   );
 }

@@ -60,7 +60,9 @@ export function formatDisplayDateTime(
 
 export function formatCurrencyInput(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === "") return "";
-  const digits = String(val).replace(/\D/g, "");
+  const str = String(val).trim();
+  if (str === "0") return "0";
+  const digits = str.replace(/\D/g, "");
   if (!digits) return "";
   const cleanDigits = digits.replace(/^0+(?=\d)/, "");
   return cleanDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");

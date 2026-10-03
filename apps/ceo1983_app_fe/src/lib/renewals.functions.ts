@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { RenewalRecord } from "./renewal-data";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { addOneYear, toRecord, type Row } from "./renewals-calc";
+import { addOneYear, toRecord, isApprovedMember, type Row } from "./renewals-calc";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
@@ -21,7 +21,7 @@ export const listRenewalsFn = createServerFn({ method: "GET" })
     try {
       const nestMembers = await fetchNestApiFromServer<any[]>("/members", token);
       if (Array.isArray(nestMembers) && nestMembers.length > 0) {
-        return nestMembers.map((r: any) => toRecord(r as Row));
+        return nestMembers.filter(isApprovedMember).map((r: any) => toRecord(r as Row));
       }
     } catch (e) {
       console.warn("Fallback to db for listRenewals:", e);
@@ -33,7 +33,7 @@ export const listRenewalsFn = createServerFn({ method: "GET" })
     if (activeId) query = query.eq("association_id", activeId);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r: any) => toRecord(r as Row));
+    return (data ?? []).filter(isApprovedMember).map((r: any) => toRecord(r as Row));
   });
 
 export const renewMembershipFn = createServerFn({ method: "POST" })
@@ -117,13 +117,16 @@ export const bulkRenewMembershipFn = createServerFn({ method: "POST" })
 
 export const sendRenewalReminderFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().min(1).max(128), isAuto: z.boolean().optional() }).parse(d),
+  )
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
     const token = (context as any)?.token;
     try {
       const reminded = await fetchNestApiFromServer<any>(`/members/${code}/remind`, token, {
         method: "POST",
+        body: JSON.stringify({ isAuto: Boolean(data.isAuto) }),
       });
       if (reminded) {
         return toRecord(reminded as Row);
@@ -179,17 +182,30 @@ export const setPaymentStatusFn = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().min(1).max(128),
-        status: z.enum(["unpaid", "pending", "paid"]),
+        status: z.enum(["unpaid", "pending", "paid", "cash"]),
       })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<RenewalRecord> => {
     const code = codeFromId(data.id);
+    const token = (context as any)?.token;
+    try {
+      const updated = await fetchNestApiFromServer<any>(`/members/${code}/payment-status`, token, {
+        method: "PATCH",
+        body: JSON.stringify({ paymentStatus: data.status, feePaid: data.status !== "unpaid" }),
+      });
+      if (updated) {
+        return toRecord(updated as Row);
+      }
+    } catch (e) {
+      console.warn("Fallback to db for setPaymentStatus:", e);
+    }
+
     const { data: row, error } = await getDb(context)
       .from("members")
       .update({
         payment_status: data.status,
-        fee_paid: data.status === "paid",
+        fee_paid: data.status !== "unpaid",
       })
       .eq("code", code)
       .select("*")

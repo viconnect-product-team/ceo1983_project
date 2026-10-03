@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import {
   Activity,
@@ -69,7 +69,6 @@ import {
   type MeetingRoom,
   type RoomBookingRequest,
 } from "@/lib/room-booking.functions";
-import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
 
 export const Route = createFileRoute("/meetings")({
   ssr: false,
@@ -130,73 +129,6 @@ const DEPARTMENT_MEMBERS: Record<
   ],
 };
 
-export interface ConnectionAppointment {
-  id: string;
-  title: string;
-  hostName: string;
-  hostCompany?: string;
-  hostPhone?: string;
-  hostCode?: string;
-  hostAvatar?: string;
-  partnerName: string;
-  partnerCompany?: string;
-  partnerPhone?: string;
-  partnerCode?: string;
-  partnerAvatar?: string;
-  date: string;
-  time: string;
-  venueType: "offline" | "online";
-  venue: string;
-  onlineUrl?: string;
-  notes?: string;
-  status: "scheduled" | "confirmed" | "completed" | "cancelled" | "accepted";
-  source?: "business_meeting" | "user_connection" | "local";
-  createdAt?: string;
-}
-
-export type ActiveMeetingTab = "meetings" | "appointments";
-
-function renderAppointmentStatusPill(status: string) {
-  switch (status) {
-    case "confirmed":
-    case "accepted":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-          Đã Xác Nhận
-        </span>
-      );
-    case "scheduled":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-blue-50 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
-          <Clock className="h-3 w-3 text-[#003B95]" />
-          Sắp Diễn Ra
-        </span>
-      );
-    case "completed":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-          <CheckCircle2 className="h-3 w-3 text-slate-500" />
-          Đã Hoàn Tất
-        </span>
-      );
-    case "cancelled":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-          <XCircle className="h-3 w-3 text-rose-600" />
-          Đã Hủy
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-          <Clock className="h-3 w-3 text-amber-600" />
-          Đang Chờ
-        </span>
-      );
-  }
-}
-
 function MeetingsPage() {
   const t: any = useT();
   const fmt = useFmt();
@@ -217,127 +149,7 @@ function MeetingsPage() {
   const deleteFn = useServerFn(deleteMeetingFn);
   const createNotif = useServerFn(createNotificationFn);
 
-  // Active Main Tab (Cuộc Họp & Hẹn Gặp Kết Nối làm mặc định)
-  const [activeTab, setActiveTab] = useState<ActiveMeetingTab>("meetings");
-  const [is1on1ModalOpen, setIs1on1ModalOpen] = useState(false);
-  const [connectionAppointments, setConnectionAppointments] = useState<ConnectionAppointment[]>([]);
-  const [loadingAppointments, setLoadingAppointments] = useState(false);
-  const [appointmentSearch, setAppointmentSearch] = useState("");
-  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
-
-  const loadConnectionAppointments = async () => {
-    setLoadingAppointments(true);
-    let localItems: ConnectionAppointment[] = [];
-    try {
-      const stored =
-        localStorage.getItem("ceo1983_meetings_history") ||
-        localStorage.getItem("vione_meetings_history") ||
-        "[]";
-      localItems = JSON.parse(stored);
-    } catch {
-      localItems = [];
-    }
-
-    try {
-      const res = await fetchNestApi<any>("/meetings/connection-appointments");
-      const serverItems = Array.isArray(res) ? res : res?.items || [];
-      const map = new Map<string, ConnectionAppointment>();
-      for (const item of serverItems) {
-        map.set(String(item.id), item);
-      }
-      for (const item of localItems) {
-        if (!map.has(String(item.id))) {
-          map.set(String(item.id), item);
-        }
-      }
-      setConnectionAppointments(Array.from(map.values()));
-    } catch (err) {
-      console.warn("Could not fetch remote connection appointments, fallback to local:", err);
-      setConnectionAppointments(localItems);
-    } finally {
-      setLoadingAppointments(false);
-    }
-  };
-
-  useEffect(() => {
-    loadConnectionAppointments();
-    const handleUpdate = () => loadConnectionAppointments();
-    window.addEventListener("ceo1983:calendar-updated", handleUpdate);
-    window.addEventListener("vione:meetings-updated", handleUpdate);
-    return () => {
-      window.removeEventListener("ceo1983:calendar-updated", handleUpdate);
-      window.removeEventListener("vione:meetings-updated", handleUpdate);
-    };
-  }, []);
-
-  const handleDeleteAppointment = async (id: string, title: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa cuộc hẹn "${title}" không?`)) return;
-    try {
-      const keys = ["ceo1983_meetings_history", "vione_meetings_history"];
-      for (const k of keys) {
-        try {
-          const list = JSON.parse(localStorage.getItem(k) || "[]");
-          const next = list.filter((x: any) => String(x.id) !== String(id));
-          localStorage.setItem(k, JSON.stringify(next));
-        } catch {}
-      }
-      try {
-        const cleanId = id.startsWith("conn_") ? id.replace("conn_", "") : id;
-        await fetchNestApi(`/meetings/${cleanId}`, { method: "DELETE" });
-      } catch {}
-
-      toast.success("✓ Đã xóa cuộc hẹn kết nối thành công!");
-      window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
-      await loadConnectionAppointments();
-    } catch {
-      toast.error("Lỗi khi xóa cuộc hẹn");
-    }
-  };
-
-  const handleCompleteAppointment = async (id: string) => {
-    try {
-      const keys = ["ceo1983_meetings_history", "vione_meetings_history"];
-      for (const k of keys) {
-        try {
-          const list = JSON.parse(localStorage.getItem(k) || "[]");
-          const next = list.map((x: any) => String(x.id) === String(id) ? { ...x, status: "completed" } : x);
-          localStorage.setItem(k, JSON.stringify(next));
-        } catch {}
-      }
-      setConnectionAppointments((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, status: "completed" as const } : item))
-      );
-      toast.success("✓ Đã cập nhật trạng thái: Đã hoàn tất cuộc hẹn!");
-      window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
-    } catch {
-      toast.error("Lỗi khi cập nhật trạng thái");
-    }
-  };
-
-  const filteredAppointments = useMemo(() => {
-    return connectionAppointments.filter((app) => {
-      const q = appointmentSearch.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        app.title?.toLowerCase().includes(q) ||
-        app.hostName?.toLowerCase().includes(q) ||
-        app.hostCompany?.toLowerCase().includes(q) ||
-        app.partnerName?.toLowerCase().includes(q) ||
-        app.partnerCompany?.toLowerCase().includes(q) ||
-        app.venue?.toLowerCase().includes(q) ||
-        app.notes?.toLowerCase().includes(q);
-
-      const matchesStatus =
-        appointmentStatusFilter === "all" ||
-        (appointmentStatusFilter === "upcoming" && (app.status === "scheduled" || app.status === "confirmed" || app.status === "accepted")) ||
-        (appointmentStatusFilter === "completed" && app.status === "completed") ||
-        (appointmentStatusFilter === "cancelled" && app.status === "cancelled");
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [connectionAppointments, appointmentSearch, appointmentStatusFilter]);
-
-  // --- TAB 1: Meetings State ---
+  // --- Meetings State ---
   const [modalOpen, setModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
@@ -814,90 +626,55 @@ function MeetingsPage() {
         subtitle="Khởi tạo cuộc họp, quản trị phê duyệt, chọn phòng họp Zoom/Google Meet/UniWork và phát thông báo đồng bộ"
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {activeTab === "meetings" ? (
-              canCreateMeeting && (
-                <button
-                  onClick={handleOpenCreate}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[#003B95] hover:bg-blue-900 transition shadow-sm cursor-pointer"
-                >
-                  <Plus className="h-4 w-4" />
-                  Tạo Cuộc Họp Ban
-                </button>
-              )
-            ) : (
+            {canCreateMeeting && (
               <button
-                onClick={() => setIs1on1ModalOpen(true)}
+                onClick={handleOpenCreate}
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[#003B95] hover:bg-blue-900 transition shadow-sm cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                Lên Lịch Hẹn 1-on-1 Mới
+                Tạo Cuộc Họp Ban
               </button>
             )}
+            <Link
+              to="/business-connect/meetings"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition shadow-xs cursor-pointer"
+            >
+              <Handshake className="h-4 w-4 text-amber-500" />
+              <span>Quản Lý Cuộc Gặp Giao Thương 1-on-1 →</span>
+            </Link>
             <button
               onClick={() => {
-                if (activeTab === "appointments") {
-                  loadConnectionAppointments();
-                  toast.success("✓ Đã làm mới danh sách cuộc hẹn giao thương 1-on-1!");
-                } else {
-                  router.invalidate();
-                  toast.success("✓ Đã làm mới danh sách cuộc họp!");
-                }
+                router.invalidate();
+                toast.success("✓ Đã làm mới danh sách cuộc họp!");
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
               title="Làm mới dữ liệu từ CSDL"
             >
-              <RefreshCw className={`h-4 w-4 ${loadingAppointments ? "animate-spin text-[#003B95]" : ""}`} />
+              <RefreshCw className="h-4 w-4" />
               <span className="hidden sm:inline">Làm mới</span>
             </button>
           </div>
         }
       />
 
-      {/* Main Tab Navigation */}
-      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-        <button
-          onClick={() => setActiveTab("meetings")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "meetings"
-              ? "bg-[#003B95] text-white shadow-md shadow-blue-950/20"
-              : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          <span>Cuộc Họp Ban Điều Hành & Chuyên Ban</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            activeTab === "meetings" ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-          }`}>
-            {MEETINGS.length}
+      {/* Subheader & Navigation info */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div className="flex items-center gap-2">
+          <Users className="h-5 w-5 text-[#003B95]" />
+          <span className="font-bold text-base text-foreground">Cuộc Họp Ban Điều Hành & Chuyên Ban</span>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-[#003B95] text-white">
+            {MEETINGS.length} cuộc họp
           </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab("appointments");
-            loadConnectionAppointments();
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "appointments"
-              ? "bg-[#003B95] text-white shadow-md shadow-blue-950/20"
-              : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-          }`}
-        >
-          <Handshake className="h-4 w-4 text-amber-400" />
-          <span>Cuộc Hẹn Giao Thương 1-on-1 (App Hiệp Hội)</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            activeTab === "appointments" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
-          }`}>
-            {connectionAppointments.length}
-          </span>
-        </button>
+        </div>
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <span>* Các cuộc hẹn gặp giao thương 1-on-1 đã được chuyển về phân hệ</span>
+          <Link to="/business-connect/meetings" className="text-primary font-bold hover:underline">
+            Quản Lý Cuộc Gặp →
+          </Link>
+        </div>
       </div>
 
-      {/* ==================================================================== */}
-      {/* TAB 1: EXECUTIVE & COMMITTEE MEETINGS VIEW                           */}
-      {/* ==================================================================== */}
-      {activeTab === "meetings" && (
-        <>
+      <>
           {/* KPI Cards */}
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <StatCard
@@ -1164,304 +941,6 @@ function MeetingsPage() {
             ))}
           </div>
         </>
-      )}
-
-      {/* ==================================================================== */}
-      {/* TAB 2: 1-ON-1 CONNECTION APPOINTMENTS VIEW (APP HIỆP HỘI)             */}
-      {/* ==================================================================== */}
-      {activeTab === "appointments" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          {/* KPI Cards for 1-on-1 Connection Appointments */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <StatCard
-              label="Tổng Lịch Hẹn 1-on-1"
-              value={connectionAppointments.length}
-              icon={<Handshake className="h-4 w-4 text-[#003B95]" />}
-            />
-            <StatCard
-              label="Đã Xác Nhận / Sắp Tới"
-              value={
-                connectionAppointments.filter(
-                  (m) =>
-                    m.status === "confirmed" ||
-                    m.status === "accepted" ||
-                    m.status === "scheduled"
-                ).length
-              }
-              tone="info"
-              icon={<Calendar className="h-4 w-4 text-blue-600" />}
-            />
-            <StatCard
-              label="Gặp Trực Tiếp (Offline)"
-              value={
-                connectionAppointments.filter((m) => m.venueType === "offline")
-                  .length
-              }
-              tone="warning"
-              icon={<MapPin className="h-4 w-4 text-amber-600" />}
-            />
-            <StatCard
-              label="Đã Hoàn Tất Gặp Gỡ"
-              value={
-                connectionAppointments.filter((m) => m.status === "completed")
-                  .length
-              }
-              tone="success"
-              icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />}
-            />
-          </div>
-
-          {/* Toolbar: Search, Filters & Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl shadow-xs">
-            <div className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 px-3 py-2">
-              <Search className="h-4 w-4 text-slate-400 shrink-0" />
-              <input
-                type="text"
-                value={appointmentSearch}
-                onChange={(e) => setAppointmentSearch(e.target.value)}
-                placeholder="Tìm theo tên hội viên, đối tác, công ty, địa điểm, ghi chú..."
-                className="w-full bg-transparent text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden"
-              />
-              {appointmentSearch && (
-                <button
-                  onClick={() => setAppointmentSearch("")}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <select
-                value={appointmentStatusFilter}
-                onChange={(e) => setAppointmentStatusFilter(e.target.value)}
-                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
-              >
-                <option value="all">Tất cả trạng thái ({connectionAppointments.length})</option>
-                <option value="upcoming">Đã xác nhận & Sắp tới</option>
-                <option value="completed">Đã hoàn tất</option>
-                <option value="cancelled">Đã hủy</option>
-              </select>
-
-              <button
-                onClick={() => setIs1on1ModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white bg-[#003B95] hover:bg-blue-900 transition shadow-xs cursor-pointer shrink-0"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Lên Lịch Hẹn 1-on-1 Mới</span>
-              </button>
-            </div>
-          </div>
-
-          {/* List of 1-on-1 Appointments */}
-          {filteredAppointments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-              <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-[#003B95] dark:text-blue-400">
-                <Handshake className="h-8 w-8" />
-              </div>
-              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                Chưa Có Cuộc Hẹn Giao Thương 1-on-1 Nào
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md">
-                Khi các hội viên chấp nhận lời mời kết nối hoặc lên lịch hẹn 1-on-1 trên App Hiệp hội, dữ liệu CSDL sẽ tự động hiển thị tập trung tại đây để quản trị viên theo dõi.
-              </p>
-              <button
-                onClick={() => setIs1on1ModalOpen(true)}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white bg-[#003B95] hover:bg-blue-900 transition shadow-xs cursor-pointer"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Lên Lịch Hẹn 1-on-1 Đầu Tiên
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {filteredAppointments.map((app) => (
-                <div
-                  key={app.id}
-                  className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 relative overflow-hidden"
-                >
-                  {/* Top Header Row */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                        <Handshake className="h-3 w-3 text-amber-600" />
-                        {app.source === "user_connection" ? "Kết Nối B2B" : "Gặp Gỡ 1-on-1"}
-                      </span>
-                      {renderAppointmentStatusPill(app.status)}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5 text-[#003B95]" />
-                        {app.date}
-                      </span>
-                      <span>•</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-[#003B95]" />
-                        {app.time}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 line-clamp-2">
-                      {app.title}
-                    </h3>
-                  </div>
-
-                  {/* Two Participants Side-by-Side Card */}
-                  <div className="rounded-xl border border-blue-100 dark:border-blue-950/40 bg-blue-50/40 dark:bg-blue-950/20 p-3.5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                      {/* Host */}
-                      <div className="space-y-1">
-                        <div className="text-[10px] uppercase font-bold text-[#003B95] dark:text-blue-400 flex items-center gap-1">
-                          <span>👑 Hội viên chủ trì</span>
-                          {app.hostCode && (
-                            <span className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.2 rounded text-[9px] border border-blue-200">
-                              {app.hostCode}
-                            </span>
-                          )}
-                        </div>
-                        <p className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
-                          {app.hostName}
-                        </p>
-                        {app.hostCompany && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                            <Building className="h-3 w-3 shrink-0" />
-                            {app.hostCompany}
-                          </p>
-                        )}
-                        {app.hostPhone && (
-                          <a
-                            href={`tel:${app.hostPhone}`}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline"
-                          >
-                            <Phone className="h-2.5 w-2.5" />
-                            {app.hostPhone}
-                          </a>
-                        )}
-                      </div>
-
-                      {/* Partner */}
-                      <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-blue-200/60 dark:border-blue-900/60 pt-2 sm:pt-0 sm:pl-3">
-                        <div className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
-                          <span>🤝 Đối tác kết nối</span>
-                          {app.partnerCode && (
-                            <span className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.2 rounded text-[9px] border border-amber-200">
-                              {app.partnerCode}
-                            </span>
-                          )}
-                        </div>
-                        <p className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
-                          {app.partnerName}
-                        </p>
-                        {app.partnerCompany && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                            <Building className="h-3 w-3 shrink-0" />
-                            {app.partnerCompany}
-                          </p>
-                        )}
-                        {app.partnerPhone && (
-                          <a
-                            href={`tel:${app.partnerPhone}`}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 hover:underline"
-                          >
-                            <Phone className="h-2.5 w-2.5" />
-                            {app.partnerPhone}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Venue & Details */}
-                  <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-                    <div className="flex items-start gap-2">
-                      {app.venueType === "online" ? (
-                        <Video className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
-                      ) : (
-                        <MapPin className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
-                      )}
-                      <span className="truncate">
-                        <strong>Địa điểm:</strong> {app.venue}
-                      </span>
-                    </div>
-
-                    {app.onlineUrl && (
-                      <div className="flex items-center gap-2">
-                        <ExternalLink className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                        <a
-                          href={app.onlineUrl.startsWith("http") ? app.onlineUrl : `https://${app.onlineUrl}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 hover:underline truncate font-medium"
-                        >
-                          {app.onlineUrl}
-                        </a>
-                      </div>
-                    )}
-
-                    {app.notes && (
-                      <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 text-[11px] text-slate-600 dark:text-slate-300">
-                        <span className="font-semibold text-slate-700 dark:text-slate-200">Mục đích:</span>{" "}
-                        {app.notes}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Bar */}
-                  <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    {app.partnerPhone && (
-                      <a
-                        href={`tel:${app.partnerPhone}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition cursor-pointer"
-                        title="Gọi điện cho đối tác"
-                      >
-                        <Phone className="h-3.5 w-3.5 text-slate-500" />
-                        <span>Gọi Đối Tác</span>
-                      </a>
-                    )}
-
-                    {app.venueType === "online" && app.onlineUrl && (
-                      <a
-                        href={app.onlineUrl.startsWith("http") ? app.onlineUrl : `https://${app.onlineUrl}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition cursor-pointer"
-                      >
-                        <Video className="h-3.5 w-3.5 text-blue-600" />
-                        <span>Vào Họp Zoom</span>
-                      </a>
-                    )}
-
-                    {app.status !== "completed" && (
-                      <button
-                        onClick={() => handleCompleteAppointment(app.id)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition cursor-pointer"
-                        title="Đánh dấu đã hoàn tất cuộc gặp gỡ"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>Đã Hoàn Tất</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => handleDeleteAppointment(app.id, app.title)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer transition"
-                      title="Xóa / Hủy cuộc hẹn này"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      <span>Hủy Hẹn</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
 
 
@@ -2348,15 +1827,6 @@ function MeetingsPage() {
           </div>
         </div>
       )}
-      {/* Modal Lên Lịch Hẹn 1-on-1 Mới */}
-      <Create1on1MeetingModal
-        isOpen={is1on1ModalOpen}
-        onClose={() => setIs1on1ModalOpen(false)}
-        onSuccess={() => {
-          loadConnectionAppointments();
-          toast.success("✓ Đã lên lịch hẹn giao thương 1-on-1 thành công!");
-        }}
-      />
     </AppShell>
   );
 }

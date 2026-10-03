@@ -90,64 +90,8 @@ export function formatToIso(val?: string | null): string {
 }
 
 /**
- * Formats user input as they type without interfering with manual slashes or backspacing
+ * Cleanly formats user date on blur or when fully typed, without mutating keystrokes mid-typing
  */
-function formatMaskWhileTyping(input: string, prevVal: string): string {
-  // If user deleted a character, allow natural deletion
-  if (prevVal && input.length < prevVal.length) {
-    if (input.endsWith("/")) {
-      return input.slice(0, -1);
-    }
-    return input;
-  }
-
-  // Remove invalid characters (keep digits and slashes only)
-  let clean = input.replace(/[^0-9\/]/g, "");
-  // Collapse multiple slashes
-  clean = clean.replace(/\/+/g, "/");
-
-  // If user typed digits continuously without slashes (e.g. 20101983)
-  if (!clean.includes("/") && clean.length > 2) {
-    const d = clean.slice(0, 2);
-    const m = clean.slice(2, 4);
-    const y = clean.slice(4, 8);
-    let r = d;
-    if (m) r += "/" + m;
-    if (y) r += "/" + y;
-    return r;
-  }
-
-  const parts = clean.split("/");
-
-  // Day part
-  let d = parts[0] ? parts[0].slice(0, 2) : "";
-  if (d.length === 2 && parseInt(d, 10) > 31) d = "31";
-
-  // Month part
-  let m = parts[1] !== undefined ? parts[1].slice(0, 2) : "";
-  if (m.length === 2 && parseInt(m, 10) > 12) m = "12";
-
-  // Year part
-  const y = parts[2] !== undefined ? parts[2].slice(0, 4) : "";
-
-  let res = d;
-  if (d.length === 2) {
-    res += "/" + m;
-    if (m.length === 2) {
-      res += "/" + y;
-    } else if (parts.length > 2) {
-      res += "/" + y;
-    }
-  } else if (parts.length > 1) {
-    res += "/" + m;
-    if (parts.length > 2) {
-      res += "/" + y;
-    }
-  }
-
-  return res;
-}
-
 export function StandardDateInput({
   id,
   name,
@@ -167,60 +111,53 @@ export function StandardDateInput({
   });
   const [isInvalid, setIsInvalid] = useState(false);
   const datePickerRef = useRef<HTMLInputElement>(null);
-  const prevTextRef = useRef(displayText);
   const isFocusedRef = useRef(false);
 
+  // Synchronize when value changes externally (and user is not currently typing)
   useEffect(() => {
     if (isFocusedRef.current) return;
     const parsed = parseFlexibleDate(value);
     const targetDisplay = parsed.isValid ? parsed.display : value || "";
-    if (targetDisplay !== displayText && value !== displayText) {
+    if (targetDisplay !== displayText) {
       setDisplayText(targetDisplay);
-      prevTextRef.current = targetDisplay;
       setIsInvalid(false);
     }
   }, [value]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
+    setDisplayText(raw);
+
     if (!raw.trim()) {
-      setDisplayText("");
-      prevTextRef.current = "";
       setIsInvalid(false);
       onChange("", "");
       return;
     }
 
-    const formatted = formatMaskWhileTyping(raw, prevTextRef.current);
-    prevTextRef.current = formatted;
-    setDisplayText(formatted);
-
-    const parsed = parseFlexibleDate(formatted);
+    const parsed = parseFlexibleDate(raw);
     if (parsed.isValid) {
       setIsInvalid(false);
       onChange(parsed.iso, parsed.display);
     } else {
-      // If user has typed full 10 chars (dd/mm/yyyy) but date is mathematically invalid (e.g. 31/02/2026)
-      if (formatted.length === 10) {
-        setIsInvalid(true);
-      } else {
-        setIsInvalid(false);
-      }
-      onChange("", formatted);
+      // Keep the typed value in parent state so it doesn't get cleared or reset during re-renders
+      setIsInvalid(false);
+      onChange(raw, raw);
     }
   };
 
   const handleBlur = () => {
     isFocusedRef.current = false;
-    if (!displayText.trim()) {
+    const trimmed = displayText.trim();
+    if (!trimmed) {
       setIsInvalid(false);
       onChange("", "");
       return;
     }
-    let parsed = parseFlexibleDate(displayText);
+
+    let parsed = parseFlexibleDate(trimmed);
     if (!parsed.isValid) {
-      // Check 2-digit year on blur only
-      const dmy2 = displayText.trim().match(/^(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2})$/);
+      // Check 2-digit year on blur (e.g., 25/10/83 -> 25/10/1983)
+      const dmy2 = trimmed.match(/^(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2})$/);
       if (dmy2) {
         const d = parseInt(dmy2[1], 10);
         const m = parseInt(dmy2[2], 10);
@@ -233,13 +170,14 @@ export function StandardDateInput({
         }
       }
     }
+
     if (parsed.isValid) {
       setDisplayText(parsed.display);
-      prevTextRef.current = parsed.display;
       setIsInvalid(false);
       onChange(parsed.iso, parsed.display);
     } else {
       setIsInvalid(true);
+      onChange(trimmed, trimmed);
     }
   };
 
@@ -247,7 +185,6 @@ export function StandardDateInput({
     const isoVal = e.target.value; // YYYY-MM-DD
     if (!isoVal) {
       setDisplayText("");
-      prevTextRef.current = "";
       setIsInvalid(false);
       onChange("", "");
       return;
@@ -255,7 +192,6 @@ export function StandardDateInput({
     const parsed = parseFlexibleDate(isoVal);
     if (parsed.isValid) {
       setDisplayText(parsed.display);
-      prevTextRef.current = parsed.display;
       setIsInvalid(false);
       onChange(parsed.iso, parsed.display);
     }

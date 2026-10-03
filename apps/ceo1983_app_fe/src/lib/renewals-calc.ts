@@ -55,6 +55,16 @@ export function addOneYear(date: Date): Date {
   return result;
 }
 
+export function isApprovedMember(r: Row): boolean {
+  const status = String(r.status || "").toLowerCase().trim();
+  // Only officially approved members (active, expired, approved) can be renewed.
+  // Pending (chờ phê duyệt), waiting, rejected, draft accounts MUST NOT appear in renewal!
+  if (status === "pending" || status === "rejected" || status === "waiting" || status === "draft") {
+    return false;
+  }
+  return status === "active" || status === "expired" || status === "approved" || status === "";
+}
+
 export function toRecord(r: Row): RenewalRecord {
   const m = mapMember(r);
   const today = new Date();

@@ -72,6 +72,23 @@ export const MEETING_PLATFORMS: Record<
   },
 };
 
+export interface TaskDelegation {
+  acceptedAt?: string;
+  declinedAt?: string;
+  declineReason?: string;
+  submittedAt?: string;
+  submissionNote?: string;
+  submissionDeliverables?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  approvalRating?: number; // 1-5 sao
+  approvalFeedback?: string;
+  reworkRequestedAt?: string;
+  reworkReason?: string;
+  lastRemindedAt?: string;
+  reminderCount?: number;
+}
+
 export interface TaskItem {
   id: string;
   code: string;
@@ -103,6 +120,7 @@ export interface TaskItem {
   attachments?: TaskAttachment[];
   comments: TaskComment[];
   history: TaskHistory[];
+  delegation?: TaskDelegation;
   createdAt: string;
   updatedAt: string;
 }

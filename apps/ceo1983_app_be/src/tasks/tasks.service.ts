@@ -43,6 +43,23 @@ export interface TaskMeeting {
   note?: string;
 }
 
+export interface TaskDelegation {
+  acceptedAt?: string;
+  declinedAt?: string;
+  declineReason?: string;
+  submittedAt?: string;
+  submissionNote?: string;
+  submissionDeliverables?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  approvalRating?: number; // 1-5 sao
+  approvalFeedback?: string;
+  reworkRequestedAt?: string;
+  reworkReason?: string;
+  lastRemindedAt?: string;
+  reminderCount?: number;
+}
+
 export interface TaskItem {
   id: string;
   code: string;
@@ -74,6 +91,7 @@ export interface TaskItem {
   attachments?: TaskAttachment[];
   comments: TaskComment[];
   history: TaskHistory[];
+  delegation?: TaskDelegation;
   createdAt: string;
   updatedAt: string;
 }
@@ -654,6 +672,154 @@ export class TasksService {
       task.updatedAt = new Date().toISOString();
       this.saveToFile();
     }
+
+    return task;
+  }
+
+  async acceptTask(id: string, actorName = 'Người phụ trách'): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    task.status = 'IN_PROGRESS';
+    task.delegation = {
+      ...task.delegation,
+      acceptedAt: new Date().toISOString(),
+      declinedAt: undefined,
+      declineReason: undefined,
+    };
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: 'Tiếp nhận công việc và cam kết thực hiện',
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+    return task;
+  }
+
+  async declineTask(id: string, reason: string, actorName = 'Người phụ trách'): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    task.delegation = {
+      ...task.delegation,
+      declinedAt: new Date().toISOString(),
+      declineReason: reason,
+    };
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: `Từ chối tiếp nhận công việc: "${reason}"`,
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+    return task;
+  }
+
+  async submitTaskReview(
+    id: string,
+    payload: { deliverables?: string; note?: string },
+    actorName = 'Người phụ trách',
+  ): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    task.status = 'REVIEW';
+    task.progress = Math.max(task.progress, 90);
+    if (payload.deliverables) {
+      task.deliverables = payload.deliverables;
+    }
+    task.delegation = {
+      ...task.delegation,
+      submittedAt: new Date().toISOString(),
+      submissionNote: payload.note,
+      submissionDeliverables: payload.deliverables,
+    };
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: `Gửi báo cáo nghiệm thu hoàn thành: "${payload.note || 'Đã nộp kết quả công việc'}"`,
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+    return task;
+  }
+
+  async approveTask(
+    id: string,
+    payload: { rating?: number; feedback?: string },
+    actorName = 'Ban Quản trị',
+  ): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    task.status = 'DONE';
+    task.progress = 100;
+    task.delegation = {
+      ...task.delegation,
+      approvedAt: new Date().toISOString(),
+      approvedBy: actorName,
+      approvalRating: payload.rating || 5,
+      approvalFeedback: payload.feedback || 'Nghiệm thu đạt chuẩn yêu cầu',
+    };
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: `Phê duyệt nghiệm thu hoàn thành (${payload.rating || 5} sao): "${payload.feedback || 'Đạt yêu cầu'}"`,
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+    return task;
+  }
+
+  async requestTaskRework(id: string, reason: string, actorName = 'Ban Quản trị'): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    task.status = 'IN_PROGRESS';
+    task.delegation = {
+      ...task.delegation,
+      reworkRequestedAt: new Date().toISOString(),
+      reworkReason: reason,
+    };
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: `Yêu cầu chỉnh sửa / làm lại: "${reason}"`,
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+    return task;
+  }
+
+  async remindTask(id: string, actorName = 'Ban Quản trị'): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    const newCount = (task.delegation?.reminderCount || 0) + 1;
+    task.delegation = {
+      ...task.delegation,
+      lastRemindedAt: new Date().toISOString(),
+      reminderCount: newCount,
+    };
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: `Gửi nhắc nhở hạn chót & đôn đốc tiến độ (Lần ${newCount})`,
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+
+    // Bắn thông báo nhắc nhở đến người phụ trách
+    this.dispatchTaskAssignmentNotification(task, `${actorName} (Nhắc nhở đôn đốc lần ${newCount})`).catch((err) => {
+      this.logger.warn(`Reminder notification error: ${err?.message}`);
+    });
 
     return task;
   }

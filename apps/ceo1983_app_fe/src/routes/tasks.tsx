@@ -504,6 +504,11 @@ function TasksPage() {
           onProgressChange={handleProgressChange}
           onToggleSubtask={handleToggleSubtask}
           onAddComment={handleAddComment}
+          onTaskUpdated={(updated) => {
+            setSelectedTask(updated);
+            setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+            loadData();
+          }}
         />
       </div>
     </AppShell>

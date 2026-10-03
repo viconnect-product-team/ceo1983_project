@@ -65,6 +65,7 @@ import {
 import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { uploadProductMedia, signProductMediaPreview } from "@/lib/upload-media";
 import { formatCurrencyInput, parseCurrencyInput, formatDisplayDate } from "@/lib/date-format";
+import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -821,18 +822,14 @@ function ProductModal({
               <label className="mb-1 block text-xs font-semibold text-foreground">
                 Giá ưu đãi (VND) <span className="text-destructive">*</span>
               </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
+              <StandardCurrencyInput
                 value={price}
-                onChange={(e) => {
-                  setPrice(formatCurrencyInput(e.target.value));
+                onChange={(formatted) => {
+                  setPrice(formatted);
                   if (errors.price) setErrors((prev) => ({ ...prev, price: "" }));
                 }}
                 placeholder="VD: 10.000.000"
+                unit="VND"
                 className={`w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none font-mono transition ${
                   errors.price
                     ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
@@ -849,15 +846,11 @@ function ProductModal({
               <label className="mb-1 block text-xs font-semibold text-foreground">
                 Giá niêm yết (VND)
               </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
+              <StandardCurrencyInput
                 value={originalPrice}
-                onChange={(e) => setOriginalPrice(formatCurrencyInput(e.target.value))}
+                onChange={(formatted) => setOriginalPrice(formatted)}
                 placeholder="VD: 12.000.000"
+                unit="VND"
                 className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring font-mono"
               />
             </div>

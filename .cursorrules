@@ -270,4 +270,49 @@
 #   - Header Form Đăng Ký Hội Viên:
 #     + Loại bỏ hoàn toàn text rác ("cl doanh nghiệp", "CLB Doanh Nhân 1983"). Chỉ giữ lại Logo CEO 1983 trang trọng, tag "✦ HIỆP HỘI DOANH NGHIỆP CEO 1983 ✦", tiêu đề và subtitle chuẩn mực.
 #     + Thông báo xác nhận tự động gửi email biên nhận hồ sơ & cảm ơn ngay sau khi nộp đơn.
+#
+# [BẮT BUỘC 20] Quy Chuẩn Input Typing An Toàn, Tinh Chỉnh Phân Quyền Tab 2 & 3, Vòng Đời Giao Việc Nghiệm Thu, Trao Đổi Công Việc & Giao Thương B2B Có Đánh Giá Uy Tín:
+#   - Input Typing An Toàn & Chống Xáo Trộn Ký Tự:
+#     + Input ngày tháng: Sử dụng `StandardDateInput` không format sớm khi người dùng đang gõ; chỉ validate/chuẩn hóa khi blur.
+#     + Input tiền tệ / số tiền: Sử dụng `StandardCurrencyInput` định dạng dấu chấm phân tách hàng nghìn và bảo toàn vị trí con trỏ chuột.
+#     + Input email: Cấu hình `autoCapitalize="none"`, `autoCorrect="off"`, `spellCheck={false}` để tránh bàn phím di động tự động sửa ký tự.
+#   - Ma Trận Phân Quyền Tab 2 & 3 (`permissions.tsx`):
+#     + Tab 2: Thêm bộ lọc Ban chuyên môn (`filterDept`) song hành cùng Vai trò (`filterRole`); Sử dụng dropdown tự động lưu trực tiếp (`handleDirectRoleChange`, `handleDirectDeptChange`) kèm spinner và badge màu, loại bỏ nút lưu nhấp nháy gây rối mắt.
+#     + Tab 3: Hiển thị danh mục 5 Cấp bậc Cốt lõi & 6 Ban Chuyên môn với thống kê số lượng hội viên trực tiếp (`roleCounts`, `deptCounts`) và nút 1-click drilldown sang Tab 2; xóa bỏ bảng nhóm quyền giả lập và modal tạo role mock.
+#   - Quy Trình Vòng Đời Giao Việc Nghiệm Thu (Task Delegation Lifecycle):
+#     + 4 bước chuẩn hóa: 1. Giao việc (TODO) -> 2. Tiếp nhận (IN_PROGRESS) / Từ chối (Lý do bắt buộc) -> 3. Nộp nghiệm thu (REVIEW kèm link sản phẩm/tài liệu) -> 4. Phê duyệt hoàn thành 100% (Đánh giá 1-5 sao + Lời khen) hoặc Yêu cầu chỉnh sửa (Chuyển về IN_PROGRESS kèm góp ý).
+#     + Backend NestJS cung cấp đầy đủ RESTful endpoints: `POST /tasks/:id/accept`, `/decline`, `/submit-review`, `/approve`, `/rework`, `/remind`.
+#     + Tính năng đôn đốc tiến độ: Bắn chuông thông báo nhắc nhở hạn chót đến người chịu trách nhiệm.
+#   - Tin Nhắn & Trao Đổi Công Việc CRM (`/network`):
+#     + Cập nhật nhãn Menu Sidebar: `/network` là "Tin nhắn & Trao đổi công việc", `/marketplace` là "Marketplace & Giao thương B2B".
+#     + Nút trao đổi trực tiếp trong `TaskDetailDrawer` nhảy sang `/network` với `peerName` và `taskContext` điền sẵn.
+#   - Giao Thương B2B & Đánh Giá Uy Tín Đối Tác:
+#     + Modal `Create1on1MeetingModal` nhận props prefill (`defaultTitle`, `defaultPartnerName`, `defaultPartnerCompany`, `defaultPartnerPhone`, `defaultNotes`) để lên lịch đàm phán 1-on-1 chỉ với 1 click từ trang chi tiết sản phẩm Marketplace hoặc Chi tiết cơ hội.
+#     + Component `SellerReviewCard` kết nối trực tiếp CSDL PostgreSQL qua NestJS API `GET /api/reviews?sellerId=...` và `POST /api/reviews`, cho phép hội viên đánh giá 1-5 sao và để lại nhận xét uy tín giao thương.
+#
+# [BẮT BUỘC 21] Quy Chuẩn Toàn Diện Realtime Gia Hạn, Tiêu Chuẩn Dashboard Bảng Biểu, Email Thật, Re-render Optimistic, Cuộc Gặp 1-on-1, Dashboard Thẩm Quyền 6 Ban & 5 Cấp, và Tinh Gọn Landing Page:
+#   - Realtime Gia Hạn Hội Viên & Lọc Bỏ Tài Khoản Chưa Phê Duyệt (`/renewal`):
+#     + Tuyệt đối KHÔNG hiển thị tài khoản chưa được phê duyệt (`status === 'pending'`) trong danh sách gia hạn hội viên. Chỉ hiển thị các hội viên chính thức hoặc đã hết hạn (`status === 'active' || status === 'approved' || status === 'expired'`).
+#     + Bắt buộc cấu hình TanStack Query polling 8 giây tự động (`refetchInterval: 8000`) và kích hoạt `qc.invalidateQueries({ queryKey: ["admin_members"] })` ngay sau mỗi thao tác (nhắc nhở, cập nhật thanh toán) để dữ liệu luôn realtime.
+#   - Tiêu Chuẩn Toàn Diện Cho Mọi Màn Hình Dashboard / Bảng Biểu:
+#     + Mặc định luôn cập nhật và sắp xếp dữ liệu mới nhất lên đầu bảng (`createdAt` / `id` descending).
+#     + Bắt buộc trang bị bộ điều khiển bảng chuẩn (`useTableControls` hoặc `DataTablePagination`): Sắp xếp từng cột thông qua `SortHeader`, phân trang chuẩn (10/20/50 rows), tìm kiếm từ khóa tức thì và bộ lọc trạng thái đa chiều.
+#   - Luồng Gửi Email Thật & Tách Biệt Nhắc Tự Động vs Thủ Công:
+#     + Mọi thông báo gửi email phải gửi về email thật (`member.email`) của hội viên qua SMTP (`mailService.sendDirectEmail`) với template HTML thương hiệu trang trọng.
+#     + Phân biệt rạch ròi giữa nhắc tự động và nhắc thủ công: Chỉ tăng bộ đếm `auto_reminder_count` khi hệ thống chạy cron tự động (`isAuto: true`). Người dùng có thẩm quyền được bấm nhắc thủ công (`isAuto: false`) thoải mái mà không bị giới hạn và không tính vào hạn mức tự động của hệ thống.
+#   - Khắc Phục Thiếu Re-render & Làm Lại Select Trạng Thái Thanh Toán:
+#     + Chống thiếu re-render: Áp dụng Optimistic Cache Update trên TanStack Query (`qc.setQueryData`) ngay khi người dùng Xóa hội viên hoặc Cập nhật trạng thái, giao diện cập nhật ngay lập tức trong 0 giây mà không cần reload trang.
+#     + Select Trạng Thái Thanh Toán: Hỗ trợ 3 tùy chọn: Đã thanh toán QR/Chuyển khoản (`paid`), Tiền mặt (`cash`), và Chưa thanh toán (`unpaid`). Khi chọn lại `unpaid`, hệ thống gọi `@Patch(':id/payment-status')` khôi phục nguyên trạng `fee_paid = false` và `payment_status = 'unpaid'` chuẩn xác 100%.
+#   - Chuyển Cuộc Hẹn Giao Thương 1-on-1 Sang Phân Hệ Cuộc Gặp:
+#     + Tách biệt triệt để: Màn hình Cuộc Họp (`/meetings`) chỉ phục vụ cuộc họp Ban Điều Hành & Chuyên Ban.
+#     + Quản lý cuộc hẹn giao thương 1-on-1 giữa các hội viên được chuyển toàn bộ sang phân hệ Cuộc Gặp chuyên biệt tại `/business-connect/meetings` với giao diện Dashboard đầy đủ sắp xếp mới nhất, lọc Host/Partner, tìm kiếm, phân trang và xóa optimistic.
+#   - Dashboard Phân Quyền Thẩm Định 6 Ban & 5 Cấp (`/permissions` Tab 3):
+#     + Thay thế hoàn toàn dạng lưới card tĩnh bằng Dashboard quản trị thẩm quyền chuyên nghiệp.
+#     + Cung cấp trọn bộ 4 chức năng nghiệp vụ: Xem chi tiết thẩm quyền & giới hạn (Modal), Chỉnh sửa thẩm quyền (Modal), Xóa thẩm quyền (Modal xác nhận an toàn), và Tạo mới Ban chuyên môn hoặc Cấp bậc thẩm định (Modal).
+#   - Tinh Gọn Landing Page & Bảo Vệ Form Đăng Ký Hội Viên Mới:
+#     + Giữ lại DUY NHẤT `Ceo1983MemberRegistrationForm.tsx` phục vụ tiếp nhận đăng ký gia nhập CLB CEO 1983 tại `/landing` (route `src/routes/landing.index.tsx`).
+#     + XÓA BỎ VĨNH VIỄN toàn bộ landing page v1 đến v8 (`b2b-v1` đến `b2b-v8`), catalog danh mục `landing-templates-catalog.ts`, thư mục hiệu ứng `src/components/landing/animations/`, các component wrapper và URL landing cũ.
+#     + Tuyệt đối không tái tạo hoặc lưu trữ các mẫu template v1-v8 trong mã nguồn dự án.
+#     + Đảm bảo route `/business-connect` render trực tiếp `WorkHubPage` bên trong `AppShell`.
+
 

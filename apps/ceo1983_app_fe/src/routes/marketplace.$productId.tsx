@@ -59,6 +59,8 @@ import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
+import { SellerReviewCard } from "@/components/marketplace/SellerReviewCard";
 
 export const Route = createFileRoute("/marketplace/$productId")({
   validateSearch: (search: Record<string, unknown>): { quote?: boolean } =>
@@ -511,6 +513,7 @@ function ProductDetailContent({
   const navigate = useNavigate();
   const { quote: quoteParam } = Route.useSearch();
   const [showQuote, setShowQuote] = useState(false);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -1153,8 +1156,22 @@ function ProductDetailContent({
                 <MessageSquare className="h-4 w-4" aria-hidden="true" />
                 {t("mk.detail.contactBtn")}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowMeetingModal(true)}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm font-semibold text-primary hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition cursor-pointer"
+              >
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                Hẹn gặp đàm phán 1-on-1
+              </button>
             </Card>
           )}
+
+          <SellerReviewCard
+            sellerId={product.sellerId}
+            sellerName={product.sellerName || seller?.name}
+            title="Đánh giá uy tín & Giao thương"
+          />
         </div>
       </div>
 
@@ -1220,6 +1237,16 @@ function ProductDetailContent({
       {showQuote && (
         <QuoteModal product={product} onClose={() => setShowQuote(false)} onChanged={reload} />
       )}
+
+      <Create1on1MeetingModal
+        isOpen={showMeetingModal}
+        onClose={() => setShowMeetingModal(false)}
+        defaultTitle={`Đàm phán hợp tác & Báo giá sản phẩm: ${product.title}`}
+        defaultPartnerName={product.sellerName || seller?.name || ""}
+        defaultPartnerCompany={product.company || ""}
+        defaultPartnerPhone={product.sellerPhone || seller?.phone || ""}
+        defaultNotes={`Đàm phán hợp tác cung ứng sản phẩm: ${product.title}. Giá niêm yết: ${fmt.money(product.price)}.`}
+      />
     </AppShell>
   );
 }

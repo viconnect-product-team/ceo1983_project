@@ -59,6 +59,7 @@ import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-clien
 import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { formatDisplayDate } from "@/lib/date-format";
+import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 
 function formatCurrencyInput(val: string | number): string {
   if (val === undefined || val === null) return "";
@@ -1580,15 +1581,11 @@ function OpportunitiesScreen() {
                       <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
                         Ngân sách tối thiểu (VNĐ)
                       </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
+                      <StandardCurrencyInput
                         value={newBudgetMin}
-                        onChange={(e) => setNewBudgetMin(formatCurrencyInput(e.target.value))}
+                        onChange={(formatted) => setNewBudgetMin(formatted)}
                         placeholder="VD: 500.000.000"
+                        unit="đ"
                         className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
                       />
                     </div>
@@ -1596,15 +1593,11 @@ function OpportunitiesScreen() {
                       <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
                         Ngân sách tối đa (VNĐ)
                       </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
+                      <StandardCurrencyInput
                         value={newBudgetMax}
-                        onChange={(e) => setNewBudgetMax(formatCurrencyInput(e.target.value))}
+                        onChange={(formatted) => setNewBudgetMax(formatted)}
                         placeholder="VD: 2.000.000.000"
+                        unit="đ"
                         className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
                       />
                     </div>
@@ -1905,15 +1898,11 @@ function OpportunitiesScreen() {
                       <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
                         Ngân sách từ (VNĐ)
                       </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
+                      <StandardCurrencyInput
                         value={editBudgetMin}
-                        onChange={(e) => setEditBudgetMin(formatCurrencyInput(e.target.value))}
+                        onChange={(formatted) => setEditBudgetMin(formatted)}
                         placeholder="VD: 50.000.000"
+                        unit="đ"
                         className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
                       />
                     </div>
@@ -1921,15 +1910,11 @@ function OpportunitiesScreen() {
                       <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
                         Đến (VNĐ)
                       </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
+                      <StandardCurrencyInput
                         value={editBudgetMax}
-                        onChange={(e) => setEditBudgetMax(formatCurrencyInput(e.target.value))}
+                        onChange={(formatted) => setEditBudgetMax(formatted)}
                         placeholder="VD: 200.000.000"
+                        unit="đ"
                         className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
                       />
                     </div>

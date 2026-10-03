@@ -389,7 +389,7 @@ const LAND_I18N = {
   },
 };
 
-import { Ceo1983Landing } from "./Ceo1983Landing";
+import { Ceo1983MemberRegistrationForm } from "./Ceo1983MemberRegistrationForm";
 
 /** Shared public landing UI for an association, used by /h/:slug and hostname routing. */
 export function AssociationLandingView({ a }: { a: PublicAssociation }) {
@@ -411,7 +411,7 @@ export function AssociationLandingView({ a }: { a: PublicAssociation }) {
     a.slug?.includes("1983") ||
     a.name?.toLowerCase().includes("1983")
   ) {
-    return <Ceo1983Landing />;
+    return <Ceo1983MemberRegistrationForm />;
   }
 
   const isCeo1983 = false;

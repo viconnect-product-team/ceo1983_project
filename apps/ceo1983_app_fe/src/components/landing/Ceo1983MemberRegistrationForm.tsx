@@ -329,6 +329,11 @@ export function Ceo1983MemberRegistrationForm() {
                     placeholder="ceo@tencongty.vn"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setEmail((v) => v.trim())}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="email"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
                   />
                 </div>

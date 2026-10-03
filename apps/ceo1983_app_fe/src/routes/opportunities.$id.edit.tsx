@@ -9,6 +9,7 @@ import { ICON_OPTIONS, OPPORTUNITY_TYPES, type OpportunityTypeKey } from "@/lib/
 import { getOpportunityFn, updateOpportunityFn } from "@/lib/opportunities.functions";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { formatCurrencyInput, parseCurrencyInput } from "@/lib/date-format";
+import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { uploadProductMedia } from "@/lib/upload-media";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
@@ -218,10 +219,11 @@ function EditOpportunityPage() {
               <label className="mb-1.5 block text-xs font-semibold">
                 {t("opp.form.budgetMin")} (VNĐ)
               </label>
-              <input
+              <StandardCurrencyInput
                 value={budgetMin}
-                onChange={(e) => setBudgetMin(formatCurrencyInput(e.target.value))}
+                onChange={(formatted) => setBudgetMin(formatted)}
                 placeholder="0"
+                unit="VNĐ"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />
             </div>
@@ -229,10 +231,11 @@ function EditOpportunityPage() {
               <label className="mb-1.5 block text-xs font-semibold">
                 {t("opp.form.budgetMax")} (VNĐ)
               </label>
-              <input
+              <StandardCurrencyInput
                 value={budgetMax}
-                onChange={(e) => setBudgetMax(formatCurrencyInput(e.target.value))}
+                onChange={(formatted) => setBudgetMax(formatted)}
                 placeholder="0"
+                unit="VNĐ"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />
             </div>
