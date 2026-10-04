@@ -20,6 +20,8 @@ import {
   Users,
   X,
   Handshake,
+  Calendar,
+  Video,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -45,7 +47,75 @@ export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
 });
 
-type FilterTab = "all" | "connected" | "sent";
+export type FilterTab = "all" | "connected" | "sent" | "meetings";
+
+export interface MemberMeetingItem {
+  id: string;
+  title: string;
+  hostName?: string;
+  hostCompany?: string;
+  hostPhone?: string;
+  hostCode?: string;
+  hostAvatar?: string;
+  partnerName: string;
+  partnerCompany?: string;
+  partnerPhone?: string;
+  partnerCode?: string;
+  partnerAvatar?: string;
+  date: string;
+  time: string;
+  venueType?: "online" | "offline";
+  venue?: string;
+  onlineUrl?: string;
+  notes?: string;
+  status: "scheduled" | "completed" | "cancelled" | "pending" | string;
+  createdAt?: string;
+}
+
+const DEFAULT_SAMPLE_MEETINGS: MemberMeetingItem[] = [
+  {
+    id: "sample-meet-1",
+    title: "Gặp gỡ kết nối 1-on-1 & Hợp tác thương mại",
+    partnerName: "Đỗ Kim Phượng",
+    partnerCompany: "Công ty Cổ phần Công nghệ & Dược phẩm Quốc tế",
+    partnerCode: "CEO-1983-002",
+    partnerAvatar: "/avatars/avatar-2.jpg",
+    date: "2026-10-18",
+    time: "09:30 - 10:45",
+    venueType: "offline",
+    venue: "Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội",
+    notes: "Trao đổi phân phối độc quyền và ký kết biên bản ghi nhớ hợp tác chiến lược Q4/2026.",
+    status: "completed",
+  },
+  {
+    id: "sample-meet-2",
+    title: "Cà phê Doanh nhân & Giao lưu kết nối B2B",
+    partnerName: "Nguyễn Văn Dũng",
+    partnerCompany: "Tập đoàn Đầu tư & Xây dựng Thăng Long 83",
+    partnerCode: "CEO-1983-005",
+    partnerAvatar: "/avatars/avatar-1.jpg",
+    date: "2026-10-24",
+    time: "14:00 - 15:30",
+    venueType: "offline",
+    venue: "Starbucks Coffee - Tòa Capital Place, 29 Liễu Giai, Hà Nội",
+    notes: "Thảo luận về gói thầu nội thất văn phòng và cung ứng vật tư xây dựng cao cấp.",
+    status: "scheduled",
+  },
+  {
+    id: "sample-meet-3",
+    title: "Họp trực tuyến: Demo giải pháp chuyển đổi số AI",
+    partnerName: "Trần Mai Lan",
+    partnerCompany: "Công ty CP Giải pháp Công nghệ Thông tin ViConnect",
+    partnerCode: "CEO-1983-012",
+    date: "2026-10-28",
+    time: "10:00 - 11:00",
+    venueType: "online",
+    venue: "Zoom Meeting ID: 839 1983 2026 (Pass: 1983)",
+    onlineUrl: "https://zoom.us/j/83919832026",
+    notes: "Demo hệ thống tích hợp Thẻ thông minh NFC và phần mềm quản trị doanh nghiệp CEO 1983.",
+    status: "scheduled",
+  },
+];
 
 function MembersScreen() {
   const t = useT();
@@ -67,6 +137,46 @@ function MembersScreen() {
   const [connectTarget, setConnectTarget] = useState<BusinessConnectTarget | null>(null);
   const [localPending, setLocalPending] = useState<Set<string>>(new Set());
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  // Lịch sử cuộc gặp 1-on-1 state
+  const [meetingsList, setMeetingsList] = useState<MemberMeetingItem[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_SAMPLE_MEETINGS;
+    try {
+      const stored = localStorage.getItem("vba_connection_appointments");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return DEFAULT_SAMPLE_MEETINGS;
+    } catch {
+      return DEFAULT_SAMPLE_MEETINGS;
+    }
+  });
+  const [loadingMeetings, setLoadingMeetings] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const fetchMeetings = async () => {
+      try {
+        setLoadingMeetings(true);
+        const res = await fetchNestApi<MemberMeetingItem[]>("/meetings/connection-appointments").catch(() => null);
+        if (active && Array.isArray(res) && res.length > 0) {
+          setMeetingsList(res);
+          try {
+            localStorage.setItem("vba_connection_appointments", JSON.stringify(res));
+          } catch {}
+        }
+      } catch (err) {
+        console.warn("fetchMeetings error:", err);
+      } finally {
+        if (active) setLoadingMeetings(false);
+      }
+    };
+    fetchMeetings();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Tự động mở hồ sơ công ty khi được điều hướng từ banner quảng cáo Marketplace
   useEffect(() => {
@@ -546,20 +656,20 @@ function MembersScreen() {
       <MemberHeader title={t("m.members.title")} back />
 
       {/* Search Input & Invite Button */}
-      <div className="px-4 pt-3 flex items-center gap-2">
-        <div id="tour-members-search" className="flex-1 flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 shadow-none">
+      <div className="px-3 sm:px-4 pt-3 flex items-center gap-2 w-full max-w-full overflow-hidden">
+        <div id="tour-members-search" className="flex-1 min-w-0 flex items-center gap-2 rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3 sm:px-4 py-2 sm:py-2.5 shadow-none">
           <Search className="h-4 w-4 text-slate-400 shrink-0" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo tên hội viên, doanh nghiệp, ngành nghề..."
-            className="borderless-search-input flex-1 bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 focus:ring-0 focus:outline-none focus-visible:outline-none placeholder:text-slate-400"
+            placeholder="Tìm hội viên, ngành nghề..."
+            className="borderless-search-input w-full min-w-0 bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 focus:ring-0 focus:outline-none placeholder:text-slate-400 truncate"
             style={{ outline: "none", border: "none", boxShadow: "none" }}
           />
           {q && (
             <button
               onClick={() => setQ("")}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-white shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
@@ -570,11 +680,13 @@ function MembersScreen() {
         <button
           type="button"
           onClick={() => setInviteModalOpen(true)}
-          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2.5 text-[12px] font-bold text-white shadow-md transition active:scale-95 cursor-pointer"
+          className="shrink-0 flex items-center gap-1 sm:gap-1.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-[11px] sm:text-[12px] font-bold text-white shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap"
+          title="Mời vào CLB CEO 1983"
         >
-          <UserPlus className="h-4 w-4 text-white" />
-          <span className="hidden sm:inline">Mời vào CLB CEO 1983</span>
-          <span className="sm:hidden">Mời vào CLB</span>
+          <UserPlus className="h-4 w-4 text-white shrink-0" />
+          <span className="hidden md:inline">Mời vào CLB CEO 1983</span>
+          <span className="hidden sm:inline md:hidden">Mời vào CLB</span>
+          <span className="sm:hidden">Mời vào</span>
         </button>
       </div>
 
@@ -612,12 +724,25 @@ function MembersScreen() {
           <Clock className="h-3.5 w-3.5" />
           Đã gửi kết nối ({sentList.length})
         </button>
+        <button
+          onClick={() => setTab("meetings")}
+          className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            tab === "meetings"
+              ? "bg-[#003B95] text-white shadow-xs"
+              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
+          }`}
+        >
+          <Handshake className="h-3.5 w-3.5 text-amber-500" />
+          Lịch sử cuộc gặp ({meetingsList.length})
+        </button>
       </div>
 
       <p className="sr-only" role="status" aria-live="polite" data-testid="members-announcement">
         {loading
           ? t("m.members.announce.loading")
-          : t("m.members.announce.count", { count: tab === "sent" ? sentList.length : filtered.length })}
+          : t("m.members.announce.count", {
+              count: tab === "sent" ? sentList.length : tab === "meetings" ? meetingsList.length : filtered.length,
+            })}
       </p>
 
       {/* Members List */}
@@ -634,7 +759,184 @@ function MembersScreen() {
           </p>
         )}
 
-        {tab === "sent" ? (
+        {tab === "meetings" ? (
+          loadingMeetings ? (
+            <div className="py-12 text-center space-y-2">
+              <Clock className="h-8 w-8 text-blue-500 animate-spin mx-auto opacity-75" />
+              <p className="text-[13px] text-slate-500 dark:text-slate-400">Đang tải lịch sử cuộc gặp...</p>
+            </div>
+          ) : meetingsList.length === 0 ? (
+            <div className="py-12 text-center space-y-2">
+              <Handshake className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
+              <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
+                Bạn chưa có cuộc gặp 1-on-1 nào. Hãy gửi lời mời kết nối và hẹn gặp gỡ các hội viên CEO 1983!
+              </p>
+            </div>
+          ) : (
+            meetingsList.map((meet) => {
+              const matchedMember = members.find(
+                (m) =>
+                  (meet.partnerCode && m.code.toLowerCase() === meet.partnerCode.toLowerCase()) ||
+                  (meet.partnerName &&
+                    (m.name.toLowerCase().includes(meet.partnerName.toLowerCase()) ||
+                      (m.contact && m.contact.toLowerCase().includes(meet.partnerName.toLowerCase())))),
+              );
+              const partnerAvatar = meet.partnerAvatar
+                ? resolveMediaUrl(meet.partnerAvatar)
+                : matchedMember?.avatar
+                ? resolveMediaUrl(matchedMember.avatar)
+                : null;
+              const isOnline =
+                meet.venueType === "online" || Boolean(meet.venue && meet.venue.toLowerCase().includes("zoom"));
+              const isCompleted = meet.status === "completed" || meet.status === "done";
+              const isScheduled = meet.status === "scheduled" || meet.status === "confirmed";
+              const isCancelled = meet.status === "cancelled";
+
+              return (
+                <div
+                  key={meet.id}
+                  role="listitem"
+                  className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 transition hover:border-[#001B54]/40 bg-white dark:bg-[#131a26] shadow-xs"
+                >
+                  <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-white/5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md">
+                        <Calendar className="h-3 w-3 text-[#003B95] dark:text-blue-400" />
+                        <span>{meet.date}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                        <Clock className="h-3 w-3 text-slate-400" />
+                        <span>{meet.time}</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      {isCompleted && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 shadow-2xs">
+                          <Check className="h-3 w-3" />
+                          <span>Đã diễn ra</span>
+                        </span>
+                      )}
+                      {isScheduled && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 shadow-2xs">
+                          <Clock className="h-3 w-3 animate-pulse" />
+                          <span>Sắp diễn ra</span>
+                        </span>
+                      )}
+                      {isCancelled && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 shadow-2xs">
+                          <X className="h-3 w-3" />
+                          <span>Đã hủy</span>
+                        </span>
+                      )}
+                      {!isCompleted && !isScheduled && !isCancelled && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 shadow-2xs">
+                          <Clock className="h-3 w-3" />
+                          <span>Chờ xác nhận</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Partner & Meeting Details */}
+                  <div className="flex items-start gap-3 mt-3">
+                    <div className="relative shrink-0">
+                      {partnerAvatar ? (
+                        <img
+                          src={partnerAvatar}
+                          alt={meet.partnerName}
+                          className="h-12 w-12 rounded-full object-cover ring-2 ring-[#001B54]/20"
+                          onError={(e) => {
+                            e.currentTarget.src = "/ceo1983-logo.png";
+                          }}
+                        />
+                      ) : (
+                        <span className="grid h-12 w-12 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#001B54] dark:text-blue-300 ring-2 ring-[#001B54]/20 font-bold text-sm">
+                          <User className="h-5 w-5" />
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="truncate text-[13.5px] font-bold text-slate-900 dark:text-white">
+                          {meet.partnerName}
+                        </span>
+                        {meet.partnerCode && (
+                          <span className="rounded-md bg-[#001B54] px-1.5 py-0.5 text-[9.5px] font-extrabold text-white shadow-xs shrink-0 tracking-wide">
+                            {meet.partnerCode}
+                          </span>
+                        )}
+                      </div>
+
+                      {meet.partnerCompany && (
+                        <p className="truncate text-[11.5px] font-semibold text-slate-700 dark:text-slate-300 mt-0.5 flex items-center gap-1">
+                          <Building2 className="h-3 w-3 text-[#001B54] dark:text-blue-300 shrink-0" />
+                          <span>{meet.partnerCompany}</span>
+                        </p>
+                      )}
+
+                      <h4 className="text-[12px] font-bold text-[#003B95] dark:text-blue-300 mt-1.5">
+                        {meet.title}
+                      </h4>
+
+                      {/* Location / Zoom */}
+                      <div className="mt-1 flex items-start gap-1 text-[11px] text-slate-600 dark:text-slate-400">
+                        {isOnline ? (
+                          <Video className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
+                        )}
+                        <span className="line-clamp-2">{meet.venue || "Văn phòng Hiệp hội CEO 1983"}</span>
+                      </div>
+
+                      {meet.notes && (
+                        <div className="mt-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5 text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+                          <span className="font-bold text-[#001B54] dark:text-blue-300 mr-1">Mục đích:</span>
+                          <span>{meet.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions Row */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-slate-400">
+                      Gặp gỡ 1-on-1 CEO 1983
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {matchedMember && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMember(matchedMember)}
+                          className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                        >
+                          <User className="h-3.5 w-3.5 text-slate-500" />
+                          <span>Hồ sơ</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleOpenChat(
+                            meet.partnerCode || matchedMember?.code || meet.partnerName,
+                            meet.partnerName,
+                          )
+                        }
+                        className="inline-flex items-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        <span>Nhắn tin</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )
+        ) : tab === "sent" ? (
           sentList.length === 0 ? (
             <div className="py-12 text-center space-y-2">
               <Clock className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />

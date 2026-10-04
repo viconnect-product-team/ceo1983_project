@@ -101,12 +101,16 @@ export function useRole(): RoleState {
 
     const userEmail = String(userObj?.email || member?.email || user?.email || "").toLowerCase();
 
-    // ADM (Super Admin / Platform Admin)
+    // ADM (Super Admin / Platform Admin / Quản Trị)
     if (
       rList.includes("platform_admin") ||
       rList.includes("superadmin") ||
+      rList.includes("quan_tri") ||
+      rList.includes("quantri") ||
       primaryRole === "platform_admin" ||
       primaryRole === "superadmin" ||
+      primaryRole === "quan_tri" ||
+      primaryRole === "quantri" ||
       userEmail === "admin@connect.vn" ||
       userEmail === "admin1@connect.vn"
     ) {
@@ -287,6 +291,7 @@ export function useRole(): RoleState {
     window.addEventListener("vba_auth_changed", handleAuthChange);
     window.addEventListener("role-changed", handleAuthChange);
     window.addEventListener("crm_permissions_updated", handleAuthChange);
+    window.addEventListener("vba_member_permissions_updated", handleAuthChange);
     window.addEventListener("profile-updated", handleAuthChange);
     window.addEventListener("storage", handleAuthChange);
 
@@ -295,12 +300,41 @@ export function useRole(): RoleState {
       window.removeEventListener("vba_auth_changed", handleAuthChange);
       window.removeEventListener("role-changed", handleAuthChange);
       window.removeEventListener("crm_permissions_updated", handleAuthChange);
+      window.removeEventListener("vba_member_permissions_updated", handleAuthChange);
       window.removeEventListener("profile-updated", handleAuthChange);
       window.removeEventListener("storage", handleAuthChange);
     };
   }, [user?.id, user?.role, user?.department, user?.executiveRole]);
 
   const [matrixVersion, setMatrixVersion] = useState(0);
+
+  // Check member-level permission profile saved by admin in vba_member_permissions
+  const memberPermProfile = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("vba_member_permissions");
+      if (!raw) return null;
+      const map = JSON.parse(raw);
+      if (!map || typeof map !== "object") return null;
+
+      let mCode = user?.code || (user as any)?.memberCode;
+      if (!mCode) {
+        const rawMem = localStorage.getItem("vba_my_member");
+        if (rawMem) {
+          const m = JSON.parse(rawMem);
+          mCode = m?.code;
+        }
+      }
+      if (mCode) {
+        const found = map[mCode] || map[mCode.toLowerCase()] || map[mCode.toUpperCase()];
+        if (found) return found;
+        for (const k in map) {
+          if (k.toLowerCase() === mCode.toLowerCase()) return map[k];
+        }
+      }
+    } catch {}
+    return null;
+  }, [user?.code, matrixVersion]);
 
   const setRoleOverride = (newRole: SrsRole) => {
     setSrsRole(newRole);
@@ -313,7 +347,9 @@ export function useRole(): RoleState {
   };
 
   const isPlatformAdmin = srsRole === "ADM";
-  const isBQT = srsRole === "BQT" || isPlatformAdmin;
+  const isBQT =
+    (srsRole === "BQT" || isPlatformAdmin) &&
+    (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin);
   const isBTK = srsRole === "BTK" || isBQT;
   const isBTT = srsRole === "BTT" || isBQT;
   const isBXT = srsRole === "BXT" || isBQT;
@@ -321,7 +357,8 @@ export function useRole(): RoleState {
   const isBTN = srsRole === "BTN" || isBQT;
   const isBTC = isBQT; // backward compatibility fallback
   const isHVT = srsRole === "HVT";
-  const isAdmin = isPlatformAdmin || isBQT;
+  const isAdmin =
+    (isPlatformAdmin || isBQT) && (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin);
   const isModerator = isAdmin || isBTK || isBTT || isBXT || isBTV || isBTN;
 
   // Granular RBAC Matrix per SRS Part 2.2
@@ -332,7 +369,47 @@ export function useRole(): RoleState {
   const can = useCallback(
     (permission: Permission): boolean => {
       if (isPlatformAdmin) return true;
-      // 1. Kiểm tra trực tiếp Ma Trận Quyền CSDL/localStorage:
+
+      // 1. Kiểm tra trực tiếp phân quyền từng hội viên từ vba_member_permissions:
+      // Nếu Admin đã bỏ chọn (false), lập tức thu hồi quyền và ẩn chức năng trên giao diện
+      if (memberPermProfile) {
+        if (
+          permission.startsWith("event:") &&
+          memberPermProfile.canManageEvents === false &&
+          permission !== "event:view"
+        ) {
+          return false;
+        }
+        if (
+          permission.startsWith("member:") &&
+          memberPermProfile.canManageMembers === false &&
+          permission !== "member:view"
+        ) {
+          return false;
+        }
+        if (
+          permission.startsWith("media:") &&
+          memberPermProfile.canManageNews === false &&
+          permission !== "media:view"
+        ) {
+          return false;
+        }
+        if (
+          (permission.startsWith("opportunity:") || permission.startsWith("marketplace:")) &&
+          memberPermProfile.canManageMarketplace === false &&
+          !permission.endsWith(":view")
+        ) {
+          return false;
+        }
+        if (permission.startsWith("voting:") && memberPermProfile.canManageVoting === false) {
+          return false;
+        }
+        if (permission.startsWith("system:") && memberPermProfile.isAdmin === false) {
+          return false;
+        }
+      }
+
+      // 2. Kiểm tra trực tiếp Ma Trận Quyền CSDL/localStorage:
       // Nếu Admin đã BỎ TÍCH hành động này và lưu, lập tức thu hồi quyền (trả về false)
       const allowedByMatrix = isActionAllowedByMatrix(permission, srsRole);
       if (!allowedByMatrix) {
@@ -340,7 +417,7 @@ export function useRole(): RoleState {
       }
       return grantedPermissions.has(permission);
     },
-    [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion],
+    [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion, memberPermProfile],
   );
 
   const hasPermission = can;
@@ -369,18 +446,25 @@ export function useRole(): RoleState {
     [isPlatformAdmin, srsRole],
   );
 
-  // Granular shortcut flags: Tuân thủ chặt chẽ can(), không bypass cứng để người dùng bỏ tích là ẩn ngay
-  const canManageMembers = can(PERMISSIONS.MEMBER_EDIT);
-  const canApproveMembers = can(PERMISSIONS.MEMBER_APPROVE);
-  const canRenewMembers = can(PERMISSIONS.MEMBER_RENEW);
+  // Granular shortcut flags: Tuân thủ chặt chẽ can() và memberPermProfile để người dùng bỏ tích là ẩn ngay
+  const canManageMembers =
+    can(PERMISSIONS.MEMBER_EDIT) && (!memberPermProfile || memberPermProfile.canManageMembers !== false);
+  const canApproveMembers =
+    can(PERMISSIONS.MEMBER_APPROVE) && (!memberPermProfile || memberPermProfile.canManageMembers !== false);
+  const canRenewMembers =
+    can(PERMISSIONS.MEMBER_RENEW) && (!memberPermProfile || memberPermProfile.canManageMembers !== false);
   const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE);
-  const canManageMedia = can(PERMISSIONS.MEDIA_MANAGE);
-  const canManageEvents = can(PERMISSIONS.EVENT_CREATE);
-  const canScanQR = can(PERMISSIONS.EVENT_CHECKIN_MANAGE);
-  const canManageOpportunities = can(PERMISSIONS.OPPORTUNITY_MANAGE);
+  const canManageMedia =
+    can(PERMISSIONS.MEDIA_MANAGE) && (!memberPermProfile || memberPermProfile.canManageNews !== false);
+  const canManageEvents =
+    can(PERMISSIONS.EVENT_CREATE) && (!memberPermProfile || memberPermProfile.canManageEvents !== false);
+  const canScanQR =
+    can(PERMISSIONS.EVENT_CHECKIN_MANAGE) && (!memberPermProfile || memberPermProfile.canManageEvents !== false);
+  const canManageOpportunities =
+    can(PERMISSIONS.OPPORTUNITY_MANAGE) && (!memberPermProfile || memberPermProfile.canManageMarketplace !== false);
   const canManageCharity = can(PERMISSIONS.CHARITY_MANAGE);
   const canManageMeetings = can(PERMISSIONS.MEETING_MANAGE);
-  const canManageSystem = can(PERMISSIONS.SYSTEM_MANAGE);
+  const canManageSystem = can(PERMISSIONS.SYSTEM_MANAGE) && isAdmin;
 
   return {
     roles,

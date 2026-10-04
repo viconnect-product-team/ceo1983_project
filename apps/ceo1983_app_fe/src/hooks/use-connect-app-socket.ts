@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { NEST_API_URL } from "@/lib/api-client";
 import { useViewerUserId } from "./use-viewer-user-id";
+import { useAuth } from "@/context/AuthContext";
 
 let globalSocket: Socket | null = null;
 
@@ -41,6 +42,7 @@ export function getConnectAppSocket(): Socket {
 export function useConnectAppSocket(room?: string) {
   const socketRef = useRef<Socket | null>(null);
   const viewerUserId = useViewerUserId();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Only connect if there is an authenticated user or a specific room requested
@@ -54,9 +56,13 @@ export function useConnectAppSocket(room?: string) {
     }
 
     const joinRooms = () => {
-      // Join personal user room for targeted notifications, NFC tap alerts, DMs
+      // Join personal user room for targeted notifications, NFC tap alerts, DMs, WebRTC calls
       if (viewerUserId) {
         socket.emit("join:room", `user:${viewerUserId}`);
+      }
+      const code = user?.code || (user as any)?.memberCode;
+      if (code) {
+        socket.emit("join:room", `user:${code}`);
       }
       // Join specific room if provided (e.g. `moment:${momentId}`, `thread:${threadId}`)
       if (room) {

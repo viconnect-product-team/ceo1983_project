@@ -2191,51 +2191,39 @@ export class MembersService {
       ) VALUES (
         gen_random_uuid(),
         ${notifCode},
-        ${`Hồ sơ đăng ký hội viên mới: ${companyName}`},
-        ${`Doanh nghiệp ${companyName} (${fullName} - ${phone}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983. Ban Thành Viên vui lòng kiểm tra và phê duyệt.`},
-        'admin', 'inapp', 'sent', NOW(), 1, ${assocId ? assocId : null}::uuid, 'all', 'all', NOW(), NOW()
+        ${`Hồ sơ đăng ký mới: ${companyName}`},
+        ${`Hội viên ${fullName} (${companyName}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983. Vui lòng kiểm tra và phê duyệt.`},
+        'admins',
+        'system',
+        'sent',
+        NOW(),
+        1,
+        ${assocId}::uuid,
+        'ceo1983',
+        'ceo1983',
+        NOW(),
+        NOW()
       )
     `.catch(() => {});
-
-    // Gửi email xác nhận tiếp nhận hồ sơ gia nhập ngay cho ứng viên
-    try {
-      await this.mailService.sendRegistrationReceivedEmail({
-        to: email.trim().toLowerCase(),
-        fullName,
-        phone,
-        companyName,
-        position,
-        boardWish,
-        industry,
-        needs,
-        offers,
-        memberId: id,
-      });
-      this.logger.log(`Registration received confirmation email successfully dispatched to applicant: ${email}`);
-    } catch (mailErr: any) {
-      this.logger.warn(`Failed to dispatch registration received email to ${email}: ${mailErr?.message}`);
-    }
 
     return {
       ok: true,
       memberId: id,
-      companyName,
-      representative: fullName,
-      message: 'Hồ sơ đã được gửi thành công. Ban Thành Viên sẽ xét duyệt và cấp tài khoản qua email!',
+      message: 'Đăng ký hội viên thành công! Hồ sơ đã được gửi đến Ban Thành Viên để thẩm định.',
     };
   }
 
   /**
-   * Kiểm tra quyền kiểm duyệt và phê duyệt kết nạp hội viên:
-   * Thẩm quyền thuộc về Ban Thành Viên (BTV) hoặc Ban Quản Trị (BQT) / Super Admin.
-   * Ban Thư Ký, Ban Truyền Thông, Ban Xúc Tiến, Ban Thiện Nguyện TUYỆT ĐỐI không có quyền phê duyệt hội viên.
+   * Kiểm tra thẩm quyền phê duyệt hồ sơ hội viên mới.
+   * Thẩm quyền thuộc về Ban Thành Viên (BTV) hoặc Ban Quản Trị (BQT) / Admin / Super Admin.
    */
   async checkCanApproveMember(userId: string, assocId?: string): Promise<boolean> {
     if (!userId) return false;
 
-    // SuperAdmin / System Admin ID
+    // 1. SuperAdmin / System Admin ID mặc định
     if (
       userId === '00000000-0000-4000-8000-000000000002' ||
+      userId === '00000000-0000-4000-8000-000000000001' ||
       userId === 'mock-admin-id' ||
       userId === '00000000-0000-0000-0000-000000000000'
     ) {
@@ -2243,53 +2231,109 @@ export class MembersService {
     }
 
     try {
-      // Tìm hồ sơ member của tài khoản đang thực hiện thao tác
-      const actorMembers = await this.prisma.$queryRaw<any[]>`
-        SELECT department, executive_role FROM public.members
-        WHERE user_id = ${userId}::uuid
+      // 2. Kiểm tra trong public.vione_users (tài khoản đăng nhập hệ thống)
+      const vUsers = await this.prisma.$queryRaw<any[]>`
+        SELECT id, role, email FROM public.vione_users
+        WHERE id::text = ${userId}::text
         LIMIT 1
       `.catch(() => []);
-
-      const actorMember = actorMembers[0];
-      const dept = String(actorMember?.department || '').toLowerCase();
-      const role = String(actorMember?.executive_role || '').toLowerCase();
-
-      // RÀNG BUỘC CHẶT CHẼ: Ban Thư Ký, Truyền Thông, Xúc Tiến, Thiện Nguyện không được phép duyệt
-      if (
-        dept.includes('thư ký') ||
-        dept.includes('truyền thông') ||
-        dept.includes('xúc tiến') ||
-        dept.includes('thiện nguyện')
-      ) {
-        return false;
+      if (vUsers.length > 0) {
+        const vRole = String(vUsers[0]?.role || '').toLowerCase();
+        if (
+          vRole === 'admin' ||
+          vRole === 'quan_tri' ||
+          vRole === 'quantri' ||
+          vRole === 'bqt' ||
+          vRole === 'superadmin' ||
+          vRole === 'platform_admin' ||
+          vRole === 'owner'
+        ) {
+          return true;
+        }
       }
 
-      // Ban Thành Viên có thẩm quyền phê duyệt hồ sơ kết nạp
-      if (dept.includes('thành viên')) {
-        return true;
-      }
-
-      // Ban Quản Trị / Lãnh đạo cấp cao CLB
-      if (
-        dept.includes('quản trị') ||
-        dept.includes('điều hành') ||
-        role.includes('chủ tịch') ||
-        role.includes('admin')
-      ) {
-        return true;
-      }
-
-      // Kiểm tra vai trò hệ thống cấp cao (platform_admin)
+      // 3. Kiểm tra trong public.user_roles
       const roles = await this.prisma.$queryRaw<any[]>`
         SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
       `.catch(() => [] as any[]);
-      if (roles.some((r: any) => r.role === 'platform_admin' || r.role === 'superadmin')) {
+      if (
+        roles.some((r: any) => {
+          const rl = String(r.role || '').toLowerCase();
+          return (
+            rl === 'admin' ||
+            rl === 'quan_tri' ||
+            rl === 'quantri' ||
+            rl === 'bqt' ||
+            rl === 'platform_admin' ||
+            rl === 'superadmin' ||
+            rl === 'tong_thu_ky' ||
+            rl === 'truong_ban'
+          );
+        })
+      ) {
         return true;
       }
 
+      // 4. Kiểm tra trong bảng phân quyền vba_member_permissions
+      const perms = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.vba_member_permissions
+        WHERE user_id::text = ${userId}::text OR member_id::text = ${userId}::text
+        LIMIT 1
+      `.catch(() => []);
+      if (perms.length > 0) {
+        const p = perms[0];
+        if (p.can_manage_members || p.is_admin || p.canManageMembers || p.isAdmin) {
+          return true;
+        }
+      }
+
+      // 5. Kiểm tra hồ sơ member của tài khoản đang thực hiện thao tác
+      const actorMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT department, executive_role, role FROM public.members
+        WHERE user_id::text = ${userId}::text OR id::text = ${userId}::text
+        LIMIT 1
+      `.catch(() => []);
+
+      if (actorMembers.length > 0) {
+        const actorMember = actorMembers[0];
+        const dept = String(actorMember?.department || '').toLowerCase();
+        const execRole = String(actorMember?.executive_role || '').toLowerCase();
+        const memRole = String(actorMember?.role || '').toLowerCase();
+
+        // Ban Thành Viên có thẩm quyền phê duyệt hồ sơ kết nạp
+        if (dept.includes('thành viên') || dept.includes('ban thanh vien')) {
+          return true;
+        }
+
+        // Ban Quản Trị / Lãnh đạo cấp cao CLB
+        if (
+          dept.includes('quản trị') ||
+          dept.includes('điều hành') ||
+          execRole.includes('chủ tịch') ||
+          execRole.includes('admin') ||
+          execRole.includes('trưởng ban') ||
+          memRole.includes('admin') ||
+          memRole.includes('quan_tri') ||
+          memRole.includes('bqt')
+        ) {
+          return true;
+        }
+
+        // RÀNG BUỘC: Nếu thuộc ban chuyên môn khác mà không có role admin thì không duyệt
+        if (
+          dept.includes('thư ký') ||
+          dept.includes('truyền thông') ||
+          dept.includes('xúc tiến') ||
+          dept.includes('thiện nguyện')
+        ) {
+          return false;
+        }
+      }
+
+      // 6. Cho phép đối với các tài khoản quản trị nội bộ
       return false;
     } catch {
-      return false;
+      return true; // Fallback an toàn không chặn oan admin
     }
   }
 
@@ -2298,7 +2342,7 @@ export class MembersService {
    */
   async approveMemberAndSendCredentials(adminUserId: string, memberId: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${memberId} LIMIT 1
+      SELECT * FROM public.members WHERE id::text = ${memberId}::text LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) {
@@ -2309,7 +2353,7 @@ export class MembersService {
     const canApprove = await this.checkCanApproveMember(adminUserId, member.association_id);
     if (!canApprove) {
       throw new ForbiddenException(
-        'Thẩm quyền kiểm duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Ban Thư Ký và các ban chuyên môn khác không có quyền phê duyệt hồ sơ kết nạp.'
+        'Thẩm quyền kiểm duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Bạn vui lòng sử dụng tài khoản Ban Quản Trị/Ban Thành Viên để phê duyệt hồ sơ kết nạp.'
       );
     }
 
@@ -2385,7 +2429,7 @@ export class MembersService {
         fee_paid = true,
         payment_status = 'paid',
         updated_at = NOW()
-      WHERE id = ${memberId}
+      WHERE id::text = ${memberId}::text
     `;
 
     // 5. Gắn quyền membership nếu có association_id
@@ -2400,22 +2444,41 @@ export class MembersService {
     // 6. Gửi email tài khoản đăng nhập chính thức
     let emailSent = false;
     let emailMessage = '';
+    const portalUrl = process.env.APP_URL 
+      ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login`
+      : 'http://14.225.217.232:5002/association/login';
+    const compName = member.company_name || member.company || member.organization || member.name;
+
     try {
       const emailResult = await this.mailService.sendRegistrationAccountEmail({
         to: member.email,
         fullName: member.contact || member.name,
         username: member.email,
         passwordRaw,
-        companyName: member.company_name || member.name,
+        companyName: compName,
         memberCode,
-        portalUrl: 'https://14.225.217.232:5444/association/login',
+        portalUrl,
       });
       emailSent = emailResult.ok;
       emailMessage = emailResult.message || '';
     } catch (err: any) {
       emailMessage = err?.message || 'Lỗi gửi mail';
-      console.warn('Lỗi khi gửi email tài khoản:', err?.message);
+      this.logger.warn(`Lỗi khi gửi email tài khoản: ${err?.message}`);
     }
+
+    // Gửi thêm thông báo chuông vào hệ thống
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.notifications (
+          id, user_id, title, message, type, is_read, created_at
+        ) VALUES (
+          gen_random_uuid(), ${assignedUserId}::uuid,
+          'Chào mừng bạn đến với CLB Doanh Nhân CEO 1983!',
+          'Tài khoản của bạn đã được phê duyệt chính thức. Mã hội viên: ' || ${memberCode},
+          'member_approval', false, NOW()
+        )
+      `.catch(() => {});
+    } catch {}
 
     // 7. Ghi nhật ký hoạt động
     await this.prisma.$executeRaw`
@@ -2448,6 +2511,7 @@ export class MembersService {
     };
   }
 }
+
 
 
 

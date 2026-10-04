@@ -159,7 +159,7 @@ function ProductsScreen() {
 
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [marketplaceTab, setMarketplaceTab] = useState<"market" | "interested" | "my_store">(() => (search?.action === "manage" || search?.action === "create") ? "my_store" : "market");
+  const [marketplaceTab, setMarketplaceTab] = useState<"market" | "my_store">(() => (search?.action === "manage" || search?.action === "create") ? "my_store" : "market");
   const [postModalOpen, setPostModalOpen] = useState(() => search?.action === "create");
   const [editingProduct, setEditingProduct] = useState<MyProduct | null>(null);
   const [activeProductMenuId, setActiveProductMenuId] = useState<string | null>(null);
@@ -488,7 +488,6 @@ function ProductsScreen() {
   } | null>(null);
   const [companyCatFilter, setCompanyCatFilter] = useState<string>("all");
   const [companySearch, setCompanySearch] = useState<string>("");
-  const [wishlistCartOpen, setWishlistCartOpen] = useState(false);
   const [excelImportOpen, setExcelImportOpen] = useState(false);
 
   const handleImportExcelProducts = async (importedItems: ParsedProductItem[]) => {
@@ -520,7 +519,7 @@ function ProductsScreen() {
 
   // Lock body scroll when modal is open to ensure 100% stable centering on mobile
   useEffect(() => {
-    if (quoteProduct || postModalOpen || editingProduct || viewingQuotesProduct || wishlistCartOpen || excelImportOpen) {
+    if (quoteProduct || postModalOpen || editingProduct || viewingQuotesProduct || excelImportOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -528,7 +527,7 @@ function ProductsScreen() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [quoteProduct, postModalOpen, editingProduct, viewingQuotesProduct, wishlistCartOpen, excelImportOpen]);
+  }, [quoteProduct, postModalOpen, editingProduct, viewingQuotesProduct, excelImportOpen]);
 
   // Form states for posting product with full CRM pricing fields & Company storefront
   const [customProfile, setCustomProfile] = useState<any>(() => {
@@ -690,10 +689,9 @@ function ProductsScreen() {
       if (selectedCategory === "my_products") {
         return checkIsProductOwner(p);
       }
-      if (selectedCategory === "interested") return interestedIds.includes(p.id);
       return matchCategory(p.category, selectedCategory);
     });
-  }, [allProducts, q, selectedCategory, interestedIds, member]);
+  }, [allProducts, q, selectedCategory, member]);
 
   const myProductsCount = useMemo(() => {
     return allProducts.filter((p) => checkIsProductOwner(p)).length;
@@ -714,14 +712,13 @@ function ProductsScreen() {
   const categoriesList = useMemo(() => [
     { id: "all", label: isEn ? "All" : "Tất cả", count: allProducts.length },
     { id: "my_products", label: isEn ? "My Products" : "Của tôi", count: myProductsCount },
-    { id: "interested", label: isEn ? "Interested" : "Đã quan tâm", count: interestedIds.length },
     { id: "Công nghệ & Phần mềm", label: isEn ? "Technology" : "Công nghệ & Phần mềm" },
     { id: "Bất động sản & Xây dựng", label: isEn ? "Real Estate" : "Bất động sản & Xây dựng" },
     { id: "Sản xuất & Công nghiệp", label: isEn ? "Manufacturing" : "Sản xuất & Công nghiệp" },
     { id: "Tài chính & Đầu tư", label: isEn ? "Finance" : "Tài chính & Đầu tư" },
     { id: "Dịch vụ & Du lịch", label: isEn ? "Services & Tourism" : "Dịch vụ & Du lịch" },
     { id: "Hàng tiêu dùng & Bán lẻ", label: isEn ? "Consumer Goods" : "Hàng tiêu dùng & Bán lẻ" },
-  ], [isEn, allProducts.length, myProductsCount, interestedIds.length]);
+  ], [isEn, allProducts.length, myProductsCount]);
 
   // Section 1: Sản phẩm mới đăng
   const newestProducts = useMemo(() => {
@@ -1523,31 +1520,20 @@ function ProductsScreen() {
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => toggleInterest(p.id)}
-                              className={`h-9 w-9 rounded-xl grid place-items-center transition cursor-pointer border shrink-0 ${
-                                isInterested
-                                  ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-600"
-                                  : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500"
-                              }`}
-                              title={isInterested ? "Bỏ quan tâm" : "Lưu vào giỏ quan tâm"}
-                            >
-                              <Heart className={`h-4 w-4 ${isInterested ? "fill-rose-600" : ""}`} />
-                            </button>
-                            <button
-                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleMessageSeller(p);
                               }}
-                              className="h-9 w-9 rounded-xl bg-slate-100 hover:bg-[#003B95] hover:text-white dark:bg-slate-800 dark:hover:bg-[#003B95] dark:hover:text-white text-slate-700 dark:text-slate-200 grid place-items-center transition active:scale-95 cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0"
+                              className="h-9 px-3 rounded-xl bg-slate-100 hover:bg-[#003B95] hover:text-white dark:bg-slate-800 dark:hover:bg-[#003B95] dark:hover:text-white text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0"
                               title="Nhắn tin cho công ty / người bán"
                             >
                               <MessageSquare className="h-4 w-4" />
+                              <span>Nhắn tin</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleOpenQuoteModal(p)}
-                              className="flex-1 h-9 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
+                              className="flex-1 h-9 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                             >
                               <Mail className="h-3.5 w-3.5 text-amber-300" />
                               <span>Nhận báo giá VIP</span>
@@ -1584,129 +1570,40 @@ function ProductsScreen() {
                 <ChevronLeft className="size-5 text-sky-950 dark:text-white" />
               </button>
               <div className="justify-start text-sky-950 dark:text-white text-lg font-bold font-['Inter']">
-                Chợ Marketplace
+                Chợ Giao Thương B2B
               </div>
             </div>
           </div>
 
-          {/* ── SUB-HEADER TABS: Chợ Marketplace vs Đã quan tâm vs Mục của tôi ── */}
-          <div id="tour-market-tabs" className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
+          {/* ── SUB-HEADER TABS: Chợ Giao Thương B2B vs Gian Hàng Của Tôi ── */}
+          <div id="tour-market-tabs" className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
             <button
               type="button"
               onClick={() => setMarketplaceTab("market")}
-              className={`flex-1 py-2 px-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 px-3 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
                 marketplaceTab === "market"
                   ? "bg-[#003B95] text-white shadow-xs"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
-              <Store className="size-3.5" />
-              <span>Chợ Marketplace</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMarketplaceTab("interested")}
-              className={`flex-1 py-2 px-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                marketplaceTab === "interested"
-                  ? "bg-rose-600 text-white shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-              }`}
-            >
-              <Heart className={`size-3.5 ${marketplaceTab === "interested" ? "fill-white text-white" : "fill-rose-500 text-rose-500"}`} />
-              <span>Đã quan tâm ({interestedIds.length})</span>
+              <Store className="size-4" />
+              <span>Chợ Giao Thương B2B</span>
             </button>
             <button
               type="button"
               onClick={() => setMarketplaceTab("my_store")}
-              className={`flex-1 py-2 px-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 px-3 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
                 marketplaceTab === "my_store"
                   ? "bg-[#003B95] text-white shadow-xs"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >
-              <Package className="size-3.5" />
-              <span>Mục của tôi ({myProductsCount})</span>
+              <Package className="size-4" />
+              <span>Gian Hàng Của Tôi ({myProductsCount})</span>
             </button>
           </div>
 
-          {marketplaceTab === "interested" ? (
-            <div className="self-stretch px-4 pt-4 pb-6 flex flex-col justify-start items-start gap-4">
-              <div className="w-full flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Heart className="size-4 fill-rose-500 text-rose-500" />
-                    <span>Sản Phẩm Đã Quan Tâm ({interestedIds.length})</span>
-                  </h3>
-                  <p className="text-[11px] text-slate-500">Danh mục các sản phẩm / dịch vụ bạn đã lưu để theo dõi và kết nối giao thương</p>
-                </div>
-              </div>
-
-              {allProducts.filter((p) => interestedIds.includes(p.id)).length === 0 ? (
-                <div className="w-full py-12 px-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center flex flex-col items-center justify-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-                  <div className="size-12 rounded-full bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center text-rose-500">
-                    <Heart className="size-6 text-rose-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Chưa có sản phẩm quan tâm nào</p>
-                    <p className="text-xs text-slate-500 max-w-xs">Nhấn biểu tượng trái tim ở các sản phẩm trên Chợ Marketplace để lưu vào danh mục này.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setMarketplaceTab("market")}
-                    className="px-4 py-2 bg-[#003B95] hover:bg-blue-900 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer"
-                  >
-                    Khám phá Chợ Marketplace
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 w-full">
-                  {allProducts
-                    .filter((p) => interestedIds.includes(p.id))
-                    .map((p) => {
-                      return (
-                        <div
-                          key={p.id}
-                          onClick={() => {
-                            trackRecentlyViewed(p);
-                            handleOpenQuoteModal(p);
-                          }}
-                          className="w-full bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer"
-                        >
-                          <img className="self-stretch h-28 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"} alt={p.name} />
-                          <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
-                            <div className="self-stretch inline-flex justify-between items-center">
-                              <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
-                                {p.category || "Hội viên"}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={(e) => toggleInterest(p.id, e)}
-                                className="size-5 inline-flex flex-col justify-center items-center text-rose-500 hover:scale-110 transition cursor-pointer"
-                                title="Bỏ quan tâm"
-                              >
-                                <Heart className="size-4 fill-rose-500 text-rose-500" />
-                              </button>
-                            </div>
-                            <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
-                              {p.name}
-                            </div>
-                            <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
-                              {p.company || "CEO 1983"}
-                            </div>
-                            <div className="self-stretch inline-flex justify-between items-center pt-0.5 border-t border-slate-100 dark:border-slate-700/60 mt-1">
-                              <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
-                                {formatSmartProductPrice(p.memberPrice || p.price)}
-                              </div>
-                              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Báo giá</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-          ) : marketplaceTab === "my_store" ? (
+          {marketplaceTab === "my_store" ? (
             <div className="self-stretch px-4 pt-4 pb-6 flex flex-col justify-start items-start gap-4">
               {/* Action Banner for Companies */}
               <div className="w-full bg-gradient-to-br from-slate-900 via-[#003B95] to-blue-950 text-white rounded-2xl p-4 shadow-md">
@@ -1983,11 +1880,11 @@ function ProductsScreen() {
             <div className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-1">
               {[
                 { id: "all", label: "Tất cả" },
-                { id: "interested", label: `Đã quan tâm (${interestedIds.length})` },
-                { id: "tech", label: "Công nghệ" },
-                { id: "realestate", label: "Xây dựng" },
+                { id: "tech", label: "Công nghệ & Số hóa" },
+                { id: "realestate", label: "Bất động sản & Xây dựng" },
+                { id: "manufacturing", label: "Sản xuất & Công nghiệp" },
                 { id: "services", label: "Dịch vụ doanh nghiệp" },
-                { id: "logistics", label: "Logistics" },
+                { id: "logistics", label: "Logistics & Vận tải" },
               ].map((chip) => {
                 const isActive = selectedCategory === chip.id;
                 return (
@@ -2069,13 +1966,9 @@ function ProductsScreen() {
                             <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
                               {formatSmartProductPrice(p.memberPrice || p.price)}
                             </div>
-                            <button
-                              type="button"
-                              onClick={(e) => toggleInterest(p.id, e)}
-                              className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
-                            >
-                              <Heart className={`size-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
-                            </button>
+                            <span className="text-[10px] font-bold text-[#003B95] dark:text-blue-400">
+                              Báo giá →
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -2131,13 +2024,9 @@ function ProductsScreen() {
                             <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
                               {p.priceDisplay || formatSmartProductPrice(p.memberPrice || p.price)}
                             </div>
-                            <button
-                              type="button"
-                              onClick={(e) => toggleInterest(p.id, e)}
-                              className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
-                            >
-                              <Heart className={`size-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
-                            </button>
+                            <span className="text-[10px] font-bold text-[#003B95] dark:text-blue-400">
+                              Báo giá →
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -2250,13 +2139,9 @@ function ProductsScreen() {
                         <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
                           {formatSmartProductPrice(p.memberPrice || p.price)}
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => toggleInterest(p.id, e)}
-                          className="size-4 inline-flex flex-col justify-center items-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
-                        >
-                          <Heart className={`size-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : "text-slate-500"}`} />
-                        </button>
+                        <span className="text-[10px] font-bold text-[#003B95] dark:text-blue-400">
+                          Báo giá →
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -2956,120 +2841,7 @@ function ProductsScreen() {
 
       {/* ── MODAL GIAN HÀNG DOANH NGHIỆP: ĐÃ CHUYỂN SANG GIAO DIỆN TOÀN MÀN HÌNH B2B STOREFRONT ── */}
 
-      {/* ── MODAL GIỎ HÀNG QUAN TÂM (WISHLIST CART MODAL) ── */}
-      {mounted && wishlistCartOpen && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-          onClick={() => setWishlistCartOpen(false)}
-        >
-          <div
-            className="my-auto w-full max-w-[480px] max-h-[88dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="relative bg-gradient-to-r from-[#002087] to-[#003B95] p-4 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 text-white border border-white/30 backdrop-blur-md font-bold shadow-xs">
-                  <ShoppingCart className="h-5 w-5" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-black text-white">Giỏ Hàng Quan Tâm</h3>
-                  <p className="text-[11px] text-blue-100/80">
-                    {interestedIds.length} sản phẩm đã đánh dấu quan tâm
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setWishlistCartOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-black/35 text-white hover:bg-black/60 transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 [scrollbar-width:thin]">
-              {interestedIds.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 space-y-2">
-                  <ShoppingCart className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600 mb-1" />
-                  <p className="text-xs font-semibold">Bạn chưa lưu sản phẩm nào vào danh sách quan tâm.</p>
-                  <p className="text-[11px] text-slate-500">Bấm biểu tượng trái tim trên các sản phẩm để lưu lại tại đây.</p>
-                </div>
-              ) : (
-                allProducts
-                  .filter((p) => interestedIds.includes(p.id))
-                  .map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-[#2E3192]/40 transition"
-                    >
-                      <div className="h-16 w-16 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0">
-                        <img
-                          src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
-                          alt={p.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-bold text-[#2E3192] dark:text-amber-400 block truncate">
-                          {p.company || "CLB CEO 1983"}
-                        </span>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
-                          {p.name}
-                        </h4>
-                        <div className="mt-1 flex items-baseline gap-1.5">
-                          <span className="text-xs font-black text-rose-600 dark:text-amber-400">
-                            {formatSmartProductPrice(p.memberPrice || p.price)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setWishlistCartOpen(false);
-                            handleOpenQuoteModal(p);
-                          }}
-                          className="py-1 px-2.5 rounded-lg bg-[#2E3192] text-white text-[10.5px] font-bold hover:bg-[#232677] transition cursor-pointer"
-                        >
-                          Báo giá VIP
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toggleInterest(p.id)}
-                          className="text-[10px] text-rose-500 hover:underline text-center cursor-pointer"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    </div>
-                  ))
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
-              <Link
-                to="/association/perks"
-                onClick={() => setWishlistCartOpen(false)}
-                className="text-xs font-bold text-[#2E3192] dark:text-amber-400 hover:underline flex items-center gap-1"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Xem ưu đãi VIP</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setWishlistCartOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       <ProductExcelModal
         open={excelImportOpen}

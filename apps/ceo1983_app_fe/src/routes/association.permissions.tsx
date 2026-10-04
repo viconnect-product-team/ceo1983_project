@@ -71,11 +71,19 @@ function AssociationPermissionsScreen() {
   const fetchMyMemberFn = useServerFn(getMyMember);
   const { data: member } = useServerData<MyMember | null>(() => fetchMyMemberFn(), null, "vba_my_member");
 
+  const userRole = String((user as any)?.role || "").toLowerCase();
+  const memberRole = String((member as any)?.role || "").toLowerCase();
+
   const isBQTOrAdmin = Boolean(
-    (user as any)?.role === "admin" ||
-    (user as any)?.role === "platform_admin" ||
-    (member as any)?.role === "admin" ||
-    (member as any)?.role === "association_admin" ||
+    userRole === "admin" ||
+    userRole === "quan_tri" ||
+    userRole === "quantri" ||
+    userRole === "superadmin" ||
+    userRole === "platform_admin" ||
+    memberRole === "admin" ||
+    memberRole === "quan_tri" ||
+    memberRole === "quantri" ||
+    memberRole === "association_admin" ||
     isPlatformAdmin ||
     isBQT ||
     (member as any)?.department === "Ban Quản Trị" ||
@@ -125,22 +133,34 @@ function AssociationPermissionsScreen() {
   const handleSaveDraft = () => {
     if (!draftPermission || !editingMemberCode) return;
 
-    setPermissionsMap((prev) => {
-      const updated = {
-        ...prev,
-        [editingMemberCode]: {
-          ...draftPermission,
-          updatedAt: new Date().toISOString(),
-        },
-      };
-      try {
-        localStorage.setItem("vba_member_permissions", JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
+    const updated = {
+      ...permissionsMap,
+      [editingMemberCode]: {
+        ...draftPermission,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    setPermissionsMap(updated);
+
+    try {
+      localStorage.setItem("vba_member_permissions", JSON.stringify(updated));
+    } catch {}
+
+    // Dispatch realtime synchronization events so other accounts/sessions instantly reflect the permission changes
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("vba_member_permissions_updated", {
+          detail: { memberCode: editingMemberCode, profile: draftPermission, map: updated },
+        }),
+      );
+      window.dispatchEvent(new CustomEvent("crm_permissions_updated"));
+      window.dispatchEvent(new CustomEvent("role-changed"));
+      window.dispatchEvent(new CustomEvent("vba_auth_changed"));
+    }
 
     toast.success("Đã lưu phân quyền hội viên thành công!", {
-      description: `Quyền hạn của ${editingMemberCode} đã được cập nhật hiệu lực ngay lập tức.`,
+      description: `Quyền hạn của ${editingMemberCode} đã được cập nhật và có hiệu lực ngay lập tức.`,
     });
     setEditingMemberCode(null);
     setDraftPermission(null);

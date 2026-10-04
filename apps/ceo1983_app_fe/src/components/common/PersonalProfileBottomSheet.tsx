@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   X,
   Phone,
@@ -55,8 +55,55 @@ export function PersonalProfileBottomSheet({
 }: PersonalProfileBottomSheetProps) {
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartY = useRef(0);
+  const currentDragY = useRef(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setDragY(0);
+      setIsDragging(false);
+      currentDragY.current = 0;
+    }
+  }, [open]);
 
   if (!open) return null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (sheetRef.current && sheetRef.current.scrollTop <= 0) {
+      touchStartY.current = e.touches[0].clientY;
+      setIsDragging(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (deltaY > 0) {
+      currentDragY.current = deltaY;
+      setDragY(deltaY);
+    } else {
+      currentDragY.current = 0;
+      setDragY(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (currentDragY.current > 85) {
+      setDragY(window.innerHeight || 800);
+      setTimeout(() => {
+        onClose();
+        setDragY(0);
+      }, 200);
+    } else {
+      setDragY(0);
+    }
+    currentDragY.current = 0;
+  };
 
   const initials = profile.displayName
     ? profile.displayName
@@ -66,7 +113,7 @@ export function PersonalProfileBottomSheet({
         .slice(-2)
         .join("")
         .toUpperCase()
-    : "VO";
+    : "CEO";
 
   const resolvedAvatar = profile.avatarUrl
     ? resolveMediaUrl(profile.avatarUrl) || profile.avatarUrl
@@ -89,8 +136,8 @@ export function PersonalProfileBottomSheet({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${profile.displayName} — Danh thiếp số ViOne`,
-          text: `${profile.displayName} • ${profile.jobTitle || "Doanh nhân"} tại ${profile.companyName || "ViOne"}`,
+          title: `${profile.displayName} — Danh thiếp số CLB Doanh Nhân CEO 1983`,
+          text: `${profile.displayName} • ${profile.jobTitle || "Hội viên"} tại ${profile.companyName || "CLB CEO 1983"}`,
           url,
         });
         return;
@@ -125,12 +172,28 @@ export function PersonalProfileBottomSheet({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[32px] border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0A1224] text-slate-900 dark:text-white shadow-2xl transition-transform duration-300 ease-out animate-in slide-in-from-bottom"
+        ref={sheetRef}
+        className={`relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[32px] border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0A1224] text-slate-900 dark:text-white shadow-2xl ${
+          isDragging ? "" : "transition-transform duration-200 ease-out"
+        } animate-in slide-in-from-bottom overscroll-contain`}
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+        }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Drag handle */}
-        <div className="sticky top-0 z-30 flex justify-center pt-3 pb-1 bg-inherit">
-          <div className="h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
+        <div
+          className="sticky top-0 z-30 flex flex-col items-center justify-center pt-3 pb-1.5 bg-inherit cursor-grab active:cursor-grabbing select-none"
+          onTouchStart={(e) => {
+            touchStartY.current = e.touches[0].clientY;
+            setIsDragging(true);
+          }}
+        >
+          <div className="h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 transition-colors" />
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">Vuốt xuống để đóng</span>
         </div>
 
         {/* Nút đóng */}

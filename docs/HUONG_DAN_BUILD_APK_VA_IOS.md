@@ -178,3 +178,23 @@ Mở file `capacitor.config.ts` trong thư mục app tương ứng:
 2. Chạy `npm run build:static`
 3. Tiến hành build lại APK / IPA.
 Toàn bộ mã nguồn web sẽ được nhúng cứng vào file cài đặt native.
+
+---
+
+## 📲 7. HƯỚNG DẪN CÀI ĐẶT PWA iOS & ANDROID QUA SMART LINK
+Bên cạnh file APK và TestFlight IPA, ứng dụng Hiệp hội Doanh nhân CEO 1983 hỗ trợ công nghệ **Progressive Web App (PWA)** cài đặt trực tiếp lên màn hình chính mà không cần qua App Store:
+
+### 1. Cơ Chế Smart Link Tự Động Hiện Hộp Thoại Cài Đặt:
+- Định dạng link chia sẻ chuẩn: `https://<domain>/association?install=ios`.
+- Khi người dùng gửi link này qua **Zalo, Facebook Messenger, SMS** cho hội viên hoặc đối tác:
+  - **Trên iPhone (Safari):** Ngay khi mở link, sau 400ms hệ thống tự động hiện hộp thoại trang trọng:
+    *"Bạn muốn thêm ứng dụng CEO 1983 vào màn hình chính không?"* kèm nút `[Có, thêm luôn]` và `[Để sau]`.
+    Khi bấm `[Có, thêm luôn]`, ứng dụng hiển thị hướng dẫn 3 bước Safari chuẩn Apple (Nút Chia sẻ ➔ Thêm vào MH chính ➔ Thêm) hoặc hỗ trợ tải Profile WebClip `.mobileconfig` 1-chạm.
+  - **Khi mở trong Zalo / Facebook Messenger:** Apple chặn cài đặt trực tiếp trong Webview. Ứng dụng tự động phát hiện và hiển thị nút **"Sao chép link cài đặt"** kèm hình minh họa hướng dẫn người dùng bấm biểu tượng `( ••• )` ở góc trên bên phải ➔ chọn **"Mở bằng Safari"**.
+  - **Trên Android:** Bắt sự kiện `beforeinstallprompt`, khi bấm `[Có, thêm luôn]` sẽ kích hoạt ngay hộp thoại cài đặt native của Android Chrome.
+
+### 2. Cách Chia Sẻ Link Cài Đặt Nhanh Trong App:
+- Ở thanh header trang chủ cạnh biểu tượng chuông: Bấm nút **"Chia sẻ App"**.
+- Hoặc ở trang Cá nhân (`/association/profile`): Bấm nút **"Gửi link cài App"**.
+- Hộp thoại cung cấp nút 1-chạm gửi trực tiếp qua Zalo/Messenger/Tin nhắn (Web Share API) hoặc sao chép đường dẫn cài đặt vào bộ nhớ tạm.
+

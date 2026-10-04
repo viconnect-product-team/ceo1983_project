@@ -52,6 +52,7 @@ export interface ConnectionMeetingItem {
   venueType: "offline" | "online";
   venue: string;
   onlineUrl?: string;
+  onlinePlatform?: string;
   notes?: string;
   status: string;
   createdAt?: string;
@@ -89,6 +90,9 @@ function MeetingsWorkspacePage() {
         : serverData?.items || [];
       const remoteMeetings: ConnectionMeetingItem[] = serverList.map((m: any) => {
         const tm = m.target_members || {};
+        const isOnline = m.type === "online" || m.zoom_url || tm.venueType === "online";
+        const meetingUrl = m.zoom_url || tm.onlineUrl;
+        const platform = tm.onlinePlatform || m.onlinePlatform || (meetingUrl?.includes("uniwork") ? "uniwork" : undefined);
         return {
           id: String(m.id),
           title: m.title || "Cuộc gặp giao thương 1-on-1",
@@ -100,9 +104,12 @@ function MeetingsWorkspacePage() {
           partnerCompany: tm.partnerCompany || undefined,
           date: m.date ? new Date(m.date).toLocaleDateString("vi-VN") : "Hôm nay",
           time: m.time || "09:00",
-          venueType: (m.type === "online" || m.zoom_url || tm.venueType === "online") ? "online" : "offline",
-          venue: m.location || tm.venue || "Văn phòng Hiệp hội CEO 1983",
-          onlineUrl: m.zoom_url || tm.onlineUrl,
+          venueType: isOnline ? "online" : "offline",
+          venue: isOnline
+            ? (platform === "uniwork" ? "Phòng họp trực tuyến Uniwork" : (m.location || tm.venue || "Họp trực tuyến"))
+            : (m.location || tm.venue || "Văn phòng Hiệp hội CEO 1983"),
+          onlineUrl: meetingUrl,
+          onlinePlatform: platform,
           notes: tm.notes || m.urgent_reason,
           status: m.status || "scheduled",
           createdAt: m.created_at || m.date,
@@ -327,11 +334,17 @@ function MeetingsWorkspacePage() {
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase shrink-0 ${
                         item.venueType === "online"
-                          ? "bg-blue-500/10 text-blue-600 border border-blue-500/30"
+                          ? (item.onlinePlatform === "uniwork" || item.onlineUrl?.includes("uniwork"))
+                            ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30"
+                            : "bg-blue-500/10 text-blue-600 border border-blue-500/30"
                           : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
                       }`}
                     >
-                      {item.venueType === "online" ? "Online" : "Offline"}
+                      {item.venueType === "online"
+                        ? (item.onlinePlatform === "uniwork" || item.onlineUrl?.includes("uniwork"))
+                          ? "Uniwork Online"
+                          : "Online"
+                        : "Offline"}
                     </span>
                     <span className="text-[11px] font-semibold text-muted-foreground">
                       {item.date} • {item.time}
@@ -378,7 +391,11 @@ function MeetingsWorkspacePage() {
                   <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
                       {item.venueType === "online" ? (
-                        <Video className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                        <Video className={`h-3.5 w-3.5 shrink-0 ${
+                          (item.onlinePlatform === "uniwork" || item.onlineUrl?.includes("uniwork"))
+                            ? "text-indigo-600"
+                            : "text-blue-600"
+                        }`} />
                       ) : (
                         <MapPin className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                       )}
@@ -409,9 +426,18 @@ function MeetingsWorkspacePage() {
                         href={item.onlineUrl.startsWith("http") ? item.onlineUrl : `https://${item.onlineUrl}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-blue-700 transition"
+                        className={`rounded-lg px-3 py-1.5 text-[11px] font-bold text-white transition flex items-center gap-1 shadow-xs ${
+                          (item.onlinePlatform === "uniwork" || item.onlineUrl.includes("uniwork"))
+                            ? "bg-indigo-600 hover:bg-indigo-700"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        }`}
                       >
-                        Vào Họp Online
+                        <Video className="h-3 w-3" />
+                        <span>
+                          {(item.onlinePlatform === "uniwork" || item.onlineUrl.includes("uniwork"))
+                            ? "Vào Uniwork Meet"
+                            : "Vào Họp Online"}
+                        </span>
                       </a>
                     )}
                     {item.venueType === "offline" && (
@@ -477,8 +503,21 @@ function MeetingsWorkspacePage() {
                     <td className="px-4 py-3 text-xs text-muted-foreground border-b border-border whitespace-nowrap">
                       {item.date} • {item.time}
                     </td>
-                    <td className="px-4 py-3 text-xs border-b border-border max-w-[200px] truncate">
-                      {item.venue}
+                    <td className="px-4 py-3 text-xs border-b border-border max-w-[200px]">
+                      {item.venueType === "online" ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            (item.onlinePlatform === "uniwork" || item.onlineUrl?.includes("uniwork"))
+                              ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                              : "bg-blue-50 text-blue-700 border border-blue-200"
+                          }`}>
+                            <Video className="h-3 w-3" />
+                            {(item.onlinePlatform === "uniwork" || item.onlineUrl?.includes("uniwork")) ? "Uniwork Meet" : "Online"}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="truncate block" title={item.venue}>{item.venue}</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs border-b border-border">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
@@ -486,13 +525,30 @@ function MeetingsWorkspacePage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-xs border-b border-border whitespace-nowrap">
-                      <button
-                        onClick={() => handleDeleteMeeting(item.id, item.title)}
-                        className="p-1 text-destructive hover:bg-destructive/10 rounded-md transition"
-                        title="Xóa cuộc gặp"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {item.venueType === "online" && item.onlineUrl && (
+                          <a
+                            href={item.onlineUrl.startsWith("http") ? item.onlineUrl : `https://${item.onlineUrl}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`p-1.5 rounded-md text-white transition flex items-center gap-1 text-[11px] font-semibold ${
+                              (item.onlinePlatform === "uniwork" || item.onlineUrl.includes("uniwork"))
+                                ? "bg-indigo-600 hover:bg-indigo-700"
+                                : "bg-blue-600 hover:bg-blue-700"
+                            }`}
+                            title="Vào phòng họp"
+                          >
+                            <Video className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleDeleteMeeting(item.id, item.title)}
+                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition"
+                          title="Xóa cuộc gặp"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

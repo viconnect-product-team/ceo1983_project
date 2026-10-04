@@ -314,5 +314,96 @@
 #     + XÓA BỎ VĨNH VIỄN toàn bộ landing page v1 đến v8 (`b2b-v1` đến `b2b-v8`), catalog danh mục `landing-templates-catalog.ts`, thư mục hiệu ứng `src/components/landing/animations/`, các component wrapper và URL landing cũ.
 #     + Tuyệt đối không tái tạo hoặc lưu trữ các mẫu template v1-v8 trong mã nguồn dự án.
 #     + Đảm bảo route `/business-connect` render trực tiếp `WorkHubPage` bên trong `AppShell`.
+#
+# [BẮT BUỘC 22] Quy Chuẩn 10 Tính Năng Nhanh App Hiệp Hội, Tự Động Gợi Ý Cài App iOS PWA, và Tinh Gọn Chợ B2B:
+#   - Chuẩn Hóa 10 Tính Năng Nhanh App Hiệp Hội (`/association`):
+#     + Cố định đúng 10 tính năng nhanh sắp xếp theo độ quan trọng vận hành doanh nghiệp & kết nối điều hành (Lưới đối xứng 5x2):
+#       1. Danh thiếp số (`/association/card`, VIP) - Công cụ kết nối, nhận diện doanh nhân 1-chạm.
+#       2. Danh bạ CEO (`/association/members`, 100+) - Tra cứu đối tác, lãnh đạo trong hiệp hội.
+#       3. Chợ B2B (`/association/products`, Hot) - Sàn chào hàng, kết nối cung cầu doanh nghiệp.
+#       4. Cơ hội hợp tác (`/association/opportunities`, Mới) - Đấu thầu, kết nối thương mại, dự án chung.
+#       5. Sự kiện CLB (`/association/events`, 3) - Lịch trình họp, hội thảo, xúc tiến thương mại.
+#       6. Quét Check-in (`/association/checkin`, 1-Chạm) - Điểm danh QR tại sự kiện CLB.
+#       7. Lịch sử (`/association/history`, Hoạt động) - Theo dõi điểm danh, giao dịch đóng phí và kết nối doanh nhân.
+#       8. Đặc quyền VIP (`/association/perks`, Ưu đãi) - Chiết khấu chéo, quyền lợi dành riêng hội viên.
+#       9. Biểu quyết số (`/association/voting`, Mới) - Bầu cử, biểu quyết nghị quyết minh bạch.
+#       10. Kho tài liệu (`/association/library`, Điều lệ) - Điều lệ, quy chế, biểu mẫu pháp lý chính thức.
+#     + Tuyệt đối KHÔNG đưa tính năng "Hội phí" (`/renewal`) lên trang chủ App hội viên vì đây là luồng quản trị/kế toán.
+#     + Tuyệt đối KHÔNG đặt shortcut "Cài App iOS" trên lưới tính năng nhanh để tránh chiếm dụng không gian kết nối kinh doanh.
+#   - Tự Động Nhận Diện & Gợi Ý Cài Đặt iOS PWA (`IosInstallPrompt`):
+#     + Khi người dùng truy cập web app trên thiết bị iOS (Safari hoặc Webview Zalo, Messenger, Facebook), tự động kích hoạt modal gợi ý cài đặt:
+#       * Tên ứng dụng: `CEO 1983`.
+#       * Logo biểu tượng chuẩn: `/apple-touch-icon.png` viền bo chuẩn mực.
+#       * Câu hỏi: "Bạn muốn thêm ứng dụng CEO 1983 vào màn hình chính không?".
+#       * Nút bấm: "[Có, thêm luôn]" (kích hoạt tải cấu hình Apple WebClip Profile `/ceo1983.mobileconfig` để cài trực tiếp 1-chạm vào màn hình chính kèm hướng dẫn 2 bước trong Cài đặt iOS; fallback menu Chia sẻ Safari) và "[Để sau]".
+#   - Tinh Gọn Phân Hệ Chợ B2B Marketplace (`association.products.tsx`):
+#     + Loại bỏ hoàn toàn mô hình giỏ hàng và trạng thái "quan tâm" / wishlist bị lặp lại kiểu thương mại điện tử B2C.
+#     + Giao diện phân hệ gói gọn trong 2 Tab B2B rõ ràng: "Chợ Giao Thương B2B" và "Gian Hàng Của Tôi".
+#     + Hành động trên sản phẩm tập trung vào giao thương trực tiếp: "Báo giá →", "Nhắn tin", "Nhận báo giá VIP".
+#
+# [BẮT BUỘC 23] Quy Chuẩn Tinh Gọn Trang Chủ Hội Viên, Đưa Lịch Sử Ra Trang Chủ, Trải Nghiệm Thẻ Hội Viên & Chống Tràn Mobile:
+#   - Tinh Gọn Trang Chủ & Xóa Bỏ Khối Trùng Lặp (`association.index.tsx`):
+#     + Khi các tính năng đã nằm trong Lưới 10 Tính năng nhanh (Sự kiện, Ưu đãi, Chợ B2B, Cơ hội hợp tác, Quét Check-in), TUYỆT ĐỐI KHÔNG render lại các khối banner/card lớn trùng lặp trên trang chủ.
+#     + Bố cục trang chủ chuẩn hóa tinh gọn: Header -> Thẻ Hội Viên VIP Executive -> Lưới 10 Tính Năng Nhanh -> Doanh Nghiệp Mới Gia Nhập -> Lịch Sử Hoạt Động & Giao Dịch -> Tin Hoạt Động CLB -> Footer padding.
+#   - Đưa Tính Năng Lịch Sử Ra Màn Hình Trang Chủ:
+#     + Tích hợp tại vị trí số 7 trong Lưới 10 Tính năng nhanh cốt lõi (`qaHistory`).
+#     + Xây dựng khối "Lịch sử hoạt động & Giao dịch" (`tour-recent-history`) ngay trên trang chủ gồm: 3 phím tắt nhanh 1-chạm (Kết nối B2B, Vé sự kiện, Hội phí & Quỹ), danh sách 3 hoạt động/giao dịch mới nhất kèm trạng thái và liên kết "Xem chi tiết" dẫn thẳng tới `/association/history`.
+#   - Thẻ Hội Viên Trang Chủ Chạm Mở Hồ Sơ & Cử Chỉ Vuốt Xuống (Swipe-Down To Dismiss):
+#     + Thẻ hội viên `#tour-member-card` trên trang chủ có thể chạm để mở `PersonalProfileBottomSheet`.
+#     + Component `PersonalProfileBottomSheet` bắt buộc hỗ trợ cử chỉ cảm ứng vuốt xuống (Touch start, move, end trên thanh drag handle và nội dung sheet); khi vuốt xuống >85px tự động trượt mượt mà đóng sheet.
+#   - Chống Tràn Màn Hình Mobile Tại Danh Bạ CEO (`association.members.tsx`):
+#     + Khung tìm kiếm và nút mời bắt buộc có `w-full max-w-full overflow-hidden`, ô input có `min-w-0` và placeholder súc tích `"Tìm hội viên, ngành nghề..."`.
+#     + Nút "Mời vào CLB" phải dùng nhãn thích ứng responsive (`Mời vào CLB CEO 1983` trên desktop, `Mời vào CLB` trên tablet, `Mời vào` trên điện thoại) và `whitespace-nowrap shrink-0` chống vỡ layout ngang 100%.
+#
+# [BẮT BUỘC 24] Quy Chuẩn Cuộc Gọi WebRTC APK/Web, Lịch Sử Cuộc Gặp Danh Bạ, Badge Sự Kiện/Tin Nhắn & Siết Chặt Phân Quyền:
+#   - Quy Chuẩn Gọi Điện Thoại & Video Call WebRTC Trên APK & Trình Duyệt:
+#     + Android WebView (`MainActivity.java`): Bắt buộc kiểm tra quyền runtime `Manifest.permission.CAMERA` và `RECORD_AUDIO` trong `WebChromeClient.onPermissionRequest` trước khi gọi `request.grant(...)`. Cấu hình `settings.setMediaPlaybackRequiresUserGesture(false)` và `settings.setJavaScriptCanOpenWindowsAutomatically(true)` để âm thanh/video tự động phát mà không bị chặn.
+#     + Socket Room (`use-connect-app-socket.ts`): Bắt buộc join đồng thời cả 2 room `user:${userId}` và `user:${memberCode}` để các tín hiệu cuộc gọi (`call:invite`, `call:signal`, `call:end`) luôn đến đúng thiết bị người nhận.
+#     + WebRTC Engine (`CeoWebRtcCallModal.tsx`): Bắt buộc đàm phán SDP Offer/Answer 2 chiều hoàn chỉnh, hàng đợi ICE Candidate (`queuedCandidatesRef`) chống rơi rụng ứng viên mạng trước khi `setRemoteDescription`, tích hợp STUN/TURN (80/443 TCP/UDP) cho mạng di động 4G/LTE, và thẻ `<audio>` với volume = 1.0 đảm bảo luôn nghe được giọng nói ngay cả khi tắt camera.
+#   - Danh Mục "Lịch Sử Cuộc Gặp" Tại Danh Bạ Hội Viên (`association.members.tsx`):
+#     + Danh bạ hội viên có 4 Tab: "Tất cả", "Bạn bè", "Đã gửi kết nối", và "Lịch sử cuộc gặp".
+#     + Tab "Lịch sử cuộc gặp" hiển thị các cuộc hẹn 1-on-1 từ `/meetings/connection-appointments` kèm trạng thái (Đã diễn ra, Sắp diễn ra, Chờ xác nhận, Đã hủy), thời gian, địa điểm Zoom/offline, thông tin đối tác và nút thao tác nhanh Nhắn tin / Xem hồ sơ.
+#   - Huy Hiệu Số Lượng Kèm Animation Trên Tab Sự Kiện & Tin Nhắn (`MemberShell.tsx`):
+#     + Tab Sự kiện (`/association/events`): Hiển thị số lượng sự kiện mới với hiệu ứng `animate-pulse` và vòng hào quang gợn sóng `animate-ping` (Amber/Rose). Tự động xóa khi người dùng xem trang Sự kiện.
+#     + Tab Tin nhắn (`/association/messages`): Hiển thị số lượng tin nhắn chưa đọc với hiệu ứng `animate-ping` và `animate-pulse` (Rose/Red), cập nhật realtime qua socket `dm:message_received`, `vba:conversation_updated` và local storage. Tự động xóa khi người dùng xem trang Tin nhắn.
+# [BẮT BUỘC 25] Quy Chuẩn Web App Mượt Mà, Triệt Tiêu Xung Đột Cử Chỉ, Smart Link Tự Động Hỏi Cài App PWA & Hướng Dẫn In-App Browser:
+#   - Khử Xung Đột Cuộn Ngang vs Chuyển Tab (`PullToRefresh.tsx`):
+#     + Trong `handleTouchStart`, bắt buộc kiểm tra `target.closest('[data-horizontal-scroll], [class*="overflow-x"], .no-scrollbar, [role="tablist"], [data-radix-scroll-area-viewport], input, textarea, select, button')` để set `isInsideHorizontalContainerRef = true`.
+#     + Khi người dùng lướt ngang danh thiếp, carousel hội viên hoặc bộ lọc pills, TUYỆT ĐỐI KHÔNG nhận diện là vuốt chuyển tab và KHÔNG hiển thị huy hiệu `Tab tiếp / Tab trước` cản trở thao tác.
+#     + Xóa bỏ bộ kích hoạt Reachability tự động khi vuốt gần thanh điều hướng dưới đáy để tránh giật tụt màn hình ngoài ý muốn.
+#   - Tối Ưu Hóa Cảm Ứng Web App & Mobile PWA (`styles.css`):
+#     + Triệt tiêu hoàn toàn viền xám flash khi bấm: `* { -webkit-tap-highlight-color: transparent; }`.
+#     + Khử độ trễ chạm 300ms: `touch-action: manipulation` trên toàn bộ nút, liên kết và điều khiển.
+#     + Kích hoạt cuộn quán tính iOS mượt: `.smooth-scroll-touch { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }`.
+#     + Chống bôi đen văn bản ngoài ý muốn: `user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;` trên nút, tab, thẻ hội viên.
+#     + Thêm phản hồi xúc giác vi mô nảy chạm: `.touch-press:active { transform: scale(0.97); opacity: 0.9; }`, áp dụng cho các tab `MemberTabBar` (`active:scale-90`) và toàn bộ nút bấm chính.
+#   - Cơ Chế Smart Link Tự Động Nhận Biết Cài App PWA Trên iOS (Không Hiện Bất Kỳ Banner/Nút Nào Lên Màn Hình):
+#     + TUYỆT ĐỐI KHÔNG để hiển thị bất kỳ logo floating cài app nào ở góc dưới màn hình, không để banner cài đặt thường trực và KHÔNG để nút "Chia sẻ App" trên thanh header trang chủ.
+#     + Tự động nhận diện khi người dùng truy cập qua link chia sẻ cài app (`?install=...`, `?pwa=...` hoặc lần đầu trên iOS Safari): Tự động hiển thị bảng hướng dẫn 3 bước thao tác "Thêm vào Màn hình chính" (Add to Home Screen) trực quan chuẩn iOS.
+#     + Có nút "Đã hiểu" và "Để sau", ghi nhớ vào `sessionStorage` và `localStorage` (`ceo1983_ios_prompt_dismissed`) để không bao giờ tái hiện phiền nhiễu.
+#     + Bảng thao tác tuân thủ đúng chuẩn popup: Header cố định, Footer cố định, các bước cuộn ở giữa.
+#
+# [BẮT BUỘC 26] Phân Định Rạch Ròi Giữa Lưới Tính Năng Nhanh (Quick Actions) và Khối Nội Dung Thân Trang Chủ (Main Body Sections):
+#   - Khi người dùng yêu cầu gỡ bỏ tính năng (Sự kiện, Chợ B2B, Cơ hội hợp tác) khỏi "Tính năng nhanh":
+#     + CHỈ ĐƯỢC gỡ bỏ các icon shortcut trong mảng `quickActionDefs` để rút gọn lưới Tính năng nhanh (chuẩn 8 icon cân đối: Danh thiếp số, Danh bạ CEO, Quét Check-in, Đặc quyền VIP, Biểu quyết số, Lịch sử, Kho tài liệu, Hội phí).
+#     + TUYỆT ĐỐI KHÔNG ĐƯỢC XÓA BỎ các khối hiển thị nội dung phong phú ở phần thân trang chủ bên dưới:
+#       * Khối 1: Sự kiện sắp tới (`/association/events`) với Carousel ảnh banner, bộ đếm ngược `EventCountdownMiniBadge`, ngày giờ địa điểm và nút "Xem tất cả".
+#       * Khối 2: Ưu đãi Hội viên & Đối tác (`/association/perks`) với huy hiệu +Hot và hình ảnh quà tặng VIP `vba-gift.png`.
+#       * Khối 3: Chia sẻ cơ hội & Sàn thương mại B2B (`/association/opportunities`, `/association/products`) với số lượng deals/sản phẩm thực tế, tổng giá trị niêm yết (`totalOpportunitiesValue`, `totalProductsValue`), và nút "Đăng ngay".
+#     + Luôn duy trì trọn vẹn dữ liệu kết nối từ database CRM và TanStack server hooks cho các khối nội dung thân trang chủ.
+#
+# [BẮT BUỘC 27] Quy Chuẩn Toàn Bộ Popup / Modal Toàn Dự Án & Nền Tảng Họp Uniwork Trong CRM:
+#   - Chuẩn Hóa Popup / Modal (Fixed Header & Footer, Scrollable Body):
+#     + Toàn bộ modal, dialog, popup trên toàn bộ dự án (`DialogContent`, `.modal-standard`, `.popup-standard`) BẮT BUỘC có cấu trúc:
+#       * Khung bao ngoài: `flex flex-col max-h-[90vh] max-h-[90dvh] overflow-hidden p-0`.
+#       * Header cố định: `DialogHeader` hoặc `[data-modal-header]` với `shrink-0 border-b`. Tiêu đề và nút đóng không bao giờ bị cuộn mất.
+#       * Footer cố định: `DialogFooter` hoặc `[data-modal-footer]` với `shrink-0 border-t bg-black/20`. Các nút hành động (Lưu, Hủy, Đóng, Gửi) luôn hiển thị cố định ở chân modal.
+#       * Thân giữa cuộn: `DialogBody` hoặc `[data-modal-body]` với `flex-1 overflow-y-auto px-6 py-4 overscroll-contain`. Khi nội dung form hoặc danh sách dài, thanh cuộn chỉ xuất hiện ở phần thân giữa.
+#   - Tích Hợp Nền Tảng Họp Trực Tuyến Uniwork Meet (`meet.uniwork.space`) Trong CRM:
+#     + Tại modal đặt lịch hẹn 1-on-1 (`Create1on1MeetingModal.tsx`): Bắt buộc có tùy chọn Uniwork Meet làm lựa chọn hàng đầu bên cạnh Google Meet và Zoom. Tự động sinh link phòng họp `https://meet.uniwork.space/CEO1983_Connect_${id}` và có nút "Mở phòng test".
+#     + Tại danh sách cuộc hẹn CRM (`business-connect.meetings.index.tsx`): Hiển thị badge nhận diện xanh ngọc "Uniwork Online" / "Uniwork Meet" và nút 1-chạm "Vào phòng Uniwork" trên cả giao diện Thẻ (Grid) và Bảng (Table).
+#   - Quy Trình Phê Duyệt Hội Viên & Cấp Phát Tài Khoản (`members.service.ts`):
+#     + Phân quyền duyệt hội viên phải nhận diện đầy đủ các vai trò: Quản trị viên (`admin`, `quan_tri`, `bqt`, `platform_admin`, `superadmin`, `owner`) trong `public.vione_users`, `public.user_roles`, `public.vba_member_permissions`, và thành viên Ban Thành Viên / Ban Quản Trị trong `public.members`.
+#     + Khi duyệt thành công: Tự động tạo/cập nhật tài khoản `vione_users`, đồng bộ vào `auth.users`, kích hoạt trạng thái hội viên, và tự động gửi email chứa thông tin tài khoản đăng nhập (Email + Mật khẩu an toàn) qua Gmail SMTP tới hòm thư của hội viên.
 
 

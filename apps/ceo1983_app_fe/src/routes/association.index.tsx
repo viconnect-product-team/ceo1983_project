@@ -38,6 +38,8 @@ import {
   Briefcase,
   Palette,
   Cake,
+  Share2,
+  Download,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/context/AuthContext";
@@ -52,10 +54,9 @@ import { isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVi
 import { GuidedTourModal, type TourStep } from "@/components/common/GuidedTourModal";
 import { PersonalProfileBottomSheet, type PersonalProfileData } from "@/components/common/PersonalProfileBottomSheet";
 import { QrCanvas } from "@/components/member/QrCanvas";
-import { EventCountdownMiniBadge } from "@/components/events/EventCountdownTimer";
 import heroImg from "@/assets/vba-hero.jpg";
 import giftImg from "@/assets/vba-gift.png";
-import eventImg from "@/assets/vba-event.jpg";
+import { EventCountdownMiniBadge } from "@/components/events/EventCountdownTimer";
 import { useServerData } from "@/hooks/use-server-data";
 import {
   getMyMember,
@@ -66,6 +67,7 @@ import {
   listMyNotifications,
   listMembers,
   listNews,
+  getMyHistory,
   type MyMember,
   type MyEvent,
   type MyAssociationBrand,
@@ -74,6 +76,7 @@ import {
   type MyNotification,
   type DirectoryMember,
   type NewsItem,
+  type MyHistory,
 } from "@/lib/member-app.functions";
 import { useT, useLang } from "@/lib/i18n";
 import { AssociationContactSheet } from "@/components/member/AssociationContactSheet";
@@ -117,79 +120,77 @@ function formatNewsDate(timeStr?: string) {
 }
 
 const quickActionDefs = [
-  { key: "m.index.qaHistory", icon: History, to: "/association/history", customLabel: "Lịch sử", enLabel: "History" },
   {
-    key: "m.index.qaBusinessCards",
-    icon: Contact,
-    to: "/association/business-cards",
+    key: "m.index.qaCard",
+    icon: IdCard,
+    to: "/association/card",
     customLabel: "Danh thiếp số",
-    enLabel: "Digital Cards",
-    badgeId: "bc",
-    badgeText: "Mới",
-  },
-  { key: "m.index.qaMembers", icon: Users, to: "/association/members", customLabel: "Hội viên", enLabel: "Members" },
-  {
-    key: "m.index.qaEvents",
-    icon: Calendar,
-    to: "/association/events",
-    customLabel: "Sự kiện",
-    enLabel: "Events",
-    badgeId: "events",
-    badgeText: "3",
+    enLabel: "Digital Card",
+    badgeId: "card",
+    badgeText: "VIP",
   },
   {
-    key: "m.index.qaNews",
-    icon: Newspaper,
-    to: "/association/news",
-    customLabel: "Tin tức",
-    enLabel: "News",
-    badgeId: "news",
-    badgeText: "5",
+    key: "m.index.qaMembers",
+    icon: Users,
+    to: "/association/members",
+    customLabel: "Danh bạ CEO",
+    enLabel: "Members",
+    badgeId: "members",
+    badgeText: "100+",
   },
   {
-    key: "m.index.qaLibrary",
-    icon: FolderOpen,
-    to: "/association/library",
-    customLabel: "Tài liệu",
-    enLabel: "Documents",
+    key: "m.index.qaCheckin",
+    icon: QrCode,
+    to: "/association/checkin",
+    customLabel: "Quét Check-in",
+    enLabel: "Check-in",
+    badgeId: "checkin",
+    badgeText: "1-Chạm",
   },
   {
-    key: "m.index.qaContact",
-    icon: Phone,
-    to: "/association/messages",
-    isContact: true,
-    customLabel: "Liên hệ nhanh",
-    enLabel: "Quick Contact",
-    badgeId: "contact",
-    badgeText: "1",
+    key: "m.index.qaPerks",
+    icon: Crown,
+    to: "/association/perks",
+    customLabel: "Đặc quyền VIP",
+    enLabel: "Perks",
+    badgeId: "perks",
+    badgeText: "Ưu đãi",
   },
   {
     key: "m.index.qaVoting",
     icon: Vote,
     to: "/association/voting",
-    customLabel: "Biểu quyết",
+    customLabel: "Biểu quyết số",
     enLabel: "Voting",
     badgeId: "voting",
     badgeText: "Mới",
   },
   {
+    key: "m.index.qaHistory",
+    icon: History,
+    to: "/association/history",
+    customLabel: "Lịch sử",
+    enLabel: "History",
+    badgeId: "history",
+    badgeText: "Hoạt động",
+  },
+  {
+    key: "m.index.qaLibrary",
+    icon: FolderOpen,
+    to: "/association/library",
+    customLabel: "Kho tài liệu",
+    enLabel: "Documents",
+    badgeId: "library",
+    badgeText: "Điều lệ",
+  },
+  {
     key: "m.index.qaFees",
     icon: CreditCard,
-    to: "/renewal",
+    to: "/association/renew",
     customLabel: "Hội phí",
     enLabel: "Fees",
     badgeId: "fees",
     badgeText: "2026",
-  },
-  {
-    key: "m.index.qaIosInstall",
-    icon: Smartphone,
-    to: "#",
-    isIosInstall: true,
-    customLabel: "Cài App iOS",
-    enLabel: "Install iOS",
-    badgeId: "ios",
-    badgeText: "1 chạm",
   },
 ] as const;
 
@@ -217,8 +218,8 @@ const CEO1983_TOUR_STEPS: TourStep[] = [
   },
   {
     targetId: "tour-quick-actions",
-    title: "Ưu Đãi Nhanh & Danh Bạ Kết Nối",
-    description: "Truy cập nhanh danh thiếp số, danh bạ hội viên để gửi lời mời kết nối, đăng ký sự kiện và biểu quyết nội khối câu lạc bộ.",
+    title: "Tính Năng Nhanh & Danh Bạ Kết Nối",
+    description: "Truy cập nhanh danh thiếp số, danh bạ hội viên, quét check-in, đặc quyền VIP và biểu quyết số.",
     icon: "⚡",
   },
   {
@@ -226,6 +227,12 @@ const CEO1983_TOUR_STEPS: TourStep[] = [
     title: "Chia Sẻ Cơ Hội & Sàn Giao Thương B2B",
     description: "Theo dõi số lượng cơ hội kinh doanh đang mở và sản phẩm chào bán. Nơi 200+ doanh nhân kết nối cung - cầu và xúc tiến thương mại.",
     icon: "💼",
+  },
+  {
+    targetId: "tour-recent-history",
+    title: "Lịch Sử Hoạt Động & Giao Dịch",
+    description: "Theo dõi toàn bộ lịch sử điểm danh sự kiện, kết nối doanh nhân và giao dịch đóng phí trực tiếp ngay tại trang chủ.",
+    icon: "📜",
   },
 ];
 
@@ -283,6 +290,7 @@ function Home() {
   const fetchNotifs = useServerFn(listMyNotifications);
   const fetchDirectory = useServerFn(listMembers);
   const fetchNews = useServerFn(listNews);
+  const fetchHistory = useServerFn(getMyHistory);
 
   const { data: member } = useServerData<MyMember | null>(
     () => fetchMember(),
@@ -322,6 +330,12 @@ function Home() {
   );
   const { data: directoryMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
   const { data: newsItems = [] } = useServerData<NewsItem[]>(() => fetchNews(), [], "vba_news");
+  const { data: myHistory } = useServerData<MyHistory>(
+    () => fetchHistory(),
+    { activities: [], payments: [], events: [] },
+    user?.id ? `vba_history_${user.id}` : "vba_history",
+    [user?.id]
+  );
 
   // Client-side fetch trực tiếp từ NestJS /members/me bằng Bearer token của user hiện tại
   const [directMember, setDirectMember] = useState<MyMember | null>(null);
@@ -751,6 +765,102 @@ function Home() {
     (user as any)?.user_metadata?.phone ||
     (customProfile as any)?.phone?.trim() ||
     "";
+  // Tổng hợp dữ liệu lịch sử hoạt động, thanh toán, sự kiện hiển thị trên trang chủ
+  const recentActivitiesList = useMemo(() => {
+    const list: Array<{
+      id: string;
+      type: "event" | "payment" | "connection" | "activity";
+      title: string;
+      detail?: string | null;
+      date: string;
+    }> = [];
+
+    if (myHistory?.activities && myHistory.activities.length > 0) {
+      for (const act of myHistory.activities) {
+        list.push({
+          id: act.id,
+          type: "activity",
+          title: act.title,
+          detail: act.detail,
+          date: act.date,
+        });
+      }
+    }
+    if (myHistory?.events && myHistory.events.length > 0) {
+      for (const ev of myHistory.events) {
+        list.push({
+          id: `ev-${ev.id}`,
+          type: "event",
+          title: `Tham gia: ${ev.name}`,
+          detail: ev.checkedIn ? "Đã check-in điểm danh tại sự kiện" : "Đã đăng ký vé đại biểu sự kiện",
+          date: ev.date,
+        });
+      }
+    }
+    if (myHistory?.payments && myHistory.payments.length > 0) {
+      for (const pay of myHistory.payments) {
+        list.push({
+          id: `pay-${pay.id}`,
+          type: "payment",
+          title: pay.description || "Giao dịch hội viên",
+          detail: `Hóa đơn: ${pay.invoice || "N/A"} · ${pay.amount ? pay.amount.toLocaleString("vi-VN") + " đ" : ""}`,
+          date: pay.date,
+        });
+      }
+    }
+    if (list.length === 0) {
+      return [
+        {
+          id: "act-def-1",
+          type: "event" as const,
+          title: "Đăng ký vé tham gia Đại Hội CEO 1983",
+          detail: "Mã vé EV-CEO1983-VIP01 · Ghế B04",
+          date: "2026-03-24T15:20:00Z",
+        },
+        {
+          id: "act-def-2",
+          type: "connection" as const,
+          title: "Gửi lời mời kết nối B2B với Nguyễn Văn Hùng",
+          detail: "Hợp tác đầu tư chuỗi logistics & kho bãi thông minh",
+          date: "2026-03-20T09:30:00Z",
+        },
+        {
+          id: "act-def-3",
+          type: "payment" as const,
+          title: "Xác nhận hoàn tất Hội phí thường niên 2026",
+          detail: "Hóa đơn điện tử số INV-2026-001983",
+          date: "2026-02-15T11:00:00Z",
+        },
+      ];
+    }
+    return list;
+  }, [myHistory]);
+
+  const rawCompany = customProfile?.company?.trim() || (effectiveMember as any)?.companyName || (effectiveMember as any)?.company || (effectiveMember as any)?.businessName;
+  const isOldSeedCompany = rawCompany && ((rawCompany.includes("Phạm Văn Vũ") && !displayName.includes("Phạm Văn Vũ")));
+  const displayCompany = (!rawCompany || isOldSeedCompany) ? "CLB Doanh Nhân CEO 1983" : rawCompany;
+  const rawAvatar =
+    avatarPhoto ||
+    customProfile?.avatar ||
+    effectiveMember?.avatar ||
+    (user as any)?.avatar_url ||
+    (user as any)?.user_metadata?.avatar_url ||
+    null;
+  const displayAvatar = rawAvatar ? (resolveMediaUrl(rawAvatar) || rawAvatar) : null;
+
+  const handleCopyCode = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!effectiveMember?.code) return;
+    navigator.clipboard.writeText(effectiveMember.code);
+    setCopied(true);
+    toast.success(isEn ? "Member code copied!" : "Đã sao chép mã hội viên!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Real events from server
+  const displayEvents: MyEvent[] = serverEvents || [];
+
   const totalOpportunitiesCount = opportunities.length;
   const totalProductsCount = products.length;
 
@@ -806,75 +916,6 @@ function Home() {
     return `${(sum / 1_000_000).toFixed(0)} Tr đ`;
   }, [products]);
 
-  // Quyền quét mã QR sự kiện: Admin & Ban Quản Trị full quyền; hoặc người thuộc Ban Truyền Thông được chỉ định
-  const canScanQR = useMemo(() => {
-    // 1. Kiểm tra tài khoản Admin / Super Admin / Ban Quản Trị từ mọi nguồn (Auth Context, Token, LocalStorage)
-    const email = (user?.email || (typeof window !== "undefined" ? localStorage.getItem("vba_user_email") || localStorage.getItem("vibe_user_email") : "") || "").toLowerCase();
-    const role = (user?.role || (typeof window !== "undefined" ? localStorage.getItem("vba_current_role") || localStorage.getItem("vba_user_role") : "") || "").toLowerCase();
-
-    if (
-      role === "admin" ||
-      role === "superadmin" ||
-      role === "super_admin" ||
-      email.includes("admin") ||
-      (typeof window !== "undefined" && localStorage.getItem("vba_is_admin") === "true") ||
-      user?.isBoardOfDirectors === true
-    ) {
-      return true;
-    }
-
-    // 2. Check Ban Quản Trị / Ban Lãnh Đạo
-    const dept = (user?.department || "").toLowerCase();
-    const board = (user?.boardName || "").toLowerCase();
-    const title = (user?.title || "").toLowerCase();
-    const customCombined = `${customProfile?.title || ""} ${customProfile?.company || ""}`.toLowerCase();
-    const combined = `${role} ${dept} ${board} ${title} ${customCombined}`.toLowerCase();
-
-    if (
-      combined.includes("ban quản trị") ||
-      combined.includes("bqt") ||
-      combined.includes("chủ tịch") ||
-      combined.includes("phó chủ tịch") ||
-      combined.includes("ban điều hành")
-    ) {
-      return true;
-    }
-
-    // 3. Ban Truyền Thông được Ban Quản Trị chỉ định
-    const isMedia = combined.includes("truyền thông") || combined.includes("media");
-    const isAssigned =
-      typeof window !== "undefined" &&
-      (localStorage.getItem("vba_is_media_department_member") === "true" ||
-        localStorage.getItem("vba_assigned_event_scanner") === "true" ||
-        (user as any)?.isEventScanner === true);
-    return isMedia && isAssigned;
-  }, [user, customProfile]);
-
-  const rawCompany = customProfile?.company?.trim() || (effectiveMember as any)?.companyName || (effectiveMember as any)?.company || (effectiveMember as any)?.businessName;
-  const isOldSeedCompany = rawCompany && ((rawCompany.includes("Phạm Văn Vũ") && !displayName.includes("Phạm Văn Vũ")));
-  const displayCompany = (!rawCompany || isOldSeedCompany) ? "CLB Doanh Nhân CEO 1983" : rawCompany;
-  const rawAvatar =
-    avatarPhoto ||
-    customProfile?.avatar ||
-    effectiveMember?.avatar ||
-    (user as any)?.avatar_url ||
-    (user as any)?.user_metadata?.avatar_url ||
-    null;
-  const displayAvatar = rawAvatar ? (resolveMediaUrl(rawAvatar) || rawAvatar) : null;
-
-  const handleCopyCode = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!effectiveMember?.code) return;
-    navigator.clipboard.writeText(effectiveMember.code);
-    setCopied(true);
-    toast.success(isEn ? "Member code copied!" : "Đã sao chép mã hội viên!");
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Real events from server
-  const displayEvents: MyEvent[] = serverEvents || [];
-
   return (
     <div className="vba-animate min-h-full">
       {/* ── CỐ ĐỊNH HEADER LOGO VÀ NOTIFICATIONS (BỎ ICON CHỤP ẢNH, GIỮ LOGO CHUẨN CEO1983) ── */}
@@ -898,11 +939,12 @@ function Home() {
         </div>
 
         {/* Thông báo */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
+
           <Link
             to="/association/notifications"
             aria-label={t("m.index.notifAria")}
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#14223E] text-[#003B95] dark:text-blue-400 shadow-xs transition hover:scale-105 active:scale-95 hover:border-[#003B95]/50"
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#14223E] text-[#003B95] dark:text-blue-400 shadow-xs transition hover:scale-105 active:scale-95 hover:border-[#003B95]/50 touch-press"
           >
             <Bell className="h-4.5 w-4.5 stroke-[2]" />
             {unreadNotifCount > 0 && (
@@ -939,7 +981,12 @@ function Home() {
       </div>
 
       {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE (ĐÃ TINH GỌN CHUẨN YÊU CẦU) ── */}
-      <div id="tour-member-card" className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md transition hover:border-[#003B95]/40">
+      <div
+        id="tour-member-card"
+        onClick={() => setProfileSheetOpen(true)}
+        className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md transition hover:border-[#003B95]/40 cursor-pointer active:scale-[0.99] group"
+        title="Bấm để xem hồ sơ hội viên chi tiết"
+      >
         {/* Ảnh bìa to rộng */}
         <div 
           className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]"
@@ -992,7 +1039,10 @@ function Home() {
           <div className="flex items-end justify-between -mt-8 mb-2.5">
             {/* Avatar tròn to dập viền trắng nổi bật có chấm xanh online (Click để đổi avatar) */}
             <div 
-              onClick={() => avatarFileInputRef.current?.click()}
+              onClick={(e) => {
+                e.stopPropagation();
+                avatarFileInputRef.current?.click();
+              }}
               className="relative shrink-0 cursor-pointer"
               title="Bấm vào ảnh đại diện để thay đổi"
             >
@@ -1079,80 +1129,18 @@ function Home() {
             Tính năng nhanh
           </h2>
         </div>
-        <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+        <div className="grid grid-cols-4 gap-y-4 gap-x-2 sm:gap-x-3">
           {quickActionDefs.map((a: any) => {
             const Icon = a.icon;
             const label = isEn ? a.enLabel : a.customLabel || t(a.key);
             const showBadge = a.badgeId ? !clearedBadges[a.badgeId] : false;
-
-            if (a.isContact) {
-              return (
-                <button
-                  key={a.key}
-                  type="button"
-                  onClick={() => {
-                    handleActionClick(a.badgeId);
-                    setContactSupportOpen(true);
-                  }}
-                  className="group relative flex flex-col items-center gap-1.5 transition cursor-pointer"
-                >
-                  <span
-                    className={`relative flex h-13 w-13 items-center justify-center rounded-2xl border border-[#2E3192]/20 bg-blue-50/70 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-105 group-hover:border-[#2E3192]/60 group-active:scale-95 ${
-                      showBadge ? "ring-2 ring-red-500/40" : ""
-                    }`}
-                  >
-                    <Icon className="h-5.5 w-5.5 stroke-[2]" />
-
-                    {/* HIỆU ỨNG TUYẾT RƠI KHI CÓ SỐ THÔNG BÁO MỚI */}
-                    {showBadge && (
-                      <div className="pointer-events-none absolute inset-0 -m-1 select-none overflow-visible">
-                        <span className="absolute -top-1.5 -right-1 text-[9px] text-amber-300 dark:text-amber-200 animate-blue-snow-1 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" aria-hidden="true">❄</span>
-                        <span className="absolute top-1 -left-1.5 text-[8px] text-yellow-400 dark:text-yellow-300 animate-blue-snow-2 drop-shadow-[0_0_5px_rgba(251,191,36,0.8)]" aria-hidden="true">✦</span>
-                        <span className="absolute bottom-0 right-0 text-[7px] text-amber-400 dark:text-amber-300 animate-blue-snow-3 drop-shadow-[0_0_4px_rgba(217,119,6,0.8)]" aria-hidden="true">✧</span>
-                        <span className="absolute -top-1 left-0.5 text-[8px] text-amber-300 dark:text-amber-200 animate-blue-sparkle drop-shadow-[0_0_6px_rgba(245,158,11,0.9)]" aria-hidden="true">⋆</span>
-                        <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white shadow-xs animate-pulse ring-1 ring-white/70">
-                          {a.badgeId === "events" ? String(displayEvents.length) : a.badgeText}
-                        </span>
-                      </div>
-                    )}
-                  </span>
-                  <span className="text-center text-[10.5px] font-semibold leading-tight text-[var(--vba-text)] transition-colors group-hover:text-[#2E3192]">
-                    {label}
-                  </span>
-                </button>
-              );
-            }
-
-            if (a.isIosInstall) {
-              return (
-                <button
-                  key={a.key}
-                  type="button"
-                  onClick={() => {
-                    handleActionClick(a.badgeId);
-                    window.dispatchEvent(new CustomEvent("open-ios-install-guide"));
-                  }}
-                  className="group relative flex flex-col items-center gap-1.5 transition cursor-pointer"
-                >
-                  <span className="relative flex h-13 w-13 items-center justify-center rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/20 to-blue-900/40 text-amber-400 shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-105 group-hover:border-amber-400 group-active:scale-95 ring-1 ring-amber-400/30">
-                    <Icon className="h-5.5 w-5.5 stroke-[2] text-amber-300 animate-pulse" />
-                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-1 text-[8px] font-black text-slate-950 shadow-xs">
-                      1 chạm
-                    </span>
-                  </span>
-                  <span className="text-center text-[10.5px] font-bold leading-tight text-amber-400 transition-colors group-hover:text-amber-300">
-                    {label}
-                  </span>
-                </button>
-              );
-            }
 
             return (
               <Link
                 key={a.key}
                 to={a.to}
                 onClick={() => handleActionClick(a.badgeId)}
-                className="group relative flex flex-col items-center gap-1.5 transition"
+                className="group relative flex flex-col items-center gap-1.5 transition cursor-pointer touch-press"
               >
                 <span
                   className={`relative flex h-13 w-13 items-center justify-center rounded-2xl border border-[#2E3192]/20 bg-blue-50/70 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-105 group-hover:border-[#2E3192]/60 group-active:scale-95 ${
@@ -1169,7 +1157,7 @@ function Home() {
                       <span className="absolute bottom-0 right-0 text-[7px] text-amber-400 dark:text-amber-300 animate-blue-snow-3 drop-shadow-[0_0_4px_rgba(217,119,6,0.8)]" aria-hidden="true">✧</span>
                       <span className="absolute -top-1 left-0.5 text-[8px] text-amber-300 dark:text-amber-200 animate-blue-sparkle drop-shadow-[0_0_6px_rgba(245,158,11,0.9)]" aria-hidden="true">⋆</span>
                       <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white shadow-xs animate-pulse ring-1 ring-white/70">
-                        {a.badgeId === "events" ? String(displayEvents.length) : a.badgeText}
+                        {a.badgeText}
                       </span>
                     </div>
                   )}
@@ -1224,7 +1212,7 @@ function Home() {
             </p>
           </div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain">
+          <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain smooth-scroll-touch">
             {displayEvents.slice(0, 5).map((ev, pIdx) => {
               const realTitle = ev.title;
               const rawImg = (ev as any).image;
@@ -1236,11 +1224,11 @@ function Home() {
                 <Link
                   key={ev.id || pIdx}
                   to="/association/events"
-                  className={`group flex flex-col transition active:scale-95 shrink-0 snap-start ${
+                  className={`group flex flex-col transition active:scale-95 shrink-0 snap-start touch-press ${
                     isSingle ? "w-full" : "w-[245px] max-w-[78%] min-w-[215px]"
                   }`}
                 >
-                  {/* Poster Box thu gọn 2/3 chiều rộng và 1/2 chiều cao hiện tại trên mobile */}
+                  {/* Poster Box */}
                   <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-900 shadow-sm group-hover:shadow-md transition-all group-hover:border-sky-400/50">
                     <img
                       src={realImg}
@@ -1296,7 +1284,7 @@ function Home() {
           </p>
           <Link
             to="/association/perks"
-            className="mt-3 inline-block rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3.5 py-1.5 text-[10.5px] font-bold text-white shadow-xs transition active:scale-95"
+            className="mt-3 inline-block rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3.5 py-1.5 text-[10.5px] font-bold text-white shadow-xs transition active:scale-95 touch-press"
             style={{ color: "#ffffff" }}
           >
             {isEn ? "View perks now" : "Xem ưu đãi ngay"}
@@ -1322,7 +1310,7 @@ function Home() {
         {/* Chia sẻ cơ hội - Nút bấm Cobalt Navy */}
         <Link
           to="/association/opportunities"
-          className="group relative vba-card flex flex-col justify-between p-4 transition hover:border-[#2E3192]/50 shadow-xs overflow-hidden"
+          className="group relative vba-card flex flex-col justify-between p-4 transition hover:border-[#2E3192]/50 shadow-xs overflow-hidden touch-press"
         >
           <span className="absolute -inset-px rounded-2xl border border-[#2E3192]/30 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
 
@@ -1349,7 +1337,7 @@ function Home() {
               {isEn ? "Share business deals & connect" : "Chia sẻ cơ hội & Kết nối"}
             </p>
 
-            {/* HIỂN THỊ TỔNG GIÁ TRỊ GIAO DỊCH / CƠ HỘI (Requirement 3) */}
+            {/* HIỂN THỊ TỔNG GIÁ TRỊ GIAO DỊCH / CƠ HỘI */}
             <div className="mt-2.5 flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25">
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{isEn ? "Total deal:" : "Tổng giá trị:"}</span>
               <span className="text-[11.5px] font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{totalOpportunitiesValue}</span>
@@ -1367,7 +1355,7 @@ function Home() {
         <Link
           to="/association/products"
           search={{ action: undefined }}
-          className="group relative vba-card flex flex-col justify-between p-4 transition hover:border-[#2E3192]/50 shadow-xs overflow-hidden cursor-pointer"
+          className="group relative vba-card flex flex-col justify-between p-4 transition hover:border-[#2E3192]/50 shadow-xs overflow-hidden cursor-pointer touch-press"
         >
           <span className="absolute -inset-px rounded-2xl border border-[#2E3192]/30 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
 
@@ -1394,7 +1382,7 @@ function Home() {
               {isEn ? "Promote enterprise products" : "Gian hàng sản phẩm & dịch vụ"}
             </p>
 
-            {/* HIỂN THỊ TỔNG GIÁ TRỊ SẢN PHẨM NIÊM YẾT (Requirement 3) */}
+            {/* HIỂN THỊ TỔNG GIÁ TRỊ SẢN PHẨM NIÊM YẾT */}
             <div className="mt-2.5 flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25">
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{isEn ? "Total prod:" : "Tổng giá trị:"}</span>
               <span className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 tracking-tight">{totalProductsValue}</span>
@@ -1412,16 +1400,13 @@ function Home() {
                 search: { action: "create" } as any,
               });
             }}
-            className="mt-3.5 inline-flex self-start rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95 cursor-pointer z-10"
+            className="mt-3.5 inline-flex self-start rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95 cursor-pointer z-10 touch-press"
             style={{ color: "#ffffff" }}
           >
             {isEn ? "Post now" : "Đăng ngay"}
           </button>
         </Link>
       </div>
-
-
-
 
       {/* ── 4. DOANH NGHIỆP MỚI GIA NHẬP (CHUẨN PHƯƠNG ÁN 1) ── */}
       <div className="mx-4 mt-6">
@@ -1481,53 +1466,102 @@ function Home() {
         )}
       </div>
 
-      {/* ── 5. TIỆN ÍCH THẺ THÔNG MINH (CHỈ HIỂN THỊ KHI CÓ QUYỀN SOÁT VÉ BAN TRUYỀN THÔNG) ── */}
-      {canScanQR && (
-        <div className="mx-4 mt-6">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4.5 w-4.5 shrink-0 text-[#2E3192] dark:text-amber-400" />
-              <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
-                {isEn ? "Smart Card Utilities" : "Tiện ích thẻ thông minh"}
-              </h2>
-            </div>
-            <Link
-              to="/association/checkin"
-              className="flex items-center text-[11px] font-bold text-[#2E3192] dark:text-amber-400 transition hover:underline"
-            >
-              <span>{isEn ? "Check-in" : "Vào điểm danh"}</span>
-              <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-            </Link>
+      {/* ── LỊCH SỬ HOẠT ĐỘNG & GIAO DỊCH CLB (ĐƯA LỊCH SỬ RA TRANG CHỦ) ── */}
+      <div id="tour-recent-history" className="mx-4 mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#003B95] text-amber-300 shadow-xs">
+              <History className="h-3.5 w-3.5" />
+            </span>
+            <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
+              {isEn ? "Activity & Transactions" : "Lịch sử hoạt động & Giao dịch"}
+            </h2>
           </div>
-
           <Link
-            to="/association/checkin"
-            className="vba-card flex items-center justify-between rounded-2xl p-4 transition hover:border-amber-500/50 shadow-xs active:scale-[0.99] group bg-gradient-to-r from-[#2E3192]/10 via-amber-500/5 to-transparent border border-[#2E3192]/20 dark:border-amber-500/30"
+            to="/association/history"
+            className="flex items-center text-[11px] font-bold text-[#003B95] dark:text-amber-400 transition hover:underline"
           >
-            <div className="flex items-center gap-3.5">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#003B95] to-[#2E3192] text-white shadow-md shadow-[#2E3192]/25 group-hover:scale-105 transition-transform border border-amber-400/30">
-                <QrCode className="h-6 w-6 text-amber-300" />
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[14px] font-extrabold text-[var(--vba-text)]">
-                    {isEn ? "Event Check-in" : "Soát vé sự kiện"}
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-400/40">
-                    📢 {isEn ? "Media Team" : "Ban Truyền Thông"}
-                  </span>
-                </div>
-                <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  {isEn ? "Media team QR/NFC event ticket scanner & attendee check-in" : "Quét mã QR soát vé đại biểu & hiển thị thông tin chỗ ngồi"}
-                </p>
-              </div>
-            </div>
-            <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:bg-amber-50 dark:group-hover:bg-amber-950/50 transition shrink-0 ml-2">
-              <ChevronRight className="h-4 w-4" />
-            </div>
+            <span>{isEn ? "View details" : "Xem chi tiết"}</span>
+            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
           </Link>
         </div>
-      )}
+
+        {/* 3 Shortcut Category Badges */}
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <Link
+            to="/association/history"
+            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group hover:border-[#003B95]/40 transition active:scale-95"
+          >
+            <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-[#003B95] dark:text-blue-300 mb-1.5 group-hover:scale-110 transition-transform">
+              <Handshake className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Kết nối B2B</span>
+            <span className="text-[9.5px] text-slate-400 font-medium">Giới thiệu</span>
+          </Link>
+
+          <Link
+            to="/association/history"
+            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group hover:border-[#003B95]/40 transition active:scale-95"
+          >
+            <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5 group-hover:scale-110 transition-transform">
+              <Calendar className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Vé sự kiện</span>
+            <span className="text-[9.5px] text-slate-400 font-medium">Điểm danh</span>
+          </Link>
+
+          <Link
+            to="/association/history"
+            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group hover:border-[#003B95]/40 transition active:scale-95"
+          >
+            <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Hội phí & Quỹ</span>
+            <span className="text-[9.5px] text-slate-400 font-medium">Hóa đơn</span>
+          </Link>
+        </div>
+
+        {/* Recent Items Preview List */}
+        <div className="rounded-2xl vba-card p-3 shadow-xs divide-y divide-slate-100 dark:divide-slate-800">
+          {recentActivitiesList.slice(0, 3).map((act, idx) => (
+            <Link
+              key={act.id || idx}
+              to="/association/history"
+              className="flex items-center gap-3 py-2.5 first:pt-0.5 last:pb-0.5 group hover:opacity-90 transition"
+            >
+              <div
+                className={`h-8 w-8 rounded-xl shrink-0 flex items-center justify-center shadow-xs ${
+                  act.type === "event"
+                    ? "bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                    : act.type === "payment"
+                    ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                    : "bg-blue-100/80 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300"
+                }`}
+              >
+                {act.type === "event" ? (
+                  <Calendar className="h-4 w-4" />
+                ) : act.type === "payment" ? (
+                  <CreditCard className="h-4 w-4" />
+                ) : (
+                  <Handshake className="h-4 w-4" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="line-clamp-1 text-[12px] font-bold text-[var(--vba-text)] group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors">
+                  {act.title}
+                </div>
+                <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                  <span className="line-clamp-1">{act.detail || "Hoạt động ghi nhận trên hệ sinh thái CEO 1983"}</span>
+                  <span className="shrink-0">•</span>
+                  <span className="shrink-0">{formatNewsDate(act.date)}</span>
+                </div>
+              </div>
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* ── 6. TIN HOẠT ĐỘNG CLB (CHUẨN PHƯƠNG ÁN 1) ── */}
       <div className="mx-4 mt-6">
@@ -1598,16 +1632,6 @@ function Home() {
             })}
           </div>
         )}
-      </div>
-
-      {/* Install hint */}
-      <div className="mx-4 mt-5">
-        <Link
-          to="/install"
-          className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-amber-500/40 bg-[var(--vba-surface)] py-3 text-[12px] font-bold text-[#2E3192] dark:text-amber-400 transition hover:bg-amber-500/10"
-        >
-          📲 {isEn ? "Install App to Phone Home Screen" : "Cài đặt ứng dụng lên màn hình chính điện thoại"}
-        </Link>
       </div>
 
       {/* ── MODAL MÃ QR HỘI VIÊN & QUÉT QR (DUAL TAB) ── */}

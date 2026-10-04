@@ -147,9 +147,9 @@ export function SendEmailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-glow)]">
+      <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-glow)] flex flex-col max-h-[90vh] max-h-[90dvh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Mail className="h-5 w-5" />
@@ -170,7 +170,7 @@ export function SendEmailModal({
         </div>
 
         {/* Content */}
-        <div className="max-h-[75vh] space-y-4 overflow-y-auto p-6 text-sm">
+        <div className="flex-1 space-y-4 overflow-y-auto p-6 text-sm overscroll-contain">
           {/* Email input */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-foreground">

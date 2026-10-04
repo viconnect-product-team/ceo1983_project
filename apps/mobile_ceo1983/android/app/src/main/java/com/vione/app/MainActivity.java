@@ -391,6 +391,7 @@ public class MainActivity extends BridgeActivity {
             WebSettings settings = webView.getSettings();
             settings.setJavaScriptEnabled(true);
             settings.setMediaPlaybackRequiresUserGesture(false);
+            settings.setJavaScriptCanOpenWindowsAutomatically(true);
             settings.setAllowFileAccess(true);
             settings.setAllowContentAccess(true);
             settings.setDomStorageEnabled(true);
@@ -419,7 +420,23 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public void onPermissionRequest(final PermissionRequest request) {
                     MainActivity.this.runOnUiThread(() -> {
-                        request.grant(request.getResources());
+                        try {
+                            List<String> needed = new ArrayList<>();
+                            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                                needed.add(Manifest.permission.CAMERA);
+                            }
+                            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                                needed.add(Manifest.permission.RECORD_AUDIO);
+                            }
+                            if (!needed.isEmpty()) {
+                                ActivityCompat.requestPermissions(MainActivity.this, needed.toArray(new String[0]), PERMISSION_REQUEST_CODE);
+                            }
+                            request.grant(request.getResources());
+                        } catch (Exception e) {
+                            try {
+                                request.grant(request.getResources());
+                            } catch (Exception ignored) {}
+                        }
                     });
                 }
 

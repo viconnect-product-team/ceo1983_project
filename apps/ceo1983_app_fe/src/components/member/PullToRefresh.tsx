@@ -64,6 +64,7 @@ export function PullToRefresh({
   const startTimeRef = useRef(0);
   const isAtTopRef = useRef(true);
   const gestureDirectionRef = useRef<"vertical" | "horizontal" | null>(null);
+  const isInsideHorizontalContainerRef = useRef(false);
 
   const PULL_THRESHOLD = 60; // px kéo xuống để kích hoạt reload
   const MAX_PULL = 95;
@@ -131,6 +132,15 @@ export function PullToRefresh({
     gestureDirectionRef.current = null;
     setIsSwipingX(false);
     setSwipeDistanceX(0);
+
+    // Kiểm tra xem vị trí chạm có thuộc vùng cuộn ngang (carousels, danh sách pills, tabs...) không
+    const target = e.target as HTMLElement | null;
+    const isHoriz = Boolean(
+      target?.closest(
+        '[data-horizontal-scroll], [class*="overflow-x"], .no-scrollbar, [role="tablist"], [data-radix-scroll-area-viewport], input, textarea, select, button'
+      )
+    );
+    isInsideHorizontalContainerRef.current = isHoriz;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -147,8 +157,8 @@ export function PullToRefresh({
       if (Math.abs(diffY) > 15) {
         // Đang cuộn dọc: khóa ngay cử chỉ chuyển tab
         gestureDirectionRef.current = "vertical";
-      } else if (Math.abs(diffX) > 25) {
-        // Chỉ nhận là vuốt ngang khi khoảng cách ngang áp đảo rõ rệt trục dọc
+      } else if (Math.abs(diffX) > 25 && !isInsideHorizontalContainerRef.current) {
+        // Chỉ nhận là vuốt ngang khi không nằm trong container cuộn ngang và khoảng cách ngang áp đảo trục dọc
         if (Math.abs(diffX) > Math.abs(diffY) * 2.5) {
           gestureDirectionRef.current = "horizontal";
         } else {
@@ -169,7 +179,12 @@ export function PullToRefresh({
     }
 
     // ── GESTURE NGANG: TRACKING VUỐT TAB DYNAMIC (chỉ khi vuốt ngang chủ động) ──
-    if (enableSwipeNav && gestureDirectionRef.current === "horizontal" && Math.abs(diffY) < 30) {
+    if (
+      enableSwipeNav &&
+      gestureDirectionRef.current === "horizontal" &&
+      !isInsideHorizontalContainerRef.current &&
+      Math.abs(diffY) < 30
+    ) {
       setIsSwipingX(true);
       setSwipeDistanceX(diffX);
     }
@@ -186,10 +201,11 @@ export function PullToRefresh({
     setSwipeDistanceX(0);
 
     // ── 1. XỬ LÝ CỬ CHỈ NGANG DYNAMIC: CHUYỂN TAB / BACK ──
-    // Giảm độ nhạy: Chỉ xử lý khi người dùng chủ động vuốt ngang dứt khoát và không bị lệch dọc nhiều
+    // Chỉ xử lý khi người dùng chủ động vuốt ngang trên khoảng trống, không nằm trong carousel/tab ngang
     if (
       enableSwipeNav &&
       gestureDirectionRef.current === "horizontal" &&
+      !isInsideHorizontalContainerRef.current &&
       Math.abs(diffY) < 45
     ) {
       // Ngưỡng vuốt dứt khoát (khoảng cách tối thiểu 115px hoặc flick nhanh dứt khoát)
@@ -230,17 +246,11 @@ export function PullToRefresh({
       }
     }
 
-    {/* Vuốt xuống từ mép đáy màn hình (Bottom Edge Swipe Down) để kích hoạt chế độ một tay (Reachability) */}
-    if (enableReachability && typeof window !== "undefined") {
-      if (isReachabilityActive && diffY < -20) {
-        setIsReachabilityActive(false);
-        triggerHaptic(15);
-        return;
-      }
-      if (!isReachabilityActive && startYRef.current >= window.innerHeight - 110 && diffY > 30) {
-        toggleReachability();
-        return;
-      }
+    // Dismiss reachability khi đang hạ màn hình và vuốt ngược lên
+    if (enableReachability && isReachabilityActive && diffY < -20) {
+      setIsReachabilityActive(false);
+      triggerHaptic(15);
+      return;
     }
 
     // ── 2. XỬ LÝ KÉO DỌC: PULL TO REFRESH ──
@@ -368,7 +378,7 @@ export function PullToRefresh({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className={`h-full w-full overflow-y-auto overscroll-contain transition-transform ${className}`}
+        className={`h-full w-full overflow-y-auto overscroll-contain smooth-scroll-touch select-none-touch transition-transform ${className}`}
         style={{
           transform: isReachabilityActive
             ? "translateY(35vh)"

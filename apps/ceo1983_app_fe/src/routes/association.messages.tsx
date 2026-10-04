@@ -3701,9 +3701,9 @@ function ChatThread({
         <CeoWebRtcCallModal
           open={callModal.open}
           type={callModal.type}
-          peerUserId={peer.peerCode}
+          peerUserId={peer.userId || matchedMember?.userId || peer.peerCode}
           peerName={displayName}
-          peerAvatar={peer.avatarUrl}
+          peerAvatar={resolvedAvatar}
           peerTitle={(peer as any)?.title || (matchedMember as any)?.title || "Hội viên CEO 1983"}
           onClose={() => setCallModal({ open: false, type: "audio" })}
           onEndCall={(result) => {

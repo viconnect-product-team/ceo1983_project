@@ -2390,4 +2390,89 @@ html:has([contenteditable="true"]:focus) .vba-bottom-bar {
 .border-Primary-400 {
   border-color: #38bdf8;
 }
+
+/* ── Mobile Web App & PWA Performance Optimization ── */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+
+/* Native App-like controls & buttons */
+button, a, [role="button"], input[type="button"], input[type="submit"] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent accidental text selection on cards & navigation */
+.vba-app button,
+.vba-app .vba-bottom-bar,
+.vba-app [role="tablist"],
+.vba-app .select-none-touch {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Smooth momentum scrolling for iOS containers */
+.smooth-scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Tactile press micro-interactions */
+.touch-press {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+}
+.touch-press:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUY CHUẨN POPUP TOÀN DỰ ÁN: CỐ ĐỊNH HEADER & FOOTER, DÀI THÌ SCROLL Ở GIỮA
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modal-standard,
+.popup-standard,
+[data-modal-container],
+[role="dialog"][class*="fixed"] {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
+  overflow: hidden !important;
+}
+
+.modal-standard-header,
+.popup-header,
+.modal-header,
+[data-modal-header] {
+  flex-shrink: 0 !important;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.modal-standard-body,
+.popup-body,
+.modal-body,
+[data-modal-body] {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.modal-standard-footer,
+.popup-footer,
+.modal-footer,
+[data-modal-footer] {
+  flex-shrink: 0 !important;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+
 

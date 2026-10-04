@@ -313,7 +313,7 @@ function MembersPage() {
     },
   });
   const { isAdmin, canApproveMembers, isBTV, isBQT, isPlatformAdmin, loading: roleLoading } = useRole();
-  const canApprove = canApproveMembers || isBTV || isBQT || isPlatformAdmin;
+  const canApprove = isAdmin || canApproveMembers || isBTV || isBQT || isPlatformAdmin;
   const { data: acctStatuses = {} } = useQuery({
     queryKey: ["member-account-statuses"],
     queryFn: async () => {

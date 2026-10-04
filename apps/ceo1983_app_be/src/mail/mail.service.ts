@@ -90,6 +90,11 @@ export class MailService {
         port,
         secure: port === 465,
         auth: { user, pass },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 10000,
       });
       this.logger.log(`SMTP Mailer initialized with user: ${user}`);
     } else {

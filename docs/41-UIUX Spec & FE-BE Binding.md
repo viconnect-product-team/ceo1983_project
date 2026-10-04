@@ -373,6 +373,10 @@ Lập trình viên Frontend (Dev-FE) và AI Sub-agent có quyền chủ động 
 1. **Chuyển đổi Modal sang Bottom Sheet trên Mobile**: Nếu người dùng truy cập từ thiết bị có màn hình `<= 768px`, các Modal dạng Popup ở giữa màn hình phải tự động chuyển thành Bottom Sheet trượt từ cạnh đáy lên với tay cầm kéo (Drag handle).
 2. **Skeleton Loading Shimmer**: Mọi bảng dữ liệu và danh sách Card khi đang ở trạng thái `isLoading` bắt buộc hiển thị khung xương chuyển động mờ ảo (Shimmer Skeleton) thay vì icon xoay tròn đơn điệu.
 3. **Phản hồi Rung Haptic**: Tích hợp rung phản hồi nhẹ khi người dùng bấm các nút hành động quan trọng (Chạm NFC, Quét QR thành công, Đổi ngôn ngữ, Duyệt đơn).
+4. **Chuẩn Hóa Cảm Ứng Web App & Smart Link PWA (Mobile Ergonomics)**:
+   - Triệt tiêu hoàn toàn viền xám flash khi bấm (`-webkit-tap-highlight-color: transparent`) và loại bỏ độ trễ chạm 300ms (`touch-action: manipulation`).
+   - Khử xung đột cuộn ngang: Kiểm tra vùng chứa carousel / tab ngang để khóa cử chỉ chuyển tab ngoài ý muốn (`PullToRefresh.tsx`).
+   - Cơ chế Smart Link PWA: Khi gửi link có tham số `?install=ios`, hệ thống tự động hiện hộp thoại xác nhận thêm vào màn hình chính iPhone / Android, kèm hướng dẫn mở Safari nếu phát hiện đang mở trong Webview Zalo / Messenger.
 
 ## 5.3 Cổng Kiểm soát Trùng lặp Giao diện (Reject Gate DRY-UI)
 - **Quy tắc 80% Tương đồng**: Nếu một PR tạo mới một file component mà 80% cấu trúc JSX/CSS tương đồng với component đã có trong `@/components/`, PR đó sẽ bị **REJECT NGAY LẬP TỨC**.

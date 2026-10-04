@@ -355,17 +355,35 @@ sequenceDiagram
   2. **Kích hoạt Tài khoản Hội viên**: Nút "Kích hoạt tài khoản" dành riêng cho hội viên mới được Ban Thư ký phê duyệt.
   3. **Quên mật khẩu & Hỗ trợ**: Liên kết phục hồi mật khẩu và hỗ trợ trực tiếp từ Ban Thư ký.
 
-## 5.2. Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`)
-- **Dashboard Di động**:
-  - Thẻ thông tin hội viên điện tử thu nhỏ: Hiển thị ảnh đại diện, họ tên, mã số thẻ và trạng thái hội viên (*Chính thức / Sắp đến hạn / Đã gia hạn*).
-  - Lưới lối tắt tiện ích 1-chạm: *Điểm danh sự kiện, Danh bạ hội viên, Nộp hội phí, Thẻ danh thiếp số, Hộp thư thư ký*.
-- **Bản tin Hoạt động (`/association/news`)**:
+## 5.2. Trang chủ Hội viên & Bảng tin Hoạt động (`/association`, `/association/news`, `/association/history`)
+- **Dashboard Di động & Thẻ Hội viên Thông minh**:
+  - Thẻ thông tin hội viên điện tử thu nhỏ: Hiển thị ảnh bìa sắc nét, ảnh đại diện, họ tên, chức vụ, tên doanh nghiệp, mã thẻ VIP M1983 và số điện thoại liên hệ trực tiếp.
+  - **Tương tác 1-chạm mở Hồ sơ Cá nhân (Bottom Sheet)**: Chạm trực tiếp vào Thẻ hội viên để mở popup Bottom Sheet chi tiết (`PersonalProfileBottomSheet`), hỗ trợ cử chỉ vuốt xuống (swipe-down to dismiss) cực kỳ tự nhiên, mượt mà chuẩn iOS & Android.
+  - Tự động nhận diện thiết bị iOS: Tự động hiển thị popup gợi ý *"Bạn muốn thêm ứng dụng CEO 1983 vào màn hình chính không?"* với logo biểu tượng chuẩn và nút `[Có, thêm luôn]` để cài đặt PWA WebClip trực tiếp.
+- **Chuẩn Hóa Đúng 10 Tính Năng Nhanh (Lưới 5x2 theo Mức Độ Ưu Tiên Doanh Nghiệp)**:
+  1. **Danh thiếp số (`/association/card`)**: Công cụ kết nối, nhận diện doanh nhân 1-chạm (Badge "VIP").
+  2. **Danh bạ CEO (`/association/members`)**: Tra cứu thông tin, chức vụ lãnh đạo trong hiệp hội (Badge "100+").
+  3. **Chợ B2B (`/association/products`)**: Sàn chào hàng B2B, tối giản 2 tab "Chợ Giao Thương B2B" & "Gian Hàng Của Tôi", bỏ hoàn toàn giỏ hàng quan tâm rườm rà (Badge "Hot").
+  4. **Cơ hội hợp tác (`/association/opportunities`)**: Đấu thầu, kết nối thương mại, dự án chung (Badge "Mới").
+  5. **Sự kiện CLB (`/association/events`)**: Lịch sinh hoạt định kỳ, hội thảo, xúc tiến thương mại (Badge "3").
+  6. **Quét Check-in (`/association/checkin`)**: Điểm danh QR 1-chạm tại các sự kiện CLB.
+  7. **Lịch sử hoạt động (`/association/history`)**: Theo dõi điểm danh sự kiện, đóng phí thường niên, kết nối doanh nhân (Badge "Hoạt động").
+  8. **Đặc quyền VIP (`/association/perks`)**: Chiết khấu đối tác độc quyền dành riêng hội viên (Badge "Ưu đãi").
+  9. **Biểu quyết số (`/association/voting`)**: Bầu cử, biểu quyết nghị quyết đại hội minh bạch (Badge "Mới").
+  10. **Kho tài liệu (`/association/library`)**: Điều lệ hiệp hội, quy chế, biểu mẫu pháp lý chính thức (Badge "Điều lệ").
+- **Tinh Gọn Trang Chủ & Xóa Bỏ Hoàn Toàn Trùng Lặp**:
+  - Không lặp lại các khối banner/card lớn (Sự kiện sắp tới, Ưu đãi, Chia sẻ cơ hội & Marketplace, Tiện ích soát vé, Cài app) trên trang chủ vì các tính năng này đã có vị trí chính thức trong 10 Tính năng nhanh.
+  - **Khối Giao Diện "Lịch sử hoạt động & Giao dịch" Chuyên Biệt**: Được đưa trực tiếp ra trang chủ với 3 phím tắt nhanh 1-chạm (*Kết nối B2B, Vé sự kiện, Hội phí & Quỹ*) cùng danh sách xem trước 3 hoạt động/giao dịch gần đây nhất kèm trạng thái và liên kết *"Xem chi tiết"* chuyển thẳng vào `/association/history`.
+- **Doanh Nghiệp Mới Gia Nhập & Bản tin Hoạt động (`/association/news`)**:
+  - Giới thiệu nhanh các hội viên, doanh nhân mới tham gia CLB trong tuần.
   - Đọc tin tức mới nhất từ Ban Thư ký, thông báo lịch sinh hoạt định kỳ, hình ảnh sự kiện đã diễn ra.
 
 ## 5.3. Danh bạ Hội viên & Kết nối Trực tiếp (`/association/members`)
-- **Tra cứu Doanh nghiệp Đồng môn**:
+- **Tra cứu Doanh nghiệp Đồng môn & Giao diện Chống Tràn Mobile**:
   - Tìm kiếm hội viên theo họ tên, phân ban hoạt động, hoặc ngành nghề kinh doanh (Bất động sản, Công nghệ, Xây dựng, Tài chính,...).
+  - Ô tìm kiếm và nút "Mời vào CLB" được tối ưu hóa responsive hoàn toàn chống vỡ layout hoặc tràn viền ngang trên mọi kích thước màn hình smartphone.
 - **Tương tác 1-Chạm**:
+  - Nút **Mời vào CLB**: Mở modal giới thiệu và mời đối tác doanh nhân gia nhập CLB CEO 1983.
   - Nút **Gọi điện**: Mở trình gọi điện thoại native liên hệ trực tiếp với Chủ tịch hoặc Giám đốc công ty đối tác.
   - Nút **Lưu danh bạ**: Tải file vCard lưu trực tiếp thông tin vào danh bạ điện thoại cá nhân.
 

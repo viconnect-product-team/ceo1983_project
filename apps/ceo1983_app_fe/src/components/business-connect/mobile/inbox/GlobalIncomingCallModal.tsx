@@ -3,7 +3,7 @@ import { Phone, PhoneOff, Video, Sparkles } from "lucide-react";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { sendExternalNotification } from "@/lib/notification-permissions";
-import { DmCallModal } from "./DmCallModal";
+import { CeoWebRtcCallModal } from "@/components/common/CeoWebRtcCallModal";
 
 export interface IncomingCallData {
   callId: string;
@@ -207,14 +207,14 @@ export function GlobalIncomingCallModal() {
 
       {/* Active Call UI for Callee when accepted */}
       {activeCallData && (
-        <DmCallModal
-          isOpen={true}
+        <CeoWebRtcCallModal
+          open={true}
           callId={activeCallData.callId}
-          callType={activeCallData.callType}
-          counterpartUserId={activeCallData.callerUserId}
-          counterpartName={activeCallData.callerName}
-          counterpartAvatar={activeCallData.callerAvatar}
-          counterpartTitle={activeCallData.callerTitle}
+          type={activeCallData.callType}
+          peerUserId={activeCallData.callerUserId}
+          peerName={activeCallData.callerName}
+          peerAvatar={activeCallData.callerAvatar}
+          peerTitle={activeCallData.callerTitle}
           isIncomingAcceptance={true}
           onClose={() => setActiveCallData(null)}
         />

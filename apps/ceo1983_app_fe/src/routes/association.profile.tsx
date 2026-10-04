@@ -50,6 +50,7 @@ import {
   Headphones,
   Bot,
   CreditCard,
+  Smartphone,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -110,11 +111,19 @@ export default function ProfileScreen() {
   const { data: realMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
   const { data: conversations = [] } = useServerData<MyConversation[]>(() => fetchConversations(), [], "vba_conversations");
 
+  const userRole = String((user as any)?.role || "").toLowerCase();
+  const memberRole = String((member as any)?.role || "").toLowerCase();
+
   const isBQTOrAdmin = Boolean(
-    (user as any)?.role === "admin" ||
-    (user as any)?.role === "platform_admin" ||
-    (member as any)?.role === "admin" ||
-    (member as any)?.role === "association_admin" ||
+    userRole === "admin" ||
+    userRole === "quan_tri" ||
+    userRole === "quantri" ||
+    userRole === "superadmin" ||
+    userRole === "platform_admin" ||
+    memberRole === "admin" ||
+    memberRole === "quan_tri" ||
+    memberRole === "quantri" ||
+    memberRole === "association_admin" ||
     isPlatformAdmin ||
     isBQT ||
     (member as any)?.department === "Ban Quản Trị" ||
@@ -682,7 +691,7 @@ export default function ProfileScreen() {
       onClick: () => setContactSupportOpen(true),
       desc: isEn ? "Hotline, Zalo OA & support inquiry" : "Hotline, Tổng đài, Zalo OA & gửi yêu cầu hỗ trợ",
     },
-    ...(isAdmin ? [{
+    ...(hasAdminPrivilege ? [{
       label: isEn ? "Member Permissions Management" : "Phân quyền Hội viên & Ban Quản Trị",
       icon: ShieldCheck,
       to: "/association/permissions" as const,
@@ -1178,12 +1187,24 @@ export default function ProfileScreen() {
       {/* ── SUPPORT & LOGOUT ── */}
       <div className="mx-4 mt-6 space-y-2.5">
 
-        <Link
-          to="/install"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-white dark:bg-[#0F172A] py-3 text-[13px] font-bold text-[#2E3192] dark:text-amber-400 shadow-xs transition hover:bg-amber-50 dark:hover:bg-[#14223E]"
-        >
-          {isEn ? "📲 Install App to Home Screen" : "📲 Cài đặt ứng dụng lên màn hình chính"}
-        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-share-app-modal"))}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 py-3 text-[12px] font-black shadow-sm transition active:scale-95 cursor-pointer touch-press"
+          >
+            <Share2 className="h-4 w-4" />
+            <span>{isEn ? "Share App Link" : "Gửi link cài App"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-install-prompt"))}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white dark:bg-[#0F172A] py-3 text-[12px] font-bold text-[#003B95] dark:text-amber-400 shadow-xs transition hover:bg-amber-50 dark:hover:bg-[#14223E] active:scale-95 cursor-pointer touch-press"
+          >
+            <Smartphone className="h-4 w-4 text-amber-500" />
+            <span>{isEn ? "Install to Screen" : "Cài lên MH chính"}</span>
+          </button>
+        </div>
         <button
           type="button"
           onClick={logout}

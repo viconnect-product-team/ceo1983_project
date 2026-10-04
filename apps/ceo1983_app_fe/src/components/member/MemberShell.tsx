@@ -284,6 +284,103 @@ function MemberTabBar() {
     "/association/profile": { vi: "Cá nhân", en: "Profile" },
   };
 
+  // Track new events count & unread messages count for animated badges
+  const [newEventCount, setNewEventCount] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const rawCount = localStorage.getItem("vba_new_event_count");
+      if (rawCount) return Math.max(0, parseInt(rawCount, 10));
+      const seen = localStorage.getItem("vba_seen_events");
+      if (!seen) return 2;
+    } catch {}
+    return 0;
+  });
+
+  const [unreadMessageCount, setUnreadMessageCount] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const rawCount = localStorage.getItem("vba_total_unread_messages");
+      if (rawCount) return Math.max(0, parseInt(rawCount, 10));
+      const rawConv = localStorage.getItem("vba_conversations");
+      if (rawConv) {
+        const list = JSON.parse(rawConv);
+        if (Array.isArray(list)) {
+          return list.reduce((acc: number, c: any) => acc + (Number(c.unread) || 0), 0);
+        }
+      }
+    } catch {}
+    return 1;
+  });
+
+  // Clear or update badges based on current route
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (pathname === "/association/events" || pathname.startsWith("/association/events/")) {
+      setNewEventCount(0);
+      try {
+        localStorage.setItem("vba_new_event_count", "0");
+        localStorage.setItem("vba_seen_events", Date.now().toString());
+      } catch {}
+    }
+
+    if (pathname === "/association/messages" || pathname.startsWith("/association/messages/")) {
+      setUnreadMessageCount(0);
+      try {
+        localStorage.setItem("vba_total_unread_messages", "0");
+      } catch {}
+    }
+  }, [pathname]);
+
+  // Listen to socket and custom events for new messages and new events
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleMessagesUpdate = () => {
+      try {
+        const rawConv = localStorage.getItem("vba_conversations");
+        if (rawConv) {
+          const list = JSON.parse(rawConv);
+          if (Array.isArray(list)) {
+            const sum = list.reduce((acc: number, c: any) => acc + (Number(c.unread) || 0), 0);
+            setUnreadMessageCount(sum);
+            return;
+          }
+        }
+        const rawCount = localStorage.getItem("vba_total_unread_messages");
+        if (rawCount) {
+          setUnreadMessageCount(Math.max(0, parseInt(rawCount, 10)));
+        }
+      } catch {}
+    };
+
+    const handleNewMessage = () => {
+      if (pathname !== "/association/messages") {
+        setUnreadMessageCount((prev) => prev + 1);
+      }
+    };
+
+    const handleNewEvent = () => {
+      if (pathname !== "/association/events") {
+        setNewEventCount((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener("vba:conversation_updated", handleMessagesUpdate);
+    window.addEventListener("dm:message_received", handleNewMessage);
+    window.addEventListener("vba:new_event", handleNewEvent);
+    window.addEventListener("events-updated", handleNewEvent);
+    window.addEventListener("storage", handleMessagesUpdate);
+
+    return () => {
+      window.removeEventListener("vba:conversation_updated", handleMessagesUpdate);
+      window.removeEventListener("dm:message_received", handleNewMessage);
+      window.removeEventListener("vba:new_event", handleNewEvent);
+      window.removeEventListener("events-updated", handleNewEvent);
+      window.removeEventListener("storage", handleMessagesUpdate);
+    };
+  }, [pathname]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const check = () => {
@@ -405,17 +502,45 @@ function MemberTabBar() {
             }
           }
 
+          // Animated notification badges for Events and Messages
+          let notificationBadge: ReactNode = null;
+          if (tab.to === "/association/events" && newEventCount > 0) {
+            notificationBadge = (
+              <span
+                className="absolute -top-1.5 -right-2.5 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-rose-500 px-1 text-[9px] font-black text-white shadow-xs ring-1 ring-white/80 select-none animate-pulse"
+                title={`${newEventCount} sự kiện mới`}
+              >
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-70" />
+                <span className="relative z-10">{newEventCount > 9 ? "9+" : newEventCount}</span>
+              </span>
+            );
+          } else if (tab.to === "/association/messages" && unreadMessageCount > 0) {
+            notificationBadge = (
+              <span
+                className="absolute -top-1.5 -right-2.5 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-1 text-[9px] font-black text-white shadow-xs ring-1 ring-white/80 select-none animate-pulse"
+                title={`${unreadMessageCount} tin nhắn mới`}
+              >
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-70" />
+                <span className="relative z-10">{unreadMessageCount > 99 ? "99+" : unreadMessageCount}</span>
+              </span>
+            );
+          }
+
           return (
-            <Link key={tab.to} to={tab.to} className="relative flex flex-1 flex-col items-center justify-end gap-1 py-1 transition-colors">
+            <Link
+              key={tab.to}
+              to={tab.to}
+              className="relative flex flex-1 flex-col items-center justify-end gap-1 py-1 transition-transform touch-press select-none-touch active:scale-90"
+            >
               <div className="relative">
                 <Icon
                   className="h-5 w-5 transition-colors"
                   style={{ color: active ? "#2E3192" : "var(--vba-text-dim)" }}
                 />
-                {seasonalBadge}
+                {notificationBadge || seasonalBadge}
               </div>
               <span
-                className={`text-[10px] transition-colors ${active ? "font-bold text-[#2E3192] dark:text-blue-400" : "font-medium text-[var(--vba-text-dim)]"}`}
+                className={`text-[10px] transition-colors select-none ${active ? "font-bold text-[#2E3192] dark:text-blue-400" : "font-medium text-[var(--vba-text-dim)]"}`}
               >
                 {lang === "en" ? tabLabels[tab.to]?.en || t(tab.label) : tabLabels[tab.to]?.vi || t(tab.label)}
               </span>

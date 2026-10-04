@@ -440,6 +440,17 @@ export function MemberAccountModal({ memberId, memberName, memberEmail, onClose 
             )}
           </div>
         </div>
+
+        {/* Fixed Footer */}
+        <div className="flex items-center justify-end border-t border-border px-5 py-3.5 shrink-0 bg-muted/20">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
+          >
+            {t("common.close") || "Đóng"}
+          </button>
+        </div>
       </div>
     </div>
   );
