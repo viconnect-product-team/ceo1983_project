@@ -44,7 +44,7 @@ function addSlideFooter(slide, pres, isDark = false) {
     x: 0.8, y: 7.0, w: 11.73, h: 0.02,
     fill: { color: isDark ? '2A3E66' : C.BORDER_SUBTLE }
   });
-  slide.addText('Hệ Sinh Thái Chuyển Đổi Số Toàn Diện · CLB Doanh Nhân CEO 1983 · VIONE Ecosystem', {
+  slide.addText('Hệ Sinh Thái Chuyển Đổi Số Toàn Diện · CLB Doanh Nhân CEO 1983 · HanoiBA', {
     x: 0.8, y: 7.05, w: 7.5, h: 0.3,
     color: isDark ? '94A3B8' : C.TEXT_MUTED, fontSize: 9.5, fontFace: 'Calibri'
   });

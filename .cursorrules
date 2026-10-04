@@ -405,5 +405,17 @@
 #   - Quy Trình Phê Duyệt Hội Viên & Cấp Phát Tài Khoản (`members.service.ts`):
 #     + Phân quyền duyệt hội viên phải nhận diện đầy đủ các vai trò: Quản trị viên (`admin`, `quan_tri`, `bqt`, `platform_admin`, `superadmin`, `owner`) trong `public.vione_users`, `public.user_roles`, `public.vba_member_permissions`, và thành viên Ban Thành Viên / Ban Quản Trị trong `public.members`.
 #     + Khi duyệt thành công: Tự động tạo/cập nhật tài khoản `vione_users`, đồng bộ vào `auth.users`, kích hoạt trạng thái hội viên, và tự động gửi email chứa thông tin tài khoản đăng nhập (Email + Mật khẩu an toàn) qua Gmail SMTP tới hòm thư của hội viên.
+#
+# [BẮT BUỘC 28] Quy Chuẩn Soạn Thảo Tài Liệu Kỹ Thuật Word (.docx), Use Cases & Bộ Slide Trình Chiếu:
+#   - Quy Chuẩn Xuất Bản Use Cases Sang File Word (.docx):
+#     + Ở mọi Use Case (Luồng sự kiện chính, Luồng rẽ nhánh, Luồng ngoại lệ), nếu có mô tả theo bước (Bước 1, Bước 2... hoặc 1., 2...), TUYỆT ĐỐI KHÔNG GOM CHUNG vào một Paragraph duy nhất với soft line break (`break: 1` / Shift+Enter) khiến các dòng bị dính chùm vào nhau.
+#     + BẮT BUỘC MỖI BƯỚC PHẢI LÀ MỘT PARAGRAPH ĐỘC LẬP (Hard Paragraph Break).
+#     + Áp dụng thụt lề chuẩn `indent: { left: 360 }`, khoảng cách đệm `spacing: { before: 50, after: 60, line: 260 }` và in đậm tiêu đề bước (`Bước 1:`, `Bước 2:`) với màu xanh thương hiệu Navy `#003B95`.
+#     + Tương tự, trong các ô bảng (`createTable`), khi có nhiều dòng hoặc danh sách bước/gạch đầu dòng, BẮT BUỘC mỗi dòng là một Paragraph độc lập trong TableCell.
+#   - Quy Chuẩn Hình Ảnh Thực Tế & Bộ Slide Thuyết Trình:
+#     + Luôn sử dụng bộ ảnh thực tế 100% mới chụp từ hệ thống đang chạy (`document/images/evidence/`, `docs/training/images/`), tuyệt đối không dùng ảnh cũ không khớp giao diện.
+#     + Đối với màn hình Web CRM Desktop: Hiển thị toàn cảnh, viền xám mềm mại bo góc 8px.
+#     + Đối với màn hình Mobile App: BẮT BUỘC đặt trong khung điện thoại `.phone-mockup` hoặc `.mobile-device-wrapper` bo góc cong 28px-36px, Dynamic Island, không kéo dãn ảnh dọc thành hình chữ nhật ngang.
+#     + Toàn bộ slide thuyết trình cho CEO và CRM phải loại bỏ 100% ViOne, tập trung duy nhất cho CLB Doanh Nhân CEO 1983 (Trực thuộc HanoiBA).
 
 

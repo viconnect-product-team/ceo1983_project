@@ -500,14 +500,19 @@ async function main() {
   const doc = buildDoc();
   const buffer = await Packer.toBuffer(doc);
   
-  const target1 = path.join(__dirname, '..', 'document', 'HUONG_DAN_SU_DUNG_APP_HIEP_HOI_CEO1983.docx');
-  const target2 = path.join(__dirname, '..', 'document', 'HDSD_App_Hiep_Hoi_CEO1983.docx');
-  
-  fs.writeFileSync(target1, buffer);
-  console.log('Successfully written:', target1, buffer.length, 'bytes');
-  
-  fs.writeFileSync(target2, buffer);
-  console.log('Successfully written:', target2, buffer.length, 'bytes');
+  function safeWrite(filePath, data) {
+    try {
+      fs.writeFileSync(filePath, data);
+      console.log('Successfully written:', filePath, data.length, 'bytes');
+    } catch (e) {
+      console.warn('Cannot write', filePath, e.message);
+    }
+  }
+
+  safeWrite(path.join(__dirname, '..', 'docs', 'HDSD_CEO1983_TOAN_DIEN_PRO.docx'), buffer);
+  safeWrite(path.join(__dirname, '..', 'document', 'HDSD_CEO1983_TOAN_DIEN_PRO.docx'), buffer);
+  safeWrite(path.join(__dirname, '..', 'document', 'HUONG_DAN_SU_DUNG_APP_HIEP_HOI_CEO1983.docx'), buffer);
+  safeWrite(path.join(__dirname, '..', 'document', 'HDSD_App_Hiep_Hoi_CEO1983.docx'), buffer);
 }
 
 main().catch((err) => {

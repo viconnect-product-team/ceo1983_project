@@ -2,12 +2,12 @@ const pptxgen = require('pptxgenjs');
 const path = require('path');
 const fs = require('fs');
 
-const OUT_DIR = path.join(__dirname, '..', 'document');
+const DOCS_DIR = path.join(__dirname, '../docs');
+const OUT_DIR = path.join(__dirname, '../document');
 const EVIDENCE_DIR = path.join(OUT_DIR, 'images', 'evidence');
-const FE_DOCS_DIR = path.join(__dirname, '..', 'apps', 'vione_app_fe', 'public', 'docs');
-const CEO_FE_DOCS_DIR = path.join(__dirname, '..', 'apps', 'ceo1983_app_fe', 'public', 'docs');
+const CEO_FE_DOCS_DIR = path.join(__dirname, '../apps/ceo1983_app_fe/public/docs');
 
-for (const d of [OUT_DIR, FE_DOCS_DIR, CEO_FE_DOCS_DIR]) {
+for (const d of [DOCS_DIR, OUT_DIR, CEO_FE_DOCS_DIR]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 }
 
@@ -43,9 +43,84 @@ const APP_THEME = {
   TEXT_MUTED: '64748B',
 };
 
+// ÁNH XẠ THÔNG MINH SANG BỘ ẢNH THỰC TẾ CHỤP MỚI 100%
+const IMAGE_FALLBACK_MAP = {
+  // CRM Desktop
+  'crm_step_02_dashboard_kpi_live.png': '02_crm_dashboard.png',
+  'crm_step_03_members_management.png': '04_crm_members_management.png',
+  'crm_step_04_member_approval_drawer.png': '04_crm_members_management.png',
+  'crm1983_04_member_detail_drawer.png': '03_crm_members_list.png',
+  '03_crm_event_create_modal.png': '05_crm_events_list.png',
+  'crm_step_06_seating_cinema_map.png': '06_crm_cinema_seating_map.png',
+  'crm_step_07_gate_checkin.png': '07_crm_checkin_gate.png',
+  'crm1983_09_meetings_calendar.png': '08_crm_meetings_management.png',
+  'crm_voting_management.png': '15_app_live_voting.png',
+  'crm_lucky_draw_modal.png': '05_crm_events_list.png',
+  'crm1983_15_sponsors_management.png': '05_crm_events_list.png',
+  'crm_step_08_marketplace_moderation.png': '16_app_products_ecommerce_grid.png',
+  'crm_step_09_opportunities_sync.png': '20_app_opportunities_feed.png',
+  'crm_step_10_finance_fees_cashbook.png': '10_crm_cashbook_funds.png',
+  'crm_step_11_companies_directory.png': '04_crm_members_management.png',
+  '02_crm_members_roles_permission.png': '12_crm_permissions_rbac.png',
+  // Mobile App
+  'app_step_04_home_dashboard.png': '08_app_home_dashboard.png',
+  'live_26_app_vip_3d_card.png': '09_app_vip_card.png',
+  'app_visit_card_front.png': '14_app_public_card_vcf.png',
+  'app_public_qr_scan_user.png': '14_app_event_checkin_pass.png',
+  'app_public_qr_scan_view.png': '14_app_public_card_vcf.png',
+  'live_30_app_member_profile_edit.png': '09_app_vip_card.png',
+  'app_step_06_profile_view.png': '09_app_vip_card.png',
+  'app1983_03_members_directory.png': '15_app_members_directory.png',
+  'app1983_04_partner_detail.png': '15_app_members_directory.png',
+  'app1983_05_schedule_meeting.png': '08_crm_meetings_management.png',
+  'app1983_06_chat_1on1.png': '09_app_chat_call_messenger_bubble.png',
+  'app_step_07_events_calendar.png': '13_app_events_screen.png',
+  'app_step_08_ticket_seating_select.png': '06_crm_cinema_seating_map.png',
+  'app_step_09_eticket_qr_pass.png': '14_app_event_checkin_pass.png',
+  'app1983_11_voting_session.png': '15_app_live_voting.png',
+  'app1983_12_lucky_draw.png': '14_app_event_checkin_pass.png',
+  'app_step_10_marketplace_grid.png': '16_app_products_ecommerce_grid.png',
+  'app_step_11_b2b_opportunities.png': '20_app_opportunities_feed.png',
+  'app_step_12_vietqr_payment.png': '08_app_vietqr_payment_modal.png',
+  'app1983_16_settings_preferences.png': '08_app_home_dashboard.png',
+  'app_step_08_member_profile_modal.png': '09_app_vip_card.png',
+  'app1983_14_meetings_schedule.png': '08_crm_meetings_management.png',
+  'app_step_10_chat_conversation.png': '09_app_chat_call_messenger_bubble.png',
+  'app_step_11_events_list.png': '13_app_events_screen.png',
+  'app_step_12_event_detail_modal.png': '13_app_events_screen.png',
+  'app_step_13_ticket_qr_pass.png': '14_app_event_checkin_pass.png',
+  'app_voting_mobile_view.png': '15_app_live_voting.png',
+  'app_lucky_draw_winner_notification.png': '14_app_event_checkin_pass.png',
+  'live_28_app_marketplace_b2b.png': '16_app_products_ecommerce_grid.png',
+  'live_29_app_opportunities_feed_1on1.png': '20_app_opportunities_feed.png',
+  'app1983_09_fees_vietqr.png': '08_app_vietqr_payment_modal.png',
+  'app_card_privacy_settings.png': '14_app_public_card_vcf.png',
+};
+
+function resolveImagePath(filename) {
+  // 1. Tìm trực tiếp trong EVIDENCE_DIR
+  let p = path.join(EVIDENCE_DIR, filename);
+  if (fs.existsSync(p)) return p;
+
+  // 2. Tìm qua bảng map
+  const mapped = IMAGE_FALLBACK_MAP[filename];
+  if (mapped) {
+    p = path.join(EVIDENCE_DIR, mapped);
+    if (fs.existsSync(p)) return p;
+    p = path.join(__dirname, '../docs/training/images', mapped);
+    if (fs.existsSync(p)) return p;
+  }
+
+  // 3. Tìm trong docs/training/images
+  p = path.join(__dirname, '../docs/training/images', filename);
+  if (fs.existsSync(p)) return p;
+
+  return null;
+}
+
 function getImgBase64(filename) {
-  const p = path.join(EVIDENCE_DIR, filename);
-  if (fs.existsSync(p)) {
+  const p = resolveImagePath(filename);
+  if (p && fs.existsSync(p)) {
     const data = fs.readFileSync(p);
     return `image/png;base64,${data.toString('base64')}`;
   }
@@ -54,8 +129,8 @@ function getImgBase64(filename) {
 }
 
 function getRawBase64(filename) {
-  const p = path.join(EVIDENCE_DIR, filename);
-  if (fs.existsSync(p)) {
+  const p = resolveImagePath(filename);
+  if (p && fs.existsSync(p)) {
     const data = fs.readFileSync(p);
     return `data:image/png;base64,${data.toString('base64')}`;
   }
@@ -994,7 +1069,7 @@ async function generateCrmPptx() {
     }
   }
 
-  for (const dir of [FE_DOCS_DIR, CEO_FE_DOCS_DIR]) {
+  for (const dir of [DOCS_DIR, CEO_FE_DOCS_DIR]) {
     try {
       fs.copyFileSync(actualTarget, path.join(dir, 'SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.pptx'));
     } catch (e) {
@@ -1190,7 +1265,7 @@ async function generateAppPptx() {
     }
   }
 
-  for (const dir of [FE_DOCS_DIR, CEO_FE_DOCS_DIR]) {
+  for (const dir of [DOCS_DIR, CEO_FE_DOCS_DIR]) {
     try {
       fs.copyFileSync(actualTarget, path.join(dir, 'SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.pptx'));
     } catch (e) {
@@ -1403,7 +1478,7 @@ function generateHtmlSlides() {
   const htmlCrm = renderDeckHtml('Thuyết Trình Hệ Thống CRM Quản Trị - CLB Doanh Nhân CEO 1983', 'Hệ Thống CRM Quản Trị', crmHtmlSlides, false);
   const outHtmlCrm = path.join(OUT_DIR, 'SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.html');
   fs.writeFileSync(outHtmlCrm, htmlCrm, 'utf8');
-  for (const dir of [FE_DOCS_DIR, CEO_FE_DOCS_DIR]) {
+  for (const dir of [DOCS_DIR, CEO_FE_DOCS_DIR]) {
     fs.writeFileSync(path.join(dir, 'SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.html'), htmlCrm, 'utf8');
   }
   console.log(`✓ Đã tạo HTML CRM thành công: ${outHtmlCrm}`);
@@ -1436,10 +1511,39 @@ function generateHtmlSlides() {
   const htmlApp = renderDeckHtml('Thuyết Trình Ứng Dụng Di Động Hiệp Hội - CLB Doanh Nhân CEO 1983', 'Ứng Dụng Di Động Hiệp Hội', appHtmlSlides, true);
   const outHtmlApp = path.join(OUT_DIR, 'SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.html');
   fs.writeFileSync(outHtmlApp, htmlApp, 'utf8');
-  for (const dir of [FE_DOCS_DIR, CEO_FE_DOCS_DIR]) {
+  for (const dir of [DOCS_DIR, CEO_FE_DOCS_DIR]) {
     fs.writeFileSync(path.join(dir, 'SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.html'), htmlApp, 'utf8');
   }
   console.log(`✓ Đã tạo HTML App thành công: ${outHtmlApp}`);
+
+  // BUILD MARKDOWN SLIDES (CRM & APP)
+  let crmMd = '# SLIDE THUYẾT TRÌNH HỆ THỐNG WEB CRM QUẢN TRỊ - CLB DOANH NHÂN CEO 1983\n';
+  crmMd += '*Bản quyền © 2026 CLB Doanh Nhân CEO 1983 · Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)*\n\n---\n\n';
+  CRM_FEATURE_SLIDES.forEach((s, idx) => {
+    crmMd += `### Slide ${idx + 2 < 10 ? '0' + (idx + 2) : idx + 2}: ${s.title}\n`;
+    crmMd += `- **Mục tiêu**: ${s.subtitle}\n`;
+    s.features.forEach(f => {
+      crmMd += `- **${f.title}**: ${f.desc}\n`;
+    });
+    crmMd += '\n';
+  });
+
+  let appMd = '# SLIDE THUYẾT TRÌNH ỨNG DỤNG DI ĐỘNG HIỆP HỘI - CLB DOANH NHÂN CEO 1983\n';
+  appMd += '*Bản quyền © 2026 CLB Doanh Nhân CEO 1983 · Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)*\n\n---\n\n';
+  APP_FEATURE_SLIDES.forEach((s, idx) => {
+    appMd += `### Slide ${idx + 2 < 10 ? '0' + (idx + 2) : idx + 2}: ${s.title}\n`;
+    appMd += `- **Mục tiêu**: ${s.subtitle}\n`;
+    s.features.forEach(f => {
+      appMd += `- **${f.title}**: ${f.desc}\n`;
+    });
+    appMd += '\n';
+  });
+
+  for (const dir of [DOCS_DIR, OUT_DIR, CEO_FE_DOCS_DIR]) {
+    fs.writeFileSync(path.join(dir, 'SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.md'), crmMd, 'utf8');
+    fs.writeFileSync(path.join(dir, 'SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.md'), appMd, 'utf8');
+  }
+  console.log('✓ Đã tạo Markdown Slides cho cả CRM và App thành công!');
 }
 
 async function main() {
