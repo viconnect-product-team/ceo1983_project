@@ -43,6 +43,8 @@ import {
   IdCard,
   Bookmark,
   ShieldCheck,
+  UserCog,
+  Layers,
   PanelLeftClose,
   PanelLeftOpen,
   Sun,
@@ -116,13 +118,27 @@ const system: Item[] = [
     label: "Quản lý chủ đề",
   },
 ];
-const admin: Item[] = [
+const permissionsGroup: Item[] = [
   {
     key: "nav.permissions" as TKey,
     icon: ShieldCheck,
-    to: "/permissions",
+    to: "/permissions?tab=matrix",
     label: "Ma trận phân quyền",
   },
+  {
+    key: "nav.permissionUserActions" as any,
+    icon: UserCog,
+    to: "/permissions?tab=user_actions",
+    label: "Phân quyền tài khoản",
+  },
+  {
+    key: "nav.permissionRoleGroups" as any,
+    icon: Layers,
+    to: "/permissions?tab=role_groups",
+    label: "Thẩm quyền Ban & Cấp bậc",
+  },
+];
+const admin: Item[] = [
   { key: "nav.documents", icon: FolderOpen, to: "/documents" },
   {
     key: "nav.bcAdmin",
@@ -136,6 +152,14 @@ const COLLAPSE_KEY = "vba.sidebar.collapsed";
 
 function isActive(pathname: string | undefined, to?: string) {
   if (!to || !pathname) return false;
+  if (to.includes("?")) {
+    const [pathPart, queryPart] = to.split("?");
+    if (pathname !== pathPart) return false;
+    if (typeof window !== "undefined") {
+      return window.location.search.includes(queryPart);
+    }
+    return false;
+  }
   if (to === "/") return pathname === "/";
   return pathname === to || pathname.startsWith(to + "/");
 }
@@ -471,11 +495,13 @@ export function Sidebar({
     return true;
   });
 
+  const filteredPermissions = permissionsGroup.filter((it) => {
+    if (!isAllowed("/permissions")) return false;
+    return isPlatformAdmin || isBQT;
+  });
+
   const filteredAdmin = admin.filter((it) => {
     if (!isAllowed(it.to)) return false;
-    if (it.to === "/permissions") {
-      return isPlatformAdmin || isBQT;
-    }
     if (it.to === "/documents") {
       return true;
     }
@@ -617,6 +643,15 @@ export function Sidebar({
           <Group
             label="nav.group.system"
             items={filteredSystem}
+            pathname={pathname}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+          />
+        )}
+        {filteredPermissions.length > 0 && (
+          <Group
+            label="nav.group.permissions"
+            items={filteredPermissions}
             pathname={pathname}
             collapsed={isCollapsed}
             onNavigate={onNavigate}

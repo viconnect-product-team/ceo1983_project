@@ -163,6 +163,34 @@ export const createMeetingFn = createServerFn({ method: "POST" })
       },
     ];
 
+    // Validate địa điểm cuộc họp trực tiếp
+    if (data.location && !data.zoomUrl) {
+      const { data: conflicts } = await getDb(context)
+        .from("meetings")
+        .select("code, title, date, time, location")
+        .eq("date", data.date)
+        .neq("status", "cancelled");
+
+      const cleanLoc = data.location.trim().toLowerCase();
+      const matched = (conflicts || []).find(
+        (c: any) =>
+          c.location &&
+          c.location.trim().toLowerCase() === cleanLoc &&
+          c.time === data.time,
+      );
+
+      if (matched) {
+        const [h, m] = (data.time || "09:30").split(":").map(Number);
+        const endHour = String((h || 9) + 2).padStart(2, "0");
+        const endMin = String(m || 0).padStart(2, "0");
+        const [yyyy, mm, dd] = data.date.split("-");
+        const nextTime = `${endHour}:${endMin} ngày ${dd}/${mm}/${yyyy}`;
+        throw new Error(
+          `Địa điểm này đang trùng với cuộc họp "${matched.title}", sau thời gian ${nextTime} có thể đăng ký được.`,
+        );
+      }
+    }
+
     const dbPayload = {
       code,
       title: data.title,
@@ -197,6 +225,35 @@ export const updateMeetingFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Meeting> => {
     const { logActivity } = await import("./crud.server");
     const { id, targetMembers, zoomUrl, cancelReason, platform, creatorRole, creatorName, creatorPhone, creatorEmail, isUrgent, urgentReason, ...rest } = data;
+
+    // Validate địa điểm cuộc họp trực tiếp khi cập nhật
+    if (data.location && !zoomUrl) {
+      const { data: conflicts } = await getDb(context)
+        .from("meetings")
+        .select("code, title, date, time, location")
+        .eq("date", data.date)
+        .neq("code", id)
+        .neq("status", "cancelled");
+
+      const cleanLoc = data.location.trim().toLowerCase();
+      const matched = (conflicts || []).find(
+        (c: any) =>
+          c.location &&
+          c.location.trim().toLowerCase() === cleanLoc &&
+          c.time === data.time,
+      );
+
+      if (matched) {
+        const [h, m] = (data.time || "09:30").split(":").map(Number);
+        const endHour = String((h || 9) + 2).padStart(2, "0");
+        const endMin = String(m || 0).padStart(2, "0");
+        const [yyyy, mm, dd] = data.date.split("-");
+        const nextTime = `${endHour}:${endMin} ngày ${dd}/${mm}/${yyyy}`;
+        throw new Error(
+          `Địa điểm này đang trùng với cuộc họp "${matched.title}", sau thời gian ${nextTime} có thể đăng ký được.`,
+        );
+      }
+    }
 
     const enrichedTargetMembers = [
       ...targetMembers.filter((item: any) => !(item && typeof item === "object" && item._creatorMeta)),

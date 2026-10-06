@@ -207,10 +207,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
     // Synchronously apply theme (defaulting to dark).
     try {
       var savedTheme = localStorage.getItem("vba.theme");
-      var theme = (savedTheme === "light" || savedTheme === "dark" || savedTheme === "contrast") ? savedTheme : "dark";
+      var theme = (savedTheme === "light" || savedTheme === "dark") ? savedTheme : "dark";
       var doc = document.documentElement;
-      doc.classList.toggle("dark", theme === "dark" || theme === "contrast");
-      doc.classList.toggle("hc", theme === "contrast");
+      doc.classList.toggle("dark", theme === "dark");
+      doc.classList.remove("hc");
       doc.dataset.theme = theme;
       doc.style.colorScheme = theme === "light" ? "light" : "dark";
     } catch (e) {

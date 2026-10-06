@@ -890,6 +890,24 @@ function EventsScreen() {
     const totalAmount = isFree ? 0 : rawPrice * actualTicketCount;
     const tempInvNo = `EV-${Date.now().toString(36).toUpperCase()}`;
 
+    // Cảnh báo nếu đăng ký cùng thời gian với sự kiện khác đã đăng ký
+    const targetDate = registeringEvent.date ? String(registeringEvent.date).slice(0, 10) : "";
+    const conflictingEvent = events.find(
+      (ev) => isRegistered(ev) && ev.id !== registeringEvent.id && String(ev.date).slice(0, 10) === targetDate
+    );
+
+    let confirmOverlap = false;
+    if (conflictingEvent) {
+      const proceed = window.confirm(
+        `Bạn đang đăng ký sự kiện "${registeringEvent.title}" cùng thời gian với sự kiện "${conflictingEvent.title}". Bạn có chắc muốn đăng ký thêm không?`
+      );
+      if (!proceed) {
+        setSubmittingReg(false);
+        return;
+      }
+      confirmOverlap = true;
+    }
+
     try {
       const res = await doRegister({
         data: {
@@ -902,6 +920,7 @@ function EventsScreen() {
           ticketCount: actualTicketCount,
           ticketType: formTicketType,
           note: formNote.trim(),
+          confirmOverlap,
         },
       });
 

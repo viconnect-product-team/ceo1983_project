@@ -17,20 +17,17 @@ import { useTheme } from "@/lib/theme";
 
 export function BusinessConnectMobileShell({ children }: { children: ReactNode }) {
   let isLight = false;
-  let isContrast = false;
   try {
     const themeCtx = useTheme();
     isLight = themeCtx.theme === "light";
-    isContrast = themeCtx.theme === "contrast";
   } catch {
     isLight = false;
-    isContrast = false;
   }
   const [vOpen, setVOpen] = useState(false);
   const openV = useCallback(() => setVOpen(true), []);
   const vControls = useMemo(() => ({ openV }), [openV]);
 
-  const bgMain = isLight ? "#FAF8F5" : isContrast ? "#000000" : "#1A120B";
+  const bgMain = isLight ? "#FAF8F5" : "#1A120B";
 
   return (
     <VSheetContext.Provider value={vControls}>
@@ -42,7 +39,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
       >
         {isLight ? (
           <div className="pointer-events-none absolute inset-0 bg-white" />
-        ) : !isContrast ? (
+        ) : (
           <>
             <img
               src={authBg}
@@ -58,7 +55,7 @@ export function BusinessConnectMobileShell({ children }: { children: ReactNode }
               }}
             />
           </>
-        ) : null}
+        )}
       </div>
 
       {/* data-motion="forced" explicitly overrides reduced-motion inside the BC shell */}

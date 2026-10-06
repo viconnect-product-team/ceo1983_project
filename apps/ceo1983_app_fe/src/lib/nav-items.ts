@@ -32,6 +32,7 @@ import {
   ShieldCheck,
   UserCog,
   Bookmark,
+  Layers,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
@@ -98,9 +99,16 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "nav.group.permissions",
+    items: [
+      { key: "nav.permissions" as TKey, icon: ShieldCheck, to: "/permissions?tab=matrix" },
+      { key: "nav.permissionUserActions" as TKey, icon: UserCog, to: "/permissions?tab=user_actions" },
+      { key: "nav.permissionRoleGroups" as TKey, icon: Layers, to: "/permissions?tab=role_groups" },
+    ],
+  },
+  {
     label: "nav.group.admin",
     items: [
-      { key: "nav.permissions" as TKey, icon: ShieldCheck, to: "/permissions" },
       { key: "nav.documents", icon: FolderOpen, to: "/documents" },
     ],
   },

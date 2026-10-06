@@ -21,14 +21,39 @@ function EventsScreen() {
   const { data: events, loading, reload } = useServerData<MyEvent[]>(() => fetchEvents(), []);
   const [busy, setBusy] = useState<string | null>(null);
 
-  async function register(id: string) {
+  async function register(id: string, forceConfirm?: boolean) {
     setBusy(id);
     try {
-      await doRegister({ data: { eventId: id } });
+      const targetEvt = events?.find((e) => e.id === id);
+      if (!forceConfirm && targetEvt) {
+        const targetDate = targetEvt.date ? String(targetEvt.date).slice(0, 10) : "";
+        const conflictingEvent = events?.find(
+          (e) => e.registered && e.id !== id && String(e.date).slice(0, 10) === targetDate
+        );
+        if (conflictingEvent) {
+          const ok = window.confirm(
+            `Bạn đang đăng ký sự kiện "${targetEvt.title}" cùng thời gian với sự kiện "${conflictingEvent.title}". Bạn có chắc muốn đăng ký thêm không?`
+          );
+          if (!ok) {
+            setBusy(null);
+            return;
+          }
+          forceConfirm = true;
+        }
+      }
+
+      await doRegister({ data: { eventId: id, confirmOverlap: forceConfirm } });
       toast.success(t("m.events.register_success"));
       reload();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("m.events.register_error"));
+    } catch (e: any) {
+      const errMsg = e instanceof Error ? e.message : String(e || "");
+      if (errMsg.includes("OVERLAP_CONFIRM_REQUIRED")) {
+        const cleanMsg = errMsg.replace(/^.*OVERLAP_CONFIRM_REQUIRED:\s*/, "");
+        if (window.confirm(cleanMsg)) {
+          return register(id, true);
+        }
+      }
+      toast.error(errMsg || t("m.events.register_error"));
     } finally {
       setBusy(null);
     }

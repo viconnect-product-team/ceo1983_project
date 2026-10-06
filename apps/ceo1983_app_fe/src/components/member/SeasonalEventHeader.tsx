@@ -2,11 +2,25 @@ import { useState, useEffect } from "react";
 import { Sparkles, Moon, Star, Bell, Gift, Heart, Flag, Award, Check } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 
-export type EventThemeType = "classic" | "mid-autumn" | "national-day" | "christmas" | "tet" | "entrepreneur-day" | "none";
+export type EventThemeType =
+  | "classic"
+  | "mid-autumn"
+  | "national-day"
+  | "christmas"
+  | "tet"
+  | "entrepreneur-day"
+  | "custom"
+  | "none";
+
+export type LayoutGridCols = "3" | "4";
+export type BorderRadiusStyle = "rounded-xl" | "rounded-2xl" | "rounded-3xl";
+export type IconStyleType = "3d-emoji" | "luxury-vector" | "glow-neon" | "royal-badge";
+export type EffectType = "none" | "snow" | "lanterns" | "flowers" | "fireworks" | "sparkles";
 
 const EVENT_THEME_STORAGE_KEY = "vba_event_theme_disabled";
 const EVENT_THEME_TYPE_KEY = "vba_event_theme_type";
 const EVENT_THEME_ENABLED_KEY = "vba_event_theme_enabled";
+const EVENT_THEME_CUSTOM_CONFIG_KEY = "ceo1983_custom_theme_config";
 
 export interface FestivalThemeOption {
   id: EventThemeType;
@@ -18,11 +32,24 @@ export interface FestivalThemeOption {
   primaryColor: string;
   accentColor: string;
   iconEmoji: string;
+  layoutGrid?: LayoutGridCols;
+  borderRadius?: BorderRadiusStyle;
+  iconStyle?: IconStyleType;
+  effectType?: EffectType;
   actionIcons: {
-    directory: string;
-    events: string;
-    opportunities: string;
-    marketplace: string;
+    card?: string;
+    members?: string;
+    checkin?: string;
+    perks?: string;
+    voting?: string;
+    history?: string;
+    library?: string;
+    fees?: string;
+    directory?: string;
+    events?: string;
+    opportunities?: string;
+    marketplace?: string;
+    connect?: string;
   };
 }
 
@@ -37,11 +64,24 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
     primaryColor: "#001B54",
     accentColor: "#D4AF37",
     iconEmoji: "👑",
+    layoutGrid: "4",
+    borderRadius: "rounded-2xl",
+    iconStyle: "luxury-vector",
+    effectType: "none",
     actionIcons: {
+      card: "💳",
+      members: "👥",
+      checkin: "⚡",
+      perks: "👑",
+      voting: "🗳️",
+      history: "📜",
+      library: "📁",
+      fees: "💎",
       directory: "👥",
       events: "📅",
       opportunities: "✨",
       marketplace: "🛍️",
+      connect: "🤝",
     },
   },
   {
@@ -54,11 +94,24 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
     primaryColor: "#991B1B",
     accentColor: "#F59E0B",
     iconEmoji: "🥮",
+    layoutGrid: "4",
+    borderRadius: "rounded-2xl",
+    iconStyle: "3d-emoji",
+    effectType: "lanterns",
     actionIcons: {
+      card: "🥮",
+      members: "🏮",
+      checkin: "🌕",
+      perks: "🐇",
+      voting: "🪔",
+      history: "📜",
+      library: "📚",
+      fees: "💰",
       directory: "🏮",
       events: "🌕",
       opportunities: "🐇",
       marketplace: "🥮",
+      connect: "🤝",
     },
   },
   {
@@ -71,11 +124,24 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
     primaryColor: "#DC2626",
     accentColor: "#EAB308",
     iconEmoji: "🇻🇳",
+    layoutGrid: "4",
+    borderRadius: "rounded-2xl",
+    iconStyle: "3d-emoji",
+    effectType: "sparkles",
     actionIcons: {
+      card: "⭐",
+      members: "🇻🇳",
+      checkin: "🎖️",
+      perks: "🦅",
+      voting: "🗳️",
+      history: "🏛️",
+      library: "📜",
+      fees: "💎",
       directory: "⭐",
       events: "🇻🇳",
       opportunities: "🦅",
       marketplace: "🏆",
+      connect: "🤝",
     },
   },
   {
@@ -88,11 +154,24 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
     primaryColor: "#065F46",
     accentColor: "#EF4444",
     iconEmoji: "🎄",
+    layoutGrid: "4",
+    borderRadius: "rounded-3xl",
+    iconStyle: "3d-emoji",
+    effectType: "snow",
     actionIcons: {
+      card: "🎁",
+      members: "🎅",
+      checkin: "❄️",
+      perks: "🎄",
+      voting: "🔔",
+      history: "📜",
+      library: "📁",
+      fees: "💰",
       directory: "🔔",
       events: "🎄",
       opportunities: "🎁",
       marketplace: "❄️",
+      connect: "🤝",
     },
   },
   {
@@ -105,11 +184,24 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
     primaryColor: "#B91C1C",
     accentColor: "#FBBF24",
     iconEmoji: "🌸",
+    layoutGrid: "4",
+    borderRadius: "rounded-2xl",
+    iconStyle: "3d-emoji",
+    effectType: "flowers",
     actionIcons: {
+      card: "🧧",
+      members: "🌸",
+      checkin: "🎆",
+      perks: "💰",
+      voting: "🗳️",
+      history: "📜",
+      library: "📁",
+      fees: "🪙",
       directory: "🧧",
       events: "🌸",
       opportunities: "💰",
       marketplace: "🎆",
+      connect: "🤝",
     },
   },
   {
@@ -122,11 +214,54 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
     primaryColor: "#003B95",
     accentColor: "#38BDF8",
     iconEmoji: "🏆",
+    layoutGrid: "4",
+    borderRadius: "rounded-2xl",
+    iconStyle: "royal-badge",
+    effectType: "sparkles",
     actionIcons: {
+      card: "🏆",
+      members: "🤝",
+      checkin: "⚡",
+      perks: "👑",
+      voting: "🗳️",
+      history: "📈",
+      library: "📁",
+      fees: "💼",
       directory: "🤝",
       events: "🏆",
       opportunities: "💼",
       marketplace: "⭐",
+      connect: "🤝",
+    },
+  },
+  {
+    id: "custom",
+    name: "Chủ Đề Tùy Chỉnh Doanh Nghiệp",
+    tagline: "Thiết kế riêng theo phong cách & nhận diện CLB",
+    badge: "🎨 Tùy Biến",
+    colorScheme: "Custom Palette & Brand Identity",
+    bannerGradient: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)",
+    primaryColor: "#312E81",
+    accentColor: "#F59E0B",
+    iconEmoji: "🎨",
+    layoutGrid: "4",
+    borderRadius: "rounded-2xl",
+    iconStyle: "3d-emoji",
+    effectType: "sparkles",
+    actionIcons: {
+      card: "💳",
+      members: "👥",
+      checkin: "⚡",
+      perks: "👑",
+      voting: "🗳️",
+      history: "📜",
+      library: "📁",
+      fees: "💎",
+      directory: "👥",
+      events: "📅",
+      opportunities: "✨",
+      marketplace: "🛍️",
+      connect: "🤝",
     },
   },
 ];
@@ -160,11 +295,59 @@ function normalizeTheme(t?: string | null): EventThemeType {
     t === "christmas" ||
     t === "tet" ||
     t === "entrepreneur-day" ||
+    t === "custom" ||
     t === "none"
   ) {
     return t as EventThemeType;
   }
   return "classic";
+}
+
+export function getCustomThemeConfig(): Partial<FestivalThemeOption> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(EVENT_THEME_CUSTOM_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCustomThemeConfig(config: Partial<FestivalThemeOption>) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(EVENT_THEME_CUSTOM_CONFIG_KEY, JSON.stringify(config));
+    const customIdx = FESTIVAL_THEMES.findIndex((t) => t.id === "custom");
+    if (customIdx >= 0) {
+      FESTIVAL_THEMES[customIdx] = {
+        ...FESTIVAL_THEMES[customIdx],
+        ...config,
+        actionIcons: {
+          ...FESTIVAL_THEMES[customIdx].actionIcons,
+          ...(config.actionIcons || {}),
+        },
+      };
+    }
+  } catch {}
+}
+
+export function getEffectiveThemeOption(): FestivalThemeOption {
+  const activeId = getActiveEventThemeType();
+  const found = FESTIVAL_THEMES.find((t) => t.id === activeId) || FESTIVAL_THEMES[0];
+  if (activeId === "custom") {
+    const customConf = getCustomThemeConfig();
+    if (customConf) {
+      return {
+        ...found,
+        ...customConf,
+        actionIcons: {
+          ...found.actionIcons,
+          ...(customConf.actionIcons || {}),
+        },
+      };
+    }
+  }
+  return found;
 }
 
 export function getCrmAppliedTheme(): EventThemeType {
@@ -189,9 +372,14 @@ export function getActiveEventThemeType(): EventThemeType {
 export async function syncThemeFromBackend() {
   if (typeof window === "undefined") return;
   try {
-    const res = await fetchNestApi<{ themeId: EventThemeType; enabled: boolean }>("/public/active-theme");
+    const res = await fetchNestApi<{ themeId: EventThemeType; enabled: boolean; customConfig?: any }>(
+      "/public/active-theme"
+    );
     if (res?.themeId) {
       const normalized = normalizeTheme(res.themeId);
+      if (res.customConfig) {
+        saveCustomThemeConfig(res.customConfig);
+      }
       setActiveEventThemeType(normalized);
       if (res.enabled !== undefined) {
         setEventThemeEnabled(res.enabled);
@@ -219,13 +407,14 @@ export function setActiveEventThemeType(type: EventThemeType) {
   window.dispatchEvent(new Event("storage"));
 }
 
-function applyThemeAttributes(theme: EventThemeType) {
+export function applyThemeAttributes(theme: EventThemeType) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.setAttribute("data-festival-theme", theme);
-  const found = FESTIVAL_THEMES.find((t) => t.id === theme) || FESTIVAL_THEMES[0];
+  const found = getEffectiveThemeOption();
   root.style.setProperty("--festival-primary", found.primaryColor);
   root.style.setProperty("--festival-accent", found.accentColor);
+  root.style.setProperty("--festival-gradient", found.bannerGradient);
 }
 
 /**
@@ -371,6 +560,40 @@ export function SeasonalEventHeader() {
         <div className="absolute right-3 top-2 flex items-center gap-1 opacity-90">
           <Award className="h-4 w-4 text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
           <span className="text-sm">🤝</span>
+        </div>
+      </div>
+    );
+  }
+
+  // 6. CHỦ ĐỀ TÙY CHỈNH DOANH NGHIỆP
+  if (themeType === "custom") {
+    const effective = getEffectiveThemeOption();
+    const eff = effective.effectType || "sparkles";
+    return (
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 overflow-hidden select-none"
+        aria-hidden="true"
+      >
+        <div
+          className="absolute -right-6 -top-6 h-28 w-28 rounded-full blur-2xl animate-pulse opacity-40"
+          style={{ backgroundColor: effective.accentColor || "#F59E0B" }}
+        />
+        <div className="absolute left-3 top-2 flex items-center gap-1.5 animate-pulse">
+          <span className="text-base">{effective.iconEmoji || "🎨"}</span>
+          <span
+            className="text-[10px] font-black uppercase tracking-wider drop-shadow-sm"
+            style={{ color: effective.accentColor || "#F59E0B" }}
+          >
+            {effective.badge || "CEO 1983"}
+          </span>
+        </div>
+        <div className="absolute right-3 top-2 flex items-center gap-1 opacity-90">
+          {eff === "snow" && <span className="text-sm animate-spin" style={{ animationDuration: "8s" }}>❄️</span>}
+          {eff === "lanterns" && <span className="text-sm animate-bounce">🏮</span>}
+          {eff === "flowers" && <span className="text-sm animate-pulse">🌸</span>}
+          {eff === "fireworks" && <span className="text-sm animate-bounce">🎆</span>}
+          {eff === "sparkles" && <Sparkles className="h-4 w-4" style={{ color: effective.accentColor }} />}
+          <span className="text-sm">{effective.iconEmoji || "✨"}</span>
         </div>
       </div>
     );

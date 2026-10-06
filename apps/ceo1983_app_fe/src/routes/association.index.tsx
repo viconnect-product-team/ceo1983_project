@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/context/AuthContext";
-import { SeasonalEventHeader } from "@/components/member/SeasonalEventHeader";
+import { SeasonalEventHeader, getEffectiveThemeOption } from "@/components/member/SeasonalEventHeader";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
@@ -122,75 +122,91 @@ function formatNewsDate(timeStr?: string) {
 const quickActionDefs = [
   {
     key: "m.index.qaCard",
+    iconKey: "card",
     icon: IdCard,
     to: "/association/card",
     customLabel: "Danh thiếp số",
     enLabel: "Digital Card",
     badgeId: "card",
     badgeText: "VIP",
+    badgeTextEn: "VIP",
   },
   {
     key: "m.index.qaMembers",
+    iconKey: "members",
     icon: Users,
     to: "/association/members",
     customLabel: "Danh bạ CEO",
-    enLabel: "Members",
+    enLabel: "CEO Directory",
     badgeId: "members",
     badgeText: "100+",
+    badgeTextEn: "100+",
   },
   {
     key: "m.index.qaCheckin",
+    iconKey: "checkin",
     icon: QrCode,
     to: "/association/checkin",
     customLabel: "Quét Check-in",
-    enLabel: "Check-in",
+    enLabel: "Scan Check-in",
     badgeId: "checkin",
     badgeText: "1-Chạm",
+    badgeTextEn: "1-Tap",
   },
   {
     key: "m.index.qaPerks",
+    iconKey: "perks",
     icon: Crown,
     to: "/association/perks",
     customLabel: "Đặc quyền VIP",
-    enLabel: "Perks",
+    enLabel: "VIP Perks",
     badgeId: "perks",
     badgeText: "Ưu đãi",
+    badgeTextEn: "Perks",
   },
   {
     key: "m.index.qaVoting",
+    iconKey: "voting",
     icon: Vote,
     to: "/association/voting",
     customLabel: "Biểu quyết số",
-    enLabel: "Voting",
+    enLabel: "E-Voting",
     badgeId: "voting",
     badgeText: "Mới",
+    badgeTextEn: "New",
   },
   {
     key: "m.index.qaHistory",
+    iconKey: "history",
     icon: History,
     to: "/association/history",
     customLabel: "Lịch sử",
     enLabel: "History",
     badgeId: "history",
     badgeText: "Hoạt động",
+    badgeTextEn: "Active",
   },
   {
     key: "m.index.qaLibrary",
+    iconKey: "library",
     icon: FolderOpen,
     to: "/association/library",
     customLabel: "Kho tài liệu",
-    enLabel: "Documents",
+    enLabel: "Library",
     badgeId: "library",
     badgeText: "Điều lệ",
+    badgeTextEn: "Docs",
   },
   {
     key: "m.index.qaFees",
+    iconKey: "fees",
     icon: CreditCard,
     to: "/association/renew",
     customLabel: "Hội phí",
-    enLabel: "Fees",
+    enLabel: "Membership Dues",
     badgeId: "fees",
     badgeText: "2026",
+    badgeTextEn: "2026",
   },
 ] as const;
 
@@ -247,6 +263,21 @@ function Home() {
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [effectiveTheme, setEffectiveTheme] = useState(() => getEffectiveThemeOption());
+
+  useEffect(() => {
+    const handleThemeUpdate = () => {
+      setEffectiveTheme(getEffectiveThemeOption());
+    };
+    window.addEventListener("vba-event-theme-changed", handleThemeUpdate);
+    window.addEventListener("ceo1983-theme-changed", handleThemeUpdate);
+    window.addEventListener("storage", handleThemeUpdate);
+    return () => {
+      window.removeEventListener("vba-event-theme-changed", handleThemeUpdate);
+      window.removeEventListener("ceo1983-theme-changed", handleThemeUpdate);
+      window.removeEventListener("storage", handleThemeUpdate);
+    };
+  }, []);
 
   // Guided tour is triggered explicitly from profile/user guide center
   useEffect(() => {
@@ -1122,18 +1153,50 @@ function Home() {
       </div>
 
       {/* Action shortcuts / Quick Action Grid */}
-      <div id="tour-quick-actions" className="relative mt-3.5 mx-4 rounded-3xl vba-card p-4 shadow-md">
+      <div
+        id="tour-quick-actions"
+        className={`relative mt-3.5 mx-4 ${
+          effectiveTheme.borderRadius === "rounded-3xl"
+            ? "rounded-3xl"
+            : effectiveTheme.borderRadius === "rounded-xl"
+            ? "rounded-xl"
+            : "rounded-2xl"
+        } vba-card p-4 shadow-md transition-all duration-300`}
+        style={{
+          borderColor: `${effectiveTheme.primaryColor}35`,
+        }}
+      >
         <div className="flex items-center justify-between mb-3 px-0.5">
           <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)] flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#2E3192]"></span>
-            Tính năng nhanh
+            <span
+              className="h-2 w-2 rounded-full animate-pulse"
+              style={{ backgroundColor: effectiveTheme.primaryColor }}
+            />
+            <span>{isEn ? "Quick Actions" : "Tính năng nhanh"}</span>
+            {effectiveTheme.id !== "classic" && (
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-full font-bold shadow-2xs"
+                style={{
+                  backgroundColor: `${effectiveTheme.accentColor}25`,
+                  color: effectiveTheme.accentColor,
+                }}
+              >
+                {effectiveTheme.iconEmoji} {effectiveTheme.name}
+              </span>
+            )}
           </h2>
         </div>
-        <div className="grid grid-cols-4 gap-y-4 gap-x-2 sm:gap-x-3">
+        <div
+          className={`grid ${
+            effectiveTheme.layoutGrid === "3" ? "grid-cols-3" : "grid-cols-4"
+          } gap-y-4 gap-x-2 sm:gap-x-3`}
+        >
           {quickActionDefs.map((a: any) => {
             const Icon = a.icon;
             const label = isEn ? a.enLabel : a.customLabel || t(a.key);
             const showBadge = a.badgeId ? !clearedBadges[a.badgeId] : false;
+            const themeEmoji = effectiveTheme.actionIcons?.[a.iconKey as keyof typeof effectiveTheme.actionIcons];
+            const useEmojiIcon = (effectiveTheme.iconStyle === "3d-emoji" || effectiveTheme.id !== "classic") && Boolean(themeEmoji);
 
             return (
               <Link
@@ -1143,26 +1206,56 @@ function Home() {
                 className="group relative flex flex-col items-center gap-1.5 transition cursor-pointer touch-press"
               >
                 <span
-                  className={`relative flex h-13 w-13 items-center justify-center rounded-2xl border border-[#2E3192]/20 bg-blue-50/70 dark:bg-[#2E3192]/15 text-[#2E3192] dark:text-blue-400 shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-105 group-hover:border-[#2E3192]/60 group-active:scale-95 ${
+                  className={`relative flex h-13 w-13 items-center justify-center ${
+                    effectiveTheme.borderRadius === "rounded-3xl"
+                      ? "rounded-3xl"
+                      : effectiveTheme.borderRadius === "rounded-xl"
+                      ? "rounded-xl"
+                      : "rounded-2xl"
+                  } shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-108 group-active:scale-95 ${
                     showBadge ? "ring-2 ring-red-500/40" : ""
                   }`}
+                  style={{
+                    backgroundColor: `${effectiveTheme.primaryColor}18`,
+                    borderWidth: "1px",
+                    borderColor: `${effectiveTheme.primaryColor}35`,
+                    color: effectiveTheme.primaryColor,
+                    boxShadow:
+                      effectiveTheme.iconStyle === "glow-neon"
+                        ? `0 0 12px ${effectiveTheme.accentColor}70`
+                        : undefined,
+                  }}
                 >
-                  <Icon className="h-5.5 w-5.5 stroke-[2]" />
+                  {useEmojiIcon ? (
+                    <span className="text-2xl drop-shadow-sm select-none transition-transform group-hover:scale-115">
+                      {themeEmoji}
+                    </span>
+                  ) : (
+                    <Icon className="h-5.5 w-5.5 stroke-[2]" style={{ color: effectiveTheme.primaryColor }} />
+                  )}
 
-                  {/* HIỆU ỨNG TUYẾT RƠI KHI CÓ SỐ THÔNG BÁO MỚI */}
+                  {/* HIỆU ỨNG THÔNG BÁO HOẶC TUYẾT RƠI / HOA NỞ KHI CÓ BADGE */}
                   {showBadge && (
                     <div className="pointer-events-none absolute inset-0 -m-1 select-none overflow-visible">
-                      <span className="absolute -top-1.5 -right-1 text-[9px] text-amber-300 dark:text-amber-200 animate-blue-snow-1 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" aria-hidden="true">❄</span>
-                      <span className="absolute top-1 -left-1.5 text-[8px] text-yellow-400 dark:text-yellow-300 animate-blue-snow-2 drop-shadow-[0_0_5px_rgba(251,191,36,0.8)]" aria-hidden="true">✦</span>
-                      <span className="absolute bottom-0 right-0 text-[7px] text-amber-400 dark:text-amber-300 animate-blue-snow-3 drop-shadow-[0_0_4px_rgba(217,119,6,0.8)]" aria-hidden="true">✧</span>
-                      <span className="absolute -top-1 left-0.5 text-[8px] text-amber-300 dark:text-amber-200 animate-blue-sparkle drop-shadow-[0_0_6px_rgba(245,158,11,0.9)]" aria-hidden="true">⋆</span>
-                      <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white shadow-xs animate-pulse ring-1 ring-white/70">
-                        {a.badgeText}
+                      {effectiveTheme.effectType === "snow" && (
+                        <span className="absolute -top-1.5 -right-1 text-[9px] text-sky-300 animate-spin" aria-hidden="true">❄</span>
+                      )}
+                      {effectiveTheme.effectType === "flowers" && (
+                        <span className="absolute -top-1.5 -right-1 text-[9px] text-pink-300 animate-pulse" aria-hidden="true">🌸</span>
+                      )}
+                      {effectiveTheme.effectType === "lanterns" && (
+                        <span className="absolute -top-1.5 -right-1 text-[9px] text-amber-300 animate-bounce" aria-hidden="true">🏮</span>
+                      )}
+                      <span
+                        className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-black text-white shadow-xs animate-pulse ring-1 ring-white/70"
+                        style={{ backgroundColor: effectiveTheme.accentColor || "#DC2626" }}
+                      >
+                        {isEn ? a.badgeTextEn || a.badgeText : a.badgeText}
                       </span>
                     </div>
                   )}
                 </span>
-                <span className="text-center text-[10.5px] font-semibold leading-tight text-[var(--vba-text)] transition-colors group-hover:text-[#2E3192]">
+                <span className="text-center text-[10.5px] font-semibold leading-tight text-[var(--vba-text)] transition-colors group-hover:opacity-90 line-clamp-2">
                   {label}
                 </span>
               </Link>

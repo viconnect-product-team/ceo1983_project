@@ -3,7 +3,7 @@ import { ChevronDown, Check, Globe } from "lucide-react";
 import { useLang, type Lang } from "@/lib/i18n";
 
 type Variant = "default" | "dropdown" | "overlay" | "inline";
-type ThemeMode = "dark" | "light" | "contrast";
+type ThemeMode = "dark" | "light";
 
 export function LangSwitcher({
   variant = "default",
@@ -48,7 +48,6 @@ export function LangSwitcher({
   const current = opts.find((o) => o.code === lang) ?? opts[0];
 
   const isDark = themeMode === "dark";
-  const isContrast = themeMode === "contrast";
 
   // If explicit "inline" is requested
   if (variant === "inline") {
@@ -82,25 +81,17 @@ export function LangSwitcher({
   }
 
   // Determine container and button classes based on themeMode
-  const triggerBtnClass = isContrast
-    ? "border-white/50 bg-black text-white hover:bg-zinc-900"
-    : isDark
+  const triggerBtnClass = isDark
     ? "border-amber-500/40 bg-[#161B28] text-slate-100 hover:bg-white/10 hover:border-amber-400"
     : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:border-amber-500 shadow-xs";
 
-  const dropdownMenuClass = isContrast
-    ? "border-white bg-black text-white shadow-2xl"
-    : isDark
+  const dropdownMenuClass = isDark
     ? "border-amber-500/30 bg-[#0E1320]/98 text-white shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
     : "border-slate-200 bg-white text-slate-900 shadow-[0_16px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl";
 
-  const activeItemClass = isContrast
-    ? "bg-white text-black font-extrabold shadow-sm"
-    : "bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 font-black shadow-xs";
+  const activeItemClass = "bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 font-black shadow-xs";
 
-  const inactiveItemClass = isContrast
-    ? "text-slate-300 hover:bg-zinc-800 hover:text-white"
-    : isDark
+  const inactiveItemClass = isDark
     ? "text-slate-300 hover:bg-white/10 hover:text-[#E8C986]"
     : "text-slate-700 hover:bg-amber-500/10 hover:text-amber-800";
 

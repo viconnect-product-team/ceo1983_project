@@ -406,16 +406,130 @@
 #     + Phân quyền duyệt hội viên phải nhận diện đầy đủ các vai trò: Quản trị viên (`admin`, `quan_tri`, `bqt`, `platform_admin`, `superadmin`, `owner`) trong `public.vione_users`, `public.user_roles`, `public.vba_member_permissions`, và thành viên Ban Thành Viên / Ban Quản Trị trong `public.members`.
 #     + Khi duyệt thành công: Tự động tạo/cập nhật tài khoản `vione_users`, đồng bộ vào `auth.users`, kích hoạt trạng thái hội viên, và tự động gửi email chứa thông tin tài khoản đăng nhập (Email + Mật khẩu an toàn) qua Gmail SMTP tới hòm thư của hội viên.
 #
-# [BẮT BUỘC 28] Quy Chuẩn Soạn Thảo Tài Liệu Kỹ Thuật Word (.docx), Use Cases & Bộ Slide Trình Chiếu:
-#   - Quy Chuẩn Xuất Bản Use Cases Sang File Word (.docx):
-#     + Ở mọi Use Case (Luồng sự kiện chính, Luồng rẽ nhánh, Luồng ngoại lệ), nếu có mô tả theo bước (Bước 1, Bước 2... hoặc 1., 2...), TUYỆT ĐỐI KHÔNG GOM CHUNG vào một Paragraph duy nhất với soft line break (`break: 1` / Shift+Enter) khiến các dòng bị dính chùm vào nhau.
-#     + BẮT BUỘC MỖI BƯỚC PHẢI LÀ MỘT PARAGRAPH ĐỘC LẬP (Hard Paragraph Break).
-#     + Áp dụng thụt lề chuẩn `indent: { left: 360 }`, khoảng cách đệm `spacing: { before: 50, after: 60, line: 260 }` và in đậm tiêu đề bước (`Bước 1:`, `Bước 2:`) với màu xanh thương hiệu Navy `#003B95`.
-#     + Tương tự, trong các ô bảng (`createTable`), khi có nhiều dòng hoặc danh sách bước/gạch đầu dòng, BẮT BUỘC mỗi dòng là một Paragraph độc lập trong TableCell.
-#   - Quy Chuẩn Hình Ảnh Thực Tế & Bộ Slide Thuyết Trình:
-#     + Luôn sử dụng bộ ảnh thực tế 100% mới chụp từ hệ thống đang chạy (`document/images/evidence/`, `docs/training/images/`), tuyệt đối không dùng ảnh cũ không khớp giao diện.
-#     + Đối với màn hình Web CRM Desktop: Hiển thị toàn cảnh, viền xám mềm mại bo góc 8px.
-#     + Đối với màn hình Mobile App: BẮT BUỘC đặt trong khung điện thoại `.phone-mockup` hoặc `.mobile-device-wrapper` bo góc cong 28px-36px, Dynamic Island, không kéo dãn ảnh dọc thành hình chữ nhật ngang.
-#     + Toàn bộ slide thuyết trình cho CEO và CRM phải loại bỏ 100% ViOne, tập trung duy nhất cho CLB Doanh Nhân CEO 1983 (Trực thuộc HanoiBA).
+# [BẮT BUỘC 29] Quy Chuẩn Kiểm Soát Xung Đột Địa Điểm, Lịch Trình, Email Suppression & Nhóm Phân Quyền:
+#   - Kiểm Soát Xung Đột Địa Điểm Sự Kiện & Cuộc Họp Vật Lý (Venue Collision & Next Available Time):
+#     + Nhiều sự kiện/cuộc họp có thể diễn ra cùng ngày, cùng giờ nhưng BẮT BUỘC phải khác địa điểm (`LOWER(TRIM(location))`).
+#     + Nếu phát hiện trùng địa điểm của sự kiện/cuộc họp đang kích hoạt (`status != 'cancelled'`), hệ thống BẮT BUỘC ném lỗi: "Địa điểm này đang trùng với sự kiện/cuộc họp [Tên], sau thời gian [hh:mm dd/mm/yyyy] có thể đăng ký được." (với Next Available Time = Giờ bắt đầu sự kiện cũ + 2 tiếng thời lượng tổ chức chuẩn).
+#   - Cảnh Báo Xác Nhận Trùng Lịch Cá Nhân Khi Đăng Ký (`confirmOverlap`):
+#     + Khi hội viên đăng ký một sự kiện hoặc lên lịch cuộc họp có cùng thời gian (cùng ngày) với sự kiện/cuộc họp khác đã tham gia, giao diện BẮT BUỘC hiển thị hộp thoại xác nhận: "Bạn đang đăng ký sự kiện '[Tên mới]' cùng thời gian với sự kiện '[Tên cũ]'. Bạn có chắc muốn đăng ký thêm không?".
+#     + Nếu người dùng xác nhận "OK", gửi kèm cờ `confirmOverlap: true` lên Backend để hoàn tất đăng ký; nếu chọn "Hủy / Cancel", giữ nguyên trạng thái cũ.
+#   - Triệt Tiêu Vòng Lặp Mailer-Daemon 47h Bằng 1-Fail Suppression List & Bộ Lọc Dummy Email:
+#     + Toàn bộ email test, mock, dummy (`@ceo1983.com`, `test`, `dev`, `5137`) BẮT BUỘC được lọc qua `isTestOrDummyEmail()` để không gửi SMTP thật, tránh lỗi không có MX record khiến Google Mailer-Daemon xếp hàng 47 giờ.
+#     + Khi gửi SMTP thất bại 1 lần, địa chỉ email đó BẮT BUỘC được đưa vào danh sách chặn vĩnh viễn (`uploads/mail_suppression_list.json` và in-memory `failedRecipients: Set<string>`), không bao giờ gửi lại.
+#   - Tách Riêng "Nhóm Phân Quyền" Độc Lập & Đồng Bộ URL Query:
+#     + Menu điều hướng phân quyền BẮT BUỘC tách thành nhóm độc lập "PHÂN QUYỀN" (`nav.group.permissions`) trên Sidebar và Drawer di động, gồm 3 mục: "Ma trận phân quyền" (`/permissions?tab=matrix`), "Phân quyền tài khoản" (`/permissions?tab=user_actions`), "Thẩm quyền Ban & Cấp bậc" (`/permissions?tab=role_groups`).
+#     + Trang `/permissions` BẮT BUỘC đồng bộ hai chiều giữa `activeTab` và URL query parameter `tab`.
+#   - Quy Chuẩn Bảng Biểu Word (.docx) Không Lỗi Format:
+#     + Mọi bảng biểu xuất bản qua thư viện `docx` BẮT BUỘC sử dụng đơn vị đo lường DXA cố định (`TOTAL_TABLE_WIDTH_DXA = 9200 twips` cho khổ A4), `TableLayoutType.FIXED`, và `cantSplit: true` trên từng `TableRow`.
+#     + Toàn bộ `TableCell` phải khai báo chiều rộng cụ thể bằng DXA khớp chính xác với `columnWidths` của bảng, tuyệt đối không dùng phần trăm (`PERCENTAGE`) hay chế độ tự động (`AUTO`) để tránh lỗi vỡ cột và méo layout trên Microsoft Word.
+#
+# [BẮT BUỘC 30] Quy Chuẩn Trợ Lý AI Thông Minh Google Gemini 2.0 Flash Free Tier & Chỉ Dẫn Lái Màn Hình GPS Giọng Nói Tiếng Việt (Turn-by-Turn Voice GPS HUD Spotlight):
+#   - Mô Hình AI Cốt Lõi (Free 100%): Google Gemini 2.0 Flash Free Tier (kết nối qua Google AI Studio API key) kết hợp Smart Hybrid NLP Engine dự phòng nội bộ đảm bảo 100% không phụ thuộc dịch vụ ngoài.
+#   - Tự Động Nắm Bắt Phiên Đăng Nhập (`/api/ai/live-context`):
+#     + AI tự động nhận diện danh tính hội viên: Tên, Mã hội viên (`M1983-xxx`), Doanh nghiệp, Chức vụ, Cấp bậc, Ban chuyên môn.
+#     + Trạng thái tài chính & Hội phí: Tình trạng đã đóng / còn nợ, kỳ thu, số tiền nợ, hạn nộp và thông tin chuyển khoản VietQR.
+#     + Thông báo chưa đọc: Số lượng thông báo mới và nội dung thông báo tiêu biểu từ Ban Thư ký.
+#     + Sự kiện cá nhân & Sự kiện toàn khối: Danh sách sự kiện hội viên đã có vé tham dự và Top 5 sự kiện có số người đăng ký đông nhất toàn Hiệp hội.
+#   - Trả Lời Trực Tiếp Mọi Câu Hỏi Dữ Liệu Thời Gian Thực (`/api/ai/ask`):
+#     + Xử lý câu hỏi tự nhiên: "Sự kiện nào đang được nhiều người đăng ký nhất?", "Tôi có đang đăng ký sự kiện nào không?", "Tôi có thông báo nào chưa đọc?", "Tôi có hội phí nào chưa đóng?".
+#     + Trả về Markdown đẹp mắt và tóm tắt kịch bản phát âm súc tích (`speechText`) phục vụ phát âm thanh tiếng Việt.
+#   - Chỉ Dẫn Lái Màn Hình Từng Bước Có Giọng Nói Như Google Maps (`VoiceGpsHudOverlay.tsx` & `useVoiceGpsTour`):
+#     + Khi người dùng yêu cầu hướng dẫn thao tác (ví dụ: đăng ký sự kiện, ghi thẻ NFC, quét QR check-in, giao thương B2B...):
+#       1. AI phát câu nói mở đầu: "Vâng! Tôi sẽ dẫn đường cho Quý anh/chị thao tác chức năng [X]. Hãy quan sát màn hình và làm theo giọng nói nhé!".
+#       2. Tự động chuyển trang đến route đích tương ứng.
+#       3. Bật lớp phủ dẫn đường Spotlight HUD: Vùng tối bao quanh, làm nổi bật viền hào quang vàng kim nhấp nháy vào đúng vị trí nút/thẻ cần chạm (`targetRect`).
+#       4. Thanh chỉ dẫn nổi dạng Google Maps: Hiển thị biểu tượng cử chỉ (👆 Chạm 1 lần, 📸 Quét camera, ↔️ Vuốt ngang), Điểm chạm, Lời hướng dẫn hành động, Mẹo doanh nhân VIP.
+#       5. Phát âm thanh giọng đọc tiếng Việt chuẩn xác qua Web Speech API (`SpeechSynthesis` voice `vi-VN`) hoàn toàn miễn phí, 0ms latency.
+#       6. Hỗ trợ điều khiển mượt mà: [Trước], [Bước tiếp], [Đọc lại], [Bật/Tắt tiếng] và tự động chúc mừng khi hoàn tất lộ trình.
+#
+# [BẮT BUỘC 31] Quy Chuẩn Hướng Dẫn Sử Dụng AI Toàn Diện (32 Tính Năng Trong/Ngoài) & Cơ Chế 2 Pha Chỉ Dẫn Trực Tiếp ("Có" -> Tự Động Lái Màn Hình GPS Tour):
+#   - Ma Trận Bao Phủ 32 Tính Năng Toàn Diện (Không Bỏ Sót Bất Kỳ Chức Năng Nào):
+#     + Phân hệ Hội viên Nội bộ (In-App Member Modules - 24 tính năng):
+#       * Sự kiện & Vé mời: Đăng ký vé sự kiện (`event-register`), Xem vé QR Check-in & Bàn VIP (`checkin-ticket`), Quét vé QR & NFC đa năng (`checkin-scanner`).
+#       * Danh thiếp số 5.0 & Công nghệ AI: Mở danh thiếp cá nhân (`card-show`), Ghi thẻ cứng NFC (`card-nfc`), Chụp & Quét card visit giấy bằng AI OCR (`card-ai-scan`), Bảo mật số điện thoại & CCCD (`card-privacy`).
+#       * Kết nối Doanh nhân & Giao thương: Tìm kiếm & Tra cứu danh bạ CEO (`member-search`), Lọc ngành nghề & Ban chuyên môn (`member-filter`), Gửi lời mời gặp gỡ 1-on-1 (`meeting-1on1`), Đăng cơ hội kinh doanh B2B (`opportunity-post`), Khám phá cơ hội hợp tác (`opportunity-connect`), Đăng bán sản phẩm B2B (`b2b-sell`), Sàn thương mại B2B (`b2b-explore`), Báo giá & Kết nối sỉ (`b2b-quote`).
+#       * Đại hội & Tiện ích CLB: Biểu quyết đại hội trực tuyến (`voting-poll`), Quay số may mắn Lucky Draw Gala (`voting-lucky`), Nộp hội phí thường niên qua VietQR MB Bank (`dues-pay`), Thư viện điều lệ & Kỷ yếu số (`documents-download`), Đổi ảnh đại diện & Phôi thẻ VIP (`profile-avatar`), Chế độ giao diện & Lễ hội (`profile-theme`), Cài đặt ứng dụng PWA lên màn hình chính (`pwa-install`), Đường dây nóng 5 Ban chuyên môn (`hotline-support`), Hộp thư & Nhắn tin B2B (`messages-b2b`).
+#     + Phân hệ Quản Trị Hệ Thống CRM (External / CRM Admin Modules - 8 tính năng):
+#       * Quản lý sự kiện BTC (`event-create`, route `/events`), Quản lý & Duyệt hội viên CRM (`members-crm`, route `/members`), Kế toán & Đối soát hội phí MB Bank (`finance-mgmt`, route `/fees`), Giao việc & Điều hành ban thư ký Kanban (`tasks-mgmt`, route `/tasks`), Phân quyền RBAC & Ủy quyền soát vé (`permissions-mgmt`, route `/permissions`), Quản lý nhà tài trợ & Quyền lợi thương hiệu (`sponsors-mgmt`, route `/sponsors`), Kho văn bản & Quyết định ban hành (`documents-mgmt`, route `/documents`), Trung tâm thông báo & Nhắc việc (`association-notifications`, route `/association/notifications`).
+#   - Cơ Chế 2 Pha Tương Tác Giọng Nói & Trực Tiếp (Two-Phase Guidance Flow):
+#     + Pha 1 - Giải Thích Chi Tiết & Đặt Câu Hỏi Xác Nhận:
+#       * Khi người dùng hỏi bất kỳ chức năng nào (ví dụ: "đăng ký sự kiện như nào", "tạo sự kiện mới kiểu gì", "ghi thẻ NFC ra sao"): AI BẮT BUỘC giải thích tường tận các thao tác 1, 2, 3 bằng văn bản Markdown và phát câu nói súc tích qua giọng nói tiếng Việt.
+#       * Cuối phần hướng dẫn, AI BẮT BUỘC đặt câu hỏi: "Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ dẫn đường từng bước cho Anh/Chị." (hoặc ngắn gọn: "Bạn có muốn hướng dẫn thao tác trực tiếp không tôi sẽ hướng dẫn bạn?").
+#       * Khối tin nhắn hiển thị hộp Callout viền vàng hoàng gia sang trọng kèm 2 nút bấm tương tác: `[👉 Có, hướng dẫn trực tiếp ngay]` và `[Để sau]`.
+#     + Pha 2 - Kích Hoạt Tức Thì Khi Người Dùng Đồng Ý:
+#       * Người dùng BẤM nút "Có" HOẶC NÓI bằng giọng nói các từ khóa khẳng định: "Có", "Co", "Đồng ý", "Ok", "Bắt đầu", "Yes", "Hướng dẫn đi", "Lái màn hình đi".
+#       * Hệ thống BẮT BUỘC tự động: 1) Đóng modal trợ lý AI; 2) Điều hướng ngay đến trang tính năng tương ứng (`navigate({ to: route })`); 3) Kích hoạt lộ trình chỉ dẫn trực tiếp GPS Turn-by-Turn HUD (`startTourGlobally(tourId)`) với Spotlight viền vàng nhấp nháy vào đúng nút cần thao tác trên màn hình và đọc lời chỉ dẫn qua giọng nói.
+
+# [BẮT BUỘC 32] Quy Chuẩn Theme Studio CRM, WebRTC Video Call, Kiểm Tra Trùng Lịch Cuộc Gặp Kết Nối & Bản Dịch Tiếng Anh 100%:
+#   - Hệ Thống Theme & Giao Diện 2 Chế Độ (Loại Bỏ Vĩnh Viễn Chế Độ Tương Phản Cao):
+#     + Chỉ hỗ trợ 2 chế độ hiển thị chuẩn mực: Sáng (Light) và Tối (Dark). Tuyệt đối không phục hồi class .hc hay data-theme "contrast".
+#     + CRM Theme Studio (`admin.landing-templates.tsx`): Cho phép người dùng tự set up bố cục (3 cột / 4 cột), độ bo góc (xl, 2xl, 3xl), màu sắc chủ đạo, hiệu ứng hạt lễ hội và tùy chọn icon cho từng tính năng. Khi bấm "Lưu & Áp dụng ngay", app CEO 1983 bắt buộc phải tự động thay đổi theo thời gian thực.
+#   - WebRTC Video Call Chuẩn Messenger / Zalo (`CeoWebRtcCallModal.tsx`):
+#     + Bắt buộc gom dồn các tracks thu được từ `pc.ontrack` vào một persistent `MediaStream` instance duy nhất (`remoteMediaStreamRef.current`), không phụ thuộc vào `event.streams[0]` để tránh mất track tiếng/hình trên thiết bị di động.
+#     + Audio đối phương phải tự động un-mute (`muted = false`, `volume = 1.0`) và kích hoạt `.play()` ngay khi kết nối.
+#     + Video đối phương phải hiển thị rõ nét ngay khi có track hình, không che mờ. Hỗ trợ nút Loa ngoài (Speaker toggle) thuận tiện.
+#   - Kiểm Tra Trùng Lịch Cuộc Gặp Kết Nối 1-on-1 & Popup Cảnh Báo Bắt Buộc:
+#     + Khi người dùng thiết lập cuộc gặp kết nối (`Create1on1MeetingModal.tsx`, `ScheduleCalendar.tsx`), hệ thống BẮT BUỘC kiểm tra xung đột:
+#       * Trùng thời gian (`time`): Cuộc gặp khác trong cùng ngày có giờ bắt đầu lệch < 60 phút.
+#       * Trùng địa điểm trực tiếp (`location`): Cuộc gặp offline khác trong cùng ngày diễn ra tại cùng địa điểm.
+#       * Trùng cả hai (`both`): Vừa trùng khung giờ vừa trùng địa điểm.
+#     + Khi phát hiện xung đột, BẮT BUỘC bật Popup Cảnh Báo chuyên dụng (Warning Confirmation Dialog) phân loại rõ ràng loại trùng lặp, kèm bảng so sánh trực quan giữa cuộc gặp đang tạo và cuộc gặp đã có.
+#     + Đặt câu hỏi: "Bạn có chắc chắn muốn lên lịch trùng và đảm bảo có thể tham gia được không?" với 2 nút hành động: [Quay lại chỉnh sửa] (để người dùng chọn lại giờ/địa điểm) và [Tôi đảm bảo tham gia - Xác nhận lưu] (gửi cờ `confirmOverlap: true` và `forceLocation: true` để lưu bản ghi).
+#     + Backend `meetings.service.ts` phải tôn trọng cờ xác nhận của người dùng và cho phép lưu bản ghi khi đã được người dùng đồng ý.
+#   - Bản Dịch Tiếng Anh 100% Toàn Diện (Zero Missing Translation Keys):
+#     + Khi chuyển đổi sang ngôn ngữ tiếng Anh (`lang === "en"`), toàn bộ giao diện, nhãn tính năng nhanh, thẻ danh thiếp, tiêu đề và thông báo BẮT BUỘC phải dịch 100% sang tiếng Anh.
+#     + Tệp `packages/shared/locales/en.json` phải luôn được bổ sung đầy đủ, đảm bảo 0 missing keys so với `vi.json`.
+#
+# [BẮT BUỘC 33] Quy Chuẩn Đối Soát Chụp Danh Thiếp Lưu Danh Bạ & Popup Thẻ Hội Viên BottomSheet Nửa Màn Hình (50vh):
+#   - Luồng Chụp Ảnh Danh Thiếp Lưu Danh Bạ (`AssociationCardCaptureModal.tsx`):
+#     + Đối soát hội viên hợp lệ BẮT BUỘC kiểm tra 2 cặp điều kiện:
+#       * Cặp 1: Trùng Họ & Tên VÀ Trùng Số điện thoại với hội viên trong hệ thống.
+#       * Cặp 2: Trùng Địa chỉ Email VÀ Trùng Số điện thoại với hội viên trong hệ thống.
+#       * Bắt buộc chuẩn hóa chuỗi trước khi so sánh: Chuẩn hóa họ tên (bỏ dấu tiếng Việt, viết thường, cắt khoảng trắng thừa qua `normalizeText`), chuẩn hóa số điện thoại (`+84` -> `0`, chỉ lấy chữ số qua `normalizePhone`), chuẩn hóa email (lowercase, trim qua `normalizeEmail`).
+#     + Trường hợp không phải hội viên (Non-member):
+#       * BẮT BUỘC hiển thị đúng nguyên văn thông báo: "Chức năng chụp ảnh lưu danh bạ không áp dụng cho người không phải hội viên nhưng bạn có thể cài đặt app ViOne để sử dụng chức năng này."
+#       * BẮT BUỘC hiển thị nút bấm điều hướng mở tab mới đến đúng địa chỉ: `https://14.225.217.232:5445/connect-app`.
+#     + Khối đối soát thủ công phải cung cấp đầy đủ 3 trường: Họ và tên, Số điện thoại (*), và Email để người dùng linh hoạt kiểm tra cả 2 trường hợp.
+#   - Popup Thẻ Hội Viên Trang Chủ BottomSheet Nửa Màn Hình (`PersonalProfileBottomSheet.tsx`):
+#     + Chiều cao hiển thị BẮT BUỘC giới hạn ở mức giữa màn hình: `h-[50dvh] max-h-[50dvh]` (chuẩn mid-screen sheet).
+# [BẮT BUỘC 34] Tiêu Chuẩn Trải Nghiệm Mobile Web App Chuẩn Native (Như MoMo) & Triệt Tiêu Thoát App Khi Vuốt Mép:
+#   - Triệt Tiêu 100% Lỗi Thoát App Khi Vuốt Mép Trái / Mép Phải:
+#     + TUYỆT ĐỐI KHÔNG tự tiện gọi `window.history.back()` khi vuốt mép trái màn hình trong bất kỳ gesture handler nào.
+#     + Mặc định TẮT hoàn toàn cử chỉ vuốt ngang chuyển tab toàn màn hình (`enableSwipeNav = false`) trong `PullToRefresh.tsx` và `MemberShell.tsx`.
+#     + Hội viên chuyển tab bằng thanh TabBar bên dưới để nhường 100% cử chỉ lướt ngang cho các Carousel sự kiện, Thẻ VIP và Card slider, không bao giờ bị nhảy tab ngoài ý muốn.
+#     + Chặn Browser Navigation Gestures bằng CSS: `html:has(.vba-app), body:has(.vba-app), .vba-app` BẮT BUỘC có `overscroll-behavior-x: none !important; overscroll-behavior-y: none !important; touch-action: pan-y pinch-zoom;`.
+#     + Chặn Edge Swipe ở tầng Touch Event: Khi ngón tay chạm vùng sát mép viền (<= 18px), tự động `preventDefault()` khi kéo ngang để ngăn Safari/Chrome kích hoạt History Swipe.
+#   - Cơ Chế Native Navigation Guard (Double-Tap Back To Exit & Close Popup First):
+#     + Khi có Modal, Sheet hoặc Popup đang mở: Phím Back của trình duyệt hoặc điện thoại BẮT BUỘC đóng modal trước (`vba:close_top_modal`) và giữ người dùng ở lại app.
+#     + Khi ở các tab con (`/association/events`, `/association/card`, `/association/messages`, `/association/profile`): Bấm Back tự động chuyển về Trang chủ `/association` (Home) thay vì out app.
+#     + Khi ở Trang chủ `/association` và không có modal nào mở: Lần chạm Back thứ 1 BẮT BUỘC rung haptic nhẹ và hiển thị Toast: "Chạm lần nữa để thoát ứng dụng"; Lần chạm thứ 2 trong vòng 2000ms mới cho phép thoát app.
+#   - Trải Nghiệm Xúc Giác & Thao Tác Chuẩn Native MoMo:
+#     + Kéo làm mới (Pull-To-Refresh): Chỉ kích hoạt khi kéo dọc ở đỉnh trang (`scrollTop <= 0`); Indicator dạng capsule trung tâm bo tròn sang trọng, xoay mượt theo lực kéo, đạt ngưỡng rung nhẹ haptic (`navigator.vibrate(15)`), sau khi xong tự co lại êm ái.
+#     + Tactile Press Feedback: Mọi nút bấm, icon quick actions, tab items BẮT BUỘC có class `.native-press` / `.touch-press` với độ nhún đầm tay (`scale(0.965)`), triệt tiêu bóng viền xám tap-highlight và delay chạm 300ms.
+#     + Khử bôi đen văn bản khi vuốt: `.vba-app` áp dụng `user-select: none`, chỉ cho phép bôi đen tại input, textarea và các đoạn text cần sao chép (`.selectable-text`).
+#     + Bottom TabBar: Cố định đầm chắc, hỗ trợ Safe Area đáy, có rung haptic nhẹ khi bấm; Khi bấm vào tab ĐANG ACTIVE (ví dụ đang ở `/association` bấm lại Trang chủ), BẮT BUỘC tự động cuộn mượt lên đỉnh đầu trang (`vba:scroll_to_top`); Có dot indicator vàng kim sang trọng dưới icon active.
+#
+# [BẮT BUỘC 35] Quy Chuẩn Tối Ưu Độ Mượt Thao Tác (Zero Scroll Delay), Cơ Chế Back 2 Lần Native Android APK & Trợ Lý Giọng Nói AI Chuẩn Con Người:
+#   - Tối Ưu Hóa Hiệu Năng Cuộn & Thao Tác Cảm Ứng (Zero Scroll Latency):
+#     + TUYỆT ĐỐI KHÔNG đăng ký listener `{ passive: false }` trên sự kiện `touchmove` ở phạm vi toàn màn hình (`window` hoặc `document`), vì hành vi này buộc Browser Compositor Thread phải dừng lại đợi Main Thread JS, gây độ trễ 50-200ms cho mọi thao tác cuộn và chạm.
+#     + Chặn cử chỉ lướt mép trình duyệt (Edge Swipe Navigation) bằng cấu trúc Edge Guards vô hình (2 dải div cố định rộng 12-16px sát 2 mép trái và phải với class `touch-none`), giữ trọn vẹn 98% diện tích màn hình chính hoạt động với 60fps Native Scrolling.
+#     + `PullToRefresh.tsx` phải throttle các thao tác cập nhật state chuyển động (`pullY`) thông qua `requestAnimationFrame`, đồng thời chỉ kích hoạt logic khi trang ở đỉnh tuyệt đối (`isAtTopRef.current === true`). Bỏ qua xử lý khi đang cuộn nội dung bên dưới.
+#     + Hiệu ứng nhấn nhún cảm ứng (`active:scale-[0.97]`) chỉ áp dụng cục bộ trên các class `.native-press`, `.touch-press`; tuyệt đối không gán `scale` lên toàn bộ selector `button` chung trong CSS toàn cục để tránh sụt giảm frame khi lướt ngón tay qua các danh sách dài.
+#   - Cơ Chế Double-Tap Back To Exit Hai Lớp (Native Android APK & Web App):
+#     + Tầng Native Android Wrapper (`MainActivity.java`):
+#       * Bắt buộc override phương thức `onBackPressed()`.
+#       * Khi nhận phím Back phần cứng: Bắn CustomEvent `native:hardware_back` vào WebView qua `evaluateJavascript()`.
+#       * Nếu có Modal/Popup đang mở: Chỉ đóng modal và hủy thao tác thoát.
+#       * Nếu đang ở tab con: Điều hướng về Trang chủ (`/association`).
+#       * Nếu đang ở Trang chủ và không có modal: Bấm lần 1 hiển thị Toast Native Android `Toast.makeText(this, "Chạm lần nữa để thoát ứng dụng", Toast.LENGTH_SHORT).show()`; Bấm lần 2 trong vòng 2000ms mới cho phép thoát app qua `super.onBackPressed()`.
+#     + Tầng Web App (`MemberShell.tsx`): Lắng nghe CustomEvent `native:hardware_back` song song với sự kiện `popstate`, đảm bảo trải nghiệm đồng nhất 100% giữa phiên bản Web PWA và bản cài đặt APK Native.
+#   - Trợ Lý Giọng Nói AI Trực Quan Chuẩn Con Người (Instant Human-like Conversational Voice Assistant):
+#     + Cờ kích hoạt `isVoiceAiEnabled()` BẮT BUỘC mặc định trả về `true` (khi chưa có giá trị cài đặt trong `localStorage`), đảm bảo 100% người dùng đều nhìn thấy và sử dụng được Trợ lý AI.
+#     + Bộ Não Hội Thoại Tức Thì (< 50ms): Tích hợp sẵn bộ máy phản hồi ngữ cảnh thông minh chuẩn người thật, xưng "Em", gọi "Quý Anh/Chị" hoặc theo họ tên hội viên; phản hồi tức thì các câu hỏi chào hỏi, hỏi thăm, tình trạng hội viên, sự kiện nóng, thông báo và hỗ trợ dẫn đường.
+#     + Tự Động Nhận Diện Dừng Nói (Silence Detection): Sau 1.3 giây hội viên dừng phát âm, hệ thống tự động chốt câu hỏi và kích hoạt phân tích mà không cần người dùng phải bấm nút dừng thủ công.
+#     + Tách Biệt Nhận Dạng Giọng Nói & Tránh Vòng Lặp: Tuyệt đối không đưa `transcript` vào dependency array của `useEffect` khởi tạo SpeechRecognition; sử dụng `transcriptRef` để lưu trữ chuỗi âm thanh và chống tự hủy bộ thu âm.
+#     + Giọng Đọc Text-to-Speech (TTS) Không Bị Câm/Kẹt: Luôn gọi `window.speechSynthesis.cancel()` và `window.speechSynthesis.resume()` trước khi phát âm; tự động chọn giọng tiếng Việt chất lượng cao qua sự kiện `onvoiceschanged`; tự động làm sạch ký tự Markdown, Emoji, URL trước khi đọc văn bản.
+
+
 
 

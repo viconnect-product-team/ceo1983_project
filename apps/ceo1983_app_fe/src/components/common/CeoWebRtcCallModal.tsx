@@ -89,10 +89,12 @@ export function CeoWebRtcCallModal({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [hasRemoteAudio, setHasRemoteAudio] = useState(false);
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const remoteMediaStreamRef = useRef<MediaStream | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const queuedCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
@@ -288,26 +290,56 @@ export function CeoWebRtcCallModal({
           }
         });
 
-        // 3. Handle remote tracks (audio & video)
-        pc.ontrack = (event) => {
-          if (!isMounted || !event.streams || !event.streams[0]) return;
-          const remoteStream = event.streams[0];
+        // 3. Handle remote tracks (audio & video) without ever dropping tracks
+        const remoteStream = new MediaStream();
+        remoteMediaStreamRef.current = remoteStream;
 
-          // Always route audio to dedicated audio element
+        pc.ontrack = (event) => {
+          if (!isMounted) return;
+          console.log("[WebRTC] ontrack received:", event.track.kind, event.track.id);
+
+          // Add incoming tracks into our persistent remoteStream
+          if (event.streams && event.streams[0]) {
+            event.streams[0].getTracks().forEach((tr) => {
+              if (!remoteStream.getTracks().some((t) => t.id === tr.id)) {
+                remoteStream.addTrack(tr);
+              }
+            });
+          } else if (event.track) {
+            if (!remoteStream.getTracks().some((t) => t.id === event.track.id)) {
+              remoteStream.addTrack(event.track);
+            }
+          }
+
+          // Route to remote audio element
           if (remoteAudioRef.current) {
-            remoteAudioRef.current.srcObject = remoteStream;
+            if (remoteAudioRef.current.srcObject !== remoteStream) {
+              remoteAudioRef.current.srcObject = remoteStream;
+            }
+            remoteAudioRef.current.muted = false;
             remoteAudioRef.current.volume = 1.0;
             remoteAudioRef.current.play().catch((e) => console.log("[WebRTC] Audio auto-play prevented:", e));
           }
 
-          // If video element exists, attach remote stream as well
+          // Route to remote video element
           if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStream;
+            if (remoteVideoRef.current.srcObject !== remoteStream) {
+              remoteVideoRef.current.srcObject = remoteStream;
+            }
+            remoteVideoRef.current.muted = false;
             remoteVideoRef.current.play().catch((e) => console.log("[WebRTC] Video auto-play prevented:", e));
           }
 
-          if (event.track.kind === "audio") setHasRemoteAudio(true);
-          if (event.track.kind === "video") setHasRemoteVideo(true);
+          if (event.track.kind === "audio") {
+            setHasRemoteAudio(true);
+            setCallStatus("connected");
+            stopOutgoingTone();
+          }
+          if (event.track.kind === "video") {
+            setHasRemoteVideo(true);
+            setCallStatus("connected");
+            stopOutgoingTone();
+          }
         };
 
         // 4. Relay ICE candidates to peer
@@ -592,7 +624,7 @@ export function CeoWebRtcCallModal({
             />
 
             {/* Fallback if remote stream has no video yet: Show partner card inside */}
-            {(!hasRemoteVideo || callStatus === "calling") && (
+            {!hasRemoteVideo && (
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none bg-slate-950/70 backdrop-blur-xs">
                 <div className="relative mb-4">
                   {peerAvatar ? (
@@ -724,6 +756,39 @@ export function CeoWebRtcCallModal({
             <span className="text-[11px] font-medium">Đổi camera</span>
           </button>
         )}
+
+        {/* Speaker Volume Toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            const nextSpeaker = !isSpeakerOn;
+            setIsSpeakerOn(nextSpeaker);
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.muted = !nextSpeaker;
+              remoteAudioRef.current.volume = nextSpeaker ? 1.0 : 0.0;
+              if (nextSpeaker) remoteAudioRef.current.play().catch(() => {});
+            }
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.muted = !nextSpeaker;
+              if (nextSpeaker) remoteVideoRef.current.play().catch(() => {});
+            }
+            toast.info(nextSpeaker ? "Đã bật loa ngoài" : "Đã tắt tiếng loa");
+          }}
+          className={`flex flex-col items-center gap-1.5 transition active:scale-95 cursor-pointer ${
+            !isSpeakerOn ? "text-amber-400" : "text-white"
+          }`}
+        >
+          <div
+            className={`grid h-13 w-13 place-items-center rounded-full border transition-colors ${
+              !isSpeakerOn
+                ? "bg-amber-500/20 border-amber-500 text-amber-400"
+                : "bg-white/10 border-white/20 hover:bg-white/20 text-white"
+            }`}
+          >
+            {!isSpeakerOn ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </div>
+          <span className="text-[11px] font-medium">{isSpeakerOn ? "Loa ngoài" : "Tắt loa"}</span>
+        </button>
 
         {/* End Call Button */}
         <button

@@ -7,6 +7,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlertCircle,
+  AlertTriangle,
   Bell,
   CalendarDays,
   CalendarPlus,
@@ -557,11 +559,90 @@ function CreateMeetingModal({
   const [venue, setVenue] = useState("Trụ sở doanh nghiệp / Quán Cafe");
   const [reminderTier, setReminderTier] = useState<1 | 2 | 3 | 4>(2);
   const [notes, setNotes] = useState("");
+  const [conflictModalData, setConflictModalData] = useState<{
+    type: "both" | "time" | "location";
+    primaryMeeting: any;
+  } | null>(null);
 
-  const handleSave = () => {
+  const detectConflict = () => {
+    const history = getMeetingHistory();
+    const events = getSavedCalendarEvents();
+    const all = [...history, ...events];
+    const targetDateClean = date.slice(0, 10);
+    const targetMin = (() => {
+      const [h, m] = time.split(":").map(Number);
+      return isNaN(h) ? null : h * 60 + (isNaN(m) ? 0 : m);
+    })();
+    const targetLocClean = venue.trim().toLowerCase();
+
+    let timeConflict: any = null;
+    let locConflict: any = null;
+
+    for (const m of all) {
+      if (!m) continue;
+      const mDate = String((m as any).date || (m as any).startsAt || "").slice(0, 10);
+      if (mDate !== targetDateClean) continue;
+
+      const mTime =
+        (m as any).time ||
+        ((m as any).startsAt && (m as any).startsAt.includes("T")
+          ? (m as any).startsAt.split("T")[1]?.slice(0, 5)
+          : "");
+      let isTimeOverlap = false;
+      if (mTime && targetMin !== null) {
+        const [mh, mm] = mTime.split(":").map(Number);
+        if (!isNaN(mh)) {
+          const mMin = mh * 60 + (isNaN(mm) ? 0 : mm);
+          if (Math.abs(mMin - targetMin) < 60) isTimeOverlap = true;
+        }
+      } else if (mTime && time && mTime === time) {
+        isTimeOverlap = true;
+      }
+
+      let isLocOverlap = false;
+      if (venueType === "offline") {
+        const mLoc = String((m as any).venue || (m as any).location || "").trim().toLowerCase();
+        const isOnline =
+          mLoc.includes("online") ||
+          mLoc.includes("trực tuyến") ||
+          mLoc.includes("meet") ||
+          mLoc.includes("http");
+        if (!isOnline && mLoc.length > 3 && targetLocClean.length > 3) {
+          if (
+            mLoc === targetLocClean ||
+            mLoc.includes(targetLocClean) ||
+            targetLocClean.includes(mLoc)
+          ) {
+            isLocOverlap = true;
+          }
+        }
+      }
+
+      if (isTimeOverlap && isLocOverlap) {
+        return { type: "both" as const, primaryMeeting: m };
+      }
+      if (isTimeOverlap && !timeConflict) timeConflict = m;
+      if (isLocOverlap && !locConflict) locConflict = m;
+    }
+
+    if (timeConflict && locConflict) return { type: "both" as const, primaryMeeting: timeConflict };
+    if (timeConflict) return { type: "time" as const, primaryMeeting: timeConflict };
+    if (locConflict) return { type: "location" as const, primaryMeeting: locConflict };
+    return null;
+  };
+
+  const handleSave = (force = false) => {
     if (!title.trim() || !partnerName.trim()) {
       toast.error("Vui lòng nhập tiêu đề cuộc gặp và tên đối tác!");
       return;
+    }
+
+    if (!force) {
+      const conflict = detectConflict();
+      if (conflict) {
+        setConflictModalData(conflict);
+        return;
+      }
     }
 
     const meetingId = `meet_${Date.now()}`;
@@ -593,6 +674,8 @@ function CreateMeetingModal({
       isOnline: venueType === "online",
     });
 
+    setConflictModalData(null);
+    toast.success("✓ Đã lên lịch cuộc gặp thành công!");
     onSuccess();
   };
 
@@ -826,13 +909,66 @@ function CreateMeetingModal({
           </button>
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => handleSave(false)}
             className="flex-1 py-2.5 rounded-full bg-[linear-gradient(135deg,#F6E1C3_0%,#D8B282_45%,#C29B69_70%,#8C653B_100%)] text-[#050c15] text-xs font-bold shadow-md cursor-pointer hover:brightness-105 active:scale-98 transition-all"
           >
             Lên lịch cuộc gặp
           </button>
         </div>
       </div>
+
+      {/* Popup cảnh báo trùng lịch */}
+      {conflictModalData && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border border-amber-500/40 bg-[var(--bc-mobile-surface)] p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 ring-8 ring-amber-500/10">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-500 border border-amber-500/30 mb-1">
+                  {conflictModalData.type === "both"
+                    ? "Trùng cả giờ & địa điểm"
+                    : conflictModalData.type === "time"
+                    ? "Trùng thời gian"
+                    : "Trùng địa điểm trực tiếp"}
+                </span>
+                <h4 className="text-sm font-bold text-[var(--bc-mobile-text)]">
+                  Cảnh báo trùng lịch cuộc gặp
+                </h4>
+                <p className="text-xs text-[var(--bc-mobile-muted)] mt-0.5">
+                  Đang trùng với cuộc gặp: <strong className="text-[var(--bc-mobile-text)]">{conflictModalData.primaryMeeting.title}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3.5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+              <p className="font-semibold flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                Bạn có chắc chắn muốn lên lịch trùng và đảm bảo có thể tham gia được không?
+              </p>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setConflictModalData(null)}
+                className="flex-1 py-2 rounded-xl border border-[var(--bc-mobile-border)] text-xs font-semibold text-[var(--bc-mobile-muted)] hover:text-[var(--bc-mobile-text)]"
+              >
+                Quay lại chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSave(true)}
+                className="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold shadow-md flex items-center justify-center gap-1"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Tôi đảm bảo tham gia
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

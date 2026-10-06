@@ -57,52 +57,118 @@ export function PersonalProfileBottomSheet({
   const [copiedLink, setCopiedLink] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
   const touchStartY = useRef(0);
-  const currentDragY = useRef(0);
+  const touchStartTime = useRef(0);
+  const isDragActive = useRef(false);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
       setDragY(0);
       setIsDragging(false);
-      currentDragY.current = 0;
+      setIsClosing(false);
+      isDragActive.current = false;
     }
   }, [open]);
 
   if (!open) return null;
 
+  // Xử lý vuốt xuống mượt mà trên cảm ứng (Touch Events)
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (sheetRef.current && sheetRef.current.scrollTop <= 0) {
+    const target = e.target as HTMLElement;
+    const isHandle = Boolean(target.closest("[data-drag-handle='true']"));
+    const isAtTop = !contentRef.current || contentRef.current.scrollTop <= 0;
+
+    if (isHandle || isAtTop) {
       touchStartY.current = e.touches[0].clientY;
-      setIsDragging(true);
+      touchStartTime.current = Date.now();
+      isDragActive.current = true;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (!isDragActive.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+
     if (deltaY > 0) {
-      currentDragY.current = deltaY;
+      if (e.cancelable) e.preventDefault();
+      setIsDragging(true);
+      // Áp dụng damping nhẹ để vuốt đầm tay, mượt mà
       setDragY(deltaY);
     } else {
-      currentDragY.current = 0;
+      setIsDragging(false);
       setDragY(0);
     }
   };
 
   const handleTouchEnd = () => {
-    if (!isDragging) return;
+    if (!isDragActive.current) return;
+    isDragActive.current = false;
     setIsDragging(false);
-    if (currentDragY.current > 85) {
-      setDragY(window.innerHeight || 800);
+
+    const timeElapsed = Math.max(Date.now() - touchStartTime.current, 1);
+    const velocity = dragY / timeElapsed; // px/ms
+
+    // Nếu kéo xuống > 45px HOẶC vuốt nhanh (velocity > 0.3) thì đóng mượt mà
+    if (dragY > 45 || velocity > 0.3) {
+      setIsClosing(true);
+      setDragY(window.innerHeight || 600);
       setTimeout(() => {
         onClose();
+        setIsClosing(false);
         setDragY(0);
-      }, 200);
+      }, 240);
     } else {
       setDragY(0);
     }
-    currentDragY.current = 0;
+  };
+
+  // Hỗ trợ kéo chuột đóng trên Desktop
+  const handleMouseDownHandle = (e: React.MouseEvent) => {
+    touchStartY.current = e.clientY;
+    touchStartTime.current = Date.now();
+    isDragActive.current = true;
+    setIsDragging(true);
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragActive.current) return;
+      const deltaY = ev.clientY - touchStartY.current;
+      if (deltaY > 0) {
+        setDragY(deltaY);
+      } else {
+        setDragY(0);
+      }
+    };
+
+    const onMouseUp = (ev: MouseEvent) => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      isDragActive.current = false;
+      setIsDragging(false);
+
+      const deltaY = Math.max(0, ev.clientY - touchStartY.current);
+      const timeElapsed = Math.max(Date.now() - touchStartTime.current, 1);
+      const velocity = deltaY / timeElapsed;
+
+      if (deltaY > 45 || velocity > 0.3) {
+        setIsClosing(true);
+        setDragY(window.innerHeight || 600);
+        setTimeout(() => {
+          onClose();
+          setIsClosing(false);
+          setDragY(0);
+        }, 240);
+      } else {
+        setDragY(0);
+      }
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
   };
 
   const initials = profile.displayName
@@ -168,14 +234,23 @@ export function PersonalProfileBottomSheet({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm p-0 transition-opacity duration-300 animate-in fade-in"
+      className={`fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm p-0 transition-opacity duration-200 ${
+        isClosing ? "opacity-0 pointer-events-none" : "opacity-100 animate-in fade-in"
+      }`}
       onClick={onClose}
     >
+      {/* 
+        POPUP THẺ HỘI VIÊN:
+        1. Chỉ hiện đến giữa màn hình (h-[50dvh] max-h-[50dvh]).
+        2. Vuốt xuống mượt mà (smooth swipe-down touch/drag with cubic-bezier transition).
+      */}
       <div
         ref={sheetRef}
-        className={`relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[32px] border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0A1224] text-slate-900 dark:text-white shadow-2xl ${
-          isDragging ? "" : "transition-transform duration-200 ease-out"
-        } animate-in slide-in-from-bottom overscroll-contain`}
+        className={`relative w-full max-w-lg h-[50dvh] max-h-[50dvh] flex flex-col rounded-t-[28px] border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0A1224] text-slate-900 dark:text-white shadow-2xl overflow-hidden ${
+          isDragging
+            ? "transition-none"
+            : "transition-transform duration-250 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        } animate-in slide-in-from-bottom`}
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
         }}
@@ -184,16 +259,16 @@ export function PersonalProfileBottomSheet({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Drag handle */}
+        {/* Drag handle header (Kéo vuốt xuống mượt mà) */}
         <div
-          className="sticky top-0 z-30 flex flex-col items-center justify-center pt-3 pb-1.5 bg-inherit cursor-grab active:cursor-grabbing select-none"
-          onTouchStart={(e) => {
-            touchStartY.current = e.touches[0].clientY;
-            setIsDragging(true);
-          }}
+          data-drag-handle="true"
+          onMouseDown={handleMouseDownHandle}
+          className="shrink-0 flex flex-col items-center justify-center pt-2.5 pb-1.5 bg-white dark:bg-[#0A1224] border-b border-slate-100 dark:border-white/5 cursor-grab active:cursor-grabbing select-none"
         >
           <div className="h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 transition-colors" />
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">Vuốt xuống để đóng</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
+            Vuốt xuống để đóng
+          </span>
         </div>
 
         {/* Nút đóng */}
@@ -201,80 +276,83 @@ export function PersonalProfileBottomSheet({
           type="button"
           onClick={onClose}
           aria-label="Đóng"
-          className="absolute top-4 right-4 z-30 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition active:scale-95 cursor-pointer"
+          className="absolute top-2.5 right-3 z-30 grid h-7 w-7 place-items-center rounded-full bg-black/10 dark:bg-white/10 text-slate-700 dark:text-white backdrop-blur-md hover:bg-black/20 dark:hover:bg-white/20 transition active:scale-95 cursor-pointer"
         >
-          <X className="h-4.5 w-4.5" />
+          <X className="h-4 w-4" />
         </button>
 
-        {/* Ảnh bìa Cover */}
-        <div className="relative h-32 sm:h-36 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1224]">
-          {resolvedCover ? (
-            <img
-              src={resolvedCover}
-              alt="Cover Photo"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#00224F] via-[#003B95] to-[#0A1224]" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+        {/* Scrollable Container bên trong nửa màn hình */}
+        <div
+          ref={contentRef}
+          className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 pb-6 pt-2"
+        >
+          {/* Ảnh bìa Cover tinh gọn cho màn hình nửa dưới */}
+          <div className="relative h-20 sm:h-24 w-full rounded-2xl overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1224] shrink-0 shadow-xs">
+            {resolvedCover ? (
+              <img
+                src={resolvedCover}
+                alt="Cover Photo"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#00224F] via-[#003B95] to-[#0A1224]" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
-          {/* Huy hiệu thành viên góc bìa */}
-          <div className="absolute top-3 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10.5px] font-bold shadow-xs">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>{profile.memberCode || "HỘI VIÊN CHÍNH THỨC"}</span>
+            {/* Huy hiệu thành viên góc bìa */}
+            <div className="absolute top-2 left-3 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10px] font-bold shadow-xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{profile.memberCode || "HỘI VIÊN CHÍNH THỨC"}</span>
+            </div>
           </div>
-        </div>
 
-        {/* Nội dung hồ sơ cá nhân */}
-        <div className="px-5 pb-8 pt-0">
           {/* Avatar + Quick Action Row */}
-          <div className="flex items-end justify-between -mt-12 mb-3">
-            <div className="relative">
+          <div className="flex items-end justify-between -mt-9 mb-2.5 px-1">
+            <div className="relative shrink-0">
               {resolvedAvatar ? (
                 <img
                   src={resolvedAvatar}
                   alt={profile.displayName}
-                  className="h-24 w-24 rounded-2xl border-4 border-white dark:border-[#0A1224] object-cover shadow-xl bg-white dark:bg-slate-800"
+                  className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl border-3 border-white dark:border-[#0A1224] object-cover shadow-lg bg-white dark:bg-slate-800"
                 />
               ) : (
-                <div className="h-24 w-24 rounded-2xl border-4 border-white dark:border-[#0A1224] bg-gradient-to-tr from-[#003B95] to-[#19194D] text-white font-black text-2xl grid place-items-center shadow-xl">
+                <div className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl border-3 border-white dark:border-[#0A1224] bg-gradient-to-tr from-[#003B95] to-[#19194D] text-white font-black text-xl grid place-items-center shadow-lg">
                   {initials}
                 </div>
               )}
-              <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0A1224]" />
+              <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0A1224]" />
             </div>
 
             {/* Cụm nút hành động nhanh bên phải avatar */}
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
               {onOpenQr && (
                 <button
                   type="button"
                   onClick={onOpenQr}
-                  className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[#003B95] dark:text-blue-400 hover:bg-slate-100 transition active:scale-95 shadow-xs cursor-pointer"
+                  className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[#003B95] dark:text-blue-400 hover:bg-slate-100 transition active:scale-95 shadow-xs cursor-pointer"
                   title="Mở mã QR danh thiếp"
                 >
-                  <QrCode className="h-5 w-5" />
+                  <QrCode className="h-4.5 w-4.5" />
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={handleShare}
-                className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition active:scale-95 shadow-xs cursor-pointer"
+                className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition active:scale-95 shadow-xs cursor-pointer"
                 title="Chia sẻ hồ sơ"
               >
-                {copiedLink ? <Check className="h-5 w-5 text-emerald-500" /> : <Share2 className="h-5 w-5" />}
+                {copiedLink ? <Check className="h-4.5 w-4.5 text-emerald-500" /> : <Share2 className="h-4.5 w-4.5" />}
               </button>
 
               {onEdit && (
                 <button
                   type="button"
                   onClick={onEdit}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer"
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-[11px] font-bold shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span>Chỉnh sửa</span>
+                  <Pencil className="h-3 w-3" />
+                  <span>Sửa</span>
                 </button>
               )}
             </div>

@@ -3,16 +3,16 @@
  * ĐẶC TẢ TOÀN DIỆN YÊU CẦU PHẦN MỀM (SRS - SOFTWARE REQUIREMENTS SPECIFICATION)
  * Tiêu Chuẩn Quốc Tế: IEEE 830-1998 & ISO/IEC 25010
  * Hệ Sinh Thái Số Hóa & Quản Trị Hiệp Hội Doanh Nhân CEO 1983 (Trực thuộc HanoiBA)
- * Áp dụng nguyên tắc MECE (Mutually Exclusive, Collectively Exhaustive) 100% — Đầy Đủ 48 Use Cases
+ * Áp dụng nguyên tắc MECE (Mutually Exclusive, Collectively Exhaustive) 100% — Đầy Đủ 59 Use Cases
  */
 
 const SRS_METADATA = {
   title: "SOFTWARE REQUIREMENTS SPECIFICATION (SRS)",
   subTitle: "HỆ SINH THÁI SỐ HÓA & QUẢN TRỊ HIỆP HỘI DOANH NHÂN CEO 1983",
   standard: "Tiêu Chuẩn Quốc Tế IEEE 830-1998 — Master Enterprise Specification",
-  docCode: "SRS-IEEE830-CEO1983-MASTER-V5.0",
-  version: "Version 5.0 (Bàn Giao Kỹ Thuật Đầy Đủ Chi Tiết 100% MECE)",
-  date: "04/10/2026",
+  docCode: "SRS-IEEE830-CEO1983-MASTER-V5.5",
+  version: "Version 5.5 (Tích Hợp Trợ Lý AI 32 Tính Năng & Chỉ Dẫn GPS Lái Màn Hình Trực Tiếp)",
+  date: "06/10/2026",
   organization: "Câu Lạc Bộ Doanh Nhân CEO 1983 (Trực thuộc Hội Doanh Nhân Trẻ Hà Nội — HanoiBA)",
   consultant: "Ban Công Nghệ Chuyển Đổi Số & ViConnect Platform",
   author: "Senior Business Analyst & System Architect (15+ Năm Kinh Nghiệm)",
@@ -65,7 +65,7 @@ const USER_ROLES_DATA = [
   }
 ];
 
-// 2. NĂM HÀNH TRÌNH NGƯỜI DÙNG TOÀN DIỆN (END-TO-END USER JOURNEYS)
+// 2. SÁU HÀNH TRÌNH NGƯỜI DÙNG TOÀN DIỆN (END-TO-END USER JOURNEYS)
 const USER_JOURNEYS_DATA = [
   {
     journeyId: "UJ-01",
@@ -133,10 +133,25 @@ const USER_JOURNEYS_DATA = [
       "Bước 4: Hệ thống mã hóa một chiều phiếu bầu (Đảm bảo nguyên tắc 1 người 1 phiếu và ẩn danh tuyệt đối), khóa nút biểu quyết trên máy hội viên.",
       "Bước 5: Máy chủ Socket.IO tổng hợp kết quả tức thời. Màn hình LED trung tâm của Đại hội hiển thị biểu đồ tỷ lệ phần trăm (%) nhảy động thời gian thực với độ trễ dưới 1 giây, công bố kết quả minh bạch 100%."
     ]
+  },
+  {
+    journeyId: "UJ-06",
+    name: "Hành Trình Tương Tác Giọng Nói Với Trợ Lý AI ➔ Tra Cứu Dữ Liệu Thực Tế ➔ Dẫn Đường Lái Màn Hình Trực Tiếp GPS Turn-by-Turn HUD (32 Tính Năng)",
+    targetRole: "Hội viên chính thức, Ban Quản Trị, Cán bộ các Ban Chuyên Môn",
+    steps: [
+      "Bước 1: Người dùng chạm biểu tượng Robot Trợ lý AI ở góc màn hình hoặc dùng phím tắt nổi.",
+      "Bước 2: Hệ thống tự động gọi API `/api/ai/live-context`, tải tức thời thông tin phiên đăng nhập: Họ tên, Mã hội viên, Hạng thẻ VIP, Tình trạng hội phí thường niên, Số lượng thông báo chưa đọc, Danh sách sự kiện đã có vé tham dự và Top 5 sự kiện đông nhất.",
+      "Bước 3: Người dùng ra lệnh bằng giọng nói tiếng Việt (Microphone) hoặc nhập câu hỏi: 'Sự kiện nào đang được nhiều người đăng ký nhất?', 'Tôi có thông báo nào chưa đọc?' hoặc 'Hướng dẫn tôi đăng ký sự kiện như nào'.",
+      "Bước 4: Bộ máy Smart Hybrid Engine kết hợp Google Gemini 2.0 Flash xử lý ngôn ngữ tự nhiên, phản hồi Markdown chi tiết và tóm tắt lời thoại tiếng Việt qua Web Speech API (0ms latency, 100% miễn phí).",
+      "Bước 5: Khi câu hỏi liên quan đến hướng dẫn sử dụng bất kỳ chức năng nào trong hệ thống, AI giải thích chi tiết các bước và chủ động hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ dẫn đường từng bước cho Anh/Chị.' kèm hộp Callout vàng hoàng gia hiển thị 2 nút [👉 Có, hướng dẫn trực tiếp ngay] và [Để sau].",
+      "Bước 6: Người dùng bấm nút 'Có' hoặc nói khẩu lệnh khẳng định ('Có', 'Đồng ý', 'Bắt đầu', 'OK', 'Yes', 'Lái màn hình đi').",
+      "Bước 7: Trợ lý AI tự động đóng modal, lập tức điều hướng URL đến đúng trang tính năng (`navigate({ to: route })`) và kích hoạt lộ trình dẫn đường thực tế `startTourGlobally(tourId)`.",
+      "Bước 8: Lớp phủ Voice GPS HUD Overlay kích hoạt hiệu ứng Spotlight làm mờ xung quanh, chiếu vòng hào quang vàng kim nhấp nháy vào đúng nút cần chạm, thanh chỉ dẫn HUD hiển thị cử chỉ (👆 Chạm, 📸 Quét, ↔️ Vuốt) kèm lời thuyết minh giọng nói từng bước cho đến khi hoàn thành."
+    ]
   }
 ];
 
-// 3. TOÀN BỘ 48 USE CASES CHI TIẾT (MECE 100% TOÀN DỰ ÁN CEO 1983)
+// 3. TOÀN BỘ 59 USE CASES CHI TIẾT (MECE 100% TOÀN DỰ ÁN CEO 1983)
 // Mỗi bước đều có định dạng chuẩn "Bước X: ..." và xuống dòng độc lập!
 const ALL_USE_CASES_DETAILED = [
   // -------------------------------------------------------------
@@ -212,32 +227,36 @@ const ALL_USE_CASES_DETAILED = [
   {
     ucId: "UC-PUB-03",
     module: "Phân hệ 1: Cổng Thông Tin Công Khai & Tiếp Nhận Ứng Viên",
-    name: "Tự Động Phát Hành Email Tiếp Nhận Hồ Sơ Qua SMTP Relay",
-    description: "Hệ thống máy chủ dịch vụ tự động phát hành email xác nhận ngay khi ứng viên nộp hồ sơ đăng ký thành công.",
+    name: "Phát Hành Thư Điện Tử SMTP Relay & Chặn Vòng Lặp 1-Fail Suppression",
+    description: "Hệ thống tự động phát hành email xác nhận, tích hợp bộ lọc địa chỉ giả lập và cơ chế danh sách đen 1-Fail Suppression List chống vòng lặp kẹt 47 giờ.",
     actors: "Máy chủ dịch vụ SMTP Mailer ngầm định (Backend Service)",
-    preConditions: "Bản ghi đăng ký [UC-PUB-02] được tạo thành công trong CSDL.",
+    preConditions: "Bản ghi đăng ký [UC-PUB-02] hoặc sự kiện hệ thống được kích hoạt.",
     inputs: [
-      { field: "recipientEmail", type: "String", req: true, val: "Email ứng viên vừa đăng ký" },
-      { field: "applicantName", type: "String", req: true, val: "Họ và tên ứng viên" },
-      { field: "applicationId", type: "String UUID", req: true, val: "Mã định danh hồ sơ hệ thống cấp" }
+      { field: "recipientEmail", type: "String", req: true, val: "Email ứng viên/hội viên nhận thư" },
+      { field: "applicantName", type: "String", req: true, val: "Họ và tên người nhận" },
+      { field: "applicationId", type: "String UUID", req: true, val: "Mã định danh giao dịch/hồ sơ hệ thống cấp" }
     ],
     mainFlow: [
-      "Bước 1: Sự kiện APPLICATION_SUBMITTED kích hoạt Job trong hàng đợi xử lý thư tín.",
-      "Bước 2: Dịch vụ nạp Template email HTML thương hiệu CEO 1983 (Màu Navy/Gold, Logo HanoiBA).",
-      "Bước 3: Điền thông tin cá nhân hóa: Họ tên, Tên doanh nghiệp, Mã tra cứu hồ sơ và Quy trình thẩm định 4 bước.",
-      "Bước 4: Kết nối an toàn đến cổng SMTP Relay bảo mật (smtp.gmail.com:465 qua SSL/TLS).",
-      "Bước 5: Phát hành thư điện tử đến hộp thư ứng viên.",
-      "Bước 6: Ghi nhận nhật ký gửi thư thành công vào bảng `activity_log`."
+      "Bước 1: Sự kiện gửi thư kích hoạt Job trong dịch vụ `mail.service.ts`.",
+      "Bước 2: Hệ thống chạy Bộ Lọc Kiểm Tra Email Hợp Lệ (Validation Pre-filter):",
+      "   - Kiểm tra nếu email thuộc tên miền giả lập/nội bộ (@ceo1983.com, test, dummy) -> Hủy tác vụ ngay lập tức, không gửi SMTP.",
+      "   - Kiểm tra danh sách chặn `uploads/mail_suppression_list.json` -> Nếu email đã từng bị lỗi trước đó, hủy gửi ngay lập tức.",
+      "Bước 3: Dịch vụ nạp Template email HTML thương hiệu CEO 1983 (Màu Navy/Gold, Logo HanoiBA).",
+      "Bước 4: Điền thông tin cá nhân hóa: Họ tên, Tên doanh nghiệp, Mã tra cứu hồ sơ và nội dung nghiệp vụ.",
+      "Bước 5: Kết nối an toàn đến cổng SMTP Relay bảo mật (smtp.gmail.com qua SSL/TLS hoặc App Password).",
+      "Bước 6: Phát hành thư điện tử đến hộp thư ứng viên.",
+      "Bước 7: Ghi nhận nhật ký gửi thư thành công vào bảng `activity_log`."
     ],
     alternativeFlows: [
-      "Bước A1: Hòm thư nhận tạm thời không liên lạc được -> Xếp hàng thử lại sau 5 phút (Tối đa 3 lần)."
+      "Bước A1: Hòm thư nhận là email kiểm thử nội bộ -> Bỏ qua gửi thư an toàn, không sinh lỗi hệ thống."
     ],
     exceptionFlows: [
-      "Bước E1: Lỗi xác thực SMTP hoặc mất kết nối mạng -> Ghi nhận lỗi vào hệ thống giám sát và thông báo quản trị viên."
+      "Bước E1: Gửi thư thất bại ngay lần đầu (mã lỗi 5xx, Recipient Rejected, 550 Mailbox not found) -> Hệ thống lập tức thêm email vào `uploads/mail_suppression_list.json` và DỪNG HẲN, tuyệt đối KHÔNG thử lại lần thứ 2, ngắt đứt vòng lặp Mailer-Daemon 47 giờ.",
+      "Bước E2: Lỗi xác thực SMTP mật khẩu ứng dụng Google -> Ghi nhận log cảnh báo quản trị viên kiểm tra cấu hình biến môi trường `SMTP_PASS`."
     ],
-    postConditions: "Ứng viên nhận được thư xác nhận chính thức trong hộp thư đến (Inbox) trong vòng dưới 10 giây.",
-    businessRules: "Đảm bảo tỷ lệ gửi thư thành công đạt > 99.5%, tránh rơi vào hòm thư rác (Spam).",
-    techMapping: "Service: `mailer.service.ts` | Config: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`"
+    postConditions: "Email được phát hành an toàn, hạ tầng SMTP không bao giờ bị nghẽn hay khóa do gửi lặp email chết.",
+    businessRules: "RULE-SMTP-FAIL-SUPPRESSION: Lọc email ảo và ngắt ngay nếu gửi lỗi 1 lần duy nhất.",
+    techMapping: "Service: `mail.service.ts` | Suppression List: `uploads/mail_suppression_list.json`"
   },
   {
     ucId: "UC-PUB-04",
@@ -523,34 +542,40 @@ const ALL_USE_CASES_DETAILED = [
   {
     ucId: "UC-CRM-EVT-01",
     module: "Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM)",
-    name: "Khởi Tạo Sự Kiện Hội Nghị & Gala Dinner (Event Wizard)",
-    description: "Khởi tạo sự kiện đại hội, hội thảo chuyên đề hoặc đêm tiệc Gala Dinner, thiết lập timeline chương trình và cấu hình các hạng vé mời.",
+    name: "Khởi Tạo Sự Kiện Hội Nghị & Gala (Kiểm Tra Xung Đột Địa Điểm)",
+    description: "Khởi tạo sự kiện đại hội, hội thảo chuyên đề hoặc đêm tiệc Gala Dinner, thiết lập timeline và tự động kiểm tra chống xung đột địa điểm vật lý.",
     actors: "Ban Truyền Thông & Sự Kiện (BTT), Ban Quản Trị",
     preConditions: "Tài khoản có quyền quản trị sự kiện.",
     inputs: [
       { field: "eventName", type: "String", req: true, val: "Tên sự kiện (VD: Gala Kỷ Niệm 3 Năm CEO 1983)" },
-      { field: "eventDate", type: "DateTime", req: true, val: "Thời gian bắt đầu và kết thúc" },
-      { field: "location", type: "String", req: true, val: "Địa điểm tổ chức hội trường" },
+      { field: "eventDate", type: "DateTime", req: true, val: "Thời gian bắt đầu và kết thúc sự kiện" },
+      { field: "location", type: "String", req: true, val: "Địa điểm tổ chức hội trường (hoặc 'Online')" },
       { field: "capacity", type: "Integer", req: true, val: "Sức chứa tối đa (VD: 500 khách)" },
       { field: "bannerUrl", type: "String URL", req: true, val: "Ảnh bìa sự kiện tỷ lệ chuẩn 16:9" }
     ],
     mainFlow: [
-      "Bước 1: Người dùng mở màn hình 'Quản Lý Sự Kiện' (/events) và bấm 'Tạo Sự Kiện Mới'.",
+      "Bước 1: Quản trị viên mở màn hình 'Quản Lý Sự Kiện' (/events) và bấm 'Tạo Sự Kiện Mới'.",
       "Bước 2: Trình tạo sự kiện đa bước (Wizard) mở ra: Bước 1: Thông tin chung; Bước 2: Diễn giả & Timeline; Bước 3: Cấu hình gói vé; Bước 4: Sơ đồ chỗ ngồi.",
-      "Bước 3: Nhập thông tin chung và tải ảnh banner 16:9 lên MinIO Storage.",
-      "Bước 4: Nhập danh sách diễn giả VIP, timeline chi tiết từng khung giờ.",
-      "Bước 5: Bấm 'Lưu & Tiếp Tục' sang bước cấu hình gói vé."
+      "Bước 3: Nhập thông tin chung (Tên sự kiện, Ngày giờ, Địa điểm tổ chức, Sức chứa) và tải ảnh banner 16:9 lên MinIO Storage.",
+      "Bước 4: Client & Backend tự động kích hoạt Thuật toán Kiểm Tra Xung Đột Địa Điểm (Venue Conflict Validation):",
+      "   - Cho phép nhiều sự kiện cùng ngày/giờ nhưng khác địa điểm.",
+      "   - Nếu địa điểm là 'Online', luôn cho phép tổ chức song song.",
+      "   - Nếu là địa điểm vật lý: Quét các sự kiện có status != 'cancelled' trong cùng ngày/giờ có location trùng nhau.",
+      "Bước 5: Nếu KHÔNG trùng địa điểm: Hệ thống xác thực hợp lệ, chuyển sang bước nhập danh sách diễn giả VIP và timeline chi tiết.",
+      "Bước 6: Bấm 'Lưu & Tiếp Tục' sang bước cấu hình gói vé."
     ],
     alternativeFlows: [
-      "Bước A1: Lưu ở trạng thái 'Bản nháp' (draft) để tiếp tục chỉnh sửa nội dung trước khi công bố."
+      "Bước A1: Lưu ở trạng thái 'Bản nháp' (draft) để tiếp tục chỉnh sửa nội dung trước khi công bố.",
+      "Bước A2: Tổ chức nhiều sự kiện cùng khung giờ tại các địa điểm khác nhau (VD: Workshop Ban Xúc Tiến tại Tầng 2 và Gala Dinner tại Khán phòng Diamond)."
     ],
     exceptionFlows: [
-      "Bước E1: Thời gian kết thúc trước thời gian bắt đầu -> Báo lỗi validation.",
-      "Bước E2: Ảnh banner sai tỷ lệ -> Cảnh báo tối ưu chuẩn 16:9."
+      "Bước E1: Thời gian kết thúc trước thời gian bắt đầu -> Báo lỗi: 'Thời gian kết thúc phải sau thời gian bắt đầu'.",
+      "Bước E2: Ảnh banner sai tỷ lệ -> Cảnh báo tối ưu chuẩn 16:9.",
+      "Bước E3: Trùng địa điểm với sự kiện khác đang hoạt động -> Hệ thống chặn lưu với mã HTTP 409 Conflict và thông báo: 'Địa điểm này đang trùng với sự kiện [Tên sự kiện], sau thời gian [hh:mm dd/MM/yyyy] có thể đăng ký được' (với thời điểm có thể đăng ký được tính bằng thời gian kết thúc sự kiện chiếm chỗ + 2 giờ chuẩn bị)."
     ],
-    postConditions: "Sự kiện được khởi tạo thành công ở trạng thái bản nháp.",
-    businessRules: "RULE-UI-ROYAL-NAVY-GOLD: Ảnh banner sự kiện bắt buộc tỷ lệ 16:9 sắc nét.",
-    techMapping: "Route: `/events` | API: `POST /api/association/events` | Table: `events`"
+    postConditions: "Sự kiện được khởi tạo thành công không bị tranh chấp khán phòng.",
+    businessRules: "RULE-EVT-VENUE-CONFLICT: Nhiều sự kiện có thể cùng thời gian nhưng bắt buộc khác địa điểm; RULE-UI-ROYAL-NAVY-GOLD.",
+    techMapping: "Route: `/events` | API: `POST /api/association/events` | Service: `events.service.ts`"
   },
   {
     ucId: "UC-CRM-EVT-02",
@@ -673,36 +698,41 @@ const ALL_USE_CASES_DETAILED = [
   {
     ucId: "UC-CRM-MTG-01",
     module: "Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM)",
-    name: "Khởi Tạo Lịch Họp & Thuật Toán Chống Trùng Phòng Sapphire Hub (40 Chỗ)",
-    description: "Khởi tạo cuộc họp lãnh đạo tập trung hoặc trực tuyến; tự động phát hiện và ngăn chặn xung đột lịch sử dụng phòng họp vật lý Sapphire Hub (40 chỗ).",
+    name: "Khởi Tạo Lịch Họp & Kiểm Tra Xung Đột Phòng Họp & Lịch Đại Biểu",
+    description: "Khởi tạo cuộc họp lãnh đạo tập trung hoặc trực tuyến; tự động kiểm tra chống trùng địa điểm/phòng họp vật lý và cảnh báo xung đột lịch trình đại biểu.",
     actors: "Ban Thư Ký (BTK), Ban Quản Trị (BQT)",
     preConditions: "Tài khoản có quyền khởi tạo cuộc họp.",
     inputs: [
       { field: "title", type: "String", req: true, val: "Tiêu đề cuộc họp (VD: Họp Ban Chấp Hành Quý 3/2026)" },
-      { field: "startTime", type: "DateTime", req: true, val: "Thời gian bắt đầu" },
+      { field: "startTime", type: "DateTime", req: true, val: "Thời gian bắt đầu cuộc họp" },
       { field: "endTime", type: "DateTime", req: true, val: "Thời gian kết thúc (Phải sau startTime)" },
-      { field: "roomType", type: "String", req: true, val: "Phòng Họp Sapphire Hub / Zoom / Google Meet / Offline khác" },
-      { field: "attendees", type: "Array of Member IDs", req: true, val: "Danh sách đại biểu được triệu tập" }
+      { field: "roomType", type: "String", req: true, val: "Phòng Họp Sapphire Hub / Zoom / Google Meet / Offline tập trung" },
+      { field: "location", type: "String", req: false, val: "Địa điểm cụ thể nếu là cuộc họp offline ngoài" },
+      { field: "attendees", type: "Array of Member IDs", req: true, val: "Danh sách đại biểu được triệu tập tham dự" }
     ],
     mainFlow: [
       "Bước 1: Ban Thư Ký mở màn hình 'Quản Lý Cuộc Họp' (/meetings) và bấm 'Lên Lịch Họp Mới'.",
       "Bước 2: Nhập tiêu đề cuộc họp, thời gian bắt đầu và kết thúc.",
-      "Bước 3: Lựa chọn địa điểm: 'Phòng Họp Sapphire UniWork Hub' (Sức chứa 40 chỗ).",
-      "Bước 4: Hệ thống tự động kích hoạt Thuật toán Chống Trùng Phòng (Room Conflict Detection):",
-      "   - Truy vấn toàn bộ các cuộc họp đang có trong CSDL có roomType = 'sapphire_hub' và trạng thái khác cancelled.",
-      "   - Kiểm tra điều kiện xung đột thời gian: (start_time < new_end_time) AND (end_time > new_start_time).",
-      "Bước 5: Nếu KHÔNG có xung đột: Hệ thống cho phép lưu bản ghi ở trạng thái pending_approval.",
-      "Bước 6: Ban Quản Trị phê duyệt chuyển sang trạng thái upcoming, hệ thống tự động phát hành giấy triệu tập qua thông báo đẩy và email đến các đại biểu."
+      "Bước 3: Lựa chọn địa điểm: 'Phòng Họp Sapphire UniWork Hub' (Sức chứa 40 chỗ) hoặc Nhập địa điểm vật lý offline khác.",
+      "Bước 4: Hệ thống tự động kích hoạt Thuật toán Chống Trùng Phòng Họp (Venue Conflict Detection):",
+      "   - Kiểm tra toàn bộ cuộc họp active có cùng địa điểm vật lý trong khung giờ: (start_time < new_end_time) AND (end_time > new_start_time).",
+      "   - Nếu phát hiện trùng địa điểm: Chặn lưu và báo rõ tên cuộc họp chiếm chỗ cùng thời gian rảnh dự kiến.",
+      "Bước 5: Hệ thống kích hoạt Thuật toán Kiểm tra Lịch trình Đại biểu (Attendee Schedule Overlap Detection):",
+      "   - Kiểm tra danh sách đại biểu tham gia xem có ai đang có lịch họp khác diễn ra đồng thời hay không.",
+      "   - Nếu có đại biểu trùng lịch: Hiển thị cảnh báo danh sách đại biểu bị xung đột để Ban Thư Ký quyết định.",
+      "Bước 6: Ban Thư Ký xác nhận lưu cuộc họp ở trạng thái pending_approval.",
+      "Bước 7: Ban Quản Trị phê duyệt chuyển sang trạng thái upcoming, hệ thống tự động phát hành giấy triệu tập qua thông báo đẩy và email đến các đại biểu."
     ],
     alternativeFlows: [
-      "Bước A1: Lựa chọn cuộc họp trực tuyến -> Nhập đường dẫn phòng họp Zoom / Google Meet / UniWork Link."
+      "Bước A1: Lựa chọn cuộc họp trực tuyến -> Nhập đường dẫn phòng họp Zoom / Google Meet / UniWork Link.",
+      "Bước A2: Cuộc họp gặp trùng lịch đại biểu nhưng là cuộc họp mở rộng không bắt buộc -> Ban Thư Ký bấm 'Tiếp Tục Lưu' để hoàn tất lịch họp."
     ],
     exceptionFlows: [
-      "Bước E1: Phát hiện xung đột lịch phòng Sapphire Hub -> Hệ thống chặn lưu và hiển thị cảnh báo đỏ rực: 'XUNG ĐỘT LỊCH: Phòng họp Sapphire Hub đã được đăng ký bởi [Tên cuộc họp trước] từ hh:mm đến hh:mm. Vui lòng chọn khung giờ khác hoặc đổi địa điểm!'."
+      "Bước E1: Phát hiện xung đột phòng họp vật lý (Sapphire Hub hoặc địa điểm trùng) -> Hệ thống chặn lưu và hiển thị cảnh báo đỏ rực: 'Địa điểm/Phòng họp này đang trùng với cuộc họp [Tên cuộc họp trước], sau thời gian [hh:mm dd/MM/yyyy] có thể đăng ký được!'."
     ],
-    postConditions: "Lịch họp được thiết lập an toàn, triệt tiêu 100% rủi ro trùng phòng họp vật lý.",
-    businessRules: "Phòng họp Sapphire Hub chỉ phục vụ tối đa 01 cuộc họp trong cùng một khung thời gian.",
-    techMapping: "Route: `/meetings` | API: `POST /api/association/meetings`"
+    postConditions: "Lịch họp được thiết lập an toàn, triệt tiêu 100% rủi ro trùng phòng họp và tối ưu tỷ lệ tham dự của đại biểu.",
+    businessRules: "RULE-MTG-VENUE-SCHEDULE-CONFLICT: Kiểm tra địa điểm phòng họp và lịch trình đại biểu.",
+    techMapping: "Route: `/meetings` | API: `POST /api/association/meetings` | Service: `meetings.service.ts`"
   },
   {
     ucId: "UC-CRM-MTG-02",
@@ -977,34 +1007,40 @@ const ALL_USE_CASES_DETAILED = [
   {
     ucId: "UC-CRM-SEC-01",
     module: "Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM)",
-    name: "Quản Trị Ma Trận Phân Quyền Vai Trò Động Dynamic RBAC 5 Cấp",
-    description: "Cho phép Superadmin cấu hình quyền hạn chi tiết (Xem, Thêm, Sửa, Xóa, Duyệt) cho 5 vai trò hệ thống.",
+    name: "Quản Trị Ma Trận Phân Quyền Vai Trò RBAC (Nhóm Menu Độc Lập & URL Sync)",
+    description: "Cung cấp phân hệ chuyên biệt 'PHÂN QUYỀN' trên thanh điều hướng Sidebar; cho phép Superadmin cấu hình ma trận phân quyền 5 vai trò, tra cứu quyền hạn người dùng và danh mục nhóm quyền kèm đồng bộ URL Query.",
     actors: "Ban Quản Trị tối cao (quan_tri)",
     preConditions: "Đăng nhập bằng tài khoản Superadmin (admin@connect.vn).",
     inputs: [
-      { field: "targetRole", type: "String", req: true, val: "Thuộc danh mục 5 vai trò hệ thống" },
-      { field: "moduleKey", type: "String", req: true, val: "Mã module/màn hình chức năng" },
-      { field: "actions", type: "Array of Strings", req: true, val: "Tập hợp các quyền: read, create, update, delete, approve" }
+      { field: "targetRole", type: "String", req: true, val: "Thuộc danh mục 5 vai trò hệ thống (quan_tri, admin, tong_thu_ky, truong_ban, member)" },
+      { field: "moduleKey", type: "String", req: true, val: "Mã module/màn hình chức năng (30 màn hình hệ thống)" },
+      { field: "actions", type: "Array of Strings", req: true, val: "Tập hợp các quyền: read, create, update, delete, approve" },
+      { field: "activeTab", type: "String Query", req: false, val: "matrix | user_actions | role_groups" }
     ],
     mainFlow: [
-      "Bước 1: Superadmin mở màn hình 'Phân Quyền Vai Trò' (/settings/roles) trên Web CRM.",
-      "Bước 2: Hệ thống tải ma trận phân quyền dạng bảng: Cột dọc là danh sách 5 vai trò, Cột ngang là 30 màn hình chức năng chia theo 8 nhóm sidebar.",
-      "Bước 3: Superadmin tích chọn hoặc hủy chọn các ActionPills (Xem, Sửa, Xóa, Duyệt) tương ứng.",
-      "Bước 4: Nhấn nút 'Lưu Ma Trận Phân Quyền'.",
-      "Bước 5: Hệ thống kiểm tra tính toàn vẹn (Không cho phép tước quyền quản trị của chính vai trò quan_tri).",
-      "Bước 6: Cập nhật các bản ghi trong bảng `role_permissions`.",
-      "Bước 7: Làm mới bộ đệm phân quyền (Permission Cache) tức thời trên toàn hệ thống.",
+      "Bước 1: Superadmin truy cập trực tiếp Nhóm Menu Cấp 1 'PHÂN QUYỀN' trên Sidebar hoặc Mobile Drawer (`/permissions`).",
+      "Bước 2: Hệ thống tải giao diện phân quyền trung tâm gồm 3 tab nghiệp vụ:",
+      "   - Tab 1: Ma Trận Phân Quyền Vai Trò (`?tab=matrix`): Cột dọc là 5 vai trò, Cột ngang là 30 màn hình chức năng chia theo từng nhóm nghiệp vụ.",
+      "   - Tab 2: Tra Cứu Quyền Người Dùng (`?tab=user_actions`): Tìm kiếm tài khoản cụ thể và xem danh sách hành vi được phép/bị chặn.",
+      "   - Tab 3: Danh Mục Nhóm Quyền & Ban Chuyên Môn (`?tab=role_groups`): Quản trị cấu trúc 6 ban và nhóm quyền tương ứng.",
+      "Bước 3: Chuyển đổi giữa các Tab sẽ tự động đồng bộ tham số trên thanh địa chỉ URL (`window.history.pushState`), hỗ trợ bookmark và chia sẻ liên kết sâu.",
+      "Bước 4: Tại Tab Ma Trận, Superadmin tích chọn hoặc hủy chọn các ActionPills (Xem, Sửa, Xóa, Duyệt) tương ứng.",
+      "Bước 5: Bấm nút 'Lưu Ma Trận Phân Quyền'.",
+      "Bước 6: Hệ thống kiểm tra tính toàn vẹn (Không cho phép tước quyền quản trị của chính vai trò quan_tri, chặn cứng quyền duyệt hội viên của Ban Thư Ký).",
+      "Bước 7: Cập nhật các bản ghi trong bảng `role_permissions` và làm mới bộ đệm phân quyền (Permission Cache) tức thời.",
       "Bước 8: Hiển thị thông báo cập nhật thành công."
     ],
     alternativeFlows: [
-      "Bước A1: Superadmin bấm 'Đặt lại mặc định' để khôi phục ma trận phân quyền tiêu chuẩn."
+      "Bước A1: Superadmin bấm 'Đặt lại mặc định' để khôi phục ma trận phân quyền chuẩn quốc tế của CLB CEO 1983.",
+      "Bước A2: Quản trị viên truy cập từ đường dẫn cũ `/settings/roles` -> Hệ thống tự động chuyển hướng sang `/permissions?tab=matrix`."
     ],
     exceptionFlows: [
-      "Bước E1: Cố tình tước quyền truy cập module Cấu hình của vai trò quan_tri -> Hệ thống chặn và báo lỗi an toàn."
+      "Bước E1: Cố tình tước quyền truy cập module Phân quyền của vai trò quan_tri -> Hệ thống chặn và báo lỗi an toàn: 'Không thể tước quyền quản trị tối cao của Superadmin'.",
+      "Bước E2: Cố tình cấp quyền duyệt hội viên cho Ban Thư Ký -> Hệ thống từ chối theo RULE-AUTH-BTV-EXCLUSIVE."
     ],
-    postConditions: "Các tài khoản đang hoạt động được áp dụng ma trận quyền mới ngay trong lần gọi API kế tiếp.",
-    businessRules: "Đảm bảo tính bất biến của tài khoản Quản trị tối cao Superadmin.",
-    techMapping: "Route: `/settings/roles` | API: `PUT /api/roles/permissions` | Table: `role_permissions`"
+    postConditions: "Ma trận phân quyền mới có hiệu lực ngay lập tức trên toàn bộ Web CRM và Mobile App mà không cần người dùng đăng xuất.",
+    businessRules: "RULE-RBAC-DEDICATED-MENU-GROUP: Nhóm menu độc lập 'PHÂN QUYỀN'; RULE-AUTH-BTV-EXCLUSIVE: Độc quyền duyệt hội viên của BTV.",
+    techMapping: "Route: `/permissions` | Nav Group: `nav.group.permissions` | Component: `permissions.tsx`, `Sidebar.tsx`"
   },
   {
     ucId: "UC-CRM-SEC-02",
@@ -1363,29 +1399,36 @@ const ALL_USE_CASES_DETAILED = [
   {
     ucId: "UC-APP-EVT-02",
     module: "Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983",
-    name: "Đăng Ký Vé Tham Dự & Lựa Chọn Vị Trí Ghế Ngồi Cinema Seating Map",
-    description: "Hội viên đăng ký vé tham dự sự kiện Gala 0 VNĐ và trực tiếp chọn vị trí bàn tiệc VIP yêu thích trên sơ đồ ghế trực quan.",
+    name: "Đăng Ký Vé Sự Kiện & Cảnh Báo Trùng Khung Giờ (confirmOverlap)",
+    description: "Hội viên đăng ký vé tham dự sự kiện Gala 0 VNĐ, chọn vị trí bàn tiệc VIP; hệ thống phát hiện trùng lịch và yêu cầu xác nhận trước khi cấp vé.",
     actors: "Hội viên chính thức CLB Doanh Nhân CEO 1983",
     preConditions: "Sự kiện có thiết kế sơ đồ ghế và đang mở đăng ký chỗ ngồi.",
     inputs: [
       { field: "eventId", type: "String", req: true, val: "Mã sự kiện tham dự" },
-      { field: "selectedSeatId", type: "String", req: true, val: "Mã ghế được chọn trên sơ đồ (VD: Bàn 03 - Ghế 08)" }
+      { field: "selectedSeatId", type: "String", req: false, val: "Mã ghế được chọn trên sơ đồ (VD: Bàn 03 - Ghế 08)" },
+      { field: "confirmOverlap", type: "Boolean", req: false, val: "Mặc định false; true khi hội viên xác nhận đăng ký trùng khung giờ" }
     ],
     mainFlow: [
       "Bước 1: Tại trang chi tiết sự kiện, hội viên bấm 'Đăng Ký Tham Dự'.",
       "Bước 2: Hệ thống tự động nhận diện tư cách hội viên chính thức, áp dụng giá vé VIP 0 VNĐ.",
-      "Bước 3: Mở màn hình Sơ Đồ Ghế Ngồi Cinema Seating Map trên điện thoại.",
-      "Bước 4: Hội viên chạm chọn bàn tiệc và ghế còn trống (Ghế đã có người chọn hiển thị màu xám khóa).",
-      "Bước 5: Bấm 'Xác Nhận Giữ Chỗ'.",
-      "Bước 6: Hệ thống khóa ghế và phát hành Vé điện tử E-Ticket tức thì vào Ví vé của hội viên."
+      "Bước 3: Hệ thống kiểm tra danh sách các sự kiện mà hội viên này đã đăng ký trước đó:",
+      "   - Nếu trùng ngày và khung giờ tổ chức với một sự kiện khác: Kích hoạt cảnh báo xác nhận overlap.",
+      "Bước 4: Mở màn hình Sơ Đồ Ghế Ngồi Cinema Seating Map trên điện thoại (nếu sự kiện có sơ đồ ghế).",
+      "Bước 5: Hội viên chạm chọn bàn tiệc và ghế còn trống (Ghế đã có người chọn hiển thị màu xám khóa).",
+      "Bước 6: Bấm 'Xác Nhận Giữ Chỗ'.",
+      "Bước 7: Hệ thống khóa ghế và phát hành Vé điện tử E-Ticket tức thì vào Ví vé của hội viên."
     ],
-    alternativeFlows: [],
+    alternativeFlows: [
+      "Bước A1: Hội viên đã đăng ký sự kiện A (VD: Hội thảo Xúc tiến đầu tư 08:30 - 11:30 ngày 15/10 tại KS Daewoo), tiếp tục đăng ký sự kiện B (Tọa đàm Chuyển đổi số 09:00 - 11:00 ngày 15/10 tại Khách sạn Lotte) -> Hệ thống hiển thị Modal cảnh báo: 'Bạn đang đăng ký sự kiện \"Tọa đàm Chuyển đổi số\" cùng thời gian với sự kiện \"Hội thảo Xúc tiến đầu tư\" (08:30 15/10/2026). Bạn có chắc muốn đăng ký thêm không?'.",
+      "Bước A2: Hội viên bấm 'Tiếp Tục Đăng Ký' -> Client gửi API với tham số `confirmOverlap: true` -> Backend lưu vé thành công."
+    ],
     exceptionFlows: [
-      "Bước E1: Ghế vừa bị người khác chọn trước trong tích tắc -> Báo lỗi: 'Ghế này vừa được đăng ký, vui lòng chọn vị trí khác'."
+      "Bước E1: Ghế vừa bị người khác chọn trước trong tích tắc -> Báo lỗi: 'Ghế này vừa được đăng ký, vui lòng chọn vị trí khác'.",
+      "Bước E2: Đăng ký trùng giờ nhưng không có cờ `confirmOverlap: true` -> Backend trả về HTTP 409 Overlap Warning kèm tên sự kiện xung đột để client bật popup xác nhận."
     ],
-    postConditions: "Hội viên sở hữu vé sự kiện có số bàn và số ghế định danh chính xác.",
-    businessRules: "Mỗi hội viên chỉ được đăng ký 01 vé hội viên chính thức 0 VNĐ.",
-    techMapping: "API: `POST /api/association/events/:id/register` | Table: `event_registrations`"
+    postConditions: "Hội viên sở hữu vé sự kiện định danh chính xác, có xác nhận chủ động nếu tham gia nhiều sự kiện cùng buổi.",
+    businessRules: "RULE-EVT-USER-OVERLAP-WARNING: Cảnh báo xác nhận trùng lịch; RULE-EVENT-SINGLE-CHECKIN: Mỗi vé chỉ check-in 1 lần.",
+    techMapping: "API: `POST /api/association/events/:id/register` | Table: `event_registrations` | Component: `association.events.tsx`, `m.events.tsx`"
   },
   {
     ucId: "UC-APP-EVT-03",
@@ -1671,6 +1714,121 @@ const ALL_USE_CASES_DETAILED = [
     businessRules: "Khi người dùng đã bấm tắt, tuyệt đối không được tự ý hiện lại popup làm phiền.",
     techMapping: "Component: `IosInstallPrompt.tsx` | WebClip: `/ceo1983.mobileconfig`"
   }
+,
+  {
+  "ucId": "UC-APP-AI-01",
+  "module": "Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983",
+  "name": "Trợ Lý AI Giọng Nói Tiếng Việt & Nắm Bắt Động Phiên Đăng Nhập (Live Context)",
+  "description": "Trợ lý AI tự động nhận diện danh tính hội viên, tình trạng nợ hội phí VietQR, thông báo mới chưa đọc, vé sự kiện đã đặt và Top 5 sự kiện có số người đăng ký đông nhất; phản hồi ngôn ngữ tự nhiên bằng văn bản Markdown và giọng đọc tiếng Việt 100% miễn phí.",
+  "actors": "Hội viên chính thức, Ban Quản Trị, Cán bộ các Ban Chuyên Môn",
+  "preConditions": "Hội viên đã đăng nhập vào Ứng dụng Hiệp hội (`/association/*`) và thiết bị hỗ trợ Web Speech API.",
+  "inputs": [
+    {
+      "field": "prompt",
+      "type": "String",
+      "req": true,
+      "val": "Câu hỏi dạng văn bản hoặc giọng nói thu âm từ Microphone"
+    },
+    {
+      "field": "liveContext",
+      "type": "Object",
+      "req": false,
+      "val": "Ngữ cảnh phiên: memberCode, feeStatus, unreadNotifs, registeredEvents"
+    }
+  ],
+  "mainFlow": [
+    "Bước 1: Hội viên chạm vào biểu tượng Robot Trợ lý AI ở góc màn hình hoặc dùng phím tắt nổi.",
+    "Bước 2: Hệ thống tự động kích hoạt API `GET /api/ai/live-context`, trích xuất thông tin phiên đăng nhập theo thời gian thực.",
+    "Bước 3: Hội viên bấm Micro và nói câu hỏi (Ví dụ: 'Sự kiện nào đang được nhiều người đăng ký nhất?', 'Tôi có thông báo nào chưa đọc không?', 'Hội phí của tôi thế nào?').",
+    "Bước 4: Trình duyệt chuyển giọng nói thành văn bản qua Web Speech Recognition (`lang = vi-VN`).",
+    "Bước 5: Gửi truy vấn đến Backend `POST /api/ai/ask`. Bộ máy Smart Hybrid Engine kết hợp Google Gemini 2.0 Flash xử lý dữ liệu động.",
+    "Bước 6: Trả về câu trả lời định dạng Markdown và kịch bản phát âm tiếng Việt ngắn gọn `speechText`.",
+    "Bước 7: Ứng dụng hiển thị bong bóng chat sinh động và Web Speech Synthesis phát âm thanh thuyết minh tiếng Việt chuẩn mực với độ trễ 0ms."
+  ],
+  "alternativeFlows": [
+    "Bước A1: Hội viên nhập câu hỏi bằng bàn phím thay vì nói qua Micro.",
+    "Bước A2: Hội viên chạm vào các chip hỏi nhanh (Quick Prompts) được đề xuất sẵn ở đầu giao diện chat."
+  ],
+  "exceptionFlows": [
+    "Bước E1: Trình duyệt chưa cấp quyền truy cập Microphone -> Hệ thống hiển thị Toast hướng dẫn cấp quyền và cho phép gõ phím.",
+    "Bước E2: Mất kết nối API ngoài -> Smart Hybrid Engine nội bộ tự động chuyển sang chế độ tra cứu dữ liệu CSDL offline đảm bảo 100% không gián đoạn."
+  ],
+  "postConditions": "Hội viên nắm bắt tức thì mọi thông tin hoạt động hiệp hội mà không cần mở nhiều màn hình tra cứu.",
+  "businessRules": "RULE-AI-32-FEATURES-TWO-PHASE-GPS-GUIDE: Model AI 100% miễn phí; dữ liệu phiên đăng nhập luôn cập nhật thời gian thực.",
+  "techMapping": "API: `GET /api/ai/live-context`, `POST /api/ai/ask` | Component: `VoiceNavAssistant.tsx`"
+},
+  {
+  "ucId": "UC-APP-AI-02",
+  "module": "Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983",
+  "name": "Bộ Máy Hướng Dẫn 32 Tính Năng & Cơ Chế 2 Pha Chỉ Dẫn Trực Tiếp (Turn-by-Turn Voice GPS HUD)",
+  "description": "Bộ máy điều hướng thông minh giải thích cặn kẽ thao tác của 32 tính năng trong/ngoài và tự động lái màn hình, chiếu Spotlight viền vàng nhấp nháy dẫn đường từng bước như Google Maps khi người dùng đồng ý.",
+  "actors": "Hội viên chính thức, Doanh nhân CEO 1983, Cán bộ tác nghiệp",
+  "preConditions": "Người dùng mở Trợ lý AI và hỏi về cách thao tác một chức năng bất kỳ (Ví dụ: 'Đăng ký sự kiện như nào', 'Ghi thẻ NFC ra sao', 'Cách quét card visit AI').",
+  "inputs": [
+    {
+      "field": "featureQuery",
+      "type": "String",
+      "req": true,
+      "val": "Câu hỏi yêu cầu hướng dẫn chức năng"
+    },
+    {
+      "field": "confirmation",
+      "type": "String / Click",
+      "req": true,
+      "val": "Bấm nút 'Có' hoặc nói 'Có', 'Đồng ý', 'Bắt đầu', 'OK', 'Yes'"
+    }
+  ],
+  "mainFlow": [
+    "Bước 1: Khi nhận câu hỏi về thao tác tính năng, AI giải thích tường tận các bước 1, 2, 3 bằng văn bản Markdown và phát giọng nói tiếng Việt.",
+    "Bước 2: Cuối câu trả lời, AI chủ động hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ dẫn đường từng bước cho Anh/Chị.'",
+    "Bước 3: Bong bóng chat hiển thị khung Callout vàng hoàng gia với 2 nút hành động: `[👉 Có, hướng dẫn trực tiếp ngay]` và `[Để sau]`.",
+    "Bước 4: Người dùng bấm nút 'Có' HOẶC nói khẩu lệnh khẳng định vào Micro ('Có', 'Đồng ý', 'Bắt đầu', 'OK', 'Yes', 'Lái màn hình đi').",
+    "Bước 5: Trợ lý AI ghi nhận xác nhận, đóng modal chat, phát câu mở đầu: 'Vâng! Tôi sẽ dẫn đường cho Quý anh/chị... Hãy quan sát màn hình và làm theo giọng nói nhé!'.",
+    "Bước 6: Trình duyệt tự động chuyển hướng URL đến đúng trang đích (`navigate({ to: route })`).",
+    "Bước 7: Kích hoạt lớp phủ Voice GPS HUD Overlay: Toàn màn hình tối mờ, chiếu Spotlight viền vàng nhấp nháy khoanh vùng chính xác nút bấm cần chạm.",
+    "Bước 8: Thanh chỉ dẫn HUD nổi hiển thị biểu tượng cử chỉ (👆 Chạm, 📸 Quét, ↔️ Vuốt), Vị trí chạm, Mô tả hành động và phát âm thanh thuyết minh từng bước cho đến khi hoàn thành toàn bộ lộ trình."
+  ],
+  "alternativeFlows": [
+    "Bước A1: Người dùng bấm '[Để sau]' hoặc nói 'Không' -> Giữ nguyên màn hình hiện tại, không chuyển trang đột ngột."
+  ],
+  "exceptionFlows": [
+    "Bước E1: Phần tử đích trên màn hình chưa kịp tải xong -> Bộ điều khiển tự động quan sát DOM qua MutationObserver, gắn Spotlight ngay khi phần tử xuất hiện."
+  ],
+  "postConditions": "Người dùng thao tác thành công tính năng trên thực tế mà không cần ghi nhớ tài liệu hướng dẫn phức tạp.",
+  "businessRules": "RULE-AI-32-FEATURES-TWO-PHASE-GPS-GUIDE: Bắt buộc áp dụng cơ chế 2 pha (Giải thích -> Hỏi ý kiến -> Lái màn hình khi Đồng ý); bao phủ trọn vẹn 32 tính năng.",
+  "techMapping": "Component: `VoiceNavAssistant.tsx`, `VoiceGpsHudOverlay.tsx` | Controller: `voice-gps-controller.ts` | Registry: `appTourRegistry.ts`"
+},
+  {
+  "ucId": "UC-CRM-AI-01",
+  "module": "Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM)",
+  "name": "Trợ Lý AI Điều Hành & Dẫn Đường Thao Tác Quản Trị CRM (Sự Kiện, Duyệt Hội Viên, Kế Toán, Giao Việc, Phân Quyền)",
+  "description": "Hỗ trợ cán bộ quản trị CRM hướng dẫn và dẫn đường trực tiếp các nghiệp vụ điều hành phức tạp: Tạo sự kiện mới, thẩm định duyệt hội viên, quản trị tài chính hội phí, giao việc bảng Kanban, phân quyền RBAC và quản lý nhà tài trợ.",
+  "actors": "Ban Quản Trị, Ban Thư Ký, Ban Thành Viên, Ban Tài Chính, Ban Sự Kiện",
+  "preConditions": "Cán bộ quản trị đã đăng nhập Cổng Web CRM (`/events`, `/members`, `/fees`, `/tasks`, `/permissions`, `/sponsors`, `/documents`).",
+  "inputs": [
+    {
+      "field": "adminPrompt",
+      "type": "String",
+      "req": true,
+      "val": "Câu hỏi nghiệp vụ quản trị từ cán bộ ban"
+    }
+  ],
+  "mainFlow": [
+    "Bước 1: Cán bộ quản lý hỏi trợ lý AI về thao tác CRM (Ví dụ: 'Tạo sự kiện mới cho Ban Tổ Chức kiểu gì', 'Duyệt hồ sơ kết nạp hội viên ở đâu', 'Giao việc cho ban chuyên môn như nào').",
+    "Bước 2: AI phân tích và trình bày các bước tác nghiệp chuẩn theo Quy chế hoạt động của Hiệp hội HanoiBA.",
+    "Bước 3: AI hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình quản trị không?'.",
+    "Bước 4: Cán bộ bấm 'Có' hoặc nói 'Có'.",
+    "Bước 5: Hệ thống tự động chuyển trang đến màn hình quản trị CRM tương ứng (`/events`, `/members`, `/fees`, `/tasks`, `/permissions`, `/sponsors`, `/documents`).",
+    "Bước 6: Khởi chạy lộ trình Spotlight HUD chuyên biệt cho CRM: Khoanh vùng các nút bấm then chốt ('Tạo sự kiện', 'Duyệt kết nạp', 'Duyệt gạch nợ', 'Giao việc', 'Cấp quyền soát vé') kèm lưu ý bảo mật dữ liệu."
+  ],
+  "alternativeFlows": [],
+  "exceptionFlows": [
+    "Bước E1: Tài khoản không đủ quyền hạn RBAC đối với tính năng được yêu cầu -> AI cảnh báo: 'Chức năng này yêu cầu quyền hạn của Trưởng Ban Thành Viên / Superadmin' và không mở tour."
+  ],
+  "postConditions": "Cán bộ các ban thực hiện tác nghiệp quản trị chính xác 100%, tuân thủ đúng phân định thẩm quyền và quy chế hiệp hội.",
+  "businessRules": "RULE-AUTH-BTV-EXCLUSIVE & RULE-RBAC-DEDICATED-MENU-GROUP: Kiểm tra quyền hạn trước khi hướng dẫn thao tác nhạy cảm.",
+  "techMapping": "Route: `/events`, `/members`, `/fees`, `/tasks`, `/permissions` | Tour IDs: `events-admin`, `members-admin`, `fees-admin`, `tasks-admin`, `permissions-admin`"
+}
 ];
 
 module.exports = {

@@ -4,7 +4,7 @@
 
 ### TIÊU CHUẨN IEEE 830-1998 (PHÂN TÍCH MECE 100%)
 
-*Mã tài liệu: SRS-02-APP-CEO1983-2026 | Phiên bản: Version 5.0 (Bàn Giao Kỹ Thuật Đầy Đủ Chi Tiết 100% MECE) | Ngày phê duyệt: 04/10/2026*
+*Mã tài liệu: SRS-02-APP-CEO1983-2026 | Phiên bản: Version 5.5 (Tích Hợp Trợ Lý AI 32 Tính Năng & Chỉ Dẫn GPS Lái Màn Hình Trực Tiếp) | Ngày phê duyệt: 06/10/2026*
 
 *Cơ quan chủ quản: Câu Lạc Bộ Doanh Nhân CEO 1983 (Trực thuộc Hội Doanh Nhân Trẻ Hà Nội — HanoiBA)*
 
@@ -19,7 +19,7 @@ Tài liệu Đặc tả Yêu cầu Phần mềm (Software Requirements Specifica
 
 ### 1.2. Phạm Vi Tài Liệu (Document Scope)
 
-Tài liệu này bao gồm đặc tả chi tiết của 26 trường hợp sử dụng (Use Cases) tương ứng với phạm vi chức năng bàn giao, áp dụng nguyên tắc MECE (Mutually Exclusive, Collectively Exhaustive) để tuyệt đối không trùng lặp và không bỏ sót bất kỳ luồng tác nghiệp nào của Hội đồng Điều hành và Hội viên CLB Doanh Nhân CEO 1983.
+Tài liệu này bao gồm đặc tả chi tiết của 28 trường hợp sử dụng (Use Cases) tương ứng với phạm vi chức năng bàn giao, áp dụng nguyên tắc MECE (Mutually Exclusive, Collectively Exhaustive) để tuyệt đối không trùng lặp và không bỏ sót bất kỳ luồng tác nghiệp nào của Hội đồng Điều hành và Hội viên CLB Doanh Nhân CEO 1983.
 
 ### 1.3. Định Nghĩa & Viết Tắt (Definitions & Acronyms)
 
@@ -141,6 +141,26 @@ Bước 4: Hệ thống mã hóa một chiều phiếu bầu (Đảm bảo nguy�
 
 Bước 5: Máy chủ Socket.IO tổng hợp kết quả tức thời. Màn hình LED trung tâm của Đại hội hiển thị biểu đồ tỷ lệ phần trăm (%) nhảy động thời gian thực với độ trễ dưới 1 giây, công bố kết quả minh bạch 100%.
 
+#### UJ-06: Hành Trình Tương Tác Giọng Nói Với Trợ Lý AI ➔ Tra Cứu Dữ Liệu Thực Tế ➔ Dẫn Đường Lái Màn Hình Trực Tiếp GPS Turn-by-Turn HUD (32 Tính Năng)
+
+**Đối tượng trải nghiệm:** Hội viên chính thức, Ban Quản Trị, Cán bộ các Ban Chuyên Môn
+
+Bước 1: Người dùng chạm biểu tượng Robot Trợ lý AI ở góc màn hình hoặc dùng phím tắt nổi.
+
+Bước 2: Hệ thống tự động gọi API `/api/ai/live-context`, tải tức thời thông tin phiên đăng nhập: Họ tên, Mã hội viên, Hạng thẻ VIP, Tình trạng hội phí thường niên, Số lượng thông báo chưa đọc, Danh sách sự kiện đã có vé tham dự và Top 5 sự kiện đông nhất.
+
+Bước 3: Người dùng ra lệnh bằng giọng nói tiếng Việt (Microphone) hoặc nhập câu hỏi: 'Sự kiện nào đang được nhiều người đăng ký nhất?', 'Tôi có thông báo nào chưa đọc?' hoặc 'Hướng dẫn tôi đăng ký sự kiện như nào'.
+
+Bước 4: Bộ máy Smart Hybrid Engine kết hợp Google Gemini 2.0 Flash xử lý ngôn ngữ tự nhiên, phản hồi Markdown chi tiết và tóm tắt lời thoại tiếng Việt qua Web Speech API (0ms latency, 100% miễn phí).
+
+Bước 5: Khi câu hỏi liên quan đến hướng dẫn sử dụng bất kỳ chức năng nào trong hệ thống, AI giải thích chi tiết các bước và chủ động hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ dẫn đường từng bước cho Anh/Chị.' kèm hộp Callout vàng hoàng gia hiển thị 2 nút [👉 Có, hướng dẫn trực tiếp ngay] và [Để sau].
+
+Bước 6: Người dùng bấm nút 'Có' hoặc nói khẩu lệnh khẳng định ('Có', 'Đồng ý', 'Bắt đầu', 'OK', 'Yes', 'Lái màn hình đi').
+
+Bước 7: Trợ lý AI tự động đóng modal, lập tức điều hướng URL đến đúng trang tính năng (`navigate({ to: route })`) và kích hoạt lộ trình dẫn đường thực tế `startTourGlobally(tourId)`.
+
+Bước 8: Lớp phủ Voice GPS HUD Overlay kích hoạt hiệu ứng Spotlight làm mờ xung quanh, chiếu vòng hào quang vàng kim nhấp nháy vào đúng nút cần chạm, thanh chỉ dẫn HUD hiển thị cử chỉ (👆 Chạm, 📸 Quét, ↔️ Vuốt) kèm lời thuyết minh giọng nói từng bước cho đến khi hoàn thành.
+
 ### 2.3. Môi Trường Hoạt Động Của Hệ Thống (Operating Environment)
 
 * Phía Máy Khách (Clients):
@@ -154,7 +174,7 @@ Bước 5: Máy chủ Socket.IO tổng hợp kết quả tức thời. Màn hìn
   - Lưu trữ tệp đối tượng: MinIO S3 Compatible Object Storage.
   - Động cơ thời gian thực: Socket.IO Gateway Engine.
 
-## 3. YÊU CẦU CHỨC NĂNG CHI TIẾT (FUNCTIONAL REQUIREMENTS — 26 USE CASES)
+## 3. YÊU CẦU CHỨC NĂNG CHI TIẾT (FUNCTIONAL REQUIREMENTS — 28 USE CASES)
 
 *Mỗi chức năng dưới đây được đặc tả theo đúng chuẩn quốc tế bao gồm 12 trường thông tin: Mã Use Case, Tên chức năng, Module, Mục tiêu, Tác nhân, Tiền điều kiện, Từ điển dữ liệu đầu vào, Luồng sự kiện chính (mỗi bước xuống dòng rõ ràng), Luồng thay thế, Luồng ngoại lệ, Hậu điều kiện, Quy tắc nghiệp vụ và Ánh xạ kỹ thuật CSDL/API.*
 
@@ -636,19 +656,19 @@ Bước 3: Danh sách các sự kiện phân loại: 'Sắp Diễn Ra' và 'Đã
 
 Bước 4: Bấm vào một sự kiện để mở màn hình chi tiết: Địa điểm tổ chức, Bản đồ đường đi, Diễn giả VIP và Nút 'Đăng Ký Tham Dự'.
 
-### [UC-APP-EVT-02] Đăng Ký Vé Tham Dự & Lựa Chọn Vị Trí Ghế Ngồi Cinema Seating Map
+### [UC-APP-EVT-02] Đăng Ký Vé Sự Kiện & Cảnh Báo Trùng Khung Giờ (confirmOverlap)
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-APP-EVT-02 |
-| Tên Chức Năng | Đăng Ký Vé Tham Dự & Lựa Chọn Vị Trí Ghế Ngồi Cinema Seating Map |
+| Tên Chức Năng | Đăng Ký Vé Sự Kiện & Cảnh Báo Trùng Khung Giờ (confirmOverlap) |
 | Phân Hệ / Module | Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983 |
-| Mục Tiêu Nghiệp Vụ | Hội viên đăng ký vé tham dự sự kiện Gala 0 VNĐ và trực tiếp chọn vị trí bàn tiệc VIP yêu thích trên sơ đồ ghế trực quan. |
+| Mục Tiêu Nghiệp Vụ | Hội viên đăng ký vé tham dự sự kiện Gala 0 VNĐ, chọn vị trí bàn tiệc VIP; hệ thống phát hiện trùng lịch và yêu cầu xác nhận trước khi cấp vé. |
 | Tác Nhân (Actors) | Hội viên chính thức CLB Doanh Nhân CEO 1983 |
 | Tiền Điều Kiện (Pre-conditions) | Sự kiện có thiết kế sơ đồ ghế và đang mở đăng ký chỗ ngồi. |
-| Hậu Điều Kiện (Post-conditions) | Hội viên sở hữu vé sự kiện có số bàn và số ghế định danh chính xác. |
-| Quy Tắc Nghiệp Vụ (Business Rules) | Mỗi hội viên chỉ được đăng ký 01 vé hội viên chính thức 0 VNĐ. |
-| Ánh Xạ Kỹ Thuật (Tech Mapping) | API: `POST /api/association/events/:id/register` | Table: `event_registrations` |
+| Hậu Điều Kiện (Post-conditions) | Hội viên sở hữu vé sự kiện định danh chính xác, có xác nhận chủ động nếu tham gia nhiều sự kiện cùng buổi. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-EVT-USER-OVERLAP-WARNING: Cảnh báo xác nhận trùng lịch; RULE-EVENT-SINGLE-CHECKIN: Mỗi vé chỉ check-in 1 lần. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | API: `POST /api/association/events/:id/register` | Table: `event_registrations` | Component: `association.events.tsx`, `m.events.tsx` |
 
 
 
@@ -657,7 +677,8 @@ Bước 4: Bấm vào một sự kiện để mở màn hình chi tiết: Địa
 | Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
 | --- | --- | --- | --- |
 | eventId | String | BẮT BUỘC | Mã sự kiện tham dự |
-| selectedSeatId | String | BẮT BUỘC | Mã ghế được chọn trên sơ đồ (VD: Bàn 03 - Ghế 08) |
+| selectedSeatId | String | Tùy chọn | Mã ghế được chọn trên sơ đồ (VD: Bàn 03 - Ghế 08) |
+| confirmOverlap | Boolean | Tùy chọn | Mặc định false; true khi hội viên xác nhận đăng ký trùng khung giờ |
 
 
 
@@ -667,17 +688,29 @@ Bước 1: Tại trang chi tiết sự kiện, hội viên bấm 'Đăng Ký Tha
 
 Bước 2: Hệ thống tự động nhận diện tư cách hội viên chính thức, áp dụng giá vé VIP 0 VNĐ.
 
-Bước 3: Mở màn hình Sơ Đồ Ghế Ngồi Cinema Seating Map trên điện thoại.
+Bước 3: Hệ thống kiểm tra danh sách các sự kiện mà hội viên này đã đăng ký trước đó:
 
-Bước 4: Hội viên chạm chọn bàn tiệc và ghế còn trống (Ghế đã có người chọn hiển thị màu xám khóa).
+   - Nếu trùng ngày và khung giờ tổ chức với một sự kiện khác: Kích hoạt cảnh báo xác nhận overlap.
 
-Bước 5: Bấm 'Xác Nhận Giữ Chỗ'.
+Bước 4: Mở màn hình Sơ Đồ Ghế Ngồi Cinema Seating Map trên điện thoại (nếu sự kiện có sơ đồ ghế).
 
-Bước 6: Hệ thống khóa ghế và phát hành Vé điện tử E-Ticket tức thì vào Ví vé của hội viên.
+Bước 5: Hội viên chạm chọn bàn tiệc và ghế còn trống (Ghế đã có người chọn hiển thị màu xám khóa).
+
+Bước 6: Bấm 'Xác Nhận Giữ Chỗ'.
+
+Bước 7: Hệ thống khóa ghế và phát hành Vé điện tử E-Ticket tức thì vào Ví vé của hội viên.
+
+#### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
+
+Bước A1: Hội viên đã đăng ký sự kiện A (VD: Hội thảo Xúc tiến đầu tư 08:30 - 11:30 ngày 15/10 tại KS Daewoo), tiếp tục đăng ký sự kiện B (Tọa đàm Chuyển đổi số 09:00 - 11:00 ngày 15/10 tại Khách sạn Lotte) -> Hệ thống hiển thị Modal cảnh báo: 'Bạn đang đăng ký sự kiện "Tọa đàm Chuyển đổi số" cùng thời gian với sự kiện "Hội thảo Xúc tiến đầu tư" (08:30 15/10/2026). Bạn có chắc muốn đăng ký thêm không?'.
+
+Bước A2: Hội viên bấm 'Tiếp Tục Đăng Ký' -> Client gửi API với tham số `confirmOverlap: true` -> Backend lưu vé thành công.
 
 #### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
 
 Bước E1: Ghế vừa bị người khác chọn trước trong tích tắc -> Báo lỗi: 'Ghế này vừa được đăng ký, vui lòng chọn vị trí khác'.
+
+Bước E2: Đăng ký trùng giờ nhưng không có cờ `confirmOverlap: true` -> Backend trả về HTTP 409 Overlap Warning kèm tên sự kiện xung đột để client bật popup xác nhận.
 
 ### [UC-APP-EVT-03] Ví Vé Điện Tử E-Ticket Offline & Mã Check-in QR Khổ Lớn (#LUCKY-xxxx)
 
@@ -1098,6 +1131,110 @@ Bước A1: Hội viên bấm '[Để sau]' -> Ghi nhớ vĩnh viễn vào `loca
 #### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
 
 Bước E1: Mở qua trình duyệt In-App của Zalo / Facebook Messenger -> Hệ thống phát hiện và hướng dẫn 2 bước mở bằng Safari ngoài.
+
+### [UC-APP-AI-01] Trợ Lý AI Giọng Nói Tiếng Việt & Nắm Bắt Động Phiên Đăng Nhập (Live Context)
+
+| Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
+| --- | --- |
+| Mã Use Case | UC-APP-AI-01 |
+| Tên Chức Năng | Trợ Lý AI Giọng Nói Tiếng Việt & Nắm Bắt Động Phiên Đăng Nhập (Live Context) |
+| Phân Hệ / Module | Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983 |
+| Mục Tiêu Nghiệp Vụ | Trợ lý AI tự động nhận diện danh tính hội viên, tình trạng nợ hội phí VietQR, thông báo mới chưa đọc, vé sự kiện đã đặt và Top 5 sự kiện có số người đăng ký đông nhất; phản hồi ngôn ngữ tự nhiên bằng văn bản Markdown và giọng đọc tiếng Việt 100% miễn phí. |
+| Tác Nhân (Actors) | Hội viên chính thức, Ban Quản Trị, Cán bộ các Ban Chuyên Môn |
+| Tiền Điều Kiện (Pre-conditions) | Hội viên đã đăng nhập vào Ứng dụng Hiệp hội (`/association/*`) và thiết bị hỗ trợ Web Speech API. |
+| Hậu Điều Kiện (Post-conditions) | Hội viên nắm bắt tức thì mọi thông tin hoạt động hiệp hội mà không cần mở nhiều màn hình tra cứu. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-AI-32-FEATURES-TWO-PHASE-GPS-GUIDE: Model AI 100% miễn phí; dữ liệu phiên đăng nhập luôn cập nhật thời gian thực. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | API: `GET /api/ai/live-context`, `POST /api/ai/ask` | Component: `VoiceNavAssistant.tsx` |
+
+
+
+#### Từ Điển Dữ Liệu Đầu Vào (Input Data Dictionary)
+
+| Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
+| --- | --- | --- | --- |
+| prompt | String | BẮT BUỘC | Câu hỏi dạng văn bản hoặc giọng nói thu âm từ Microphone |
+| liveContext | Object | Tùy chọn | Ngữ cảnh phiên: memberCode, feeStatus, unreadNotifs, registeredEvents |
+
+
+
+#### Luồng Sự Kiện Chính (Step-by-step Main Flow)
+
+Bước 1: Hội viên chạm vào biểu tượng Robot Trợ lý AI ở góc màn hình hoặc dùng phím tắt nổi.
+
+Bước 2: Hệ thống tự động kích hoạt API `GET /api/ai/live-context`, trích xuất thông tin phiên đăng nhập theo thời gian thực.
+
+Bước 3: Hội viên bấm Micro và nói câu hỏi (Ví dụ: 'Sự kiện nào đang được nhiều người đăng ký nhất?', 'Tôi có thông báo nào chưa đọc không?', 'Hội phí của tôi thế nào?').
+
+Bước 4: Trình duyệt chuyển giọng nói thành văn bản qua Web Speech Recognition (`lang = vi-VN`).
+
+Bước 5: Gửi truy vấn đến Backend `POST /api/ai/ask`. Bộ máy Smart Hybrid Engine kết hợp Google Gemini 2.0 Flash xử lý dữ liệu động.
+
+Bước 6: Trả về câu trả lời định dạng Markdown và kịch bản phát âm tiếng Việt ngắn gọn `speechText`.
+
+Bước 7: Ứng dụng hiển thị bong bóng chat sinh động và Web Speech Synthesis phát âm thanh thuyết minh tiếng Việt chuẩn mực với độ trễ 0ms.
+
+#### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
+
+Bước A1: Hội viên nhập câu hỏi bằng bàn phím thay vì nói qua Micro.
+
+Bước A2: Hội viên chạm vào các chip hỏi nhanh (Quick Prompts) được đề xuất sẵn ở đầu giao diện chat.
+
+#### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
+
+Bước E1: Trình duyệt chưa cấp quyền truy cập Microphone -> Hệ thống hiển thị Toast hướng dẫn cấp quyền và cho phép gõ phím.
+
+Bước E2: Mất kết nối API ngoài -> Smart Hybrid Engine nội bộ tự động chuyển sang chế độ tra cứu dữ liệu CSDL offline đảm bảo 100% không gián đoạn.
+
+### [UC-APP-AI-02] Bộ Máy Hướng Dẫn 32 Tính Năng & Cơ Chế 2 Pha Chỉ Dẫn Trực Tiếp (Turn-by-Turn Voice GPS HUD)
+
+| Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
+| --- | --- |
+| Mã Use Case | UC-APP-AI-02 |
+| Tên Chức Năng | Bộ Máy Hướng Dẫn 32 Tính Năng & Cơ Chế 2 Pha Chỉ Dẫn Trực Tiếp (Turn-by-Turn Voice GPS HUD) |
+| Phân Hệ / Module | Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983 |
+| Mục Tiêu Nghiệp Vụ | Bộ máy điều hướng thông minh giải thích cặn kẽ thao tác của 32 tính năng trong/ngoài và tự động lái màn hình, chiếu Spotlight viền vàng nhấp nháy dẫn đường từng bước như Google Maps khi người dùng đồng ý. |
+| Tác Nhân (Actors) | Hội viên chính thức, Doanh nhân CEO 1983, Cán bộ tác nghiệp |
+| Tiền Điều Kiện (Pre-conditions) | Người dùng mở Trợ lý AI và hỏi về cách thao tác một chức năng bất kỳ (Ví dụ: 'Đăng ký sự kiện như nào', 'Ghi thẻ NFC ra sao', 'Cách quét card visit AI'). |
+| Hậu Điều Kiện (Post-conditions) | Người dùng thao tác thành công tính năng trên thực tế mà không cần ghi nhớ tài liệu hướng dẫn phức tạp. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-AI-32-FEATURES-TWO-PHASE-GPS-GUIDE: Bắt buộc áp dụng cơ chế 2 pha (Giải thích -> Hỏi ý kiến -> Lái màn hình khi Đồng ý); bao phủ trọn vẹn 32 tính năng. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | Component: `VoiceNavAssistant.tsx`, `VoiceGpsHudOverlay.tsx` | Controller: `voice-gps-controller.ts` | Registry: `appTourRegistry.ts` |
+
+
+
+#### Từ Điển Dữ Liệu Đầu Vào (Input Data Dictionary)
+
+| Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
+| --- | --- | --- | --- |
+| featureQuery | String | BẮT BUỘC | Câu hỏi yêu cầu hướng dẫn chức năng |
+| confirmation | String / Click | BẮT BUỘC | Bấm nút 'Có' hoặc nói 'Có', 'Đồng ý', 'Bắt đầu', 'OK', 'Yes' |
+
+
+
+#### Luồng Sự Kiện Chính (Step-by-step Main Flow)
+
+Bước 1: Khi nhận câu hỏi về thao tác tính năng, AI giải thích tường tận các bước 1, 2, 3 bằng văn bản Markdown và phát giọng nói tiếng Việt.
+
+Bước 2: Cuối câu trả lời, AI chủ động hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ dẫn đường từng bước cho Anh/Chị.'
+
+Bước 3: Bong bóng chat hiển thị khung Callout vàng hoàng gia với 2 nút hành động: `[👉 Có, hướng dẫn trực tiếp ngay]` và `[Để sau]`.
+
+Bước 4: Người dùng bấm nút 'Có' HOẶC nói khẩu lệnh khẳng định vào Micro ('Có', 'Đồng ý', 'Bắt đầu', 'OK', 'Yes', 'Lái màn hình đi').
+
+Bước 5: Trợ lý AI ghi nhận xác nhận, đóng modal chat, phát câu mở đầu: 'Vâng! Tôi sẽ dẫn đường cho Quý anh/chị... Hãy quan sát màn hình và làm theo giọng nói nhé!'.
+
+Bước 6: Trình duyệt tự động chuyển hướng URL đến đúng trang đích (`navigate({ to: route })`).
+
+Bước 7: Kích hoạt lớp phủ Voice GPS HUD Overlay: Toàn màn hình tối mờ, chiếu Spotlight viền vàng nhấp nháy khoanh vùng chính xác nút bấm cần chạm.
+
+Bước 8: Thanh chỉ dẫn HUD nổi hiển thị biểu tượng cử chỉ (👆 Chạm, 📸 Quét, ↔️ Vuốt), Vị trí chạm, Mô tả hành động và phát âm thanh thuyết minh từng bước cho đến khi hoàn thành toàn bộ lộ trình.
+
+#### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
+
+Bước A1: Người dùng bấm '[Để sau]' hoặc nói 'Không' -> Giữ nguyên màn hình hiện tại, không chuyển trang đột ngột.
+
+#### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
+
+Bước E1: Phần tử đích trên màn hình chưa kịp tải xong -> Bộ điều khiển tự động quan sát DOM qua MutationObserver, gắn Spotlight ngay khi phần tử xuất hiện.
 
 ## 4. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS - ISO/IEC 25010)
 

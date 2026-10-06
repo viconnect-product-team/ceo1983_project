@@ -1,4 +1,4 @@
-import { Moon, Sun, Contrast } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme, type Theme } from "@/lib/theme";
 import { useT } from "@/lib/i18n";
 
@@ -7,7 +7,7 @@ type TKey = Parameters<ReturnType<typeof useT>>[0];
 type Variant = "default" | "overlay";
 
 /**
- * Three-mode appearance switcher: light / dark / high-contrast.
+ * Two-mode appearance switcher: light / dark.
  * Keeps the indigo enterprise identity in every mode.
  */
 export function ThemeSwitcher({
@@ -39,7 +39,6 @@ export function ThemeSwitcher({
   const opts: { mode: Theme; icon: typeof Sun; labelKey: TKey }[] = [
     { mode: "light", icon: Sun, labelKey: "theme.light" },
     { mode: "dark", icon: Moon, labelKey: "theme.dark" },
-    { mode: "contrast", icon: Contrast, labelKey: "theme.contrast" },
   ];
 
   return (

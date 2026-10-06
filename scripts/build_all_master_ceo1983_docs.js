@@ -23,6 +23,7 @@ const {
   Header,
   Footer,
   PageNumber,
+  TableLayoutType,
 } = require('docx');
 
 const { BRD_DATA } = require('./data_ceo1983_brd');
@@ -155,8 +156,11 @@ function createCallout(title, textLines, type = 'info') {
 
   return new Table({
     width: { size: TOTAL_TABLE_WIDTH_DXA, type: WidthType.DXA },
+    columnWidths: [TOTAL_TABLE_WIDTH_DXA],
+    layout: TableLayoutType.FIXED,
     rows: [
       new TableRow({
+        cantSplit: true,
         children: [
           new TableCell({
             width: { size: TOTAL_TABLE_WIDTH_DXA, type: WidthType.DXA },
@@ -252,8 +256,13 @@ function createTable(headers, rowsData, widths = []) {
     return Math.round(TOTAL_TABLE_WIDTH_DXA / headers.length);
   });
 
+  // Đảm bảo tổng chiều rộng các cột chuẩn xác 100% bằng TOTAL_TABLE_WIDTH_DXA (9200 twips)
+  const allocated = colWidthsDxa.slice(0, -1).reduce((a, b) => a + b, 0);
+  colWidthsDxa[colWidthsDxa.length - 1] = TOTAL_TABLE_WIDTH_DXA - allocated;
+
   const headerRow = new TableRow({
     tableHeader: true,
+    cantSplit: true,
     children: headers.map((h, i) => {
       return new TableCell({
         width: { size: colWidthsDxa[i], type: WidthType.DXA },
@@ -281,6 +290,7 @@ function createTable(headers, rowsData, widths = []) {
   const bodyRows = rowsData.map((row, rIdx) => {
     const isEven = rIdx % 2 === 0;
     return new TableRow({
+      cantSplit: true,
       children: row.map((cellText, cIdx) => {
         const textVal = cellText !== undefined && cellText !== null ? String(cellText) : '';
         const lines = textVal.split('\n');
@@ -355,6 +365,8 @@ function createTable(headers, rowsData, widths = []) {
 
   return new Table({
     width: { size: TOTAL_TABLE_WIDTH_DXA, type: WidthType.DXA },
+    columnWidths: colWidthsDxa,
+    layout: TableLayoutType.FIXED,
     rows: [headerRow, ...bodyRows],
   });
 }
@@ -1064,8 +1076,16 @@ async function buildSRS() {
         md: path.join(__dirname, '../document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.md'),
       },
       {
+        docx: path.join(__dirname, '../docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx'),
+        md: path.join(__dirname, '../docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.md'),
+      },
+      {
         docx: path.join(__dirname, '../docs/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx'),
         md: path.join(__dirname, '../docs/SRS_CEO1983_HE_THONG_TOAN_DIEN.md'),
+      },
+      {
+        docx: path.join(__dirname, '../document/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx'),
+        md: path.join(__dirname, '../document/SRS_CEO1983_HE_THONG_TOAN_DIEN.md'),
       },
     ],
   });

@@ -4,7 +4,7 @@
 
 ### TIÊU CHUẨN IEEE 830-1998 (PHÂN TÍCH MECE 100%)
 
-*Mã tài liệu: SRS-01-CRM-CEO1983-2026 | Phiên bản: Version 5.0 (Bàn Giao Kỹ Thuật Đầy Đủ Chi Tiết 100% MECE) | Ngày phê duyệt: 04/10/2026*
+*Mã tài liệu: SRS-01-CRM-CEO1983-2026 | Phiên bản: Version 5.5 (Tích Hợp Trợ Lý AI 32 Tính Năng & Chỉ Dẫn GPS Lái Màn Hình Trực Tiếp) | Ngày phê duyệt: 06/10/2026*
 
 *Cơ quan chủ quản: Câu Lạc Bộ Doanh Nhân CEO 1983 (Trực thuộc Hội Doanh Nhân Trẻ Hà Nội — HanoiBA)*
 
@@ -19,7 +19,7 @@ Tài liệu Đặc tả Yêu cầu Phần mềm (Software Requirements Specifica
 
 ### 1.2. Phạm Vi Tài Liệu (Document Scope)
 
-Tài liệu này bao gồm đặc tả chi tiết của 30 trường hợp sử dụng (Use Cases) tương ứng với phạm vi chức năng bàn giao, áp dụng nguyên tắc MECE (Mutually Exclusive, Collectively Exhaustive) để tuyệt đối không trùng lặp và không bỏ sót bất kỳ luồng tác nghiệp nào của Hội đồng Điều hành và Hội viên CLB Doanh Nhân CEO 1983.
+Tài liệu này bao gồm đặc tả chi tiết của 31 trường hợp sử dụng (Use Cases) tương ứng với phạm vi chức năng bàn giao, áp dụng nguyên tắc MECE (Mutually Exclusive, Collectively Exhaustive) để tuyệt đối không trùng lặp và không bỏ sót bất kỳ luồng tác nghiệp nào của Hội đồng Điều hành và Hội viên CLB Doanh Nhân CEO 1983.
 
 ### 1.3. Định Nghĩa & Viết Tắt (Definitions & Acronyms)
 
@@ -141,6 +141,26 @@ Bước 4: Hệ thống mã hóa một chiều phiếu bầu (Đảm bảo nguy�
 
 Bước 5: Máy chủ Socket.IO tổng hợp kết quả tức thời. Màn hình LED trung tâm của Đại hội hiển thị biểu đồ tỷ lệ phần trăm (%) nhảy động thời gian thực với độ trễ dưới 1 giây, công bố kết quả minh bạch 100%.
 
+#### UJ-06: Hành Trình Tương Tác Giọng Nói Với Trợ Lý AI ➔ Tra Cứu Dữ Liệu Thực Tế ➔ Dẫn Đường Lái Màn Hình Trực Tiếp GPS Turn-by-Turn HUD (32 Tính Năng)
+
+**Đối tượng trải nghiệm:** Hội viên chính thức, Ban Quản Trị, Cán bộ các Ban Chuyên Môn
+
+Bước 1: Người dùng chạm biểu tượng Robot Trợ lý AI ở góc màn hình hoặc dùng phím tắt nổi.
+
+Bước 2: Hệ thống tự động gọi API `/api/ai/live-context`, tải tức thời thông tin phiên đăng nhập: Họ tên, Mã hội viên, Hạng thẻ VIP, Tình trạng hội phí thường niên, Số lượng thông báo chưa đọc, Danh sách sự kiện đã có vé tham dự và Top 5 sự kiện đông nhất.
+
+Bước 3: Người dùng ra lệnh bằng giọng nói tiếng Việt (Microphone) hoặc nhập câu hỏi: 'Sự kiện nào đang được nhiều người đăng ký nhất?', 'Tôi có thông báo nào chưa đọc?' hoặc 'Hướng dẫn tôi đăng ký sự kiện như nào'.
+
+Bước 4: Bộ máy Smart Hybrid Engine kết hợp Google Gemini 2.0 Flash xử lý ngôn ngữ tự nhiên, phản hồi Markdown chi tiết và tóm tắt lời thoại tiếng Việt qua Web Speech API (0ms latency, 100% miễn phí).
+
+Bước 5: Khi câu hỏi liên quan đến hướng dẫn sử dụng bất kỳ chức năng nào trong hệ thống, AI giải thích chi tiết các bước và chủ động hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ dẫn đường từng bước cho Anh/Chị.' kèm hộp Callout vàng hoàng gia hiển thị 2 nút [👉 Có, hướng dẫn trực tiếp ngay] và [Để sau].
+
+Bước 6: Người dùng bấm nút 'Có' hoặc nói khẩu lệnh khẳng định ('Có', 'Đồng ý', 'Bắt đầu', 'OK', 'Yes', 'Lái màn hình đi').
+
+Bước 7: Trợ lý AI tự động đóng modal, lập tức điều hướng URL đến đúng trang tính năng (`navigate({ to: route })`) và kích hoạt lộ trình dẫn đường thực tế `startTourGlobally(tourId)`.
+
+Bước 8: Lớp phủ Voice GPS HUD Overlay kích hoạt hiệu ứng Spotlight làm mờ xung quanh, chiếu vòng hào quang vàng kim nhấp nháy vào đúng nút cần chạm, thanh chỉ dẫn HUD hiển thị cử chỉ (👆 Chạm, 📸 Quét, ↔️ Vuốt) kèm lời thuyết minh giọng nói từng bước cho đến khi hoàn thành.
+
 ### 2.3. Môi Trường Hoạt Động Của Hệ Thống (Operating Environment)
 
 * Phía Máy Khách (Clients):
@@ -154,7 +174,7 @@ Bước 5: Máy chủ Socket.IO tổng hợp kết quả tức thời. Màn hìn
   - Lưu trữ tệp đối tượng: MinIO S3 Compatible Object Storage.
   - Động cơ thời gian thực: Socket.IO Gateway Engine.
 
-## 3. YÊU CẦU CHỨC NĂNG CHI TIẾT (FUNCTIONAL REQUIREMENTS — 30 USE CASES)
+## 3. YÊU CẦU CHỨC NĂNG CHI TIẾT (FUNCTIONAL REQUIREMENTS — 31 USE CASES)
 
 *Mỗi chức năng dưới đây được đặc tả theo đúng chuẩn quốc tế bao gồm 12 trường thông tin: Mã Use Case, Tên chức năng, Module, Mục tiêu, Tác nhân, Tiền điều kiện, Từ điển dữ liệu đầu vào, Luồng sự kiện chính (mỗi bước xuống dòng rõ ràng), Luồng thay thế, Luồng ngoại lệ, Hậu điều kiện, Quy tắc nghiệp vụ và Ánh xạ kỹ thuật CSDL/API.*
 
@@ -265,19 +285,19 @@ Bước E2: Email hoặc Số điện thoại đã tồn tại trong CSDL -> Bá
 
 Bước E3: Định dạng mã số thuế không hợp lệ -> Báo lỗi: 'Mã số thuế phải có độ dài từ 10 đến 13 chữ số'.
 
-### [UC-PUB-03] Tự Động Phát Hành Email Tiếp Nhận Hồ Sơ Qua SMTP Relay
+### [UC-PUB-03] Phát Hành Thư Điện Tử SMTP Relay & Chặn Vòng Lặp 1-Fail Suppression
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-PUB-03 |
-| Tên Chức Năng | Tự Động Phát Hành Email Tiếp Nhận Hồ Sơ Qua SMTP Relay |
+| Tên Chức Năng | Phát Hành Thư Điện Tử SMTP Relay & Chặn Vòng Lặp 1-Fail Suppression |
 | Phân Hệ / Module | Phân hệ 1: Cổng Thông Tin Công Khai & Tiếp Nhận Ứng Viên |
-| Mục Tiêu Nghiệp Vụ | Hệ thống máy chủ dịch vụ tự động phát hành email xác nhận ngay khi ứng viên nộp hồ sơ đăng ký thành công. |
+| Mục Tiêu Nghiệp Vụ | Hệ thống tự động phát hành email xác nhận, tích hợp bộ lọc địa chỉ giả lập và cơ chế danh sách đen 1-Fail Suppression List chống vòng lặp kẹt 47 giờ. |
 | Tác Nhân (Actors) | Máy chủ dịch vụ SMTP Mailer ngầm định (Backend Service) |
-| Tiền Điều Kiện (Pre-conditions) | Bản ghi đăng ký [UC-PUB-02] được tạo thành công trong CSDL. |
-| Hậu Điều Kiện (Post-conditions) | Ứng viên nhận được thư xác nhận chính thức trong hộp thư đến (Inbox) trong vòng dưới 10 giây. |
-| Quy Tắc Nghiệp Vụ (Business Rules) | Đảm bảo tỷ lệ gửi thư thành công đạt > 99.5%, tránh rơi vào hòm thư rác (Spam). |
-| Ánh Xạ Kỹ Thuật (Tech Mapping) | Service: `mailer.service.ts` | Config: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` |
+| Tiền Điều Kiện (Pre-conditions) | Bản ghi đăng ký [UC-PUB-02] hoặc sự kiện hệ thống được kích hoạt. |
+| Hậu Điều Kiện (Post-conditions) | Email được phát hành an toàn, hạ tầng SMTP không bao giờ bị nghẽn hay khóa do gửi lặp email chết. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-SMTP-FAIL-SUPPRESSION: Lọc email ảo và ngắt ngay nếu gửi lỗi 1 lần duy nhất. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | Service: `mail.service.ts` | Suppression List: `uploads/mail_suppression_list.json` |
 
 
 
@@ -285,33 +305,41 @@ Bước E3: Định dạng mã số thuế không hợp lệ -> Báo lỗi: 'Mã
 
 | Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
 | --- | --- | --- | --- |
-| recipientEmail | String | BẮT BUỘC | Email ứng viên vừa đăng ký |
-| applicantName | String | BẮT BUỘC | Họ và tên ứng viên |
-| applicationId | String UUID | BẮT BUỘC | Mã định danh hồ sơ hệ thống cấp |
+| recipientEmail | String | BẮT BUỘC | Email ứng viên/hội viên nhận thư |
+| applicantName | String | BẮT BUỘC | Họ và tên người nhận |
+| applicationId | String UUID | BẮT BUỘC | Mã định danh giao dịch/hồ sơ hệ thống cấp |
 
 
 
 #### Luồng Sự Kiện Chính (Step-by-step Main Flow)
 
-Bước 1: Sự kiện APPLICATION_SUBMITTED kích hoạt Job trong hàng đợi xử lý thư tín.
+Bước 1: Sự kiện gửi thư kích hoạt Job trong dịch vụ `mail.service.ts`.
 
-Bước 2: Dịch vụ nạp Template email HTML thương hiệu CEO 1983 (Màu Navy/Gold, Logo HanoiBA).
+Bước 2: Hệ thống chạy Bộ Lọc Kiểm Tra Email Hợp Lệ (Validation Pre-filter):
 
-Bước 3: Điền thông tin cá nhân hóa: Họ tên, Tên doanh nghiệp, Mã tra cứu hồ sơ và Quy trình thẩm định 4 bước.
+   - Kiểm tra nếu email thuộc tên miền giả lập/nội bộ (@ceo1983.com, test, dummy) -> Hủy tác vụ ngay lập tức, không gửi SMTP.
 
-Bước 4: Kết nối an toàn đến cổng SMTP Relay bảo mật (smtp.gmail.com:465 qua SSL/TLS).
+   - Kiểm tra danh sách chặn `uploads/mail_suppression_list.json` -> Nếu email đã từng bị lỗi trước đó, hủy gửi ngay lập tức.
 
-Bước 5: Phát hành thư điện tử đến hộp thư ứng viên.
+Bước 3: Dịch vụ nạp Template email HTML thương hiệu CEO 1983 (Màu Navy/Gold, Logo HanoiBA).
 
-Bước 6: Ghi nhận nhật ký gửi thư thành công vào bảng `activity_log`.
+Bước 4: Điền thông tin cá nhân hóa: Họ tên, Tên doanh nghiệp, Mã tra cứu hồ sơ và nội dung nghiệp vụ.
+
+Bước 5: Kết nối an toàn đến cổng SMTP Relay bảo mật (smtp.gmail.com qua SSL/TLS hoặc App Password).
+
+Bước 6: Phát hành thư điện tử đến hộp thư ứng viên.
+
+Bước 7: Ghi nhận nhật ký gửi thư thành công vào bảng `activity_log`.
 
 #### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
 
-Bước A1: Hòm thư nhận tạm thời không liên lạc được -> Xếp hàng thử lại sau 5 phút (Tối đa 3 lần).
+Bước A1: Hòm thư nhận là email kiểm thử nội bộ -> Bỏ qua gửi thư an toàn, không sinh lỗi hệ thống.
 
 #### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
 
-Bước E1: Lỗi xác thực SMTP hoặc mất kết nối mạng -> Ghi nhận lỗi vào hệ thống giám sát và thông báo quản trị viên.
+Bước E1: Gửi thư thất bại ngay lần đầu (mã lỗi 5xx, Recipient Rejected, 550 Mailbox not found) -> Hệ thống lập tức thêm email vào `uploads/mail_suppression_list.json` và DỪNG HẲN, tuyệt đối KHÔNG thử lại lần thứ 2, ngắt đứt vòng lặp Mailer-Daemon 47 giờ.
+
+Bước E2: Lỗi xác thực SMTP mật khẩu ứng dụng Google -> Ghi nhận log cảnh báo quản trị viên kiểm tra cấu hình biến môi trường `SMTP_PASS`.
 
 ### [UC-PUB-04] Tra Cứu Danh Bạ Doanh Nghiệp Hội Viên Công Khai (Chống Lộ SĐT)
 
@@ -763,19 +791,19 @@ Bước 5: Ghi nhận nhật ký vào `audit_logs`.
 
 Bước E1: Không thể khóa tài khoản của chính Superadmin đang đăng nhập.
 
-### [UC-CRM-EVT-01] Khởi Tạo Sự Kiện Hội Nghị & Gala Dinner (Event Wizard)
+### [UC-CRM-EVT-01] Khởi Tạo Sự Kiện Hội Nghị & Gala (Kiểm Tra Xung Đột Địa Điểm)
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-CRM-EVT-01 |
-| Tên Chức Năng | Khởi Tạo Sự Kiện Hội Nghị & Gala Dinner (Event Wizard) |
+| Tên Chức Năng | Khởi Tạo Sự Kiện Hội Nghị & Gala (Kiểm Tra Xung Đột Địa Điểm) |
 | Phân Hệ / Module | Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM) |
-| Mục Tiêu Nghiệp Vụ | Khởi tạo sự kiện đại hội, hội thảo chuyên đề hoặc đêm tiệc Gala Dinner, thiết lập timeline chương trình và cấu hình các hạng vé mời. |
+| Mục Tiêu Nghiệp Vụ | Khởi tạo sự kiện đại hội, hội thảo chuyên đề hoặc đêm tiệc Gala Dinner, thiết lập timeline và tự động kiểm tra chống xung đột địa điểm vật lý. |
 | Tác Nhân (Actors) | Ban Truyền Thông & Sự Kiện (BTT), Ban Quản Trị |
 | Tiền Điều Kiện (Pre-conditions) | Tài khoản có quyền quản trị sự kiện. |
-| Hậu Điều Kiện (Post-conditions) | Sự kiện được khởi tạo thành công ở trạng thái bản nháp. |
-| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-UI-ROYAL-NAVY-GOLD: Ảnh banner sự kiện bắt buộc tỷ lệ 16:9 sắc nét. |
-| Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/events` | API: `POST /api/association/events` | Table: `events` |
+| Hậu Điều Kiện (Post-conditions) | Sự kiện được khởi tạo thành công không bị tranh chấp khán phòng. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-EVT-VENUE-CONFLICT: Nhiều sự kiện có thể cùng thời gian nhưng bắt buộc khác địa điểm; RULE-UI-ROYAL-NAVY-GOLD. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/events` | API: `POST /api/association/events` | Service: `events.service.ts` |
 
 
 
@@ -784,8 +812,8 @@ Bước E1: Không thể khóa tài khoản của chính Superadmin đang đăng
 | Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
 | --- | --- | --- | --- |
 | eventName | String | BẮT BUỘC | Tên sự kiện (VD: Gala Kỷ Niệm 3 Năm CEO 1983) |
-| eventDate | DateTime | BẮT BUỘC | Thời gian bắt đầu và kết thúc |
-| location | String | BẮT BUỘC | Địa điểm tổ chức hội trường |
+| eventDate | DateTime | BẮT BUỘC | Thời gian bắt đầu và kết thúc sự kiện |
+| location | String | BẮT BUỘC | Địa điểm tổ chức hội trường (hoặc 'Online') |
 | capacity | Integer | BẮT BUỘC | Sức chứa tối đa (VD: 500 khách) |
 | bannerUrl | String URL | BẮT BUỘC | Ảnh bìa sự kiện tỷ lệ chuẩn 16:9 |
 
@@ -793,25 +821,37 @@ Bước E1: Không thể khóa tài khoản của chính Superadmin đang đăng
 
 #### Luồng Sự Kiện Chính (Step-by-step Main Flow)
 
-Bước 1: Người dùng mở màn hình 'Quản Lý Sự Kiện' (/events) và bấm 'Tạo Sự Kiện Mới'.
+Bước 1: Quản trị viên mở màn hình 'Quản Lý Sự Kiện' (/events) và bấm 'Tạo Sự Kiện Mới'.
 
 Bước 2: Trình tạo sự kiện đa bước (Wizard) mở ra: Bước 1: Thông tin chung; Bước 2: Diễn giả & Timeline; Bước 3: Cấu hình gói vé; Bước 4: Sơ đồ chỗ ngồi.
 
-Bước 3: Nhập thông tin chung và tải ảnh banner 16:9 lên MinIO Storage.
+Bước 3: Nhập thông tin chung (Tên sự kiện, Ngày giờ, Địa điểm tổ chức, Sức chứa) và tải ảnh banner 16:9 lên MinIO Storage.
 
-Bước 4: Nhập danh sách diễn giả VIP, timeline chi tiết từng khung giờ.
+Bước 4: Client & Backend tự động kích hoạt Thuật toán Kiểm Tra Xung Đột Địa Điểm (Venue Conflict Validation):
 
-Bước 5: Bấm 'Lưu & Tiếp Tục' sang bước cấu hình gói vé.
+   - Cho phép nhiều sự kiện cùng ngày/giờ nhưng khác địa điểm.
+
+   - Nếu địa điểm là 'Online', luôn cho phép tổ chức song song.
+
+   - Nếu là địa điểm vật lý: Quét các sự kiện có status != 'cancelled' trong cùng ngày/giờ có location trùng nhau.
+
+Bước 5: Nếu KHÔNG trùng địa điểm: Hệ thống xác thực hợp lệ, chuyển sang bước nhập danh sách diễn giả VIP và timeline chi tiết.
+
+Bước 6: Bấm 'Lưu & Tiếp Tục' sang bước cấu hình gói vé.
 
 #### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
 
 Bước A1: Lưu ở trạng thái 'Bản nháp' (draft) để tiếp tục chỉnh sửa nội dung trước khi công bố.
 
+Bước A2: Tổ chức nhiều sự kiện cùng khung giờ tại các địa điểm khác nhau (VD: Workshop Ban Xúc Tiến tại Tầng 2 và Gala Dinner tại Khán phòng Diamond).
+
 #### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
 
-Bước E1: Thời gian kết thúc trước thời gian bắt đầu -> Báo lỗi validation.
+Bước E1: Thời gian kết thúc trước thời gian bắt đầu -> Báo lỗi: 'Thời gian kết thúc phải sau thời gian bắt đầu'.
 
 Bước E2: Ảnh banner sai tỷ lệ -> Cảnh báo tối ưu chuẩn 16:9.
+
+Bước E3: Trùng địa điểm với sự kiện khác đang hoạt động -> Hệ thống chặn lưu với mã HTTP 409 Conflict và thông báo: 'Địa điểm này đang trùng với sự kiện [Tên sự kiện], sau thời gian [hh:mm dd/MM/yyyy] có thể đăng ký được' (với thời điểm có thể đăng ký được tính bằng thời gian kết thúc sự kiện chiếm chỗ + 2 giờ chuẩn bị).
 
 ### [UC-CRM-EVT-02] Cấu Hình Đa Gói Vé E-Ticket (VIP, Tiêu Chuẩn, Khách Mời)
 
@@ -1004,19 +1044,19 @@ Bước A1: Đại biểu trúng thưởng không có mặt trên khán phòng k
 
 Bước E1: Chưa có đại biểu nào check-in -> Thông báo: 'Chưa có dữ liệu đại biểu check-in để quay thưởng'.
 
-### [UC-CRM-MTG-01] Khởi Tạo Lịch Họp & Thuật Toán Chống Trùng Phòng Sapphire Hub (40 Chỗ)
+### [UC-CRM-MTG-01] Khởi Tạo Lịch Họp & Kiểm Tra Xung Đột Phòng Họp & Lịch Đại Biểu
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-CRM-MTG-01 |
-| Tên Chức Năng | Khởi Tạo Lịch Họp & Thuật Toán Chống Trùng Phòng Sapphire Hub (40 Chỗ) |
+| Tên Chức Năng | Khởi Tạo Lịch Họp & Kiểm Tra Xung Đột Phòng Họp & Lịch Đại Biểu |
 | Phân Hệ / Module | Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM) |
-| Mục Tiêu Nghiệp Vụ | Khởi tạo cuộc họp lãnh đạo tập trung hoặc trực tuyến; tự động phát hiện và ngăn chặn xung đột lịch sử dụng phòng họp vật lý Sapphire Hub (40 chỗ). |
+| Mục Tiêu Nghiệp Vụ | Khởi tạo cuộc họp lãnh đạo tập trung hoặc trực tuyến; tự động kiểm tra chống trùng địa điểm/phòng họp vật lý và cảnh báo xung đột lịch trình đại biểu. |
 | Tác Nhân (Actors) | Ban Thư Ký (BTK), Ban Quản Trị (BQT) |
 | Tiền Điều Kiện (Pre-conditions) | Tài khoản có quyền khởi tạo cuộc họp. |
-| Hậu Điều Kiện (Post-conditions) | Lịch họp được thiết lập an toàn, triệt tiêu 100% rủi ro trùng phòng họp vật lý. |
-| Quy Tắc Nghiệp Vụ (Business Rules) | Phòng họp Sapphire Hub chỉ phục vụ tối đa 01 cuộc họp trong cùng một khung thời gian. |
-| Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/meetings` | API: `POST /api/association/meetings` |
+| Hậu Điều Kiện (Post-conditions) | Lịch họp được thiết lập an toàn, triệt tiêu 100% rủi ro trùng phòng họp và tối ưu tỷ lệ tham dự của đại biểu. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-MTG-VENUE-SCHEDULE-CONFLICT: Kiểm tra địa điểm phòng họp và lịch trình đại biểu. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/meetings` | API: `POST /api/association/meetings` | Service: `meetings.service.ts` |
 
 
 
@@ -1025,10 +1065,11 @@ Bước E1: Chưa có đại biểu nào check-in -> Thông báo: 'Chưa có d�
 | Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
 | --- | --- | --- | --- |
 | title | String | BẮT BUỘC | Tiêu đề cuộc họp (VD: Họp Ban Chấp Hành Quý 3/2026) |
-| startTime | DateTime | BẮT BUỘC | Thời gian bắt đầu |
+| startTime | DateTime | BẮT BUỘC | Thời gian bắt đầu cuộc họp |
 | endTime | DateTime | BẮT BUỘC | Thời gian kết thúc (Phải sau startTime) |
-| roomType | String | BẮT BUỘC | Phòng Họp Sapphire Hub / Zoom / Google Meet / Offline khác |
-| attendees | Array of Member IDs | BẮT BUỘC | Danh sách đại biểu được triệu tập |
+| roomType | String | BẮT BUỘC | Phòng Họp Sapphire Hub / Zoom / Google Meet / Offline tập trung |
+| location | String | Tùy chọn | Địa điểm cụ thể nếu là cuộc họp offline ngoài |
+| attendees | Array of Member IDs | BẮT BUỘC | Danh sách đại biểu được triệu tập tham dự |
 
 
 
@@ -1038,25 +1079,33 @@ Bước 1: Ban Thư Ký mở màn hình 'Quản Lý Cuộc Họp' (/meetings) v�
 
 Bước 2: Nhập tiêu đề cuộc họp, thời gian bắt đầu và kết thúc.
 
-Bước 3: Lựa chọn địa điểm: 'Phòng Họp Sapphire UniWork Hub' (Sức chứa 40 chỗ).
+Bước 3: Lựa chọn địa điểm: 'Phòng Họp Sapphire UniWork Hub' (Sức chứa 40 chỗ) hoặc Nhập địa điểm vật lý offline khác.
 
-Bước 4: Hệ thống tự động kích hoạt Thuật toán Chống Trùng Phòng (Room Conflict Detection):
+Bước 4: Hệ thống tự động kích hoạt Thuật toán Chống Trùng Phòng Họp (Venue Conflict Detection):
 
-   - Truy vấn toàn bộ các cuộc họp đang có trong CSDL có roomType = 'sapphire_hub' và trạng thái khác cancelled.
+   - Kiểm tra toàn bộ cuộc họp active có cùng địa điểm vật lý trong khung giờ: (start_time < new_end_time) AND (end_time > new_start_time).
 
-   - Kiểm tra điều kiện xung đột thời gian: (start_time < new_end_time) AND (end_time > new_start_time).
+   - Nếu phát hiện trùng địa điểm: Chặn lưu và báo rõ tên cuộc họp chiếm chỗ cùng thời gian rảnh dự kiến.
 
-Bước 5: Nếu KHÔNG có xung đột: Hệ thống cho phép lưu bản ghi ở trạng thái pending_approval.
+Bước 5: Hệ thống kích hoạt Thuật toán Kiểm tra Lịch trình Đại biểu (Attendee Schedule Overlap Detection):
 
-Bước 6: Ban Quản Trị phê duyệt chuyển sang trạng thái upcoming, hệ thống tự động phát hành giấy triệu tập qua thông báo đẩy và email đến các đại biểu.
+   - Kiểm tra danh sách đại biểu tham gia xem có ai đang có lịch họp khác diễn ra đồng thời hay không.
+
+   - Nếu có đại biểu trùng lịch: Hiển thị cảnh báo danh sách đại biểu bị xung đột để Ban Thư Ký quyết định.
+
+Bước 6: Ban Thư Ký xác nhận lưu cuộc họp ở trạng thái pending_approval.
+
+Bước 7: Ban Quản Trị phê duyệt chuyển sang trạng thái upcoming, hệ thống tự động phát hành giấy triệu tập qua thông báo đẩy và email đến các đại biểu.
 
 #### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
 
 Bước A1: Lựa chọn cuộc họp trực tuyến -> Nhập đường dẫn phòng họp Zoom / Google Meet / UniWork Link.
 
+Bước A2: Cuộc họp gặp trùng lịch đại biểu nhưng là cuộc họp mở rộng không bắt buộc -> Ban Thư Ký bấm 'Tiếp Tục Lưu' để hoàn tất lịch họp.
+
 #### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
 
-Bước E1: Phát hiện xung đột lịch phòng Sapphire Hub -> Hệ thống chặn lưu và hiển thị cảnh báo đỏ rực: 'XUNG ĐỘT LỊCH: Phòng họp Sapphire Hub đã được đăng ký bởi [Tên cuộc họp trước] từ hh:mm đến hh:mm. Vui lòng chọn khung giờ khác hoặc đổi địa điểm!'.
+Bước E1: Phát hiện xung đột phòng họp vật lý (Sapphire Hub hoặc địa điểm trùng) -> Hệ thống chặn lưu và hiển thị cảnh báo đỏ rực: 'Địa điểm/Phòng họp này đang trùng với cuộc họp [Tên cuộc họp trước], sau thời gian [hh:mm dd/MM/yyyy] có thể đăng ký được!'.
 
 ### [UC-CRM-MTG-02] Điểm Danh Cuộc Họp Bằng Mã QR Động Thay Đổi Sau 30 Giây (TOTP Engine)
 
@@ -1481,19 +1530,19 @@ Bước 3: Khi hai bên ký kết hợp đồng, BXT ghi nhận doanh số giao 
 
 Bước 4: Điểm thành tích giao thương được cộng vào hồ sơ 360 độ của cả 2 hội viên.
 
-### [UC-CRM-SEC-01] Quản Trị Ma Trận Phân Quyền Vai Trò Động Dynamic RBAC 5 Cấp
+### [UC-CRM-SEC-01] Quản Trị Ma Trận Phân Quyền Vai Trò RBAC (Nhóm Menu Độc Lập & URL Sync)
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-CRM-SEC-01 |
-| Tên Chức Năng | Quản Trị Ma Trận Phân Quyền Vai Trò Động Dynamic RBAC 5 Cấp |
+| Tên Chức Năng | Quản Trị Ma Trận Phân Quyền Vai Trò RBAC (Nhóm Menu Độc Lập & URL Sync) |
 | Phân Hệ / Module | Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM) |
-| Mục Tiêu Nghiệp Vụ | Cho phép Superadmin cấu hình quyền hạn chi tiết (Xem, Thêm, Sửa, Xóa, Duyệt) cho 5 vai trò hệ thống. |
+| Mục Tiêu Nghiệp Vụ | Cung cấp phân hệ chuyên biệt 'PHÂN QUYỀN' trên thanh điều hướng Sidebar; cho phép Superadmin cấu hình ma trận phân quyền 5 vai trò, tra cứu quyền hạn người dùng và danh mục nhóm quyền kèm đồng bộ URL Query. |
 | Tác Nhân (Actors) | Ban Quản Trị tối cao (quan_tri) |
 | Tiền Điều Kiện (Pre-conditions) | Đăng nhập bằng tài khoản Superadmin (admin@connect.vn). |
-| Hậu Điều Kiện (Post-conditions) | Các tài khoản đang hoạt động được áp dụng ma trận quyền mới ngay trong lần gọi API kế tiếp. |
-| Quy Tắc Nghiệp Vụ (Business Rules) | Đảm bảo tính bất biến của tài khoản Quản trị tối cao Superadmin. |
-| Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/settings/roles` | API: `PUT /api/roles/permissions` | Table: `role_permissions` |
+| Hậu Điều Kiện (Post-conditions) | Ma trận phân quyền mới có hiệu lực ngay lập tức trên toàn bộ Web CRM và Mobile App mà không cần người dùng đăng xuất. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-RBAC-DEDICATED-MENU-GROUP: Nhóm menu độc lập 'PHÂN QUYỀN'; RULE-AUTH-BTV-EXCLUSIVE: Độc quyền duyệt hội viên của BTV. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/permissions` | Nav Group: `nav.group.permissions` | Component: `permissions.tsx`, `Sidebar.tsx` |
 
 
 
@@ -1501,37 +1550,48 @@ Bước 4: Điểm thành tích giao thương được cộng vào hồ sơ 360 
 
 | Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
 | --- | --- | --- | --- |
-| targetRole | String | BẮT BUỘC | Thuộc danh mục 5 vai trò hệ thống |
-| moduleKey | String | BẮT BUỘC | Mã module/màn hình chức năng |
+| targetRole | String | BẮT BUỘC | Thuộc danh mục 5 vai trò hệ thống (quan_tri, admin, tong_thu_ky, truong_ban, member) |
+| moduleKey | String | BẮT BUỘC | Mã module/màn hình chức năng (30 màn hình hệ thống) |
 | actions | Array of Strings | BẮT BUỘC | Tập hợp các quyền: read, create, update, delete, approve |
+| activeTab | String Query | Tùy chọn | matrix | user_actions | role_groups |
 
 
 
 #### Luồng Sự Kiện Chính (Step-by-step Main Flow)
 
-Bước 1: Superadmin mở màn hình 'Phân Quyền Vai Trò' (/settings/roles) trên Web CRM.
+Bước 1: Superadmin truy cập trực tiếp Nhóm Menu Cấp 1 'PHÂN QUYỀN' trên Sidebar hoặc Mobile Drawer (`/permissions`).
 
-Bước 2: Hệ thống tải ma trận phân quyền dạng bảng: Cột dọc là danh sách 5 vai trò, Cột ngang là 30 màn hình chức năng chia theo 8 nhóm sidebar.
+Bước 2: Hệ thống tải giao diện phân quyền trung tâm gồm 3 tab nghiệp vụ:
 
-Bước 3: Superadmin tích chọn hoặc hủy chọn các ActionPills (Xem, Sửa, Xóa, Duyệt) tương ứng.
+   - Tab 1: Ma Trận Phân Quyền Vai Trò (`?tab=matrix`): Cột dọc là 5 vai trò, Cột ngang là 30 màn hình chức năng chia theo từng nhóm nghiệp vụ.
 
-Bước 4: Nhấn nút 'Lưu Ma Trận Phân Quyền'.
+   - Tab 2: Tra Cứu Quyền Người Dùng (`?tab=user_actions`): Tìm kiếm tài khoản cụ thể và xem danh sách hành vi được phép/bị chặn.
 
-Bước 5: Hệ thống kiểm tra tính toàn vẹn (Không cho phép tước quyền quản trị của chính vai trò quan_tri).
+   - Tab 3: Danh Mục Nhóm Quyền & Ban Chuyên Môn (`?tab=role_groups`): Quản trị cấu trúc 6 ban và nhóm quyền tương ứng.
 
-Bước 6: Cập nhật các bản ghi trong bảng `role_permissions`.
+Bước 3: Chuyển đổi giữa các Tab sẽ tự động đồng bộ tham số trên thanh địa chỉ URL (`window.history.pushState`), hỗ trợ bookmark và chia sẻ liên kết sâu.
 
-Bước 7: Làm mới bộ đệm phân quyền (Permission Cache) tức thời trên toàn hệ thống.
+Bước 4: Tại Tab Ma Trận, Superadmin tích chọn hoặc hủy chọn các ActionPills (Xem, Sửa, Xóa, Duyệt) tương ứng.
+
+Bước 5: Bấm nút 'Lưu Ma Trận Phân Quyền'.
+
+Bước 6: Hệ thống kiểm tra tính toàn vẹn (Không cho phép tước quyền quản trị của chính vai trò quan_tri, chặn cứng quyền duyệt hội viên của Ban Thư Ký).
+
+Bước 7: Cập nhật các bản ghi trong bảng `role_permissions` và làm mới bộ đệm phân quyền (Permission Cache) tức thời.
 
 Bước 8: Hiển thị thông báo cập nhật thành công.
 
 #### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
 
-Bước A1: Superadmin bấm 'Đặt lại mặc định' để khôi phục ma trận phân quyền tiêu chuẩn.
+Bước A1: Superadmin bấm 'Đặt lại mặc định' để khôi phục ma trận phân quyền chuẩn quốc tế của CLB CEO 1983.
+
+Bước A2: Quản trị viên truy cập từ đường dẫn cũ `/settings/roles` -> Hệ thống tự động chuyển hướng sang `/permissions?tab=matrix`.
 
 #### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
 
-Bước E1: Cố tình tước quyền truy cập module Cấu hình của vai trò quan_tri -> Hệ thống chặn và báo lỗi an toàn.
+Bước E1: Cố tình tước quyền truy cập module Phân quyền của vai trò quan_tri -> Hệ thống chặn và báo lỗi an toàn: 'Không thể tước quyền quản trị tối cao của Superadmin'.
+
+Bước E2: Cố tình cấp quyền duyệt hội viên cho Ban Thư Ký -> Hệ thống từ chối theo RULE-AUTH-BTV-EXCLUSIVE.
 
 ### [UC-CRM-SEC-02] Nhật Ký Kiểm Toán Hoạt Động Hệ Thống (Audit Logs Bất Biến)
 
@@ -1576,6 +1636,48 @@ Bước 5: Bản ghi kiểm toán được khóa chống chỉnh sửa, chỉ ch
 #### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
 
 Bước E1: Lỗi ghi log không được làm gián đoạn giao dịch chính nhưng phải kích hoạt cảnh báo giám sát hệ thống.
+
+### [UC-CRM-AI-01] Trợ Lý AI Điều Hành & Dẫn Đường Thao Tác Quản Trị CRM (Sự Kiện, Duyệt Hội Viên, Kế Toán, Giao Việc, Phân Quyền)
+
+| Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
+| --- | --- |
+| Mã Use Case | UC-CRM-AI-01 |
+| Tên Chức Năng | Trợ Lý AI Điều Hành & Dẫn Đường Thao Tác Quản Trị CRM (Sự Kiện, Duyệt Hội Viên, Kế Toán, Giao Việc, Phân Quyền) |
+| Phân Hệ / Module | Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM) |
+| Mục Tiêu Nghiệp Vụ | Hỗ trợ cán bộ quản trị CRM hướng dẫn và dẫn đường trực tiếp các nghiệp vụ điều hành phức tạp: Tạo sự kiện mới, thẩm định duyệt hội viên, quản trị tài chính hội phí, giao việc bảng Kanban, phân quyền RBAC và quản lý nhà tài trợ. |
+| Tác Nhân (Actors) | Ban Quản Trị, Ban Thư Ký, Ban Thành Viên, Ban Tài Chính, Ban Sự Kiện |
+| Tiền Điều Kiện (Pre-conditions) | Cán bộ quản trị đã đăng nhập Cổng Web CRM (`/events`, `/members`, `/fees`, `/tasks`, `/permissions`, `/sponsors`, `/documents`). |
+| Hậu Điều Kiện (Post-conditions) | Cán bộ các ban thực hiện tác nghiệp quản trị chính xác 100%, tuân thủ đúng phân định thẩm quyền và quy chế hiệp hội. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-AUTH-BTV-EXCLUSIVE & RULE-RBAC-DEDICATED-MENU-GROUP: Kiểm tra quyền hạn trước khi hướng dẫn thao tác nhạy cảm. |
+| Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/events`, `/members`, `/fees`, `/tasks`, `/permissions` | Tour IDs: `events-admin`, `members-admin`, `fees-admin`, `tasks-admin`, `permissions-admin` |
+
+
+
+#### Từ Điển Dữ Liệu Đầu Vào (Input Data Dictionary)
+
+| Trường Dữ Liệu | Kiểu Dữ Liệu | Bắt Buộc | Quy Tắc Kiểm Tra & Định Dạng (Validation) |
+| --- | --- | --- | --- |
+| adminPrompt | String | BẮT BUỘC | Câu hỏi nghiệp vụ quản trị từ cán bộ ban |
+
+
+
+#### Luồng Sự Kiện Chính (Step-by-step Main Flow)
+
+Bước 1: Cán bộ quản lý hỏi trợ lý AI về thao tác CRM (Ví dụ: 'Tạo sự kiện mới cho Ban Tổ Chức kiểu gì', 'Duyệt hồ sơ kết nạp hội viên ở đâu', 'Giao việc cho ban chuyên môn như nào').
+
+Bước 2: AI phân tích và trình bày các bước tác nghiệp chuẩn theo Quy chế hoạt động của Hiệp hội HanoiBA.
+
+Bước 3: AI hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình quản trị không?'.
+
+Bước 4: Cán bộ bấm 'Có' hoặc nói 'Có'.
+
+Bước 5: Hệ thống tự động chuyển trang đến màn hình quản trị CRM tương ứng (`/events`, `/members`, `/fees`, `/tasks`, `/permissions`, `/sponsors`, `/documents`).
+
+Bước 6: Khởi chạy lộ trình Spotlight HUD chuyên biệt cho CRM: Khoanh vùng các nút bấm then chốt ('Tạo sự kiện', 'Duyệt kết nạp', 'Duyệt gạch nợ', 'Giao việc', 'Cấp quyền soát vé') kèm lưu ý bảo mật dữ liệu.
+
+#### Luồng Ngoại Lệ & Xử Lý Lỗi (Exception Flows)
+
+Bước E1: Tài khoản không đủ quyền hạn RBAC đối với tính năng được yêu cầu -> AI cảnh báo: 'Chức năng này yêu cầu quyền hạn của Trưởng Ban Thành Viên / Superadmin' và không mở tour.
 
 ## 4. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS - ISO/IEC 25010)
 

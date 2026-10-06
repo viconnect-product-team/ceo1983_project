@@ -7,6 +7,19 @@ import { AiService } from './ai.service';
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
+  /** GET /api/ai/live-context — Ngữ cảnh động tài khoản phiên đăng nhập */
+  @Get('live-context')
+  async getLiveContext(@Request() req: any) {
+    return this.aiService.getLiveMemberAssistantContext(req.user.id);
+  }
+
+  /** POST /api/ai/ask — Hỏi đáp Trợ lý AI (Google Gemini 2.0 Flash / Smart Hybrid) */
+  @Post('ask')
+  async askAssistant(@Request() req: any, @Body() body: { prompt: string; clientContext?: any }) {
+    const res = await this.aiService.askAssistant(req.user.id, body.prompt, body.clientContext);
+    return { ok: true, data: res };
+  }
+
   /** GET /api/ai/roles — Roles của user hiện tại (cho phân quyền AI) */
   @Get('roles')
   async getRoles(@Request() req: any) {

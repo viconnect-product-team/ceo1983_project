@@ -21,6 +21,7 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { getMyMember, type MyMember } from "@/lib/member-app.functions";
 import { useTheme, type Theme } from "@/lib/theme";
+import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { fetchNestApi } from "@/lib/api-client";
@@ -56,6 +57,7 @@ function AssociationSettingsScreen() {
   const { action, required } = Route.useSearch();
   const { logout: authLogout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { lang } = useLang();
   const fetchMember = useServerFn(getMyMember);
   const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
 
@@ -274,13 +276,12 @@ function AssociationSettingsScreen() {
         {/* 2. Theme Preferences */}
         <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
-            <Sparkles className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Giao diện hiển thị
+            <Sparkles className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> {lang === "en" ? "Appearance" : "Giao diện hiển thị"}
           </h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {[
-              { mode: "light" as Theme, icon: Sun, label: "Sáng" },
-              { mode: "dark" as Theme, icon: Moon, label: "Tối" },
-              { mode: "contrast" as Theme, icon: Contrast, label: "Tương phản" },
+              { mode: "light" as Theme, icon: Sun, label: lang === "en" ? "Light" : "Sáng" },
+              { mode: "dark" as Theme, icon: Moon, label: lang === "en" ? "Dark" : "Tối" },
             ].map(({ mode, icon: Icon, label }) => (
               <button
                 key={mode}

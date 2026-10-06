@@ -11,6 +11,9 @@ import {
   X,
   Bell,
   CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -30,6 +33,21 @@ export interface Create1on1MeetingModalProps {
   defaultPartnerCompany?: string;
   defaultPartnerPhone?: string;
   defaultNotes?: string;
+}
+
+interface ConflictModalData {
+  type: "time" | "location" | "both";
+  primaryMeeting: any;
+  conflictingMeetings: any[];
+}
+
+function parseTimeToMinutes(t?: string): number | null {
+  if (!t) return null;
+  const parts = t.split(":");
+  const h = Number(parts[0]);
+  const m = Number(parts[1] || 0);
+  if (isNaN(h)) return null;
+  return h * 60 + (isNaN(m) ? 0 : m);
 }
 
 export function Create1on1MeetingModal({
@@ -67,6 +85,9 @@ export function Create1on1MeetingModal({
     defaultNotes || "Trao đổi nhu cầu cung ứng nguyên vật liệu & giới thiệu các đối tác tiềm năng trong Hiệp hội."
   );
 
+  // Trạng thái hiển thị popup cảnh báo trùng lịch (thời gian, địa điểm, hoặc cả hai)
+  const [conflictModalData, setConflictModalData] = useState<ConflictModalData | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       if (defaultTitle) setTitle(defaultTitle);
@@ -75,10 +96,127 @@ export function Create1on1MeetingModal({
       if (defaultPartnerPhone) setPartnerPhone(defaultPartnerPhone);
       if (defaultNotes) setNotes(defaultNotes);
       setErrors({});
+      setConflictModalData(null);
     }
   }, [isOpen, defaultTitle, defaultPartnerName, defaultPartnerCompany, defaultPartnerPhone, defaultNotes]);
 
   if (!isOpen) return null;
+
+  // Thu thập danh sách cuộc họp đã lưu từ mọi nguồn
+  const getExistingMeetings = () => {
+    const allMeetings: any[] = [];
+    try {
+      const ceoHist = JSON.parse(localStorage.getItem("ceo1983_meetings_history") || "[]");
+      if (Array.isArray(ceoHist)) allMeetings.push(...ceoHist);
+    } catch {}
+    try {
+      const vioneHist = JSON.parse(localStorage.getItem("vione_meetings_history") || "[]");
+      if (Array.isArray(vioneHist)) allMeetings.push(...vioneHist);
+    } catch {}
+    try {
+      const ceoCal = JSON.parse(localStorage.getItem("ceo1983_saved_calendar_events") || "[]");
+      if (Array.isArray(ceoCal)) allMeetings.push(...ceoCal);
+    } catch {}
+
+    // Deduplicate theo id hoặc tiêu đề + thời gian
+    const seen = new Set<string>();
+    return allMeetings.filter((m) => {
+      const key = `${m.id || ""}_${m.title || ""}_${m.date || m.startsAt || ""}_${m.time || ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  // Hàm kiểm tra trùng thời gian, địa điểm hoặc cả hai
+  const detectConflicts = (): ConflictModalData | null => {
+    const existingList = getExistingMeetings();
+    const targetDateClean = String(date).slice(0, 10);
+    const targetMin = parseTimeToMinutes(time);
+    const targetLocClean = venue.trim().toLowerCase();
+
+    let timeConflictMeeting: any = null;
+    let locConflictMeeting: any = null;
+    const conflicts: any[] = [];
+
+    for (const m of existingList) {
+      if (!m || m.status === "cancelled") continue;
+      const mDate = String(m.date || m.startsAt || "").slice(0, 10);
+      if (mDate !== targetDateClean) continue;
+
+      // 1. Kiểm tra trùng thời gian (cùng giờ hoặc lệch dưới 60 phút)
+      const mTime = m.time || (m.startsAt && m.startsAt.includes("T") ? m.startsAt.split("T")[1]?.slice(0, 5) : "");
+      const mMin = parseTimeToMinutes(mTime);
+      let isTimeOverlap = false;
+      if (mMin !== null && targetMin !== null) {
+        if (Math.abs(mMin - targetMin) < 60) {
+          isTimeOverlap = true;
+        }
+      } else if (mTime && time && mTime === time) {
+        isTimeOverlap = true;
+      }
+
+      // 2. Kiểm tra trùng địa điểm trực tiếp (offline)
+      let isLocOverlap = false;
+      if (venueType === "offline") {
+        const mLoc = String(m.venue || m.location || "").trim().toLowerCase();
+        const isMOnline =
+          m.venueType === "online" ||
+          mLoc.includes("http") ||
+          mLoc.includes("zoom") ||
+          mLoc.includes("online") ||
+          mLoc.includes("trực tuyến");
+        if (!isMOnline && mLoc.length > 3 && targetLocClean.length > 3) {
+          if (mLoc === targetLocClean || mLoc.includes(targetLocClean) || targetLocClean.includes(mLoc)) {
+            isLocOverlap = true;
+          }
+        }
+      }
+
+      if (isTimeOverlap && isLocOverlap) {
+        return {
+          type: "both",
+          primaryMeeting: m,
+          conflictingMeetings: [m],
+        };
+      }
+
+      if (isTimeOverlap && !timeConflictMeeting) {
+        timeConflictMeeting = m;
+        conflicts.push(m);
+      }
+      if (isLocOverlap && !locConflictMeeting) {
+        locConflictMeeting = m;
+        conflicts.push(m);
+      }
+    }
+
+    if (timeConflictMeeting && locConflictMeeting) {
+      return {
+        type: "both",
+        primaryMeeting: timeConflictMeeting,
+        conflictingMeetings: [timeConflictMeeting, locConflictMeeting],
+      };
+    }
+
+    if (timeConflictMeeting) {
+      return {
+        type: "time",
+        primaryMeeting: timeConflictMeeting,
+        conflictingMeetings: [timeConflictMeeting],
+      };
+    }
+
+    if (locConflictMeeting) {
+      return {
+        type: "location",
+        primaryMeeting: locConflictMeeting,
+        conflictingMeetings: [locConflictMeeting],
+      };
+    }
+
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +232,19 @@ export function Create1on1MeetingModal({
     }
     setErrors({});
 
+    // Kiểm tra xem có trùng thời gian, địa điểm hoặc cả hai không
+    const detected = detectConflicts();
+    if (detected) {
+      // Bật popup cảnh báo để người dùng xác nhận chắc chắn muốn tham gia
+      setConflictModalData(detected);
+      return;
+    }
+
+    // Không trùng thì tiến hành lưu bình thường
+    await executeSaveMeeting();
+  };
+
+  const executeSaveMeeting = async (options?: { confirmOverlap?: boolean; forceLocation?: boolean }) => {
     const meetingId = `meet_1on1_${Date.now()}`;
     const newRecord = {
       id: meetingId,
@@ -122,10 +273,30 @@ export function Create1on1MeetingModal({
     try {
       await fetchNestApi("/meetings", {
         method: "POST",
-        body: newRecord,
+        body: {
+          ...newRecord,
+          confirmOverlap: options?.confirmOverlap ?? false,
+          forceLocation: options?.forceLocation ?? false,
+        },
       });
     } catch (e: any) {
-      console.warn("Lưu cuộc gặp lên server lỗi hoặc đang offline:", e?.message);
+      const errMsg = e?.message || "";
+      if (errMsg.includes("LOCATION_CONFLICT") || errMsg.includes("OVERLAP_CONFIRM_REQUIRED")) {
+        const isLoc = errMsg.includes("LOCATION_CONFLICT");
+        const cleanMsg = errMsg.replace(/^.*(LOCATION_CONFLICT|OVERLAP_CONFIRM_REQUIRED):\s*/, "");
+        setConflictModalData({
+          type: isLoc ? "location" : "time",
+          primaryMeeting: {
+            title: cleanMsg,
+            date,
+            time,
+            venue: isLoc ? venue : "Lịch họp hiệp hội",
+          },
+          conflictingMeetings: [],
+        });
+        return;
+      }
+      console.warn("Lưu cuộc gặp lên server cảnh báo:", e?.message);
     }
 
     try {
@@ -190,6 +361,7 @@ export function Create1on1MeetingModal({
       window.dispatchEvent(new CustomEvent("ceo1983:calendar-updated"));
       window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
 
+      setConflictModalData(null);
       toast.success(
         `✓ Đã lên lịch cuộc gặp kết nối với "${partnerName.trim()}" và gửi thông báo tới đối tác thành công!`
       );
@@ -566,6 +738,166 @@ export function Create1on1MeetingModal({
           </div>
         </form>
       </div>
+
+      {/* ── POPUP CẢNH BÁO TRÙNG LỊCH (THỜI GIAN, ĐỊA ĐIỂM HOẶC CẢ HAI) ── */}
+      {conflictModalData && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-3xl border border-amber-500/40 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-start gap-3.5">
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-8 ${
+                  conflictModalData.type === "both"
+                    ? "bg-rose-500/15 text-rose-500 ring-rose-500/10"
+                    : "bg-amber-500/15 text-amber-500 ring-amber-500/10"
+                }`}
+              >
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide uppercase mb-1.5 border"
+                  style={{
+                    backgroundColor:
+                      conflictModalData.type === "both"
+                        ? "rgba(244, 63, 94, 0.12)"
+                        : "rgba(245, 158, 11, 0.12)",
+                    borderColor:
+                      conflictModalData.type === "both"
+                        ? "rgba(244, 63, 94, 0.3)"
+                        : "rgba(245, 158, 11, 0.3)",
+                    color: conflictModalData.type === "both" ? "#f43f5e" : "#d97706",
+                  }}
+                >
+                  {conflictModalData.type === "both"
+                    ? "Trùng cả thời gian & địa điểm"
+                    : conflictModalData.type === "time"
+                    ? "Trùng thời gian cuộc gặp"
+                    : "Trùng địa điểm cuộc gặp"}
+                </div>
+                <h3 className="text-base font-black text-foreground">
+                  Phát hiện lịch gặp bị trùng
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {conflictModalData.type === "both"
+                    ? "Bạn đang thiết lập cuộc gặp trùng cả khung giờ và địa điểm với một cuộc gặp khác."
+                    : conflictModalData.type === "time"
+                    ? "Bạn đang thiết lập cuộc gặp trùng khung giờ với một cuộc gặp khác trong ngày."
+                    : "Địa điểm trực tiếp này đã được lên lịch sử dụng cho cuộc gặp khác cùng ngày."}
+                </p>
+              </div>
+            </div>
+
+            {/* Chi tiết so sánh cuộc gặp */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              {/* Cuộc gặp đang tạo */}
+              <div className="rounded-2xl border border-sky-500/30 bg-sky-500/5 p-3.5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                    Cuộc gặp đang tạo
+                  </span>
+                  <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                    Mới
+                  </span>
+                </div>
+                <div className="font-bold text-foreground text-xs line-clamp-2">
+                  {title}
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="h-3 w-3 text-sky-500 shrink-0" />
+                  <span>
+                    {time} • {date}
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                  <MapPin className="h-3 w-3 text-sky-500 shrink-0 mt-0.5" />
+                  <span className="line-clamp-2">
+                    {venueType === "online" ? "Họp trực tuyến" : venue}
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <User className="h-3 w-3 text-sky-500 shrink-0" />
+                  <span>
+                    Đối tác: <strong className="text-foreground">{partnerName}</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Cuộc gặp đã có */}
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3.5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                    Cuộc gặp đã có
+                  </span>
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                    Đã lên lịch
+                  </span>
+                </div>
+                <div className="font-bold text-foreground text-xs line-clamp-2">
+                  {conflictModalData.primaryMeeting.title}
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="h-3 w-3 text-amber-500 shrink-0" />
+                  <span>
+                    {conflictModalData.primaryMeeting.time || "Theo lịch"} •{" "}
+                    {conflictModalData.primaryMeeting.date || date}
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                  <MapPin className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+                  <span className="line-clamp-2">
+                    {conflictModalData.primaryMeeting.venue ||
+                      conflictModalData.primaryMeeting.location ||
+                      "Văn phòng / Địa điểm đã đặt"}
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <User className="h-3 w-3 text-amber-500 shrink-0" />
+                  <span>
+                    {conflictModalData.primaryMeeting.partnerName
+                      ? `Đối tác: ${conflictModalData.primaryMeeting.partnerName}`
+                      : `Người tổ chức: ${
+                          conflictModalData.primaryMeeting.organizer ||
+                          conflictModalData.primaryMeeting.hostName ||
+                          "Hiệp hội"
+                        }`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Câu hỏi xác nhận */}
+            <div className="mt-4 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-900 dark:text-amber-200">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                Bạn có chắc chắn muốn lên lịch trùng và đảm bảo có thể tham gia được không?
+              </p>
+            </div>
+
+            {/* Nút hành động */}
+            <div className="mt-5 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setConflictModalData(null)}
+                className="px-4 py-2.5 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-secondary transition cursor-pointer"
+              >
+                Quay lại chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConflictModalData(null);
+                  executeSaveMeeting({ confirmOverlap: true, forceLocation: true });
+                }}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Tôi đảm bảo tham gia - Xác nhận lưu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

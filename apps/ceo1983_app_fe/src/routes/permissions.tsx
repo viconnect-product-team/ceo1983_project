@@ -331,8 +331,36 @@ function PermissionsPage() {
   const [filterRole, setFilterRole] = useState("all");
   const [filterDept, setFilterDept] = useState("all");
 
-  // Tab switch
-  const [activeTab, setActiveTab] = useState<"matrix" | "user_actions" | "role_groups">("matrix");
+  // Tab switch with URL sync (?tab=matrix | ?tab=user_actions | ?tab=role_groups)
+  const [activeTab, setActiveTabState] = useState<"matrix" | "user_actions" | "role_groups">(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("tab");
+      if (p === "user_actions" || p === "role_groups" || p === "matrix") return p;
+    }
+    return "matrix";
+  });
+
+  const setActiveTab = (tab: "matrix" | "user_actions" | "role_groups") => {
+    setActiveTabState(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkTab = () => {
+      const p = new URLSearchParams(window.location.search).get("tab");
+      if (p === "user_actions" || p === "role_groups" || p === "matrix") {
+        setActiveTabState(p);
+      }
+    };
+    checkTab();
+    window.addEventListener("popstate", checkTab);
+    return () => window.removeEventListener("popstate", checkTab);
+  }, []);
 
   // Action Modals for User Permissions
   const [viewingMember, setViewingMember] = useState<any | null>(null);

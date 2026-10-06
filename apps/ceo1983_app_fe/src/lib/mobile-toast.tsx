@@ -9,10 +9,9 @@ export interface MobileToastOptions {
   };
 }
 
-function getActiveTheme(): "dark" | "light" | "contrast" {
+function getActiveTheme(): "dark" | "light" {
   if (typeof document === "undefined") return "dark";
   const doc = document.documentElement;
-  if (doc.classList.contains("hc") || doc.dataset.theme === "contrast") return "contrast";
   if (doc.classList.contains("dark") || doc.dataset.theme === "dark") return "dark";
   return "light";
 }
@@ -37,19 +36,13 @@ export const mobileToast = {
     toast.custom((t) => (
       <div
         className={`w-full max-w-sm rounded-2xl p-3.5 backdrop-blur-xl border transition-all duration-300 shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-3 ${
-          theme === "contrast"
-            ? "bg-black border-[#FFD700] text-[#FFD700] shadow-[0_0_20px_rgba(255,215,0,0.35)]"
-            : theme === "light"
+          theme === "light"
             ? "bg-white/95 border-emerald-500/30 text-slate-900 shadow-[0_10px_30px_rgba(16,185,129,0.15)]"
             : "bg-[#0F1420]/95 border-emerald-500/40 text-white shadow-[0_12px_35px_rgba(0,0,0,0.7),0_0_20px_rgba(16,185,129,0.12)]"
         }`}
       >
         <div
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-            theme === "contrast"
-              ? "bg-[#FFD700] text-black"
-              : "bg-emerald-500 text-white"
-          }`}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-emerald-500 text-white"
         >
           ✓
         </div>
@@ -58,7 +51,7 @@ export const mobileToast = {
           {options?.description && (
             <p
               className={`mt-0.5 text-[11px] leading-snug ${
-                theme === "contrast" ? "text-[#E6C200]" : theme === "light" ? "text-slate-600" : "text-slate-300"
+                theme === "light" ? "text-slate-600" : "text-slate-300"
               }`}
             >
               {options.description}
@@ -95,9 +88,7 @@ export const mobileToast = {
     toast.custom((t) => (
       <div
         className={`w-full max-w-sm rounded-2xl p-3.5 backdrop-blur-xl border transition-all duration-300 shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-3 ${
-          theme === "contrast"
-            ? "bg-black border-red-500 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.35)]"
-            : theme === "light"
+          theme === "light"
             ? "bg-white/95 border-red-500/30 text-slate-900 shadow-[0_10px_30px_rgba(239,68,68,0.15)]"
             : "bg-[#0F1420]/95 border-red-500/40 text-white shadow-[0_12px_35px_rgba(0,0,0,0.7),0_0_20px_rgba(239,68,68,0.15)]"
         }`}
@@ -131,19 +122,13 @@ export const mobileToast = {
     toast.custom((t) => (
       <div
         className={`w-full max-w-sm rounded-2xl p-3.5 backdrop-blur-xl border transition-all duration-300 shadow-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-3 ${
-          theme === "contrast"
-            ? "bg-black border-[#FFD700] text-[#FFD700]"
-            : theme === "light"
+          theme === "light"
             ? "bg-white/95 border-[#D8B282]/40 text-slate-900 shadow-[0_10px_30px_rgba(216,178,130,0.2)]"
             : "bg-[#0F1420]/95 border-[#D8B282]/50 text-white shadow-[0_12px_35px_rgba(0,0,0,0.7),0_0_20px_rgba(216,178,130,0.12)]"
         }`}
       >
         <div
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-            theme === "contrast"
-              ? "bg-[#FFD700] text-black"
-              : "bg-gradient-to-br from-[#E2B755] to-[#B8860B] text-slate-950"
-          }`}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-gradient-to-br from-[#E2B755] to-[#B8860B] text-slate-950"
         >
           ★
         </div>

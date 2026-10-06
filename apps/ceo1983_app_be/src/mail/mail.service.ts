@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface SendAccountEmailOptions {
   to: string;
@@ -74,8 +76,136 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter | null = null;
 
+  private readonly failedRecipients = new Set<string>();
+  private readonly suppressionFile = path.resolve(process.cwd(), 'uploads', 'mail_suppression_list.json');
+
   constructor() {
     this.initTransporter();
+    this.loadSuppressionList();
+  }
+
+  private loadSuppressionList() {
+    try {
+      if (fs.existsSync(this.suppressionFile)) {
+        const raw = fs.readFileSync(this.suppressionFile, 'utf8');
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          list.forEach((email: string) => this.failedRecipients.add(String(email).toLowerCase().trim()));
+        }
+        this.logger.log(`Loaded ${this.failedRecipients.size} suppressed email addresses from disk.`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`Could not load mail suppression list: ${err.message}`);
+    }
+  }
+
+  private persistSuppressionList() {
+    try {
+      const dir = path.dirname(this.suppressionFile);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(this.suppressionFile, JSON.stringify(Array.from(this.failedRecipients), null, 2), 'utf8');
+    } catch (err: any) {
+      this.logger.warn(`Could not persist mail suppression list: ${err.message}`);
+    }
+  }
+
+  /**
+   * Nhận diện các địa chỉ email kiểm thử / mock / fake để không bắn SMTP thật,
+   * tránh việc Google Mailer-Daemon giữ trong hàng đợi 47 giờ và gửi thư cảnh báo lỗi.
+   */
+  public isTestOrDummyEmail(email: string): boolean {
+    if (!email) return false;
+    const lower = email.toLowerCase().trim();
+    if (
+      lower.includes('.test') ||
+      lower.includes('test.') ||
+      lower.includes('test_') ||
+      lower.includes('test5137') ||
+      lower.includes('test-') ||
+      lower.startsWith('test') ||
+      lower.includes('dummy') ||
+      lower.includes('fake') ||
+      lower.includes('@example.com') ||
+      lower.includes('@test.com') ||
+      lower.endsWith('@example.org') ||
+      lower.endsWith('@localhost')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Bộ điều phối gửi email tập trung:
+   * 1. Kiểm tra chính sách: Nếu đã từng thất bại (fail 1 lần) thì chặn gửi lại (Suppression).
+   * 2. Tự động bỏ qua SMTP đối với các email test/mock để tránh Google Mailer-Daemon retry 47h.
+   * 3. Gửi qua SMTP và nếu lỗi lập tức ghi nhận vào danh sách chặn vĩnh viễn, không gửi lại.
+   */
+  public async dispatchSmtpEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    fromName?: string;
+    auditContext?: string;
+  }): Promise<{ ok: boolean; message: string; messageId?: string; isSuppressed?: boolean }> {
+    const cleanTo = (options.to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`Cannot send email: invalid destination email "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const lowerTo = cleanTo.toLowerCase();
+
+    // 1. Kiểm tra chính sách chặn gửi lại nếu đã fail 1 lần (1-Fail Suppression Policy)
+    if (this.failedRecipients.has(lowerTo)) {
+      this.logger.warn(
+        `[SUPPRESSION_BLOCKED] Destination "${cleanTo}" previously failed delivery. Skipping SMTP to prevent bounce / repeated delivery attempts.`,
+      );
+      return {
+        ok: false,
+        message: 'Email address previously failed to receive mail. Delivery cancelled without retry.',
+        isSuppressed: true,
+      };
+    }
+
+    // 2. Chặn các địa chỉ email test / dummy / mock không thể nhận thư
+    if (this.isTestOrDummyEmail(cleanTo)) {
+      this.logger.log(
+        `[MOCK_EMAIL_SKIPPED_SMTP] Destination "${cleanTo}" is a test/mock address. Recorded to audit log without sending via Gmail SMTP. Context: ${options.auditContext || options.subject}`,
+      );
+      return { ok: true, message: 'Test email logged to audit stream (SMTP skipped to prevent bounce)' };
+    }
+
+    // 3. Nếu cấu hình SMTP Transporter: Gửi thật qua Gmail/SMTP
+    if (this.transporter) {
+      try {
+        const fromAddr = this.getCleanFromEmail();
+        const fromHeader = `"${options.fromName || 'CLB Doanh Nhân CEO 1983'}" <${fromAddr}>`;
+        const info = await this.transporter.sendMail({
+          from: fromHeader,
+          to: cleanTo,
+          subject: options.subject,
+          html: options.html,
+        });
+        this.logger.log(`Email dispatched successfully to ${cleanTo}. Id: ${info.messageId}`);
+        return { ok: true, message: 'Email sent successfully via SMTP', messageId: info.messageId };
+      } catch (err: any) {
+        // Ghi nhận ngay vào danh sách thất bại - Nếu fail 1 lần thì thôi không bắn thêm nữa
+        this.failedRecipients.add(lowerTo);
+        this.persistSuppressionList();
+        this.logger.error(
+          `[SMTP_FAILURE_SUPPRESSED] Failed to send email to ${cleanTo} via SMTP: ${err.message}. Address added to suppression list (no further retries).`,
+          err.stack,
+        );
+        return { ok: false, message: `SMTP delivery failed: ${err.message}. Address added to suppression list (no retry).` };
+      }
+    }
+
+    // 4. Fallback Audit Log khi chưa cấu hình SMTP
+    this.logger.log(`[AUDIT_EMAIL_DISPATCH] To: ${cleanTo} | Subject: ${options.subject} | Context: ${options.auditContext || ''}`);
+    return { ok: true, message: 'Email logged to audit stream (SMTP fallback mode)' };
   }
 
   private initTransporter() {
@@ -213,28 +343,13 @@ export class MailService {
 </html>
     `;
 
-    // 1. Nếu có transporter, thực hiện gửi email thật
-    if (this.transporter) {
-      try {
-        const fromAddr = this.getCleanFromEmail();
-        const info = await this.transporter.sendMail({
-          from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
-          to: cleanTo,
-          subject,
-          html,
-        });
-        this.logger.log(`Account email sent to ${cleanTo} via SMTP. MessageId: ${info.messageId}`);
-        return { ok: true, message: 'Email sent successfully via SMTP' };
-      } catch (err: any) {
-        this.logger.error(`Failed to send email to ${cleanTo} via SMTP: ${err.message}`, err.stack);
-      }
-    }
-
-    // 2. Audit logger (luôn ghi nhận đầy đủ thông tin tài khoản vào hệ thống để không bao giờ thất lạc)
-    this.logger.log(
-      `[MEMBER_ACCOUNT_CREATED] Destination: ${cleanTo} | User: ${username} | Password: ${passwordRaw} | Name: ${fullName}`,
-    );
-    return { ok: true, message: 'Account created and credentials logged to audit stream' };
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[MEMBER_ACCOUNT_CREATED] User: ${username} | Password: ${passwordRaw} | Name: ${fullName}`,
+    });
   }
 
   /**
@@ -443,28 +558,13 @@ export class MailService {
 </html>
     `;
 
-    // 1. Gửi qua SMTP nếu đã cấu hình transporter
-    if (this.transporter) {
-      try {
-        const fromAddr = this.getCleanFromEmail();
-        const info = await this.transporter.sendMail({
-          from: `"Ban Tổ Chức Sự Kiện CEO 1983" <${fromAddr}>`,
-          to: cleanTo,
-          subject,
-          html,
-        });
-        this.logger.log(`Event ticket email sent to ${cleanTo} via SMTP. RegistrationId: ${registrationId}, MessageId: ${info.messageId}`);
-        return { ok: true, message: 'Event ticket email sent successfully via SMTP' };
-      } catch (err: any) {
-        this.logger.error(`Failed to send event ticket email to ${cleanTo} via SMTP: ${err.message}`, err.stack);
-      }
-    }
-
-    // 2. Audit log
-    this.logger.log(
-      `[EVENT_TICKET_EMAIL_DISPATCHED] To: ${cleanTo} | Event: ${eventTitle} | RegId: ${registrationId} | Name: ${fullName} | LuckyNum: ${luckyNumber}`,
-    );
-    return { ok: true, message: 'Event ticket created and notification logged to audit stream' };
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'Ban Tổ Chức Sự Kiện CEO 1983',
+      auditContext: `[EVENT_TICKET_EMAIL] RegId: ${registrationId} | Event: ${eventTitle} | Name: ${fullName}`,
+    });
   }
 
   /**
@@ -594,28 +694,13 @@ export class MailService {
 </html>
     `;
 
-    // 1. Gửi qua SMTP nếu đã cấu hình
-    if (this.transporter) {
-      try {
-        const fromAddr = this.getCleanFromEmail();
-        const info = await this.transporter.sendMail({
-          from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
-          to: cleanTo,
-          subject,
-          html,
-        });
-        this.logger.log(`App welcome email sent to ${cleanTo} via SMTP. MessageId: ${info.messageId}`);
-        return { ok: true, message: 'App welcome email sent successfully via SMTP' };
-      } catch (err: any) {
-        this.logger.error(`Failed to send app welcome email to ${cleanTo} via SMTP: ${err.message}`, err.stack);
-      }
-    }
-
-    // 2. Audit log
-    this.logger.log(
-      `[APP_WELCOME_EMAIL_DISPATCHED] To: ${cleanTo} | User: ${username} | Name: ${fullName}`,
-    );
-    return { ok: true, message: 'App welcome registration logged to audit stream' };
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[APP_WELCOME_EMAIL] User: ${username} | Name: ${fullName}`,
+    });
   }
 
   /**
@@ -724,24 +809,13 @@ export class MailService {
 </html>
     `;
 
-    if (this.transporter) {
-      try {
-        const fromAddr = this.getCleanFromEmail();
-        const info = await this.transporter.sendMail({
-          from: `"${assocTitle}" <${fromAddr}>`,
-          to: cleanTo,
-          subject,
-          html,
-        });
-        this.logger.log(`Member approved email sent to ${cleanTo}. MessageId: ${info.messageId}`);
-        return { ok: true, message: 'Member approved email sent via SMTP' };
-      } catch (err: any) {
-        this.logger.error(`Failed to send member approved email to ${cleanTo}: ${err.message}`, err.stack);
-      }
-    }
-
-    this.logger.log(`[MEMBER_APPROVED_EMAIL_DISPATCHED] To: ${cleanTo} | Name: ${fullName} | Code: ${memberCode}`);
-    return { ok: true, message: 'Member approved email logged to audit stream' };
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: assocTitle,
+      auditContext: `[MEMBER_APPROVED_EMAIL] Name: ${fullName} | Code: ${memberCode}`,
+    });
   }
 
   /**
@@ -868,24 +942,13 @@ export class MailService {
 </html>
     `;
 
-    if (this.transporter) {
-      try {
-        const fromAddr = this.getCleanFromEmail();
-        const info = await this.transporter.sendMail({
-          from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
-          to: cleanTo,
-          subject,
-          html,
-        });
-        this.logger.log(`Registration received email sent to ${cleanTo}. MessageId: ${info.messageId}`);
-        return { ok: true, message: 'Registration received email sent via SMTP' };
-      } catch (err: any) {
-        this.logger.error(`Failed to send registration received email to ${cleanTo}: ${err.message}`, err.stack);
-      }
-    }
-
-    this.logger.log(`[REGISTRATION_RECEIVED_LOG] To: ${cleanTo} | Name: ${fullName} | Company: ${companyName}`);
-    return { ok: true, message: 'Registration received logged to audit stream' };
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[REGISTRATION_RECEIVED] Name: ${fullName} | Company: ${companyName}`,
+    });
   }
 
   // ── DYNAMIC MAIL TEMPLATES MANAGEMENT & DISPATCH (RESTFUL API) ─────────────
@@ -1071,26 +1134,14 @@ export class MailService {
     });
   }
 
-  async sendDirectEmail(options: { to: string; subject: string; html: string; templateCode?: string }) {
-    const cleanTo = (options.to || '').trim();
-    if (this.transporter) {
-      try {
-        const fromAddr = this.getCleanFromEmail();
-        const info = await this.transporter.sendMail({
-          from: `"CLB Doanh Nhân CEO 1983" <${fromAddr}>`,
-          to: cleanTo,
-          subject: options.subject,
-          html: options.html,
-        });
-        this.logger.log(`Email dispatched successfully to ${cleanTo}. Id: ${info.messageId}`);
-        return { ok: true, message: 'Email sent successfully via SMTP', messageId: info.messageId };
-      } catch (err: any) {
-        this.logger.error(`SMTP delivery failed: ${err.message}`, err.stack);
-      }
-    }
-
-    this.logger.log(`[AUDIT_EMAIL_DISPATCH] To: ${cleanTo} | Subject: ${options.subject}`);
-    return { ok: true, message: 'Email logged to audit stream (SMTP fallback mode)' };
+  async sendDirectEmail(options: { to: string; subject: string; html: string; templateCode?: string; fromName?: string }) {
+    return this.dispatchSmtpEmail({
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      fromName: options.fromName,
+      auditContext: `[DIRECT_EMAIL] Template: ${options.templateCode || 'custom'}`,
+    });
   }
 
   async sendDynamic(templateCode: string, to: string, variables: Record<string, string>) {

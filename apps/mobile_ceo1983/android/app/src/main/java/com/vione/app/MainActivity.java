@@ -23,6 +23,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -554,5 +555,44 @@ public class MainActivity extends BridgeActivity {
         }
 
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private long mLastBackPressTime = 0;
+    private Toast mExitToast = null;
+
+    @Override
+    public void onBackPressed() {
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            WebView webView = getBridge().getWebView();
+            String jsCheck = "(function() {" +
+                "  try {" +
+                "    window.dispatchEvent(new CustomEvent('native:hardware_back'));" +
+                "    return window.__VBA_HANDLED_BACK__ === true ? 'handled' : 'home';" +
+                "  } catch(e) { return 'error'; }" +
+                "})();";
+
+            webView.evaluateJavascript(jsCheck, new ValueCallback<String>() {
+                @Override
+                public void onReceiveValue(String val) {
+                    if (val != null && val.contains("handled")) {
+                        return;
+                    }
+
+                    long now = System.currentTimeMillis();
+                    if (now - mLastBackPressTime < 2000) {
+                        if (mExitToast != null) mExitToast.cancel();
+                        MainActivity.this.finish();
+                    } else {
+                        mLastBackPressTime = now;
+                        if (mExitToast != null) mExitToast.cancel();
+                        mExitToast = Toast.makeText(MainActivity.this, "Chạm lần nữa để thoát ứng dụng", Toast.LENGTH_SHORT);
+                        mExitToast.show();
+                    }
+                }
+            });
+            return;
+        }
+
+        super.onBackPressed();
     }
 }

@@ -2408,29 +2408,72 @@ button, a, [role="button"], input[type="button"], input[type="submit"] {
   -webkit-user-select: none;
 }
 
-/* Prevent accidental text selection on cards & navigation */
-.vba-app button,
-.vba-app .vba-bottom-bar,
-.vba-app [role="tablist"],
-.vba-app .select-none-touch {
+/* ═══════════════════════════════════════════════════════════════════════════
+   TIÊU CHUẨN TRẢI NGHIỆM MOBILE WEB APP CHUẨN NATIVE (NHƯ MOMO / ZALO) - CEO 1983
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Triệt tiêu hoàn toàn cử chỉ vuốt mép thoát app của trình duyệt di động */
+html:has(.vba-app),
+body:has(.vba-app),
+.vba-app {
+  overflow-x: clip !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none !important;
+  overscroll-behavior-y: none !important;
+  overscroll-behavior: none !important;
+  touch-action: pan-y pinch-zoom;
+  max-width: 100vw;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 2. Khử bôi đen văn bản và bóng chạm khó chịu trên toàn bộ app hội viên */
+.vba-app {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
-/* Smooth momentum scrolling for iOS containers */
-.smooth-scroll-touch {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+/* Cho phép bôi đen văn bản tại các trường dữ liệu cần sao chép hoặc nhập liệu */
+.vba-app input,
+.vba-app textarea,
+.vba-app [contenteditable="true"],
+.vba-app .selectable-text {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -webkit-touch-callout: default !important;
 }
 
-/* Tactile press micro-interactions */
+/* 3. Phản hồi xúc giác đầm tay chuẩn Native MoMo (Tactile Touch Feedback) */
+.native-press,
 .touch-press {
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation;
 }
+
+.native-press:active,
 .touch-press:active {
-  transform: scale(0.97);
+  transform: scale(0.965);
   opacity: 0.9;
+  transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.1s ease;
+}
+
+/* 4. Momentum smooth scrolling & ẩn thanh cuộn chuẩn Native */
+.smooth-scroll-touch,
+.vba-app .overflow-y-auto,
+.vba-app .overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.smooth-scroll-touch::-webkit-scrollbar,
+.vba-app .overflow-y-auto::-webkit-scrollbar,
+.vba-app .overflow-x-auto::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

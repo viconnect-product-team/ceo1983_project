@@ -708,7 +708,6 @@ export default function ProfileScreen() {
   const themeOptions: { mode: Theme; icon: typeof Sun; label: string; desc: string }[] = [
     { mode: "light", icon: Sun, label: isEn ? "Light" : "Sáng", desc: isEn ? "Crisp, clean" : "Tươi sáng, tinh tế" },
     { mode: "dark", icon: Moon, label: isEn ? "Dark" : "Tối", desc: isEn ? "Luxury, sleek" : "Sang trọng, dịu mắt" },
-    { mode: "contrast", icon: Contrast, label: isEn ? "Contrast" : "Tương phản", desc: isEn ? "High contrast" : "Độ tương phản cao" },
   ];
 
   async function logout() {
@@ -956,11 +955,11 @@ export default function ProfileScreen() {
             {isEn ? "Appearance & Theme" : "Giao diện & Chế độ màu"}
           </span>
           <span className="text-[11px] font-bold text-[#2E3192] dark:text-amber-400">
-            {theme === "light" ? (isEn ? "Light" : "Sáng") : theme === "dark" ? (isEn ? "Dark" : "Tối") : (isEn ? "Contrast" : "Tương phản")}
+            {theme === "light" ? (isEn ? "Light" : "Sáng") : (isEn ? "Dark" : "Tối")}
           </span>
         </div>
 
-        <div id="tour-profile-theme" className="grid grid-cols-3 gap-2.5">
+        <div id="tour-profile-theme" className="grid grid-cols-2 gap-2.5">
           {themeOptions.map((opt) => {
             const Icon = opt.icon;
             const active = theme === opt.mode;

@@ -47,6 +47,7 @@ export const registerForEvent = createServerFn({ method: "POST" })
         ticketCount: z.number().int().min(1).max(100).optional(),
         ticketType: z.string().optional(),
         note: z.string().optional(),
+        confirmOverlap: z.boolean().optional(),
       })
       .parse(d),
   )

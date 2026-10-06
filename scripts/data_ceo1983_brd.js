@@ -9,9 +9,9 @@ const BRD_DATA = {
   metadata: {
     projectTitle: "HỆ SINH THÁI SỐ HÓA & QUẢN TRỊ HIỆP HỘI DOANH NHÂN CEO 1983",
     subTitle: "Tài Liệu Yêu Cầu Nghiệp Vụ Toàn Diện (Business Requirements Document - BRD)",
-    docCode: "BRD-CEO1983-MASTER-V5.0",
-    version: "Version 5.0 (Master Enterprise Release)",
-    date: "04/10/2026",
+    docCode: "BRD-CEO1983-MASTER-V5.5",
+    version: "Version 5.5 (Master Enterprise Release - Tích Hợp Trợ Lý AI 32 Tính Năng & GPS Tour)",
+    date: "06/10/2026",
     governingBody: "Câu Lạc Bộ Doanh Nhân CEO 1983 (Trực thuộc Hội Doanh Nhân Trẻ Hà Nội — HanoiBA)",
     consultant: "Ban Công Nghệ Chuyển Đổi Số & ViConnect Platform",
     status: "Đã Thẩm Định Nghiệp Vụ & Phê Duyệt Triển Khai Chính Thức",
@@ -54,6 +54,11 @@ Với sứ mệnh "Bản lĩnh - Tiên phong - Kết nối - Phát triển", CLB
         id: "PP-06",
         title: "Thiếu Kênh Giao thương B2B Nội Khối & Minh Bạch Quỹ Thiện Nguyện",
         desc: "Hội viên có nhu cầu tiêu dùng chéo và tìm kiếm nhà cung cấp tin cậy trong nội bộ những người bạn đồng niên 1983 nhưng không có sàn thương mại B2B chính danh để niêm yết sản phẩm với chính sách ưu đãi đặc quyền. Đồng thời, nguồn tiền quyên góp Quỹ Thiện nguyện an sinh xã hội thiếu cơ chế công khai sao kê thời gian thực, chưa đáp ứng kỳ vọng minh bạch tuyệt đối của các nhà hảo tâm."
+      },
+      {
+        id: "PP-07",
+        title: "Hội Viên & Cán Bộ Bỡ Ngỡ Trước 32+ Phân Hệ Tính Năng (Thiếu Trợ Lý Hướng Dẫn Tức Thời)",
+        desc: "Hệ thống sở hữu hơn 32 phân hệ tính năng phức tạp từ quản trị sự kiện, soát vé QR/NFC, danh thiếp số AI OCR, sàn giao thương B2B, biểu quyết đại hội đến phân quyền RBAC và kế toán hội phí. Đa số doanh nhân CEO 1983 bận rộn và cán bộ văn phòng mới tiếp cận không có thời gian đọc cẩm nang hướng dẫn dài hàng trăm trang, thường xuyên gọi điện hỏi Ban Thư Ký về các thao tác cơ bản, gây quá tải bộ máy hành chính và giảm tỷ lệ tương tác với nền tảng số."
       }
     ],
 
@@ -87,6 +92,11 @@ Với sứ mệnh "Bản lĩnh - Tiên phong - Kết nối - Phát triển", CLB
         id: "OBJ-06",
         kpi: "Minh Bạch 100% Sổ Quỹ Thu Chi & Thiện Nguyện",
         target: "Áp dụng quy trình kiểm soát chi tiêu 3 cấp nghiêm ngặt; công khai sao kê quỹ thiện nguyện thời gian thực cho toàn thể hội viên."
+      },
+      {
+        id: "OBJ-07",
+        kpi: "Trợ Lý AI Điều Hành 100% Miễn Phí & Chỉ Dẫn Thao Tác Trực Tiếp 32/32 Tính Năng",
+        target: "Tích hợp Google Gemini 2.0 Flash Free Tier kết hợp giọng nói tiếng Việt Web Speech API vi-VN và Smart Hybrid Engine nội bộ; tự động nắm bắt 100% phiên đăng nhập thời gian thực và dẫn đường GPS Turn-by-Turn HUD cho 32 tính năng (trong/ngoài) khi người dùng bấm hoặc nói 'Có', giải quyết 99% thắc mắc thao tác tức thời."
       }
     ]
   },
@@ -467,6 +477,42 @@ Với sứ mệnh "Bản lĩnh - Tiên phong - Kết nối - Phát triển", CLB
       code: "RULE-UI-ROYAL-NAVY-GOLD",
       name: "Quy Tắc Nhận Diện Thương Hiệu Hoàng Gia (Navy & Amber Gold)",
       desc: "Toàn bộ giao diện Web CRM và Mobile App bắt buộc tuân thủ hệ màu thương hiệu chính thức của CLB CEO 1983: Màu chủ đạo Xanh Navy `#003B95` đại diện cho bản lĩnh doanh nhân; Màu điểm xuyết Vàng Ánh Kim Amber Gold `#F59E0B` đại diện cho sự thịnh vượng và uy quyền. Tuyệt đối KHÔNG sử dụng màu đen thuần `#000000` cho các nút bấm chính (CTA Buttons)."
+    },
+    {
+      id: "BR-11",
+      code: "RULE-EVT-VENUE-CONFLICT",
+      name: "Quy Tắc Kiểm Tra Xung Đột Địa Điểm Tổ Chức Sự Kiện (Venue Conflict Validation)",
+      desc: "Hệ thống cho phép nhiều sự kiện diễn ra trong cùng một khung thời gian nhưng BẮT BUỘC phải tổ chức ở các địa điểm vật lý khác nhau (hoặc hình thức trực tuyến Online). Nếu quản trị viên nhập địa điểm trùng khớp với một sự kiện khác đang hoạt động (`status != 'cancelled'`) trong cùng ngày/giờ, hệ thống bắt buộc chặn lưu và hiển thị thông báo chi tiết: 'Địa điểm này đang trùng với sự kiện [Tên sự kiện], sau thời gian [hh:mm dd/MM/yyyy] có thể đăng ký được' (với thời điểm rảnh được tự động tính toán bằng thời gian kết thúc của sự kiện đang chiếm chỗ cộng thêm 2 giờ đệm phục vụ công tác dọn dẹp hội trường)."
+    },
+    {
+      id: "BR-12",
+      code: "RULE-EVT-USER-OVERLAP-WARNING",
+      name: "Quy Tắc Cảnh Báo Trùng Khung Giờ Đăng Ký Sự Kiện Hội Viên (confirmOverlap)",
+      desc: "Khi hội viên đăng ký một sự kiện mới có cùng thời gian diễn ra với một sự kiện khác mà hội viên đó đã đăng ký trước đó, hệ thống không chặn cứng mà BẮT BUỘC hiển thị hộp thoại cảnh báo xác nhận: 'Bạn đang đăng ký sự kiện [Tên sự kiện mới] cùng thời gian với sự kiện [Tên sự kiện cũ] ([Thời gian]). Bạn có chắc muốn đăng ký thêm không?'. Khi hội viên chủ động bấm 'Tiếp Tục Đăng Ký', client gửi kèm cờ `confirmOverlap: true` để backend phê duyệt lưu bản ghi."
+    },
+    {
+      id: "BR-13",
+      code: "RULE-SMTP-FAIL-SUPPRESSION",
+      name: "Quy Tắc Kiểm Soát Thư Tín SMTP & Khóa Gửi 1-Fail Suppression List",
+      desc: "Máy chủ dịch vụ thư điện tử (SMTP Relay) phải chủ động lọc và bỏ qua các địa chỉ hòm thư giả lập, kiểm thử nội bộ (`@ceo1983.com`, `test`, `dummy`). Đối với các email hội viên thực tế, nếu gửi thất bại ngay lần đầu (mã lỗi 5xx, Recipient Rejected, Mailbox Unavailable), hệ thống lập tức đưa email đó vào Danh Sách Chặn (Suppression List - lưu trữ tại `uploads/mail_suppression_list.json`) và TUYỆT ĐỐI KHÔNG thử lại lần thứ 2, nhằm triệt tiêu hoàn toàn vòng lặp thử lại vô hạn 47 giờ gây quá tải hạ tầng và rủi ro bị khóa tài khoản Google Mailer-Daemon."
+    },
+    {
+      id: "BR-14",
+      code: "RULE-MTG-VENUE-SCHEDULE-CONFLICT",
+      name: "Quy Tắc Kiểm Tra Xung Đột Phòng Họp Vật Lý & Lịch Trình Đại Biểu",
+      desc: "Áp dụng thuật toán kiểm tra xung đột thời gian và địa điểm cho tất cả các phòng họp vật lý (Sapphire Hub hoặc địa điểm phòng họp tập trung ngoài). Đồng thời, khi lên lịch cuộc họp hoặc mời đại biểu, hệ thống tự động kiểm tra lịch trình của các đại biểu tham gia (`attendees`); nếu phát hiện đại biểu đang có lịch họp trùng khung giờ, hệ thống hiển thị cảnh báo để Ban Thư Ký nắm bắt và chủ động sắp xếp nhân sự."
+    },
+    {
+      id: "BR-15",
+      code: "RULE-RBAC-DEDICATED-MENU-GROUP",
+      name: "Quy Tắc Độc Lập Hóa Nhóm Phân Quyền Vai Trò & Đồng Bộ URL Query",
+      desc: "Chức năng Ma Trận Phân Quyền Vai Trò (RBAC Matrix) phải được tách biệt thành một Nhóm Menu Cấp 1 độc lập trên thanh điều hướng Sidebar và Mobile Drawer mang tên 'PHÂN QUYỀN' (`nav.group.permissions`). Màn hình điều khiển `/permissions` hỗ trợ đồng bộ trạng thái Tab hai chiều qua URL Query Parameter (`?tab=matrix`, `?tab=user_actions`, `?tab=role_groups`), đảm bảo khả năng liên kết sâu (deep link) và trải nghiệm tác nghiệp mượt mà cho Quản trị viên."
+    },
+    {
+      id: "BR-16",
+      code: "RULE-AI-32-FEATURES-TWO-PHASE-GPS-GUIDE",
+      name: "Quy Chuẩn Trợ Lý AI Điều Hành 32 Tính Năng & Cơ Chế 2 Pha Chỉ Dẫn Trực Tiếp (Voice GPS Tour Spotlight)",
+      desc: "1) Nền tảng 100% Miễn Phí: Kết hợp Google Gemini 2.0 Flash Free Tier, Web Speech API vi-VN và Smart Hybrid NLP Engine nội bộ, đảm bảo 0đ chi phí vận hành và tốc độ phản hồi < 400ms. 2) Tự Động Nắm Bắt Phiên Đăng Nhập: Truy vấn dữ liệu thực tế thời gian thực (Hồ sơ cá nhân, Hội phí nợ, Thông báo chưa đọc, Vé sự kiện đã đặt, Top 5 sự kiện đông nhất). 3) Quy Trình Đàm Thoại 2 Pha: Pha 1 giải thích chi tiết các bước thao tác và chủ động hỏi: 'Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không?'; Pha 2 khi người dùng bấm 'Có' hoặc nói khẩu lệnh khẳng định ('Có', 'Đồng ý', 'Bắt đầu', 'OK'), hệ thống tự động đóng modal, điều hướng URL đến trang đích và kích hoạt Spotlight viền vàng nhấp nháy dẫn đường từng bước như Google Maps. 4) Ma Trận 32 Tính Năng Toàn Diện: Bao phủ 24 chức năng nội bộ hội viên và 8 chức năng quản trị CRM bên ngoài, không bỏ sót bất kỳ phân hệ nào."
     }
   ],
 
@@ -477,6 +523,12 @@ Với sứ mệnh "Bản lĩnh - Tiên phong - Kết nối - Phát triển", CLB
       designedState: "Tự động gạch nợ công nợ hội phí sang trạng thái `paid` trong 1 giây qua Webhook ngân hàng.",
       actualState: "Đã sinh mã VietQR động chuẩn Napas 24/7 chứa đúng số tiền và nội dung chuyển khoản; tuy nhiên chưa có kết nối Webhook gạch nợ tự động.",
       operationalSolution: "Kế toán / Thủ quỹ đối soát biến động số dư trên sao kê tài khoản ngân hàng thực tế, sau đó truy cập Web CRM (`/fees`) và bấm nút 'Duyệt Gạch Nợ' thủ công."
+    },
+    {
+      item: "Trợ Lý AI Điều Hành & Dẫn Đường Thao Tác Trực Tiếp (Turn-by-Turn Voice GPS)",
+      designedState: "Người dùng phải đọc tài liệu văn bản tĩnh hoặc xem video hướng dẫn rời rạc, tự tìm kiếm các nút bấm phức tạp trên giao diện.",
+      actualState: "Đã tích hợp Trợ lý AI giọng nói tiếng Việt 100% miễn phí (Gemini 2.0 Flash Free Tier + Web Speech API); cơ chế 2 pha đàm thoại thông minh; tự động lái màn hình và chiếu Spotlight viền vàng nhấp nháy vào đúng nút cần thao tác khi người dùng đồng ý.",
+      operationalSolution: "Hội viên và cán bộ quản trị chỉ cần mở micro nói khẩu lệnh (ví dụ: 'Đăng ký sự kiện như nào', 'Tạo sự kiện mới kiểu gì', 'Có'), AI tự động giải thích và dẫn đường tận tay."
     },
     {
       item: "Đăng Nhập Một Chạm (SSO Google / Apple)",
@@ -495,6 +547,36 @@ Với sứ mệnh "Bản lĩnh - Tiên phong - Kết nối - Phát triển", CLB
       designedState: "Gửi mã xác thực OTP qua cổng Brandname SMS của các nhà mạng viễn thông Viettel/VNPT/Mobifone.",
       actualState: "Chưa ký kết hợp đồng thương mại với nhà cung cấp dịch vụ SMS Brandname.",
       operationalSolution: "Sử dụng mã OTP mặc định trong môi trường kiểm thử nội bộ hoặc gửi mã kích hoạt trực tiếp qua dịch vụ Thư điện tử SMTP Gmail Relay bảo mật."
+    },
+    {
+      item: "Kiểm Soát Xung Đột Địa Điểm Tổ Chức Sự Kiện",
+      designedState: "Hệ thống chỉ cho phép tạo 1 sự kiện duy nhất trên toàn hiệp hội trong cùng 1 ngày, hoặc không kiểm tra địa điểm dẫn đến 2 sự kiện khác nhau tranh chấp cùng một khán phòng.",
+      actualState: "Đã chuẩn hóa thuật toán kiểm tra xung đột theo cặp (Thời gian - Địa điểm). Cho phép nhiều sự kiện cùng ngày/giờ nhưng khác địa điểm. Trùng địa điểm sẽ chặn và hiển thị thời gian rảnh dự kiến (+2h).",
+      operationalSolution: "Backend API `POST /api/association/events` tự động quét các sự kiện active cùng ngày/giờ; nếu trùng địa điểm thì trả về HTTP 409 kèm gợi ý thời gian đăng ký khả dụng."
+    },
+    {
+      item: "Cảnh Báo Đăng Ký Sự Kiện Trùng Lịch Hội Viên",
+      designedState: "Hội viên có thể vô tình hoặc cố ý đăng ký tham dự nhiều sự kiện diễn ra cùng thời gian ở 2 địa điểm khác nhau mà không có bất kỳ cảnh báo nào từ hệ thống.",
+      actualState: "Giao diện và API đã bổ sung bước xác thực overlap. Hiển thị modal cảnh báo xác nhận rõ tên sự kiện cũ và mới, thời gian trùng lặp; chỉ lưu khi có cờ `confirmOverlap: true`.",
+      operationalSolution: "Mobile App hiển thị Confirm Dialog giải thích xung đột; khi hội viên bấm 'Tiếp Tục Đăng Ký', API nhận `confirmOverlap = true` để lưu vé hợp lệ."
+    },
+    {
+      item: "Vòng Lặp Thử Lại Thư Điện Tử (Google Mailer-Daemon Loop)",
+      designedState: "Nodemailer cấu hình retry vô hạn hoặc không lọc email test/dummy, dẫn đến việc gửi mail đến hòm thư ảo (@ceo1983.com) bị Google trả về lỗi 550 và kẹt tiến trình suốt 47 giờ.",
+      actualState: "Đã tích hợp bộ lọc Regex chặn gửi đến miền ảo/test và cơ chế danh sách đen 1-Fail Suppression List (`uploads/mail_suppression_list.json`). Gửi lỗi 1 lần là dừng hẳn.",
+      operationalSolution: "Dịch vụ `mail.service.ts` kiểm tra suppression list trước khi gửi. Nếu gặp lỗi từ chối, ghi địa chỉ vào file JSON để triệt tiêu hoàn toàn retry."
+    },
+    {
+      item: "Kiểm Tra Xung Đột Phòng Họp & Lịch Đại Biểu",
+      designedState: "Chỉ kiểm tra phòng Sapphire Hub, không kiểm tra các địa điểm họp offline khác và không cảnh báo nếu đại biểu được mời đang có lịch họp trùng khung giờ.",
+      actualState: "Đã mở rộng kiểm tra mọi địa điểm phòng họp offline; bổ sung kiểm tra xung đột lịch trình của từng đại biểu trong danh sách tham gia cuộc họp.",
+      operationalSolution: "`meetings.service.ts` kiểm tra cả room physical conflict lẫn attendee conflict; cảnh báo trực quan cho Ban Thư Ký khi lên lịch."
+    },
+    {
+      item: "Cấu Trúc Điều Hướng Phân Quyền Quản Trị RBAC",
+      designedState: "Menu phân quyền bị ẩn sâu bên trong 'Cấu Hình Hệ Thống' chung, khó tìm kiếm và không lưu trạng thái tab trên thanh địa chỉ URL.",
+      actualState: "Đã tách thành Nhóm Menu riêng 'PHÂN QUYỀN' trên Sidebar và Mobile Drawer. Trang `/permissions` đồng bộ query param `?tab=matrix`, `?tab=user_actions`, `?tab=role_groups`.",
+      operationalSolution: "Navigation Sidebar bổ sung nhóm `nav.group.permissions`; Route `/permissions` hỗ trợ quản trị viên chia sẻ deep link trực tiếp đến từng tab chức năng."
     }
   ],
 

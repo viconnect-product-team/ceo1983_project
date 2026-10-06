@@ -439,6 +439,32 @@ export class EventsService {
     return rows.map((r) => this.mapTicketRow(r));
   }
 
+  /**
+   * Validate trùng địa điểm giữa các sự kiện diễn ra cùng thời gian.
+   * Nếu nhập trùng địa điểm: Báo lỗi địa điểm đang trùng với sự kiện... sau thời gian... có thể đăng ký được.
+   */
+  private async validateEventLocationConflict(date: string, location: string, excludeEventId?: string) {
+    const cleanLocation = (location || '').trim();
+    if (!cleanLocation) return;
+
+    const query = excludeEventId
+      ? `SELECT id, name, date, location FROM public.events WHERE date = $1::date AND status != 'cancelled' AND LOWER(TRIM(location)) = LOWER(TRIM($2)) AND id != $3 LIMIT 1`
+      : `SELECT id, name, date, location FROM public.events WHERE date = $1::date AND status != 'cancelled' AND LOWER(TRIM(location)) = LOWER(TRIM($2)) LIMIT 1`;
+
+    const params = excludeEventId ? [date, cleanLocation, excludeEventId] : [date, cleanLocation];
+    const conflicts = await this.prisma.$queryRawUnsafe<any[]>(query, ...params).catch(() => []);
+
+    if (conflicts.length > 0) {
+      const conf = conflicts[0];
+      const dObj = new Date(date);
+      const dayFormatted = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}/${dObj.getFullYear()}`;
+      const nextAvailableTime = `18:00 ngày ${dayFormatted}`;
+      throw new BadRequestException(
+        `Địa điểm này đang trùng với sự kiện "${conf.name}", sau thời gian ${nextAvailableTime} có thể đăng ký được.`,
+      );
+    }
+  }
+
   async createEvent(userId: string, data: CreateEventDto) {
     const assocId = (await this.getAssociationIdForUser(userId, data.associationId)) || 'c1983000-0000-4000-8000-000000001983';
     const isAdmin = await this.checkIsAdmin(userId, assocId ?? undefined);
@@ -469,6 +495,9 @@ export class EventsService {
     const rawDate = data.date ? String(data.date).trim() : '';
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : new Date().toISOString().slice(0, 10);
     const safeCapacity = Number.isFinite(Number(data.capacity)) ? Number(data.capacity) : 0;
+
+    // Validate địa điểm trùng khung giờ
+    await this.validateEventLocationConflict(safeDate, data.location ?? '');
 
     await this.prisma.$executeRaw`
       INSERT INTO public.events (
@@ -589,6 +618,9 @@ export class EventsService {
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : (current.date ? (current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10)) : new Date().toISOString().slice(0, 10));
     const safeCapacity = Number.isFinite(Number(capacity)) ? Number(capacity) : (Number(current.capacity) || 0);
     const safeTicketPrice = Number.isFinite(Number(ticketPrice)) ? Number(ticketPrice) : (Number(current.ticket_price) || 0);
+
+    // Validate địa điểm trùng khung giờ khi cập nhật
+    await this.validateEventLocationConflict(safeDate, location ?? '', id);
 
     await this.prisma.$executeRaw`
       UPDATE public.events SET
@@ -746,6 +778,36 @@ export class EventsService {
     const ticketCount = Math.max(1, Number(attendeeData?.ticketCount) || 1);
     const ticketType = attendeeData?.ticketType || 'Standard';
     const note = attendeeData?.note || '';
+    const confirmOverlap = Boolean(attendeeData?.confirmOverlap);
+
+    // Validate cảnh báo khi hội viên đăng ký 1 sự kiện cùng thời gian với sự kiện khác đã đăng ký
+    if (!confirmOverlap) {
+      const targetDate = event.date instanceof Date ? event.date.toISOString().slice(0, 10) : String(event.date).slice(0, 10);
+      const existingRegs = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT r.id, e.id as event_id, e.name as event_name, e.date, e.location
+         FROM public.event_registrations r
+         JOIN public.events e ON e.id = r.event_id
+         WHERE (
+           r.member_code = $1
+           OR (LOWER(TRIM(r.email)) = LOWER(TRIM($2)) AND $2 != '')
+         )
+         AND e.date = $3::date
+         AND e.id != $4
+         AND r.status != 'cancelled'
+         LIMIT 1`,
+        memberCode,
+        email,
+        targetDate,
+        eventId,
+      ).catch(() => []);
+
+      if (existingRegs.length > 0) {
+        const conf = existingRegs[0];
+        throw new BadRequestException(
+          `OVERLAP_CONFIRM_REQUIRED: Bạn đang đăng ký sự kiện "${event.name}" cùng thời gian với sự kiện "${conf.event_name}". Bạn có chắc muốn đăng ký thêm không?`,
+        );
+      }
+    }
 
     const ticketPrice = (event.ticket_price !== undefined && event.ticket_price !== null)
       ? Number(event.ticket_price)

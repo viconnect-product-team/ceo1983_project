@@ -195,6 +195,29 @@ function EventsPage() {
   ];
 
   const onSubmit = async (v: CrudValues) => {
+    const loc = String(v.location || "").trim().toLowerCase();
+    const dt = String(v.date || "").trim();
+    if (loc && dt) {
+      const conflict = (events || []).find((e) => {
+        if (editing && e.id === editing.id) return false;
+        if (e.status === "cancelled") return false;
+        const eLoc = String(e.location || "").trim().toLowerCase();
+        const eDt = String(e.date || "").trim();
+        return eLoc === loc && eDt === dt;
+      });
+
+      if (conflict) {
+        const dObj = new Date(dt);
+        const dayFormatted = !isNaN(dObj.getTime())
+          ? `${String(dObj.getDate()).padStart(2, "0")}/${String(dObj.getMonth() + 1).padStart(2, "0")}/${dObj.getFullYear()}`
+          : dt;
+        toast.error(
+          `Địa điểm này đang trùng với sự kiện "${conflict.name}", sau thời gian 18:00 ngày ${dayFormatted} có thể đăng ký được.`
+        );
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload = {

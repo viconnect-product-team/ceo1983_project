@@ -31,6 +31,35 @@ export class MeetingsService {
     const venue = (data.venue || 'Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội').trim();
     const notes = (data.notes || '').trim();
 
+    // Validate địa điểm cuộc họp trực tiếp
+    const isOffline = venueType === 'offline' || (venue && !venue.toLowerCase().startsWith('http'));
+    if (isOffline && venue) {
+      const conflictMeetings = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT code, title, date, time, location FROM public.meetings
+         WHERE date = $1::date AND time = $2 AND status != 'cancelled' AND LOWER(TRIM(location)) = LOWER(TRIM($3))
+         LIMIT 1`,
+        date,
+        time,
+        venue,
+      ).catch(() => []);
+
+      if (conflictMeetings.length > 0) {
+        const conf = conflictMeetings[0];
+        const [h, m] = (time || '09:30').split(':').map(Number);
+        const endHour = String((h || 9) + 2).padStart(2, '0');
+        const endMin = String(m || 0).padStart(2, '0');
+        const dObj = new Date(date);
+        const dayFormatted = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}/${dObj.getFullYear()}`;
+        const nextAvailableTime = `${endHour}:${endMin} ngày ${dayFormatted}`;
+
+        if (!data.confirmOverlap && !data.forceLocation) {
+          throw new BadRequestException(
+            `LOCATION_CONFLICT: Địa điểm này đang trùng với cuộc họp "${conf.title}", sau thời gian ${nextAvailableTime} có thể đăng ký được.`,
+          );
+        }
+      }
+    }
+
     // 1. Tìm thông tin đối tác trong danh bạ hội viên
     let partnerUserId: string | null = null;
     let partnerMemberCode: string | null = null;
@@ -53,6 +82,26 @@ export class MeetingsService {
       if (foundByName.length > 0) {
         partnerUserId = foundByName[0].user_id ? String(foundByName[0].user_id) : null;
         partnerMemberCode = foundByName[0].code || null;
+      }
+    }
+
+    // Validate cảnh báo khi đối tác/người dùng đã có cuộc họp khác trong cùng khung thời gian
+    const confirmOverlap = Boolean(data.confirmOverlap);
+    if (!confirmOverlap && partnerUserId) {
+      const overlapMeetings = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT m.title FROM public.business_meetings m
+         JOIN public.business_meeting_participants p ON p.meeting_id = m.id
+         WHERE p.user_id = $1::uuid AND m.status IN ('confirmed', 'scheduled')
+           AND m.description LIKE '%Thời gian: ' || $2 || '%'
+         LIMIT 1`,
+        partnerUserId,
+        `${time} ngày ${date}`,
+      ).catch(() => []);
+
+      if (overlapMeetings.length > 0) {
+        throw new BadRequestException(
+          `OVERLAP_CONFIRM_REQUIRED: Bạn đang đăng ký cuộc họp "${title}" cùng thời gian với cuộc họp "${overlapMeetings[0].title}". Bạn có chắc muốn đăng ký thêm không?`,
+        );
       }
     }
 
@@ -88,7 +137,6 @@ export class MeetingsService {
     }
 
     // 5. TRIGGER PUSH NOTIFICATION CHO CUỘC HỌP OFFLINE
-    const isOffline = venueType === 'offline' || (venue && !venue.toLowerCase().startsWith('http'));
     if (isOffline) {
       const notifTitle = `[LỊCH HỌP TRỰC TIẾP OFFLINE] ${title}`;
       const notifBody = `Bạn có lịch hẹn gặp mặt trực tiếp với ${hostName} vào lúc ${time} ngày ${date} tại: ${venue}.${notes ? ` Ghi chú: "${notes}"` : ''}`;

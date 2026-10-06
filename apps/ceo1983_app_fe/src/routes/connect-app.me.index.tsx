@@ -164,7 +164,7 @@ function SectionCard({
   );
 }
 
-/** Inline theme-picker row — light / dark / high-contrast. */
+/** Inline theme-picker row — light / dark. */
 function ThemeSettingRow() {
   const { theme, setTheme } = useTheme();
   const t = useT();
@@ -172,11 +172,10 @@ function ThemeSettingRow() {
   const MODES = [
     { mode: "light" as const, emoji: "☀️", label: t("theme.light") },
     { mode: "dark" as const, emoji: "🌙", label: t("theme.dark") },
-    { mode: "contrast" as const, emoji: "◑", label: t("theme.contrast") },
   ];
 
   return (
-    <div role="group" aria-label={t("theme.label")} className="grid grid-cols-3 gap-2 py-1">
+    <div role="group" aria-label={t("theme.label")} className="grid grid-cols-2 gap-2 py-1">
       {MODES.map(({ mode, emoji, label }) => {
         const active = theme === mode;
         return (

@@ -81,7 +81,6 @@ function ProfileScreen() {
   const themeOptions: { mode: Theme; icon: typeof Sun; label: string; desc: string }[] = [
     { mode: "light", icon: Sun, label: "Sáng", desc: "Tươi sáng, tinh tế" },
     { mode: "dark", icon: Moon, label: "Tối", desc: "Sang trọng, dịu mắt" },
-    { mode: "contrast", icon: Contrast, label: "Tương phản", desc: "Độ tương phản cao" },
   ];
 
   async function logout() {
@@ -173,11 +172,11 @@ function ProfileScreen() {
             Giao diện & Chế độ màu
           </span>
           <span className="text-[11px] font-medium text-[var(--vba-gold)]">
-            {theme === "light" ? "Sáng" : theme === "dark" ? "Tối" : "Tương phản cao"}
+            {theme === "light" ? "Sáng" : "Tối"}
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
           {themeOptions.map((opt) => {
             const Icon = opt.icon;
             const active = theme === opt.mode;
