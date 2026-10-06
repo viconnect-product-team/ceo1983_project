@@ -117,23 +117,30 @@ export function IncomingConnectionModal() {
         });
       } catch {}
 
-      // Cập nhật danh bạ đã kết nối vào localStorage
+      // Cập nhật danh bạ đã kết nối vào CẢ 2 key localStorage (vba_connected_members & vba.connected_members)
       try {
-        const rawConnected = localStorage.getItem("vba_connected_members");
-        const connectedList = rawConnected ? JSON.parse(rawConnected) : [];
-        if (profile.memberCode && !connectedList.includes(profile.memberCode)) {
-          connectedList.push(profile.memberCode);
+        const idsToAdd = [profile.memberCode, profile.userId, (profile as any).code, incoming.connectionId].filter(Boolean) as string[];
+
+        const raw1 = localStorage.getItem("vba_connected_members");
+        const list1 = raw1 ? JSON.parse(raw1) : [];
+        for (const id of idsToAdd) {
+          if (!list1.includes(id)) list1.push(id);
         }
-        if (profile.userId && !connectedList.includes(profile.userId)) {
-          connectedList.push(profile.userId);
+        localStorage.setItem("vba_connected_members", JSON.stringify(list1));
+
+        const raw2 = localStorage.getItem("vba.connected_members");
+        const list2 = raw2 ? JSON.parse(raw2) : [];
+        for (const id of idsToAdd) {
+          if (!list2.includes(id)) list2.push(id);
         }
-        localStorage.setItem("vba_connected_members", JSON.stringify(connectedList));
+        localStorage.setItem("vba.connected_members", JSON.stringify(list2));
       } catch {}
 
       setAccepted(true);
       toast.success(`Đã kết nối thành công với ${displayName}!`);
       window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
       window.dispatchEvent(new CustomEvent("vba:connection_accepted"));
+      window.dispatchEvent(new CustomEvent("vba.connection.changed"));
       window.dispatchEvent(new CustomEvent("notifications-updated"));
 
       setTimeout(() => {
@@ -147,16 +154,41 @@ export function IncomingConnectionModal() {
     }
   };
 
-  const handleDecline = async () => {
-    if (incoming.connectionId) {
-      try {
-        await fetchNestApi(`/network/connections/${encodeURIComponent(incoming.connectionId)}`, {
-          method: "PATCH",
-          body: JSON.stringify({ status: "declined" }),
-        }).catch(() => {});
-      } catch {}
-    }
+  const handleLater = () => {
+    // Không decline yêu cầu kết nối! Giữ nguyên pending và lưu vào mục Thông báo để xem sau
+    try {
+      const rawNotifs = localStorage.getItem("vba_notifications");
+      const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+      const connId = incoming.connectionId || `conn_req_${Date.now()}`;
+      const existingIdx = notifs.findIndex((x: any) => x.id === connId || x.refId === connId);
+      if (existingIdx === -1) {
+        notifs.unshift({
+          id: connId,
+          refId: connId,
+          title: "Lời mời kết nối mới",
+          body: `${displayName} muốn kết nối danh thiếp số với bạn.`,
+          createdAt: incoming.timestamp || new Date().toISOString(),
+          unread: true,
+          type: "connection",
+          notificationKind: "connection_request_received",
+          avatar,
+          safeDisplayData: {
+            counterpartDisplayName: displayName,
+            companyName: company,
+            jobTitle: title,
+            avatarUrl: avatar,
+            connectionId: incoming.connectionId,
+            phone,
+            email,
+          },
+        });
+        localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+      }
+      window.dispatchEvent(new CustomEvent("notifications-updated"));
+    } catch {}
+
     setIncoming(null);
+    toast.info("Đã lưu yêu cầu kết nối vào mục Thông báo để bạn xem lại sau.");
   };
 
   return createPortal(
@@ -259,7 +291,7 @@ export function IncomingConnectionModal() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={handleDecline}
+                  onClick={handleLater}
                   className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
                   Để sau
@@ -269,10 +301,10 @@ export function IncomingConnectionModal() {
                   onClick={handleAccept}
                   disabled={accepting}
                   style={{ color: "#ffffff" }}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-98 transition cursor-pointer disabled:opacity-50"
                 >
                   <UserCheck className="h-3.5 w-3.5" />
-                  <span>{accepting ? "Đang xử lý..." : "Chấp nhận"}</span>
+                  <span>{accepting ? "Đang kết nối..." : "Đồng ý"}</span>
                 </button>
               </div>
             )}

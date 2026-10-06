@@ -58,6 +58,7 @@ import heroImg from "@/assets/vba-hero.jpg";
 import giftImg from "@/assets/vba-gift.png";
 import { EventCountdownMiniBadge } from "@/components/events/EventCountdownTimer";
 import { useServerData } from "@/hooks/use-server-data";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import {
   getMyMember,
   listMyEvents,
@@ -258,6 +259,25 @@ function Home() {
   const isEn = lang === "en";
   const navigate = Route.useNavigate();
   const { user } = useAuth();
+  const { canScanQR, isAdmin, isPlatformAdmin, isBTC, isBQT, isBTK, isBTT, can } = useRole();
+
+  const hasCheckinPermission = useMemo(() => {
+    if (canScanQR || isAdmin || isPlatformAdmin || isBTC || isBQT || isBTK || isBTT) return true;
+    if (can(PERMISSIONS.EVENT_CHECKIN_MANAGE)) return true;
+    const userRole = (user as any)?.role;
+    if (userRole === "admin" || userRole === "superadmin" || userRole === "platform_admin" || userRole === "bqt") return true;
+    if (typeof window !== "undefined" && localStorage.getItem("vba_is_media_department_member") === "true") return true;
+    return false;
+  }, [canScanQR, isAdmin, isPlatformAdmin, isBTC, isBQT, isBTK, isBTT, can, user]);
+
+  const visibleQuickActions = useMemo(() => {
+    return quickActionDefs.filter((a) => {
+      if (a.key === "m.index.qaCheckin") {
+        return hasCheckinPermission;
+      }
+      return true;
+    });
+  }, [hasCheckinPermission]);
   const [tourOpen, setTourOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
@@ -1191,7 +1211,7 @@ function Home() {
             effectiveTheme.layoutGrid === "3" ? "grid-cols-3" : "grid-cols-4"
           } gap-y-4 gap-x-2 sm:gap-x-3`}
         >
-          {quickActionDefs.map((a: any) => {
+          {visibleQuickActions.map((a: any) => {
             const Icon = a.icon;
             const label = isEn ? a.enLabel : a.customLabel || t(a.key);
             const showBadge = a.badgeId ? !clearedBadges[a.badgeId] : false;

@@ -142,6 +142,39 @@ function formatNotifBody(n: any): string {
   return b;
 }
 
+function isConnectionRequestReceived(n: any): boolean {
+  const k = String(n.notificationKind || n.type || (n.safeDisplayData as any)?.notificationKind || '').toLowerCase();
+  const t = String(n.title || '').toLowerCase();
+  const b = String(n.body || '').toLowerCase();
+  if (t.includes('chấp nhận') || t.includes('đồng ý') || t.includes('từ chối') || b.includes('chấp nhận') || b.includes('từ chối')) {
+    return false;
+  }
+  return (
+    k.includes('connection_request_received') ||
+    k === 'connection_request' ||
+    (k === 'connection' && !k.includes('accepted') && !k.includes('declined')) ||
+    t.includes('connection_request_received') ||
+    t.includes('yêu cầu kết nối') ||
+    t.includes('lời mời kết nối') ||
+    t.includes('muốn kết nối') ||
+    (n.refType === 'connection')
+  );
+}
+
+function isMeetingNotification(n: any): boolean {
+  const k = String(n.notificationKind || n.type || '').toLowerCase();
+  const t = String(n.title || '').toLowerCase();
+  const b = String(n.body || '').toLowerCase();
+  return (
+    k.includes('meeting') ||
+    t.includes('hẹn gặp') ||
+    b.includes('hẹn gặp') ||
+    t.includes('cuộc hẹn') ||
+    b.includes('cuộc hẹn') ||
+    n.refType === 'meeting'
+  );
+}
+
 function getChannelOrPeerForNotif(n: any): string {
   const kind = String(n.notificationKind || n.type || '').toLowerCase();
   const text = `${n.title || ''} ${n.body || ''}`.toLowerCase();
@@ -1160,39 +1193,123 @@ function NotificationsScreen() {
                     </button>
                   ) : (
                     <>
-                      <div className="flex items-center gap-1.5">
-                        {/* Nút Action 1: Xem trong Tin nhắn (Chỉ hiển thị khi đã được bấm Đưa vào tin nhắn ở CRM) */}
-                        {canViewInMessages(n) && (
+                      {isConnectionRequestReceived(n) ? (
+                        <div className="flex items-center gap-1.5">
+                          {(connectionStates[n.id] === "accepted" || (n.safeDisplayData as any)?.connectionStatus === "accepted") ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
+                              <Check className="h-3 w-3 stroke-[2.5]" />
+                              <span>Đã đồng ý kết nối</span>
+                            </span>
+                          ) : (connectionStates[n.id] === "declined" || (n.safeDisplayData as any)?.connectionStatus === "declined") ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[11px] font-bold">
+                              <X className="h-3 w-3" />
+                              <span>Đã từ chối kết nối</span>
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                disabled={actionBusy === n.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAcceptFriend(n);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all disabled:opacity-50"
+                                style={{ color: "#ffffff" }}
+                              >
+                                <UserCheck className="h-3.5 w-3.5 text-white" />
+                                <span>{actionBusy === n.id ? "Đang xử lý..." : "Đồng ý"}</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionBusy === n.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeclineFriend(n);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all disabled:opacity-50"
+                              >
+                                <UserX className="h-3.5 w-3.5 text-slate-500" />
+                                <span>Từ chối</span>
+                              </button>
+                            </>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedNotif(n);
+                              if (n.unread && n.personal) onMarkOneRead(n);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-slate-500" />
+                            <span>Chi tiết</span>
+                          </button>
+                        </div>
+                      ) : isMeetingNotification(n) ? (
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (n.unread && n.personal) onMarkOneRead(n);
-                              const targetChannel = getChannelOrPeerForNotif(n);
-                              void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
+                              void navigate({ to: "/association/members", search: { tab: "meetings" } });
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                             style={{ color: "#ffffff" }}
                           >
-                            <MessageSquare className="h-3.5 w-3.5 text-white" />
-                            <span>Xem tin nhắn</span>
+                            <Calendar className="h-3.5 w-3.5 text-white" />
+                            <span>Lịch hẹn kết nối</span>
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedNotif(n);
+                              if (n.unread && n.personal) onMarkOneRead(n);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-slate-500" />
+                            <span>Chi tiết</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          {/* Nút Action 1: Xem trong Tin nhắn (Chỉ hiển thị khi đã được bấm Đưa vào tin nhắn ở CRM) */}
+                          {canViewInMessages(n) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (n.unread && n.personal) onMarkOneRead(n);
+                                const targetChannel = getChannelOrPeerForNotif(n);
+                                void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                              style={{ color: "#ffffff" }}
+                            >
+                              <MessageSquare className="h-3.5 w-3.5 text-white" />
+                              <span>Xem tin nhắn</span>
+                            </button>
+                          )}
 
-                        {/* Nút Action 2: Xem chi tiết (mở modal hiển thị toàn bộ nội dung & thẻ tương tác) */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedNotif(n);
-                            if (n.unread && n.personal) onMarkOneRead(n);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-slate-500" />
-                          <span>Chi tiết</span>
-                        </button>
-                      </div>
+                          {/* Nút Action 2: Xem chi tiết (mở modal hiển thị toàn bộ nội dung & thẻ tương tác) */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedNotif(n);
+                              if (n.unread && n.personal) onMarkOneRead(n);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-slate-500" />
+                            <span>Chi tiết</span>
+                          </button>
+                        </div>
+                      )}
 
                       <div className="flex items-center gap-1">
                         <button
@@ -1505,6 +1622,78 @@ function NotificationsScreen() {
                 >
                   <Wallet className="h-4 w-4 text-white" style={{ color: "#ffffff" }} />
                   <span style={{ color: "#ffffff" }}>Thanh toán ngay</span>
+                </button>
+              </div>
+            )}
+
+            {/* KHỐI LỜI MỜI KẾT NỐI B2B / DANH THIẾP */}
+            {isConnectionRequestReceived(selectedNotif) && (
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-500/15 via-emerald-500/10 to-transparent border-2 border-emerald-500/30 p-4 space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                    <UserCheck className="h-4 w-4 text-emerald-600" />
+                    Lời mời kết nối danh thiếp số
+                  </span>
+                  {(connectionStates[selectedNotif.id] === "accepted" || (selectedNotif.safeDisplayData as any)?.connectionStatus === "accepted") ? (
+                    <span className="text-xs font-bold text-emerald-600">Đã đồng ý</span>
+                  ) : (connectionStates[selectedNotif.id] === "declined" || (selectedNotif.safeDisplayData as any)?.connectionStatus === "declined") ? (
+                    <span className="text-xs font-bold text-rose-600">Đã từ chối</span>
+                  ) : (
+                    <span className="text-xs font-bold text-amber-600">Chờ phản hồi</span>
+                  )}
+                </div>
+                <p className="text-[12px] text-slate-600 dark:text-slate-400">
+                  Đối tác muốn thiết lập kết nối giao thương trực tiếp trên hệ thống CEO 1983.
+                </p>
+                {!(connectionStates[selectedNotif.id] || (selectedNotif.safeDisplayData as any)?.connectionStatus) && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={actionBusy === selectedNotif.id}
+                      onClick={() => handleDeclineFriend(selectedNotif)}
+                      className="py-2.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <UserX className="h-3.5 w-3.5 text-slate-500" />
+                      <span>Từ chối</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionBusy === selectedNotif.id}
+                      onClick={() => handleAcceptFriend(selectedNotif)}
+                      style={{ color: "#ffffff" }}
+                      className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <UserCheck className="h-3.5 w-3.5 text-white" />
+                      <span>{actionBusy === selectedNotif.id ? "Đang xử lý..." : "Đồng ý"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* KHỐI HẸN GẶP KẾT NỐI 1-1 */}
+            {isMeetingNotification(selectedNotif) && (
+              <div className="rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border-2 border-amber-500/30 p-4 space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-amber-600" />
+                    Lịch hẹn gặp kết nối 1-1
+                  </span>
+                </div>
+                <p className="text-[12px] text-slate-600 dark:text-slate-400">
+                  Bạn có lời mời hẹn gặp kết nối giao thương 1-on-1. Hãy xem chi tiết lịch hẹn trong danh mục Hẹn gặp kết nối ở Danh bạ CEO.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNotif(null);
+                    void navigate({ to: "/association/members", search: { tab: "meetings" } });
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  style={{ color: "#ffffff" }}
+                >
+                  <Calendar className="h-4 w-4 text-white" />
+                  <span>Đi đến Danh mục Hẹn gặp kết nối</span>
                 </button>
               </div>
             )}

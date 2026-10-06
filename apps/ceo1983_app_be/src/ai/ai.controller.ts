@@ -20,6 +20,22 @@ export class AiController {
     return { ok: true, data: res };
   }
 
+  /** POST /api/ai/ask-voice — Hỏi đáp bằng giọng nói (nhận file audio base64) */
+  @Post('ask-voice')
+  async askVoiceAssistant(
+    @Request() req: any,
+    @Body() body: { audioBase64?: string; mimeType?: string; prompt?: string; clientContext?: any },
+  ) {
+    const res = await this.aiService.askVoiceAssistant(
+      req.user.id,
+      body.audioBase64,
+      body.mimeType,
+      body.prompt,
+      body.clientContext,
+    );
+    return { ok: true, data: res };
+  }
+
   /** GET /api/ai/roles — Roles của user hiện tại (cho phân quyền AI) */
   @Get('roles')
   async getRoles(@Request() req: any) {

@@ -33,6 +33,9 @@ export interface BusinessConnectBottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
   target: BusinessConnectTarget | null;
+  initialPurpose?: string;
+  initialOpportunityId?: string;
+  initialOpportunityTitle?: string;
   onSuccess?: () => void;
 }
 
@@ -40,6 +43,9 @@ export function BusinessConnectBottomSheet({
   isOpen,
   onClose,
   target,
+  initialPurpose,
+  initialOpportunityId,
+  initialOpportunityTitle,
   onSuccess,
 }: BusinessConnectBottomSheetProps) {
   const navigate = useNavigate();
@@ -49,14 +55,16 @@ export function BusinessConnectBottomSheet({
   const [senderName, setSenderName] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
   const [senderCompany, setSenderCompany] = useState("");
-  const [purpose, setPurpose] = useState("");
-  const [selectedOpportunityId, setSelectedOpportunityId] = useState("");
+  const [purpose, setPurpose] = useState(initialPurpose || "");
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState(initialOpportunityId || "");
   const [myOpportunities, setMyOpportunities] = useState<MyOpportunity[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Prefill sender information from localStorage or session
   useEffect(() => {
     if (!isOpen) return;
+    if (initialPurpose) setPurpose(initialPurpose);
+    if (initialOpportunityId) setSelectedOpportunityId(initialOpportunityId);
     try {
       const raw = localStorage.getItem("vba_custom_profile");
       if (raw) {
@@ -106,6 +114,8 @@ export function BusinessConnectBottomSheet({
     try {
       // Find selected opportunity title if any
       const opp = myOpportunities.find((o) => o.id === selectedOpportunityId);
+      const effectiveOppId = opp ? opp.id : (selectedOpportunityId || initialOpportunityId || undefined);
+      const effectiveOppTitle = opp ? opp.title : (initialOpportunityTitle || undefined);
 
       // Create structured B2B connection invite payload (Requirement 11)
       const b2bInvitePayload = {
@@ -115,8 +125,8 @@ export function BusinessConnectBottomSheet({
         senderPhone: senderPhone.trim(),
         senderCompany: senderCompany.trim(),
         purpose: purpose.trim(),
-        opportunityId: opp ? opp.id : undefined,
-        opportunityTitle: opp ? opp.title : undefined,
+        opportunityId: effectiveOppId,
+        opportunityTitle: effectiveOppTitle,
         recipientCode: target.code,
         recipientName: target.name,
         status: "pending" as const,
@@ -219,7 +229,9 @@ export function BusinessConnectBottomSheet({
 
         await createMeeting({
           data: {
-            title: `Kết nối 1-1: ${senderName.trim()} & ${target.name.trim()}`,
+            title: effectiveOppTitle
+              ? `Đàm phán 1-1 (${effectiveOppTitle.slice(0, 30)}): ${senderName.trim()} & ${target.name.trim()}`
+              : `Kết nối 1-1: ${senderName.trim()} & ${target.name.trim()}`,
             type: "committee",
             date: meetingDate,
             time: "09:30",
@@ -246,6 +258,63 @@ export function BusinessConnectBottomSheet({
             zoomUrl: "https://meet.jit.si/CEO1983_Connect_1on1",
           },
         });
+
+        // 1. Lưu vào danh mục cuộc gặp cá nhân vba_connection_appointments
+        try {
+          const appointmentItem = {
+            id: `meet_${Date.now()}`,
+            title: effectiveOppTitle
+              ? `Đàm phán 1-1 (${effectiveOppTitle.slice(0, 30)}): ${senderName.trim()} & ${target.name.trim()}`
+              : `Hẹn gặp kết nối: ${senderName.trim()} & ${target.name.trim()}`,
+            hostName: senderName.trim(),
+            hostCompany: senderCompany.trim() || "Doanh nghiệp CEO 1983",
+            hostPhone: senderPhone.trim(),
+            partnerName: target.name.trim(),
+            partnerCompany: target.company || "Hội viên CEO 1983",
+            partnerCode: target.code,
+            partnerPhone: (target as any).phone,
+            partnerAvatar: target.avatar,
+            date: meetingDate,
+            time: "09:30 - 10:30",
+            venueType: "online" as const,
+            venue: "Văn phòng Hiệp hội CEO 1983 / Trực tuyến",
+            onlineUrl: "https://meet.jit.si/CEO1983_Connect_1on1",
+            notes: purpose.trim(),
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          };
+          const curAppointments = JSON.parse(localStorage.getItem("vba_connection_appointments") || "[]");
+          curAppointments.unshift(appointmentItem);
+          localStorage.setItem("vba_connection_appointments", JSON.stringify(curAppointments));
+        } catch {}
+
+        // 2. Đẩy thông báo lời mời hẹn gặp vào hộp thư vba_notifications
+        try {
+          const notifObj = {
+            id: `meet_inv_${Date.now()}`,
+            title: `Lời mời hẹn gặp kết nối 1-1 từ ${senderName.trim()}`,
+            body: `${senderName.trim()} (${senderCompany.trim() || "Doanh nghiệp"}) đã gửi lời mời hẹn gặp kết nối giao thương với bạn: "${purpose.trim()}". Bấm xem chi tiết để mở Danh mục Hẹn gặp kết nối.`,
+            message: `${senderName.trim()} (${senderCompany.trim() || "Doanh nghiệp"}) đã gửi lời mời hẹn gặp kết nối giao thương với bạn: "${purpose.trim()}"`,
+            time: new Date().toISOString(),
+            type: "meeting",
+            notificationKind: "meeting_invitation",
+            senderId: senderName.trim(),
+            avatar: target.avatar,
+            safeDisplayData: {
+              senderName: senderName.trim(),
+              companyName: senderCompany.trim(),
+              purpose: purpose.trim(),
+              targetRoute: "/association/members",
+              targetSearch: { tab: "meetings" },
+            },
+            unread: true,
+            personal: true,
+          };
+          const rawNotifs = JSON.parse(localStorage.getItem("vba_notifications") || "[]");
+          rawNotifs.unshift(notifObj);
+          localStorage.setItem("vba_notifications", JSON.stringify(rawNotifs.slice(0, 50)));
+          window.dispatchEvent(new CustomEvent("notifications-updated"));
+        } catch {}
       } catch (err: any) {
         console.warn("Lưu cuộc gặp lên CRM lỗi:", err?.message);
       }

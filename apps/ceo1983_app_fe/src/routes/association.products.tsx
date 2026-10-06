@@ -657,10 +657,13 @@ function ProductsScreen() {
     if (!viewingCompany) return false;
     if (isAdmin) return true;
     const targetComp = viewingCompany.name.toLowerCase().trim();
-    if ((member as any)?.company && (member as any).company.toLowerCase().trim() === targetComp) return true;
-    if ((member as any)?.companyName && (member as any).companyName.toLowerCase().trim() === targetComp) return true;
-    if (member?.title && member.title.toLowerCase().trim() === targetComp) return true;
-    return companyProducts.some((p) => checkCanManageProduct(p));
+    const generic = ["clb", "doanh nhân ceo 1983", "ceo 1983", "hanoiba", "hanoi ba", "hiệp hội"];
+    if (generic.some((g) => targetComp.includes(g))) {
+      return false;
+    }
+    const memComp = String((member as any)?.company || (member as any)?.companyName || "").toLowerCase().trim();
+    if (memComp && memComp.length >= 6 && memComp === targetComp) return true;
+    return companyProducts.some((p) => checkIsProductAuthor(p));
   }, [viewingCompany, isAdmin, member, companyProducts]);
 
   const companyCategories = useMemo(() => {
@@ -1908,7 +1911,7 @@ function ProductsScreen() {
 
             {/* 3. DYNAMIC SPONSORED ADS SLIDER (CRM Sync) */}
             <div className="self-stretch px-1">
-              <MarketplaceAdSlider />
+              <MarketplaceAdSlider onSelectCompany={(comp) => setViewingCompany(comp)} />
             </div>
 
             {/* 4. SẢN PHẨM MỚI ĐĂNG (HORIZONTAL CAROUSEL) */}

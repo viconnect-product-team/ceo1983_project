@@ -103,6 +103,20 @@ export function CeoWebRtcCallModal({
   const audioContextRef = useRef<AudioContext | null>(null);
   const dialIntervalRef = useRef<any>(null);
 
+  const callSecondsRef = useRef(0);
+  const callStatusRef = useRef<"calling" | "connected" | "ended">(
+    isIncomingAcceptance ? "connected" : "calling"
+  );
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const onEndCallRef = useRef(onEndCall);
+  onEndCallRef.current = onEndCall;
+  const peerUserIdRef = useRef(peerUserId);
+  peerUserIdRef.current = peerUserId;
+  const typeRef = useRef(type);
+  typeRef.current = type;
+  const finishCallRef = useRef<(status: "completed" | "missed" | "declined") => void>(() => {});
+
   useEffect(() => {
     if (callIdProp) callIdRef.current = callIdProp;
   }, [callIdProp]);
@@ -189,20 +203,22 @@ export function CeoWebRtcCallModal({
       const socket = getConnectAppSocket();
       socket.emit("call:end", {
         callId: callIdRef.current,
-        targetUserId: peerUserId,
+        targetUserId: peerUserIdRef.current,
       });
     } catch {}
 
-    const duration = callStatus === "connected" ? callSeconds : 0;
-    if (onEndCall) {
-      onEndCall({
-        callType: type,
+    const duration = callStatusRef.current === "connected" ? callSecondsRef.current : 0;
+    if (onEndCallRef.current) {
+      onEndCallRef.current({
+        callType: typeRef.current,
         status: duration > 0 ? "completed" : status,
         duration,
       });
     }
-    onClose();
-  }, [callSeconds, callStatus, onClose, onEndCall, peerUserId, stopOutgoingTone, type]);
+    onCloseRef.current?.();
+  }, [stopOutgoingTone]);
+
+  finishCallRef.current = finishCall;
 
   // 1. Initialize media stream and WebRTC connection
   useEffect(() => {
@@ -210,7 +226,9 @@ export function CeoWebRtcCallModal({
 
     hasRecordedRef.current = false;
     setCallSeconds(0);
+    callSecondsRef.current = 0;
     setCallStatus(isIncomingAcceptance ? "connected" : "calling");
+    callStatusRef.current = isIncomingAcceptance ? "connected" : "calling";
     setIsVideoEnabled(type === "video");
     setCameraError(null);
     setHasRemoteAudio(false);
@@ -333,11 +351,13 @@ export function CeoWebRtcCallModal({
           if (event.track.kind === "audio") {
             setHasRemoteAudio(true);
             setCallStatus("connected");
+            callStatusRef.current = "connected";
             stopOutgoingTone();
           }
           if (event.track.kind === "video") {
             setHasRemoteVideo(true);
             setCallStatus("connected");
+            callStatusRef.current = "connected";
             stopOutgoingTone();
           }
         };
@@ -358,6 +378,7 @@ export function CeoWebRtcCallModal({
           console.log("[WebRTC] Connection state:", pc.connectionState);
           if (pc.connectionState === "connected") {
             setCallStatus("connected");
+            callStatusRef.current = "connected";
             stopOutgoingTone();
           } else if (pc.connectionState === "failed" || pc.connectionState === "closed") {
             // Attempt ICE restart or notify
@@ -403,6 +424,7 @@ export function CeoWebRtcCallModal({
       stopOutgoingTone();
       playConnectedChime();
       setCallStatus("connected");
+      callStatusRef.current = "connected";
       toast.success(`Đã kết nối cuộc gọi với ${peerName}`);
 
       // Caller creates offer once accepted
@@ -428,16 +450,18 @@ export function CeoWebRtcCallModal({
       if (payload?.callId && payload.callId !== callIdRef.current) return;
       stopOutgoingTone();
       setCallStatus("ended");
+      callStatusRef.current = "ended";
       toast.error(`${peerName} đang bận hoặc đã từ chối cuộc gọi.`);
-      setTimeout(() => finishCall("declined"), 1200);
+      setTimeout(() => finishCallRef.current("declined"), 1200);
     };
 
     const handleCallEnded = (payload: any) => {
       if (payload?.callId && payload.callId !== callIdRef.current) return;
       stopOutgoingTone();
       setCallStatus("ended");
+      callStatusRef.current = "ended";
       toast.info("Cuộc gọi đã kết thúc.");
-      setTimeout(() => finishCall("completed"), 800);
+      setTimeout(() => finishCallRef.current("completed"), 800);
     };
 
     const handleCallSignal = async (payload: any) => {
@@ -466,6 +490,7 @@ export function CeoWebRtcCallModal({
             });
           }
           setCallStatus("connected");
+          callStatusRef.current = "connected";
           stopOutgoingTone();
         } else if (signal.type === "answer") {
           // Caller receives answer
@@ -475,6 +500,7 @@ export function CeoWebRtcCallModal({
             if (cand) await peer.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
           }
           setCallStatus("connected");
+          callStatusRef.current = "connected";
           stopOutgoingTone();
         } else if (signal.type === "candidate" && signal.candidate) {
           if (peer.remoteDescription && peer.remoteDescription.type) {
@@ -497,9 +523,9 @@ export function CeoWebRtcCallModal({
     let ringTimer: any = null;
     if (!isIncomingAcceptance) {
       ringTimer = setTimeout(() => {
-        if (callStatus === "calling") {
+        if (callStatusRef.current === "calling") {
           toast.info("Đối phương không trả lời cuộc gọi.");
-          finishCall("missed");
+          finishCallRef.current("missed");
         }
       }, 45000);
     }
@@ -525,31 +551,43 @@ export function CeoWebRtcCallModal({
     };
   }, [
     open,
-    type,
-    facingMode,
+    callIdProp,
     isIncomingAcceptance,
     peerUserId,
     viewerUserId,
-    peerName,
-    peerTitle,
-    user?.name,
-    user?.avatar_url,
-    user?.user_metadata,
-    startOutgoingTone,
-    stopOutgoingTone,
-    playConnectedChime,
-    finishCall,
-    isVideoEnabled,
   ]);
 
   // 2. Timer when call is connected
   useEffect(() => {
     if (callStatus !== "connected") return;
     const timer = setInterval(() => {
-      setCallSeconds((s) => s + 1);
+      setCallSeconds((s) => {
+        const next = s + 1;
+        callSecondsRef.current = next;
+        return next;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [callStatus]);
+
+  // Ensure local video element stays connected to media stream
+  useEffect(() => {
+    if (localVideoRef.current && localStreamRef.current && isVideoEnabled) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
+  }, [isVideoEnabled]);
+
+  // Ensure remote audio and video elements stay connected to stream
+  useEffect(() => {
+    if (remoteMediaStreamRef.current) {
+      if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== remoteMediaStreamRef.current) {
+        remoteVideoRef.current.srcObject = remoteMediaStreamRef.current;
+      }
+      if (remoteAudioRef.current && remoteAudioRef.current.srcObject !== remoteMediaStreamRef.current) {
+        remoteAudioRef.current.srcObject = remoteMediaStreamRef.current;
+      }
+    }
+  }, [hasRemoteVideo, hasRemoteAudio, isVideoEnabled]);
 
   const toggleMic = () => {
     if (localStreamRef.current) {
@@ -564,15 +602,48 @@ export function CeoWebRtcCallModal({
     if (localStreamRef.current) {
       const videoTracks = localStreamRef.current.getVideoTracks();
       if (videoTracks.length > 0) {
-        videoTracks.forEach((t) => (t.enabled = !t.enabled));
-        setIsVideoEnabled((prev) => !prev);
-        toast.info(!isVideoEnabled ? "Đã bật camera" : "Đã tắt camera");
+        const nextEnabled = !videoTracks[0].enabled;
+        videoTracks.forEach((t) => (t.enabled = nextEnabled));
+        setIsVideoEnabled(nextEnabled);
+        toast.info(nextEnabled ? "Đã bật camera" : "Đã tắt camera");
       }
     }
   };
 
-  const switchCamera = () => {
-    setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
+  const switchCamera = async () => {
+    const nextFacingMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(nextFacingMode);
+    try {
+      if (localStreamRef.current && pcRef.current) {
+        const oldTrack = localStreamRef.current.getVideoTracks()[0];
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: nextFacingMode,
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
+          },
+        });
+        const newTrack = newStream.getVideoTracks()[0];
+        if (newTrack) {
+          if (oldTrack) {
+            oldTrack.stop();
+            localStreamRef.current.removeTrack(oldTrack);
+          }
+          localStreamRef.current.addTrack(newTrack);
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = localStreamRef.current;
+          }
+          const videoSender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
+          if (videoSender) {
+            await videoSender.replaceTrack(newTrack);
+          }
+          toast.info(nextFacingMode === "user" ? "Đã chuyển camera trước" : "Đã chuyển camera sau");
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to switch camera:", e);
+    }
   };
 
   const fmtDuration = (sec: number) => {

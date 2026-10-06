@@ -60,6 +60,7 @@ import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { formatDisplayDate } from "@/lib/date-format";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
+import { BusinessConnectBottomSheet, type BusinessConnectTarget } from "@/components/common/BusinessConnectBottomSheet";
 
 function formatCurrencyInput(val: string | number): string {
   if (val === undefined || val === null) return "";
@@ -186,6 +187,32 @@ function OpportunitiesScreen() {
     }>
   >([]);
   const [loadingInterests, setLoadingInterests] = useState(false);
+  const [negotiateTarget, setNegotiateTarget] = useState<BusinessConnectTarget | null>(null);
+  const [negotiateOpp, setNegotiateOpp] = useState<any>(null);
+
+  const handleNegotiate = (opp: any) => {
+    const target: BusinessConnectTarget = {
+      code: opp.posterCode || opp.posterId || (opp.creator ? opp.creator.code : "admin"),
+      name: opp.posterName || opp.contactName || opp.company || "Hội viên CLB CEO 1983",
+      company: opp.company,
+      title: opp.contactTitle || "Chủ đề xuất cơ hội",
+      userId: opp.posterId || opp.userId,
+    };
+    setNegotiateTarget(target);
+    setNegotiateOpp(opp);
+  };
+
+  const handleNegotiateWithMember = (m: any, opp: any) => {
+    const target: BusinessConnectTarget = {
+      code: m.memberCode || m.memberId || m.phone || "member",
+      name: m.name || "Hội viên quan tâm",
+      company: m.company || "Doanh nghiệp CLB CEO 1983",
+      title: m.personTitle || "Hội viên",
+      userId: m.userId || m.memberId,
+    };
+    setNegotiateTarget(target);
+    setNegotiateOpp(opp);
+  };
 
   const handleOpenOppDetail = async (o: MyOpportunity & { description?: string }) => {
     setSelectedOpp(o);
@@ -1066,8 +1093,21 @@ function OpportunitiesScreen() {
                               Của bạn
                             </div>
                           ) : o.interested || interestedIds.includes(o.id) ? (
-                            <div className="px-3 py-1.5 bg-emerald-100 rounded-md text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                              <Check className="size-3" /> Đã quan tâm
+                            <div className="flex items-center gap-1.5">
+                              <div className="px-2 py-1 bg-emerald-100 rounded-md text-[10.5px] font-bold text-emerald-700 flex items-center gap-1">
+                                <Check className="size-3" /> Đã quan tâm
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNegotiate(o);
+                                }}
+                                className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-md text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95 shadow-xs"
+                                title="Lên lịch hẹn 1-1 đàm phán cơ hội này"
+                              >
+                                <Handshake className="size-3" /> Đàm phán 1-1
+                              </button>
                             </div>
                           ) : (
                             <button
@@ -1278,6 +1318,15 @@ function OpportunitiesScreen() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0 ml-2">
+                              <button
+                                type="button"
+                                onClick={() => handleNegotiateWithMember(m, selectedOpp)}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                                title="Lên lịch hẹn 1-1 đàm phán cơ hội này"
+                              >
+                                <Handshake className="h-3.5 w-3.5" />
+                                <span>Đàm phán</span>
+                              </button>
                               {m.phone && (
                                 <a
                                   href={`tel:${m.phone}`}
@@ -1404,6 +1453,19 @@ function OpportunitiesScreen() {
                     <button
                       type="button"
                       onClick={() => {
+                        const opp = selectedOpp;
+                        setSelectedOpp(null);
+                        handleNegotiate(opp);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-emerald-600/20"
+                    >
+                      <Handshake className="h-4 w-4" />
+                      Đàm phán 1-1
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         const targetCode =
                           selectedOpp.posterCode || selectedOpp.posterId || "admin";
                         const targetName = selectedOpp.posterName || selectedOpp.company;
@@ -1417,20 +1479,26 @@ function OpportunitiesScreen() {
                       className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-[#2E3192]/20"
                     >
                       <MessageSquare className="h-4 w-4" />
-                      Gắn kết & nhắn tin
+                      Nhắn tin
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        interest(selectedOpp.id);
-                        setSelectedOpp(null);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#2E3192] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
-                    >
-                      <Handshake className="h-4 w-4" />
-                      Bày tỏ quan tâm
-                    </button>
+                    {selectedOpp.interested || interestedIds.includes(selectedOpp.id) ? (
+                      <div className="flex items-center justify-center gap-1 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-3 py-2.5 text-[12px] font-bold">
+                        <Check className="h-3.5 w-3.5" />
+                        Đã quan tâm
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          interest(selectedOpp.id);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#2E3192] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
+                      >
+                        <Flame className="h-4 w-4 text-amber-500" />
+                        Quan tâm
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -2084,6 +2152,28 @@ function OpportunitiesScreen() {
           </div>,
           document.body,
         )}
+
+      {/* MODAL ĐÀM PHÁN HẸN GẶP 1-1 GẮN VỚI CƠ HỘI */}
+      <BusinessConnectBottomSheet
+        isOpen={Boolean(negotiateTarget)}
+        onClose={() => {
+          setNegotiateTarget(null);
+          setNegotiateOpp(null);
+        }}
+        target={negotiateTarget}
+        initialPurpose={
+          negotiateOpp
+            ? `Hẹn gặp 1-1 đàm phán cơ hội: "${negotiateOpp.title}"`
+            : "Hẹn gặp 1-1 đàm phán hợp tác kinh doanh"
+        }
+        initialOpportunityId={negotiateOpp?.id}
+        initialOpportunityTitle={negotiateOpp?.title}
+        onSuccess={() => {
+          toast.success("Đã gửi đề xuất lịch hẹn đàm phán 1-1 thành công!");
+          setNegotiateTarget(null);
+          setNegotiateOpp(null);
+        }}
+      />
     </div>
   );
 }

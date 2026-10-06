@@ -529,7 +529,52 @@
 #     + Tự Động Nhận Diện Dừng Nói (Silence Detection): Sau 1.3 giây hội viên dừng phát âm, hệ thống tự động chốt câu hỏi và kích hoạt phân tích mà không cần người dùng phải bấm nút dừng thủ công.
 #     + Tách Biệt Nhận Dạng Giọng Nói & Tránh Vòng Lặp: Tuyệt đối không đưa `transcript` vào dependency array của `useEffect` khởi tạo SpeechRecognition; sử dụng `transcriptRef` để lưu trữ chuỗi âm thanh và chống tự hủy bộ thu âm.
 #     + Giọng Đọc Text-to-Speech (TTS) Không Bị Câm/Kẹt: Luôn gọi `window.speechSynthesis.cancel()` và `window.speechSynthesis.resume()` trước khi phát âm; tự động chọn giọng tiếng Việt chất lượng cao qua sự kiện `onvoiceschanged`; tự động làm sạch ký tự Markdown, Emoji, URL trước khi đọc văn bản.
-
-
-
-
+#
+# [BẮT BUỘC 36] Quy Chuẩn 8 Luồng Nghiệp Vụ Cốt Lõi (Kết Nối QR, WebRTC Ổn Định, Danh Bạ Không Dấu, Hẹn Gặp 1-1, Quyền Sàn TMĐT, Check-in Trang Chủ, Đàm Phán Cơ Hội & Hiệu Năng MoMo):
+#   - Luồng Kết Nối Qua Mã QR Code & Thông Báo Quyết Định 2 Chiều:
+#     + Khi quét QR gửi kết nối, phía người nhận (Account B) BẮT BUỘC hiển thị modal hồ sơ đối tác với 2 nút: `[Đồng ý]` (màu xanh emerald) và `[Để sau]`.
+#     + Khi bấm `[Để sau]`: Đóng popup nhưng BẮT BUỘC giữ trạng thái pending trong `vba_notifications`.
+#     + Tại màn hình Thông báo: Yêu cầu kết nối BẮT BUỘC có 2 nút hành động `[Đồng ý]` và `[Từ chối]` (trên cả danh sách và modal xem chi tiết).
+#     + Khi người nhận bấm bất kỳ nút nào (Đồng ý hoặc Từ chối): Hệ thống BẮT BUỘC tự động đẩy thông báo phản hồi kết quả ngược về cho người gửi (Account A).
+#     + Khi Đồng ý: Tự động lưu thông tin vào danh bạ bạn bè (`vba_connected_members` và `vba.connected_members`).
+#   - Khắc Phục Lỗi WebRTC Video Call Reset Timer Về 0s Mỗi Giây:
+#     + TUYỆT ĐỐI KHÔNG đưa các biến trạng thái biến thiên (`callSeconds`, `callStatus`, `isFrontCamera`, callback props) vào dependency array của `useEffect` khởi tạo WebRTC.
+#     + Mọi biến thay đổi liên tục phải được lưu trữ qua `useRef` ổn định để không kích hoạt vòng lặp teardown/reconnect sau mỗi giây.
+#     + Thao tác chuyển camera trước/sau phải dùng `sender.replaceTrack()` trực tiếp thay vì hủy và tạo lại PeerConnection.
+#   - Danh Bạ Bạn Bè Kết Nối & Tìm Kiếm Không Dấu Đa Trường:
+#     + Tab "Bạn bè" trong Danh bạ CEO (`/association/members`) BẮT BUỘC tổng hợp đồng thời từ local cache và API `/network/connections`.
+#     + Thanh tìm kiếm BẮT BUỘC sử dụng hàm chuẩn hóa bỏ dấu tiếng Việt (`normalizeSearchText` loại bỏ diacritics) đối soát trên toàn bộ các trường: Họ tên, Tên doanh nghiệp, Người đại diện, Chức danh, Số điện thoại, Email, Mã hội viên.
+#   - Điều Hướng Lịch Hẹn Kết Nối 1-1:
+#     + Thông báo mời hẹn gặp kết nối BẮT BUỘC mang target `{ tab: "meetings" }`. Khi người nhận bấm "Xem chi tiết", route Danh bạ BẮT BUỘC tự động chuyển sang tab "Lịch hẹn 1-1".
+#   - Sàn Giao Thương B2B & Banner Quảng Cáo Khám Phá:
+#     + Quyền chỉnh sửa/xóa sản phẩm BẮT BUỘC kiểm tra khớp ID người tạo (`userId` hoặc `sellerId`), TUYỆT ĐỐI KHÔNG so sánh chuỗi tên doanh nghiệp lỏng lẻo. Người không phải chủ sở hữu CHỈ ĐƯỢC thấy nút "Nhận báo giá VIP" và "Nhắn tin".
+#     + Nút "Khám phá" trên banner quảng cáo BẮT BUỘC mở gian hàng B2B của doanh nghiệp ngay bên trong sàn (`onSelectCompany`), không chuyển hướng ra ngoài danh bạ.
+#   - Phân Quyền Nút Quét Check-in Trang Chủ:
+#     + Nút "Quét Check-in" trên lưới Tính năng nhanh trang chủ BẮT BUỘC chỉ hiển thị đối với tài khoản có quyền (`canScanQR`, ban tổ chức `isBTC`, ban quản trị `isBQT`, `isBTK`, `isBTT`, quản trị viên hoặc cán bộ soát vé được chỉ định). Ẩn hoàn toàn với hội viên thông thường.
+#   - Luồng Chia Sẻ Cơ Hội & Đàm Phán Hẹn Gặp 1-1:
+#     + Người đăng cơ hội xem được danh sách hội viên quan tâm kèm nút `[Đàm phán]`.
+#     + Hội viên quan tâm BẮT BUỘC có nút `[🤝 Đàm phán 1-1]` trên card cơ hội và modal chi tiết để mở BottomSheet hẹn gặp kết nối 1-1 gắn liền với cơ hội đó.
+#   - Tối Ưu Hiệu Năng 60-120fps Chuẩn MoMo Native:
+#     + Khung cuộn `PullToRefresh` sử dụng `translate3d(0, ..., 0)` và `willChange: isPulling ? 'transform' : 'auto'`.
+#     + CSS toàn cục thiết lập `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent`, `overscroll-behavior-y: contain`.
+#
+# [BẮT BUỘC 37] Quy Chuẩn Typography Trợ Lý AI, Kiến Trúc Micro Đa Tầng (MediaRecorder + Waveform Visualizer) & Đồng Hành Doanh Nhân Cấp Cao:
+#   - Chuẩn Hóa Typography & Độ Tương Phản Sắc Nét Chuẩn CEO 1983:
+#     + TUYỆT ĐỐI KHÔNG dùng text màu xám mờ (`text-slate-400`, `text-gray-500`) trên nền tối vì làm giảm độ tương phản và gây mờ chữ khó đọc cho người dùng.
+#     + BẮT BUỘC sử dụng chữ trắng tinh khôi chuẩn mực `#FFFFFF` (`text-white`), kết hợp điểm nhấn Warm Amber Gold (`#FBBF24` / `#F59E0B`).
+#     + Nền modal AI BẮT BUỘC bọc kín với hiệu ứng chuyển màu Dark Royal Navy trứ danh (`from-[#091D3E] via-[#051329] to-[#040D1B]`) kết hợp viền mạ vàng `border-amber-400/50`.
+#     + BẮT BUỘC sử dụng bộ định dạng Markdown chuyên dụng (`FormattedAiText`): Tự động chuyển đổi `**chữ đậm**` thành thẻ `<strong>` màu vàng hoàng gia (`text-amber-300 font-bold`), chuyển gạch đầu dòng thành chấm tròn vàng, triệt tiêu 100% hiện tượng để lộ các ký tự sao `**` thô kệch.
+#     + Bổ sung nút Bật/Tắt âm thanh (Mute/Unmute) trên thanh tiêu đề modal trợ lý AI.
+#   - Kiến Trúc Micro Đa Tầng Khắc Phục Triệt Để Giọng Nói Trên Android WebView:
+#     + Trên môi trường Android WebView của Capacitor APK, Web Speech API (`window.SpeechRecognition`) bị vô hiệu hóa; do đó TUYỆT ĐỐI KHÔNG phụ thuộc đơn lẻ vào Web Speech API.
+#     + BẮT BUỘC triển khai kiến trúc micro 3 tầng:
+#       * Tầng 1: Web Speech API (chạy khi trình duyệt web có hỗ trợ).
+#       * Tầng 2: Native `MediaRecorder` thu âm trực tiếp nhị phân (audio/webm, audio/mp4) nhờ quyền `android.permission.RECORD_AUDIO` đã cấp sẵn.
+#       * Tầng 3: Tích hợp Web Audio API (`AudioContext` + `AnalyserNode`) tạo 7 cột sóng nhạc thời gian thực (Live Audio Waveform) nhún nhảy sống động theo biên độ giọng nói; tự động mã hóa Base64 và đẩy lên backend `/api/ai/ask-voice` để Gemini 2.0 Flash xử lý trực tiếp âm thanh đa phương thức.
+#       * Bổ sung ghi chú hướng dẫn hội viên có thể bấm ô nhập liệu và dùng micro của bàn phím di động (Google Gboard / Samsung Voice Typing).
+#   - Nhân Cách Trợ Lý Đồng Hành Cấp Cao (Executive Business Companion):
+#     + Xưng "Em", gọi "Quý Anh/Chị" hoặc theo họ tên hội viên với phong thái kính trọng, ân cần, ấm áp.
+#     + Thấu hiểu áp lực và sự cô đơn của người làm chủ doanh nghiệp; sẵn sàng lắng nghe, chia sẻ phương pháp giải tỏa stress, gợi ý mở rộng kết nối với mạng lưới hơn 200 CEO cùng sinh năm 1983.
+#     + Gợi ý các địa điểm tiếp khách, quán cafe doanh nhân sang trọng, riêng tư tại Hà Nội; tư vấn các nguyên tắc đàm phán kinh doanh Win-Win.
+#   - Quy Chuẩn Đóng Gói APK Android:
+#     + Trước khi xuất bản APK mới, BẮT BUỘC chạy `npm run build` trên Frontend, `npx cap copy android`, và thực thi `.\\gradlew.bat clean assembleDebug` để đảm bảo tài nguyên được làm sạch và đóng gói mới 100%.

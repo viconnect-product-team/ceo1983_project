@@ -19,6 +19,8 @@ export interface ActiveAdCampaign {
   status: string;
   impressions?: number;
   clicks?: number;
+  companyAvatar?: string;
+  description?: string;
 }
 
 const DEFAULT_SAMPLE_ADS: ActiveAdCampaign[] = [
@@ -44,7 +46,11 @@ const DEFAULT_SAMPLE_ADS: ActiveAdCampaign[] = [
   },
 ];
 
-export function MarketplaceAdSlider() {
+export interface MarketplaceAdSliderProps {
+  onSelectCompany?: (company: { name: string; avatarUrl?: string | null; bio?: string }) => void;
+}
+
+export function MarketplaceAdSlider({ onSelectCompany }: MarketplaceAdSliderProps = {}) {
   const navigate = useNavigate();
   const [ads, setAds] = useState<ActiveAdCampaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,12 +117,31 @@ export function MarketplaceAdSlider() {
     // Report click to backend
     fetchNestApi(`/advertisements/${ad.id}/click`, { method: "POST" }).catch(() => {});
 
-    // Khi người dùng bấm Khám phá hoặc click quảng cáo, dẫn ngay vào công ty đăng sản phẩm/quảng cáo đó
+    // Khi người dùng bấm Khám phá hoặc click quảng cáo, dẫn ngay vào gian hàng B2B của công ty chạy quảng cáo đó trong Chợ giao thương
     if (ad.companyName) {
-      navigate({
-        to: "/association/members",
-        search: { q: ad.companyName } as any,
-      });
+      if (onSelectCompany) {
+        onSelectCompany({
+          name: ad.companyName,
+          avatarUrl: ad.companyAvatar || ad.bannerUrl,
+          bio: ad.description,
+        });
+        return;
+      }
+      window.dispatchEvent(
+        new CustomEvent("vba:view_company_storefront", {
+          detail: {
+            name: ad.companyName,
+            avatarUrl: ad.companyAvatar || ad.bannerUrl,
+            bio: ad.description,
+          },
+        })
+      );
+      if (typeof window !== "undefined" && !window.location.pathname.includes("/association/products")) {
+        navigate({
+          to: "/association/products",
+          search: { company: ad.companyName } as any,
+        });
+      }
       return;
     }
 

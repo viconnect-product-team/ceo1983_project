@@ -362,10 +362,11 @@ export function PullToRefresh({
         className={`h-full w-full overflow-y-auto overscroll-contain smooth-scroll-touch select-none-touch transition-transform ${className}`}
         style={{
           transform: isReachabilityActive
-            ? "translateY(35vh)"
+            ? "translate3d(0, 35vh, 0)"
             : pullY > 0
-            ? `translateY(${pullY * 0.75}px)`
-            : "none",
+            ? `translate3d(0, ${pullY * 0.75}px, 0)`
+            : "translate3d(0, 0, 0)",
+          willChange: isPulling ? "transform" : "auto",
           transitionDuration: isReachabilityActive ? "300ms" : isPulling ? "0ms" : "240ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
         }}

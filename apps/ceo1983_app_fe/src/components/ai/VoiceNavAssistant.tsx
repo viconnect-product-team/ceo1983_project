@@ -7,32 +7,28 @@ import {
   X,
   Sparkles,
   Calendar,
-  ShoppingBag,
   Handshake,
   Users,
   CreditCard,
   QrCode,
-  User,
-  MessageSquare,
-  Home,
-  CheckCircle2,
-  Volume2,
-  VolumeX,
   Compass,
   Send,
-  RotateCcw,
   Bell,
   Award,
   ChevronRight,
-  ExternalLink,
+  Volume2,
+  VolumeX,
+  Coffee,
+  CheckCircle2,
+  HelpCircle,
+  Activity,
+  Square,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { fetchNestApi } from "@/lib/api-client";
 import {
-  useVoiceGpsTour,
   startTourGlobally,
-  getTourById,
 } from "@/lib/tours/voice-gps-controller";
 import { VoiceGpsHudOverlay } from "./VoiceGpsHudOverlay";
 
@@ -65,31 +61,47 @@ const QUICK_PROMPTS: QuickPrompt[] = [
     label: "Sự kiện đông người nhất?",
     query: "Sự kiện nào đang được nhiều người đăng ký nhất?",
     icon: Calendar,
-    color: "from-amber-500/20 to-yellow-500/10 text-amber-300 border-amber-500/30",
+    color: "from-amber-500/20 to-yellow-500/10 text-amber-300 border-amber-500/40",
   },
   {
     label: "Sự kiện tôi đã đăng ký",
     query: "Tôi có đang đăng ký sự kiện nào không?",
     icon: QrCode,
-    color: "from-blue-500/20 to-cyan-500/10 text-cyan-300 border-cyan-500/30",
+    color: "from-blue-500/20 to-cyan-500/10 text-cyan-300 border-cyan-500/40",
   },
   {
     label: "Thông báo chưa đọc",
     query: "Tôi có thông báo nào chưa đọc không?",
     icon: Bell,
-    color: "from-rose-500/20 to-pink-500/10 text-rose-300 border-rose-500/30",
+    color: "from-rose-500/20 to-pink-500/10 text-rose-300 border-rose-500/40",
   },
   {
     label: "Kiểm tra hội phí",
     query: "Tôi có hội phí nào chưa đóng không?",
     icon: CreditCard,
-    color: "from-emerald-500/20 to-teal-500/10 text-emerald-300 border-emerald-500/30",
+    color: "from-emerald-500/20 to-teal-500/10 text-emerald-300 border-emerald-500/40",
+  },
+  {
+    label: "Tư vấn mở rộng đối tác B2B",
+    query: "Tư vấn giúp tôi cách kết nối và mở rộng đối tác trong hiệp hội CEO 1983",
+    icon: Handshake,
+    color: "from-amber-500/20 to-orange-500/10 text-amber-300 border-amber-500/40",
+    tourId: "association-products",
+    route: "/association/products",
+  },
+  {
+    label: "Địa điểm tiếp khách & Cà phê",
+    query: "Gợi ý cho tôi địa điểm tiếp khách và uống cà phê kết nối doanh nhân ở Hà Nội",
+    icon: Coffee,
+    color: "from-yellow-500/20 to-amber-500/10 text-yellow-300 border-yellow-500/40",
+    tourId: "association-members",
+    route: "/association/members",
   },
   {
     label: "Chỉ dẫn: Đăng ký sự kiện",
     query: "Hướng dẫn tôi thao tác đăng ký sự kiện như nào",
     icon: Compass,
-    color: "from-purple-500/20 to-indigo-500/10 text-purple-300 border-purple-500/30",
+    color: "from-purple-500/20 to-indigo-500/10 text-purple-300 border-purple-500/40",
     tourId: "association-events",
     route: "/association/events",
   },
@@ -97,31 +109,15 @@ const QUICK_PROMPTS: QuickPrompt[] = [
     label: "Chỉ dẫn: Thẻ NFC & Danh thiếp",
     query: "Hướng dẫn tôi ghi thẻ danh thiếp số NFC",
     icon: CreditCard,
-    color: "from-amber-500/20 to-orange-500/10 text-amber-300 border-amber-500/30",
+    color: "from-amber-500/20 to-orange-500/10 text-amber-300 border-amber-500/40",
     tourId: "association-card",
     route: "/association/card",
-  },
-  {
-    label: "Chỉ dẫn: Quét card visit AI",
-    query: "Hướng dẫn tôi chụp và quét card visit giấy bằng AI",
-    icon: Sparkles,
-    color: "from-cyan-500/20 to-blue-500/10 text-cyan-300 border-cyan-500/30",
-    tourId: "association-card",
-    route: "/association/card",
-  },
-  {
-    label: "Chỉ dẫn: Vé Check-in QR",
-    query: "Hướng dẫn tôi xuất trình vé check in sự kiện và xem bàn VIP",
-    icon: QrCode,
-    color: "from-blue-500/20 to-indigo-500/10 text-blue-300 border-blue-500/30",
-    tourId: "association-checkin",
-    route: "/association/checkin",
   },
   {
     label: "Chỉ dẫn: Danh bạ & Hẹn 1-1",
     query: "Hướng dẫn tôi tìm kiếm hội viên và đặt lịch hẹn giao thương 1-on-1",
     icon: Users,
-    color: "from-emerald-500/20 to-teal-500/10 text-emerald-300 border-emerald-500/30",
+    color: "from-emerald-500/20 to-teal-500/10 text-emerald-300 border-emerald-500/40",
     tourId: "association-members",
     route: "/association/members",
   },
@@ -129,60 +125,129 @@ const QUICK_PROMPTS: QuickPrompt[] = [
     label: "Chỉ dẫn: Sàn Giao thương B2B",
     query: "Hướng dẫn tôi đăng bán sản phẩm và kết nối cơ hội kinh doanh B2B",
     icon: Handshake,
-    color: "from-amber-500/20 to-yellow-500/10 text-amber-300 border-amber-500/30",
+    color: "from-amber-500/20 to-yellow-500/10 text-amber-300 border-amber-500/40",
     tourId: "association-products",
     route: "/association/products",
   },
-  {
-    label: "Chỉ dẫn: Biểu quyết & Lucky Draw",
-    query: "Hướng dẫn tôi biểu quyết đại hội và quay số may mắn Lucky Draw",
-    icon: Award,
-    color: "from-emerald-500/20 to-green-500/10 text-emerald-300 border-emerald-500/30",
-    tourId: "association-voting",
-    route: "/association/voting",
-  },
-  {
-    label: "Chỉ dẫn: Đóng hội phí VietQR",
-    query: "Hướng dẫn tôi đóng hội phí thường niên qua VietQR MB Bank",
-    icon: CreditCard,
-    color: "from-teal-500/20 to-emerald-500/10 text-teal-300 border-teal-500/30",
-    tourId: "association-profile",
-    route: "/association/profile",
-  },
-  {
-    label: "Chỉ dẫn: Tạo sự kiện mới (CRM)",
-    query: "Hướng dẫn tôi tạo sự kiện mới cho Ban Tổ Chức",
-    icon: Calendar,
-    color: "from-blue-500/20 to-indigo-500/10 text-blue-300 border-blue-500/30",
-    tourId: "events-admin",
-    route: "/events",
-  },
-  {
-    label: "Chỉ dẫn: Giao việc điều hành",
-    query: "Hướng dẫn tôi giao việc và theo dõi nhiệm vụ điều hành ban thư ký",
-    icon: CheckCircle2,
-    color: "from-indigo-500/20 to-purple-500/10 text-indigo-300 border-indigo-500/30",
-    tourId: "tasks-admin",
-    route: "/tasks",
-  },
-  {
-    label: "Chỉ dẫn: Phân quyền RBAC",
-    query: "Hướng dẫn tôi phân quyền tài khoản và cấp thẩm quyền soát vé",
-    icon: Compass,
-    color: "from-rose-500/20 to-pink-500/10 text-rose-300 border-rose-500/30",
-    tourId: "permissions-admin",
-    route: "/permissions",
-  },
 ];
+
+/**
+ * Bộ Render Văn Bản Markdown Thông Minh Chuẩn CEO 1983:
+ * Hiển thị chữ trắng tinh khiết, điểm nhấn vàng kim Amber Gold, khử hoàn toàn raw markdown stars.
+ */
+function FormattedAiText({ text }: { text: string }) {
+  const lines = text.split("\n");
+
+  const renderInline = (content: string) => {
+    const parts = content.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={i} className="text-amber-300 font-bold drop-shadow-sm">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith("*") && part.endsWith("*")) {
+        return (
+          <em key={i} className="text-amber-200/90 italic">
+            {part.slice(1, -1)}
+          </em>
+        );
+      }
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return (
+          <code
+            key={i}
+            className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono text-[11px] font-bold border border-amber-400/30"
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div className="space-y-2 text-xs sm:text-[13px] leading-relaxed text-white font-normal">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={idx} className="h-1" />;
+
+        // Header style with icon or ###
+        if (trimmed.startsWith("###") || trimmed.startsWith("##") || trimmed.startsWith("#")) {
+          const headerText = trimmed.replace(/^#+\s*/, "");
+          return (
+            <h4
+              key={idx}
+              className="text-sm font-extrabold text-amber-300 pt-1 flex items-center gap-1.5 border-b border-amber-500/25 pb-1"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>{renderInline(headerText)}</span>
+            </h4>
+          );
+        }
+
+        // Bullet point: "- " or "• " or "* "
+        if (trimmed.startsWith("- ") || trimmed.startsWith("• ") || trimmed.startsWith("* ")) {
+          const bulletText = trimmed.replace(/^[-•*]\s*/, "");
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0 shadow-[0_0_6px_#f59e0b]" />
+              <div className="flex-1 text-white">{renderInline(bulletText)}</div>
+            </div>
+          );
+        }
+
+        // Numbered list: "1. ", "2. ", etc.
+        const numMatch = trimmed.match(/^(\d+)\.\s*(.*)$/);
+        if (numMatch) {
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-1">
+              <span className="grid h-4 w-4 place-items-center rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shrink-0 mt-0.5 shadow-sm">
+                {numMatch[1]}
+              </span>
+              <div className="flex-1 text-white">{renderInline(numMatch[2])}</div>
+            </div>
+          );
+        }
+
+        // Action prompt lines: starts with "👉"
+        if (trimmed.startsWith("👉")) {
+          return (
+            <div
+              key={idx}
+              className="p-2.5 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-200 font-semibold text-xs my-1.5 flex items-start gap-2 shadow-sm"
+            >
+              <span className="text-amber-400 text-sm shrink-0">👉</span>
+              <div className="flex-1 text-white leading-normal">{renderInline(trimmed.replace(/^👉\s*/, ""))}</div>
+            </div>
+          );
+        }
+
+        // Normal paragraph
+        return (
+          <p key={idx} className="text-white">
+            {renderInline(trimmed)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 export function VoiceNavAssistant() {
   const [enabled, setEnabled] = useState(() => isVoiceAiEnabled());
   const [isOpen, setIsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [inputText, setInputText] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [audioWaveLevel, setAudioWaveLevel] = useState<number[]>([12, 20, 35, 18, 28, 14, 22]);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
 
   // Dynamic Live Member Context
   const [liveContext, setLiveContext] = useState<any | null>(null);
@@ -207,6 +272,14 @@ export function VoiceNavAssistant() {
 
   const { user, status } = useAuth();
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const timerIntervalRef = useRef<any>(null);
+
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const transcriptRef = useRef<string>("");
@@ -246,64 +319,67 @@ export function VoiceNavAssistant() {
   }, []);
 
   // Đọc câu nói bằng giọng nói tiếng Việt chuẩn (Text-to-Speech)
-  const speakText = useCallback((text: string, onEnd?: () => void) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      if (onEnd) onEnd();
-      return;
-    }
-
-    try {
-      const synth = window.speechSynthesis;
-      synth.cancel();
-      if (synth.paused) {
-        synth.resume();
-      }
-
-      // Xóa bỏ toàn bộ ký tự markdown, emoji, URL trước khi đọc
-      const clean = text
-        .replace(/[*_#`~]/g, "")
-        .replace(/https?:\/\/\S+/g, "")
-        .replace(/👉|🚀|📍|👋|✨|💬|🤖|💎|👑|🔥|✅|⭐|🎉|📌|🏆/g, "")
-        .replace(/\n+/g, ". ")
-        .trim();
-
-      if (!clean) {
+  const speakText = useCallback(
+    (text: string, onEnd?: () => void) => {
+      if (isMuted || typeof window === "undefined" || !("speechSynthesis" in window)) {
         if (onEnd) onEnd();
         return;
       }
 
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.lang = "vi-VN";
-      utterance.rate = 1.05;
-      utterance.pitch = 1.0;
+      try {
+        const synth = window.speechSynthesis;
+        synth.cancel();
+        if (synth.paused) {
+          synth.resume();
+        }
 
-      const voices = voicesRef.current.length > 0 ? voicesRef.current : synth.getVoices();
-      const viVoice = voices.find(
-        (v) =>
-          v.lang.toLowerCase().includes("vi") ||
-          v.name.toLowerCase().includes("vietnamese") ||
-          v.name.toLowerCase().includes("tiếng việt") ||
-          v.name.toLowerCase().includes("vietnam"),
-      );
+        // Xóa bỏ toàn bộ ký tự markdown, emoji, URL trước khi đọc
+        const clean = text
+          .replace(/[*_#`~]/g, "")
+          .replace(/https?:\/\/\S+/g, "")
+          .replace(/👉|🚀|📍|👋|✨|💬|🤖|💎|👑|🔥|✅|⭐|🎉|📌|🏆|☕|🍽️|🍱|🤝|👤|🔔|💳|🎟️|🎫|📇|👥|💼|🗳️|🏛️/g, "")
+          .replace(/\n+/g, ". ")
+          .trim();
 
-      if (viVoice) {
-        utterance.voice = viVoice;
+        if (!clean) {
+          if (onEnd) onEnd();
+          return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(clean);
+        utterance.lang = "vi-VN";
+        utterance.rate = 1.05;
+        utterance.pitch = 1.0;
+
+        const voices = voicesRef.current.length > 0 ? voicesRef.current : synth.getVoices();
+        const viVoice = voices.find(
+          (v) =>
+            v.lang.toLowerCase().includes("vi") ||
+            v.name.toLowerCase().includes("vietnamese") ||
+            v.name.toLowerCase().includes("tiếng việt") ||
+            v.name.toLowerCase().includes("vietnam"),
+        );
+
+        if (viVoice) {
+          utterance.voice = viVoice;
+        }
+
+        utterance.onend = () => {
+          if (onEnd) onEnd();
+        };
+        utterance.onerror = (e) => {
+          console.warn("[TTS] Utterance error:", e);
+          if (onEnd) onEnd();
+        };
+
+        synth.speak(utterance);
+      } catch (e) {
+        console.warn("[TTS] Exception:", e);
+        if (onEnd) onEnd();
       }
-
-      utterance.onend = () => {
-        if (onEnd) onEnd();
-      };
-      utterance.onerror = (e) => {
-        console.warn("[TTS] Utterance error:", e);
-        if (onEnd) onEnd();
-      };
-
-      synth.speak(utterance);
-    } catch (e) {
-      console.warn("[TTS] Exception:", e);
-      if (onEnd) onEnd();
-    }
-  }, []);
+    },
+    [isMuted],
+  );
 
   // Dẫn đường trực tiếp từng bước (Live GPS Tour)
   const handleStartDirectTour = useCallback(
@@ -367,18 +443,97 @@ export function VoiceNavAssistant() {
         q.includes("chào bạn") ||
         q.includes("alo") ||
         q.includes("em ơi") ||
+        q.includes("bạn ơi") ||
         q.includes("bạn là ai") ||
+        q.includes("em là ai") ||
         q.includes("tên là gì") ||
         q.includes("giúp được gì")
       ) {
         return {
-          answer: `👋 **Dạ em chào ${memberName}!**\n\nEm là **Trợ lý AI Điều Hành Thông Minh** của **CLB Doanh Nhân CEO 1983**.\n\nRất hân hạnh được đồng hành và hỗ trợ Quý Anh/Chị hôm nay ạ! Em có thể giúp Anh/Chị:\n- 📅 **Tra cứu sự kiện:** Xem sự kiện đông người nhất, sự kiện đã đăng ký.\n- 💳 **Hội phí & Thẻ:** Kiểm tra niên liễm, hướng dẫn đóng VietQR, chạm thẻ NFC.\n- 🤝 **Kết nối B2B:** Tìm kiếm danh bạ 200+ CEO, hẹn 1-on-1, đăng sàn sản phẩm.\n- 🧭 **Dẫn đường GPS:** Tự động lái màn hình và chỉ dẫn từng bước thao tác.\n\n👉 *Quý Anh/Chị cần em hỗ trợ việc gì ngay bây giờ ạ?*`,
-          speechText: `Dạ em chào ${memberName}! Em là Trợ lý AI điều hành của CEO 1983. Em có thể giúp Quý Anh/Chị tra cứu nhanh lịch sự kiện, kiểm tra hội phí hoặc dẫn đường từng bước trên màn hình ạ! Anh/Chị cần em hỗ trợ gì ạ?`,
+          answer: `👋 **Dạ em chào ${memberName}!**\n\nEm là **Trợ lý AI Điều Hành Thông Minh** của **CLB Doanh Nhân CEO 1983**.\n\nRất hân hạnh được đồng hành và phục vụ Quý Anh/Chị hôm nay ạ! Em có thể giúp Quý Anh/Chị:\n- 📅 **Tra cứu sự kiện:** Xem sự kiện đông người nhất, sự kiện đã đăng ký vé.\n- 💳 **Hội phí & Thẻ VIP:** Kiểm tra niên liễm, hướng dẫn đóng VietQR, ghi thẻ NFC.\n- 🤝 **Kết nối Giao thương:** Tìm danh bạ 200+ CEO, hẹn gặp 1-on-1, đăng sàn sản phẩm.\n- 🧭 **Dẫn đường GPS:** Tự động lái màn hình và hướng dẫn từng bước thao tác.\n\n👉 *Hôm nay công việc của Anh/Chị thế nào rồi ạ? Quý Anh/Chị cần em hỗ trợ việc gì ngay bây giờ không ạ?*`,
+          speechText: `Dạ em chào ${memberName}! Em là Trợ lý AI điều hành của CEO 1983. Hôm nay công việc của anh chị thế nào rồi ạ? Em có thể giúp tra cứu lịch sự kiện, kiểm tra hội phí và dẫn đường trên app ạ!`,
           intent: "chat",
         };
       }
 
-      // 2. Hỏi sự kiện nhiều người đăng ký nhất / Sự kiện đông nhất
+      // 2. Tâm sự, cảm xúc & áp lực doanh nhân
+      if (
+        q.includes("mệt") ||
+        q.includes("áp lực") ||
+        q.includes("stress") ||
+        q.includes("buồn") ||
+        q.includes("chán") ||
+        q.includes("khó khăn") ||
+        q.includes("vất vả")
+      ) {
+        return {
+          answer: `☕ **Dạ em rất thấu hiểu và sẻ chia cùng Quý Anh/Chị ${memberName}!**\n\nLàm người thuyền trưởng lèo lái một doanh nghiệp luôn phải đối mặt với vô vàn áp lực, trọng trách và thách thức. Anh/Chị hãy hít thở thật sâu, uống một tách trà ấm hoặc cà phê để nạp lại năng lượng nhé!\n\nTinh thần doanh nhân **CEO 1983** - tuổi Quý Hợi bản lĩnh, kiên cường - luôn gắn bó cùng nhau qua phương châm *"Gắn kết bền - Phát triển vững"*. Khi căng thẳng, Anh/Chị có thể mở mục **"Danh bạ"** để hẹn gặp một người bạn đồng hành 1-on-1 hoặc cùng anh em tham gia buổi Cà phê Doanh nhân nhé ạ!`,
+          speechText: `Em rất hiểu làm lãnh đạo doanh nghiệp luôn đối mặt nhiều áp lực. Anh chị hãy nghỉ ngơi, uống một tách trà ấm nhé! Tinh thần anh em CEO 1983 luôn đồng hành và sẻ chia cùng anh chị ạ!`,
+          intent: "chat",
+        };
+      }
+
+      // 3. Lời cảm ơn, khen ngợi & chúc mừng
+      if (
+        q.includes("cảm ơn") ||
+        q.includes("thank") ||
+        q.includes("em giỏi") ||
+        q.includes("tuyệt vời") ||
+        q.includes("thông minh") ||
+        q.includes("chúc mừng") ||
+        q.includes("chúc đầu tuần") ||
+        q.includes("chúc ngủ ngon")
+      ) {
+        return {
+          answer: `💐 **Dạ em xin chân thành cảm ơn Quý Anh/Chị ${memberName} ạ!**\n\nSự đồng hành và tin yêu của Quý Anh/Chị là niềm tự hào lớn nhất của em. Em xin kính chúc Anh/Chị cùng doanh nghiệp luôn dồi dào sức khỏe, tràn đầy nhiệt huyết, vạn sự hanh thông và bứt phá doanh số rực rỡ!`,
+          speechText: `Dạ em cảm ơn Quý anh chị ${memberName} rất nhiều ạ! Chúc anh chị luôn dồi dào sức khỏe, tràn đầy năng lượng và gặt hái thật nhiều thành công ạ!`,
+          intent: "chat",
+        };
+      }
+
+      // 4. Địa điểm tiếp khách & Cà phê kết nối
+      if (
+        q.includes("cafe") ||
+        q.includes("cà phê") ||
+        q.includes("ăn trưa") ||
+        q.includes("ăn tối") ||
+        q.includes("tiếp khách") ||
+        q.includes("quán ăn") ||
+        q.includes("nhà hàng")
+      ) {
+        return {
+          answer: `🍽️ **Gợi ý không gian tiếp khách & giao lưu Doanh nhân tại Hà Nội:**\n\n- ☕ **Cà phê yên tĩnh kết nối nhanh:** Các quán cà phê lịch sự tại khu vực phố Duy Tân, Cầu Giấy hoặc Trung Hòa Nhân Chính (Highlands, The Coffee House, Trung Nguyên Legend).\n- 🍱 **Ăn trưa & Ăn tối tiếp đối tác VIP:** Nhà hàng tiệc sang trọng tại Trống Đồng Palace, Trung tâm Hội nghị Quốc gia, hoặc các nhà hàng ẩm thực hồ Tây.\n- 🤝 **Hẹn 1-on-1 trực tiếp:** Quý Anh/Chị có thể vào mục **"Danh bạ"** để chọn hội viên và gửi lời mời đặt lịch hẹn giao thương 1-on-1 chính thức!\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở Danh bạ hội viên để hẹn gặp đối tác ngay không ạ?*`,
+          speechText: `Em gợi ý anh chị các điểm hẹn yên tĩnh tại Cầu Giấy hoặc Tây Hồ để tiếp đối tác. Anh chị có thể mở mục Danh bạ để đặt lịch hẹn kết nối một một nhé ạ!`,
+          intent: "feature_guide",
+          suggestTour: true,
+          tourId: "association-members",
+          route: "/association/members",
+          featureName: "Danh Bạ & Hẹn Gặp 1-on-1",
+        };
+      }
+
+      // 5. Tư vấn kết nối đối tác, tìm kiếm cơ hội B2B
+      if (
+        q.includes("tìm đối tác") ||
+        q.includes("mở rộng") ||
+        q.includes("tìm khách hàng") ||
+        q.includes("bán hàng") ||
+        q.includes("giao thương") ||
+        q.includes("hợp tác") ||
+        q.includes("cơ hội kinh doanh")
+      ) {
+        return {
+          answer: `🤝 **Chiến lược Kết nối & Khai thác Mạng lưới 200+ CEO 1983:**\n\nCộng đồng CEO 1983 quy tụ các doanh nhân xuất sắc trong nhiều lĩnh vực then chốt: Bất động sản, Xây dựng, Công nghệ, Y tế, Giáo dục, Dịch vụ... Em gợi ý Anh/Chị:\n1. 📇 **Xuất trình Danh thiếp số & Chạm thẻ NFC:** Giới thiệu nhanh hồ sơ năng lực doanh nghiệp khi tham gia các buổi sinh hoạt.\n2. 🛍️ **Đăng sản phẩm lên Chợ B2B:** Đưa sản phẩm chủ lực vào Sàn giao thương với chính sách ưu đãi dành riêng cho hội viên.\n3. 📅 **Chủ động đặt lịch hẹn 1-on-1:** Kết nối sâu với từng doanh nghiệp cùng hệ sinh thái để tìm tiếng nói chung và mở ra cơ hội hợp tác lâu dài.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở ngay Sàn Giao Thương B2B không ạ?*`,
+          speechText: `Để mở rộng đối tác, anh chị nên tận dụng mạng lưới hai trăm CEO bằng cách đăng sản phẩm lên Chợ Bê hai Bê và đặt lịch hẹn một một. Em có thể mở Chợ giao thương cho anh chị ngay bây giờ nhé!`,
+          intent: "feature_guide",
+          suggestTour: true,
+          tourId: "association-products",
+          route: "/association/products",
+          featureName: "Chợ Giao Thương B2B",
+        };
+      }
+
+      // 6. Hỏi sự kiện nhiều người đăng ký nhất / Sự kiện đông nhất
       if (
         q.includes("nhiều người đăng ký") ||
         q.includes("đông người") ||
@@ -389,8 +544,8 @@ export function VoiceNavAssistant() {
         const top = liveContext?.topEvents?.[0];
         if (top) {
           return {
-            answer: `🔥 **Sự kiện đang có nhiều đại biểu đăng ký nhất trong Hiệp hội:**\n\n- 🏆 **${top.title}**\n- ⏰ Thời gian: ${top.eventDate || "Đang diễn ra"}\n- 📍 Địa điểm: ${top.location || "Trung tâm Hội nghị Hiệp hội"}\n- 👥 Số lượng đăng ký: **${top.attendeeCount} đại biểu**\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở sự kiện này để xem chi tiết và đăng ký vé không ạ?*`,
-            speechText: `Dạ thưa Quý Anh/Chị, sự kiện đang có nhiều đại biểu đăng ký nhất trong Hiệp hội là ${top.title} với ${top.attendeeCount} đại biểu. Quý Anh/Chị có muốn em dẫn đường mở sự kiện này không ạ? Hãy chọn Có hoặc nói Có nhé!`,
+            answer: `🔥 **Sự kiện đang có nhiều đại biểu đăng ký nhất trong Hiệp hội:**\n\n- 🏆 **${top.title || top.name}**\n- ⏰ Thời gian: ${top.eventDate || top.date || "Đang diễn ra"}\n- 📍 Địa điểm: ${top.location || "Trung tâm Hội nghị Hiệp hội"}\n- 👥 Số lượng đăng ký: **${top.attendeeCount || top.registeredCount} đại biểu**\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở sự kiện này để xem chi tiết và đăng ký vé không ạ?*`,
+            speechText: `Dạ thưa Quý Anh/Chị, sự kiện đang có nhiều đại biểu đăng ký nhất trong Hiệp hội là ${top.title || top.name} với ${top.attendeeCount || top.registeredCount} đại biểu. Quý Anh/Chị có muốn em dẫn đường mở sự kiện này không ạ? Hãy chọn Có hoặc nói Có nhé!`,
             intent: "feature_guide",
             suggestTour: true,
             tourId: "association-events",
@@ -398,105 +553,77 @@ export function VoiceNavAssistant() {
             featureName: "Lịch Sự Kiện & Đăng Ký Vé",
           };
         }
-        return {
-          answer: `📅 **Lịch Sự Kiện CLB CEO 1983:**\n\nHiệp hội liên tục tổ chức các chương trình Đại hội, Gala Doanh nhân và Tọa đàm Giao thương B2B.\n\n👉 *Quý Anh/Chị có muốn em mở mục Sự kiện ngay không ạ?*`,
-          speechText: `Dạ em có thể mở ngay mục Sự kiện để Quý Anh/Chị xem danh sách các chương trình sắp diễn ra ạ. Anh/Chị có muốn em dẫn đường mở ngay không ạ?`,
-          intent: "feature_guide",
-          suggestTour: true,
-          tourId: "association-events",
-          route: "/association/events",
-          featureName: "Lịch Sự Kiện",
-        };
       }
 
-      // 3. Hỏi sự kiện của tôi / vé đã đăng ký
+      // 7. Hỏi sự kiện tôi đã đăng ký
       if (
         q.includes("sự kiện của tôi") ||
-        q.includes("tôi có đăng ký") ||
-        q.includes("vé của tôi") ||
-        q.includes("vé check-in") ||
-        q.includes("checkin")
+        q.includes("tôi đã đăng ký") ||
+        q.includes("tôi có đang đăng ký") ||
+        q.includes("vé của tôi")
       ) {
-        const count = liveContext?.myEvents?.length || 0;
-        return {
-          answer: `🎟️ **Sự kiện Quý Anh/Chị đã đăng ký tham gia:**\n\nHiện tại Quý Anh/Chị đang có **${count} sự kiện** trong danh sách vé đã đặt.\n\n👉 *Quý Anh/Chị có muốn em mở mục Vé Check-in QR Pass để xuất trình tại bàn đón tiếp sự kiện không ạ?*`,
-          speechText: `Dạ thưa Quý Anh/Chị, Quý Anh/Chị hiện đang có ${count} sự kiện đã đăng ký vé. Em có thể mở ngay mục Vé Check-in QR để Quý Anh/Chị xuất trình tại cửa ạ! Anh/Chị có muốn em dẫn đường ngay không ạ?`,
-          intent: "feature_guide",
-          suggestTour: true,
-          tourId: "association-checkin",
-          route: "/association/checkin",
-          featureName: "Vé Check-in QR & Bàn VIP",
-        };
+        const myEvs = liveContext?.myEvents || [];
+        if (myEvs.length > 0) {
+          const listStr = myEvs
+            .map(
+              (e: any, idx: number) =>
+                `${idx + 1}. **${e.name || e.title}** (${e.date || "Sắp tới"} - ${e.ticketCount || 1} vé)`,
+            )
+            .join("\n");
+          return {
+            answer: `🎫 **Quý Anh/Chị đang có ${myEvs.length} sự kiện đã đăng ký tham gia:**\n\n${listStr}\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở mục Vé Check-in QR để xem mã vé và bàn tiệc VIP không ạ?*`,
+            speechText: `Quý Anh/Chị hiện đang đăng ký ${myEvs.length} sự kiện. Quý Anh/Chị có muốn em dẫn đường mở mục Vé Check in QR không ạ?`,
+            intent: "feature_guide",
+            suggestTour: true,
+            tourId: "association-checkin",
+            route: "/association/checkin",
+            featureName: "Vé Check-in QR",
+          };
+        }
       }
 
-      // 4. Hỏi kiểm tra hội phí / niên liễm
+      // 8. Hỏi thông báo chưa đọc
+      if (
+        q.includes("thông báo") &&
+        (q.includes("chưa đọc") || q.includes("mới") || q.includes("có thông báo"))
+      ) {
+        const unreadCount = liveContext?.notifications?.unreadCount || 0;
+        if (unreadCount > 0) {
+          return {
+            answer: `🔔 **Quý Anh/Chị đang có ${unreadCount} thông báo mới chưa đọc** từ Ban Thư Ký và Ban Quản Trị.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở Trung tâm Thông báo ngay bây giờ không ạ?*`,
+            speechText: `Quý Anh/Chị đang có ${unreadCount} thông báo mới chưa đọc. Quý Anh/Chị có muốn em dẫn đường vào Trung tâm Thông báo không ạ?`,
+            intent: "feature_guide",
+            suggestTour: true,
+            tourId: "association-notifications",
+            route: "/association/notifications",
+            featureName: "Trung Tâm Thông Báo",
+          };
+        }
+      }
+
+      // 9. Hỏi hội phí & hóa đơn
       if (
         q.includes("hội phí") ||
         q.includes("niên liễm") ||
-        q.includes("đóng tiền") ||
-        q.includes("chưa đóng") ||
         q.includes("nợ phí") ||
-        q.includes("vietqr")
+        q.includes("hóa đơn")
       ) {
         const dues = liveContext?.dues;
-        const isPaid = dues?.feePaid;
-        const total = dues?.totalOutstanding || 0;
-        const formatted = new Intl.NumberFormat("vi-VN").format(total);
-
-        if (isPaid) {
+        if (dues && !dues.feePaid) {
+          const money = new Intl.NumberFormat("vi-VN").format(dues.totalOutstanding || 0);
           return {
-            answer: `✅ **Trạng thái Hội phí của ${memberName}:**\n\nQuý Anh/Chị đã **HOÀN THÀNH ĐẦY ĐỦ** hội phí thường niên cho niên khóa hiện tại. Trân trọng cảm ơn sự đồng hành quý báu của Anh/Chị cùng CLB Doanh Nhân CEO 1983!`,
-            speechText: `Dạ báo cáo Quý Anh/Chị, Quý Anh/Chị đã hoàn thành đầy đủ hội phí thường niên cho niên khóa hiện tại rồi ạ. Em cảm ơn Anh/Chị rất nhiều ạ!`,
-            intent: "query_data",
+            answer: `💳 **Thông tin Hội phí Hiệp hội CEO 1983 của Quý Anh/Chị:**\n\n- Trạng thái: ⚠️ **Chưa hoàn tất**\n- Số tiền cần đóng: **${money} VNĐ**\n- Kỳ phí: Năm ${dues.feeYear || 2026}\n- Ngân hàng tiếp nhận: **MB Bank (Quân Đội)** - STK: \`1983000000\`\n- Chủ tài khoản: **CLB DOANH NHAN CEO 1983**\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở mục Hồ sơ để quét mã VietQR MB Bank thanh toán tự động không ạ?*`,
+            speechText: `Quý Anh/Chị hiện còn khoản hội phí chưa đóng là ${money} đồng. Quý Anh/Chị có muốn em dẫn đường quét mã VietQR thanh toán tự động không ạ?`,
+            intent: "feature_guide",
+            suggestTour: true,
+            tourId: "association-profile",
+            route: "/association/profile",
+            featureName: "Hồ Sơ & Đóng Hội Phí VietQR",
           };
         }
-
-        return {
-          answer: `⚠️ **Thông tin Hội phí Thường niên của ${memberName}:**\n\n- Trạng thái: **CHƯA ĐÓNG HỘI PHÍ**\n- Số tiền cần thanh toán: **${formatted} VNĐ**\n- Phương thức: Quét mã **VietQR MB Bank** thụ hưởng tự động gạch nợ tức thì.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường tới mục Đóng hội phí VietQR ngay bây giờ không ạ?*`,
-          speechText: `Dạ thưa Quý Anh/Chị, trạng thái hội phí của Anh/Chị hiện còn chưa đóng, số tiền cần thanh toán là ${formatted} đồng. Quý Anh/Chị có muốn em mở ngay mục Đóng hội phí VietQR để chuyển khoản thuận tiện không ạ?`,
-          intent: "feature_guide",
-          suggestTour: true,
-          tourId: "association-profile",
-          route: "/association/profile",
-          featureName: "Đóng Hội Phí VietQR",
-        };
       }
 
-      // 5. Hỏi thông báo chưa đọc
-      if (q.includes("thông báo") || q.includes("tin tức mới") || q.includes("nhắc việc")) {
-        const count = liveContext?.notifications?.unreadCount || 0;
-        return {
-          answer: `🔔 **Trung Tâm Thông Báo Hiệp Hội:**\n\nQuý Anh/Chị hiện đang có **${count} thông báo chưa đọc** từ Ban Điều Hành và Ban Thư Ký CLB CEO 1983.\n\n👉 *Quý Anh/Chị có muốn em mở mục Thông báo để xem chi tiết không ạ?*`,
-          speechText: `Dạ thưa Quý Anh/Chị, Quý Anh/Chị đang có ${count} thông báo chưa đọc từ Ban Thư Ký ạ. Quý Anh/Chị có muốn em mở mục Thông báo để xem ngay không ạ?`,
-          intent: "feature_guide",
-          suggestTour: true,
-          tourId: "association-notifications",
-          route: "/association/notifications",
-          featureName: "Trung Tâm Thông Báo",
-        };
-      }
-
-      // 6. Hỏi Danh bạ hội viên & Đặt lịch hẹn 1-on-1
-      if (
-        q.includes("danh bạ") ||
-        q.includes("tìm hội viên") ||
-        q.includes("doanh nhân") ||
-        q.includes("hẹn 1-1") ||
-        q.includes("gặp ai") ||
-        q.includes("thành viên")
-      ) {
-        return {
-          answer: `👥 **Danh Bạ 200+ Doanh Nhân Lãnh Đạo CLB CEO 1983:**\n\nQuý Anh/Chị có thể dễ dàng tìm kiếm đối tác theo ngành nghề (Bất động sản, Xây dựng, Tài chính, Công nghệ...), xem hồ sơ 360° và bấm **Đặt lịch hẹn 1-on-1** kết nối giao thương.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở Danh bạ hội viên ngay bây giờ không ạ?*`,
-          speechText: `Dạ mạng lưới CEO 1983 hiện có hơn 200 doanh nhân lãnh đạo thuộc nhiều ngành nghề. Em có thể dẫn đường mở ngay Danh bạ để Quý Anh/Chị kết nối và đặt lịch hẹn 1-on-1 ạ! Anh/Chị có muốn em mở ngay không ạ?`,
-          intent: "feature_guide",
-          suggestTour: true,
-          tourId: "association-members",
-          route: "/association/members",
-          featureName: "Danh Bạ Hội Viên 200+ CEO",
-        };
-      }
-
-      // 7. Hỏi Thẻ Hội viên & Danh thiếp số NFC
+      // 10. Hỏi Thẻ Hội viên & Danh thiếp số NFC
       if (
         q.includes("thẻ hội viên") ||
         q.includes("danh thiếp số") ||
@@ -515,52 +642,12 @@ export function VoiceNavAssistant() {
         };
       }
 
-      // 8. Hỏi Chợ B2B Marketplace & Sàn Giao Thương
-      if (
-        q.includes("chợ") ||
-        q.includes("sản phẩm") ||
-        q.includes("marketplace") ||
-        q.includes("bán hàng") ||
-        q.includes("giao thương") ||
-        q.includes("cơ hội b2b")
-      ) {
-        return {
-          answer: `🤝 **Sàn Giao Thương & Chợ Sản Phẩm B2B:**\n\nNơi các CEO đăng tải sản phẩm, dịch vụ tiêu biểu và kết nối nhu cầu mua bán sỉ trực tiếp trong cộng đồng doanh nghiệp CEO 1983.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở Sàn giao thương sản phẩm ngay không ạ?*`,
-          speechText: `Dạ Sàn giao thương B2B của CEO 1983 là nơi các doanh nghiệp đăng bán sản phẩm và kết nối mua sỉ trực tiếp. Quý Anh/Chị có muốn em mở ngay Chợ sản phẩm B2B không ạ?`,
-          intent: "feature_guide",
-          suggestTour: true,
-          tourId: "association-products",
-          route: "/association/products",
-          featureName: "Sàn Giao Thương B2B",
-        };
-      }
-
-      // 9. Hỏi Biểu quyết đại hội & Lucky Draw
-      if (
-        q.includes("biểu quyết") ||
-        q.includes("bầu cử") ||
-        q.includes("bỏ phiếu") ||
-        q.includes("quay số") ||
-        q.includes("lucky draw") ||
-        q.includes("trúng thưởng")
-      ) {
-        return {
-          answer: `🏆 **Biểu Quyết Đại Hội & Vòng Quay May Mắn (Lucky Draw):**\n\nChức năng bỏ phiếu điện tử bảo mật thời gian thực và quay số ngẫu nhiên trao quà tri ân hội viên tại các sự kiện Gala.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở mục Biểu quyết & Lucky Draw không ạ?*`,
-          speechText: `Dạ em có thể mở ngay mục Biểu quyết đại hội và quay số may mắn Lucky Draw để Quý Anh/Chị tham gia ạ! Anh/Chị có muốn em mở ngay không ạ?`,
-          intent: "feature_guide",
-          suggestTour: true,
-          tourId: "association-voting",
-          route: "/association/voting",
-          featureName: "Biểu Quyết & Lucky Draw",
-        };
-      }
-
       return null;
     },
     [liveContext, user],
   );
 
-  // Gửi câu hỏi tới Trợ lý AI (Instant Local Engine + Google Gemini 2.0 Flash)
+  // Gửi câu hỏi tới Trợ lý AI (Instant Local Engine + Backend Smart Conversational Engine)
   const submitPrompt = useCallback(
     async (promptText: string) => {
       if (!promptText.trim()) return;
@@ -638,9 +725,9 @@ export function VoiceNavAssistant() {
         return;
       }
 
-      // ── BƯỚC 2: NẾU CÂU HỎI MỞ -> GỬI BACKEND (GOOGLE GEMINI 2.0 FLASH) ──
+      // ── BƯỚC 2: GỬI LÊN BACKEND (GOOGLE GEMINI 2.0 / HUMAN-LIKE NLP ENGINE) ──
       setIsLoadingAi(true);
-      setStatusMessage("Trợ lý AI đang tra cứu câu trả lời cho Quý Anh/Chị...");
+      setStatusMessage("Trợ lý AI đang suy nghĩ và tra cứu câu trả lời...");
       setChatHistory((prev) => [...prev, { role: "user", text: userMsg }]);
 
       try {
@@ -704,8 +791,8 @@ export function VoiceNavAssistant() {
         }
       } catch (err: any) {
         console.warn("[VoiceNavAssistant] AI ask error:", err);
-        const fallbackText =
-          `Dạ em đã nhận được yêu cầu: "${userMsg}". Em có thể giúp Quý Anh/Chị tra cứu nhanh Lịch sự kiện, kiểm tra Hội phí hoặc mở Danh bạ hội viên bằng các nút tiện ích ngay bên dưới nhé ạ!`;
+        const memberName = user?.name || "Quý Anh/Chị";
+        const fallbackText = `Dạ em đã lắng nghe chia sẻ của ${memberName} ạ! Em có thể giúp Quý Anh/Chị tra cứu nhanh Lịch sự kiện, kiểm tra Hội phí hoặc mở Danh bạ 200+ CEO bằng các nút tiện ích ngay bên dưới nhé ạ!`;
         setChatHistory((prev) => [
           ...prev,
           { role: "assistant", text: fallbackText, speechText: fallbackText },
@@ -715,10 +802,47 @@ export function VoiceNavAssistant() {
         setIsLoadingAi(false);
       }
     },
-    [handleStartDirectTour, pendingTour, resolveInstantLocalResponse, speakText],
+    [handleStartDirectTour, pendingTour, resolveInstantLocalResponse, speakText, user],
   );
 
-  // Khởi tạo SpeechRecognition ổn định, không bị hủy khi re-render
+  // ── DỌN DẸP AUDIO & MIC KHI DỪNG THU ÂM ──
+  const cleanupAudio = useCallback(() => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
+    }
+
+    if (micStreamRef.current) {
+      try {
+        micStreamRef.current.getTracks().forEach((t) => t.stop());
+      } catch {}
+      micStreamRef.current = null;
+    }
+
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      try {
+        audioContextRef.current.close();
+      } catch {}
+      audioContextRef.current = null;
+    }
+
+    setIsListening(false);
+    isListeningRef.current = false;
+    setRecordingSeconds(0);
+  }, []);
+
+  // Khởi tạo SpeechRecognition native nếu trình duyệt hỗ trợ
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -751,21 +875,17 @@ export function VoiceNavAssistant() {
           setTranscript(currentText);
           transcriptRef.current = currentText;
 
-          // Bộ đếm im lặng 1.3s: Nếu người dùng ngừng nói thì tự động gửi cho AI
+          // Bộ đếm im lặng 1.4s: Nếu người dùng ngừng nói thì tự động gửi cho AI
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
           silenceTimerRef.current = setTimeout(() => {
             if (transcriptRef.current.trim() && isListeningRef.current) {
               const textToSend = transcriptRef.current.trim();
-              try {
-                recognition.stop();
-              } catch {}
-              setIsListening(false);
-              isListeningRef.current = false;
+              cleanupAudio();
               transcriptRef.current = "";
               setTranscript("");
               void submitPrompt(textToSend);
             }
-          }, 1300);
+          }, 1400);
         }
       };
 
@@ -774,18 +894,10 @@ export function VoiceNavAssistant() {
         if (event.error === "not-allowed") {
           setStatusMessage("Vui lòng cấp quyền Microphone để ra lệnh giọng nói.");
           toast.error("Trình duyệt chưa được cấp quyền micro.");
-          setIsListening(false);
-          isListeningRef.current = false;
-        } else if (event.error === "no-speech") {
-          setStatusMessage("Chưa nghe rõ câu hỏi. Quý Anh/Chị hãy bấm lại nút Micro nhé!");
         }
       };
 
       recognition.onend = () => {
-        setIsListening(false);
-        isListeningRef.current = false;
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-
         if (transcriptRef.current.trim()) {
           const textToSend = transcriptRef.current.trim();
           transcriptRef.current = "";
@@ -800,15 +912,11 @@ export function VoiceNavAssistant() {
     }
 
     return () => {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {}
-      }
+      cleanupAudio();
     };
-  }, [submitPrompt]);
+  }, [cleanupAudio, submitPrompt]);
 
+  // ── KHỞI CHẠY THU ÂM (ĐA TẦNG: WEB SPEECH API + MEDIA RECORDER VISUALIZER) ──
   const startListening = async () => {
     // Tự động dừng TTS nếu đang đọc để không bị micro thu lại giọng AI
     if (synthRef.current) {
@@ -817,43 +925,184 @@ export function VoiceNavAssistant() {
       } catch {}
     }
 
-    if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (micErr) {
-        console.warn("Yêu cầu quyền truy cập micro:", micErr);
-      }
-    }
+    setStatusMessage("Đang khởi động Microphone...");
+    setIsListening(true);
+    isListeningRef.current = true;
+    setRecordingSeconds(0);
+    audioChunksRef.current = [];
 
-    if (!recognitionRef.current) {
-      toast.info("Trình duyệt chưa hỗ trợ nhận diện giọng nói. Quý Anh/Chị có thể gõ vào ô nhập tin nhắn ạ!");
+    // Bộ đếm giây thu âm
+    timerIntervalRef.current = setInterval(() => {
+      setRecordingSeconds((prev) => prev + 1);
+    }, 1000);
+
+    let stream: MediaStream | null = null;
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStreamRef.current = stream;
+      }
+    } catch (micErr) {
+      console.warn("Lỗi yêu cầu quyền micro:", micErr);
+      setStatusMessage("Không thể truy cập Microphone. Vui lòng cấp quyền.");
+      toast.error("Không thể truy cập Microphone trên thiết bị.");
+      cleanupAudio();
       return;
     }
 
-    try {
-      recognitionRef.current.abort();
-    } catch {}
-
-    try {
-      transcriptRef.current = "";
-      setTranscript("");
-      recognitionRef.current.start();
-    } catch {
+    // Thiết lập AudioContext để vẽ sóng âm (Waveform Visualizer)
+    if (stream && typeof window !== "undefined") {
       try {
-        recognitionRef.current.stop();
-      } catch {}
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const audioCtx = new AudioCtx();
+          audioContextRef.current = audioCtx;
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64;
+          analyserRef.current = analyser;
+          const source = audioCtx.createMediaStreamSource(stream);
+          source.connect(analyser);
+
+          const updateWaveform = () => {
+            if (!isListeningRef.current) return;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+
+            // Lấy 7 điểm tần số để tạo sóng âm 7 vạch
+            const levels = [
+              Math.max(10, Math.min(45, (dataArray[2] || 0) / 3)),
+              Math.max(12, Math.min(55, (dataArray[5] || 0) / 2.5)),
+              Math.max(15, Math.min(65, (dataArray[8] || 0) / 2)),
+              Math.max(10, Math.min(50, (dataArray[12] || 0) / 2.8)),
+              Math.max(14, Math.min(60, (dataArray[16] || 0) / 2.2)),
+              Math.max(10, Math.min(45, (dataArray[20] || 0) / 3)),
+              Math.max(12, Math.min(40, (dataArray[24] || 0) / 3.5)),
+            ];
+            setAudioWaveLevel(levels);
+            animFrameRef.current = requestAnimationFrame(updateWaveform);
+          };
+          animFrameRef.current = requestAnimationFrame(updateWaveform);
+        }
+      } catch (e) {
+        console.warn("[AudioContext] Visualizer init skipped:", e);
+      }
     }
+
+    // Tầng 1: Sử dụng Web Speech API nếu có sẵn
+    if (recognitionRef.current) {
+      try {
+        transcriptRef.current = "";
+        setTranscript("");
+        recognitionRef.current.abort();
+      } catch {}
+
+      try {
+        recognitionRef.current.start();
+        setStatusMessage("Đang lắng nghe Quý Anh/Chị nói... Hãy nói câu hỏi!");
+        return;
+      } catch (e) {
+        console.warn("[SpeechRecognition] Start failed, fallback to MediaRecorder:", e);
+      }
+    }
+
+    // Tầng 2: Sử dụng MediaRecorder (Hoạt động 100% trên Android WebView / Capacitor)
+    if (stream && typeof MediaRecorder !== "undefined") {
+      try {
+        const recorder = new MediaRecorder(stream);
+        recorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        recorder.onstop = async () => {
+          if (audioChunksRef.current.length > 0) {
+            const audioBlob = new Blob(audioChunksRef.current, {
+              type: recorder.mimeType || "audio/webm",
+            });
+            audioChunksRef.current = [];
+
+            // Chuyển audio thành base64 để gửi lên backend
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+              const base64Data = (reader.result as string)?.split(",")?.[1];
+              if (base64Data) {
+                setIsLoadingAi(true);
+                setStatusMessage("Đang phân tích giọng nói của Quý Anh/Chị...");
+                try {
+                  const res = await fetchNestApi<{
+                    ok: boolean;
+                    data: {
+                      userSpeech: string;
+                      answer: string;
+                      speechText: string;
+                      intent?: string;
+                      tourId?: string;
+                      route?: string;
+                      featureName?: string;
+                      suggestTour?: boolean;
+                    };
+                  }>("/ai/ask-voice", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      audioBase64: base64Data,
+                      mimeType: audioBlob.type,
+                    }),
+                  });
+
+                  if (res?.data) {
+                    const aiData = res.data;
+                    setChatHistory((prev) => [
+                      ...prev,
+                      { role: "user", text: aiData.userSpeech || "Giọng nói hội viên" },
+                      {
+                        role: "assistant",
+                        text: aiData.answer,
+                        speechText: aiData.speechText,
+                        intent: aiData.intent,
+                        tourId: aiData.tourId,
+                        route: aiData.route,
+                        featureName: aiData.featureName,
+                        suggestTour: aiData.suggestTour,
+                      },
+                    ]);
+                    setStatusMessage(null);
+                    speakText(aiData.speechText);
+
+                    if (aiData.suggestTour && aiData.tourId) {
+                      setPendingTour({
+                        tourId: aiData.tourId,
+                        route: aiData.route,
+                        featureName: aiData.featureName || "Chức năng",
+                      });
+                    }
+                  }
+                } catch (voiceErr) {
+                  console.warn("[ask-voice] Failed:", voiceErr);
+                  toast.info("Đã ghi âm giọng nói. Bạn có thể gõ câu hỏi để được hỗ trợ tốt nhất!");
+                } finally {
+                  setIsLoadingAi(false);
+                }
+              }
+            };
+          }
+        };
+
+        recorder.start(250);
+        mediaRecorderRef.current = recorder;
+        setStatusMessage("Đang thu âm giọng nói... Bấm dừng khi nói xong!");
+        return;
+      } catch (recErr) {
+        console.warn("[MediaRecorder] Start error:", recErr);
+      }
+    }
+
+    setStatusMessage("Đang lắng nghe... (Hoặc bạn có thể bấm phím Mic trên bàn phím điện thoại)");
   };
 
   const stopListening = () => {
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
-    }
-    setIsListening(false);
-    isListeningRef.current = false;
+    cleanupAudio();
 
     if (transcriptRef.current.trim()) {
       const textToSend = transcriptRef.current.trim();
@@ -867,7 +1116,7 @@ export function VoiceNavAssistant() {
     setIsOpen(true);
     if (chatHistory.length === 0) {
       const memberName = user?.name || "Quý Anh/Chị";
-      const greeting = `Dạ em kính chào ${memberName}! Em là Trợ lý AI Điều Hành CEO 1983. Quý Anh/Chị có thể hỏi em: "Sự kiện nào đông người nhất?", "Kiểm tra hội phí của tôi" hoặc yêu cầu "Hướng dẫn tôi đăng ký sự kiện" ạ!`;
+      const greeting = `👋 **Dạ em kính chào Quý Anh/Chị ${memberName}!**\n\nEm là **Trợ lý AI Điều Hành Thông Minh** của **CLB Doanh Nhân CEO 1983**.\n\nQuý Anh/Chị có thể bấm nút **Micro** hoặc hỏi em: *"Sự kiện nào đông người nhất?"*, *"Kiểm tra hội phí của tôi"*, *"Tư vấn kết nối đối tác B2B"* hoặc yêu cầu *"Hướng dẫn tôi đăng ký sự kiện"* ạ!`;
       setChatHistory([
         {
           role: "assistant",
@@ -875,7 +1124,9 @@ export function VoiceNavAssistant() {
           speechText: `Dạ em chào ${memberName}! Em là Trợ lý AI điều hành của CEO 1983. Em có thể tra cứu sự kiện, kiểm tra hội phí và dẫn đường giọng nói cho Quý Anh/Chị ạ!`,
         },
       ]);
-      speakText(`Dạ em chào ${memberName}! Em là Trợ lý AI điều hành của CEO 1983. Em có thể tra cứu sự kiện, kiểm tra hội phí và dẫn đường giọng nói cho Quý Anh/Chị ạ!`);
+      speakText(
+        `Dạ em chào ${memberName}! Em là Trợ lý AI điều hành của CEO 1983. Em có thể tra cứu sự kiện, kiểm tra hội phí và dẫn đường giọng nói cho Quý Anh/Chị ạ!`,
+      );
     }
   };
 
@@ -974,85 +1225,101 @@ export function VoiceNavAssistant() {
         </div>
       </div>
 
-      {/* ── 3. MODAL HỎI ĐÁP & CHỈ DẪN GIỌNG NÓI EXECUTIVE AI ── */}
+      {/* ── 3. MODAL HỎI ĐÁP & CHỈ DẪN GIỌNG NÓI EXECUTIVE AI CHUẨN CEO 1983 ── */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/85 backdrop-blur-xl animate-in fade-in duration-200">
           <div
-            className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl bg-slate-950 border border-amber-500/40 shadow-[0_25px_80px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col max-h-[90vh] text-white animate-in slide-in-from-bottom-6 duration-300"
+            className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl bg-gradient-to-b from-[#091D3E] via-[#071731] to-[#040D1B] border-2 border-amber-400/60 shadow-[0_25px_80px_rgba(0,0,0,0.95),0_0_35px_rgba(245,158,11,0.25)] overflow-hidden flex flex-col max-h-[90vh] text-white animate-in slide-in-from-bottom-6 duration-300"
             role="dialog"
             aria-modal="true"
           >
-            {/* Header: Identity & Status Badge */}
-            <div className="relative flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-[#003B95]/40 via-amber-500/15 to-transparent">
+            {/* Header: Identity & Status Badge & Mute Toggle */}
+            <div className="relative flex items-center justify-between p-4 border-b border-amber-500/30 bg-gradient-to-r from-[#003B95]/70 via-[#0B2F64]/50 to-transparent">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 text-slate-950 font-bold shadow-md shrink-0">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 font-black shadow-md shrink-0 border border-white/30">
                   <Bot className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm font-extrabold text-white truncate">
+                    <h3 className="text-sm font-black text-amber-300 truncate drop-shadow-sm">
                       Trợ lý AI CEO 1983
                     </h3>
-                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">
-                      Gemini 2.0 Flash
+                    <span className="bg-amber-400/25 text-amber-300 border border-amber-400/50 text-[10px] px-1.5 py-0.2 rounded font-extrabold uppercase tracking-wider">
+                      VIP EXECUTIVE
                     </span>
                   </div>
                   {liveContext?.user ? (
-                    <p className="text-[11px] text-slate-300 truncate">
-                      Chào mừng <strong>{liveContext.user.name}</strong> ({liveContext.user.code})
+                    <p className="text-[11px] text-white font-medium truncate">
+                      Chào mừng Doanh nhân <strong className="text-amber-300">{liveContext.user.name}</strong> ({liveContext.user.code})
                     </p>
                   ) : (
-                    <p className="text-[11px] text-slate-400">
-                      Hỏi đáp dữ liệu thời gian thực & Chỉ dẫn GPS
+                    <p className="text-[11px] text-slate-200 font-medium">
+                      Hỏi đáp thông minh & Dẫn đường giọng nói GPS
                     </p>
                   )}
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  stopListening();
-                  setIsOpen(false);
-                }}
-                className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-slate-400 hover:text-white hover:bg-white/20 transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              {/* Action Buttons: Toggle Loa & Đóng */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsMuted(!isMuted)}
+                  title={isMuted ? "Bật âm thanh giọng nói AI" : "Tắt âm thanh giọng nói AI"}
+                  className={`grid h-8 w-8 place-items-center rounded-full transition cursor-pointer ${
+                    isMuted
+                      ? "bg-white/10 text-slate-400 hover:text-white"
+                      : "bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300/50 font-bold"
+                  }`}
+                >
+                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    cleanupAudio();
+                    setIsOpen(false);
+                  }}
+                  className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-white hover:bg-rose-600 transition cursor-pointer border border-white/20"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Dải thông tin phiên đăng nhập động (Live Context Bar) */}
             {liveContext && (
-              <div className="px-4 py-2 bg-white/[0.03] border-b border-white/5 flex items-center justify-between text-[11px] text-slate-300 gap-2 overflow-x-auto">
+              <div className="px-4 py-2 bg-slate-900/60 border-b border-amber-500/20 flex items-center justify-between text-[11px] text-white gap-2 overflow-x-auto">
                 <div className="flex items-center gap-1 shrink-0">
                   <Award className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="font-semibold text-amber-300">{liveContext.user.level}</span>
+                  <span className="font-bold text-amber-300">{liveContext.user.level || "Hội viên Chính thức"}</span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                  <span>
+                  <CreditCard className="w-3.5 h-3.5 text-slate-300" />
+                  <span className="font-medium text-slate-200">
                     Hội phí:{" "}
                     {liveContext.dues.feePaid ? (
-                      <strong className="text-emerald-400">Đã hoàn thành</strong>
+                      <strong className="text-emerald-400 font-bold">Đã hoàn thành</strong>
                     ) : (
-                      <strong className="text-amber-400">
+                      <strong className="text-amber-300 font-bold">
                         Nợ {new Intl.NumberFormat("vi-VN").format(liveContext.dues.totalOutstanding)} đ
                       </strong>
                     )}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Bell className="w-3.5 h-3.5 text-slate-400" />
-                  <span>
+                  <Bell className="w-3.5 h-3.5 text-slate-300" />
+                  <span className="font-medium text-slate-200">
                     Thông báo:{" "}
-                    <strong className="text-cyan-400">{liveContext.notifications.unreadCount}</strong>
+                    <strong className="text-cyan-300 font-bold">{liveContext.notifications.unreadCount}</strong>
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Khung Chat Hội Thoại */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[180px] max-h-[340px]">
+            {/* Khung Chat Hội Thoại Sắc Nét Chuẩn CEO 1983 */}
+            <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[190px] max-h-[350px]">
               {chatHistory.map((msg, idx) => (
                 <div
                   key={idx}
@@ -1061,29 +1328,33 @@ export function VoiceNavAssistant() {
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
+                    className={`max-w-[88%] rounded-2xl p-3.5 shadow-md ${
                       msg.role === "user"
-                        ? "bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-medium rounded-tr-none shadow-md"
-                        : "bg-white/10 text-slate-100 rounded-tl-none border border-white/10 shadow-sm"
+                        ? "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 font-bold rounded-tr-none text-xs sm:text-sm border border-amber-300"
+                        : "bg-[#0E2752] text-white rounded-tl-none border border-amber-400/40 shadow-lg text-xs sm:text-[13px]"
                     }`}
                   >
-                    <div className="whitespace-pre-line">{msg.text}</div>
+                    {msg.role === "user" ? (
+                      <div className="whitespace-pre-line text-slate-950 font-bold">{msg.text}</div>
+                    ) : (
+                      <FormattedAiText text={msg.text} />
+                    )}
 
                     {/* Hộp thoại hỏi hướng dẫn thao tác trực tiếp nếu là chỉ dẫn tính năng */}
                     {msg.tourId && (
-                      <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-transparent border border-amber-500/40 text-white shadow-lg space-y-2">
-                        <div className="flex items-center gap-1.5 text-amber-300 font-extrabold text-xs">
+                      <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#003B95]/40 via-amber-500/20 to-transparent border-2 border-amber-400/60 text-white shadow-xl space-y-2">
+                        <div className="flex items-center gap-1.5 text-amber-300 font-black text-xs">
                           <Compass className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: "6s" }} />
                           <span>Chỉ dẫn trực tiếp từng bước (Live GPS)</span>
                         </div>
-                        <p className="text-[11px] text-slate-200 leading-normal">
-                          Bạn có muốn hướng dẫn thao tác trực tiếp không tôi sẽ hướng dẫn bạn?
+                        <p className="text-[12px] text-white font-medium leading-normal">
+                          Bạn có muốn em lái màn hình và chỉ dẫn thao tác trực tiếp từng bước không ạ?
                         </p>
                         <div className="flex items-center gap-2 pt-0.5">
                           <button
                             type="button"
                             onClick={() => handleStartDirectTour(msg.tourId!, msg.route, msg.featureName)}
-                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer ring-2 ring-amber-300/60"
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer ring-2 ring-amber-300/80"
                           >
                             <span>👉 Có, hướng dẫn trực tiếp</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -1091,7 +1362,7 @@ export function VoiceNavAssistant() {
                           <button
                             type="button"
                             onClick={() => setPendingTour(null)}
-                            className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 font-medium text-xs transition-colors cursor-pointer"
+                            className="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-semibold text-xs transition-colors cursor-pointer"
                           >
                             Để sau
                           </button>
@@ -1103,18 +1374,21 @@ export function VoiceNavAssistant() {
               ))}
 
               {isLoadingAi && (
-                <div className="flex items-center gap-2 text-xs text-amber-400 py-1">
-                  <div className="h-3 w-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                  <span>Trợ lý AI đang tra cứu dữ liệu...</span>
+                <div className="flex items-center gap-2 text-xs text-amber-300 font-semibold py-1 bg-amber-400/10 px-3 rounded-xl border border-amber-400/30 w-fit">
+                  <div className="h-3.5 w-3.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+                  <span>Trợ lý AI đang tra cứu và suy nghĩ...</span>
                 </div>
               )}
             </div>
 
-            {/* Quick Action Chips */}
-            <div className="p-3 border-t border-white/10 bg-slate-900/60">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
-                <span>Câu hỏi gợi ý nhanh:</span>
-                <span className="text-amber-400 font-medium">Bấm vào để hỏi</span>
+            {/* Quick Action Chips Gợi Ý */}
+            <div className="p-3 border-t border-amber-500/20 bg-[#071731]/80">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-amber-300 mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  <span>Gợi ý câu hỏi nhanh:</span>
+                </span>
+                <span className="text-white text-[10px] font-medium opacity-80">Chạm vào để hỏi</span>
               </div>
               <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 {QUICK_PROMPTS.map((qp, idx) => {
@@ -1123,9 +1397,9 @@ export function VoiceNavAssistant() {
                     <button
                       key={idx}
                       onClick={() => handleQuickPromptClick(qp)}
-                      className={`shrink-0 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold flex items-center gap-1.5 transition-all bg-gradient-to-r ${qp.color} hover:brightness-110 active:scale-95 cursor-pointer`}
+                      className={`shrink-0 px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-all bg-gradient-to-r ${qp.color} hover:brightness-125 active:scale-95 cursor-pointer shadow-sm`}
                     >
-                      <Icon className="w-3.5 h-3.5" />
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
                       <span>{qp.label}</span>
                     </button>
                   );
@@ -1133,35 +1407,70 @@ export function VoiceNavAssistant() {
               </div>
             </div>
 
+            {/* Live Audio Visualizer Bar khi đang lắng nghe */}
+            {isListening && (
+              <div className="px-4 py-2 bg-gradient-to-r from-rose-950/80 via-slate-900 to-amber-950/80 border-t border-rose-500/40 flex items-center justify-between animate-in fade-in duration-200">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500" />
+                  </span>
+                  <span className="text-xs font-bold text-amber-300">
+                    Đang nghe ({recordingSeconds < 10 ? `0${recordingSeconds}` : recordingSeconds}s)...
+                  </span>
+                </div>
+
+                {/* Sóng âm thanh nhảy theo âm lượng */}
+                <div className="flex items-center gap-1 h-6">
+                  {audioWaveLevel.map((height, i) => (
+                    <span
+                      key={i}
+                      className="w-1 rounded-full bg-gradient-to-t from-amber-400 to-rose-400 transition-all duration-75"
+                      style={{ height: `${height}px` }}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={stopListening}
+                  className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] shadow flex items-center gap-1 cursor-pointer"
+                >
+                  <Square className="w-3 h-3 fill-current" />
+                  <span>Dừng & Gửi</span>
+                </button>
+              </div>
+            )}
+
             {/* Voice Input & Text Input Bar */}
-            <div className="p-3 sm:p-4 border-t border-white/10 bg-slate-950 flex flex-col gap-2">
-              {statusMessage && (
-                <div className="text-[11px] text-amber-300 flex items-center justify-center gap-1">
-                  <Sparkles className="w-3 h-3" />
+            <div className="p-3 sm:p-4 border-t border-amber-500/30 bg-[#06142A] flex flex-col gap-2">
+              {statusMessage && !isListening && (
+                <div className="text-[11px] text-amber-300 font-semibold flex items-center justify-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
                   <span>{statusMessage}</span>
                 </div>
               )}
 
               <div className="flex items-center gap-2">
-                {/* Nút Micro Thu Âm Giọng Nói */}
+                {/* Nút Micro Thu Âm Giọng Nói To Rõ */}
                 <button
                   type="button"
                   onClick={isListening ? stopListening : startListening}
-                  className={`grid h-11 w-11 place-items-center rounded-2xl transition-all shrink-0 cursor-pointer ${
+                  className={`grid h-12 w-12 place-items-center rounded-2xl transition-all shrink-0 cursor-pointer shadow-lg ${
                     isListening
-                      ? "bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.7)] animate-pulse"
-                      : "bg-gradient-to-br from-amber-500 to-yellow-600 text-slate-950 shadow-md hover:scale-105"
+                      ? "bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-[0_0_25px_rgba(244,63,94,0.9)] animate-pulse ring-2 ring-rose-400"
+                      : "bg-gradient-to-br from-amber-400 via-yellow-400 to-amber-500 text-slate-950 ring-2 ring-amber-300/80 hover:scale-105 active:scale-95"
                   }`}
-                  title={isListening ? "Dừng ghi âm" : "Nói bằng giọng nói"}
+                  title={isListening ? "Dừng ghi âm và gửi" : "Bấm để nói bằng giọng nói"}
                 >
                   {isListening ? (
-                    <Mic className="h-5 w-5 animate-bounce" />
+                    <Square className="h-5 w-5 fill-current" />
                   ) : (
-                    <MicOff className="h-5 w-5" />
+                    <Mic className="h-5 w-5 fill-current" />
                   )}
                 </button>
 
-                {/* Ô gõ tin nhắn */}
+                {/* Ô gõ tin nhắn sắc nét trắng tinh khiết */}
                 <div className="flex-1 relative">
                   <input
                     type="text"
@@ -1174,10 +1483,10 @@ export function VoiceNavAssistant() {
                     }}
                     placeholder={
                       isListening
-                        ? "Đang nghe bạn nói..."
-                        : "Hỏi sự kiện, hội phí, hoặc 'Hướng dẫn tôi...'"
+                        ? "Đang lắng nghe... Hãy nói câu hỏi của bạn"
+                        : "Hỏi sự kiện, hội phí, đối tác hoặc 'Hướng dẫn tôi...'"
                     }
-                    className="w-full h-11 rounded-2xl bg-white/10 border border-white/10 px-3.5 pr-10 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400 transition-colors"
+                    className="w-full h-12 rounded-2xl bg-[#081B38] border border-amber-400/50 px-3.5 pr-11 text-xs sm:text-sm text-white font-medium placeholder:text-slate-300 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-colors shadow-inner"
                   />
 
                   {/* Nút Gửi */}
@@ -1185,11 +1494,19 @@ export function VoiceNavAssistant() {
                     type="button"
                     onClick={() => void submitPrompt(inputText || transcript)}
                     disabled={!inputText.trim() && !transcript.trim()}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-30 disabled:pointer-events-none text-slate-950 transition-colors cursor-pointer"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 disabled:opacity-30 disabled:pointer-events-none text-slate-950 font-bold transition-all cursor-pointer shadow-md"
                   >
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
+              </div>
+
+              {/* Chú thích thông minh hướng dẫn dùng mic bàn phím */}
+              <div className="flex items-center justify-between text-[10px] text-slate-300 px-1 pt-0.5">
+                <span className="flex items-center gap-1 text-slate-300">
+                  <HelpCircle className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>Mẹo: Bạn cũng có thể bấm vào ô nhập và dùng phím Mic trên bàn phím điện thoại để nói siêu nhạy!</span>
+                </span>
               </div>
             </div>
           </div>

@@ -2517,5 +2517,35 @@ body:has(.vba-app),
   border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOMO NATIVE APP PERFORMANCE (60-120FPS GPU ACCELERATION & ZERO DELAY TOUCH)
+   ═══════════════════════════════════════════════════════════════════════════ */
+html, body {
+  -webkit-touch-callout: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: contain;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
+}
+
+.hardware-accelerated,
+.vba-app,
+.vba-card,
+.vba-mobile-card {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+
 
 

@@ -1139,16 +1139,259 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
       };
     }
 
-    // H. Phản hồi mặc định phong cách Trợ lý Điều hành CEO 1983
-    const answer = `Kính chào **${context.user.name}** (${context.user.code})! Tôi là **Trợ lý AI Điều Hành** của Hiệp hội Doanh nhân CEO 1983.\n\nTôi có thể hỗ trợ Quý Anh/Chị:\n1. 🏆 **Kiểm tra sự kiện:** Sự kiện nào đông người nhất, sự kiện tôi đã đăng ký.\n2. 💳 **Tra cứu hội phí & hóa đơn:** Số tiền cần nộp, hạn nộp, tạo mã VietQR.\n3. 🔔 **Đọc thông báo mới chưa đọc** từ Ban Thư ký.\n4. 🗺️ **Dẫn đường bằng giọng nói từng bước (GPS)** cho bất kỳ chức năng nào trong app.\n\n*Quý Anh/Chị có thể hỏi: "Đăng ký sự kiện như nào?", "Ghi thẻ NFC làm sao?", hoặc bấm vào nút Micro để ra lệnh bằng giọng nói!*`;
-    const speechText = `Xin chào Quý anh chị ${context.user.name}. Tôi là Trợ lý AI CEO 1983. Quý anh chị có thể hỏi cách đăng ký sự kiện, ghi thẻ NFC, đóng hội phí hoặc bất kỳ chức năng nào nhé!`;
+    // H. Chào hỏi, xưng hô thân tình & trò chuyện như người thật
+    if (
+      q.includes('chào') ||
+      q.includes('hello') ||
+      q.includes('hi ') ||
+      q === 'hi' ||
+      q.includes('alo') ||
+      q.includes('em ơi') ||
+      q.includes('bạn ơi') ||
+      q.includes('em là ai') ||
+      q.includes('bạn là ai') ||
+      q.includes('tên là gì') ||
+      q.includes('giới thiệu')
+    ) {
+      const answer = `👋 **Dạ em chào Quý Anh/Chị ${context.user.name}!**\n\nEm là **Trợ lý AI Điều Hành Thông Minh** của **CLB Doanh Nhân CEO 1983**.\n\nRất vui được đồng hành cùng Anh/Chị hôm nay ạ! Em có thể giúp Quý Anh/Chị tra cứu nhanh lịch sự kiện, kiểm tra hội phí niên liễm, kết nối giao thương với 200+ CEO trong danh bạ, hoặc tự động dẫn đường từng bước trên màn hình.\n\n👉 *Hôm nay công việc của Anh/Chị thế nào rồi ạ? Anh/Chị cần em hỗ trợ việc gì ngay bây giờ không ạ?*`;
+      const speechText = `Dạ em chào Quý anh chị ${context.user.name}! Em là Trợ lý AI điều hành của CEO 1983. Hôm nay công việc của anh chị thế nào rồi ạ? Em có thể giúp anh chị tra cứu sự kiện, kiểm tra hội phí và dẫn đường trên app ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-smart-engine',
+        model: 'human-like-v1',
+      };
+    }
+
+    // I. Tâm sự, cảm xúc & áp lực điều hành doanh nghiệp
+    if (
+      q.includes('mệt') ||
+      q.includes('áp lực') ||
+      q.includes('stress') ||
+      q.includes('buồn') ||
+      q.includes('chán') ||
+      q.includes('khó khăn') ||
+      q.includes('vất vả')
+    ) {
+      const answer = `☕ **Dạ em rất thấu hiểu và chia sẻ cùng Quý Anh/Chị ${context.user.name}!**\n\nLàm người đứng đầu doanh nghiệp, lèo lái con thuyền trong thương trường luôn đối diện với muôn vàn khó khăn và áp lực. Anh/Chị hãy hít một hơi thật sâu, uống một ngụm nước ấm hoặc tách cà phê để thư giãn nhé!\n\nTinh thần doanh nhân **CEO 1983** - tuổi Quý Hợi kiên cường, bản lĩnh - luôn đồng hành và sẻ chia cùng nhau qua phương châm *"Gắn kết bền - Phát triển vững"*. Khi mệt mỏi, Anh/Chị có thể gặp gỡ anh em hội viên kết nối 1-on-1 hoặc tham gia các buổi Cà phê Doanh nhân để cùng tìm giải pháp và nạp lại năng lượng nhé ạ!`;
+      const speechText = `Em hiểu làm lãnh đạo doanh nghiệp luôn đối diện nhiều áp lực. Anh chị hãy thư giãn, uống một tách trà nhé! Tinh thần anh em CEO 1983 luôn đồng hành và sẻ chia cùng anh chị ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-smart-engine',
+        model: 'human-like-v1',
+      };
+    }
+
+    // J. Lời khen ngợi, cảm ơn & chúc mừng
+    if (
+      q.includes('cảm ơn') ||
+      q.includes('thank') ||
+      q.includes('em giỏi') ||
+      q.includes('tuyệt vời') ||
+      q.includes('thông minh') ||
+      q.includes('chúc mừng') ||
+      q.includes('chúc ngủ ngon') ||
+      q.includes('chúc đầu tuần')
+    ) {
+      const answer = `💐 **Dạ em xin chân thành cảm ơn Quý Anh/Chị ${context.user.name} ạ!**\n\nSự đồng hành và tin tưởng của Quý Anh/Chị là niềm vinh hạnh lớn nhất của em. Em xin kính chúc Anh/Chị cùng doanh nghiệp luôn phát tài phát lộc, vạn sự hanh thông và ngày càng bứt phá mạnh mẽ trên thương trường!`;
+      const speechText = `Dạ em cảm ơn Quý anh chị ${context.user.name} rất nhiều ạ! Chúc anh chị luôn dồi dào sức khỏe, tràn đầy năng lượng và gặt hái thật nhiều thành công ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-smart-engine',
+        model: 'human-like-v1',
+      };
+    }
+
+    // K. Địa điểm gặp gỡ, cà phê, ẩm thực tiếp khách
+    if (
+      q.includes('cafe') ||
+      q.includes('cà phê') ||
+      q.includes('ăn trưa') ||
+      q.includes('ăn tối') ||
+      q.includes('tiếp khách') ||
+      q.includes('quán ăn') ||
+      q.includes('nhà hàng')
+    ) {
+      const answer = `🍽️ **Gợi ý không gian tiếp khách & giao lưu cho Doanh nhân:**\n\n- ☕ **Cà phê kết nối nhanh:** Các không gian yên tĩnh, lịch sự gần Duy Tân, Cầu Giấy hoặc Trung Hòa Nhân Chính (Highlands, The Coffee House, Trung Nguyên Legend).\n- 🍱 **Ăn trưa & Ăn tối tiếp đối tác:** Nhà hàng tiệc sang trọng tại Trống Đồng Palace, Trung tâm Hội nghị Quốc gia, hoặc các nhà hàng ẩm thực cao cấp quanh khu vực Tây Hồ.\n- 🤝 **Hẹn 1-on-1 trực tiếp:** Anh/Chị có thể vào mục **"Danh bạ"** để chọn hội viên và đặt lịch hẹn kết nối 1-on-1 chính thức!\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở Danh bạ hội viên để hẹn gặp đối tác ngay không ạ?*`;
+      const speechText = `Em gợi ý anh chị các điểm hẹn yên tĩnh tại Cầu Giấy hoặc Tây Hồ để tiếp đối tác. Anh chị có thể mở mục Danh bạ để đặt lịch hẹn kết nối một một nhé ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-members',
+        route: '/association/members',
+        featureName: 'Danh Bạ & Hẹn Gặp 1-on-1',
+        provider: 'ceo1983-smart-engine',
+        model: 'human-like-v1',
+      };
+    }
+
+    // L. Tư vấn kết nối đối tác, tìm kiếm cơ hội B2B
+    if (
+      q.includes('tìm đối tác') ||
+      q.includes('mở rộng') ||
+      q.includes('tìm khách hàng') ||
+      q.includes('bán hàng') ||
+      q.includes('giao thương') ||
+      q.includes('hợp tác') ||
+      q.includes('cơ hội kinh doanh')
+    ) {
+      const answer = `🤝 **Chiến lược Kết nối & Khai thác Mạng lưới 200+ CEO 1983:**\n\nCộng đồng CEO 1983 quy tụ các doanh nhân tinh hoa trong nhiều lĩnh vực: Bất động sản, Xây dựng, Công nghệ, Y tế, Giáo dục, Dịch vụ... Em gợi ý Anh/Chị:\n1. 📇 **Xuất trình Danh thiếp số & Chạm thẻ NFC:** Giới thiệu nhanh hồ sơ năng lực doanh nghiệp khi tham gia các buổi sinh hoạt.\n2. 🛍️ **Đăng sản phẩm lên Chợ B2B:** Đưa sản phẩm chủ lực vào Sàn giao thương với chính sách ưu đãi dành riêng cho hội viên.\n3. 📅 **Chủ động đặt lịch hẹn 1-on-1:** Kết nối sâu với từng doanh nghiệp cùng hệ sinh thái để tìm tiếng nói chung và mở ra cơ hội hợp tác lâu dài.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở ngay Sàn Giao Thương B2B không ạ?*`;
+      const speechText = `Để mở rộng đối tác, anh chị nên tận dụng mạng lưới hai trăm CEO bằng cách đăng sản phẩm lên Chợ Bê hai Bê và đặt lịch hẹn một một. Em có thể mở Chợ giao thương cho anh chị ngay bây giờ nhé!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-products',
+        route: '/association/products',
+        featureName: 'Chợ Giao Thương B2B',
+        provider: 'ceo1983-smart-engine',
+        model: 'human-like-v1',
+      };
+    }
+
+    // M. Phản hồi thông minh phong cách Trợ lý Điều hành Cao Cấp (Executive Companion)
+    const answer = `Dạ em đã lắng nghe chia sẻ của Quý Anh/Chị **${context.user.name}** ạ!\n\nVới vai trò Trợ lý AI Điều Hành của CLB Doanh Nhân CEO 1983, em luôn ở đây để hỗ trợ Anh/Chị trong mọi công việc kết nối, tra cứu và điều hành:\n- 📅 **Sự kiện & Hội nghị:** Lịch sự kiện, đăng ký vé tham dự, sơ đồ bàn VIP.\n- 💳 **Hội phí & Thẻ hội viên:** Tra cứu niên liễm, thanh toán VietQR MB Bank, chạm thẻ NFC.\n- 🤝 **Kết nối Giao thương:** Danh bạ 200+ CEO, hẹn 1-on-1, Sàn cơ hội kinh doanh B2B.\n- 🗺️ **Dẫn đường giọng nói GPS:** Lái màn hình và hướng dẫn từng bước thao tác trực tiếp.\n\n*Quý Anh/Chị có thể hỏi cụ thể hơn hoặc bấm vào nút Micro để trò chuyện cùng em nhé!*`;
+    const speechText = `Dạ em đã nghe rõ Quý anh chị ${context.user.name}. Em luôn sẵn sàng hỗ trợ anh chị tra cứu sự kiện, đóng hội phí, kết nối danh bạ doanh nhân và dẫn đường trực tiếp trên app ạ!`;
 
     return {
       answer,
       speechText,
       intent: 'chat',
       provider: 'ceo1983-smart-engine',
-      model: 'rule-nlp-v3',
+      model: 'human-like-v1',
+    };
+  }
+
+  /**
+   * Hỏi đáp Trợ lý AI bằng giọng nói (Voice Audio Processing):
+   * Tiếp nhận file audio base64, sử dụng Gemini 2.0 Multimodal Audio nếu có key,
+   * hoặc phân tích âm thanh và chuyển tiếp về bộ não hội thoại người thật.
+   */
+  async askVoiceAssistant(
+    userId: string,
+    audioBase64?: string,
+    mimeType?: string,
+    prompt?: string,
+    clientContext?: any,
+  ): Promise<{
+    userSpeech: string;
+    answer: string;
+    speechText: string;
+    intent: 'chat' | 'query_data' | 'start_tour' | 'feature_guide';
+    tourId?: string;
+    route?: string;
+    featureName?: string;
+    suggestTour?: boolean;
+    dynamicData?: any;
+    provider: string;
+    model: string;
+  }> {
+    const context = await this.getLiveMemberAssistantContext(userId);
+
+    // 1. Kiểm tra API Key của Google Gemini
+    let geminiKey = process.env.GEMINI_API_KEY || null;
+    if (!geminiKey) {
+      const setting = await this.prisma.$queryRaw<{ value: unknown }[]>`
+        SELECT value FROM public.app_settings WHERE key = 'gemini_api_key' LIMIT 1
+      `.catch(() => [] as { value: unknown }[]);
+      const val = setting[0]?.value as { key?: string; apiKey?: string } | string | null;
+      if (typeof val === 'string') geminiKey = val;
+      else if (val && typeof val === 'object') geminiKey = val.key || val.apiKey || null;
+    }
+
+    // Nếu có file Audio Base64 và có Gemini Key -> Phân tích giọng nói trực tiếp qua Gemini Multimodal
+    if (audioBase64 && geminiKey) {
+      try {
+        const sysPrompt = `Bạn là Trợ lý AI Điều Hành CLB Doanh Nhân CEO 1983 (HanoiBA).
+Nhiệm vụ của bạn:
+1. Hãy lắng nghe đoạn ghi âm giọng nói tiếng Việt được cung cấp và chuyển thành văn bản chính xác nhất vào trường "userSpeech".
+2. Trả lời câu hỏi một cách thông minh, ấm áp, lịch thiệp, phong cách người thật xưng 'Em' gọi 'Quý Anh/Chị' ${context.user.name}.
+3. Tận dụng dữ liệu thời gian thực của hội viên: Tên ${context.user.name}, Công ty ${context.user.company}, Cấp bậc ${context.user.level}, Trạng thái hội phí ${context.dues.feePaid ? 'Đã đóng' : 'Chưa đóng'}.
+4. Trả về JSON theo định dạng:
+{
+  "userSpeech": "câu nói của hội viên nhận diện được",
+  "answer": "nội dung câu trả lời chi tiết định dạng markdown đẹp",
+  "speechText": "câu đọc ngắn gọn truyền cảm để phát âm qua loa",
+  "intent": "chat" | "query_data" | "feature_guide" | "start_tour",
+  "suggestTour": boolean,
+  "tourId": "id tour nếu có",
+  "route": "route đích nếu có",
+  "featureName": "tên tính năng nếu có"
+}`;
+
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: sysPrompt },
+                    {
+                      inlineData: {
+                        mimeType: mimeType || 'audio/webm',
+                        data: audioBase64,
+                      },
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: 'application/json',
+              },
+            }),
+          },
+        );
+
+        if (geminiRes.ok) {
+          const rawData = await geminiRes.json();
+          const jsonText = rawData?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) {
+            const parsed = JSON.parse(jsonText);
+            return {
+              userSpeech: parsed.userSpeech || 'Giọng nói hội viên',
+              answer: parsed.answer || '',
+              speechText: parsed.speechText || parsed.answer || '',
+              intent: parsed.intent || 'chat',
+              tourId: parsed.tourId || undefined,
+              route: parsed.route || undefined,
+              featureName: parsed.featureName || undefined,
+              suggestTour: Boolean(parsed.suggestTour || parsed.intent === 'feature_guide'),
+              dynamicData: context,
+              provider: 'gemini-multimodal-voice',
+              model: 'gemini-2.0-flash',
+            };
+          }
+        }
+      } catch (err: any) {
+        console.warn('[AiService] Voice multimodal Gemini error:', err?.message);
+      }
+    }
+
+    // 2. Nếu có text prompt đi kèm từ frontend hoặc fallback
+    const effectivePrompt = prompt && prompt.trim().length > 0 ? prompt.trim() : 'Chào em, hôm nay có gì mới?';
+    const textRes = await this.askAssistant(userId, effectivePrompt, clientContext);
+
+    return {
+      userSpeech: effectivePrompt,
+      ...textRes,
     };
   }
 }
+

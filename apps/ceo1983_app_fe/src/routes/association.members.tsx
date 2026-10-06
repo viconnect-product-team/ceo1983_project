@@ -117,6 +117,17 @@ const DEFAULT_SAMPLE_MEETINGS: MemberMeetingItem[] = [
   },
 ];
 
+function normalizeSearchText(str: any): string {
+  if (!str) return "";
+  return String(str)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
+    .trim();
+}
+
 function MembersScreen() {
   const t = useT();
   const navigate = useNavigate();
@@ -132,11 +143,46 @@ function MembersScreen() {
     }
     return "";
   });
-  const [tab, setTab] = useState<FilterTab>("all");
+  const [tab, setTab] = useState<FilterTab>(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (t === "meetings" || t === "connected" || t === "sent" || t === "all") {
+        return t as FilterTab;
+      }
+    }
+    return "all";
+  });
+
+  const handleSelectTab = (newTab: FilterTab) => {
+    setTab(newTab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (newTab === "all") {
+        url.searchParams.delete("tab");
+      } else {
+        url.searchParams.set("tab", newTab);
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncTabFromUrl = () => {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (t === "meetings" || t === "connected" || t === "sent" || t === "all") {
+        setTab(t as FilterTab);
+      }
+    };
+    window.addEventListener("popstate", syncTabFromUrl);
+    return () => window.removeEventListener("popstate", syncTabFromUrl);
+  }, []);
+
   const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null);
   const [connectTarget, setConnectTarget] = useState<BusinessConnectTarget | null>(null);
   const [localPending, setLocalPending] = useState<Set<string>>(new Set());
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [backendConnectedUserIds, setBackendConnectedUserIds] = useState<Set<string>>(new Set());
 
   // Lịch sử cuộc gặp 1-on-1 state
   const [meetingsList, setMeetingsList] = useState<MemberMeetingItem[]>(() => {
@@ -212,12 +258,35 @@ function MembersScreen() {
   const [connectedSet, setConnectedSet] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
-      const stored = localStorage.getItem("vba.connected_members");
-      return stored ? new Set(JSON.parse(stored).map((s: string) => String(s).toLowerCase())) : new Set();
+      const s1 = localStorage.getItem("vba.connected_members");
+      const s2 = localStorage.getItem("vba_connected_members");
+      const a1: string[] = s1 ? JSON.parse(s1) : [];
+      const a2: string[] = s2 ? JSON.parse(s2) : [];
+      const combined = [...a1, ...a2].map((s) => String(s).toLowerCase());
+      return new Set(combined);
     } catch {
       return new Set();
     }
   });
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const res = await fetchNestApi<Array<{ id: string; counterpartUserId: string }>>("/network/connections");
+        if (active && Array.isArray(res)) {
+          const uids = new Set<string>();
+          for (const item of res) {
+            if (item?.counterpartUserId) {
+              uids.add(String(item.counterpartUserId).toLowerCase());
+            }
+          }
+          setBackendConnectedUserIds(uids);
+        }
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, []);
 
   const [localSentRequests, setLocalSentRequests] = useState<Array<{
     id: string;
@@ -247,8 +316,12 @@ function MembersScreen() {
       try {
         const storedD = localStorage.getItem("vba.disconnected_members");
         setDisconnectedSet(storedD ? new Set(JSON.parse(storedD).map((s: string) => String(s).toLowerCase())) : new Set());
-        const storedC = localStorage.getItem("vba.connected_members");
-        setConnectedSet(storedC ? new Set(JSON.parse(storedC).map((s: string) => String(s).toLowerCase())) : new Set());
+        const s1 = localStorage.getItem("vba.connected_members");
+        const s2 = localStorage.getItem("vba_connected_members");
+        const a1: string[] = s1 ? JSON.parse(s1) : [];
+        const a2: string[] = s2 ? JSON.parse(s2) : [];
+        const combined = [...a1, ...a2].map((s) => String(s).toLowerCase());
+        setConnectedSet(new Set(combined));
         const storedSent = localStorage.getItem("vba_sent_connection_requests");
         if (storedSent) {
           setLocalSentRequests(JSON.parse(storedSent));
@@ -308,31 +381,35 @@ function MembersScreen() {
     if (isExplicitlyDisconnected) return false;
     const isExplicitlyConnected = connectedSet.has(mCode) || (mUserId && connectedSet.has(mUserId));
     if (isExplicitlyConnected) return true;
+    if (mUserId && backendConnectedUserIds.has(mUserId)) return true;
     return Boolean(m.userId && connectedMap.has(mUserId));
   };
 
   const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
+    const normTerm = normalizeSearchText(q);
     return members.filter((m) => {
       // Exclude self
       if (myMember?.code && m.code.toLowerCase() === myMember.code.toLowerCase()) {
         return false;
       }
 
-      const personName = m.contact || m.personName || "";
+      const searchable = normalizeSearchText([
+        m.name,
+        m.contact,
+        (m as any).personName,
+        (m as any).companyName,
+        (m as any).company,
+        m.industry,
+        m.region,
+        m.code,
+        (m as any).title,
+        (m as any).personTitle,
+        (m as any).phone,
+        (m as any).email,
+      ].filter(Boolean).join(" "));
 
-      // Search match
-      const matchesSearch =
-        !term ||
-        m.name.toLowerCase().includes(term) ||
-        personName.toLowerCase().includes(term) ||
-        m.industry.toLowerCase().includes(term) ||
-        m.region.toLowerCase().includes(term) ||
-        m.code.toLowerCase().includes(term);
-
+      const matchesSearch = !normTerm || searchable.includes(normTerm);
       if (!matchesSearch) return false;
-
-      const targetId = (m.userId || m.code).toLowerCase();
 
       // Tab filter
       if (tab === "connected") {
@@ -340,7 +417,33 @@ function MembersScreen() {
       }
       return true;
     });
-  }, [members, q, tab, myMember, connectedMap, outgoingMap, incomingMap, localPending, disconnectedSet, connectedSet]);
+  }, [members, q, tab, myMember, connectedMap, outgoingMap, incomingMap, localPending, disconnectedSet, connectedSet, backendConnectedUserIds]);
+
+  const connectedMembersCount = useMemo(() => {
+    return members.filter((m) => {
+      if (myMember?.code && m.code.toLowerCase() === myMember.code.toLowerCase()) return false;
+      return checkIsFriend(m);
+    }).length;
+  }, [members, myMember, disconnectedSet, connectedSet, connectedMap, backendConnectedUserIds]);
+
+  const filteredMeetings = useMemo(() => {
+    const normTerm = normalizeSearchText(q);
+    if (!normTerm) return meetingsList;
+    return meetingsList.filter((m) => {
+      const searchable = normalizeSearchText([
+        m.title,
+        m.partnerName,
+        m.partnerCompany,
+        m.partnerCode,
+        m.partnerPhone,
+        m.hostName,
+        m.hostCompany,
+        m.venue,
+        m.notes,
+      ].filter(Boolean).join(" "));
+      return searchable.includes(normTerm);
+    });
+  }, [meetingsList, q]);
 
   type SentRequestItem = {
     id: string;
@@ -693,7 +796,7 @@ function MembersScreen() {
       {/* Filter Tabs */}
       <div id="tour-members-filter" className="flex gap-2 px-4 pt-3 overflow-x-auto no-scrollbar">
         <button
-          onClick={() => setTab("all")}
+          onClick={() => handleSelectTab("all")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
             tab === "all"
               ? "bg-[#003B95] text-white shadow-xs"
@@ -703,7 +806,7 @@ function MembersScreen() {
           Tất cả ({members.length})
         </button>
         <button
-          onClick={() => setTab("connected")}
+          onClick={() => handleSelectTab("connected")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "connected"
               ? "bg-[#003B95] text-white shadow-xs"
@@ -711,10 +814,10 @@ function MembersScreen() {
           }`}
         >
           <UserCheck className="h-3.5 w-3.5" />
-          Bạn bè ({connected.length})
+          Bạn bè ({connectedMembersCount})
         </button>
         <button
-          onClick={() => setTab("sent")}
+          onClick={() => handleSelectTab("sent")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "sent"
               ? "bg-[#003B95] text-white shadow-xs"
@@ -725,7 +828,7 @@ function MembersScreen() {
           Đã gửi kết nối ({sentList.length})
         </button>
         <button
-          onClick={() => setTab("meetings")}
+          onClick={() => handleSelectTab("meetings")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "meetings"
               ? "bg-[#003B95] text-white shadow-xs"
@@ -733,7 +836,7 @@ function MembersScreen() {
           }`}
         >
           <Handshake className="h-3.5 w-3.5 text-amber-500" />
-          Lịch sử cuộc gặp ({meetingsList.length})
+          Hẹn gặp kết nối ({meetingsList.length})
         </button>
       </div>
 
@@ -741,7 +844,7 @@ function MembersScreen() {
         {loading
           ? t("m.members.announce.loading")
           : t("m.members.announce.count", {
-              count: tab === "sent" ? sentList.length : tab === "meetings" ? meetingsList.length : filtered.length,
+              count: tab === "sent" ? sentList.length : tab === "meetings" ? filteredMeetings.length : filtered.length,
             })}
       </p>
 
@@ -765,7 +868,7 @@ function MembersScreen() {
               <Clock className="h-8 w-8 text-blue-500 animate-spin mx-auto opacity-75" />
               <p className="text-[13px] text-slate-500 dark:text-slate-400">Đang tải lịch sử cuộc gặp...</p>
             </div>
-          ) : meetingsList.length === 0 ? (
+          ) : filteredMeetings.length === 0 ? (
             <div className="py-12 text-center space-y-2">
               <Handshake className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
               <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
@@ -773,7 +876,7 @@ function MembersScreen() {
               </p>
             </div>
           ) : (
-            meetingsList.map((meet) => {
+            filteredMeetings.map((meet) => {
               const matchedMember = members.find(
                 (m) =>
                   (meet.partnerCode && m.code.toLowerCase() === meet.partnerCode.toLowerCase()) ||

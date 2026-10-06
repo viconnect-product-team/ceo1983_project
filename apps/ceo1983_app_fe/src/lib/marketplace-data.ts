@@ -95,24 +95,10 @@ export function isUserProductOwner(product: Product | null | undefined, user: an
     return true;
   }
 
-  // 2. Check seller phone number
+  // 2. Check seller phone number (exact match)
   const userPhone = String(user?.phone || member?.phone || "").replace(/\D/g, "");
   const prodPhone = String(product.sellerPhone || (product as any).seller_phone || (product as any).phone || "").replace(/\D/g, "");
   if (userPhone && prodPhone && userPhone.length >= 9 && userPhone === prodPhone) {
-    return true;
-  }
-
-  // 3. Check seller full name
-  const userName = String(user?.name || user?.user_metadata?.full_name || member?.name || member?.fullName || "").trim().toLowerCase();
-  const prodName = String(product.sellerName || (product as any).seller_name || "").trim().toLowerCase();
-  if (userName && prodName && userName.length >= 3 && userName === prodName) {
-    return true;
-  }
-
-  // 4. Check company
-  const userCompany = String(user?.company || member?.company || member?.title || "").trim().toLowerCase();
-  const prodCompany = String(product.company || "").trim().toLowerCase();
-  if (userCompany && prodCompany && userCompany.length >= 4 && userCompany === prodCompany) {
     return true;
   }
 
