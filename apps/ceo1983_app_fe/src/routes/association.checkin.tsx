@@ -154,13 +154,18 @@ function CheckinScreen() {
   });
 
   const isAdmin = useMemo(() => {
+    const uRole = String(user?.role || "").toLowerCase();
+    const mRole = String((member as any)?.executiveRole || (member as any)?.role || "").toLowerCase();
     return Boolean(
-      user?.role === "admin" ||
-      user?.role === "superadmin" ||
-      user?.role === "platform_admin" ||
-      user?.role === "bqt"
+      uRole === "admin" ||
+      uRole === "quan_tri" ||
+      uRole === "superadmin" ||
+      uRole === "platform_admin" ||
+      uRole === "bqt" ||
+      mRole === "quan_tri" ||
+      mRole === "admin"
     );
-  }, [user]);
+  }, [user, member]);
 
   // Events where current user is assigned as QR scanner in qr_scanners
   const assignedEvents = useMemo(() => {
@@ -413,6 +418,53 @@ function CheckinScreen() {
           scannedBy: checkinRecord.scannedBy,
         });
         return;
+      }
+
+      // PRIMARY CHECK: Call backend scan-ticket API for accurate cross-event and registration lookup
+      try {
+        const scanRes = await fetchNestApi<any>("/checkin/scan-ticket", {
+          method: "POST",
+          body: JSON.stringify({
+            payload: resolved,
+            currentEventId: currentScanningEvent?.id || activeEvent?.id,
+            confirm: false,
+          }),
+        }).catch(() => null);
+
+        if (scanRes && scanRes.success && scanRes.attendeeName) {
+          if (scanRes.eventMismatch) {
+            toast.warning("Vé không thuộc sự kiện đang chọn soát vé!", {
+              description: `Vé của ${scanRes.attendeeName} thuộc: "${scanRes.eventTitle}". Sự kiện bàn đang soát: "${scanRes.currentEventTitle || currentScanningEvent?.name || activeEvent?.name}"`,
+              duration: 8000,
+            });
+          }
+          setScannedTicket({
+            ticketCode: scanRes.ticketCode,
+            attendeeName: scanRes.attendeeName,
+            attendeePhone: scanRes.attendeePhone,
+            attendeeCompany: scanRes.attendeeCompany,
+            attendeePosition: scanRes.attendeePosition,
+            attendeeAvatar: scanRes.attendeeAvatar,
+            memberCode: scanRes.memberCode,
+            eventId: scanRes.eventId,
+            eventTitle: scanRes.eventTitle,
+            eventDate: scanRes.eventDate,
+            eventLocation: scanRes.eventLocation,
+            ticketType: scanRes.ticketType,
+            seatAssignment: scanRes.seatAssignment,
+            luckyNumber: scanRes.luckyNumber,
+            ticketCount: scanRes.ticketCount || 1,
+            isCheckedIn: scanRes.isCheckedIn,
+            checkedInAt: scanRes.checkedInAt,
+            scannedBy: scanRes.scannedBy,
+            eventMismatch: scanRes.eventMismatch,
+            currentEventId: scanRes.currentEventId,
+            currentEventTitle: scanRes.currentEventTitle,
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn("Scan ticket backend call failed, falling back to local resolver", err);
       }
 
       // CASE 0B: Attendee Ticket QR scanned by Gatekeeper (event_ticket:EVENT_ID:MEMBER_CODE:SEAT:LUCKY)
@@ -682,7 +734,7 @@ function CheckinScreen() {
       });
       setError(`Mã vé "${resolved.slice(0, 40)}" không tồn tại trong hệ thống đăng ký sự kiện!`);
     },
-    [stopScan, member, serverEventsData, serverRegistrations],
+    [stopScan, member, serverEventsData, serverRegistrations, currentScanningEvent, activeEvent],
   );
 
   // Confirm Check-in action from Media Department member (sync to real DB)
@@ -691,12 +743,22 @@ function CheckinScreen() {
       const checkedInMap = getCheckedInRegistry();
       checkedInMap[updatedTicket.ticketCode] = {
         checkedInAt: updatedTicket.checkedInAt || new Date().toLocaleString("vi-VN"),
-        scannedBy: updatedTicket.scannedBy || "Ban Truyền Thông CEO 1983",
+        scannedBy: updatedTicket.scannedBy || "Ban Soát Vé CEO 1983",
       };
       localStorage.setItem("vba_checkedin_tickets", JSON.stringify(checkedInMap));
       setScannedTicket(updatedTicket);
 
-      // Call real backend API to mark checked in
+      // 1. Call real backend scan-ticket API with confirm: true to record checkin for User A
+      await fetchNestApi("/checkin/scan-ticket", {
+        method: "POST",
+        body: JSON.stringify({
+          payload: lastScan.current?.payload || updatedTicket.ticketCode,
+          currentEventId: currentScanningEvent?.id || activeEvent?.id,
+          confirm: true,
+        }),
+      }).catch(() => null);
+
+      // 2. Call fallback checkin endpoint
       await fetchNestApi("/checkin", {
         method: "POST",
         body: JSON.stringify({ attendeeId: updatedTicket.ticketCode }),

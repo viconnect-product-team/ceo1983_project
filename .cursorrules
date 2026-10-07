@@ -79,12 +79,15 @@
 #   - Controller phải MỎNG (Thin Controller): Chỉ làm nhiệm vụ điều hướng, map params/body sang DTO, gọi Service và trả về kết quả.
 #   - Service chứa toàn bộ Business Logic: Thống kê, validate dữ liệu, bọc try-catch, ném NestJS HttpException (`NotFoundException`, `BadRequestException`, `ForbiddenException`).
 #
-# [BẮT BUỘC 4] Bảo mật & Phân quyền (Security & Permissions):
-#   - Chuẩn hóa ĐÚNG 5 Vai trò hệ thống cố định trong Ma trận RBAC: Quản trị (`quan_tri` - Quyền to nhất hệ thống, loại bỏ `platform_admin`), Admin (`admin`), Tổng thư ký (`tong_thu_ky`), Trưởng ban (`truong_ban`), Thành viên (`member`).
-#   - Tuyệt đối không hiển thị hay sử dụng `Platform Admin` trên giao diện hay danh mục vai trò.
-#   - Phân quyền theo 6 Ban chức danh: BQT, BTK, BTT, BXT, BTV, BTN.
-#   - Lưu trữ Ma trận Phân quyền: Phải đồng bộ trực tiếp vào CSDL PostgreSQL (bảng `public.app_settings` với `key = 'crm_permission_matrix'`) thông qua API `/admin/permission-matrix`, kết hợp `localStorage` để tăng tốc độ load và fallback.
-#   - Luồng Công Việc (Tasks Notification): Khi tạo/giao việc cho hội viên, hệ thống phải tự động tra cứu tài khoản PostgreSQL và bắn thông báo trực tiếp vào `public.business_notifications` (chuông CRM & Web) và `public.member_notifications` (App Hiệp Hội).
+# [BẮT BUỘC 4] Bảo mật & Phân quyền Chuẩn Hóa (Security, Strict RBAC & Permissions):
+#   - Chuẩn hóa DUY NHẤT 5 Vai trò hệ thống cố định: Quản trị (`quan_tri`), Admin (`admin`), Tổng thư ký (`tong_thu_ky`), Trưởng ban (`truong_ban`), Thành viên (`member`). Tuyệt đối không thêm bất kỳ từ ngữ nào khác.
+#   - Chuẩn hóa DUY NHẤT 7 Ban chuyên môn: Ban Thành viên, Ban xúc tiến, Ban thiện nguyện, Ban truyền thông, Ban quản trị, Ban tài chính, Hội viên ceo1983. Tuyệt đối không thêm bất kỳ từ ngữ nào khác.
+#   - Mặc định tài khoản mới tham gia: Vai trò luôn là "Thành viên", ban chuyên môn luôn là "Hội viên ceo1983".
+#   - Phân quyền gán ban & đổi vai trò: Chỉ tài khoản có vai trò Quản trị hoặc Admin mới có quyền chỉ định hội viên vào ban khác hoặc đổi vai trò (chặn cả frontend UI lẫn backend API, trả 403 Forbidden nếu không có quyền).
+#   - Thu hồi quyền tức thì: Khi quyền hạn/thao tác bị thay đổi, hệ thống phải lập tức ẩn chức năng/nút thao tác khỏi giao diện. Nếu người dùng bấm vào khi chưa kịp ẩn: Bắt buộc hiển thị Toast: "Tài khoản của bạn đã bị thay đổi quyền không còn quyền sử dụng chức năng [Tên chức năng], không còn quyền thao tác [Tên thao tác]" và tự động đăng xuất đá văng ra màn hình đăng nhập.
+#   - Luồng Quét Mã Sự Kiện (QR Check-In): Khi tài khoản A có mã vé/mã đại biểu, tài khoản B (có quyền soát vé) quét mã của A thì B phải thấy đầy đủ thông tin đăng ký của A (Tên, SĐT, Công ty, Chức vụ, Ghế ngồi, Số may mắn, Hạng vé). Hệ thống phải phân biệt rõ ràng mã QR của A thuộc sự kiện nào, hiển thị tiêu đề sự kiện nổi bật và bắn cảnh báo rực đỏ nếu vé không trùng với sự kiện đang soát tại bàn.
+#   - Lưu trữ Ma trận Phân quyền: Đồng bộ trực tiếp vào CSDL PostgreSQL (bảng `public.app_settings` với `key = 'crm_permission_matrix'`) thông qua API `/admin/permission-matrix`, kết hợp `localStorage` để tăng tốc độ load và fallback.
+#   - Luồng Công Việc (Tasks Notification): Khi tạo/giao việc cho hội viên, hệ thống tự động tra cứu tài khoản PostgreSQL và bắn thông báo trực tiếp vào `public.business_notifications` (chuông CRM & Web) và `public.member_notifications` (App Hiệp Hội).
 #   - Endpoint liên quan đến dữ liệu phạm vi sử dụng `@UseInterceptors(DataScopeInterceptor)` và `@DataScope('entity')`.
 #   - Trích xuất định danh người dùng chuẩn: `req.user.id || req.user.sub`.
 #
@@ -122,27 +125,19 @@
 #     4. `docs/developer-checklist.md`: Bảng kiểm nghiệm thu developer & tiêu chuẩn code.
 #     5. `project-memory.md`: Nhật ký tiến độ, lịch sử quyết định và bộ nhớ dự án.
 #
-# [BẮT BUỘC 10] Chuẩn Hóa Phân Quyền 5 Cấp Bậc Theo Sidebar & Luồng Cuộc Họp Duyệt Tập Trung:
-#   - Phân quyền:
-#     + Tab 1: Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản: Cột "Quyền hạn" chỉ có đúng 5 role:
-#       1. Quản trị (`platform_admin`): Toàn quyền hệ thống.
-#       2. Admin (`admin`): Quản trị vận hành ban thư ký.
-#       3. Tổng thư ký (`tong_thu_ky`): Điều hành & Thư ký.
-#       4. Trưởng ban (`truong_ban`): Quản lý chuyên ban.
-#       5. Thành viên (`member`): Hội viên chính thức.
-#     + Tab 2: Ma Trận Phân Quyền 5 Cấp Bậc & Thao Tác Chi Tiết:
-#       - Bảng phẳng, tối giản, chuyên nghiệp, không làm màu mè.
-#       - Hàng (Rows): Lấy chính xác 30 chức năng chuẩn từ Sidebar.tsx phân loại theo đúng 8 nhóm danh mục Sidebar:
-#         1. Tổng quan (/dashboard)
-#         2. Hội viên (/members, /categories, /reviews, /scoring, /benefits)
-#         3. Sự kiện & Hoạt động (/events, /calendar, /attendance, /seating, /voting)
-#         4. Nhà tài trợ (/sponsors, /packages, /reports)
-#         5. Tài chính & Quỹ (/finance, /cashbook, /debts, /funds)
-#         6. Truyền thông & Tin tức (/news, /media, /documents, /feedback)
-#         7. Giao thương & Kết nối (/opportunities, /marketplace, /meetings, /tasks)
-#         8. Hệ thống & Điều hành (/audit-logs, /permissions, /settings)
-#       - Cột (Columns): Đúng 5 role cốt lõi (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên).
-#       - Giao điểm: Hiển thị ActionPill gọn gàng (Xem, Thêm, Sửa, Xóa, Duyệt, Điểm danh, Bỏ phiếu...).
+# [BẮT BUỘC 10] Chuẩn Hóa Phân Quyền Đúng 3 Nhóm Cụ Thể (CRM /permissions):
+#   - Trang Phân Quyền chia thành đúng 3 tab độc lập:
+#     + Tab 1: 1. Ma Trận Phân Quyền Vai Trò:
+#       - Bảng phẳng, tối giản, chuyên nghiệp.
+#       - Hàng (Rows): 30 chức năng chuẩn từ Sidebar.tsx phân loại theo 8 nhóm danh mục Sidebar.
+#       - Cột (Columns): Đúng 5 vai trò cốt lõi (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên).
+#       - Giao điểm: Checkbox/Toggle phân quyền Xem, Thêm, Sửa, Xóa, Duyệt, Quản lý.
+#     + Tab 2: 2. Phân Quyền Tài Khoản Thành Viên:
+#       - Bảng danh sách hội viên: Cột "Vai trò" (5 vai trò: Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên) và Cột "Ban chuyên môn" (7 ban: Ban Thành viên, Ban xúc tiến, Ban thiện nguyện, Ban truyền thông, Ban quản trị, Ban tài chính, Hội viên ceo1983).
+#       - Chỉ Quản trị hoặc Admin mới có quyền chỉnh sửa và lưu phân quyền thành viên.
+#     + Tab 3: 3. Thẩm Định 6 Ban Chuyên Môn:
+#       - Bỏ hoàn toàn cột "Cấp" và phân loại "Cấp 1 - 5".
+#       - Quản lý thẩm quyền, đầu mối trưởng ban và phạm vi trách nhiệm của đúng 6 ban chuyên môn.
 #   - Luồng Cuộc Họp & Phòng Họp:
 #     + Thẩm quyền tạo: Chỉ có 4 vai trò được phép khởi tạo (Quản trị, Admin, Tổng thư ký, Trưởng ban). Thành viên không có quyền tạo cuộc họp.
 #     + Người duyệt: Quản trị (Super Admin / Admin).
@@ -578,3 +573,29 @@
 #     + Gợi ý các địa điểm tiếp khách, quán cafe doanh nhân sang trọng, riêng tư tại Hà Nội; tư vấn các nguyên tắc đàm phán kinh doanh Win-Win.
 #   - Quy Chuẩn Đóng Gói APK Android:
 #     + Trước khi xuất bản APK mới, BẮT BUỘC chạy `npm run build` trên Frontend, `npx cap copy android`, và thực thi `.\\gradlew.bat clean assembleDebug` để đảm bảo tài nguyên được làm sạch và đóng gói mới 100%.
+#
+# [BẮT BUỘC 38] Quy Chuẩn Luồng Kết Nối QR Realtime 2 Chiều, Lịch Hẹn 1-1, Phân Quyền Sàn & Khử Delay Chạm App CEO 1983:
+#   - Luồng Kết Nối QR Realtime 2 Chiều (Handshake):
+#     + Khi quét mã QR và bấm "Gửi kết nối", đối phương (Account B) BẮT BUỘC nhận socket realtime `connection:incoming_request` và hiển thị `IncomingConnectionModal` với thông tin chi tiết của người gửi và 2 nút: `[Đồng ý]` và `[Để sau]`.
+#     + Nếu người nhận chọn `[Để sau]`: Modal tự động đóng, yêu cầu kết nối được lưu trong danh sách Thông báo (`vba_notifications`) với trạng thái pending và 2 nút hành động `[Đồng ý]` và `[Từ chối]`.
+#     + Khi người nhận bấm một trong hai nút (`[Đồng ý]` hoặc `[Từ chối]`), hệ thống BẮT BUỘC bắn socket realtime ngược lại cho người gửi (Account A) qua sự kiện `connection:accepted` hoặc `connection:declined` kèm toast thông báo tức thì.
+#   - Danh Bạ Mục Bạn Bè & Nút Hành Động Kép:
+#     + Mục "Bạn bè" trong Danh bạ CEO (`/association/members`) CHỈ ĐƯỢC phép hiển thị hội viên đã kết nối thật (từ API `/network/connections` và cache `vba_connected_members`). TUYỆT ĐỐI KHÔNG dùng mock data mẫu `DEFAULT_SAMPLE_MEETINGS`.
+#     + Hội viên đã kết nối BẮT BUỘC hiển thị đồng thời cả nút `[🤝 Hẹn gặp]` (để mở `BusinessConnectBottomSheet` lên lịch hẹn 1-on-1) và nút trạng thái `[✓ Đã kết nối / Hủy]`.
+#   - Luồng Hẹn Gặp Kết Nối 1-1 & Phản Hồi Realtime:
+#     + Khi tài khoản B hẹn kết nối với tài khoản A: Hệ thống lưu vào database backend và bắn socket realtime `meeting:requested` đến A.
+#     + A nhận được Toast/Thông báo với nút `[Xem chi tiết]` điều hướng thẳng đến `/association/members?tab=meetings`.
+#     + Tại tab Lịch hẹn: Hiển thị 2 nút hành động trực tiếp `[Đồng ý]` và `[Từ chối]` cho các cuộc hẹn chờ phản hồi.
+#     + Khi A bấm Đồng ý hoặc Từ chối: Backend cập nhật trạng thái cuộc hẹn và bắn socket `meeting:responded` gửi thông báo ngược về cho B ngay lập tức.
+#   - Phân Quyền Sàn Thương Mại B2B Chuẩn Tuyệt Đối:
+#     + Hội viên xem sản phẩm của doanh nghiệp khác CHỈ CÓ QUYỀN `[Yêu cầu báo giá VIP]` và `[Nhắn tin với chủ gian hàng]`.
+#     + ẨN HOÀN TOÀN nút Sửa, Xóa và Chỉnh sửa sản phẩm đối với tài khoản không phải là chủ sở hữu chính thức của doanh nghiệp đó.
+#     + Kiểm tra phân quyền kép: Cả giao diện và hàm xử lý (`startEditProduct`, `handleDeleteProduct`) đều phải chặn người không có quyền.
+#   - Khắc Phục Triệt Để Giọng Nói AI (STT & TTS):
+#     + Nhận diện giọng nói STT (`recognition.onresult`) phải đọc toàn bộ chuỗi kết quả từ 0 đến `length` để không bị mất từ hay rớt câu.
+#     + Phát giọng nói TTS sử dụng luồng âm thanh tiếng Việt tự nhiên truyền cảm (`Google Natural Vietnamese Voice Stream`), kết hợp fallback `window.speechSynthesis`.
+#     + Tích hợp hàm `stopSpeaking()` lập tức ngắt giọng đọc khi người dùng kích hoạt micro hoặc đóng trợ lý.
+#   - Tối Ưu Độ Mượt & Triệt Tiêu Delay Chạm (Responsive Tap & Smoothness):
+#     + Đặt các dải biên Edge Guard ở chế độ `pointer-events-none` để không cản trở thao tác chạm/click của người dùng ở 2 mép màn hình.
+#     + Bỏ thuộc tính `select-none` gây kẹt thao tác trên các ô nhập liệu và liên kết.
+#     + Bổ sung CSS `touch-action: manipulation;` và `-webkit-tap-highlight-color: transparent;` toàn cục trên các phần tử tương tác (`button`, `a`, `input`, `.cursor-pointer`) để loại bỏ 100% độ trễ 300ms của trình duyệt di động.

@@ -4,19 +4,56 @@
  */
 
 export const SRS_ROLES = {
-  ADM: "ADM", // Super Admin / Platform Admin
-  BQT: "BQT", // Ban Quản Trị
-  BTK: "BTK", // Ban Thư Ký
-  BTT: "BTT", // Ban Truyền Thông
-  BXT: "BXT", // Ban Xúc Tiến
-  BTV: "BTV", // Ban Thành Viên
-  BTN: "BTN", // Ban Thiện Nguyện
-  HVT: "HVT", // Hội Viên Thường
-  // Backward compatibility alias:
-  BTC: "BQT",
+  QUAN_TRI: "quan_tri",
+  ADMIN: "admin",
+  TONG_THU_KY: "tong_thu_ky",
+  TRUONG_BAN: "truong_ban",
+  MEMBER: "member",
+  // Backward compatibility aliases
+  ADM: "quan_tri",
+  BQT: "admin",
+  BTK: "tong_thu_ky",
+  BTT: "truong_ban",
+  BXT: "truong_ban",
+  BTV: "truong_ban",
+  BTN: "truong_ban",
+  BTC: "truong_ban",
+  HVT: "member",
 } as const;
 
-export type SrsRole = (typeof SRS_ROLES)[keyof typeof SRS_ROLES];
+export const STANDARD_5_ROLES = [
+  "Quản trị",
+  "Admin",
+  "Tổng thư ký",
+  "Trưởng ban",
+  "Thành viên",
+] as const;
+
+export const STANDARD_7_COMMITTEES = [
+  "Ban Thành viên",
+  "Ban xúc tiến",
+  "Ban thiện nguyện",
+  "Ban truyền thông",
+  "Ban quản trị",
+  "Ban tài chính",
+  "Hội viên ceo1983",
+] as const;
+
+export type SrsRole =
+  | "quan_tri"
+  | "admin"
+  | "tong_thu_ky"
+  | "truong_ban"
+  | "member"
+  | "ADM"
+  | "BQT"
+  | "BTK"
+  | "BTT"
+  | "BXT"
+  | "BTV"
+  | "BTN"
+  | "BTC"
+  | "HVT";
 
 export const PERMISSIONS = {
   // Events
@@ -76,11 +113,52 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 /**
  * Granular RBAC Role to Permission Mapping for 6 Official Departments
  */
-export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
+export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
+  quan_tri: Object.values(PERMISSIONS),
+  admin: Object.values(PERMISSIONS),
+  tong_thu_ky: [
+    PERMISSIONS.MEETING_VIEW,
+    PERMISSIONS.MEETING_MANAGE,
+    PERMISSIONS.DOCUMENT_MANAGE,
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.EVENT_CREATE,
+    PERMISSIONS.EVENT_EDIT,
+    PERMISSIONS.EVENT_CHECKIN_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.MEDIA_VIEW,
+    PERMISSIONS.MEDIA_MANAGE,
+    PERMISSIONS.SPONSOR_VIEW,
+    PERMISSIONS.AUDIT_LOG_VIEW,
+  ],
+  truong_ban: [
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.EVENT_CREATE,
+    PERMISSIONS.EVENT_EDIT,
+    PERMISSIONS.EVENT_CHECKIN_MANAGE,
+    PERMISSIONS.SPONSOR_VIEW,
+    PERMISSIONS.MEDIA_VIEW,
+    PERMISSIONS.MEDIA_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.OPPORTUNITY_VIEW,
+    PERMISSIONS.OPPORTUNITY_MANAGE,
+    PERMISSIONS.MARKETPLACE_MANAGE,
+    PERMISSIONS.CHARITY_VIEW,
+    PERMISSIONS.CHARITY_MANAGE,
+    PERMISSIONS.MEETING_VIEW,
+  ],
+  member: [
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.SPONSOR_VIEW,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.MEDIA_VIEW,
+    PERMISSIONS.OPPORTUNITY_VIEW,
+    PERMISSIONS.CHARITY_VIEW,
+    PERMISSIONS.MEETING_VIEW,
+  ],
+  // Legacy aliases
   ADM: Object.values(PERMISSIONS),
   BQT: Object.values(PERMISSIONS),
   BTK: [
-    // Ban Thư Ký (Điều phối cuộc họp, quản lý văn bản, giám sát sự kiện & truyền thông)
     PERMISSIONS.MEETING_VIEW,
     PERMISSIONS.MEETING_MANAGE,
     PERMISSIONS.DOCUMENT_MANAGE,
@@ -95,7 +173,6 @@ export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
     PERMISSIONS.AUDIT_LOG_VIEW,
   ],
   BTT: [
-    // Ban Truyền Thông
     PERMISSIONS.EVENT_VIEW,
     PERMISSIONS.EVENT_CREATE,
     PERMISSIONS.EVENT_EDIT,
@@ -107,7 +184,6 @@ export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
     PERMISSIONS.MEMBER_VIEW,
   ],
   BXT: [
-    // Ban Xúc Tiến
     PERMISSIONS.OPPORTUNITY_VIEW,
     PERMISSIONS.OPPORTUNITY_MANAGE,
     PERMISSIONS.MARKETPLACE_MANAGE,
@@ -120,7 +196,6 @@ export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
     PERMISSIONS.EVENT_VIEW,
   ],
   BTV: [
-    // Ban Thành Viên
     PERMISSIONS.MEMBER_VIEW,
     PERMISSIONS.MEMBER_CREATE,
     PERMISSIONS.MEMBER_EDIT,
@@ -132,7 +207,6 @@ export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
     PERMISSIONS.MEDIA_VIEW,
   ],
   BTN: [
-    // Ban Thiện Nguyện
     PERMISSIONS.CHARITY_VIEW,
     PERMISSIONS.CHARITY_MANAGE,
     PERMISSIONS.EVENT_VIEW,
@@ -145,7 +219,6 @@ export const ROLE_PERMISSIONS: Record<SrsRole, readonly Permission[]> = {
     PERMISSIONS.MEMBER_VIEW,
   ],
   HVT: [
-    // Hội Viên Thường
     PERMISSIONS.EVENT_VIEW,
     PERMISSIONS.SPONSOR_VIEW,
     PERMISSIONS.MEMBER_VIEW,

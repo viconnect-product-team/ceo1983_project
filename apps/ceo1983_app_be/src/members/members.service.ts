@@ -452,11 +452,13 @@ export class MembersService {
         INSERT INTO public.members (
           id, code, name, contact, email, phone, type, level, industry, region,
           status, joined_at, fee_year, fee_paid, address, about, payment_status,
+          executive_role, department,
           user_id, association_id, created_at, updated_at
         ) VALUES (
           ${userId}::text, ${newCode}, ${realName}, ${realName},
           ${userEmail}, ${finalPhone}, 'individual', 'standard', ${industry}, ${region},
           'active', CURRENT_DATE, 2026, true, ${region}, ${company}, 'paid',
+          'member', 'Hội viên ceo1983',
           ${userId}::uuid, 'c1983000-0000-4000-8000-000000001983'::uuid, now(), now()
         ) ON CONFLICT (id) DO UPDATE SET user_id = ${userId}::uuid, name = EXCLUDED.name
       `.catch(() => null);
@@ -876,6 +878,7 @@ export class MembersService {
       INSERT INTO public.members (
         id, code, name, contact, email, phone, type, level, industry, region, status,
         joined_at, fee_year, fee_paid, address, website, tax_code, employees, about,
+        executive_role, department,
         association_id, created_at, updated_at
       ) VALUES (
         ${id},
@@ -897,6 +900,8 @@ export class MembersService {
         ${data.taxCode ?? null},
         ${data.employees ?? null},
         ${data.about ?? ''},
+        'member',
+        'Hội viên ceo1983',
         ${assocId}::uuid,
         now(),
         now()
@@ -1966,28 +1971,91 @@ export class MembersService {
   }
 
   async updateMemberRoleDept(
+    operatorUserId: string | undefined,
     memberId: string,
     data: { executiveRole: string; department: string; associationId?: string },
   ) {
+    // 0. Authorization check: Only Quản trị or Admin can assign committees or roles
+    if (operatorUserId) {
+      const isPrivilegedUser = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT 1 FROM public.user_roles
+        WHERE user_id = $1::uuid
+          AND role IN ('admin', 'platform_admin', 'superadmin', 'quan_tri')
+        LIMIT 1
+      `, operatorUserId).catch(() => []);
+
+      const isPrivilegedMember = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT 1 FROM public.members
+        WHERE user_id = $1::uuid
+          AND (
+            executive_role IN ('quan_tri', 'admin')
+            OR LOWER(executive_role) LIKE '%quản trị%'
+            OR LOWER(executive_role) LIKE '%admin%'
+            OR LOWER(department) LIKE '%quản trị%'
+          )
+        LIMIT 1
+      `, operatorUserId).catch(() => []);
+
+      if (isPrivilegedUser.length === 0 && isPrivilegedMember.length === 0) {
+        throw new ForbiddenException(
+          'Chỉ tài khoản có vai trò Quản trị hoặc Admin mới có quyền chỉ định ban chuyên môn và thay đổi vai trò hội viên.',
+        );
+      }
+    }
+
     const member = await this.prisma.members.findUnique({ where: { id: memberId } });
     if (!member) throw new NotFoundException('Không tìm thấy hồ sơ hội viên');
 
     const assocId = data.associationId || member.association_id || 'c1983000-0000-4000-8000-000000001983';
+
+    // Normalize to exact 7 committees
+    const rawDept = (data.department || '').trim();
+    let sanitizedDept = 'Hội viên ceo1983';
+    if (rawDept.includes('Thành viên') || rawDept.includes('thành viên')) {
+      sanitizedDept = 'Ban Thành viên';
+    } else if (rawDept.includes('xúc tiến') || rawDept.includes('Xúc tiến')) {
+      sanitizedDept = 'Ban xúc tiến';
+    } else if (rawDept.includes('thiện nguyện') || rawDept.includes('Thiện nguyện')) {
+      sanitizedDept = 'Ban thiện nguyện';
+    } else if (rawDept.includes('truyền thông') || rawDept.includes('Truyền thông')) {
+      sanitizedDept = 'Ban truyền thông';
+    } else if (rawDept.includes('quản trị') || rawDept.includes('Quản trị')) {
+      sanitizedDept = 'Ban quản trị';
+    } else if (rawDept.includes('tài chính') || rawDept.includes('Tài chính')) {
+      sanitizedDept = 'Ban tài chính';
+    } else if (rawDept === 'Hội viên ceo1983' || rawDept.includes('ceo1983') || rawDept.includes('CEO 1983')) {
+      sanitizedDept = 'Hội viên ceo1983';
+    }
+
+    // Normalize to exact 5 roles: quan_tri, admin, tong_thu_ky, truong_ban, member
+    const rawRole = (data.executiveRole || '').trim().toLowerCase();
+    let sanitizedRole = 'member';
+    if (rawRole === 'quan_tri' || rawRole.includes('quản trị') || rawRole === 'platform_admin') {
+      sanitizedRole = 'quan_tri';
+    } else if (rawRole === 'admin') {
+      sanitizedRole = 'admin';
+    } else if (rawRole === 'tong_thu_ky' || rawRole.includes('thư ký')) {
+      sanitizedRole = 'tong_thu_ky';
+    } else if (rawRole.startsWith('truong_ban') || rawRole.includes('trưởng ban')) {
+      sanitizedRole = 'truong_ban';
+    } else {
+      sanitizedRole = 'member';
+    }
 
     // 1. Update members table
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.members
       SET executive_role = $1, department = $2, association_id = $3::uuid, updated_at = NOW()
       WHERE id = $4
-    `, data.executiveRole, data.department, assocId, memberId);
+    `, sanitizedRole, sanitizedDept, assocId, memberId);
 
     // 2. If member has linked user_id, update memberships and user_roles
     const userId = member.user_id;
     if (userId) {
       let membershipRole = 'member';
-      if (data.executiveRole === 'quan_tri' || data.executiveRole === 'platform_admin' || data.executiveRole === 'admin') {
+      if (sanitizedRole === 'quan_tri' || sanitizedRole === 'admin') {
         membershipRole = 'admin';
-      } else if (data.executiveRole.startsWith('truong_ban') || data.executiveRole === 'tong_thu_ky' || data.executiveRole === 'pho_ban' || data.executiveRole === 'uy_vien') {
+      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'truong_ban') {
         membershipRole = 'moderator';
       }
 
@@ -2002,10 +2070,10 @@ export class MembersService {
             executive_role = EXCLUDED.executive_role,
             department = EXCLUDED.department,
             updated_at = NOW()
-      `, userId, assocId, membershipRole, data.executiveRole, data.department);
+      `, userId, assocId, membershipRole, sanitizedRole, sanitizedDept);
 
       // Manage user_roles table
-      if (data.executiveRole === 'quan_tri' || data.executiveRole === 'platform_admin') {
+      if (sanitizedRole === 'quan_tri') {
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.user_roles (id, user_id, role)
           VALUES (gen_random_uuid(), $1::uuid, 'platform_admin')
@@ -2016,7 +2084,7 @@ export class MembersService {
           VALUES (gen_random_uuid(), $1::uuid, 'admin')
           ON CONFLICT DO NOTHING
         `, userId).catch(() => {});
-      } else if (data.executiveRole === 'admin') {
+      } else if (sanitizedRole === 'admin') {
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.user_roles (id, user_id, role)
           VALUES (gen_random_uuid(), $1::uuid, 'admin')
@@ -2027,7 +2095,7 @@ export class MembersService {
             DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role = 'platform_admin'
           `, userId).catch(() => {});
         }
-      } else if (data.executiveRole.startsWith('truong_ban') || data.executiveRole === 'tong_thu_ky' || data.executiveRole === 'pho_ban' || data.executiveRole === 'uy_vien') {
+      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'truong_ban') {
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.user_roles (id, user_id, role)
           VALUES (gen_random_uuid(), $1::uuid, 'moderator')
@@ -2038,7 +2106,7 @@ export class MembersService {
             DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role IN ('platform_admin', 'admin')
           `, userId).catch(() => {});
         }
-      } else if (data.executiveRole === 'member') {
+      } else if (sanitizedRole === 'member') {
         if (userId !== '00000000-0000-0000-0000-000000000000') {
           await this.prisma.$executeRawUnsafe(`
             DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role IN ('platform_admin', 'admin', 'moderator', 'tenant_admin')
@@ -2173,8 +2241,8 @@ export class MembersService {
         ${website || null},
         ${taxCode || null},
         ${aboutMeta},
-        ${position || 'Đại diện Doanh nghiệp'},
-        ${boardWish || 'Ban Thành Viên & Kết Nối'},
+        'member',
+        'Hội viên ceo1983',
         ${staffSize || null},
         ${companyName},
         ${assocId}::uuid,

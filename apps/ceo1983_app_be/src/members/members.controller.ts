@@ -293,7 +293,7 @@ export class MembersController {
     @Param('id') id: string,
     @Body() body: { executiveRole: string; department: string; associationId?: string },
   ) {
-    return this.membersService.updateMemberRoleDept(id, body);
+    return this.membersService.updateMemberRoleDept(req.user?.id, id, body);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -303,7 +303,7 @@ export class MembersController {
     @Param('id') id: string,
     @Body() body: { executiveRole: string; department: string; associationId?: string },
   ) {
-    return this.membersService.updateMemberRoleDept(id, body);
+    return this.membersService.updateMemberRoleDept(req.user?.id, id, body);
   }
 
   @UseGuards(JwtAuthGuard)

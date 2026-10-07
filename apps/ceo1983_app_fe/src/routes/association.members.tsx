@@ -68,54 +68,11 @@ export interface MemberMeetingItem {
   venue?: string;
   onlineUrl?: string;
   notes?: string;
-  status: "scheduled" | "completed" | "cancelled" | "pending" | string;
+  status: "scheduled" | "completed" | "cancelled" | "pending" | "confirmed" | "declined" | string;
   createdAt?: string;
+  isUserHost?: boolean;
+  isUserInvitee?: boolean;
 }
-
-const DEFAULT_SAMPLE_MEETINGS: MemberMeetingItem[] = [
-  {
-    id: "sample-meet-1",
-    title: "Gặp gỡ kết nối 1-on-1 & Hợp tác thương mại",
-    partnerName: "Đỗ Kim Phượng",
-    partnerCompany: "Công ty Cổ phần Công nghệ & Dược phẩm Quốc tế",
-    partnerCode: "CEO-1983-002",
-    partnerAvatar: "/avatars/avatar-2.jpg",
-    date: "2026-10-18",
-    time: "09:30 - 10:45",
-    venueType: "offline",
-    venue: "Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội",
-    notes: "Trao đổi phân phối độc quyền và ký kết biên bản ghi nhớ hợp tác chiến lược Q4/2026.",
-    status: "completed",
-  },
-  {
-    id: "sample-meet-2",
-    title: "Cà phê Doanh nhân & Giao lưu kết nối B2B",
-    partnerName: "Nguyễn Văn Dũng",
-    partnerCompany: "Tập đoàn Đầu tư & Xây dựng Thăng Long 83",
-    partnerCode: "CEO-1983-005",
-    partnerAvatar: "/avatars/avatar-1.jpg",
-    date: "2026-10-24",
-    time: "14:00 - 15:30",
-    venueType: "offline",
-    venue: "Starbucks Coffee - Tòa Capital Place, 29 Liễu Giai, Hà Nội",
-    notes: "Thảo luận về gói thầu nội thất văn phòng và cung ứng vật tư xây dựng cao cấp.",
-    status: "scheduled",
-  },
-  {
-    id: "sample-meet-3",
-    title: "Họp trực tuyến: Demo giải pháp chuyển đổi số AI",
-    partnerName: "Trần Mai Lan",
-    partnerCompany: "Công ty CP Giải pháp Công nghệ Thông tin ViConnect",
-    partnerCode: "CEO-1983-012",
-    date: "2026-10-28",
-    time: "10:00 - 11:00",
-    venueType: "online",
-    venue: "Zoom Meeting ID: 839 1983 2026 (Pass: 1983)",
-    onlineUrl: "https://zoom.us/j/83919832026",
-    notes: "Demo hệ thống tích hợp Thẻ thông minh NFC và phần mềm quản trị doanh nghiệp CEO 1983.",
-    status: "scheduled",
-  },
-];
 
 function normalizeSearchText(str: any): string {
   if (!str) return "";
@@ -186,43 +143,69 @@ function MembersScreen() {
 
   // Lịch sử cuộc gặp 1-on-1 state
   const [meetingsList, setMeetingsList] = useState<MemberMeetingItem[]>(() => {
-    if (typeof window === "undefined") return DEFAULT_SAMPLE_MEETINGS;
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem("vba_connection_appointments");
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-      return DEFAULT_SAMPLE_MEETINGS;
+      return [];
     } catch {
-      return DEFAULT_SAMPLE_MEETINGS;
+      return [];
     }
   });
   const [loadingMeetings, setLoadingMeetings] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    const fetchMeetings = async () => {
+  const fetchMeetings = async () => {
+    try {
+      setLoadingMeetings(true);
+      const res = await fetchNestApi<any>("/meetings/connection-appointments").catch(() => null);
+      const items = Array.isArray(res) ? res : (res?.items || []);
+      setMeetingsList(items);
       try {
-        setLoadingMeetings(true);
-        const res = await fetchNestApi<MemberMeetingItem[]>("/meetings/connection-appointments").catch(() => null);
-        if (active && Array.isArray(res) && res.length > 0) {
-          setMeetingsList(res);
-          try {
-            localStorage.setItem("vba_connection_appointments", JSON.stringify(res));
-          } catch {}
-        }
-      } catch (err) {
-        console.warn("fetchMeetings error:", err);
-      } finally {
-        if (active) setLoadingMeetings(false);
-      }
-    };
+        localStorage.setItem("vba_connection_appointments", JSON.stringify(items));
+      } catch {}
+    } catch (err) {
+      console.warn("fetchMeetings error:", err);
+    } finally {
+      setLoadingMeetings(false);
+    }
+  };
+
+  useEffect(() => {
     fetchMeetings();
+    const handleMeetingChanged = () => {
+      fetchMeetings();
+    };
+    window.addEventListener("vba.meeting.changed", handleMeetingChanged);
     return () => {
-      active = false;
+      window.removeEventListener("vba.meeting.changed", handleMeetingChanged);
     };
   }, []);
+
+  const handleRespondMeeting = async (meetingId: string, action: "accept" | "decline", partnerName: string) => {
+    try {
+      await fetchNestApi(`/meetings/connection-appointments/${meetingId}/respond`, {
+        method: "POST",
+        body: JSON.stringify({ action }),
+      });
+      const newStatus = action === "accept" ? "confirmed" : "declined";
+      setMeetingsList((prev) =>
+        prev.map((item) => (item.id === meetingId ? { ...item, status: newStatus } : item))
+      );
+      if (action === "accept") {
+        toast.success(`Đã đồng ý lịch hẹn gặp kết nối với ${partnerName || "đối tác"}!`);
+      } else {
+        toast.info("Đã từ chối lịch hẹn gặp kết nối.");
+      }
+      try {
+        window.dispatchEvent(new Event("vba.meeting.changed"));
+      } catch {}
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể phản hồi lịch hẹn kết nối");
+    }
+  };
 
   // Tự động mở hồ sơ công ty khi được điều hướng từ banner quảng cáo Marketplace
   useEffect(() => {
@@ -893,7 +876,9 @@ function MembersScreen() {
                 meet.venueType === "online" || Boolean(meet.venue && meet.venue.toLowerCase().includes("zoom"));
               const isCompleted = meet.status === "completed" || meet.status === "done";
               const isScheduled = meet.status === "scheduled" || meet.status === "confirmed";
-              const isCancelled = meet.status === "cancelled";
+              const isCancelled = meet.status === "cancelled" || meet.status === "declined";
+              const isPending = meet.status === "pending" || meet.status === "waiting";
+              const canRespond = isPending && (meet.isUserInvitee || (!meet.isUserHost && Boolean(meet.hostName && meet.hostName !== myMember?.name)));
 
               return (
                 <div
@@ -923,19 +908,19 @@ function MembersScreen() {
                       {isScheduled && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 shadow-2xs">
                           <Clock className="h-3 w-3 animate-pulse" />
-                          <span>Sắp diễn ra</span>
+                          <span>Đã đồng ý / Sắp tới</span>
                         </span>
                       )}
                       {isCancelled && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 shadow-2xs">
                           <X className="h-3 w-3" />
-                          <span>Đã hủy</span>
+                          <span>Đã từ chối / hủy</span>
                         </span>
                       )}
                       {!isCompleted && !isScheduled && !isCancelled && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 shadow-2xs">
                           <Clock className="h-3 w-3" />
-                          <span>Chờ xác nhận</span>
+                          <span>{canRespond ? "Cần xác nhận" : "Chờ xác nhận"}</span>
                         </span>
                       )}
                     </div>
@@ -1003,37 +988,58 @@ function MembersScreen() {
                   </div>
 
                   {/* Actions Row */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-[10px] text-slate-400">
                       Gặp gỡ 1-on-1 CEO 1983
                     </span>
 
-                    <div className="flex items-center gap-2">
-                      {matchedMember && (
+                    {canRespond ? (
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setSelectedMember(matchedMember)}
-                          className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                          onClick={() => handleRespondMeeting(meet.id, "accept", meet.partnerName || meet.hostName || "")}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white px-3 py-1.5 text-[11px] font-bold shadow-xs active:scale-95 transition cursor-pointer"
                         >
-                          <User className="h-3.5 w-3.5 text-slate-500" />
-                          <span>Hồ sơ</span>
+                          <Check className="h-3.5 w-3.5 stroke-[3]" />
+                          <span>Đồng ý</span>
                         </button>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => handleRespondMeeting(meet.id, "decline", meet.partnerName || meet.hostName || "")}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 px-3 py-1.5 text-[11px] font-bold shadow-xs active:scale-95 transition cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5 stroke-[3]" />
+                          <span>Từ chối</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {matchedMember && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMember(matchedMember)}
+                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                          >
+                            <User className="h-3.5 w-3.5 text-slate-500" />
+                            <span>Hồ sơ</span>
+                          </button>
+                        )}
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleOpenChat(
-                            meet.partnerCode || matchedMember?.code || meet.partnerName,
-                            meet.partnerName,
-                          )
-                        }
-                        className="inline-flex items-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
-                      >
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        <span>Nhắn tin</span>
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleOpenChat(
+                              meet.partnerCode || matchedMember?.code || meet.partnerName,
+                              meet.partnerName,
+                            )
+                          }
+                          className="inline-flex items-center gap-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-1.5 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>Nhắn tin</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -1297,17 +1303,39 @@ function MembersScreen() {
                 {/* Connection Lifecycle: Primary Action */}
                 <div id={mIndex === 0 ? "tour-members-connect-btn" : undefined} className="flex items-center gap-1.5">
                   {isFriend ? (
-                    <button
-                      type="button"
-                      onClick={() => handleDisconnect(m)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer group"
-                      title="Chạm để hủy kết nối"
-                    >
-                      <Handshake className="h-3.5 w-3.5 group-hover:hidden text-emerald-500" />
-                      <UserMinus className="h-3.5 w-3.5 hidden group-hover:block" />
-                      <span className="group-hover:hidden">Đã kết nối</span>
-                      <span className="hidden group-hover:inline">Hủy</span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setConnectTarget({
+                            code: m.code,
+                            name: personDisplayName,
+                            company: (companyDisplayName || m.company) ?? undefined,
+                            title: (m.personTitle || m.industry) ?? undefined,
+                            avatar: m.avatar ?? undefined,
+                            industry: m.industry ?? undefined,
+                            userId: m.userId ?? undefined,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-[#001B54] to-[#003B95] hover:from-[#00143F] hover:to-[#002B70] text-white px-2.5 py-1.5 text-[11px] font-bold shadow-xs active:scale-95 transition cursor-pointer"
+                        title="Hẹn gặp kết nối 1-on-1"
+                      >
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>Hẹn gặp</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDisconnect(m)}
+                        className="inline-flex items-center gap-1 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 transition cursor-pointer group"
+                        title="Chạm để hủy kết nối"
+                      >
+                        <Handshake className="h-3.5 w-3.5 group-hover:hidden text-emerald-500" />
+                        <UserMinus className="h-3.5 w-3.5 hidden group-hover:block" />
+                        <span className="group-hover:hidden">Đã kết nối</span>
+                        <span className="hidden group-hover:inline">Hủy</span>
+                      </button>
+                    </>
                   ) : isOutgoing ? (
                     <button
                       type="button"

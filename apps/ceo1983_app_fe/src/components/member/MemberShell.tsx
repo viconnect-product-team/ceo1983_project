@@ -160,15 +160,110 @@ export function MemberScreen({ children }: { children: ReactNode }) {
       toast.success(`${partnerName} đã đồng ý kết nối giao thương với bạn!`);
     };
 
+    const handleConnectionDeclined = (data: any) => {
+      const declinerName =
+        data?.declinerProfile?.display_name ||
+        data?.declinerProfile?.name ||
+        "Hội viên CEO 1983";
+      try {
+        const newNotif = {
+          id: `conn_dec_${Date.now()}`,
+          title: "Lời mời kết nối đã bị từ chối",
+          body: `${declinerName} đã từ chối lời mời kết nối của bạn.`,
+          createdAt: new Date().toISOString(),
+          unread: true,
+          type: "connection",
+        };
+        const rawNotifs = localStorage.getItem("vba_notifications");
+        const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+        notifs.unshift(newNotif);
+        localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+
+        window.dispatchEvent(new CustomEvent("notifications-updated"));
+      } catch {}
+
+      toast.info(`${declinerName} đã từ chối lời mời kết nối.`);
+    };
+
+    const handleMeetingRequested = (data: any) => {
+      const hostName = data?.host?.name || "Hội viên CEO 1983";
+      try {
+        const newNotif = {
+          id: `meet_req_${Date.now()}`,
+          title: "Lời mời hẹn gặp kết nối 1-on-1 mới!",
+          body: `${hostName} đã gửi lời mời hẹn gặp kết nối 1-on-1 với bạn: "${data?.title || 'Gặp gỡ kết nối'}".`,
+          createdAt: new Date().toISOString(),
+          unread: true,
+          type: "meeting",
+          actionUrl: "/association/members?tab=meetings",
+          meetingId: data?.id,
+        };
+        const rawNotifs = localStorage.getItem("vba_notifications");
+        const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+        notifs.unshift(newNotif);
+        localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+
+        window.dispatchEvent(new CustomEvent("notifications-updated"));
+        window.dispatchEvent(new Event("vba.meeting.changed"));
+      } catch {}
+
+      toast.info(`Bạn có lời mời hẹn gặp 1-on-1 mới từ ${hostName}!`, {
+        action: {
+          label: "Xem chi tiết",
+          onClick: () => {
+            window.location.href = "/association/members?tab=meetings";
+          },
+        },
+      });
+    };
+
+    const handleMeetingResponded = (data: any) => {
+      const responderName = data?.responder?.name || "Đối tác";
+      const isAccepted = data?.action === "accept";
+      try {
+        const newNotif = {
+          id: `meet_resp_${Date.now()}`,
+          title: isAccepted ? "Lịch hẹn gặp đã được đồng ý!" : "Lịch hẹn gặp đã bị từ chối",
+          body: isAccepted
+            ? `${responderName} đã đồng ý lịch hẹn gặp kết nối với bạn!`
+            : `${responderName} đã từ chối lịch hẹn gặp kết nối.`,
+          createdAt: new Date().toISOString(),
+          unread: true,
+          type: "meeting",
+          actionUrl: "/association/members?tab=meetings",
+          meetingId: data?.id,
+        };
+        const rawNotifs = localStorage.getItem("vba_notifications");
+        const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+        notifs.unshift(newNotif);
+        localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+
+        window.dispatchEvent(new CustomEvent("notifications-updated"));
+        window.dispatchEvent(new Event("vba.meeting.changed"));
+      } catch {}
+
+      if (isAccepted) {
+        toast.success(`${responderName} đã đồng ý lịch hẹn gặp kết nối 1-on-1!`);
+      } else {
+        toast.info(`${responderName} đã từ chối lịch hẹn gặp kết nối.`);
+      }
+    };
+
     socket.on("connection:accepted", handleConnectionAccepted);
+    socket.on("connection:declined", handleConnectionDeclined);
+    socket.on("meeting:requested", handleMeetingRequested);
+    socket.on("meeting:responded", handleMeetingResponded);
 
     return () => {
       socket.off("connection:accepted", handleConnectionAccepted);
+      socket.off("connection:declined", handleConnectionDeclined);
+      socket.off("meeting:requested", handleMeetingRequested);
+      socket.off("meeting:responded", handleMeetingResponded);
     };
   }, []);
 
   return (
-    <div className="vba-app relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200 select-none">
+    <div className="vba-app relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200">
       {/* Dynamic Background Mesh Overlay — only in dark luxury mode */}
       {!isLight && (
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
@@ -183,9 +278,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Dải Edge Guard vô hình 2 bên mép: Vô hiệu hóa cử chỉ History Swipe Navigation của trình duyệt di động mà không cần can thiệp JavaScript blocking */}
-      <div className="fixed left-0 top-0 bottom-0 w-3 z-40 pointer-events-auto touch-none select-none opacity-0" aria-hidden="true" />
-      <div className="fixed right-0 top-0 bottom-0 w-3 z-40 pointer-events-auto touch-none select-none opacity-0" aria-hidden="true" />
+      {/* Dải Edge Guard vô hình 2 bên mép: Đảm bảo pointer-events-none để không chặn cảm ứng người dùng */}
+      <div className="fixed left-0 top-0 bottom-0 w-3 z-40 pointer-events-none touch-none select-none opacity-0" aria-hidden="true" />
+      <div className="fixed right-0 top-0 bottom-0 w-3 z-40 pointer-events-none touch-none select-none opacity-0" aria-hidden="true" />
 
       <div
         className={`relative z-10 mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${

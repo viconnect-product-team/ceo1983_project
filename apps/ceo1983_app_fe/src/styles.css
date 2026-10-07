@@ -250,6 +250,14 @@
   * {
     border-color: var(--color-border);
   }
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, a, input, select, textarea, [role="button"], [role="tab"], .cursor-pointer {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

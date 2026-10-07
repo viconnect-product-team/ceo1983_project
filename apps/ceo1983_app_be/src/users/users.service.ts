@@ -303,19 +303,22 @@ export class UsersService {
 
       if (memberRow?.executive_role) {
         const exec = String(memberRow.executive_role).toLowerCase();
-        if ((exec === 'platform_admin' || exec === 'superadmin' || exec.includes('hệ thống')) && !roleList.includes('platform_admin')) {
+        if ((exec === 'quan_tri' || exec === 'platform_admin' || exec === 'superadmin' || exec.includes('hệ thống')) && !roleList.includes('platform_admin')) {
           roleList.push('platform_admin');
           if (!roleList.includes('admin')) roleList.push('admin');
+          if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
         }
-        if ((exec === 'president' || exec === 'vice_president' || exec === 'admin' || exec.includes('chủ tịch') || exec === 'bqt') && !roleList.includes('bqt')) {
+        if ((exec === 'president' || exec === 'vice_president' || exec === 'admin' || exec === 'quan_tri' || exec.includes('chủ tịch') || exec === 'bqt') && !roleList.includes('bqt')) {
           roleList.push('bqt');
           if (!roleList.includes('admin')) roleList.push('admin');
         }
         if ((exec === 'tong_thu_ky' || exec.includes('thư ký')) && !roleList.includes('btk')) {
           roleList.push('btk');
+          if (!roleList.includes('tong_thu_ky')) roleList.push('tong_thu_ky');
         }
         if ((exec.startsWith('truong_ban') || exec.startsWith('phó ban') || exec.startsWith('pho_ban')) && !roleList.includes('moderator')) {
           roleList.push('moderator');
+          if (!roleList.includes('truong_ban')) roleList.push('truong_ban');
         }
       }
 
@@ -339,6 +342,9 @@ export class UsersService {
         }
         if (dept.includes('thiện nguyện') && !roleList.includes('btn')) {
           roleList.push('btn');
+        }
+        if (dept.includes('tài chính') && !roleList.includes('btc')) {
+          roleList.push('btc');
         }
       }
 
@@ -367,7 +373,7 @@ export class UsersService {
         updated_at: user.updated_at,
         executiveRole: memberRow?.executive_role || 'member',
         executive_role: memberRow?.executive_role || 'member',
-        department: memberRow?.department || 'Hội viên CEO 1983',
+        department: memberRow?.department || 'Hội viên ceo1983',
         memberCode: memberRow?.code || null,
         memberId: memberRow?.id || null,
         profile: profile

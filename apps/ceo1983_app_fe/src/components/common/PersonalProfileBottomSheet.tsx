@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Phone,
@@ -230,23 +231,18 @@ export function PersonalProfileBottomSheet({
     ? `https://zalo.me/${profile.phone.replace(/[^0-9]/g, "")}`
     : null;
 
-  return (
+  const content = (
     <div
       role="dialog"
       aria-modal="true"
-      className={`fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm p-0 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm p-0 transition-opacity duration-200 ${
         isClosing ? "opacity-0 pointer-events-none" : "opacity-100 animate-in fade-in"
       }`}
       onClick={onClose}
     >
-      {/* 
-        POPUP THẺ HỘI VIÊN:
-        1. Chỉ hiện đến giữa màn hình (h-[50dvh] max-h-[50dvh]).
-        2. Vuốt xuống mượt mà (smooth swipe-down touch/drag with cubic-bezier transition).
-      */}
       <div
         ref={sheetRef}
-        className={`relative w-full max-w-lg h-[50dvh] max-h-[50dvh] flex flex-col rounded-t-[28px] border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0A1224] text-slate-900 dark:text-white shadow-2xl overflow-hidden ${
+        className={`relative w-full max-w-lg max-h-[88vh] h-[82vh] flex flex-col rounded-t-[28px] border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0A1224] text-slate-900 dark:text-white shadow-2xl overflow-hidden pb-[calc(max(env(safe-area-inset-bottom,0px),16px)+16px)] ${
           isDragging
             ? "transition-none"
             : "transition-transform duration-250 ease-[cubic-bezier(0.32,0.72,0,1)]"
@@ -569,4 +565,9 @@ export function PersonalProfileBottomSheet({
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(content, document.body);
+  }
+  return content;
 }

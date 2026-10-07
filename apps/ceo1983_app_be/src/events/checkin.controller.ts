@@ -39,6 +39,14 @@ export class CheckinController {
     return this.eventsService.recordMemberCheckin(req.user?.id || req.user?.sub, body);
   }
 
+  @Post('scan-ticket')
+  async scanTicket(
+    @Request() req: any,
+    @Body() body: { payload: string; currentEventId?: string; confirm?: boolean; method?: 'qr' | 'nfc' },
+  ) {
+    return this.eventsService.scanTicketPayload(req.user?.id || req.user?.sub, body);
+  }
+
   @Get('my-checkins')
   async listMyMemberCheckins(@Request() req: any) {
     return this.eventsService.listMyMemberCheckins(req.user?.id || req.user?.sub);

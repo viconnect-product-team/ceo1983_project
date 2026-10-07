@@ -13,7 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { requestMemberConnectionFn, listMyOpportunities, type MyOpportunity } from "@/lib/member-app.functions";
 import { createMeetingFn } from "@/lib/meetings.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -258,6 +258,33 @@ export function BusinessConnectBottomSheet({
             zoomUrl: "https://meet.jit.si/CEO1983_Connect_1on1",
           },
         });
+
+        // Gửi lịch hẹn kết nối 1-1 lên Backend để lưu vào database và bắn thông báo real-time tới đối tác
+        try {
+          await fetchNestApi("/meetings/connection-appointments", {
+            method: "POST",
+            body: JSON.stringify({
+              targetCode: target.code,
+              targetUserId: target.userId,
+              targetName: target.name,
+              targetCompany: target.company,
+              targetAvatar: target.avatar,
+              senderName: senderName.trim(),
+              senderCompany: senderCompany.trim(),
+              senderPhone: senderPhone.trim(),
+              purpose: purpose.trim(),
+              date: meetingDate,
+              time: "09:30 - 10:30",
+              venueType: "online",
+              venue: "https://meet.jit.si/CEO1983_Connect_1on1",
+              title: effectiveOppTitle
+                ? `Đàm phán 1-1 (${effectiveOppTitle.slice(0, 30)}): ${senderName.trim()} & ${target.name.trim()}`
+                : `Hẹn gặp kết nối: ${senderName.trim()} & ${target.name.trim()}`,
+            }),
+          });
+        } catch (apiErr) {
+          console.warn("Lưu cuộc gặp lên Backend lỗi:", apiErr);
+        }
 
         // 1. Lưu vào danh mục cuộc gặp cá nhân vba_connection_appointments
         try {

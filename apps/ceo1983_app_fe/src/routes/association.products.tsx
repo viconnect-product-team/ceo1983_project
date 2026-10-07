@@ -394,9 +394,9 @@ function ProductsScreen() {
   const isAdmin = Boolean(
     (user as any)?.role === "admin" ||
     (user as any)?.role === "platform_admin" ||
+    (user as any)?.role === "superadmin" ||
     (member as any)?.role === "admin" ||
-    (member as any)?.role === "association_admin" ||
-    (member as any)?.executiveRole
+    (member as any)?.role === "association_admin"
   );
 
   // Check if current user is the actual creator/author of this product
@@ -411,8 +411,25 @@ function ProductsScreen() {
     return false;
   };
 
+  const isProductFromUserCompany = (p: MyProduct) => {
+    if (!p) return false;
+    const userCompany = String((member as any)?.company || (member as any)?.companyName || member?.title || "").trim().toLowerCase();
+    const prodCompany = String(p.company || "").trim().toLowerCase();
+    if (!userCompany || !prodCompany) return false;
+    const generic = ["clb", "doanh nhân ceo 1983", "ceo 1983", "hanoiba", "hanoi ba", "hiệp hội"];
+    if (generic.some((g) => userCompany === g || prodCompany === g)) return false;
+    if (userCompany.length >= 4 && (userCompany === prodCompany || prodCompany.includes(userCompany) || userCompany.includes(prodCompany))) {
+      return true;
+    }
+    return false;
+  };
+
   const checkCanManageProduct = (p: MyProduct) => {
-    return checkIsProductAuthor(p) || isAdmin;
+    if (!p) return false;
+    if (checkIsProductAuthor(p)) return true;
+    if (isProductFromUserCompany(p)) return true;
+    if (isAdmin) return true;
+    return false;
   };
 
   const checkIsProductOwner = checkIsProductAuthor;
@@ -655,16 +672,15 @@ function ProductsScreen() {
 
   const isCompanyOwner = useMemo(() => {
     if (!viewingCompany) return false;
-    if (isAdmin) return true;
     const targetComp = viewingCompany.name.toLowerCase().trim();
     const generic = ["clb", "doanh nhân ceo 1983", "ceo 1983", "hanoiba", "hanoi ba", "hiệp hội"];
     if (generic.some((g) => targetComp.includes(g))) {
       return false;
     }
-    const memComp = String((member as any)?.company || (member as any)?.companyName || "").toLowerCase().trim();
-    if (memComp && memComp.length >= 6 && memComp === targetComp) return true;
+    const memComp = String((member as any)?.company || (member as any)?.companyName || member?.title || "").toLowerCase().trim();
+    if (memComp && memComp.length >= 4 && (memComp === targetComp || targetComp.includes(memComp) || memComp.includes(targetComp))) return true;
     return companyProducts.some((p) => checkIsProductAuthor(p));
-  }, [viewingCompany, isAdmin, member, companyProducts]);
+  }, [viewingCompany, member, companyProducts]);
 
   const companyCategories = useMemo(() => {
     const cats = Array.from(new Set(companyProducts.map((p) => p.category).filter(Boolean))) as string[];
@@ -803,6 +819,10 @@ function ProductsScreen() {
       e.preventDefault();
       e.stopPropagation();
     }
+    if (!checkCanManageProduct(p)) {
+      toast.error("Bạn không thuộc công ty này nên không có quyền chỉnh sửa sản phẩm!");
+      return;
+    }
     setEditingProduct(p);
     setEditPhoto(p.imageUrl || "");
     setEditName(p.name || "");
@@ -819,6 +839,11 @@ function ProductsScreen() {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+    }
+    const targetProd = allProducts.find((x) => x.id === id);
+    if (targetProd && !checkCanManageProduct(targetProd)) {
+      toast.error("Bạn không thuộc công ty này nên không có quyền xóa sản phẩm!");
+      return;
     }
     if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi sàn giao thương không?")) return;
     try {

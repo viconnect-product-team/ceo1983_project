@@ -203,20 +203,73 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
 
   emitConnectionRequested(targetUserId: string, requesterProfile: any, connectionId: string) {
     if (!this.server) return;
-    this.server.to(`user:${targetUserId}`).emit('connection:requested', {
-      requesterProfile,
-      connectionId,
-      timestamp: new Date().toISOString(),
-    });
+    const rooms = [`user:${targetUserId}`];
+    if (requesterProfile?.targetMemberCode) rooms.push(`user:${requesterProfile.targetMemberCode}`);
+    if (requesterProfile?.targetMemberId) rooms.push(`user:${requesterProfile.targetMemberId}`);
+    for (const r of rooms) {
+      this.server.to(r).emit('connection:requested', {
+        requesterProfile,
+        connectionId,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   emitConnectionAccepted(targetUserId: string, accepterProfile: any, connectionId: string) {
     if (!this.server) return;
-    this.server.to(`user:${targetUserId}`).emit('connection:accepted', {
-      accepterProfile,
-      connectionId,
-      timestamp: new Date().toISOString(),
-    });
+    const rooms = [`user:${targetUserId}`];
+    if (accepterProfile?.targetMemberCode) rooms.push(`user:${accepterProfile.targetMemberCode}`);
+    if (accepterProfile?.targetMemberId) rooms.push(`user:${accepterProfile.targetMemberId}`);
+    for (const r of rooms) {
+      this.server.to(r).emit('connection:accepted', {
+        accepterProfile,
+        connectionId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  emitConnectionDeclined(targetUserId: string, declinerProfile: any, connectionId: string) {
+    if (!this.server) return;
+    const rooms = [`user:${targetUserId}`];
+    if (declinerProfile?.targetMemberCode) rooms.push(`user:${declinerProfile.targetMemberCode}`);
+    if (declinerProfile?.targetMemberId) rooms.push(`user:${declinerProfile.targetMemberId}`);
+    for (const r of rooms) {
+      this.server.to(r).emit('connection:declined', {
+        declinerProfile,
+        connectionId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  emitMeetingRequested(targetUserId: string, requesterProfile: any, meeting: any) {
+    if (!this.server) return;
+    const rooms = [`user:${targetUserId}`];
+    if (meeting?.partnerCode) rooms.push(`user:${meeting.partnerCode}`);
+    if (meeting?.partnerMemberId) rooms.push(`user:${meeting.partnerMemberId}`);
+    for (const r of rooms) {
+      this.server.to(r).emit('meeting:requested', {
+        requesterProfile,
+        meeting,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  emitMeetingResponded(targetUserId: string, responderProfile: any, meeting: any, status: 'confirmed' | 'declined') {
+    if (!this.server) return;
+    const rooms = [`user:${targetUserId}`];
+    if (meeting?.hostCode) rooms.push(`user:${meeting.hostCode}`);
+    if (meeting?.hostMemberId) rooms.push(`user:${meeting.hostMemberId}`);
+    for (const r of rooms) {
+      this.server.to(r).emit('meeting:responded', {
+        responderProfile,
+        meeting,
+        status,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   emitNotification(userId: string, notification: any) {

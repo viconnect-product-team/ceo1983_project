@@ -111,13 +111,17 @@ function AssociationLoginPage() {
     }
   }, [reason]);
 
-  // Nếu đã đăng nhập và người dùng truy cập trang này, chỉ redirect nếu không có yêu cầu đổi tài khoản
+  // Nếu đã có phiên đăng nhập hợp lệ, tự động chuyển ngay vào App không hiển thị nút Vào App
   useEffect(() => {
-    // Nếu có tham số lý do expired hoặc switch, xóa phiên cũ
     if (reason === "expired") {
       logout?.();
+      return;
     }
-  }, [reason, logout]);
+    if (user) {
+      const target = safeRedirect(redirectTo) || "/association";
+      navigate({ to: target as any, replace: true });
+    }
+  }, [user, reason, redirectTo, navigate, logout]);
 
   const handleSubmit = async () => {
     const cleanId = identifier.trim();
@@ -183,6 +187,15 @@ function AssociationLoginPage() {
     }
   }
 
+  if (user && reason !== "expired") {
+    return (
+      <div className="min-h-screen bg-[#001D4A] flex flex-col items-center justify-center text-white p-4">
+        <div className="h-10 w-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-semibold tracking-wide text-slate-200">Đang chuyển tiếp vào ứng dụng CEO 1983...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <AssociationAppSignIn
@@ -198,7 +211,7 @@ function AssociationLoginPage() {
         onScanCard={() => setScanOpen(true)}
         remember={remember}
         onRememberChange={setRemember}
-        currentSessionUser={user ? { name: user.name, email: user.email } : null}
+        currentSessionUser={null}
         onSwitchAccount={() => {
           clearUserSessionData();
           logout?.();

@@ -351,6 +351,45 @@ async function handleResponse(response: Response, endpoint = "") {
     }
     throw new Error(errMsg);
   }
+  if (response.status === 403) {
+    let errDetail = "";
+    try {
+      const errText = await response.text();
+      if (errText) {
+        const errJson = JSON.parse(errText);
+        errDetail = errJson?.message || "";
+      }
+    } catch {
+      // ignore
+    }
+
+    const toastMsg =
+      errDetail && errDetail.includes("không còn quyền")
+        ? errDetail
+        : "Tài khoản của bạn đã bị thay đổi quyền không còn quyền sử dụng chức năng này, không còn quyền thao tác này.";
+
+    if (typeof window !== "undefined") {
+      import("sonner").then(({ toast }) => {
+        toast.error(toastMsg, { duration: 6000 });
+      });
+
+      localStorage.removeItem("vibe_token");
+      localStorage.removeItem("vibe_refresh_token");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("token");
+      document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+
+      const pathname = window.location.pathname;
+      const isAssociation = pathname.startsWith("/association") || pathname.startsWith("/m");
+      const target = isAssociation ? "/association/login" : "/auth";
+
+      setTimeout(() => {
+        window.location.href = `${target}?reason=permission_revoked`;
+      }, 1200);
+    }
+    throw new Error(toastMsg);
+  }
   if (!response.ok) {
     let errDetail = response.statusText;
     try {

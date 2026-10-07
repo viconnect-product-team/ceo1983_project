@@ -21,37 +21,103 @@ export const SYSTEM_5_ROLES: SystemRoleDef[] = [
     name: "Quản trị",
     shortName: "Quản trị",
     color: "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800",
-    desc: "Toàn quyền hệ thống & phân quyền cao nhất (Super Admin)",
+    desc: "Toàn quyền hệ thống & phân quyền cao nhất",
   },
   {
     key: "admin",
     name: "Admin",
     shortName: "Admin",
     color: "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800",
-    desc: "Quản trị viên vận hành nghiệp vụ CRM & Quản lý các ban",
+    desc: "Quản trị viên vận hành nghiệp vụ CRM",
   },
   {
     key: "tong_thu_ky",
     name: "Tổng thư ký",
     shortName: "Tổng thư ký",
     color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
-    desc: "Điều phối thư ký, sự kiện, cuộc họp, công văn & biểu quyết",
+    desc: "Điều phối thư ký, sự kiện, cuộc họp & công văn",
   },
   {
     key: "truong_ban",
     name: "Trưởng ban",
     shortName: "Trưởng ban",
     color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800",
-    desc: "Lãnh đạo các ban chuyên môn (Thành viên, Xúc tiến TM, Truyền thông, Thiện nguyện)",
+    desc: "Lãnh đạo ban chuyên môn, khởi tạo & duyệt đề xuất ban",
   },
   {
     key: "member",
     name: "Thành viên",
     shortName: "Thành viên",
     color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800",
-    desc: "Hội viên chính thức tham gia sinh hoạt & giao thương nội bộ",
+    desc: "Hội viên chính thức tham gia sinh hoạt & giao thương",
   },
 ];
+
+export const ROLE_OPTIONS = [
+  { value: "quan_tri", label: "Quản trị" },
+  { value: "admin", label: "Admin" },
+  { value: "tong_thu_ky", label: "Tổng thư ký" },
+  { value: "truong_ban", label: "Trưởng ban" },
+  { value: "member", label: "Thành viên" },
+];
+
+export const DEPARTMENT_OPTIONS = [
+  "Ban Thành viên",
+  "Ban xúc tiến",
+  "Ban thiện nguyện",
+  "Ban truyền thông",
+  "Ban quản trị",
+  "Ban tài chính",
+  "Hội viên ceo1983",
+];
+
+export function normalizeRole(r?: string): SystemRoleKey {
+  if (!r) return "member";
+  const s = r.toLowerCase().trim();
+  if (s === "quan_tri" || s === "platform_admin" || s === "superadmin" || s.includes("hệ thống") || s === "quản trị") return "quan_tri";
+  if (s === "admin" || s === "adm" || s.includes("chủ tịch") || s === "bqt") return "admin";
+  if (s.includes("tổng thư ký") || s.includes("tong_thu_ky") || s === "ttk" || s.includes("thu_ky") || s.includes("thư ký")) return "tong_thu_ky";
+  if (s.startsWith("trưởng ban") || s.startsWith("truong_ban") || s.startsWith("phó ban") || s.startsWith("pho_ban") || s === "truong_ban" || s.includes("trưởng ban")) return "truong_ban";
+  return "member";
+}
+
+export function normalizeDept(d?: string): string {
+  if (!d) return "Hội viên ceo1983";
+  const s = d.toLowerCase().trim();
+  if (s.includes("tài chính") || s.includes("kế toán") || s.includes("ngân quỹ")) return "Ban tài chính";
+  if (s.includes("thành viên") && !s.includes("hội viên") && !s.includes("ceo")) return "Ban Thành viên";
+  if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b")) return "Ban xúc tiến";
+  if (s.includes("thiện nguyện") || s.includes("tấm lòng") || s.includes("an sinh")) return "Ban thiện nguyện";
+  if (s.includes("truyền thông") || s.includes("marketing") || s.includes("báo chí")) return "Ban truyền thông";
+  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("thường trực") || s.includes("bqt")) return "Ban quản trị";
+  return "Hội viên ceo1983";
+}
+
+export function handleUnauthorizedAction(featureName?: string, actionName?: string, redirectTarget?: string) {
+  const feat = featureName ? `chức năng "${featureName}"` : "chức năng này";
+  const act = actionName ? `thao tác "${actionName}"` : "thao tác này";
+  const message = `Tài khoản của bạn đã bị thay đổi quyền không còn quyền sử dụng ${feat}, không còn quyền ${act}.`;
+
+  if (typeof window !== "undefined") {
+    import("sonner").then(({ toast }) => {
+      toast.error(message, { duration: 6000 });
+    });
+
+    localStorage.removeItem("vibe_token");
+    localStorage.removeItem("vibe_refresh_token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("token");
+    document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+
+    const isAssociationApp = window.location.pathname.startsWith("/association") || window.location.pathname.startsWith("/m");
+    const target = redirectTarget || (isAssociationApp ? "/association/login" : "/auth");
+
+    setTimeout(() => {
+      window.location.href = `${target}?reason=permission_revoked`;
+    }, 1200);
+  }
+}
 
 /**
  * Chuẩn hóa quyền cho 5 vai trò hệ thống dựa trên hành động

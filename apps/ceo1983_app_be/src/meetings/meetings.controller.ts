@@ -43,6 +43,22 @@ export class MeetingsController {
     return this.meetingsService.getConnectionAppointments(userId);
   }
 
+  @Post('connection-appointments')
+  async createConnectionAppointment(@Request() req: any, @Body() data: any) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.createConnectionAppointment(userId, data);
+  }
+
+  @Post('connection-appointments/:id/respond')
+  async respondConnectionAppointment(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('status') status: 'accepted' | 'declined' | 'confirmed',
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.respondConnectionAppointment(userId, id, status);
+  }
+
   @Post('workspace/list')
   async listWorkspaceMeetings(@Request() req: any, @Body() filters: any) {
     const userId = req.user.id || req.user.sub;

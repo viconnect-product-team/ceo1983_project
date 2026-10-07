@@ -101,12 +101,38 @@ function useAssociationRealtimeNotifications() {
       return;
     }
 
+    const joinRooms = () => {
+      try {
+        const rawUser = localStorage.getItem("auth_user");
+        const user = rawUser ? JSON.parse(rawUser) : null;
+        const rawMember = localStorage.getItem("vba_my_member");
+        const member = rawMember ? JSON.parse(rawMember) : null;
+
+        if (user?.id) {
+          socket.emit("join:room", { room: `user:${user.id}` });
+        }
+        if (member?.code) {
+          socket.emit("join:room", { room: `user:${member.code.toLowerCase()}` });
+        }
+        if (member?.id) {
+          socket.emit("join:room", { room: `user:${member.id}` });
+        }
+      } catch {
+        // ignore room join error
+      }
+    };
+
+    joinRooms();
+    socket.on("connect", joinRooms);
+
     const handleNewNotification = (data: any) => {
       try {
         if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
           navigator.vibrate([80, 50, 100]);
         }
-      } catch {}
+      } catch {
+        // ignore vibrate error on non-supported devices
+      }
 
       window.dispatchEvent(new Event("notifications-updated"));
 
@@ -127,6 +153,7 @@ function useAssociationRealtimeNotifications() {
     socket.on("member:notification_new", handleNewNotification);
 
     return () => {
+      socket.off("connect", joinRooms);
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:count", handleCount);
       socket.off("member:notification_new", handleNewNotification);

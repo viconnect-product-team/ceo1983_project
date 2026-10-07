@@ -2892,14 +2892,14 @@ export class ConnectAppService implements OnModuleInit {
           `.catch(() => {});
         } catch {}
 
-        this.gateway.server?.to(`user:${requesterUserId}`).emit('connection:declined', {
-          connectionId: actualConnId,
-          declinerProfile: {
+        this.gateway.emitConnectionDeclined(
+          requesterUserId,
+          {
             display_name: declinerName,
             avatar_url: declinerUser?.avatar_url || null,
           },
-          timestamp: now.toISOString(),
-        });
+          actualConnId,
+        );
       } catch (e) {
         console.warn('declineConnection broadcast failed:', e);
       }

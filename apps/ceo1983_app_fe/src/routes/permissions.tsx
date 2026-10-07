@@ -37,11 +37,11 @@ export const Route = createFileRoute("/permissions")({
 });
 
 export const ROLE_OPTIONS = [
-  { value: "quan_tri", label: "Quản trị cấp cao", desc: "Toàn quyền quản trị hệ thống và điều hành" },
-  { value: "admin", label: "Admin điều hành", desc: "Quản lý dữ liệu hội viên, tài chính và sự kiện" },
+  { value: "quan_tri", label: "Quản trị", desc: "Toàn quyền quản trị hệ thống và điều hành" },
+  { value: "admin", label: "Admin", desc: "Quản lý dữ liệu hội viên, tài chính và sự kiện" },
   { value: "tong_thu_ky", label: "Tổng thư ký", desc: "Điều phối cuộc họp, ban hành tài liệu và biểu quyết" },
-  { value: "truong_ban", label: "Trưởng ban chuyên môn", desc: "Quản trị nghiệp vụ theo ban chuyên trách" },
-  { value: "member", label: "Thành viên hội viên", desc: "Quyền hội viên chính thức tiêu chuẩn" },
+  { value: "truong_ban", label: "Trưởng ban", desc: "Quản trị nghiệp vụ theo ban chuyên trách" },
+  { value: "member", label: "Thành viên", desc: "Hội viên chính thức tiêu chuẩn" },
 ];
 
 export function normalizeRole(r?: string): string {
@@ -55,25 +55,25 @@ export function normalizeRole(r?: string): string {
 }
 
 export const DEPARTMENT_OPTIONS = [
-  "Ban Quản trị",
-  "Ban Thư ký",
-  "Ban Truyền thông",
-  "Ban Xúc tiến",
   "Ban Thành viên",
-  "Ban Thiện nguyện",
-  "Hội viên CEO 1983",
+  "Ban xúc tiến",
+  "Ban thiện nguyện",
+  "Ban truyền thông",
+  "Ban quản trị",
+  "Ban tài chính",
+  "Hội viên ceo1983",
 ];
 
 export function normalizeDept(d?: string): string {
-  if (!d) return "Hội viên CEO 1983";
+  if (!d) return "Hội viên ceo1983";
   const s = d.toLowerCase().trim();
-  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("công nghệ")) return "Ban Quản trị";
-  if (s.includes("thư ký") || s.includes("điều phối")) return "Ban Thư ký";
-  if (s.includes("truyền thông") || s.includes("sự kiện")) return "Ban Truyền thông";
-  if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b")) return "Ban Xúc tiến";
   if (s.includes("thành viên") && !s.includes("hội viên") && !s.includes("ceo")) return "Ban Thành viên";
-  if (s.includes("thiện nguyện") || s.includes("tài chính") || s.includes("đào tạo") || s.includes("an sinh")) return "Ban Thiện nguyện";
-  return "Hội viên CEO 1983";
+  if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b")) return "Ban xúc tiến";
+  if (s.includes("thiện nguyện") || s.includes("an sinh") || s.includes("tấm lòng vàng")) return "Ban thiện nguyện";
+  if (s.includes("truyền thông") || s.includes("sự kiện") || s.includes("báo chí")) return "Ban truyền thông";
+  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("bqt")) return "Ban quản trị";
+  if (s.includes("tài chính") || s.includes("ngân sách") || s.includes("thu chi") || s.includes("thư ký")) return "Ban tài chính";
+  return "Hội viên ceo1983";
 }
 
 export const ASSOCIATION_OPTIONS: { id: string; name: string; shortName: string }[] = [
@@ -117,15 +117,12 @@ const ROLE_PERMISSIONS_SUMMARY: Record<string, string[]> = {
     "Tham gia kết nối B2B và gian hàng marketplace",
   ],
 };
-
 export interface AppraisalUnit {
   id: string;
-  type: "ban" | "cap";
   code: string;
   name: string;
   leadership: string;
   scope: string;
-  level: number;
   permissions: string[];
   status: "active" | "inactive";
   updatedAt: string;
@@ -133,183 +130,88 @@ export interface AppraisalUnit {
 
 export const DEFAULT_APPRAISAL_UNITS: AppraisalUnit[] = [
   {
-    id: "cap-01",
-    type: "cap",
-    code: "CAP-01",
-    name: "Cấp 1 · Quản Trị Cấp Cao (Super Admin)",
-    leadership: "Chủ tịch & Super Admin",
-    scope: "Toàn quyền cấu hình hệ thống, bảo mật dữ liệu, phê duyệt phân quyền tối cao",
-    level: 1,
-    permissions: [
-      "Toàn quyền thêm, sửa, xóa mọi danh mục và nghiệp vụ",
-      "Bật/tắt ma trận phân quyền 5 cấp bậc",
-      "Xem và xuất nhật ký kiểm toán hệ thống (Audit Log)",
-      "Phê duyệt tối cao các quyết định của BCH",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
-    id: "cap-02",
-    type: "cap",
-    code: "CAP-02",
-    name: "Cấp 2 · Admin Điều Hành (BQT Thường Trực)",
-    leadership: "Phó Chủ tịch & BQT Thường trực",
-    scope: "Điều hành nghiệp vụ CRM, thẩm định hội viên mới, ký duyệt chi và tài trợ",
-    level: 2,
-    permissions: [
-      "Phê duyệt kết nạp và xét duyệt gia hạn hội viên chính thức",
-      "Ký duyệt phiếu thu, chi ngân quỹ hiệp hội",
-      "Quản lý đối tác chiến lược và nhà tài trợ",
-      "Tạo, duyệt và điều hành các sự kiện hiệp hội",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
-    id: "cap-03",
-    type: "cap",
-    code: "CAP-03",
-    name: "Cấp 3 · Tổng Thư Ký (Ban Thư Ký)",
-    leadership: "Tổng thư ký Hiệp hội",
-    scope: "Điều phối thư ký, tổ chức cuộc họp BCH, ban hành công văn & biểu quyết",
-    level: 3,
-    permissions: [
-      "Khởi tạo và chủ trì cuộc họp toàn hiệp hội",
-      "Ban hành nghị quyết, văn bản ký số và công văn chính thức",
-      "Khởi tạo và giám sát các phiên biểu quyết trực tuyến",
-      "Theo dõi điểm danh, chuyên cần và điều lệ hội viên",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
-    id: "cap-04",
-    type: "cap",
-    code: "CAP-04",
-    name: "Cấp 4 · Trưởng Ban Chuyên Môn",
-    leadership: "Trưởng 6 ban chuyên môn",
-    scope: "Quản trị nghiệp vụ theo ban chuyên trách (Thành viên, Xúc tiến, Truyền thông, Thiện nguyện...)",
-    level: 4,
-    permissions: [
-      "Lập kế hoạch và thẩm định nghiệp vụ chuyên môn của ban",
-      "Tổ chức sự kiện, cuộc họp và hoạt động nội bộ ban",
-      "Đề xuất duyệt chi dự toán ngân sách hoạt động ban",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
-    id: "cap-05",
-    type: "cap",
-    code: "CAP-05",
-    name: "Cấp 5 · Thành Viên Hội Viên",
-    leadership: "Hội viên tiêu chuẩn",
-    scope: "Tham gia sinh hoạt, kết nối giao thương B2B và sử dụng nền tảng App Hiệp Hội",
-    level: 5,
-    permissions: [
-      "Đăng ký tham gia sự kiện và chọn chỗ ngồi",
-      "Đăng tin gian hàng giao thương B2B và hẹn gặp 1-on-1",
-      "Biểu quyết và đóng góp ý kiến trong các sự kiện",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
     id: "ban-01",
-    type: "ban",
-    code: "BAN-01",
-    name: "Ban Quản Trị",
-    leadership: "Lê Văn Hùng (Trưởng ban QT)",
-    scope: "Hoạch định chiến lược, chỉ đạo điều hành toàn bộ hoạt động hiệp hội và đối ngoại cấp cao",
-    level: 1,
-    permissions: [
-      "Thẩm định định hướng phát triển chiến lược",
-      "Phê duyệt bổ nhiệm nhân sự Ban chấp hành",
-      "Phê duyệt các dự án hợp tác quy mô lớn",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
-    id: "ban-02",
-    type: "ban",
-    code: "BAN-02",
-    name: "Ban Thư Ký",
-    leadership: "Lê Hoàng Long (Tổng thư ký)",
-    scope: "Điều phối cuộc họp, quản lý văn bản, ban hành nghị quyết và giám sát kỷ luật",
-    level: 3,
-    permissions: [
-      "Thẩm định tính pháp lý hồ sơ, biên bản cuộc họp",
-      "Thẩm định quy chế hoạt động và thể lệ biểu quyết",
-      "Quản lý con dấu số và phát hành tài liệu hiệp hội",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
-    id: "ban-03",
-    type: "ban",
-    code: "BAN-03",
-    name: "Ban Thành Viên",
-    leadership: "Nguyễn Văn Cường (Trưởng ban TV)",
-    scope: "Phát triển hội viên mới, tiếp nhận hồ sơ gia nhập, thẩm định năng lực và cấp mã hội viên",
-    level: 4,
+    code: "BAN-TV",
+    name: "Ban Thành viên",
+    leadership: "Nguyễn Văn Cường (Trưởng ban)",
+    scope: "Phát triển hội viên mới, tiếp nhận hồ sơ gia nhập, thẩm định năng lực và quản lý mã hội viên",
     permissions: [
       "Thẩm định điều kiện kết nạp hội viên mới",
       "Thẩm định hồ sơ gia hạn hội viên định kỳ",
       "Đề xuất khen thưởng hoặc xử lý vi phạm hội viên",
     ],
     status: "active",
-    updatedAt: "2026-10-03",
+    updatedAt: "2026-10-07",
   },
   {
-    id: "ban-04",
-    type: "ban",
-    code: "BAN-04",
-    name: "Ban Xúc Tiến Thương Mại",
-    leadership: "Hoàng Minh Tuấn (Trưởng ban XT)",
+    id: "ban-02",
+    code: "BAN-XT",
+    name: "Ban xúc tiến",
+    leadership: "Hoàng Minh Tuấn (Trưởng ban)",
     scope: "Khởi tạo cơ hội giao thương B2B, gian hàng marketplace, matching 1-on-1 và kết nối hợp đồng",
-    level: 4,
     permissions: [
       "Thẩm định tính xác thực sản phẩm gian hàng B2B",
       "Điều phối các cuộc hẹn kết nối giao thương 1-on-1",
       "Theo dõi và báo cáo giá trị hợp đồng giao thương",
     ],
     status: "active",
-    updatedAt: "2026-10-03",
+    updatedAt: "2026-10-07",
   },
   {
-    id: "ban-05",
-    type: "ban",
-    code: "BAN-05",
-    name: "Ban Truyền Thông",
-    leadership: "Phạm Quang Huy (Trưởng ban TT)",
-    scope: "Quản lý cổng tin tức, thông báo đẩy, hình ảnh thương hiệu CEO 1983 và truyền thông sự kiện",
-    level: 4,
-    permissions: [
-      "Kiểm duyệt tin tức, hình ảnh trước khi xuất bản",
-      "Thẩm định tài liệu truyền thông và quyền lợi tài trợ",
-      "Quản lý thông báo push in-app và email marketing",
-    ],
-    status: "active",
-    updatedAt: "2026-10-03",
-  },
-  {
-    id: "ban-06",
-    type: "ban",
-    code: "BAN-06",
-    name: "Ban Thiện Nguyện",
-    leadership: "Vũ Thu Trang (Trưởng ban TN)",
-    scope: "Tổ chức chương trình thiện nguyện, quản lý quỹ tấm lòng vàng và an sinh xã hội",
-    level: 4,
+    id: "ban-03",
+    code: "BAN-TN",
+    name: "Ban thiện nguyện",
+    leadership: "Vũ Thu Trang (Trưởng ban)",
+    scope: "Tổ chức chương trình thiện nguyện, quản lý quỹ tấm lòng vàng và hoạt động an sinh xã hội",
     permissions: [
       "Thẩm định đối tượng tiếp nhận hỗ trợ thiện nguyện",
       "Giám sát tính minh bạch thu chi quỹ thiện nguyện",
       "Lập kế hoạch và tổng kết các chuyến thiện nguyện",
     ],
     status: "active",
-    updatedAt: "2026-10-03",
+    updatedAt: "2026-10-07",
+  },
+  {
+    id: "ban-04",
+    code: "BAN-TT",
+    name: "Ban truyền thông",
+    leadership: "Phạm Quang Huy (Trưởng ban)",
+    scope: "Quản lý cổng tin tức, thông báo đẩy, hình ảnh thương hiệu CEO 1983 và truyền thông sự kiện",
+    permissions: [
+      "Kiểm duyệt tin tức, hình ảnh trước khi xuất bản",
+      "Thẩm định tài liệu truyền thông và quyền lợi tài trợ",
+      "Quản lý thông báo push in-app và email marketing",
+    ],
+    status: "active",
+    updatedAt: "2026-10-07",
+  },
+  {
+    id: "ban-05",
+    code: "BAN-QT",
+    name: "Ban quản trị",
+    leadership: "Lê Văn Hùng (Trưởng ban)",
+    scope: "Hoạch định chiến lược, chỉ đạo điều hành toàn bộ hoạt động hiệp hội và đối ngoại cấp cao",
+    permissions: [
+      "Thẩm định định hướng phát triển chiến lược",
+      "Phê duyệt bổ nhiệm nhân sự Ban chấp hành",
+      "Phê duyệt các dự án hợp tác quy mô lớn",
+    ],
+    status: "active",
+    updatedAt: "2026-10-07",
+  },
+  {
+    id: "ban-06",
+    code: "BAN-TC",
+    name: "Ban tài chính",
+    leadership: "Trần Anh Tuấn (Trưởng ban)",
+    scope: "Quản lý tài chính, thẩm định thu chi, ngân sách hoạt động và báo cáo tài chính định kỳ",
+    permissions: [
+      "Thẩm định tính hợp lý và cân đối thu chi tài chính",
+      "Thẩm định và giám sát kế hoạch ngân sách sự kiện",
+      "Kiểm toán nội bộ và báo cáo tài chính định kỳ",
+    ],
+    status: "active",
+    updatedAt: "2026-10-07",
   },
 ];
 
@@ -367,14 +269,14 @@ function PermissionsPage() {
   const [editingMember, setEditingMember] = useState<any | null>(null);
   const [editForm, setEditForm] = useState<{ role: string; department: string; associationId: string }>({
     role: "member",
-    department: "Hội viên CEO 1983",
+    department: "Hội viên ceo1983",
     associationId: "c1983000-0000-4000-8000-000000001983",
   });
 
-  // Appraisal units state (6 Ban & 5 Cấp Bậc)
+  // Appraisal units state (6 Ban Chuyên Môn)
   const [appraisalUnits, setAppraisalUnits] = useState<AppraisalUnit[]>(() => {
     try {
-      const stored = localStorage.getItem("ceo1983_appraisal_units_v1");
+      const stored = localStorage.getItem("ceo1983_appraisal_units_v2");
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -384,7 +286,6 @@ function PermissionsPage() {
   });
 
   const [appraisalSearch, setAppraisalSearch] = useState("");
-  const [appraisalTypeFilter, setAppraisalTypeFilter] = useState<"all" | "ban" | "cap">("all");
   const [appraisalStatusFilter, setAppraisalStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [viewingAppraisal, setViewingAppraisal] = useState<AppraisalUnit | null>(null);
@@ -395,8 +296,6 @@ function PermissionsPage() {
   const [appraisalForm, setAppraisalForm] = useState<{
     code: string;
     name: string;
-    type: "ban" | "cap";
-    level: number;
     leadership: string;
     scope: string;
     permissionsText: string;
@@ -404,8 +303,6 @@ function PermissionsPage() {
   }>({
     code: "",
     name: "",
-    type: "ban",
-    level: 4,
     leadership: "",
     scope: "",
     permissionsText: "",
@@ -415,14 +312,13 @@ function PermissionsPage() {
   const saveAppraisalUnitsToStorage = (next: AppraisalUnit[]) => {
     setAppraisalUnits(next);
     try {
-      localStorage.setItem("ceo1983_appraisal_units_v1", JSON.stringify(next));
+      localStorage.setItem("ceo1983_appraisal_units_v2", JSON.stringify(next));
     } catch {}
   };
 
   const filteredAppraisalUnits = useMemo(() => {
     const ql = appraisalSearch.trim().toLowerCase();
     return appraisalUnits.filter((u) => {
-      if (appraisalTypeFilter !== "all" && u.type !== appraisalTypeFilter) return false;
       if (appraisalStatusFilter !== "all" && u.status !== appraisalStatusFilter) return false;
       if (!ql) return true;
       return (
@@ -432,14 +328,12 @@ function PermissionsPage() {
         u.scope.toLowerCase().includes(ql)
       );
     });
-  }, [appraisalUnits, appraisalSearch, appraisalTypeFilter, appraisalStatusFilter]);
+  }, [appraisalUnits, appraisalSearch, appraisalStatusFilter]);
 
   const appraisalAccessors = useMemo(
     () => ({
       code: (u: AppraisalUnit) => u.code,
       name: (u: AppraisalUnit) => u.name,
-      type: (u: AppraisalUnit) => u.type,
-      level: (u: AppraisalUnit) => u.level,
       leadership: (u: AppraisalUnit) => u.leadership,
       status: (u: AppraisalUnit) => u.status,
       updatedAt: (u: AppraisalUnit) => u.updatedAt,
@@ -449,16 +343,14 @@ function PermissionsPage() {
 
   const appraisalTc = useTableControls(filteredAppraisalUnits, appraisalAccessors, {
     initialPageSize: 10,
-    initialSortKey: "level",
+    initialSortKey: "code",
     initialSortDir: "asc",
   });
 
   const handleOpenCreateAppraisal = () => {
     setAppraisalForm({
-      code: `BAN-0${appraisalUnits.filter((u) => u.type === "ban").length + 1}`,
+      code: `BAN-0${appraisalUnits.length + 1}`,
       name: "",
-      type: "ban",
-      level: 4,
       leadership: "",
       scope: "",
       permissionsText: "Thẩm định chuyên môn nghiệp vụ\nBáo cáo kế hoạch hoạt động\nĐề xuất kinh phí và khen thưởng",
@@ -472,8 +364,6 @@ function PermissionsPage() {
     setAppraisalForm({
       code: u.code,
       name: u.name,
-      type: u.type,
-      level: u.level,
       leadership: u.leadership,
       scope: u.scope,
       permissionsText: u.permissions.join("\n"),
@@ -485,7 +375,7 @@ function PermissionsPage() {
     e.preventDefault();
     if (!editingAppraisal) return;
     if (!appraisalForm.name.trim() || !appraisalForm.code.trim()) {
-      toast.error("Vui lòng điền đầy đủ mã và tên thẩm quyền");
+      toast.error("Vui lòng điền đầy đủ mã và tên ban chuyên môn");
       return;
     }
     const perms = appraisalForm.permissionsText
@@ -496,8 +386,6 @@ function PermissionsPage() {
       ...editingAppraisal,
       code: appraisalForm.code.trim().toUpperCase(),
       name: appraisalForm.name.trim(),
-      type: appraisalForm.type,
-      level: Number(appraisalForm.level),
       leadership: appraisalForm.leadership.trim() || "Chưa phân công",
       scope: appraisalForm.scope.trim() || "Chưa có mô tả",
       permissions: perms.length > 0 ? perms : ["Quyền hạn chuyên môn tiêu chuẩn"],
@@ -508,13 +396,13 @@ function PermissionsPage() {
     const next = appraisalUnits.map((item) => (item.id === updated.id ? updated : item));
     saveAppraisalUnitsToStorage(next);
     setEditingAppraisal(null);
-    toast.success(`✓ Đã cập nhật thẩm quyền "${updated.name}" thành công!`);
+    toast.success(`✓ Đã cập nhật ban "${updated.name}" thành công!`);
   };
 
   const handleCreateAppraisal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!appraisalForm.name.trim() || !appraisalForm.code.trim()) {
-      toast.error("Vui lòng điền đầy đủ mã và tên thẩm quyền");
+      toast.error("Vui lòng điền đầy đủ mã và tên ban chuyên môn");
       return;
     }
     const perms = appraisalForm.permissionsText
@@ -522,11 +410,9 @@ function PermissionsPage() {
       .map((s) => s.trim())
       .filter(Boolean);
     const newUnit: AppraisalUnit = {
-      id: `${appraisalForm.type}_${Date.now()}`,
+      id: `ban_${Date.now()}`,
       code: appraisalForm.code.trim().toUpperCase(),
       name: appraisalForm.name.trim(),
-      type: appraisalForm.type,
-      level: Number(appraisalForm.level),
       leadership: appraisalForm.leadership.trim() || "Chưa phân công",
       scope: appraisalForm.scope.trim() || "Chưa có mô tả",
       permissions: perms.length > 0 ? perms : ["Quyền hạn chuyên môn tiêu chuẩn"],
@@ -537,21 +423,21 @@ function PermissionsPage() {
     const next = [newUnit, ...appraisalUnits];
     saveAppraisalUnitsToStorage(next);
     setIsCreateAppraisalOpen(false);
-    toast.success(`✓ Đã tạo thẩm quyền "${newUnit.name}" thành công!`);
+    toast.success(`✓ Đã tạo ban "${newUnit.name}" thành công!`);
   };
 
   const handleConfirmDeleteAppraisal = () => {
     if (!deletingAppraisal) return;
     const next = appraisalUnits.filter((u) => u.id !== deletingAppraisal.id);
     saveAppraisalUnitsToStorage(next);
-    toast.success(`✓ Đã xóa thẩm quyền "${deletingAppraisal.name}"!`);
+    toast.success(`✓ Đã xóa ban "${deletingAppraisal.name}"!`);
     setDeletingAppraisal(null);
   };
 
   const handleResetDefaultAppraisal = () => {
-    if (!window.confirm("Khôi phục danh mục phân quyền 6 Ban và 5 Cấp về thiết lập chuẩn ban đầu?")) return;
+    if (!window.confirm("Khôi phục danh mục 6 Ban Chuyên Môn về thiết lập chuẩn ban đầu?")) return;
     saveAppraisalUnitsToStorage(DEFAULT_APPRAISAL_UNITS);
-    toast.success("✓ Đã khôi phục danh mục 6 Ban và 5 Cấp về mặc định!");
+    toast.success("✓ Đã khôi phục danh mục 6 Ban Chuyên Môn về mặc định!");
   };
 
   const filteredMembers = useMemo(() => {
@@ -709,7 +595,7 @@ function PermissionsPage() {
 
   // Revoke/Delete role action
   const handleRevokeRole = async (m: any) => {
-    if (!window.confirm(`Xác nhận thu hồi toàn bộ đặc quyền quản trị của hội viên "${m.name}"? Tài khoản sẽ chuyển về quyền Thành viên (Member) cơ bản.`)) {
+    if (!window.confirm(`Xác nhận thu hồi toàn bộ đặc quyền quản trị của hội viên "${m.name}"? Tài khoản sẽ chuyển về quyền Thành viên cơ bản.`)) {
       return;
     }
 
@@ -719,7 +605,7 @@ function PermissionsPage() {
         data: {
           memberId: m.id,
           executiveRole: "member",
-          department: "Hội viên CEO 1983",
+          department: "Hội viên ceo1983",
           associationId: "c1983000-0000-4000-8000-000000001983",
         },
       });
@@ -730,7 +616,7 @@ function PermissionsPage() {
           ...prev,
           [m.id]: {
             role: "member",
-            department: "Hội viên CEO 1983",
+            department: "Hội viên ceo1983",
             associationId: "c1983000-0000-4000-8000-000000001983",
           },
         }));
@@ -792,7 +678,7 @@ function PermissionsPage() {
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <PageHeader
           title="Hệ Thống Phân Quyền & Quản Trị Thao Tác"
-          subtitle="Tách biệt rõ ràng: Ma trận quyền cốt lõi, Phân quyền thao tác từng tài khoản và Quản lý nhóm quyền hiệp hội"
+          subtitle="Tách biệt rõ ràng: Ma trận phân quyền vai trò, Phân quyền tài khoản thành viên và Thẩm định 6 ban chuyên môn"
         />
 
         {/* Tab Switcher: 3 Chức năng rõ ràng */}
@@ -806,7 +692,7 @@ function PermissionsPage() {
             }`}
           >
             <ShieldCheck className="h-4 w-4" />
-            <span>1. Ma Trận Phân Quyền 5 Cấp Bậc</span>
+            <span>1. Ma Trận Phân Quyền Vai Trò</span>
           </button>
 
           <button
@@ -818,7 +704,7 @@ function PermissionsPage() {
             }`}
           >
             <Users className="h-4 w-4" />
-            <span>2. Phân Quyền Thao Tác Từng Tài Khoản</span>
+            <span>2. Phân Quyền Tài Khoản Thành Viên</span>
             <span className="rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 text-[10px] px-2 py-0.5">
               {filteredMembers.length}
             </span>
@@ -833,14 +719,14 @@ function PermissionsPage() {
             }`}
           >
             <Layers className="h-4 w-4" />
-            <span>3. Thẩm Quyền 6 Ban &amp; 5 Cấp Bậc</span>
+            <span>3. Thẩm Định 6 Ban Chuyên Môn</span>
             <span className="rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 text-[10px] px-2 py-0.5">
-              6 Ban · 5 Cấp
+              6 Ban
             </span>
           </button>
         </div>
 
-        {/* TAB 1: Ma Trận Phân Quyền 5 Cấp Bậc */}
+        {/* TAB 1: Ma Trận Phân Quyền Vai Trò */}
         {activeTab === "matrix" && <RbacPermissionMatrix />}
 
         {/* TAB 2: Phân Quyền Thao Tác Trực Tiếp Cho Từng Tài Khoản */}
@@ -930,7 +816,7 @@ function PermissionsPage() {
                       <th className="px-4 py-3 min-w-[180px]">Họ tên &amp; Doanh nghiệp</th>
                       <th className="px-4 py-3 min-w-[180px]">Email &amp; SĐT</th>
                       <th className="px-4 py-3 min-w-[140px]">Hiệp hội trực thuộc</th>
-                      <th className="px-4 py-3 min-w-[170px]">Vai trò / Cấp bậc</th>
+                      <th className="px-4 py-3 min-w-[170px]">Vai trò</th>
                       <th className="px-4 py-3 min-w-[180px]">Ban chuyên môn</th>
                       <th className="px-4 py-3 text-center min-w-[140px]">Thao tác quyền</th>
                     </tr>
@@ -1112,7 +998,7 @@ function PermissionsPage() {
                   className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#002b6d] transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Thêm Thẩm Quyền / Ban Mới</span>
+                  <span>Thêm Ban Chuyên Môn</span>
                 </button>
               </div>
             </div>
@@ -1120,30 +1006,30 @@ function PermissionsPage() {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
-                <div className="text-xs text-muted-foreground font-semibold">Tổng Đơn Vị Thẩm Định</div>
-                <div className="text-2xl font-bold text-foreground mt-1">{appraisalUnits.length}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Ban chuyên môn &amp; Cấp phê duyệt</div>
-              </div>
-              <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
-                <div className="text-xs text-muted-foreground font-semibold">6 Ban Chuyên Môn</div>
-                <div className="text-2xl font-bold text-blue-600 mt-1">
-                  {appraisalUnits.filter((u) => u.type === "ban").length} Ban
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Nghiệp vụ chuyên trách hiệp hội</div>
-              </div>
-              <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
-                <div className="text-xs text-muted-foreground font-semibold">5 Cấp Bậc Phê Duyệt</div>
-                <div className="text-2xl font-bold text-purple-600 mt-1">
-                  {appraisalUnits.filter((u) => u.type === "cap").length} Cấp
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Phân cấp thẩm quyền tối cao -&gt; HV</div>
+                <div className="text-xs text-muted-foreground font-semibold">Tổng Số Ban Chuyên Môn</div>
+                <div className="text-2xl font-bold text-[#003B95] dark:text-blue-400 mt-1">{appraisalUnits.length} Ban</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Ban nghiệp vụ chuẩn hiệp hội</div>
               </div>
               <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
                 <div className="text-xs text-muted-foreground font-semibold">Đang Áp Dụng</div>
                 <div className="text-2xl font-bold text-emerald-600 mt-1">
-                  {appraisalUnits.filter((u) => u.status === "active").length} Đơn vị
+                  {appraisalUnits.filter((u) => u.status === "active").length} Ban
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">Hiệu lực trong CSDL hệ thống</div>
+              </div>
+              <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
+                <div className="text-xs text-muted-foreground font-semibold">Tạm Ngưng</div>
+                <div className="text-2xl font-bold text-slate-500 mt-1">
+                  {appraisalUnits.filter((u) => u.status === "inactive").length} Ban
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Chưa kích hoạt hoặc tạm dừng</div>
+              </div>
+              <div className="p-4 rounded-2xl border border-border bg-card shadow-xs">
+                <div className="text-xs text-muted-foreground font-semibold">Quyền Hạn Đã Gán</div>
+                <div className="text-2xl font-bold text-indigo-600 mt-1">
+                  {appraisalUnits.reduce((acc, u) => acc + u.permissions.length, 0)} Quyền
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Quyền thẩm định chuyên môn</div>
               </div>
             </div>
 
@@ -1155,7 +1041,7 @@ function PermissionsPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Tìm theo mã, tên ban, cấp bậc, lãnh đạo, phạm vi..."
+                    placeholder="Tìm theo mã, tên ban, lãnh đạo phụ trách, phạm vi thẩm định..."
                     value={appraisalSearch}
                     onChange={(e) => setAppraisalSearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-border bg-background focus:border-primary outline-none transition"
@@ -1178,16 +1064,6 @@ function PermissionsPage() {
                   </div>
 
                   <select
-                    value={appraisalTypeFilter}
-                    onChange={(e) => setAppraisalTypeFilter(e.target.value as any)}
-                    className="text-xs rounded-xl border border-border bg-background px-3 py-2 outline-none font-semibold focus:border-primary cursor-pointer"
-                  >
-                    <option value="all">Tất cả phân loại ({appraisalUnits.length})</option>
-                    <option value="ban">6 Ban Chuyên Môn ({appraisalUnits.filter((u) => u.type === "ban").length})</option>
-                    <option value="cap">5 Cấp Bậc Phê Duyệt ({appraisalUnits.filter((u) => u.type === "cap").length})</option>
-                  </select>
-
-                  <select
                     value={appraisalStatusFilter}
                     onChange={(e) => setAppraisalStatusFilter(e.target.value as any)}
                     className="text-xs rounded-xl border border-border bg-background px-3 py-2 outline-none font-semibold focus:border-primary cursor-pointer"
@@ -1203,7 +1079,7 @@ function PermissionsPage() {
                     className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#002b6d] transition shadow-xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Tạo mới</span>
+                    <span>Tạo mới ban</span>
                   </button>
                 </div>
               </div>
@@ -1215,36 +1091,22 @@ function PermissionsPage() {
                     <tr className="border-b border-border bg-secondary/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                       <th className="px-4 py-3 text-center w-12">STT</th>
                       <SortHeader
-                        label="Mã Đơn Vị"
+                        label="Mã Ban"
                         columnKey="code"
                         sortKey={appraisalTc.sortKey}
                         sortDir={appraisalTc.sortDir}
                         onSort={appraisalTc.toggleSort}
                       />
                       <SortHeader
-                        label="Tên Ban / Cấp Bậc"
+                        label="Tên Ban Chuyên Môn"
                         columnKey="name"
                         sortKey={appraisalTc.sortKey}
                         sortDir={appraisalTc.sortDir}
                         onSort={appraisalTc.toggleSort}
                       />
-                      <SortHeader
-                        label="Phân Loại"
-                        columnKey="type"
-                        sortKey={appraisalTc.sortKey}
-                        sortDir={appraisalTc.sortDir}
-                        onSort={appraisalTc.toggleSort}
-                      />
-                      <SortHeader
-                        label="Cấp Độ"
-                        columnKey="level"
-                        sortKey={appraisalTc.sortKey}
-                        sortDir={appraisalTc.sortDir}
-                        onSort={appraisalTc.toggleSort}
-                      />
-                      <th className="px-4 py-3 min-w-[150px]">Lãnh Đạo Phụ Trách</th>
-                      <th className="px-4 py-3 min-w-[200px]">Phạm Vi Thẩm Định</th>
-                      <th className="px-4 py-3 text-center min-w-[100px]">Quyền Hạn</th>
+                      <th className="px-4 py-3 min-w-[170px]">Lãnh Đạo Phụ Trách</th>
+                      <th className="px-4 py-3 min-w-[240px]">Phạm Vi Thẩm Định</th>
+                      <th className="px-4 py-3 text-center min-w-[110px]">Quyền Hạn</th>
                       <SortHeader
                         label="Trạng Thái"
                         columnKey="status"
@@ -1258,8 +1120,8 @@ function PermissionsPage() {
                   <tbody className="divide-y divide-border">
                     {appraisalTc.paged.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="py-12 text-center text-xs text-muted-foreground">
-                          Không tìm thấy thẩm quyền nào phù hợp với bộ lọc.
+                        <td colSpan={8} className="py-12 text-center text-xs text-muted-foreground">
+                          Không tìm thấy ban chuyên môn nào phù hợp với bộ lọc.
                         </td>
                       </tr>
                     ) : (
@@ -1272,28 +1134,13 @@ function PermissionsPage() {
                             {u.code}
                           </td>
                           <td className="px-4 py-3">
-                            <div className="font-bold text-foreground text-xs">{u.name}</div>
+                            <div className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                              <Building2 className="w-3.5 h-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                              <span>{u.name}</span>
+                            </div>
                             <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                               <span>Cập nhật: {u.updatedAt}</span>
                             </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            {u.type === "ban" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200">
-                                <Building2 className="w-3 h-3" />
-                                6 Ban Chuyên Môn
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200">
-                                <ShieldCheck className="w-3 h-3" />
-                                5 Cấp Bậc Duyệt
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-secondary text-foreground border border-border">
-                              Cấp {u.level}
-                            </span>
                           </td>
                           <td className="px-4 py-3 text-xs font-medium text-foreground">
                             {u.leadership}
@@ -1305,7 +1152,7 @@ function PermissionsPage() {
                             <button
                               type="button"
                               onClick={() => setViewingAppraisal(u)}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary text-[11px] font-bold text-foreground hover:bg-muted transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-[11px] font-bold text-foreground hover:bg-muted transition cursor-pointer"
                               title="Bấm xem danh sách quyền hạn"
                             >
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -1337,7 +1184,7 @@ function PermissionsPage() {
                                 type="button"
                                 onClick={() => handleOpenEditAppraisal(u)}
                                 className="p-1.5 rounded-lg border border-border text-muted-foreground hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:text-amber-600 transition cursor-pointer"
-                                title="Chỉnh sửa thẩm quyền"
+                                title="Chỉnh sửa ban chuyên môn"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -1345,7 +1192,7 @@ function PermissionsPage() {
                                 type="button"
                                 onClick={() => setDeletingAppraisal(u)}
                                 className="p-1.5 rounded-lg border border-border text-muted-foreground hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 transition cursor-pointer"
-                                title="Xóa thẩm quyền này"
+                                title="Xóa ban chuyên môn này"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1373,23 +1220,19 @@ function PermissionsPage() {
           </section>
         )}
 
-        {/* MODAL 3: Xem chi tiết thẩm quyền 6 Ban / 5 Cấp */}
+        {/* MODAL 3: Xem chi tiết ban chuyên môn */}
         {viewingAppraisal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
             <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
               <div className="flex items-start justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl font-bold text-base ${
-                    viewingAppraisal.type === "ban"
-                      ? "bg-blue-100 text-[#003B95] dark:bg-blue-950 dark:text-blue-300"
-                      : "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
-                  }`}>
-                    {viewingAppraisal.code.slice(0, 3)}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl font-bold text-base bg-blue-100 text-[#003B95] dark:bg-blue-950 dark:text-blue-300">
+                    <Building2 className="w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-foreground">{viewingAppraisal.name}</h3>
                     <p className="text-xs text-muted-foreground font-mono">
-                      Mã: {viewingAppraisal.code} • Cấp {viewingAppraisal.level}
+                      Mã ban: {viewingAppraisal.code}
                     </p>
                   </div>
                 </div>
@@ -1403,24 +1246,12 @@ function PermissionsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="rounded-xl border border-border bg-secondary/30 p-3">
-                  <div className="text-muted-foreground mb-1">Phân loại</div>
-                  <div className="font-bold text-foreground">
-                    {viewingAppraisal.type === "ban" ? "6 Ban Chuyên Môn" : "5 Cấp Bậc Phê Duyệt"}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-border bg-secondary/30 p-3">
-                  <div className="text-muted-foreground mb-1">Cấp độ phê duyệt</div>
-                  <div className="font-bold text-[#003B95] dark:text-blue-400">
-                    Cấp {viewingAppraisal.level}
-                  </div>
-                </div>
                 <div className="col-span-2 rounded-xl border border-border bg-secondary/30 p-3">
                   <div className="text-muted-foreground mb-1">Lãnh đạo phụ trách</div>
                   <div className="font-semibold text-foreground">{viewingAppraisal.leadership}</div>
                 </div>
                 <div className="col-span-2 rounded-xl border border-border bg-secondary/30 p-3">
-                  <div className="text-muted-foreground mb-1">Phạm vi thẩm định</div>
+                  <div className="text-muted-foreground mb-1">Phạm vi thẩm định &amp; nghiệp vụ</div>
                   <div className="font-medium text-foreground leading-relaxed">{viewingAppraisal.scope}</div>
                 </div>
               </div>
@@ -1428,7 +1259,7 @@ function PermissionsPage() {
               <div>
                 <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  Danh sách quyền hạn được gán ({viewingAppraisal.permissions.length} quyền):
+                  Danh sách quyền hạn chuyên môn ({viewingAppraisal.permissions.length} quyền):
                 </h4>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                   {viewingAppraisal.permissions.map((perm, i) => (
@@ -1458,14 +1289,14 @@ function PermissionsPage() {
                   className="px-4 py-2 text-xs font-semibold rounded-xl bg-[#003B95] text-white hover:bg-[#002b6d] shadow-sm flex items-center gap-1.5 cursor-pointer"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  <span>Sửa thẩm quyền</span>
+                  <span>Sửa ban</span>
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* MODAL 4: Chỉnh sửa thẩm quyền 6 Ban / 5 Cấp */}
+        {/* MODAL 4: Chỉnh sửa ban chuyên môn */}
         {editingAppraisal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
             <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
@@ -1473,7 +1304,7 @@ function PermissionsPage() {
                 <div>
                   <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                     <Pencil className="w-4 h-4 text-[#003B95]" />
-                    Chỉnh Sửa Thẩm Quyền Phê Duyệt
+                    Chỉnh Sửa Ban Chuyên Môn
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{editingAppraisal.name} ({editingAppraisal.code})</p>
                 </div>
@@ -1499,45 +1330,6 @@ function PermissionsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-foreground mb-1">Phân loại *</label>
-                    <select
-                      value={appraisalForm.type}
-                      onChange={(e) => setAppraisalForm((prev) => ({ ...prev, type: e.target.value as any }))}
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-semibold focus:border-primary cursor-pointer"
-                    >
-                      <option value="ban">6 Ban Chuyên Môn</option>
-                      <option value="cap">5 Cấp Bậc Phê Duyệt</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-foreground mb-1">Tên ban / Vai trò thẩm quyền *</label>
-                  <input
-                    type="text"
-                    required
-                    value={appraisalForm.name}
-                    onChange={(e) => setAppraisalForm((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-medium focus:border-primary"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-foreground mb-1">Cấp độ duyệt (1 - 5) *</label>
-                    <select
-                      value={appraisalForm.level}
-                      onChange={(e) => setAppraisalForm((prev) => ({ ...prev, level: Number(e.target.value) }))}
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-semibold focus:border-primary cursor-pointer"
-                    >
-                      <option value={1}>Cấp 1 - Tối cao (Super Admin / Chủ tịch)</option>
-                      <option value={2}>Cấp 2 - Ban Quản Trị / Phó Chủ tịch</option>
-                      <option value={3}>Cấp 3 - Tổng Thư Ký</option>
-                      <option value={4}>Cấp 4 - Trưởng Ban Chuyên Môn</option>
-                      <option value={5}>Cấp 5 - Hội Viên Tiêu Chuẩn</option>
-                    </select>
-                  </div>
-                  <div>
                     <label className="block font-bold text-foreground mb-1">Trạng thái *</label>
                     <select
                       value={appraisalForm.status}
@@ -1551,18 +1343,29 @@ function PermissionsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-foreground mb-1">Lãnh đạo / Người phụ trách</label>
+                  <label className="block font-bold text-foreground mb-1">Tên ban chuyên môn *</label>
                   <input
                     type="text"
-                    value={appraisalForm.leadership}
-                    onChange={(e) => setAppraisalForm((prev) => ({ ...prev, leadership: e.target.value }))}
-                    placeholder="Ví dụ: Lê Hoàng Long (Tổng thư ký)"
+                    required
+                    value={appraisalForm.name}
+                    onChange={(e) => setAppraisalForm((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-medium focus:border-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-foreground mb-1">Phạm vi thẩm định / nghiệp vụ</label>
+                  <label className="block font-bold text-foreground mb-1">Lãnh đạo phụ trách</label>
+                  <input
+                    type="text"
+                    value={appraisalForm.leadership}
+                    onChange={(e) => setAppraisalForm((prev) => ({ ...prev, leadership: e.target.value }))}
+                    placeholder="Ví dụ: Nguyễn Văn Cường (Trưởng ban)"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-medium focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-foreground mb-1">Phạm vi thẩm định &amp; nghiệp vụ</label>
                   <textarea
                     rows={2}
                     value={appraisalForm.scope}
@@ -1606,7 +1409,7 @@ function PermissionsPage() {
           </div>
         )}
 
-        {/* MODAL 5: Tạo mới thẩm quyền 6 Ban / 5 Cấp */}
+        {/* MODAL 5: Tạo mới ban chuyên môn */}
         {isCreateAppraisalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
             <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
@@ -1614,9 +1417,9 @@ function PermissionsPage() {
                 <div>
                   <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                     <Plus className="w-4 h-4 text-[#003B95]" />
-                    Thêm Mới Ban / Cấp Bậc Thẩm Quyền
+                    Thêm Mới Ban Chuyên Môn
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Khởi tạo vai trò điều hành hoặc ban chuyên môn mới cho CEO 1983</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Khởi tạo ban chuyên môn mới cho CEO 1983</p>
                 </div>
                 <button
                   type="button"
@@ -1636,49 +1439,9 @@ function PermissionsPage() {
                       required
                       value={appraisalForm.code}
                       onChange={(e) => setAppraisalForm((prev) => ({ ...prev, code: e.target.value }))}
-                      placeholder="VD: BAN-07 hoặc CAP-06"
+                      placeholder="VD: BAN-07"
                       className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-mono font-bold focus:border-primary"
                     />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-foreground mb-1">Phân loại *</label>
-                    <select
-                      value={appraisalForm.type}
-                      onChange={(e) => setAppraisalForm((prev) => ({ ...prev, type: e.target.value as any }))}
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-semibold focus:border-primary cursor-pointer"
-                    >
-                      <option value="ban">6 Ban Chuyên Môn</option>
-                      <option value="cap">5 Cấp Bậc Phê Duyệt</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-foreground mb-1">Tên ban / Vai trò thẩm quyền *</label>
-                  <input
-                    type="text"
-                    required
-                    value={appraisalForm.name}
-                    onChange={(e) => setAppraisalForm((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder="VD: Ban Chuyển Đổi Số & AI / Cấp 6 · Cố Vấn Cấp Cao"
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-medium focus:border-primary"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-foreground mb-1">Cấp độ duyệt (1 - 5) *</label>
-                    <select
-                      value={appraisalForm.level}
-                      onChange={(e) => setAppraisalForm((prev) => ({ ...prev, level: Number(e.target.value) }))}
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-semibold focus:border-primary cursor-pointer"
-                    >
-                      <option value={1}>Cấp 1 - Tối cao (Super Admin / Chủ tịch)</option>
-                      <option value={2}>Cấp 2 - Ban Quản Trị / Phó Chủ tịch</option>
-                      <option value={3}>Cấp 3 - Tổng Thư Ký</option>
-                      <option value={4}>Cấp 4 - Trưởng Ban Chuyên Môn</option>
-                      <option value={5}>Cấp 5 - Hội Viên Tiêu Chuẩn</option>
-                    </select>
                   </div>
                   <div>
                     <label className="block font-bold text-foreground mb-1">Trạng thái *</label>
@@ -1694,7 +1457,19 @@ function PermissionsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-foreground mb-1">Lãnh đạo / Người phụ trách</label>
+                  <label className="block font-bold text-foreground mb-1">Tên ban chuyên môn *</label>
+                  <input
+                    type="text"
+                    required
+                    value={appraisalForm.name}
+                    onChange={(e) => setAppraisalForm((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="VD: Ban Chuyển Đổi Số"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none font-medium focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-foreground mb-1">Lãnh đạo phụ trách</label>
                   <input
                     type="text"
                     value={appraisalForm.leadership}
@@ -1705,7 +1480,7 @@ function PermissionsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-foreground mb-1">Phạm vi thẩm định / nghiệp vụ</label>
+                  <label className="block font-bold text-foreground mb-1">Phạm vi thẩm định &amp; nghiệp vụ</label>
                   <textarea
                     rows={2}
                     value={appraisalForm.scope}
@@ -1770,7 +1545,7 @@ function PermissionsPage() {
               <div className="space-y-3 text-xs">
                 <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-950 bg-rose-50/60 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200 space-y-1">
                   <div className="font-bold text-sm">{deletingAppraisal.name}</div>
-                  <div className="font-mono text-xs">Mã: {deletingAppraisal.code} • Cấp {deletingAppraisal.level}</div>
+                  <div className="font-mono text-xs">Mã ban: {deletingAppraisal.code}</div>
                   <div className="text-[11px] text-rose-700 dark:text-rose-300">{deletingAppraisal.scope}</div>
                 </div>
 

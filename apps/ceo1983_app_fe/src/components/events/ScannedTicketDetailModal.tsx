@@ -23,6 +23,8 @@ export interface ScannedTicketData {
   attendeeCompany?: string;
   attendeePosition?: string;
   attendeeAvatar?: string | null;
+  memberCode?: string;
+  eventId?: string;
   eventTitle: string;
   eventDate?: string;
   eventLocation?: string;
@@ -33,6 +35,9 @@ export interface ScannedTicketData {
   isCheckedIn: boolean;
   checkedInAt?: string | null;
   scannedBy?: string;
+  eventMismatch?: boolean;
+  currentEventId?: string;
+  currentEventTitle?: string;
 }
 
 export interface ScannedTicketDetailModalProps {
@@ -131,8 +136,30 @@ export function ScannedTicketDetailModal({
           </div>
         </div>
 
-        {/* Check-in Status Banner */}
-        <div className="px-5 pt-3.5">
+        {/* Check-in Status Banner & Event Mismatch Alert */}
+        <div className="px-5 pt-3.5 space-y-2.5">
+          {ticket.eventMismatch && (
+            <div className="rounded-2xl border-2 border-rose-500 bg-rose-50/95 dark:bg-rose-950/60 p-3.5 space-y-1.5 shadow-sm">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-black text-xs uppercase tracking-wide">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 animate-pulse" />
+                <span>CẢNH BÁO: VÉ KHÔNG THUỘC SỰ KIỆN ĐANG SOÁT VÉ!</span>
+              </div>
+              <div className="text-xs text-rose-950 dark:text-rose-100 space-y-1">
+                <div>
+                  Vé của đại biểu <strong>{ticket.attendeeName}</strong> ({ticket.memberCode || ticket.ticketCode}) thuộc sự kiện:
+                  <strong className="block font-black text-rose-700 dark:text-rose-300 text-sm mt-0.5">
+                    {ticket.eventTitle}
+                  </strong>
+                </div>
+                {ticket.currentEventTitle && (
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-rose-200 dark:border-rose-900/60">
+                    Sự kiện bàn đang kiểm soát: <strong className="text-slate-900 dark:text-white">{ticket.currentEventTitle}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {ticket.isCheckedIn ? (
             <div className="rounded-2xl border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 p-3 flex items-start gap-3 shadow-xs">
               <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500 text-white shrink-0 mt-0.5">

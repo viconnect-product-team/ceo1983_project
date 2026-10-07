@@ -37,7 +37,7 @@ export const Route = createFileRoute("/association/permissions")({
 export interface MemberPermissionProfile {
   memberCode: string;
   boardName: string;
-  boardRole: "truong-ban" | "pho-ban-thuong-truc" | "pho-ban" | "uy-vien" | "hoi-vien";
+  boardRole: "quan_tri" | "admin" | "tong_thu_ky" | "truong_ban" | "thanh_vien" | string;
   canManageEvents: boolean;
   canManageNews: boolean;
   canManageMarketplace: boolean;
@@ -48,21 +48,24 @@ export interface MemberPermissionProfile {
 }
 
 const BOARD_OPTIONS = [
-  "Ban Quản trị",
-  "Ban Thư ký",
-  "Ban Truyền thông",
-  "Ban Xúc tiến",
   "Ban Thành viên",
-  "Ban Thiện nguyện",
-  "Hội viên CLB CEO 1983",
+  "Ban xúc tiến",
+  "Ban thiện nguyện",
+  "Ban truyền thông",
+  "Ban quản trị",
+  "Ban tài chính",
+  "Hội viên ceo1983",
 ];
 
 const ROLE_LABELS: Record<string, string> = {
-  "truong-ban": "Trưởng Ban",
-  "pho-ban-thuong-truc": "Phó Ban Thường Trực",
-  "pho-ban": "Phó Ban",
-  "uy-vien": "Ủy Viên",
-  "hoi-vien": "Hội Viên",
+  "quan_tri": "Quản trị",
+  "admin": "Admin",
+  "tong_thu_ky": "Tổng thư ký",
+  "truong_ban": "Trưởng ban",
+  "thanh_vien": "Thành viên",
+  "truong-ban": "Trưởng ban",
+  "hoi-vien": "Thành viên",
+  "member": "Thành viên",
 };
 
 function AssociationPermissionsScreen() {
@@ -116,8 +119,8 @@ function AssociationPermissionsScreen() {
   const handleStartEdit = (member: DirectoryMember) => {
     const existing = permissionsMap[member.code] || {
       memberCode: member.code,
-      boardName: member.industry || "Hội viên CLB CEO 1983",
-      boardRole: "hoi-vien",
+      boardName: member.industry || "Hội viên ceo1983",
+      boardRole: "thanh_vien",
       canManageEvents: false,
       canManageNews: false,
       canManageMarketplace: false,
@@ -196,7 +199,7 @@ function AssociationPermissionsScreen() {
               KHÔNG CÓ QUYỀN TRUY CẬP
             </h2>
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-              Khu vực này chỉ dành riêng cho Ban Quản Trị và Ban Thư Ký CLB Doanh Nhân CEO 1983 để phân quyền điều hành ứng dụng.
+              Khu vực này chỉ dành riêng cho Quản trị và Admin để phân quyền điều hành ứng dụng.
             </p>
           </div>
           <Link
@@ -338,7 +341,7 @@ function AssociationPermissionsScreen() {
                       </p>
                       <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                         <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[10px] font-bold text-[#003B95] dark:text-blue-300 border border-[#003B95]/20">
-                          {perm?.boardName || "Hội viên chính thức"}
+                          {perm?.boardName || "Hội viên ceo1983"}
                         </span>
                         {perm?.boardRole && (
                           <span className="rounded-full bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 border border-amber-400/30">
@@ -391,7 +394,7 @@ function AssociationPermissionsScreen() {
                       {/* Board Role Select */}
                       <div>
                         <label className="text-[10.5px] font-bold text-slate-500 uppercase block mb-1">
-                          Chức vụ trong Ban:
+                          Vai trò:
                         </label>
                         <select
                           value={draftPermission.boardRole}
@@ -403,11 +406,11 @@ function AssociationPermissionsScreen() {
                           }
                           className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] cursor-pointer"
                         >
-                          <option value="truong-ban">Trưởng Ban</option>
-                          <option value="pho-ban-thuong-truc">Phó Ban Thường Trực</option>
-                          <option value="pho-ban">Phó Ban</option>
-                          <option value="uy-vien">Ủy Viên</option>
-                          <option value="hoi-vien">Hội Viên</option>
+                          <option value="quan_tri">Quản trị</option>
+                          <option value="admin">Admin</option>
+                          <option value="tong_thu_ky">Tổng thư ký</option>
+                          <option value="truong_ban">Trưởng ban</option>
+                          <option value="thanh_vien">Thành viên</option>
                         </select>
                       </div>
                     </div>
