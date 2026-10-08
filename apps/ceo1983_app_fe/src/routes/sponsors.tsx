@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Award,
@@ -13,6 +13,7 @@ import {
   Trash2,
   TrendingUp,
   UserPlus,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -230,6 +231,14 @@ function SponsorsPage() {
               <UserPlus className="h-4 w-4 text-primary" />
               {t("onb.open")}
             </button>
+            <Link
+              to="/sponsor-packages"
+              search={{ tab: "prizes", eventId: "" }}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-500 hover:bg-amber-500/20 shadow-sm"
+            >
+              <Trophy className="h-4 w-4 text-amber-500" />
+              <span>Cơ Cấu Giải Thưởng Sự Kiện</span>
+            </Link>
             {can(PERMISSIONS.SPONSOR_CREATE) && (
               <button
                 onClick={() => {

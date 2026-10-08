@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import {
   UpdateSponsorPackageDto,
   CreateSponsorDto,
   OnboardSponsorDto,
+  CreateEventPrizeDto,
+  UpdateEventPrizeDto,
 } from './sponsors.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -94,5 +97,35 @@ export class SponsorsController {
   @Post('onboard')
   async onboardSponsor(@Body() body: OnboardSponsorDto) {
     return this.sponsorsService.onboardSponsor(body);
+  }
+
+  // ── EVENT PRIZES / AWARDS ──────────────────────────────────────────────────
+
+  @Get('prizes')
+  async listPrizes(@Query('eventId') eventId?: string) {
+    return this.sponsorsService.listPrizes(eventId);
+  }
+
+  @Get('prizes/:id')
+  async getPrizeById(@Param('id') id: string) {
+    return this.sponsorsService.getPrizeById(id);
+  }
+
+  @Post('prizes')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  async createPrize(@Body() body: CreateEventPrizeDto) {
+    return this.sponsorsService.createPrize(body);
+  }
+
+  @Put('prizes/:id')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  async updatePrize(@Param('id') id: string, @Body() body: UpdateEventPrizeDto) {
+    return this.sponsorsService.updatePrize(id, body);
+  }
+
+  @Delete('prizes/:id')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc')
+  async deletePrize(@Param('id') id: string) {
+    return this.sponsorsService.deletePrize(id);
   }
 }

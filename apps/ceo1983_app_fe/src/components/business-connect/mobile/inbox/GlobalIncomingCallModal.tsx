@@ -85,9 +85,12 @@ export function GlobalIncomingCallModal() {
       startRingtone();
       // External background notification like Messenger / Zalo
       sendExternalNotification(`Cuộc gọi đến từ ${data.callerName || "Đối tác"}`, {
-        body: data.callType === "video" ? "📹 Cuộc gọi Video trực tiếp" : "📞 Cuộc gọi thoại trực tiếp",
+        body:
+          data.callType === "video" ? "📹 Cuộc gọi Video trực tiếp" : "📞 Cuộc gọi thoại trực tiếp",
         icon: data.callerAvatar || "/app-icon.png",
         tag: `call-${data.callId}`,
+        type: "call",
+        url: "/association/messages",
       });
     };
 
@@ -143,13 +146,22 @@ export function GlobalIncomingCallModal() {
 
             {/* Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#D8B282]/50 bg-[#D8B282]/15 text-[11px] font-bold uppercase tracking-wider text-[#F0D59D] mb-6">
-              {incomingCall.callType === "video" ? <Video className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
-              <span>{incomingCall.callType === "video" ? "Cuộc gọi Video đến" : "Cuộc gọi thoại đến"}</span>
+              {incomingCall.callType === "video" ? (
+                <Video className="w-3.5 h-3.5" />
+              ) : (
+                <Phone className="w-3.5 h-3.5" />
+              )}
+              <span>
+                {incomingCall.callType === "video" ? "Cuộc gọi Video đến" : "Cuộc gọi thoại đến"}
+              </span>
             </div>
 
             {/* Avatar with Animated Ripple Rings */}
             <div className="relative mb-5">
-              <div className="absolute -inset-3 rounded-full bg-[#D8B282]/25 animate-ping opacity-75" style={{ animationDuration: "2s" }} />
+              <div
+                className="absolute -inset-3 rounded-full bg-[#D8B282]/25 animate-ping opacity-75"
+                style={{ animationDuration: "2s" }}
+              />
               <div className="absolute -inset-1.5 rounded-full bg-[#D8B282]/40 animate-pulse" />
               {incomingCall.callerAvatar ? (
                 <img
@@ -164,9 +176,13 @@ export function GlobalIncomingCallModal() {
               )}
             </div>
 
-            <h3 className="text-xl font-bold text-white tracking-tight">{incomingCall.callerName}</h3>
+            <h3 className="text-xl font-bold text-white tracking-tight">
+              {incomingCall.callerName}
+            </h3>
             {incomingCall.callerTitle && (
-              <p className="text-xs text-[#9DA3AE] mt-1 max-w-[240px] truncate">{incomingCall.callerTitle}</p>
+              <p className="text-xs text-[#9DA3AE] mt-1 max-w-[240px] truncate">
+                {incomingCall.callerTitle}
+              </p>
             )}
             <p className="text-xs text-[#D8B282] mt-2 flex items-center gap-1 animate-pulse">
               <Sparkles className="w-3.5 h-3.5" /> Đang đổ chuông mời bạn kết nối...

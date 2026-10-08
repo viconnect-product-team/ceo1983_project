@@ -91,8 +91,8 @@ export class TasksController {
   }
 
   @Post(':id/accept')
-  async acceptTask(@Request() req: any, @Param('id') id: string) {
-    const actor = req?.user?.fullName || req?.user?.name || 'Người phụ trách';
+  async acceptTask(@Request() req: any, @Param('id') id: string, @Body('actorName') explicitActor?: string) {
+    const actor = explicitActor || req?.user?.fullName || req?.user?.name || 'Người phụ trách';
     return this.tasksService.acceptTask(id, actor);
   }
 
@@ -101,8 +101,9 @@ export class TasksController {
     @Request() req: any,
     @Param('id') id: string,
     @Body('reason') reason: string,
+    @Body('actorName') explicitActor?: string,
   ) {
-    const actor = req?.user?.fullName || req?.user?.name || 'Người phụ trách';
+    const actor = explicitActor || req?.user?.fullName || req?.user?.name || 'Người phụ trách';
     return this.tasksService.declineTask(id, reason || 'Không thể tiếp nhận vì lý do chuyên môn', actor);
   }
 
@@ -110,19 +111,29 @@ export class TasksController {
   async submitReview(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { deliverables?: string; note?: string },
+    @Body() body: { deliverables?: string; note?: string; actorName?: string },
   ) {
-    const actor = req?.user?.fullName || req?.user?.name || 'Người phụ trách';
+    const actor = body.actorName || req?.user?.fullName || req?.user?.name || 'Người phụ trách';
     return this.tasksService.submitTaskReview(id, body, actor);
+  }
+
+  @Post(':id/evaluate')
+  async evaluateProgress(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { rating?: number; statusAssessment: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD'; feedback: string; actorName?: string },
+  ) {
+    const actor = body.actorName || req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
+    return this.tasksService.evaluateProgress(id, body, actor);
   }
 
   @Post(':id/approve')
   async approveTask(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { rating?: number; feedback?: string },
+    @Body() body: { rating?: number; feedback?: string; actorName?: string },
   ) {
-    const actor = req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
+    const actor = body.actorName || req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
     return this.tasksService.approveTask(id, body, actor);
   }
 
@@ -131,15 +142,37 @@ export class TasksController {
     @Request() req: any,
     @Param('id') id: string,
     @Body('reason') reason: string,
+    @Body('actorName') explicitActor?: string,
   ) {
-    const actor = req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
+    const actor = explicitActor || req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
     return this.tasksService.requestTaskRework(id, reason || 'Yêu cầu hoàn thiện lại kết quả', actor);
   }
 
   @Post(':id/remind')
-  async remindTask(@Request() req: any, @Param('id') id: string) {
-    const actor = req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
+  async remindTask(@Request() req: any, @Param('id') id: string, @Body('actorName') explicitActor?: string) {
+    const actor = explicitActor || req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
     return this.tasksService.remindTask(id, actor);
+  }
+
+  @Post(':id/attachments')
+  async addAttachment(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { name: string; url: string; size?: string; type?: string; isDeliverable?: boolean; actorName?: string },
+  ) {
+    const actor = body.actorName || req?.user?.fullName || req?.user?.name || 'Người dùng';
+    return this.tasksService.addAttachment(id, body, actor);
+  }
+
+  @Delete(':id/attachments/:attachmentIndex')
+  async deleteAttachment(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('attachmentIndex') attachmentIndex: string,
+    @Query('actorName') explicitActor?: string,
+  ) {
+    const actor = explicitActor || req?.user?.fullName || req?.user?.name || 'Người dùng';
+    return this.tasksService.deleteAttachment(id, attachmentIndex, actor);
   }
 
   @Delete(':id')

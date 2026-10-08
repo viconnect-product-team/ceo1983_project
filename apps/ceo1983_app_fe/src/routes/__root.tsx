@@ -331,47 +331,26 @@ function RootComponent() {
     };
   }, []);
 
-  // PWA: block zoom gestures on standalone.
+  // PWA: block multi-touch pinch zoom without intercepting or delaying single-tap clicks
   useEffect(() => {
     const preventGesture = (e: Event) => e.preventDefault();
-    let lastTouchEnd = 0;
-    const onTouchEnd = (e: TouchEvent) => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
-      detachPinchGuard();
+    const onTouchMove = (e: TouchEvent) => {
+      // Chỉ chặn cử chỉ pinch zoom từ 2 ngón tay trở lên, tuyệt đối không can thiệp vào chạm 1 ngón
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
     };
-    const onPinchMove = (e: TouchEvent) => {
-      if (e.touches.length > 1) e.preventDefault();
-    };
-    let pinchGuardAttached = false;
-    function attachPinchGuard() {
-      if (pinchGuardAttached) return;
-      pinchGuardAttached = true;
-      document.addEventListener("touchmove", onPinchMove, { passive: false });
-    }
-    function detachPinchGuard() {
-      if (!pinchGuardAttached) return;
-      pinchGuardAttached = false;
-      document.removeEventListener("touchmove", onPinchMove);
-    }
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length > 1) attachPinchGuard();
-    };
+
     document.addEventListener("gesturestart", preventGesture);
     document.addEventListener("gesturechange", preventGesture);
     document.addEventListener("gestureend", preventGesture);
-    document.addEventListener("touchstart", onTouchStart, { passive: true });
-    document.addEventListener("touchend", onTouchEnd, { passive: false });
-    document.addEventListener("touchcancel", detachPinchGuard, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+
     return () => {
       document.removeEventListener("gesturestart", preventGesture);
       document.removeEventListener("gesturechange", preventGesture);
       document.removeEventListener("gestureend", preventGesture);
-      document.removeEventListener("touchstart", onTouchStart);
-      document.removeEventListener("touchend", onTouchEnd);
-      document.removeEventListener("touchcancel", detachPinchGuard);
-      detachPinchGuard();
+      document.removeEventListener("touchmove", onTouchMove);
     };
   }, []);
 

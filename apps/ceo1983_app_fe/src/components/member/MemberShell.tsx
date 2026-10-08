@@ -11,6 +11,11 @@ const emblem83 = "/ceo1983-emblem-8.png";
 import { PullToRefresh } from "@/components/member/PullToRefresh";
 import { useNavigate } from "@tanstack/react-router";
 import { IncomingConnectionModal } from "@/components/member/IncomingConnectionModal";
+import { NotificationPermissionBanner } from "@/components/business-connect/mobile/inbox/NotificationPermissionBanner";
+import {
+  requestNotificationPermission,
+  sendExternalNotification,
+} from "@/lib/notification-permissions";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { toast } from "sonner";
 
@@ -26,10 +31,15 @@ export function MemberScreen({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // 0. Tự động yêu cầu cấp quyền thông báo khi mở app CEO1983
+    if (typeof window !== "undefined") {
+      void requestNotificationPermission();
+    }
+
     const handleNativeHardwareBack = () => {
       // A. Nếu có Dialog / Modal / Sheet đang mở: Bấm Back sẽ đóng modal trước
       const openDialog = document.querySelector(
-        '[role="dialog"], [data-modal-container], .modal-standard, [data-state="open"]'
+        '[role="dialog"], [data-modal-container], .modal-standard, [data-state="open"]',
       );
       if (openDialog) {
         window.dispatchEvent(new CustomEvent("vba:close_top_modal"));
@@ -63,7 +73,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
     const pushAppState = () => {
       try {
         window.history.pushState({ vbaApp: true, path: pathname }, "", window.location.href);
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     };
 
     // Đẩy state ban đầu nếu chưa có
@@ -74,7 +86,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
     const handlePopState = (e: PopStateEvent) => {
       // A. Nếu có Dialog / Modal / Sheet đang mở: Bấm Back sẽ đóng modal trước
       const openDialog = document.querySelector(
-        '[role="dialog"], [data-modal-container], .modal-standard, [data-state="open"]'
+        '[role="dialog"], [data-modal-container], .modal-standard, [data-state="open"]',
       );
       if (openDialog) {
         window.dispatchEvent(new CustomEvent("vba:close_top_modal"));
@@ -101,7 +113,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
           pushAppState();
           try {
             if (navigator.vibrate) navigator.vibrate(15);
-          } catch {}
+          } catch {
+            /* ignore */
+          }
           toast("Chạm lần nữa để thoát ứng dụng", {
             duration: 2000,
             icon: "👋",
@@ -119,13 +133,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
 
     const handleConnectionAccepted = (data: any) => {
       const partnerName =
-        data?.accepterProfile?.display_name ||
-        data?.accepterProfile?.name ||
-        "Hội viên CEO 1983";
-      const partnerAvatar =
-        data?.accepterProfile?.avatar_url || data?.accepterProfile?.avatar;
-      const partnerCode =
-        data?.accepterProfile?.memberCode || data?.accepterProfile?.code;
+        data?.accepterProfile?.display_name || data?.accepterProfile?.name || "Hội viên CEO 1983";
+      const partnerAvatar = data?.accepterProfile?.avatar_url || data?.accepterProfile?.avatar;
+      const partnerCode = data?.accepterProfile?.memberCode || data?.accepterProfile?.code;
       const partnerUserId = data?.accepterProfile?.userId;
 
       // 1. Lưu vào vba_notifications (đẩy về chuông thông báo hiệp hội)
@@ -148,23 +158,29 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         const rawConnected = localStorage.getItem("vba_connected_members");
         const connectedList = rawConnected ? JSON.parse(rawConnected) : [];
         if (partnerCode && !connectedList.includes(partnerCode)) connectedList.push(partnerCode);
-        if (partnerUserId && !connectedList.includes(partnerUserId)) connectedList.push(partnerUserId);
+        if (partnerUserId && !connectedList.includes(partnerUserId))
+          connectedList.push(partnerUserId);
         localStorage.setItem("vba_connected_members", JSON.stringify(connectedList));
 
         window.dispatchEvent(new CustomEvent("notifications-updated"));
         window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
         window.dispatchEvent(new CustomEvent("vba:connection_accepted"));
-      } catch {}
+      } catch {
+        /* ignore */
+      }
 
-      // 3. Thông báo đẩy 2 chiều trên app
+      // 3. Thông báo đẩy 2 chiều trên app & hệ thống điện thoại
       toast.success(`${partnerName} đã đồng ý kết nối giao thương với bạn!`);
+      sendExternalNotification("🎉 Lời mời kết nối đã được chấp nhận!", {
+        body: `${partnerName} đã đồng ý lời mời kết nối của bạn.`,
+        type: "notification",
+        url: "/association/messages",
+      });
     };
 
     const handleConnectionDeclined = (data: any) => {
       const declinerName =
-        data?.declinerProfile?.display_name ||
-        data?.declinerProfile?.name ||
-        "Hội viên CEO 1983";
+        data?.declinerProfile?.display_name || data?.declinerProfile?.name || "Hội viên CEO 1983";
       try {
         const newNotif = {
           id: `conn_dec_${Date.now()}`,
@@ -180,7 +196,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
 
         window.dispatchEvent(new CustomEvent("notifications-updated"));
-      } catch {}
+      } catch {
+        /* ignore */
+      }
 
       toast.info(`${declinerName} đã từ chối lời mời kết nối.`);
     };
@@ -191,7 +209,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         const newNotif = {
           id: `meet_req_${Date.now()}`,
           title: "Lời mời hẹn gặp kết nối 1-on-1 mới!",
-          body: `${hostName} đã gửi lời mời hẹn gặp kết nối 1-on-1 với bạn: "${data?.title || 'Gặp gỡ kết nối'}".`,
+          body: `${hostName} đã gửi lời mời hẹn gặp kết nối 1-on-1 với bạn: "${data?.title || "Gặp gỡ kết nối"}".`,
           createdAt: new Date().toISOString(),
           unread: true,
           type: "meeting",
@@ -205,7 +223,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
 
         window.dispatchEvent(new CustomEvent("notifications-updated"));
         window.dispatchEvent(new Event("vba.meeting.changed"));
-      } catch {}
+      } catch {
+        /* ignore */
+      }
 
       toast.info(`Bạn có lời mời hẹn gặp 1-on-1 mới từ ${hostName}!`, {
         action: {
@@ -214,6 +234,12 @@ export function MemberScreen({ children }: { children: ReactNode }) {
             window.location.href = "/association/members?tab=meetings";
           },
         },
+      });
+
+      sendExternalNotification("🤝 Lời mời hẹn gặp 1-on-1 mới!", {
+        body: `${hostName} đã gửi lời mời hẹn gặp kết nối 1-on-1 với bạn: "${data?.title || "Gặp gỡ kết nối"}"`,
+        type: "meeting",
+        url: "/association/members?tab=meetings",
       });
     };
 
@@ -240,13 +266,26 @@ export function MemberScreen({ children }: { children: ReactNode }) {
 
         window.dispatchEvent(new CustomEvent("notifications-updated"));
         window.dispatchEvent(new Event("vba.meeting.changed"));
-      } catch {}
+      } catch {
+        /* ignore */
+      }
 
       if (isAccepted) {
         toast.success(`${responderName} đã đồng ý lịch hẹn gặp kết nối 1-on-1!`);
       } else {
         toast.info(`${responderName} đã từ chối lịch hẹn gặp kết nối.`);
       }
+
+      sendExternalNotification(
+        isAccepted ? "🤝 Lịch hẹn đã được đồng ý!" : "🤝 Lịch hẹn đã bị từ chối",
+        {
+          body: isAccepted
+            ? `${responderName} đã đồng ý lịch hẹn gặp kết nối với bạn!`
+            : `${responderName} đã từ chối lịch hẹn gặp kết nối.`,
+          type: "meeting",
+          url: "/association/members?tab=meetings",
+        },
+      );
     };
 
     socket.on("connection:accepted", handleConnectionAccepted);
@@ -279,15 +318,22 @@ export function MemberScreen({ children }: { children: ReactNode }) {
       )}
 
       {/* Dải Edge Guard vô hình 2 bên mép: Đảm bảo pointer-events-none để không chặn cảm ứng người dùng */}
-      <div className="fixed left-0 top-0 bottom-0 w-3 z-40 pointer-events-none touch-none select-none opacity-0" aria-hidden="true" />
-      <div className="fixed right-0 top-0 bottom-0 w-3 z-40 pointer-events-none touch-none select-none opacity-0" aria-hidden="true" />
+      <div
+        className="fixed left-0 top-0 bottom-0 w-3 z-40 pointer-events-none touch-none select-none opacity-0"
+        aria-hidden="true"
+      />
+      <div
+        className="fixed right-0 top-0 bottom-0 w-3 z-40 pointer-events-none touch-none select-none opacity-0"
+        aria-hidden="true"
+      />
 
       <div
         className={`relative z-10 mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${
-          isLight ? "bg-white" : "bg-[var(--vba-bg)]/90"
-        } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] backdrop-blur-sm`}
+          isLight ? "bg-white" : "bg-[var(--vba-bg)]"
+        } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)]`}
       >
         <OfflineBanner />
+        <NotificationPermissionBanner />
         {/* Tắt hoàn toàn cử chỉ vuốt ngang chuyển tab để tránh xung đột với carousel/card và ngăn thoát app */}
         <PullToRefresh
           enableSwipeNav={false}
@@ -412,7 +458,8 @@ function useVirtualKeyboard() {
       setTimeout(() => {
         const active = document.activeElement;
         const tag = active?.tagName?.toLowerCase();
-        const isInput = tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
+        const isInput =
+          tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
         if (!isInput) {
           setKeyboardOpen(false);
         }
@@ -437,7 +484,8 @@ function useVirtualKeyboard() {
       } else {
         const active = document.activeElement;
         const tag = active?.tagName?.toLowerCase();
-        const isInput = tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
+        const isInput =
+          tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
         if (!isInput) {
           setKeyboardOpen(false);
         }
@@ -445,12 +493,10 @@ function useVirtualKeyboard() {
     };
 
     vv.addEventListener("resize", handleResize);
-    vv.addEventListener("scroll", handleResize);
     return () => {
       window.removeEventListener("focusin", handleFocusIn);
       window.removeEventListener("focusout", handleFocusOut);
       vv.removeEventListener("resize", handleResize);
-      vv.removeEventListener("scroll", handleResize);
     };
   }, []);
 
@@ -604,7 +650,10 @@ function MemberTabBar() {
             className="pointer-events-none absolute left-2 -top-3.5 flex flex-col items-center select-none"
             aria-hidden="true"
           >
-            <span className="text-[14px] animate-bounce filter drop-shadow-[0_2px_6px_rgba(239,68,68,0.7)]" style={{ animationDuration: "3s" }}>
+            <span
+              className="text-[14px] animate-bounce filter drop-shadow-[0_2px_6px_rgba(239,68,68,0.7)]"
+              style={{ animationDuration: "3s" }}
+            >
               🏮
             </span>
           </div>
@@ -656,7 +705,8 @@ function MemberTabBar() {
                     style={{
                       background: "linear-gradient(135deg, #002B70 0%, #003B95 50%, #0052CC 100%)",
                       border: "2.5px solid #FFFFFF",
-                      boxShadow: "0 6px 16px rgba(0, 59, 149, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.3)",
+                      boxShadow:
+                        "0 6px 16px rgba(0, 59, 149, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.3)",
                     }}
                   >
                     <QrCode
@@ -669,7 +719,10 @@ function MemberTabBar() {
                       }}
                     />
                     {isMidAutumn && (
-                      <span className="absolute -top-1.5 -right-1.5 text-[10px] select-none" aria-hidden="true">
+                      <span
+                        className="absolute -top-1.5 -right-1.5 text-[10px] select-none"
+                        aria-hidden="true"
+                      >
                         🌕
                       </span>
                     )}
@@ -684,19 +737,29 @@ function MemberTabBar() {
           if (isMidAutumn) {
             if (tab.to.includes("notifications")) {
               seasonalBadge = (
-                <span className="absolute -top-1 -right-1 text-[9px] animate-bounce select-none" style={{ animationDuration: "2.4s" }} aria-hidden="true">
+                <span
+                  className="absolute -top-1 -right-1 text-[9px] animate-bounce select-none"
+                  style={{ animationDuration: "2.4s" }}
+                  aria-hidden="true"
+                >
                   🏮
                 </span>
               );
             } else if (tab.to.includes("messages")) {
               seasonalBadge = (
-                <span className="absolute -top-1.5 -right-1.5 text-[9px] animate-pulse select-none" aria-hidden="true">
+                <span
+                  className="absolute -top-1.5 -right-1.5 text-[9px] animate-pulse select-none"
+                  aria-hidden="true"
+                >
                   🐰
                 </span>
               );
             } else if (tab.to.includes("profile")) {
               seasonalBadge = (
-                <span className="absolute -top-1.5 -right-1.5 text-[9px] animate-wiggle select-none" aria-hidden="true">
+                <span
+                  className="absolute -top-1.5 -right-1.5 text-[9px] animate-wiggle select-none"
+                  aria-hidden="true"
+                >
                   ✨
                 </span>
               );
@@ -722,7 +785,9 @@ function MemberTabBar() {
                 title={`${unreadMessageCount} tin nhắn mới`}
               >
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-70" />
-                <span className="relative z-10">{unreadMessageCount > 99 ? "99+" : unreadMessageCount}</span>
+                <span className="relative z-10">
+                  {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+                </span>
               </span>
             );
           }
@@ -743,10 +808,14 @@ function MemberTabBar() {
               </div>
               <span
                 className={`text-[10px] transition-colors select-none ${
-                  active ? "font-bold text-[#003B95] dark:text-amber-400" : "font-medium text-[var(--vba-text-dim)]"
+                  active
+                    ? "font-bold text-[#003B95] dark:text-amber-400"
+                    : "font-medium text-[var(--vba-text-dim)]"
                 }`}
               >
-                {lang === "en" ? tabLabels[tab.to]?.en || t(tab.label) : tabLabels[tab.to]?.vi || t(tab.label)}
+                {lang === "en"
+                  ? tabLabels[tab.to]?.en || t(tab.label)
+                  : tabLabels[tab.to]?.vi || t(tab.label)}
               </span>
               {/* Dot indicator nhỏ màu vàng kim sang trọng khi tab active (chuẩn MoMo) */}
               {active && (

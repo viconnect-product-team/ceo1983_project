@@ -48,6 +48,43 @@ export class OnboardSponsorDto {
   phone?: string;
 }
 
+export type PrizeTargetType = 'PRODUCT' | 'SPONSOR_PACKAGE' | 'CUSTOM' | 'VOUCHER' | 'CASH';
+
+export class CreateEventPrizeDto {
+  eventId!: string;
+  rankName!: string;
+  title!: string;
+  value?: string;
+  amount?: number;
+  quantity?: number;
+  targetType!: PrizeTargetType;
+  targetId?: string;
+  sponsorName?: string;
+  sponsorPackageId?: string;
+  description?: string;
+  iconName?: string;
+  imageUrl?: string;
+  highlightColor?: string;
+}
+
+export class UpdateEventPrizeDto {
+  eventId?: string;
+  rankName?: string;
+  title?: string;
+  value?: string;
+  amount?: number;
+  quantity?: number;
+  targetType?: PrizeTargetType;
+  targetId?: string;
+  sponsorName?: string;
+  sponsorPackageId?: string;
+  description?: string;
+  iconName?: string;
+  imageUrl?: string;
+  highlightColor?: string;
+  status?: string;
+}
+
 @Injectable()
 export class SponsorsService {
   constructor(private prisma: PrismaService) {}
@@ -360,5 +397,186 @@ export class SponsorsService {
     `;
 
     return sponsor;
+  }
+
+  // ── EVENT PRIZES / AWARDS (DYNAMIC DATABASE BACKED) ───────────────────────
+
+  async listPrizes(eventId?: string) {
+    try {
+      const rows = eventId
+        ? await this.prisma.$queryRaw<any[]>`
+            SELECT ep.*, p.name as prod_name, p.company as prod_company, p.price as prod_price, p.image_url as prod_image,
+                   sp.tier as pkg_tier, sp.price as pkg_price
+            FROM public.event_prizes ep
+            LEFT JOIN public.products p ON ep.target_id = p.id
+            LEFT JOIN public.sponsor_packages sp ON ep.target_id = sp.id
+            WHERE ep.event_id = ${eventId}
+            ORDER BY ep.created_at ASC
+          `
+        : await this.prisma.$queryRaw<any[]>`
+            SELECT ep.*, p.name as prod_name, p.company as prod_company, p.price as prod_price, p.image_url as prod_image,
+                   sp.tier as pkg_tier, sp.price as pkg_price
+            FROM public.event_prizes ep
+            LEFT JOIN public.products p ON ep.target_id = p.id
+            LEFT JOIN public.sponsor_packages sp ON ep.target_id = sp.id
+            ORDER BY ep.created_at ASC
+          `;
+
+      return (rows || []).map((r) => ({
+        id: r.id,
+        eventId: r.event_id,
+        rankName: r.rank_name,
+        title: r.title || r.prod_name || 'Giải thưởng sự kiện',
+        value: r.value || (r.amount ? `${Number(r.amount).toLocaleString('vi-VN')} VNĐ` : 'Giá trị liên hệ'),
+        amount: Number(r.amount ?? r.prod_price ?? r.pkg_price ?? 0),
+        quantity: Number(r.quantity ?? 1),
+        targetType: (r.target_type || 'PRODUCT') as PrizeTargetType,
+        targetId: r.target_id || null,
+        sponsorName: r.sponsor_name || r.prod_company || 'Nhà tài trợ CEO 1983',
+        sponsorPackageId: r.sponsor_package_id || null,
+        description: r.description || '',
+        iconName: r.icon_name || 'Gift',
+        imageUrl: r.image_url || r.prod_image || null,
+        highlightColor: r.highlight_color || 'from-amber-500 to-yellow-600',
+        status: r.status || 'active',
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      }));
+    } catch (err: any) {
+      console.error('[SponsorsService] listPrizes error:', err);
+      return [];
+    }
+  }
+
+  async getPrizeById(id: string) {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT ep.*, p.name as prod_name, p.company as prod_company, p.price as prod_price, p.image_url as prod_image
+      FROM public.event_prizes ep
+      LEFT JOIN public.products p ON ep.target_id = p.id
+      WHERE ep.id = ${id}
+      LIMIT 1
+    `;
+    if (!rows || rows.length === 0) {
+      throw new NotFoundException(`Prize ${id} not found`);
+    }
+    const r = rows[0];
+    return {
+      id: r.id,
+      eventId: r.event_id,
+      rankName: r.rank_name,
+      title: r.title || r.prod_name,
+      value: r.value || (r.amount ? `${Number(r.amount).toLocaleString('vi-VN')} VNĐ` : 'Giá trị liên hệ'),
+      amount: Number(r.amount ?? r.prod_price ?? 0),
+      quantity: Number(r.quantity ?? 1),
+      targetType: (r.target_type || 'PRODUCT') as PrizeTargetType,
+      targetId: r.target_id || null,
+      sponsorName: r.sponsor_name || r.prod_company,
+      sponsorPackageId: r.sponsor_package_id || null,
+      description: r.description || '',
+      iconName: r.icon_name || 'Gift',
+      imageUrl: r.image_url || r.prod_image || null,
+      highlightColor: r.highlight_color || 'from-amber-500 to-yellow-600',
+      status: r.status || 'active',
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    };
+  }
+
+  async createPrize(dto: CreateEventPrizeDto) {
+    const id = `PRZ-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+    const eventId = dto.eventId;
+    let title = dto.title?.trim();
+    let sponsorName = dto.sponsorName?.trim();
+    let amount = dto.amount ? BigInt(Math.round(dto.amount)) : 0n;
+    let imageUrl = dto.imageUrl || null;
+    let description = dto.description?.trim() || '';
+
+    // If targetType is PRODUCT and targetId is provided, pull product info if not provided
+    if (dto.targetType === 'PRODUCT' && dto.targetId) {
+      const prodRows = await this.prisma.$queryRaw<any[]>`
+        SELECT name, title, company, price, image_url, description FROM public.products WHERE id = ${dto.targetId} LIMIT 1
+      `.catch(() => []);
+      if (prodRows.length > 0) {
+        const prod = prodRows[0];
+        if (!title) title = prod.name || prod.title;
+        if (!sponsorName) sponsorName = prod.company;
+        if (!amount && prod.price) amount = BigInt(prod.price);
+        if (!imageUrl) imageUrl = prod.image_url;
+        if (!description) description = prod.description || '';
+      }
+    } else if (dto.targetType === 'SPONSOR_PACKAGE' && dto.targetId) {
+      const pkgRows = await this.prisma.$queryRaw<any[]>`
+        SELECT tier, price, in_kind_description FROM public.sponsor_packages WHERE id = ${dto.targetId} LIMIT 1
+      `.catch(() => []);
+      if (pkgRows.length > 0) {
+        const pkg = pkgRows[0];
+        if (!title) title = `Gói tài trợ ${String(pkg.tier).toUpperCase()}`;
+        if (!amount && pkg.price) amount = BigInt(pkg.price);
+        if (!description) description = pkg.in_kind_description || '';
+      }
+    }
+
+    const rankName = dto.rankName?.trim() || 'Giải Thưởng';
+    const value = dto.value?.trim() || (amount > 0n ? `${Number(amount).toLocaleString('vi-VN')} VNĐ` : 'Đang cập nhật');
+    const quantity = Math.max(1, Math.round(dto.quantity ?? 1));
+    const targetType = dto.targetType || 'PRODUCT';
+    const targetId = dto.targetId || null;
+    const sponsorPackageId = dto.sponsorPackageId || null;
+    const iconName = dto.iconName || 'Gift';
+    const highlightColor = dto.highlightColor || 'from-amber-500 to-yellow-600';
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.event_prizes (
+        id, event_id, rank_name, title, value, amount, quantity,
+        target_type, target_id, sponsor_name, sponsor_package_id,
+        description, icon_name, image_url, highlight_color, status,
+        created_at, updated_at
+      ) VALUES (
+        ${id}, ${eventId}, ${rankName}, ${title}, ${value}, ${amount}, ${quantity},
+        ${targetType}, ${targetId}, ${sponsorName}, ${sponsorPackageId},
+        ${description}, ${iconName}, ${imageUrl}, ${highlightColor}, 'active',
+        NOW(), NOW()
+      )
+    `;
+
+    return this.getPrizeById(id);
+  }
+
+  async updatePrize(id: string, dto: UpdateEventPrizeDto) {
+    const existing = await this.getPrizeById(id);
+    const eventId = dto.eventId ?? existing.eventId;
+    const rankName = dto.rankName ?? existing.rankName;
+    const title = dto.title ?? existing.title;
+    const value = dto.value ?? existing.value;
+    const amount = BigInt(Math.round(dto.amount !== undefined ? dto.amount : existing.amount));
+    const quantity = Math.round(dto.quantity !== undefined ? dto.quantity : existing.quantity);
+    const targetType = dto.targetType ?? existing.targetType;
+    const targetId = dto.targetId !== undefined ? dto.targetId : existing.targetId;
+    const sponsorName = dto.sponsorName !== undefined ? dto.sponsorName : existing.sponsorName;
+    const sponsorPackageId = dto.sponsorPackageId !== undefined ? dto.sponsorPackageId : existing.sponsorPackageId;
+    const description = dto.description !== undefined ? dto.description : existing.description;
+    const iconName = dto.iconName ?? existing.iconName;
+    const imageUrl = dto.imageUrl !== undefined ? dto.imageUrl : existing.imageUrl;
+    const highlightColor = dto.highlightColor ?? existing.highlightColor;
+    const status = dto.status ?? existing.status;
+
+    await this.prisma.$executeRaw`
+      UPDATE public.event_prizes
+      SET event_id = ${eventId}, rank_name = ${rankName}, title = ${title}, value = ${value},
+          amount = ${amount}, quantity = ${quantity}, target_type = ${targetType}, target_id = ${targetId},
+          sponsor_name = ${sponsorName}, sponsor_package_id = ${sponsorPackageId}, description = ${description},
+          icon_name = ${iconName}, image_url = ${imageUrl}, highlight_color = ${highlightColor},
+          status = ${status}, updated_at = NOW()
+      WHERE id = ${id}
+    `;
+
+    return this.getPrizeById(id);
+  }
+
+  async deletePrize(id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.event_prizes WHERE id = ${id}
+    `;
+    return { ok: true, id };
   }
 }

@@ -23,7 +23,12 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.view.View;
 import android.widget.Toast;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
+import androidx.core.app.NotificationCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -55,13 +60,21 @@ public class MainActivity extends BridgeActivity {
     private IntentFilter[] mNfcIntentFilters;
     private String[][] mNfcTechLists;
 
+    private static final String CHANNEL_CALLS_ID = "ceo1983_channel_calls";
+    private static final String CHANNEL_MESSAGES_ID = "ceo1983_channel_messages";
+    private static final String CHANNEL_MEETINGS_ID = "ceo1983_channel_meetings";
+    private static final String CHANNEL_OPPORTUNITIES_ID = "ceo1983_channel_opportunities";
+    private static final String CHANNEL_GENERAL_ID = "ceo1983_channel_general";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        createNotificationChannels();
         requestNativePermissions();
         setupNativeBridge();
         initNfc();
         handleNfcIntent(getIntent());
+        handleTargetUrlIntent(getIntent());
     }
 
     private void initNfc() {
@@ -127,6 +140,7 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleNfcIntent(intent);
+        handleTargetUrlIntent(intent);
     }
 
     private void handleNfcIntent(Intent intent) {
@@ -290,6 +304,9 @@ public class MainActivity extends BridgeActivity {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.READ_MEDIA_IMAGES);
             }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.POST_NOTIFICATIONS);
+            }
         } else {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
@@ -315,6 +332,197 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public boolean isNative() {
             return true;
+        }
+
+        @JavascriptInterface
+        public void showNotification(String title, String body, String type, String tag, String url) {
+            MainActivity.this.runOnUiThread(() -> {
+                MainActivity.this.displayNativeNotification(title, body, type, tag, url);
+            });
+        }
+
+        @JavascriptInterface
+        public void requestNotificationPermission() {
+            MainActivity.this.runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, PERMISSION_REQUEST_CODE);
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean isNotificationPermissionGranted() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+            }
+            return true;
+        }
+    }
+
+    private void createNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager == null) return;
+
+            // 1. Calls Channel (Max Importance, Heads-up banner, high priority sound & vibration)
+            NotificationChannel callChannel = new NotificationChannel(
+                CHANNEL_CALLS_ID,
+                "Cuộc gọi đến CEO 1983",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            callChannel.setDescription("Thông báo cuộc gọi thoại & video trực tiếp từ hội viên");
+            callChannel.enableVibration(true);
+            callChannel.setVibrationPattern(new long[]{0, 500, 250, 500, 250, 500});
+            callChannel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            manager.createNotificationChannel(callChannel);
+
+            // 2. Messages Channel (High Importance, Heads-up banner)
+            NotificationChannel msgChannel = new NotificationChannel(
+                CHANNEL_MESSAGES_ID,
+                "Tin nhắn CEO 1983",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            msgChannel.setDescription("Thông báo tin nhắn đối tác và hội viên");
+            msgChannel.enableVibration(true);
+            msgChannel.setVibrationPattern(new long[]{0, 200, 100, 200});
+            msgChannel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            manager.createNotificationChannel(msgChannel);
+
+            // 3. Meetings Channel (High Importance, Heads-up banner)
+            NotificationChannel meetingChannel = new NotificationChannel(
+                CHANNEL_MEETINGS_ID,
+                "Cuộc hẹn & Gặp mặt B2B",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            meetingChannel.setDescription("Thông báo cuộc hẹn, lịch gặp và thư mời kết nối B2B");
+            meetingChannel.enableVibration(true);
+            meetingChannel.setVibrationPattern(new long[]{0, 300, 150, 300});
+            meetingChannel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            manager.createNotificationChannel(meetingChannel);
+
+            // 4. Opportunities Channel (High Importance, Heads-up banner)
+            NotificationChannel oppChannel = new NotificationChannel(
+                CHANNEL_OPPORTUNITIES_ID,
+                "Cơ hội hợp tác & Giao thương",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            oppChannel.setDescription("Thông báo cơ hội hợp tác kinh doanh và kết nối cung cầu");
+            oppChannel.enableVibration(true);
+            oppChannel.setVibrationPattern(new long[]{0, 250, 150, 250});
+            oppChannel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            manager.createNotificationChannel(oppChannel);
+
+            // 5. General Notifications Channel (High Importance)
+            NotificationChannel generalChannel = new NotificationChannel(
+                CHANNEL_GENERAL_ID,
+                "Thông báo chung CEO 1983",
+                NotificationManager.IMPORTANCE_HIGH
+            );
+            generalChannel.setDescription("Thông báo từ Ban Thư Ký và Hiệp hội");
+            generalChannel.enableVibration(true);
+            generalChannel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+            manager.createNotificationChannel(generalChannel);
+        }
+    }
+
+    private void handleTargetUrlIntent(Intent intent) {
+        if (intent == null) return;
+        String targetUrl = intent.getStringExtra("target_url");
+        if (targetUrl != null && !targetUrl.isEmpty() && getBridge() != null && getBridge().getWebView() != null) {
+            runOnUiThread(() -> {
+                try {
+                    WebView webView = getBridge().getWebView();
+                    String safeUrl = targetUrl.replace("'", "\\'");
+                    String js = "(function() {" +
+                        "  try {" +
+                        "    if (window.location.pathname !== '" + safeUrl + "' && !window.location.href.includes('" + safeUrl + "')) {" +
+                        "      window.location.href = '" + safeUrl + "';" +
+                        "    }" +
+                        "    window.dispatchEvent(new CustomEvent('native:navigate', { detail: '" + safeUrl + "' }));" +
+                        "  } catch(e) {}" +
+                        "})();";
+                    webView.evaluateJavascript(js, null);
+                } catch (Exception ignored) {}
+            });
+        }
+    }
+
+    public void displayNativeNotification(String title, String body, String type, String tag, String url) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    requestNativePermissions();
+                    return;
+                }
+            }
+
+            String channelId = CHANNEL_GENERAL_ID;
+            int priority = NotificationCompat.PRIORITY_HIGH;
+            long[] vibration = new long[]{0, 200, 100, 200};
+            String category = NotificationCompat.CATEGORY_REMINDER;
+
+            if ("call".equalsIgnoreCase(type)) {
+                channelId = CHANNEL_CALLS_ID;
+                priority = NotificationCompat.PRIORITY_MAX;
+                vibration = new long[]{0, 500, 250, 500, 250, 500};
+                category = NotificationCompat.CATEGORY_CALL;
+            } else if ("message".equalsIgnoreCase(type) || "dm".equalsIgnoreCase(type)) {
+                channelId = CHANNEL_MESSAGES_ID;
+                priority = NotificationCompat.PRIORITY_HIGH;
+                vibration = new long[]{0, 200, 100, 200};
+                category = NotificationCompat.CATEGORY_MESSAGE;
+            } else if ("meeting".equalsIgnoreCase(type) || "appointment".equalsIgnoreCase(type)) {
+                channelId = CHANNEL_MEETINGS_ID;
+                priority = NotificationCompat.PRIORITY_HIGH;
+                vibration = new long[]{0, 300, 150, 300};
+                category = NotificationCompat.CATEGORY_EVENT;
+            } else if ("opportunity".equalsIgnoreCase(type) || "co_hoi".equalsIgnoreCase(type) || "b2b".equalsIgnoreCase(type)) {
+                channelId = CHANNEL_OPPORTUNITIES_ID;
+                priority = NotificationCompat.PRIORITY_HIGH;
+                vibration = new long[]{0, 250, 150, 250};
+                category = NotificationCompat.CATEGORY_RECOMMENDATION;
+            }
+
+            Intent notifyIntent = new Intent(this, MainActivity.class);
+            notifyIntent.setAction(Intent.ACTION_MAIN);
+            notifyIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            if (url != null && !url.isEmpty()) {
+                notifyIntent.putExtra("target_url", url);
+            }
+
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            int requestCode = (tag != null ? Math.abs(tag.hashCode()) : (int) System.currentTimeMillis());
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, requestCode, notifyIntent, flags);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title != null ? title : "CEO 1983")
+                .setContentText(body != null ? body : "")
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body != null ? body : ""))
+                .setPriority(priority)
+                .setCategory(category)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setVibrate(vibration)
+                .setDefaults(NotificationCompat.DEFAULT_SOUND | NotificationCompat.DEFAULT_LIGHTS);
+
+            if ("call".equalsIgnoreCase(type)) {
+                builder.setFullScreenIntent(pendingIntent, true);
+            }
+
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                int notifId = (tag != null ? Math.abs(tag.hashCode()) : (int) (System.currentTimeMillis() % 100000));
+                manager.notify(tag, notifId, builder.build());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -398,7 +606,20 @@ public class MainActivity extends BridgeActivity {
             settings.setDomStorageEnabled(true);
             settings.setDatabaseEnabled(true);
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+
+            // Tối ưu hóa hiệu năng phần cứng 60fps - 120fps siêu mượt chuẩn Native
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+            webView.setVerticalScrollBarEnabled(false);
+            webView.setHorizontalScrollBarEnabled(false);
+            settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                settings.setOffscreenPreRaster(true);
+            }
+
             webView.addJavascriptInterface(new NativeBridge(), "AndroidNative");
+            webView.addJavascriptInterface(new NativeBridge(), "CEO1983Native");
+            webView.addJavascriptInterface(new NativeBridge(), "NativeBridge");
         }
     }
 

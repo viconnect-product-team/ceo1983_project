@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { isRouteAllowedByMatrix, type SystemRoleKey } from "@/lib/rbac-permission-helpers";
 import { useT } from "@/lib/i18n";
 import { useRole } from "@/hooks/use-role";
+import { useSidebarLabels } from "@/hooks/use-sidebar-labels";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useServerData } from "@/hooks/use-server-data";
@@ -170,17 +171,20 @@ function NavItem({
   collapsed,
   onNavigate,
   badge,
+  getLabel,
 }: {
   item: Item;
   pathname: string | undefined;
   collapsed: boolean;
   onNavigate?: () => void;
   badge?: number;
+  getLabel?: (it: { to?: string; key?: string; label?: string }, fallback?: string) => string;
 }) {
   const t = useT();
   const Icon = item.icon;
   const active = isActive(pathname, item.to);
-  const label = item.label || t(item.key);
+  const defaultLabel = item.label || t(item.key);
+  const label = getLabel ? getLabel(item, defaultLabel) : defaultLabel;
   const showBadge = !!badge && badge > 0;
   const badgeText = badge && badge > 99 ? "99+" : String(badge ?? 0);
   const cls = `group relative flex w-full items-center gap-3 rounded-lg py-2 text-[13px] outline-none transition-[background-color,color] duration-[var(--motion-fast)] ease-out focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
@@ -259,14 +263,16 @@ function Group({
 }) {
   if (!items || items.length === 0) return null;
   const t = useT();
+  const { getLabel, getGroupLabel } = useSidebarLabels();
+  const displayGroupLabel = label ? getGroupLabel(label, t(label)) : undefined;
   return (
     <div className={collapsed ? "px-2.5" : "px-3"}>
-      {label &&
+      {displayGroupLabel &&
         (collapsed ? (
           <div className="mx-2 mb-1.5 mt-1 h-px bg-sidebar-border/50" />
         ) : (
           <div className="mb-1 px-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/45">
-            {t(label)}
+            {displayGroupLabel}
           </div>
         ))}
       <div className="space-y-[3px]">
@@ -278,6 +284,7 @@ function Group({
             collapsed={collapsed}
             onNavigate={onNavigate}
             badge={it.to ? badges?.[it.to] : undefined}
+            getLabel={getLabel}
           />
         ))}
       </div>

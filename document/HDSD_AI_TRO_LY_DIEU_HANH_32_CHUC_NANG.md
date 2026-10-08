@@ -99,9 +99,51 @@ Trợ lý AI nắm vững và hỗ trợ hướng dẫn chi tiết cho **tất c
 
 ---
 
-## 4. BẢO ĐẢM CHẤT LƯỢNG MÃ NGUỒN & KIỂM THỬ
+---
+
+## 4. TÍNH NĂNG ĐIỀU KHIỂN RẢNH TAY BẰNG GIỌNG NÓI (HANDS-FREE AUTO VOICE NAVIGATION)
+
+Bên cạnh luồng 2 pha, hệ thống đã được nâng cấp tính năng **Tự động chuyển màn hình rảnh tay (Hands-free Navigation)** đáp ứng xu hướng AI điều khiển app bằng giọng nói:
+- **Lệnh thực thi trực tiếp**: Khi người dùng nói các câu lệnh ngắn như:
+  - *"Mở danh bạ"* / *"Tìm hội viên"* -> Tự động chuyển đến `/association/members`
+  - *"Vào sự kiện"* / *"Xem lịch trình"* -> Tự động chuyển đến `/association/events`
+  - *"Chợ B2B"* / *"Xem sản phẩm"* -> Tự động chuyển đến `/association/products`
+  - *"Cơ hội giao thương"* / *"Hợp tác"* -> Tự động chuyển đến `/association/products?tab=opportunities`
+  - *"Xem hội phí"* / *"Đóng tiền"* -> Tự động chuyển đến `/association/profile?tab=fees`
+  - *"Thẻ NFC"* / *"Danh thiếp số"* -> Tự động chuyển đến `/association/card`
+  - *"Quét check-in"* / *"Soát vé"* -> Tự động chuyển đến `/association/checkin`
+  - *"Về trang chủ"* -> Tự động chuyển đến `/association`
+- **Thời gian phản hồi**: Phân loại ý định siêu tốc (< 10ms), AI nói xác nhận ngắn gọn và tự động kích hoạt `navigate({ to: route })` sau 1 giây, hoàn toàn không cần người dùng chạm tay vào màn hình.
+
+---
+
+## 5. CÔNG NGHỆ DYNAMIC RAG (TRA CỨU CƠ SỞ DỮ LIỆU ĐỘNG CHỐNG TRẢ LỜI LẶP)
+
+- **Tra cứu thời gian thực đa bảng**: Mọi câu hỏi về doanh nghiệp, hội viên, sản phẩm, cơ hội B2B, sự kiện và văn bản được backend truy vấn trực tiếp vào PostgreSQL:
+  - Tra cứu họ tên, chức vụ, SĐT thành viên từ `public.members`.
+  - Tra cứu thông tin giá và sản phẩm từ `public.products`.
+  - Tra cứu cung cầu B2B từ `public.opportunities`.
+  - Tra cứu sự kiện và ngày giờ từ `public.events`.
+  - Tra cứu quy chế và tài liệu từ `public.documents`.
+  - Cung cấp thông tin chuẩn 7 Ban chuyên môn và tài khoản đóng hội phí MB Bank `0983198383`.
+- **Dynamic Synthesizer (Triệt tiêu 100% hiện tượng trả lời lặp)**:
+  - Bơm khối ngữ cảnh CSDL thực tế vào Gemini 2.0 Flash prompt.
+  - Khi chạy ngoại tuyến hoặc không có Gemini API key, bộ tổng hợp động tự động bóc tách bản ghi và trình bày với các mẫu văn phong xoay vòng đa dạng, tuyệt đối không lặp lại một câu trả lời mẫu đơn điệu.
+
+---
+
+## 6. GIAO DIỆN TỐI GIẢN DOANH NHÂN (MINIMALIST EXECUTIVE DARK UI)
+
+- **Tone màu chủ đạo**: Obsidian Slate (`bg-slate-950`, `bg-slate-900`, `border-slate-800`), loại bỏ triệt để các hình vẽ hoạt hình robot, gradient cầu vồng lòe loẹt.
+- **Nút mở trợ lý**: Nút tròn Slate mạ vàng nhẹ, bóng đổ sang trọng, tích hợp chỉ báo trạng thái lắng nghe tinh tế.
+- **Thẻ gợi ý câu hỏi**: Dạng viên thuốc đơn sắc tối giản, thông tin cô đọng, dễ đọc, tương phản cao.
+
+---
+
+## 7. BẢO ĐẢM CHẤT LƯỢNG MÃ NGUỒN & KIỂM THỬ
 
 - **TypeScript Compilation**: Kiểm tra `tsc --noEmit` đạt **Exit code 0 (0 errors)** trên toàn bộ:
   - Backend NestJS: `apps/ceo1983_app_be`
   - Frontend Vite: `apps/ceo1983_app_fe`
 - **Tuân thủ quy tắc bảo mật & Git**: Toàn bộ thay đổi mã nguồn được lưu trữ cục bộ, tuyệt đối không tự ý thực hiện `git push` hay `git commit`.
+

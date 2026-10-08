@@ -7,7 +7,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { useServerData } from "@/hooks/use-server-data";
-import { useRole } from "@/hooks/use-role";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
@@ -28,7 +28,7 @@ const ICON_OPTIONS = ["Gift", "Briefcase", "Scale", "Calculator", "Hotel"];
 
 function PerksAdminPage() {
   const t = useT();
-  const { isAdmin, loading: roleLoading } = useRole();
+  const { isAdmin, can, loading: roleLoading } = useRole();
   const fetchPerks = useServerFn(listPerksAdminFn);
   const {
     data: perks,
@@ -119,6 +119,10 @@ function PerksAdminPage() {
   ];
 
   const onSubmit = async (v: CrudValues) => {
+    if (!can(PERMISSIONS.SPONSOR_CREATE) && !can(PERMISSIONS.MEMBER_CREATE)) {
+      toast.error("Bạn không có quyền thêm mới hoặc chỉnh sửa ưu đãi!");
+      return;
+    }
     setSubmitting(true);
     try {
       if (editing) {
@@ -139,6 +143,10 @@ function PerksAdminPage() {
   };
 
   const onDelete = async (p: AdminPerk) => {
+    if (!can(PERMISSIONS.SPONSOR_CREATE) && !can(PERMISSIONS.MEMBER_CREATE)) {
+      toast.error("Bạn không có quyền xóa ưu đãi!");
+      return;
+    }
     if (!window.confirm(t("common.confirmDelete", { name: p.title }))) return;
     setDeletingId(p.id);
     try {
@@ -181,17 +189,19 @@ function PerksAdminPage() {
                 <LayoutGrid className="h-3.5 w-3.5" /> Thẻ
               </button>
             </div>
-            <button
-              onClick={() => {
-                setEditing(null);
-                setOpen(true);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <Plus className="h-4 w-4" />
-              {t("perks.create")}
-            </button>
+            {(can(PERMISSIONS.SPONSOR_CREATE) || can(PERMISSIONS.MEMBER_CREATE)) && (
+              <button
+                onClick={() => {
+                  setEditing(null);
+                  setOpen(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Plus className="h-4 w-4" />
+                {t("perks.create")}
+              </button>
+            )}
           </div>
         }
       />

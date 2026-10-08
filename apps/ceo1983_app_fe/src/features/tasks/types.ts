@@ -26,10 +26,14 @@ export interface TaskHistory {
 }
 
 export interface TaskAttachment {
+  id?: string;
   name: string;
   url: string;
   size?: string;
   type?: string;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  isDeliverable?: boolean;
 }
 
 export type MeetingPlatform = 'ZOOM' | 'GOOGLE_MEET' | 'UNIWORK';
@@ -72,6 +76,16 @@ export const MEETING_PLATFORMS: Record<
   },
 };
 
+export interface TaskProgressEvaluation {
+  id: string;
+  evaluatedAt: string;
+  evaluatorName: string;
+  evaluatorRole?: string;
+  rating?: number; // 1-5 sao
+  statusAssessment: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD';
+  feedback: string;
+}
+
 export interface TaskDelegation {
   acceptedAt?: string;
   declinedAt?: string;
@@ -87,6 +101,8 @@ export interface TaskDelegation {
   reworkReason?: string;
   lastRemindedAt?: string;
   reminderCount?: number;
+  lastEvaluatedAt?: string;
+  lastEvaluationAssessment?: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD';
 }
 
 export interface TaskItem {
@@ -121,6 +137,7 @@ export interface TaskItem {
   comments: TaskComment[];
   history: TaskHistory[];
   delegation?: TaskDelegation;
+  evaluations?: TaskProgressEvaluation[];
   createdAt: string;
   updatedAt: string;
 }

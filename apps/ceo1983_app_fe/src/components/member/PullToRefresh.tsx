@@ -169,6 +169,9 @@ export function PullToRefresh({
     const diffX = touch.clientX - startXRef.current;
     const diffY = touch.clientY - startYRef.current;
 
+    // Nếu người dùng đang cuộn xuống bên dưới (diffY <= 0), lập tức thoát để trình duyệt xử lý native scroll
+    if (diffY <= 0 && !isPulling) return;
+
     // Xác định hướng cử chỉ: Kéo dọc khi ở đỉnh trang
     if (!gestureDirectionRef.current) {
       if (Math.abs(diffY) > 8 && Math.abs(diffY) > Math.abs(diffX) * 1.2) {
@@ -296,7 +299,7 @@ export function PullToRefresh({
   const progressPct = Math.min(100, Math.round((pullY / PULL_THRESHOLD) * 100));
 
   return (
-    <div className="relative h-full w-full overflow-hidden select-none">
+    <div className="relative h-full w-full overflow-hidden">
       {/* ── REACHABILITY OVERLAY (VÙNG TRÊN KHI HẠ MÀN HÌNH) ── */}
       {isReachabilityActive && (
         <div
@@ -359,15 +362,21 @@ export function PullToRefresh({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className={`h-full w-full overflow-y-auto overscroll-contain smooth-scroll-touch select-none-touch transition-transform ${className}`}
+        className={`h-full w-full overflow-y-auto overscroll-contain smooth-scroll-touch ${
+          !isPulling && (pullY > 0 || isReachabilityActive) ? "transition-transform" : ""
+        } ${className}`}
         style={{
           transform: isReachabilityActive
             ? "translate3d(0, 35vh, 0)"
             : pullY > 0
             ? `translate3d(0, ${pullY * 0.75}px, 0)`
-            : "translate3d(0, 0, 0)",
-          willChange: isPulling ? "transform" : "auto",
-          transitionDuration: isReachabilityActive ? "300ms" : isPulling ? "0ms" : "240ms",
+            : undefined,
+          willChange: isPulling || isReachabilityActive ? "transform" : undefined,
+          transitionDuration: isReachabilityActive
+            ? "300ms"
+            : !isPulling && pullY > 0
+            ? "240ms"
+            : "0ms",
           transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >

@@ -6,17 +6,13 @@ import { useViewerUserId } from "./use-viewer-user-id";
 import { notificationKeys } from "./use-bc-notifications";
 import { bcMobileHomeKeys } from "./use-business-connect-home";
 import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
+import { sendExternalNotification } from "@/lib/notification-permissions";
 
 // Global cache of recent notifications / connection event keys to strictly prevent double toasts across components & re-renders
 const globalRecentToastKeys = new Map<string, number>();
 
 export function useConnectAppRealtimeNotifications() {
-  let qc: ReturnType<typeof useQueryClient> | null = null;
-  try {
-    qc = useQueryClient();
-  } catch {
-    qc = null;
-  }
+  const qc = useQueryClient();
   const viewerUserId = useViewerUserId();
   const socket = useConnectAppSocket();
 
@@ -88,6 +84,12 @@ export function useConnectAppRealtimeNotifications() {
       if (!shouldShowToast(dedupeKeys)) return;
 
       playNotificationSound();
+      sendExternalNotification(title, {
+        body: `${senderName}: Đã gửi lời mời kết nối thành viên VIP`,
+        tag: dedupeKeys[0] || undefined,
+        type: "notification",
+        url: "/connect-app/network/requests",
+      });
 
       toast.custom(
         (toastId) => (
@@ -195,7 +197,7 @@ export function useConnectAppRealtimeNotifications() {
             </div>
           </div>
         ),
-        { duration: 10000 }
+        { duration: 10000 },
       );
     };
 
@@ -212,13 +214,23 @@ export function useConnectAppRealtimeNotifications() {
         data?.actorDisplayName ||
         "Đối tác";
 
+      sendExternalNotification(`${name} đã xác nhận kết bạn`, {
+        body: `${name} đã đồng ý lời mời kết bạn của bạn.`,
+        tag: `conn_acc_${connectionId}`,
+        type: "notification",
+        url: "/association/messages",
+      });
+
       toast.success(`${name} đã xác nhận kết bạn`, {
         description: `${name} đã đồng ý lời mời kết bạn của bạn.`,
         action: {
           label: "Xem hồ sơ",
           onClick: () => {
             if (typeof window !== "undefined") {
-              const uId = data?.accepterUserId || data?.actorUserId || data?.safeDisplayData?.counterpartUserId;
+              const uId =
+                data?.accepterUserId ||
+                data?.actorUserId ||
+                data?.safeDisplayData?.counterpartUserId;
               if (uId) {
                 window.location.href = `/connect-app/network/u:${uId}`;
               } else {
@@ -299,6 +311,19 @@ export function useConnectAppRealtimeNotifications() {
       const title = notif?.safeDisplayData?.title || "Bạn có thông báo mới";
       const desc = notif?.safeDisplayData?.body || notif?.safeDisplayData?.companyName;
 
+      const notifCategory = notif?.category || notif?.type;
+      const isOpp =
+        notifCategory === "opportunity" ||
+        notifCategory === "b2b" ||
+        notif?.action?.targetRoute?.includes("opportunities");
+
+      sendExternalNotification(title, {
+        body: desc,
+        tag: `notif-${notifId}`,
+        type: isOpp ? "opportunity" : "notification",
+        url: notif?.action?.targetRoute || "/association",
+      });
+
       toast.info(title, {
         description: desc,
         action: {
@@ -367,7 +392,12 @@ export function useConnectAppRealtimeNotifications() {
     };
 
     const handleUnreadCount = (data: { unreadCount?: number; count?: number }) => {
-      const count = typeof data?.unreadCount === "number" ? data.unreadCount : typeof data?.count === "number" ? data.count : 0;
+      const count =
+        typeof data?.unreadCount === "number"
+          ? data.unreadCount
+          : typeof data?.count === "number"
+            ? data.count
+            : 0;
       qc.setQueryData(notificationKeys.unreadCount(), { count });
       if (viewerUserId) {
         qc.setQueryData(bcMobileHomeKeys.home(viewerUserId), (old: any) => {
@@ -386,6 +416,159 @@ export function useConnectAppRealtimeNotifications() {
       invalidateEverything();
     };
 
+    const handleDmReceived = (data: any) => {
+      invalidateEverything();
+      const msg = data?.message || data;
+      const threadId = data?.threadId || msg?.threadId;
+      const senderUserId = msg?.senderUserId || msg?.sender_id || msg?.fromUserId;
+      if (senderUserId && viewerUserId && String(senderUserId) === String(viewerUserId)) {
+        return;
+      }
+      const senderName =
+        msg?.senderName || data?.threadSummary?.otherUserName || msg?.actorDisplayName || "Đối tác";
+      const rawBody = msg?.body || msg?.text || msg?.content || "";
+      if (!rawBody && !msg?.attachments?.length) return;
+
+      const dedupeKey = `dm_msg:${msg?.id || threadId || Date.now()}`;
+      if (!shouldShowToast([dedupeKey])) return;
+
+      playNotificationSound();
+
+      if (typeof rawBody === "string" && rawBody.startsWith("[B2B_CONNECT_INVITE]")) {
+        const title = `🤝 Thư mời gặp mặt B2B từ ${senderName}`;
+        const bodyText = "Mời bạn tham gia cuộc gặp trao đổi hợp tác kinh doanh B2B";
+        toast.info(title, {
+          description: bodyText,
+          action: {
+            label: "Xem ngay",
+            onClick: () => {
+              if (typeof window !== "undefined") {
+                window.location.href = `/association/messages${threadId ? `?thread=${threadId}` : ""}`;
+              }
+            },
+          },
+          duration: 8000,
+        });
+        sendExternalNotification(title, {
+          body: bodyText,
+          tag: `meeting-${threadId || Date.now()}`,
+          type: "meeting",
+          url: `/association/messages${threadId ? `?thread=${threadId}` : ""}`,
+        });
+        return;
+      }
+
+      if (typeof rawBody === "string" && rawBody.startsWith("[call:")) {
+        const title = `📞 Cuộc gọi từ ${senderName}`;
+        const bodyText = "Cuộc gọi thoại / video trực tiếp giữa 2 hội viên";
+        sendExternalNotification(title, {
+          body: bodyText,
+          tag: `call-log-${threadId || Date.now()}`,
+          type: "call",
+          url: `/association/messages${threadId ? `?thread=${threadId}` : ""}`,
+        });
+        return;
+      }
+
+      const title = `💬 ${senderName}`;
+      const bodyText = rawBody.length > 120 ? rawBody.slice(0, 120) + "..." : rawBody;
+      toast.info(title, {
+        description: bodyText,
+        action: {
+          label: "Trả lời",
+          onClick: () => {
+            if (typeof window !== "undefined") {
+              window.location.href = `/association/messages${threadId ? `?thread=${threadId}` : ""}`;
+            }
+          },
+        },
+        duration: 6000,
+      });
+      sendExternalNotification(title, {
+        body: bodyText,
+        tag: `dm-${threadId || Date.now()}`,
+        type: "message",
+        url: `/association/messages${threadId ? `?thread=${threadId}` : ""}`,
+      });
+    };
+
+    const handleMeetingRequested = (data: any) => {
+      invalidateEverything();
+      const reqProfile = data?.requesterProfile;
+      const meeting = data?.meeting;
+      const name = reqProfile?.display_name || reqProfile?.name || "Hội viên";
+      const title = `🤝 Lịch hẹn / Cuộc gặp mới từ ${name}`;
+      const body =
+        meeting?.title || meeting?.purpose || "Mời bạn tham gia cuộc gặp trao đổi kết nối B2B";
+
+      playNotificationSound();
+      toast.info(title, {
+        description: body,
+        action: {
+          label: "Chi tiết",
+          onClick: () => {
+            if (typeof window !== "undefined") window.location.href = "/association/messages";
+          },
+        },
+        duration: 8000,
+      });
+      sendExternalNotification(title, {
+        body,
+        tag: `meeting-req-${meeting?.id || Date.now()}`,
+        type: "meeting",
+        url: "/association/messages",
+      });
+    };
+
+    const handleMeetingResponded = (data: any) => {
+      invalidateEverything();
+      const resProfile = data?.responderProfile;
+      const status = data?.status;
+      const name = resProfile?.display_name || resProfile?.name || "Đối tác";
+      const title = `🤝 Phản hồi cuộc hẹn từ ${name}`;
+      const body =
+        status === "confirmed" ? "Đã đồng ý cuộc hẹn gặp với bạn" : "Đã từ chối lời mời gặp";
+
+      playNotificationSound();
+      toast.info(title, {
+        description: body,
+        duration: 7000,
+      });
+      sendExternalNotification(title, {
+        body,
+        tag: `meeting-res-${Date.now()}`,
+        type: "meeting",
+        url: "/association/messages",
+      });
+    };
+
+    const handleOpportunityCreated = (data: any) => {
+      invalidateEverything();
+      const opp = data?.opportunity || data;
+      const authorName = opp?.authorName || opp?.creatorName || opp?.memberName || "Hội viên";
+      const oppTitle = opp?.title || "Cơ hội giao thương mới";
+      const title = `✨ Cơ hội hợp tác mới từ ${authorName}`;
+      const bodyText = oppTitle.length > 120 ? oppTitle.slice(0, 120) + "..." : oppTitle;
+
+      playNotificationSound();
+      toast.info(title, {
+        description: bodyText,
+        action: {
+          label: "Xem ngay",
+          onClick: () => {
+            if (typeof window !== "undefined") window.location.href = `/opportunities`;
+          },
+        },
+        duration: 8000,
+      });
+      sendExternalNotification(title, {
+        body: bodyText,
+        tag: `opp-${opp?.id || Date.now()}`,
+        type: "opportunity",
+        url: `/opportunities`,
+      });
+    };
+
     socket.on("notification:new", handleNewNotification);
     socket.on("notification:updated", handleNotificationUpdated);
     socket.on("notification:deleted", handleNotificationDeleted);
@@ -396,6 +579,13 @@ export function useConnectAppRealtimeNotifications() {
     socket.on("connection:accepted", handleConnectionAccepted);
     socket.on("connection:declined", handleConnectionDeclined);
     socket.on("connection:cancelled", handleConnectionCancelled);
+    socket.on("dm:thread_updated", handleDmReceived);
+    socket.on("dm:message_received", handleDmReceived);
+    socket.on("member:message_received", handleDmReceived);
+    socket.on("meeting:requested", handleMeetingRequested);
+    socket.on("meeting:responded", handleMeetingResponded);
+    socket.on("opportunity:created", handleOpportunityCreated);
+    socket.on("opportunity:new", handleOpportunityCreated);
 
     return () => {
       socket.off("notification:new", handleNewNotification);
@@ -408,7 +598,13 @@ export function useConnectAppRealtimeNotifications() {
       socket.off("connection:accepted", handleConnectionAccepted);
       socket.off("connection:declined", handleConnectionDeclined);
       socket.off("connection:cancelled", handleConnectionCancelled);
+      socket.off("dm:thread_updated", handleDmReceived);
+      socket.off("dm:message_received", handleDmReceived);
+      socket.off("member:message_received", handleDmReceived);
+      socket.off("meeting:requested", handleMeetingRequested);
+      socket.off("meeting:responded", handleMeetingResponded);
+      socket.off("opportunity:created", handleOpportunityCreated);
+      socket.off("opportunity:new", handleOpportunityCreated);
     };
   }, [socket, viewerUserId, qc]);
 }
-

@@ -29,7 +29,7 @@ import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboa
 import { MemberAccountModal } from "@/components/dashboard/MemberAccountModal";
 import { EmptyState, NoSearchResult, ListSkeleton } from "@/components/dashboard/StateKit";
 import { useT, type TKey } from "@/lib/i18n";
-import { useRole } from "@/hooks/use-role";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { downloadCsv } from "@/lib/csv";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
@@ -312,8 +312,11 @@ function MembersPage() {
       return Array.isArray(res) ? res : [];
     },
   });
-  const { isAdmin, canApproveMembers, isBTV, isBQT, isPlatformAdmin, loading: roleLoading } = useRole();
+  const { isAdmin, canApproveMembers, isBTV, isBQT, isPlatformAdmin, can, loading: roleLoading } = useRole();
   const canApprove = isAdmin || canApproveMembers || isBTV || isBQT || isPlatformAdmin;
+  const canEdit = isAdmin || can(PERMISSIONS.MEMBER_EDIT);
+  const canDelete = isAdmin || can(PERMISSIONS.MEMBER_DELETE);
+  const canAccount = isAdmin;
   const { data: acctStatuses = {} } = useQuery({
     queryKey: ["member-account-statuses"],
     queryFn: async () => {
@@ -333,9 +336,18 @@ function MembersPage() {
   const [region, setRegion] = useUrlState<RegionKey | "all">("region", "all");
   const [type, setType] = useUrlState<MemberType | "all">("type", "all");
   const [status, setStatus] = useUrlState<MemberStatus | "all">("status", "all");
+  const [paymentFilter, setPaymentFilter] = useUrlState<"all" | "paid" | "unpaid">("payment", "all");
   const [favOnly, setFavOnly] = useState(false);
   const [sort, setSort] = useState<"name" | "newest" | "code" | "renewal">("newest");
   const [sel, setSel] = useState<Set<string>>(new Set());
+
+  const paidCount = useMemo(() => {
+    return members.filter((m) => {
+      const rawStatus = (m as any).payment_status || (m as any).paymentStatus;
+      return m.feePaid || rawStatus === "paid" || rawStatus === "cash";
+    }).length;
+  }, [members]);
+  const unpaidCount = members.length - paidCount;
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
@@ -441,6 +453,10 @@ function MembersPage() {
       };
 
       if (editing) {
+        if (!can(PERMISSIONS.MEMBER_EDIT)) {
+          toast.error("Bạn không có quyền chỉnh sửa thông tin hội viên!");
+          return;
+        }
         await fetchNestApi(`/members/${editing.id}`, {
           method: "PUT",
           body: JSON.stringify(payload),
@@ -448,6 +464,10 @@ function MembersPage() {
         toast.success(t("members.updated"));
         setEditing(null);
       } else {
+        if (!can(PERMISSIONS.MEMBER_CREATE)) {
+          toast.error("Bạn không có quyền thêm mới hội viên!");
+          return;
+        }
         await fetchNestApi("/members", {
           method: "POST",
           body: JSON.stringify(payload),
@@ -577,7 +597,13 @@ function MembersPage() {
   });
 
   const anyFilterActive =
-    !!q || industry !== "all" || region !== "all" || type !== "all" || status !== "all" || favOnly;
+    !!q ||
+    industry !== "all" ||
+    region !== "all" ||
+    type !== "all" ||
+    status !== "all" ||
+    paymentFilter !== "all" ||
+    favOnly;
 
   const filtered = useMemo<Member[]>(() => {
     const ql = q.trim().toLowerCase();
@@ -587,6 +613,12 @@ function MembersPage() {
       if (region !== "all" && m.region !== region) return false;
       if (type !== "all" && m.type !== type) return false;
       if (status !== "all" && m.status !== status) return false;
+      if (paymentFilter !== "all") {
+        const rawStatus = (m as any).payment_status || (m as any).paymentStatus;
+        const isPaid = m.feePaid || rawStatus === "paid" || rawStatus === "cash";
+        if (paymentFilter === "paid" && !isPaid) return false;
+        if (paymentFilter === "unpaid" && isPaid) return false;
+      }
       if (favOnly && !favSet.has(m.id)) return false;
       if (
         ql &&
@@ -598,7 +630,7 @@ function MembersPage() {
         return false;
       return true;
     });
-  }, [members, q, industry, region, type, status, favOnly, favorites]);
+  }, [members, q, industry, region, type, status, paymentFilter, favOnly, favorites]);
 
   const ordered = useMemo<Member[]>(() => {
     const copy = [...filtered];
@@ -649,6 +681,7 @@ function MembersPage() {
     setRegion("all");
     setType("all");
     setStatus("all");
+    setPaymentFilter("all");
     setFavOnly(false);
   };
 
@@ -763,23 +796,21 @@ function MembersPage() {
           </div>
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted cursor-pointer"
           >
             <Download className="h-4 w-4 text-muted-foreground" />
             {t("members.export")}
           </button>
-          <button
-            onClick={() => (isAdmin ? setOpen(true) : denyPermission())}
-            aria-disabled={!isAdmin}
-            title={!isAdmin && !roleLoading ? t("perm.denied.title") : undefined}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] ${
-              !isAdmin ? "opacity-60" : ""
-            }`}
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <Plus className="h-4 w-4" />
-            {t("members.add")}
-          </button>
+          {can(PERMISSIONS.MEMBER_CREATE) && (
+            <button
+              onClick={() => setOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Plus className="h-4 w-4" />
+              {t("members.add")}
+            </button>
+          )}
         </div>
       </div>
 
@@ -850,6 +881,27 @@ function MembersPage() {
         >
           Hết hạn ({members.filter((m) => m.status === "expired").length})
         </button>
+        <div className="h-5 w-px bg-border mx-1 shrink-0" />
+        <button
+          onClick={() => setPaymentFilter(paymentFilter === "paid" ? "all" : "paid")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            paymentFilter === "paid"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100"
+          }`}
+        >
+          ✓ Đã thanh toán ({paidCount})
+        </button>
+        <button
+          onClick={() => setPaymentFilter(paymentFilter === "unpaid" ? "all" : "unpaid")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            paymentFilter === "unpaid"
+              ? "bg-rose-600 text-white shadow-sm"
+              : "bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100"
+          }`}
+        >
+          ✗ Chưa thanh toán ({unpaidCount})
+        </button>
       </div>
 
       {/* Sticky search + filters */}
@@ -891,6 +943,13 @@ function MembersPage() {
             onChange={setStatus}
             options={STATUSES}
             renderOption={(v) => t(`status.${v}` as TKey)}
+          />
+          <FilterSelect
+            label="Thanh toán"
+            value={paymentFilter}
+            onChange={setPaymentFilter}
+            options={["paid", "unpaid"]}
+            renderOption={(v) => (v === "paid" ? "Đã thanh toán" : "Chưa thanh toán")}
           />
         </div>
 
@@ -1023,9 +1082,9 @@ function MembersPage() {
               onToggleSel={() => toggleSel(m.id)}
               onToggleFav={() => setFavoriteAndSync(m.id)}
               onTogglePin={() => setPinnedAndSync(m.id)}
-              onEdit={() => (isAdmin ? setEditing(m) : denyPermission())}
-              onAccount={() => (isAdmin ? setAccountFor(m) : denyPermission())}
-              onDelete={() => (isAdmin ? setDeleting(m) : denyPermission())}
+              onEdit={canEdit ? () => setEditing(m) : undefined}
+              onAccount={canAccount ? () => setAccountFor(m) : undefined}
+              onDelete={canDelete ? () => setDeleting(m) : undefined}
               onApprove={canApprove ? () => handleApproveAndSendCredentials(m) : undefined}
               onPaymentChange={(s) => handleUpdatePaymentStatus(m, s)}
             />
@@ -1101,13 +1160,32 @@ function MembersPage() {
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
                   />
-                  <SortHeader
-                    label="Thanh toán"
-                    columnKey="payment"
-                    sortKey={tc.sortKey}
-                    sortDir={tc.sortDir}
-                    onSort={tc.toggleSort}
-                  />
+                  <th className="px-4 py-3 border-b border-border bg-secondary text-left">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => tc.toggleSort("payment")}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <span>Thanh toán</span>
+                      </button>
+                      <select
+                        aria-label="Lọc trạng thái thanh toán"
+                        value={paymentFilter}
+                        onChange={(e) => setPaymentFilter(e.target.value as any)}
+                        className={`text-[11px] font-semibold rounded px-1.5 py-0.5 border cursor-pointer ${
+                          paymentFilter !== "all"
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background/80 text-muted-foreground border-border"
+                        }`}
+                        title="Lọc trạng thái thanh toán"
+                      >
+                        <option value="all">Tất cả</option>
+                        <option value="paid">✓ Đã TT</option>
+                        <option value="unpaid">✗ Chưa TT</option>
+                      </select>
+                    </div>
+                  </th>
                   <SortHeader
                     label={t("tbl.joined")}
                     columnKey="joined"
@@ -1230,30 +1308,36 @@ function MembersPage() {
                           <Eye className="h-3.5 w-3.5" />
                           {t("tbl.view")}
                         </Link>
-                        <button
-                          onClick={() => (isAdmin ? setEditing(m) : setEditing(m))}
-                          aria-label={t("common.edit")}
-                          title={t("common.edit")}
-                          className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary cursor-pointer transition-colors"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => (isAdmin ? setAccountFor(m) : setAccountFor(m))}
-                          aria-label={t("macct.manage")}
-                          title={t("macct.manage")}
-                          className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:bg-muted cursor-pointer transition-colors"
-                        >
-                          <UserCog className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => (isAdmin ? setDeleting(m) : setDeleting(m))}
-                          aria-label={t("common.delete")}
-                          title={t("common.delete")}
-                          className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => setEditing(m)}
+                            aria-label={t("common.edit")}
+                            title={t("common.edit")}
+                            className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary cursor-pointer transition-colors"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {canAccount && (
+                          <button
+                            onClick={() => setAccountFor(m)}
+                            aria-label={t("macct.manage")}
+                            title={t("macct.manage")}
+                            className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-foreground hover:bg-muted cursor-pointer transition-colors"
+                          >
+                            <UserCog className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => setDeleting(m)}
+                            aria-label={t("common.delete")}
+                            title={t("common.delete")}
+                            className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1441,8 +1525,8 @@ function MemberCard({
   onToggleSel: () => void;
   onToggleFav: () => void;
   onTogglePin: () => void;
-  onEdit: () => void;
-  onAccount: () => void;
+  onEdit?: () => void;
+  onAccount?: () => void;
   onDelete?: () => void;
   onApprove?: () => void;
   onPaymentChange?: (status: "paid" | "cash" | "unpaid") => void;
@@ -1569,28 +1653,36 @@ function MemberCard({
         >
           <Eye className="h-3.5 w-3.5" /> {t("tbl.view")}
         </Link>
-        <button
-          onClick={onEdit}
-          aria-label={t("common.edit")}
-          title={!isAdmin && !roleLoading ? t("perm.denied.title") : undefined}
-          className={`grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-foreground hover:bg-muted ${!isAdmin ? "opacity-60" : ""}`}
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={onAccount}
-          aria-label={t("macct.manage")}
-          className={`grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-foreground hover:bg-muted ${!isAdmin ? "opacity-60" : ""}`}
-        >
-          <UserCog className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={onDelete}
-          aria-label={t("common.delete")}
-          className={`grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-destructive hover:bg-destructive/10 ${!isAdmin ? "opacity-60" : ""}`}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            aria-label={t("common.edit")}
+            title={t("common.edit")}
+            className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-foreground hover:bg-muted cursor-pointer transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {onAccount && (
+          <button
+            onClick={onAccount}
+            aria-label={t("macct.manage")}
+            title={t("macct.manage")}
+            className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-foreground hover:bg-muted cursor-pointer transition-colors"
+          >
+            <UserCog className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            aria-label={t("common.delete")}
+            title={t("common.delete")}
+            className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );

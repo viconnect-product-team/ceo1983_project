@@ -216,6 +216,42 @@ export class AdminController {
   async saveActiveTheme(@Request() req: any, @Body() body: any) {
     return this.adminService.saveActiveTheme(body, req.user?.id);
   }
+
+  // ── DYNAMIC SIDEBAR MENU LABELS ──────────────────────────────────────────
+
+  @Get('sidebar-labels')
+  async getSidebarLabels() {
+    return this.adminService.getSidebarLabels();
+  }
+
+  @Put('sidebar-labels')
+  async saveSidebarLabels(@Request() req: any, @Body() body: any) {
+    return this.adminService.saveSidebarLabels(body, req.user?.id);
+  }
+
+  // ── MEMBER PERMISSION PROFILES (RBAC INDIVIDUAL OVERRIDES) ─────────────────
+
+  @Get('member-permissions')
+  async getMemberPermissions() {
+    return this.adminService.getMemberPermissions();
+  }
+
+  @Put('member-permissions')
+  async saveMemberPermissions(@Request() req: any, @Body() body: any) {
+    return this.adminService.saveMemberPermissions(body, req.user?.id);
+  }
+
+  // ── LUCKY DRAW CONFIGURATION & LANDING BANNER ─────────────────────────────
+
+  @Get('lucky-draw-config')
+  async getLuckyDrawConfig() {
+    return this.adminService.getLuckyDrawConfig();
+  }
+
+  @Put('lucky-draw-config')
+  async saveLuckyDrawConfig(@Request() req: any, @Body() body: any) {
+    return this.adminService.saveLuckyDrawConfig(body, req.user?.id);
+  }
 }
 
 

@@ -197,6 +197,11 @@ export function TaskFormModal({
           meetingTime: meetingTime || undefined,
           note: meetingNote.trim() || undefined,
         },
+        attachments: initialData?.attachments || [],
+        comments: initialData?.comments || [],
+        history: initialData?.history || [],
+        delegation: initialData?.delegation,
+        evaluations: initialData?.evaluations,
       });
       onClose();
     } finally {

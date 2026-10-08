@@ -599,3 +599,110 @@
 #     + Đặt các dải biên Edge Guard ở chế độ `pointer-events-none` để không cản trở thao tác chạm/click của người dùng ở 2 mép màn hình.
 #     + Bỏ thuộc tính `select-none` gây kẹt thao tác trên các ô nhập liệu và liên kết.
 #     + Bổ sung CSS `touch-action: manipulation;` và `-webkit-tap-highlight-color: transparent;` toàn cục trên các phần tử tương tác (`button`, `a`, `input`, `.cursor-pointer`) để loại bỏ 100% độ trễ 300ms của trình duyệt di động.
+#
+# [BẮT BUỘC 39] Quy Chuẩn AI Dynamic RAG (Tra Cứu Dữ Liệu Thời Gian Thực Đa Bảng), Tự Động Điều Khiển Giọng Nói & UI Doanh Nhân Tối Giản:
+#   - Hệ Thống AI Dynamic RAG Tra Cứu Đa Bảng (Zero-Hallucination Realtime Data Retrieval):
+#     + Khi hội viên hỏi bất kỳ vấn đề nào trong app CEO 1983 (hội viên, sản phẩm chợ B2B, cơ hội giao thương, sự kiện đại hội, tài liệu văn bản, thông tin 7 Ban chuyên môn, hội phí niên liễm), hệ thống Backend (`ai.service.ts`) BẮT BUỘC tự động bóc tách từ khóa và truy vấn đồng thời vào cơ sở dữ liệu PostgreSQL thực tế:
+#       * `public.members`: Tra cứu họ tên, chức vụ, tên doanh nghiệp, ngành nghề, số điện thoại, ban trực thuộc.
+#       * `public.products`: Tra cứu sản phẩm, giải pháp, giá niêm yết, ưu đãi nội bộ của các doanh nghiệp hội viên.
+#       * `public.opportunities`: Tra cứu nhu cầu mua/bán, kết nối cung cầu B2B, thời hạn và ngân sách.
+#       * `public.events`: Tra cứu sự kiện sắp diễn ra, địa điểm tổ chức, thời gian và số vé đăng ký.
+#       * `public.documents`: Tra cứu điều lệ, quy chế hoạt động, kỷ yếu và văn bản nội bộ HanoiBA.
+#       * 7 Ban chuyên môn & Quy chế hội phí MB Bank `0983198383` (Hội viên 3.000.000đ, Trưởng ban/BQT 5.000.000đ).
+#     + Bơm trực tiếp khối ngữ cảnh dữ liệu thực (`DB RAG Context`) vào prompt của Gemini 2.0 Flash trước khi sinh câu trả lời, đảm bảo nội dung phản hồi chính xác 100% theo thực tế vận hành CLB.
+#   - Khắc Phục Triệt Để Hiện Tượng Trả Lời Lặp (Anti-Looping Dynamic Synthesizer):
+#     + TUYỆT ĐỐI KHÔNG dùng câu trả lời mẫu tĩnh đóng khung lặp đi lặp lại.
+#     + Frontend: Đã loại bỏ hoàn toàn các nhánh `if-else` trả về chuỗi tĩnh giả mạo trong `resolveInstantLocalResponse`. Chỉ giữ lại phân loại ý định điều hướng giọng nói tức thì (< 10ms) và chào hỏi lễ tân. Mọi câu hỏi tra cứu thông tin BẮT BUỘC gửi lên API `/ai/ask`.
+#     + Backend: Khi không có kết nối ra Gemini hoặc ngoại tuyến, hệ thống BẮT BUỘC kích hoạt bộ tổng hợp động từ chính các bản ghi cơ sở dữ liệu tìm được (Dynamic Data Synthesizer), kèm cơ chế xoay vòng 4+ phong cách mở đầu/kết luận khác nhau để loại bỏ triệt để hiện tượng lặp từ và lặp mẫu câu.
+#   - Tự Động Điều Khiển Bằng Giọng Nói (Auto Voice Navigation & Hands-Free Execution):
+#     + Đáp ứng xu hướng phát triển ứng dụng điều khiển tự động hoàn toàn bằng giọng nói.
+#     + Khi hội viên ra lệnh bằng giọng nói (hoặc gõ lệnh) mang ý định chuyển màn hình ("Mở danh bạ", "Vào sự kiện", "Chợ B2B", "Cơ hội giao thương", "Xem hội phí", "Quét check-in", "Thẻ NFC", "Về trang chủ"...), Trợ lý AI BẮT BUỘC tự động kích hoạt `navigate({ to: route })` chuyển màn hình tự động sau khi đọc lời phản hồi ngắn gọn.
+#   - Thiết Kế Giao Diện AI Doanh Nhân Tối Giản & Thanh Lịch (Minimalist Executive Dark UI):
+#     + Triệt tiêu hoàn toàn các họa tiết màu mè, phong cách hoạt hình robot sặc sỡ, gradient cầu vồng gây phân tâm.
+#     + Nút mở trợ lý AI: Thiết kế nút tròn nổi (Floating Circle) tone Obsidian Slate sang trọng (`bg-slate-900 border border-slate-700/80 hover:border-amber-400 text-slate-100 shadow-xl`) với icon Mic tối giản và chỉ báo trạng thái trang nhã.
+#     + Gợi ý câu hỏi nhanh (Quick Prompts): Dạng viên thuốc Slate đơn sắc (`bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800`), tinh giản tối đa, không dùng màu sắc lòe loẹt.
+#     + Cửa sổ đàm thoại (AI Modal): Phông nền Obsidian Dark Slate nguyên khối (`bg-slate-950 border border-slate-800`), thanh tiêu đề tinh gọn với chấm trạng thái trực quan, bong bóng tin nhắn sắc nét (`bg-slate-800` cho người dùng, `bg-slate-900` cho AI), cùng bộ 7 cột sóng âm thanh (Live Audio Waveform) màu hổ phách vàng kim đồng bộ khi thu âm.
+#
+# [BẮT BUỘC 40] Quy Chuẩn Tối Ưu Triển Khai Deploy, Docker Pre-flight Health Check & Kịch Bản Triển Khai Siêu Tốc Cho CEO 1983 Mobile:
+#   - Cơ Chế Docker Pre-flight Health Check Guard Chống Treo Vô Hạn:
+#     + Mọi script triển khai có sử dụng Docker (`deploy/ceo1983/fast-deploy.ps1`, `deploy/crm/fast-deploy.ps1`) BẮT BUỘC phải thực hiện kiểm tra kết nối `docker version` với cơ chế Timeout tối đa 6.000ms trước khi gọi các lệnh `docker build`.
+#     + TUYỆT ĐỐI KHÔNG để script chạy thẳng vào `docker build` khi chưa qua kiểm tra, tránh hiện tượng PowerShell bị treo im lìm không hồi kết khi Docker Desktop trên Windows bị kẹt pipe giao tiếp với WSL2.
+#     + Nếu Docker không phản hồi: Bắt buộc dừng ngay tiến trình, in cảnh báo màu đỏ nêu rõ nguyên nhân và hướng dẫn cụ thể cách mở lại Docker Desktop.
+#   - Phân Tách Triển Khai Full-Stack & Triển Khai Siêu Tốc Mobile Frontend:
+#     + Khi chỉ cập nhật mã nguồn App Mobile / Giao diện Hiệp Hội CEO 1983 (`apps/ceo1983_app_fe`), BẮT BUỘC sử dụng kịch bản chuyên biệt `deploy-mobile.ps1` (hoặc cờ `-FrontendOnly`).
+#     + Bỏ qua hoàn toàn việc build và tải lên image Backend nặng 1.5GB, giúp tiết kiệm hơn 70% thời gian triển khai.
+#     + Khi thư mục `.output` đã được biên dịch xong trước đó, kích hoạt lệnh siêu tốc `npm run deploy:mobile:fast` (tương đương `.\deploy-mobile.ps1 -SkipWebBuild`) để nạp trực tiếp bản build vào container, rút ngắn toàn bộ thời gian deploy từ 15 phút xuống chỉ còn 1-2 phút.
+#
+# [BẮT BUỘC 41] Quy Chuẩn Tối Ưu Hóa Hiệu Năng Cảm Ứng Di Động, Khử Trễ Chạm (Touch Latency & 0ms Tap) & Tối Ưu WebView Android 60-120fps Native:
+#   - Khắc Phục Triệt Để Hiện Tượng Nuốt Chạm (Tap Swallowing / Missed Click):
+#     + TUYỆT ĐỐI KHÔNG đăng ký listener `touchend` gọi `e.preventDefault()` để chống double-tap zoom. Trên Chromium WebView, việc gọi `e.preventDefault()` trong `touchend` sẽ hủy bỏ hoàn toàn sự kiện `click` tự nhiên, khiến người dùng bấm bị hụt hoặc chạm không ăn ("thao tác bị chạm").
+#     + Chống double-tap zoom chuẩn xác: Sử dụng CSS `touch-action: manipulation;` trên toàn bộ các phần tử tương tác (`button`, `a`, `input`, `select`, `[role="button"]`), kết hợp viewport meta tag `maximum-scale=1.0, user-scalable=no`.
+#     + Chỉ chặn thao tác phóng to đa điểm (pinch-to-zoom) bằng listener `touchmove` thụ động kiểm tra `if (e.touches.length > 1) e.preventDefault();`, tuyệt đối không can thiệp vào luồng `touchend` hay `touchstart`.
+#   - Khử Tràn Băng Thông GPU (GPU Overdraw Prevention):
+#     + TUYỆT ĐỐI KHÔNG sử dụng `filter: blur(...)` kích thước lớn (như 80px, 100px, 120px) trên các phần tử nền toàn màn hình (`100vw x 70vh`) kết hợp keyframe animations lặp vô hạn. Điều này làm cạn kiệt fill-rate của chip đồ họa di động và kéo tụt FPS xuống 15fps.
+#     + Thay thế hiệu ứng phát sáng mờ ảo (luxury aura glow) bằng các dải màu chuyển tiếp hướng tâm tĩnh (`radial-gradient`), không dùng bộ lọc CSS filter hoặc animation nặng nề.
+#     + Tránh lạm dụng `transform: translateZ(0)` vô tội vạ trên các phần tử lặp lại trong danh sách (như thẻ hội viên, card tin tức). Chỉ dùng phần cứng acceleration trên các container cuộn chính hoặc modal đang chuyển động.
+#   - Tối Ưu Vùng Cuộn (Scroll Container Optimization) & Pull-To-Refresh:
+#     + Component `PullToRefresh`: Khi không có thao tác kéo (`pullY === 0`), thuộc tính `transform` BẮT BUỘC phải đặt về `undefined` (hoặc `none`), và CSS `transition` BẮT BUỘC phải tắt để giải phóng container cuộn khỏi trạng thái transition liên tục.
+#     + Bổ sung CSS `touch-action: pan-y;` cho container danh sách để trình duyệt tối ưu hóa luồng cuộn dọc ngay ở Compositor thread mà không cần chờ Main thread JavaScript.
+#   - Cấu Hình Tối Ưu Native Android WebView (Capacitor / Android Studio):
+#     + `AndroidManifest.xml`: Luôn khai báo `android:hardwareAccelerated="true"` cho cả thẻ `<application>` và `<activity>` chính.
+#     + `MainActivity.java`:
+#       * Kích hoạt chế độ phần cứng: `webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);`.
+#       * Tắt overscroll bounce native của Android Java: `webView.setOverScrollMode(View.OVER_SCROLL_NEVER);` để triệt tiêu hiện tượng xung đột giật bóng nước với cử chỉ kéo Web.
+#       * Kích hoạt tính năng vẽ trước vùng nội dung ngoài màn hình: `webView.getSettings().setOffscreenPreRaster(true);` giúp khi người dùng cuộn nhanh không bị vệt trắng giật hình.
+#
+# [BẮT BUỘC 42] Quy Chuẩn Phân Quyền CRM (RESTful Staging, Ẩn Nút Khỏi DOM, Lọc Tài Khoản Chưa Duyệt, Dual View Dashboard & Matrix Grid) & Landing Banner Bốc Thăm Chuẩn Icon ClickUp:
+#   - Loại Bỏ Triệt Để Tài Khoản Chưa Duyệt Khỏi Phân Quyền:
+#     + Mọi tài khoản mang trạng thái `pending`, `pending_approval`, `rejected`, `inactive` hoặc `isApproved: false` TUYỆT ĐỐI KHÔNG được xuất hiện trong phân quyền (bao gồm số liệu thống kê KPI, sĩ số các ban, bảng phân quyền và modal phân quyền).
+#     + Phân quyền chỉ dành riêng cho hội viên chính thức đã được ban kiểm duyệt phê duyệt kết nạp.
+#   - Chuẩn Hóa RESTful API Phân Quyền & Cơ Chế Staging Cục Bộ (Draft Buffer):
+#     + Khi người dùng thay đổi vai trò hoặc cấp quyền chức năng trong phân quyền, hệ thống BẮT BUỘC lưu tạm vào state cục bộ (Draft Staging Buffer), làm nổi bật các dòng đang sửa đổi (viền hổ phách, badge 'Chưa lưu').
+#     + Hiển thị thanh lưu nổi (Floating Save Bar) ở đáy màn hình với thông báo số lượng thay đổi chưa lưu và nút bấm rõ ràng **"Lưu Vào Database"**.
+#     + Chỉ khi người dùng bấm "Lưu Vào Database", hệ thống mới gửi yêu cầu RESTful API (`PUT /api/admin/member-permissions`) về backend để lưu đồng bộ vào database.
+#     + Giao diện phân quyền BẮT BUỘC phải hỗ trợ đủ 2 dạng: Dạng Dashboard (thẻ thống kê + 6 ban chuyên môn) và Dạng Lưới (Matrix Grid đa chiều) với nút chuyển đổi trực quan.
+#   - Ẩn Hoàn Toàn Nút / Chức Năng Khỏi DOM Khi Không Có Quyền (DOM Omission):
+#     + TUYỆT ĐỐI KHÔNG giữ nguyên nút trong DOM rồi chỉ chỉnh CSS làm mờ (`opacity-60`) hoặc bắt sự kiện gọi `denyPermission()`.
+#     + BẮT BUỘC sử dụng điều kiện render `{can(...) && (...)}` để loại bỏ hoàn toàn các nút thao tác (Sửa, Xóa, Cấp tài khoản, Đóng cơ hội, ...) khỏi cây DOM khi người dùng không có quyền.
+#   - Bộ Lọc Trạng Thái Thanh Toán Hội Phí Đa Vị Trí:
+#     + Danh mục hội viên BẮT BUỘC phải hỗ trợ lọc thanh toán ở cả 3 vị trí: Nút lọc nhanh (Pills) tại thanh tab ('✓ Đã thanh toán', '✗ Chưa thanh toán'), Dropdown lọc trên thanh công cụ cố định, và Dropdown selector trực tiếp tại thẻ `<th>` của cột 'Thanh toán' trong bảng dữ liệu.
+#
+# [BẮT BUỘC 43] Quy Chuẩn Luồng Giao Việc - Nhận Việc - Đánh Giá Tiến Độ - Nộp File & Xem Bảng Tính Excel Trực Tiếp Theo Chuẩn RESTful API & Validate Phân Quyền Đầy Đủ:
+#   - Chuẩn Hóa Vòng Đời & Phân Vai Luồng Giao Việc (Assigner/Supervisor vs Assignee vs Collaborator vs Viewer):
+#     + Vai trò Người giao việc / Giám sát (Supervisor / Ban Quản trị): Có toàn quyền giao việc, chỉnh sửa nội dung, đôn đốc nhắc việc (`POST :id/remind`), đánh giá tiến độ định kỳ (`POST :id/evaluate`), phê duyệt nghiệm thu hoàn thành 1-5 sao (`POST :id/approve`), hoặc yêu cầu làm lại kèm lý do (`POST :id/rework`).
+#     + Vai trò Người nhận việc (Assignee): Có quyền tiếp nhận công việc cam kết thực hiện (`POST :id/accept`) hoặc từ chối tiếp nhận kèm lý do rõ ràng (`POST :id/decline`) khi task ở trạng thái `TODO`; được quyền cập nhật tiến độ % thực tế (`PATCH :id/progress`), hoàn thành checklist công việc con, nộp file kết quả deliverables (`POST :id/attachments`), và gửi báo cáo nghiệm thu (`POST :id/submit-review`) khi task ở trạng thái `IN_PROGRESS` hoặc `OVERDUE`.
+#     + Vai trò Người quan sát (Viewer): Chỉ có quyền xem thông tin công việc, checklist (chế độ chỉ đọc read-only), tham gia bình luận thảo luận; TUYỆT ĐỐI KHÔNG render các nút thao tác giao việc, nhận việc, nộp bài hay nghiệm thu vào DOM.
+#   - Phân Quyền Chặt Chẽ & Ẩn Hoàn Toàn Khỏi DOM (Strict Role Validation & Render Omission):
+#     + Giao diện BẮT BUỘC xác thực quyền thông qua `useAuth()` và `useRole()`: Xác định chính xác `canSupervise`, `canExecute`, `isReadOnly`.
+#     + Thanh "Chuyển trạng thái linh hoạt" (Status Switcher): CHỈ render cho Người giao việc / Ban Quản trị (`canSupervise`). Người nhận việc chỉ được chuyển trạng thái thông qua các nút hành động nghiệp vụ (Tiếp nhận -> Nộp nghiệm thu).
+#     + Backend NestJS BẮT BUỘC kiểm tra định danh `actorName` / `req.user` cho toàn bộ các endpoint đột biến trạng thái task; chặn ngay lập tức nếu không đúng thẩm quyền.
+#   - Đánh Giá Tiến Độ Thực Hiện Định Kỳ (Periodic Progress Evaluation):
+#     + Cung cấp endpoint RESTful `POST /tasks/:id/evaluate` và modal đánh giá tiến độ chuyên biệt cho Supervisor.
+#     + Cho phép đánh giá 4 mức độ tiến độ (`ON_TRACK` - Đúng tiến độ, `AHEAD` - Vượt tiến độ, `AT_RISK` - Có nguy cơ trễ, `DELAYED` - Chậm tiến độ / Cần can thiệp) kết hợp chấm điểm 1-5 sao và ghi chú nhận xét chỉ đạo chi tiết.
+#     + Lịch sử đánh giá tiến độ được lưu trữ vào mảng `evaluations` của task và hiển thị trực quan dạng thẻ tiến độ ngay trong chi tiết công việc.
+#   - Nộp File Kết Quả Nghiệm Thu & Quản Lý Tài Liệu Đính Kèm:
+#     + Cung cấp endpoint RESTful `POST /tasks/:id/attachments` và `DELETE /tasks/:id/attachments/:attachmentIndex`.
+#     + Phân biệt rõ ràng giữa "Tài liệu giao việc" (do Supervisor tải lên) và "File kết quả / Deliverable nộp nghiệm thu" (do Assignee nộp).
+#     + Hỗ trợ tải lên file đa định dạng (bảng tính Excel `.xlsx`, `.xls`, `.csv`, tài liệu `.pdf`, `.docx`, ảnh) dung lượng lên đến 25MB với cơ chế mã hóa Data URL / Storage an toàn.
+#   - Trình Xem Bảng Tính Excel Trực Tiếp Trong Ứng Dụng (In-App Excel Spreadsheet Viewer):
+#     + Khi nhiệm vụ có file bảng tính (`.xlsx`, `.xls`, `.csv`), BẮT BUỘC hiển thị nút "Xem bảng tính Excel" nổi bật.
+#     + Tích hợp modal `ExcelViewerModal` sử dụng thư viện SheetJS `xlsx` để phân tích và hiển thị trực tiếp dữ liệu bảng tính trên nền tảng Web & Mobile mà không bắt buộc người dùng phải tải về máy hoặc mở ứng dụng ngoài.
+#     + Hỗ trợ đầy đủ các tính năng bảng tính hiện đại: Chuyển đổi qua lại giữa các Sheet (Tab Navigation), lưới ô tính với tiêu đề cột (A, B, C...) và số dòng (1, 2, 3...), thanh công cụ tìm kiếm dữ liệu thời gian thực theo từ khóa, chế độ xem toàn màn hình (Fullscreen) và nút tải file gốc.
+#
+# [BẮT BUỘC 44] Quy Chuẩn Loại Bỏ Icon Hardcode & Tích Hợp Thư Viện ClickUp Design System Icon Tokens, Động Hóa 100% Cơ Cấu Giải Thưởng Sự Kiện & Bốc Thăm (Lucky Draw) Tích Hợp Database API Sản Phẩm / Gói Tài Trợ:
+#   - Loại Bỏ Triệt Để Icon Hardcode & Emojis Thô Cứng:
+#     + Tuyệt đối KHÔNG hardcode emoji (🏆, 🥇, 🥈, 🥉, 🎁, 🎰, ...) hay chèn SVG rời rạc rải rác trong giao diện.
+#     + BẮT BUỘC sử dụng thư viện biểu tượng chuẩn ClickUp Design System từ `ClickUpIcons.tsx` (`ClickUpIcon`, `ClickUpBadgeIcon`, `ClickUpMark`) cùng bộ mã màu token chuẩn `CLICKUP_TOKENS` (`logo-purple`, `ai-pink`, `product-teal`, `product-yellow`, `electric-blue`, `warning-orange`).
+#   - Động Hóa 100% Dữ Liệu Bốc Thăm & Giải Thưởng Từ Database (Zero Mock Data):
+#     + Bảng PostgreSQL lưu trữ: `public.event_prizes`. Tuyệt đối CẤM dùng mock data hay fake array trong component quay thưởng hoặc quản lý giải thưởng.
+#     + Backend RESTful API: `GET /sponsors/prizes`, `GET /sponsors/prizes/:id`, `POST /sponsors/prizes`, `PUT /sponsors/prizes/:id`, `DELETE /sponsors/prizes/:id`.
+#     + `LuckyDrawLandingBanner` kết nối trực tiếp database: cấu hình sự kiện, cơ cấu giải thưởng và đại biểu đủ điều kiện quay từ `events`, `event_prizes` và `event_registrations`.
+#   - Quản Lý Cơ Cấu Giải Thưởng Tại Phân Hệ Gói Tài Trợ (`/sponsor-packages`):
+#     + Trang `/sponsor-packages` có tab switcher: "Gói Tài Trợ & Quyền Lợi" (`packages`) vs "Cơ Cấu Giải Thưởng Sự Kiện & Bốc Thăm" (`prizes`).
+#     + Tạo và chỉnh sửa giải thưởng bắt buộc có typed target rõ ràng: `targetType: 'PRODUCT' | 'SPONSOR_PACKAGE' | 'VOUCHER' | 'CASH' | 'CUSTOM'` và `targetId`.
+#     + Khi người dùng chọn `targetType = 'PRODUCT'`, form BẮT BUỘC gọi API `GET /products` để lấy danh sách sản phẩm thật từ CSDL `public.products`, tự động điền tên sản phẩm, doanh nghiệp cung ứng, giá thị trường và ảnh đại diện.
+#     + Tương tự, khi chọn `targetType = 'SPONSOR_PACKAGE'`, tự động nạp danh sách gói từ `public.sponsor_packages`.
+
+
+
+

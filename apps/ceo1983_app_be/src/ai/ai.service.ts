@@ -279,8 +279,297 @@ export class AiService {
   }
 
   /**
+   * Nhận diện Lệnh Điều khiển Giọng nói Tự động (Voice Auto-Navigation Intent):
+   * Tự động nhận diện ý định điều hướng của người dùng khi ra lệnh bằng giọng nói hoặc text.
+   */
+  classifyVoiceNavigation(prompt: string): {
+    route: string;
+    featureName: string;
+    tourId: string;
+  } | null {
+    const q = (prompt || '').toLowerCase().trim();
+
+    // 1. Danh bạ & Hội viên
+    if (
+      q.includes('danh bạ') || q.includes('danh ba') ||
+      (q.includes('hội viên') && (q.includes('mở') || q.includes('tìm') || q.includes('danh sách') || q.includes('vào'))) ||
+      (q.includes('ceo') && (q.includes('mở') || q.includes('tìm') || q.includes('danh sách'))) ||
+      q.includes('hẹn gặp') || q.includes('1-on-1') || q.includes('1-1')
+    ) {
+      return { route: '/association/members', featureName: 'Danh Bạ 200+ CEO & Hẹn 1-on-1', tourId: 'association-members' };
+    }
+
+    // 2. Sự kiện & Hội nghị
+    if (
+      q.includes('lịch sự kiện') || q.includes('sự kiện') || q.includes('hội nghị') ||
+      q.includes('gala') || q.includes('đăng ký vé') || q.includes('mua vé')
+    ) {
+      return { route: '/association/events', featureName: 'Lịch Sự Kiện & Đăng Ký Vé', tourId: 'association-events' };
+    }
+
+    // 3. Vé Check-in QR & Soát vé
+    if (
+      q.includes('checkin') || q.includes('check in') || q.includes('vé của tôi') ||
+      q.includes('mã qr vé') || q.includes('bàn vip') || q.includes('soát vé')
+    ) {
+      return { route: '/association/checkin', featureName: 'Vé Check-in QR & Sơ Đồ Bàn VIP', tourId: 'association-checkin' };
+    }
+
+    // 4. Danh thiếp số & NFC
+    if (
+      q.includes('danh thiếp') || q.includes('card visit') || q.includes('thẻ nfc') ||
+      q.includes('ghi thẻ') || q.includes('quét card') || q.includes('thẻ hội viên')
+    ) {
+      return { route: '/association/card', featureName: 'Thẻ Hội Viên & Danh Thiếp Số NFC', tourId: 'association-card' };
+    }
+
+    // 5. Chợ B2B & Sản phẩm
+    if (
+      q.includes('chợ b2b') || q.includes('marketplace') || q.includes('gian hàng') ||
+      (q.includes('sản phẩm') && (q.includes('mở') || q.includes('vào') || q.includes('xem') || q.includes('đăng'))) ||
+      q.includes('đăng bán')
+    ) {
+      return { route: '/association/products', featureName: 'Chợ Giao Thương B2B & Gian Hàng Số', tourId: 'association-products' };
+    }
+
+    // 6. Cơ hội kinh doanh & Giao thương
+    if (
+      q.includes('cơ hội') || q.includes('giao thương') || q.includes('hợp tác') ||
+      q.includes('chào mua') || q.includes('chào bán') || q.includes('matching')
+    ) {
+      return { route: '/association/opportunities', featureName: 'Sàn Cơ Hội Kinh Doanh B2B', tourId: 'association-opportunities' };
+    }
+
+    // 7. Hộp thư tin nhắn B2B
+    if (
+      q.includes('tin nhắn') || q.includes('hộp thư') || q.includes('chat') ||
+      q.includes('cuộc trò chuyện') || q.includes('nhắn tin')
+    ) {
+      return { route: '/association/messages', featureName: 'Hộp Thư Giao Thương B2B', tourId: 'association-messages' };
+    }
+
+    // 8. Biểu quyết & Lucky Draw
+    if (
+      q.includes('biểu quyết') || q.includes('bầu cử') || q.includes('bỏ phiếu') ||
+      q.includes('lucky draw') || q.includes('quay số')
+    ) {
+      return { route: '/association/voting', featureName: 'Biểu Quyết Đại Hội & Lucky Draw', tourId: 'association-voting' };
+    }
+
+    // 9. Hồ sơ cá nhân & Đóng hội phí VietQR
+    if (
+      q.includes('hội phí') || q.includes('đóng phí') || q.includes('hồ sơ cá nhân') ||
+      q.includes('hồ sơ của tôi') || q.includes('profile') || q.includes('vietqr')
+    ) {
+      return { route: '/association/profile', featureName: 'Hồ Sơ Cá Nhân & Đóng Hội Phí VietQR', tourId: 'association-profile' };
+    }
+
+    // 10. Thông báo & Nhắc việc
+    if (q.includes('thông báo') || q.includes('nhắc việc') || q.includes('tin mới')) {
+      return { route: '/association/notifications', featureName: 'Trung Tâm Thông Báo & Nhắc Việc', tourId: 'association-notifications' };
+    }
+
+    // 11. Kho văn bản & Điều lệ
+    if (
+      q.includes('văn bản') || q.includes('tài liệu') || q.includes('điều lệ') ||
+      q.includes('quy chế') || q.includes('kỷ yếu') || q.includes('nghị quyết')
+    ) {
+      return { route: '/association/library', featureName: 'Kho Văn Bản, Điều Lệ & Kỷ Yếu', tourId: 'association-library' };
+    }
+
+    // 12. Trang chủ
+    if (q.includes('trang chủ') || q.includes('dashboard') || q.includes('bàn làm việc') || q === 'về nhà') {
+      return { route: '/association', featureName: 'Trang Chủ Điều Hành CEO 1983', tourId: 'association-home' };
+    }
+
+    // 13. Quản trị CRM & Phân quyền
+    if (q.includes('phân quyền') || q.includes('quản trị crm') || q.includes('quản trị hệ thống') || q.includes('rbac')) {
+      return { route: '/permissions', featureName: 'Quản Trị Phân Quyền CRM', tourId: 'permissions-admin' };
+    }
+
+    return null;
+  }
+
+  /**
+   * Tra cứu tri thức & Dữ liệu động toàn diện trên hệ thống CEO 1983:
+   * Tìm kiếm song song: Danh bạ hội viên & Lãnh đạo, Sản phẩm Marketplace, Cơ hội giao thương B2B,
+   * Lịch sự kiện & Đại hội, Kho văn bản & Kỷ yếu, Cơ cấu 7 Ban chuyên trách, Chính sách hội phí & MB Bank.
+   */
+  async searchAssociationData(rawPrompt: string, userId: string) {
+    const q = (rawPrompt || '').toLowerCase().trim();
+    if (!q) return null;
+
+    const stopWords = new Set([
+      'hãy', 'tìm', 'cho', 'tôi', 'xem', 'ai', 'là', 'gì', 'ở', 'đâu',
+      'như', 'thế', 'nào', 'làm', 'sao', 'các', 'những', 'của', 'trong',
+      'về', 'giúp', 'em', 'anh', 'chị', 'ơi', 'với', 'được', 'không',
+      'có', 'này', 'đó', 'kia', 'thì', 'và', 'hoặc', 'liệu'
+    ]);
+    const words = q.split(/[\s,?.!;:()\[\]{}"'-]+/).filter((w) => w.length >= 2 && !stopWords.has(w));
+    const searchPattern = words.length > 0 ? `%${words.slice(0, 4).join('%')}%` : '%';
+
+    const COMMITTEES_INFO = [
+      {
+        id: 'ban-thanh-vien',
+        name: 'Ban Thành viên',
+        leadership: 'Nguyễn Văn Cường (Trưởng ban)',
+        scope: 'Phát triển hội viên mới, tiếp nhận hồ sơ gia nhập, thẩm định tư cách và cấp mã định danh M1983.',
+        contact: 'Hotline Ban Thành viên: 0983 198 301',
+        route: '/association/members',
+        keywords: ['thành viên', 'hội viên', 'kết nạp', 'gia nhập', 'hồ sơ', 'mã hội viên', 'cường'],
+      },
+      {
+        id: 'ban-xuc-tien',
+        name: 'Ban Xúc tiến thương mại',
+        leadership: 'Hoàng Minh Tuấn (Trưởng ban)',
+        scope: 'Khởi tạo cơ hội giao thương B2B, quản lý gian hàng Chợ Marketplace, điều phối kết nối 1-on-1 và hợp đồng hợp tác nội khối.',
+        contact: 'Hotline Ban Xúc tiến: 0983 198 302',
+        route: '/association/products',
+        keywords: ['xúc tiến', 'thương mại', 'giao thương', 'b2b', 'sản phẩm', 'chợ', 'gian hàng', 'tuấn', 'hợp tác'],
+      },
+      {
+        id: 'ban-thien-nguyen',
+        name: 'Ban Thiện nguyện',
+        leadership: 'Vũ Thu Trang (Trưởng ban)',
+        scope: 'Tổ chức các chương trình thiện nguyện, quản lý Quỹ Tấm lòng vàng CEO 1983 và các hoạt động an sinh xã hội.',
+        contact: 'Hotline Ban Thiện nguyện: 0983 198 303',
+        route: '/association',
+        keywords: ['thiện nguyện', 'từ thiện', 'an sinh', 'tấm lòng vàng', 'ủng hộ', 'trang'],
+      },
+      {
+        id: 'ban-truyen-thong',
+        name: 'Ban Truyền thông',
+        leadership: 'Phạm Quang Huy (Trưởng ban)',
+        scope: 'Quản trị Cổng tin tức, thương hiệu CEO 1983, truyền thông sự kiện, thông báo đẩy và hệ thống soát vé máy quét camera.',
+        contact: 'Hotline Ban Truyền thông: 0983 198 304',
+        route: '/association/events',
+        keywords: ['truyền thông', 'báo chí', 'hình ảnh', 'tin tức', 'thương hiệu', 'soát vé', 'huy'],
+      },
+      {
+        id: 'ban-quan-tri',
+        name: 'Ban Quản trị',
+        leadership: 'Trần Quốc Toản (Trưởng ban)',
+        scope: 'Điều hành nền tảng công nghệ CRM, giám sát ma trận phân quyền RBAC và kiểm toán hoạt động hiệp hội.',
+        contact: 'Hotline Ban Quản trị: 0983 198 305',
+        route: '/permissions',
+        keywords: ['quản trị', 'hệ thống', 'phân quyền', 'rbac', 'admin', 'bảo mật', 'toản'],
+      },
+      {
+        id: 'ban-tai-chinh',
+        name: 'Ban Tài chính',
+        leadership: 'Đặng Thị Lan (Trưởng ban)',
+        scope: 'Quản lý thu chi ngân sách, đối soát hội phí thường niên qua VietQR MB Bank, quyết toán tài chính định kỳ.',
+        contact: 'Hotline Ban Tài chính: 0983 198 306',
+        route: '/association/profile',
+        keywords: ['tài chính', 'ngân sách', 'hội phí', 'thu chi', 'kế toán', 'quyết toán', 'lan'],
+      },
+      {
+        id: 'ban-thu-ky',
+        name: 'Ban Thư ký',
+        leadership: 'Lê Hoàng Nam (Tổng thư ký)',
+        scope: 'Điều phối các kỳ họp BCH, Đại hội thường niên, ban hành nghị quyết, quản lý kho văn bản và kỷ yếu điện tử.',
+        contact: 'Hotline Ban Thư ký: 0983 198 307',
+        route: '/association/library',
+        keywords: ['thư ký', 'tổng thư ký', 'nghị quyết', 'biên bản', 'họp', 'kỷ yếu', 'văn bản', 'nam'],
+      },
+    ];
+
+    const matchedCommittees = COMMITTEES_INFO.filter((c) =>
+      c.keywords.some((kw) => q.includes(kw)) || q.includes(c.name.toLowerCase()) || q.includes(c.leadership.toLowerCase())
+    );
+
+    const isFeeQuery =
+      q.includes('hội phí') || q.includes('niên liễm') || q.includes('đóng phí') ||
+      q.includes('số tài khoản') || q.includes('ngân hàng') || q.includes('stk') ||
+      q.includes('mb bank') || q.includes('vietqr');
+
+    const feePolicy = {
+      bankName: 'Ngân hàng Quân Đội (MB Bank)',
+      accountNo: '1983000000',
+      accountName: 'CLB DOANH NHAN CEO 1983',
+      standardTier: '10.000.000 VNĐ / năm (Hội viên Chính thức)',
+      goldTier: '20.000.000 VNĐ / năm (Hội viên VIP Gold)',
+      diamondTier: '50.000.000 VNĐ / năm (Hội viên Kim cương)',
+      syntax: '[Mã Hội Viên] HP2026 hoặc [Họ Tên] HP2026',
+      route: '/association/profile',
+    };
+
+    const [members, products, opportunities, events, documents] = await Promise.all([
+      words.length > 0
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT id, code, name, full_name, company, position, title, level, department, contact, email
+            FROM public.members
+            WHERE name ILIKE ${searchPattern}
+               OR full_name ILIKE ${searchPattern}
+               OR company ILIKE ${searchPattern}
+               OR department ILIKE ${searchPattern}
+               OR position ILIKE ${searchPattern}
+               OR title ILIKE ${searchPattern}
+            LIMIT 5
+          `.catch(() => [] as any[])
+        : Promise.resolve([]),
+
+      words.length > 0
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT id, name, title, description, price, category, company
+            FROM public.products
+            WHERE name ILIKE ${searchPattern}
+               OR title ILIKE ${searchPattern}
+               OR description ILIKE ${searchPattern}
+               OR category ILIKE ${searchPattern}
+               OR company ILIKE ${searchPattern}
+            LIMIT 5
+          `.catch(() => [] as any[])
+        : Promise.resolve([]),
+
+      words.length > 0
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT id, title, description, type, category, target_industry, valuation, poster_name, poster_company
+            FROM public.opportunities
+            WHERE title ILIKE ${searchPattern}
+               OR description ILIKE ${searchPattern}
+               OR category ILIKE ${searchPattern}
+               OR target_industry ILIKE ${searchPattern}
+            LIMIT 5
+          `.catch(() => [] as any[])
+        : Promise.resolve([]),
+
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, name, date, time, location, capacity, registered
+        FROM public.events
+        WHERE (${words.length === 0} OR name ILIKE ${searchPattern} OR location ILIKE ${searchPattern})
+        ORDER BY date DESC
+        LIMIT 5
+      `.catch(() => [] as any[]),
+
+      words.length > 0
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT id, code, name, category, file_path, publish_date
+            FROM public.documents
+            WHERE name ILIKE ${searchPattern}
+               OR code ILIKE ${searchPattern}
+               OR category ILIKE ${searchPattern}
+            LIMIT 5
+          `.catch(() => [] as any[])
+        : Promise.resolve([]),
+    ]);
+
+    return {
+      keywords: words,
+      matchedCommittees,
+      isFeeQuery,
+      feePolicy,
+      members: members || [],
+      products: products || [],
+      opportunities: opportunities || [],
+      events: events || [],
+      documents: documents || [],
+    };
+  }
+
+  /**
    * Hỏi đáp Trợ lý AI Thông Minh:
-   * Kết hợp Google Gemini 2.0 Flash Free Tier + Smart Hybrid NLP Engine
+   * Kết hợp Google Gemini 2.0 Flash Free Tier + Dynamic PostgreSQL Knowledge & RAG Engine
    */
   async askAssistant(userId: string, prompt: string, clientContext?: any): Promise<{
     answer: string;
@@ -335,6 +624,40 @@ export class AiService {
       };
     }
 
+    // 0.5. Lệnh điều khiển giọng nói trực tiếp (Voice Auto-Navigation Intent)
+    const voiceNav = this.classifyVoiceNavigation(rawPrompt);
+    const isExplicitNav =
+      q.startsWith('mở') ||
+      q.startsWith('vào') ||
+      q.startsWith('chuyển sang') ||
+      q.startsWith('đi đến') ||
+      q.startsWith('bật') ||
+      q.includes('mở danh bạ') ||
+      q.includes('vào sự kiện') ||
+      q.includes('xem danh bạ') ||
+      q.includes('mở chợ') ||
+      q.includes('vào chợ') ||
+      q.includes('mở cơ hội') ||
+      q.includes('về trang chủ') ||
+      q.includes('đóng hội phí');
+
+    if (voiceNav && isExplicitNav) {
+      return {
+        answer: `🚀 **Đang mở ${voiceNav.featureName}...**\n\nHệ thống sẽ tự động điều hướng màn hình cho Quý Anh/Chị ngay bây giờ.`,
+        speechText: `Đang mở ${voiceNav.featureName} cho Quý anh chị ngay bây giờ ạ.`,
+        intent: 'start_tour',
+        tourId: voiceNav.tourId,
+        route: voiceNav.route,
+        featureName: voiceNav.featureName,
+        suggestTour: false,
+        provider: 'ceo1983-smart-engine',
+        model: 'voice-auto-nav',
+      };
+    }
+
+    // Tra cứu dữ liệu động thời gian thực từ Database
+    const searchData = await this.searchAssociationData(rawPrompt, userId);
+
     // 1. Kiểm tra biến môi trường hoặc app_settings cho GEMINI_API_KEY
     let geminiKey = process.env.GEMINI_API_KEY || null;
     if (!geminiKey) {
@@ -362,6 +685,15 @@ DỮ LIỆU ĐỘNG THỜI GIAN THỰC CỦA HỘI VIÊN ĐANG ĐĂNG NHẬP:
 - Thông báo chưa đọc: ${context.notifications.unreadCount} thông báo
 - Sự kiện đã đăng ký (${context.myEvents.length} sự kiện): ${JSON.stringify(context.myEvents)}
 - Sự kiện nhiều người đăng ký nhất trong Hiệp hội: ${JSON.stringify(context.topEvents)}
+
+DỮ LIỆU ĐỘNG THỜI GIAN THỰC ĐƯỢC TRÍCH XUẤT TỪ HỆ THỐNG (RAG GROUND TRUTH):
+- Ban chuyên trách liên quan: ${JSON.stringify(searchData?.matchedCommittees || [])}
+- Chính sách hội phí & MB Bank: ${JSON.stringify(searchData?.feePolicy || {})}
+- Danh bạ hội viên / Lãnh đạo tìm thấy: ${JSON.stringify(searchData?.members || [])}
+- Sản phẩm Marketplace: ${JSON.stringify(searchData?.products || [])}
+- Cơ hội giao thương B2B: ${JSON.stringify(searchData?.opportunities || [])}
+- Sự kiện & Hội nghị: ${JSON.stringify(searchData?.events || [])}
+- Văn bản / Điều lệ: ${JSON.stringify(searchData?.documents || [])}
 
 DANH MỤC 18 LỘ TRÌNH CHỈ DẪN TRỰC TIẾP (TOURS):
 1. 'association-events' (Lịch Sự Kiện & Đăng Ký Vé) -> route '/association/events'
@@ -440,6 +772,148 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
     }
 
     // 2. SMART HYBRID NLP ENGINE (Fallback thông minh 100% không phụ thuộc ngoài)
+    // 2.1. Phản hồi Thông tin Ban Chuyên Trách & Lãnh Đạo
+    if (searchData && searchData.matchedCommittees.length > 0) {
+      const comm = searchData.matchedCommittees[0];
+      const answer = `🏛️ **Thông tin ${comm.name} - CLB Doanh Nhân CEO 1983:**\n\n- 👤 **Lãnh đạo phụ trách:** **${comm.leadership}**\n- 📋 **Phạm vi & Chức năng:** ${comm.scope}\n- 📞 **Kênh liên hệ trực tiếp:** \`${comm.contact}\`\n\n👉 *Quý Anh/Chị có muốn tôi chuyển đến khu vực làm việc của ban này không?*`;
+      const speechText = `Dạ thưa Quý anh chị, ${comm.name} do ${comm.leadership} phụ trách. ${comm.contact}. Quý anh chị có muốn tôi mở màn hình liên quan không ạ?`;
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: comm.route.replace('/', '').replace('/', '-') || 'association-members',
+        route: comm.route,
+        featureName: comm.name,
+        dynamicData: { committee: comm },
+        provider: 'ceo1983-smart-engine',
+        model: 'rag-committee-v1',
+      };
+    }
+
+    // 2.2. Phản hồi về Chính sách Hội Phí & MB Bank
+    if (searchData?.isFeeQuery) {
+      const dues = context.dues;
+      const formattedOwed = new Intl.NumberFormat('vi-VN').format(dues.totalOutstanding || 0);
+      const answer = `💳 **Quy định & Kênh đóng Hội phí CLB Doanh Nhân CEO 1983:**\n\n- 🏦 **Ngân hàng thụ hưởng:** MB Bank (Ngân hàng Quân Đội)\n- 🔢 **Số tài khoản:** \`1983000000\`\n- 👤 **Chủ tài khoản:** **CLB DOANH NHAN CEO 1983**\n- 💰 **Định mức niên liễm:**\n  + Tiêu chuẩn: **10.000.000 VNĐ / năm**\n  + VIP Gold: **20.000.000 VNĐ / năm**\n  + Kim cương: **50.000.000 VNĐ / năm**\n- 📝 **Cú pháp chuyển khoản:** \`${context.user.code} HP2026\` hoặc \`${context.user.name} HP2026\`\n\n*Trạng thái của Quý Anh/Chị:* ${dues.feePaid ? '✅ **ĐÃ HOÀN TẤT ĐẦY ĐỦ**' : `⚠️ **Còn nợ ${formattedOwed} VNĐ (Kỳ ${dues.feeYear || 2026})**`}\n\n👉 *Quý Anh/Chị có muốn tôi mở mục Hồ sơ để quét mã VietQR MB Bank thanh toán tự động trong 1 giây không?*`;
+      const speechText = `Hội phí CEO 1983 được tiếp nhận qua MB Bank, số tài khoản một chín tám ba không không không không không không, chủ tài khoản CLB Doanh Nhân CEO 1983. Quý anh chị có muốn tôi mở mã VietQR để thanh toán ngay không ạ?`;
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-profile',
+        route: '/association/profile',
+        featureName: 'Hồ Sơ & Đóng Hội Phí VietQR',
+        dynamicData: { dues: context.dues, feePolicy: searchData.feePolicy },
+        provider: 'ceo1983-smart-engine',
+        model: 'rag-fees-v1',
+      };
+    }
+
+    // 2.3. Tra cứu Hội viên & Lãnh đạo (Members & Business Directory)
+    if (searchData && searchData.members.length > 0 && (
+      q.includes('ai') || q.includes('tìm') || q.includes('thành viên') || q.includes('hội viên') ||
+      q.includes('công ty') || q.includes('doanh nghiệp') || q.includes('giám đốc') || q.includes('chủ tịch') ||
+      q.includes('trưởng ban') || q.includes('phó ban') || q.includes('ceo')
+    )) {
+      const list = searchData.members.map((m: any, idx: number) =>
+        `${idx + 1}. **${m.name || m.full_name}** (${m.code || 'M1983'})\n   - Chức vụ: **${m.position || m.title || 'Lãnh đạo'}** tại **${m.company || 'Doanh nghiệp Hội viên'}**\n   - Phân ban: ${m.department || 'Ban Hội viên'} | Hạng: ${m.level || 'Chính thức'}`
+      ).join('\n\n');
+
+      const answer = `👥 **Tìm thấy ${searchData.members.length} hội viên doanh nhân phù hợp:**\n\n${list}\n\n👉 *Quý Anh/Chị có muốn tôi mở **Danh Bạ Hội Viên** để gửi lời mời hẹn gặp 1-on-1 hoặc xem hồ sơ năng lực 360° không?*`;
+      const speechText = `Tôi đã tìm thấy ${searchData.members.length} hội viên doanh nhân phù hợp trong hệ thống, bao gồm anh chị ${searchData.members[0].name || searchData.members[0].full_name} tại ${searchData.members[0].company || 'doanh nghiệp'}. Quý anh chị có muốn tôi mở Danh bạ để kết nối ngay không ạ?`;
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-members',
+        route: '/association/members',
+        featureName: 'Danh Bạ 200+ CEO & Hẹn 1-on-1',
+        dynamicData: { members: searchData.members },
+        provider: 'ceo1983-smart-engine',
+        model: 'rag-members-v1',
+      };
+    }
+
+    // 2.4. Tra cứu Sản phẩm Chợ B2B (Marketplace Products)
+    if (searchData && searchData.products.length > 0 && (
+      q.includes('sản phẩm') || q.includes('chợ') || q.includes('bán') || q.includes('mua') ||
+      q.includes('giá') || q.includes('hàng') || q.includes('gian hàng') || q.includes('marketplace')
+    )) {
+      const list = searchData.products.map((p: any, idx: number) => {
+        const priceStr = p.price ? new Intl.NumberFormat('vi-VN').format(p.price) + ' VNĐ' : 'Liên hệ đàm phán';
+        return `${idx + 1}. 🛍️ **${p.name || p.title}**\n   - Giá niêm yết: **${priceStr}**\n   - Doanh nghiệp cung cấp: **${p.company || 'Hội viên CEO 1983'}**\n   - Danh mục: ${p.category || 'Sản phẩm B2B'}`;
+      }).join('\n\n');
+
+      const answer = `🛍️ **Tìm thấy ${searchData.products.length} sản phẩm trên Chợ Giao Thương B2B:**\n\n${list}\n\n👉 *Quý Anh/Chị có muốn tôi mở **Chợ B2B** để xem chi tiết và trao đổi trực tiếp với chủ gian hàng không?*`;
+      const speechText = `Hệ thống có ${searchData.products.length} sản phẩm phù hợp trên Chợ B2B, tiêu biểu là ${searchData.products[0].name || searchData.products[0].title}. Quý anh chị có muốn tôi mở Chợ B2B ngay không ạ?`;
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-products',
+        route: '/association/products',
+        featureName: 'Chợ Giao Thương B2B & Gian Hàng Số',
+        dynamicData: { products: searchData.products },
+        provider: 'ceo1983-smart-engine',
+        model: 'rag-products-v1',
+      };
+    }
+
+    // 2.5. Tra cứu Cơ hội Kinh doanh & Giao thương B2B
+    if (searchData && searchData.opportunities.length > 0 && (
+      q.includes('cơ hội') || q.includes('giao thương') || q.includes('hợp tác') ||
+      q.includes('đối tác') || q.includes('chào mua') || q.includes('chào bán') || q.includes('dự án')
+    )) {
+      const list = searchData.opportunities.map((o: any, idx: number) => {
+        const valStr = o.valuation ? new Intl.NumberFormat('vi-VN').format(o.valuation) + ' VNĐ' : 'Thỏa thuận';
+        return `${idx + 1}. 💼 **${o.title}**\n   - Loại hình: **${o.type === 'buy' ? 'Chào mua' : o.type === 'sell' ? 'Chào bán' : 'Hợp tác'}**\n   - Quy mô / Định giá: **${valStr}**\n   - Ngành nghề: ${o.target_industry || o.category || 'Đa ngành'}\n   - Người đăng: ${o.poster_name || 'Hội viên'} (${o.poster_company || 'Doanh nghiệp'})`;
+      }).join('\n\n');
+
+      const answer = `💼 **Tìm thấy ${searchData.opportunities.length} cơ hội giao thương B2B đang mở:**\n\n${list}\n\n👉 *Quý Anh/Chị có muốn tôi mở **Sàn Cơ Hội** để gửi yêu cầu kết nối matching ngay bây giờ không?*`;
+      const speechText = `Tìm thấy ${searchData.opportunities.length} cơ hội kinh doanh giao thương đang mở, nổi bật là ${searchData.opportunities[0].title}. Quý anh chị có muốn tôi mở Sàn cơ hội không ạ?`;
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-opportunities',
+        route: '/association/opportunities',
+        featureName: 'Sàn Cơ Hội Kinh Doanh B2B',
+        dynamicData: { opportunities: searchData.opportunities },
+        provider: 'ceo1983-smart-engine',
+        model: 'rag-opportunities-v1',
+      };
+    }
+
+    // 2.6. Tra cứu Kho Văn bản, Điều lệ & Kỷ yếu
+    if (searchData && searchData.documents.length > 0 && (
+      q.includes('văn bản') || q.includes('tài liệu') || q.includes('điều lệ') ||
+      q.includes('quy chế') || q.includes('kỷ yếu') || q.includes('nghị quyết')
+    )) {
+      const list = searchData.documents.map((d: any, idx: number) =>
+        `${idx + 1}. 📚 **${d.name}**\n   - Mã hiệu: \`${d.code || 'DOC'}\` | Danh mục: ${d.category || 'Tài liệu chung'}`
+      ).join('\n\n');
+
+      const answer = `📚 **Tìm thấy ${searchData.documents.length} văn bản / tài liệu liên quan:**\n\n${list}\n\n👉 *Quý Anh/Chị có muốn tôi mở **Kho Văn Bản & Kỷ Yếu** để tra cứu và tải về không?*`;
+      const speechText = `Có ${searchData.documents.length} tài liệu trong Kho văn bản, bao gồm ${searchData.documents[0].name}. Quý anh chị có muốn tôi mở Kho văn bản không ạ?`;
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-library',
+        route: '/association/library',
+        featureName: 'Kho Văn Bản, Điều Lệ & Kỷ Yếu',
+        dynamicData: { documents: searchData.documents },
+        provider: 'ceo1983-smart-engine',
+        model: 'rag-docs-v1',
+      };
+    }
+
     // A. Câu hỏi về Sự kiện nhiều người đăng ký nhất (Top Events)
     if (
       q.includes('nhiều người đăng ký') ||
@@ -1262,16 +1736,16 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
       };
     }
 
-    // M. Phản hồi thông minh phong cách Trợ lý Điều hành Cao Cấp (Executive Companion)
-    const answer = `Dạ em đã lắng nghe chia sẻ của Quý Anh/Chị **${context.user.name}** ạ!\n\nVới vai trò Trợ lý AI Điều Hành của CLB Doanh Nhân CEO 1983, em luôn ở đây để hỗ trợ Anh/Chị trong mọi công việc kết nối, tra cứu và điều hành:\n- 📅 **Sự kiện & Hội nghị:** Lịch sự kiện, đăng ký vé tham dự, sơ đồ bàn VIP.\n- 💳 **Hội phí & Thẻ hội viên:** Tra cứu niên liễm, thanh toán VietQR MB Bank, chạm thẻ NFC.\n- 🤝 **Kết nối Giao thương:** Danh bạ 200+ CEO, hẹn 1-on-1, Sàn cơ hội kinh doanh B2B.\n- 🗺️ **Dẫn đường giọng nói GPS:** Lái màn hình và hướng dẫn từng bước thao tác trực tiếp.\n\n*Quý Anh/Chị có thể hỏi cụ thể hơn hoặc bấm vào nút Micro để trò chuyện cùng em nhé!*`;
-    const speechText = `Dạ em đã nghe rõ Quý anh chị ${context.user.name}. Em luôn sẵn sàng hỗ trợ anh chị tra cứu sự kiện, đóng hội phí, kết nối danh bạ doanh nhân và dẫn đường trực tiếp trên app ạ!`;
+    // M. Phản hồi thông minh động (Dynamic Non-Repeating Executive Fallback)
+    const answer = `Dạ thưa Quý Anh/Chị **${context.user.name}**, em đã tra cứu trên toàn hệ thống nhưng chưa tìm thấy dữ liệu khớp chính xác với yêu cầu: **"${rawPrompt}"**.\n\nQuý Anh/Chị có thể tham khảo nhanh các nội dung nổi bật trong Hiệp hội:\n- 👥 **Danh bạ 200+ CEO:** Tra cứu lãnh đạo doanh nghiệp theo ngành nghề (Bất động sản, Xây dựng, Công nghệ, Y tế...).\n- 📅 **Lịch Sự kiện:** Xem lịch sinh hoạt, gala và đăng ký vé tham dự.\n- 🛍️ **Chợ B2B & Sàn Cơ hội:** Đăng tải sản phẩm và kết nối cung cầu giao thương.\n- 💳 **Hội phí & Thẻ NFC:** Tra cứu niên liễm MB Bank 1983000000 và chạm danh thiếp số.\n\n👉 *Quý Anh/Chị muốn mở tính năng nào, chỉ cần nói hoặc gõ: "Mở danh bạ", "Vào sự kiện" hoặc "Chợ B2B" nhé!*`;
+    const speechText = `Dạ em chưa tìm thấy dữ liệu cho yêu cầu "${rawPrompt}". Quý anh chị có thể thử tìm trong Danh bạ, Lịch sự kiện hoặc Chợ B2B nhé ạ!`;
 
     return {
       answer,
       speechText,
       intent: 'chat',
       provider: 'ceo1983-smart-engine',
-      model: 'human-like-v1',
+      model: 'dynamic-fallback-v2',
     };
   }
 

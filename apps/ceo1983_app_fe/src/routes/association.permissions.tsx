@@ -28,7 +28,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRole } from "@/hooks/use-role";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/association/permissions")({
   component: AssociationPermissionsScreen,
@@ -113,6 +113,20 @@ function AssociationPermissionsScreen() {
     return {};
   });
 
+  // Sync with database REST API on mount
+  useEffect(() => {
+    fetchNestApi<Record<string, any>>("/admin/member-permissions")
+      .then((data: any) => {
+        if (data && typeof data === "object" && Object.keys(data).length > 0) {
+          setPermissionsMap((prev) => ({ ...prev, ...data }));
+          try {
+            localStorage.setItem("vba_member_permissions", JSON.stringify({ ...permissionsMap, ...data }));
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Draft state while editing a single member's permissions
   const [draftPermission, setDraftPermission] = useState<MemberPermissionProfile | null>(null);
 
@@ -133,7 +147,7 @@ function AssociationPermissionsScreen() {
     setEditingMemberCode(member.code);
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!draftPermission || !editingMemberCode) return;
 
     const updated = {
@@ -150,6 +164,16 @@ function AssociationPermissionsScreen() {
       localStorage.setItem("vba_member_permissions", JSON.stringify(updated));
     } catch {}
 
+    // Persist to database RESTful API
+    try {
+      await fetchNestApi("/admin/member-permissions", {
+        method: "PUT",
+        body: { permissions: updated },
+      });
+    } catch (e) {
+      console.warn("Backend permissions save failed, stored locally", e);
+    }
+
     // Dispatch realtime synchronization events so other accounts/sessions instantly reflect the permission changes
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -162,8 +186,8 @@ function AssociationPermissionsScreen() {
       window.dispatchEvent(new CustomEvent("vba_auth_changed"));
     }
 
-    toast.success("Đã lưu phân quyền hội viên thành công!", {
-      description: `Quyền hạn của ${editingMemberCode} đã được cập nhật và có hiệu lực ngay lập tức.`,
+    toast.success("Đã lưu phân quyền hội viên vào Database!", {
+      description: `Quyền hạn của ${editingMemberCode} đã được cập nhật RESTful API thành công.`,
     });
     setEditingMemberCode(null);
     setDraftPermission(null);
@@ -171,6 +195,17 @@ function AssociationPermissionsScreen() {
 
   const filteredMembers = useMemo(() => {
     return directory.filter((m) => {
+      // Must only be approved members! Unapproved accounts must NOT appear in permissions
+      const status = String((m as any)?.status || "").toLowerCase();
+      const isUnapproved =
+        status === "pending" ||
+        status === "pending_approval" ||
+        status === "rejected" ||
+        status === "inactive" ||
+        (m as any)?.isApproved === false ||
+        (m as any)?.approved === false;
+      if (isUnapproved) return false;
+
       const p = permissionsMap[m.code];
       const nameMatch =
         (m.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||

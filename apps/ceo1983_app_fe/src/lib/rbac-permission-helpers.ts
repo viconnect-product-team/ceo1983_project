@@ -264,34 +264,93 @@ const PERMISSION_TO_MATRIX_CODES: Record<string, string[]> = {
   "system:audit_view": ["ACT_VIEW", "ACT_EXPORT"],
 };
 
+export const COMMITTEE_PERMISSIONS_STORAGE_KEY = "ceo1983_committee_permissions_v2";
+
+export function normalizeCommitteeKey(dept?: string): string {
+  if (!dept) return "thanh_vien";
+  const s = dept.toLowerCase().trim();
+  if (s.includes("quản trị") || s.includes("bqt") || s.includes("điều hành")) return "bqt";
+  if (s.includes("thư ký") || s.includes("btk") || s.includes("tong_thu_ky")) return "thu_ky";
+  if (s.includes("thành viên") || s.includes("btv")) return "thanh_vien";
+  if (s.includes("xúc tiến") || s.includes("bxt") || s.includes("thương mại")) return "xuc_tien";
+  if (s.includes("truyền thông") || s.includes("btt")) return "truyen_thong";
+  if (s.includes("thiện nguyện") || s.includes("btn") || s.includes("an sinh")) return "thien_nguyen";
+  return "thanh_vien";
+}
+
+export function dispatchPermissionSyncEvent() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("role-changed"));
+    window.dispatchEvent(new Event("crm_permissions_updated"));
+    window.dispatchEvent(new Event("vba_member_permissions_updated"));
+    try {
+      localStorage.setItem("ceo1983_perm_sync_ping", String(Date.now()));
+    } catch {}
+  }
+}
+
 /**
  * Kiểm tra xem một hành động / Permission có được cấp phép theo Ma Trận Phân Quyền (lưu trong CSDL / localStorage) hay không
  * Nếu người quản trị đã BỎ TÍCH trong ma trận và lưu, hàm này trả về FALSE để ẩn ngay các nút/thao tác trên giao diện.
  */
-export function isActionAllowedByMatrix(actionOrPerm: string, roleKey: string): boolean {
-  // Quản trị viên cấp cao (Super Admin) luôn có toàn quyền thao tác
-  if (roleKey === "quan_tri" || roleKey === "ADM" || roleKey === "platform_admin") {
-    return true;
-  }
-
+export function isActionAllowedByMatrix(
+  actionOrPerm: string,
+  roleKey?: string,
+  committeeKeyOrDept?: string,
+  memberCode?: string
+): boolean {
   if (typeof window === "undefined") return true;
 
   try {
+    // 1. Kiểm tra ghi đè trực tiếp của tài khoản hội viên nếu có
+    if (memberCode) {
+      const rawUserPerms = localStorage.getItem("vba_member_permissions");
+      if (rawUserPerms) {
+        const userMap = JSON.parse(rawUserPerms);
+        const userProfile = userMap[memberCode] || userMap[memberCode.toUpperCase()] || userMap[memberCode.toLowerCase()];
+        if (userProfile) {
+          // Bị khóa chức năng cấp cao
+          if (actionOrPerm.startsWith("member:") && userProfile.canManageMembers === false && actionOrPerm !== "member:view") {
+            return false;
+          }
+          if (actionOrPerm.startsWith("event:") && userProfile.canManageEvents === false && actionOrPerm !== "event:view") {
+            return false;
+          }
+          if (actionOrPerm.startsWith("media:") && userProfile.canManageNews === false && actionOrPerm !== "media:view") {
+            return false;
+          }
+          if ((actionOrPerm.startsWith("opportunity:") || actionOrPerm.startsWith("marketplace:")) && userProfile.canManageMarketplace === false && !actionOrPerm.endsWith(":view")) {
+            return false;
+          }
+          if (userProfile.deniedCodes && Array.isArray(userProfile.deniedCodes)) {
+            const denied = userProfile.deniedCodes.map((c: string) => c.toUpperCase());
+            if (denied.includes(actionOrPerm.toUpperCase())) return false;
+          }
+        }
+      }
+    }
+
     const raw = localStorage.getItem(RBAC_MATRIX_STORAGE_KEY);
     if (!raw) return true; // Chưa tùy biến thì giữ quyền mặc định
 
     const categories = JSON.parse(raw);
     if (!Array.isArray(categories)) return true;
 
-    // Chuẩn hóa roleKey sang key trong ma trận
-    let targetRole = roleKey.toLowerCase();
-    if (targetRole === "bqt") targetRole = "admin";
-    else if (targetRole === "btk") targetRole = "tong_thu_ky";
-    else if (targetRole === "btv" || targetRole === "btt" || targetRole === "bxt" || targetRole === "btn") {
+    // Chuẩn hóa roleKey sang key trong ma trận (5 vai trò hệ thống)
+    const normRole = (roleKey || "member").toLowerCase().trim();
+    let targetRole: SystemRoleKey = "member";
+    if (normRole === "quan_tri" || normRole === "adm" || normRole === "platform_admin" || normRole === "superadmin" || normRole.includes("quản trị")) {
+      targetRole = "quan_tri";
+    } else if (normRole === "admin" || normRole === "bqt" || normRole.includes("chủ tịch")) {
+      targetRole = "admin";
+    } else if (normRole === "tong_thu_ky" || normRole === "btk" || normRole.includes("thư ký")) {
+      targetRole = "tong_thu_ky";
+    } else if (normRole.startsWith("truong_ban") || normRole.startsWith("pho_ban") || normRole === "btv" || normRole === "bxt" || normRole === "btt" || normRole === "btn") {
       targetRole = "truong_ban";
-    } else if (targetRole === "hvt") {
-      targetRole = "member";
     }
+
+    // Chuẩn hóa ban chuyên môn nếu có
+    const committeeKey = committeeKeyOrDept ? normalizeCommitteeKey(committeeKeyOrDept) : null;
 
     // Lấy danh sách các mã thao tác tương ứng
     const codesToCheck = PERMISSION_TO_MATRIX_CODES[actionOrPerm] || [actionOrPerm.toUpperCase(), actionOrPerm.toLowerCase()];
@@ -309,12 +368,34 @@ export function isActionAllowedByMatrix(actionOrPerm: string, roleKey: string): 
           );
 
           if (isMatch && act.roles) {
-            // Kiểm tra theo 5 system roles hoặc 6 ban roles
-            if (act.roles[targetRole] !== undefined) {
-              if (act.roles[targetRole] === false) return false;
+            // A. Kiểm tra theo Ban chuyên môn của tài khoản
+            if (committeeKey && act.roles[committeeKey] !== undefined) {
+              if (act.roles[committeeKey] === false) {
+                // Nếu Ban bị bỏ tích quyền này, lập tức khóa
+                return false;
+              }
             }
-            if (act.roles[roleKey.toLowerCase()] !== undefined) {
-              if (act.roles[roleKey.toLowerCase()] === false) return false;
+
+            // B. Kiểm tra theo Vai trò hệ thống
+            if (act.roles[targetRole] !== undefined) {
+              if (act.roles[targetRole] === false) {
+                // Nếu vai trò bị bỏ tích quyền này, lập tức khóa (kể cả admin/quan_tri)
+                return false;
+              }
+            }
+
+            // C. Kiểm tra roleKey thô
+            if (act.roles[normRole] !== undefined) {
+              if (act.roles[normRole] === false) return false;
+            }
+
+            // D. Nếu cả ban hoặc vai trò có quyền true
+            if (
+              act.roles[targetRole] === true ||
+              (committeeKey && act.roles[committeeKey] === true) ||
+              (targetRole === "quan_tri" && act.roles["quan_tri"] !== false)
+            ) {
+              return true;
             }
           }
         }
@@ -324,6 +405,12 @@ export function isActionAllowedByMatrix(actionOrPerm: string, roleKey: string): 
     return true;
   }
 
+  // Quản trị viên cấp cao mặc định được phép nếu không bị bỏ tích cụ thể
+  if (roleKey === "quan_tri" || roleKey === "ADM" || roleKey === "platform_admin") {
+    return true;
+  }
+
   return true;
 }
+
 

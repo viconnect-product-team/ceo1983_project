@@ -32,6 +32,7 @@ import { Route as MyPermissionsRouteImport } from './routes/my-permissions'
 import { Route as MeetingsRouteImport } from './routes/meetings'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as MRouteImport } from './routes/m'
+import { Route as LuckyDrawRouteImport } from './routes/lucky-draw'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as IncomeRouteImport } from './routes/income'
@@ -345,6 +346,11 @@ const MarketplaceRoute = MarketplaceRouteImport.update({
 const MRoute = MRouteImport.update({
   id: '/m',
   path: '/m',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LuckyDrawRoute = LuckyDrawRouteImport.update({
+  id: '/lucky-draw',
+  path: '/lucky-draw',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingRoute = LandingRouteImport.update({
@@ -1421,6 +1427,7 @@ export interface FileRoutesByFullPath {
   '/income': typeof IncomeRoute
   '/install': typeof InstallRoute
   '/landing': typeof LandingRouteWithChildren
+  '/lucky-draw': typeof LuckyDrawRoute
   '/m': typeof MRouteWithChildren
   '/marketplace': typeof MarketplaceRouteWithChildren
   '/meetings': typeof MeetingsRoute
@@ -1636,6 +1643,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/income': typeof IncomeRoute
   '/install': typeof InstallRoute
+  '/lucky-draw': typeof LuckyDrawRoute
   '/meetings': typeof MeetingsRoute
   '/my-permissions': typeof MyPermissionsRoute
   '/network': typeof NetworkRoute
@@ -1839,6 +1847,7 @@ export interface FileRoutesById {
   '/income': typeof IncomeRoute
   '/install': typeof InstallRoute
   '/landing': typeof LandingRouteWithChildren
+  '/lucky-draw': typeof LuckyDrawRoute
   '/m': typeof MRouteWithChildren
   '/marketplace': typeof MarketplaceRouteWithChildren
   '/meetings': typeof MeetingsRoute
@@ -2065,6 +2074,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/install'
     | '/landing'
+    | '/lucky-draw'
     | '/m'
     | '/marketplace'
     | '/meetings'
@@ -2280,6 +2290,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/income'
     | '/install'
+    | '/lucky-draw'
     | '/meetings'
     | '/my-permissions'
     | '/network'
@@ -2482,6 +2493,7 @@ export interface FileRouteTypes {
     | '/income'
     | '/install'
     | '/landing'
+    | '/lucky-draw'
     | '/m'
     | '/marketplace'
     | '/meetings'
@@ -2707,6 +2719,7 @@ export interface RootRouteChildren {
   IncomeRoute: typeof IncomeRoute
   InstallRoute: typeof InstallRoute
   LandingRoute: typeof LandingRouteWithChildren
+  LuckyDrawRoute: typeof LuckyDrawRoute
   MRoute: typeof MRouteWithChildren
   MarketplaceRoute: typeof MarketplaceRouteWithChildren
   MeetingsRoute: typeof MeetingsRoute
@@ -2919,6 +2932,13 @@ declare module '@tanstack/react-router' {
       path: '/m'
       fullPath: '/m'
       preLoaderRoute: typeof MRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lucky-draw': {
+      id: '/lucky-draw'
+      path: '/lucky-draw'
+      fullPath: '/lucky-draw'
+      preLoaderRoute: typeof LuckyDrawRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing': {
@@ -4999,6 +5019,7 @@ const rootRouteChildren: RootRouteChildren = {
   IncomeRoute: IncomeRoute,
   InstallRoute: InstallRoute,
   LandingRoute: LandingRouteWithChildren,
+  LuckyDrawRoute: LuckyDrawRoute,
   MRoute: MRouteWithChildren,
   MarketplaceRoute: MarketplaceRouteWithChildren,
   MeetingsRoute: MeetingsRoute,

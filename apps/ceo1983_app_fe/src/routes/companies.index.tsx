@@ -25,7 +25,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useT, type TKey } from "@/lib/i18n";
-import { useRole } from "@/hooks/use-role";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { downloadCsv } from "@/lib/csv";
 import { useTableControls, type TableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
@@ -111,7 +111,7 @@ function CompaniesPage() {
     loadMembers();
   }, []);
 
-  const { isAdmin, loading: roleLoading } = useRole();
+  const { isAdmin, can, loading: roleLoading } = useRole();
   const router = useRouter();
   const [q, setQ] = useUrlState<string>("q", "");
   const [industry, setIndustry] = useState<"" | IndustryKey>("");
@@ -257,6 +257,10 @@ function CompaniesPage() {
       };
 
       if (editing) {
+        if (!can(PERMISSIONS.MEMBER_EDIT)) {
+          toast.error("Bạn không có quyền chỉnh sửa thông tin doanh nghiệp!");
+          return;
+        }
         await fetchNestApi(`/members/${editing.id}`, {
           method: "PUT",
           body: JSON.stringify(payload),
@@ -264,6 +268,10 @@ function CompaniesPage() {
         toast.success(t("members.updated") || "Cập nhật doanh nghiệp thành công");
         setEditing(null);
       } else {
+        if (!can(PERMISSIONS.MEMBER_CREATE)) {
+          toast.error("Bạn không có quyền thêm mới doanh nghiệp!");
+          return;
+        }
         await fetchNestApi("/members", {
           method: "POST",
           body: JSON.stringify(payload),
@@ -428,26 +436,18 @@ function CompaniesPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleExport}
-                className="flex h-10 items-center gap-2 rounded-xl border border-border/20 bg-card/10 px-4 text-sm font-semibold text-primary-foreground backdrop-blur transition hover:bg-card/20"
+                className="flex h-10 items-center gap-2 rounded-xl border border-border/20 bg-card/10 px-4 text-sm font-semibold text-primary-foreground backdrop-blur transition hover:bg-card/20 cursor-pointer"
               >
                 <Download className="h-4 w-4" /> {t("members.export")}
               </button>
-              <button
-                onClick={() =>
-                  isAdmin
-                    ? setOpen(true)
-                    : toast.error(t("perm.denied.title"), {
-                        description: t("perm.denied.adminOnly"),
-                      })
-                }
-                aria-disabled={!isAdmin}
-                title={!isAdmin && !roleLoading ? t("perm.denied.title") : undefined}
-                className={`flex h-10 items-center gap-2 rounded-xl bg-card px-4 text-sm font-semibold text-primary shadow transition hover:bg-card/90 ${
-                  !isAdmin ? "opacity-60" : ""
-                }`}
-              >
-                <Plus className="h-4 w-4" /> {t("companies.add")}
-              </button>
+              {can(PERMISSIONS.MEMBER_CREATE) && (
+                <button
+                  onClick={() => setOpen(true)}
+                  className="flex h-10 items-center gap-2 rounded-xl bg-card px-4 text-sm font-semibold text-primary shadow transition hover:bg-card/90 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" /> {t("companies.add")}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -925,14 +925,18 @@ function CompanyTable({
                           maxWidth="max-w-[300px]"
                           className="font-semibold text-foreground"
                         />
-                        <div className="truncate text-[11px] text-muted-foreground">
-                          {m.taxCode ? `MST: ${m.taxCode}` : "-"}
+                        <div className="text-[11px] text-muted-foreground">
+                          <TruncatedText text={m.taxCode ? `MST: ${m.taxCode}` : "-"} maxWidth="max-w-[200px]" />
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-foreground border-b border-border/50">{t(m.industry)}</td>
-                  <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{t(m.region)}</td>
+                  <td className="px-4 py-3 text-foreground border-b border-border/50">
+                    <TruncatedText text={t(m.industry)} maxWidth="max-w-[160px]" />
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground border-b border-border/50">
+                    <TruncatedText text={t(m.region)} maxWidth="max-w-[140px]" />
+                  </td>
                   <td className="px-4 py-3 font-medium text-foreground border-b border-border/50">
                     {(m.employees ?? 0).toLocaleString("vi-VN")}
                   </td>
@@ -982,20 +986,24 @@ function CompanyTable({
                         {t("tbl.view")}
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
-                      <button
-                        onClick={() => onEdit?.(m)}
-                        title={t("common.edit")}
-                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary cursor-pointer"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => onDelete?.(m)}
-                        title={t("common.delete")}
-                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {isAdmin && onEdit && (
+                        <button
+                          onClick={() => onEdit(m)}
+                          title={t("common.edit")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary cursor-pointer"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {isAdmin && onDelete && (
+                        <button
+                          onClick={() => onDelete(m)}
+                          title={t("common.delete")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

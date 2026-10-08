@@ -30,7 +30,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useT, type TKey } from "@/lib/i18n";
-import { useRole } from "@/hooks/use-role";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { downloadCsv } from "@/lib/csv";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
@@ -188,7 +188,7 @@ function FeesPage() {
   const createFn = useServerFn(createInvoiceFn);
   const deleteFn = useServerFn(deleteInvoiceFn);
   const remindFn = useServerFn(addReminderFn);
-  const { isAdmin, isModerator } = useRole();
+  const { isAdmin, isModerator, can } = useRole();
   const [remindingId, setRemindingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const YEARS = useMemo(() => {
@@ -386,10 +386,10 @@ function FeesPage() {
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             {t("fees.export")}
           </button>
-          {isAdmin && (
+          {can(PERMISSIONS.FINANCE_MANAGE) && (
             <button
               onClick={() => setShowCreate(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
               style={{ background: "var(--gradient-primary)" }}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -795,6 +795,10 @@ function FeesPage() {
           defaultYear={year}
           onClose={() => setShowCreate(false)}
           onCreate={async (payload) => {
+            if (!can(PERMISSIONS.FINANCE_MANAGE)) {
+              toast.error("Bạn không có quyền tạo hóa đơn hội phí!");
+              return;
+            }
             try {
               await createFn({ data: payload });
               toast.success(t("fees.created"));

@@ -27,9 +27,10 @@ import { EmptyState, ListSkeleton, NoSearchResult } from "@/components/dashboard
 import { MailTemplateManager } from "@/components/documents/MailTemplateManager";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
-import { useRole } from "@/hooks/use-role";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
+import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import {
   createDocumentFn,
   deleteDocumentFn,
@@ -125,8 +126,8 @@ function DocsPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
-  const { isAdmin, isModerator, isPlatformAdmin } = useRole();
-  const canWrite = isAdmin || isModerator || isPlatformAdmin;
+  const { isAdmin, isModerator, isPlatformAdmin, can } = useRole();
+  const canWrite = can(PERMISSIONS.DOCUMENT_MANAGE);
 
   const DOCUMENTS = Route.useLoaderData() as Document[];
   const { pins, isPinned, toggle } = usePinnedDocs();
@@ -179,6 +180,10 @@ function DocsPage() {
   ];
 
   const onSubmit = async (v: CrudValues) => {
+    if (!can(PERMISSIONS.DOCUMENT_MANAGE)) {
+      toast.error("Bạn không có quyền thêm hoặc chỉnh sửa tài liệu!");
+      return;
+    }
     setSubmitting(true);
     try {
       if (editing) {
@@ -890,16 +895,20 @@ function DocsPage() {
                                 params={{ docId: d.id }}
                                 className="font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
-                                {d.name}
+                                <TruncatedText text={d.name} maxWidth="max-w-[260px]" className="font-semibold text-foreground" />
                               </Link>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-foreground border-b border-border/50">{d.category}</td>
+                          <td className="px-4 py-3 text-foreground border-b border-border/50">
+                            <TruncatedText text={d.category} maxWidth="max-w-[160px]" />
+                          </td>
                           <td className="px-4 py-3 text-[11px] font-semibold uppercase text-muted-foreground border-b border-border/50">
                             {d.type}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{d.size}</td>
-                          <td className="px-4 py-3 text-foreground border-b border-border/50">{d.uploadedBy}</td>
+                          <td className="px-4 py-3 text-foreground border-b border-border/50">
+                            <TruncatedText text={d.uploadedBy} maxWidth="max-w-[160px]" />
+                          </td>
                           <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{fmt.date(d.uploadedAt)}</td>
                           <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
                             <div className="flex items-center justify-end gap-1">

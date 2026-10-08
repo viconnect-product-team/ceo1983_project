@@ -19,6 +19,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
 import { fetchNestApi } from "@/lib/api-client";
+import { LuckyDrawLandingBanner } from "@/components/dashboard/LuckyDrawLandingBanner";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 import {
   listVotesFn,
@@ -157,6 +158,7 @@ function VotingPage() {
   const VOTES = Route.useLoaderData() as Vote[];
   const [open, setOpen] = useState(false);
   const [luckyDrawOpen, setLuckyDrawOpen] = useState(false);
+  const [showLuckyDrawBanner, setShowLuckyDrawBanner] = useState(true);
   const [editing, setEditing] = useState<Vote | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -345,8 +347,13 @@ function VotingPage() {
               {copied ? "Đã sao chép!" : "Sao chép liên kết"}
             </button>
             <button
-              onClick={() => setLuckyDrawOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-95"
+              onClick={() => {
+                setShowLuckyDrawBanner(true);
+                setTimeout(() => {
+                  document.getElementById("lucky-draw-banner-section")?.scrollIntoView({ behavior: "smooth" });
+                }, 50);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-95 cursor-pointer"
             >
               <Gift className="h-4 w-4" />
               Bốc Thăm Trúng Thưởng
@@ -362,6 +369,12 @@ function VotingPage() {
           </div>
         }
       />
+
+      {showLuckyDrawBanner && (
+        <div id="lucky-draw-banner-section" className="mb-6">
+          <LuckyDrawLandingBanner />
+        </div>
+      )}
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard

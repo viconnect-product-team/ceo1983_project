@@ -9,6 +9,7 @@ import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboa
 import { type NewsArticle } from "@/lib/extra-data";
 import { createNewsFn, deleteNewsFn, listNewsFn, updateNewsFn } from "@/lib/news.functions";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 
 export const Route = createFileRoute("/news")({
   ssr: false,
@@ -31,6 +32,7 @@ function NewsPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
+  const { can } = useRole();
   const NEWS = Route.useLoaderData() as NewsArticle[];
   const published = NEWS.filter((n) => n.status === "published");
   const totalViews = published.reduce((s, n) => s + n.views, 0);
@@ -68,6 +70,10 @@ function NewsPage() {
   ];
 
   const onSubmit = async (v: CrudValues) => {
+    if (!can(PERMISSIONS.MEDIA_MANAGE)) {
+      toast.error("Bạn không có quyền tạo hoặc chỉnh sửa tin tức!");
+      return;
+    }
     setSubmitting(true);
     try {
       if (editing) {
@@ -88,6 +94,10 @@ function NewsPage() {
   };
 
   const onDelete = async (n: NewsArticle) => {
+    if (!can(PERMISSIONS.MEDIA_MANAGE)) {
+      toast.error("Bạn không có quyền xóa bài viết tin tức!");
+      return;
+    }
     if (!window.confirm(t("common.confirmDelete", { name: n.title }))) return;
     setDeletingId(n.id);
     try {
@@ -107,17 +117,19 @@ function NewsPage() {
         title={t("news.title")}
         subtitle={t("news.subtitle")}
         actions={
-          <button
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <Plus className="h-4 w-4" />
-            {t("news.create")}
-          </button>
+          can(PERMISSIONS.MEDIA_MANAGE) ? (
+            <button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Plus className="h-4 w-4" />
+              {t("news.create")}
+            </button>
+          ) : undefined
         }
       />
 

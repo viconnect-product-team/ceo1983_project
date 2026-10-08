@@ -26,6 +26,8 @@
     "deploy:association": "powershell -ExecutionPolicy Bypass -File ./deploy-ceo1983.ps1",
     "deploy:ceo1983": "powershell -ExecutionPolicy Bypass -File ./deploy-ceo1983.ps1",
     "deploy:ceo1983:fe": "powershell -ExecutionPolicy Bypass -File ./deploy-ceo1983.ps1 -FrontendOnly -SkipWebBuild",
+    "deploy:mobile": "powershell -ExecutionPolicy Bypass -File ./deploy-mobile.ps1",
+    "deploy:mobile:fast": "powershell -ExecutionPolicy Bypass -File ./deploy-mobile.ps1 -SkipWebBuild",
     "deploy:crm": "powershell -ExecutionPolicy Bypass -File ./deploy-crm.ps1",
     "deploy:crm:fe": "powershell -ExecutionPolicy Bypass -File ./deploy-crm.ps1 -FrontendOnly -SkipWebBuild"
   },

@@ -29,10 +29,14 @@ export interface TaskHistory {
 }
 
 export interface TaskAttachment {
+  id?: string;
   name: string;
   url: string;
   size?: string;
   type?: string;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  isDeliverable?: boolean;
 }
 
 export interface TaskMeeting {
@@ -41,6 +45,16 @@ export interface TaskMeeting {
   link?: string;
   meetingTime?: string;
   note?: string;
+}
+
+export interface TaskProgressEvaluation {
+  id: string;
+  evaluatedAt: string;
+  evaluatorName: string;
+  evaluatorRole?: string;
+  rating?: number; // 1-5 sao
+  statusAssessment: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD';
+  feedback: string;
 }
 
 export interface TaskDelegation {
@@ -58,6 +72,8 @@ export interface TaskDelegation {
   reworkReason?: string;
   lastRemindedAt?: string;
   reminderCount?: number;
+  lastEvaluatedAt?: string;
+  lastEvaluationAssessment?: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD';
 }
 
 export interface TaskItem {
@@ -92,6 +108,7 @@ export interface TaskItem {
   comments: TaskComment[];
   history: TaskHistory[];
   delegation?: TaskDelegation;
+  evaluations?: TaskProgressEvaluation[];
   createdAt: string;
   updatedAt: string;
 }
@@ -820,6 +837,143 @@ export class TasksService {
     this.dispatchTaskAssignmentNotification(task, `${actorName} (Nhắc nhở đôn đốc lần ${newCount})`).catch((err) => {
       this.logger.warn(`Reminder notification error: ${err?.message}`);
     });
+
+    return task;
+  }
+
+  async evaluateProgress(
+    id: string,
+    payload: {
+      rating?: number;
+      statusAssessment: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD';
+      feedback: string;
+    },
+    actorName = 'Ban Quản trị',
+  ): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    const evalItem: TaskProgressEvaluation = {
+      id: `eval-${Date.now()}`,
+      evaluatedAt: new Date().toISOString(),
+      evaluatorName: actorName,
+      evaluatorRole: 'Giám sát / Ban Quản trị',
+      rating: payload.rating || 5,
+      statusAssessment: payload.statusAssessment || 'ON_TRACK',
+      feedback: payload.feedback || 'Tiến độ được đánh giá đạt yêu cầu',
+    };
+
+    if (!task.evaluations) task.evaluations = [];
+    task.evaluations.unshift(evalItem);
+
+    const assessmentLabels: Record<string, string> = {
+      ON_TRACK: 'Đúng tiến độ',
+      AT_RISK: 'Có nguy cơ trễ hạn',
+      DELAYED: 'Chậm tiến độ / Cần can thiệp',
+      AHEAD: 'Vượt tiến độ',
+    };
+
+    task.delegation = {
+      ...task.delegation,
+      lastEvaluatedAt: evalItem.evaluatedAt,
+      lastEvaluationAssessment: evalItem.statusAssessment,
+    };
+
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: `Đánh giá tiến độ (${assessmentLabels[evalItem.statusAssessment] || evalItem.statusAssessment}${payload.rating ? ` - ${payload.rating} sao` : ''}): "${evalItem.feedback}"`,
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+
+    // Bắn thông báo đánh giá tiến độ đến người phụ trách
+    this.dispatchTaskAssignmentNotification(
+      task,
+      `${actorName} (Đã đánh giá tiến độ: ${assessmentLabels[evalItem.statusAssessment] || ''})`,
+    ).catch((err) => {
+      this.logger.warn(`Evaluation notification error: ${err?.message}`);
+    });
+
+    return task;
+  }
+
+  async addAttachment(
+    id: string,
+    attachment: {
+      name: string;
+      url: string;
+      size?: string;
+      type?: string;
+      isDeliverable?: boolean;
+    },
+    actorName = 'Người dùng',
+  ): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+
+    const newAtt: TaskAttachment = {
+      id: `att-${Date.now()}`,
+      name: attachment.name,
+      url: attachment.url,
+      size: attachment.size || '1.0 MB',
+      type: attachment.type || 'application/octet-stream',
+      uploadedBy: actorName,
+      uploadedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      isDeliverable: !!attachment.isDeliverable,
+    };
+
+    if (!task.attachments) task.attachments = [];
+    task.attachments.push(newAtt);
+
+    task.history.unshift({
+      id: `h-${Date.now()}`,
+      action: `${newAtt.isDeliverable ? 'Nộp file kết quả / deliverable' : 'Tải lên tài liệu đính kèm'}: "${newAtt.name}"`,
+      actor: actorName,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    });
+
+    task.updatedAt = new Date().toISOString();
+    this.saveToFile();
+    return task;
+  }
+
+  async deleteAttachment(
+    id: string,
+    attachmentIndexOrId: number | string,
+    actorName = 'Người dùng',
+  ): Promise<TaskItem> {
+    const task = await this.getTaskById(id);
+    if (!task) throw new Error(`Không tìm thấy công việc ${id}`);
+    if (!task.attachments || task.attachments.length === 0) return task;
+
+    let removedName = '';
+    if (typeof attachmentIndexOrId === 'number' || !isNaN(Number(attachmentIndexOrId))) {
+      const idx = Number(attachmentIndexOrId);
+      if (idx >= 0 && idx < task.attachments.length) {
+        removedName = task.attachments[idx].name;
+        task.attachments.splice(idx, 1);
+      }
+    } else {
+      const idx = task.attachments.findIndex((a) => a.id === attachmentIndexOrId);
+      if (idx !== -1) {
+        removedName = task.attachments[idx].name;
+        task.attachments.splice(idx, 1);
+      }
+    }
+
+    if (removedName) {
+      task.history.unshift({
+        id: `h-${Date.now()}`,
+        action: `Xóa tài liệu đính kèm: "${removedName}"`,
+        actor: actorName,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      });
+      task.updatedAt = new Date().toISOString();
+      this.saveToFile();
+    }
 
     return task;
   }

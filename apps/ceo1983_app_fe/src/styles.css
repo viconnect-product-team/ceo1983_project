@@ -1999,40 +1999,33 @@ textarea::placeholder {
 
 .luxury-glow-1 {
   position: fixed;
-  top: -25%;
+  top: -20%;
   left: 50%;
-  transform: translate(-50%, -15%);
+  transform: translate(-50%, 0);
   width: 100vw;
-  height: 70vh;
+  height: 60vh;
   background: radial-gradient(
-    circle,
-    color-mix(in oklab, var(--primary) 14%, transparent) 0%,
+    ellipse at center,
+    color-mix(in oklab, var(--primary) 10%, transparent) 0%,
     transparent 70%
   );
-  border-radius: 50%;
-  filter: blur(100px);
   pointer-events: none;
   z-index: 0;
-  animation: ambient-drift-one 24s ease-in-out infinite;
 }
 
 .luxury-glow-2 {
   position: fixed;
-  bottom: -20%;
-  right: -10%;
-  transform: translate(15%, 15%);
+  bottom: -15%;
+  right: -5%;
   width: 70vw;
-  height: 70vh;
+  height: 60vh;
   background: radial-gradient(
-    circle,
-    color-mix(in oklab, var(--primary) 8%, transparent) 0%,
+    ellipse at center,
+    color-mix(in oklab, var(--primary) 6%, transparent) 0%,
     transparent 70%
   );
-  border-radius: 50%;
-  filter: blur(120px);
   pointer-events: none;
   z-index: 0;
-  animation: ambient-drift-two 28s ease-in-out infinite;
 }
 
 /* ── WARM LUXURY GOLD GRADIENT BUTTON ── */
@@ -2458,13 +2451,15 @@ body:has(.vba-app),
 .touch-press {
   -webkit-tap-highlight-color: transparent !important;
   touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .native-press:active,
 .touch-press:active {
-  transform: scale(0.965);
-  opacity: 0.9;
-  transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.1s ease;
+  transform: scale(0.97);
+  opacity: 0.88;
+  transition: transform 60ms ease-out, opacity 60ms ease-out;
 }
 
 /* 4. Momentum smooth scrolling & ẩn thanh cuộn chuẩn Native */
@@ -2474,6 +2469,7 @@ body:has(.vba-app),
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  touch-action: pan-y;
 }
 
 .smooth-scroll-touch::-webkit-scrollbar,
@@ -2540,20 +2536,37 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-button, a, input, select, textarea, [role="button"] {
+button, a, input, select, textarea, [role="button"], [role="tab"] {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hardware-accelerated,
-.vba-app,
-.vba-card,
-.vba-mobile-card {
+.vba-app {
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CRM TABLE AUTO-ELLIPSIS & TOOLTIP PRESERVATION (GLOBAL REQUIREMENT 4)
+   ═══════════════════════════════════════════════════════════════════════════ */
+table td {
+  max-width: 280px;
+}
 
+.crm-table-cell-ellipsis,
+.crm-cell-ellipsis {
+  display: inline-block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
 
+td[title] {
+  cursor: default;
+}
 

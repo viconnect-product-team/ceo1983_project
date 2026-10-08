@@ -368,11 +368,21 @@ export function useRole(): RoleState {
 
   const can = useCallback(
     (permission: Permission): boolean => {
-      if (isPlatformAdmin) return true;
-
       // 1. Kiểm tra trực tiếp phân quyền từng hội viên từ vba_member_permissions:
       // Nếu Admin đã bỏ chọn (false), lập tức thu hồi quyền và ẩn chức năng trên giao diện
       if (memberPermProfile) {
+        if (memberPermProfile.canAdd === false && (permission.includes(":create") || permission.includes(":add"))) {
+          return false;
+        }
+        if (memberPermProfile.canEdit === false && (permission.includes(":edit") || permission.includes(":update"))) {
+          return false;
+        }
+        if (memberPermProfile.canDelete === false && permission.includes(":delete")) {
+          return false;
+        }
+        if (memberPermProfile.canApprove === false && permission.includes(":approve")) {
+          return false;
+        }
         if (
           permission.startsWith("event:") &&
           memberPermProfile.canManageEvents === false &&
@@ -411,31 +421,41 @@ export function useRole(): RoleState {
 
       // 2. Kiểm tra trực tiếp Ma Trận Quyền CSDL/localStorage:
       // Nếu Admin đã BỎ TÍCH hành động này và lưu, lập tức thu hồi quyền (trả về false)
-      const allowedByMatrix = isActionAllowedByMatrix(permission, srsRole);
+      let mCode = user?.code || (user as any)?.memberCode;
+      if (!mCode) {
+        try {
+          const rawMem = localStorage.getItem("vba_my_member");
+          if (rawMem) mCode = JSON.parse(rawMem)?.code;
+        } catch {}
+      }
+
+      const dept = (user as any)?.department || (memberPermProfile as any)?.department;
+      const allowedByMatrix = isActionAllowedByMatrix(permission, srsRole, dept, mCode);
       if (!allowedByMatrix) {
         return false;
       }
+
+      if (isPlatformAdmin) return true;
+
       return grantedPermissions.has(permission);
     },
-    [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion, memberPermProfile],
+    [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion, memberPermProfile, user?.code],
   );
 
   const hasPermission = can;
 
   const hasAnyPermission = useCallback(
     (...permissions: Permission[]): boolean => {
-      if (isPlatformAdmin) return true;
       return permissions.some((p) => can(p));
     },
-    [isPlatformAdmin, can],
+    [can],
   );
 
   const hasAllPermissions = useCallback(
     (...permissions: Permission[]): boolean => {
-      if (isPlatformAdmin) return true;
       return permissions.every((p) => can(p));
     },
-    [isPlatformAdmin, can],
+    [can],
   );
 
   const hasRole = useCallback(

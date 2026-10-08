@@ -178,3 +178,89 @@ export const onboardSponsorFn = createServerFn({ method: "POST" })
       body: JSON.stringify(data),
     });
   });
+
+// ---------------- Event Prizes (Lucky Draw & Awards) ----------------
+
+export type PrizeTargetType = "PRODUCT" | "SPONSOR_PACKAGE" | "CUSTOM" | "VOUCHER" | "CASH";
+
+export type EventPrize = {
+  id: string;
+  eventId: string;
+  rankName: string;
+  title: string;
+  value: string;
+  amount: number;
+  quantity: number;
+  targetType: PrizeTargetType;
+  targetId?: string | null;
+  sponsorName?: string | null;
+  sponsorPackageId?: string | null;
+  description: string;
+  iconName?: string;
+  imageUrl?: string | null;
+  highlightColor?: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export const listEventPrizesFn = createServerFn({ method: "GET" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => z.object({ eventId: z.string().optional() }).optional().parse(d))
+  .handler(async ({ data, context }): Promise<EventPrize[]> => {
+    try {
+      const q = data?.eventId ? `?eventId=${encodeURIComponent(data.eventId)}` : "";
+      const res = await fetchNestApiFromServer<EventPrize[]>(`/sponsors/prizes${q}`, context.token);
+      return Array.isArray(res) ? res : [];
+    } catch (err: any) {
+      console.error("[listEventPrizesFn] error:", err);
+      return [];
+    }
+  });
+
+const prizeInput = z.object({
+  eventId: z.string().min(1),
+  rankName: z.string().min(1).max(200),
+  title: z.string().min(1).max(300),
+  value: z.string().optional(),
+  amount: z.number().min(0).optional(),
+  quantity: z.number().int().min(1).default(1),
+  targetType: z.enum(["PRODUCT", "SPONSOR_PACKAGE", "CUSTOM", "VOUCHER", "CASH"]).default("PRODUCT"),
+  targetId: z.string().optional().nullable(),
+  sponsorName: z.string().optional().nullable(),
+  sponsorPackageId: z.string().optional().nullable(),
+  description: z.string().max(2000).optional().default(""),
+  iconName: z.string().max(100).optional().default("Gift"),
+  imageUrl: z.string().optional().nullable(),
+  highlightColor: z.string().optional().default("from-amber-500 to-yellow-600"),
+});
+
+export const createEventPrizeFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => prizeInput.parse(d))
+  .handler(async ({ data, context }): Promise<EventPrize> => {
+    return fetchNestApiFromServer<EventPrize>("/sponsors/prizes", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  });
+
+export const updateEventPrizeFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => prizeInput.partial().extend({ id: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }): Promise<EventPrize> => {
+    const { id, ...rest } = data;
+    return fetchNestApiFromServer<EventPrize>(`/sponsors/prizes/${id}`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(rest),
+    });
+  });
+
+export const deleteEventPrizeFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    return fetchNestApiFromServer<{ ok: boolean }>(`/sponsors/prizes/${data.id}`, context.token, {
+      method: "DELETE",
+    });
+  });

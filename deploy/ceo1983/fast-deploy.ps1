@@ -82,7 +82,36 @@ try {
             }
         }
 
-        Write-Host "`n[1/5] Khoi tao quy trinh Build Docker Images cho App Hiep Hoi CEO 1983..." -ForegroundColor Cyan
+        Write-Host "`n[1/5] Kiem tra Docker Engine va khoi tao quy trinh Build Docker Images..." -ForegroundColor Cyan
+        
+        # Kiem tra ket noi Docker Desktop voi co che Timeout chong treo tuyet doi
+        $dockerHealthy = $false
+        try {
+            $testProc = Start-Process docker -ArgumentList "version" -NoNewWindow -PassThru -ErrorAction SilentlyContinue
+            if ($testProc.WaitForExit(6000)) {
+                $dockerHealthy = $true
+            } else {
+                if (-not $testProc.HasExited) {
+                    $testProc.Kill()
+                }
+            }
+        } catch {
+            $dockerHealthy = $false
+        }
+
+        if (-not $dockerHealthy) {
+            Write-Host "`n[CANH BAO NGHIEP VU] Docker Desktop tren may cuc bo dang KHONG PHAN HOI (hoac chua bat)!" -ForegroundColor Red
+            Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Red
+            Write-Host "-> NGUYEN NHAN TREO: Tien trinh Docker Desktop tren Windows dang bi ket pipe ket noi voi WSL2." -ForegroundColor Yellow
+            Write-Host "-> KHAC PHUC NHANH:" -ForegroundColor Yellow
+            Write-Host "   1. Vui long mo/khoi dong lai ung dung Docker Desktop tren Windows." -ForegroundColor White
+            Write-Host "   2. Doi bieu tuong con ca voi (whale icon) o khay he thong chuyen sang mau xanh (Engine running)." -ForegroundColor White
+            Write-Host "   3. Neu chi can cap nhat thay doi cho CEO 1983 Mobile, hay chay lenh toi uu:" -ForegroundColor Green
+            Write-Host "      .\deploy-mobile.ps1 (hoac .\deploy-ceo1983.ps1 -FrontendOnly -SkipWebBuild)" -ForegroundColor Green
+            Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Red
+            throw "Dung tien trinh deploy vi Docker Desktop cuc bo khong phan hoi. Vui long mo lai Docker Desktop va thu lai."
+        }
+
         if ($buildBE) {
             Invoke-CheckedCommand -Description "Xay dung Backend Image (ceo1983-backend)" -Action {
                 docker build -t ceo1983-backend:latest -f Dockerfile.backend .
