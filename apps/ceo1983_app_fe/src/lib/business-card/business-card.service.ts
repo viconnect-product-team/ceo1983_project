@@ -125,35 +125,14 @@ export const BusinessCardService = {
    * always nulled in the projection.
    */
   async getPublicBySlug(slug: string): Promise<PublicBusinessCardResult> {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-
-    const c = await BusinessCardRepository.findPublishedBySlug(supabase, slug);
-    if (!c) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const gated = await BusinessCardRepository.findPublishedPublicMode(
-        supabaseAdmin as unknown as SupabaseClient,
-        slug,
-      );
-      if (gated && gated.public_mode === "members_only") {
-        return { state: "members_only" };
-      }
+    try {
+      const { fetchNestApiFromServer } = await import("@/lib/api-client");
+      const card = await fetchNestApiFromServer(`/business-cards/public/${slug}`).catch(() => null);
+      if (!card) return { state: "not_found" };
+      return { state: "public", card: card as any };
+    } catch {
       return { state: "not_found" };
     }
-
-    const children = await BusinessCardRepository.loadChildren(supabase, c.id as string);
-    const card = mapRowToBusinessCard(c, children, {
-      status: "published",
-      publicMode: "public",
-      exposeOwner: false,
-    });
-    // BC-Mobile-3A — the anonymous surface receives ONLY the explicit
-    // whitelist DTO: visibility gates applied here, internals never mapped.
-    return { state: "public", card: toPublicBusinessCard(card) };
   },
 
   /**
@@ -163,14 +142,13 @@ export const BusinessCardService = {
    * collapses into the same result as "not found").
    */
   async resolvePublicCardId(slug: string): Promise<string | null> {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-    const c = await BusinessCardRepository.findPublishedBySlug(supabase, slug);
-    return c ? (c.id as string) : null;
+    try {
+      const { fetchNestApiFromServer } = await import("@/lib/api-client");
+      const card = await fetchNestApiFromServer(`/business-cards/public/${slug}`).catch(() => null);
+      return card?.id ?? null;
+    } catch {
+      return null;
+    }
   },
 
   /**
@@ -179,14 +157,13 @@ export const BusinessCardService = {
    * only. Never exposes PII or non-public cards.
    */
   async listPublicProfileSlugs(): Promise<{ slug: string; updatedAt: string | null }[]> {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-    const rows = await BusinessCardRepository.listPublishedPublicSlugs(supabase);
-    return rows.map((r: any) => ({ slug: r.slug, updatedAt: r.updated_at }));
+    try {
+      const { fetchNestApiFromServer } = await import("@/lib/api-client");
+      const list = await fetchNestApiFromServer(`/business-cards/public-slugs`).catch(() => []);
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
   },
 
   async listMyCardIds(supabase: SupabaseClient, memberId: string): Promise<string[]> {

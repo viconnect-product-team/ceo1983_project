@@ -313,10 +313,10 @@ function MembersPage() {
     },
   });
   const { isAdmin, canApproveMembers, isBTV, isBQT, isPlatformAdmin, can, loading: roleLoading } = useRole();
-  const canApprove = isAdmin || canApproveMembers || isBTV || isBQT || isPlatformAdmin;
-  const canEdit = isAdmin || can(PERMISSIONS.MEMBER_EDIT);
-  const canDelete = isAdmin || can(PERMISSIONS.MEMBER_DELETE);
-  const canAccount = isAdmin;
+  const canApprove = can(PERMISSIONS.MEMBER_APPROVE);
+  const canEdit = can(PERMISSIONS.MEMBER_EDIT);
+  const canDelete = can(PERMISSIONS.MEMBER_DELETE);
+  const canAccount = can(PERMISSIONS.SYSTEM_MANAGE) || can("PRM_EDIT");
   const { data: acctStatuses = {} } = useQuery({
     queryKey: ["member-account-statuses"],
     queryFn: async () => {
@@ -794,13 +794,15 @@ function MembersPage() {
               <List className="h-4 w-4" /> {t("mlist.viewTable")}
             </button>
           </div>
-          <button
-            onClick={handleExport}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted cursor-pointer"
-          >
-            <Download className="h-4 w-4 text-muted-foreground" />
-            {t("members.export")}
-          </button>
+          {can("MEM_EXPORT") && (
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted cursor-pointer"
+            >
+              <Download className="h-4 w-4 text-muted-foreground" />
+              {t("members.export")}
+            </button>
+          )}
           {can(PERMISSIONS.MEMBER_CREATE) && (
             <button
               onClick={() => setOpen(true)}
@@ -1254,7 +1256,7 @@ function MembersPage() {
                       <MemberPaymentSelect
                         member={m}
                         onChange={(s) => handleUpdatePaymentStatus(m, s)}
-                        disabled={!isAdmin}
+                        disabled={!can(PERMISSIONS.FINANCE_MANAGE) && !can("FEE_EDIT")}
                       />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground border-b border-border whitespace-nowrap">

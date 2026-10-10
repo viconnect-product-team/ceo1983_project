@@ -6,7 +6,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { ProfileConnectSDK } from "@/lib/business-card/profile-connect.sdk";
 import type { BusinessProfileRelationshipState } from "@/lib/business-card/profile-connect.types";
 import { networkErrorTKey } from "@/lib/global-network/error-messages";
@@ -37,8 +36,10 @@ export function useBusinessProfileRelationship(cardSlug: string) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await supabase.auth.getUser();
-      authed.current = Boolean(data.user);
+      const token = typeof window !== "undefined"
+        ? (localStorage.getItem("token") || localStorage.getItem("vibe_token") || localStorage.getItem("access_token"))
+        : null;
+      authed.current = Boolean(token);
       if (!authed.current) {
         setState(ANON_STATE);
         return;

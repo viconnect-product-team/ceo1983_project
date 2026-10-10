@@ -65,7 +65,7 @@ import {
   type HistoryExportRow,
 } from "@/lib/card-ai-history-export";
 import { getTemplate } from "@/lib/card-templates";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { GlobalCardPreview, type PreviewState } from "./GlobalCardPreview";
 import { CardTemplateGallery } from "./CardTemplateGallery";
 import { ImageCropperDialog } from "./ImageCropperDialog";
@@ -281,27 +281,20 @@ export function AiCardImportModal({
   useEffect(() => {
     actorRef.current = actor;
   }, [actor]);
+  const { user } = useAuth();
   useEffect(() => {
-    let cancelled = false;
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        if (cancelled) return;
-        const u = data?.user ?? null;
-        if (!u) return;
-        const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
-        const label =
-          (typeof meta.full_name === "string" && meta.full_name) ||
-          (typeof meta.name === "string" && meta.name) ||
-          u.email ||
-          u.id;
-        setActor({ id: u.id, label: String(label) });
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (user) {
+      const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+      const label =
+        (typeof meta.full_name === "string" && meta.full_name) ||
+        (typeof meta.name === "string" && meta.name) ||
+        user.name ||
+        user.username ||
+        user.email ||
+        user.id;
+      setActor({ id: user.id, label: String(label) });
+    }
+  }, [user]);
 
   const reset = useCallback(() => {
     setItems([]);

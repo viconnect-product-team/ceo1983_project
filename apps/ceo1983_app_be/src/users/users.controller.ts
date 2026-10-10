@@ -14,6 +14,16 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  UpdateAccountProfileDto,
+  ChangePasswordDto,
+  DeactivateAccountDto,
+  ListUsersQueryDto,
+  AdminCreateUserDto,
+  AdminUpdateUserDto,
+  AdminResetPasswordDto,
+  AdminToggleStatusDto,
+} from './dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -30,14 +40,14 @@ export class UsersController {
 
   @Put('me')
   @Patch('me')
-  async updateMyAccount(@Request() req: any, @Body() body: any) {
+  async updateMyAccount(@Request() req: any, @Body() body: UpdateAccountProfileDto) {
     return this.usersService.updateAccountProfile(req.user.id, body);
   }
 
   @Post('change-password')
   async changePassword(
     @Request() req: any,
-    @Body() body: { currentPassword?: string; newPassword: string },
+    @Body() body: ChangePasswordDto,
   ) {
     return this.usersService.changePassword(
       req.user.id,
@@ -47,7 +57,7 @@ export class UsersController {
   }
 
   @Post('deactivate')
-  async deactivateAccount(@Request() req: any, @Body() body: { password?: string }) {
+  async deactivateAccount(@Request() req: any, @Body() body: DeactivateAccountDto) {
     return this.usersService.deactivateAccount(req.user.id, body?.password);
   }
 
@@ -56,22 +66,18 @@ export class UsersController {
   @Get()
   async listUsers(
     @Request() req: any,
-    @Query('search') search?: string,
-    @Query('role') role?: string,
-    @Query('status') status?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: ListUsersQueryDto,
   ) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
       throw new ForbiddenException('Bạn không có quyền truy cập danh sách người dùng');
     }
     return this.usersService.listUsers({
-      search,
-      role,
-      status,
-      page: page ? parseInt(page, 10) : 1,
-      limit: limit ? parseInt(limit, 10) : 10,
+      search: query.search,
+      role: query.role,
+      status: query.status,
+      page: query.page ? Number(query.page) : 1,
+      limit: query.limit ? Number(query.limit) : 10,
     });
   }
 
@@ -85,7 +91,7 @@ export class UsersController {
   }
 
   @Post()
-  async createUser(@Request() req: any, @Body() body: any) {
+  async createUser(@Request() req: any, @Body() body: AdminCreateUserDto) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
       throw new ForbiddenException('Bạn không có quyền tạo tài khoản mới');
@@ -97,7 +103,7 @@ export class UsersController {
   async updateUser(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: AdminUpdateUserDto,
   ) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
@@ -110,26 +116,26 @@ export class UsersController {
   async toggleStatus(
     @Request() req: any,
     @Param('id') id: string,
-    @Body('status') status?: string,
+    @Body() body: AdminToggleStatusDto,
   ) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
       throw new ForbiddenException('Bạn không có quyền thay đổi trạng thái tài khoản');
     }
-    return this.usersService.adminToggleStatus(id, status);
+    return this.usersService.adminToggleStatus(id, body?.status);
   }
 
   @Post(':id/reset-password')
   async resetPassword(
     @Request() req: any,
     @Param('id') id: string,
-    @Body('newPassword') newPassword: string,
+    @Body() body: AdminResetPasswordDto,
   ) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
       throw new ForbiddenException('Bạn không có quyền đặt lại mật khẩu tài khoản này');
     }
-    return this.usersService.adminResetPassword(id, newPassword);
+    return this.usersService.adminResetPassword(id, body.newPassword);
   }
 
   @Delete(':id')

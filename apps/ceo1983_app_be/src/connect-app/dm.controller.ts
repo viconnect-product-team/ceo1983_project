@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Delete, Body, Request, UseGuards, Param, Query, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
+import { SendMemberMessageDto } from './dto';
 
 @Controller(['dm', 'connect-app/dm'])
 @UseGuards(JwtAuthGuard)
@@ -20,7 +21,7 @@ export class DmController {
   }
 
   @Post('member/messages')
-  async sendMemberMessage(@Request() req, @Body() data: { peerCode: string; text: string }) {
+  async sendMemberMessage(@Request() req, @Body() data: SendMemberMessageDto) {
     if (!data?.peerCode || !data?.text) throw new BadRequestException('peerCode_and_text_required');
     return this.connectAppService.sendMemberMessage(req.user.id, data.peerCode, data.text);
   }

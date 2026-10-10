@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateAdvertisementDto, CreateAdRequestDto } from './dto/create-advertisement.dto';
+import { AdvertisementsRepository } from './advertisements.repository';
+import { CreateAdvertisementDto, CreateAdRequestDto } from './dto';
 
 export interface AdvertisementItem {
   id: string;
@@ -23,45 +23,11 @@ export interface AdvertisementItem {
 export class AdvertisementsService implements OnModuleInit {
   private readonly logger = new Logger(AdvertisementsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly adsRepo: AdvertisementsRepository) {}
 
   async onModuleInit() {
     try {
-      await this.prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS public.advertisements (
-          id VARCHAR(64) PRIMARY KEY,
-          request_id VARCHAR(64),
-          title VARCHAR(255) NOT NULL,
-          company_name VARCHAR(255) NOT NULL,
-          badge_text VARCHAR(100) DEFAULT 'ĐỐI TÁC CHIẾN LƯỢC',
-          banner_url TEXT NOT NULL,
-          target_url TEXT,
-          animation VARCHAR(50) DEFAULT 'gradient-wave',
-          start_date VARCHAR(50),
-          end_date VARCHAR(50),
-          status VARCHAR(20) DEFAULT 'active',
-          impressions BIGINT DEFAULT 0,
-          clicks BIGINT DEFAULT 0,
-          created_at TIMESTAMPTZ DEFAULT NOW(),
-          updated_at TIMESTAMPTZ DEFAULT NOW()
-        );
-        CREATE TABLE IF NOT EXISTS public.ad_requests (
-          id VARCHAR(64) PRIMARY KEY,
-          company_name VARCHAR(255) NOT NULL,
-          contact_person VARCHAR(255) NOT NULL,
-          phone VARCHAR(50) NOT NULL,
-          email VARCHAR(100),
-          goal TEXT,
-          duration_months INT DEFAULT 3,
-          budget_est VARCHAR(100) DEFAULT '15.000.000 đ',
-          product_link TEXT,
-          notes TEXT,
-          status VARCHAR(20) DEFAULT 'pending',
-          payment_amount BIGINT DEFAULT 15000000,
-          payment_code VARCHAR(100),
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-      `);
+      await this.adsRepo.ensureTables();
     } catch (e: any) {
       this.logger.warn(`Could not ensure advertisements tables: ${e?.message}`);
     }
@@ -69,15 +35,7 @@ export class AdvertisementsService implements OnModuleInit {
 
   async findAll(activeOnly: boolean = false): Promise<AdvertisementItem[]> {
     try {
-      const rows = await this.prisma.$queryRaw<any[]>`
-        SELECT 
-          id, request_id, title, company_name, badge_text, banner_url, 
-          target_url, animation, start_date, end_date, status, 
-          impressions, clicks, created_at
-        FROM public.advertisements
-        WHERE (${!activeOnly} OR status = 'active')
-        ORDER BY created_at DESC
-      `;
+      const rows = await this.adsRepo.findAll(activeOnly);
 
       return rows.map((r) => ({
         id: r.id,
@@ -102,13 +60,10 @@ export class AdvertisementsService implements OnModuleInit {
   }
 
   async findById(id: string): Promise<AdvertisementItem> {
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.advertisements WHERE id = ${id} LIMIT 1
-    `;
-    if (!rows.length) {
+    const r = await this.adsRepo.findById(id);
+    if (!r) {
       throw new NotFoundException(`Không tìm thấy quảng cáo với ID: ${id}`);
     }
-    const r = rows[0];
     return {
       id: r.id,
       requestId: r.request_id || undefined,
@@ -136,21 +91,22 @@ export class AdvertisementsService implements OnModuleInit {
     const endDate = dto.endDate || new Date(Date.now() + 864e5 * 90).toISOString().split('T')[0];
     const targetUrl = dto.targetUrl?.trim() || 'https://ceo1983.vn/marketplace';
 
-    await this.prisma.$executeRaw`
-      INSERT INTO public.advertisements (
-        id, request_id, title, company_name, badge_text, banner_url, 
-        target_url, animation, start_date, end_date, status, impressions, clicks, created_at, updated_at
-      ) VALUES (
-        ${id}, ${dto.requestId || null}, ${dto.title.trim()}, ${dto.companyName.trim()},
-        ${badgeText}, ${dto.bannerUrl.trim()}, ${targetUrl}, ${animation},
-        ${startDate}, ${endDate}, ${status}, 1, 0, NOW(), NOW()
-      )
-    `;
+    await this.adsRepo.insertAdvertisement({
+      id,
+      requestId: dto.requestId || null,
+      title: dto.title.trim(),
+      companyName: dto.companyName.trim(),
+      badgeText,
+      bannerUrl: dto.bannerUrl.trim(),
+      targetUrl,
+      animation,
+      startDate,
+      endDate,
+      status,
+    });
 
     if (dto.requestId) {
-      await this.prisma.$executeRaw`
-        UPDATE public.ad_requests SET status = 'active' WHERE id = ${dto.requestId}
-      `.catch(() => {});
+      await this.adsRepo.updateRequestStatus(dto.requestId, 'active').catch(() => {});
     }
 
     return this.findById(id);
@@ -168,51 +124,39 @@ export class AdvertisementsService implements OnModuleInit {
     const startDate = data.startDate !== undefined ? data.startDate : ad.startDate;
     const endDate = data.endDate !== undefined ? data.endDate : ad.endDate;
 
-    await this.prisma.$executeRaw`
-      UPDATE public.advertisements
-      SET 
-        title = ${title},
-        company_name = ${companyName},
-        badge_text = ${badgeText},
-        banner_url = ${bannerUrl},
-        target_url = ${targetUrl},
-        animation = ${animation},
-        status = ${status},
-        start_date = ${startDate},
-        end_date = ${endDate},
-        updated_at = NOW()
-      WHERE id = ${id}
-    `;
+    await this.adsRepo.updateAdvertisement(id, {
+      title,
+      companyName,
+      badgeText,
+      bannerUrl,
+      targetUrl,
+      animation,
+      status,
+      startDate,
+      endDate,
+    });
 
     return this.findById(id);
   }
 
   async delete(id: string): Promise<{ success: boolean }> {
     await this.findById(id);
-    await this.prisma.$executeRaw`
-      DELETE FROM public.advertisements WHERE id = ${id}
-    `;
+    await this.adsRepo.deleteAdvertisement(id);
     return { success: true };
   }
 
   async trackImpression(id: string): Promise<void> {
-    await this.prisma.$executeRaw`
-      UPDATE public.advertisements SET impressions = impressions + 1 WHERE id = ${id}
-    `.catch(() => {});
+    await this.adsRepo.incrementImpressions(id);
   }
 
   async trackClick(id: string): Promise<void> {
-    await this.prisma.$executeRaw`
-      UPDATE public.advertisements SET clicks = clicks + 1 WHERE id = ${id}
-    `.catch(() => {});
+    await this.adsRepo.incrementClicks(id);
   }
 
   // --- Requests ---
   async findAllRequests(): Promise<any[]> {
     try {
-      const rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.ad_requests ORDER BY created_at DESC
-      `;
+      const rows = await this.adsRepo.findAllRequests();
       return rows.map((r) => ({
         id: r.id,
         companyName: r.company_name,
@@ -240,25 +184,26 @@ export class AdvertisementsService implements OnModuleInit {
     const paymentAmount = (dto.durationMonths || 3) * 5000000;
     const paymentCode = `QC-CEO1983-${Date.now().toString().slice(-6)}`;
 
-    await this.prisma.$executeRaw`
-      INSERT INTO public.ad_requests (
-        id, company_name, contact_person, phone, email, goal, duration_months,
-        budget_est, product_link, notes, status, payment_amount, payment_code, created_at
-      ) VALUES (
-        ${id}, ${dto.companyName.trim()}, ${dto.contactPerson.trim()}, ${dto.phone.trim()},
-        ${dto.email || null}, ${dto.goal || null}, ${dto.durationMonths || 3},
-        ${dto.budgetEst || '15.000.000 đ'}, ${dto.productLink || null}, ${dto.notes || null},
-        'pending', ${paymentAmount}, ${paymentCode}, NOW()
-      )
-    `;
+    await this.adsRepo.insertAdRequest({
+      id,
+      companyName: dto.companyName.trim(),
+      contactPerson: dto.contactPerson.trim(),
+      phone: dto.phone.trim(),
+      email: dto.email || null,
+      goal: dto.goal || null,
+      durationMonths: dto.durationMonths || 3,
+      budgetEst: dto.budgetEst || '15.000.000 đ',
+      productLink: dto.productLink || null,
+      notes: dto.notes || null,
+      paymentAmount,
+      paymentCode,
+    });
 
     return { id, success: true };
   }
 
   async updateRequestStatus(id: string, status: string): Promise<any> {
-    await this.prisma.$executeRaw`
-      UPDATE public.ad_requests SET status = ${status} WHERE id = ${id}
-    `;
+    await this.adsRepo.updateRequestStatus(id, status);
     return { id, status, success: true };
   }
 }

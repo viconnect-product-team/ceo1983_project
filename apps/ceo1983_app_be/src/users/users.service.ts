@@ -5,9 +5,17 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { UsersRepository } from './users.repository';
 import { vione_users, app_role } from '@vibe/db';
 import * as bcrypt from 'bcrypt';
+import {
+  UpdateAccountProfileDto,
+  ChangePasswordDto,
+  DeactivateAccountDto,
+  ListUsersQueryDto,
+  AdminCreateUserDto,
+  AdminUpdateUserDto,
+} from './dto';
 
 function cleanStoredMediaUrl(url?: string | null): string | null {
   if (!url) return null;
@@ -67,17 +75,11 @@ export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   constructor(
-    private prisma: PrismaService,
+    private readonly usersRepo: UsersRepository,
   ) {}
 
   async findByUsername(username: string): Promise<vione_users | null> {
-    const user = await this.prisma.vione_users
-      .findFirst({
-        where: {
-          OR: [{ username }, { email: username }],
-        },
-      })
-      .catch(() => null);
+    const user = await this.usersRepo.findByUsername(username);
 
     if (user) {
       return user;
@@ -109,25 +111,14 @@ export class UsersService {
     const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
     if (isUuid) {
-      const user = await this.prisma.vione_users
-        .findUnique({
-          where: { id },
-        })
-        .catch(() => null);
-
+      const user = await this.usersRepo.findById(id);
       if (user) {
         return user;
       }
     }
 
     if (id === 'mock-admin-id' || id === '00000000-0000-0000-0000-000000000000' || id === '00000000-0000-4000-8000-000000000002') {
-      const adminUser = await this.prisma.vione_users
-        .findFirst({
-          where: {
-            OR: [{ username: 'admin@connect.vn' }, { email: 'admin@connect.vn' }],
-          },
-        })
-        .catch(() => null);
+      const adminUser = await this.usersRepo.findByUsername('admin@connect.vn');
 
       if (adminUser) {
         return adminUser;
@@ -154,27 +145,15 @@ export class UsersService {
   }
 
   async findByGoogleId(googleId: string): Promise<vione_users | null> {
-    return this.prisma.vione_users
-      .findUnique({
-        where: { google_id: googleId },
-      })
-      .catch(() => null);
+    return this.usersRepo.findByGoogleId(googleId);
   }
 
   async findByAppleId(appleId: string): Promise<vione_users | null> {
-    return this.prisma.vione_users
-      .findUnique({
-        where: { apple_id: appleId },
-      })
-      .catch(() => null);
+    return this.usersRepo.findByAppleId(appleId);
   }
 
   async findByEmail(email: string): Promise<vione_users | null> {
-    return this.prisma.vione_users
-      .findUnique({
-        where: { email },
-      })
-      .catch(() => null);
+    return this.usersRepo.findByEmail(email);
   }
 
   async createUser(data: {
@@ -187,54 +166,30 @@ export class UsersService {
     apple_id?: string;
     email_verified?: boolean;
   }) {
-    const newUser = await this.prisma.vione_users.create({
-      data: {
-        username: data.username,
-        password: data.password || '',
-        email: data.email || null,
-        name: data.name || null,
-        avatar_url: data.avatar_url || null,
-        google_id: data.google_id || null,
-        apple_id: data.apple_id || null,
-        email_verified: data.email_verified || false,
-      },
+    const newUser = await this.usersRepo.createUser({
+      username: data.username,
+      password: data.password || '',
+      email: data.email || null,
+      name: data.name || null,
+      avatar_url: data.avatar_url || null,
+      google_id: data.google_id || null,
+      apple_id: data.apple_id || null,
+      email_verified: data.email_verified || false,
     });
 
-    // Sync to auth.users to satisfy foreign key constraints in related tables
-    await this.prisma.$executeRawUnsafe(
-      `INSERT INTO auth.users (id, email, role) VALUES ($1::uuid, $2, 'authenticated') ON CONFLICT (id) DO NOTHING`,
-      newUser.id,
-      newUser.email || newUser.username,
-    ).catch((err) => {
-      console.error('Failed to sync user to auth.users:', err);
-    });
+    // Sync to auth.users
+    await this.usersRepo.syncToAuthUsers(newUser.id, newUser.email || newUser.username);
 
     // Auto-link to approved member in public.members if matching phone or email
     const cleanPhone = (newUser.username || '').replace(/\D/g, '');
     const userEmail = (newUser.email || '').toLowerCase().trim();
-    if (cleanPhone || userEmail) {
-      await this.prisma.$executeRaw`
-        UPDATE public.members
-        SET user_id = ${newUser.id}::uuid, updated_at = now()
-        WHERE user_id IS NULL
-          AND (
-            (${cleanPhone} != '' AND regexp_replace(phone, '\\D', '', 'g') = ${cleanPhone})
-            OR (${userEmail} != '' AND LOWER(email) = ${userEmail})
-          )
-      `.catch((e) => console.warn('Could not auto-link member:', e));
-    }
+    await this.usersRepo.autoLinkMember(newUser.id, cleanPhone, userEmail);
 
     return newUser;
   }
 
   async updateUser(id: string, data: Partial<vione_users>) {
-    return this.prisma.vione_users.update({
-      where: { id },
-      data: {
-        ...data,
-        updated_at: new Date(),
-      },
-    });
+    return this.usersRepo.updateUser(id, data);
   }
 
   // ── ACCOUNT MANAGEMENT METHODS ──────────────────────────────────────────
@@ -243,19 +198,15 @@ export class UsersService {
     if (userId === 'mock-admin-id' || userId === '00000000-0000-0000-0000-000000000000') {
       return true;
     }
-    const roles = await this.prisma.user_roles.findMany({
-      where: { user_id: userId },
-    }).catch(() => [] as any[]);
+    const roles = await this.usersRepo.getUserRoles(userId);
 
     const hasAdminRole = roles.some(
       (r: any) => r.role === 'platform_admin' || r.role === 'tenant_admin',
     );
     if (hasAdminRole) return true;
 
-    // Check association admin in memberships via raw SQL
-    const memberships = await this.prisma.$queryRaw<any[]>`
-      SELECT role FROM public.memberships WHERE user_id = ${userId}::uuid
-    `.catch(() => [] as any[]);
+    // Check association admin in memberships via repository
+    const memberships = await this.usersRepo.getMemberships(userId);
 
     return memberships.some(
       (m: any) => m.role === 'admin' || m.role === 'association_admin',
@@ -275,24 +226,12 @@ export class UsersService {
       const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(user.id);
       const safeUuid = isUuid ? user.id : '00000000-0000-4000-8000-000000000002';
 
-      const [profile, roles, memberships, memberRows] = await Promise.all([
-        this.prisma.user_profiles.findUnique({
-          where: { user_id: safeUuid },
-        }).catch(() => null),
-        this.prisma.user_roles.findMany({
-          where: { user_id: safeUuid },
-        }).catch(() => []),
-        this.prisma.$queryRaw<any[]>`
-          SELECT role FROM public.memberships WHERE user_id = ${safeUuid}::uuid
-        `.catch(() => [] as any[]),
-        this.prisma.$queryRaw<any[]>`
-          SELECT id, code, executive_role, department, association_id FROM public.members 
-          WHERE user_id = ${safeUuid}::uuid OR LOWER(email) = LOWER(${user.email || ''})
-          LIMIT 1
-        `.catch(() => [] as any[]),
+      const [profile, roles, memberships, memberRow] = await Promise.all([
+        this.usersRepo.getUserProfile(safeUuid),
+        this.usersRepo.getUserRoles(safeUuid),
+        this.usersRepo.getMemberships(safeUuid),
+        this.usersRepo.getMemberInfo(safeUuid, user.email),
       ]);
-
-      const memberRow = memberRows?.[0] || null;
       const roleList = (roles || []).map((r) => r.role).filter(Boolean);
       const isAssocAdmin = (memberships ?? []).some(
         (m: any) => m.role === 'admin' || m.role === 'association_admin' || m.role === 'owner',
@@ -353,10 +292,9 @@ export class UsersService {
           user.id === '00000000-0000-4000-8000-000000000002' ||
           user.username === 'admin@connect.vn' ||
           user.email === 'admin@connect.vn') &&
-        !roleList.includes('platform_admin')
+        !roleList.includes('admin')
       ) {
-        roleList.push('platform_admin');
-        if (!roleList.includes('admin')) roleList.push('admin');
+        roleList.push('admin');
       }
 
       return {
@@ -443,11 +381,9 @@ export class UsersService {
     }
 
     if (data.email && data.email !== user.email) {
-      const existing = await this.prisma.vione_users.findFirst({
-        where: {
-          email: data.email,
-          NOT: { id: userId },
-        },
+      const existing = await this.usersRepo.findFirst({
+        email: data.email,
+        NOT: { id: userId },
       });
       if (existing) {
         throw new BadRequestException('Email đã được sử dụng bởi một tài khoản khác');
@@ -470,20 +406,16 @@ export class UsersService {
     }
 
     // Update vione_users
-    await this.prisma.vione_users.update({
-      where: { id: userId },
-      data: {
-        name: data.name !== undefined ? data.name : undefined,
-        email: data.email !== undefined ? data.email : undefined,
-        avatar_url: finalAvatarUrl !== undefined ? finalAvatarUrl : undefined,
-        updated_at: new Date(),
-      },
+    await this.usersRepo.updateUser(userId, {
+      name: data.name !== undefined ? data.name : undefined,
+      email: data.email !== undefined ? data.email : undefined,
+      avatar_url: finalAvatarUrl !== undefined ? finalAvatarUrl : undefined,
     });
 
     // Upsert user_profiles
-    await this.prisma.user_profiles.upsert({
-      where: { user_id: userId },
-      create: {
+    await this.usersRepo.upsertProfile(
+      userId,
+      {
         user_id: userId,
         display_name: data.name || user.name || null,
         avatar_url: finalAvatarUrl || user.avatar_url || null,
@@ -497,7 +429,7 @@ export class UsersService {
         onboarding_status: 'completed',
         account_status: 'active',
       },
-      update: {
+      {
         display_name: data.name !== undefined ? data.name : undefined,
         avatar_url: finalAvatarUrl !== undefined ? finalAvatarUrl : undefined,
         professional_title:
@@ -510,73 +442,37 @@ export class UsersService {
         timezone: data.timezone !== undefined ? data.timezone : undefined,
         updated_at: new Date(),
       },
-    });
+    );
 
     // Synchronize to members if exists
     try {
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE public.members 
-         SET name = COALESCE($1, name),
-             avatar = COALESCE($2, avatar),
-             email = COALESCE($3, email),
-             industry = COALESCE($4, industry),
-             region = COALESCE($5, region),
-             updated_at = NOW()
-         WHERE user_id = $6::uuid OR id = $6::text`,
-        data.name || null,
-        finalAvatarUrl || null,
-        data.email || null,
-        data.industry || null,
-        data.region || null,
-        userId,
-      );
+      await this.usersRepo.syncMemberDetails(userId, {
+        name: data.name || null,
+        avatar: finalAvatarUrl || null,
+        email: data.email || null,
+        industry: data.industry || null,
+        region: data.region || null,
+      });
     } catch (err: any) {
       this.logger.warn(`Notice synchronizing members: ${err?.message}`);
     }
 
     // Synchronize to member_business_cards & card_settings if exist
     try {
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE public.member_business_cards
-         SET display_name = COALESCE($1, display_name),
-             avatar_url = COALESCE($2, avatar_url),
-             professional_title = COALESCE($3, professional_title),
-             company_name = COALESCE($4, company_name),
-             bio = COALESCE($5, bio),
-             updated_at = NOW()
-         WHERE owner_user_id = $6::uuid`,
-        data.name || null,
-        finalAvatarUrl || null,
-        data.professional_title || null,
-        data.company_name || null,
-        data.bio || null,
-        userId,
-      );
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE public.card_settings
-         SET display_name = COALESCE($1, display_name),
-             photo_url = COALESCE($2, photo_url),
-             company_name = COALESCE($3, company_name),
-             updated_at = NOW()
-         WHERE user_id = $4::uuid`,
-        data.name || null,
-        finalAvatarUrl || null,
-        data.company_name || null,
-        userId,
-      );
+      await this.usersRepo.syncCardsDetails(userId, {
+        name: data.name || null,
+        avatar: finalAvatarUrl || null,
+        professional_title: data.professional_title || null,
+        company_name: data.company_name || null,
+        bio: data.bio || null,
+      });
     } catch (err: any) {
       this.logger.warn(`Notice synchronizing cards: ${err?.message}`);
     }
 
     // Sync email to auth.users
     if (data.email) {
-      await this.prisma
-        .$executeRawUnsafe(
-          `UPDATE auth.users SET email = $1 WHERE id = $2::uuid`,
-          data.email,
-          userId,
-        )
-        .catch(() => {});
+      await this.usersRepo.syncAuthUserEmail(userId, data.email);
     }
 
     return this.getAccountDetails(userId);
@@ -587,9 +483,7 @@ export class UsersService {
       throw new BadRequestException('Mật khẩu mới phải có ít nhất 6 ký tự');
     }
 
-    const user = await this.prisma.vione_users.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.usersRepo.findById(userId);
     if (!user) {
       throw new NotFoundException('Tài khoản không tồn tại');
     }
@@ -608,29 +502,15 @@ export class UsersService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPass, salt);
 
-    await this.prisma.vione_users.update({
-      where: { id: userId },
-      data: {
-        password: hashedPassword,
-        updated_at: new Date(),
-      },
+    await this.usersRepo.updateUser(userId, {
+      password: hashedPassword,
     });
 
     // Sync to auth.users encrypted_password if applicable
-    await this.prisma
-      .$executeRawUnsafe(
-        `UPDATE auth.users SET encrypted_password = $1 WHERE id = $2::uuid`,
-        hashedPassword,
-        userId,
-      )
-      .catch(() => {});
+    await this.usersRepo.syncAuthUserPassword(userId, hashedPassword);
 
     // Đánh dấu onboarding_status = 'completed' để hoàn tất quy trình đổi mật khẩu bắt buộc
-    await this.prisma.$executeRaw`
-      UPDATE public.user_profiles
-      SET onboarding_status = 'completed'::public.onboarding_status, updated_at = now()
-      WHERE user_id = ${userId}::uuid
-    `.catch(() => null);
+    await this.usersRepo.completeOnboardingStatus(userId);
 
     return {
       success: true,
@@ -640,23 +520,15 @@ export class UsersService {
 
   async checkMustChangePassword(userId: string): Promise<boolean> {
     try {
-      const rows = await this.prisma.$queryRaw<any[]>`
-        SELECT onboarding_status::text as onboarding_status
-        FROM public.user_profiles
-        WHERE user_id = ${userId}::uuid
-        LIMIT 1
-      `.catch(() => []);
-      if (rows && rows[0]) {
-        return rows[0].onboarding_status === 'new';
-      }
-      return false;
+      const status = await this.usersRepo.getOnboardingStatus(userId);
+      return status === 'new';
     } catch {
       return false;
     }
   }
 
   async deactivateAccount(userId: string, password?: string) {
-    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+    const user = await this.usersRepo.findById(userId);
     if (!user) {
       throw new NotFoundException('Tài khoản không tồn tại');
     }
@@ -666,17 +538,17 @@ export class UsersService {
         throw new BadRequestException('Mật khẩu xác nhận không chính xác');
       }
     }
-    await this.prisma.user_profiles.upsert({
-      where: { user_id: userId },
-      create: {
+    await this.usersRepo.upsertProfile(
+      userId,
+      {
         user_id: userId,
         account_status: 'deactivated',
       },
-      update: {
+      {
         account_status: 'deactivated',
         updated_at: new Date(),
       },
-    });
+    );
     return { success: true, message: 'Tài khoản đã được vô hiệu hóa thành công' };
   }
 
@@ -704,24 +576,15 @@ export class UsersService {
     }
 
     const [total, rawUsers] = await Promise.all([
-      this.prisma.vione_users.count({ where }),
-      this.prisma.vione_users.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { created_at: 'desc' },
-      }),
+      this.usersRepo.countUsers(where),
+      this.usersRepo.findUsers(where, skip, limit),
     ]);
 
     const userIds = rawUsers.map((u) => u.id);
 
     const [profiles, roles] = await Promise.all([
-      this.prisma.user_profiles.findMany({
-        where: { user_id: { in: userIds } },
-      }).catch(() => [] as any[]),
-      this.prisma.user_roles.findMany({
-        where: { user_id: { in: userIds } },
-      }).catch(() => [] as any[]),
+      this.usersRepo.findProfilesByUserIds(userIds),
+      this.usersRepo.findRolesByUserIds(userIds),
     ]);
 
     const profileMap = new Map<string, any>();
@@ -740,9 +603,9 @@ export class UsersService {
       const userRoles = roleMap.get(u.id) || [];
       if (
         (u.id === '00000000-0000-0000-0000-000000000000' || u.username === 'admin@connect.vn') &&
-        !userRoles.includes('platform_admin')
+        !userRoles.includes('admin')
       ) {
-        userRoles.push('platform_admin');
+        userRoles.push('admin');
       }
 
       return {
@@ -771,12 +634,8 @@ export class UsersService {
 
     // Quick stats overview
     const [allProfiles, allRoles] = await Promise.all([
-      this.prisma.user_profiles.findMany({
-        select: { account_status: true },
-      }).catch(() => [] as any[]),
-      this.prisma.user_roles.findMany({
-        select: { role: true },
-      }).catch(() => [] as any[]),
+      this.usersRepo.getAllProfileStatuses(),
+      this.usersRepo.getAllRoles(),
     ]);
 
     const activeCount = (allProfiles as any[]).filter((p: any) => p.account_status === 'active').length;
@@ -815,13 +674,11 @@ export class UsersService {
     }
     const username = data.username.trim();
 
-    const existing = await this.prisma.vione_users.findFirst({
-      where: {
-        OR: [
-          { username },
-          ...(data.email ? [{ email: data.email.trim() }] : []),
-        ],
-      },
+    const existing = await this.usersRepo.findFirst({
+      OR: [
+        { username },
+        ...(data.email ? [{ email: data.email.trim() }] : []),
+      ],
     });
     if (existing) {
       throw new BadRequestException('Tên đăng nhập hoặc Email đã tồn tại');
@@ -840,26 +697,21 @@ export class UsersService {
     });
 
     const accountStatus = data.account_status || 'active';
-    await this.prisma.user_profiles.upsert({
-      where: { user_id: newUser.id },
-      create: {
+    await this.usersRepo.upsertProfile(
+      newUser.id,
+      {
         user_id: newUser.id,
         display_name: newUser.name,
         account_status: accountStatus,
         onboarding_status: 'completed',
       },
-      update: {
+      {
         account_status: accountStatus,
       },
-    });
+    );
 
     if (data.role) {
-      await this.prisma.user_roles.create({
-        data: {
-          user_id: newUser.id,
-          role: data.role,
-        },
-      }).catch(() => {});
+      await this.usersRepo.createUserRole(newUser.id, data.role);
     }
 
     return this.getAccountDetails(newUser.id);
@@ -880,53 +732,39 @@ export class UsersService {
     }
 
     if (data.email && data.email !== user.email) {
-      const existing = await this.prisma.vione_users.findFirst({
-        where: {
-          email: data.email,
-          NOT: { id },
-        },
+      const existing = await this.usersRepo.findFirst({
+        email: data.email,
+        NOT: { id },
       });
       if (existing) {
         throw new BadRequestException('Email đã thuộc về tài khoản khác');
       }
     }
 
-    await this.prisma.vione_users.update({
-      where: { id },
-      data: {
-        name: data.name !== undefined ? data.name : undefined,
-        email: data.email !== undefined ? data.email : undefined,
-        updated_at: new Date(),
-      },
+    await this.usersRepo.updateUser(id, {
+      name: data.name !== undefined ? data.name : undefined,
+      email: data.email !== undefined ? data.email : undefined,
     });
 
     if (data.account_status || data.name) {
-      await this.prisma.user_profiles.upsert({
-        where: { user_id: id },
-        create: {
+      await this.usersRepo.upsertProfile(
+        id,
+        {
           user_id: id,
           display_name: data.name || user.name,
           account_status: data.account_status || 'active',
         },
-        update: {
+        {
           display_name: data.name !== undefined ? data.name : undefined,
           account_status: data.account_status !== undefined ? data.account_status : undefined,
           updated_at: new Date(),
         },
-      });
+      );
     }
 
     if (data.role) {
-      await this.prisma.user_roles.deleteMany({
-        where: { user_id: id },
-      }).catch(() => {});
-
-      await this.prisma.user_roles.create({
-        data: {
-          user_id: id,
-          role: data.role,
-        },
-      }).catch(() => {});
+      await this.usersRepo.deleteUserRoles(id);
+      await this.usersRepo.createUserRole(id, data.role);
     }
 
     return this.getAccountDetails(id);
@@ -945,21 +783,11 @@ export class UsersService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPass, salt);
 
-    await this.prisma.vione_users.update({
-      where: { id },
-      data: {
-        password: hashedPassword,
-        updated_at: new Date(),
-      },
+    await this.usersRepo.updateUser(id, {
+      password: hashedPassword,
     });
 
-    await this.prisma
-      .$executeRawUnsafe(
-        `UPDATE auth.users SET encrypted_password = $1 WHERE id = $2::uuid`,
-        hashedPassword,
-        id,
-      )
-      .catch(() => {});
+    await this.usersRepo.syncAuthUserPassword(id, hashedPassword);
 
     return {
       success: true,
@@ -973,9 +801,7 @@ export class UsersService {
       throw new NotFoundException('Tài khoản không tồn tại');
     }
 
-    const currentProfile = await this.prisma.user_profiles.findUnique({
-      where: { user_id: id },
-    }).catch(() => null);
+    const currentProfile = await this.usersRepo.getUserProfile(id);
 
     let nextStatus = newStatus;
     if (!nextStatus) {
@@ -983,18 +809,18 @@ export class UsersService {
       nextStatus = current === 'active' ? 'suspended' : 'active';
     }
 
-    await this.prisma.user_profiles.upsert({
-      where: { user_id: id },
-      create: {
+    await this.usersRepo.upsertProfile(
+      id,
+      {
         user_id: id,
         display_name: user.name,
         account_status: nextStatus,
       },
-      update: {
+      {
         account_status: nextStatus,
         updated_at: new Date(),
       },
-    });
+    );
 
     return {
       id,
@@ -1023,21 +849,10 @@ export class UsersService {
       throw new NotFoundException('Tài khoản không tồn tại');
     }
 
-    await this.prisma.user_roles.deleteMany({
-      where: { user_id: targetId },
-    }).catch(() => {});
-
-    await this.prisma.user_profiles.delete({
-      where: { user_id: targetId },
-    }).catch(() => {});
-
-    await this.prisma.vione_users.delete({
-      where: { id: targetId },
-    }).catch(() => {});
-
-    await this.prisma
-      .$executeRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, targetId)
-      .catch(() => {});
+    await this.usersRepo.deleteUserRoles(targetId);
+    await this.usersRepo.deleteUserProfile(targetId);
+    await this.usersRepo.deleteUser(targetId);
+    await this.usersRepo.deleteAuthUser(targetId);
 
     return {
       success: true,

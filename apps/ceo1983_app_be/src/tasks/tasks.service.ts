@@ -1,117 +1,42 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
+import { TasksRepository } from './tasks.repository';
+import {
+  TaskSubtask,
+  TaskComment,
+  TaskHistory,
+  TaskAttachment,
+  TaskMeeting,
+  TaskProgressEvaluation,
+  TaskDelegation,
+  TaskItem,
+  TaskFilterDto,
+  CreateTaskDto,
+  UpdateTaskDto,
+  AddCommentDto,
+  AddSubtaskDto,
+} from './dto';
 
-export interface TaskSubtask {
-  id: string;
-  title: string;
-  completed: boolean;
-  dueDate?: string;
-  assignee?: string;
-}
+export type {
+  TaskSubtask,
+  TaskComment,
+  TaskHistory,
+  TaskAttachment,
+  TaskMeeting,
+  TaskProgressEvaluation,
+  TaskDelegation,
+  TaskItem,
+};
+export {
+  TaskFilterDto,
+  CreateTaskDto,
+  UpdateTaskDto,
+  AddCommentDto,
+  AddSubtaskDto,
+};
 
-export interface TaskComment {
-  id: string;
-  authorName: string;
-  authorAvatar?: string;
-  authorRole?: string;
-  content: string;
-  createdAt: string;
-}
-
-export interface TaskHistory {
-  id: string;
-  action: string;
-  actor: string;
-  timestamp: string;
-}
-
-export interface TaskAttachment {
-  id?: string;
-  name: string;
-  url: string;
-  size?: string;
-  type?: string;
-  uploadedBy?: string;
-  uploadedAt?: string;
-  isDeliverable?: boolean;
-}
-
-export interface TaskMeeting {
-  enabled: boolean;
-  platform: 'ZOOM' | 'GOOGLE_MEET' | 'UNIWORK';
-  link?: string;
-  meetingTime?: string;
-  note?: string;
-}
-
-export interface TaskProgressEvaluation {
-  id: string;
-  evaluatedAt: string;
-  evaluatorName: string;
-  evaluatorRole?: string;
-  rating?: number; // 1-5 sao
-  statusAssessment: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD';
-  feedback: string;
-}
-
-export interface TaskDelegation {
-  acceptedAt?: string;
-  declinedAt?: string;
-  declineReason?: string;
-  submittedAt?: string;
-  submissionNote?: string;
-  submissionDeliverables?: string;
-  approvedAt?: string;
-  approvedBy?: string;
-  approvalRating?: number; // 1-5 sao
-  approvalFeedback?: string;
-  reworkRequestedAt?: string;
-  reworkReason?: string;
-  lastRemindedAt?: string;
-  reminderCount?: number;
-  lastEvaluatedAt?: string;
-  lastEvaluationAssessment?: 'ON_TRACK' | 'AT_RISK' | 'DELAYED' | 'AHEAD';
-}
-
-export interface TaskItem {
-  id: string;
-  code: string;
-  title: string;
-  department: string;
-  assignee: {
-    id?: string;
-    name: string;
-    avatar?: string;
-    role?: string;
-    email?: string;
-  };
-  supervisor: {
-    id?: string;
-    name: string;
-    avatar?: string;
-    role?: string;
-  };
-  collaborators?: Array<{ id: string; name: string; avatar?: string }>;
-  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'OVERDUE';
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  startDate: string;
-  dueDate: string;
-  progress: number;
-  description: string;
-  deliverables?: string;
-  subtasks: TaskSubtask[];
-  meeting?: TaskMeeting;
-  attachments?: TaskAttachment[];
-  comments: TaskComment[];
-  history: TaskHistory[];
-  delegation?: TaskDelegation;
-  evaluations?: TaskProgressEvaluation[];
-  createdAt: string;
-  updatedAt: string;
-}
 
 @Injectable()
 export class TasksService {
@@ -119,7 +44,9 @@ export class TasksService {
   private readonly storageFilePath = path.join(process.cwd(), 'uploads', 'tasks_data.json');
   private tasks: TaskItem[] = [];
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly tasksRepo: TasksRepository,
+  ) {
     this.ensureInitialized();
   }
 
@@ -539,13 +466,7 @@ export class TasksService {
 
       // 1. Tìm theo Email
       if (email && email.trim()) {
-        const u = await this.prisma.$queryRaw<any[]>`
-          SELECT u.id as user_id, m.id as member_id
-          FROM public.vione_users u
-          LEFT JOIN public.members m ON m.user_id = u.id OR lower(m.email) = lower(u.email)
-          WHERE lower(u.email) = lower(${email.trim()})
-          LIMIT 1
-        `.catch(() => []);
+        const u = await this.tasksRepo.findUserAndMemberByEmail(email.trim());
         if (u.length && u[0].user_id) {
           targetUserId = u[0].user_id;
           targetMemberId = u[0].member_id;
@@ -554,13 +475,7 @@ export class TasksService {
 
       // 2. Tìm theo assigneeId (nếu là UUID)
       if (!targetUserId && assigneeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assigneeId)) {
-        const u = await this.prisma.$queryRaw<any[]>`
-          SELECT u.id as user_id, m.id as member_id
-          FROM public.members m
-          LEFT JOIN public.vione_users u ON m.user_id = u.id
-          WHERE m.id = ${assigneeId}::uuid OR m.user_id = ${assigneeId}::uuid OR u.id = ${assigneeId}::uuid
-          LIMIT 1
-        `.catch(() => []);
+        const u = await this.tasksRepo.findUserAndMemberById(assigneeId);
         if (u.length && u[0].user_id) {
           targetUserId = u[0].user_id;
           targetMemberId = u[0].member_id;
@@ -569,14 +484,7 @@ export class TasksService {
 
       // 3. Tìm theo Tên hội viên
       if (!targetUserId && name && name.trim()) {
-        const u = await this.prisma.$queryRaw<any[]>`
-          SELECT u.id as user_id, m.id as member_id
-          FROM public.members m
-          LEFT JOIN public.vione_users u ON m.user_id = u.id
-          WHERE lower(m.name) ILIKE '%' || lower(${name.trim()}) || '%'
-             OR lower(u.name) ILIKE '%' || lower(${name.trim()}) || '%'
-          LIMIT 1
-        `.catch(() => []);
+        const u = await this.tasksRepo.findUserAndMemberByName(name.trim());
         if (u.length && u[0].user_id) {
           targetUserId = u[0].user_id;
           targetMemberId = u[0].member_id;
@@ -604,29 +512,11 @@ export class TasksService {
         targetRoute: '/tasks',
       });
 
-      // 1. Ghi vào public.business_notifications (hiển thị chuông thông báo Topbar CRM & App)
-      await this.prisma.$executeRawUnsafe(`
-        INSERT INTO public.business_notifications (
-          id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
-          title_key, body_key, safe_display_data, priority, status, delivered_at, dedupe_key, app_scope, target_app, created_at, updated_at
-        ) VALUES (
-          $1::uuid, $2::uuid, 'task', $3, 'task_assigned', 'task_created',
-          $4, $5, $6::jsonb, 'high', 'delivered', NOW(), $7, 'all', 'all', NOW(), NOW()
-        )
-      `, notifId, targetUserId, task.id, notifTitle, notifBody, safeData, dedupeKey).catch((err: any) => {
-        this.logger.warn(`Lỗi ghi business_notification: ${err.message}`);
-      });
+      // 1. Ghi vào public.business_notifications
+      await this.tasksRepo.insertBusinessNotification(notifId, targetUserId, task.id, notifTitle, notifBody, safeData, dedupeKey);
 
-      // 2. Ghi vào public.member_notifications (hiển thị thông báo trên App di động hội viên)
-      await this.prisma.$executeRawUnsafe(`
-        INSERT INTO public.member_notifications (
-          id, recipient_id, type, title, body, read, dismissed, ref_type, ref_id, created_at
-        ) VALUES (
-          gen_random_uuid(), $1, 'task', $2, $3, false, false, 'task', $4, NOW()
-        )
-      `, targetMemberId || targetUserId, notifTitle, notifBody, task.id).catch((err: any) => {
-        this.logger.warn(`Lỗi ghi member_notification: ${err.message}`);
-      });
+      // 2. Ghi vào public.member_notifications
+      await this.tasksRepo.insertMemberNotification(targetMemberId || targetUserId, notifTitle, notifBody, task.id);
 
       this.logger.log(`Đã gửi thông báo giao việc ${task.code} thành công đến user ${targetUserId}`);
     } catch (e: any) {

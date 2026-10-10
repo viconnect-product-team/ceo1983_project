@@ -13,25 +13,18 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminService } from './admin.service';
+import {
+  UpdateDemoLeadDto,
+  CreateInvoiceDto,
+  AddInvoiceReminderDto,
+  CreateAdminNotificationDto,
+  UpdateAdminNotificationDto,
+  CreateCampaignDto,
+  CreateTransactionDto,
+  UpdateTransactionDto,
+} from './dto';
 
-
-export class UpdateDemoLeadDto {
-  status?: string;
-  adminNotes?: string | null;
-}
-
-export class CreateInvoiceDto {
-  memberId!: string;
-  year?: number;
-  amount?: number;
-  dueDate?: string;
-}
-
-export class AddInvoiceReminderDto {
-  channel!: string;
-  byName?: string;
-  note?: string;
-}
+export { UpdateDemoLeadDto, CreateInvoiceDto, AddInvoiceReminderDto };
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
@@ -118,7 +111,7 @@ export class AdminController {
   @Post('notifications')
   async createNotification(
     @Request() req,
-    @Body() body: any,
+    @Body() body: CreateAdminNotificationDto,
   ) {
     return this.adminService.createNotification(req.user.id, body);
   }
@@ -126,7 +119,7 @@ export class AdminController {
   @Patch('notifications/:id')
   async updateNotification(
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: UpdateAdminNotificationDto,
   ) {
     return this.adminService.updateNotification(id, body);
   }
@@ -162,7 +155,7 @@ export class AdminController {
   }
 
   @Post('campaigns')
-  async createCampaign(@Body() body: any) {
+  async createCampaign(@Body() body: CreateCampaignDto) {
     return this.adminService.createCampaign(body);
   }
 
@@ -179,12 +172,12 @@ export class AdminController {
   }
 
   @Post('transactions')
-  async createTransaction(@Body() body: any) {
+  async createTransaction(@Body() body: CreateTransactionDto) {
     return this.adminService.createTransaction(body);
   }
 
   @Patch('transactions/:id')
-  async updateTransaction(@Param('id') id: string, @Body() body: any) {
+  async updateTransaction(@Param('id') id: string, @Body() body: UpdateTransactionDto) {
     return this.adminService.updateTransaction(id, body);
   }
 

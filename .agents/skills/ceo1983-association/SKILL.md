@@ -51,14 +51,14 @@ apps/ceo1983_app_fe/
 
 ---
 
-## 3. Executive UI & Color Standards
+## 3. Executive UI & Color Standards (CHỈ ĐÚNG 3 MÀU CHUẨN CEO 1983)
 
 Always strictly apply the official CEO 1983 palette:
-- **Primary Cobalt Navy**: `#003B95`, `#00224F`
-- **Accent Warm Amber Gold**: `#F59E0B`, `#D97706`, `#FEF3C7`
-- **Deep Obsidian Dark**: `#0B132B`, `#0F172A`
-- **Semantic Emerald**: `#059669`, `#10B981` (Success, Verified, Voted)
-- **Semantic Ruby**: `#E11D48` (Declined, Alerts)
+1. **Primary Cobalt Navy**: `#003B95`, `#002B70`, `#0A1A3A` (Header, Primary CTA buttons, official badge).
+2. **Accent Warm Amber Gold**: `#F59E0B`, `#D97706`, `#B45309`, `#FEF3C7` (VIP card border, gold star, CRM deal values, interest button).
+3. **Neutral Contrast**: `#FFFFFF` (Clean white background) and `#0F172A` (Obsidian luxury dark card).
+- **CẤM TUYỆT ĐỐI**: Màu tím (purple), hồng (pink), xanh lá chuối (lime), xanh neon, dải màu cầu vồng.
+- **CẤM TUYỆT ĐỐI HARD DỮ LIỆU / MOCK DATA**: 100% dữ liệu phải nạp từ PostgreSQL qua NestJS RESTful API (`fetchNestApi`).
 
 ### Button-to-Icon Minimization
 Do NOT clutter screens with bulky text buttons. Use sleek single-color Lucide icons (`<MessageSquare />`, `<Phone />`, `<User />`, `<Handshake />`). Reserve full buttons only for critical decisions (Edit Profile, Accept Meeting, Cast Vote).

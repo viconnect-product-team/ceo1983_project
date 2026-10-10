@@ -1,34 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { ReviewsRepository } from './reviews.repository';
+import { CreateReviewDto, UpdateReviewDto } from './dto';
 
-export class CreateReviewDto {
-  sellerId!: string;
-  reviewerId?: string;
-  rating!: number;
-  comment!: string;
-  reviewType?: 'service' | 'event' | 'networking';
-}
-
-export class UpdateReviewDto {
-  rating?: number;
-  comment?: string;
-  reviewType?: 'service' | 'event' | 'networking';
-}
+export { CreateReviewDto, UpdateReviewDto };
 
 @Injectable()
 export class ReviewsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly reviewsRepo: ReviewsRepository) {}
 
   async listReviews(sellerId: string) {
     if (!sellerId) return { reviews: [], stats: { count: 0, avg: 0 } };
 
-    const rows: any[] = await this.prisma.$queryRaw<any[]>`
-      SELECT id, seller_id, reviewer_id, reviewer_name, rating, comment, review_type, created_at
-      FROM public.reviews
-      WHERE seller_id = ${sellerId}
-      ORDER BY created_at DESC
-    `.catch(() => [] as any[]);
+    const rows = await this.reviewsRepo.listReviewsBySellerId(sellerId);
 
     const reviews = rows.map((r) => ({
       id: r.id,
@@ -53,28 +37,17 @@ export class ReviewsService {
     const id = crypto.randomUUID();
     const reviewerId = data.reviewerId || userId;
 
-    // Get reviewer name
-    const memberRows = await this.prisma.$queryRaw<any[]>`
-      SELECT name FROM public.members WHERE id = ${reviewerId}::uuid OR user_id = ${userId}::uuid LIMIT 1
-    `.catch(() => [] as any[]);
-    const reviewerName = memberRows[0]?.name || 'Hội viên CEO 1983';
+    const reviewerName = (await this.reviewsRepo.findReviewerName(reviewerId, userId)) || 'Hội viên CEO 1983';
 
-    const inserted = await this.prisma.$queryRaw<any[]>`
-      INSERT INTO public.reviews (id, seller_id, reviewer_id, reviewer_name, rating, comment, review_type, created_at)
-      VALUES (${id}::uuid, ${data.sellerId}, ${reviewerId}, ${reviewerName}, ${data.rating || 5}, ${data.comment}, ${data.reviewType || 'service'}, now())
-      RETURNING id, seller_id, reviewer_id, reviewer_name, rating, comment, review_type, created_at
-    `.catch(() => [] as any[]);
-
-    const r = inserted[0] || {
+    const r = await this.reviewsRepo.insertReview(
       id,
-      seller_id: data.sellerId,
-      reviewer_id: reviewerId,
-      reviewer_name: reviewerName,
-      rating: data.rating,
-      comment: data.comment,
-      review_type: data.reviewType || 'service',
-      created_at: new Date(),
-    };
+      data.sellerId,
+      reviewerId,
+      reviewerName,
+      data.rating || 5,
+      data.comment,
+      data.reviewType || 'service',
+    );
 
     return {
       id: r.id,
@@ -89,21 +62,9 @@ export class ReviewsService {
   }
 
   async updateReview(userId: string, id: string, data: UpdateReviewDto) {
-    await this.prisma.$executeRaw`
-      UPDATE public.reviews
-      SET rating = COALESCE(${data.rating}, rating),
-          comment = COALESCE(${data.comment}, comment),
-          review_type = COALESCE(${data.reviewType}, review_type)
-      WHERE id = ${id}::uuid
-    `.catch(() => {});
+    const r = await this.reviewsRepo.updateReviewRaw(id, data.rating, data.comment, data.reviewType);
+    if (!r) throw new NotFoundException('Review not found');
 
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, seller_id, reviewer_id, reviewer_name, rating, comment, review_type, created_at
-      FROM public.reviews WHERE id = ${id}::uuid LIMIT 1
-    `.catch(() => [] as any[]);
-
-    if (rows.length === 0) throw new NotFoundException('Review not found');
-    const r = rows[0];
     return {
       id: r.id,
       sellerId: r.seller_id,
@@ -117,9 +78,7 @@ export class ReviewsService {
   }
 
   async deleteReview(userId: string, id: string) {
-    await this.prisma.$executeRaw`
-      DELETE FROM public.reviews WHERE id = ${id}::uuid
-    `.catch(() => {});
+    await this.reviewsRepo.deleteReviewRaw(id);
     return { ok: true };
   }
 }

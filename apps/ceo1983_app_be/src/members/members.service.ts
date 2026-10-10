@@ -7,52 +7,28 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { MembersRepository } from './members.repository';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
+import {
+  CreateMemberDto,
+  UpdateMemberDto,
+  UpdateMemberContactDto,
+  PublicRegisterDto,
+  UpdateMemberProfileDto,
+  UpdateMemberExecutiveDto,
+  RenewMembershipDto,
+} from './dto';
 
-export class CreateMemberDto {
-  name!: string;
-  contact?: string;
-  email?: string;
-  phone?: string;
-  type?: 'company' | 'individual';
-  level?: string;
-  industry?: string;
-  region?: string;
-  status?: 'active' | 'pending' | 'expired';
-  address?: string;
-  website?: string;
-  taxCode?: string;
-  employees?: number;
-  about?: string;
-  associationId?: string;
-}
-
-export class UpdateMemberDto {
-  name?: string;
-  contact?: string;
-  email?: string;
-  phone?: string;
-  type?: 'company' | 'individual';
-  level?: string;
-  industry?: string;
-  region?: string;
-  status?: 'active' | 'pending' | 'expired';
-  address?: string;
-  website?: string;
-  taxCode?: string;
-  employees?: number;
-  about?: string;
-  feePaid?: boolean;
-  feeYear?: number;
-  paymentStatus?: string;
-}
-
-export class UpdateMemberContactDto {
-  email?: string;
-  phone?: string;
-  address?: string;
-}
+export {
+  CreateMemberDto,
+  UpdateMemberDto,
+  UpdateMemberContactDto,
+  PublicRegisterDto,
+  UpdateMemberProfileDto,
+  UpdateMemberExecutiveDto,
+  RenewMembershipDto,
+};
 
 @Injectable()
 export class MembersService {
@@ -61,6 +37,7 @@ export class MembersService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private readonly membersRepo: MembersRepository,
   ) {}
 
   private async checkIsPlatformAdmin(userId: string): Promise<boolean> {
@@ -98,6 +75,96 @@ export class MembersService {
       );
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Kiểm tra quyền thực thi action code (MEM_ADD, MEM_EDIT, MEM_DELETE, MEM_APPROVE, ...)
+   * theo app_settings.crm_member_permissions (override cá nhân) và app_settings.crm_permission_matrix.
+   * Nếu bị thu hồi hoặc uncheck -> trả về false.
+   */
+  async checkActionPermission(userId: string, actionCode: string, assocId?: string): Promise<boolean> {
+    try {
+      // 1. Platform Admin / Superadmin luôn có quyền tối thượng
+      const roles = await this.prisma.$queryRaw<any[]>`
+        SELECT role FROM public.user_roles WHERE user_id = ${userId}::uuid
+      `.catch(() => [] as any[]);
+      if (roles.some((r: any) => r.role === 'platform_admin' || r.role === 'superadmin')) {
+        return true;
+      }
+
+      // 2. Lấy thông tin user hiện tại
+      const userRows = await this.prisma.$queryRaw<any[]>`
+        SELECT u.email, m.code, m.executive_role, m.department, mem.role as membership_role
+        FROM public.vione_users u
+        LEFT JOIN public.members m ON (m.user_id = u.id)
+        LEFT JOIN public.memberships mem ON (mem.user_id = u.id)
+        WHERE u.id = ${userId}::uuid LIMIT 1
+      `.catch(() => [] as any[]);
+
+      const user = userRows[0];
+      const memberCode = (user?.code || '').toUpperCase();
+      const email = (user?.email || '').toLowerCase();
+
+      // 3. Kiểm tra override cá nhân trong app_settings.crm_member_permissions
+      const memberPermsRow = await this.prisma.$queryRaw<{ value: any }[]>`
+        SELECT value FROM public.app_settings WHERE key = 'crm_member_permissions' LIMIT 1
+      `.catch(() => []);
+      if (memberPermsRow.length && memberPermsRow[0]?.value) {
+        const val = memberPermsRow[0].value;
+        const map = typeof val === 'string' ? JSON.parse(val) : (val.permissionsMap || val);
+        const profile = (memberCode && map[memberCode]) || (email && map[email]);
+        if (profile) {
+          if (Array.isArray(profile.deniedCodes) && profile.deniedCodes.includes(actionCode)) {
+            return false;
+          }
+          if (Array.isArray(profile.allowedCodes) && profile.allowedCodes.includes(actionCode)) {
+            return true;
+          }
+        }
+      }
+
+      // 4. Kiểm tra cấu hình trong ma trận app_settings.crm_permission_matrix
+      const matrixRow = await this.prisma.$queryRaw<{ value: any }[]>`
+        SELECT value FROM public.app_settings WHERE key = 'crm_permission_matrix' LIMIT 1
+      `.catch(() => []);
+
+      if (matrixRow.length && matrixRow[0]?.value) {
+        const val = matrixRow[0].value;
+        const cats = Array.isArray(val) ? val : (val.categories || val.rows || []);
+        if (Array.isArray(cats) && cats.length > 0) {
+          let roleKey = 'member';
+          const rawRole = (user?.executive_role || user?.membership_role || '').toLowerCase();
+          if (rawRole.includes('admin') || rawRole.includes('bqt') || rawRole.includes('chủ tịch')) {
+            roleKey = 'admin';
+          } else if (rawRole.includes('quan_tri') || rawRole.includes('superadmin')) {
+            roleKey = 'quan_tri';
+          } else if (rawRole.includes('thư ký') || rawRole.includes('tong_thu_ky')) {
+            roleKey = 'tong_thu_ky';
+          } else if (rawRole.includes('trưởng ban') || rawRole.includes('truong_ban')) {
+            roleKey = 'truong_ban';
+          }
+
+          for (const cat of cats) {
+            if (!cat.features || !Array.isArray(cat.features)) continue;
+            for (const feat of cat.features) {
+              if (!feat.actions || !Array.isArray(feat.actions)) continue;
+              for (const act of feat.actions) {
+                if (act.code === actionCode) {
+                  if (act.roles && typeof act.roles === 'object') {
+                    const allowed = act.roles[roleKey] !== undefined ? !!act.roles[roleKey] : !!act.roles['admin'];
+                    return allowed;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return true;
+    } catch {
+      return true;
     }
   }
 
@@ -325,45 +392,9 @@ export class MembersService {
   }
 
   // Mobile API: member directory
-  async listDirectory(userId: string) {
+  async listDirectory(userId: string, connectedOnly?: boolean) {
     const assocId = await this.getAssociationIdForUser(userId);
-
-    let rows: any[];
-    if (assocId) {
-      rows = await this.prisma.$queryRaw<any[]>`
-        SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
-               m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
-               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
-               COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
-               COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
-        FROM public.members m
-        LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
-        LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
-        LEFT JOIN public.vione_users vu ON vu.id = m.user_id
-        WHERE m.association_id = ${assocId}::uuid AND m.status = 'active'
-        ORDER BY m.name ASC
-      `.catch((err) => {
-        console.error('listDirectory assoc query error:', err);
-        return [];
-      });
-    } else {
-      rows = await this.prisma.$queryRaw<any[]>`
-        SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
-               m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
-               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
-               COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
-               COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
-        FROM public.members m
-        LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
-        LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
-        LEFT JOIN public.vione_users vu ON vu.id = m.user_id
-        WHERE m.status = 'active'
-        ORDER BY m.name ASC
-      `.catch((err) => {
-        console.error('listDirectory all query error:', err);
-        return [];
-      });
-    }
+    const rows = await this.membersRepo.findDirectoryMembers(assocId, userId, connectedOnly);
 
     return rows.map((m) => ({
       id: m.id ?? m.user_id ?? m.code ?? '',
@@ -866,6 +897,10 @@ export class MembersService {
     if (!isAdmin) {
       throw new ForbiddenException('Chỉ quản trị viên mới có quyền thêm hội viên');
     }
+    const canAdd = await this.checkActionPermission(userId, 'MEM_ADD', assocId ?? undefined);
+    if (!canAdd) {
+      throw new ForbiddenException('Hành động thêm hội viên mới (MEM_ADD) đã bị thu hồi trong cấu hình phân quyền hệ thống');
+    }
 
     const now = new Date();
     const id = `MB${now.getTime().toString(36).toUpperCase()}`;
@@ -943,6 +978,10 @@ export class MembersService {
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
     if (!isAdmin) {
       throw new ForbiddenException('Chỉ quản trị viên mới có quyền cập nhật hội viên');
+    }
+    const canEdit = await this.checkActionPermission(userId, 'MEM_EDIT', current.association_id);
+    if (!canEdit) {
+      throw new ForbiddenException('Hành động chỉnh sửa thông tin hội viên (MEM_EDIT) đã bị thu hồi trong cấu hình phân quyền hệ thống');
     }
 
     const name = data.name !== undefined ? data.name : current.name;
@@ -1199,6 +1238,10 @@ export class MembersService {
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
     if (!isAdmin) {
       throw new ForbiddenException('Chỉ quản trị viên mới có quyền xóa hội viên');
+    }
+    const canDelete = await this.checkActionPermission(userId, 'MEM_DELETE', current.association_id);
+    if (!canDelete) {
+      throw new ForbiddenException('Hành động xóa hội viên (MEM_DELETE) đã bị thu hồi trong cấu hình phân quyền hệ thống');
     }
 
     await this.prisma.$executeRaw`
@@ -2422,6 +2465,12 @@ export class MembersService {
     if (!canApprove) {
       throw new ForbiddenException(
         'Thẩm quyền kiểm duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Bạn vui lòng sử dụng tài khoản Ban Quản Trị/Ban Thành Viên để phê duyệt hồ sơ kết nạp.'
+      );
+    }
+    const canApproveAction = await this.checkActionPermission(adminUserId, 'MEM_APPROVE', member.association_id);
+    if (!canApproveAction) {
+      throw new ForbiddenException(
+        'Quyền phê duyệt hội viên (MEM_APPROVE) đã bị thu hồi trong cấu hình ma trận phân quyền hệ thống'
       );
     }
 

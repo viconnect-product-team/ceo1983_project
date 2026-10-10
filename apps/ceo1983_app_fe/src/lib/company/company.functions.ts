@@ -75,13 +75,12 @@ export const listVisibleCompaniesFn = createServerFn({ method: "GET" })
 export const getPublicCompanyFn = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => z.object({ slug: z.string().trim().min(1).max(120) }).parse(d))
   .handler(async ({ data }): Promise<PublicCompanyResult> => {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-    return CompanyService.getPublic(supabase, data.slug);
+    try {
+      const { fetchNestApiFromServer } = await import("@/lib/api-client");
+      const res = await fetchNestApiFromServer(`/company/public/${data.slug}`).catch(() => null);
+      if (res) return res;
+    } catch {}
+    return { state: "not_found" } as PublicCompanyResult;
   });
 
 // ---- membership ----

@@ -4,10 +4,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BusinessCardRepository } from './business-card.repository';
+import { SaveCardDto, CardSettingsDto, CardExchangeDto, CardAiHistoryDto } from './dto';
+
+export { SaveCardDto, CardSettingsDto, CardExchangeDto, CardAiHistoryDto };
 
 @Injectable()
 export class BusinessCardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly cardRepo: BusinessCardRepository,
+  ) {}
 
   async listMyCards(userId: string) {
     const cards = await this.prisma.$queryRawUnsafe<any[]>(

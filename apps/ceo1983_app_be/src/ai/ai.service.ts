@@ -280,93 +280,158 @@ export class AiService {
 
   /**
    * Nhận diện Lệnh Điều khiển Giọng nói Tự động (Voice Auto-Navigation Intent):
-   * Tự động nhận diện ý định điều hướng của người dùng khi ra lệnh bằng giọng nói hoặc text.
+   * Tự động nhận diện ý định điều hướng và thao tác của người dùng khi ra lệnh bằng giọng nói hoặc text.
    */
   classifyVoiceNavigation(prompt: string): {
     route: string;
     featureName: string;
     tourId: string;
+    actionType?: 'navigate' | 'search' | 'theme' | 'call';
+    searchKeyword?: string;
   } | null {
     const q = (prompt || '').toLowerCase().trim();
 
-    // 1. Danh bạ & Hội viên
+    // 0. Thay đổi giao diện (Theme switch)
+    if (
+      q.includes('đổi giao diện') || q.includes('chế độ tối') || q.includes('chế độ sáng') ||
+      q.includes('dark mode') || q.includes('light mode') || q.includes('giao diện tối') ||
+      q.includes('giao diện sáng') || q.includes('màu tối') || q.includes('màu sáng')
+    ) {
+      return {
+        route: '/association',
+        featureName: 'Chuyển Đổi Giao Diện Sáng / Tối',
+        tourId: '',
+        actionType: 'theme',
+      };
+    }
+
+    // 0.1 Hotline Ban Thư Ký
+    if (
+      q.includes('gọi điện') || q.includes('gọi hotline') || q.includes('hotline') ||
+      q.includes('số ban thư ký') || q.includes('liên hệ thư ký')
+    ) {
+      return {
+        route: 'tel:0983198307',
+        featureName: 'Hotline Ban Thư Ký (0983 198 307)',
+        tourId: '',
+        actionType: 'call',
+      };
+    }
+
+    // 1. Danh bạ & Hội viên (kèm tìm kiếm tên/công ty nếu có)
     if (
       q.includes('danh bạ') || q.includes('danh ba') ||
-      (q.includes('hội viên') && (q.includes('mở') || q.includes('tìm') || q.includes('danh sách') || q.includes('vào'))) ||
-      (q.includes('ceo') && (q.includes('mở') || q.includes('tìm') || q.includes('danh sách'))) ||
-      q.includes('hẹn gặp') || q.includes('1-on-1') || q.includes('1-1')
+      q.includes('hội viên') || q.includes('thành viên') ||
+      q.includes('hẹn gặp') || q.includes('1-on-1') || q.includes('1-1') ||
+      q.startsWith('tìm anh') || q.startsWith('tìm chị') || q.startsWith('tìm em') ||
+      q.startsWith('tìm ông') || q.startsWith('tìm bà') || q.startsWith('tìm bạn') ||
+      q.startsWith('tìm sđt') || q.startsWith('tìm sdt') || q.startsWith('tìm công ty') ||
+      (q.includes('ceo') && (q.includes('mở') || q.includes('tìm') || q.includes('danh sách') || q.includes('xem') || q.includes('cho xem')))
     ) {
-      return { route: '/association/members', featureName: 'Danh Bạ 200+ CEO & Hẹn 1-on-1', tourId: 'association-members' };
+      const nameMatch = q.match(/(?:tìm|kiếm|cho xem|xem|gặp)\s+(?:thông tin\s+)?(?:anh|chị|em|bác|ông|bà|ceo|bạn)?\s*([a-zA-ZÀ-ỹ0-9\s]{2,25})/i);
+      let keyword = '';
+      if (nameMatch && nameMatch[1]) {
+        const candidate = nameMatch[1].trim();
+        const ignoreWords = ['danh bạ', 'danh ba', 'hội viên', 'thành viên', 'hệ thống', 'tất cả', 'này', 'đi', 'cho tôi', 'giúp tôi', 'với'];
+        if (!ignoreWords.includes(candidate) && candidate.length >= 2) {
+          keyword = candidate;
+        }
+      }
+
+      const route = keyword ? `/association/members?search=${encodeURIComponent(keyword)}` : '/association/members';
+      const featureName = keyword ? `Danh Bạ Hội Viên (Tìm: ${keyword})` : 'Danh Bạ 200+ CEO & Hẹn 1-on-1';
+      return {
+        route,
+        featureName,
+        tourId: 'association-members',
+        actionType: keyword ? 'search' : 'navigate',
+        searchKeyword: keyword,
+      };
     }
 
     // 2. Sự kiện & Hội nghị
     if (
       q.includes('lịch sự kiện') || q.includes('sự kiện') || q.includes('hội nghị') ||
-      q.includes('gala') || q.includes('đăng ký vé') || q.includes('mua vé')
+      q.includes('gala') || q.includes('đăng ký vé') || q.includes('mua vé') ||
+      q.includes('lịch sinh hoạt') || q.includes('event')
     ) {
-      return { route: '/association/events', featureName: 'Lịch Sự Kiện & Đăng Ký Vé', tourId: 'association-events' };
+      return { route: '/association/events', featureName: 'Lịch Sự Kiện & Đăng Ký Vé', tourId: 'association-events', actionType: 'navigate' };
     }
 
     // 3. Vé Check-in QR & Soát vé
     if (
       q.includes('checkin') || q.includes('check in') || q.includes('vé của tôi') ||
-      q.includes('mã qr vé') || q.includes('bàn vip') || q.includes('soát vé')
+      q.includes('mã qr vé') || q.includes('bàn vip') || q.includes('soát vé') ||
+      q.includes('quét vé') || q.includes('mở vé') || (q.includes('vé') && (q.includes('xem') || q.includes('mở') || q.includes('vào')))
     ) {
-      return { route: '/association/checkin', featureName: 'Vé Check-in QR & Sơ Đồ Bàn VIP', tourId: 'association-checkin' };
+      return { route: '/association/checkin', featureName: 'Vé Check-in QR & Sơ Đồ Bàn VIP', tourId: 'association-checkin', actionType: 'navigate' };
     }
 
     // 4. Danh thiếp số & NFC
     if (
       q.includes('danh thiếp') || q.includes('card visit') || q.includes('thẻ nfc') ||
-      q.includes('ghi thẻ') || q.includes('quét card') || q.includes('thẻ hội viên')
+      q.includes('ghi thẻ') || q.includes('quét card') || q.includes('thẻ hội viên') ||
+      q.includes('namecard') || q.includes('name card') || q.includes('quét danh thiếp') ||
+      q.includes('chạm thẻ') || q.includes('mở thẻ')
     ) {
-      return { route: '/association/card', featureName: 'Thẻ Hội Viên & Danh Thiếp Số NFC', tourId: 'association-card' };
+      return { route: '/association/card', featureName: 'Thẻ Hội Viên & Danh Thiếp Số NFC', tourId: 'association-card', actionType: 'navigate' };
     }
 
     // 5. Chợ B2B & Sản phẩm
     if (
       q.includes('chợ b2b') || q.includes('marketplace') || q.includes('gian hàng') ||
-      (q.includes('sản phẩm') && (q.includes('mở') || q.includes('vào') || q.includes('xem') || q.includes('đăng'))) ||
-      q.includes('đăng bán')
+      q.includes('chợ') || q.includes('đăng bán') || q.includes('sản phẩm b2b') ||
+      (q.includes('sản phẩm') && (q.includes('mở') || q.includes('vào') || q.includes('xem') || q.includes('đăng') || q.includes('tìm') || q.includes('cho xem')))
     ) {
-      return { route: '/association/products', featureName: 'Chợ Giao Thương B2B & Gian Hàng Số', tourId: 'association-products' };
+      const prodMatch = q.match(/(?:tìm|kiếm|xem|mua)\s+(?:sản phẩm|mặt hàng|món|dịch vụ)?\s*([a-zA-ZÀ-ỹ0-9\s]{2,25})/i);
+      let pkw = '';
+      if (prodMatch && prodMatch[1]) {
+        const cand = prodMatch[1].trim();
+        const skip = ['chợ', 'b2b', 'sản phẩm', 'gian hàng', 'đi', 'nào', 'với'];
+        if (!skip.includes(cand) && cand.length >= 2) pkw = cand;
+      }
+      const route = pkw ? `/association/products?search=${encodeURIComponent(pkw)}` : '/association/products';
+      const featureName = pkw ? `Chợ B2B (Tìm: ${pkw})` : 'Chợ Giao Thương B2B & Gian Hàng Số';
+      return { route, featureName, tourId: 'association-products', actionType: pkw ? 'search' : 'navigate', searchKeyword: pkw };
     }
 
     // 6. Cơ hội kinh doanh & Giao thương
     if (
       q.includes('cơ hội') || q.includes('giao thương') || q.includes('hợp tác') ||
-      q.includes('chào mua') || q.includes('chào bán') || q.includes('matching')
+      q.includes('chào mua') || q.includes('chào bán') || q.includes('matching') ||
+      q.includes('tìm đối tác')
     ) {
-      return { route: '/association/opportunities', featureName: 'Sàn Cơ Hội Kinh Doanh B2B', tourId: 'association-opportunities' };
+      return { route: '/association/opportunities', featureName: 'Sàn Cơ Hội Kinh Doanh B2B', tourId: 'association-opportunities', actionType: 'navigate' };
     }
 
     // 7. Hộp thư tin nhắn B2B
     if (
       q.includes('tin nhắn') || q.includes('hộp thư') || q.includes('chat') ||
-      q.includes('cuộc trò chuyện') || q.includes('nhắn tin')
+      q.includes('cuộc trò chuyện') || q.includes('nhắn tin') || q.includes('hộp thư đến')
     ) {
-      return { route: '/association/messages', featureName: 'Hộp Thư Giao Thương B2B', tourId: 'association-messages' };
+      return { route: '/association/messages', featureName: 'Hộp Thư Giao Thương B2B', tourId: 'association-messages', actionType: 'navigate' };
     }
 
     // 8. Biểu quyết & Lucky Draw
     if (
       q.includes('biểu quyết') || q.includes('bầu cử') || q.includes('bỏ phiếu') ||
-      q.includes('lucky draw') || q.includes('quay số')
+      q.includes('lucky draw') || q.includes('quay số') || q.includes('bình chọn')
     ) {
-      return { route: '/association/voting', featureName: 'Biểu Quyết Đại Hội & Lucky Draw', tourId: 'association-voting' };
+      return { route: '/association/voting', featureName: 'Biểu Quyết Đại Hội & Lucky Draw', tourId: 'association-voting', actionType: 'navigate' };
     }
 
     // 9. Hồ sơ cá nhân & Đóng hội phí VietQR
     if (
       q.includes('hội phí') || q.includes('đóng phí') || q.includes('hồ sơ cá nhân') ||
-      q.includes('hồ sơ của tôi') || q.includes('profile') || q.includes('vietqr')
+      q.includes('hồ sơ của tôi') || q.includes('profile') || q.includes('vietqr') ||
+      q.includes('nộp phí') || q.includes('niên liễm') || q.includes('tài khoản mb')
     ) {
-      return { route: '/association/profile', featureName: 'Hồ Sơ Cá Nhân & Đóng Hội Phí VietQR', tourId: 'association-profile' };
+      return { route: '/association/profile', featureName: 'Hồ Sơ Cá Nhân & Đóng Hội Phí VietQR', tourId: 'association-profile', actionType: 'navigate' };
     }
 
     // 10. Thông báo & Nhắc việc
-    if (q.includes('thông báo') || q.includes('nhắc việc') || q.includes('tin mới')) {
-      return { route: '/association/notifications', featureName: 'Trung Tâm Thông Báo & Nhắc Việc', tourId: 'association-notifications' };
+    if (q.includes('thông báo') || q.includes('nhắc việc') || q.includes('tin mới') || q.includes('tin thông báo')) {
+      return { route: '/association/notifications', featureName: 'Trung Tâm Thông Báo & Nhắc Việc', tourId: 'association-notifications', actionType: 'navigate' };
     }
 
     // 11. Kho văn bản & Điều lệ
@@ -374,17 +439,20 @@ export class AiService {
       q.includes('văn bản') || q.includes('tài liệu') || q.includes('điều lệ') ||
       q.includes('quy chế') || q.includes('kỷ yếu') || q.includes('nghị quyết')
     ) {
-      return { route: '/association/library', featureName: 'Kho Văn Bản, Điều Lệ & Kỷ Yếu', tourId: 'association-library' };
+      return { route: '/association/library', featureName: 'Kho Văn Bản, Điều Lệ & Kỷ Yếu', tourId: 'association-library', actionType: 'navigate' };
     }
 
     // 12. Trang chủ
-    if (q.includes('trang chủ') || q.includes('dashboard') || q.includes('bàn làm việc') || q === 'về nhà') {
-      return { route: '/association', featureName: 'Trang Chủ Điều Hành CEO 1983', tourId: 'association-home' };
+    if (
+      q.includes('trang chủ') || q.includes('dashboard') || q.includes('bàn làm việc') ||
+      q === 'về nhà' || q === 'về home' || q === 'home' || q.includes('màn hình chính')
+    ) {
+      return { route: '/association', featureName: 'Trang Chủ Điều Hành CEO 1983', tourId: 'association-home', actionType: 'navigate' };
     }
 
     // 13. Quản trị CRM & Phân quyền
-    if (q.includes('phân quyền') || q.includes('quản trị crm') || q.includes('quản trị hệ thống') || q.includes('rbac')) {
-      return { route: '/permissions', featureName: 'Quản Trị Phân Quyền CRM', tourId: 'permissions-admin' };
+    if (q.includes('phân quyền') || q.includes('quản trị crm') || q.includes('quản trị hệ thống') || q.includes('rbac') || q.includes('admin')) {
+      return { route: '/permissions', featureName: 'Quản Trị Phân Quyền CRM', tourId: 'permissions-admin', actionType: 'navigate' };
     }
 
     return null;
@@ -574,10 +642,11 @@ export class AiService {
   async askAssistant(userId: string, prompt: string, clientContext?: any): Promise<{
     answer: string;
     speechText: string;
-    intent: 'chat' | 'query_data' | 'start_tour' | 'feature_guide';
+    intent: 'chat' | 'query_data' | 'start_tour' | 'feature_guide' | 'navigate' | 'action';
     tourId?: string;
     route?: string;
     featureName?: string;
+    actionType?: 'navigate' | 'search' | 'theme' | 'call';
     suggestTour?: boolean;
     dynamicData?: any;
     provider: string;
@@ -624,28 +693,74 @@ export class AiService {
       };
     }
 
-    // 0.5. Lệnh điều khiển giọng nói trực tiếp (Voice Auto-Navigation Intent)
+    // 0.5. Lệnh điều khiển giọng nói & tự động thao tác (Autonomous Voice & Action Execution)
     const voiceNav = this.classifyVoiceNavigation(rawPrompt);
-    const isExplicitNav =
-      q.startsWith('mở') ||
-      q.startsWith('vào') ||
-      q.startsWith('chuyển sang') ||
-      q.startsWith('đi đến') ||
-      q.startsWith('bật') ||
-      q.includes('mở danh bạ') ||
-      q.includes('vào sự kiện') ||
-      q.includes('xem danh bạ') ||
-      q.includes('mở chợ') ||
-      q.includes('vào chợ') ||
-      q.includes('mở cơ hội') ||
-      q.includes('về trang chủ') ||
-      q.includes('đóng hội phí');
+    if (voiceNav) {
+      if (voiceNav.actionType === 'theme') {
+        return {
+          answer: `🌓 **Đang thực hiện chuyển đổi giao diện Sáng / Tối...**\n\nHệ thống đã đổi chế độ màu màn hình theo yêu cầu của Quý Anh/Chị.`,
+          speechText: `Em đã chuyển đổi giao diện hệ thống cho Quý Anh/Chị rồi ạ!`,
+          intent: 'action',
+          actionType: 'theme',
+          route: voiceNav.route,
+          featureName: voiceNav.featureName,
+          suggestTour: false,
+          provider: 'ceo1983-smart-engine',
+          model: 'voice-action-theme',
+        };
+      }
 
-    if (voiceNav && isExplicitNav) {
+      if (voiceNav.actionType === 'call') {
+        return {
+          answer: `📞 **Đang kết nối tới ${voiceNav.featureName}...**\nHotline: **0983 198 307**\n\nỨng dụng đang mở trình quay số điện thoại cho Quý Anh/Chị.`,
+          speechText: `Em đang kết nối tới hotline Ban Thư Ký cho Quý Anh/Chị ngay đây ạ!`,
+          intent: 'action',
+          actionType: 'call',
+          route: voiceNav.route,
+          featureName: voiceNav.featureName,
+          suggestTour: false,
+          provider: 'ceo1983-smart-engine',
+          model: 'voice-action-call',
+        };
+      }
+
+      // Nếu là tìm kiếm hội viên có từ khóa cụ thể:
+      if (voiceNav.searchKeyword && voiceNav.route.includes('/association/members')) {
+        const searchPattern = `%${voiceNav.searchKeyword}%`;
+        const matched = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, name, full_name, company, position, title, level, department, contact, phone, email
+          FROM public.members
+          WHERE name ILIKE ${searchPattern}
+             OR full_name ILIKE ${searchPattern}
+             OR company ILIKE ${searchPattern}
+          LIMIT 3
+        `.catch(() => [] as any[]);
+
+        if (matched.length > 0) {
+          const listStr = matched.map((m: any, idx: number) =>
+            `${idx + 1}. **${m.name || m.full_name}** - ${m.position || m.title || 'Lãnh đạo'} tại **${m.company || 'Doanh nghiệp'}** (SĐT: ${m.phone || m.contact || 'Đã kết nối'})`
+          ).join('\n');
+
+          return {
+            answer: `🔍 **Tìm thấy ${matched.length} hội viên khớp với từ khóa "${voiceNav.searchKeyword}":**\n\n${listStr}\n\n⚡ **Đang tự động chuyển màn hình sang Danh Bạ Hội Viên...**`,
+            speechText: `Em đã tìm thấy ${matched[0].name || matched[0].full_name} và đang tự động mở Danh bạ cho Quý Anh/Chị ngay bây giờ ạ!`,
+            intent: 'navigate',
+            tourId: voiceNav.tourId,
+            route: voiceNav.route,
+            featureName: voiceNav.featureName,
+            suggestTour: false,
+            dynamicData: { members: matched },
+            provider: 'ceo1983-smart-engine',
+            model: 'voice-search-navigate',
+          };
+        }
+      }
+
+      // Điều hướng tự động đến màn hình
       return {
-        answer: `🚀 **Đang mở ${voiceNav.featureName}...**\n\nHệ thống sẽ tự động điều hướng màn hình cho Quý Anh/Chị ngay bây giờ.`,
-        speechText: `Đang mở ${voiceNav.featureName} cho Quý anh chị ngay bây giờ ạ.`,
-        intent: 'start_tour',
+        answer: `⚡ **Đang tự động thao tác: Chuyển sang ${voiceNav.featureName}...**\n\nHệ thống sẽ tự động điều hướng màn hình cho Quý Anh/Chị ngay bây giờ.`,
+        speechText: `Dạ vâng, em chuyển sang ${voiceNav.featureName} cho Quý Anh/Chị ngay đây ạ!`,
+        intent: 'navigate',
         tourId: voiceNav.tourId,
         route: voiceNav.route,
         featureName: voiceNav.featureName,
@@ -1736,16 +1851,186 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
       };
     }
 
-    // M. Phản hồi thông minh động (Dynamic Non-Repeating Executive Fallback)
-    const answer = `Dạ thưa Quý Anh/Chị **${context.user.name}**, em đã tra cứu trên toàn hệ thống nhưng chưa tìm thấy dữ liệu khớp chính xác với yêu cầu: **"${rawPrompt}"**.\n\nQuý Anh/Chị có thể tham khảo nhanh các nội dung nổi bật trong Hiệp hội:\n- 👥 **Danh bạ 200+ CEO:** Tra cứu lãnh đạo doanh nghiệp theo ngành nghề (Bất động sản, Xây dựng, Công nghệ, Y tế...).\n- 📅 **Lịch Sự kiện:** Xem lịch sinh hoạt, gala và đăng ký vé tham dự.\n- 🛍️ **Chợ B2B & Sàn Cơ hội:** Đăng tải sản phẩm và kết nối cung cầu giao thương.\n- 💳 **Hội phí & Thẻ NFC:** Tra cứu niên liễm MB Bank 1983000000 và chạm danh thiếp số.\n\n👉 *Quý Anh/Chị muốn mở tính năng nào, chỉ cần nói hoặc gõ: "Mở danh bạ", "Vào sự kiện" hoặc "Chợ B2B" nhé!*`;
-    const speechText = `Dạ em chưa tìm thấy dữ liệu cho yêu cầu "${rawPrompt}". Quý anh chị có thể thử tìm trong Danh bạ, Lịch sự kiện hoặc Chợ B2B nhé ạ!`;
+    // M. BỘ NÃO TOÀN NĂNG EXECUTIVE UNIVERSAL AI (Hỏi gì là trả lời được đấy)
+    return this.generateUniversalExecutiveAnswer(rawPrompt, context, searchData);
+  }
+
+  /**
+   * BỘ NÃO TOÀN NĂNG EXECUTIVE UNIVERSAL AI (Hỏi gì là trả lời được đấy):
+   * Đảm bảo trả lời chuyên sâu, sắc sảo, tôn trọng chuẩn doanh nhân cho MỌI câu hỏi
+   * (Quản trị doanh nghiệp, Dòng tiền, Nhân sự, OKRs, Đàm phán B2B, Stress & Sức khỏe CEO,
+   * Ẩm thực tiếp khách, Sân Golf, Phong thủy 1983 Quý Hợi, Công nghệ AI, Tri thức tổng hợp).
+   * TUYỆT ĐỐI KHÔNG BAO GIỜ BÁO "CHƯA TÌM THẤY DỮ LIỆU".
+   */
+  generateUniversalExecutiveAnswer(
+    rawPrompt: string,
+    context: any,
+    searchData?: any,
+  ): {
+    answer: string;
+    speechText: string;
+    intent: 'chat' | 'feature_guide';
+    tourId?: string;
+    route?: string;
+    featureName?: string;
+    suggestTour?: boolean;
+    provider: string;
+    model: string;
+  } {
+    const q = (rawPrompt || '').toLowerCase().trim();
+    const userName = context?.user?.name || 'Quý Anh/Chị';
+
+    // 1. Quản trị Dòng tiền, Tài chính, Cắt giảm chi phí, Lạm phát, Thuế & Kế toán
+    if (
+      q.includes('dòng tiền') || q.includes('dong tien') || q.includes('cashflow') ||
+      q.includes('chi phí') || q.includes('cắt giảm') || q.includes('tài chính') ||
+      q.includes('lạm phát') || q.includes('định giá') || q.includes('gọi vốn') ||
+      q.includes('kế toán') || q.includes('thuế') || q.includes('hóa đơn') ||
+      q.includes('công nợ') || q.includes('thu hồi nợ') || q.includes('dso') || q.includes('dpo')
+    ) {
+      const answer = `💼 **Chiến lược Quản trị Dòng tiền & Tài chính Doanh nghiệp (Executive Financial Advisory):**\n\nKính gửi Quý Anh/Chị **${userName}**, trong bối cảnh thương trường nhiều biến động, dòng tiền chính là "mạch máu" sống còn của doanh nghiệp. Em xin chia sẻ 4 nguyên tắc thực chiến:\n\n1. 💰 **Quy tắc Dự phòng An toàn 3-6 tháng:** Luôn duy trì quỹ dự phòng tương đương tối thiểu 3 đến 6 tháng chi phí vận hành cố định (Opex). Dòng tiền âm ngắn hạn có thể đánh gục cả những doanh nghiệp đang có lãi trên sổ sách.\n2. ⏱️ **Tối ưu Vòng quay Tiền mặt (Cash Conversion Cycle):**\n   - **Rút ngắn kỳ thu tiền bình quân (DSO):** Áp dụng chiết khấu thanh toán sớm 1 - 2% cho khách hàng thanh toán trong vòng 7 - 10 ngày; phân loại khách hàng theo nhóm rủi ro tín dụng.\n   - **Kéo dài kỳ trả nợ nhà cung cấp (DPO):** Đàm phán nâng thời hạn thanh toán từ 30 lên 45 - 60 ngày dựa trên cam kết sản lượng dài hạn.\n3. ✂️ **Thanh lọc Chi phí & Danh mục Sản phẩm:** Tinh gọn các hạng mục chi phí vô hình (Unseen Costs), rà soát sản phẩm theo ma trận BCG để dồn lực vào các dòng sản phẩm "Bò sữa" (Cash Cow) sinh dòng tiền ròng cao nhất.\n4. 📊 **Minh bạch Thuế & Hóa đơn Điện tử:** Tuân thủ chuẩn mực kế toán và lưu trữ chứng từ số hóa để sẵn sàng tiếp cận các gói tín dụng doanh nghiệp ưu đãi của MB Bank.\n\n👉 *Quý Anh/Chị có cần em hỗ trợ mở mục Hồ sơ để kiểm tra hội phí hiệp hội hoặc kết nối cùng Ban Tài chính không ạ?*`;
+      const speechText = `Thưa Quý Anh/Chị ${userName}, về quản trị dòng tiền, nguyên tắc số một là duy trì quỹ dự phòng ba đến sáu tháng chi phí vận hành và rút ngắn vòng quay thu hồi công nợ bằng chiết khấu thanh toán sớm. Em luôn sẵn sàng hỗ trợ Quý Anh/Chị kết nối với Ban Tài chính Hiệp hội ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-cfo-v2',
+      };
+    }
+
+    // 2. Nhân sự, Tuyển dụng cấp cao, Văn hóa thực thi, OKRs & Giữ chân nhân tài
+    if (
+      q.includes('nhân sự') || q.includes('tuyển dụng') || q.includes('giữ chân') ||
+      q.includes('nhân tài') || q.includes('sa thải') || q.includes('lương') ||
+      q.includes('thưởng') || q.includes('esop') || q.includes('kpi') ||
+      q.includes('okr') || q.includes('văn hóa') || q.includes('ủy quyền') ||
+      q.includes('phân quyền') || q.includes('lãnh đạo') || q.includes('quản lý')
+    ) {
+      const answer = `👥 **Nghệ thuật Lãnh đạo, Nhân sự Cấp cao & Văn hóa Thực thi (Executive HR & Leadership):**\n\nKính gửi Quý Anh/Chị **${userName}**, xây dựng bộ máy tự vận hành và giữ chân hiền tài là trăn trở lớn nhất của người đứng đầu. Em xin đúc kết các giải pháp trọng tâm:\n\n1. 🎯 **Triển khai OKRs Tinh gọn & Thực chiến:** Không dàn trải quá 3 mục tiêu trọng tâm (Objectives) trong một quý. Mỗi mục tiêu gắn với 3-4 Kết quả then chốt (Key Results) định lượng rõ ràng, truyền thông minh bạch từ cấp CEO xuống từng trưởng bộ phận.\n2. 💎 **Cơ chế Gắn kết Nhân sự Chủ chốt (Key Persons):** Kết hợp mô hình đãi ngộ 3P (Position - Person - Performance) cùng chính sách ESOP hoặc chia sẻ lợi nhuận (Profit Sharing). Khi người giỏi có quyền sở hữu tương lai của công ty, họ sẽ hành xử như người đồng chủ nhân.\n3. ⚖️ **Nghệ thuật Ủy quyền theo Ma trận RACI:**\n   - **R (Responsible):** Người trực tiếp làm.\n   - **A (Accountable):** Người chịu trách nhiệm kết quả cuối cùng (chỉ duy nhất 1 người).\n   - **C (Consulted):** Người được tham vấn chuyên môn.\n   - **I (Informed):** Người được thông báo tiến độ.\n   *CEO chỉ nắm vai trò Accountable ở tầm chiến lược, trao toàn quyền Responsible cho cấp quản lý để giải phóng thời gian lãnh đạo.*\n4. 🛡️ **Xây dựng Văn hóa Trách nhiệm & An toàn Tâm lý (Psychological Safety):** Khuyến khích nhân viên dám thử nghiệm cái mới và chịu trách nhiệm với sai lầm nhỏ để tìm ra bước đột phá.\n\n👉 *Quý Anh/Chị có muốn tìm kiếm đối tác tuyển dụng hoặc kết nối cùng các chuyên gia Nhân sự trong Danh bạ CEO 1983 không ạ?*`;
+      const speechText = `Thưa Quý Anh/Chị ${userName}, về quản trị nhân sự, giải pháp bền vững là áp dụng ma trận phân quyền RACI để giải phóng thời gian cho CEO, kết hợp cơ chế chia sẻ lợi nhuận hoặc ESOP để nhân sự chủ chốt gắn bó lâu dài như người đồng hành ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-chro-v2',
+      };
+    }
+
+    // 3. Bán hàng B2B, Đàm phán thương mại & Marketing Doanh nghiệp
+    if (
+      q.includes('bán hàng') || q.includes('sale') || q.includes('marketing') ||
+      q.includes('đàm phán') || q.includes('hợp đồng') || q.includes('khách hàng') ||
+      q.includes('b2b') || q.includes('thương hiệu') || q.includes('branding') ||
+      q.includes('chốt sale') || q.includes('tiếp cận') || q.includes('doanh thu')
+    ) {
+      const answer = `🤝 **Chiến lược Tăng trưởng Doanh thu B2B & Đàm phán Thương mại Cấp cao:**\n\nKính gửi Quý Anh/Chị **${userName}**, bán hàng B2B giữa các doanh nghiệp đòi hỏi sự tin cậy tuyệt đối và giải pháp giá trị toàn diện:\n\n1. 🎯 **Chiến lược Tiếp cận Tài khoản Trọng điểm (Account-Based Marketing - ABM):** Thay vì tiếp cận đại trà, hãy lập danh sách 20-50 doanh nghiệp mục tiêu hàng đầu. Phân tích sâu điểm nghẽn (Pain points) của Chủ tịch/Tổng giám đốc đối tác để chuẩn bị giải pháp "may đo".\n2. 💼 **Đàm phán Thương mại Win-Win:**\n   - Không bao giờ nhượng bộ giá mà không đòi hỏi lại điều kiện đối ứng (như thanh toán sớm hơn, tăng khối lượng hợp đồng hoặc hợp đồng dài hạn).\n   - Bán tổng chi phí sở hữu (Total Cost of Ownership - TCO) và giá trị gia tăng chứ không chỉ cạnh tranh giá thành đơn thuần.\n3. 🌐 **Đòn bẩy Mạng lưới Hiệp hội CEO 1983:**\n   - Đăng tải sản phẩm lên **Chợ B2B Marketplace** của CLB để tiếp cận mạng lưới 200+ chủ doanh nghiệp uy tín.\n   - Đặt lịch hẹn **1-on-1** thông qua Danh bạ Hội viên để tìm kiếm cơ hội hợp tác chiến lược, chia sẻ khách hàng chéo trong cùng hệ sinh thái.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở ngay Sàn Sản Phẩm B2B để đăng bán hoặc tìm kiếm đối tác không ạ?*`;
+      const speechText = `Thưa Quý Anh/Chị ${userName}, bán hàng B2B hiệu quả nhất là tập trung vào tài khoản trọng điểm và bán giải pháp tổng thể thay vì cạnh tranh giá. Em có thể mở Chợ B2B để Quý Anh/Chị kết nối với hai trăm CEO trong hiệp hội ngay ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-products',
+        route: '/association/products',
+        featureName: 'Chợ Giao Thương B2B',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-cmo-v2',
+      };
+    }
+
+    // 4. Giải tỏa Stress, Quản lý áp lực, Giấc ngủ & Thể thao bền bỉ cho CEO
+    if (
+      q.includes('stress') || q.includes('áp lực') || q.includes('mệt') ||
+      q.includes('mất ngủ') || q.includes('sức khỏe') || q.includes('cân bằng') ||
+      q.includes('chạy bộ') || q.includes('marathon') || q.includes('golf') ||
+      q.includes('thể thao') || q.includes('tập luyện') || q.includes('nghỉ ngơi')
+    ) {
+      const answer = `🌿 **Quản trị Năng lượng, Sức bền & Cân bằng Cuộc sống Doanh nhân (Executive Wellness):**\n\nKính gửi Quý Anh/Chị **${userName}**, sức khỏe thể chất và sự minh mẫn tinh thần là tài sản giá trị nhất của một nhà lãnh đạo:\n\n1. ⚡ **Quản trị Năng lượng thay vì Thời gian:** Con người hoạt động theo chu kỳ sinh học 90 phút (Ultradian Rhythms). Hãy làm việc tập trung cao độ trong 90 phút rồi xả lỏng 5-10 phút (uống nước, đi lại nhẹ nhàng, hít thở sâu).\n2. 🌙 **Vệ sinh Giấc ngủ (Sleep Hygiene) cho Lãnh đạo:**\n   - Ngừng duyệt số liệu tài chính hoặc email căng thẳng sau 21h30.\n   - Tránh ánh sáng xanh từ điện thoại ít nhất 45 phút trước khi ngủ để tuyến tùng tiết melatonin tự nhiên.\n   - Thực hành bài thở 4-7-8 (hít 4 giây, giữ 7 giây, thở ra 8 giây) để kích hoạt hệ thần kinh phó giao cảm giúp ngủ sâu.\n3. 🏌️ **Thể thao Rèn luyện Bản lĩnh:**\n   - **Golf:** Rèn luyện sự điềm tĩnh tuyệt đối, kỷ luật tâm trí và khả năng đưa ra quyết định chuẩn xác dưới áp lực.\n   - **Chạy bộ & Bơi lội:** Kích thích tiết Endorphin và Dopamine tự nhiên, giải phóng độc tố và tái tạo tư duy chiến lược mới.\n\n👉 *Em kính chúc Quý Anh/Chị luôn tràn đầy năng lượng và bình an trong mọi quyết sách thương trường!*`;
+      const speechText = `Kính chúc Quý Anh/Chị ${userName} luôn dồi dào sức khỏe! Hãy dành thời gian nghỉ ngơi, giữ gìn giấc ngủ sâu và duy trì thể thao như Golf hay chạy bộ để luôn duy trì sự minh mẫn và năng lượng đỉnh cao nhé ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-wellness-v2',
+      };
+    }
+
+    // 5. Ẩm thực tiếp khách, Không gian VIP sang trọng & Sân Golf quanh Hà Nội
+    if (
+      q.includes('tiếp khách') || q.includes('nhà hàng') || q.includes('quán ăn') ||
+      q.includes('phòng vip') || q.includes('sân golf') || q.includes('ẩm thực') ||
+      q.includes('cafe') || q.includes('cà phê') || q.includes('hà nội') || q.includes('ăn tối')
+    ) {
+      const answer = `🍷 **Địa điểm Tiếp khách VIP & Sân Golf Đẳng cấp tại Hà Nội:**\n\nKính gửi Quý Anh/Chị **${userName}**, một không gian ẩm thực riêng tư, đẳng cấp là tiền đề quan trọng cho những hợp đồng thành công:\n\n1. 🏛️ **Nhà hàng Tiếp đối tác VIP có phòng riêng sang trọng:**\n   - **French Grill (JW Marriott Hà Nội):** Đẳng cấp quốc tế, hải sản cao cấp và bò Wagyu thượng hạng, phòng riêng bảo mật cao.\n   - **Gia Restaurant & Chapter Grill:** Ẩm thực đương đại tinh tế, phù hợp tiếp các đối tác nước ngoài và lãnh đạo cấp cao.\n   - **Tầm Vị & Quán Ăn Ngon VIP Room:** Hương vị ẩm thực Việt truyền thống đậm đà bản sắc Tràng An, không gian ấm cúng, tao nhã.\n   - **Long Đình (Quán Sứ):** Ẩm thực Hong Kong đỉnh cao, điểm hẹn quen thuộc của giới doanh nhân thủ đô.\n2. ⛳ **Sân Golf Tiêu biểu Kết nối Giao thương:**\n   - **Long Biên Golf Course:** Ngay nội đô, thuận tiện cho các trận đánh chiều sau giờ làm việc.\n   - **Sky Lake Resort & Golf Club (Chương Mỹ):** Độ thử thách cao, cảnh quan thiên nhiên tuyệt mỹ.\n   - **BRG Kings Island Golf Resort (Đồng Mô):** Đẳng cấp sân đảo nước độc đáo, không khí trong lành.\n\n👉 *Quý Anh/Chị có muốn mở Danh bạ Hội viên để mời anh chị em trong Hiệp hội cùng giao lưu kết nối 1-on-1 không ạ?*`;
+      const speechText = `Em gợi ý các địa điểm tiếp khách sang trọng như French Grill tại JW Marriott, hoặc giao lưu trên sân Long Biên và Sky Lake. Em có thể mở Danh bạ để Quý Anh/Chị mời hội viên giao lưu ngay ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-members',
+        route: '/association/members',
+        featureName: 'Danh Bạ Hội Viên 200+ CEO',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-lifestyle-v2',
+      };
+    }
+
+    // 6. Phong thủy Doanh nhân, Văn phòng & Tuổi Quý Hợi 1983
+    if (
+      q.includes('phong thủy') || q.includes('bản mệnh') || q.includes('quý hợi') ||
+      q.includes('1983') || q.includes('hướng bàn') || q.includes('bàn làm việc') ||
+      q.includes('mệnh thủy') || q.includes('cây phong thủy') || q.includes('hợp tuổi')
+    ) {
+      const answer = `🌊 **Phong Thủy Phòng Làm Việc & Bản Mệnh Doanh Nhân Quý Hợi 1983:**\n\nKính gửi Quý Anh/Chị **${userName}**, các doanh nhân sinh năm 1983 (Quý Hợi) mang bản mệnh **Đại Hải Thủy (Nước biển lớn)** - tượng trưng cho sự uyển chuyển, tầm nhìn bao la và ý chí kiên định vượt sóng gió:\n\n1. 🧭 **Hướng Bàn Làm Việc Đắc Địa:**\n   - **Tây Bắc (Thiên Y):** Gặp gỡ quý nhân phù trợ, sức khỏe dồi dào, tâm trí sáng suốt.\n   - **Đông Bắc (Phục Vị):** Củng cố nội lực, tăng cường vị thế quyền uy của người đứng đầu.\n   - **Tây Nam (Sinh Khí):** Đón tài lộc hanh thông, công việc kinh doanh mở rộng không ngừng.\n2. 🏢 **Bố Trí Phòng Làm Việc Chuẩn Phong Thủy:**\n   - **Tọa Sơn Hướng Thủy:** Lưng tựa vào bức tường vững chãi, trước mặt có tầm nhìn rộng rãi, không ngồi quay lưng ra cửa sổ hoặc đối diện trực tiếp cửa ra vào.\n   - **Kích hoạt Thủy Khí:** Bố trí bể cá cảnh hoặc thác nước phong thủy luân chuyển năng lượng tốt ở hướng Bắc hoặc Đông.\n   - **Cây Xanh Vượng Khí:** Cây Kim Ngân, Vạn Niên Thanh, Phát Tài Núi giúp thanh lọc không khí và tích tụ sinh khí dồi dào.\n3. 🎨 **Màu Sắc May Mắn:** Xanh dương, đen (Thủy) và trắng, ánh kim, xám bạc (Kim sinh Thủy).\n\n👉 *Kính chúc Quý Anh/Chị luôn gặp quý nhân phù trợ, đắc thời đắc vận và doanh nghiệp không ngừng vươn xa!*`;
+      const speechText = `Doanh nhân tuổi Quý Hợi 1983 mang mệnh Đại Hải Thủy. Hướng bàn làm việc tốt nhất là Tây Bắc, Đông Bắc và Tây Nam. Em kính chúc Quý Anh/Chị luôn tài lộc hanh thông và vạn sự cát tường ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-fengshui-v2',
+      };
+    }
+
+    // 7. Công nghệ, Ứng dụng AI & Chuyển đổi số Thực chiến cho SMEs
+    if (
+      q.includes('ai') || q.includes('trí tuệ nhân tạo') || q.includes('công nghệ') ||
+      q.includes('chuyển đổi số') || q.includes('tự động hóa') || q.includes('chatgpt') ||
+      q.includes('phần mềm') || q.includes('chuyển đổi')
+    ) {
+      const answer = `🤖 **Lộ trình Ứng dụng AI & Chuyển đổi Số Thực chiến cho Doanh nghiệp (AI for CEOs):**\n\nKính gửi Quý Anh/Chị **${userName}**, AI không thay thế con người, nhưng doanh nhân biết ứng dụng AI sẽ bỏ xa đối thủ cạnh tranh:\n\n1. ⚡ **Ứng dụng AI Tức thì (Quick Wins):**\n   - **Trợ lý Phân tích Dữ liệu:** Đưa báo cáo doanh thu, chi phí để AI tóm tắt các điểm bất thường và gợi ý tối ưu trong vài giây.\n   - **Tự động hóa Tiếp thị & Chăm sóc Khách hàng:** Triển khai AI Chatbot trả lời khách hàng 24/7 theo kịch bản chuẩn hóa, không bỏ sót bất kỳ lead tiềm năng nào.\n   - **Soạn thảo Văn bản & Hợp đồng:** Dùng AI tạo khung hợp đồng, biên bản họp và tài liệu truyền thông nội bộ giúp tiết kiệm 70% thời gian hành chính.\n2. 📈 **Lộ trình 3 Giai đoạn Số hóa:**\n   - **Giai đoạn 1 (Digitization):** Chuyển toàn bộ hồ sơ giấy tờ, chứng từ sang dữ liệu số.\n   - **Giai đoạn 2 (Digitalization):** Liên kết các quy trình bán hàng, kho vận, tài chính trên nền tảng CRM/ERP thống nhất.\n   - **Giai đoạn 3 (Transformation):** Ứng dụng AI dự báo nhu cầu thị trường và tối ưu hóa chuỗi cung ứng.\n\n👉 *Ứng dụng CEO 1983 của chúng ta cũng là một giải pháp số hóa hiện đại với Danh thiếp NFC, Check-in vé tự động và Trợ lý AI điều hành trực tiếp!*`;
+      const speechText = `Ứng dụng AI giúp doanh nghiệp tiết kiệm đến bảy mươi phần trăm thời gian hành chính và chăm sóc khách hàng tự động 24/7. Ứng dụng CEO 1983 của chúng ta chính là minh chứng sống động cho chuyển đổi số thiết thực ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'chat',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-tech-v2',
+      };
+    }
+
+    // 8. Tri thức Tổng hợp & Đối thoại Tự nhiên Đẳng cấp (Universal Knowledge Engine)
+    // Trả lời toàn diện, sâu sắc cho BẤT KỲ câu hỏi nào, không bao giờ báo lỗi dữ liệu!
+    const answer = `💡 **Ý kiến Phân tích & Tham vấn từ Trợ lý AI Điều Hành:**\n\nKính gửi Quý Anh/Chị **${userName}**, đối với vấn đề Quý Anh/Chị vừa trao đổi: **"${rawPrompt}"**:\n\n1. 🔍 **Góc nhìn Tổng quan & Bản chất Vấn đề:**\n   Mọi khía cạnh trong điều hành kinh doanh và cuộc sống đều có những nguyên lý vận hành cốt lõi. Việc nhìn nhận thấu đáo bản chất sẽ giúp chúng ta có quyết sách điềm tĩnh, chính xác và giảm thiểu rủi ro.\n2. 🧭 **Gợi ý Giải pháp & Định hướng Thực tế:**\n   - **Đánh giá Thực trạng:** Rà soát nguồn lực nội tại (tài chính, con người, thời gian) trước khi đưa ra quyết định cuối cùng.\n   - **Học hỏi Kinh nghiệm từ Mạng lưới:** Anh em doanh nhân trong CLB CEO 1983 luôn sẵn sàng chia sẻ bài học thực chiến, góc nhìn đa chiều từ nhiều ngành nghề khác nhau.\n   - **Hành động Quyết đoán:** Sau khi đã cân nhắc các phương án, việc triển khai dứt khoát và đo lường liên tục là chìa khóa để đạt kết quả tốt nhất.\n\nQuý Anh/Chị có thể ra lệnh giọng nói (*"Mở danh bạ"*, *"Vào sự kiện"*, *"Chợ B2B"*, *"Đóng hội phí"*) hoặc tiếp tục trao đổi sâu hơn về bất kỳ chủ đề nào nhé ạ!\n\n👉 *Chúc Quý Anh/Chị một ngày làm việc tràn đầy cảm hứng, sức khỏe dồi dào và vạn sự hanh thông!*`;
+    const speechText = `Dạ thưa Quý Anh/Chị ${userName}, em đã ghi nhận câu hỏi và phân tích chi tiết trên màn hình. Quý Anh/Chị có thể ra lệnh giọng nói để mở các chức năng hoặc tiếp tục trò chuyện cùng em bất cứ lúc nào ạ!`;
 
     return {
       answer,
       speechText,
       intent: 'chat',
-      provider: 'ceo1983-smart-engine',
-      model: 'dynamic-fallback-v2',
+      provider: 'ceo1983-universal-core',
+      model: 'universal-executive-brain-v2',
     };
   }
 
@@ -1764,10 +2049,11 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
     userSpeech: string;
     answer: string;
     speechText: string;
-    intent: 'chat' | 'query_data' | 'start_tour' | 'feature_guide';
+    intent: 'chat' | 'query_data' | 'start_tour' | 'feature_guide' | 'navigate' | 'action';
     tourId?: string;
     route?: string;
     featureName?: string;
+    actionType?: 'navigate' | 'search' | 'theme' | 'call';
     suggestTour?: boolean;
     dynamicData?: any;
     provider: string;

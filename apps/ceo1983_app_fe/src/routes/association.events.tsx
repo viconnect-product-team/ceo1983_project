@@ -53,6 +53,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
+import {
+  EventRegisteredTicketsModal,
+  EventDetailModal,
+  EventRegistrationModal,
+  EventSuccessNoticeModal,
+  EventTicketPassModal,
+} from "@/components/events/modals";
 
 export const Route = createFileRoute("/association/events")({
   component: EventsScreen,
@@ -1503,979 +1510,149 @@ function EventsScreen() {
       </div>
 
 
-      {/* ── MODAL DANH SÁCH TẤT CẢ VÉ SỰ KIỆN ĐÃ ĐĂNG KÝ (PHÂN BIỆT RÕ RÀNG TỪNG SỰ KIỆN) ── */}
-      <Dialog open={allTicketsModalOpen} onOpenChange={setAllTicketsModalOpen}>
-        <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-0 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl">
-          <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
-            <div className="flex items-center gap-2.5">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                <Ticket className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  Danh sách vé sự kiện của bạn
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {registeredEvents.length > 0
-                    ? `Hiện bạn đang có ${registeredEvents.length} vé tham gia sự kiện`
-                    : "Chưa có vé sự kiện nào được đăng ký"}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAllTicketsModalOpen(false)}
-              className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+      {/* ── MODALS EXTRACTED ── */}
+      <EventRegisteredTicketsModal
+        open={allTicketsModalOpen}
+        onOpenChange={setAllTicketsModalOpen}
+        registeredEvents={registeredEvents}
+        events={events}
+        member={member}
+        user={user}
+        isEventFree={isEventFree}
+        getEventAgenda={getEventAgenda}
+        formatDisplayDate={formatDisplayDate}
+        makeTicketQrUrl={makeTicketQrUrl}
+        onExploreEvents={() => setAllTicketsModalOpen(false)}
+      />
 
-          <div className="p-4 sm:p-5 space-y-4">
-            {registeredEvents.length === 0 ? (
-              <div className="py-12 text-center space-y-3">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
-                  <Ticket className="h-8 w-8" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Bạn chưa có vé tham dự sự kiện nào
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                    Hãy duyệt danh sách sự kiện và đăng ký để nhận mã vé điện tử & QR check-in nhé!
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAllTicketsModalOpen(false)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#232677] transition cursor-pointer"
-                >
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>Khám phá sự kiện ngay</span>
-                </button>
-              </div>
-            ) : (
-              registeredEvents.map((e, idx) => {
-                const evIdx = events.findIndex((x) => x.id === e.id);
-                const invoiceCode = `REG-${e.id.slice(0, 8).toUpperCase()}`;
-                const lucky = `#${(1000 + (evIdx >= 0 ? evIdx : 1) * 337) % 9000 + 1000}`;
-                const isFree = isEventFree(e);
-                const agenda = getEventAgenda(e, evIdx >= 0 ? evIdx : idx);
-                const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
-                const attendeePhone = member?.phone || "";
-                const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
-                const attendeePosition = member?.title || "Hội viên chính thức";
-                const seatAssignment = `Bàn VIP ${(evIdx >= 0 ? evIdx + 1 : idx + 1).toString().padStart(2, "0")} - Ghế 02`;
-                const qrUrl = makeTicketQrUrl({
-                  ticketCode: invoiceCode,
-                  attendeeName,
-                  attendeePhone,
-                  attendeeCompany,
-                  attendeePosition,
-                  eventTitle: e.title,
-                  eventDate: e.date ? formatDisplayDate(e.date) : `${e.day} ${e.month}, 2026`,
-                  eventLocation: e.place || "Hà Nội",
-                  ticketType: isFree ? "Vé Miễn Phí (Standard)" : "VIP Standard Pass",
-                  seatAssignment,
-                  luckyNumber: lucky,
-                  ticketCount: 1,
-                });
+      <EventDetailModal
+        selectedEvent={selectedEvent}
+        events={events}
+        onClose={() => setSelectedEvent(null)}
+        defaultEventImages={defaultEventImages}
+        resolveMediaUrl={resolveMediaUrl}
+        getEventAgenda={getEventAgenda}
+        formatDisplayDate={formatDisplayDate}
+        isEventFree={isEventFree}
+        getEventPrice={getEventPrice}
+        isRegistered={isRegistered}
+        onViewPass={(e) => {
+          const invNo = `EV-${e.id.slice(0, 8).toUpperCase()}`;
+          const isFree = isEventFree(e);
+          const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
+          const attendeePhone = member?.phone || "";
+          const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
+          const attendeePosition = member?.title || "Hội viên chính thức";
+          const ticketQr = makeTicketQrUrl({
+            ticketCode: invNo,
+            attendeeName,
+            attendeePhone,
+            attendeeCompany,
+            attendeePosition,
+            eventTitle: e.title,
+            eventDate: e.date ? formatDisplayDate(e.date) : "Sắp diễn ra",
+            eventLocation: e.place || "Địa điểm tổ chức sự kiện",
+            ticketType: isFree ? "Vé Miễn Phí" : "Standard VIP",
+            seatAssignment: "Bàn VIP 08 - Ghế 02",
+            luckyNumber: "#1983",
+            ticketCount: 1,
+          });
+          setTicketPassModal({
+            eventTitle: e.title,
+            ticketCode: invNo,
+            luckyNumber: "#1983",
+            ticketType: isFree ? "Vé Miễn Phí" : "Standard VIP",
+            ticketCount: 1,
+            isFree,
+            date: e.date ? formatDisplayDate(e.date) : "Sắp diễn ra",
+            time: e.time || "Theo lịch trình sự kiện",
+            location: e.place || "Địa điểm tổ chức sự kiện",
+            attendeeName,
+            attendeePhone,
+            attendeeCompany,
+            attendeePosition,
+            qrUrl: ticketQr,
+          });
+        }}
+        onUnregister={(eventId, evt) => unregister(eventId, evt)}
+        onOpenRegister={(evtObj, evt) => handleOpenRegister(evtObj, evt)}
+        busy={busy}
+      />
 
-                const borderColors = [
-                  "border-l-[#2E3192] border-t-blue-100 dark:border-t-blue-900/30",
-                  "border-l-purple-600 border-t-purple-100 dark:border-t-purple-900/30",
-                  "border-l-emerald-600 border-t-emerald-100 dark:border-t-emerald-900/30",
-                  "border-l-amber-500 border-t-amber-100 dark:border-t-amber-900/30",
-                ];
-                const badgeBgs = [
-                  "bg-blue-600 text-white",
-                  "bg-purple-600 text-white",
-                  "bg-emerald-600 text-white",
-                  "bg-amber-600 text-white",
-                ];
+      <EventRegistrationModal
+        registeringEvent={registeringEvent}
+        onClose={() => setRegisteringEvent(null)}
+        onSubmit={handleConfirmRegistration}
+        formName={formName}
+        setFormName={setFormName}
+        formPhone={formPhone}
+        setFormPhone={setFormPhone}
+        formEmail={formEmail}
+        setFormEmail={setFormEmail}
+        formCompany={formCompany}
+        setFormCompany={setFormCompany}
+        formPosition={formPosition}
+        setFormPosition={setFormPosition}
+        formTicketCount={formTicketCount}
+        setFormTicketCount={setFormTicketCount}
+        formTicketType={formTicketType}
+        setFormTicketType={setFormTicketType}
+        formNote={formNote}
+        setFormNote={setFormNote}
+        submittingReg={submittingReg}
+        isEventFree={isEventFree}
+      />
 
-                return (
-                  <div
-                    key={e.id}
-                    className={`relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden border-l-4 ${
-                      borderColors[idx % borderColors.length]
-                    }`}
-                  >
-                    {/* Header phân biệt rõ ràng vé sự kiện số mấy */}
-                    <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs ${
-                            badgeBgs[idx % badgeBgs.length]
-                          }`}
-                        >
-                          Sự kiện #{idx + 1}
-                        </span>
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-[200px] sm:max-w-xs">
-                          {agenda.category || "HỘI NGHỊ DOANH NHÂN"}
-                        </span>
-                      </div>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                        <Check className="h-3 w-3 stroke-[2.5]" /> Đã xác nhận
-                      </span>
-                    </div>
+      <EventSuccessNoticeModal
+        registeredSuccessInfo={registeredSuccessInfo}
+        onClose={() => setRegisteredSuccessInfo(null)}
+        onViewPass={(info) => {
+          setRegisteredSuccessInfo(null);
+          const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
+          const attendeePhone = member?.phone || "";
+          const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
+          const attendeePosition = member?.title || "Hội viên chính thức";
+          const ticketQr = makeTicketQrUrl({
+            ticketCode: info.invoiceNo,
+            attendeeName,
+            attendeePhone,
+            attendeeCompany,
+            attendeePosition,
+            eventTitle: info.eventTitle,
+            eventDate: info.event?.date ? formatDisplayDate(info.event.date) : "Sắp diễn ra",
+            eventLocation: info.event?.place || "Địa điểm tổ chức sự kiện",
+            ticketType: Boolean(info.isFree || info.totalAmount === 0) ? "Vé Miễn Phí" : "Standard VIP",
+            seatAssignment: "Bàn VIP 08 - Ghế 02",
+            luckyNumber: info.luckyNumber || "#1983",
+            ticketCount: info.ticketCount,
+          });
+          setTicketPassModal({
+            eventTitle: info.eventTitle,
+            ticketCode: info.invoiceNo,
+            luckyNumber: info.luckyNumber || "#1983",
+            ticketType: Boolean(info.isFree || info.totalAmount === 0) ? "Vé Miễn Phí" : "Standard VIP",
+            ticketCount: info.ticketCount,
+            isFree: Boolean(info.isFree || info.totalAmount === 0),
+            date: info.event?.date ? formatDisplayDate(info.event.date) : "Sắp diễn ra",
+            time: info.event?.time || "Theo lịch trình sự kiện",
+            location: info.event?.place || "Địa điểm tổ chức sự kiện",
+            attendeeName,
+            attendeePhone,
+            attendeeCompany,
+            attendeePosition,
+            qrUrl: ticketQr,
+          });
+        }}
+        onGoToMessages={() => {
+          setRegisteredSuccessInfo(null);
+          navigate({ to: "/association/messages", search: { peerCode: "admin" } });
+        }}
+      />
 
-                    {/* Nội dung vé & thông tin sự kiện */}
-                    <div className="p-4 flex flex-col sm:flex-row items-center gap-4">
-                      {/* Cột QR Code với scan badge */}
-                      <div className="flex flex-col items-center gap-1.5 shrink-0">
-                        <div className="relative p-2 rounded-2xl bg-white border border-slate-200 dark:border-slate-700 shadow-xs">
-                          <img
-                            src={qrUrl}
-                            alt={`Mã QR vé ${e.title}`}
-                            className="h-28 w-28 object-contain"
-                          />
-                          <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 border-t-2 border-dashed border-rose-500/40 pointer-events-none" />
-                        </div>
-                        <span className="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                          Quét check-in
-                        </span>
-                      </div>
-
-                      {/* Cột thông tin sự kiện và vé */}
-                      <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
-                        <div>
-                          <h4 className="text-sm font-black text-slate-900 dark:text-white line-clamp-2 leading-snug">
-                            {e.title}
-                          </h4>
-                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                            {agenda.subtitle}
-                          </p>
-                        </div>
-
-                        {/* Metadata chip strip */}
-                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                          <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg font-medium">
-                            <Clock className="h-3 w-3 text-[#2E3192] dark:text-amber-400" />
-                            {e.time || "08:00"} · Ngày {e.date ? formatDisplayDate(e.date) : `${e.day} ${e.month}, 2026`}
-                          </span>
-                          <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg font-medium truncate max-w-[180px]">
-                            <MapPin className="h-3 w-3 text-rose-500" />
-                            {e.place || "Hà Nội"}
-                          </span>
-                        </div>
-
-                        {/* Ticket Code & Lucky number */}
-                        <div className="flex items-center justify-center sm:justify-start gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <div>
-                            <span className="text-[9.5px] text-slate-400 block font-medium">MÃ VÉ</span>
-                            <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">
-                              {invoiceCode}
-                            </span>
-                          </div>
-                          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
-                          <div>
-                            <span className="text-[9.5px] text-slate-400 block font-medium">SỐ MAY MẮN</span>
-                            <span className="font-mono text-xs font-extrabold text-amber-600 dark:text-amber-400">
-                              {lucky}
-                            </span>
-                          </div>
-                          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
-                          <div>
-                            <span className="text-[9.5px] text-slate-400 block font-medium">LOẠI VÉ</span>
-                            <span className="text-xs font-bold text-[#2E3192] dark:text-blue-400">
-                              {isFree ? "Miễn phí" : "VIP Pass"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Full Screen Ticket Action */}
-                        <div className="pt-2 flex items-center justify-center sm:justify-start gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAllTicketsModalOpen(false);
-                              setTicketPassModal({
-                                eventTitle: e.title,
-                                ticketCode: invoiceCode,
-                                luckyNumber: lucky,
-                                ticketType: isFree ? "Vé Miễn Phí (Standard)" : "VIP Standard Pass",
-                                ticketCount: 1,
-                                isFree,
-                                date: e.date ? formatDisplayDate(e.date) : `${e.day} ${e.month}, 2026`,
-                                time: e.time || "08:00",
-                                location: e.place || "Hà Nội",
-                                attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
-                                attendeePhone: member?.phone || "",
-                                attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
-                                attendeePosition: member?.title || "Hội viên chính thức",
-                                qrUrl,
-                              });
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
-                          >
-                            <QrCode className="h-3.5 w-3.5" />
-                            <span>Mở thẻ vé toàn màn hình</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL 1: XEM CHI TIẾT SỰ KIỆN (IMAGE 4 POSTER & HIGHLIGHTS) */}
-      {selectedEvent && (() => {
-        const selectedIndex = events.findIndex((x: any) => x.id === selectedEvent.id);
-        const rawSelImg = (selectedEvent as any).image;
-        const selectedImg = (rawSelImg ? resolveMediaUrl(rawSelImg) || rawSelImg : null) || defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];
-        const selectedAgenda = getEventAgenda(selectedEvent, selectedIndex >= 0 ? selectedIndex : 0);
-
-        return (
-          <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-            <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto p-0 rounded-3xl border-amber-400/40 bg-[var(--vba-surface,#fff)]">
-              {/* Poster Banner Header with Golden Swoosh Effect */}
-              <div className="relative min-h-52 w-full overflow-hidden bg-gradient-to-br from-[#040C20] via-[#091D54] to-[#020714] p-4 text-white flex flex-col justify-between">
-                <img
-                  src={selectedImg}
-                  alt={selectedEvent.title}
-                  className="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-luminosity pointer-events-none"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#020714] via-[#081B4B]/80 to-transparent pointer-events-none" />
-
-                <div className="relative z-10 flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 px-2.5 py-0.5 text-[10.5px] font-black text-amber-300 shadow-sm border border-amber-400/50 uppercase">
-                    <Sparkles className="h-3 w-3" />
-                    {selectedAgenda.category}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedEvent(null)}
-                    className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="relative z-10 mt-3">
-                  <h3 className="text-[18px] sm:text-[20px] font-black text-white line-clamp-2 leading-tight drop-shadow-md">
-                    {selectedEvent.title}
-                  </h3>
-                  <p className="text-[11px] text-amber-300/90 font-bold tracking-wide uppercase mt-0.5">
-                    {selectedAgenda.subtitle}
-                  </p>
-                </div>
-
-                {/* Countdown Timer on Modal Banner */}
-                <div className="relative z-10 mt-3 pt-2.5 border-t border-white/15">
-                  <EventCountdownBanner event={selectedEvent} index={selectedIndex >= 0 ? selectedIndex : 0} />
-                </div>
-              </div>
-
-              {/* 3-Column Metadata Strip under Banner */}
-              <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center border-b border-slate-100 dark:border-white/5">
-                <div className="px-1">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Thời gian</span>
-                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{selectedEvent.time}</span>
-                </div>
-                <div className="px-1">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Địa điểm</span>
-                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-1">{selectedEvent.place}</span>
-                </div>
-                <div className="px-1">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Đối tượng</span>
-                  <span className="text-[10.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">{selectedAgenda.audience}</span>
-                </div>
-              </div>
-
-              <div className="p-4 sm:p-5 space-y-4 text-[13px]">
-                {/* Headline & Body Context Paragraphs (Image 4 style) */}
-                <div className="space-y-2">
-                  <h4 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
-                    {selectedAgenda.headline}
-                  </h4>
-                  <div className="text-slate-600 dark:text-slate-300 text-[12.5px] leading-relaxed whitespace-pre-line space-y-2">
-                    {selectedAgenda.desc}
-                  </div>
-                </div>
-
-                {/* Dashed Separator */}
-                <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
-
-                {/* Highlighted Event Keypoints (Image 4 Style) */}
-                <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 font-semibold">
-                    <Calendar className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span>
-                      {selectedEvent.time ? `${selectedEvent.time} | ` : ""}
-                      Ngày {selectedEvent.date ? formatDisplayDate(selectedEvent.date) : `${selectedEvent.day} ${selectedEvent.month}, 2026`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <MapPin className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span className="font-semibold">{selectedEvent.place}</span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <Ticket className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span className="font-semibold">
-                      Phí tham dự:{" "}
-                      <span className={isEventFree(selectedEvent) ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
-                        {isEventFree(selectedEvent) ? "Miễn phí (0 đ)" : `${new Intl.NumberFormat("vi-VN").format(getEventPrice(selectedEvent))} đ / vé`}
-                      </span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <Users className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span>
-                      Ưu đãi: <span className="font-semibold text-amber-700 dark:text-amber-300">{selectedAgenda.offer}</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Zalo Link Notice Box */}
-                <div className="rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 p-3.5 border border-blue-200/60 dark:border-blue-900/60 text-[12px] space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
-                    <Info className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0" />
-                    <span>Kênh kết nối & Thảo luận</span>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-300">
-                    Hội viên tham dự vui lòng gia nhập nhóm Zalo để nhận tài liệu diễn giả và cập nhật thông báo:
-                  </p>
-                  <div className="pt-1">
-                    <a
-                      href={selectedAgenda.zaloLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[#2E3192] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
-                    >
-                      {selectedAgenda.zaloLink}
-                      <ExternalLink className="h-3 w-3 inline" />
-                    </a>
-                  </div>
-                </div>
-
-                {/* Dashed Separator */}
-                <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
-
-                {/* Lịch trình chi tiết */}
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Chương trình chi tiết</h4>
-                  <div className="space-y-2 border-l-2 border-[#2E3192]/40 pl-3">
-                    {selectedAgenda.schedule.map((item, i) => (
-                      <div key={i} className="text-xs">
-                        <span className="font-bold text-[#2E3192] dark:text-amber-400">{item.time}</span>
-                        <p className="text-slate-700 dark:text-slate-300">{item.activity}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Diễn giả / Khách mời */}
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5">Diễn giả & Khách mời</h4>
-                  <ul className="list-disc list-inside text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                    {selectedAgenda.speakers.map((sp, idx) => (
-                      <li key={idx}>{sp}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Action Buttons Footer */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-2">
-                  <a
-                    href={selectedAgenda.zaloLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full sm:flex-1 py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-[#2E3192] dark:text-amber-400 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                  >
-                    <MessageSquare className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
-                    <span>Tham gia nhóm Zalo sự kiện</span>
-                  </a>
-
-                  {isRegistered(selectedEvent) ? (
-                    <div className="flex w-full sm:flex-1 gap-2">
-                      <button
-                        type="button"
-                        onClick={(evt) => {
-                          evt.stopPropagation();
-                          const e = selectedEvent;
-                          const invNo = `EV-${e.id.slice(0, 8).toUpperCase()}`;
-                          const isFree = isEventFree(e);
-                          const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
-                          const attendeePhone = member?.phone || "";
-                          const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
-                          const attendeePosition = member?.title || "Hội viên chính thức";
-                          const ticketQr = makeTicketQrUrl({
-                            ticketCode: invNo,
-                            attendeeName,
-                            attendeePhone,
-                            attendeeCompany,
-                            attendeePosition,
-                            eventTitle: e.title,
-                            eventDate: e.date ? formatDisplayDate(e.date) : "Sắp diễn ra",
-                            eventLocation: e.place || "Địa điểm tổ chức sự kiện",
-                            ticketType: isFree ? "Vé Miễn Phí" : "Standard VIP",
-                            seatAssignment: "Bàn VIP 08 - Ghế 02",
-                            luckyNumber: "#1983",
-                            ticketCount: 1,
-                          });
-                          setTicketPassModal({
-                            eventTitle: e.title,
-                            ticketCode: invNo,
-                            luckyNumber: "#1983",
-                            ticketType: isFree ? "Vé Miễn Phí" : "Standard VIP",
-                            ticketCount: 1,
-                            isFree,
-                            date: e.date ? formatDisplayDate(e.date) : "Sắp diễn ra",
-                            time: e.time || "Theo lịch trình sự kiện",
-                            location: e.place || "Địa điểm tổ chức sự kiện",
-                            attendeeName,
-                            attendeePhone,
-                            attendeeCompany,
-                            attendeePosition,
-                            qrUrl: ticketQr,
-                          });
-                        }}
-                        style={{ color: "#ffffff" }}
-                        className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                      >
-                        <QrCode className="h-4 w-4" />
-                        <span>Xem vé & QR</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(evt) => unregister(selectedEvent.id, evt)}
-                        disabled={busy === selectedEvent.id}
-                        className="py-2.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-100 transition cursor-pointer"
-                      >
-                        {busy === selectedEvent.id ? "..." : "Hủy đăng ký"}
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(evt) => handleOpenRegister(selectedEvent, evt)}
-                      style={{ color: "#ffffff" }}
-                      className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Ticket className="h-4 w-4" />
-                      <span>Đăng ký tham gia ngay</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        );
-      })()}
-
-      {/* MODAL 2: FORM ĐĂNG KÝ SỰ KIỆN */}
-      {registeringEvent && (
-        <Dialog open={!!registeringEvent} onOpenChange={(open) => !open && setRegisteringEvent(null)}>
-          <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto p-4 rounded-2xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)]">
-            <DialogHeader>
-              <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Ticket className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
-                <span>Đăng ký tham dự sự kiện</span>
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                {registeringEvent.title}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleConfirmRegistration} className="mt-2 space-y-3.5 text-xs">
-              {/* Họ tên */}
-              <div>
-                <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                  <User className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                  Họ và tên người tham dự <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Số điện thoại & Email */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                    <Phone className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                    Số điện thoại <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    placeholder="0988xxxxxx"
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                    <Mail className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                    Email nhận vé
-                  </label>
-                  <input
-                    type="email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    placeholder="an.nguyen@company.vn"
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Doanh nghiệp & Chức vụ */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                    <Building2 className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                    Tên Doanh nghiệp
-                  </label>
-                  <input
-                    type="text"
-                    value={formCompany}
-                    onChange={(e) => setFormCompany(e.target.value)}
-                    placeholder="Tập đoàn An Phát"
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                    <Briefcase className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                    Chức vụ
-                  </label>
-                  <input
-                    type="text"
-                    value={formPosition}
-                    onChange={(e) => setFormPosition(e.target.value)}
-                    placeholder="Tổng Giám Đốc"
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Số lượng vé & Hạng vé */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                      <Ticket className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                      Số lượng vé
-                    </label>
-                    <span className="text-[10px] text-slate-400">Nhập số cụ thể</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setFormTicketCount((prev) => Math.max(1, (Number(prev) || 1) - 1))}
-                      className="h-8 w-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 transition cursor-pointer"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={formTicketCount}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === "") {
-                          setFormTicketCount("");
-                        } else {
-                          const parsed = parseInt(raw, 10);
-                          setFormTicketCount(isNaN(parsed) ? 0 : Math.min(100, Math.max(0, parsed)));
-                        }
-                      }}
-                      className="w-full text-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFormTicketCount((prev) => Math.min(100, (Number(prev) || 0) + 1))}
-                      className="h-8 w-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-200 transition cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                  {/* Preset Pills */}
-                  <div className="mt-1.5 flex items-center gap-1">
-                    {[1, 2, 5, 10].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setFormTicketCount(num)}
-                        className={`flex-1 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
-                          formTicketCount === num
-                            ? "bg-[#2E3192] text-white"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                        }`}
-                      >
-                        {num} vé
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                    <Sparkles className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                    Hạng vé
-                  </label>
-                  <select
-                    value={formTicketType}
-                    onChange={(e) => setFormTicketType(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                  >
-                    <option value="Standard">Vé Tiêu Chuẩn (Standard)</option>
-                    <option value="VIP">Vé VIP Danh Dự (VIP)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Ghi chú / Xuất hóa đơn */}
-              <div>
-                <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                  <FileText className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
-                  Ghi chú / Yêu cầu xuất hóa đơn VAT
-                </label>
-                <textarea
-                  rows={2}
-                  value={formNote}
-                  onChange={(e) => setFormNote(e.target.value)}
-                  placeholder="Ghi chú thêm thông tin xuất hóa đơn hoặc chế độ ăn kiêng nếu có..."
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-amber-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Khối tóm tắt thanh toán */}
-              {(() => {
-                const actualCount = typeof formTicketCount === "number" && formTicketCount > 0 ? formTicketCount : (formTicketCount === 0 ? 0 : 1);
-                const rawPrice = (registeringEvent as any)?.ticketPrice !== undefined && (registeringEvent as any)?.ticketPrice !== null
-                  ? Number((registeringEvent as any)?.ticketPrice)
-                  : ((registeringEvent as any)?.fee !== undefined ? Number((registeringEvent as any)?.fee) : 0);
-                const isFree = rawPrice === 0;
-                const totalCost = isFree ? 0 : rawPrice * actualCount;
-
-                return (
-                  <div className="rounded-xl bg-amber-50 dark:bg-amber-950/50 p-3 border border-amber-200 dark:border-amber-800/80 space-y-1.5">
-                    <div className="flex items-center justify-between font-medium text-slate-700 dark:text-slate-300">
-                      <span>Đơn giá vé:</span>
-                      <span className={isFree ? "font-bold text-emerald-600 dark:text-emerald-400" : ""}>
-                        {isFree ? "Miễn phí (0 đ)" : `${new Intl.NumberFormat("vi-VN").format(rawPrice)} đ / vé`}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between font-bold text-sm text-amber-900 dark:text-amber-300 pt-1 border-t border-amber-200/60 dark:border-amber-800/60">
-                      <span>Tổng phí thanh toán:</span>
-                      <span className={`text-base ${isFree ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                        {isFree ? "0 đ (Miễn phí)" : `${new Intl.NumberFormat("vi-VN").format(totalCost)} đ`}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex items-start gap-1">
-                      <Info className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                      <span>
-                        {isFree ? (
-                          "Sự kiện này hoàn toàn miễn phí. Vé tham dự sẽ được xác nhận ngay khi bạn bấm Đăng ký."
-                        ) : (
-                          <span>Hệ thống CRM sẽ tự động gửi thông tin thanh toán VietQR vào mục <b>Kết nối</b> của bạn ngay sau khi bấm Gửi.</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Action */}
-              <div className="pt-2 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  disabled={submittingReg}
-                  onClick={() => setRegisteringEvent(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition cursor-pointer"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingReg}
-                  style={{ color: "#ffffff" }}
-                  className="px-5 py-2 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold shadow-md transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-                >
-                  {submittingReg ? (
-                    <span>Đang xử lý...</span>
-                  ) : (
-                    <>
-                      <Send className="h-3.5 w-3.5" />
-                      <span>
-                        {isEventFree(registeringEvent)
-                          ? "Xác nhận đăng ký vé miễn phí (0đ)"
-                          : "Xác nhận & Gửi đăng ký"}
-                      </span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* MODAL 3: THÔNG BÁO ĐÃ GỬI HÓA ĐƠN VÀO TIN NHẮN HOẶC VÉ MIỄN PHÍ THÀNH CÔNG */}
-      {registeredSuccessInfo && (
-        <Dialog open={!!registeredSuccessInfo} onOpenChange={(open) => !open && setRegisteredSuccessInfo(null)}>
-          <DialogContent className="max-w-sm p-5 rounded-2xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] text-center space-y-3">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-              <Check className="h-6 w-6 stroke-[3]" />
-            </div>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
-              {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0
-                ? "Nhận vé sự kiện miễn phí thành công!"
-                : "Đăng ký sự kiện thành công!"}
-            </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Ban Thư Ký CLB Doanh Nhân CEO 1983 đã tiếp nhận đăng ký tham gia sự kiện <b>"{registeredSuccessInfo.eventTitle}"</b>.
-            </p>
-
-            <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 text-xs text-left space-y-1">
-              <div className="flex justify-between">
-                <span className="text-slate-500">
-                  {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? "Mã vé tham dự:" : "Mã hóa đơn:"}
-                </span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">{registeredSuccessInfo.invoiceNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Số lượng vé:</span>
-                <span className="font-bold">{registeredSuccessInfo.ticketCount} vé</span>
-              </div>
-              <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400 pt-1 border-t border-slate-200 dark:border-slate-800">
-                <span>Tổng phí:</span>
-                <span>
-                  {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0
-                    ? "0 đ (Miễn phí)"
-                    : `${new Intl.NumberFormat("vi-VN").format(registeredSuccessInfo.totalAmount)} đ`}
-                </span>
-              </div>
-              {registeredSuccessInfo.luckyNumber && (
-                <div className="flex justify-between items-center bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 rounded-lg px-2.5 py-1.5 mt-1.5">
-                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    Số vé may mắn (Quay thưởng):
-                  </span>
-                  <span className="font-mono font-black text-sm text-amber-600 dark:text-amber-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-amber-500/30">
-                    {registeredSuccessInfo.luckyNumber}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0 ? (
-              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 p-2.5 text-[11px] text-emerald-900 dark:text-emerald-300 flex items-start gap-2 text-left">
-                <Check className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
-                <span>Vé sự kiện miễn phí của bạn đã được xác nhận tự động. Xuất trình mã QR bên dưới khi đến quầy check-in sự kiện!</span>
-              </div>
-            ) : (
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2 text-left">
-                <MessageSquare className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400 mt-0.5" />
-                <span>Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Kết nối</b> và thông tin xác nhận qua email của bạn.</span>
-              </div>
-            )}
-
-            {/* Direct QR Code Display in Modal 3 */}
-            {registeredSuccessInfo.qrCodeUrl && (
-              <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border-2 border-dashed border-emerald-500/50 inline-block shadow-sm">
-                <img
-                  src={registeredSuccessInfo.qrCodeUrl}
-                  alt="QR Check-in"
-                  className="w-40 h-40 mx-auto rounded-lg object-contain cursor-pointer"
-                />
-                <div className="text-[11px] font-mono font-black text-slate-800 dark:text-slate-200 mt-1.5">
-                  MÃ CHECK-IN: {registeredSuccessInfo.invoiceNo}
-                </div>
-              </div>
-            )}
-
-            <div className="pt-2 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const info = registeredSuccessInfo;
-                  setRegisteredSuccessInfo(null);
-                  const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
-                  const attendeePhone = member?.phone || "";
-                  const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
-                  const attendeePosition = member?.title || "Hội viên chính thức";
-                  const ticketQr = makeTicketQrUrl({
-                    ticketCode: info.invoiceNo,
-                    attendeeName,
-                    attendeePhone,
-                    attendeeCompany,
-                    attendeePosition,
-                    eventTitle: info.eventTitle,
-                    eventDate: info.event?.date ? formatDisplayDate(info.event.date) : "Sắp diễn ra",
-                    eventLocation: info.event?.place || "Địa điểm tổ chức sự kiện",
-                    ticketType: Boolean(info.isFree || info.totalAmount === 0) ? "Vé Miễn Phí" : "Standard VIP",
-                    seatAssignment: "Bàn VIP 08 - Ghế 02",
-                    luckyNumber: info.luckyNumber || "#1983",
-                    ticketCount: info.ticketCount,
-                  });
-                  setTicketPassModal({
-                    eventTitle: info.eventTitle,
-                    ticketCode: info.invoiceNo,
-                    luckyNumber: info.luckyNumber || "#1983",
-                    ticketType: Boolean(info.isFree || info.totalAmount === 0) ? "Vé Miễn Phí" : "Standard VIP",
-                    ticketCount: info.ticketCount,
-                    isFree: Boolean(info.isFree || info.totalAmount === 0),
-                    date: info.event?.date ? formatDisplayDate(info.event.date) : "Sắp diễn ra",
-                    time: info.event?.time || "Theo lịch trình sự kiện",
-                    location: info.event?.place || "Địa điểm tổ chức sự kiện",
-                    attendeeName,
-                    attendeePhone,
-                    attendeeCompany,
-                    attendeePosition,
-                    qrUrl: ticketQr,
-                  });
-                }}
-                style={{ color: "#ffffff" }}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <Ticket className="h-3.5 w-3.5 text-amber-400" />
-                <span>Xem Thẻ Vé Điện Tử VIP & Phóng To QR</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-
-              {!(registeredSuccessInfo.isFree || registeredSuccessInfo.totalAmount === 0) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRegisteredSuccessInfo(null);
-                    navigate({ to: "/association/messages", search: { peerCode: "admin" } });
-                  }}
-                  style={{ color: "#ffffff" }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <span>Đến mục Kết nối để thanh toán VietQR</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setRegisteredSuccessInfo(null)}
-                className="w-full py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* MODAL 4: THẺ VÉ ĐIỆN TỬ (TICKET PASS) CÓ MÃ QR ĐỂ BAN TỔ CHỨC QUÉT */}
-      {ticketPassModal && (
-        <Dialog open={!!ticketPassModal} onOpenChange={(open) => !open && setTicketPassModal(null)}>
-          <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-[var(--vba-surface,#fff)] text-center shadow-2xl">
-            {/* Header Ticket Banner */}
-            <div className="bg-gradient-to-br from-[#001A4D] via-[#2E3192] to-[#0A192F] p-4 text-white relative">
-              <div className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-400/60 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 uppercase tracking-wider mb-2">
-                <Sparkles className="h-3 w-3" />
-                VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC
-              </div>
-              <h3 className="text-base font-black text-white line-clamp-2 leading-snug">
-                {ticketPassModal.eventTitle}
-              </h3>
-              <p className="text-[11px] text-white/80 mt-1">
-                📍 {ticketPassModal.location}
-              </p>
-            </div>
-
-            {/* Ticket Body with QR Code */}
-            <div className="p-4 space-y-3">
-              <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-[#2E3192]/30 inline-block shadow-sm">
-                <img
-                  src={ticketPassModal.qrUrl}
-                  alt="Mã QR Vé Sự Kiện"
-                  className="w-48 h-48 mx-auto rounded-lg object-contain"
-                />
-                <div className="text-[12px] font-mono font-black text-[#2E3192] mt-2">
-                  MÃ VÉ: {ticketPassModal.ticketCode}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 border border-slate-200 dark:border-slate-800 text-xs text-left space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Đại biểu tham dự:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100">{ticketPassModal.attendeeName}</span>
-                </div>
-                {ticketPassModal.attendeePosition && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Chức vụ:</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">{ticketPassModal.attendeePosition}</span>
-                  </div>
-                )}
-                {ticketPassModal.attendeeCompany && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Doanh nghiệp:</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{ticketPassModal.attendeeCompany}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Thời gian:</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{ticketPassModal.time} | {ticketPassModal.date}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Hạng vé:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                    {ticketPassModal.ticketType} ({ticketPassModal.ticketCount} vé)
-                  </span>
-                </div>
-                {/* Randomly Assigned Seat Display */}
-                <div className="flex justify-between items-center bg-indigo-500/10 dark:bg-indigo-500/20 rounded-lg p-2 border border-indigo-500/30">
-                  <div className="text-left">
-                    <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase block">
-                      Vị trí chỗ ngồi (Hệ thống xếp tự động):
-                    </span>
-                    <span className="font-bold text-xs text-indigo-950 dark:text-indigo-100">
-                      {(ticketPassModal as any).seatAssignment || "Bàn VIP 02 - Ghế 04"}
-                    </span>
-                  </div>
-                  <span className="text-[9.5px] text-slate-500 dark:text-slate-400 text-right italic max-w-[120px] leading-tight">
-                    Chỉ BTT, BQT và Admin mới có quyền đổi chỗ
-                  </span>
-                </div>
-                <div className="flex justify-between items-center bg-amber-500/10 rounded-lg p-1.5 border border-amber-500/30">
-                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                    Số may mắn (Quay thưởng):
-                  </span>
-                  <span className="font-mono font-black text-sm text-amber-700 dark:text-amber-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-amber-500/30">
-                    {ticketPassModal.luckyNumber}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/60 p-2.5 text-[11px] text-blue-900 dark:text-blue-300 text-left leading-relaxed">
-                ℹ️ <b>Lưu ý chỗ ngồi & check-in:</b> Chỗ ngồi được hệ thống phân bổ ngẫu nhiên theo bàn tiệc. Khi đến sự kiện, Anh/Chị vui lòng xuất trình mã QR này để Ban Truyền Thông quét mã QR xác nhận và hướng dẫn vào đúng vị trí bàn tiệc.
-              </div>
-
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setTicketPassModal(null)}
-                  className="w-full py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold text-xs text-slate-800 dark:text-slate-200 transition cursor-pointer"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <EventTicketPassModal
+        ticketPassModal={ticketPassModal}
+        onClose={() => setTicketPassModal(null)}
+      />
     </div>
   );
 }

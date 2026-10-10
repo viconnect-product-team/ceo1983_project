@@ -379,13 +379,15 @@ function FeesPage() {
           <p className="mt-1 text-sm text-muted-foreground">{t("fees.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleExport}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            {t("fees.export")}
-          </button>
+          {(can("FEE_VIEW") || can(PERMISSIONS.FINANCE_VIEW)) && (
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              {t("fees.export")}
+            </button>
+          )}
           {can(PERMISSIONS.FINANCE_MANAGE) && (
             <button
               onClick={() => setShowCreate(true)}
@@ -694,7 +696,7 @@ function FeesPage() {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {tc.pageRows.map((r: any) => (
-              <FeeCard key={r.id} r={r} onDelete={handleDelete} onRemind={handleRemind} canManage={isAdmin} />
+              <FeeCard key={r.id} r={r} onDelete={handleDelete} onRemind={handleRemind} canManage={can(PERMISSIONS.FINANCE_MANAGE) || can("FEE_EDIT")} />
             ))}
           </div>
           <div className="mt-4 rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -771,7 +773,7 @@ function FeesPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {tc.pageRows.map((r: any, idx: number) => (
-                  <FeeRow key={r.id} r={r} index={(tc.page - 1) * tc.pageSize + idx + 1} onDelete={handleDelete} onRemind={handleRemind} canManage={isAdmin} />
+                  <FeeRow key={r.id} r={r} index={(tc.page - 1) * tc.pageSize + idx + 1} onDelete={handleDelete} onRemind={handleRemind} canManage={can(PERMISSIONS.FINANCE_MANAGE) || can("FEE_EDIT")} />
                 ))}
               </tbody>
             </table>
@@ -1098,22 +1100,26 @@ function FeeCard({
           </span>
         )}
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => toast.info(`Chỉnh sửa khoản thu ${r.invoiceNo}`)}
-            title="Chỉnh sửa hóa đơn"
-            aria-label="Chỉnh sửa hóa đơn"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors"
-          >
-            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-          <button
-            onClick={() => onDelete(r)}
-            title={t("fees.action.delete")}
-            aria-label={t("fees.action.delete")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
+          {canManage && (
+            <button
+              onClick={() => toast.info(`Chỉnh sửa khoản thu ${r.invoiceNo}`)}
+              title="Chỉnh sửa hóa đơn"
+              aria-label="Chỉnh sửa hóa đơn"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors"
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={() => onDelete(r)}
+              title={t("fees.action.delete")}
+              aria-label={t("fees.action.delete")}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -1329,20 +1335,24 @@ function FeeRow({
               {r.method && t(`fees.method.${r.method}` as TKey)}
             </span>
           )}
-          <button
-            onClick={() => toast.info(`Chỉnh sửa khoản thu ${r.invoiceNo}`)}
-            title="Chỉnh sửa hóa đơn"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => onDelete(r)}
-            title={t("fees.action.delete")}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          {canManage && (
+            <button
+              onClick={() => toast.info(`Chỉnh sửa khoản thu ${r.invoiceNo}`)}
+              title="Chỉnh sửa hóa đơn"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer transition-colors"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={() => onDelete(r)}
+              title={t("fees.action.delete")}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </td>
     </tr>

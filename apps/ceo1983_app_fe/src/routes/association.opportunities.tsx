@@ -61,6 +61,11 @@ import { useAuth } from "@/context/AuthContext";
 import { formatDisplayDate } from "@/lib/date-format";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { BusinessConnectBottomSheet, type BusinessConnectTarget } from "@/components/common/BusinessConnectBottomSheet";
+import {
+  OpportunityDetailModal,
+  OpportunityCreateModal,
+  OpportunityEditModal,
+} from "@/components/opportunities/modals";
 
 function formatCurrencyInput(val: string | number): string {
   if (val === undefined || val === null) return "";
@@ -1154,1006 +1159,107 @@ function OpportunitiesScreen() {
         </div>
       </div>
 
-      {/* Opportunity Detail Modal (React Portal - IMAGE 4 LAYOUT) */}
-      {mounted &&
-        selectedOpp &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-            onClick={() => setSelectedOpp(null)}
-          >
-            <div
-              className="w-full max-w-[440px] my-auto flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in border border-slate-200 dark:border-white/10"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Poster Header (Image 4) */}
-              <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-slate-900 shrink-0">
-                <img
-                  src={
-                    (selectedOpp.image
-                      ? resolveMediaUrl(selectedOpp.image) || selectedOpp.image
-                      : null) || defaultOppImages[0]
-                  }
-                  alt={selectedOpp.title}
-                  className="h-full w-full object-cover opacity-90"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
-                <button
-                  type="button"
-                  onClick={() => setSelectedOpp(null)}
-                  className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition cursor-pointer z-20"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-                <div className="absolute bottom-3 left-4 right-4 z-10">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#2E3192]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm border border-amber-400/30">
-                      <Sparkles className="h-3 w-3" />
-                      {normalizeTag(selectedOpp.tag)}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white/90 border border-white/20">
-                      <Eye className="h-3 w-3 text-amber-300" />
-                      <span>{selectedOpp.views || 0} lượt xem</span>
-                    </span>
-                  </div>
-                  <h3 className="text-[16px] font-extrabold text-white line-clamp-2 leading-tight">
-                    {selectedOpp.title}
-                  </h3>
-                  <p className="text-[11px] text-amber-300/90 font-medium tracking-wide flex items-center gap-1.5 mt-0.5">
-                    <Building2 className="h-3 w-3 shrink-0" />
-                    <span>{selectedOpp.company}</span>
-                  </p>
-                </div>
-              </div>
+            {/* Modals extracted to @/components/opportunities/modals */}
+      <OpportunityDetailModal
+        selectedOpp={selectedOpp}
+        onClose={() => setSelectedOpp(null)}
+        defaultOppImages={defaultOppImages}
+        resolveMediaUrl={resolveMediaUrl}
+        normalizeTag={normalizeTag}
+        formatSmartPrice={formatSmartPrice}
+        fmt={fmt}
+        checkCanManageOpp={checkCanManageOpp}
+        interestedMembers={interestedMembers}
+        loadingInterests={loadingInterests}
+        handleNegotiateWithMember={handleNegotiateWithMember}
+        navigate={navigate}
+        checkIsMine={checkIsMine}
+        onEdit={startEditOpp}
+        onDelete={handleDeleteOpp}
+        onNegotiate={handleNegotiate}
+        interestedIds={interestedIds}
+        onInterest={interest}
+      />
 
-              {/* 3-Column Metadata Strip */}
-              <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center border-b border-slate-100 dark:border-white/5 shrink-0">
-                <div className="px-1">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
-                    Hạn tiếp nhận
-                  </span>
-                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">
-                    {fmt.rel(selectedOpp.time)}
-                  </span>
-                </div>
-                <div className="px-1">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
-                    Địa bàn
-                  </span>
-                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-1">
-                    Toàn quốc & B2B
-                  </span>
-                </div>
-                <div className="px-1">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
-                    Đối tượng
-                  </span>
-                  <span className="text-[10.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">
-                    Hội viên CEO 1983
-                  </span>
-                </div>
-              </div>
+      <OpportunityCreateModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSubmit={handleCreateOpp}
+        newImage={newImage}
+        setNewImage={setNewImage}
+        imageInputRef={imageInputRef}
+        handleImageFileChange={handleImageFileChange}
+        uploadingImage={uploadingImage}
+        newTitle={newTitle}
+        setNewTitle={setNewTitle}
+        newErrors={newErrors}
+        setNewErrors={setNewErrors}
+        newTag={newTag}
+        setNewTag={setNewTag}
+        newCompany={newCompany}
+        setNewCompany={setNewCompany}
+        newBudgetMin={newBudgetMin}
+        setNewBudgetMin={setNewBudgetMin}
+        newBudgetMax={newBudgetMax}
+        setNewBudgetMax={setNewBudgetMax}
+        newIndustry={newIndustry}
+        setNewIndustry={setNewIndustry}
+        newRegion={newRegion}
+        setNewRegion={setNewRegion}
+        newDeadline={newDeadline}
+        setNewDeadline={setNewDeadline}
+        newContactName={newContactName}
+        setNewContactName={setNewContactName}
+        newContactPhone={newContactPhone}
+        setNewContactPhone={setNewContactPhone}
+        newContactTitle={newContactTitle}
+        setNewContactTitle={setNewContactTitle}
+        newDesc={newDesc}
+        setNewDesc={setNewDesc}
+        creating={creating}
+        resolveMediaUrl={resolveMediaUrl}
+      />
 
-              {/* Scrollable Content */}
-              <div className="p-4 sm:p-5 space-y-3.5 text-[13px] overflow-y-auto max-h-[55vh] [scrollbar-width:thin]">
-                {/* Context Paragraphs */}
-                <div className="space-y-2">
-                  <h4 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
-                    Chi tiết cơ hội hợp tác & giao thương
-                  </h4>
-                  <div className="text-slate-600 dark:text-slate-300 text-[12.5px] leading-relaxed whitespace-pre-line">
-                    {selectedOpp.description ||
-                      "Cơ hội hợp tác kinh doanh, chuyển giao công nghệ và mở rộng mạng lưới đối tác chiến lược dành riêng cho cộng đồng doanh nhân và hội viên CLB CEO 1983."}
-                  </div>
-                </div>
+      <OpportunityEditModal
+        isOpen={Boolean(editingOpp)}
+        onClose={() => setEditingOpp(null)}
+        onSubmit={handleUpdateOpp}
+        editImage={editImage}
+        setEditImage={setEditImage}
+        editImageInputRef={editImageInputRef}
+        handleImageFileChange={handleImageFileChange}
+        uploadingImage={uploadingImage}
+        editTitle={editTitle}
+        setEditTitle={setEditTitle}
+        editErrors={editErrors}
+        setEditErrors={setEditErrors}
+        editTag={editTag}
+        setEditTag={setEditTag}
+        editCompany={editCompany}
+        setEditCompany={setEditCompany}
+        editBudgetMin={editBudgetMin}
+        setEditBudgetMin={setEditBudgetMin}
+        editBudgetMax={editBudgetMax}
+        setEditBudgetMax={setEditBudgetMax}
+        editIndustry={editIndustry}
+        setEditIndustry={setEditIndustry}
+        editRegion={editRegion}
+        setEditRegion={setEditRegion}
+        editDeadline={editDeadline}
+        setEditDeadline={setEditDeadline}
+        editContactName={editContactName}
+        setEditContactName={setEditContactName}
+        editContactPhone={editContactPhone}
+        setEditContactPhone={setEditContactPhone}
+        editContactTitle={editContactTitle}
+        setEditContactTitle={setEditContactTitle}
+        editDesc={editDesc}
+        setEditDesc={setEditDesc}
+        updating={updating}
+        resolveMediaUrl={resolveMediaUrl}
+      />
 
-                {/* Dashed Separator */}
-                <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
-
-                {/* CRM Deal Value Banner */}
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-blue-500/10 to-transparent border border-amber-500/30">
-                  <div className="flex items-center gap-2.5">
-                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/20 text-amber-500">
-                      <Sparkles className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
-                        Giá trị hợp đồng / Deal CRM
-                      </span>
-                      <p className="text-[15px] font-black text-amber-600 dark:text-amber-400 whitespace-normal break-words">
-                        {formatSmartPrice(selectedOpp.value)}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                    Xác thực CRM
-                  </span>
-                </div>
-
-                {/* Danh sách người quan tâm dành riêng cho người đăng cơ hội hoặc ban quản trị */}
-                {Boolean(checkCanManageOpp(selectedOpp) || interestedMembers.length > 0) && (
-                  <div className="rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-bold text-[13px] text-slate-900 dark:text-amber-300">
-                        <Users className="h-4 w-4 text-amber-500" />
-                        <span>Hội viên đã quan tâm ({interestedMembers.length})</span>
-                      </div>
-                      <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
-                        CRM Realtime
-                      </span>
-                    </div>
-
-                    {loadingInterests ? (
-                      <p className="text-xs text-slate-400 text-center py-3">
-                        Đang tải danh sách người quan tâm...
-                      </p>
-                    ) : interestedMembers.length === 0 ? (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 py-2 italic text-center">
-                        Chưa có hội viên nào bấm quan tâm cơ hội này. Khi có người quan tâm, thông
-                        tin liên hệ sẽ hiển thị tại đây.
-                      </p>
-                    ) : (
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {interestedMembers.map((m) => (
-                          <div
-                            key={m.memberId || m.phone}
-                            className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xs"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-[#2E3192] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
-                                {m.name ? m.name.charAt(0).toUpperCase() : "U"}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
-                                  {m.name}
-                                </div>
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                  {m.company || "Hội viên CLB CEO 1983"}
-                                </div>
-                                {m.expressedAt && (
-                                  <div className="text-[10px] text-amber-600 dark:text-amber-400">
-                                    {fmt.rel(m.expressedAt)}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0 ml-2">
-                              <button
-                                type="button"
-                                onClick={() => handleNegotiateWithMember(m, selectedOpp)}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
-                                title="Lên lịch hẹn 1-1 đàm phán cơ hội này"
-                              >
-                                <Handshake className="h-3.5 w-3.5" />
-                                <span>Đàm phán</span>
-                              </button>
-                              {m.phone && (
-                                <a
-                                  href={`tel:${m.phone}`}
-                                  className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-100 transition"
-                                  title="Gọi điện"
-                                >
-                                  <Phone className="h-3.5 w-3.5" />
-                                </a>
-                              )}
-                              {m.email && (
-                                <a
-                                  href={`mailto:${m.email}`}
-                                  className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300 hover:bg-blue-100 transition"
-                                  title="Gửi email"
-                                >
-                                  <Mail className="h-3.5 w-3.5" />
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedOpp(null);
-                                  navigate({
-                                    to: "/association/messages",
-                                    search: { peerCode: m.memberId || m.phone },
-                                  });
-                                }}
-                                className="p-1.5 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-100 transition cursor-pointer"
-                                title="Nhắn tin"
-                              >
-                                <MessageSquare className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Highlighted Key Points (Image 4 Style) */}
-                <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <Clock className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Thời hạn tiếp nhận:</strong> {fmt.rel(selectedOpp.time)} (Đang mở tiếp
-                      nhận hồ sơ)
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <MapPin className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Khu vực hợp tác:</strong> Toàn quốc & Liên kết mạng lưới vùng miền
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                    <Briefcase className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Hình thức:</strong> {normalizeTag(selectedOpp.tag)} · Ưu đãi độc quyền
-                      hội viên CEO 1983
-                    </span>
-                  </div>
-
-                  <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 pt-1 border-t border-amber-500/10">
-                    <User className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span>
-                        <strong>Người đăng / Đầu mối:</strong>{" "}
-                        {selectedOpp.posterName ||
-                          selectedOpp.contactName ||
-                          "Hội viên CLB CEO 1983"}{" "}
-                        {selectedOpp.contactTitle ? `(${selectedOpp.contactTitle})` : ""}
-                      </span>
-                      {selectedOpp.company && (
-                        <span className="block text-slate-500 dark:text-slate-400 text-[11.5px]">
-                          {selectedOpp.company}
-                        </span>
-                      )}
-                      {(selectedOpp.posterPhone || selectedOpp.contactPhone) && (
-                        <span className="block mt-0.5">
-                          Hotline / Zalo:{" "}
-                          <a
-                            href={`tel:${selectedOpp.posterPhone || selectedOpp.contactPhone}`}
-                            className="text-emerald-600 dark:text-emerald-400 font-bold underline"
-                          >
-                            {selectedOpp.posterPhone || selectedOpp.contactPhone}
-                          </a>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fixed Footer Buttons */}
-              <div className="flex gap-2.5 px-4 py-3 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                {checkIsMine(selectedOpp) ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        const opp = selectedOpp;
-                        setSelectedOpp(null);
-                        startEditOpp(opp, e);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/10 py-2.5 text-[12.5px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition cursor-pointer"
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Chỉnh sửa cơ hội
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteOpp(selectedOpp.id)}
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-500/10 px-4 py-2.5 text-[12.5px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition cursor-pointer"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Xóa
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const opp = selectedOpp;
-                        setSelectedOpp(null);
-                        handleNegotiate(opp);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-emerald-600/20"
-                    >
-                      <Handshake className="h-4 w-4" />
-                      Đàm phán 1-1
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const targetCode =
-                          selectedOpp.posterCode || selectedOpp.posterId || "admin";
-                        const targetName = selectedOpp.posterName || selectedOpp.company;
-                        setSelectedOpp(null);
-                        navigate({
-                          to: "/association/messages" as any,
-                          search: { peerCode: targetCode, peerName: targetName } as any,
-                        });
-                      }}
-                      style={{ color: "#ffffff" }}
-                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-[#2E3192]/20"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      Nhắn tin
-                    </button>
-
-                    {selectedOpp.interested || interestedIds.includes(selectedOpp.id) ? (
-                      <div className="flex items-center justify-center gap-1 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-3 py-2.5 text-[12px] font-bold">
-                        <Check className="h-3.5 w-3.5" />
-                        Đã quan tâm
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          interest(selectedOpp.id);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#2E3192] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
-                      >
-                        <Flame className="h-4 w-4 text-amber-500" />
-                        Quan tâm
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
-
-      {/* Create Opportunity Modal (React Portal) */}
-      {mounted &&
-        createModalOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-            style={{ minHeight: "100dvh" }}
-            onClick={() => setCreateModalOpen(false)}
-          >
-            <div
-              className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
-                <span className="text-[13.5px] font-extrabold text-[#2E3192] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Handshake className="h-4 w-4" />
-                  Đăng cơ hội hợp tác mới
-                </span>
-                <button
-                  onClick={() => setCreateModalOpen(false)}
-                  className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateOpp} className="flex flex-col flex-1 min-h-0">
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
-                  {/* Image upload */}
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Hình ảnh minh họa / Poster cơ hội
-                    </label>
-                    <input
-                      type="file"
-                      ref={imageInputRef}
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageFileChange}
-                    />
-                    {newImage ? (
-                      <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
-                        <img
-                          src={resolveMediaUrl(newImage) || newImage}
-                          alt="Hình ảnh cơ hội"
-                          className="w-full h-44 object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setNewImage(null)}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => imageInputRef.current?.click()}
-                        disabled={uploadingImage}
-                        className="w-full border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-amber-500 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition bg-slate-50 dark:bg-white/[0.02] cursor-pointer"
-                      >
-                        {uploadingImage ? (
-                          <>
-                            <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-                            <span className="text-[12px] font-medium">Đang tải ảnh lên...</span>
-                          </>
-                        ) : (
-                          <>
-                            <ImagePlus className="h-6 w-6 text-amber-500" />
-                            <span className="text-[12.5px] font-semibold">
-                              Tải lên hình ảnh dự án / cơ hội
-                            </span>
-                            <span className="text-[10.5px] text-slate-400">
-                              JPG, PNG, WebP (Tối đa 10MB)
-                            </span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Tiêu đề cơ hội <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      value={newTitle}
-                      onChange={(e) => {
-                        setNewTitle(e.target.value);
-                        if (newErrors.title) setNewErrors((prev) => ({ ...prev, title: "" }));
-                      }}
-                      placeholder="Ví dụ: Tìm đối tác cung ứng bao bì giấy số lượng lớn..."
-                      className={`w-full rounded-2xl border bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 transition ${
-                        newErrors.title
-                          ? "border-rose-500 ring-1 ring-rose-500/30"
-                          : "border-transparent focus:border-amber-500"
-                      }`}
-                    />
-                    {newErrors.title && (
-                      <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
-                        {newErrors.title}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Phân loại cơ hội
-                      </label>
-                      <select
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      >
-                        <option value="Hợp tác B2B">Hợp tác B2B</option>
-                        <option value="Đầu tư & Vốn">Đầu tư & Vốn</option>
-                        <option value="Giao thương">Giao thương</option>
-                        <option value="Cung ứng">Cung ứng & Phân phối</option>
-                        <option value="Xuất nhập khẩu">Xuất nhập khẩu</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Doanh nghiệp
-                      </label>
-                      <input
-                        value={newCompany}
-                        onChange={(e) => setNewCompany(e.target.value)}
-                        placeholder="Tên doanh nghiệp..."
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* CRM Deal Fields: Budget Min/Max */}
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Ngân sách tối thiểu (VNĐ)
-                      </label>
-                      <StandardCurrencyInput
-                        value={newBudgetMin}
-                        onChange={(formatted) => setNewBudgetMin(formatted)}
-                        placeholder="VD: 500.000.000"
-                        unit="đ"
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Ngân sách tối đa (VNĐ)
-                      </label>
-                      <StandardCurrencyInput
-                        value={newBudgetMax}
-                        onChange={(formatted) => setNewBudgetMax(formatted)}
-                        placeholder="VD: 2.000.000.000"
-                        unit="đ"
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Industry & Region & Deadline */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Ngành nghề
-                      </label>
-                      <select
-                        value={newIndustry}
-                        onChange={(e) => setNewIndustry(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      >
-                        <option value="Công nghệ & Số hóa">Công nghệ & Số hóa</option>
-                        <option value="Xây dựng & Bất động sản">Xây dựng & BĐS</option>
-                        <option value="Sản xuất & Công nghiệp">Sản xuất & Chế tạo</option>
-                        <option value="Tài chính & Đầu tư">Tài chính & Đầu tư</option>
-                        <option value="Thương mại & Dịch vụ">Thương mại & Dịch vụ</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Khu vực
-                      </label>
-                      <select
-                        value={newRegion}
-                        onChange={(e) => setNewRegion(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      >
-                        <option value="Toàn quốc">Toàn quốc</option>
-                        <option value="Hà Nội & Miền Bắc">Hà Nội & Miền Bắc</option>
-                        <option value="TP. Hồ Chí Minh & Miền Nam">TP.HCM & Miền Nam</option>
-                        <option value="Miền Trung">Miền Trung</option>
-                        <option value="Quốc tế">Quốc tế</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Hạn chót
-                      </label>
-                      <input
-                        type="date"
-                        value={newDeadline}
-                        onChange={(e) => setNewDeadline(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      />
-                      {newDeadline && (
-                        <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            Hạn chót: {formatDisplayDate(newDeadline, { withWeekday: true })}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Contact information fields */}
-                  <div className="rounded-2xl p-3.5 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-500/20 space-y-2.5">
-                    <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
-                      <User className="h-3.5 w-3.5" /> Thông tin người đại diện kết nối
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                          Họ tên người liên hệ <span className="text-red-500">*</span>
-                        </label>
-                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
-                          newErrors.contactName ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
-                        }`}>
-                          <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <input
-                            value={newContactName}
-                            onChange={(e) => {
-                              setNewContactName(e.target.value);
-                              if (newErrors.contactName) setNewErrors((prev) => ({ ...prev, contactName: "" }));
-                            }}
-                            placeholder="VD: Nguyễn Văn A"
-                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          />
-                        </div>
-                        {newErrors.contactName && (
-                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
-                            {newErrors.contactName}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                          Số điện thoại <span className="text-red-500">*</span>
-                        </label>
-                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
-                          newErrors.contactPhone ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
-                        }`}>
-                          <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <input
-                            value={newContactPhone}
-                            onChange={(e) => {
-                              setNewContactPhone(e.target.value);
-                              if (newErrors.contactPhone) setNewErrors((prev) => ({ ...prev, contactPhone: "" }));
-                            }}
-                            placeholder="VD: 0912345678"
-                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          />
-                        </div>
-                        {newErrors.contactPhone && (
-                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
-                            {newErrors.contactPhone}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                        Chức vụ / Chức danh
-                      </label>
-                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                        <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <input
-                          value={newContactTitle}
-                          onChange={(e) => setNewContactTitle(e.target.value)}
-                          placeholder="VD: Giám đốc kinh doanh / CEO"
-                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Mô tả chi tiết nội dung cơ hội
-                    </label>
-                    <textarea
-                      value={newDesc}
-                      onChange={(e) => setNewDesc(e.target.value)}
-                      placeholder="Mô tả cụ thể nhu cầu, tiêu chuẩn đối tác, ngân sách hoặc phương án hợp tác..."
-                      rows={3}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-2.5 px-5 py-3.5 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                  <button
-                    type="button"
-                    onClick={() => setCreateModalOpen(false)}
-                    className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 py-2.5 text-[12.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creating}
-                    style={{ color: "#ffffff" }}
-                    className="flex-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#003B95]/25 cursor-pointer disabled:opacity-50"
-                  >
-                    {creating ? "Đang đăng..." : "Đăng cơ hội ngay"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body,
-        )}
-
-      {/* Edit Opportunity Modal (React Portal) */}
-      {mounted &&
-        editingOpp &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-            style={{ minHeight: "100dvh" }}
-            onClick={() => setEditingOpp(null)}
-          >
-            <div
-              className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
-                <span className="text-[13.5px] font-extrabold text-[#2E3192] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Pencil className="h-4 w-4" />
-                  Chỉnh sửa cơ hội giao thương
-                </span>
-                <button
-                  onClick={() => setEditingOpp(null)}
-                  className="rounded-full p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleUpdateOpp} className="flex flex-col flex-1 min-h-0">
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
-                  {/* Image upload */}
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Hình ảnh minh họa / Poster cơ hội
-                    </label>
-                    <input
-                      type="file"
-                      ref={editImageInputRef}
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageFileChange(e, true)}
-                    />
-                    {editImage ? (
-                      <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
-                        <img
-                          src={resolveMediaUrl(editImage) || editImage}
-                          alt="Hình ảnh cơ hội"
-                          className="w-full h-44 object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setEditImage(null)}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => editImageInputRef.current?.click()}
-                        disabled={uploadingImage}
-                        className="w-full rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 p-4 text-center hover:border-amber-500/50 hover:bg-amber-500/5 transition cursor-pointer flex flex-col items-center justify-center gap-1.5"
-                      >
-                        <ImagePlus className="h-6 w-6 text-slate-400" />
-                        <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">
-                          {uploadingImage ? "Đang tải ảnh lên..." : "Tải ảnh mới từ thiết bị"}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Tiêu đề cơ hội hợp tác <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      value={editTitle}
-                      onChange={(e) => {
-                        setEditTitle(e.target.value);
-                        if (editErrors.title) setEditErrors((prev) => ({ ...prev, title: "" }));
-                      }}
-                      placeholder="VD: Cần tìm đối tác cung ứng dịch vụ phần mềm..."
-                      className={`w-full rounded-2xl border bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 placeholder:text-slate-400 transition ${
-                        editErrors.title
-                          ? "border-rose-500 ring-1 ring-rose-500/30"
-                          : "border-transparent focus:border-amber-500"
-                      }`}
-                    />
-                    {editErrors.title && (
-                      <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
-                        {editErrors.title}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Loại cơ hội
-                      </label>
-                      <select
-                        value={editTag}
-                        onChange={(e) => setEditTag(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      >
-                        <option value="Hợp tác B2B">Hợp tác B2B</option>
-                        <option value="Đầu tư & Vốn">Đầu tư & Vốn</option>
-                        <option value="Giao thương">Giao thương</option>
-                        <option value="Cung ứng">Cung ứng</option>
-                        <option value="Xuất nhập khẩu">Xuất nhập khẩu</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Tên doanh nghiệp
-                      </label>
-                      <input
-                        value={editCompany}
-                        onChange={(e) => setEditCompany(e.target.value)}
-                        placeholder="VD: Công ty Cổ phần ABC"
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Deal Budget Range */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Ngân sách từ (VNĐ)
-                      </label>
-                      <StandardCurrencyInput
-                        value={editBudgetMin}
-                        onChange={(formatted) => setEditBudgetMin(formatted)}
-                        placeholder="VD: 50.000.000"
-                        unit="đ"
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Đến (VNĐ)
-                      </label>
-                      <StandardCurrencyInput
-                        value={editBudgetMax}
-                        onChange={(formatted) => setEditBudgetMax(formatted)}
-                        placeholder="VD: 200.000.000"
-                        unit="đ"
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[12.5px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Industry, Region, Deadline */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Ngành nghề
-                      </label>
-                      <select
-                        value={editIndustry}
-                        onChange={(e) => setEditIndustry(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      >
-                        <option value="Công nghệ & Số hóa">Công nghệ</option>
-                        <option value="Xây dựng & Bất động sản">Xây dựng & BĐS</option>
-                        <option value="Sản xuất & Công nghiệp">Sản xuất</option>
-                        <option value="Tài chính & Đầu tư">Tài chính</option>
-                        <option value="Thương mại & Dịch vụ">Dịch vụ</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Khu vực
-                      </label>
-                      <select
-                        value={editRegion}
-                        onChange={(e) => setEditRegion(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      >
-                        <option value="Toàn quốc">Toàn quốc</option>
-                        <option value="Hà Nội & Miền Bắc">Miền Bắc</option>
-                        <option value="TP. Hồ Chí Minh & Miền Nam">Miền Nam</option>
-                        <option value="Miền Trung">Miền Trung</option>
-                        <option value="Quốc tế">Quốc tế</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                        Hạn xử lý
-                      </label>
-                      <input
-                        type="date"
-                        value={editDeadline}
-                        onChange={(e) => setEditDeadline(e.target.value)}
-                        className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-slate-800 px-2 py-2 text-[12px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                      />
-                      {editDeadline && (
-                        <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            Hạn xử lý: {formatDisplayDate(editDeadline, { withWeekday: true })}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Contact information fields */}
-                  <div className="rounded-2xl p-3.5 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-500/20 space-y-2.5">
-                    <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
-                      <User className="h-3.5 w-3.5" /> Thông tin người đại diện kết nối
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                          Họ tên người liên hệ <span className="text-red-500">*</span>
-                        </label>
-                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
-                          editErrors.contactName ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
-                        }`}>
-                          <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <input
-                            value={editContactName}
-                            onChange={(e) => {
-                              setEditContactName(e.target.value);
-                              if (editErrors.contactName) setEditErrors((prev) => ({ ...prev, contactName: "" }));
-                            }}
-                            placeholder="VD: Nguyễn Văn A"
-                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          />
-                        </div>
-                        {editErrors.contactName && (
-                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
-                            {editErrors.contactName}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                          Số điện thoại <span className="text-red-500">*</span>
-                        </label>
-                        <div className={`flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border transition ${
-                          editErrors.contactPhone ? "border-rose-500 ring-1 ring-rose-500/30" : "border-slate-200/80 dark:border-white/10"
-                        }`}>
-                          <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <input
-                            value={editContactPhone}
-                            onChange={(e) => {
-                              setEditContactPhone(e.target.value);
-                              if (editErrors.contactPhone) setEditErrors((prev) => ({ ...prev, contactPhone: "" }));
-                            }}
-                            placeholder="VD: 0912345678"
-                            className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                          />
-                        </div>
-                        {editErrors.contactPhone && (
-                          <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
-                            {editErrors.contactPhone}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                        Chức vụ / Chức danh
-                      </label>
-                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                        <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <input
-                          value={editContactTitle}
-                          onChange={(e) => setEditContactTitle(e.target.value)}
-                          placeholder="VD: Giám đốc kinh doanh / CEO"
-                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      Mô tả chi tiết nội dung cơ hội
-                    </label>
-                    <textarea
-                      value={editDesc}
-                      onChange={(e) => setEditDesc(e.target.value)}
-                      placeholder="Mô tả cụ thể nhu cầu, tiêu chuẩn đối tác, ngân sách hoặc phương án hợp tác..."
-                      rows={3}
-                      className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-2.5 px-5 py-3.5 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                  <button
-                    type="button"
-                    onClick={() => setEditingOpp(null)}
-                    className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 py-2.5 text-[12.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    style={{ color: "#ffffff" }}
-                    className="flex-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-2.5 text-[12.5px] font-bold text-white transition shadow-md shadow-[#003B95]/25 cursor-pointer disabled:opacity-50"
-                  >
-                    {updating ? "Đang lưu..." : "Lưu thay đổi"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body,
-        )}
-
-      {/* MODAL ĐÀM PHÁN HẸN GẶP 1-1 GẮN VỚI CƠ HỘI */}
+{/* MODAL ĐÀM PHÁN HẸN GẶP 1-1 GẮN VỚI CƠ HỘI */}
       <BusinessConnectBottomSheet
         isOpen={Boolean(negotiateTarget)}
         onClose={() => {

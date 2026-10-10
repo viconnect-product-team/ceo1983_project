@@ -1,25 +1,22 @@
-import { useState, useMemo, useEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { createFileRoute, useBlocker, useNavigate, Link } from "@tanstack/react-router";
 import {
   ShieldCheck,
   Users,
   Layers,
   Lock,
   Sparkles,
-  RefreshCw,
   Building2,
   Info,
   CheckCircle2,
-  LayoutDashboard,
-  Grid3X3,
   SlidersHorizontal,
-  Crown,
-  Award,
-  Calendar,
-  Send,
-  HeartHandshake,
-  TrendingUp,
+  AlertTriangle,
+  Save,
+  LogOut,
+  UserCog,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { useRole } from "@/hooks/use-role";
@@ -32,6 +29,9 @@ import { MemberPermissionsByCommittee } from "@/components/dashboard/MemberPermi
 import { dispatchPermissionSyncEvent } from "@/lib/rbac-permission-helpers";
 
 export const Route = createFileRoute("/permissions")({
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : "matrix",
+  }),
   component: PermissionsPage,
 });
 
@@ -219,66 +219,131 @@ function PermissionsPage() {
 
   const totalMembersCount = approvedMembers.length;
 
-  // QUY TẮC BẮT BUỘC 2: Có đủ 2 dạng hiển thị: Dạng Dashboard và Dạng Lưới
-  const [viewMode, setViewModeState] = useState<"dashboard" | "grid">(() => {
-    if (typeof window !== "undefined") {
-      const p = new URLSearchParams(window.location.search).get("view");
-      if (p === "grid" || p === "dashboard") return p;
-      const tab = new URLSearchParams(window.location.search).get("tab");
-      if (tab === "matrix") return "grid";
-    }
-    return "dashboard";
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+
+  // Dirty state tracking across sub-components
+  const [matrixDirty, setMatrixDirty] = useState(false);
+  const [memberPermsDirty, setMemberPermsDirty] = useState(false);
+  const isDirty = matrixDirty || memberPermsDirty;
+
+  // Trigger refs to execute save or discard from parent modal
+  const matrixSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const matrixDiscardRef = useRef<(() => void) | null>(null);
+  const memberPermsSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const memberPermsDiscardRef = useRef<(() => void) | null>(null);
+
+  // Tab switch pending state if user clicks internal tab switcher
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [isSavingAndProceeding, setIsSavingAndProceeding] = useState(false);
+
+  // TanStack Router Blocker for full navigation protection
+  const blocker = useBlocker({
+    shouldBlockFn: () => isDirty,
+    withResolver: true,
+    enableBeforeUnload: true,
   });
 
-  const setViewMode = (mode: "dashboard" | "grid") => {
-    setViewModeState(mode);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("view", mode);
-      if (mode === "grid") {
-        url.searchParams.set("tab", "matrix");
+  const showUnsavedModal = blocker.status === "blocked" || pendingTab !== null;
+
+  // Action 1: Lưu & Chuyển chức năng
+  const handleSaveAndProceed = async () => {
+    setIsSavingAndProceeding(true);
+    try {
+      if (matrixDirty && matrixSaveRef.current) {
+        await matrixSaveRef.current();
       }
-      window.history.replaceState({}, "", url.toString());
+      if (memberPermsDirty && memberPermsSaveRef.current) {
+        await memberPermsSaveRef.current();
+      }
+      setMatrixDirty(false);
+      setMemberPermsDirty(false);
+      dispatchPermissionSyncEvent();
+      toast.success("Đã lưu các thay đổi phân quyền và tiếp tục chuyển chức năng!");
+
+      if (pendingTab) {
+        const nextTab = pendingTab;
+        setPendingTab(null);
+        navigate({ to: "/permissions", search: { tab: nextTab } });
+      } else if (blocker.status === "blocked") {
+        blocker.proceed?.();
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi lưu phân quyền");
+    } finally {
+      setIsSavingAndProceeding(false);
     }
   };
 
-  // Tab switcher with URL query sync (?tab=matrix | ?tab=committees | ?tab=members)
-  const [activeTab, setActiveTabState] = useState<"matrix" | "committees" | "members">(() => {
+  // Action 2: Rời đi không lưu
+  const handleDiscardAndProceed = () => {
+    if (matrixDirty && matrixDiscardRef.current) {
+      matrixDiscardRef.current();
+    }
+    if (memberPermsDirty && memberPermsDiscardRef.current) {
+      memberPermsDiscardRef.current();
+    }
+    setMatrixDirty(false);
+    setMemberPermsDirty(false);
+    toast.info("Đã hủy các thay đổi phân quyền chưa lưu.");
+
+    if (pendingTab) {
+      const nextTab = pendingTab;
+      setPendingTab(null);
+      navigate({ to: "/permissions", search: { tab: nextTab } });
+    } else if (blocker.status === "blocked") {
+      blocker.proceed?.();
+    }
+  };
+
+  // Action 3: Ở lại chỉnh sửa
+  const handleStayAndEdit = () => {
+    setPendingTab(null);
+    if (blocker.status === "blocked") {
+      blocker.reset?.();
+    }
+  };
+
+  const handleTabClick = (targetTab: string) => {
+    if (targetTab === activeTab) return;
+    if (isDirty) {
+      setPendingTab(targetTab);
+    } else {
+      navigate({ to: "/permissions", search: { tab: targetTab } });
+    }
+  };
+
+  const [tabFromWindow, setTabFromWindow] = useState(() => {
     if (typeof window !== "undefined") {
-      const p = new URLSearchParams(window.location.search).get("tab");
-      if (p === "matrix" || p === "committees" || p === "members") return p;
-      if (p === "role_groups") return "committees";
-      if (p === "user_actions") return "members";
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get("tab") || "matrix";
     }
     return "matrix";
   });
-
-  const setActiveTab = (tab: "matrix" | "committees" | "members") => {
-    setActiveTabState(tab);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", tab);
-      window.history.replaceState({}, "", url.toString());
-    }
-  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const checkState = () => {
       const sp = new URLSearchParams(window.location.search);
-      const v = sp.get("view");
-      if (v === "grid" || v === "dashboard") {
-        setViewModeState(v);
-      }
-      const t = sp.get("tab");
-      if (t === "matrix" || t === "committees" || t === "members") {
-        setActiveTabState(t);
-      }
+      setTabFromWindow(sp.get("tab") || "matrix");
     };
     checkState();
     window.addEventListener("popstate", checkState);
     return () => window.removeEventListener("popstate", checkState);
   }, []);
+
+  const rawTab = (search?.tab || tabFromWindow || "matrix").toLowerCase();
+
+  // Tab mapping trực tiếp 3 phân hệ tương ứng 3 mục menu Phân Quyền trên Sidebar:
+  // 1. matrix: Ma trận phân quyền (RbacPermissionMatrix)
+  // 2. user_actions: Phân quyền tài khoản (MemberPermissionsByCommittee)
+  // 3. role_groups: Thẩm quyền Ban & Cấp bậc (CommitteesPermissionManager)
+  const activeTab: "matrix" | "user_actions" | "role_groups" =
+    rawTab === "user_actions" || rawTab === "members"
+      ? "user_actions"
+      : rawTab === "role_groups" || rawTab === "committees"
+        ? "role_groups"
+        : "matrix";
 
   // Đếm số lượng hội viên theo từng ban (chỉ tính tài khoản đã duyệt)
   const committeeCounts = useMemo(() => {
@@ -318,74 +383,145 @@ function PermissionsPage() {
   return (
     <AppShell>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <PageHeader
-          title="Hệ Thống Phân Quyền & Quản Trị Thao Tác (CRM Hiệp Hội CEO 1983)"
-          subtitle="Liên kết 3 phân hệ thời gian thực: Ma Trận Vai Trò ↔ Thẩm Quyền 6 Ban Chuyên Môn ↔ Phân Quyền Tài Khoản Theo Ban"
-        />
+        {/* THANH ĐIỀU HƯỚNG TAB TRỰC TIẾP TRÊN TRANG PHÂN QUYỀN */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/80 pb-3">
+          <button
+            type="button"
+            onClick={() => handleTabClick("matrix")}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeTab === "matrix"
+                ? "bg-[#003B95] text-white shadow-xs"
+                : "bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>1. Ma Trận Phân Quyền Hệ Thống</span>
+            {matrixDirty && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Có thay đổi chưa lưu" />
+            )}
+          </button>
 
-        {/* Real-time synchronization notice banner */}
-        <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#003B95] text-white flex items-center justify-center shrink-0 shadow-sm">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="font-bold text-foreground">
-                Đồng Bộ 2 Chiều Chuẩn Xác &amp; Lưu RESTful API Vào Database
-              </p>
-              <p className="text-muted-foreground text-[11px] mt-0.5">
-                Chỉnh sửa xong quyền bấm nút "Lưu Vào Database" để gửi RESTful API cập nhật CSDL. Các nút hành động (Thêm, Sửa, Xóa, Duyệt) trong toàn bộ CRM sẽ tự động ẩn đi đối với tài khoản không có quyền.
-              </p>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleTabClick("user_actions")}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeTab === "user_actions"
+                ? "bg-[#003B95] text-white shadow-xs"
+                : "bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <UserCog className="w-4 h-4" />
+            <span>2. Phân Quyền Tài Khoản Theo Ban</span>
+            {memberPermsDirty && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Có thay đổi chưa lưu" />
+            )}
+          </button>
 
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              RESTful Database Sync
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleTabClick("role_groups")}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeTab === "role_groups"
+                ? "bg-[#003B95] text-white shadow-xs"
+                : "bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>3. Thẩm Quyền 6 Ban &amp; Cấp Bậc</span>
+          </button>
         </div>
 
-        {/* ── BỘ CHUYỂN ĐỔI 2 DẠNG: DẠNG DASHBOARD VÀ DẠNG LƯỚI (MATRIX) ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-2 rounded-2xl border border-border bg-card shadow-xs">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode("dashboard")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
-                viewMode === "dashboard"
-                  ? "bg-[#003B95] text-white shadow-sm"
-                  : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              <span>Dạng Dashboard (Tổng Quan 6 Ban &amp; Hội Viên)</span>
-            </button>
-
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-[#003B95] text-white shadow-sm"
-                  : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
-            >
-              <Grid3X3 className="h-4 w-4" />
-              <span>Dạng Lưới (Ma Trận Phân Quyền)</span>
-            </button>
-          </div>
-
-          <div className="text-xs text-muted-foreground flex items-center gap-2 px-2">
-            <Users className="h-3.5 w-3.5 text-primary" />
-            <span>
-              <strong>{totalMembersCount}</strong> tài khoản chính thức đã duyệt (được phép phân quyền)
-            </span>
-          </div>
-        </div>
-
-        {/* ── HIỂN THỊ DẠNG DASHBOARD ── */}
-        {viewMode === "dashboard" && (
+        {/* PHÂN HỆ 1: MA TRẬN PHÂN QUYỀN (8 Phân Hệ x 5 Vai Trò) */}
+        {activeTab === "matrix" && (
           <div className="space-y-6 animate-in fade-in duration-200">
+            <PageHeader
+              title="Ma Trận Phân Quyền Hệ Thống"
+              subtitle="Cấu hình chi tiết ma trận quyền hạn thao tác (Xem, Thêm, Sửa, Xóa, Duyệt, Xuất file) cho 8 phân hệ CRM x 5 vai trò cốt lõi (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên)"
+            />
+
+            {/* Banner đồng bộ Database RESTful API thời gian thực */}
+            <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#003B95] text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground">
+                    Đồng Bộ 2 Chiều Chuẩn Xác &amp; Lưu RESTful API Vào Database
+                  </p>
+                  <p className="text-muted-foreground text-[11px] mt-0.5">
+                    Chỉnh sửa xong quyền bấm nút "Lưu Toàn Bộ" để gửi RESTful API cập nhật CSDL. Các nút hành động (Thêm, Sửa, Xóa, Duyệt) trong toàn bộ CRM sẽ tự động ẩn đi đối với vai trò không có quyền.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  RESTful Database Sync
+                </span>
+              </div>
+            </div>
+
+            <RbacPermissionMatrix
+              onDirtyChange={setMatrixDirty}
+              saveTriggerRef={matrixSaveRef}
+              discardTriggerRef={matrixDiscardRef}
+            />
+          </div>
+        )}
+
+        {/* PHÂN HỆ 2: PHÂN QUYỀN TÀI KHOẢN (Theo Ban Chuyên Môn) */}
+        {activeTab === "user_actions" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <PageHeader
+              title="Phân Quyền Tài Khoản (Theo Từng Ban Chuyên Môn)"
+              subtitle="Danh sách tài khoản hội viên chính thức đã duyệt, phân bổ theo Ban và cấu hình thẩm quyền thao tác thực tế (Thêm, Sửa, Xóa, Duyệt) cho từng tài khoản"
+            />
+
+            {/* Thông báo hướng dẫn phân quyền tài khoản theo ban */}
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 flex items-center gap-3 text-xs">
+              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Info className="w-4 h-4" />
+              </div>
+              <div className="flex-1 text-foreground">
+                <p className="font-bold text-emerald-900 dark:text-emerald-300">
+                  Phân Hệ 2: Phân Quyền Tài Khoản Theo Từng Ban
+                </p>
+                <p className="text-muted-foreground text-[11px] mt-0.5 leading-relaxed">
+                  Danh sách tài khoản hội viên được phân theo từng <strong>Ban Chuyên Môn</strong>. Quyền hạn thao tác thực tế (Thêm, Sửa, Xóa, Duyệt) được <strong>tự động thừa hưởng từ Ban</strong> và có thể tùy chỉnh ghi đè riêng cho từng tài khoản khi cần cấp thêm hoặc thu hồi đặc quyền cụ thể.
+                </p>
+              </div>
+              <div className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-600/10 text-emerald-700 dark:text-emerald-300">
+                {totalMembersCount} Tài khoản đã duyệt
+              </div>
+            </div>
+
+            <MemberPermissionsByCommittee
+              members={approvedMembers}
+              loading={loadingMembers}
+              onUpdateRoleDept={async (payload) => {
+                const res = await updateRoleDept({ data: payload });
+                if (res && (res as any).ok) {
+                  reloadMembers();
+                }
+                return res;
+              }}
+              onDirtyChange={setMemberPermsDirty}
+              saveTriggerRef={memberPermsSaveRef}
+              discardTriggerRef={memberPermsDiscardRef}
+            />
+          </div>
+        )}
+
+        {/* PHÂN HỆ 3: THẨM QUYỀN BAN & CẤP BẬC */}
+        {activeTab === "role_groups" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <PageHeader
+              title="Thẩm Quyền 6 Ban Chuyên Môn & Cấp Bậc Nghiệp Vụ"
+              subtitle="Quản lý lãnh đạo phụ trách, phạm vi thẩm quyền và phân cấp trách nhiệm của 6 Ban chuyên môn hiệp hội"
+            />
+
             {/* 4 KPIs Dashboard */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl border border-border bg-card shadow-xs flex items-center gap-3">
@@ -480,114 +616,91 @@ function PermissionsPage() {
               </div>
             </div>
 
-            {/* Phân Hệ Quản Lý Tài Khoản Hội Viên Đã Duyệt */}
+            {/* Trình Quản Lý Thẩm Quyền 6 Ban Chuyên Môn */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Users className="w-4 h-4 text-primary" />
-                    <span>Phân Quyền Chi Tiết Từng Tài Khoản Theo Ban (Chỉ Tài Khoản Đã Duyệt)</span>
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Điều chỉnh vai trò, ban chuyên môn và ghi đè thẩm quyền thao tác. Bấm "Lưu Vào Database" để gửi RESTful API.
-                  </p>
-                </div>
-              </div>
-
-              <MemberPermissionsByCommittee
-                members={approvedMembers}
-                loading={loadingMembers}
-                onUpdateRoleDept={async (payload) => {
-                  const res = await updateRoleDept({ data: payload });
-                  if (res && (res as any).ok) {
-                    reloadMembers();
-                  }
-                  return res;
+              <CommitteesPermissionManager
+                onMatrixChanged={() => {
+                  dispatchPermissionSyncEvent();
                 }}
               />
             </div>
           </div>
         )}
+      </div>
 
-        {/* ── HIỂN THỊ DẠNG LƯỚI (MATRIX GRID) ── */}
-        {viewMode === "grid" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            {/* 3 Main Sub-Tabs Switcher for Grid Exploration */}
-            <div className="flex flex-wrap items-center gap-2.5 border-b border-border/80 pb-3">
-              <button
-                onClick={() => setActiveTab("matrix")}
-                className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
-                  activeTab === "matrix"
-                    ? "bg-[#003B95] text-white shadow-sm"
-                    : "bg-card text-muted-foreground border border-border hover:bg-secondary hover:text-foreground"
-                }`}
-              >
-                <ShieldCheck className="h-4 w-4" />
-                <span>1. Ma Trận Quyền 8 Phân Hệ x 5 Vai Trò</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("committees")}
-                className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
-                  activeTab === "committees"
-                    ? "bg-[#003B95] text-white shadow-sm"
-                    : "bg-card text-muted-foreground border border-border hover:bg-secondary hover:text-foreground"
-                }`}
-              >
-                <Layers className="h-4 w-4" />
-                <span>2. Thẩm Quyền 6 Ban Chuyên Môn</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("members")}
-                className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
-                  activeTab === "members"
-                    ? "bg-[#003B95] text-white shadow-sm"
-                    : "bg-card text-muted-foreground border border-border hover:bg-secondary hover:text-foreground"
-                }`}
-              >
-                <Users className="h-4 w-4" />
-                <span>3. Phân Quyền Tài Khoản ({totalMembersCount} Đã Duyệt)</span>
-              </button>
+      {/* ==================================================================== */}
+      {/* MODAL CẢNH BÁO: BẠN CHƯA LƯU QUYỀN NGƯỜI DÙNG!                        */}
+      {/* ==================================================================== */}
+      {showUnsavedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-modal-title"
+            className="w-full max-w-lg rounded-3xl border-2 border-amber-500/40 bg-card p-6 shadow-2xl transition-all animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3
+                  id="unsaved-modal-title"
+                  className="text-lg font-black text-foreground flex items-center gap-2"
+                >
+                  <span>Bạn chưa lưu quyền người dùng!</span>
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                  Bạn đang có các thay đổi phân quyền chưa được lưu vào hệ thống. Bạn có muốn lưu và chuyển chức năng không?
+                </p>
+                <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs text-amber-800 dark:text-amber-300 font-medium">
+                  {matrixDirty && memberPermsDirty ? (
+                    <span>• Đang có thay đổi chưa lưu trên cả <strong>Ma Trận Phân Quyền</strong> và <strong>Phân Quyền Tài Khoản</strong>.</span>
+                  ) : matrixDirty ? (
+                    <span>• Đang có thay đổi chưa lưu trên <strong>Ma Trận Phân Quyền</strong>.</span>
+                  ) : (
+                    <span>• Đang có thay đổi chưa lưu trên <strong>Phân Quyền Tài Khoản Hội Viên</strong>.</span>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* TAB 1: Ma Trận Phân Quyền Vai Trò & Ban */}
-            {activeTab === "matrix" && (
-              <div className="space-y-4">
-                <RbacPermissionMatrix />
-              </div>
-            )}
+            <div className="mt-6 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-4 border-t border-border">
+              {/* Nút 3: Ở lại chỉnh sửa */}
+              <button
+                type="button"
+                onClick={handleStayAndEdit}
+                disabled={isSavingAndProceeding}
+                className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-border bg-background text-foreground hover:bg-muted font-semibold text-xs transition cursor-pointer"
+              >
+                Ở lại chỉnh sửa
+              </button>
 
-            {/* TAB 2: Thẩm Quyền 6 Ban Chuyên Môn */}
-            {activeTab === "committees" && (
-              <div className="space-y-4">
-                <CommitteesPermissionManager
-                  onMatrixChanged={() => {
-                    dispatchPermissionSyncEvent();
-                  }}
-                />
-              </div>
-            )}
+              {/* Nút 2: Rời đi không lưu */}
+              <button
+                type="button"
+                onClick={handleDiscardAndProceed}
+                disabled={isSavingAndProceeding}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 font-semibold text-xs transition cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Rời đi không lưu</span>
+              </button>
 
-            {/* TAB 3: Phân Quyền Tài Khoản Theo Ban */}
-            {activeTab === "members" && (
-              <div className="space-y-4">
-                <MemberPermissionsByCommittee
-                  members={approvedMembers}
-                  loading={loadingMembers}
-                  onUpdateRoleDept={async (payload) => {
-                    const res = await updateRoleDept({ data: payload });
-                    if (res && (res as any).ok) {
-                      reloadMembers();
-                    }
-                    return res;
-                  }}
-                />
-              </div>
-            )}
+              {/* Nút 1: Lưu & Chuyển chức năng */}
+              <button
+                type="button"
+                onClick={handleSaveAndProceed}
+                disabled={isSavingAndProceeding}
+                className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#003B95] text-white hover:bg-blue-900 font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" />
+                <span>{isSavingAndProceeding ? "Đang lưu & chuyển..." : "Lưu & Chuyển chức năng"}</span>
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </AppShell>
   );
 }

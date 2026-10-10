@@ -28,9 +28,10 @@
 # │       ├── auth/                # AuthModule, JWT Strategy, RolesGuard, DataScope
 # │       ├── <feature-module>/    # Domain Modules (events, members, voting, sponsors, reviews, documents, etc.)
 # │       │   ├── <name>.controller.ts  # Thin Controller: Routes, HTTP Status, DTO binding
-# │       │   ├── <name>.service.ts     # Fat Service: Business logic, Prisma queries, transactions
-# │       │   ├── <name>.module.ts      # Module bundle definition
-# │       │   └── dto/                  # Input validation DTOs (Zod / TypeScript Classes)
+# │       │   ├── <name>.service.ts     # Business Logic Service: Validation, calculations, orchestration
+# │       │   ├── <name>.repository.ts  # Data Access Repository: Prisma ORM queries, Raw SQL ($queryRaw, $executeRaw)
+# │       │   ├── <name>.module.ts      # Module bundle definition (registers Controller, Service, Repository)
+# │       │   └── dto/                  # Input validation DTOs separated into distinct classes & barrel index.ts
 # │       ├── app.module.ts        # Root NestJS Module
 # │       └── main.ts              # Server entry point (CORS, Pipes, Listeners)
 # ├── ceo1983_app_fe/              # React 18 + TanStack Router Frontend
@@ -75,15 +76,30 @@
 #   - Tuyệt đối KHÔNG dùng kiểu `any`. Mọi DTO, request, response, state và props phải có Type/Interface rõ ràng.
 #   - Nếu kiểu dữ liệu chưa xác định, dùng `unknown`, Generics `<T>`, hoặc `Record<string, unknown>`.
 #
-# [BẮT BUỘC 3] Kiến trúc Controller - Service:
-#   - Controller phải MỎNG (Thin Controller): Chỉ làm nhiệm vụ điều hướng, map params/body sang DTO, gọi Service và trả về kết quả.
-#   - Service chứa toàn bộ Business Logic: Thống kê, validate dữ liệu, bọc try-catch, ném NestJS HttpException (`NotFoundException`, `BadRequestException`, `ForbiddenException`).
+# [BẮT BUỘC 3] Kiến trúc 3 Tầng Chuẩn RESTful (Controller - Service - Repository) & Tách Biệt DTO:
+#   - Controller phải MỎNG (Thin Controller): Chỉ làm nhiệm vụ điều hướng RESTful, validate/map params/body bằng các lớp DTO riêng biệt, gọi Service và trả về HTTP response.
+#   - Service chứa toàn bộ Business Logic: Validate nghiệp vụ, tính toán, phân quyền, điều phối luồng xử lý; ném NestJS HttpException (`NotFoundException`, `BadRequestException`, `ForbiddenException`). Tuyệt đối KHÔNG viết trực tiếp câu lệnh CSDL ($queryRaw, Prisma client queries) trong Service.
+#   - Repository đóng gói toàn bộ Data Access Layer (Repository Pattern): Mọi truy vấn CSDL (Prisma ORM, $queryRaw, $executeRaw, create, update, delete) bắt buộc phải đóng gói trong `<name>.repository.ts`.
+#   - Tách Biệt DTOs (Data Transfer Objects): Tuyệt đối KHÔNG viết inline DTO trong Service hay Controller. Toàn bộ DTOs của mỗi module phải được tách riêng thành các file `<name>.dto.ts` trong thư mục con `dto/` kèm barrel `index.ts`.
 #
 # [BẮT BUỘC 4] Bảo mật & Phân quyền Chuẩn Hóa (Security, Strict RBAC & Permissions):
 #   - Chuẩn hóa DUY NHẤT 5 Vai trò hệ thống cố định: Quản trị (`quan_tri`), Admin (`admin`), Tổng thư ký (`tong_thu_ky`), Trưởng ban (`truong_ban`), Thành viên (`member`). Tuyệt đối không thêm bất kỳ từ ngữ nào khác.
 #   - Chuẩn hóa DUY NHẤT 7 Ban chuyên môn: Ban Thành viên, Ban xúc tiến, Ban thiện nguyện, Ban truyền thông, Ban quản trị, Ban tài chính, Hội viên ceo1983. Tuyệt đối không thêm bất kỳ từ ngữ nào khác.
 #   - Mặc định tài khoản mới tham gia: Vai trò luôn là "Thành viên", ban chuyên môn luôn là "Hội viên ceo1983".
 #   - Phân quyền gán ban & đổi vai trò: Chỉ tài khoản có vai trò Quản trị hoặc Admin mới có quyền chỉ định hội viên vào ban khác hoặc đổi vai trò (chặn cả frontend UI lẫn backend API, trả 403 Forbidden nếu không có quyền).
+#   - Tách Rời 3 Phân Hệ Phân Quyền Thành 3 Màn Hình Độc Lập (Dedicated Permissions Subsystems):
+#     + Menu "Ma trận phân quyền": Route `/permissions?tab=matrix` - Hiển thị ĐỘC LẬP duy nhất Ma trận phân quyền 8 Modules x 5 Roles (`RbacPermissionMatrix`). Tuyệt đối KHÔNG lồng sub-tabs gom cụm 3 phân hệ bên trong.
+#     + Menu "Phân quyền tài khoản": Route `/permissions?tab=user_actions` - Hiển thị ĐỘC LẬP Phân quyền tài khoản theo ban chuyên môn (`MemberPermissionsByCommittee`).
+#     + Menu "Thẩm quyền Ban & Cấp bậc": Route `/permissions?tab=role_groups` - Hiển thị ĐỘC LẬP Thẩm quyền 6 ban & cấp bậc nghiệp vụ (`CommitteesPermissionManager`).
+#     + Sidebar navigation: Bắt buộc đọc `searchStr` từ router state để highlight chính xác từng phân hệ khi người dùng điều hướng qua lại giữa 3 mục menu.
+#   - Cơ Chế Đánh Giá Ma Trận Quyền Nghiêm Ngặt (Strict RBAC Matrix Evaluation & Explicit Denial):
+#     + Khi một thao tác (ví dụ `MEM_ADD`, `MEM_EDIT`, `MEM_DELETE`, `MEM_APPROVE`, `MEM_EXPORT`, `COM_EXPORT`, `FEE_VIEW`, `EVTO_EXPORT`, `CHK_SCAN`) đã tồn tại trong ma trận, nếu cột vai trò tương ứng không được tích (`act.roles[targetRole] === false`), hàm `isActionAllowedByMatrix` BẮT BUỘC phải trả về `false` dứt khoát. Tuyệt đối KHÔNG được để logic fallback cấp phép ngầm `return true`.
+#     + Triệt tiêu hoàn toàn Bypass `isAdmin ||`: Tuyệt đối KHÔNG được viết `isAdmin || can(...)` hoặc `{isAdmin && <button>}` để bảo vệ các nút thao tác con (Sửa, Xóa, Duyệt, Xuất file, Quét QR, Gán phí, Điều phối). Mọi nút thao tác con bắt buộc phải dùng `can(PERMISSIONS...)` hoặc `can("ACTION_CODE")` để khi bỏ tích trong ma trận, nút lập tức bị ẩn đi trên toàn bộ giao diện!
+#     + Chặn Điều Hướng Khi Chưa Lưu Quyền (Unsaved Changes Navigation Blocker): Tại màn hình phân quyền (`/permissions`), khi admin thay đổi quyền trong ma trận hoặc ghi đè tài khoản mà chưa lưu (trạng thái `isDirty = true`): BẮT BUỘC phải chặn điều hướng (Router Navigation qua `useBlocker`, Tab click và `beforeunload`) và hiển thị Modal cảnh báo: "Bạn chưa lưu quyền người dùng! Bạn có muốn lưu và chuyển chức năng không?" với 3 lựa chọn chuẩn:
+#       (1) [Lưu & Chuyển chức năng]: Lưu thay đổi vào CSDL & localStorage, phát sự kiện sync, rồi mới tiếp tục điều hướng.
+#       (2) [Rời đi không lưu]: Hủy bỏ các thay đổi draft chưa lưu, khôi phục trạng thái cũ, rồi mới tiếp tục điều hướng.
+#       (3) [Ở lại chỉnh sửa]: Hủy lệnh điều hướng, đóng modal và giữ nguyên giao diện để tiếp tục chỉnh sửa.
+#     + Backend API RBAC Enforcement: Các service backend (ví dụ `MembersService`) bắt buộc phải gọi `checkActionPermission(userId, actionCode)` kiểm tra cả `crm_member_permissions` (personal override) và `crm_permission_matrix` (bảng `app_settings`), chặn đứng 403 Forbidden các hành vi thêm/sửa/xóa/phê duyệt trái phép khi quyền đã bị thu hồi trong cấu hình hệ thống.
 #   - Thu hồi quyền tức thì: Khi quyền hạn/thao tác bị thay đổi, hệ thống phải lập tức ẩn chức năng/nút thao tác khỏi giao diện. Nếu người dùng bấm vào khi chưa kịp ẩn: Bắt buộc hiển thị Toast: "Tài khoản của bạn đã bị thay đổi quyền không còn quyền sử dụng chức năng [Tên chức năng], không còn quyền thao tác [Tên thao tác]" và tự động đăng xuất đá văng ra màn hình đăng nhập.
 #   - Luồng Quét Mã Sự Kiện (QR Check-In): Khi tài khoản A có mã vé/mã đại biểu, tài khoản B (có quyền soát vé) quét mã của A thì B phải thấy đầy đủ thông tin đăng ký của A (Tên, SĐT, Công ty, Chức vụ, Ghế ngồi, Số may mắn, Hạng vé). Hệ thống phải phân biệt rõ ràng mã QR của A thuộc sự kiện nào, hiển thị tiêu đề sự kiện nổi bật và bắn cảnh báo rực đỏ nếu vé không trùng với sự kiện đang soát tại bàn.
 #   - Lưu trữ Ma trận Phân quyền: Đồng bộ trực tiếp vào CSDL PostgreSQL (bảng `public.app_settings` với `key = 'crm_permission_matrix'`) thông qua API `/admin/permission-matrix`, kết hợp `localStorage` để tăng tốc độ load và fallback.
@@ -702,7 +718,159 @@
 #     + Tạo và chỉnh sửa giải thưởng bắt buộc có typed target rõ ràng: `targetType: 'PRODUCT' | 'SPONSOR_PACKAGE' | 'VOUCHER' | 'CASH' | 'CUSTOM'` và `targetId`.
 #     + Khi người dùng chọn `targetType = 'PRODUCT'`, form BẮT BUỘC gọi API `GET /products` để lấy danh sách sản phẩm thật từ CSDL `public.products`, tự động điền tên sản phẩm, doanh nghiệp cung ứng, giá thị trường và ảnh đại diện.
 #     + Tương tự, khi chọn `targetType = 'SPONSOR_PACKAGE'`, tự động nạp danh sách gói từ `public.sponsor_packages`.
-
-
-
+#
+# [BẮT BUỘC 45] Quy Chuẩn Kiến Trúc Miền Độc Lập (Modular Domain Services & Facade Pattern), Triệt Tiêu God File, Thuần Hóa Backend NestJS + Prisma & Cấm Tuyệt Đối Phụ Thuộc Supabase:
+#   - Triệt Tiêu Tuyệt Đối "God Service" & "God Component" (> 2.000 dòng):
+#     + Nghiêm cấm viết các tệp dịch vụ Backend hoặc Component Frontend vượt quá 2.000 dòng mã nguồn.
+#     + Khi một domain/feature phình to (như ConnectApp, Messages, Events, Moments), BẮT BUỘC bóc tách thành các Sub-Services chuyên biệt theo từng miền nghiệp vụ đặt trong thư mục `services/` hoặc `components/<feature>/`.
+#     + Điển hình chuẩn mực: `ConnectAppService` được bóc tách từ monolith 9.206 dòng thành 12 Specialized Domain Services độc lập trong `apps/ceo1983_app_be/src/connect-app/services/`:
+#       1. `ConnectCustomerService`: Quản lý khách hàng BC CRM, nhật ký tương tác, tags, nhu cầu, gợi ý AI tag.
+#       2. `ConnectCardScanService`: Quét danh thiếp OCR, nhận diện AI Vision, khớp liên hệ, lưu danh thiếp.
+#       3. `ConnectIdentityService`: Quản lý hồ sơ cá nhân, Business Identity, độ hiển thị thông tin, link chia sẻ, Showcase.
+#       4. `ConnectCommunityService`: Hội nhóm/CLB, phân quyền thành viên, duyệt gia nhập, thư mời, tin tức, sự kiện CLB.
+#       5. `ConnectContentService`: Tin tức xuất bản, quyền lợi/đặc quyền hội viên (Perks), quản trị nội dung.
+#       6. `ConnectPublicRegistrationService`: Đăng ký gia nhập hiệp hội công khai, tra cứu hồ sơ qua SĐT/Email, cảnh báo Admin.
+#       7. `ConnectNetworkService`: Kết nối hội viên, đối tác khách mời, gợi ý kết nối hôm nay, feed mạng lưới, bắt tay NFC, Person Journey.
+#       8. `ConnectMomentsService`: Khoảnh khắc doanh nhân, bình luận phân cấp, thả tim, nhắc nhở sau, upload ảnh, thông báo gắn thẻ.
+#       9. `ConnectNfcService`: Quản lý thẻ NFC cá nhân, đăng ký, đổi tên, thu hồi thẻ, phiên thiết bị NFC.
+#       10. `ConnectOpportunityService`: Cơ hội giao thương B2B cộng đồng, tiếp nhận, đăng ký quan tâm, tiến độ hợp tác, follow-up.
+#       11. `ConnectMessengerService`: Trò chuyện hội viên, hội thoại trực tiếp DM, tin nhắn hệ thống, phản ứng emoji, thu hồi tin nhắn.
+#       12. `ConnectMarketplaceService`: Chợ B2B & Sản phẩm hội viên, báo giá, cập nhật trạng thái đơn, hủy/nhắc nhở báo giá.
+#     + Áp dụng mô hình Facade Pattern: Lớp `ConnectAppService` chính đóng vai trò điều phối (Orchestrator / Facade), tiêm (inject) 12 Domain Services và ủy quyền (delegate) xử lý nghiệp vụ; bảo toàn 100% chữ ký phương thức để 13 Controller không bị ảnh hưởng.
+#   - Thuần Hóa Backend NestJS + Prisma & Loại Bỏ Triệt Để Supabase Client Trên Frontend:
+#     + Dự án sử dụng CSDL PostgreSQL tập trung vận hành qua Prisma ORM (`packages/db`) và NestJS Backend API (`apps/ceo1983_app_be`).
+#     + TUYỆT ĐỐI KHÔNG import hoặc gọi trực tiếp Supabase Client (`@supabase/supabase-js`, `supabase.from(...)`, `supabase.auth`) trên Frontend `ceo1983_app_fe`.
+#     + Toàn bộ nghiệp vụ xác thực (Auth), tải file (Upload), cơ sở dữ liệu và realtime phải đi qua NestJS RESTful API (`fetchNestApi`, `uploadFileToNest`) với Bearer JWT Token từ `AuthContext`.
+#   - Phân Rã & Mô-đun Hóa Modal Giao Diện (Frontend Modal Extraction Standard):
+#     + Các màn hình phức tạp hoặc Mega-Routes (> 2.000 dòng như Products, Events, Opportunities) TUYỆT ĐỐI KHÔNG nhúng trực tiếp hàng trăm dòng JSX modal lồng nhau trong thân route.
+#     + BẮT BUỘC bóc tách toàn bộ modals vào thư mục chuyên trách: `src/components/<feature>/modals/` kèm tệp barrel `index.ts`:
+#       1. `src/components/marketplace/modals/`: `ProductPostModal`, `ProductQuoteModal`, `ProductQuotesListModal`, `ProductEditModal`, `ProductAdRegistrationModal`. Rút gọn `association.products.tsx` từ 3.110 dòng xuống ~2.340 dòng.
+#       2. `src/components/events/modals/`: `EventRegisteredTicketsModal`, `EventDetailModal`, `EventRegistrationModal`, `EventSuccessNoticeModal`, `EventTicketPassModal`. Rút gọn `association.events.tsx` từ 2.490 dòng xuống 1.660 dòng (-830 dòng).
+#       3. `src/components/opportunities/modals/`: `OpportunityDetailModal`, `OpportunityCreateModal`, `OpportunityEditModal`. Rút gọn `association.opportunities.tsx` từ 2.180 dòng xuống 1.286 dòng (-894 dòng).
+#     + Mỗi Modal là một Component độc lập, tự quản lý Render Portal (`createPortal(..., document.body)`), nhận Typed Props rõ ràng và sử dụng Sonner Toast (`import { toast } from "sonner"`).
+#
+# [BẮT BUỘC 46] Quy Chuẩn Thống Nhất Tài Liệu Cho AI (Unified Subsystem Docs), ĐÚNG 3 Màu Chuẩn CEO 1983 Duy Nhất & CẤM Tuyệt Đối Hard/Mock Data:
+#   - Quy Hoạch Toàn Diện Thư Mục Tài Liệu AI Theo Từng Phân Hệ (`docs/`):
+#     + Backend API (`apps/ceo1983_app_be/docs/`): `SKILL.md`, `TECHSPEC.md`, `CURSORRULE.md`, `MEMORY.md`, `MO_TA_LUONG_XU_LY_CHUC_NANG_CODE.md`.
+#     + Frontend Web (`apps/ceo1983_app_fe/docs/`): `SKILL.md`, `TECHSPEC.md`, `CURSORRULE.md`, `MEMORY.md`, `MO_TA_LUONG_XU_LY_CHUC_NANG_CODE.md`, `QUY_CHUAN_UI_UX.md`.
+#     + Mobile Wrapper (`apps/mobile_ceo1983/docs/`): `SKILL.md`, `TECHSPEC.md`, `CURSORRULE.md`, `MEMORY.md`, `MO_TA_LUONG_XU_LY_CHUC_NANG_CODE.md`, `QUY_CHUAN_UI_UX.md`.
+#     + Toàn bộ AI Assistant khi làm việc trên phân hệ nào bắt buộc phải đọc và tuân thủ tuyệt đối bộ tài liệu trong thư mục `docs/` của phân hệ đó.
+#   - ĐÚNG 3 MÀU CHUẨN CEO 1983 DUY NHẤT - CẤM TỰ BỊA MÀU LINH TINH:
+#     1. Màu 1 - Deep Cobalt Navy: `#003B95` / `#002B70` / `#0A1A3A` (Header, Nút bấm chính, Huy hiệu hội viên).
+#     2. Màu 2 - Warm Amber Gold: `#F59E0B` / `#D97706` / `#B45309` (Viền thẻ VIP, Icon nổi bật, Nút quan tâm, Deal CRM).
+#     3. Màu 3 - Neutral Contrast: `#FFFFFF` / `#0F172A` / `#1E293B` (Nền sáng trắng thanh lịch hoặc thẻ đen sang trọng).
+#     + CẤM TUYỆT ĐỐI: Màu tím (purple), hồng (pink), xanh chuối (lime), xanh neon, dải màu cầu vồng.
+#   - CẤM TUYỆT ĐỐI HARD DỮ LIỆU & MOCK DATA (ZERO MOCK DATA):
+#     + 100% dữ liệu hiển thị, thống kê, bảng tin, sản phẩm, cơ hội, bốc thăm phải được truy vấn thật từ PostgreSQL thông qua NestJS API (`fetchNestApi`, Prisma queries).
+#     + Nghiêm cấm tạo mảng fake array trong component. Nếu mảng rỗng: BẮT BUỘC hiển thị Empty State chuẩn ("Chưa có dữ liệu" + Nút tạo mới).
+#
+# [BẮT BUỘC 47] Quy Chuẩn Giao Diện Danh Bạ CEO (Phone Contacts UI) & Trợ Lý AI Tối Giản (Minimalist Executive AI):
+#   - Danh Bạ Hội Viên (/association/members):
+#     + Mặc định hiển thị danh bạ cá nhân: CHỈ hiển thị những hội viên đã kết nối với tài khoản đang đăng nhập (`user_connections` trạng thái `accepted` hoặc `vba_connected_members`). Tuyệt đối không trả ra tràn lan toàn bộ hội viên câu lạc bộ làm sai lệch bản chất danh bạ điện thoại.
+#     + Sắp xếp chuẩn theo bảng chữ cái A-Z tiếng Việt theo Tên người Việt (trích xuất từ cuối cùng của Họ Tên và dùng `localeCompare(..., "vi")`).
+#     + Thanh chỉ mục cuộn nhanh A-Z mini dọc bên phải màn hình hỗ trợ chạm/lướt để cuộn mượt (`scrollToLetter`) đến đúng nhóm vần tức thì.
+#     + Thẻ liên hệ chuẩn giao diện danh bạ điện thoại thông minh (Phone Contacts Card): Avatar dập viền vàng, Tên, Chức danh, Công ty, Số điện thoại (ẩn/hiện thông minh) kèm cụm 4 nút tròn thao tác nhanh: Gọi điện (`tel:`), Nhắn tin (`/association/messages`), Thẻ 83 điện tử (`MemberProfileModal`), Hẹn gặp 1-1 (`BusinessConnectBottomSheet`).
+#     + Phân tách rõ ràng: Toàn bộ danh sách hội viên chưa kết nối được đưa sang Tab "Khám phá" riêng biệt có tính năng gửi yêu cầu kết nối.
+#   - Trợ Lý AI Điều Hành (VoiceNavAssistant.tsx):
+#     + Thiết kế tối giản chuẩn Executive (Minimalist Executive AI): Nút nổi tròn 48px viền vàng gold tinh tế, icon Sparkles phát sáng nhẹ, không hiển thị nút X gây rối mắt.
+#     + Hộp thoại AI tối giản, loại bỏ hoàn toàn các thanh thông tin phiên cồng kềnh (Live Context Bar hiển thị nợ phí, unread); thu gọn các phím tắt nhanh còn 4 gợi ý cốt lõi; thanh nhập liệu capsule bo tròn tích hợp micro và gửi tin tức thời.
+#
+# [BẮT BUỘC 48] Quy Chuẩn Trợ Lý AI Toàn Năng (Universal Executive AI Brain) & Giao Diện ChatGPT Voice-First Tối Giản:
+#   - Bộ Não Toàn Năng Universal Executive AI (Không Bao Giờ Trả Lời Thiếu Dữ Liệu):
+#     + Trợ lý AI tuyệt đối KHÔNG trả về câu trả lời cụt lủn "chưa tìm thấy dữ liệu trên toàn hệ thống".
+#     + Tích hợp Bộ Não Điều Hành Toàn Năng giải đáp ngay lập tức (10ms) với văn phong tôn kính ("Dạ thưa Quý Anh/Chị Doanh nhân CEO 1983..."), cấu trúc chuyên sâu, dẫn chứng bài bản cho mọi câu hỏi thuộc 8 lĩnh vực: (1) Quản trị dòng tiền & tài chính doanh nghiệp; (2) Chiến lược nhân sự, giữ chân nhân tài & OKRs; (3) Chiến lược kinh doanh & B2B Sales; (4) Giải tỏa Stress lãnh đạo, phục hồi năng lượng & giấc ngủ CEO; (5) Địa điểm tiếp khách VIP, ẩm thực & sân Golf; (6) Phong thủy tuổi Quý Hợi 1983 (Mệnh Đại Hải Thủy, bàn làm việc, tài lộc); (7) Ứng dụng AI thực chiến trong doanh nghiệp SME; (8) Triết lý lãnh đạo & quản trị chung.
+#   - Cơ Chế Tự Động Thao Tác & Điều Hướng (Autonomous Action & Navigation):
+#     + Tự động nhận diện mọi câu lệnh tự nhiên: "mở", "vào", "xem", "cho xem", "chuyển sang", "dẫn tới", "đi tới".
+#     + Tự động bóc tách tên hội viên để tìm kiếm trong Danh bạ (ví dụ: "tìm anh Tùng" -> `/association/members?search=Tùng`).
+#     + Tự động thực hiện các thao tác hệ thống: Đổi giao diện Sáng/Tối (`toggleTheme()`), gọi hotline ban thư ký (`tel:0983198307`).
+#     + Hiển thị huy hiệu hành động trực quan nổi bật: `⚡ Đang chuyển tới...` hoặc `🌓 Đang chuyển đổi giao diện...` kèm âm thanh phản hồi và chuyển màn hình mượt mà trong 650ms.
+#   - Thiết Kế Giao Diện Chuẩn ChatGPT Tối Giản Voice-First UI:
+#     + Tone màu tối giản chuẩn ChatGPT: Nền matte dark zinc (`bg-[#09090b]`), viền tinh gọn `border-zinc-800`, chữ trắng ngà sắc nét `text-zinc-100`, loại bỏ hoàn toàn các viền neon và thanh thông tin cồng kềnh.
+#     + Chế độ kép Voice/Chat (Segmented Control Pill): Chuyển đổi linh hoạt giữa Tab Giọng Nói (Voice Mode) và Tab Hội Thoại (Chat Mode).
+#     + Quả Cầu Giọng Nói Tương Tác (ChatGPT Voice Orb): Quả cầu trung tâm phản ứng động theo âm lượng micro (`audioWaveLevel`) với các vòng sóng âm đồng tâm (concentric dynamic ripples), phát sáng breathing êm dịu khi AI nói, chạm vào quả cầu để bật/tắt ghi âm.
+#     + Thẻ phụ đề thời gian thực (Real-time Subtitles): Hiển thị trực tiếp câu nói của người dùng và câu trả lời AI ngay dưới quả cầu.
+#     + Thanh nhập liệu capsule đáy ChatGPT: Micro phát sáng khi ghi âm, ô nhập không viền, nút mũi tên gửi bo tròn chuẩn ChatGPT.
+#
+# [BẮT BUỘC 49] Quy Chuẩn Quản Lý Phiên Hội Thoại (ChatGPT Conversation History Drawer), Triệt Tiêu Vòng Lặp Nói 2 Lần & Màu Sắc Chuẩn Brand CEO 1983:
+#   - Quản Lý Phiên Hội Thoại & Lịch Sử Trò Chuyện Chuẩn ChatGPT (Conversation History & New Chat):
+#     + Trợ lý AI BẮT BUỘC phải có tính năng "+ Hội thoại mới" (New Chat) và ngăn kéo "Lịch sử hội thoại" (History Drawer) lưu trữ danh sách các phiên đàm thoại trong `localStorage` (`ceo1983_ai_chat_sessions_v3`, `ceo1983_ai_active_session_id_v3`).
+#     + Thanh tiêu đề (Header): Bố trí nút capsule trắng "+ Hội thoại mới" viền thanh lịch chữ xanh `#265BFF` (khớp chính xác theo bản vẽ thiết kế SVG: `rx="16" fill="white"`), biểu tượng ngăn kéo Lịch Sử (`History`), nút bật/tắt âm thanh (`Volume2`/`VolumeX`) và nút đóng (`X`).
+#     + Ngăn kéo Lịch sử (Slide-over History Drawer): Cho phép duyệt tìm kiếm, xem tiêu đề tự sinh từ câu hỏi đầu tiên, thời gian và số lượng tin nhắn; nhấp vào để tiếp tục phiên trò chuyện cũ hoặc bấm biểu tượng thùng rác để xóa phiên.
+#   - Triệt Tiêu Hoàn Toàn Lỗi Nói Lặp 2 Lần & Vòng Lặp Âm Thanh (Acoustic Echo & Duplicate Submission Elimination):
+#     + Khóa nguyên tử submission (`isSubmittingRef.current = true`): Chặn đứng 100% việc gửi câu hỏi song song hoặc gửi lặp khi sự kiện `silenceTimer` và `recognition.onend` cùng kích hoạt.
+#     + Dọn dẹp độc lập kênh âm thanh (`cleanupAudio`): Khi bắt đầu thu âm hoặc phát âm thanh, BẮT BUỘC hủy toàn bộ event handlers cũ (`recognition.onend = null`, `mediaRecorder.onstop = null`) và tắt micro hoàn toàn trước khi phát loa ngoài (`stopSpeaking()`) để âm thanh từ loa thiết bị không bị micro thu lại tạo thành vòng lặp acoustic echo loop.
+#     + Phát âm thanh đơn kênh (Single Audio Channel Guard): Giọng đọc tiếng Việt (Natural Vietnamese TTS) chỉ phát qua duy nhất 1 kênh âm thanh tại một thời điểm, không phát đồng thời Google Audio và SpeechSynthesis.
+#   - Chuẩn Hóa Màu Sắc Thương Hiệu CEO 1983 Theo Thiết Kế SVG (Luxury Executive Light & Dark Palette):
+#     + Nền tổng thể: Nền xanh băng sang trọng `#F7FAFF` (Dark: `#0D1522`), khung viền mềm mại `#DCE6F5` / `#E5EDF8`, bóng mờ êm dịu (`shadow-2xl`).
+#     + Thẻ nội dung: Màu trắng tinh khôi `#FFFFFF` bo góc lớn `rounded-2xl` / `rounded-3xl` (chuẩn `rx="16"` đến `rx="20"` trong SVG).
+#     + Màu chủ đạo: Deep Cobalt Navy `#003B95` / `#002B70` kết hợp Vibrant Royal Blue `#265BFF` và điểm nhấn Warm Amber Gold (`#F59E0B` / `#D97706`).
+#     + Màu chữ chuẩn doanh nhân: Chữ chính màu than đá đậm `#192638` (tương phản cao, dễ đọc), chữ phụ màu xám thép `#788392` / `#526074`.
+# [BẮT BUỘC 50] Quy Chuẩn Avatar Nhân Vật Hoạt Hình 3D CEO 1983 AI, Triệt Tiêu Hoàn Toàn Lỗi Lặp Giọng Nói (Single-Engine Native SpeechSynthesis) & Loại Bỏ Hoàn Toàn Giao Diện Scroll Ngang:
+#   - Tích Hợp Avatar Nhân Vật Hoạt Hình 3D Doanh Nhân CEO 1983 AI:
+#     + Thay thế hoàn toàn các biểu tượng micro/quả cầu trừu tượng bằng hình ảnh nhân vật hoạt hình 3D doanh nhân nam lịch lãm (`Rectangle.png` -> `/ai-assistant-character.png`) tại tất cả các điểm chạm:
+#       * Nút Trợ lý Nổi (Floating Launcher): Nút tròn nổi viền vàng gold sang trọng hiển thị avatar nhân vật 3D, có chấm xanh lá báo hiệu trực tuyến (Online Status Pulse).
+#       * Tiêu đề Modal (Header Brand): Avatar tròn 36px của nhân vật 3D cạnh tên thương hiệu "CEO 1983 AI".
+#       * Bong bóng tin nhắn Chat: Avatar nhân vật 3D cạnh mỗi tin nhắn phản hồi của Trợ lý AI.
+#       * Trung tâm Chế độ Giọng nói (Voice Mode Stage): Sân khấu trung tâm tròn đường kính 176px (44 tailwind units) hiển thị nhân vật hoạt hình 3D, bao quanh bởi các vòng sóng âm đồng tâm chuyển động theo âm lượng micro, kèm huy hiệu trạng thái động ('Đang nghe...', 'Đang nói...', 'Chạm để nói').
+#   - Triệt Tiêu Hoàn Toàn Lỗi Lặp Giọng Nói 2 Lần (Double Speech Permanent Elimination):
+#     + Nguyên nhân gốc rễ đã xác định: Việc sử dụng link bên ngoài `translate.google.com/translate_tts` bị trình duyệt chặn CORS/403 khiến cả 2 listener `audio.onerror` và `audio.play().catch(...)` cùng kích hoạt, dẫn đến hàm fallback `window.speechSynthesis.speak()` bị gọi 2 lần liên tiếp cho cùng một câu nói.
+#     + Giải pháp triệt để: Loại bỏ hoàn toàn dịch vụ bên ngoài `translate.google.com`. Chỉ sử dụng DUY NHẤT một bộ máy phát âm thanh native trình duyệt `window.speechSynthesis` tiêu chuẩn:
+#       * Luôn gọi `window.speechSynthesis.cancel()` để dọn sạch hàng đợi âm thanh cũ trước khi phát câu mới.
+#       * Khởi tạo duy nhất 1 đối tượng `SpeechSynthesisUtterance`, gắn voice `vi-VN` tiếng Việt tự nhiên và gán listener `onend` / `onerror` để dập cờ `isSpeaking`.
+#       * Tuyệt đối không tự động đọc lời chào khi người dùng vừa mở hộp thoại, chỉ kích hoạt giọng nói khi có phản hồi mới từ câu hỏi của người dùng hoặc lệnh điều hướng.
+#       * Tự động gọi `stopSpeaking()` ngay khi người dùng chạm vào micro để nói, chặn đứng 100% việc micro thu âm lại giọng nói của chính loa thiết bị (triệt tiêu acoustic echo loop).
+#   - Loại Bỏ Hoàn Toàn Giao Diện Scroll Ngang (Zero Horizontal Scrollbar):
+#     + CẤM TUYỆT ĐỐI việc sử dụng `overflow-x-auto` và hàng nút đơn dòng kẹt thanh cuộn ngang gây che khuất thao tác trên thiết bị di động.
+#     + Toàn bộ danh sách nút gợi ý câu lệnh nhanh (Quick Prompt Chips) BẮT BUỘC sử dụng bố cục cuộn quấn tự nhiên (`flex flex-wrap items-center justify-start gap-1.5`).
+#     + Tất cả container modal, drawer lịch sử và khung hội thoại BẮT BUỘC khai báo `overflow-x-hidden` để đảm bảo 100% không bao giờ xuất hiện thanh trượt ngang trên bất kỳ kích thước màn hình nào.
+#
+# [BẮT BUỘC 51] Quy Chuẩn Vòng Đời React Fiber Lifecycle & Triệt Tiêu Lỗi Cập Nhật Trạng Thái Khi Chưa Mount ("Can't perform a React state update on a component that hasn't mounted yet"):
+#   - Khởi Tạo Trạng Thái Đồng Bộ (Lazy Initializers vs useEffect Cascades):
+#     + Tuyệt đối KHÔNG khởi tạo state bằng giá trị rỗng (như `useState([])`, `useState("")`) rồi dùng `useEffect` ngay sau mount để đọc `localStorage` và gọi `setState(...)`.
+#     + Mọi dữ liệu đọc từ `localStorage`, cookie hoặc device settings BẮT BUỘC sử dụng hàm khởi tạo lười: `useState(() => readInitial())`. State được tính toán và gán đồng bộ ngay trong render pass đầu tiên, triệt tiêu hoàn toàn cascading re-render và cảnh báo cập nhật fiber chưa commit.
+#   - Quản Lý Vòng Đời Bằng `isMountedRef`:
+#     + Mọi component có chứa Web Speech API, MediaRecorder, WebRTC, timer (`setTimeout`, `setInterval`) hoặc asynchronous fetch BẮT BUỘC thiết lập cờ `isMountedRef`:
+#       ```typescript
+#       const isMountedRef = useRef(false);
+#       useEffect(() => {
+#         isMountedRef.current = true;
+#         return () => {
+#           isMountedRef.current = false;
+#         };
+#       }, []);
+#       ```
+#     + Trong các hàm dọn dẹp (`cleanupAudio`, `stopSpeaking`), callback timer hoặc event listener bất đồng bộ: BẮT BUỘC kiểm tra `if (isMountedRef.current)` trước khi kích hoạt `setState`.
+#     + Trong `cleanupAudio()`: Chỉ gọi `setIsListening(false)` và `setRecordingSeconds(0)` khi `isListeningRef.current === true` VÀ `isMountedRef.current === true`, tránh gọi setState dư thừa trong quá trình React đang unmount/teardown fiber.
+#   - Tách Biệt Biến Động Khỏi Dependency Array Của Browser Native APIs:
+#     + Các hàm xử lý phức tạp (`submitPrompt`) phụ thuộc vào nhiều state biến thiên (`activeSessionId`, `user`, v.v.) BẮT BUỘC được lưu qua `useRef` (`submitPromptRef.current = submitPrompt`).
+#     + `useEffect` khởi tạo `SpeechRecognition` chỉ phụ thuộc vào `[cleanupAudio]`, TUYỆT ĐỐI KHÔNG đưa `submitPrompt` vào dependency array để ngăn chặn việc browser API bị hủy và tái tạo liên tục ở mỗi nhịp re-render.
+#   - Điều Kiện Hóa Các Effect Đo Lường DOM:
+#     + Các effect tính toán bounding client rect (`measureTarget` trong `useVoiceGpsTour`) BẮT BUỘC kiểm tra điều kiện `if (!activeTour || !currentStep) return;` trước khi thực thi để không gọi `setTargetRect(null)` trên mount khi không có tour nào hoạt động.
+#   - Bảo Vệ Tuyến Đường Công Khai (Public & Auth Route Guard):
+#     + `GlobalVoiceNavAssistant` trong `__root.tsx` BẮT BUỘC kiểm tra `isAuthOrPublicPage` (`/login`, `/register`, `/auth`) trước khi render component AI, ngăn ngừa triệt để churn mount/unmount vô ích trên màn hình xác thực.
+#
+# [BẮT BUỘC 52] Quy Chuẩn Cụm Nút Hành Động Danh Bạ CEO 1983 & Bất Biến Hook Dependency Array:
+#   - Thiết Kế Cụm 4 Nút Tròn Danh Bạ (Phone Contacts Action Buttons):
+#     + Cụm 4 nút thao tác nhanh (Gọi điện, Nhắn tin, Thẻ 83, Hẹn gặp) BẮT BUỘC có kích thước tròn đồng bộ `rounded-full h-9 w-9`, có viền tương phản cao và hiệu ứng `active:scale-95 transition-all shadow-xs`.
+#     + TUYỆT ĐỐI KHÔNG dùng viền mờ nhạt như `border-blue-200` hay icon nét mảnh gây hiện tượng mờ nhòa khó nhìn.
+#     + Nút Nhắn tin (`MessageSquare`): BẮT BUỘC sử dụng nhận diện Deep Cobalt Navy (`bg-blue-50 dark:bg-blue-950/50`, viền `border border-[#003B95]/35 dark:border-blue-500/50`, text `#003B95 dark:text-blue-300`, hover `hover:bg-[#003B95] hover:text-white`), icon BẮT BUỘC có độ dày `stroke-[2.3]`.
+#     + Nút Gọi điện (`Phone`): Viền `border-emerald-600/35`, icon `stroke-[2.2]`, text `text-emerald-700 dark:text-emerald-400`.
+#     + Nút Thẻ 83 (`CreditCard`): Viền `border-amber-500/40`, icon `stroke-[2.2]`, text `text-amber-700 dark:text-amber-400`.
+#     + Nút Hẹn gặp (`Handshake`): Viền `border-purple-500/35`, icon `stroke-[2.2]`, text `text-purple-700 dark:text-purple-400`.
+#   - Bất Biến Kích Thước Hook Dependency Array Trong React (Immutable Hook Deps Size):
+#     + TUYỆT ĐỐI KHÔNG thay đổi số lượng phần tử của dependency array trong `useEffect` / `useCallback` / `useMemo` giữa các phiên bản mã nguồn mà không kiểm tra tác động đến React Fast Refresh / Vite HMR.
+#     + Với các effect đo lường DOM (`useVoiceGpsTour`): Giữ dependency array ổn định gồm hàm callback đã memoize `[measureTarget]` (size 1). Mọi điều kiện kiểm tra dữ liệu phụ thuộc (`activeTour`, `currentStep`) BẮT BUỘC đặt dưới dạng early return guard `if (!activeTour || !currentStep) return;` ngay tại đầu thân effect.
+#
+# [BẮT BUỘC 53] Quy Chuẩn Triệt Tiêu Nhân Bản Tin Nhắn (Chat Deduplication) & Nút Nhắn Tin Siêu Đậm Nét:
+#   - Quy Trình Chống Nhân Bản Tin Nhắn Trong Giao Diện Chat (`ChatThread`):
+#     + Socket Loopback Guard: Socket event `member:message_received` CHỈ ĐƯỢC PHÉP đưa tin nhắn vào `localMessages` khi `fromCode === currentPeer` (tin nhắn gửi đến từ đối phương). TUYỆT ĐỐI KHÔNG thêm lại tin nhắn của chính mình do broadcast socket trả về, vì người gửi đã có tin nhắn optimistic trong `handleSend`.
+#     + Re-key Optimistic Message: Khi API `send()` trả về `{ ok: true, id: serverGeneratedUuid }`, BẮT BUỘC cập nhật ngay lập tức `id` của tin nhắn optimistic từ `local-...` thành UUID chính thức của server.
+#     + Thuật Toán Deduplication Theo Khoảng Thời Gian Thực (Sliding Window):
+#       * TUYỆT ĐỐI KHÔNG dùng phép chia slot thời gian tĩnh dạng `Math.floor(timeMs / 15000)` do gây lỗi tách bucket tại ranh giới giây.
+#       * BẮT BUỘC dùng thuật toán sliding window so sánh độ lệch thời gian thực `diff < 45000` (45 giây) kết hợp kiểm tra `m.mine` và nội dung text đã `.trim()`. Khi phát hiện trùng lặp, BẮT BUỘC ưu tiên giữ tin nhắn có ID chính thức từ server.
+#     + Dọn Dẹp Bộ Nhớ Đệm Tự Động: Khi `effectiveData.messages` trả về từ server, BẮT BUỘC chạy effect lọc bỏ các tin nhắn local optimistic trùng lặp để giải phóng `localStorage`, ngăn chặn việc tồn đọng tin nhắn cũ giữa các phiên đăng nhập.
+#   - Nhận Diện Nút Nhắn Tin Danh Bạ CEO 1983 Siêu Đậm Nét (`association.members.tsx`):
+#     + Viền: BẮT BUỘC dùng `border-2 border-blue-600 dark:border-blue-400`.
+#     + Nền & Chữ: `bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300`.
+#     + Biểu tượng: `<MessageSquare className="h-4.5 w-4.5 stroke-[2.6] fill-blue-600/25 group-hover:fill-white/30 group-hover:text-white text-blue-700 dark:text-blue-300 transition-colors" />` với nét vẽ dày 2.6px và màu đổ fill 25% giúp bong bóng chat đậm đà, không bị rỗng và sắc nét tuyệt đối.
 

@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import { DocumentsService } from './documents.service';
+import { CreateDocumentDto, UpdateDocumentDto } from './dto';
 
 @Controller('documents')
 @UseGuards(AuthGuard)
@@ -25,7 +26,7 @@ export class DocumentsController {
   }
 
   @Post()
-  async create(@Request() req: any, @Body() data: any) {
+  async create(@Request() req: any, @Body() data: CreateDocumentDto) {
     const userId = req.user.id || req.user.sub;
     if (!data.name || !data.category || !data.type) {
       throw new BadRequestException('Missing required fields: name, category, or type');
@@ -34,7 +35,7 @@ export class DocumentsController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: any) {
+  async update(@Param('id') id: string, @Body() data: UpdateDocumentDto) {
     if (!data.name || !data.category || !data.type) {
       throw new BadRequestException('Missing required fields: name, category, or type');
     }

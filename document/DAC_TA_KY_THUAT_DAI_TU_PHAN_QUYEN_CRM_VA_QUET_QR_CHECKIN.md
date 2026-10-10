@@ -78,19 +78,30 @@ Tuyệt đối không dùng thêm các tên ban tự do ngoài danh sách 7 ban 
 
 ---
 
-## 5. TỔ CHỨC LẠI GIAO DIỆN PHÂN QUYỀN CRM (`/permissions`)
+## 5. TÁCH RỜI TOÀN DIỆN 3 PHÂN HỆ PHÂN QUYỀN THÀNH 3 MÀN HÌNH ĐỘC LẬP & FIX QUYỀN THÊM HỘI VIÊN (`MEM_ADD`)
 
-Tổ chức lại thành đúng **3 Tab cụ thể**:
-1. **Tab 1: 1. Ma Trận Phân Quyền Vai Trò**
-   - Bảng phân quyền phân cấp theo 5 vai trò chuẩn: `Quản trị`, `Admin`, `Tổng thư ký`, `Trưởng ban`, `Thành viên`.
-   - Cấu hình chi tiết quyền Xem, Tạo, Sửa, Xóa, Phê duyệt cho từng phân hệ: Hội viên, Tài chính, Sự kiện, Ban chuyên môn, Sàn thương mại, Quyền quản trị.
-2. **Tab 2: 2. Phân Quyền Tài Khoản Thành Viên**
-   - Danh sách tài khoản hội viên kèm thông tin: Mã hội viên, Họ tên, Email, Vai trò hiện tại, Ban chuyên môn hiện tại.
-   - Bộ lọc tiện lợi theo 5 vai trò và 7 ban chuyên môn.
-   - Thao tác gán vai trò & đổi ban với bộ kiểm tra quyền chặt chẽ (chỉ `Quản trị` và `Admin` mới lưu thành công).
-3. **Tab 3: 3. Thẩm Định 6 Ban Chuyên Môn**
-   - Bảng quy trình thẩm định hội viên mới của 6 ban nghiệp vụ.
-   - **Đã gỡ bỏ 100%:** Cột "Cấp", các nhãn "5 Cấp Bậc Phê Duyệt", và các trường Cấp độ thẩm định gây rối mắt.
+### 5.1. Khắc Phục Lỗi Hiển Thị Nút "+ Thêm hội viên" Khi `admin@connect.vn` Không Có Quyền
+1. **Chuẩn Hóa Vai Trò `admin@connect.vn`**:
+   - Trước đây `admin@connect.vn` bị gán nhầm thành `'platform_admin'` (Backend `users.service.ts`) và `"ADM"` (Frontend `use-role.ts`), dẫn đến việc `isPlatformAdmin = true` và bypass mọi kiểm tra quyền.
+   - Đã chuẩn hóa: `admin@connect.vn` mang vai trò `admin` (`BQT`), tương ứng với cột `ADMIN` trong ma trận phân quyền.
+2. **Cơ Chế Explicit Denial Trong Ma Trận RBAC (`isActionAllowedByMatrix`)**:
+   - Trước đây: Nếu thao tác có trong ma trận nhưng role đó chưa được tích quyền (`act.roles[targetRole] === false`), hàm bỏ qua và rơi xuống cuối hàm `return true` (fallback ngầm cho phép).
+   - Đã sửa: Khi thao tác được khớp trong ma trận, nếu role đó không có quyền, hàm lập tức trả về `false`.
+   - Kết quả: Khi `MEM_ADD` không được tích ở cột `ADMIN`, nút `+ Thêm hội viên` trên trang Quản lý hội viên `/members` bị ẩn hoàn toàn 100%.
+
+### 5.2. Tách Rời 3 Phân Hệ Thành 3 Màn Hình Độc Lập Theo Sidebar (Loại Bỏ Sub-Tabs)
+Hệ thống loại bỏ hoàn toàn các nút sub-tabs lồng ghép bên trong và nút toggle view mode gom cụm, phân tách thành đúng 3 màn hình độc lập tương ứng với 3 mục menu trên thanh Sidebar:
+1. **Màn hình 1: Ma Trận Phân Quyền (`/permissions?tab=matrix`)**:
+   - Menu Sidebar: `Ma trận phân quyền`.
+   - Nội dung độc lập: Tiêu đề trang "Ma Trận Phân Quyền Hệ Thống", banner đồng bộ PostgreSQL/LocalStorage, và bảng ma trận chuẩn 8 Phân hệ x 5 Vai trò (`RbacPermissionMatrix`).
+2. **Màn hình 2: Phân Quyền Tài Khoản (`/permissions?tab=user_actions`)**:
+   - Menu Sidebar: `Phân quyền tài khoản`.
+   - Nội dung độc lập: Tiêu đề trang "Phân Quyền Tài Khoản (Theo Từng Ban Chuyên Môn)", banner hướng dẫn phân quyền hội viên, và bảng quản lý phân quyền theo ban chuyên môn (`MemberPermissionsByCommittee`).
+3. **Màn hình 3: Thẩm Quyền Ban & Cấp Bậc (`/permissions?tab=role_groups`)**:
+   - Menu Sidebar: `Thẩm quyền Ban & Cấp bậc`.
+   - Nội dung độc lập: Tiêu đề trang "Thẩm Quyền 6 Ban Chuyên Môn & Cấp Bậc Nghiệp Vụ", 4 thẻ KPI thống kê, 6 thẻ tổng quan thẩm quyền ban và bảng quản lý chi tiết (`CommitteesPermissionManager`).
+4. **Đồng Bộ Trạng Thái Active Menu Trên Sidebar**:
+   - `Sidebar.tsx` đọc `searchStr` từ `useRouterState` để so khớp chính xác URL params (`tab=matrix`, `tab=user_actions`, `tab=role_groups`), đảm bảo khi click menu nào thì menu đó sáng đèn chính xác.
 
 ---
 

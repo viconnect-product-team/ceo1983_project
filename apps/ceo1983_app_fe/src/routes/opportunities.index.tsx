@@ -919,7 +919,7 @@ function OpportunitiesPage() {
                 {tc.pageRows.map((opp, idx) => {
                   const poster = getPoster(opp.posterId);
                   const isOwner = opp.posterId === CURRENT_USER_ID;
-                  const canManage = isOwner || isAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE);
+                  const canManage = isOwner || can(PERMISSIONS.OPPORTUNITY_MANAGE);
                   const budget =
                     opp.budgetMin && opp.budgetMax
                       ? `${fmt.money(opp.budgetMin)} – ${fmt.money(opp.budgetMax)}`
@@ -1169,7 +1169,7 @@ function OpportunitiesPage() {
                 key={opp.id}
                 opp={opp}
                 interestCount={countFor(opp.id)}
-                canManage={opp.posterId === CURRENT_USER_ID || isAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE)}
+                canManage={opp.posterId === CURRENT_USER_ID || can(PERMISSIONS.OPPORTUNITY_MANAGE)}
                 onInterest={() => setInterestOpp(opp)}
                 onDelete={async () => {
                   if (confirm(t("opp.confirmDelete"))) {

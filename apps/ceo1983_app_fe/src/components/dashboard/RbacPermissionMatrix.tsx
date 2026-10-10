@@ -590,7 +590,17 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
 
 const STORAGE_KEY = RBAC_MATRIX_STORAGE_KEY;
 
-export function RbacPermissionMatrix() {
+export interface RbacPermissionMatrixProps {
+  onDirtyChange?: (isDirty: boolean) => void;
+  saveTriggerRef?: React.MutableRefObject<(() => Promise<boolean>) | null>;
+  discardTriggerRef?: React.MutableRefObject<(() => void) | null>;
+}
+
+export function RbacPermissionMatrix({
+  onDirtyChange,
+  saveTriggerRef,
+  discardTriggerRef,
+}: RbacPermissionMatrixProps = {}) {
   const [categories, setCategories] = useState<TreeCategory[]>(() => {
     let base = INITIAL_CATEGORIES;
     if (typeof window !== "undefined") {
@@ -617,6 +627,9 @@ export function RbacPermissionMatrix() {
   });
 
   // Cố định hàng ngang chỉ hiển thị 5 vai trò hệ thống cốt lõi: Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên
+  const [initialCategoriesStr, setInitialCategoriesStr] = useState<string>(() => {
+    return JSON.stringify(categories);
+  });
 
   // Tải ma trận phân quyền thực tế từ CSDL PostgreSQL (bảng app_settings)
   useEffect(() => {
@@ -637,6 +650,7 @@ export function RbacPermissionMatrix() {
             })),
           }));
           setCategories(normalized);
+          setInitialCategoriesStr(JSON.stringify(normalized));
           try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
           } catch {}
@@ -799,6 +813,7 @@ export function RbacPermissionMatrix() {
         window.dispatchEvent(new Event("vba_auth_changed"));
         window.dispatchEvent(new Event("crm_permissions_updated"));
       }
+      setInitialCategoriesStr(JSON.stringify(categories));
       setTimeout(() => {
         setSaving(false);
         toast.success("Đã lưu toàn bộ Ma Trận Phân Quyền 5 Cấp Bậc vào CSDL thành công!");
@@ -808,6 +823,46 @@ export function RbacPermissionMatrix() {
       toast.error("Lỗi lưu ma trận");
     }
   };
+
+  const handleDiscard = React.useCallback(() => {
+    if (initialCategoriesStr) {
+      try {
+        const restored = JSON.parse(initialCategoriesStr);
+        setCategories(restored);
+        toast.info("Đã hoàn tác các thay đổi trên ma trận.");
+      } catch {}
+    }
+  }, [initialCategoriesStr]);
+
+  const isDirty = useMemo(() => {
+    if (!initialCategoriesStr) return false;
+    return JSON.stringify(categories) !== initialCategoriesStr;
+  }, [categories, initialCategoriesStr]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (saveTriggerRef) {
+      saveTriggerRef.current = async () => {
+        try {
+          await handleSaveAll();
+          return true;
+        } catch {
+          return false;
+        }
+      };
+    }
+  }, [saveTriggerRef, categories]);
+
+  useEffect(() => {
+    if (discardTriggerRef) {
+      discardTriggerRef.current = () => {
+        handleDiscard();
+      };
+    }
+  }, [discardTriggerRef, handleDiscard]);
 
   // Khôi phục mặc định
   const handleResetDefault = async () => {
@@ -1084,6 +1139,43 @@ export function RbacPermissionMatrix() {
           </button>
         </div>
       </div>
+
+      {/* ── CẢNH BÁO CHƯA LƯU QUYỀN TRÊN MA TRẬN ── */}
+      {isDirty && (
+        <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm font-bold text-sm">
+              !
+            </div>
+            <div>
+              <p className="font-bold text-amber-900 dark:text-amber-200">
+                Bạn có thay đổi ma trận phân quyền chưa lưu vào CSDL!
+              </p>
+              <p className="text-amber-700/80 dark:text-amber-300/80 text-[11px] mt-0.5">
+                Các ô checkbox vừa thay đổi sẽ chỉ có hiệu lực toàn hệ thống sau khi bạn bấm lưu.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDiscard}
+              className="px-3 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-foreground font-semibold text-xs transition cursor-pointer"
+            >
+              Hoàn tác
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAll}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#003B95] text-white font-bold text-xs hover:bg-blue-900 transition shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span>{saving ? "Đang lưu..." : "Lưu Thay Đổi"}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── BẢNG MA TRẬN DẠNG CÂY (TREE MATRIX TABLE) ── */}
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">

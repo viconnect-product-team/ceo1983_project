@@ -434,12 +434,14 @@ function CompaniesPage() {
               <p className="mt-1 text-sm text-primary-foreground/85">{t("companies.subtitle")}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleExport}
-                className="flex h-10 items-center gap-2 rounded-xl border border-border/20 bg-card/10 px-4 text-sm font-semibold text-primary-foreground backdrop-blur transition hover:bg-card/20 cursor-pointer"
-              >
-                <Download className="h-4 w-4" /> {t("members.export")}
-              </button>
+              {can("COM_EXPORT") && (
+                <button
+                  onClick={handleExport}
+                  className="flex h-10 items-center gap-2 rounded-xl border border-border/20 bg-card/10 px-4 text-sm font-semibold text-primary-foreground backdrop-blur transition hover:bg-card/20 cursor-pointer"
+                >
+                  <Download className="h-4 w-4" /> {t("members.export")}
+                </button>
+              )}
               {can(PERMISSIONS.MEMBER_CREATE) && (
                 <button
                   onClick={() => setOpen(true)}
@@ -696,6 +698,7 @@ function CompanyCard({
   onToggleFee?: (m: Member) => void;
 }) {
   const t = useT();
+  const { can } = useRole();
   const s = statusStyle[m.status];
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevated)]">
@@ -792,23 +795,23 @@ function CompanyCard({
             {t("companies.viewProfile")}
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
-          {isAdmin && (
-            <>
-              <button
-                onClick={() => onEdit?.(m)}
-                title={t("common.edit")}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
-              >
-                <Edit2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => onDelete?.(m)}
-                title={t("common.delete")}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </>
+          {can(PERMISSIONS.MEMBER_EDIT) && (
+            <button
+              onClick={() => onEdit?.(m)}
+              title={t("common.edit")}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {can(PERMISSIONS.MEMBER_DELETE) && (
+            <button
+              onClick={() => onDelete?.(m)}
+              title={t("common.delete")}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
       </div>
@@ -841,6 +844,7 @@ function CompanyTable({
   onToggleFee?: (m: Member) => void;
 }) {
   const t = useT();
+  const { can } = useRole();
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
       <div className="relative overflow-x-auto">
@@ -986,7 +990,7 @@ function CompanyTable({
                         {t("tbl.view")}
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
-                      {isAdmin && onEdit && (
+                      {can(PERMISSIONS.MEMBER_EDIT) && onEdit && (
                         <button
                           onClick={() => onEdit(m)}
                           title={t("common.edit")}
@@ -995,7 +999,7 @@ function CompanyTable({
                           <Edit2 className="h-3.5 w-3.5" />
                         </button>
                       )}
-                      {isAdmin && onDelete && (
+                      {can(PERMISSIONS.MEMBER_DELETE) && onDelete && (
                         <button
                           onClick={() => onDelete(m)}
                           title={t("common.delete")}

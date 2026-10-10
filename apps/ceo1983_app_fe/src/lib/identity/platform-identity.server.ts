@@ -103,7 +103,7 @@ export async function getAssociationContexts(
   }
 
   return memberships.map((row) => {
-    const assoc = row.associations as { name: string | null } | null;
+    const assoc = row.associations as unknown as { name: string | null } | null;
     return {
       associationId: row.association_id,
       associationName: assoc?.name ?? null,

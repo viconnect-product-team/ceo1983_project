@@ -30,3 +30,9 @@ export const listMembers = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<DirectoryMember[]> => {
     return fetchNestApiFromServer("/members/directory", context.token);
   });
+
+export const listConnectedMembers = createServerFn({ method: "GET" })
+  .middleware([requireNestAuth])
+  .handler(async ({ context }): Promise<DirectoryMember[]> => {
+    return fetchNestApiFromServer("/members/directory?connectedOnly=true", context.token);
+  });

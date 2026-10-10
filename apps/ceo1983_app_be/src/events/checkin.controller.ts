@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { CheckinAttendeeDto, RecordMemberCheckinDto, ScanTicketDto } from './dto';
 
 @Controller('checkin')
 @UseGuards(AuthGuard)
@@ -25,24 +26,24 @@ export class CheckinController {
   }
 
   @Post()
-  async checkIn(@Body('attendeeId') attendeeId: string) {
-    return this.eventsService.checkInAttendee(attendeeId);
+  async checkIn(@Body() body: CheckinAttendeeDto) {
+    return this.eventsService.checkInAttendee(body.attendeeId);
   }
 
   @Post('undo')
-  async undoCheckIn(@Body('attendeeId') attendeeId: string) {
-    return this.eventsService.undoCheckInAttendee(attendeeId);
+  async undoCheckIn(@Body() body: CheckinAttendeeDto) {
+    return this.eventsService.undoCheckInAttendee(body.attendeeId);
   }
 
   @Post('record')
-  async recordMemberCheckin(@Request() req: any, @Body() body: any) {
+  async recordMemberCheckin(@Request() req: any, @Body() body: RecordMemberCheckinDto) {
     return this.eventsService.recordMemberCheckin(req.user?.id || req.user?.sub, body);
   }
 
   @Post('scan-ticket')
   async scanTicket(
     @Request() req: any,
-    @Body() body: { payload: string; currentEventId?: string; confirm?: boolean; method?: 'qr' | 'nfc' },
+    @Body() body: ScanTicketDto,
   ) {
     return this.eventsService.scanTicketPayload(req.user?.id || req.user?.sub, body);
   }

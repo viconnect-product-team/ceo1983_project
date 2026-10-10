@@ -10,15 +10,15 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { SponsorsService } from './sponsors.service';
 import {
-  SponsorsService,
   CreateSponsorPackageDto,
   UpdateSponsorPackageDto,
   CreateSponsorDto,
   OnboardSponsorDto,
   CreateEventPrizeDto,
   UpdateEventPrizeDto,
-} from './sponsors.service';
+} from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';

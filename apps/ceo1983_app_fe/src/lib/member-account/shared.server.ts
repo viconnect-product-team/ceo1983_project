@@ -84,16 +84,13 @@ export function safeResetRedirect(redirectTo?: string): string | null {
 }
 
 export async function sendActivationEmail(email: string, redirectTo?: string) {
-  const { createClient } = await import("@supabase/supabase-js");
-  const client = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
+  const { fetchNestApiFromServer } = await import("@/lib/api-client");
+  await fetchNestApiFromServer("/auth/forgot-password", undefined, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  }).catch((err) => {
+    console.warn("sendActivationEmail via NestJS notice:", err?.message);
   });
-  const safe = safeResetRedirect(redirectTo);
-  const { error } = await client.auth.resetPasswordForEmail(
-    email,
-    safe ? { redirectTo: safe } : undefined,
-  );
-  if (error) throw new Error(error.message);
 }
 
 export function randomPassword() {

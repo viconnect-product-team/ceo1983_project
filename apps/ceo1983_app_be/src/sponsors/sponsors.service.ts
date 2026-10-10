@@ -1,102 +1,41 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SponsorsRepository } from './sponsors.repository';
+import {
+  SponsorTier,
+  SponsorType,
+  PackageType,
+  PrizeTargetType,
+  CreateSponsorPackageDto,
+  UpdateSponsorPackageDto,
+  CreateSponsorDto,
+  OnboardSponsorDto,
+  CreateEventPrizeDto,
+  UpdateEventPrizeDto,
+} from './dto';
 
-export type SponsorTier = 'platinum' | 'gold' | 'silver' | 'bronze';
-export type SponsorType = 'regular' | 'new';
-export type PackageType = 'cash' | 'in_kind';
-
-export class CreateSponsorPackageDto {
-  tier!: SponsorTier;
-  price!: number;
-  benefits?: string[];
-  available?: number;
-  sold?: number;
-  packageType?: PackageType;
-  inKindDescription?: string;
-}
-
-export class UpdateSponsorPackageDto {
-  tier?: SponsorTier;
-  price?: number;
-  benefits?: string[];
-  available?: number;
-  sold?: number;
-  packageType?: PackageType;
-  inKindDescription?: string;
-}
-
-export class CreateSponsorDto {
-  name!: string;
-  tier!: SponsorTier;
-  contact?: string;
-  email?: string;
-  phone?: string;
-  amount?: number;
-  events?: number;
-  since?: string;
-  status?: 'active' | 'expired';
-  sponsorType?: SponsorType;
-  packageType?: PackageType;
-  inKindDescription?: string;
-}
-
-export class OnboardSponsorDto {
-  packageId!: string;
-  name!: string;
-  contact?: string;
-  email?: string;
-  phone?: string;
-}
-
-export type PrizeTargetType = 'PRODUCT' | 'SPONSOR_PACKAGE' | 'CUSTOM' | 'VOUCHER' | 'CASH';
-
-export class CreateEventPrizeDto {
-  eventId!: string;
-  rankName!: string;
-  title!: string;
-  value?: string;
-  amount?: number;
-  quantity?: number;
-  targetType!: PrizeTargetType;
-  targetId?: string;
-  sponsorName?: string;
-  sponsorPackageId?: string;
-  description?: string;
-  iconName?: string;
-  imageUrl?: string;
-  highlightColor?: string;
-}
-
-export class UpdateEventPrizeDto {
-  eventId?: string;
-  rankName?: string;
-  title?: string;
-  value?: string;
-  amount?: number;
-  quantity?: number;
-  targetType?: PrizeTargetType;
-  targetId?: string;
-  sponsorName?: string;
-  sponsorPackageId?: string;
-  description?: string;
-  iconName?: string;
-  imageUrl?: string;
-  highlightColor?: string;
-  status?: string;
-}
+export type {
+  SponsorTier,
+  SponsorType,
+  PackageType,
+  PrizeTargetType,
+};
+export {
+  CreateSponsorPackageDto,
+  UpdateSponsorPackageDto,
+  CreateSponsorDto,
+  OnboardSponsorDto,
+  CreateEventPrizeDto,
+  UpdateEventPrizeDto,
+};
 
 @Injectable()
 export class SponsorsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly sponsorsRepo: SponsorsRepository) {}
 
   private async resolveAssociationId(assocId?: string): Promise<string> {
     if (assocId) return assocId;
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.associations 
-      ORDER BY landing_published DESC, created_at DESC 
-      LIMIT 1
-    `.catch(() => []);
-    if (rows.length > 0 && rows[0]?.id) return rows[0].id;
+    const defaultId = await this.sponsorsRepo.resolveDefaultAssociationId();
+    if (defaultId) return defaultId;
     return 'ba000000-0000-4000-8000-000000000001';
   }
 
@@ -104,10 +43,7 @@ export class SponsorsService {
 
   async listPackages() {
     try {
-      const rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.sponsor_packages
-        ORDER BY created_at DESC
-      `;
+      const rows = await this.sponsorsRepo.listPackagesRaw();
       const tierOrder = ['platinum', 'gold', 'silver', 'bronze'];
       return (rows || []).map((r) => ({
         id: r.id,
@@ -128,9 +64,7 @@ export class SponsorsService {
   }
 
   async getPackageById(id: string) {
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.sponsor_packages WHERE id = ${id} LIMIT 1
-    `;
+    const rows = await this.sponsorsRepo.getPackageByIdRaw(id);
     if (!rows || rows.length === 0) {
       throw new NotFoundException(`Sponsor package ${id} not found`);
     }
@@ -150,9 +84,7 @@ export class SponsorsService {
   }
 
   async createPackage(dto: CreateSponsorPackageDto & { associationId?: string }) {
-    const lastPkg = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.sponsor_packages WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
-    `.catch(() => []);
+    const lastPkg = await this.sponsorsRepo.getLastPackageId();
     const id = lastPkg.length > 0 ? (BigInt(lastPkg[0].id) + 1n).toString() : '30001';
     const tier = dto.tier || 'bronze';
     const price = BigInt(Math.round(dto.price || 0));
@@ -163,11 +95,7 @@ export class SponsorsService {
     const inKindDescription = dto.inKindDescription || null;
     const associationId = await this.resolveAssociationId(dto.associationId);
 
-    await this.prisma.$executeRaw`
-      INSERT INTO public.sponsor_packages (id, tier, price, benefits, available, sold, association_id, package_type, in_kind_description, created_at, updated_at)
-      VALUES (${id}, ${tier}, ${price}, ${benefits}::text[], ${available}, ${sold}, ${associationId}::uuid, ${packageType}, ${inKindDescription}, NOW(), NOW())
-    `;
-
+    await this.sponsorsRepo.insertPackage(id, tier, price, benefits, available, sold, associationId, packageType, inKindDescription);
     return this.getPackageById(id);
   }
 
@@ -181,20 +109,12 @@ export class SponsorsService {
     const packageType = dto.packageType ?? existing.packageType;
     const inKindDescription = dto.inKindDescription !== undefined ? dto.inKindDescription : existing.inKindDescription;
 
-    await this.prisma.$executeRaw`
-      UPDATE public.sponsor_packages
-      SET tier = ${tier}, price = ${price}, benefits = ${benefits}::text[], available = ${available}, sold = ${sold},
-          package_type = ${packageType}, in_kind_description = ${inKindDescription}, updated_at = NOW()
-      WHERE id = ${id}
-    `;
-
+    await this.sponsorsRepo.updatePackageRaw(id, tier, price, benefits, available, sold, packageType, inKindDescription);
     return this.getPackageById(id);
   }
 
   async deletePackage(id: string) {
-    await this.prisma.$executeRaw`
-      DELETE FROM public.sponsor_packages WHERE id = ${id}
-    `;
+    await this.sponsorsRepo.deletePackageRaw(id);
     return { ok: true };
   }
 
@@ -203,19 +123,12 @@ export class SponsorsService {
   async listSponsors() {
     try {
       const [rows, events] = await Promise.all([
-        this.prisma.$queryRaw<any[]>`
-          SELECT * FROM public.sponsors
-          ORDER BY amount DESC, created_at DESC
-        `,
-        this.prisma.$queryRaw<any[]>`
-          SELECT id, name, date, sponsors, status FROM public.events
-          WHERE sponsors IS NOT NULL
-        `.catch(() => []),
+        this.sponsorsRepo.listSponsorsRaw(),
+        this.sponsorsRepo.listEventsWithSponsors(),
       ]);
 
       return (rows || []).map((r) => {
         let assignedEvent: any = null;
-        let matchedItem: any = null;
 
         for (const evt of events) {
           const rawSponsors = evt.sponsors;
@@ -236,7 +149,6 @@ export class SponsorsService {
                 (s.name && s.name.trim().toLowerCase() === r.name?.trim().toLowerCase()),
             );
             if (found) {
-              matchedItem = found;
               assignedEvent = {
                 id: evt.id,
                 name: evt.name,
@@ -280,9 +192,7 @@ export class SponsorsService {
   }
 
   async getSponsorById(id: string) {
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.sponsors WHERE id = ${id} LIMIT 1
-    `;
+    const rows = await this.sponsorsRepo.getSponsorByIdRaw(id);
     if (!rows || rows.length === 0) {
       throw new NotFoundException(`Sponsor ${id} not found`);
     }
@@ -307,9 +217,7 @@ export class SponsorsService {
   }
 
   async createSponsor(dto: CreateSponsorDto) {
-    const lastSp = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.sponsors WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
-    `.catch(() => []);
+    const lastSp = await this.sponsorsRepo.getLastSponsorId();
     const id = lastSp.length > 0 ? (BigInt(lastSp[0].id) + 1n).toString() : '20001';
     const name = dto.name;
     const tier = dto.tier || 'bronze';
@@ -328,10 +236,10 @@ export class SponsorsService {
     const status = dto.status || 'active';
     const associationId = await this.resolveAssociationId((dto as any).associationId);
 
-    await this.prisma.$executeRaw`
-      INSERT INTO public.sponsors (id, name, tier, sponsor_type, package_type, in_kind_description, contact, email, phone, amount, events, since, status, association_id, created_at, updated_at)
-      VALUES (${id}, ${name}, ${tier}, ${sponsorType}, ${packageType}, ${inKindDescription}, ${contact}, ${email}, ${phone}, ${amount}, ${events}, ${safeSince}::date, ${status}, ${associationId}::uuid, NOW(), NOW())
-    `;
+    await this.sponsorsRepo.insertSponsor(
+      id, name, tier, sponsorType, packageType, inKindDescription,
+      contact, email, phone, amount, events, safeSince, status, associationId,
+    );
 
     return this.getSponsorById(id);
   }
@@ -351,21 +259,16 @@ export class SponsorsService {
     const since = dto.since ?? existing.since;
     const status = dto.status ?? existing.status;
 
-    await this.prisma.$executeRaw`
-      UPDATE public.sponsors
-      SET name = ${name}, tier = ${tier}, sponsor_type = ${sponsorType}, package_type = ${packageType}, in_kind_description = ${inKindDescription},
-          contact = ${contact}, email = ${email}, phone = ${phone},
-          amount = ${amount}, events = ${events}, since = ${since}::date, status = ${status}, updated_at = NOW()
-      WHERE id = ${id}
-    `;
+    await this.sponsorsRepo.updateSponsorRaw(
+      id, name, tier, sponsorType, packageType, inKindDescription,
+      contact, email, phone, amount, events, since, status,
+    );
 
     return this.getSponsorById(id);
   }
 
   async deleteSponsor(id: string) {
-    await this.prisma.$executeRaw`
-      DELETE FROM public.sponsors WHERE id = ${id}
-    `;
+    await this.sponsorsRepo.deleteSponsorRaw(id);
     return { ok: true };
   }
 
@@ -390,37 +293,17 @@ export class SponsorsService {
       status: 'active',
     });
 
-    await this.prisma.$executeRaw`
-      UPDATE public.sponsor_packages
-      SET sold = sold + 1, updated_at = NOW()
-      WHERE id = ${dto.packageId}
-    `;
-
+    if (dto.packageId) {
+      await this.sponsorsRepo.incrementPackageSold(dto.packageId);
+    }
     return sponsor;
   }
 
-  // ── EVENT PRIZES / AWARDS (DYNAMIC DATABASE BACKED) ───────────────────────
+  // ── EVENT PRIZES / AWARDS ──────────────────────────────────────────────────
 
   async listPrizes(eventId?: string) {
     try {
-      const rows = eventId
-        ? await this.prisma.$queryRaw<any[]>`
-            SELECT ep.*, p.name as prod_name, p.company as prod_company, p.price as prod_price, p.image_url as prod_image,
-                   sp.tier as pkg_tier, sp.price as pkg_price
-            FROM public.event_prizes ep
-            LEFT JOIN public.products p ON ep.target_id = p.id
-            LEFT JOIN public.sponsor_packages sp ON ep.target_id = sp.id
-            WHERE ep.event_id = ${eventId}
-            ORDER BY ep.created_at ASC
-          `
-        : await this.prisma.$queryRaw<any[]>`
-            SELECT ep.*, p.name as prod_name, p.company as prod_company, p.price as prod_price, p.image_url as prod_image,
-                   sp.tier as pkg_tier, sp.price as pkg_price
-            FROM public.event_prizes ep
-            LEFT JOIN public.products p ON ep.target_id = p.id
-            LEFT JOIN public.sponsor_packages sp ON ep.target_id = sp.id
-            ORDER BY ep.created_at ASC
-          `;
+      const rows = await this.sponsorsRepo.listPrizesRaw(eventId);
 
       return (rows || []).map((r) => ({
         id: r.id,
@@ -449,13 +332,7 @@ export class SponsorsService {
   }
 
   async getPrizeById(id: string) {
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT ep.*, p.name as prod_name, p.company as prod_company, p.price as prod_price, p.image_url as prod_image
-      FROM public.event_prizes ep
-      LEFT JOIN public.products p ON ep.target_id = p.id
-      WHERE ep.id = ${id}
-      LIMIT 1
-    `;
+    const rows = await this.sponsorsRepo.getPrizeByIdRaw(id);
     if (!rows || rows.length === 0) {
       throw new NotFoundException(`Prize ${id} not found`);
     }
@@ -491,11 +368,8 @@ export class SponsorsService {
     let imageUrl = dto.imageUrl || null;
     let description = dto.description?.trim() || '';
 
-    // If targetType is PRODUCT and targetId is provided, pull product info if not provided
     if (dto.targetType === 'PRODUCT' && dto.targetId) {
-      const prodRows = await this.prisma.$queryRaw<any[]>`
-        SELECT name, title, company, price, image_url, description FROM public.products WHERE id = ${dto.targetId} LIMIT 1
-      `.catch(() => []);
+      const prodRows = await this.sponsorsRepo.findProductForPrize(dto.targetId);
       if (prodRows.length > 0) {
         const prod = prodRows[0];
         if (!title) title = prod.name || prod.title;
@@ -505,9 +379,7 @@ export class SponsorsService {
         if (!description) description = prod.description || '';
       }
     } else if (dto.targetType === 'SPONSOR_PACKAGE' && dto.targetId) {
-      const pkgRows = await this.prisma.$queryRaw<any[]>`
-        SELECT tier, price, in_kind_description FROM public.sponsor_packages WHERE id = ${dto.targetId} LIMIT 1
-      `.catch(() => []);
+      const pkgRows = await this.sponsorsRepo.findPackageForPrize(dto.targetId);
       if (pkgRows.length > 0) {
         const pkg = pkgRows[0];
         if (!title) title = `Gói tài trợ ${String(pkg.tier).toUpperCase()}`;
@@ -525,19 +397,11 @@ export class SponsorsService {
     const iconName = dto.iconName || 'Gift';
     const highlightColor = dto.highlightColor || 'from-amber-500 to-yellow-600';
 
-    await this.prisma.$executeRaw`
-      INSERT INTO public.event_prizes (
-        id, event_id, rank_name, title, value, amount, quantity,
-        target_type, target_id, sponsor_name, sponsor_package_id,
-        description, icon_name, image_url, highlight_color, status,
-        created_at, updated_at
-      ) VALUES (
-        ${id}, ${eventId}, ${rankName}, ${title}, ${value}, ${amount}, ${quantity},
-        ${targetType}, ${targetId}, ${sponsorName}, ${sponsorPackageId},
-        ${description}, ${iconName}, ${imageUrl}, ${highlightColor}, 'active',
-        NOW(), NOW()
-      )
-    `;
+    await this.sponsorsRepo.insertPrize(
+      id, eventId, rankName, title || 'Giải thưởng sự kiện', value, amount, quantity,
+      targetType, targetId, sponsorName || 'Nhà tài trợ CEO 1983', sponsorPackageId,
+      description, iconName, imageUrl, highlightColor,
+    );
 
     return this.getPrizeById(id);
   }
@@ -560,23 +424,17 @@ export class SponsorsService {
     const highlightColor = dto.highlightColor ?? existing.highlightColor;
     const status = dto.status ?? existing.status;
 
-    await this.prisma.$executeRaw`
-      UPDATE public.event_prizes
-      SET event_id = ${eventId}, rank_name = ${rankName}, title = ${title}, value = ${value},
-          amount = ${amount}, quantity = ${quantity}, target_type = ${targetType}, target_id = ${targetId},
-          sponsor_name = ${sponsorName}, sponsor_package_id = ${sponsorPackageId}, description = ${description},
-          icon_name = ${iconName}, image_url = ${imageUrl}, highlight_color = ${highlightColor},
-          status = ${status}, updated_at = NOW()
-      WHERE id = ${id}
-    `;
+    await this.sponsorsRepo.updatePrizeRaw(
+      id, eventId, rankName, title, value, amount, quantity,
+      targetType, targetId, sponsorName, sponsorPackageId,
+      description, iconName, imageUrl, highlightColor, status,
+    );
 
     return this.getPrizeById(id);
   }
 
   async deletePrize(id: string) {
-    await this.prisma.$executeRaw`
-      DELETE FROM public.event_prizes WHERE id = ${id}
-    `;
+    await this.sponsorsRepo.deletePrizeRaw(id);
     return { ok: true, id };
   }
 }

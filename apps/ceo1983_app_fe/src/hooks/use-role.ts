@@ -39,10 +39,10 @@ export type RoleState = {
   canManageCharity: boolean;
   canManageMeetings: boolean;
   canManageSystem: boolean;
-  can: (permission: Permission) => boolean;
-  hasPermission: (permission: Permission) => boolean;
-  hasAnyPermission: (...permissions: Permission[]) => boolean;
-  hasAllPermissions: (...permissions: Permission[]) => boolean;
+  can: (permission: Permission | string) => boolean;
+  hasPermission: (permission: Permission | string) => boolean;
+  hasAnyPermission: (...permissions: (Permission | string)[]) => boolean;
+  hasAllPermissions: (...permissions: (Permission | string)[]) => boolean;
   hasRole: (role: SrsRole) => boolean;
   loading: boolean;
   setRoleOverride: (role: SrsRole) => void;
@@ -101,6 +101,11 @@ export function useRole(): RoleState {
 
     const userEmail = String(userObj?.email || member?.email || user?.email || "").toLowerCase();
 
+    // 0. Ưu tiên: admin@connect.vn và admin1@connect.vn là vai trò ADMIN (BQT), không phải Quản Trị Hệ Thống (ADM/Superadmin)
+    if (userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") {
+      return "BQT";
+    }
+
     // ADM (Super Admin / Platform Admin / Quản Trị)
     if (
       rList.includes("platform_admin") ||
@@ -111,8 +116,8 @@ export function useRole(): RoleState {
       primaryRole === "superadmin" ||
       primaryRole === "quan_tri" ||
       primaryRole === "quantri" ||
-      userEmail === "admin@connect.vn" ||
-      userEmail === "admin1@connect.vn"
+      userEmail.startsWith("quantri") ||
+      userEmail.includes("superadmin")
     ) {
       return "ADM";
     }
@@ -185,6 +190,9 @@ export function useRole(): RoleState {
       rList.includes("board_director") ||
       primaryRole === "admin" ||
       primaryRole === "association_admin" ||
+      userEmail === "admin@connect.vn" ||
+      userEmail === "admin1@connect.vn" ||
+      userEmail.startsWith("admin") ||
       execRole.includes("quản trị") ||
       execRole.includes("chủ tịch") ||
       execRole.includes("president") ||
@@ -367,20 +375,23 @@ export function useRole(): RoleState {
   }, [srsRole]);
 
   const can = useCallback(
-    (permission: Permission): boolean => {
+    (permission: Permission | string): boolean => {
       // 1. Kiểm tra trực tiếp phân quyền từng hội viên từ vba_member_permissions:
       // Nếu Admin đã bỏ chọn (false), lập tức thu hồi quyền và ẩn chức năng trên giao diện
       if (memberPermProfile) {
-        if (memberPermProfile.canAdd === false && (permission.includes(":create") || permission.includes(":add"))) {
+        if (memberPermProfile.canAdd === false && (permission.includes(":create") || permission.includes(":add") || permission.endsWith("_ADD"))) {
           return false;
         }
-        if (memberPermProfile.canEdit === false && (permission.includes(":edit") || permission.includes(":update"))) {
+        if (memberPermProfile.canEdit === false && (permission.includes(":edit") || permission.includes(":update") || permission.endsWith("_EDIT"))) {
           return false;
         }
-        if (memberPermProfile.canDelete === false && permission.includes(":delete")) {
+        if (memberPermProfile.canDelete === false && (permission.includes(":delete") || permission.endsWith("_DELETE"))) {
           return false;
         }
-        if (memberPermProfile.canApprove === false && permission.includes(":approve")) {
+        if (memberPermProfile.canApprove === false && (permission.includes(":approve") || permission.endsWith("_APPROVE"))) {
+          return false;
+        }
+        if (memberPermProfile.canExport === false && (permission.includes(":export") || permission.endsWith("_EXPORT"))) {
           return false;
         }
         if (
@@ -417,6 +428,10 @@ export function useRole(): RoleState {
         if (permission.startsWith("system:") && memberPermProfile.isAdmin === false) {
           return false;
         }
+        if (memberPermProfile.deniedCodes && Array.isArray(memberPermProfile.deniedCodes)) {
+          const denied = memberPermProfile.deniedCodes.map((c: string) => c.toUpperCase());
+          if (denied.includes(permission.toUpperCase())) return false;
+        }
       }
 
       // 2. Kiểm tra trực tiếp Ma Trận Quyền CSDL/localStorage:
@@ -431,13 +446,22 @@ export function useRole(): RoleState {
 
       const dept = (user as any)?.department || (memberPermProfile as any)?.department;
       const allowedByMatrix = isActionAllowedByMatrix(permission, srsRole, dept, mCode);
-      if (!allowedByMatrix) {
+      if (allowedByMatrix === false) {
         return false;
       }
 
       if (isPlatformAdmin) return true;
 
-      return grantedPermissions.has(permission);
+      // Nếu là mã ma trận trực tiếp (VD: "MEM_EXPORT", "FEE_EDIT",...) hoặc ma trận đã cấp phép rõ ràng
+      if (typeof permission === "string" && !permission.includes(":")) {
+        return allowedByMatrix;
+      }
+
+      if (allowedByMatrix === true) {
+        return true;
+      }
+
+      return grantedPermissions.has(permission as Permission);
     },
     [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion, memberPermProfile, user?.code],
   );
@@ -445,14 +469,14 @@ export function useRole(): RoleState {
   const hasPermission = can;
 
   const hasAnyPermission = useCallback(
-    (...permissions: Permission[]): boolean => {
+    (...permissions: (Permission | string)[]): boolean => {
       return permissions.some((p) => can(p));
     },
     [can],
   );
 
   const hasAllPermissions = useCallback(
-    (...permissions: Permission[]): boolean => {
+    (...permissions: (Permission | string)[]): boolean => {
       return permissions.every((p) => can(p));
     },
     [can],

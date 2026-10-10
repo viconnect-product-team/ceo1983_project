@@ -167,9 +167,21 @@ export const Route = createRootRoute({
       },
       { rel: "manifest", href: "/manifest.webmanifest?v=2026-09-29.2" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=ceo1983_v3" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon-180x180.png?v=ceo1983_v3" },
-      { rel: "apple-touch-icon", sizes: "152x152", href: "/apple-touch-icon-152x152.png?v=ceo1983_v3" },
-      { rel: "apple-touch-icon", sizes: "167x167", href: "/apple-touch-icon-167x167.png?v=ceo1983_v3" },
+      {
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: "/apple-touch-icon-180x180.png?v=ceo1983_v3",
+      },
+      {
+        rel: "apple-touch-icon",
+        sizes: "152x152",
+        href: "/apple-touch-icon-152x152.png?v=ceo1983_v3",
+      },
+      {
+        rel: "apple-touch-icon",
+        sizes: "167x167",
+        href: "/apple-touch-icon-167x167.png?v=ceo1983_v3",
+      },
       { rel: "apple-touch-icon-precomposed", href: "/apple-touch-icon.png?v=ceo1983_v3" },
       { rel: "icon", type: "image/png", sizes: "64x64", href: "/ceo1983-favicon.png?v=ceo1983_v3" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/app-icon-192.png?v=ceo1983_v3" },
@@ -206,9 +218,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
   const redirectScript = `(${String(function () {
     // Synchronously apply theme (defaulting to dark).
     try {
-      var savedTheme = localStorage.getItem("vba.theme");
-      var theme = (savedTheme === "light" || savedTheme === "dark") ? savedTheme : "dark";
-      var doc = document.documentElement;
+      const savedTheme = localStorage.getItem("vba.theme");
+      const theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+      const doc = document.documentElement;
       doc.classList.toggle("dark", theme === "dark");
       doc.classList.remove("hc");
       doc.dataset.theme = theme;
@@ -219,7 +231,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   })})();`;
 
   return (
-    <html lang="vi" className="dark" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
+    <html
+      lang="vi"
+      className="dark"
+      data-theme="dark"
+      style={{ colorScheme: "dark" }}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />
@@ -249,7 +267,9 @@ function AuthenticatedRealtimeNotifications() {
 function GlobalVoiceNavAssistant() {
   const { status, user } = useAuth();
   const routerState = useRouterState();
-  const pathname = routerState?.location?.pathname || (typeof window !== "undefined" ? window.location.pathname : "");
+  const pathname =
+    routerState?.location?.pathname ||
+    (typeof window !== "undefined" ? window.location.pathname : "");
 
   if (status !== "in" || !user) return null;
 
@@ -257,13 +277,25 @@ function GlobalVoiceNavAssistant() {
   const isAssociationApp = pathname.startsWith("/association") || pathname.startsWith("/m");
   if (!isAssociationApp) return null;
 
+  const lowerPath = pathname.toLowerCase();
+  const isAuthOrPublicPage =
+    lowerPath.includes("/login") ||
+    lowerPath === "/auth" ||
+    lowerPath === "/register" ||
+    lowerPath === "/forgot-password" ||
+    lowerPath === "/terms" ||
+    lowerPath === "/privacy";
+  if (isAuthOrPublicPage) return null;
+
   return <VoiceNavAssistant />;
 }
 
 function GlobalViOneVoiceAssistant() {
   const { status, user } = useAuth();
   const routerState = useRouterState();
-  const pathname = routerState?.location?.pathname || (typeof window !== "undefined" ? window.location.pathname : "");
+  const pathname =
+    routerState?.location?.pathname ||
+    (typeof window !== "undefined" ? window.location.pathname : "");
 
   // Con AI ViOne CHỈ xuất hiện khi ĐÃ ĐĂNG NHẬP ở app ViOne (/connect-app/*), TUYỆT ĐỐI KHÔNG xuất hiện ở bất kỳ chỗ khác
   if (status !== "in" || !user) return null;
@@ -453,8 +485,6 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-
 
   useEffect(() => {
     const stopResume = startSessionResume(() => {

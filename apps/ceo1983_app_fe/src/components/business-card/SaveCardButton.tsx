@@ -12,7 +12,7 @@
 import { useEffect, useState } from "react";
 import { BookmarkCheck, BookmarkPlus, Loader2, LogIn } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { BusinessCardSDK } from "@/lib/business-card";
 import { useT } from "@/lib/i18n";
 
@@ -26,6 +26,7 @@ export function SaveCardButton({
   source?: "profile" | "qr" | "nfc" | "url" | "import";
 }) {
   const t = useT();
+  const viewerId = useViewerUserId();
   const [auth, setAuth] = useState<AuthState>("checking");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -34,10 +35,7 @@ export function SaveCardButton({
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      const uid = data.user?.id ?? null;
-      if (!active) return;
-      if (!uid) {
+      if (!viewerId) {
         setAuth("anon");
         return;
       }

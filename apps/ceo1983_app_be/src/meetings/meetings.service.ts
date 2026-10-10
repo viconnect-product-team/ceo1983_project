@@ -8,12 +8,17 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
+import { MeetingsRepository } from './meetings.repository';
+import { CreateMeetingDto, UpdateMeetingDto, ConnectionAppointmentDto, UpdateMeetingStatusDto } from './dto';
 import * as crypto from 'crypto';
+
+export { CreateMeetingDto, UpdateMeetingDto, ConnectionAppointmentDto, UpdateMeetingStatusDto };
 
 @Injectable()
 export class MeetingsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly meetingsRepo: MeetingsRepository,
     @Optional() private readonly gateway?: ConnectAppGateway,
   ) {}
 

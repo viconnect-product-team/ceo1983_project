@@ -36,14 +36,11 @@ function readInitial(): Theme {
 const ORDER: Theme[] = ["light", "dark"];
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-
-  // Hydrate from stored/device preference on mount.
-  useEffect(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     const initial = readInitial();
-    setThemeState(initial);
     applyTheme(initial);
-  }, []);
+    return initial;
+  });
 
   const setTheme = (t: Theme) => {
     setThemeState(t);

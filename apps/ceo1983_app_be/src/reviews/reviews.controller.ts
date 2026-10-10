@@ -11,7 +11,8 @@ import {
   Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ReviewsService, CreateReviewDto, UpdateReviewDto } from './reviews.service';
+import { ReviewsService } from './reviews.service';
+import { CreateReviewDto, UpdateReviewDto } from './dto';
 
 @Controller('reviews')
 @UseGuards(JwtAuthGuard)

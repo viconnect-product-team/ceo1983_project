@@ -12,7 +12,6 @@ import {
   Bot,
   Activity,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";

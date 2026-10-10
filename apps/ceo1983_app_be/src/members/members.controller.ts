@@ -11,12 +11,16 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { MembersService } from './members.service';
 import {
-  MembersService,
   CreateMemberDto,
   UpdateMemberDto,
   UpdateMemberContactDto,
-} from './members.service';
+  PublicRegisterDto,
+  UpdateMemberProfileDto,
+  UpdateMemberExecutiveDto,
+  RenewMembershipDto,
+} from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 
@@ -28,7 +32,7 @@ export class MembersController {
    * Endpoint đăng ký công khai dạng Google Form (không cần đăng nhập)
    */
   @Post('public-register')
-  async publicRegister(@Body() body: any) {
+  async publicRegister(@Body() body: PublicRegisterDto) {
     return this.membersService.publicRegister(body);
   }
 
@@ -65,8 +69,8 @@ export class MembersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('directory')
-  async listDirectory(@Request() req: any) {
-    return this.membersService.listDirectory(req.user.id);
+  async listDirectory(@Request() req: any, @Query('connectedOnly') connectedOnly?: string) {
+    return this.membersService.listDirectory(req.user.id, connectedOnly === 'true');
   }
 
   @UseGuards(JwtAuthGuard)

@@ -228,7 +228,7 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
   return true;
 }
 
-const PERMISSION_TO_MATRIX_CODES: Record<string, string[]> = {
+export const PERMISSION_TO_MATRIX_CODES: Record<string, string[]> = {
   "event:view": ["EVT_VIEW", "act_evt_view"],
   "event:create": ["EVT_ADD", "act_evt_add"],
   "event:edit": ["EVT_EDIT", "act_evt_edit"],
@@ -246,7 +246,7 @@ const PERMISSION_TO_MATRIX_CODES: Record<string, string[]> = {
   "member:edit": ["MEM_EDIT", "act_mem_edit", "COM_EDIT"],
   "member:delete": ["MEM_DELETE", "act_mem_delete", "COM_DELETE"],
   "member:approve": ["MEM_APPROVE", "act_mem_approve", "COM_APPROVE"],
-  "member:renew": ["FEE_ADD", "MEM_EDIT"],
+  "member:renew": ["FEE_ADD", "MEM_EDIT", "REN_PROCESS"],
   "opportunity:view": ["OPP_VIEW", "MKT_VIEW", "BCM_VIEW"],
   "opportunity:manage": ["OPP_ADD", "OPP_EDIT", "OPP_DELETE", "OPP_APPROVE", "MKT_ADD", "MKT_EDIT", "BCM_ADD"],
   "marketplace:manage": ["MKT_ADD", "MKT_EDIT", "MKT_DELETE"],
@@ -262,6 +262,27 @@ const PERMISSION_TO_MATRIX_CODES: Record<string, string[]> = {
   "media:manage": ["NTF_SEND", "NTF_EDIT", "EML_ADD", "EML_SEND", "NWS_ADD", "NWS_EDIT"],
   "system:manage": ["PRM_EDIT", "SET_EDIT", "CRD_ADD", "CRD_EDIT", "CRD_DELETE"],
   "system:audit_view": ["ACT_VIEW", "ACT_EXPORT"],
+
+  // Mã định danh thao tác con trực tiếp (Direct Action Codes)
+  MEM_EXPORT: ["MEM_EXPORT", "act_mem_export"],
+  COM_EXPORT: ["COM_EXPORT", "act_com_export"],
+  COM_VIEW: ["COM_VIEW", "act_com_view"],
+  COM_ADD: ["COM_ADD", "act_com_add"],
+  COM_EDIT: ["COM_EDIT", "act_com_edit"],
+  COM_DELETE: ["COM_DELETE", "act_com_delete"],
+  FEE_VIEW: ["FEE_VIEW", "act_fee_view"],
+  FEE_ADD: ["FEE_ADD", "act_fee_add"],
+  FEE_EDIT: ["FEE_EDIT", "act_fee_edit"],
+  FEE_DELETE: ["FEE_DELETE", "act_fee_delete"],
+  FEE_RECONCILE: ["FEE_RECONCILE", "act_fee_reconcile"],
+  EVT_EXPORT: ["EVTO_EXPORT", "act_evto_export", "EVT_EXPORT"],
+  EVTO_EXPORT: ["EVTO_EXPORT", "act_evto_export"],
+  CHK_SCAN: ["CHK_SCAN", "act_chk_scan"],
+  MEET_ADD: ["MEET_ADD", "act_meet_add"],
+  MEET_APPROVE: ["MEET_APPROVE", "act_meet_approve"],
+  MEET_EDIT: ["MEET_EDIT", "act_meet_edit"],
+  MEET_DELETE: ["MEET_DELETE", "act_meet_delete"],
+  PRM_EDIT: ["PRM_EDIT", "act_prm_edit"],
 };
 
 export const COMMITTEE_PERMISSIONS_STORAGE_KEY = "ceo1983_committee_permissions_v2";
@@ -397,6 +418,9 @@ export function isActionAllowedByMatrix(
             ) {
               return true;
             }
+
+            // E. Nếu thao tác này đã nằm trong ma trận nhưng vai trò không được cấp quyền
+            return false;
           }
         }
       }

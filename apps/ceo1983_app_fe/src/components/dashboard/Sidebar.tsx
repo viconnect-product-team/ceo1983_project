@@ -151,15 +151,22 @@ const admin: Item[] = [
 
 const COLLAPSE_KEY = "vba.sidebar.collapsed";
 
-function isActive(pathname: string | undefined, to?: string) {
+function isActive(pathname: string | undefined, to?: string, searchStr?: string) {
   if (!to || !pathname) return false;
   if (to.includes("?")) {
     const [pathPart, queryPart] = to.split("?");
     if (pathname !== pathPart) return false;
-    if (typeof window !== "undefined") {
-      return window.location.search.includes(queryPart);
+    const currentSearch = searchStr ?? (typeof window !== "undefined" ? window.location.search : "");
+    const sp = new URLSearchParams(currentSearch);
+    const [queryKey, queryVal] = queryPart.split("=");
+    if (queryKey && queryVal) {
+      const actualVal = sp.get(queryKey);
+      if (!actualVal && queryKey === "tab" && queryVal === "matrix") {
+        return true;
+      }
+      return actualVal === queryVal;
     }
-    return false;
+    return currentSearch.includes(queryPart);
   }
   if (to === "/") return pathname === "/";
   return pathname === to || pathname.startsWith(to + "/");
@@ -168,6 +175,7 @@ function isActive(pathname: string | undefined, to?: string) {
 function NavItem({
   item,
   pathname,
+  searchStr,
   collapsed,
   onNavigate,
   badge,
@@ -175,6 +183,7 @@ function NavItem({
 }: {
   item: Item;
   pathname: string | undefined;
+  searchStr?: string;
   collapsed: boolean;
   onNavigate?: () => void;
   badge?: number;
@@ -182,7 +191,7 @@ function NavItem({
 }) {
   const t = useT();
   const Icon = item.icon;
-  const active = isActive(pathname, item.to);
+  const active = isActive(pathname, item.to, searchStr);
   const defaultLabel = item.label || t(item.key);
   const label = getLabel ? getLabel(item, defaultLabel) : defaultLabel;
   const showBadge = !!badge && badge > 0;
@@ -250,6 +259,7 @@ function Group({
   label,
   items,
   pathname,
+  searchStr,
   collapsed,
   onNavigate,
   badges,
@@ -257,6 +267,7 @@ function Group({
   label?: TKey;
   items: Item[];
   pathname: string | undefined;
+  searchStr?: string;
   collapsed: boolean;
   onNavigate?: () => void;
   badges?: Record<string, number>;
@@ -281,6 +292,7 @@ function Group({
             key={it.key}
             item={it}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={collapsed}
             onNavigate={onNavigate}
             badge={it.to ? badges?.[it.to] : undefined}
@@ -358,7 +370,9 @@ export function Sidebar({
   const canViewSystem = isPlatformAdmin || srsRole === "BQT"; // System settings ONLY for ADM and BQT
   const canViewPlatform = isPlatformAdmin || srsRole === "BQT"; // Permissions ONLY for ADM and BQT
 
-  const pathname = useRouterState({ select: (s) => s?.location?.pathname });
+  const location = useRouterState({ select: (s) => s?.location });
+  const pathname = location?.pathname;
+  const searchStr = location?.searchStr || (typeof window !== "undefined" ? window.location.search : "");
 
   const fetchMine = useServerFn(listMyAssociationsFn);
   const { data: myAssocs, reload } = useServerData<MyAssociation[]>(() => fetchMine(), []);
@@ -588,6 +602,7 @@ export function Sidebar({
         <Group
           items={filteredOverview}
           pathname={pathname}
+          searchStr={searchStr}
           collapsed={isCollapsed}
           onNavigate={onNavigate}
         />
@@ -596,6 +611,7 @@ export function Sidebar({
             label="nav.group.members"
             items={filteredMembers}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
@@ -605,6 +621,7 @@ export function Sidebar({
             label="nav.group.events"
             items={filteredEvents}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
@@ -614,6 +631,7 @@ export function Sidebar({
             label="nav.group.sponsors"
             items={filteredSponsors}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
@@ -623,6 +641,7 @@ export function Sidebar({
             label="nav.group.finance"
             items={filteredFinance}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
@@ -632,6 +651,7 @@ export function Sidebar({
             label="nav.group.comm"
             items={filteredComm}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
             badges={badges}
@@ -642,6 +662,7 @@ export function Sidebar({
             label="nav.group.network"
             items={filteredNetwork}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
@@ -651,6 +672,7 @@ export function Sidebar({
             label="nav.group.system"
             items={filteredSystem}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
@@ -660,6 +682,7 @@ export function Sidebar({
             label="nav.group.permissions"
             items={filteredPermissions}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
@@ -669,6 +692,7 @@ export function Sidebar({
             label="nav.group.admin"
             items={filteredAdmin}
             pathname={pathname}
+            searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />

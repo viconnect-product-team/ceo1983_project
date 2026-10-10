@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
+import { AdminRepository } from './admin.repository';
 
 export const DEMO_LEAD_STATUSES = [
   'new',
@@ -15,40 +16,12 @@ export class AdminService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: ConnectAppGateway,
+    private readonly adminRepo: AdminRepository,
   ) {}
 
   async onModuleInit() {
     try {
-      await this.prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS public.notifications (
-          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          code text UNIQUE,
-          title text NOT NULL,
-          body text,
-          audience text DEFAULT 'all',
-          channel text DEFAULT 'inapp',
-          status text DEFAULT 'sent',
-          sent_at timestamptz DEFAULT now(),
-          reach integer DEFAULT 0,
-          association_id uuid,
-          app_scope text DEFAULT 'crm',
-          target_app text DEFAULT 'crm',
-          created_at timestamptz DEFAULT now(),
-          updated_at timestamptz DEFAULT now()
-        );
-      `);
-      await this.prisma.$executeRawUnsafe(`
-        ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'crm';
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
-        ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'crm';
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
-        ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'association_app';
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
-        ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'association_app';
-      `).catch(() => {});
+      await this.adminRepo.ensureSchema();
     } catch (e) {
       console.warn('Could not ensure notifications table:', e);
     }

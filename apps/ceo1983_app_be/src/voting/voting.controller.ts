@@ -11,7 +11,8 @@ import {
   Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { VotingService, CreatePollDto, CastVoteDto } from './voting.service';
+import { VotingService } from './voting.service';
+import { CreatePollDto, CastVoteDto } from './dto';
 
 @Controller('voting')
 @UseGuards(JwtAuthGuard)

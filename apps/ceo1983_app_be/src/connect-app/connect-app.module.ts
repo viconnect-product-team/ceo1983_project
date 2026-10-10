@@ -14,6 +14,19 @@ import { MarketplaceController } from './marketplace.controller';
 import { ContentController } from './content.controller';
 import { ConnectAppService } from './connect-app.service';
 import { ConnectAppGateway } from './connect-app.gateway';
+import { ConnectMomentsService } from './services/moments.service';
+import { ConnectMessengerService } from './services/messenger.service';
+import { ConnectNfcService } from './services/nfc-device.service';
+import { ConnectOpportunityService } from './services/opportunity.service';
+import { ConnectMarketplaceService } from './services/marketplace.service';
+import { ConnectCustomerService } from './services/customer.service';
+import { ConnectCardScanService } from './services/card-scan.service';
+import { ConnectIdentityService } from './services/identity.service';
+import { ConnectCommunityService } from './services/community.service';
+import { ConnectContentService } from './services/content.service';
+import { ConnectPublicRegistrationService } from './services/public-registration.service';
+import { ConnectNetworkService } from './services/network.service';
+import { ConnectAppRepository } from './connect-app.repository';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MailModule } from '../mail/mail.module';
 
@@ -35,7 +48,39 @@ import { MailModule } from '../mail/mail.module';
     MarketplaceController,
     ContentController,
   ],
-  providers: [ConnectAppService, ConnectAppGateway],
-  exports: [ConnectAppService, ConnectAppGateway],
+  providers: [
+    ConnectAppService,
+    ConnectAppRepository,
+    ConnectAppGateway,
+    ConnectMomentsService,
+    ConnectMessengerService,
+    ConnectNfcService,
+    ConnectOpportunityService,
+    ConnectMarketplaceService,
+    ConnectCustomerService,
+    ConnectCardScanService,
+    ConnectIdentityService,
+    ConnectCommunityService,
+    ConnectContentService,
+    ConnectPublicRegistrationService,
+    ConnectNetworkService,
+  ],
+  exports: [
+    ConnectAppService,
+    ConnectAppRepository,
+    ConnectAppGateway,
+    ConnectMomentsService,
+    ConnectMessengerService,
+    ConnectNfcService,
+    ConnectOpportunityService,
+    ConnectMarketplaceService,
+    ConnectCustomerService,
+    ConnectCardScanService,
+    ConnectIdentityService,
+    ConnectCommunityService,
+    ConnectContentService,
+    ConnectPublicRegistrationService,
+    ConnectNetworkService,
+  ],
 })
 export class ConnectAppModule {}

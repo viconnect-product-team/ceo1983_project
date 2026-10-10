@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   Controller,
   Get,
@@ -13,6 +12,15 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import { MeetingsService } from './meetings.service';
+import {
+  CreateMeetingDto,
+  ConnectionAppointmentDto,
+  ListWorkspaceMeetingsDto,
+  SaveOutcomeDto,
+  CreateFollowUpDto,
+  CreateTimeProposalDto,
+  CancelMeetingDto,
+} from './dto';
 
 @Controller('meetings')
 @UseGuards(AuthGuard)
@@ -26,7 +34,7 @@ export class MeetingsController {
   }
 
   @Post()
-  async createMeeting(@Request() req: any, @Body() data: any) {
+  async createMeeting(@Request() req: any, @Body() data: CreateMeetingDto) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.createMeeting(userId, data);
   }
@@ -44,7 +52,10 @@ export class MeetingsController {
   }
 
   @Post('connection-appointments')
-  async createConnectionAppointment(@Request() req: any, @Body() data: any) {
+  async createConnectionAppointment(
+    @Request() req: any,
+    @Body() data: ConnectionAppointmentDto,
+  ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.createConnectionAppointment(userId, data);
   }
@@ -60,7 +71,10 @@ export class MeetingsController {
   }
 
   @Post('workspace/list')
-  async listWorkspaceMeetings(@Request() req: any, @Body() filters: any) {
+  async listWorkspaceMeetings(
+    @Request() req: any,
+    @Body() filters: ListWorkspaceMeetingsDto,
+  ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.listWorkspaceMeetings(userId, filters);
   }
@@ -83,7 +97,7 @@ export class MeetingsController {
   async saveOutcome(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body() data: SaveOutcomeDto,
   ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.saveOutcome(userId, id, data);
@@ -98,7 +112,7 @@ export class MeetingsController {
   async createFollowUp(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body() data: CreateFollowUpDto,
   ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.createFollowUp(userId, id, data);
@@ -141,7 +155,10 @@ export class MeetingsController {
   }
 
   @Post('time-proposals')
-  async createTimeProposals(@Request() req: any, @Body() data: any) {
+  async createTimeProposals(
+    @Request() req: any,
+    @Body() data: CreateTimeProposalDto,
+  ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.createTimeProposals(userId, data);
   }
@@ -166,7 +183,7 @@ export class MeetingsController {
   async cancelMeeting(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { reason: string },
+    @Body() body: CancelMeetingDto,
   ) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.cancelMeeting(userId, id, body);

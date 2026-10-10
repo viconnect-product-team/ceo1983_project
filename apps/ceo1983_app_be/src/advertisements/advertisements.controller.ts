@@ -12,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AdvertisementsService } from './advertisements.service';
-import { CreateAdvertisementDto, CreateAdRequestDto } from './dto/create-advertisement.dto';
+import { CreateAdvertisementDto, CreateAdRequestDto } from './dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('advertisements')

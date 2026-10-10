@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { BusinessCardService } from './business-card.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { SaveCardDto, CardSettingsDto, CardAiHistoryDto } from './dto';
 
 @Controller('business-cards')
 export class BusinessCardController {
@@ -35,14 +36,14 @@ export class BusinessCardController {
 
   @UseGuards(AuthGuard)
   @Post('settings/me')
-  saveCardSettings(@Request() req: any, @Body() data: any) {
+  saveCardSettings(@Request() req: any, @Body() data: CardSettingsDto) {
     const userId = req.user.id || req.user.sub;
     return this.businessCardService.saveCardSettings(userId, data);
   }
 
   @UseGuards(AuthGuard)
   @Post('ai-history')
-  saveCardAiHistory(@Request() req: any, @Body() data: any) {
+  saveCardAiHistory(@Request() req: any, @Body() data: CardAiHistoryDto) {
     const userId = req.user.id || req.user.sub;
     return this.businessCardService.saveCardAiHistory(userId, data);
   }

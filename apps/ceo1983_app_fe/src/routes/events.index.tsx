@@ -406,13 +406,15 @@ function EventsPage() {
         subtitle={t("events.subtitle")}
         actions={
           <>
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
-            >
-              <Download className="h-4 w-4 text-muted-foreground" />
-              {t("common.export")}
-            </button>
+            {can("EVTO_EXPORT") && (
+              <button
+                onClick={handleExport}
+                className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+              >
+                <Download className="h-4 w-4 text-muted-foreground" />
+                {t("common.export")}
+              </button>
+            )}
             {can(PERMISSIONS.EVENT_CREATE) && (
               <button
                 onClick={() => {
@@ -738,18 +740,20 @@ function EventsPage() {
                       </td>
                       <td className="sticky right-0 z-10 min-w-[170px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                         <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            title="Quản lý Check-in & QR Gatekeeper"
-                            onClick={(evt) => {
-                              evt.stopPropagation();
-                              setQrGatekeeperEvent(e);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 transition"
-                          >
-                            <QrCode className="h-3.5 w-3.5" />
-                            <span className="hidden xl:inline text-[11px]">QR Gate</span>
-                          </button>
+                          {(can(PERMISSIONS.EVENT_CHECKIN_MANAGE) || can("CHK_SCAN")) && (
+                            <button
+                              type="button"
+                              title="Quản lý Check-in & QR Gatekeeper"
+                              onClick={(evt) => {
+                                evt.stopPropagation();
+                                setQrGatekeeperEvent(e);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 transition"
+                            >
+                              <QrCode className="h-3.5 w-3.5" />
+                              <span className="hidden xl:inline text-[11px]">QR Gate</span>
+                            </button>
+                          )}
                           <Link
                             to="/events/$eventId"
                             params={{ eventId: e.id }}

@@ -63,6 +63,7 @@ import {
 } from "@/lib/meetings.functions";
 import { createNotificationFn } from "@/lib/notifications.functions";
 import { useRole } from "@/hooks/use-role";
+import { PERMISSIONS } from "@/constants/permissions";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 import {
   RoomBookingService,
@@ -135,13 +136,15 @@ function MeetingsPage() {
   const router = useRouter();
   const MEETINGS = (Route.useLoaderData() || []) as Meeting[];
   const roleState = useRole();
-  const { isPlatformAdmin, isAdmin, isBQT, srsRole } = roleState;
+  const { isPlatformAdmin, isAdmin, isBQT, srsRole, can } = roleState;
   const isSuperAdmin = isPlatformAdmin || isBQT;
   const role = (roleState.roles && roleState.roles[0]) || (srsRole as string);
 
-  // Role permissions
-  const canCreateMeeting = isSuperAdmin || isAdmin || srsRole === "BQT" || srsRole === "BTV" || srsRole === "BTK" || role === "tong_thu_ky" || role === "truong_ban";
-  const canApproveMeeting = isSuperAdmin || isAdmin;
+  // Role permissions: evaluated strictly via can() with matrix support
+  const canCreateMeeting = can("MEET_ADD") || can(PERMISSIONS.MEETING_MANAGE);
+  const canApproveMeeting = can("MEET_APPROVE") || can(PERMISSIONS.MEETING_MANAGE);
+  const canEditMeeting = can("MEET_EDIT") || can(PERMISSIONS.MEETING_MANAGE);
+  const canDeleteMeeting = can("MEET_DELETE") || can(PERMISSIONS.MEETING_MANAGE);
 
   const createFn = useServerFn(createMeetingFn);
   const updateFn = useServerFn(updateMeetingFn);
@@ -344,6 +347,10 @@ function MeetingsPage() {
   };
 
   const handleOpenEdit = (m: Meeting) => {
+    if (!canEditMeeting) {
+      toast.error("Bạn không có quyền chỉnh sửa cuộc họp.");
+      return;
+    }
     setSelectedMeeting(m);
     setFormTitle(m.title);
     setFormType(m.type);
@@ -441,12 +448,20 @@ function MeetingsPage() {
   };
 
   const handleOpenDelete = (m: Meeting) => {
+    if (!canDeleteMeeting) {
+      toast.error("Bạn không có quyền xóa cuộc họp.");
+      return;
+    }
     setDeletingMeeting(m);
     setDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!deletingMeeting) return;
+    if (!canDeleteMeeting) {
+      toast.error("Bạn không có quyền xóa cuộc họp.");
+      return;
+    }
     setSubmitting(true);
     try {
       await deleteFn({ data: { id: deletingMeeting.id } });
@@ -914,7 +929,7 @@ function MeetingsPage() {
                     <span>Mời Offline</span>
                   </button>
 
-                  {m.status === "upcoming" && (
+                  {m.status === "upcoming" && canEditMeeting && (
                     <button
                       onClick={() => handleOpenCancel(m)}
                       className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
@@ -922,20 +937,24 @@ function MeetingsPage() {
                       Hủy họp
                     </button>
                   )}
-                  <button
-                    onClick={() => handleOpenEdit(m)}
-                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 cursor-pointer"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => handleOpenDelete(m)}
-                    className="flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer transition shadow-2xs"
-                    title="Xóa cuộc họp này hoàn toàn"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Xóa</span>
-                  </button>
+                  {canEditMeeting && (
+                    <button
+                      onClick={() => handleOpenEdit(m)}
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 cursor-pointer"
+                    >
+                      Sửa
+                    </button>
+                  )}
+                  {canDeleteMeeting && (
+                    <button
+                      onClick={() => handleOpenDelete(m)}
+                      className="flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer transition shadow-2xs"
+                      title="Xóa cuộc họp này hoàn toàn"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Xóa</span>
+                    </button>
+                  )}
                 </div>
               </Card>
             ))}

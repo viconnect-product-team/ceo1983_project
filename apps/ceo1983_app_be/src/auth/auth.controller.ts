@@ -12,16 +12,17 @@ import {
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  RegisterDto,
+  RefreshTokenDto,
+  GoogleLoginDto,
+  AppleLoginDto,
+} from './dto';
+import { ChangePasswordDto } from '../users/dto';
 
-export class ForgotPasswordDto {
-  email!: string;
-}
-
-export class ResetPasswordDto {
-  email?: string;
-  token?: string;
-  newPassword!: string;
-}
+export { ForgotPasswordDto, ResetPasswordDto };
 
 @Controller('auth')
 export class AuthController {
@@ -41,7 +42,7 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() registerDto: Record<string, any>) {
+  async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
@@ -90,7 +91,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async changePassword(
     @Request() req: any,
-    @Body() body: { currentPassword?: string; newPassword: string },
+    @Body() body: ChangePasswordDto,
   ) {
     const userId = req.user?.id || req.user?.sub || req.user?.userId;
     return this.authService.changePassword(

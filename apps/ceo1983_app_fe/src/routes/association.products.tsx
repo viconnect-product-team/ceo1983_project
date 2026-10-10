@@ -54,6 +54,13 @@ import {
 import { exportProductsToExcel, type ParsedProductItem } from "@/lib/marketplace-excel";
 import { ProductExcelModal } from "@/components/dashboard/ProductExcelModal";
 import { ShopeeProductDetailModal } from "@/components/marketplace/ShopeeProductDetailModal";
+import {
+  ProductPostModal,
+  ProductQuoteModal,
+  ProductQuotesListModal,
+  ProductEditModal,
+  ProductAdRegistrationModal,
+} from "@/components/marketplace/modals";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -2213,659 +2220,86 @@ function ProductsScreen() {
         </>
       )}
 
-      {/* ── MODAL ĐĂNG SẢN PHẨM: ĐÃ SỬA THEME SÁNG TRANG NHÃ & CHÍNH GIỮA MÀN MOBILE ── */}
-      {mounted && postModalOpen && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-          onClick={() => setPostModalOpen(false)}
-        >
-          <div
-            className="my-auto w-full max-w-[440px] max-h-[85dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-              <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <PackageCheck className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
-                {isEn ? "Post New Product / Service" : "Đăng Sản Phẩm / Dịch Vụ Mới"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setPostModalOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+      {/* ── MODALS EXTRACTED ── */}
+      <ProductPostModal
+        isOpen={mounted && postModalOpen}
+        onClose={() => setPostModalOpen(false)}
+        onSubmit={handleCreateProduct}
+        isEn={isEn}
+        formCompany={formCompany}
+        setFormCompany={setFormCompany}
+        formCompanySize={formCompanySize}
+        setFormCompanySize={setFormCompanySize}
+        formCategory={formCategory}
+        setFormCategory={setFormCategory}
+        formCompanyIntro={formCompanyIntro}
+        setFormCompanyIntro={setFormCompanyIntro}
+        formPhoto={formPhoto}
+        setFormPhoto={setFormPhoto}
+        formName={formName}
+        setFormName={setFormName}
+        formOriginalPrice={formOriginalPrice}
+        setFormOriginalPrice={setFormOriginalPrice}
+        formPrice={formPrice}
+        setFormPrice={setFormPrice}
+        formUnit={formUnit}
+        setFormUnit={setFormUnit}
+        formCurrency={formCurrency}
+        setFormCurrency={setFormCurrency}
+        formDesc={formDesc}
+        setFormDesc={setFormDesc}
+      />
 
-            <form onSubmit={handleCreateProduct} className="flex flex-col flex-1 min-h-0">
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:thin]">
-                {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
-                <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20 p-3.5 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#2E3192] dark:text-amber-400">
-                    <Store className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
-                    <span>1. Thông tin Doanh Nghiệp & Gian Hàng</span>
-                  </div>
+      <ProductQuoteModal
+        isOpen={mounted && !!quoteProduct}
+        quoteProduct={quoteProduct}
+        onClose={() => setQuoteProduct(null)}
+        onSubmit={handleSubmitQuote}
+        isEn={isEn}
+        quoteQty={quoteQty}
+        setQuoteQty={setQuoteQty}
+        quotePhone={quotePhone}
+        setQuotePhone={setQuotePhone}
+        quoteNote={quoteNote}
+        setQuoteNote={setQuoteNote}
+        quoteSubmitting={quoteSubmitting}
+      />
 
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Company / Brand Name *" : "Tên Doanh Nghiệp / Thương Hiệu *"}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formCompany}
-                      onChange={(e) => setFormCompany(e.target.value)}
-                      placeholder={isEn ? "Company name" : "Ví dụ: Công ty Cổ phần Công nghệ ABC"}
-                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#2E3192]"
-                    />
-                  </div>
+      <ProductQuotesListModal
+        isOpen={mounted && !!viewingQuotesProduct}
+        viewingQuotesProduct={viewingQuotesProduct}
+        onClose={() => setViewingQuotesProduct(null)}
+        loadingProductQuotes={loadingProductQuotes}
+        productQuotes={productQuotes}
+        fmt={fmt}
+        onMessage={(peerCode) => {
+          setViewingQuotesProduct(null);
+          navigate({ to: "/association/messages", search: { peerCode } });
+        }}
+      />
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        {isEn ? "Employee Scale" : "Quy mô nhân sự"}
-                      </label>
-                      <select
-                        value={formCompanySize}
-                        onChange={(e) => setFormCompanySize(e.target.value)}
-                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700"
-                      >
-                        <option value="Dưới 10 nhân sự">Dưới 10 nhân sự</option>
-                        <option value="10 - 50 nhân sự">10 - 50 nhân sự</option>
-                        <option value="50 - 200 nhân sự">50 - 200 nhân sự</option>
-                        <option value="200 - 500 nhân sự">200 - 500 nhân sự</option>
-                        <option value="Trên 500 nhân sự">Trên 500 nhân sự</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        {isEn ? "Industry" : "Lĩnh vực chính"}
-                      </label>
-                      <select
-                        value={formCategory}
-                        onChange={(e) => setFormCategory(e.target.value)}
-                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700"
-                      >
-                        <option value="Công nghệ & Phần mềm">Công nghệ & Phần mềm</option>
-                        <option value="Bất động sản & Xây dựng">Bất động sản & Xây dựng</option>
-                        <option value="Sản xuất & Công nghiệp">Sản xuất & Công nghiệp</option>
-                        <option value="Tài chính & Đầu tư">Tài chính & Đầu tư</option>
-                        <option value="Dịch vụ & Du lịch">Dịch vụ & Du lịch</option>
-                        <option value="Hàng tiêu dùng & Bán lẻ">Hàng tiêu dùng & Bán lẻ</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Company Bio / Intro" : "Giới thiệu ngắn về doanh nghiệp"}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={formCompanyIntro}
-                      onChange={(e) => setFormCompanyIntro(e.target.value)}
-                      placeholder="Giới thiệu năng lực cung ứng, giấy phép hoặc kinh nghiệm thị trường..."
-                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 p-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* ── PHẦN 2: THÔNG TIN SẢN PHẨM / DỊCH VỤ ── */}
-                <div className="rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20 p-3.5 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                    <PackageCheck className="h-4 w-4" />
-                    <span>2. Thông tin Sản Phẩm / Dịch Vụ</span>
-                  </div>
-
-                  {/* Photo Upload */}
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Product Image (Clear & Required)" : "Ảnh sản phẩm (Bắt buộc & Rõ nét)"}
-                    </label>
-                    {formPhoto ? (
-                      <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                        <img
-                          src={resolveMediaUrl(formPhoto) || formPhoto}
-                          alt="Ảnh sản phẩm"
-                          className="h-36 w-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setFormPhoto("")}
-                          className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/75 text-white hover:bg-rose-600 transition cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-4 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
-                        <ImagePlus className="h-6 w-6 text-[#2E3192] dark:text-amber-400 mb-1" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                          {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên (Lưu MinIO)"}
-                        </span>
-                        <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const tid = toast.loading("Đang tải ảnh sản phẩm lên MinIO...");
-                            try {
-                              const uploadedUrl = await uploadFileToNest(file, "products");
-                              if (uploadedUrl) {
-                                setFormPhoto(uploadedUrl);
-                                toast.success("Đã tải ảnh sản phẩm lên MinIO thành công!", { id: tid });
-                              }
-                            } catch (err: any) {
-                              toast.error(err?.message || "Tải ảnh sản phẩm thất bại!", { id: tid });
-                            } finally {
-                              if (e.target) e.target.value = "";
-                            }
-                          }}
-                        />
-                      </label>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Product / Service Name *" : "Tên sản phẩm / Dịch vụ *"}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      placeholder={isEn ? "e.g. Enterprise Cloud Solution..." : "Ví dụ: Gói giải pháp chuyển đổi số doanh nghiệp..."}
-                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        {isEn ? "Listed Price (Original)" : "Giá niêm yết (Gốc)"}
-                      </label>
-                      <StandardCurrencyInput
-                        value={formOriginalPrice}
-                        onChange={(formatted) => setFormOriginalPrice(formatted)}
-                        placeholder="Ví dụ: 20.000.000 đ"
-                        unit="đ"
-                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        {isEn ? "VIP Member Price *" : "Giá ưu đãi Hội viên *"}
-                      </label>
-                      <StandardCurrencyInput
-                        required
-                        value={formPrice}
-                        onChange={(formatted) => setFormPrice(formatted)}
-                        placeholder="Ví dụ: 15.000.000 đ"
-                        unit="đ"
-                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        {isEn ? "Unit" : "Đơn vị tính"}
-                      </label>
-                      <input
-                        type="text"
-                        value={formUnit}
-                        onChange={(e) => setFormUnit(e.target.value)}
-                        placeholder="Gói / Chiếc / Tháng"
-                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        {isEn ? "Currency" : "Tiền tệ"}
-                      </label>
-                      <select
-                        value={formCurrency}
-                        onChange={(e) => setFormCurrency(e.target.value)}
-                        className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700 cursor-pointer"
-                      >
-                        <option value="VND">VNĐ</option>
-                        <option value="USD">USD</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Description & Quality Commitment" : "Mô tả sản phẩm & Cam kết chất lượng"}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={formDesc}
-                      onChange={(e) => setFormDesc(e.target.value)}
-                      placeholder={isEn ? "Describe specs, warranty, exclusive member discounts..." : "Mô tả thông số, chính sách bảo hành, ưu đãi riêng cho hội viên CEO 1983..."}
-                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                <button
-                  type="submit"
-                  style={{ color: "#ffffff" }}
-                  className="w-full rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer"
-                >
-                  {isEn ? "Publish Product to Marketplace" : "Đăng Sản Phẩm Lên Gian Hàng"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* ── INTERACTIVE MODAL NHẬN BÁO GIÁ VIP (React Portal) ── */}
-      {mounted && quoteProduct && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-          onClick={() => setQuoteProduct(null)}
-        >
-          <div
-            className="my-auto w-full max-w-[420px] max-h-[85dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-              <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <FileText className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
-                {isEn ? "Request VIP Quotation" : "Yêu Cầu Báo Giá VIP"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setQuoteProduct(null)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitQuote} className="flex flex-col flex-1 min-h-0">
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
-                {/* Product Summary Preview */}
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/30">
-                  <img
-                    src={quoteProduct.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
-                    alt=""
-                    className="h-12 w-12 rounded-lg object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{quoteProduct.name}</p>
-                    <p className="text-[11px] text-amber-800 dark:text-amber-300 truncate">{quoteProduct.company}</p>
-                    <p className="text-[11px] font-bold text-rose-500">{quoteProduct.price || (isEn ? "Contact for price" : "Giá ưu đãi hội viên")}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Desired Quantity / Scope" : "Số lượng dự kiến / Quy mô nhu cầu"}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={quoteQty}
-                    onChange={(e) => setQuoteQty(e.target.value)}
-                    placeholder="Ví dụ: 1 gói, 50 bộ, triển khai 1 năm..."
-                    className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Contact Phone / Zalo" : "Số điện thoại / Zalo liên hệ của bạn *"}
-                  </label>
-                  <div className="relative">
-                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="tel"
-                      required
-                      value={quotePhone}
-                      onChange={(e) => setQuotePhone(e.target.value)}
-                      placeholder="0988 123 456"
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Specific Requirements / Note" : "Yêu cầu chi tiết / Ghi chú"}
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={quoteNote}
-                    onChange={(e) => setQuoteNote(e.target.value)}
-                    placeholder={isEn ? "Specific business requirements..." : "Ghi chú thêm về yêu cầu kỹ thuật, thời gian giao hàng..."}
-                    className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] p-3 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-900/50">
-                <button
-                  type="submit"
-                  disabled={quoteSubmitting}
-                  style={{ color: "#ffffff" }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  <span>{quoteSubmitting ? (isEn ? "Sending request..." : "Đang gửi...") : (isEn ? "Send Quote Request Now" : "Gửi Yêu Cầu Báo Giá")}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* ── MODAL XEM DANH SÁCH NGƯỜI QUAN TÂM & YÊU CẦU BÁO GIÁ SẢN PHẨM ── */}
-      {mounted && viewingQuotesProduct && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-          onClick={() => setViewingQuotesProduct(null)}
-        >
-          <div
-            className="my-auto w-full max-w-[500px] max-h-[85dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-              <div className="min-w-0 flex-1 pr-2">
-                <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <Users className="h-5 w-5 text-amber-500" />
-                  <span>Hội viên quan tâm / Báo giá</span>
-                </h3>
-                <p className="text-xs text-slate-400 truncate mt-0.5">{viewingQuotesProduct.name}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setViewingQuotesProduct(null)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
-              {loadingProductQuotes ? (
-                <p className="text-xs text-slate-400 text-center py-6">Đang tải danh sách người quan tâm...</p>
-              ) : productQuotes.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Chưa có yêu cầu báo giá nào</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Khi có hội viên gửi yêu cầu báo giá hoặc bấm quan tâm, thông tin liên hệ sẽ xuất hiện tại đây.</p>
-                </div>
-              ) : (
-                productQuotes.map((q: any) => (
-                  <div key={q.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-[#2E3192] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
-                          {q.buyerName ? q.buyerName.charAt(0).toUpperCase() : "U"}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{q.buyerName || "Hội viên CLB"}</h4>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{q.buyerCompany || "Hội viên CEO 1983"}</p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 shrink-0">
-                        {fmt.rel(q.createdAt)}
-                      </span>
-                    </div>
-
-                    {q.quantity && (
-                      <p className="text-xs text-slate-700 dark:text-slate-300">
-                        <strong>Số lượng / Quy mô:</strong> {q.quantity}
-                      </p>
-                    )}
-
-                    {(q.note || q.message) && (
-                      <p className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 italic">
-                        "{q.note || q.message}"
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/40">
-                      <div className="text-xs text-slate-500">
-                        {q.phone && <span>SĐT: <strong className="text-emerald-600 dark:text-emerald-400">{q.phone}</strong></span>}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {q.phone && (
-                          <a
-                            href={`tel:${q.phone}`}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 hover:bg-emerald-600 transition"
-                          >
-                            <Phone className="h-3 w-3" />
-                            <span>Gọi</span>
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setViewingQuotesProduct(null);
-                            navigate({ to: "/association/messages", search: { peerCode: q.buyerId || q.phone } });
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-[#2E3192] text-white text-[11px] font-bold flex items-center gap-1 hover:bg-[#232677] transition cursor-pointer"
-                        >
-                          <MessageSquare className="h-3 w-3" />
-                          <span>Nhắn tin</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* ── MODAL CHỈNH SỬA SẢN PHẨM: DÀNH CHO NGƯỜI TẠO ĐĂNG ── */}
-      {mounted && editingProduct && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
-          onClick={() => setEditingProduct(null)}
-        >
-          <div
-            className="my-auto w-full max-w-[440px] max-h-[85dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-              <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
-                {isEn ? "Edit Product / Service" : "Chỉnh Sửa Sản Phẩm / Dịch Vụ"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setEditingProduct(null)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateProduct} className="flex flex-col flex-1 min-h-0">
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 [scrollbar-width:thin]">
-                {/* Image upload / preview */}
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Product Image" : "Hình ảnh đại diện sản phẩm"}
-                  </label>
-                  <input
-                    type="file"
-                    ref={editImageInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const tid = toast.loading("Đang tải ảnh sản phẩm lên MinIO...");
-                      try {
-                        const uploadedUrl = await uploadFileToNest(file, "products");
-                        if (uploadedUrl) {
-                          setEditPhoto(uploadedUrl);
-                          toast.success("Đã tải ảnh sản phẩm lên MinIO thành công!", { id: tid });
-                        }
-                      } catch (err: any) {
-                        toast.error(err?.message || "Tải ảnh sản phẩm thất bại!", { id: tid });
-                      } finally {
-                        if (e.target) e.target.value = "";
-                      }
-                    }}
-                  />
-                  {editPhoto ? (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
-                      <img
-                        src={resolveMediaUrl(editPhoto) || editPhoto}
-                        alt="Preview"
-                        className="w-full h-36 object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setEditPhoto("")}
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-rose-600 text-white hover:bg-rose-700 shadow cursor-pointer transition"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => editImageInputRef.current?.click()}
-                      className="w-full rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 p-4 text-center hover:border-amber-500/50 hover:bg-amber-500/5 transition cursor-pointer flex flex-col items-center justify-center gap-1.5"
-                    >
-                      <ImagePlus className="h-6 w-6 text-slate-400" />
-                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                        {isEn ? "Click to upload new image" : "Chọn ảnh từ thiết bị (JPG, PNG, WebP)"}
-                      </span>
-                    </button>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Product Name *" : "Tên sản phẩm / giải pháp *"}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="VD: Dịch vụ tư vấn giải pháp AI..."
-                    className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Company" : "Tên doanh nghiệp"}
-                    </label>
-                    <input
-                      type="text"
-                      value={editCompany}
-                      onChange={(e) => setEditCompany(e.target.value)}
-                      placeholder="VD: Công ty TNHH ABC"
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Category" : "Ngành hàng"}
-                    </label>
-                    <select
-                      value={editCategory}
-                      onChange={(e) => setEditCategory(e.target.value)}
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    >
-                      <option value="Công nghệ & Phần mềm">Công nghệ & Phần mềm</option>
-                      <option value="Bất động sản & Xây dựng">Bất động sản & Xây dựng</option>
-                      <option value="Sản xuất & Công nghiệp">Sản xuất & Công nghiệp</option>
-                      <option value="Tài chính & Đầu tư">Tài chính & Đầu tư</option>
-                      <option value="Dịch vụ & Du lịch">Dịch vụ & Du lịch</option>
-                      <option value="Hàng tiêu dùng & Bán lẻ">Hàng tiêu dùng & Bán lẻ</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Original Price" : "Giá niêm yết (VNĐ)"}
-                    </label>
-                    <StandardCurrencyInput
-                      value={editOriginalPrice}
-                      onChange={(formatted) => setEditOriginalPrice(formatted)}
-                      placeholder="VD: 50.000.000"
-                      unit="đ"
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {isEn ? "Member Price *" : "Giá ưu đãi hội viên *"}
-                    </label>
-                    <StandardCurrencyInput
-                      required
-                      value={editPrice}
-                      onChange={(formatted) => setEditPrice(formatted)}
-                      placeholder="VD: 35.000.000"
-                      unit="đ"
-                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "Description / Specs" : "Mô tả / Thông số / Ưu đãi"}
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={editDesc}
-                    onChange={(e) => setEditDesc(e.target.value)}
-                    placeholder="Giới thiệu điểm nổi bật, chính sách bảo hành, hỗ trợ hội viên..."
-                    className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] p-3 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-900/50 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingProduct(null)}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  {isEn ? "Cancel" : "Hủy"}
-                </button>
-                <button
-                  type="submit"
-                  disabled={updatingProduct}
-                  style={{ color: "#ffffff" }}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
-                >
-                  <span>{updatingProduct ? (isEn ? "Saving..." : "Đang lưu...") : (isEn ? "Save Changes" : "Lưu Thay Đổi")}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
+      <ProductEditModal
+        isOpen={mounted && !!editingProduct}
+        editingProduct={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSubmit={handleUpdateProduct}
+        isEn={isEn}
+        editPhoto={editPhoto}
+        setEditPhoto={setEditPhoto}
+        editName={editName}
+        setEditName={setEditName}
+        editCompany={editCompany}
+        setEditCompany={setEditCompany}
+        editCategory={editCategory}
+        setEditCategory={setEditCategory}
+        editOriginalPrice={editOriginalPrice}
+        setEditOriginalPrice={setEditOriginalPrice}
+        editPrice={editPrice}
+        setEditPrice={setEditPrice}
+        editDesc={editDesc}
+        setEditDesc={setEditDesc}
+        updatingProduct={updatingProduct}
+      />
 
       {/* ── MODAL GIAN HÀNG DOANH NGHIỆP: ĐÃ CHUYỂN SANG GIAO DIỆN TOÀN MÀN HÌNH B2B STOREFRONT ── */}
 
@@ -2878,205 +2312,30 @@ function ProductsScreen() {
       />
 
       {/* Modal Đăng Ký Chạy Quảng Cáo & Affiliate B2B */}
-      {adRegistrationModalOpen &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
-              onClick={() => !adSubmitting && setAdRegistrationModalOpen(false)}
-            />
-            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-amber-500/30 bg-white dark:bg-slate-900 p-6 shadow-2xl text-slate-900 dark:text-white max-h-[90vh] flex flex-col">
-              <div className="mb-4 flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 shadow-md">
-                    <Megaphone className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      Đăng Ký Quảng Cáo & Affiliate B2B
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Gửi yêu cầu tới Admin Quản trị hệ thống CRM Hiệp hội
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAdRegistrationModalOpen(false)}
-                  className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmitAdRequest} className="space-y-3.5 overflow-y-auto pr-1 flex-1">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Tên doanh nghiệp / Công ty <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={adCompany}
-                    onChange={(e) => setAdCompany(e.target.value)}
-                    placeholder="VD: Tập Đoàn Công Nghệ ViConnect"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Người đại diện liên hệ <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={adContactPerson}
-                      onChange={(e) => setAdContactPerson(e.target.value)}
-                      placeholder="VD: Nguyễn Văn A"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Số điện thoại nhận QR <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={adPhone}
-                      onChange={(e) => setAdPhone(e.target.value)}
-                      placeholder="0912 345 678"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Email tiếp nhận
-                    </label>
-                    <input
-                      type="email"
-                      value={adEmail}
-                      onChange={(e) => setAdEmail(e.target.value)}
-                      placeholder="contact@company.com"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Thời lượng chiến dịch
-                    </label>
-                    <select
-                      value={adDurationMonths}
-                      onChange={(e) => setAdDurationMonths(Number(e.target.value))}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                    >
-                      <option value={1}>1 Tháng (Thử nghiệm)</option>
-                      <option value={3}>3 Tháng (Khuyên dùng)</option>
-                      <option value={6}>6 Tháng (Ưu đãi 15%)</option>
-                      <option value={12}>12 Tháng (Đối tác VIP)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Mục tiêu quảng cáo
-                  </label>
-                  <select
-                    value={adGoal}
-                    onChange={(e) => setAdGoal(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                  >
-                    <option value="Quảng bá sản phẩm / dịch vụ nổi bật tới toàn thể hội viên">
-                      Quảng bá sản phẩm / dịch vụ nổi bật
-                    </option>
-                    <option value="Chiến dịch liên kết Affiliate chia sẻ doanh thu B2B">
-                      Chiến dịch Affiliate chia sẻ doanh thu B2B
-                    </option>
-                    <option value="Banner Top vị trí số 1 Chợ Giao Thương">
-                      Banner Top vị trí số 1 Chợ Giao Thương
-                    </option>
-                    <option value="Ra mắt dòng sản phẩm hoặc dịch vụ thương hiệu mới">
-                      Ra mắt sản phẩm / dịch vụ mới
-                    </option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Ngân sách dự kiến
-                    </label>
-                    <input
-                      type="text"
-                      value={adBudget}
-                      onChange={(e) => setAdBudget(e.target.value)}
-                      placeholder="VD: 10,000,000 đ"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Link sản phẩm / Website
-                    </label>
-                    <input
-                      type="text"
-                      value={adProductLink}
-                      onChange={(e) => setAdProductLink(e.target.value)}
-                      placeholder="https://company.vn/san-pham"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Ghi chú / Yêu cầu cụ thể
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={adNotes}
-                    onChange={(e) => setAdNotes(e.target.value)}
-                    placeholder="Mô tả thông điệp quảng cáo, khuyến mãi hoặc thời gian muốn kích hoạt..."
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300/60 p-3 text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
-                  <div className="flex items-center gap-1.5 font-bold mb-1">
-                    <QrCode className="h-3.5 w-3.5" />
-                    <span>Quy trình thanh toán & duyệt tự động:</span>
-                  </div>
-                  Sau khi bạn gửi thông tin, Admin quản trị hệ thống CRM sẽ nhận được yêu cầu, liên hệ chốt hợp đồng và gửi mã QR thanh toán VietQR. Sau khi thanh toán thành công, Admin sẽ thiết lập banner có hiệu ứng animation hiển thị ngay tại Chợ B2B!
-                </div>
-
-                <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setAdRegistrationModalOpen(false)}
-                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={adSubmitting}
-                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition disabled:opacity-50 cursor-pointer"
-                  >
-                    {adSubmitting ? "Đang gửi..." : "Gửi yêu cầu đến Admin CRM"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body
-        )}
+      <ProductAdRegistrationModal
+        isOpen={adRegistrationModalOpen}
+        onClose={() => setAdRegistrationModalOpen(false)}
+        onSubmit={handleSubmitAdRequest}
+        adCompany={adCompany}
+        setAdCompany={setAdCompany}
+        adContactPerson={adContactPerson}
+        setAdContactPerson={setAdContactPerson}
+        adPhone={adPhone}
+        setAdPhone={setAdPhone}
+        adEmail={adEmail}
+        setAdEmail={setAdEmail}
+        adDurationMonths={adDurationMonths}
+        setAdDurationMonths={setAdDurationMonths}
+        adGoal={adGoal}
+        setAdGoal={setAdGoal}
+        adBudget={adBudget}
+        setAdBudget={setAdBudget}
+        adProductLink={adProductLink}
+        setAdProductLink={setAdProductLink}
+        adNotes={adNotes}
+        setAdNotes={setAdNotes}
+        adSubmitting={adSubmitting}
+      />
 
       {/* ── MODAL CHI TIẾT SẢN PHẨM & ĐÁNH GIÁ SHOPEE STYLE ── */}
       {selectedDetailProduct && (

@@ -12,7 +12,8 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { TasksService, TaskItem } from './tasks.service';
+import { TasksService } from './tasks.service';
+import { TaskItem, TaskFilterDto, CreateTaskDto, UpdateTaskDto } from './dto';
 
 @Controller('tasks')
 export class TasksController {

@@ -38,11 +38,7 @@ import {
 
 import { fetchNestApi } from "@/lib/api-client";
 
-export function MemberPermissionsByCommittee({
-  members = [],
-  loading = false,
-  onUpdateRoleDept,
-}: {
+export interface MemberPermissionsByCommitteeProps {
   members: any[];
   loading?: boolean;
   onUpdateRoleDept: (p: {
@@ -51,7 +47,19 @@ export function MemberPermissionsByCommittee({
     department: string;
     associationId?: string;
   }) => Promise<any>;
-}) {
+  onDirtyChange?: (isDirty: boolean) => void;
+  saveTriggerRef?: React.MutableRefObject<(() => Promise<boolean>) | null>;
+  discardTriggerRef?: React.MutableRefObject<(() => void) | null>;
+}
+
+export function MemberPermissionsByCommittee({
+  members = [],
+  loading = false,
+  onUpdateRoleDept,
+  onDirtyChange,
+  saveTriggerRef,
+  discardTriggerRef,
+}: MemberPermissionsByCommitteeProps) {
   const [selectedCommitteeTab, setSelectedCommitteeTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
@@ -372,6 +380,32 @@ export function MemberPermissionsByCommittee({
   };
 
   const unsavedCount = Object.keys(stagedRoleDept).length + Object.keys(stagedOverrides).length;
+  const isDirty = unsavedCount > 0;
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (saveTriggerRef) {
+      saveTriggerRef.current = async () => {
+        try {
+          await handleSaveAllToDatabase();
+          return true;
+        } catch {
+          return false;
+        }
+      };
+    }
+  }, [saveTriggerRef, stagedRoleDept, stagedOverrides, memberPermsMap]);
+
+  useEffect(() => {
+    if (discardTriggerRef) {
+      discardTriggerRef.current = () => {
+        handleResetAllDraft();
+      };
+    }
+  }, [discardTriggerRef]);
 
   return (
     <div className="space-y-5">

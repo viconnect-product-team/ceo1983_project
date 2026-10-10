@@ -24,7 +24,13 @@ export type MyConversation = {
   connectionId?: string | null;
   isGroup?: boolean;
   memberCount?: number;
-  members?: { id?: string; name: string; avatarUrl?: string | null; code?: string; role?: string }[];
+  members?: {
+    id?: string;
+    name: string;
+    avatarUrl?: string | null;
+    code?: string;
+    role?: string;
+  }[];
   groupAvatar?: string | null;
 };
 
@@ -77,34 +83,49 @@ export const listConversations = createServerFn({ method: "GET" })
 
 export const listMessages = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ peerCode: z.string().min(1).max(255) }).parse(d),
-  )
-  .handler(async ({ data, context }: any): Promise<{ peerName: string; avatarUrl?: string | null; isSystem?: boolean; messages: ChatMessage[] }> => {
-    try {
-      const token = context?.token;
-      const res = await fetchNestApiFromServer<{ peerName: string; avatarUrl?: string; isSystem?: boolean; messages: any[] }>(
-        "/dm/member/messages?peerCode=" + encodeURIComponent(data.peerCode),
-        token,
-      );
-      return {
-        peerName: res?.peerName ?? data.peerCode.toUpperCase(),
-        avatarUrl: res?.avatarUrl ?? null,
-        isSystem: Boolean(res?.isSystem),
-        messages: (res?.messages ?? []).map((m: any) => ({
-          id: m.id,
-          text: m.text,
-          mine: Boolean(m.mine),
-          time: relTime(m.time || m.createdAt),
-          createdAt: m.createdAt,
-          seen: Boolean(m.seen),
-          retracted: m.text === "[retracted]" || Boolean(m.retracted || m.isRetracted),
-        })),
-      };
-    } catch {
-      return { peerName: data.peerCode.toUpperCase(), avatarUrl: null, isSystem: false, messages: [] };
-    }
-  });
+  .inputValidator((d: unknown) => z.object({ peerCode: z.string().min(1).max(255) }).parse(d))
+  .handler(
+    async ({
+      data,
+      context,
+    }: any): Promise<{
+      peerName: string;
+      avatarUrl?: string | null;
+      isSystem?: boolean;
+      messages: ChatMessage[];
+    }> => {
+      try {
+        const token = context?.token;
+        const res = await fetchNestApiFromServer<{
+          peerName: string;
+          avatarUrl?: string;
+          isSystem?: boolean;
+          messages: any[];
+        }>("/dm/member/messages?peerCode=" + encodeURIComponent(data.peerCode), token);
+        return {
+          peerName: res?.peerName ?? data.peerCode.toUpperCase(),
+          avatarUrl: res?.avatarUrl ?? null,
+          isSystem: Boolean(res?.isSystem),
+          messages: (res?.messages ?? []).map((m: any) => ({
+            id: m.id,
+            text: m.text,
+            mine: Boolean(m.mine),
+            time: relTime(m.time || m.createdAt),
+            createdAt: m.createdAt,
+            seen: Boolean(m.seen),
+            retracted: m.text === "[retracted]" || Boolean(m.retracted || m.isRetracted),
+          })),
+        };
+      } catch {
+        return {
+          peerName: data.peerCode.toUpperCase(),
+          avatarUrl: null,
+          isSystem: false,
+          messages: [],
+        };
+      }
+    },
+  );
 
 export const sendMessage = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
@@ -113,9 +134,9 @@ export const sendMessage = createServerFn({ method: "POST" })
       .object({ peerCode: z.string().min(1).max(255), text: z.string().trim().min(1).max(5000) })
       .parse(d),
   )
-  .handler(async ({ data, context }: any): Promise<{ ok: boolean }> => {
+  .handler(async ({ data, context }: any): Promise<{ ok: boolean; id?: string }> => {
     const token = context?.token;
-    return fetchNestApiFromServer<{ ok: boolean }>("/dm/member/messages", token, {
+    return fetchNestApiFromServer<{ ok: boolean; id?: string }>("/dm/member/messages", token, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -123,15 +144,13 @@ export const sendMessage = createServerFn({ method: "POST" })
 
 export const retractMemberMessage = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ messageId: z.string().min(1) }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ messageId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }: any): Promise<{ ok: boolean }> => {
     const token = context?.token;
     return fetchNestApiFromServer<{ ok: boolean }>(
       `/dm/member/messages/${encodeURIComponent(data.messageId)}`,
       token,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
   });
 
@@ -163,13 +182,10 @@ export const respondMemberConnectionFn = createServerFn({ method: "POST" })
 
 export const disconnectMemberConnectionFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ connectionId: z.string().min(1) }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ connectionId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }: any): Promise<any> => {
     const token = context?.token;
     return fetchNestApiFromServer<any>(`/network/connections/${data.connectionId}`, token, {
       method: "DELETE",
     });
   });
-

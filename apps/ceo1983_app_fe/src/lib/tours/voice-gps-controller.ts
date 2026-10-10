@@ -70,9 +70,7 @@ export function useVoiceGpsTour() {
         // Ưu tiên chọn giọng đọc tiếng Việt nếu trình duyệt hỗ trợ
         const voices = synthRef.current.getVoices();
         const viVoice = voices.find(
-          (v) =>
-            v.lang.toLowerCase().includes("vi") ||
-            v.lang.toLowerCase().includes("vietnamese"),
+          (v) => v.lang.toLowerCase().includes("vi") || v.lang.toLowerCase().includes("vietnamese"),
         );
         if (viVoice) {
           utterance.voice = viVoice;
@@ -108,9 +106,7 @@ export function useVoiceGpsTour() {
 
   // Lấy bước hiện tại
   const currentStep: TourStepItem | null =
-    activeTour && activeTour.steps[currentStepIndex]
-      ? activeTour.steps[currentStepIndex]
-      : null;
+    activeTour && activeTour.steps[currentStepIndex] ? activeTour.steps[currentStepIndex] : null;
 
   // Tính toán vị trí phần tử mục tiêu (Spotlight Target)
   const measureTarget = useCallback(() => {
@@ -134,6 +130,9 @@ export function useVoiceGpsTour() {
 
   // Cập nhật vị trí khi đổi bước hoặc resize
   useEffect(() => {
+    if (!activeTour || !currentStep) {
+      return;
+    }
     measureTarget();
     const handleResize = () => measureTarget();
     window.addEventListener("resize", handleResize);
