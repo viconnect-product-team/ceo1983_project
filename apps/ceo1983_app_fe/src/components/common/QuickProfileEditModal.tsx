@@ -326,7 +326,7 @@ export function QuickProfileEditModal({
             </div>
 
             {/* Banner preview with company logo overlay */}
-            <div className="relative h-32 w-full rounded-2xl overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A] border border-slate-200 dark:border-slate-800 shadow-inner group">
+            <div className="relative h-32 w-full rounded-2xl overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] border border-amber-400/30 shadow-inner group">
               {cover ? (
                 <img
                   src={resolveMediaUrl(cover) || cover}

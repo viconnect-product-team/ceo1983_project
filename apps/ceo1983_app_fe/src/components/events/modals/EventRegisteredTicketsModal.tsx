@@ -77,9 +77,9 @@ export const EventRegisteredTicketsModal: React.FC<EventRegisteredTicketsModalPr
                   onOpenChange(false);
                   if (onExploreEvents) onExploreEvents();
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#232677] transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] border border-amber-400/40 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#002B70] transition cursor-pointer"
               >
-                <Calendar className="h-3.5 w-3.5" />
+                <Calendar className="h-3.5 w-3.5 text-amber-300" />
                 <span>Khám phá sự kiện ngay</span>
               </button>
             </div>
@@ -111,7 +111,7 @@ export const EventRegisteredTicketsModal: React.FC<EventRegisteredTicketsModalPr
               });
 
               const borderColors = [
-                "border-l-[#2E3192] border-t-blue-100 dark:border-t-blue-900/30",
+                "border-l-[#003B95] border-t-amber-100 dark:border-t-amber-900/30",
                 "border-l-purple-600 border-t-purple-100 dark:border-t-purple-900/30",
                 "border-l-emerald-600 border-t-emerald-100 dark:border-t-emerald-900/30",
                 "border-l-amber-500 border-t-amber-100 dark:border-t-amber-900/30",

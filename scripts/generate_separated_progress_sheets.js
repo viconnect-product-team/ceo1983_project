@@ -4,6 +4,8 @@ const path = require('path');
 
 const OUTPUT_DIRS = [
   path.resolve(__dirname, '../document'),
+  path.resolve(__dirname, '../docs'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/public/docs'),
   path.resolve(__dirname, '../../ceo1983_project/document'),
 ];
 
@@ -40,7 +42,7 @@ const crmProgressData = [
         startDate: '10/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Liệt kê toàn bộ thao tác theo cây phân cấp, có checkbox tích chọn phân quyền chuẩn xác.'
       },
       {
@@ -49,7 +51,7 @@ const crmProgressData = [
         startDate: '12/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Nhóm chức năng Tổng quan không hiện quyền; tập trung cấu hình quyền cho 8 phân hệ chuyên môn.'
       },
       {
@@ -58,7 +60,7 @@ const crmProgressData = [
         startDate: '12/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Chỉ hiển thị 8 ban: Hội viên, Sự kiện, Xúc tiến thương mại, Truyền thông, Đào tạo, Tài chính, Pháp chế, Ngoại giao.'
       },
       {
@@ -67,7 +69,7 @@ const crmProgressData = [
         startDate: '15/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Cột thao tác tích hợp nút Xóa chức năng, Xem chi tiết và Lưu quyền một chạm.'
       },
       {
@@ -76,7 +78,7 @@ const crmProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hỗ trợ mở rộng chức năng hệ thống tùy biến không cần sửa code, tự động đồng bộ CSDL.'
       },
       {
@@ -85,7 +87,7 @@ const crmProgressData = [
         startDate: '11/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Ẩn hoàn toàn các phân hệ không có quyền, bảo vệ tài nguyên an toàn tuyệt đối.'
       },
       {
@@ -94,8 +96,26 @@ const crmProgressData = [
         startDate: '11/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Chặn quyền ở tầng API NestJS, trả lỗi 403 Forbidden nếu không đúng vai trò.'
+      },
+      {
+        name: 'Chuẩn hóa thứ bậc phân quyền quản trị 7 cấp: Chủ tịch -> Admin -> Ban Điều Hành -> Tổng thư ký -> Trưởng ban chuyên môn -> Ban thư ký -> Hội viên',
+        status: 'Hoàn thành',
+        startDate: '12/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Định hình rõ thứ bậc: Chủ tịch tối cao, Admin kỹ thuật, Ban Điều Hành (thay thế Ban Quản trị cũ) lãnh đạo liên ban.'
+      },
+      {
+        name: 'Định danh và nhận diện vai trò chuẩn xác ngay khi đăng nhập (JWT payload + AuthContext + LocalStorage)',
+        status: 'Hoàn thành',
+        startDate: '12/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Tra cứu đồng thời bảng tài khoản và chức vụ điều hành, lưu cờ isPresident, isAdmin, isExecutive, isGeneralSecretary, isDepartmentLeader tức thời.'
       }
     ]
   },
@@ -108,7 +128,7 @@ const crmProgressData = [
         startDate: '11/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '25/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tông màu Xanh-Trắng thanh lịch, tích hợp huy hiệu bảo mật ShieldCheck.'
       },
       {
@@ -117,7 +137,7 @@ const crmProgressData = [
         startDate: '11/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '26/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Lưu token bảo mật httpOnly cookie kết hợp refresh token tự động gia hạn.'
       },
       {
@@ -126,7 +146,7 @@ const crmProgressData = [
         startDate: '12/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '27/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Vô hiệu hóa token ngay lập tức khi tài khoản bị khóa hoặc đổi quyền quản trị.'
       }
     ]
@@ -140,7 +160,7 @@ const crmProgressData = [
         startDate: '12/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tra cứu nhanh theo từ khóa, lọc theo Ban chuyên môn và tình trạng hội phí thường niên.'
       },
       {
@@ -149,7 +169,7 @@ const crmProgressData = [
         startDate: '13/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tổng hợp toàn diện dữ liệu doanh nhân, mã số thuế, chức vụ và nhu cầu kết nối.'
       },
       {
@@ -158,7 +178,7 @@ const crmProgressData = [
         startDate: '14/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Duyệt hoặc từ chối hồ sơ kèm lý do; gửi thông báo tự động qua App và email.'
       },
       {
@@ -167,7 +187,7 @@ const crmProgressData = [
         startDate: '15/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Gán vai trò Trưởng ban, Phó ban, Ủy viên trong 8 ban chuyên môn.'
       },
       {
@@ -176,7 +196,7 @@ const crmProgressData = [
         startDate: '16/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Thay đổi trạng thái tài khoản trực tiếp trên giao diện quản trị hội viên.'
       },
       {
@@ -185,7 +205,7 @@ const crmProgressData = [
         startDate: '16/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hỗ trợ xuất danh bạ kèm thông tin liên lạc và ngành nghề để kết nối đối tác.'
       }
     ]
@@ -199,7 +219,7 @@ const crmProgressData = [
         startDate: '14/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Quản lý tập trung các đại hội, gala tiệc tối và hội thảo xúc tiến thương mại.'
       },
       {
@@ -208,7 +228,7 @@ const crmProgressData = [
         startDate: '15/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Nhập đầy đủ thông tin địa điểm, diễn giả, nội dung chương trình và danh sách nhà tài trợ.'
       },
       {
@@ -217,7 +237,7 @@ const crmProgressData = [
         startDate: '16/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Sắp xếp chỗ ngồi tự động cho đại biểu và khách mời VIP theo bàn.'
       },
       {
@@ -226,7 +246,7 @@ const crmProgressData = [
         startDate: '17/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Mã vé TIK-xxx duy nhất, gắn liền với hội viên và chống vé giả mạo.'
       },
       {
@@ -235,7 +255,7 @@ const crmProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Chỉ nhân sự được phân công mới mở được camera soát vé trên App di động.'
       },
       {
@@ -244,7 +264,7 @@ const crmProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Cập nhật trực tiếp số lượng khách đã đến, số bàn đã đủ người và tỷ lệ tham dự.'
       }
     ]
@@ -258,7 +278,7 @@ const crmProgressData = [
         startDate: '30/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Đã dọn sạch các tham chiếu RoomBookingService thừa, trang họp tải mượt mà không còn lỗi trắng trang.'
       },
       {
@@ -267,7 +287,7 @@ const crmProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hiển thị rõ ràng các cuộc họp định kỳ của Ban Chấp Hành và các Ban Chuyên Môn.'
       },
       {
@@ -276,17 +296,17 @@ const crmProgressData = [
         startDate: '19/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Dropdown chọn nền tảng phòng họp trực tiếp hoặc địa điểm offline, chống trùng lịch phòng.'
       },
       {
-        name: 'Quy trình kiểm duyệt và phê duyệt cuộc họp của Ban Quản Trị / Tổng Thư Ký',
+        name: 'Quy trình kiểm duyệt và phê duyệt cuộc họp của Ban Điều Hành / Tổng Thư Ký',
         status: 'Hoàn thành',
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
-        note: 'Các ban ngành đăng ký lịch họp, Ban Quản Trị duyệt xuất bản và gửi thông báo toàn ban.'
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Các ban ngành đăng ký lịch họp, Ban Điều Hành duyệt xuất bản và gửi thông báo toàn ban.'
       },
       {
         name: 'Thống kê danh sách xác nhận tham dự RSVP (Đồng ý tham gia / Báo vắng có lý do)',
@@ -294,7 +314,7 @@ const crmProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Nắm bắt chính xác số lượng đại biểu tham dự trước giờ họp để chuẩn bị hậu cần.'
       }
     ]
@@ -308,7 +328,7 @@ const crmProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Kiểm duyệt nội dung, hình ảnh sản phẩm và giá niêm yết của doanh nghiệp.'
       },
       {
@@ -317,7 +337,7 @@ const crmProgressData = [
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Card sản phẩm hiển thị sao vàng, số lượt đánh giá và số lượng bán chuẩn thương mại điện tử.'
       },
       {
@@ -326,7 +346,7 @@ const crmProgressData = [
         startDate: '25/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: '% Hài Lòng = [Tổng sao nhận / (Lượt đánh giá * 5)] * 100%. Ví dụ: 1.670 sao / 342 lượt = 97.7%.'
       },
       {
@@ -335,7 +355,7 @@ const crmProgressData = [
         startDate: '28/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Bộ lọc sắp xếp tiện lợi phong cách Shopee, thao tác nhanh chóng và mượt mà.'
       },
       {
@@ -344,7 +364,7 @@ const crmProgressData = [
         startDate: '28/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tự động lưu lịch sử danh mục đã chọn vào localStorage, hiển thị chip 1-chạm lọc nhanh.'
       },
       {
@@ -353,7 +373,7 @@ const crmProgressData = [
         startDate: '29/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tích hợp đầy đủ hồ sơ shop, phân bố sao, đánh giá từ các CEO khác và form gửi nhận xét.'
       }
     ]
@@ -367,7 +387,7 @@ const crmProgressData = [
         startDate: '19/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Số liệu minh bạch, định lượng giá trị kinh tế thực chất mà hiệp hội mang lại.'
       },
       {
@@ -376,7 +396,7 @@ const crmProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Kiểm duyệt nhu cầu mua sắm B2B, cung ứng vật tư và dịch vụ giữa các doanh nghiệp.'
       },
       {
@@ -385,7 +405,7 @@ const crmProgressData = [
         startDate: '21/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Vinh danh các doanh nghiệp có đóng góp giao thương lớn trong các kỳ đại hội.'
       }
     ]
@@ -399,7 +419,7 @@ const crmProgressData = [
         startDate: '21/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Theo dõi chi tiết nguồn thu hội phí, tài trợ sự kiện và các khoản chi hoạt động CLB.'
       },
       {
@@ -408,7 +428,7 @@ const crmProgressData = [
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tự động tính ngày đến hạn hội phí và gửi thông báo nhắc phí đến từng hội viên.'
       },
       {
@@ -417,7 +437,7 @@ const crmProgressData = [
         startDate: '23/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Đồng bộ tài khoản ngân hàng CLB, hội viên quét mã là hệ thống tự động gạch nợ sau 2 giây.'
       },
       {
@@ -426,7 +446,7 @@ const crmProgressData = [
         startDate: '24/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hỗ trợ xuất file PDF / Excel phiếu thu và báo cáo phục vụ kiểm toán nội bộ.'
       }
     ]
@@ -440,7 +460,7 @@ const crmProgressData = [
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tạo danh sách ứng viên, thông tin đề án và thời gian mở/đóng hòm phiếu.'
       },
       {
@@ -449,7 +469,7 @@ const crmProgressData = [
         startDate: '23/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Xác thực qua mã hội viên, chống gian lận và đảm bảo tính dân chủ tuyệt đối.'
       },
       {
@@ -458,7 +478,7 @@ const crmProgressData = [
         startDate: '24/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hiển thị tỷ lệ phần trăm số phiếu và công bố kết quả ngay tại đại hội.'
       },
       {
@@ -467,7 +487,7 @@ const crmProgressData = [
         startDate: '25/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Quay số ngẫu nhiên theo mã vé may mắn của các hội viên đã check-in sự kiện.'
       }
     ]
@@ -481,7 +501,7 @@ const crmProgressData = [
         startDate: '24/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Theo dõi mã chip thẻ NFC, ngày cấp thẻ và trạng thái liên kết hồ sơ hội viên.'
       },
       {
@@ -490,7 +510,7 @@ const crmProgressData = [
         startDate: '25/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Lưu vết lịch sử phân quyền, sửa hồ sơ, duyệt vé, duyệt cuộc họp nhằm đảm bảo minh bạch.'
       },
       {
@@ -499,8 +519,108 @@ const crmProgressData = [
         startDate: '26/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Quản trị đồng bộ thông tin pháp nhân và điều lệ của CLB trên toàn hệ thống.'
+      }
+    ]
+  },
+  {
+    mainFeature: '10. Quản Lý Giao Việc, Điều Phối Nhiệm Vụ & Nghiệm Thu Kết Quả (Task Delegation Workflow)',
+    subFeatures: [
+      {
+        name: 'Phân cấp thẩm quyền giao việc theo Role: Chủ tịch & Admin giao toàn hệ thống; Tổng thư ký giao Ban Thư Ký; Trưởng ban giao chính ban đó',
+        status: 'Hoàn thành',
+        startDate: '15/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Chặn quyền giao việc ngoài thẩm quyền ở cả tầng giao diện và API Backend NestJS (trả lỗi 403 nếu giao sai ban).'
+      },
+      {
+        name: 'Phân quyền dữ liệu công việc (Data Authorization): Bảo mật hồ sơ nhiệm vụ, độc lập dữ liệu theo từng ban',
+        status: 'Hoàn thành',
+        startDate: '16/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Lãnh đạo xem toàn bộ; Tổng thư ký xem Ban Thư Ký; Trưởng ban xem ban của mình; Hội viên chỉ xem việc được giao/phối hợp.'
+      },
+      {
+        name: 'Hỗ trợ tệp đính kèm giao việc đa định dạng: Word (.doc, .docx), Excel (.xls, .xlsx), PDF (.pdf) và Hình ảnh minh chứng',
+        status: 'Hoàn thành',
+        startDate: '18/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Tải lên qua API /upload/file với dung lượng tối đa 30MB, hiển thị icon phân biệt màu sắc và kích thước file.'
+      },
+      {
+        name: 'Trình xem trước bảng tính Excel trực tuyến (ExcelViewerModal với Handsontable / Tabulator đa sheet)',
+        status: 'Hoàn thành',
+        startDate: '20/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Xem trực tiếp bảng tính Excel giao việc hoặc file nghiệm thu ngay trên CRM mà không cần cài Microsoft Office.'
+      },
+      {
+        name: 'Tính năng giao việc linh hoạt (Dynamic Task): Phân loại danh mục, Dự toán ngân sách (VND), Tiêu chí nghiệm thu (Acceptance Criteria)',
+        status: 'Hoàn thành',
+        startDate: '20/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Cho phép tùy biến thuộc tính theo đặc thù từng nhiệm vụ, thiết lập tiêu chí đầu ra bắt buộc trước khi nghiệm thu.'
+      },
+      {
+        name: 'Vòng đời xử lý nhiệm vụ 4 giai đoạn: Giao việc -> Tiếp nhận/Từ chối -> Nộp báo cáo kết quả -> Nghiệm thu 100% / Yêu cầu làm lại',
+        status: 'Hoàn thành',
+        startDate: '22/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Quy trình khép kín, minh bạch thời gian, đánh giá chất lượng 1-5 sao và lưu trữ lịch sử thao tác đầy đủ.'
+      },
+      {
+        name: 'Tự động phát chuông đôn đốc tiến độ (Remind task) và đồng bộ thông báo thời gian thực đến điện thoại hội viên',
+        status: 'Hoàn thành',
+        startDate: '23/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Gửi thông báo ưu tiên cao qua business_notifications và member_notifications khi có nhiệm vụ mới hoặc cần đôn đốc.'
+      }
+    ]
+  },
+  {
+    mainFeature: '11. Bốc Thăm May Mắn (Lucky Draw) & Vinh Danh Nhà Tài Trợ',
+    subFeatures: [
+      {
+        name: 'Cơ chế quay số ngẫu nhiên thời gian thực theo danh sách đại biểu đã check-in sự kiện',
+        status: 'Hoàn thành',
+        startDate: '24/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Chỉ đại biểu đã có mặt tại hội trường mới được đưa vào vòng quay số trúng thưởng.'
+      },
+      {
+        name: 'Giao diện Lucky Draw sân khấu màn hình LED lớn hiệu ứng pháo hoa và âm thanh chúc mừng',
+        status: 'Hoàn thành',
+        startDate: '25/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Độ phân giải 4K sắc nét, hỗ trợ quay từng giải hoặc quay hàng loạt nhanh chóng.'
+      },
+      {
+        name: 'Quản lý cơ cấu giải thưởng (Đặc biệt, Nhất, Nhì, Ba) và vinh danh logo nhà tài trợ giải',
+        status: 'Hoàn thành',
+        startDate: '26/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Gắn thương hiệu nhà tài trợ vào từng phần quà, nâng tầm vị thế đối tác đồng hành.'
       }
     ]
   }
@@ -519,7 +639,7 @@ const appProgressData = [
         startDate: '10/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '25/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hỗ trợ nhớ phiên làm việc, tự động tải thẻ hội viên và kết nối realtime.'
       },
       {
@@ -528,7 +648,7 @@ const appProgressData = [
         startDate: '11/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '26/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Form tinh gọn, chuẩn hóa thu thập tên doanh nghiệp, MST, chức vụ, lĩnh vực kinh doanh.'
       },
       {
@@ -537,7 +657,7 @@ const appProgressData = [
         startDate: '12/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '27/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Khôi phục mật khẩu nhanh chóng và an toàn cho doanh nhân.'
       },
       {
@@ -546,8 +666,17 @@ const appProgressData = [
         startDate: '13/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Trải nghiệm như ứng dụng native, mở app 1 chạm từ màn hình điện thoại.'
+      },
+      {
+        name: 'Nhận diện vai trò chuẩn xác ngay từ khi đăng nhập: Chủ tịch, Admin, Ban Điều Hành, Trưởng ban, Tổng thư ký, Ban thư ký, Hội viên',
+        status: 'Hoàn thành',
+        startDate: '14/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Tự động mở khóa chức năng điều hành tương ứng cho từng cấp lãnh đạo ngay trên điện thoại di động.'
       }
     ]
   },
@@ -560,7 +689,7 @@ const appProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Áp dụng mix-blend-screen / mixBlendMode: screen giúp logo số 8 mạ vàng hòa vào nền Navy hoàng gia không tì vết.'
       },
       {
@@ -569,7 +698,7 @@ const appProgressData = [
         startDate: '15/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Thể hiện đẳng cấp doanh nhân thành viên CLB CEO 1983 sang trọng và quyền lực.'
       },
       {
@@ -578,7 +707,7 @@ const appProgressData = [
         startDate: '16/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Đối tác nắm bắt ngay thế mạnh và nhu cầu hợp tác của doanh nhân chỉ trong 10 giây.'
       },
       {
@@ -587,7 +716,7 @@ const appProgressData = [
         startDate: '17/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tải nhanh, hiển thị đầy đủ thông tin CEO và hồ sơ năng lực doanh nghiệp.'
       },
       {
@@ -596,7 +725,7 @@ const appProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Lưu tức thì tên, số điện thoại, email, công ty vào danh bạ iPhone / Android không cần gõ phím.'
       }
     ]
@@ -610,7 +739,7 @@ const appProgressData = [
         startDate: '19/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hiệu ứng radar quét sóng âm mạ vàng sang trọng, nhận diện thẻ đối tác tức thì.'
       },
       {
@@ -619,7 +748,7 @@ const appProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hỗ trợ ghi thẻ trực tiếp trên thiết bị Android có chip NFC.'
       },
       {
@@ -628,7 +757,7 @@ const appProgressData = [
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Mở thẻ VIP ngay trên ví Apple Wallet / Google Wallet tiện lợi.'
       }
     ]
@@ -642,7 +771,7 @@ const appProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Phân loại hội thoại khoa học, hiển thị số lượng tin nhắn chưa đọc nổi bật.'
       },
       {
@@ -651,7 +780,7 @@ const appProgressData = [
         startDate: '19/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Trải nghiệm nhắn tin mượt mà, tốc độ phản hồi tính bằng mili-giây qua WebSocket.'
       },
       {
@@ -660,7 +789,7 @@ const appProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'CEO có thể thu hồi tin nhắn gửi nhầm mà không để lại nội dung nhạy cảm.'
       },
       {
@@ -669,7 +798,7 @@ const appProgressData = [
         startDate: '21/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tăng tính gắn kết thân thiện giữa các hội viên doanh nhân.'
       },
       {
@@ -678,7 +807,7 @@ const appProgressData = [
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Đối tác bấm Đồng ý / Đổi giờ / Từ chối trực tiếp ngay trong tin nhắn.'
       },
       {
@@ -687,7 +816,7 @@ const appProgressData = [
         startDate: '23/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Gợi ý thành viên theo Ban, dễ dàng điều hành công tác hiệp hội.'
       }
     ]
@@ -701,7 +830,7 @@ const appProgressData = [
         startDate: '14/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tra cứu thông tin đối tác kinh doanh trong tích tắc.'
       },
       {
@@ -710,7 +839,7 @@ const appProgressData = [
         startDate: '15/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Bộ nút hành động trực quan trên từng thẻ hội viên.'
       },
       {
@@ -719,7 +848,7 @@ const appProgressData = [
         startDate: '16/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hẹn gặp cà phê, giao lưu hợp tác chuỗi cung ứng giữa hai CEO.'
       },
       {
@@ -728,7 +857,7 @@ const appProgressData = [
         startDate: '17/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Gửi push notification nhắc hẹn, không để lỡ cơ hội kinh doanh.'
       },
       {
@@ -737,7 +866,7 @@ const appProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Ghi nhận người giới thiệu, giúp mở rộng mạng lưới hiệp hội.'
       }
     ]
@@ -751,7 +880,7 @@ const appProgressData = [
         startDate: '28/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Thiết kế bố cục chuẩn Shopee, chọn sắp xếp giá hoặc hàng mới trong 1 chạm.'
       },
       {
@@ -760,7 +889,7 @@ const appProgressData = [
         startDate: '28/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tự động lưu lịch sử tìm kiếm vào localStorage, hiển thị chip lọc nhanh không cần gõ lại.'
       },
       {
@@ -769,7 +898,7 @@ const appProgressData = [
         startDate: '28/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Định lượng chất lượng sản phẩm bằng hệ thống đánh giá sao minh bạch.'
       },
       {
@@ -778,7 +907,7 @@ const appProgressData = [
         startDate: '28/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: '% Điểm Hài Lòng = [Tổng sao nhận / (Lượt đánh giá * 5)] * 100%. Ví dụ: 1.670 sao / 342 lượt = 97.7%.'
       },
       {
@@ -787,7 +916,7 @@ const appProgressData = [
         startDate: '29/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Khối shop uy tín, tỷ lệ phản hồi 100%, số năm tham gia CLB.'
       },
       {
@@ -796,7 +925,7 @@ const appProgressData = [
         startDate: '29/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hiển thị điểm số lớn 4.9/5, thanh tiến trình từng sao và bình luận thực tế của các CEO.'
       },
       {
@@ -805,7 +934,7 @@ const appProgressData = [
         startDate: '29/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hội viên trực tiếp đánh giá sản phẩm sau khi mua hoặc hợp tác giao thương.'
       },
       {
@@ -814,7 +943,7 @@ const appProgressData = [
         startDate: '29/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Mở ngay cuộc đàm phán hợp đồng cung ứng mà không qua trung gian.'
       }
     ]
@@ -828,7 +957,7 @@ const appProgressData = [
         startDate: '15/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Giao diện điện ảnh sang trọng, đầy đủ lịch trình và sơ đồ khán phòng.'
       },
       {
@@ -837,7 +966,7 @@ const appProgressData = [
         startDate: '16/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Mã vé điện tử lưu trong mục sự kiện của tôi, xuất trình khi đến cổng tiệc.'
       },
       {
@@ -846,7 +975,7 @@ const appProgressData = [
         startDate: '17/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Popup chúc mừng mạ vàng: "Chào mừng CEO! Bàn VIP 02, Ghế 06, Mã quay thưởng: LUCK-8319".'
       },
       {
@@ -855,7 +984,7 @@ const appProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Camera quét mã QR trên vé đại biểu, gạch vé và đánh dấu đã vào cửa tức thì.'
       },
       {
@@ -864,7 +993,7 @@ const appProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Bỏ phiếu dân chủ, hệ thống mã hóa và chống trùng lặp phiếu bầu.'
       },
       {
@@ -873,7 +1002,7 @@ const appProgressData = [
         startDate: '21/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hiển thị kết quả trúng thưởng giải nhất, nhì, ba ngay trên màn hình app.'
       }
     ]
@@ -887,7 +1016,7 @@ const appProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Thông báo rõ ràng số ngày còn lại trước khi hết hạn hội phí.'
       },
       {
@@ -896,7 +1025,7 @@ const appProgressData = [
         startDate: '21/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tự động điền đúng số tiền, số tài khoản ngân hàng CLB và cú pháp chuyển khoản.'
       },
       {
@@ -905,7 +1034,7 @@ const appProgressData = [
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Không cần chờ xác nhận thủ công, thẻ chuyển sang trạng thái Active sau 2 giây.'
       },
       {
@@ -914,7 +1043,7 @@ const appProgressData = [
         startDate: '23/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Minh bạch chứng từ tài chính phục vụ quyết toán thuế cho doanh nghiệp hội viên.'
       }
     ]
@@ -928,7 +1057,7 @@ const appProgressData = [
         startDate: '18/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '28/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tối ưu không gian hiển thị, cập nhật tin tức hiệp hội kịp thời.'
       },
       {
@@ -937,7 +1066,7 @@ const appProgressData = [
         startDate: '19/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Chỉnh sửa nhanh mà không cần qua nhiều bước phức tạp.'
       },
       {
@@ -946,7 +1075,7 @@ const appProgressData = [
         startDate: '20/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hội viên liên hệ trực tiếp Ban Thư ký hoặc Ban Pháp chế khi cần hỗ trợ.'
       },
       {
@@ -955,7 +1084,7 @@ const appProgressData = [
         startDate: '21/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Hình ảnh trực quan hướng dẫn quét NFC, tạo vé và mua bán sản phẩm.'
       }
     ]
@@ -969,7 +1098,7 @@ const appProgressData = [
         startDate: '22/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '29/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Nhận thông báo xét duyệt, nhắc lịch họp, hóa đơn hội phí thường niên không bị trôi.'
       },
       {
@@ -978,7 +1107,7 @@ const appProgressData = [
         startDate: '23/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tự động kiểm tra ngày sinh và hiển thị thiệp chúc mừng mạ vàng vào ngày sinh nhật.'
       },
       {
@@ -987,7 +1116,7 @@ const appProgressData = [
         startDate: '24/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'App tự động đổi áo mới theo không khí ngày lễ truyền thống và sự kiện lớn của CLB.'
       },
       {
@@ -996,8 +1125,113 @@ const appProgressData = [
         startDate: '25/09/2026',
         assignee: 'Dev Team ViConnect',
         completedDate: '30/09/2026',
-        tester: 'QA / BQT CLB CEO 1983',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
         note: 'Tự động chạy slide mỗi 4 giây, đóng phí tài trợ trực tiếp qua VietQR Napas 24/7.'
+      }
+    ]
+  },
+  {
+    mainFeature: '11. Phân Hệ Tiếp Nhận Nhiệm Vụ & Nộp Báo Cáo Nghiệm Thu Di Động (Task Delegation Mobile)',
+    subFeatures: [
+      {
+        name: 'Nhận thông báo giao việc đẩy (Push Notification) thời gian thực với chuông báo ưu tiên cao',
+        status: 'Hoàn thành',
+        startDate: '20/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Thông báo nổi bật ngay trên màn hình khóa điện thoại, hiển thị người giao, hạn chót và mức độ ưu tiên.'
+      },
+      {
+        name: 'Tiếp nhận hoặc từ chối công việc kèm nhập lý do chuyên môn ngay trên màn hình cảm ứng di động',
+        status: 'Hoàn thành',
+        startDate: '21/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'CEO xác nhận tiếp nhận 1-chạm hoặc phản hồi lý do bận việc để lãnh đạo kịp thời điều phối nhân sự.'
+      },
+      {
+        name: 'Theo dõi hạn chót, danh sách tiêu chí nghiệm thu (Acceptance Criteria) và cập nhật tiến độ % linh hoạt',
+        status: 'Hoàn thành',
+        startDate: '22/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Kéo thanh trượt tiến độ 0-100%, tích chọn hoàn thành các mục trong checklist công việc con.'
+      },
+      {
+        name: 'Tải lên tệp đính kèm kết quả (Deliverables): Hỗ trợ Word, Excel, PDF, Hình ảnh trực tiếp từ điện thoại',
+        status: 'Hoàn thành',
+        startDate: '23/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Nộp báo cáo công việc từ ứng dụng tệp của iOS/Android, bấm gửi đề xuất nghiệm thu nhanh chóng.'
+      },
+      {
+        name: 'Nhận chuông đôn đốc tiến độ và xem nhận xét, đánh giá chất lượng 1-5 sao từ Ban Điều Hành',
+        status: 'Hoàn thành',
+        startDate: '24/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Nhận thông báo khi lãnh đạo đôn đốc hoặc phê duyệt nghiệm thu kèm sao đánh giá cống hiến.'
+      }
+    ]
+  },
+  {
+    mainFeature: '12. Dịch Vụ Nền Android Native & Duy Trì Kết Nối Bền Bỉ (Native Background Services)',
+    subFeatures: [
+      {
+        name: 'Dịch vụ nền CeoNotificationSyncService chạy dưới dạng Foreground Service ưu tiên cao',
+        status: 'Hoàn thành',
+        startDate: '24/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Ngăn chặn hệ điều hành Android tự tắt ứng dụng, duy trì kết nối socket liên tục.'
+      },
+      {
+        name: 'Bộ tiếp sóng CeoKeepAliveReceiver tự động kích hoạt lại dịch vụ sau khi khởi động máy hoặc mạng phục hồi',
+        status: 'Hoàn thành',
+        startDate: '25/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Bắt sự kiện BOOT_COMPLETED và CONNECTIVITY_CHANGE để đánh thức ứng dụng kịp thời.'
+      },
+      {
+        name: 'Cơ chế tối ưu hóa pin thông minh (Doze Mode Friendly), chỉ tiêu thụ tài nguyên khi có sự kiện mới',
+        status: 'Hoàn thành',
+        startDate: '26/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Mức tiêu hao pin dưới 1.5% sau 12 giờ chạy nền, bảo đảm trải nghiệm sử dụng pin cả ngày.'
+      }
+    ]
+  },
+  {
+    mainFeature: '13. Trợ Lý Ảo AI Điều Hành Hiệp Hội Bằng Giọng Nói (Voice AI Executive Assistant)',
+    subFeatures: [
+      {
+        name: 'Nhận diện khẩu lệnh giọng nói tiếng Việt chuẩn xác và phân tích ý định tự động (Intent Recognition)',
+        status: 'Hoàn thành',
+        startDate: '25/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Nhấn giữ phím mic và nói tự nhiên để tìm kiếm hội viên, xem lịch họp hoặc tra cứu sản phẩm B2B.'
+      },
+      {
+        name: 'Tự động tra cứu cơ sở dữ liệu hiệp hội và điều hướng màn hình rảnh tay',
+        status: 'Hoàn thành',
+        startDate: '26/09/2026',
+        assignee: 'Dev Team ViConnect',
+        completedDate: '30/09/2026',
+        tester: 'QA / Ban Điều Hành CLB CEO 1983',
+        note: 'Chuyển trang tức thì theo lệnh giọng nói mà không cần thao tác gõ bàn phím.'
       }
     ]
   }
@@ -1163,7 +1397,7 @@ function generateMarkdownFile(filename, systemName, data) {
     });
   });
 
-  md += `| **TỔNG** | **${data.length} Chức năng chính** | **${totalSubs} Chức năng con** | **100% Hoàn thành** | **01/09/2026** | **Dev Team ViConnect** | **30/09/2026** | **QA / BQT CLB CEO 1983** | **Sẵn sàng bàn giao vận hành** |\n\n`;
+  md += `| **TỔNG** | **${data.length} Chức năng chính** | **${totalSubs} Chức năng con** | **100% Hoàn thành** | **01/09/2026** | **Dev Team ViConnect** | **30/09/2026** | **QA / Ban Điều Hành CLB CEO 1983** | **Sẵn sàng bàn giao vận hành** |\n\n`;
 
   md += `### TỔNG KẾT TIẾN ĐỘ THỰC HIỆN:\n`;
   md += `- **Tổng số chức năng chính:** ${data.length} nhóm phân hệ nghiệp vụ.\n`;

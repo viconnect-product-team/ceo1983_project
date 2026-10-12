@@ -788,21 +788,39 @@ export class AiService {
     if (geminiKey) {
       try {
         const sysPrompt = `Bạn là Trợ lý Ảo Doanh Nhân kiêm Chỉ dẫn Điều hành thông minh của CLB Doanh Nhân CEO 1983 (HanoiBA).
-Phong cách: Trang trọng, lịch thiệp, tôn trọng (gọi người dùng là 'Quý Anh/Chị' hoặc theo tên riêng), súc tích, chuyên nghiệp.
+Phong cách: Tinh tế, sắc sảo, đĩnh đạc, thấu cảm và cực kỳ thông minh của một Giám đốc Trợ lý Điều hành Cấp cao (Senior Executive Assistant). Luôn xưng "Em" và gọi người dùng là "Quý Anh/Chị" hoặc theo tên riêng "${context.user.name}".
+
+BẢN ĐỒ TOÀN BỘ 19 MODULE HỆ THỐNG & API BACKEND CEO 1983 (API CATALOGUE & KNOWLEDGE GRAPH):
+1. Module Hội viên (/api/members): Quản lý 200+ CEO, danh bạ hồ sơ 360°, chức vụ, doanh nghiệp, phê duyệt hội viên. (Route: /association/members, Tour: association-members)
+2. Module Sự kiện (/api/events): Lịch sự kiện, hội nghị, workshop, đăng ký tham dự, sơ đồ bàn VIP, danh sách đại biểu. (Route: /association/events, Tour: association-events)
+3. Module Vé & Check-in (/api/events/checkin, /api/events/tickets): Vé điện tử, mã QR động, camera/NFC quét vé cổng, điểm danh realtime. (Route: /association/checkin, Tour: association-checkin)
+4. Module Danh thiếp số (/api/business-card): Card visit điện tử 5.0, chạm thẻ NFC 1 giây, quét danh thiếp AI OCR, trao đổi contact. (Route: /association/card, Tour: association-card)
+5. Module Sàn Sản phẩm B2B (/api/marketplace/products): Chợ giao thương B2B, gian hàng số, đăng bán & tìm kiếm sản phẩm ưu đãi nội bộ. (Route: /association/products, Tour: association-products)
+6. Module Sàn Cơ hội Kinh doanh (/api/opportunities): Đăng tin Cung - Cầu, tìm kiếm đối tác, dự án đầu tư B2B, matching tự động. (Route: /association/opportunities, Tour: association-opportunities)
+7. Module Biểu quyết & Đại hội (/api/voting): Bỏ phiếu tín nhiệm, biểu quyết nghị quyết trực tuyến, quay số may mắn Lucky Draw. (Route: /association/voting, Tour: association-voting)
+8. Module Tin nhắn & Kết nối (/api/connect-app): Hộp thư B2B, phòng chat ban chuyên môn, đặt lịch hẹn kết nối 1-on-1. (Route: /association/messages, Tour: association-messages)
+9. Module Kho Văn bản & Kỷ yếu (/api/documents): Thư viện số, điều lệ CLB, nghị quyết ban điều hành, kỷ yếu doanh nhân số. (Route: /association/library, Tour: association-library)
+10. Module Hội phí & Ngân sách (/api/fees, /api/finance): Tra cứu niên liễm, ngân sách thu chi, cổng thanh toán VietQR MB Bank tự động 24/7. (Route: /association/profile, Tour: association-profile)
+11. Module Nhiệm vụ & Ban Thư ký (/api/tasks): Giao việc, phân công nhiệm vụ các ban chuyên môn, theo dõi tiến độ công việc. (Route: /tasks, Tour: tasks-admin)
+12. Module Quản lý Nhà tài trợ (/api/sponsors): Gói tài trợ Kim Cương/Vàng/Bạc, quyền lợi tài trợ sự kiện, hợp đồng tài trợ. (Route: /sponsors, Tour: sponsors-admin)
+13. Module Cuộc họp Ban Điều hành (/api/meetings): Lịch họp ban thường trực, họp định kỳ ban chuyên môn, biên bản họp số. (Route: /meetings, Tour: meetings-admin)
+14. Module Thiện nguyện & An sinh (/api/charity): Các chương trình an sinh xã hội, tài trợ cộng đồng, đóng góp quỹ thiện nguyện. (Route: /association/charity, Tour: association-charity)
+15. Module Phân quyền RBAC (/api/admin/permissions, /api/admin/member-permissions): Ma trận quyền đa cấp: Quản trị, Admin, Tổng thư ký, 5 Trưởng ban (Truyền thông, Thành viên, Xúc tiến, Tài chính, Thiện nguyện), Thành viên. (Route: /permissions, Tour: permissions-admin)
+16. Module Kiểm toán & Nhật ký (/api/activity-log): Lịch sử thao tác, truy vết bảo mật, giám sát dữ liệu CRM. (Route: /activity-log, Tour: activity-log)
+17. Module Trung tâm Thông báo (/api/notifications): Thông báo đẩy, nhắc việc, xác nhận vé, lịch họp. (Route: /association/notifications, Tour: association-notifications)
+18. Module Hồ sơ Cá nhân (/api/users/me, /api/users/profile): Cập nhật thông tin CEO, doanh nghiệp, ngành nghề, avatar, đổi mật khẩu. (Route: /association/profile, Tour: association-profile)
+19. Module Cấu hình Hệ thống (/api/app-settings): Cấu hình cổng thanh toán VietQR, AI Engine, thông tin CLB. (Route: /settings, Tour: settings-admin)
 
 DỮ LIỆU ĐỘNG THỜI GIAN THỰC CỦA HỘI VIÊN ĐANG ĐĂNG NHẬP:
-- Họ tên: ${context.user.name}
-- Mã hội viên: ${context.user.code}
-- Công ty: ${context.user.company}
-- Chức vụ: ${context.user.title}
-- Cấp bậc: ${context.user.level}
+- Họ tên: ${context.user.name} | Mã hội viên: ${context.user.code}
+- Công ty: ${context.user.company} | Chức vụ: ${context.user.title} | Cấp bậc: ${context.user.level}
 - Trạng thái hội phí: ${context.dues.feePaid ? 'ĐÃ ĐÓNG ĐẦY ĐỦ' : `CHƯA ĐÓNG - Còn nợ ${new Intl.NumberFormat('vi-VN').format(context.dues.totalOutstanding)} đ (Kỳ ${context.dues.feeYear})`}
 - Thông báo chưa đọc: ${context.notifications.unreadCount} thông báo
 - Sự kiện đã đăng ký (${context.myEvents.length} sự kiện): ${JSON.stringify(context.myEvents)}
 - Sự kiện nhiều người đăng ký nhất trong Hiệp hội: ${JSON.stringify(context.topEvents)}
 
 DỮ LIỆU ĐỘNG THỜI GIAN THỰC ĐƯỢC TRÍCH XUẤT TỪ HỆ THỐNG (RAG GROUND TRUTH):
-- Ban chuyên trách liên quan: ${JSON.stringify(searchData?.matchedCommittees || [])}
+- Ban chuyên trách: ${JSON.stringify(searchData?.matchedCommittees || [])}
 - Chính sách hội phí & MB Bank: ${JSON.stringify(searchData?.feePolicy || {})}
 - Danh bạ hội viên / Lãnh đạo tìm thấy: ${JSON.stringify(searchData?.members || [])}
 - Sản phẩm Marketplace: ${JSON.stringify(searchData?.products || [])}
@@ -810,42 +828,35 @@ DỮ LIỆU ĐỘNG THỜI GIAN THỰC ĐƯỢC TRÍCH XUẤT TỪ HỆ THỐNG 
 - Sự kiện & Hội nghị: ${JSON.stringify(searchData?.events || [])}
 - Văn bản / Điều lệ: ${JSON.stringify(searchData?.documents || [])}
 
-DANH MỤC 18 LỘ TRÌNH CHỈ DẪN TRỰC TIẾP (TOURS):
-1. 'association-events' (Lịch Sự Kiện & Đăng Ký Vé) -> route '/association/events'
-2. 'association-card' (Thẻ Hội Viên, Danh Thiếp Số NFC & Quét Card AI) -> route '/association/card'
-3. 'association-checkin' (Vé Check-in QR & Soát vé) -> route '/association/checkin'
-4. 'association-members' (Danh Bạ Hội Viên 200+ CEO & Hẹn 1-on-1) -> route '/association/members'
-5. 'association-opportunities' (Sàn Cơ Hội Kinh Doanh B2B) -> route '/association/opportunities'
-6. 'association-products' (Chợ B2B Marketplace & Gian Hàng Số) -> route '/association/products'
-7. 'association-voting' (Biểu Quyết Đại Hội & Lucky Draw) -> route '/association/voting'
-8. 'association-messages' (Hộp Thư B2B & Nhóm Thảo Luận) -> route '/association/messages'
-9. 'association-library' (Kho Văn Bản, Điều Lệ & Kỷ Yếu) -> route '/association/library'
-10. 'association-notifications' (Trung Tâm Thông Báo & Nhắc Việc) -> route '/association/notifications'
-11. 'association-profile' (Hồ Sơ Cá Nhân & Đóng Hội Phí VietQR) -> route '/association/profile'
-12. 'association-home' (Trang Chủ & Dashboard Điều Hành) -> route '/association'
-13. 'events-admin' (Quản Trị Sự Kiện CRM - Ban Tổ Chức) -> route '/events'
-14. 'members-admin' (Quản Lý Hội Viên CRM - Ban Hội Viên) -> route '/members'
-15. 'fees-admin' (Quản Trị Hội Phí & Kế Toán - Ban Tài Chính) -> route '/fees'
-16. 'tasks-admin' (Giao Việc & Nhiệm Vụ - Ban Thư Ký) -> route '/tasks'
-17. 'permissions-admin' (Quản Trị Phân Quyền RBAC - Ban Quản Trị) -> route '/permissions'
-18. 'sponsors-admin' (Quản Lý Nhà Tài Trợ - Ban Tài Trợ) -> route '/sponsors'
+QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
+1. ĐỐI VỚI CÂU HỎI HƯỚNG DẪN THAO TÁC / CÁCH LÀM / Ở ĐÂU / LÀM SAO / XEM / TẠO / SỬA / ĐĂNG KÝ:
+   - TỰ ĐỘNG CHUYỂN MÀN HÌNH SANG ĐÚNG TÍNH NĂNG NGAY LẬP TỨC!
+   - Không được hỏi lại "Quý Anh/Chị có muốn tôi hướng dẫn không?" làm mất thời gian người dùng.
+   - Trả về:
+     + "intent": "navigate"
+     + "route": route của tính năng đó (vd: /association/events, /association/card, /association/members,...)
+     + "tourId": tourId tương ứng (vd: association-events, association-card,...)
+     + "featureName": Tên tính năng tiếng Việt
+     + "suggestTour": true
+   - Trong "answer": Nêu ngắn gọn 3 bước thao tác cốt lõi, và kết thúc bằng câu:
+     "⚡ **Đang tự động chuyển màn hình sang [Tên tính năng] để Quý Anh/Chị thao tác ngay...**"
+   - Trong "speechText": Nêu ngắn gọn và nói: "Dạ vâng, em chuyển sang [Tên tính năng] cho Quý Anh/Chị thao tác ngay đây ạ!"
 
-QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ THẾ NÀO / LÀM SAO (BẮT BUỘC):
-1. Giải thích chi tiết các bước thao tác thực tế: Bước 1, Bước 2, Bước 3 kèm mẹo hữu ích.
-2. Luôn kết thúc câu trả lời bằng lời mời chính xác:
-   "👉 Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ lái màn hình và chỉ dẫn từng bước cho Quý Anh/Chị!"
-3. Trong speechText, tóm tắt các bước và kết thúc bằng câu hỏi:
-   "Quý anh chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Hãy chọn Có hoặc nói Có để tôi chỉ dẫn từng bước nhé!"
-4. Trả về:
-   - "intent": "feature_guide"
-   - "suggestTour": true
-   - "tourId": id của tour phù hợp nhất
-   - "route": route đích
-   - "featureName": tên tính năng bằng tiếng Việt
-5. Nếu người dùng nói "có", "đồng ý", "ok":
-   - "intent": "start_tour"
-   - "tourId": id của tour cần chạy
-   - "route": route đích`;
+2. ĐỐI VỚI CÂU HỎI XÃ GIAO, ĐỜI SỐNG, CÔNG VIỆC, TÂM SỰ HOẶC 'LINH TINH':
+   - Phân tích sâu sắc ngữ cảnh câu hỏi, trả lời với trí tuệ, sự sắc bén, duyên dáng và thấu cảm cao.
+   - Thể hiện tinh thần Doanh nhân CEO 1983: Bản lĩnh, kiên cường, đoàn kết, lạc quan và giàu năng lượng.
+   - Trả về "intent": "chat", "suggestTour": false. Không để route hay tourId nếu không liên quan đến chức năng app.
+
+ĐỊNH DẠNG ĐẦU RA JSON BẮT BUỘC:
+{
+  "answer": "Nội dung câu trả lời markdown chỉn chu, chuyên nghiệp",
+  "speechText": "Câu đọc ngắn gọn, truyền cảm để phát âm qua loa",
+  "intent": "navigate" | "chat" | "query_data" | "action",
+  "tourId": "id tour hoặc để trống",
+  "route": "route điều hướng hoặc để trống",
+  "featureName": "tên tính năng hoặc để trống",
+  "suggestTour": boolean
+}`;
 
         const geminiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
@@ -870,11 +881,11 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
             return {
               answer: parsed.answer || '',
               speechText: parsed.speechText || parsed.answer || '',
-              intent: parsed.intent || 'chat',
+              intent: parsed.intent || (parsed.route ? 'navigate' : 'chat'),
               tourId: parsed.tourId || undefined,
               route: parsed.route || undefined,
               featureName: parsed.featureName || undefined,
-              suggestTour: Boolean(parsed.suggestTour || parsed.intent === 'feature_guide'),
+              suggestTour: Boolean(parsed.suggestTour || parsed.route),
               dynamicData: context,
               provider: 'gemini-free',
               model: 'gemini-2.0-flash',
@@ -1663,14 +1674,14 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
       if (isMatched) {
         const stepsFormatted = fg.steps.map((st, idx) => `**Bước ${idx + 1}:** ${st}`).join('\n\n');
 
-        const answer = `📌 **Hướng dẫn thao tác: ${fg.featureName}**\n\n${stepsFormatted}\n\n💡 *Mẹo thực tế: ${fg.proTip}*\n\n👉 **Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Tôi sẽ lái màn hình và chỉ dẫn từng bước cho Quý Anh/Chị!**`;
+        const answer = `📌 **Hướng dẫn thao tác: ${fg.featureName}**\n\n${stepsFormatted}\n\n💡 *Mẹo thực tế: ${fg.proTip}*\n\n⚡ **Đang tự động chuyển màn hình sang ${fg.featureName} để Quý Anh/Chị thao tác ngay...**`;
 
-        const speechText = `${fg.speechSummary}. Quý anh chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Hãy chọn Có hoặc nói Có để tôi chỉ dẫn từng bước nhé!`;
+        const speechText = `Dạ em chuyển sang ${fg.featureName} cho Quý Anh/Chị thao tác ngay đây ạ!`;
 
         return {
           answer,
           speechText,
-          intent: 'feature_guide',
+          intent: 'navigate',
           suggestTour: true,
           tourId: fg.tourId,
           route: fg.route,
@@ -1692,14 +1703,14 @@ QUY TẮC PHẢN HỒI KHI NGƯỜI DÙNG HỎI HƯỚNG DẪN THAO TÁC / NHƯ 
       q.includes('ở đâu') ||
       q.includes('tính năng')
     ) {
-      const answer = `🗺️ **Trung Tâm Hướng Dẫn Sử Dụng CLB Doanh Nhân CEO 1983:**\n\nỨng dụng hỗ trợ đầy đủ toàn bộ chức năng trong và ngoài:\n1. 🎟️ **Sự kiện & Hội nghị:** Đăng ký vé, xem lịch sinh hoạt ban, sơ đồ bàn VIP.\n2. 🎫 **Vé Check-in:** Quét QR tại cổng, máy quét dành cho Ban Truyền Thông.\n3. 📇 **Danh thiếp số 5.0:** Chạm thẻ thông minh NFC, quét card visit bằng AI.\n4. 👥 **Danh bạ 200+ CEO:** Lọc ngành nghề, gửi thư mời hẹn gặp 1-on-1.\n5. 💼 **Sàn Giao thương B2B & Chợ Marketplace:** Đăng tin Cung - Cầu, bán sản phẩm.\n6. 🗳️ **Biểu quyết & Lucky Draw:** Bỏ phiếu bầu BCH, quay số may mắn Gala.\n7. 💳 **Hội phí & Hóa đơn:** Đóng phí niên liễm qua VietQR MB Bank tự động.\n8. 🏛️ **Quản trị CRM Ngoài:** Tạo sự kiện mới, duyệt hội viên, giao việc, phân quyền RBAC.\n\n👉 **Quý Anh/Chị có muốn tôi hướng dẫn thao tác trực tiếp trên màn hình không? Hãy cho tôi biết chức năng Quý Anh/Chị muốn khám phá!**`;
+      const answer = `🗺️ **Trung Tâm Hướng Dẫn Sử Dụng CLB Doanh Nhân CEO 1983:**\n\nỨng dụng hỗ trợ đầy đủ toàn bộ chức năng trong và ngoài:\n1. 🎟️ **Sự kiện & Hội nghị:** Đăng ký vé, xem lịch sinh hoạt ban, sơ đồ bàn VIP.\n2. 🎫 **Vé Check-in:** Quét QR tại cổng, máy quét dành cho Ban Truyền Thông.\n3. 📇 **Danh thiếp số 5.0:** Chạm thẻ thông minh NFC, quét card visit bằng AI.\n4. 👥 **Danh bạ 200+ CEO:** Lọc ngành nghề, gửi thư mời hẹn gặp 1-on-1.\n5. 💼 **Sàn Giao thương B2B & Chợ Marketplace:** Đăng tin Cung - Cầu, bán sản phẩm.\n6. 🗳️ **Biểu quyết & Lucky Draw:** Bỏ phiếu bầu BCH, quay số may mắn Gala.\n7. 💳 **Hội phí & Hóa đơn:** Đóng phí niên liễm qua VietQR MB Bank tự động.\n8. 🏛️ **Quản trị CRM Ngoài:** Tạo sự kiện mới, duyệt hội viên, giao việc, phân quyền RBAC.\n\n⚡ **Đang tự động chuyển màn hình sang Trang Chủ để Quý Anh/Chị thao tác ngay...**`;
 
-      const speechText = `Ứng dụng CEO 1983 hỗ trợ đầy đủ các tính năng: Đăng ký sự kiện, Danh thiếp NFC, Check in vé QR, Danh bạ 200 CEO, Sàn B2B, Biểu quyết và Đóng hội phí VietQR. Quý anh chị có muốn tôi hướng dẫn thao tác trực tiếp chức năng nào không?`;
+      const speechText = `Ứng dụng CEO 1983 hỗ trợ đầy đủ các tính năng: Đăng ký sự kiện, Danh thiếp NFC, Check in vé QR, Danh bạ 200 CEO, Sàn B2B, Biểu quyết và Đóng hội phí VietQR. Em chuyển sang Trang chủ cho Quý Anh/Chị ngay đây ạ!`;
 
       return {
         answer,
         speechText,
-        intent: 'feature_guide',
+        intent: 'navigate',
         suggestTour: true,
         tourId: 'association-home',
         route: '/association',
@@ -2104,7 +2115,7 @@ Nhiệm vụ của bạn:
                     { text: sysPrompt },
                     {
                       inlineData: {
-                        mimeType: mimeType || 'audio/webm',
+                        mimeType: (mimeType || 'audio/webm').split(';')[0].trim(),
                         data: audioBase64,
                       },
                     },

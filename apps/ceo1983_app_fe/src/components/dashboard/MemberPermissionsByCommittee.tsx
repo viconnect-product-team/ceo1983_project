@@ -17,6 +17,7 @@ import {
   Info,
   X,
   Save,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -64,6 +65,7 @@ export function MemberPermissionsByCommittee({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
   const [editingCustomMember, setEditingCustomMember] = useState<any | null>(null);
+  const [viewingMember, setViewingMember] = useState<any | null>(null);
 
   // Staging changes: memberId -> { memberId, executiveRole, department, associationId, memberName }
   const [stagedRoleDept, setStagedRoleDept] = useState<
@@ -303,7 +305,7 @@ export function MemberPermissionsByCommittee({
       [mCode]: overrideData,
     }));
     setEditingCustomMember(null);
-    toast.info(`Đã lưu tạm thời phân quyền của "${editingCustomMember.name}". Vui lòng nhấn "Lưu Thay Đổi (RESTful API)" để áp dụng.`);
+    toast.info(`Đã lưu tạm thời phân quyền của "${editingCustomMember.name}". Vui lòng nhấn "Lưu Thay Đổi" để áp dụng.`);
   };
 
   // Khôi phục quyền về ban mặc định trong draft
@@ -321,7 +323,54 @@ export function MemberPermissionsByCommittee({
       [mCode]: { __reset: true },
     }));
     setEditingCustomMember(null);
-    toast.info(`Đã đánh dấu khôi phục quyền mặc định cho "${m.name}". Nhấn "Lưu Thay Đổi (RESTful API)" để hoàn tất.`);
+    toast.info(`Đã đánh dấu khôi phục quyền mặc định cho "${m.name}". Nhấn "Lưu Thay Đổi" để hoàn tất.`);
+  };
+
+  // Xóa bỏ cấu hình phân quyền riêng cho 1 tài khoản
+  const handleDeleteCustomOverride = async (m: any) => {
+    const mCode = m.code || m.id;
+    const hasCustom = Boolean(memberPermsMap[mCode] || stagedOverrides[mCode]);
+    if (!hasCustom) {
+      toast.info(`Tài khoản "${m.name}" hiện đang sử dụng thẩm quyền chuẩn theo Ban & Vai trò, không có thiết lập riêng để xóa.`);
+      return;
+    }
+    if (
+      !confirm(
+        `Bạn có chắc chắn muốn xóa cấu hình quyền riêng của hội viên "${m.name}"? Quyền hạn sẽ được khôi phục về mặc định theo Ban & Vai trò.`
+      )
+    ) {
+      return;
+    }
+
+    setStagedOverrides((prev) => {
+      const next = { ...prev };
+      delete next[mCode];
+      return next;
+    });
+
+    setMemberPermsMap((prev) => {
+      const next = { ...prev };
+      delete next[mCode];
+      if (mCode) {
+        delete next[mCode.toLowerCase()];
+        delete next[mCode.toUpperCase()];
+      }
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("vba_member_permissions", JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
+
+    try {
+      await fetchNestApi(`/admin/member-permissions/${encodeURIComponent(mCode)}`, {
+        method: "DELETE",
+      }).catch(() => {});
+    } catch {}
+
+    dispatchPermissionSyncEvent();
+    toast.success(`Đã xóa cấu hình quyền riêng cho "${m.name}". Quyền đã trở về mặc định theo Ban!`);
   };
 
   // Hủy toàn bộ thay đổi chưa lưu
@@ -332,11 +381,11 @@ export function MemberPermissionsByCommittee({
     toast.info("Đã hủy các thay đổi chưa lưu.");
   };
 
-  // QUY TẮC RESTFUL API: Gửi toàn bộ thay đổi về Database khi bấm nút LƯU
+  // Gửi toàn bộ thay đổi về Database khi bấm nút LƯU
   const handleSaveAllToDatabase = async () => {
     setSavingAll(true);
     try {
-      // 1. Lưu cấu hình quyền cá nhân về CSDL qua RESTful API: PUT /api/admin/member-permissions
+      // 1. Lưu cấu hình quyền cá nhân về CSDL
       const finalMap = { ...memberPermsMap };
       Object.keys(stagedOverrides).forEach((k) => {
         if (stagedOverrides[k]?.__reset) {
@@ -370,10 +419,10 @@ export function MemberPermissionsByCommittee({
 
       setStagedRoleDept({});
       setStagedOverrides({});
-      toast.success("Đã lưu toàn bộ phân quyền hội viên vào Database thành công (RESTful API)!");
+      toast.success("Đã lưu toàn bộ phân quyền hội viên vào hệ thống thành công!");
     } catch (err: any) {
       console.error("Save member permissions error:", err);
-      toast.error(err?.message || "Lỗi khi lưu phân quyền vào Database");
+      toast.error(err?.message || "Lỗi khi lưu phân quyền vào cơ sở dữ liệu");
     } finally {
       setSavingAll(false);
     }
@@ -415,7 +464,7 @@ export function MemberPermissionsByCommittee({
         <div>
           <span className="font-bold text-sm block mb-0.5">Phân Hệ 3: Phân Quyền Tài Khoản Theo Từng Ban</span>
           <p className="leading-relaxed">
-            Danh sách tài khoản hội viên được phân theo từng <strong>Ban Chuyên Môn</strong>. Quyền hạn thao tác thực tế (Thêm, Sửa, Xóa, Duyệt) được <strong>tự động thừa hưởng từ Ban và Vai trò</strong> (Phân hệ 1 &amp; 2). Người quản trị có thể tùy chỉnh ghi đè riêng cho từng tài khoản khi cần cấp thêm hoặc thu hồi đặc quyền cụ thể.
+            Danh sách tài khoản hội viên được phân theo từng <strong>Ban Chuyên Môn</strong>. Quyền hạn thao tác thực tế (Thêm, Sửa, Xóa, Duyệt) được <strong>tự động thừa hưởng từ Ban và Vai trò</strong> (Phân hệ 1 &amp; 2). Người quản trị có thể tùy chỉnh ghi đè riêng cho từng tài khoản khi cần bật thêm hoặc thu hồi đặc quyền cụ thể.
           </p>
         </div>
       </div>
@@ -610,7 +659,7 @@ export function MemberPermissionsByCommittee({
                             title={permState.canAdd ? "Được phép thêm mới" : "Không có quyền thêm mới (Bị khóa)"}
                           >
                             {permState.canAdd ? <CheckCircle2 className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
-                            Thêm mới: {permState.canAdd ? "Cấp" : "Khóa"}
+                            Thêm mới: {permState.canAdd ? "Bật" : "Tắt"}
                           </span>
 
                           {/* Edit */}
@@ -622,7 +671,7 @@ export function MemberPermissionsByCommittee({
                             }`}
                           >
                             {permState.canEdit ? <CheckCircle2 className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
-                            Sửa: {permState.canEdit ? "Cấp" : "Khóa"}
+                            Sửa: {permState.canEdit ? "Bật" : "Tắt"}
                           </span>
 
                           {/* Delete */}
@@ -634,7 +683,7 @@ export function MemberPermissionsByCommittee({
                             }`}
                           >
                             {permState.canDelete ? <CheckCircle2 className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
-                            Xóa: {permState.canDelete ? "Cấp" : "Khóa"}
+                            Xóa: {permState.canDelete ? "Bật" : "Tắt"}
                           </span>
 
                           {/* Approve */}
@@ -646,7 +695,7 @@ export function MemberPermissionsByCommittee({
                             }`}
                           >
                             {permState.canApprove ? <CheckCircle2 className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
-                            Duyệt: {permState.canApprove ? "Cấp" : "Khóa"}
+                            Duyệt: {permState.canApprove ? "Bật" : "Tắt"}
                           </span>
 
                           {permState.hasOverride && (
@@ -657,16 +706,37 @@ export function MemberPermissionsByCommittee({
                         </div>
                       </td>
 
-                      {/* Actions */}
+                      {/* Actions: Xem, Chỉnh sửa, Xóa */}
                       <td className="px-4 py-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => setEditingCustomMember(m)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition cursor-pointer"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                          <span>Tùy chỉnh quyền</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setViewingMember(m)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-xs font-semibold hover:bg-muted transition cursor-pointer"
+                            title="Xem chi tiết phân quyền tài khoản"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Xem</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingCustomMember(m)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition cursor-pointer"
+                            title="Chỉnh sửa phân quyền tài khoản"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Chỉnh sửa</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCustomOverride(m)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-300/50 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 text-xs font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition cursor-pointer"
+                            title="Xóa phân quyền riêng (khôi phục mặc định ban)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Xóa</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -714,10 +784,24 @@ export function MemberPermissionsByCommittee({
               className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-5 py-2 text-xs font-bold text-white shadow-md cursor-pointer transition disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
-              {savingAll ? "Đang lưu RESTful API..." : "Lưu Thay Đổi Vào Database (RESTful API)"}
+              {savingAll ? "Đang lưu..." : "Lưu Thay Đổi Vào Cơ Sở Dữ Liệu"}
             </button>
           </div>
         </div>
+      )}
+
+      {/* MODAL: View member permission details */}
+      {viewingMember && (
+        <MemberPermissionDetailModal
+          member={viewingMember}
+          permState={computeMemberPermissions(viewingMember)}
+          onClose={() => setViewingMember(null)}
+          onEdit={() => {
+            const m = viewingMember;
+            setViewingMember(null);
+            setEditingCustomMember(m);
+          }}
+        />
       )}
 
       {/* MODAL: Custom personal override */}
@@ -789,7 +873,7 @@ function CustomMemberPermissionModal({
           <div>
             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-[#003B95]" />
-              Tùy Chỉnh Phân Quyền Cá Nhân
+              Chỉnh Sửa Phân Quyền Tài Khoản
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {member.name} ({member.code || "CEO1983"}) · {member.department || "Ban chuyên môn"}
@@ -961,6 +1045,135 @@ function CustomMemberPermissionModal({
               <span>Lưu Phân Quyền</span>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MemberPermissionDetailModal({
+  member,
+  permState,
+  onClose,
+  onEdit,
+}: {
+  member: any;
+  permState: any;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between pb-3 border-b border-border">
+          <div>
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Eye className="w-5 h-5 text-[#003B95]" />
+              Chi Tiết Thẩm Quyền Tài Khoản
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {member.name} ({member.code || "CEO1983"}) · {member.department || "Ban chuyên môn"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Thông tin hồ sơ */}
+        <div className="grid grid-cols-2 gap-3 text-xs bg-muted/40 p-3.5 rounded-xl border border-border">
+          <div>
+            <span className="text-muted-foreground block text-[11px]">Họ và tên:</span>
+            <span className="font-bold text-foreground">{member.name}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-[11px]">Mã hội viên:</span>
+            <span className="font-mono font-bold text-foreground">{member.code || "Chưa cấp"}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-[11px]">Ban chuyên môn:</span>
+            <span className="font-semibold text-foreground">{member.department || "Ban chuyên môn"}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block text-[11px]">Vai trò hệ thống:</span>
+            <span className="font-bold text-[#003B95] dark:text-blue-400">
+              {ROLE_OPTIONS.find((r) => r.value === member.executiveRole || r.value === member.role)?.label || member.executiveRole || member.role || "Thành viên"}
+            </span>
+          </div>
+          {member.company && (
+            <div className="col-span-2">
+              <span className="text-muted-foreground block text-[11px]">Doanh nghiệp:</span>
+              <span className="font-medium text-foreground">{member.company}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Trạng thái thẩm quyền */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider">Thẩm quyền thao tác thực tế:</span>
+            {permState.hasOverride ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                Có thiết lập quyền riêng
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                Thừa hưởng tự động từ Ban
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
+              <span className="font-medium text-foreground">Thêm mới dữ liệu:</span>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canAdd ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"}`}>
+                {permState.canAdd ? "Bật" : "Tắt"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
+              <span className="font-medium text-foreground">Chỉnh sửa dữ liệu:</span>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canEdit ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" : "bg-muted text-muted-foreground"}`}>
+                {permState.canEdit ? "Bật" : "Tắt"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
+              <span className="font-medium text-foreground">Xóa dữ liệu:</span>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canDelete ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" : "bg-muted text-muted-foreground"}`}>
+                {permState.canDelete ? "Bật" : "Tắt"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
+              <span className="font-medium text-foreground">Phê duyệt / Ký duyệt:</span>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canApprove ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300" : "bg-muted text-muted-foreground"}`}>
+                {permState.canApprove ? "Bật" : "Tắt"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-3 border-t border-border flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-secondary text-foreground text-xs font-semibold hover:bg-secondary/80 transition cursor-pointer"
+          >
+            Đóng
+          </button>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="px-4 py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-blue-900 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Chỉnh Sửa Phân Quyền
+          </button>
         </div>
       </div>
     </div>

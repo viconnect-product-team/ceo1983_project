@@ -21,6 +21,8 @@ import {
   User,
   CheckCircle2,
   ScanLine,
+  Send,
+  MessageSquare,
 } from "lucide-react";
 import { QrCanvas } from "./QrCanvas";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
@@ -75,6 +77,9 @@ export function AssociationMemberQrModal({
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [customNote, setCustomNote] = useState(
+    "Chào bạn! Tôi đã quét mã QR của bạn và rất mong được kết nối giao thương trong CLB CEO 1983.",
+  );
   const [isDecodingFile, setIsDecodingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +91,9 @@ export function AssociationMemberQrModal({
       setConnected(false);
       setErrorMsg(null);
       setTorch(false);
+      setCustomNote(
+        "Chào bạn! Tôi đã quét mã QR của bạn và rất mong được kết nối giao thương trong CLB CEO 1983.",
+      );
     }
   }, [open, defaultTab]);
 
@@ -267,6 +275,9 @@ export function AssociationMemberQrModal({
     try {
       const peerCode = scannedPartner.code || scannedPartner.userId || "MEMBER";
       const peerName = scannedPartner.name || "Hội viên";
+      const messageText =
+        customNote.trim() ||
+        `Chào bạn! Tôi đã quét mã QR của bạn và rất mong được kết nối giao thương trong CLB CEO 1983.`;
 
       // 1. Lưu danh bạ kết nối cá nhân
       await fetchNestApi("/api/members/contacts", {
@@ -285,6 +296,7 @@ export function AssociationMemberQrModal({
         body: JSON.stringify({
           targetUserId: scannedPartner.userId || scannedPartner.code,
           memberCode: scannedPartner.code,
+          message: messageText,
         }),
       }).catch(() => {
         return fetchNestApi("/connect-app/network/requests", {
@@ -292,6 +304,7 @@ export function AssociationMemberQrModal({
           body: JSON.stringify({
             targetUserId: scannedPartner.userId || scannedPartner.code,
             memberCode: scannedPartner.code,
+            message: messageText,
           }),
         }).catch(() => {});
       });
@@ -301,11 +314,12 @@ export function AssociationMemberQrModal({
         method: "POST",
         body: JSON.stringify({
           peerCode: peerCode,
-          text: "Xin chào! Chúng ta vừa kết nối thành công qua mã QR danh thiếp.",
+          text: messageText,
         }),
       }).catch(() => {});
 
       setConnected(true);
+      toast.success("Đã gửi lời mời kết nối thành công!");
 
       // 4. Lưu thông báo và đồng bộ hội thoại sang tab Tin nhắn
       try {
@@ -404,19 +418,25 @@ export function AssociationMemberQrModal({
   if (!open) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[99999] grid place-items-center w-full h-[100dvh] min-h-[100dvh] bg-black/80 backdrop-blur-md p-4 overflow-y-auto overscroll-contain animate-in fade-in duration-200 pt-[max(env(safe-area-inset-top,0px),16px)] pb-[max(env(safe-area-inset-bottom,0px),16px)]">
-      <div className="relative w-full max-w-sm my-auto rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[88dvh] select-none">
+    <div
+      className="fixed inset-0 z-[99999] grid place-items-center w-full h-[100dvh] min-h-[100dvh] bg-black/80 backdrop-blur-md p-4 animate-fade-in"
+      onClick={handleModalClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-3xl border-2 border-amber-400/40 bg-white dark:bg-[#071228] shadow-2xl overflow-hidden animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Top Header with Close Button */}
-        <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-2 border-b border-amber-500/20">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#2E3192]/10 dark:bg-amber-400/10 text-[#2E3192] dark:text-amber-400">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30">
               <QrCode className="h-4.5 w-4.5" />
             </div>
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-white leading-tight">
                 Mã QR Hội Viên
               </h3>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+              <p className="text-[10.5px] text-amber-700 dark:text-amber-400 font-semibold">
                 CLB Doanh Nhân CEO 1983
               </p>
             </div>
@@ -433,7 +453,7 @@ export function AssociationMemberQrModal({
 
         {/* Tab Switcher: [Mã QR của tôi] vs [Quét QR] */}
         <div className="px-5 pt-3">
-          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-[#14223E] p-1 border border-slate-200/80 dark:border-slate-800">
+          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-[#14223E] p-1 border border-amber-500/20">
             <button
               type="button"
               onClick={() => {
@@ -442,8 +462,8 @@ export function AssociationMemberQrModal({
               }}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "my_qr"
-                  ? "bg-[#2E3192] text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-300 hover:text-[#2E3192]"
+                  ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 border border-amber-400/50 shadow-sm"
+                  : "text-slate-600 dark:text-slate-300 hover:text-amber-500"
               }`}
             >
               <QrCode className="w-3.5 h-3.5" />
@@ -454,8 +474,8 @@ export function AssociationMemberQrModal({
               onClick={() => setActiveTab("scan_qr")}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "scan_qr"
-                  ? "bg-[#2E3192] text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-300 hover:text-[#2E3192]"
+                  ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 border border-amber-400/50 shadow-sm"
+                  : "text-slate-600 dark:text-slate-300 hover:text-amber-500"
               }`}
             >
               <Camera className="w-3.5 h-3.5" />
@@ -468,16 +488,16 @@ export function AssociationMemberQrModal({
         {activeTab === "my_qr" && (
           <div className="p-5 flex flex-col items-center overflow-y-auto">
             {/* Member Card Summary */}
-            <div className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 mb-4">
+            <div className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-amber-500/25 mb-4 shadow-2xs">
               <div className="relative">
                 {memberAvatar ? (
                   <img
                     src={memberAvatar}
                     alt={memberName}
-                    className="h-12 w-12 rounded-full object-cover ring-2 ring-white dark:ring-slate-700 shadow-sm"
+                    className="h-12 w-12 rounded-full object-cover ring-2 ring-amber-400/70 shadow-sm"
                   />
                 ) : (
-                  <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-sm font-black text-white ring-2 ring-white dark:ring-slate-700 shadow-sm">
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-tr from-[#002B70] to-[#003B95] text-sm font-black text-amber-300 ring-2 ring-amber-400/70 shadow-sm">
                     {memberName.slice(0, 2).toUpperCase()}
                   </div>
                 )}
@@ -490,24 +510,24 @@ export function AssociationMemberQrModal({
                   <h4 className="truncate text-sm font-black text-slate-900 dark:text-white">
                     {memberName}
                   </h4>
-                  <BadgeCheck className="h-4 w-4 text-[#0284c7] shrink-0" />
+                  <BadgeCheck className="h-4 w-4 text-amber-500 shrink-0" />
                 </div>
                 <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                   {memberTitle} · {memberCompany}
                 </p>
-                <div className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-mono font-bold text-[#2E3192] dark:text-amber-400">
+                <div className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400">
                   <span>ID: {memberCode}</span>
                 </div>
               </div>
             </div>
 
             {/* High-Res QR Canvas Card with Brand Ornament */}
-            <div className="relative p-4 rounded-2xl bg-white shadow-lg border border-slate-200 flex flex-col items-center">
+            <div className="relative p-4 rounded-2xl bg-white shadow-[0_4px_24px_rgba(245,158,11,0.2)] border-2 border-amber-400/60 flex flex-col items-center">
               <div id="association-member-modal-qr">
                 <QrCanvas value={qrUrl} size={180} />
               </div>
               <div className="mt-2.5 text-center">
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#2E3192]/10 px-2.5 py-0.5 text-[10.5px] font-bold text-[#2E3192]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-800 dark:text-amber-300">
                   <Sparkles className="h-3 w-3 text-amber-500" />
                   Quét để kết nối hồ sơ danh thiếp
                 </span>
@@ -521,14 +541,14 @@ export function AssociationMemberQrModal({
                 onClick={handleDownloadQr}
                 className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition active:scale-95 cursor-pointer"
               >
-                <Download className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
+                <Download className="h-4 w-4 text-amber-500" />
                 <span>Tải ảnh QR</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleShare}
-                className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-gradient-to-r from-[#19194D] to-[#2E3192] hover:brightness-110 text-white text-[11px] font-bold transition active:scale-95 cursor-pointer shadow-sm"
+                className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:brightness-110 text-amber-300 text-[11px] font-bold transition active:scale-95 cursor-pointer shadow-xs"
               >
                 <Share2 className="h-4 w-4" />
                 <span>Chia sẻ</span>
@@ -569,7 +589,7 @@ export function AssociationMemberQrModal({
                       className="h-18 w-18 rounded-full object-cover ring-3 ring-amber-400 shadow-md"
                     />
                   ) : (
-                    <div className="grid h-18 w-18 place-items-center rounded-full bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-lg font-black text-white ring-3 ring-amber-400 shadow-md">
+                    <div className="grid h-18 w-18 place-items-center rounded-full bg-gradient-to-tr from-[#002B70] to-[#003B95] text-lg font-black text-amber-300 ring-3 ring-amber-400 shadow-md">
                       {scannedPartner.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
@@ -583,7 +603,7 @@ export function AssociationMemberQrModal({
                     <h3 className="text-base font-black text-slate-900 dark:text-white">
                       {scannedPartner.name}
                     </h3>
-                    <BadgeCheck className="h-4 w-4 text-[#0284c7]" />
+                    <BadgeCheck className="h-4 w-4 text-amber-500" />
                   </div>
                   <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
                     {scannedPartner.title}
@@ -601,7 +621,7 @@ export function AssociationMemberQrModal({
                   <div className="w-full rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5 space-y-1 text-xs text-slate-700 dark:text-slate-300 mb-4 border border-slate-200/70 dark:border-slate-700/60">
                     {scannedPartner.phone && (
                       <div className="flex items-center gap-2">
-                        <Phone className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0" />
+                        <Phone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                         <a
                           href={`tel:${scannedPartner.phone}`}
                           className="hover:underline font-semibold"
@@ -612,7 +632,7 @@ export function AssociationMemberQrModal({
                     )}
                     {scannedPartner.email && (
                       <div className="flex items-center gap-2">
-                        <Mail className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0" />
+                        <Mail className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                         <a href={`mailto:${scannedPartner.email}`} className="hover:underline">
                           {scannedPartner.email}
                         </a>
@@ -621,43 +641,90 @@ export function AssociationMemberQrModal({
                   </div>
                 )}
 
+                {/* Interactive Connection Request Proposal Popup */}
+                <div className="w-full rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 to-transparent p-3.5 text-left space-y-2.5 shadow-[0_4px_20px_rgba(245,158,11,0.15)] mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border border-amber-500/40">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-[12.5px] font-black text-amber-800 dark:text-amber-300">
+                        Gửi Lời Mời Kết Nối Từ Tài Khoản Của Bạn
+                      </h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Đối tác sẽ nhận được thông báo yêu cầu kết nối ngay lập tức
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10.5px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                      <MessageSquare className="h-3 w-3 text-amber-500" />
+                      <span>Lời nhắn gửi đến {scannedPartner.name}:</span>
+                    </label>
+                    <textarea
+                      value={customNote}
+                      onChange={(e) => setCustomNote(e.target.value)}
+                      placeholder="Nhập lời nhắn kết nối..."
+                      rows={2}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/80 p-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+                    />
+                  </div>
+
+                  {connected ? (
+                    <div className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/30">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Đã gửi lời mời kết nối thành công!</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSaveContact}
+                      disabled={connecting}
+                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:brightness-110 text-amber-300 text-xs font-bold shadow-[0_4px_16px_rgba(245,158,11,0.3)] active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {connecting ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin text-amber-300" />
+                          <span>Đang gửi kết nối...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 text-amber-300" />
+                          <span>Kết Nối Ngay Với {scannedPartner.name}</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
                 {/* Actions */}
                 <div className="w-full flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setScannedPartner(null)}
+                    onClick={() => {
+                      setScannedPartner(null);
+                      setConnected(false);
+                    }}
                     className="flex-1 py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition active:scale-95 cursor-pointer text-center"
                   >
-                    Quét lại
+                    Quét mã khác
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveContact}
-                    disabled={connecting || connected}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-sm ${
-                      connected
-                        ? "bg-emerald-600 text-white"
-                        : "bg-[#2E3192] text-white hover:bg-[#19194D]"
-                    }`}
-                  >
-                    {connected ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        <span>Đã lưu kết nối</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                        <span>{connecting ? "Đang lưu..." : "Lưu kết nối"}</span>
-                      </>
-                    )}
-                  </button>
+                  {connected && (
+                    <button
+                      type="button"
+                      onClick={handleModalClose}
+                      className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition active:scale-95 cursor-pointer text-center"
+                    >
+                      Đóng
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
               /* Camera Scanner Viewfinder in Modal */
               <div className="w-full flex flex-col items-center">
-                <div className="relative w-full aspect-square max-w-[260px] rounded-2xl overflow-hidden bg-black border-2 border-[#2E3192] shadow-inner flex items-center justify-center">
+                <div className="relative w-full aspect-square max-w-[260px] rounded-2xl overflow-hidden bg-black border-2 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -672,7 +739,7 @@ export function AssociationMemberQrModal({
                     <div className="absolute top-0 right-0 w-6 h-6 border-t-3 border-r-3 border-amber-400 rounded-tr-lg" />
                     <div className="absolute bottom-0 left-0 w-6 h-6 border-b-3 border-l-3 border-amber-400 rounded-bl-lg" />
                     <div className="absolute bottom-0 right-0 w-6 h-6 border-b-3 border-r-3 border-amber-400 rounded-br-lg" />
-                    <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-0.5 bg-amber-400/80 shadow-[0_0_8px_rgba(245,130,32,0.8)] animate-pulse" />
+                    <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-0.5 bg-amber-400/80 shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse" />
                   </div>
 
                   {status === "starting" && (
@@ -686,7 +753,7 @@ export function AssociationMemberQrModal({
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 text-white text-xs gap-2 p-4 text-center">
                       <Camera className="h-6 w-6 text-red-400" />
                       <span className="font-bold text-red-400">Không có quyền truy cập camera</span>
-                      <span className="text-[10px] text-slate-300">
+                      <span className="text-[10.5px] text-slate-300">
                         Vui lòng cấp quyền camera trong cài đặt trình duyệt để quét
                       </span>
                     </div>
@@ -764,10 +831,10 @@ export function AssociationMemberQrModal({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isDecodingFile}
-                    className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition active:scale-95 cursor-pointer hover:border-[#2E3192]"
+                    className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition active:scale-95 cursor-pointer hover:border-amber-400"
                     title="Tải ảnh QR từ máy"
                   >
-                    <ImagePlus className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
+                    <ImagePlus className="h-4 w-4 text-amber-500" />
                     <span>{isDecodingFile ? "Đang đọc..." : "Chọn ảnh"}</span>
                   </button>
                   <input

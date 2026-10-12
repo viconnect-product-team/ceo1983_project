@@ -33,7 +33,7 @@ export const EventTicketPassModal: React.FC<EventTicketPassModalProps> = ({
     <Dialog open={!!ticketPassModal} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-[var(--vba-surface,#fff)] text-center shadow-2xl">
         {/* Header Ticket Banner */}
-        <div className="bg-gradient-to-br from-[#001A4D] via-[#2E3192] to-[#0A192F] p-4 text-white relative">
+        <div className="bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#002B70] p-4 text-white relative">
           <div className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-400/60 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 uppercase tracking-wider mb-2">
             <Sparkles className="h-3 w-3" />
             VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC
@@ -48,13 +48,13 @@ export const EventTicketPassModal: React.FC<EventTicketPassModalProps> = ({
 
         {/* Ticket Body with QR Code */}
         <div className="p-4 space-y-3">
-          <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-[#2E3192]/30 inline-block shadow-sm">
+          <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-amber-400/50 inline-block shadow-sm">
             <img
               src={ticketPassModal.qrUrl}
               alt="Mã QR Vé Sự Kiện"
               className="w-48 h-48 mx-auto rounded-lg object-contain"
             />
-            <div className="text-[12px] font-mono font-black text-[#2E3192] mt-2">
+            <div className="text-[12px] font-mono font-black text-[#003B95] mt-2">
               MÃ VÉ: {ticketPassModal.ticketCode}
             </div>
           </div>

@@ -312,7 +312,7 @@ export function PersonalProfileBottomSheet({
                   className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl border-3 border-white dark:border-[#0A1224] object-cover shadow-lg bg-white dark:bg-slate-800"
                 />
               ) : (
-                <div className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl border-3 border-white dark:border-[#0A1224] bg-gradient-to-tr from-[#003B95] to-[#19194D] text-white font-black text-xl grid place-items-center shadow-lg">
+                <div className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-tr from-[#003B95] to-[#002B70] text-amber-300 font-black text-xl grid place-items-center shadow-lg">
                   {initials}
                 </div>
               )}

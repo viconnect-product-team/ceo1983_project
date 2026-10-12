@@ -63,7 +63,7 @@ export const ProductQuotesListModal: React.FC<ProductQuotesListModalProps> = ({
               <div key={q.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-[#2E3192] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-[#003B95] border border-amber-400/40 text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
                       {q.buyerName ? q.buyerName.charAt(0).toUpperCase() : "U"}
                     </div>
                     <div className="min-w-0">
@@ -105,9 +105,9 @@ export const ProductQuotesListModal: React.FC<ProductQuotesListModalProps> = ({
                     <button
                       type="button"
                       onClick={() => onMessage(q.buyerId || q.phone)}
-                      className="px-2.5 py-1 rounded-lg bg-[#2E3192] text-white text-[11px] font-bold flex items-center gap-1 hover:bg-[#232677] transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-[#003B95] border border-amber-400/40 text-white text-[11px] font-bold flex items-center gap-1 hover:bg-[#002B70] transition cursor-pointer"
                     >
-                      <MessageSquare className="h-3 w-3" />
+                      <MessageSquare className="h-3 w-3 text-amber-300" />
                       <span>Nhắn tin</span>
                     </button>
                   </div>

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -17,6 +17,7 @@ import {
   UpdateTaskDto,
   AddCommentDto,
   AddSubtaskDto,
+  TASK_DEPARTMENTS,
 } from './dto';
 
 export type {
@@ -316,13 +317,150 @@ export class TasksService {
     ];
   }
 
-  async getAllTasks(filters?: {
-    department?: string;
-    status?: string;
-    priority?: string;
-    keyword?: string;
-  }): Promise<TaskItem[]> {
+  /**
+   * Lấy danh sách ban và thành viên được phép giao việc tùy theo quyền hạn của người đăng nhập
+   * - Chủ tịch / Admin: Toàn quyền giao việc cho bất kỳ ai thuộc bất kỳ ban nào
+   * - Tổng thư ký: Chỉ được giao việc cho thành viên thuộc Ban Thư Ký
+   * - Trưởng ban: Chỉ được giao việc cho các thành viên thuộc chính ban của mình
+   */
+  async getAssignableMembers(currentUser?: any): Promise<{
+    allowedDepartments: string[];
+    members: any[];
+    canAssignAll: boolean;
+    currentRole: string;
+    currentDepartment: string;
+  }> {
+    const role = (currentUser?.role || currentUser?.srsRole || 'member').toLowerCase();
+    const isPresident = Boolean(currentUser?.isPresident || role === 'chu_tich' || role === 'president');
+    const isAdmin = Boolean(currentUser?.isAdmin || role === 'admin' || role === 'quan_tri' || currentUser?.roles?.includes('admin'));
+    const isExecutive = Boolean(currentUser?.isExecutive || role === 'ban_dieu_hanh' || role === 'bqt');
+    const isGeneralSecretary = Boolean(currentUser?.isGeneralSecretary || role === 'tong_thu_ky');
+    const isDepartmentLeader = Boolean(currentUser?.isDepartmentLeader || role.startsWith('truong_ban_'));
+
+    let currentDept = currentUser?.department || '';
+    if (currentDept.toLowerCase().includes('quản trị')) {
+      currentDept = currentDept.replace(/ban quản trị/gi, 'Ban Điều Hành').replace(/quản trị/gi, 'Điều Hành');
+    }
+
+    // Xác định ban phụ trách nếu là Trưởng ban
+    let leaderDepartment = '';
+    if (role === 'truong_ban_dieu_hanh' || isExecutive) leaderDepartment = 'Ban Điều Hành';
+    else if (role === 'truong_ban_su_kien' || currentDept.includes('Sự kiện')) leaderDepartment = 'Ban Sự kiện';
+    else if (role === 'truong_ban_truyen_thong' || currentDept.includes('Truyền thông')) leaderDepartment = 'Ban Truyền thông';
+    else if (role === 'truong_ban_xuc_tien' || currentDept.includes('Xúc tiến')) leaderDepartment = 'Ban Xúc tiến';
+    else if (role === 'truong_ban_tai_chinh' || currentDept.includes('Tài chính')) leaderDepartment = 'Ban Tài chính';
+    else if (role === 'truong_ban_thien_nguyen' || currentDept.includes('Thiện nguyện')) leaderDepartment = 'Ban Thiện nguyện';
+    else if (isDepartmentLeader && currentDept) leaderDepartment = currentDept;
+
+    if (isPresident || isAdmin) {
+      // 1. Chủ tịch & Admin: Toàn quyền giao việc cho bất kỳ ai thuộc bất kỳ ban nào
+      const allMembers = await this.tasksRepo.getMembersForAssignment();
+      return {
+        allowedDepartments: [...TASK_DEPARTMENTS],
+        members: allMembers,
+        canAssignAll: true,
+        currentRole: isPresident ? 'chu_tich' : 'admin',
+        currentDepartment: currentDept || 'Hội đồng Lãnh đạo',
+      };
+    }
+
+    if (isGeneralSecretary) {
+      // 2. Tổng thư ký: Chỉ được giao việc cho Ban Thư Ký
+      const secretaryMembers = await this.tasksRepo.getMembersForAssignment('thư ký');
+      return {
+        allowedDepartments: ['Ban Thư ký'],
+        members: secretaryMembers,
+        canAssignAll: false,
+        currentRole: 'tong_thu_ky',
+        currentDepartment: 'Ban Thư ký',
+      };
+    }
+
+    if (isDepartmentLeader || leaderDepartment) {
+      // 3. Trưởng ban: Chỉ giao việc cho thành viên thuộc chính ban đó
+      const targetDept = leaderDepartment || currentDept;
+      const deptKeyword = targetDept.replace(/^Ban\s+/i, '').trim();
+      const deptMembers = await this.tasksRepo.getMembersForAssignment(deptKeyword);
+      return {
+        allowedDepartments: [targetDept || 'Ban Chuyên môn'],
+        members: deptMembers,
+        canAssignAll: false,
+        currentRole: role,
+        currentDepartment: targetDept,
+      };
+    }
+
+    // 4. Hội viên: Chỉ giao việc trong ban của mình nếu được ủy quyền
+    const memberDept = currentDept || 'Ban Thành viên';
+    const deptKeyword = memberDept.replace(/^Ban\s+/i, '').trim();
+    const deptMembers = await this.tasksRepo.getMembersForAssignment(deptKeyword);
+    return {
+      allowedDepartments: [memberDept],
+      members: deptMembers,
+      canAssignAll: false,
+      currentRole: role,
+      currentDepartment: memberDept,
+    };
+  }
+
+  async getAllTasks(
+    filters?: {
+      department?: string;
+      status?: string;
+      priority?: string;
+      keyword?: string;
+    },
+    currentUser?: any,
+  ): Promise<TaskItem[]> {
     let list = [...this.tasks];
+
+    // PHÂN QUYỀN DỮ LIỆU (Data Authorization)
+    if (currentUser && currentUser.id !== '00000000-0000-0000-0000-000000000000' && currentUser.username !== 'guest') {
+      const role = (currentUser.role || currentUser.srsRole || 'member').toLowerCase();
+      const isPresident = Boolean(currentUser.isPresident || role === 'chu_tich' || role === 'president');
+      const isAdmin = Boolean(currentUser.isAdmin || role === 'admin' || role === 'quan_tri' || currentUser.roles?.includes('admin'));
+      const isExecutive = Boolean(currentUser.isExecutive || role === 'ban_dieu_hanh' || role === 'bqt');
+      const isGeneralSecretary = Boolean(currentUser.isGeneralSecretary || role === 'tong_thu_ky');
+      const isDepartmentLeader = Boolean(currentUser.isDepartmentLeader || role.startsWith('truong_ban_'));
+
+      let userDept = (currentUser.department || '').replace(/ban quản trị/gi, 'Ban Điều Hành').trim();
+      const userId = currentUser.id || currentUser.userId || currentUser.memberId;
+      const userEmail = (currentUser.email || currentUser.username || '').toLowerCase();
+      const userName = (currentUser.name || currentUser.fullName || '').toLowerCase();
+
+      // Nếu KHÔNG phải Chủ tịch, Admin hay Ban Điều Hành thì áp dụng bộ lọc dữ liệu theo quyền
+      if (!isPresident && !isAdmin && !isExecutive) {
+        if (isGeneralSecretary) {
+          // Tổng thư ký: Xem công việc Ban Thư Ký + việc liên quan trực tiếp đến mình
+          list = list.filter((t) => {
+            const isSecDept = (t.department || '').toLowerCase().includes('thư ký');
+            const isAssigned = (t.assignee?.id && t.assignee.id === userId) || (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail);
+            const isSupervised = (t.supervisor?.id && t.supervisor.id === userId) || (t.supervisor?.name && t.supervisor.name.toLowerCase() === userName);
+            const isCollab = t.collaborators?.some((c) => (c.id && c.id === userId) || (c.name && c.name.toLowerCase() === userName));
+            return isSecDept || isAssigned || isSupervised || isCollab;
+          });
+        } else if (isDepartmentLeader) {
+          // Trưởng ban: Xem công việc ban của mình + việc liên quan
+          const deptKeyword = userDept.replace(/^Ban\s+/i, '').toLowerCase().trim();
+          list = list.filter((t) => {
+            const isOwnDept = deptKeyword && (t.department || '').toLowerCase().includes(deptKeyword);
+            const isAssigned = (t.assignee?.id && t.assignee.id === userId) || (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail);
+            const isSupervised = (t.supervisor?.id && t.supervisor.id === userId) || (t.supervisor?.name && t.supervisor.name.toLowerCase() === userName);
+            const isCollab = t.collaborators?.some((c) => (c.id && c.id === userId) || (c.name && c.name.toLowerCase() === userName));
+            return isOwnDept || isAssigned || isSupervised || isCollab;
+          });
+        } else {
+          // Hội viên: Chỉ xem các công việc mà mình được phân công, phối hợp hoặc tạo
+          list = list.filter((t) => {
+            const isAssigned = (t.assignee?.id && t.assignee.id === userId) || (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail) || (userName && t.assignee?.name && t.assignee.name.toLowerCase() === userName);
+            const isCollab = t.collaborators?.some((c) => (c.id && c.id === userId) || (userName && c.name && c.name.toLowerCase() === userName));
+            const isSupervised = (t.supervisor?.id && t.supervisor.id === userId);
+            const isCreator = t.history?.some((h) => h.actor?.toLowerCase() === userName && h.action.includes('Tạo'));
+            return isAssigned || isCollab || isSupervised || isCreator;
+          });
+        }
+      }
+    }
 
     if (filters?.department && filters.department !== 'ALL') {
       list = list.filter((t) => t.department === filters.department);
@@ -351,7 +489,30 @@ export class TasksService {
     return this.tasks.find((t) => t.id === id || t.code === id) || null;
   }
 
-  async createTask(data: Partial<TaskItem>, creatorName = 'Người quản trị'): Promise<TaskItem> {
+  async createTask(data: Partial<TaskItem>, creatorName = 'Người quản trị', currentUser?: any): Promise<TaskItem> {
+    // Kiểm tra tính hợp lệ về quyền giao việc
+    if (currentUser && currentUser.id !== '00000000-0000-0000-0000-000000000000' && currentUser.username !== 'guest') {
+      const role = (currentUser.role || currentUser.srsRole || 'member').toLowerCase();
+      const isPresident = Boolean(currentUser.isPresident || role === 'chu_tich' || role === 'president');
+      const isAdmin = Boolean(currentUser.isAdmin || role === 'admin' || role === 'quan_tri' || currentUser.roles?.includes('admin'));
+      const isGeneralSecretary = Boolean(currentUser.isGeneralSecretary || role === 'tong_thu_ky');
+      const isDepartmentLeader = Boolean(currentUser.isDepartmentLeader || role.startsWith('truong_ban_'));
+
+      if (!isPresident && !isAdmin) {
+        if (isGeneralSecretary) {
+          if (data.department && !data.department.toLowerCase().includes('thư ký')) {
+            throw new ForbiddenException('Tổng thư ký chỉ có quyền giao việc cho các thành viên thuộc Ban Thư ký.');
+          }
+        } else if (isDepartmentLeader) {
+          const userDept = (currentUser.department || '').replace(/ban quản trị/gi, 'Ban Điều Hành').trim();
+          const deptKeyword = userDept.replace(/^Ban\s+/i, '').toLowerCase().trim();
+          if (deptKeyword && data.department && !data.department.toLowerCase().includes(deptKeyword)) {
+            throw new ForbiddenException(`Trưởng ban chỉ có quyền giao việc cho các thành viên thuộc ${userDept || 'chính ban của mình'}.`);
+          }
+        }
+      }
+    }
+
     const nextNum = this.tasks.length + 1;
     const code = `CV-1983-${String(nextNum).padStart(2, '0')}`;
     const id = `task-1983-${Date.now()}`;
@@ -360,13 +521,17 @@ export class TasksService {
       id,
       code: data.code || code,
       title: data.title || 'Công việc mới chưa đặt tên',
-      department: data.department || 'Ban Quản trị & Thư ký',
+      department: data.department || 'Ban Điều Hành',
+      category: data.category || 'Chung',
+      budget: data.budget || undefined,
+      acceptanceCriteria: data.acceptanceCriteria || [],
+      customFields: data.customFields || [],
       assignee: data.assignee || {
         name: creatorName,
         role: 'Phụ trách',
       },
       supervisor: data.supervisor || {
-        name: 'Ban Quản trị',
+        name: 'Ban Điều Hành',
         role: 'Giám sát',
       },
       collaborators: data.collaborators || [],
@@ -404,13 +569,35 @@ export class TasksService {
     return newTask;
   }
 
-  async updateTask(id: string, data: Partial<TaskItem>, updaterName = 'Người quản trị'): Promise<TaskItem> {
+  async updateTask(id: string, data: Partial<TaskItem>, updaterName = 'Người quản trị', currentUser?: any): Promise<TaskItem> {
     const index = this.tasks.findIndex((t) => t.id === id || t.code === id);
     if (index === -1) {
       throw new Error(`Không tìm thấy công việc với ID ${id}`);
     }
 
     const current = this.tasks[index];
+
+    // Kiểm tra phạm vi cập nhật nếu thay đổi ban
+    if (currentUser && data.department && data.department !== current.department && currentUser.id !== '00000000-0000-0000-0000-000000000000' && currentUser.username !== 'guest') {
+      const role = (currentUser.role || currentUser.srsRole || 'member').toLowerCase();
+      const isPresident = Boolean(currentUser.isPresident || role === 'chu_tich' || role === 'president');
+      const isAdmin = Boolean(currentUser.isAdmin || role === 'admin' || role === 'quan_tri' || currentUser.roles?.includes('admin'));
+      const isGeneralSecretary = Boolean(currentUser.isGeneralSecretary || role === 'tong_thu_ky');
+      const isDepartmentLeader = Boolean(currentUser.isDepartmentLeader || role.startsWith('truong_ban_'));
+
+      if (!isPresident && !isAdmin) {
+        if (isGeneralSecretary && !data.department.toLowerCase().includes('thư ký')) {
+          throw new ForbiddenException('Tổng thư ký chỉ có quyền điều chuyển công việc trong Ban Thư ký.');
+        } else if (isDepartmentLeader) {
+          const userDept = (currentUser.department || '').replace(/ban quản trị/gi, 'Ban Điều Hành').trim();
+          const deptKeyword = userDept.replace(/^Ban\s+/i, '').toLowerCase().trim();
+          if (deptKeyword && !data.department.toLowerCase().includes(deptKeyword)) {
+            throw new ForbiddenException(`Trưởng ban chỉ có quyền điều chuyển công việc trong ${userDept || 'chính ban của mình'}.`);
+          }
+        }
+      }
+    }
+
     const changes: string[] = [];
 
     if (data.status && data.status !== current.status) {

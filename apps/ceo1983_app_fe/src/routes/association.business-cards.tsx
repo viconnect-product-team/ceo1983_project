@@ -1719,9 +1719,9 @@ function CardRow({
               </button>
               <button
                 onClick={() => setFastScanOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-800 dark:text-indigo-200 px-3 py-2 text-[12.5px] font-bold transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl border-2 border-amber-400/60 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-[#003B95] dark:text-amber-400 px-3 py-2 text-[12.5px] font-bold transition-all shadow-xs cursor-pointer"
               >
-                <Zap className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                <Zap className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
                 {t("bc.fastScan")}
               </button>
             </>

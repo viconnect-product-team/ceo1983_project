@@ -929,12 +929,14 @@ function MeetingsPage() {
                     <span>Mời Offline</span>
                   </button>
 
-                  {m.status === "upcoming" && canEditMeeting && (
+                  {(m.status === "upcoming" || m.status === "pending_approval") && (canEditMeeting || isSuperAdmin || isAdmin) && (
                     <button
                       onClick={() => handleOpenCancel(m)}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                      className="flex items-center gap-1 rounded-lg border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer transition shadow-2xs"
+                      title="Hủy cuộc họp và phát thông báo lý do hủy"
                     >
-                      Hủy họp
+                      <XCircle className="h-3.5 w-3.5" />
+                      <span>Hủy họp</span>
                     </button>
                   )}
                   {canEditMeeting && (

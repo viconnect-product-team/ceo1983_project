@@ -216,7 +216,7 @@ export function AssociationAppSignIn({
             </label>
             <div className="relative">
               <User
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#003B95]"
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-500"
                 aria-hidden="true"
               />
               <input
@@ -238,7 +238,7 @@ export function AssociationAppSignIn({
             </label>
             <div className="relative">
               <Lock
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#003B95]"
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-500"
                 aria-hidden="true"
               />
               <input
@@ -255,7 +255,7 @@ export function AssociationAppSignIn({
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:text-[#003B95] cursor-pointer transition-colors"
+                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:text-amber-500 cursor-pointer transition-colors"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -274,7 +274,7 @@ export function AssociationAppSignIn({
               <span
                 className={`flex h-4.5 w-4.5 items-center justify-center rounded-[5px] border transition-all ${
                   remember
-                    ? "bg-[#003B95] border-[#003B95] text-white"
+                    ? "bg-[#002B70] border-amber-500 text-amber-300"
                     : "bg-white border-slate-300"
                 }`}
                 aria-hidden="true"
@@ -295,28 +295,28 @@ export function AssociationAppSignIn({
             </button>
             <Link
               to="/forgot-password"
-              className="text-[12.5px] font-semibold text-[#003B95] hover:text-[#002B70] hover:underline"
+              className="text-[12.5px] font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:underline"
             >
               {lang === "en" ? "Forgot password?" : "Quên mật khẩu?"}
             </Link>
           </div>
 
-          {/* Submit Button (CEO 1983 Navy) */}
+          {/* Submit Button (Deep Navy with Amber Gold Accent) */}
           <button
             type="submit"
             disabled={loading}
-            className="relative flex h-11 w-full items-center justify-center rounded-xl text-[15px] font-bold text-white transition-all shadow-lg shadow-blue-900/25 hover:shadow-blue-900/35 hover:brightness-105 active:scale-[0.99] disabled:opacity-60 cursor-pointer bg-[#003B95] hover:bg-[#002B70] mt-1.5"
+            className="relative flex h-11 w-full items-center justify-center rounded-xl text-[15px] font-bold text-amber-300 border border-amber-400/50 transition-all shadow-[0_4px_20px_rgba(245,158,11,0.25)] hover:shadow-[0_4px_25px_rgba(245,158,11,0.4)] hover:brightness-105 active:scale-[0.99] disabled:opacity-60 cursor-pointer bg-gradient-to-r from-[#002B70] via-[#003B95] to-[#002B70] mt-1.5"
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-white" /> {lang === "en" ? "Verifying..." : "Đang xác thực..."}
+                <Loader2 className="h-4 w-4 animate-spin text-amber-300" /> {lang === "en" ? "Verifying..." : "Đang xác thực..."}
               </span>
             ) : (
               lang === "en" ? "Sign in" : "Đăng nhập"
             )}
             {!loading && (
               <ArrowRight
-                className="absolute right-4 h-4 w-4 text-white"
+                className="absolute right-4 h-4 w-4 text-amber-300"
                 aria-hidden="true"
               />
             )}
@@ -328,11 +328,11 @@ export function AssociationAppSignIn({
           <Link
             to="/landing"
             search={{ apply: "true" }}
-            className="relative flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-50/70 hover:bg-amber-100 text-[13.5px] font-semibold text-amber-900 transition-all active:scale-[0.99] cursor-pointer shadow-xs"
+            className="relative flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-50/70 hover:bg-amber-100/90 text-[13.5px] font-semibold text-amber-900 transition-all active:scale-[0.99] cursor-pointer shadow-xs"
           >
-            <Shield className="h-4 w-4 text-[#003B95]" aria-hidden="true" />
+            <Shield className="h-4 w-4 text-amber-600" aria-hidden="true" />
             <span>{lang === "en" ? "Register new member" : "Đăng ký hội viên mới"}</span>
-            <ChevronRight className="absolute right-4 h-4 w-4 text-[#003B95]" aria-hidden="true" />
+            <ChevronRight className="absolute right-4 h-4 w-4 text-amber-600" aria-hidden="true" />
           </Link>
         </div>
 

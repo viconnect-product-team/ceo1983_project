@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -29,6 +29,8 @@ import {
   CalendarPlus,
   Send,
   TrendingUp,
+  Filter,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
@@ -232,18 +234,20 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   const getOpps = useServerFn(listOpportunitiesFn);
   const getActivity = useServerFn(listActivityLogFn);
   const unread = useUnreadNotifications();
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const statsQ = useQuery({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", statusFilter],
     queryFn: () => getStats(),
     enabled: authReady,
   });
 
   const membersQ = useQuery({
-    queryKey: ["dashboard-members-client"],
+    queryKey: ["dashboard-members-client", statusFilter],
     queryFn: async () => {
       try {
-        const res = await fetchNestApi<any[]>("/members");
+        const queryParam = statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
+        const res = await fetchNestApi<any[]>(`/members${queryParam}`);
         return Array.isArray(res) ? res : [];
       } catch {
         return [];
@@ -253,10 +257,11 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   });
 
   const invoicesQ = useQuery({
-    queryKey: ["dashboard-invoices-client"],
+    queryKey: ["dashboard-invoices-client", statusFilter],
     queryFn: async () => {
       try {
-        const res = await fetchNestApi<any[]>("/admin/invoices");
+        const queryParam = statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
+        const res = await fetchNestApi<any[]>(`/admin/invoices${queryParam}`);
         return Array.isArray(res) ? res : [];
       } catch {
         return [];
@@ -266,10 +271,11 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   });
 
   const eventsQ = useQuery({
-    queryKey: ["dashboard-events"],
+    queryKey: ["dashboard-events", statusFilter],
     queryFn: async () => {
       try {
-        const res = await fetchNestApi<EventItem[]>("/events");
+        const queryParam = statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
+        const res = await fetchNestApi<EventItem[]>(`/events${queryParam}`);
         return Array.isArray(res) ? res : [];
       } catch {
         return [];
@@ -397,28 +403,42 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
 
     const target = base ?? dummyFallback;
 
-    const members = clientMembers.length > 0 ? clientMembers : [];
-    const totalMembers = members.length > 0 ? members.length : Math.max(target.totalMembers, 26);
-    const activeMembers = members.length > 0
-      ? members.filter((m: any) => m.status === "active").length
-      : Math.max(target.activeMembers, 23);
-    const companies = members.length > 0
-      ? members.filter((m: any) => m.type === "company").length
-      : Math.max(target.companies, 20);
-    const individuals = members.length > 0
-      ? members.filter((m: any) => m.type === "individual").length
-      : Math.max(target.individuals, 6);
-    const pendingRenewals = members.length > 0
-      ? members.filter((m: any) => m.status === "expired" || m.status === "pending").length
-      : Math.max(target.pendingRenewals, 3);
+    const rawMembers = clientMembers.length > 0 ? clientMembers : [];
+    const members = statusFilter === "all"
+      ? rawMembers
+      : rawMembers.filter((m: any) => {
+          const st = String(m.status || "").toLowerCase();
+          if (statusFilter === "active") return st === "active" || st === "approved";
+          if (statusFilter === "pending") return st === "pending" || st === "pending_approval";
+          if (statusFilter === "completed") return st === "active" || st === "approved";
+          if (statusFilter === "expired") return st === "expired" || st === "inactive" || st === "rejected";
+          return true;
+        });
 
-    const paidInvs = clientInvoices.filter((i: any) => i.status === "paid");
-    const unpaidInvs = clientInvoices.filter((i: any) => i.status !== "paid");
+    const totalMembers = statusFilter === "all" ? (rawMembers.length > 0 ? rawMembers.length : Math.max(target.totalMembers, 26)) : members.length;
+    const activeMembers = members.filter((m: any) => m.status === "active" || m.status === "approved").length;
+    const companies = members.filter((m: any) => m.type === "company").length;
+    const individuals = members.filter((m: any) => m.type === "individual").length;
+    const pendingRenewals = members.filter((m: any) => m.status === "expired" || m.status === "pending").length;
+
+    const rawInvoices = clientInvoices;
+    const invoices = statusFilter === "all"
+      ? rawInvoices
+      : rawInvoices.filter((i: any) => {
+          const st = String(i.status || "").toLowerCase();
+          if (statusFilter === "active" || statusFilter === "completed") return st === "paid" || st === "completed";
+          if (statusFilter === "pending") return st === "pending" || st === "unpaid";
+          if (statusFilter === "expired") return st === "cancelled" || st === "failed";
+          return true;
+        });
+
+    const paidInvs = invoices.filter((i: any) => i.status === "paid" || i.status === "completed");
+    const unpaidInvs = invoices.filter((i: any) => i.status !== "paid" && i.status !== "completed");
     const revenue = paidInvs.length > 0
       ? paidInvs.reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0)
-      : Math.max(target.revenue, 435000000);
-    const paidInvoices = paidInvs.length > 0 ? paidInvs.length : Math.max(target.paidInvoices, 21);
-    const unpaidInvoices = unpaidInvs.length > 0 ? unpaidInvs.length : Math.max(target.unpaidInvoices, 4);
+      : (statusFilter === "all" ? Math.max(target.revenue, 435000000) : 0);
+    const paidInvoices = paidInvs.length > 0 ? paidInvs.length : (statusFilter === "all" ? Math.max(target.paidInvoices, 21) : 0);
+    const unpaidInvoices = unpaidInvs.length > 0 ? unpaidInvs.length : (statusFilter === "all" ? Math.max(target.unpaidInvoices, 4) : 0);
 
     let growth = target.growth;
     if (members.length > 0) {
@@ -455,7 +475,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
       unpaidInvoices,
       growth,
     };
-  }, [statsQ.data, membersQ.data, invoicesQ.data, eventsQ.data, upcoming.length, topOpps.length]);
+  }, [statsQ.data, membersQ.data, invoicesQ.data, eventsQ.data, upcoming.length, topOpps.length, statusFilter]);
 
   /* ---- loading / error for the KPI + chart core (stats) ---- */
   if (!authReady || statsQ.isLoading) {
@@ -491,6 +511,61 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
             {t("dash.greeting")} <span aria-hidden>👋</span>
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("dash.subtitle")}</p>
+        </div>
+      </div>
+
+      {/* Bộ lọc trạng thái trực tiếp theo cơ sở dữ liệu */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-border bg-card shadow-xs">
+        <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+          <Filter className="h-4 w-4 text-[#003B95]" />
+          <span>Lọc Trạng Thái Dashboard:</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[
+            { key: "all", label: "Tất cả trạng thái", count: (membersQ.data?.length ?? 0) },
+            {
+              key: "active",
+              label: "Đang hoạt động / Đã duyệt",
+              count: (membersQ.data?.filter((m: any) => m.status === "active" || m.status === "approved").length ?? 0),
+            },
+            {
+              key: "pending",
+              label: "Chờ phê duyệt",
+              count: (membersQ.data?.filter((m: any) => m.status === "pending" || m.status === "pending_approval").length ?? 0),
+            },
+            {
+              key: "completed",
+              label: "Đã hoàn thành / Đã thanh toán",
+              count: (invoicesQ.data?.filter((i: any) => i.status === "paid").length ?? 0),
+            },
+            {
+              key: "expired",
+              label: "Tạm dừng / Hết hạn",
+              count: (membersQ.data?.filter((m: any) => m.status === "expired" || m.status === "inactive").length ?? 0),
+            },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setStatusFilter(tab.key)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                statusFilter === tab.key
+                  ? "bg-[#003B95] text-white shadow-xs"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  statusFilter === tab.key
+                    ? "bg-white/20 text-white"
+                    : "bg-background text-muted-foreground border border-border"
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 

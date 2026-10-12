@@ -36,16 +36,24 @@ export const Route = createFileRoute("/permissions")({
 });
 
 export const ROLE_OPTIONS = [
-  { value: "quan_tri", label: "Quản trị", desc: "Toàn quyền quản trị hệ thống và điều hành" },
+  { value: "chu_tich", label: "Chủ tịch", desc: "Chủ tịch Hiệp hội, quyền phê duyệt tối cao toàn hệ thống" },
+  { value: "quan_tri", label: "Quản trị", desc: "Toàn quyền quản trị hệ thống và điều hành kỹ thuật" },
   { value: "admin", label: "Admin", desc: "Quản lý dữ liệu hội viên, tài chính và sự kiện" },
+  { value: "ban_dieu_hanh", label: "Ban Điều Hành", desc: "Lãnh đạo điều hành, phối hợp hoạt động các ban chuyên môn" },
   { value: "tong_thu_ky", label: "Tổng thư ký", desc: "Điều phối cuộc họp, ban hành tài liệu và biểu quyết" },
-  { value: "truong_ban", label: "Trưởng ban", desc: "Quản trị nghiệp vụ theo ban chuyên trách" },
+  { value: "truong_ban_quan_tri", label: "Trưởng ban Điều hành", desc: "Quản lý tổ chức, điều phối các ban chuyên môn & quy chế" },
+  { value: "truong_ban_truyen_thong", label: "Trưởng ban Truyền thông", desc: "Quản lý truyền thông, tin tức, nội dung & thương hiệu CLB" },
+  { value: "truong_ban_thanh_vien", label: "Trưởng ban Thành viên", desc: "Quản lý phát triển, tiếp nhận & thẩm định hồ sơ hội viên mới" },
+  { value: "truong_ban_xuc_tien", label: "Trưởng ban Xúc tiến thương mại", desc: "Quản lý kết nối giao thương, cơ hội hợp tác & marketplace" },
+  { value: "truong_ban_tai_chinh", label: "Trưởng ban Tài chính", desc: "Quản lý ngân quỹ, hội phí, thu chi và quyết toán tài chính" },
+  { value: "truong_ban_thien_nguyen", label: "Trưởng ban Thiện nguyện", desc: "Quản trị các chiến dịch từ thiện, an sinh xã hội & quỹ cộng đồng" },
   { value: "member", label: "Thành viên", desc: "Hội viên chính thức tiêu chuẩn" },
 ];
 
 export function normalizeRole(r?: string): string {
   if (!r) return "member";
   const s = r.toLowerCase().trim();
+  if (s.includes("chủ tịch") || s === "chu_tich" || s === "president") return "chu_tich";
   if (
     s === "quan_tri" ||
     s === "platform_admin" ||
@@ -54,26 +62,32 @@ export function normalizeRole(r?: string): string {
     s === "quản trị"
   )
     return "quan_tri";
-  if (s === "admin" || s === "adm" || s.includes("chủ tịch") || s === "bqt") return "admin";
-  if (s.includes("tổng thư ký") || s.includes("tong_thu_ky") || s === "ttk" || s.includes("thu_ky"))
+  if (s === "admin" || s === "adm") return "admin";
+  if (s.includes("tổng thư ký") || s.includes("tong_thu_ky") || s === "ttk")
     return "tong_thu_ky";
-  if (
-    s.startsWith("trưởng ban") ||
-    s.startsWith("truong_ban") ||
-    s.startsWith("phó ban") ||
-    s.startsWith("pho_ban") ||
-    s === "truong_ban"
-  )
-    return "truong_ban";
+  if (s.includes("ban điều hành") || s.includes("ban quản trị") || s === "truong_ban_quan_tri" || s === "ban_dieu_hanh")
+    return "truong_ban_quan_tri";
+  if (s.includes("truyền thông") || s.includes("btt") || s === "truong_ban_truyen_thong")
+    return "truong_ban_truyen_thong";
+  if (s.includes("thành viên") || s.includes("btv") || s === "truong_ban_thanh_vien")
+    return "truong_ban_thanh_vien";
+  if (s.includes("xúc tiến") || s.includes("bxt") || s.includes("thương mại") || s === "truong_ban_xuc_tien")
+    return "truong_ban_xuc_tien";
+  if (s.includes("tài chính") || s.includes("btc") || s === "truong_ban_tai_chinh")
+    return "truong_ban_tai_chinh";
+  if (s.includes("thiện nguyện") || s.includes("btn") || s === "truong_ban_thien_nguyen")
+    return "truong_ban_thien_nguyen";
+  if (s.includes("thư ký"))
+    return "tong_thu_ky";
   return "member";
 }
 
 export const DEPARTMENT_OPTIONS = [
+  "Ban Quản trị",
   "Ban Thành viên",
   "Ban xúc tiến",
   "Ban thiện nguyện",
   "Ban truyền thông",
-  "Ban quản trị",
   "Ban tài chính",
   "Hội viên ceo1983",
 ];
@@ -85,8 +99,8 @@ export function normalizeDept(d?: string): string {
   if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b")) return "Ban xúc tiến";
   if (s.includes("thiện nguyện") || s.includes("an sinh") || s.includes("tấm lòng vàng")) return "Ban thiện nguyện";
   if (s.includes("truyền thông") || s.includes("sự kiện") || s.includes("báo chí")) return "Ban truyền thông";
-  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("bqt")) return "Ban quản trị";
-  if (s.includes("tài chính") || s.includes("ngân sách") || s.includes("thu chi") || s.includes("thư ký")) return "Ban tài chính";
+  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("bqt") || s.includes("thư ký")) return "Ban Quản trị";
+  if (s.includes("tài chính") || s.includes("ngân sách") || s.includes("thu chi")) return "Ban tài chính";
   return "Hội viên ceo1983";
 }
 
@@ -439,7 +453,7 @@ function PermissionsPage() {
               subtitle="Cấu hình chi tiết ma trận quyền hạn thao tác (Xem, Thêm, Sửa, Xóa, Duyệt, Xuất file) cho 8 phân hệ CRM x 5 vai trò cốt lõi (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên)"
             />
 
-            {/* Banner đồng bộ Database RESTful API thời gian thực */}
+            {/* Banner đồng bộ hệ thống tự động thời gian thực */}
             <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-[#003B95] text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -447,10 +461,10 @@ function PermissionsPage() {
                 </div>
                 <div>
                   <p className="font-bold text-foreground">
-                    Đồng Bộ 2 Chiều Chuẩn Xác &amp; Lưu RESTful API Vào Database
+                    Đồng Bộ Hai Chiều Tức Thì &amp; Tự Động Lưu Trữ
                   </p>
                   <p className="text-muted-foreground text-[11px] mt-0.5">
-                    Chỉnh sửa xong quyền bấm nút "Lưu Toàn Bộ" để gửi RESTful API cập nhật CSDL. Các nút hành động (Thêm, Sửa, Xóa, Duyệt) trong toàn bộ CRM sẽ tự động ẩn đi đối với vai trò không có quyền.
+                    Hệ thống tự động phát hiện và áp dụng thay đổi ngay khi chỉnh sửa. Các nút hành động (Thêm, Sửa, Xóa, Duyệt) trong toàn bộ CRM sẽ tự động hiển thị hoặc ẩn đi chính xác theo thẩm quyền.
                   </p>
                 </div>
               </div>
@@ -458,7 +472,7 @@ function PermissionsPage() {
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  RESTful Database Sync
+                  Đồng Bộ Trực Tuyến
                 </span>
               </div>
             </div>
@@ -489,7 +503,7 @@ function PermissionsPage() {
                   Phân Hệ 2: Phân Quyền Tài Khoản Theo Từng Ban
                 </p>
                 <p className="text-muted-foreground text-[11px] mt-0.5 leading-relaxed">
-                  Danh sách tài khoản hội viên được phân theo từng <strong>Ban Chuyên Môn</strong>. Quyền hạn thao tác thực tế (Thêm, Sửa, Xóa, Duyệt) được <strong>tự động thừa hưởng từ Ban</strong> và có thể tùy chỉnh ghi đè riêng cho từng tài khoản khi cần cấp thêm hoặc thu hồi đặc quyền cụ thể.
+                  Danh sách tài khoản hội viên được phân theo từng <strong>Ban Chuyên Môn</strong>. Quyền hạn thao tác thực tế (Thêm, Sửa, Xóa, Duyệt) được <strong>tự động thừa hưởng từ Ban</strong> và có thể tùy chỉnh ghi đè riêng cho từng tài khoản khi cần bật thêm hoặc thu hồi đặc quyền cụ thể.
                 </p>
               </div>
               <div className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-600/10 text-emerald-700 dark:text-emerald-300">
@@ -514,12 +528,12 @@ function PermissionsPage() {
           </div>
         )}
 
-        {/* PHÂN HỆ 3: THẨM QUYỀN BAN & CẤP BẬC */}
+        {/* PHÂN HỆ 3: THẨM QUYỀN BAN & PHÂN ĐỊNH NGHIỆP VỤ */}
         {activeTab === "role_groups" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <PageHeader
-              title="Thẩm Quyền 6 Ban Chuyên Môn & Cấp Bậc Nghiệp Vụ"
-              subtitle="Quản lý lãnh đạo phụ trách, phạm vi thẩm quyền và phân cấp trách nhiệm của 6 Ban chuyên môn hiệp hội"
+              title="Thẩm Quyền 6 Ban Chuyên Môn & Phân Định Nghiệp Vụ"
+              subtitle="Quản lý lãnh đạo phụ trách, phạm vi thẩm quyền và phân định trách nhiệm của 6 Ban chuyên môn hiệp hội"
             />
 
             {/* 4 KPIs Dashboard */}
@@ -559,8 +573,8 @@ function PermissionsPage() {
                   <SlidersHorizontal className="h-6 w-6" />
                 </div>
                 <div>
-                  <div className="text-[11px] font-semibold text-muted-foreground">Phương Thức Lưu</div>
-                  <div className="text-xl font-black text-foreground">RESTful API</div>
+                  <div className="text-[11px] font-semibold text-muted-foreground">Cơ Chế Đồng Bộ</div>
+                  <div className="text-xl font-black text-foreground">Thời Gian Thực</div>
                 </div>
               </div>
             </div>

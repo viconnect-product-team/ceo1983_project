@@ -104,7 +104,7 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10 shrink-0">
-          <span className="text-[13.5px] font-extrabold text-[#2E3192] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-[13.5px] font-extrabold text-[#003B95] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
             <Handshake className="h-4 w-4" />
             Đăng cơ hội hợp tác mới
           </span>

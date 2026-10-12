@@ -4,6 +4,7 @@ import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { sendExternalNotification } from "@/lib/notification-permissions";
 import { CeoWebRtcCallModal } from "@/components/common/CeoWebRtcCallModal";
+import { fetchNestApi } from "@/lib/api-client";
 
 export interface IncomingCallData {
   callId: string;
@@ -20,6 +21,11 @@ export function GlobalIncomingCallModal() {
   const [activeCallData, setActiveCallData] = useState<IncomingCallData | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const ringIntervalRef = useRef<any>(null);
+
+  const incomingCallRef = useRef<IncomingCallData | null>(null);
+  incomingCallRef.current = incomingCall;
+  const activeCallRef = useRef<IncomingCallData | null>(null);
+  activeCallRef.current = activeCallData;
 
   const startRingtone = () => {
     try {
@@ -81,6 +87,11 @@ export function GlobalIncomingCallModal() {
       if (!viewerUserId || data.callerUserId === viewerUserId) {
         return;
       }
+      // Prevent duplicate call modal if already ringing or connected to this call
+      if (incomingCallRef.current?.callId === data.callId || activeCallRef.current?.callId === data.callId) {
+        return;
+      }
+
       setIncomingCall(data);
       startRingtone();
       // External background notification like Messenger / Zalo
@@ -94,18 +105,74 @@ export function GlobalIncomingCallModal() {
       });
     };
 
-    const handleCallEnded = () => {
+    const handleCallEnded = (data?: any) => {
       stopRingtone();
-      setIncomingCall(null);
+      // Dismiss incoming ringing call if matching or global
+      if (!data?.callId || incomingCallRef.current?.callId === data.callId || !incomingCallRef.current) {
+        setIncomingCall(null);
+      }
+      // Dismiss active call if matching or global
+      if (!data?.callId || activeCallRef.current?.callId === data.callId) {
+        setActiveCallData(null);
+      }
+      // Cancel external mobile notification
+      if (typeof window !== "undefined" && (window as any).AndroidNative?.cancelNotification) {
+        try {
+          (window as any).AndroidNative.cancelNotification(data?.callId ? `call-${data.callId}` : "");
+        } catch {}
+      }
+    };
+
+    const checkActiveCall = async () => {
+      if (!viewerUserId) return;
+      try {
+        // 1. Socket check
+        if (socket.connected) {
+          socket.emit("call:check_active", { userId: viewerUserId });
+        }
+        // 2. HTTP check
+        const res = await fetchNestApi<any>("/me/active-call").catch(() => null);
+        if (res?.ok && res?.call && res.call.status === "ringing") {
+          handleIncomingCall({
+            callId: res.call.callId,
+            callerUserId: res.call.callerUserId,
+            callerName: res.call.callerName,
+            callerAvatar: res.call.callerAvatar,
+            callerTitle: res.call.callerTitle,
+            callType: res.call.callType,
+          });
+        } else if (res?.ok && !res?.call && incomingCallRef.current) {
+          // If server reports no active call, dismiss local ringing
+          handleCallEnded();
+        }
+      } catch {
+        /* ignore network check error */
+      }
     };
 
     socket.on("call:incoming", handleIncomingCall);
     socket.on("call:ended", handleCallEnded);
+    socket.on("call:declined", handleCallEnded);
+    socket.on("connect", checkActiveCall);
+
+    // Run active call check immediately on mount
+    void checkActiveCall();
+
+    // Check again whenever the user unlocks phone or switches back to this tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void checkActiveCall();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       stopRingtone();
       socket.off("call:incoming", handleIncomingCall);
       socket.off("call:ended", handleCallEnded);
+      socket.off("call:declined", handleCallEnded);
+      socket.off("connect", checkActiveCall);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [viewerUserId]);
 
@@ -116,8 +183,18 @@ export function GlobalIncomingCallModal() {
       socket.emit("call:decline", {
         callId: incomingCall.callId,
         callerUserId: incomingCall.callerUserId,
+        calleeUserId: viewerUserId,
         reason: "declined",
       });
+      fetchNestApi("/me/end-call", {
+        method: "POST",
+        body: JSON.stringify({ callId: incomingCall.callId, targetUserId: incomingCall.callerUserId }),
+      }).catch(() => {});
+      if (typeof window !== "undefined" && (window as any).AndroidNative?.cancelNotification) {
+        try {
+          (window as any).AndroidNative.cancelNotification(`call-${incomingCall.callId}`);
+        } catch {}
+      }
     }
     setIncomingCall(null);
   };

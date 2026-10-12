@@ -5,7 +5,7 @@ import { useT, useLang, type TKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import authBg from "@/assets/connect-auth-bg.jpg";
 
-const NAVY = "#0A0A0B";
+const NAVY = "#003B95";
 const emblem83 = "/ceo1983-emblem-8.png";
 
 import { PullToRefresh } from "@/components/member/PullToRefresh";
@@ -63,70 +63,22 @@ export function MemberScreen({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("native:hardware_back", handleNativeHardwareBack);
   }, [pathname, navigate]);
 
-  // 2. Quản lý History Stack & Double-tap back to exit trên Web / PWA
+  // 2. Lắng nghe phím Back cho PWA Standalone / Capacitor native
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let lastBackPressTime = 0;
-
-    // Giữ một history state cho app để bắt sự kiện popstate
-    const pushAppState = () => {
-      try {
-        window.history.pushState({ vbaApp: true, path: pathname }, "", window.location.href);
-      } catch {
-        /* ignore */
-      }
-    };
-
-    // Đẩy state ban đầu nếu chưa có
-    if (!window.history.state?.vbaApp) {
-      pushAppState();
-    }
-
-    const handlePopState = (e: PopStateEvent) => {
-      // A. Nếu có Dialog / Modal / Sheet đang mở: Bấm Back sẽ đóng modal trước
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       const openDialog = document.querySelector(
         '[role="dialog"], [data-modal-container], .modal-standard, [data-state="open"]',
       );
       if (openDialog) {
         window.dispatchEvent(new CustomEvent("vba:close_top_modal"));
-        pushAppState();
-        return;
-      }
-
-      // B. Nếu đang ở các tab con: Bấm Back quay về Trang chủ /association
-      if (pathname !== "/association" && pathname.startsWith("/association")) {
-        navigate({ to: "/association" });
-        pushAppState();
-        return;
-      }
-
-      // C. Nếu đang ở Trang chủ /association và không có modal nào mở
-      if (pathname === "/association") {
-        const now = Date.now();
-        if (now - lastBackPressTime < 2000) {
-          // Lần chạm thứ 2 trong 2 giây: Cho phép thoát
-          toast.info("Đang thoát ứng dụng...");
-        } else {
-          // Lần chạm thứ 1: Giữ người dùng lại và hiện thông báo
-          lastBackPressTime = now;
-          pushAppState();
-          try {
-            if (navigator.vibrate) navigator.vibrate(15);
-          } catch {
-            /* ignore */
-          }
-          toast("Chạm lần nữa để thoát ứng dụng", {
-            duration: 2000,
-            icon: "👋",
-          });
-        }
       }
     };
 
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [pathname, navigate]);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   useEffect(() => {
     const socket = getConnectAppSocket();
@@ -402,7 +354,7 @@ export function MemberHeader({
 
   return (
     <header
-      className="sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--vba-border-soft)]/60 bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-xl transition-all shadow-2xs select-none"
+      className="sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-amber-500/25 bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-xl transition-all shadow-xs select-none"
       style={{
         paddingTop:
           "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 16px) + 4px))",
@@ -415,7 +367,7 @@ export function MemberHeader({
           <button
             onClick={handleBack}
             aria-label={t("m.shell.back")}
-            className="grid h-9 w-9 place-items-center rounded-full text-[var(--vba-gold)] transition hover:bg-card/5 active:scale-90 cursor-pointer"
+            className="grid h-9 w-9 place-items-center rounded-full text-amber-500 hover:text-amber-400 transition hover:bg-card/5 active:scale-90 cursor-pointer"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -638,11 +590,7 @@ function MemberTabBar() {
   return (
     <nav className="vba-bottom-bar fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none transition-all duration-200 select-none">
       <div
-        className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),18px)] pt-2 backdrop-blur-xl transition-all ${
-          isMidAutumn
-            ? "border-amber-400/40 shadow-[0_-6px_24px_rgba(245,158,11,0.22)]"
-            : "border-slate-200/80 dark:border-[var(--vba-border-soft)] shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
-        }`}
+        className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),18px)] pt-2 backdrop-blur-xl transition-all border-amber-500/30 shadow-[0_-4px_24px_rgba(245,158,11,0.12)]`}
       >
         {/* Festive Mid-Autumn Corner Dangling Lantern */}
         {isMidAutumn && (
@@ -696,27 +644,19 @@ function MemberTabBar() {
                   aria-label={t(tab.label)}
                   className="-mt-7 relative flex flex-col items-center group active:scale-95 transition-transform"
                 >
-                  {/* Mid-Autumn Full Moon Aura Halo */}
-                  {isMidAutumn && (
-                    <span className="absolute inset-0 -top-1 rounded-full bg-amber-400/30 blur-md animate-pulse pointer-events-none" />
-                  )}
+                  {/* Gold Halo Aura */}
+                  <span className="absolute inset-0 -top-1 rounded-full bg-amber-400/25 blur-md animate-pulse pointer-events-none" />
                   <span
-                    className="relative grid h-14 w-14 place-items-center rounded-2xl shadow-[0_8px_24px_-6px_rgba(0,59,149,0.7)] group-hover:scale-105 group-active:scale-92 transition-transform overflow-hidden p-2.5"
+                    className="relative grid h-14 w-14 place-items-center rounded-2xl shadow-[0_8px_24px_-4px_rgba(245,158,11,0.5)] group-hover:scale-105 group-active:scale-92 transition-transform overflow-hidden p-2.5"
                     style={{
-                      background: "linear-gradient(135deg, #002B70 0%, #003B95 50%, #0052CC 100%)",
-                      border: "2.5px solid #FFFFFF",
+                      background: "linear-gradient(135deg, #002B70 0%, #003B95 50%, #004BBB 100%)",
+                      border: "2.5px solid #F59E0B",
                       boxShadow:
-                        "0 6px 16px rgba(0, 59, 149, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.3)",
+                        "0 6px 20px rgba(245, 158, 11, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.35)",
                     }}
                   >
                     <QrCode
-                      className="h-7 w-7"
-                      style={{
-                        color: "#FFFFFF",
-                        stroke: "#FFFFFF",
-                        strokeWidth: 2.2,
-                        filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))",
-                      }}
+                      className="h-7 w-7 text-white stroke-[2.2] filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
                     />
                     {isMidAutumn && (
                       <span
@@ -802,14 +742,14 @@ function MemberTabBar() {
               <div className="relative">
                 <Icon
                   className={`h-5 w-5 transition-transform duration-150 ${active ? "scale-110" : ""}`}
-                  style={{ color: active ? "#003B95" : "var(--vba-text-dim)" }}
+                  style={{ color: active ? "#D97706" : "var(--vba-text-dim)" }}
                 />
                 {notificationBadge || seasonalBadge}
               </div>
               <span
                 className={`text-[10px] transition-colors select-none ${
                   active
-                    ? "font-bold text-[#003B95] dark:text-amber-400"
+                    ? "font-extrabold text-amber-600 dark:text-amber-400 drop-shadow-xs"
                     : "font-medium text-[var(--vba-text-dim)]"
                 }`}
               >
@@ -817,9 +757,9 @@ function MemberTabBar() {
                   ? tabLabels[tab.to]?.en || t(tab.label)
                   : tabLabels[tab.to]?.vi || t(tab.label)}
               </span>
-              {/* Dot indicator nhỏ màu vàng kim sang trọng khi tab active (chuẩn MoMo) */}
+              {/* Dot indicator màu vàng hoàng kim sáng lấp lánh khi tab active */}
               {active && (
-                <span className="h-1 w-1 rounded-full bg-amber-500 dark:bg-amber-400 shadow-xs shadow-amber-500/80 -mt-0.5 animate-in fade-in zoom-in duration-200" />
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400 shadow-sm shadow-amber-500/80 -mt-0.5 animate-in fade-in zoom-in duration-200" />
               )}
             </Link>
           );

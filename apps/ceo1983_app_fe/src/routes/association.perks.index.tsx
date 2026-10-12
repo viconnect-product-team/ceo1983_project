@@ -286,8 +286,7 @@ function PerksScreen() {
             <button
               type="button"
               onClick={() => setGiftModalOpen(false)}
-              style={{ backgroundColor: "#2E3192", color: "#ffffff" }}
-              className="mt-5 w-full rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-3 text-xs font-bold text-white shadow-lg shadow-[#2E3192]/25 active:scale-98 transition cursor-pointer"
+              className="mt-5 w-full rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 py-3 text-xs font-bold text-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.25)] active:scale-98 transition cursor-pointer"
             >
               Lưu Vào Ví Ưu Đãi Của Tôi
             </button>
@@ -343,7 +342,7 @@ function PerksScreen() {
             <button
               type="button"
               onClick={() => setActivePrize(null)}
-              className="mt-5 w-full rounded-xl bg-gradient-to-r from-[#003B95] to-[#2E3192] py-3 text-xs font-bold text-white shadow-lg active:scale-98 transition cursor-pointer"
+              className="mt-5 w-full rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 py-3 text-xs font-bold text-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.25)] active:scale-98 transition cursor-pointer"
             >
               Xác Nhận & Đóng
             </button>

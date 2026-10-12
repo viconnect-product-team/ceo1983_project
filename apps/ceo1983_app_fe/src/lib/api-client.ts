@@ -363,44 +363,57 @@ async function handleResponse(response: Response, endpoint = "") {
       // ignore
     }
 
-    const toastMsg =
-      errDetail && errDetail.includes("không còn quyền")
+    const alertMsg =
+      errDetail && errDetail.length > 0
         ? errDetail
-        : "Tài khoản của bạn đã bị thay đổi quyền không còn quyền sử dụng chức năng này, không còn quyền thao tác này.";
+        : "Quyền hạn của bạn đã bị thay đổi bởi Quản trị viên. Hệ thống sẽ tải lại để áp dụng đúng quyền mới.";
 
     if (typeof window !== "undefined") {
-      import("sonner").then(({ toast }) => {
-        toast.error(toastMsg, { duration: 6000 });
-      });
-
-      localStorage.removeItem("vibe_token");
-      localStorage.removeItem("vibe_refresh_token");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("token");
-      document.cookie = `sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      document.cookie = `sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-
-      const pathname = window.location.pathname;
-      const isAssociation = pathname.startsWith("/association") || pathname.startsWith("/m");
-      const target = isAssociation ? "/association/login" : "/auth";
-
-      setTimeout(() => {
-        window.location.href = `${target}?reason=permission_revoked`;
-      }, 1200);
+      // Hiển thị Popup Modal thông báo chính giữa màn hình và chuẩn bị reload trang
+      window.dispatchEvent(
+        new CustomEvent("vba:permission_revoked", {
+          detail: { message: alertMsg },
+        })
+      );
     }
-    throw new Error(toastMsg);
+    throw new Error(alertMsg);
   }
   if (!response.ok) {
     let errDetail = response.statusText;
+    let errorPayload: any = null;
     try {
       const errText = await response.text();
       if (errText) {
         const errJson = JSON.parse(errText);
-        errDetail = errJson?.message || errDetail;
+        errorPayload = errJson;
+        if (Array.isArray(errJson?.message)) {
+          errDetail = errJson.message.join("; ");
+        } else if (errJson?.errors && typeof errJson.errors === "object") {
+          errDetail = Object.values(errJson.errors).join("; ");
+        } else if (errJson?.message) {
+          errDetail = errJson.message;
+        }
       }
     } catch {
       // ignore
     }
+
+    // Khi gặp lỗi Validate API (400 Bad Request hoặc 422 Unprocessable Entity)
+    if (response.status === 400 || response.status === 422) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("vba:api_validation_error", {
+            detail: {
+              status: response.status,
+              message: errDetail || "Dữ liệu nhập vào chưa đúng hoặc chưa đầy đủ. Vui lòng kiểm tra lại!",
+              errors: errorPayload?.errors,
+              endpoint,
+            },
+          })
+        );
+      }
+    }
+
     throw new Error(errDetail || `API request failed: ${response.status}`);
   }
   const text = await response.text();

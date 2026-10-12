@@ -125,7 +125,16 @@ export function isTokenValid(token: string): boolean {
 
 function tokenToUser(decoded: Record<string, any>): AppUser {
   const email = decoded.email || decoded.username || '';
-  const role = decoded.role || decoded.user_role || decoded.user_metadata?.role || (email.toLowerCase().includes('admin') ? 'admin' : '');
+  const role = decoded.role || decoded.user_role || decoded.user_metadata?.role || (email.toLowerCase().includes('admin') ? 'admin' : 'member');
+  const department = decoded.department || '';
+  const roles = decoded.roles || [role];
+  const executiveRole = decoded.executive_role || decoded.executiveRole || '';
+  const isPresident = Boolean(decoded.isPresident || role === 'chu_tich' || role === 'president');
+  const isAdmin = Boolean(decoded.isAdmin || isPresident || role === 'admin' || role === 'quan_tri');
+  const isExecutive = Boolean(decoded.isExecutive || role === 'ban_dieu_hanh' || role === 'bqt');
+  const isGeneralSecretary = Boolean(decoded.isGeneralSecretary || role === 'tong_thu_ky');
+  const isDepartmentLeader = Boolean(decoded.isDepartmentLeader || role.startsWith('truong_ban_'));
+
   return {
     id: decoded.sub || decoded.id || '',
     email,
@@ -133,15 +142,26 @@ function tokenToUser(decoded: Record<string, any>): AppUser {
     name: decoded.name || decoded.full_name || '',
     avatar_url: decoded.avatar_url || '',
     role,
-    department: decoded.department || '',
+    roles,
+    department,
     boardName: decoded.boardName || '',
     title: decoded.title || '',
     phone: decoded.phone || '',
-    isBoardOfDirectors: decoded.isBoardOfDirectors || Boolean(decoded.boardName) || false,
+    executiveRole,
+    executive_role: executiveRole,
+    memberCode: decoded.memberCode || null,
+    memberId: decoded.memberId || null,
+    isPresident,
+    isAdmin,
+    isExecutive,
+    isGeneralSecretary,
+    isDepartmentLeader,
+    isBoardOfDirectors: isPresident || isExecutive || decoded.isBoardOfDirectors || Boolean(decoded.boardName) || false,
     user_metadata: {
       full_name: decoded.name || decoded.full_name || '',
       avatar_url: decoded.avatar_url || '',
       role,
+      department,
       ...(decoded.user_metadata || {}),
     },
   };
@@ -203,7 +223,25 @@ async function apiRefresh(refreshToken: string): Promise<AppSession | null> {
 function mapApiUser(apiUser: any, accessToken: string): AppUser {
   const decoded = decodeJwt(accessToken) || {};
   const email = apiUser?.email || apiUser?.username || decoded.email || decoded.username || '';
-  const role = apiUser?.role || decoded.role || decoded.user_role || (email.toLowerCase().includes('admin') ? 'admin' : '');
+  const role = apiUser?.role || decoded.role || decoded.user_role || (email.toLowerCase().includes('admin') ? 'admin' : 'member');
+  const department = apiUser?.department || decoded.department || '';
+  const roles = apiUser?.roles || decoded.roles || [role];
+  const executiveRole = apiUser?.executive_role || apiUser?.executiveRole || decoded.executive_role || decoded.executiveRole || '';
+  const isPresident = Boolean(apiUser?.isPresident || decoded.isPresident || role === 'chu_tich' || role === 'president');
+  const isAdmin = Boolean(apiUser?.isAdmin || decoded.isAdmin || isPresident || role === 'admin' || role === 'quan_tri');
+  const isExecutive = Boolean(apiUser?.isExecutive || decoded.isExecutive || role === 'ban_dieu_hanh' || role === 'bqt');
+  const isGeneralSecretary = Boolean(apiUser?.isGeneralSecretary || decoded.isGeneralSecretary || role === 'tong_thu_ky');
+  const isDepartmentLeader = Boolean(apiUser?.isDepartmentLeader || decoded.isDepartmentLeader || role.startsWith('truong_ban_'));
+
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('vba_current_role', role);
+      localStorage.setItem('vba_user_role', role);
+      if (department) localStorage.setItem('vba_user_department', department);
+      if (isAdmin) localStorage.setItem('vba_is_admin', 'true');
+      if (isPresident) localStorage.setItem('vba_is_president', 'true');
+    } catch {}
+  }
 
   return {
     id: apiUser?.id || decoded.sub || '',
@@ -212,15 +250,26 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
     name: apiUser?.name || decoded.name || '',
     avatar_url: apiUser?.avatar_url || decoded.avatar_url || '',
     role,
-    department: apiUser?.department || decoded.department || '',
+    roles,
+    executiveRole,
+    executive_role: executiveRole,
+    department,
     boardName: apiUser?.boardName || decoded.boardName || '',
     title: apiUser?.title || decoded.title || '',
     phone: apiUser?.phone || decoded.phone || '',
-    isBoardOfDirectors: apiUser?.isBoardOfDirectors || decoded.isBoardOfDirectors || Boolean(apiUser?.boardName || decoded.boardName) || false,
+    memberCode: apiUser?.memberCode || decoded.memberCode || null,
+    memberId: apiUser?.memberId || decoded.memberId || null,
+    isPresident,
+    isAdmin,
+    isExecutive,
+    isGeneralSecretary,
+    isDepartmentLeader,
+    isBoardOfDirectors: isPresident || isExecutive || apiUser?.isBoardOfDirectors || decoded.isBoardOfDirectors || Boolean(apiUser?.boardName || decoded.boardName) || false,
     user_metadata: {
       full_name: apiUser?.name || decoded.name || '',
       avatar_url: apiUser?.avatar_url || decoded.avatar_url || '',
       role,
+      department,
       ...(apiUser?.user_metadata || decoded.user_metadata || {}),
     },
   };

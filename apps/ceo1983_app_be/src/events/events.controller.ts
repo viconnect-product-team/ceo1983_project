@@ -39,7 +39,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'truong_ban', 'member')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_truyen_thong', 'truong_ban_thanh_vien', 'truong_ban_xuc_tien', 'truong_ban_tai_chinh', 'truong_ban_thien_nguyen', 'member')
   @Get('registrations')
   async listRegistrations(
     @Request() req: any,
@@ -50,7 +50,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'truong_ban', 'member')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_truyen_thong', 'truong_ban_thanh_vien', 'truong_ban_xuc_tien', 'truong_ban_tai_chinh', 'truong_ban_thien_nguyen', 'member')
   @Get('with-registrations')
   async listEventsWithRegistrations(
     @Request() req: any,

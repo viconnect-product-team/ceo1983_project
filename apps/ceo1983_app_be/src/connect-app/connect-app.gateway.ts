@@ -9,6 +9,20 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+export interface ActiveCallRecord {
+  callId: string;
+  callerUserId: string;
+  callerName: string;
+  callerAvatar?: string | null;
+  callerTitle?: string | null;
+  recipientUserId: string;
+  callType: 'audio' | 'video';
+  status: 'ringing' | 'accepted' | 'declined' | 'ended';
+  createdAt: number;
+  expiresAt: number;
+}
 
 @Injectable()
 @WebSocketGateway({
@@ -24,6 +38,34 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
 
   private readonly logger = new Logger(ConnectAppGateway.name);
   private readonly onlineUserSockets = new Map<string, Set<string>>();
+  private readonly activeCalls = new Map<string, ActiveCallRecord>();
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  cleanExpiredCalls() {
+    const now = Date.now();
+    for (const [id, call] of this.activeCalls.entries()) {
+      if (call.expiresAt <= now || call.status !== 'ringing') {
+        this.activeCalls.delete(id);
+      }
+    }
+  }
+
+  getActiveCallForUser(userId: string): ActiveCallRecord | null {
+    if (!userId) return null;
+    this.cleanExpiredCalls();
+    const cleanId = String(userId).toLowerCase();
+    for (const call of this.activeCalls.values()) {
+      if (
+        (call.recipientUserId === userId || call.recipientUserId.toLowerCase() === cleanId) &&
+        call.status === 'ringing' &&
+        call.expiresAt > Date.now()
+      ) {
+        return call;
+      }
+    }
+    return null;
+  }
 
   handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
@@ -53,27 +95,43 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage('join:room')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() room: string,
+    @MessageBody() payload: string | { room?: string; name?: string },
   ) {
-    if (room && typeof room === 'string') {
-      client.join(room);
-      this.logger.log(`Client ${client.id} joined room ${room}`);
+    const rawRoom = typeof payload === 'string' ? payload : (payload?.room || payload?.name || '');
+    const room = String(rawRoom).trim();
+    if (!room) return { ok: false };
 
-      if (room.startsWith('user:')) {
-        const userId = room.replace('user:', '');
-        if (userId) {
-          if (!this.onlineUserSockets.has(userId)) {
-            this.onlineUserSockets.set(userId, new Set());
-          }
-          this.onlineUserSockets.get(userId)!.add(client.id);
-          if (this.server) {
-            this.server.emit('presence:user_online', { userId });
-          }
+    client.join(room);
+    this.logger.log(`Client ${client.id} joined room ${room}`);
+
+    if (room.startsWith('user:')) {
+      const userId = room.replace('user:', '');
+      if (userId) {
+        if (!this.onlineUserSockets.has(userId)) {
+          this.onlineUserSockets.set(userId, new Set());
+        }
+        this.onlineUserSockets.get(userId)!.add(client.id);
+        if (this.server) {
+          this.server.emit('presence:user_online', { userId });
+        }
+
+        // Check if there is a pending active ringing call for this user upon connection/reconnection
+        const activeCall = this.getActiveCallForUser(userId);
+        if (activeCall && activeCall.status === 'ringing') {
+          this.logger.log(`Dispatching pending active call ${activeCall.callId} to reconnected user ${userId}`);
+          client.emit('call:incoming', {
+            callId: activeCall.callId,
+            callerUserId: activeCall.callerUserId,
+            callerName: activeCall.callerName,
+            callerAvatar: activeCall.callerAvatar,
+            callerTitle: activeCall.callerTitle,
+            callType: activeCall.callType,
+            timestamp: new Date(activeCall.createdAt).toISOString(),
+          });
         }
       }
-      return { ok: true, room };
     }
-    return { ok: false };
+    return { ok: true, room };
   }
 
   @SubscribeMessage('leave:room')
@@ -296,6 +354,32 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
 
   // ── Real-time Audio & Video Call Signaling ────────────────────
 
+  @SubscribeMessage('call:check_active')
+  handleCheckActiveCall(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { userId?: string } | string,
+  ) {
+    const rawUid = typeof payload === 'string' ? payload : payload?.userId;
+    const userId = String(rawUid || '').trim();
+    if (!userId) return { ok: false, call: null };
+
+    const activeCall = this.getActiveCallForUser(userId);
+    if (activeCall && activeCall.status === 'ringing') {
+      this.logger.log(`Active call found for user ${userId}: ${activeCall.callId}`);
+      client.emit('call:incoming', {
+        callId: activeCall.callId,
+        callerUserId: activeCall.callerUserId,
+        callerName: activeCall.callerName,
+        callerAvatar: activeCall.callerAvatar,
+        callerTitle: activeCall.callerTitle,
+        callType: activeCall.callType,
+        timestamp: new Date(activeCall.createdAt).toISOString(),
+      });
+      return { ok: true, call: activeCall };
+    }
+    return { ok: true, call: null };
+  }
+
   @SubscribeMessage('call:initiate')
   handleCallInitiate(
     @ConnectedSocket() client: Socket,
@@ -318,8 +402,22 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     }
     this.logger.log(`Call initiated [${payload.callType}] by ${payload.callerName} (${callerId}) -> user:${payload.recipientUserId}`);
 
-    // Broadcast to recipient room but explicitly exclude the caller's socket
-    client.to(`user:${payload.recipientUserId}`).emit('call:incoming', {
+    this.cleanExpiredCalls();
+    const activeCall: ActiveCallRecord = {
+      callId: payload.callId,
+      callerUserId: callerId,
+      callerName: payload.callerName,
+      callerAvatar: payload.callerAvatar || null,
+      callerTitle: payload.callerTitle || null,
+      recipientUserId: payload.recipientUserId,
+      callType: payload.callType || 'video',
+      status: 'ringing',
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 45000,
+    };
+    this.activeCalls.set(payload.callId, activeCall);
+
+    const callData = {
       callId: payload.callId,
       callerUserId: callerId,
       callerName: payload.callerName,
@@ -327,9 +425,63 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
       callerTitle: payload.callerTitle || null,
       callType: payload.callType || 'video',
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Broadcast to recipient room (target UUID and lowercase variant)
+    client.to(`user:${payload.recipientUserId}`).emit('call:incoming', callData);
+    const recKey = String(payload.recipientUserId).toLowerCase();
+    if (recKey !== payload.recipientUserId) {
+      client.to(`user:${recKey}`).emit('call:incoming', callData);
+    }
+
+    // Persist urgent notification for lock screen, heads-up banner and push notification
+    void this.persistCallNotification(payload, callerId);
 
     return { ok: true, callId: payload.callId };
+  }
+
+  private async persistCallNotification(payload: any, callerId: string) {
+    try {
+      const recipientId = payload.recipientUserId;
+      const title = `Cuộc gọi đến từ ${payload.callerName || 'Hội viên CEO 1983'}`;
+      const body = payload.callType === 'video' ? '📹 Cuộc gọi Video trực tiếp' : '📞 Cuộc gọi thoại trực tiếp';
+      const safeData = JSON.stringify({
+        callId: payload.callId,
+        callerUserId: callerId,
+        callerName: payload.callerName,
+        callerAvatar: payload.callerAvatar,
+        callerTitle: payload.callerTitle,
+        callType: payload.callType,
+        type: 'call',
+      });
+
+      // 1. Business notifications table (queryable by mobile and CRM)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId);
+      if (isUuid) {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, dedupe_key,
+            event_kind, notification_kind, title_key, body_key, safe_display_data,
+            priority, status, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1::uuid, 'call', $2, $3,
+            'incoming_call', 'call', $4, $5, $6::jsonb,
+            'high', 'delivered', 'all', 'all', NOW(), NOW()
+          )
+        `, recipientId, payload.callId, `call_${payload.callId}`, title, body, safeData).catch(() => {});
+      }
+
+      // 2. Member notifications table
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1::text, $2, $3, false, false, 'call', $4, NOW()
+        )
+      `, String(recipientId), title, body, payload.callId).catch(() => {});
+    } catch (err: any) {
+      this.logger.warn(`Failed to persist call notification: ${err?.message}`);
+    }
   }
 
   @SubscribeMessage('call:accept')
@@ -347,13 +499,25 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     if (!payload?.callerUserId || !this.server) return { ok: false };
     this.logger.log(`Call accepted: ${payload.callId} by ${payload.calleeUserId}`);
 
-    this.server.to(`user:${payload.callerUserId}`).emit('call:accepted', {
+    const active = this.activeCalls.get(payload.callId);
+    if (active) {
+      active.status = 'accepted';
+    }
+
+    const callerRoom = `user:${payload.callerUserId}`;
+    const callerRoomLower = `user:${String(payload.callerUserId).toLowerCase()}`;
+    const acceptPayload = {
       callId: payload.callId,
       calleeUserId: payload.calleeUserId,
       calleeName: payload.calleeName,
       calleeAvatar: payload.calleeAvatar,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    this.server.to(callerRoom).emit('call:accepted', acceptPayload);
+    if (callerRoomLower !== callerRoom) {
+      this.server.to(callerRoomLower).emit('call:accepted', acceptPayload);
+    }
 
     return { ok: true };
   }
@@ -364,18 +528,66 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     @MessageBody()
     payload: {
       callId: string;
-      callerUserId: string;
+      callerUserId?: string;
+      calleeUserId?: string;
       reason?: string;
     },
   ) {
-    if (!payload?.callerUserId || !this.server) return { ok: false };
-    this.logger.log(`Call declined: ${payload.callId} -> user:${payload.callerUserId}`);
+    if (!this.server) return { ok: false };
+    const callId = payload?.callId;
+    const activeCall = callId ? this.activeCalls.get(callId) : null;
+    this.logger.log(`Call declined: ${callId} -> caller:${payload?.callerUserId}`);
 
-    this.server.to(`user:${payload.callerUserId}`).emit('call:declined', {
-      callId: payload.callId,
-      reason: payload.reason || 'busy',
+    if (callId) {
+      this.activeCalls.delete(callId);
+    }
+
+    const participants = new Set<string>();
+    if (payload?.callerUserId) {
+      participants.add(String(payload.callerUserId));
+      participants.add(String(payload.callerUserId).toLowerCase());
+    }
+    if (payload?.calleeUserId) {
+      participants.add(String(payload.calleeUserId));
+      participants.add(String(payload.calleeUserId).toLowerCase());
+    }
+    if (activeCall) {
+      if (activeCall.callerUserId) {
+        participants.add(String(activeCall.callerUserId));
+        participants.add(String(activeCall.callerUserId).toLowerCase());
+      }
+      if (activeCall.recipientUserId) {
+        participants.add(String(activeCall.recipientUserId));
+        participants.add(String(activeCall.recipientUserId).toLowerCase());
+      }
+    }
+
+    const declinePayload = {
+      callId: callId || '',
+      reason: payload?.reason || 'busy',
       timestamp: new Date().toISOString(),
-    });
+    };
+    const endPayload = {
+      callId: callId || '',
+      timestamp: new Date().toISOString(),
+    };
+
+    for (const u of participants) {
+      this.server.to(`user:${u}`).emit('call:declined', declinePayload);
+      this.server.to(`user:${u}`).emit('call:ended', endPayload);
+    }
+    client.broadcast.emit('call:ended', endPayload);
+
+    if (callId) {
+      this.prisma.$executeRawUnsafe(
+        `UPDATE public.business_notifications SET status = 'dismissed', updated_at = NOW() WHERE source_domain = 'call' AND source_record_id = $1`,
+        callId
+      ).catch(() => {});
+      this.prisma.$executeRawUnsafe(
+        `UPDATE public.member_notifications SET dismissed = true, read = true WHERE ref_type = 'call' AND ref_id = $1`,
+        callId
+      ).catch(() => {});
+    }
 
     return { ok: true };
   }
@@ -385,19 +597,117 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     @ConnectedSocket() client: Socket,
     @MessageBody()
     payload: {
-      callId: string;
-      targetUserId: string;
+      callId?: string;
+      targetUserId?: string;
+      callerUserId?: string;
       duration?: number;
     },
   ) {
-    if (!payload?.targetUserId || !this.server) return { ok: false };
-    this.logger.log(`Call ended: ${payload.callId} -> user:${payload.targetUserId}`);
+    if (!this.server) return { ok: false };
+    const callId = payload?.callId;
+    const activeCall = callId ? this.activeCalls.get(callId) : null;
+    this.logger.log(`Call ended: ${callId || 'unknown'} -> target:${payload?.targetUserId}`);
 
-    this.server.to(`user:${payload.targetUserId}`).emit('call:ended', {
-      callId: payload.callId,
-      duration: payload.duration || 0,
+    if (callId) {
+      this.activeCalls.delete(callId);
+    }
+
+    const participants = new Set<string>();
+    if (payload?.targetUserId) {
+      participants.add(String(payload.targetUserId));
+      participants.add(String(payload.targetUserId).toLowerCase());
+    }
+    if (payload?.callerUserId) {
+      participants.add(String(payload.callerUserId));
+      participants.add(String(payload.callerUserId).toLowerCase());
+    }
+    if (activeCall) {
+      if (activeCall.callerUserId) {
+        participants.add(String(activeCall.callerUserId));
+        participants.add(String(activeCall.callerUserId).toLowerCase());
+      }
+      if (activeCall.recipientUserId) {
+        participants.add(String(activeCall.recipientUserId));
+        participants.add(String(activeCall.recipientUserId).toLowerCase());
+      }
+    }
+
+    const endPayload = {
+      callId: callId || '',
+      duration: payload?.duration || 0,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    for (const u of participants) {
+      this.server.to(`user:${u}`).emit('call:ended', endPayload);
+    }
+    client.broadcast.emit('call:ended', endPayload);
+
+    if (callId) {
+      this.prisma.$executeRawUnsafe(
+        `UPDATE public.business_notifications SET status = 'dismissed', updated_at = NOW() WHERE source_domain = 'call' AND source_record_id = $1`,
+        callId
+      ).catch(() => {});
+      this.prisma.$executeRawUnsafe(
+        `UPDATE public.member_notifications SET dismissed = true, read = true WHERE ref_type = 'call' AND ref_id = $1`,
+        callId
+      ).catch(() => {});
+    }
+
+    return { ok: true };
+  }
+
+  endCallForUser(userId: string, callId?: string, targetUserId?: string) {
+    if (!this.server) return { ok: false };
+    let foundCallId = callId;
+    if (!foundCallId) {
+      const active = this.getActiveCallForUser(userId);
+      if (active) foundCallId = active.callId;
+    }
+
+    const activeCall = foundCallId ? this.activeCalls.get(foundCallId) : null;
+    if (foundCallId) {
+      this.activeCalls.delete(foundCallId);
+    }
+
+    const participants = new Set<string>();
+    participants.add(userId);
+    participants.add(userId.toLowerCase());
+    if (targetUserId) {
+      participants.add(targetUserId);
+      participants.add(targetUserId.toLowerCase());
+    }
+    if (activeCall) {
+      if (activeCall.callerUserId) {
+        participants.add(activeCall.callerUserId);
+        participants.add(activeCall.callerUserId.toLowerCase());
+      }
+      if (activeCall.recipientUserId) {
+        participants.add(activeCall.recipientUserId);
+        participants.add(activeCall.recipientUserId.toLowerCase());
+      }
+    }
+
+    const endPayload = {
+      callId: foundCallId || '',
+      duration: 0,
+      timestamp: new Date().toISOString(),
+    };
+
+    for (const u of participants) {
+      this.server.to(`user:${u}`).emit('call:ended', endPayload);
+    }
+
+    if (foundCallId) {
+      this.prisma.$executeRawUnsafe(
+        `UPDATE public.business_notifications SET status = 'dismissed', updated_at = NOW() WHERE source_domain = 'call' AND source_record_id = $1`,
+        foundCallId
+      ).catch(() => {});
+      this.prisma.$executeRawUnsafe(
+        `UPDATE public.member_notifications SET dismissed = true, read = true WHERE ref_type = 'call' AND ref_id = $1`,
+        foundCallId
+      ).catch(() => {});
+    }
 
     return { ok: true };
   }

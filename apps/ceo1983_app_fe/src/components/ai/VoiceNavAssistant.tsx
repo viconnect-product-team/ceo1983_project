@@ -414,22 +414,43 @@ export function VoiceNavAssistant() {
 
   // Strict submission lock: prevents parallel or double calls
   const isSubmittingRef = useRef<boolean>(false);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   const navigate = useNavigate();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
-  // Dừng phát âm thanh ngay lập tức (Single Channel Guard)
+  // Dừng phát âm thanh ngay lập tức (Single Channel Guard: Android Native TTS, Web SpeechSynthesis & HTML5 Audio)
   const stopSpeaking = useCallback(() => {
     if (isMountedRef.current) {
       setIsSpeaking(false);
     }
+    // 1. Android Native TTS (khi chạy APK)
+    if (typeof window !== "undefined") {
+      try {
+        const nativeBridge = (window as any).AndroidNative || (window as any).CEO1983Native;
+        nativeBridge?.stopSpeaking?.();
+      } catch {
+        /* ignore */
+      }
+    }
+    // 2. Web SpeechSynthesis (trình duyệt)
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
       } catch {
         /* ignore */
       }
+    }
+    // 3. HTML5 Audio element fallback
+    if (audioPlayerRef.current) {
+      try {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
+      audioPlayerRef.current = null;
     }
   }, []);
 
@@ -577,10 +598,40 @@ export function VoiceNavAssistant() {
     }
   }, []);
 
-  // Đọc câu nói bằng giọng nói tiếng Việt tự nhiên chuẩn người thật (DUY NHẤT 1 LẦN, KHÔNG DÙNG GOOGLE TTS GÂY LẶP 2 LẦN)
+  // Phát âm thanh tiếng Việt dự phòng qua Google TTS HTML5 Audio (Khi SpeechSynthesis không có voice vi-VN)
+  const playGoogleTtsFallback = useCallback((text: string, onEnd?: () => void) => {
+    try {
+      const shortSnippet = text.length > 150 ? text.substring(0, 147) + "..." : text;
+      const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(shortSnippet)}`;
+      const audio = new Audio(audioUrl);
+      audioPlayerRef.current = audio;
+
+      audio.onended = () => {
+        audioPlayerRef.current = null;
+        if (isMountedRef.current) setIsSpeaking(false);
+        if (onEnd) onEnd();
+      };
+      audio.onerror = () => {
+        audioPlayerRef.current = null;
+        if (isMountedRef.current) setIsSpeaking(false);
+        if (onEnd) onEnd();
+      };
+
+      void audio.play().catch(() => {
+        audioPlayerRef.current = null;
+        if (isMountedRef.current) setIsSpeaking(false);
+        if (onEnd) onEnd();
+      });
+    } catch {
+      if (isMountedRef.current) setIsSpeaking(false);
+      if (onEnd) onEnd();
+    }
+  }, []);
+
+  // Đọc câu nói bằng giọng nói tiếng Việt tự nhiên chuẩn người thật (Đa tầng: Android Native TTS -> Web SpeechSynthesis -> HTML5 Audio)
   const speakText = useCallback(
     (text: string, onEnd?: () => void) => {
-      if (isMuted || typeof window === "undefined" || !("speechSynthesis" in window)) {
+      if (isMuted || typeof window === "undefined") {
         if (onEnd) onEnd();
         return;
       }
@@ -610,41 +661,64 @@ export function VoiceNavAssistant() {
       setLastAssistantSpeech(clean);
       setIsSpeaking(true);
 
-      try {
-        const utterance = new SpeechSynthesisUtterance(clean);
-        utterance.lang = "vi-VN";
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-
-        const voices =
-          voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
-        const viVoice = voices.find(
-          (v) =>
-            v.lang.toLowerCase().includes("vi") ||
-            v.name.toLowerCase().includes("vietnamese") ||
-            v.name.toLowerCase().includes("tiếng việt"),
-        );
-        if (viVoice) utterance.voice = viVoice;
-
-        utterance.onend = () => {
-          if (isMountedRef.current) setIsSpeaking(false);
-          if (onEnd) onEnd();
-        };
-
-        utterance.onerror = () => {
-          if (isMountedRef.current) setIsSpeaking(false);
-          if (onEnd) onEnd();
-        };
-
-        // Gọi duy nhất 1 lần trực tiếp qua native SpeechSynthesis
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.warn("[VoiceNavAssistant] SpeechSynthesis error:", err);
+      const handleSpeechDone = () => {
         if (isMountedRef.current) setIsSpeaking(false);
         if (onEnd) onEnd();
+      };
+
+      // TẦNG 1: Android Native TTS (Khi cài về điện thoại trong file APK)
+      const nativeBridge = (window as any).AndroidNative || (window as any).CEO1983Native;
+      if (nativeBridge?.isTtsAvailable?.() || nativeBridge?.speak) {
+        try {
+          nativeBridge.speak(clean);
+          const estimatedDuration = Math.min(25000, Math.max(3000, clean.length * 70));
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              handleSpeechDone();
+            }
+          }, estimatedDuration);
+          return;
+        } catch (nativeErr) {
+          console.warn("[VoiceNavAssistant] Native TTS failed, falling back:", nativeErr);
+        }
       }
+
+      // TẦNG 2: Web SpeechSynthesis (Khi chạy trên Chrome Web Desktop / Mobile)
+      if ("speechSynthesis" in window) {
+        try {
+          const voices =
+            voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
+          const viVoice = voices.find(
+            (v) =>
+              v.lang.toLowerCase().includes("vi") ||
+              v.name.toLowerCase().includes("vietnamese") ||
+              v.name.toLowerCase().includes("tiếng việt"),
+          );
+
+          if (viVoice || (voices.length > 0 && !nativeBridge)) {
+            const utterance = new SpeechSynthesisUtterance(clean);
+            utterance.lang = "vi-VN";
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            if (viVoice) utterance.voice = viVoice;
+
+            utterance.onend = handleSpeechDone;
+            utterance.onerror = () => {
+              playGoogleTtsFallback(clean, handleSpeechDone);
+            };
+
+            window.speechSynthesis.speak(utterance);
+            return;
+          }
+        } catch (synthErr) {
+          console.warn("[VoiceNavAssistant] SpeechSynthesis failed:", synthErr);
+        }
+      }
+
+      // TẦNG 3: HTML5 Audio Google TTS Fallback (100% phát ra tiếng)
+      playGoogleTtsFallback(clean, handleSpeechDone);
     },
-    [isMuted, stopSpeaking],
+    [isMuted, stopSpeaking, playGoogleTtsFallback],
   );
 
   // Dẫn đường trực tiếp từng bước (Live GPS Tour)
@@ -889,6 +963,16 @@ export function VoiceNavAssistant() {
       animFrameRef.current = null;
     }
 
+    // Dừng Android Native SpeechRecognizer nếu có
+    if (typeof window !== "undefined") {
+      try {
+        const nativeBridge = (window as any).AndroidNative || (window as any).CEO1983Native;
+        nativeBridge?.stopSpeechRecognition?.();
+      } catch {
+        /* ignore */
+      }
+    }
+
     if (recognitionRef.current) {
       // Hủy onend và onresult trước khi ngắt để ngăn browser gọi hàm tiếp lần 2
       recognitionRef.current.onend = null;
@@ -901,7 +985,7 @@ export function VoiceNavAssistant() {
     }
 
     if (mediaRecorderRef.current) {
-      // Hủy onstop để ngăn MediaRecorder tự động gửi audio lên ask-voice lần 2
+      // Hủy onstop để ngăn MediaRecorder tự động gọi handler cũ
       mediaRecorderRef.current.onstop = null;
       mediaRecorderRef.current.ondataavailable = null;
       try {
@@ -931,7 +1015,6 @@ export function VoiceNavAssistant() {
       audioContextRef.current = null;
     }
 
-    audioChunksRef.current = [];
     if (isListeningRef.current) {
       isListeningRef.current = false;
       if (isMountedRef.current) {
@@ -1206,27 +1289,21 @@ export function VoiceNavAssistant() {
               window.location.href = aiData.route;
               setTimeout(() => setActiveActionNotice(null), 2500);
             }
-          } else if (aiData.intent === "navigate" && aiData.route) {
+          } else if (aiData.route && (aiData.intent === "navigate" || aiData.intent === "feature_guide" || aiData.suggestTour || aiData.tourId)) {
             const targetRoute = aiData.route;
             const targetTour = aiData.tourId;
             const targetName = aiData.featureName || "Màn hình";
             setActiveActionNotice(`⚡ Đang chuyển tới ${targetName}...`);
             setTimeout(() => {
               void navigate({ to: targetRoute as any });
-              toast.success(`⚡ Đã mở ${targetName}`);
-              setTimeout(() => setActiveActionNotice(null), 2000);
+              toast.success(`⚡ Đã chuyển sang ${targetName}`);
+              setTimeout(() => setActiveActionNotice(null), 1500);
               if (targetTour) {
-                setTimeout(() => startTourGlobally(targetTour), 400);
+                setTimeout(() => startTourGlobally(targetTour), 300);
               }
-            }, 650);
+            }, 300);
           } else if (aiData.intent === "start_tour" && aiData.tourId) {
             handleStartDirectTour(aiData.tourId, aiData.route, aiData.featureName);
-          } else if (aiData.suggestTour && aiData.tourId) {
-            setPendingTour({
-              tourId: aiData.tourId,
-              route: aiData.route,
-              featureName: aiData.featureName || "Chức năng",
-            });
           } else {
             setPendingTour(null);
           }
@@ -1282,6 +1359,174 @@ export function VoiceNavAssistant() {
     submitPromptRef.current = submitPrompt;
   });
 
+  // ── XỬ LÝ GỬI FILE GHI ÂM LÊN BACKEND KHI KHÔNG CÓ TEXT TỪ WEBSPEECH API ──
+  const processAudioBlob = useCallback(
+    async (audioBlob: Blob) => {
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+      setIsLoadingAi(true);
+      setStatusMessage("Đang phân tích âm thanh giọng nói...");
+
+      try {
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Data = (reader.result as string)?.split(",")?.[1];
+          if (!base64Data) {
+            setIsLoadingAi(false);
+            isSubmittingRef.current = false;
+            return;
+          }
+
+          try {
+            const res = await fetchNestApi<{
+              ok: boolean;
+              data: {
+                userSpeech: string;
+                answer: string;
+                speechText: string;
+                intent?: string;
+                tourId?: string;
+                route?: string;
+                featureName?: string;
+                suggestTour?: boolean;
+              };
+            }>("/ai/ask-voice", {
+              method: "POST",
+              body: JSON.stringify({
+                audioBase64: base64Data,
+                mimeType: audioBlob.type,
+              }),
+            });
+
+            if (res?.data) {
+              const aiData = res.data;
+              const uMsg: ChatMessage = {
+                id: `msg_u_${Date.now()}`,
+                role: "user",
+                text: aiData.userSpeech || "Giọng nói hội viên",
+                createdAt: Date.now(),
+              };
+              const aMsg: ChatMessage = {
+                id: `msg_a_${Date.now() + 1}`,
+                role: "assistant",
+                text: aiData.answer,
+                speechText: aiData.speechText,
+                intent: aiData.intent as any,
+                tourId: aiData.tourId,
+                route: aiData.route,
+                featureName: aiData.featureName,
+                suggestTour: aiData.suggestTour,
+                createdAt: Date.now() + 1,
+              };
+
+              setSessions((prev) => {
+                const updated = prev.map((s) => {
+                  if (s.id === activeSessionId) {
+                    return {
+                      ...s,
+                      updatedAt: Date.now(),
+                      messages: [...s.messages, uMsg, aMsg],
+                    };
+                  }
+                  return s;
+                });
+                if (typeof window !== "undefined") {
+                  try {
+                    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(updated));
+                  } catch {
+                    /* ignore */
+                  }
+                }
+                return updated;
+              });
+
+              setStatusMessage(null);
+              speakText(aiData.speechText);
+            }
+          } catch (voiceErr) {
+            console.warn("[ask-voice] Failed:", voiceErr);
+            toast.error("Không thể xử lý âm thanh. Quý Anh/Chị có thể gõ câu hỏi hoặc thử lại.");
+          } finally {
+            setIsLoadingAi(false);
+            isSubmittingRef.current = false;
+          }
+        };
+      } catch (err) {
+        console.warn("[processAudioBlob] Error:", err);
+        setIsLoadingAi(false);
+        isSubmittingRef.current = false;
+      }
+    },
+    [activeSessionId, speakText],
+  );
+
+  // Lắng nghe sự kiện từ Android Native SpeechRecognizer & TTS (khi chạy trong file APK)
+  useEffect(() => {
+    const handleNativeSpeechResult = (e: any) => {
+      const text = e.detail;
+      if (typeof text === "string" && text.trim()) {
+        const trimmed = text.trim();
+        if (isMountedRef.current) {
+          setTranscript(trimmed);
+        }
+        transcriptRef.current = trimmed;
+        cleanupAudio();
+        void submitPromptRef.current?.(trimmed);
+      }
+    };
+
+    const handleNativeSpeechPartial = (e: any) => {
+      const text = e.detail;
+      if (typeof text === "string" && text.trim() && isMountedRef.current) {
+        setTranscript(text.trim());
+        transcriptRef.current = text.trim();
+      }
+    };
+
+    const handleNativeSpeechRms = (e: any) => {
+      const rms = Number(e.detail) || 0;
+      const normalized = Math.max(10, Math.min(65, 15 + rms * 5));
+      setAudioWaveLevel([
+        normalized * 0.7,
+        normalized * 0.9,
+        normalized,
+        normalized * 0.95,
+        normalized * 0.85,
+        normalized * 0.7,
+        normalized * 0.6,
+      ]);
+    };
+
+    const handleNativeSpeechEnd = () => {
+      if (transcriptRef.current.trim() && isListeningRef.current && !isSubmittingRef.current) {
+        const text = transcriptRef.current.trim();
+        cleanupAudio();
+        void submitPromptRef.current?.(text);
+      }
+    };
+
+    const handleNativeTtsDone = () => {
+      if (isMountedRef.current) setIsSpeaking(false);
+    };
+
+    window.addEventListener("vione:speech_result", handleNativeSpeechResult);
+    window.addEventListener("vione:speech_partial", handleNativeSpeechPartial);
+    window.addEventListener("vione:speech_rms", handleNativeSpeechRms);
+    window.addEventListener("vione:speech_end", handleNativeSpeechEnd);
+    window.addEventListener("vione:tts_done", handleNativeTtsDone);
+    window.addEventListener("vione:tts_error", handleNativeTtsDone);
+
+    return () => {
+      window.removeEventListener("vione:speech_result", handleNativeSpeechResult);
+      window.removeEventListener("vione:speech_partial", handleNativeSpeechPartial);
+      window.removeEventListener("vione:speech_rms", handleNativeSpeechRms);
+      window.removeEventListener("vione:speech_end", handleNativeSpeechEnd);
+      window.removeEventListener("vione:tts_done", handleNativeTtsDone);
+      window.removeEventListener("vione:tts_error", handleNativeTtsDone);
+    };
+  }, [cleanupAudio]);
+
   // Khởi tạo SpeechRecognition native nếu trình duyệt hỗ trợ
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1336,7 +1581,9 @@ export function VoiceNavAssistant() {
 
       recognition.onerror = (event: any) => {
         console.warn("[SpeechRecognition] Error:", event.error);
-        if (event.error === "not-allowed" && isMountedRef.current) {
+        const isNative = Boolean((window as any).AndroidNative || (window as any).CEO1983Native);
+        // Không hiện thông báo lỗi micro trên Android WebView nếu đã có MediaRecorder hoặc NativeBridge xử lý
+        if (event.error === "not-allowed" && !isNative && isMountedRef.current) {
           setStatusMessage("Vui lòng cấp quyền Microphone để ra lệnh giọng nói.");
           toast.error("Trình duyệt chưa được cấp quyền micro.");
         }
@@ -1352,7 +1599,7 @@ export function VoiceNavAssistant() {
     };
   }, [cleanupAudio]);
 
-  // ── KHỞI CHẠY THU ÂM (ĐẢM BẢO TẮT ÂM THANH LOA TRƯỚC ĐỂ TRÁNH ECHO BỊ NÓI LẶP 2 LẦN) ──
+  // ── KHỞI CHẠY THU ÂM (ĐA TẦNG: ANDROID NATIVE -> WEB SPEECH -> MEDIARECORDER) ──
   const startListening = async () => {
     stopSpeaking();
 
@@ -1382,7 +1629,7 @@ export function VoiceNavAssistant() {
       return;
     }
 
-    // Visualizer sóng âm
+    // Visualizer sóng âm thời gian thực + Tự động phát hiện im lặng (Smart VAD)
     if (stream && typeof window !== "undefined") {
       try {
         const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -1394,6 +1641,9 @@ export function VoiceNavAssistant() {
           analyserRef.current = analyser;
           const source = audioCtx.createMediaStreamSource(stream);
           source.connect(analyser);
+
+          let hasSpoken = false;
+          let silenceStart = 0;
 
           const updateWaveform = () => {
             if (!isListeningRef.current) return;
@@ -1410,6 +1660,21 @@ export function VoiceNavAssistant() {
               Math.max(12, Math.min(40, (dataArray[24] || 0) / 3.5)),
             ];
             setAudioWaveLevel(levels);
+
+            // Tự động nhận diện khi người dùng nói xong và im lặng > 1.8s
+            const avgVol = (levels[1] + levels[2] + levels[3]) / 3;
+            if (avgVol > 20) {
+              hasSpoken = true;
+              silenceStart = 0;
+            } else if (hasSpoken && avgVol < 15) {
+              if (!silenceStart) {
+                silenceStart = Date.now();
+              } else if (Date.now() - silenceStart > 1800) {
+                stopListening();
+                return;
+              }
+            }
+
             animFrameRef.current = requestAnimationFrame(updateWaveform);
           };
           animFrameRef.current = requestAnimationFrame(updateWaveform);
@@ -1419,110 +1684,23 @@ export function VoiceNavAssistant() {
       }
     }
 
-    // MediaRecorder dự phòng nếu Web Speech API không khả dụng
-    if (stream && typeof MediaRecorder !== "undefined" && !recognitionRef.current) {
+    // MediaRecorder luôn khởi chạy để lưu trữ audio nhị phân dự phòng
+    if (stream && typeof MediaRecorder !== "undefined") {
       try {
-        const recorder = new MediaRecorder(stream);
+        let mimeType = "";
+        if (typeof MediaRecorder.isTypeSupported === "function") {
+          if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) mimeType = "audio/webm;codecs=opus";
+          else if (MediaRecorder.isTypeSupported("audio/webm")) mimeType = "audio/webm";
+          else if (MediaRecorder.isTypeSupported("audio/mp4")) mimeType = "audio/mp4";
+          else if (MediaRecorder.isTypeSupported("audio/aac")) mimeType = "audio/aac";
+        }
+
+        const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
         recorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             audioChunksRef.current.push(event.data);
           }
         };
-
-        recorder.onstop = async () => {
-          if (
-            !transcriptRef.current.trim() &&
-            audioChunksRef.current.length > 0 &&
-            !isSubmittingRef.current
-          ) {
-            const audioBlob = new Blob(audioChunksRef.current, {
-              type: recorder.mimeType || "audio/webm",
-            });
-            audioChunksRef.current = [];
-
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = async () => {
-              const base64Data = (reader.result as string)?.split(",")?.[1];
-              if (base64Data) {
-                setIsLoadingAi(true);
-                setStatusMessage("Đang phân tích giọng nói...");
-                try {
-                  const res = await fetchNestApi<{
-                    ok: boolean;
-                    data: {
-                      userSpeech: string;
-                      answer: string;
-                      speechText: string;
-                      intent?: string;
-                      tourId?: string;
-                      route?: string;
-                      featureName?: string;
-                      suggestTour?: boolean;
-                    };
-                  }>("/ai/ask-voice", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      audioBase64: base64Data,
-                      mimeType: audioBlob.type,
-                    }),
-                  });
-
-                  if (res?.data) {
-                    const aiData = res.data;
-                    const uMsg: ChatMessage = {
-                      id: `msg_u_${Date.now()}`,
-                      role: "user",
-                      text: aiData.userSpeech || "Giọng nói hội viên",
-                      createdAt: Date.now(),
-                    };
-                    const aMsg: ChatMessage = {
-                      id: `msg_a_${Date.now() + 1}`,
-                      role: "assistant",
-                      text: aiData.answer,
-                      speechText: aiData.speechText,
-                      intent: aiData.intent,
-                      tourId: aiData.tourId,
-                      route: aiData.route,
-                      featureName: aiData.featureName,
-                      suggestTour: aiData.suggestTour,
-                      createdAt: Date.now() + 1,
-                    };
-
-                    setSessions((prev) => {
-                      const updated = prev.map((s) => {
-                        if (s.id === activeSessionId) {
-                          return {
-                            ...s,
-                            updatedAt: Date.now(),
-                            messages: [...s.messages, uMsg, aMsg],
-                          };
-                        }
-                        return s;
-                      });
-                      if (typeof window !== "undefined") {
-                        try {
-                          localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(updated));
-                        } catch {
-                          /* ignore */
-                        }
-                      }
-                      return updated;
-                    });
-
-                    setStatusMessage(null);
-                    speakText(aiData.speechText);
-                  }
-                } catch (voiceErr) {
-                  console.warn("[ask-voice] Failed:", voiceErr);
-                } finally {
-                  setIsLoadingAi(false);
-                }
-              }
-            };
-          }
-        };
-
         recorder.start(250);
         mediaRecorderRef.current = recorder;
       } catch (recErr) {
@@ -1530,7 +1708,19 @@ export function VoiceNavAssistant() {
       }
     }
 
-    // Khởi động Web Speech API
+    // 1. Android Native SpeechRecognizer (file APK)
+    const nativeBridge = (window as any).AndroidNative || (window as any).CEO1983Native;
+    if (nativeBridge?.isSpeechRecognitionAvailable?.() && nativeBridge?.startSpeechRecognition) {
+      try {
+        nativeBridge.startSpeechRecognition();
+        setStatusMessage("Đang lắng nghe... Hãy nói câu hỏi!");
+        return;
+      } catch (nativeSpeechErr) {
+        console.warn("[AndroidNative] startSpeechRecognition failed:", nativeSpeechErr);
+      }
+    }
+
+    // 2. Web Speech API (trình duyệt Web Chrome)
     if (recognitionRef.current) {
       try {
         recognitionRef.current.abort();
@@ -1546,15 +1736,34 @@ export function VoiceNavAssistant() {
       }
     }
 
-    setStatusMessage("Đang thu âm giọng nói... Bấm dừng khi xong!");
+    setStatusMessage("Đang thu âm giọng nói... Bấm mic khi xong!");
   };
 
   const stopListening = () => {
+    // 1. Dừng Native SpeechRecognizer nếu đang chạy
+    try {
+      const nativeBridge = (window as any).AndroidNative || (window as any).CEO1983Native;
+      nativeBridge?.stopSpeechRecognition?.();
+    } catch {
+      /* ignore */
+    }
+
     const textToSend = transcriptRef.current.trim();
+    const recordedChunks = [...audioChunksRef.current];
+    const mimeType = mediaRecorderRef.current?.mimeType || "audio/webm";
+
     cleanupAudio();
 
+    // TRƯỜNG HỢP 1: Đã nhận diện được văn bản
     if (textToSend && !isSubmittingRef.current) {
       void submitPrompt(textToSend);
+      return;
+    }
+
+    // TRƯỜNG HỢP 2: Không có văn bản nhưng có audio nhị phân
+    if (recordedChunks.length > 0 && !isSubmittingRef.current) {
+      const audioBlob = new Blob(recordedChunks, { type: mimeType });
+      void processAudioBlob(audioBlob);
     }
   };
 
@@ -1947,6 +2156,30 @@ export function VoiceNavAssistant() {
                             </div>
                             <div className="flex-1 bg-white dark:bg-[#131D2D] text-[#192638] dark:text-slate-200 border border-[#E5EDF8] dark:border-slate-800 rounded-2xl rounded-tl-sm px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs">
                               <FormattedAiText text={msg.text} />
+
+                              {/* Nút hành động đến ngay màn hình thao tác */}
+                              {msg.route && (
+                                <div className="mt-2.5 p-2 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between gap-2 shadow-2xs">
+                                  <div className="flex items-center gap-1.5 text-[#003B95] dark:text-blue-300 font-bold text-xs">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse shrink-0" />
+                                    <span className="truncate">{msg.featureName || "Mở tính năng"}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      void navigate({ to: msg.route as any });
+                                      toast.success(`⚡ Đã chuyển sang ${msg.featureName || "màn hình"}`);
+                                      if (msg.tourId) {
+                                        setTimeout(() => startTourGlobally(msg.tourId!), 300);
+                                      }
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-[11px] transition flex items-center gap-1 cursor-pointer shrink-0 shadow-xs active:scale-95"
+                                  >
+                                    <span>⚡ Đến ngay</span>
+                                    <ChevronRight className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
 
                               {/* Gợi ý tour chỉ dẫn GPS nếu có */}
                               {msg.tourId && (

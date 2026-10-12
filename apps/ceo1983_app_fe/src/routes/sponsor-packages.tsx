@@ -469,7 +469,7 @@ function PackagesPage() {
                 <ClickUpBadgeIcon name="Trophy" variant="yellow" size={16} containerClassName="p-1.5 rounded-lg" />
               </div>
               <div className="text-2xl font-black text-foreground">{filteredPrizes.length} Hạng Mục</div>
-              <p className="text-[11px] text-muted-foreground">Lưu trữ trên PostgreSQL table public.event_prizes</p>
+              <p className="text-[11px] text-muted-foreground">Cơ cấu giải thưởng sự kiện chính thức</p>
             </Card>
 
             <Card className="p-5 space-y-2">

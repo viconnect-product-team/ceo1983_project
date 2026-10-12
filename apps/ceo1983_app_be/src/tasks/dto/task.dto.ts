@@ -92,6 +92,14 @@ export interface TaskItem {
   status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'OVERDUE';
   priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   startDate: string;
+  category?: string;
+  budget?: {
+    estimated?: number;
+    actual?: number;
+    currency?: string;
+  };
+  acceptanceCriteria?: string[];
+  customFields?: Array<{ key: string; label: string; value: string }>;
   dueDate: string;
   progress: number;
   description: string;
@@ -107,6 +115,17 @@ export interface TaskItem {
   updatedAt: string;
 }
 
+export const TASK_DEPARTMENTS = [
+  'Ban Điều Hành',
+  'Ban Thư ký',
+  'Ban Sự kiện',
+  'Ban Truyền thông',
+  'Ban Xúc tiến',
+  'Ban Thành viên',
+  'Ban Tài chính',
+  'Ban Thiện nguyện',
+] as const;
+
 export class TaskFilterDto {
   department?: string;
   status?: string;
@@ -117,6 +136,7 @@ export class TaskFilterDto {
 export class CreateTaskDto {
   title!: string;
   department?: string;
+  category?: string;
   description?: string;
   startDate?: string;
   dueDate?: string;
@@ -127,6 +147,13 @@ export class CreateTaskDto {
   supervisor?: any;
   collaborators?: any[];
   deliverables?: string;
+  budget?: {
+    estimated?: number;
+    actual?: number;
+    currency?: string;
+  };
+  acceptanceCriteria?: string[];
+  customFields?: Array<{ key: string; label: string; value: string }>;
   subtasks?: TaskSubtask[];
   meeting?: TaskMeeting;
   attachments?: TaskAttachment[];
@@ -135,6 +162,7 @@ export class CreateTaskDto {
 export class UpdateTaskDto {
   title?: string;
   department?: string;
+  category?: string;
   description?: string;
   startDate?: string;
   dueDate?: string;
@@ -145,6 +173,13 @@ export class UpdateTaskDto {
   supervisor?: any;
   collaborators?: any[];
   deliverables?: string;
+  budget?: {
+    estimated?: number;
+    actual?: number;
+    currency?: string;
+  };
+  acceptanceCriteria?: string[];
+  customFields?: Array<{ key: string; label: string; value: string }>;
   subtasks?: TaskSubtask[];
   meeting?: TaskMeeting;
   attachments?: TaskAttachment[];

@@ -32,6 +32,11 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.BridgeWebViewClient;
@@ -60,6 +65,12 @@ public class MainActivity extends BridgeActivity {
     private IntentFilter[] mNfcIntentFilters;
     private String[][] mNfcTechLists;
 
+    // AI Voice & TTS Native Engine
+    private TextToSpeech mTextToSpeech;
+    private SpeechRecognizer mSpeechRecognizer;
+    private boolean mIsTtsReady = false;
+    private boolean mIsListeningSpeech = false;
+
     private static final String CHANNEL_CALLS_ID = "ceo1983_channel_calls";
     private static final String CHANNEL_MESSAGES_ID = "ceo1983_channel_messages";
     private static final String CHANNEL_MEETINGS_ID = "ceo1983_channel_meetings";
@@ -72,6 +83,8 @@ public class MainActivity extends BridgeActivity {
         createNotificationChannels();
         requestNativePermissions();
         setupNativeBridge();
+        initTts();
+        initSpeechRecognizer();
         initNfc();
         handleNfcIntent(getIntent());
         handleTargetUrlIntent(getIntent());
@@ -359,6 +372,261 @@ public class MainActivity extends BridgeActivity {
             }
             return true;
         }
+
+        @JavascriptInterface
+        public void registerPushUser(String userId, String token) {
+            MainActivity.this.runOnUiThread(() -> {
+                try {
+                    CeoNotificationSyncService.startSync(MainActivity.this, userId, token);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void cancelNotification(String tag) {
+            MainActivity.this.runOnUiThread(() -> {
+                try {
+                    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (manager != null && tag != null) {
+                        int notifId = Math.abs(tag.hashCode());
+                        manager.cancel(tag, notifId);
+                    }
+                } catch (Exception ignored) {}
+            });
+        }
+
+        // ── NATIVE AI ASSISTANT: TTS (TEXT-TO-SPEECH) ──
+        @JavascriptInterface
+        public boolean isTtsAvailable() {
+            return mIsTtsReady && mTextToSpeech != null;
+        }
+
+        @JavascriptInterface
+        public void speak(String text) {
+            MainActivity.this.speakNative(text);
+        }
+
+        @JavascriptInterface
+        public void stopSpeaking() {
+            MainActivity.this.stopSpeakingNative();
+        }
+
+        // ── NATIVE AI ASSISTANT: SPEECH RECOGNIZER ──
+        @JavascriptInterface
+        public boolean isSpeechRecognitionAvailable() {
+            return SpeechRecognizer.isRecognitionAvailable(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void startSpeechRecognition() {
+            MainActivity.this.startNativeSpeechRecognizer();
+        }
+
+        @JavascriptInterface
+        public void stopSpeechRecognition() {
+            MainActivity.this.stopNativeSpeechRecognizer();
+        }
+    }
+
+    private void initTts() {
+        try {
+            mTextToSpeech = new TextToSpeech(this, status -> {
+                if (status == TextToSpeech.SUCCESS) {
+                    mIsTtsReady = true;
+                    int result = mTextToSpeech.setLanguage(new Locale("vi", "VN"));
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        mTextToSpeech.setLanguage(Locale.getDefault());
+                    }
+                    mTextToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                        @Override
+                        public void onStart(String utteranceId) {
+                            dispatchTtsEvent("start", utteranceId);
+                        }
+                        @Override
+                        public void onDone(String utteranceId) {
+                            dispatchTtsEvent("done", utteranceId);
+                        }
+                        @Override
+                        public void onError(String utteranceId) {
+                            dispatchTtsEvent("error", utteranceId);
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void speakNative(String text) {
+        runOnUiThread(() -> {
+            try {
+                if (mTextToSpeech != null && text != null && !text.trim().isEmpty()) {
+                    mTextToSpeech.stop();
+                    mTextToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "CEO1983_AI_TTS_" + System.currentTimeMillis());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void stopSpeakingNative() {
+        runOnUiThread(() -> {
+            try {
+                if (mTextToSpeech != null) {
+                    mTextToSpeech.stop();
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void dispatchTtsEvent(String eventType, String utteranceId) {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        runOnUiThread(() -> {
+            try {
+                WebView webView = getBridge().getWebView();
+                String script = "(function() {" +
+                    "  try {" +
+                    "    window.dispatchEvent(new CustomEvent('vione:tts_" + eventType + "', { detail: '" + utteranceId + "' }));" +
+                    "  } catch(e) {}" +
+                    "})();";
+                webView.evaluateJavascript(script, null);
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void initSpeechRecognizer() {
+        runOnUiThread(() -> {
+            try {
+                if (SpeechRecognizer.isRecognitionAvailable(this)) {
+                    if (mSpeechRecognizer != null) {
+                        try { mSpeechRecognizer.destroy(); } catch (Exception ignored) {}
+                    }
+                    mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+                    mSpeechRecognizer.setRecognitionListener(new RecognitionListener() {
+                        @Override
+                        public void onReadyForSpeech(Bundle params) {
+                            dispatchSpeechEvent("ready", "");
+                        }
+                        @Override
+                        public void onBeginningOfSpeech() {
+                            dispatchSpeechEvent("start", "");
+                        }
+                        @Override
+                        public void onRmsChanged(float rmsdB) {
+                            dispatchSpeechRms(rmsdB);
+                        }
+                        @Override
+                        public void onBufferReceived(byte[] buffer) {}
+                        @Override
+                        public void onEndOfSpeech() {
+                            dispatchSpeechEvent("end", "");
+                        }
+                        @Override
+                        public void onError(int error) {
+                            mIsListeningSpeech = false;
+                            dispatchSpeechEvent("error", "ERR_" + error);
+                        }
+                        @Override
+                        public void onResults(Bundle results) {
+                            mIsListeningSpeech = false;
+                            ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                            if (matches != null && !matches.isEmpty()) {
+                                dispatchSpeechEvent("result", matches.get(0));
+                            } else {
+                                dispatchSpeechEvent("end", "");
+                            }
+                        }
+                        @Override
+                        public void onPartialResults(Bundle partialResults) {
+                            ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                            if (matches != null && !matches.isEmpty()) {
+                                dispatchSpeechEvent("partial", matches.get(0));
+                            }
+                        }
+                        @Override
+                        public void onEvent(int eventType, Bundle params) {}
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void startNativeSpeechRecognizer() {
+        runOnUiThread(() -> {
+            try {
+                if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                    dispatchSpeechEvent("error", "RECOGNITION_UNAVAILABLE");
+                    return;
+                }
+                if (mSpeechRecognizer == null) {
+                    initSpeechRecognizer();
+                }
+
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN");
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "vi-VN");
+                intent.putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "vi-VN");
+                intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+                intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+
+                mSpeechRecognizer.startListening(intent);
+                mIsListeningSpeech = true;
+                dispatchSpeechEvent("listening", "true");
+            } catch (Exception e) {
+                mIsListeningSpeech = false;
+                dispatchSpeechEvent("error", e.getMessage() != null ? e.getMessage() : "START_FAILED");
+            }
+        });
+    }
+
+    private void stopNativeSpeechRecognizer() {
+        runOnUiThread(() -> {
+            try {
+                if (mSpeechRecognizer != null && mIsListeningSpeech) {
+                    mSpeechRecognizer.stopListening();
+                    mIsListeningSpeech = false;
+                    dispatchSpeechEvent("end", "");
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void dispatchSpeechEvent(String eventType, String detail) {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        runOnUiThread(() -> {
+            try {
+                WebView webView = getBridge().getWebView();
+                String safe = (detail != null ? detail : "").replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", "");
+                String script = "(function() {" +
+                    "  try {" +
+                    "    window.dispatchEvent(new CustomEvent('vione:speech_" + eventType + "', { detail: '" + safe + "' }));" +
+                    "  } catch(e) {}" +
+                    "})();";
+                webView.evaluateJavascript(script, null);
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void dispatchSpeechRms(float rmsdB) {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        runOnUiThread(() -> {
+            try {
+                WebView webView = getBridge().getWebView();
+                String script = "(function() {" +
+                    "  try {" +
+                    "    window.dispatchEvent(new CustomEvent('vione:speech_rms', { detail: " + rmsdB + " }));" +
+                    "  } catch(e) {}" +
+                    "})();";
+                webView.evaluateJavascript(script, null);
+            } catch (Exception ignored) {}
+        });
     }
 
     private void createNotificationChannels() {
@@ -815,5 +1083,21 @@ public class MainActivity extends BridgeActivity {
         }
 
         super.onBackPressed();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mTextToSpeech != null) {
+            try {
+                mTextToSpeech.stop();
+                mTextToSpeech.shutdown();
+            } catch (Exception ignored) {}
+        }
+        if (mSpeechRecognizer != null) {
+            try {
+                mSpeechRecognizer.destroy();
+            } catch (Exception ignored) {}
+        }
+        super.onDestroy();
     }
 }

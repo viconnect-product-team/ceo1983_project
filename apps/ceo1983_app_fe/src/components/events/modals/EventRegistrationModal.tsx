@@ -89,7 +89,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
       <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto p-4 rounded-2xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)]">
         <DialogHeader>
           <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
+            <Ticket className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
             <span>Đăng ký tham dự sự kiện</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-500">
@@ -101,7 +101,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
           {/* Họ tên */}
           <div>
             <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-              <User className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+              <User className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
               Họ và tên người tham dự <span className="text-rose-500">*</span>
             </label>
             <input
@@ -118,7 +118,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                <Phone className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+                <Phone className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
                 Số điện thoại <span className="text-rose-500">*</span>
               </label>
               <input
@@ -132,7 +132,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
             </div>
             <div>
               <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                <Mail className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+                <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
                 Email nhận vé
               </label>
               <input
@@ -149,7 +149,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
           <div className="grid grid-cols-2 gap-2.5">
             <div>
               <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                <Building2 className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+                <Building2 className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
                 Tên Doanh nghiệp
               </label>
               <input
@@ -162,7 +162,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
             </div>
             <div>
               <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                <Briefcase className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+                <Briefcase className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
                 Chức vụ
               </label>
               <input
@@ -180,7 +180,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                  <Ticket className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+                  <Ticket className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
                   Số lượng vé
                 </label>
                 <span className="text-[10px] text-slate-400">Nhập số cụ thể</span>
@@ -226,7 +226,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
                     onClick={() => setFormTicketCount(num)}
                     className={`flex-1 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
                       formTicketCount === num
-                        ? "bg-[#2E3192] text-white"
+                        ? "bg-[#003B95] text-white border border-amber-400/40"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
                     }`}
                   >
@@ -237,7 +237,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
             </div>
             <div>
               <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-                <Sparkles className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+                <Sparkles className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
                 Hạng vé
               </label>
               <select
@@ -254,7 +254,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
           {/* Ghi chú / Xuất hóa đơn */}
           <div>
             <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
-              <FileText className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400" />
+              <FileText className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
               Ghi chú / Yêu cầu xuất hóa đơn VAT
             </label>
             <textarea
@@ -285,7 +285,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
               </span>
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex items-start gap-1">
-              <Info className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <Info className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
                 {isFree ? (
                   "Sự kiện này hoàn toàn miễn phí. Vé tham dự sẽ được xác nhận ngay khi bạn bấm Đăng ký."
@@ -312,8 +312,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
             <button
               type="submit"
               disabled={submittingReg}
-              style={{ color: "#ffffff" }}
-              className="px-5 py-2 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold shadow-md transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 text-white font-bold shadow-md shadow-[#003B95]/25 transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
             >
               {submittingReg ? (
                 <span>Đang xử lý...</span>

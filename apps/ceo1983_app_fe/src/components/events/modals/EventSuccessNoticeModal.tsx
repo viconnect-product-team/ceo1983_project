@@ -80,7 +80,7 @@ export const EventSuccessNoticeModal: React.FC<EventSuccessNoticeModalProps> = (
           </div>
         ) : (
           <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2 text-left">
-            <MessageSquare className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400 mt-0.5" />
+            <MessageSquare className="h-4 w-4 shrink-0 text-[#003B95] dark:text-amber-400 mt-0.5" />
             <span>
               Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Kết nối</b> và thông tin xác nhận qua
               email của bạn.
@@ -106,8 +106,7 @@ export const EventSuccessNoticeModal: React.FC<EventSuccessNoticeModalProps> = (
           <button
             type="button"
             onClick={() => onViewPass(registeredSuccessInfo)}
-            style={{ color: "#ffffff" }}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 text-white font-bold text-xs shadow-md shadow-[#003B95]/25 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Ticket className="h-3.5 w-3.5 text-amber-400" />
             <span>Xem Thẻ Vé Điện Tử VIP & Phóng To QR</span>

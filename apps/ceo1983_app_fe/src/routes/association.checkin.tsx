@@ -839,9 +839,9 @@ function CheckinScreen() {
 
         <div className="p-4 sm:p-6 max-w-lg mx-auto space-y-4">
           {/* Official Event Ticket Pass Card */}
-          <div id="tour-checkin-ticket" className="overflow-hidden rounded-3xl border-2 border-[#003B95] bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl">
+          <div id="tour-checkin-ticket" className="overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-[0_8px_30px_rgba(245,158,11,0.2)]">
             {/* Header ribbon */}
-            <div className="bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#2E3192] px-4 py-3 text-center text-xs font-black text-amber-300 tracking-wider uppercase flex items-center justify-center gap-2 border-b border-amber-400/40">
+            <div className="bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] px-4 py-3 text-center text-xs font-black text-amber-300 tracking-wider uppercase flex items-center justify-center gap-2 border-b border-amber-400/40">
               <Sparkles className="h-4 w-4 text-amber-400" />
               <span>THẺ VÉ ĐIỆN TỬ • ĐẠI BIỂU HỘI VIÊN CHÍNH THỨC</span>
             </div>
@@ -994,7 +994,7 @@ function CheckinScreen() {
       <MemberHeader title="Soát Vé Sự Kiện (Ban Truyền Thông)" back />
 
       {/* Media Department Active Badge */}
-      <div id="tour-checkin-media-badge" className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#2E3192] p-3 text-white shadow-md border border-amber-400/40 flex items-center justify-between gap-2">
+      <div id="tour-checkin-media-badge" className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] p-3 text-white shadow-md border border-amber-400/40 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500 text-slate-950 shrink-0 font-black">
             <ShieldCheck className="h-5 w-5" />
@@ -1029,7 +1029,7 @@ function CheckinScreen() {
             onClick={() => setCheckinMethod("scan")}
             className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
               checkinMethod === "scan"
-                ? "bg-[#2E3192] text-white shadow-sm"
+                ? "bg-[#003B95] text-white shadow-sm border border-amber-400/40"
                 : "text-slate-600 dark:text-slate-400 hover:text-foreground"
             }`}
           >
@@ -1044,7 +1044,7 @@ function CheckinScreen() {
             }}
             className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
               checkinMethod === "ticket"
-                ? "bg-[#2E3192] text-white shadow-sm"
+                ? "bg-[#003B95] text-white shadow-sm border border-amber-400/40"
                 : "text-slate-600 dark:text-slate-400 hover:text-foreground"
             }`}
           >
@@ -1182,7 +1182,7 @@ function CheckinScreen() {
                 className="absolute inset-0 opacity-20 pointer-events-none"
                 style={{
                   backgroundImage:
-                    "linear-gradient(#2E3192 1px,transparent 1px),linear-gradient(90deg,#2E3192 1px,transparent 1px)",
+                    "linear-gradient(#003B95 1px,transparent 1px),linear-gradient(90deg,#003B95 1px,transparent 1px)",
                   backgroundSize: "26px 26px",
                 }}
               />
@@ -1219,8 +1219,7 @@ function CheckinScreen() {
               type="button"
               onClick={toggleScan}
               disabled={submitting}
-              style={{ backgroundColor: "#2E3192", color: "#FFFFFF" }}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-bold text-white bg-[#2E3192] hover:bg-[#19194D] active:scale-[0.99] transition-all shadow-md shadow-[#2E3192]/25 cursor-pointer disabled:opacity-60"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-bold text-white bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 active:scale-[0.99] transition-all shadow-md shadow-[#003B95]/25 cursor-pointer disabled:opacity-60"
             >
               <ScanLine className="h-4 w-4 text-white" />
               <span className="text-white">
@@ -1490,10 +1489,9 @@ function CheckinScreen() {
                       setConnecting(false);
                     }
                   }}
-                  style={{ backgroundColor: "#2E3192", color: "#ffffff" }}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] py-2.5 text-[12px] font-bold text-white transition active:scale-95 cursor-pointer shadow-md shadow-[#2E3192]/20 disabled:opacity-60"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 py-2.5 text-[12px] font-bold text-white transition active:scale-95 cursor-pointer shadow-md shadow-[#003B95]/20 disabled:opacity-60"
                 >
-                  <UserPlus className="h-4 w-4" />
+                  <UserPlus className="h-4 w-4 text-amber-300" />
                   <span>{connecting ? "Đang gửi..." : "Kết nối ngay"}</span>
                 </button>
               </div>

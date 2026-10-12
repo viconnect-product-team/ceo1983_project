@@ -139,10 +139,20 @@ export class MembersService {
             roleKey = 'admin';
           } else if (rawRole.includes('quan_tri') || rawRole.includes('superadmin')) {
             roleKey = 'quan_tri';
-          } else if (rawRole.includes('thư ký') || rawRole.includes('tong_thu_ky')) {
+          } else if (rawRole.includes('tong_thu_ky') || (rawRole.includes('thư ký') && rawRole.includes('tổng'))) {
             roleKey = 'tong_thu_ky';
-          } else if (rawRole.includes('trưởng ban') || rawRole.includes('truong_ban')) {
-            roleKey = 'truong_ban';
+          } else if (rawRole.includes('ban_thu_ky') || rawRole.includes('thu_ky') || rawRole.includes('thư ký')) {
+            roleKey = 'ban_thu_ky';
+          } else if (rawRole.includes('truyền thông') || rawRole.includes('btt') || rawRole === 'truong_ban_truyen_thong') {
+            roleKey = 'truong_ban_truyen_thong';
+          } else if (rawRole.includes('thành viên') || rawRole.includes('btv') || rawRole === 'truong_ban_thanh_vien') {
+            roleKey = 'truong_ban_thanh_vien';
+          } else if (rawRole.includes('xúc tiến') || rawRole.includes('bxt') || rawRole.includes('thương mại') || rawRole === 'truong_ban_xuc_tien') {
+            roleKey = 'truong_ban_xuc_tien';
+          } else if (rawRole.includes('tài chính') || rawRole.includes('btc') || rawRole === 'truong_ban_tai_chinh') {
+            roleKey = 'truong_ban_tai_chinh';
+          } else if (rawRole.includes('thiện nguyện') || rawRole.includes('btn') || rawRole === 'truong_ban_thien_nguyen') {
+            roleKey = 'truong_ban_thien_nguyen';
           }
 
           for (const cat of cats) {
@@ -1244,11 +1254,146 @@ export class MembersService {
       throw new ForbiddenException('Hành động xóa hội viên (MEM_DELETE) đã bị thu hồi trong cấu hình phân quyền hệ thống');
     }
 
+    const memberEmail = (current.email || '').trim().toLowerCase();
+    const memberPhone = (current.phone || '').trim();
+    const companyName = (current.company_name || current.company || '').trim();
+    const taxCode = (current.tax_code || '').trim();
+    let memberUserId = current.user_id;
+
+    // Nếu member chưa lưu user_id, tìm qua vione_users bằng email hoặc username
+    if (!memberUserId && memberEmail) {
+      const uRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.vione_users
+        WHERE LOWER(email) = ${memberEmail} OR LOWER(username) = ${memberEmail}
+        LIMIT 1
+      `.catch(() => []);
+      if (uRows.length > 0 && uRows[0]?.id) {
+        memberUserId = uRows[0].id;
+      }
+    }
+
+    // 1. Xóa doanh nghiệp liên quan (bảng companies và vione_companies)
+    if (companyName) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.companies
+        WHERE LOWER(name) = LOWER(${companyName})
+           OR (owner_id IS NOT NULL AND ${memberUserId ? memberUserId : '00000000-0000-0000-0000-000000000000'}::uuid = owner_id)
+      `.catch((e) => this.logger.warn(`Could not delete from companies: ${e?.message}`));
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.vione_companies
+        WHERE LOWER(name) = LOWER(${companyName})
+           OR (user_id IS NOT NULL AND ${memberUserId ? memberUserId : '00000000-0000-0000-0000-000000000000'}::uuid = user_id)
+      `.catch((e) => this.logger.warn(`Could not delete from vione_companies: ${e?.message}`));
+    }
+    if (taxCode) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.companies WHERE tax_code = ${taxCode}
+      `.catch(() => {});
+    }
+
+    // 2. Xóa danh thiếp và hồ sơ cá nhân
+    if (memberUserId) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.member_business_cards
+        WHERE owner_user_id = ${memberUserId}::uuid OR member_id = ${id}
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_cards
+        WHERE user_id = ${memberUserId}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.card_settings
+        WHERE user_id = ${memberUserId}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.user_profiles
+        WHERE user_id = ${memberUserId}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.user_roles
+        WHERE user_id = ${memberUserId}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.memberships
+        WHERE user_id = ${memberUserId}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.vba_member_permissions
+        WHERE user_id::text = ${memberUserId}::text OR member_id = ${id}
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.business_appointments
+        WHERE host_user_id = ${memberUserId}::uuid OR invitee_user_id = ${memberUserId}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.meeting_participants
+        WHERE user_id = ${memberUserId}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.event_registrations
+        WHERE user_id = ${memberUserId}::uuid
+           OR (${memberEmail !== ''} AND LOWER(email) = ${memberEmail})
+      `.catch(() => {});
+
+      // 3. Xóa vĩnh viễn tài khoản trong vione_users và auth.users
+      await this.prisma.$executeRaw`
+        DELETE FROM public.vione_users
+        WHERE id = ${memberUserId}::uuid
+           OR (${memberEmail !== ''} AND LOWER(email) = ${memberEmail})
+           OR (${memberEmail !== ''} AND LOWER(username) = ${memberEmail})
+      `.catch((e) => this.logger.warn(`Could not delete from vione_users: ${e?.message}`));
+
+      await this.prisma.$executeRaw`
+        DELETE FROM auth.users
+        WHERE id = ${memberUserId}::uuid
+           OR (${memberEmail !== ''} AND LOWER(email) = ${memberEmail})
+      `.catch((e) => this.logger.warn(`Could not delete from auth.users: ${e?.message}`));
+    } else if (memberEmail) {
+      await this.prisma.$executeRaw`
+        DELETE FROM public.vione_users
+        WHERE LOWER(email) = ${memberEmail} OR LOWER(username) = ${memberEmail}
+      `.catch(() => {});
+      await this.prisma.$executeRaw`
+        DELETE FROM auth.users
+        WHERE LOWER(email) = ${memberEmail}
+      `.catch(() => {});
+    }
+
+    // 4. Xóa hồ sơ hội viên trong bảng members
     await this.prisma.$executeRaw`
       DELETE FROM public.members WHERE id = ${id}
     `;
 
-    return { ok: true };
+    // 5. Ghi nhật ký hoạt động
+    await this.prisma.$executeRaw`
+      INSERT INTO public.activity_log (
+        id, code, "user", action, target, category, at, ip, association_id, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(),
+        ${id},
+        ${userId},
+        'Xóa hội viên, tài khoản & doanh nghiệp liên quan',
+        ${current.name || companyName},
+        'member',
+        to_char(NOW(), 'YYYY-MM-DD HH24:MI:SS'),
+        '127.0.0.1',
+        ${current.association_id ? current.association_id : null}::uuid,
+        NOW(),
+        NOW()
+      )
+    `.catch(() => null);
+
+    return { ok: true, message: 'Đã xóa hội viên, doanh nghiệp và tài khoản liên quan thành công' };
   }
 
   async renewMember(userId: string, id: string) {
@@ -2070,17 +2215,27 @@ export class MembersService {
       sanitizedDept = 'Hội viên ceo1983';
     }
 
-    // Normalize to exact 5 roles: quan_tri, admin, tong_thu_ky, truong_ban, member
+    // Normalize to granular roles: quan_tri, admin, tong_thu_ky, ban_thu_ky, truong_ban_truyen_thong, truong_ban_thanh_vien, truong_ban_xuc_tien, truong_ban_tai_chinh, truong_ban_thien_nguyen, member
     const rawRole = (data.executiveRole || '').trim().toLowerCase();
     let sanitizedRole = 'member';
     if (rawRole === 'quan_tri' || rawRole.includes('quản trị') || rawRole === 'platform_admin') {
       sanitizedRole = 'quan_tri';
     } else if (rawRole === 'admin') {
       sanitizedRole = 'admin';
-    } else if (rawRole === 'tong_thu_ky' || rawRole.includes('thư ký')) {
+    } else if (rawRole === 'tong_thu_ky' || rawRole.includes('tổng thư ký')) {
       sanitizedRole = 'tong_thu_ky';
-    } else if (rawRole.startsWith('truong_ban') || rawRole.includes('trưởng ban')) {
-      sanitizedRole = 'truong_ban';
+    } else if (rawRole === 'ban_thu_ky' || rawRole === 'thu_ky' || (rawRole.includes('thư ký') && !rawRole.includes('phó') && !rawRole.includes('tổng'))) {
+      sanitizedRole = 'ban_thu_ky';
+    } else if (rawRole === 'truong_ban_truyen_thong' || (rawRole.includes('truyền thông') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+      sanitizedRole = 'truong_ban_truyen_thong';
+    } else if (rawRole === 'truong_ban_thanh_vien' || (rawRole.includes('thành viên') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+      sanitizedRole = 'truong_ban_thanh_vien';
+    } else if (rawRole === 'truong_ban_xuc_tien' || ((rawRole.includes('xúc tiến') || rawRole.includes('thương mại')) && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+      sanitizedRole = 'truong_ban_xuc_tien';
+    } else if (rawRole === 'truong_ban_tai_chinh' || (rawRole.includes('tài chính') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+      sanitizedRole = 'truong_ban_tai_chinh';
+    } else if (rawRole === 'truong_ban_thien_nguyen' || (rawRole.includes('thiện nguyện') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+      sanitizedRole = 'truong_ban_thien_nguyen';
     } else {
       sanitizedRole = 'member';
     }
@@ -2098,7 +2253,7 @@ export class MembersService {
       let membershipRole = 'member';
       if (sanitizedRole === 'quan_tri' || sanitizedRole === 'admin') {
         membershipRole = 'admin';
-      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'truong_ban') {
+      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'ban_thu_ky' || sanitizedRole.startsWith('truong_ban_')) {
         membershipRole = 'moderator';
       }
 
@@ -2138,7 +2293,7 @@ export class MembersService {
             DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role = 'platform_admin'
           `, userId).catch(() => {});
         }
-      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'truong_ban') {
+      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'ban_thu_ky' || sanitizedRole.startsWith('truong_ban_')) {
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.user_roles (id, user_id, role)
           VALUES (gen_random_uuid(), $1::uuid, 'moderator')
@@ -2378,7 +2533,8 @@ export class MembersService {
             rl === 'platform_admin' ||
             rl === 'superadmin' ||
             rl === 'tong_thu_ky' ||
-            rl === 'truong_ban'
+            rl === 'ban_thu_ky' ||
+            rl.startsWith('truong_ban_')
           );
         })
       ) {

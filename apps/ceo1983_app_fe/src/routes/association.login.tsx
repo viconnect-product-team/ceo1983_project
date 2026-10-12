@@ -172,7 +172,18 @@ function AssociationLoginPage() {
     } catch (err: any) {
       const info = classifyAuthError(err);
       setAuthErrorInfo(info);
-      setAuthError(info.raw || err?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      const rawMsg = String(err?.message || info.raw || "");
+      const isAuthFail =
+        rawMsg.toLowerCase().includes("unauthorized") ||
+        rawMsg.toLowerCase().includes("không chính xác") ||
+        rawMsg.toLowerCase().includes("đã bị xóa") ||
+        rawMsg.toLowerCase().includes("credentials") ||
+        info.kind === "credentials";
+      setAuthError(
+        isAuthFail
+          ? "Tài khoản hoặc mật khẩu không chính xác hoặc đã bị xóa"
+          : (info.raw || err?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.")
+      );
     } finally {
       setLoading(false);
     }

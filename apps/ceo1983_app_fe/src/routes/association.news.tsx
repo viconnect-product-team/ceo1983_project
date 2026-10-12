@@ -149,10 +149,10 @@ export default function NewsScreen() {
       <div className="px-4 pt-3">
         <div
           onClick={() => setPostModalOpen(true)}
-          className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-blue-200/80 dark:border-blue-900/60 bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white dark:bg-[#131a27] text-slate-900 dark:text-white shadow-xs hover:border-[#003B95]/50 transition cursor-pointer"
+          className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-50/50 via-blue-50/30 to-white dark:from-[#001D4A]/50 dark:to-[#002B70]/30 text-slate-900 dark:text-white shadow-xs hover:border-amber-400/60 transition cursor-pointer"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-[#003B95] dark:text-blue-300 grid place-items-center shrink-0 border border-blue-200/80 dark:border-blue-800">
+            <div className="h-9 w-9 rounded-xl bg-amber-400/20 text-[#003B95] dark:text-amber-400 grid place-items-center shrink-0 border border-amber-400/40">
               <Share2 className="h-4.5 w-4.5" />
             </div>
             <div className="min-w-0">

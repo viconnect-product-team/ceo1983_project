@@ -102,7 +102,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
           </button>
           <div className="absolute bottom-3 left-4 right-4 z-10">
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#2E3192]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm border border-amber-400/30">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#003B95]/90 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-amber-300 shadow-sm border border-amber-400/40">
                 <Sparkles className="h-3 w-3" />
                 {normalizeTag(selectedOpp.tag)}
               </span>
@@ -215,7 +215,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                       className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-[#2E3192] text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-[#003B95] border border-amber-400/40 text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
                           {m.name ? m.name.charAt(0).toUpperCase() : "U"}
                         </div>
                         <div className="min-w-0">
@@ -285,7 +285,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
           {/* Highlighted Key Points (Image 4 Style) */}
           <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-              <Clock className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <Clock className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
                 <strong>Thời hạn tiếp nhận:</strong> {fmt.rel(selectedOpp.time)} (Đang mở tiếp
                 nhận hồ sơ)
@@ -293,14 +293,14 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             </div>
 
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-              <MapPin className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <MapPin className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
                 <strong>Khu vực hợp tác:</strong> Toàn quốc & Liên kết mạng lưới vùng miền
               </span>
             </div>
 
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-              <Briefcase className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <Briefcase className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
                 <strong>Hình thức:</strong> {normalizeTag(selectedOpp.tag)} · Ưu đãi độc quyền
                 hội viên CEO 1983
@@ -308,7 +308,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             </div>
 
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 pt-1 border-t border-amber-500/10">
-              <User className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <User className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <span>
                   <strong>Người đăng / Đầu mối:</strong>{" "}
@@ -390,10 +390,9 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                     search: { peerCode: targetCode, peerName: targetName } as any,
                   });
                 }}
-                style={{ color: "#ffffff" }}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-[#2E3192]/20"
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 py-2.5 text-[12.5px] font-bold text-white transition cursor-pointer shadow-md shadow-[#003B95]/20"
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="h-4 w-4 text-amber-300" />
                 Nhắn tin
               </button>
 
@@ -408,7 +407,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                   onClick={() => {
                     onInterest(selectedOpp.id);
                   }}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#2E3192] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 py-2.5 text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 hover:bg-amber-100 transition cursor-pointer"
                 >
                   <Flame className="h-4 w-4 text-amber-500" />
                   Quan tâm

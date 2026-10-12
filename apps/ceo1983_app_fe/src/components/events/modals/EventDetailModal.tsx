@@ -134,7 +134,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           {/* Highlighted Event Keypoints (Image 4 Style) */}
           <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200 font-semibold">
-              <Calendar className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <Calendar className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
                 {selectedEvent.time ? `${selectedEvent.time} | ` : ""}
                 Ngày{" "}
@@ -145,12 +145,12 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             </div>
 
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-              <MapPin className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <MapPin className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span className="font-semibold">{selectedEvent.place}</span>
             </div>
 
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-              <Ticket className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <Ticket className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span className="font-semibold">
                 Phí tham dự:{" "}
                 <span
@@ -168,7 +168,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             </div>
 
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-              <Users className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0 mt-0.5" />
+              <Users className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
               <span>
                 Ưu đãi:{" "}
                 <span className="font-semibold text-amber-700 dark:text-amber-300">
@@ -181,7 +181,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           {/* Zalo Link Notice Box */}
           <div className="rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 p-3.5 border border-blue-200/60 dark:border-blue-900/60 text-[12px] space-y-1.5">
             <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
-              <Info className="h-4 w-4 text-[#2E3192] dark:text-amber-400 shrink-0" />
+              <Info className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
               <span>Kênh kết nối & Thảo luận</span>
             </div>
             <p className="text-slate-600 dark:text-slate-300">
@@ -192,7 +192,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 href={selectedAgenda.zaloLink}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#2E3192] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
+                className="text-[#003B95] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
               >
                 {selectedAgenda.zaloLink}
                 <ExternalLink className="h-3 w-3 inline" />
@@ -206,10 +206,10 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           {/* Lịch trình chi tiết */}
           <div>
             <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Chương trình chi tiết</h4>
-            <div className="space-y-2 border-l-2 border-[#2E3192]/40 pl-3">
+            <div className="space-y-2 border-l-2 border-[#003B95]/40 pl-3">
               {selectedAgenda.schedule.map((item: any, i: number) => (
                 <div key={i} className="text-xs">
-                  <span className="font-bold text-[#2E3192] dark:text-amber-400">{item.time}</span>
+                  <span className="font-bold text-[#003B95] dark:text-amber-400">{item.time}</span>
                   <p className="text-slate-700 dark:text-slate-300">{item.activity}</p>
                 </div>
               ))}
@@ -232,9 +232,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               href={selectedAgenda.zaloLink}
               target="_blank"
               rel="noreferrer"
-              className="w-full sm:flex-1 py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-[#2E3192] dark:text-amber-400 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center"
+              className="w-full sm:flex-1 py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center"
             >
-              <MessageSquare className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
+              <MessageSquare className="h-4 w-4 text-amber-500" />
               <span>Tham gia nhóm Zalo sự kiện</span>
             </a>
 
@@ -265,10 +265,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               <button
                 type="button"
                 onClick={(evt) => onOpenRegister(selectedEvent, evt)}
-                style={{ color: "#ffffff" }}
-                className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 text-white text-xs font-bold shadow-md shadow-[#003B95]/20 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Ticket className="h-4 w-4" />
+                <Ticket className="h-4 w-4 text-amber-300" />
                 <span>Đăng ký tham gia ngay</span>
               </button>
             )}

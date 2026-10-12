@@ -75,7 +75,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
       >
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <PackageCheck className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
+            <PackageCheck className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
             {isEn ? "Post New Product / Service" : "Đăng Sản Phẩm / Dịch Vụ Mới"}
           </h3>
           <button
@@ -90,9 +90,9 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
         <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:thin]">
             {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
-            <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20 p-3.5 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#2E3192] dark:text-amber-400">
-                <Store className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10 p-3.5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-amber-400">
+                <Store className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
                 <span>1. Thông tin Doanh Nghiệp & Gian Hàng</span>
               </div>
 
@@ -106,7 +106,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
                   value={formCompany}
                   onChange={(e) => setFormCompany(e.target.value)}
                   placeholder={isEn ? "Company name" : "Ví dụ: Công ty Cổ phần Công nghệ ABC"}
-                  className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#2E3192]"
+                  className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
                 />
               </div>
 
@@ -190,7 +190,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
                   </div>
                 ) : (
                   <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-4 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
-                    <ImagePlus className="h-6 w-6 text-[#2E3192] dark:text-amber-400 mb-1" />
+                    <ImagePlus className="h-6 w-6 text-[#003B95] dark:text-amber-400 mb-1" />
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                       {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên (Lưu MinIO)"}
                     </span>
@@ -308,8 +308,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
           <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-900/50">
             <button
               type="submit"
-              style={{ color: "#ffffff" }}
-              className="w-full rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer"
+              className="w-full rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer"
             >
               {isEn ? "Publish Product to Marketplace" : "Đăng Sản Phẩm Lên Gian Hàng"}
             </button>

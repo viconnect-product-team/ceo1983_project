@@ -32,7 +32,7 @@ export function CeoTableEllipsis({
   const content = (
     <div className={`inline-flex flex-col min-w-0 ${maxWidth}`}>
       <span
-        className={`truncate block overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-foreground cursor-default transition-colors hover:text-[#2E3192] dark:hover:text-indigo-400 ${className}`}
+        className={`truncate block overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-foreground cursor-default transition-colors hover:text-[#003B95] dark:hover:text-amber-400 ${className}`}
       >
         {displayStr || "—"}
       </span>

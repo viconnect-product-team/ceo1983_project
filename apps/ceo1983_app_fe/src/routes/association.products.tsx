@@ -1236,7 +1236,7 @@ function ProductsScreen() {
               setCompanyCatFilter("all");
               setCompanySearch("");
             }}
-            className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#2E3192] dark:hover:text-amber-400 transition cursor-pointer group"
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#003B95] dark:hover:text-amber-400 transition cursor-pointer group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
             <span>Quay lại Chợ giao thương</span>
@@ -1251,7 +1251,7 @@ function ProductsScreen() {
         </div>
 
         {/* Hero Storefront Banner */}
-        <div className="relative bg-gradient-to-br from-[#2E3192] via-[#1E2269] to-[#0F172A] text-white p-5 sm:p-8 shadow-md">
+        <div className="relative bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#002B70] border-b-2 border-amber-400/40 text-white p-5 sm:p-8 shadow-md">
           <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 max-w-5xl mx-auto">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
@@ -1372,7 +1372,7 @@ function ProductsScreen() {
                 onClick={() => setCompanyCatFilter("all")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                   companyCatFilter === "all"
-                    ? "bg-[#2E3192] text-white shadow-xs"
+                    ? "bg-[#003B95] text-white shadow-xs border border-amber-400/40"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
@@ -1387,7 +1387,7 @@ function ProductsScreen() {
                     onClick={() => setCompanyCatFilter(cat)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                       companyCatFilter === cat
-                        ? "bg-[#2E3192] text-white shadow-xs"
+                        ? "bg-[#003B95] text-white shadow-xs border border-amber-400/40"
                         : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                   >
@@ -1405,7 +1405,7 @@ function ProductsScreen() {
                 value={companySearch}
                 onChange={(e) => setCompanySearch(e.target.value)}
                 placeholder="Tìm kiếm trong gian hàng..."
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1.5 pl-8.5 pr-8 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#2E3192]"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1.5 pl-8.5 pr-8 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-[#003B95] focus:ring-1 focus:ring-amber-400/30"
               />
               {companySearch && (
                 <button
@@ -1438,7 +1438,7 @@ function ProductsScreen() {
                     setFormCompany(viewingCompany.name);
                     setPostModalOpen(true);
                   }}
-                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2E3192] text-white text-xs font-bold shadow-xs hover:bg-[#232677] transition cursor-pointer"
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs border border-amber-400/40 transition cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Đăng sản phẩm ngay</span>
@@ -1454,7 +1454,7 @@ function ProductsScreen() {
                 return (
                   <div
                     key={p.id}
-                    className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-xl hover:border-[#2E3192]/30 dark:hover:border-amber-400/30 transition-all duration-200 break-inside-avoid mb-3"
+                    className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-400/50 dark:hover:border-amber-400/50 transition-all duration-200 break-inside-avoid mb-3"
                   >
                     <div className={`relative ${isStaggered ? "aspect-[4/5]" : "aspect-square sm:aspect-4/3"} w-full bg-slate-100 dark:bg-slate-800 overflow-hidden`}>
                       <img
@@ -1501,7 +1501,7 @@ function ProductsScreen() {
                             {p.category}
                           </span>
                         )}
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug mt-0.5 mb-1.5 group-hover:text-[#2E3192] dark:group-hover:text-amber-400 transition-colors">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug mt-0.5 mb-1.5 group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors">
                           {p.name}
                         </h4>
                         {p.description && (
@@ -2193,8 +2193,8 @@ function ProductsScreen() {
       <div className="mt-6 mb-4 px-4">
         <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-3 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-[#2E3192]/10 dark:bg-amber-400/10 grid place-items-center shrink-0">
-              <Store className="h-4 w-4 text-[#2E3192] dark:text-amber-400" />
+            <div className="h-8 w-8 rounded-xl bg-amber-400/15 border border-amber-400/30 grid place-items-center shrink-0">
+              <Store className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
             </div>
             <div>
               <div className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center justify-center sm:justify-start gap-1.5">
@@ -2209,7 +2209,7 @@ function ProductsScreen() {
           <div className="flex items-center gap-2 shrink-0">
             <Link
               to="/association/perks"
-              className="h-8 px-3 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95"
+              className="h-8 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs border border-amber-400/40 transition active:scale-95"
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
               <span>Ưu đãi VIP</span>

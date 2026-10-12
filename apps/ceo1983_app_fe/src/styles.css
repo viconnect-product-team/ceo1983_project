@@ -339,15 +339,16 @@
   --vba-bg-2: #050912;
   --vba-surface: #0E172A;
   --vba-surface-2: #14223E;
-  --vba-border: rgba(0, 59, 149, 0.35);
-  --vba-border-soft: rgba(245, 158, 11, 0.16);
-  --vba-border-accent: rgba(245, 158, 11, 0.45);
+  --vba-border: rgba(245, 158, 11, 0.32);
+  --vba-border-soft: rgba(245, 158, 11, 0.22);
+  --vba-border-accent: rgba(245, 158, 11, 0.65);
   --vba-gold: #F59E0B;
   --vba-gold-2: #FBBF24;
-  --vba-gold-soft: rgba(245, 158, 11, 0.15);
-  --vba-gold-glow: 0 6px 20px -6px rgba(245, 158, 11, 0.45);
-  --vba-navy: #2E3192;
-  --vba-navy-light: #25AAE1;
+  --vba-gold-soft: rgba(245, 158, 11, 0.18);
+  --vba-gold-glow: 0 6px 24px -4px rgba(245, 158, 11, 0.5);
+  --vba-navy: #003B95;
+  --vba-navy-deep: #002B70;
+  --vba-navy-light: #1E60C6;
   --vba-brand-orange: #F7941D;
   --vba-text: #FFFFFF;
   --vba-text-muted: #CBD5E1;
@@ -359,6 +360,13 @@
   color: var(--vba-text);
   min-height: 100dvh;
   font-family: var(--font-sans);
+}
+
+.vba-card {
+  background: var(--vba-surface, #0E172A);
+  color: var(--vba-text, #FFFFFF);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  box-shadow: 0 4px 20px -3px rgba(245, 158, 11, 0.12), 0 2px 8px -2px rgba(0, 59, 149, 0.15);
 }
 
 /* High-contrast: strengthen borders and text separation */
@@ -375,16 +383,17 @@ html:not(.dark) .vba-app {
   --vba-bg: #FFFFFF;
   --vba-bg-2: #F8FAFC;
   --vba-surface: #FFFFFF;
-  --vba-surface-2: #F1F5F9;
-  --vba-border: rgba(0, 59, 149, 0.22);
-  --vba-border-soft: rgba(0, 59, 149, 0.12);
-  --vba-border-accent: rgba(217, 119, 6, 0.45);
+  --vba-surface-2: #F8FAFC;
+  --vba-border: rgba(217, 119, 6, 0.28);
+  --vba-border-soft: rgba(217, 119, 6, 0.18);
+  --vba-border-accent: rgba(217, 119, 6, 0.55);
   --vba-gold: #D97706;
   --vba-gold-2: #F59E0B;
-  --vba-gold-soft: rgba(217, 119, 6, 0.12);
-  --vba-gold-glow: 0 4px 14px -3px rgba(217, 119, 6, 0.3);
-  --vba-navy: #2E3192;
-  --vba-navy-light: #25AAE1;
+  --vba-gold-soft: rgba(217, 119, 6, 0.14);
+  --vba-gold-glow: 0 4px 16px -2px rgba(217, 119, 6, 0.35);
+  --vba-navy: #003B95;
+  --vba-navy-deep: #002B70;
+  --vba-navy-light: #1E60C6;
   --vba-brand-orange: #F7941D;
   --vba-text: #0F172A;
   --vba-text-muted: #334155;
@@ -402,22 +411,29 @@ html:not(.dark) .vba-app {
 html:not(.dark) .vba-card {
   background: #FFFFFF;
   color: #0F172A;
-  border: 1.5px solid rgba(0, 59, 149, 0.18);
-  box-shadow: 0 4px 20px -2px rgba(0, 59, 149, 0.08), 0 1px 3px 0 rgba(217, 119, 6, 0.05);
+  border: 1.5px solid rgba(217, 119, 6, 0.25);
+  box-shadow: 0 4px 20px -2px rgba(217, 119, 6, 0.12), 0 2px 8px -2px rgba(0, 59, 149, 0.08);
 }
 
-html:not(.dark) .vba-gold-text {
-  background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #EA580C 100%);
+.vba-gold-text {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 60%, #B45309 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-html:not(.dark) .vba-gold-grad {
+.vba-gold-grad {
   background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   color: #FFFFFF !important;
   font-weight: 700;
-  box-shadow: 0 2px 12px -2px rgba(217, 119, 6, 0.35);
+  box-shadow: 0 3px 14px -2px rgba(217, 119, 6, 0.4);
+}
+
+.vba-navy-gold-btn {
+  background: linear-gradient(135deg, #002B70 0%, #003B95 100%);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #FEF3C7;
+  box-shadow: 0 4px 14px -2px rgba(0, 59, 149, 0.35);
 }
 
 /* High-contrast mode tokens for .vba-app — Pure Solid Black, Pure White, & Electric Gold */
@@ -2464,17 +2480,26 @@ body:has(.vba-app),
 
 /* 4. Momentum smooth scrolling & ẩn thanh cuộn chuẩn Native */
 .smooth-scroll-touch,
-.vba-app .overflow-y-auto,
-.vba-app .overflow-x-auto {
+.vba-app .overflow-y-auto {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
   touch-action: pan-y;
 }
 
+.vba-app .overflow-x-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
+}
+
 .smooth-scroll-touch::-webkit-scrollbar,
 .vba-app .overflow-y-auto::-webkit-scrollbar,
-.vba-app .overflow-x-auto::-webkit-scrollbar {
+.vba-app .overflow-x-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;

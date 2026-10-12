@@ -83,10 +83,37 @@
 #   - Tách Biệt DTOs (Data Transfer Objects): Tuyệt đối KHÔNG viết inline DTO trong Service hay Controller. Toàn bộ DTOs của mỗi module phải được tách riêng thành các file `<name>.dto.ts` trong thư mục con `dto/` kèm barrel `index.ts`.
 #
 # [BẮT BUỘC 4] Bảo mật & Phân quyền Chuẩn Hóa (Security, Strict RBAC & Permissions):
-#   - Chuẩn hóa DUY NHẤT 5 Vai trò hệ thống cố định: Quản trị (`quan_tri`), Admin (`admin`), Tổng thư ký (`tong_thu_ky`), Trưởng ban (`truong_ban`), Thành viên (`member`). Tuyệt đối không thêm bất kỳ từ ngữ nào khác.
-#   - Chuẩn hóa DUY NHẤT 7 Ban chuyên môn: Ban Thành viên, Ban xúc tiến, Ban thiện nguyện, Ban truyền thông, Ban quản trị, Ban tài chính, Hội viên ceo1983. Tuyệt đối không thêm bất kỳ từ ngữ nào khác.
-#   - Mặc định tài khoản mới tham gia: Vai trò luôn là "Thành viên", ban chuyên môn luôn là "Hội viên ceo1983".
-#   - Phân quyền gán ban & đổi vai trò: Chỉ tài khoản có vai trò Quản trị hoặc Admin mới có quyền chỉ định hội viên vào ban khác hoặc đổi vai trò (chặn cả frontend UI lẫn backend API, trả 403 Forbidden nếu không có quyền).
+#   - Phân cấp Vai trò Hệ thống & Ban Chuyên trách (7 Cấp Bậc Chuẩn Hóa):
+#     + Cấp 1 - Chủ tịch Hiệp hội (`chu_tich`): Cấp lãnh đạo tối cao, toàn quyền giao việc toàn hiệp hội, giám sát toàn diện dữ liệu đa ban.
+#     + Cấp 2 - Admin Hệ thống (`admin` / `quan_tri`): Quản trị viên kỹ thuật và vận hành CRM, toàn quyền cấu hình và giao việc toàn hệ thống.
+#     + Cấp 3 - Ban Điều Hành (`ban_dieu_hanh`): Thay thế hoàn toàn thuật ngữ "Ban Quản trị" cũ. Lãnh đạo liên ban, giám sát và điều hành toàn bộ công việc của các ban chuyên môn.
+#     + Cấp 4 - Tổng thư ký (`tong_thu_ky`): Điều phối Ban Thư Ký; thẩm quyền giao việc giới hạn trong nội bộ các thành viên thuộc Ban Thư Ký.
+#     + Cấp 5 - Trưởng ban Chuyên môn (`truong_ban_*`): Phân cấp chuyên trách cụ thể:
+#       * Trưởng ban Truyền thông (`truong_ban_truyen_thong`): Quản lý tin tức, truyền thông, sự kiện, media CLB. Thẩm quyền giao việc giới hạn cho thành viên thuộc Ban Truyền thông.
+#       * Trưởng ban Thành viên (`truong_ban_thanh_vien`): Quản lý hồ sơ, tiếp nhận, phát triển & thẩm định hội viên. Thẩm quyền giao việc giới hạn cho thành viên thuộc Ban Thành viên.
+#       * Trưởng ban Xúc tiến thương mại (`truong_ban_xuc_tien`): Quản lý cơ hội giao thương B2B, sản phẩm marketplace. Thẩm quyền giao việc giới hạn cho thành viên thuộc Ban Xúc tiến thương mại.
+#       * Trưởng ban Tài chính (`truong_ban_tai_chinh`): Quản lý ngân quỹ, niên liễm hội phí, thu chi và quyết toán. Thẩm quyền giao việc giới hạn cho thành viên thuộc Ban Tài chính.
+#       * Trưởng ban Thiện nguyện (`truong_ban_thien_nguyen`): Quản lý các chiến dịch an sinh, từ thiện, quỹ cộng đồng. Thẩm quyền giao việc giới hạn cho thành viên thuộc Ban Thiện nguyện.
+#       * Trưởng ban Kế thừa (`truong_ban`): Quản trị nghiệp vụ theo ban chuyên trách được gán.
+#     + Cấp 6 - Ban Thư ký (`ban_thu_ky`): Thành viên ban thư ký, nhận việc trực tiếp từ Tổng thư ký và Ban Điều Hành.
+#     + Cấp 7 - Thành viên (`member`): Hội viên doanh nhân CEO 1983.
+#   - Chuẩn hóa 6 Ban chuyên môn: Ban Thành viên, Ban Xúc tiến thương mại, Ban Thiện nguyện, Ban Truyền thông, Ban Điều Hành (thay Ban Quản trị), Ban Tài chính, Hội viên CEO 1983.
+#   - Mặc định tài khoản mới tham gia: Vai trò luôn là "Thành viên", ban chuyên môn luôn là "Hội viên CEO 1983".
+#   - Nhận diện vai trò chuẩn xác ngay khi đăng nhập: Backend cung cấp cờ boolean `isPresident`, `isAdmin`, `isExecutive`, `isGeneralSecretary`, `isDepartmentLeader` và `department` trong JWT payload và response đăng nhập; Frontend lưu trữ đồng bộ vào `localStorage` và `AuthContext` ngay tức thì.
+#   - Phân quyền gán ban & đổi vai trò: Chỉ tài khoản có vai trò Chủ tịch, Quản trị hoặc Admin mới có quyền chỉ định hội viên vào ban khác hoặc đổi vai trò (chặn cả frontend UI lẫn backend API, trả 403 Forbidden nếu không có quyền).
+#   - Quy chuẩn Luồng Giao Việc & Phân Quyền Dữ Liệu Công Việc (Task Delegation & Data Authorization):
+#     + Đa dạng định dạng file đính kèm: Hỗ trợ tải lên và đính kèm tài liệu Word (.doc, .docx), Excel (.xls, .xlsx), PDF (.pdf) và hình ảnh (JPG, PNG, WebP) thông qua API lưu trữ tập trung.
+#     + Thẩm quyền giao việc phân cấp nghiêm ngặt:
+#       * Chủ tịch & Quản trị viên (Admin): Toàn quyền giao việc cho bất kỳ ai trên toàn hiệp hội.
+#       * Tổng thư ký: CHỈ được phép giao việc cho các thành viên thuộc Ban Thư Ký.
+#       * Trưởng ban chuyên môn: CHỈ được phép giao việc cho các thành viên thuộc chính ban mình phụ trách (call API `/tasks/assignable-members` để lấy danh sách hợp lệ).
+#       * Backend API ném 403 Forbidden dứt khoát nếu tài khoản cố tình giao việc vượt quá phạm vi thẩm quyền của mình.
+#     + Phân quyền dữ liệu công việc (Data Authorization):
+#       * Cấp Chủ tịch, Admin và Ban Điều Hành: Được phép xem toàn bộ danh sách công việc của toàn hiệp hội.
+#       * Cấp Tổng thư ký: Xem các công việc thuộc Ban Thư Ký và các công việc do mình tạo hoặc được giao/phối hợp.
+#       * Cấp Trưởng ban chuyên môn: Xem các công việc thuộc ban mình phụ trách và các công việc do mình tạo hoặc được giao/phối hợp.
+#       * Cấp Hội viên: CHỈ xem được các công việc mà mình được phân công thực hiện, phối hợp hoặc do chính mình tạo ra.
+#     + Biểu mẫu giao việc động (Dynamic Task Model): Mở rộng linh hoạt với Phân loại danh mục (`category`), Dự toán ngân sách (`budget`), Tiêu chí nghiệm thu rõ ràng (`acceptanceCriteria`), Danh sách đầu việc con (`subtasks`), và Cuộc họp trực tuyến liên kết (`meeting`).
 #   - Tách Rời 3 Phân Hệ Phân Quyền Thành 3 Màn Hình Độc Lập (Dedicated Permissions Subsystems):
 #     + Menu "Ma trận phân quyền": Route `/permissions?tab=matrix` - Hiển thị ĐỘC LẬP duy nhất Ma trận phân quyền 8 Modules x 5 Roles (`RbacPermissionMatrix`). Tuyệt đối KHÔNG lồng sub-tabs gom cụm 3 phân hệ bên trong.
 #     + Menu "Phân quyền tài khoản": Route `/permissions?tab=user_actions` - Hiển thị ĐỘC LẬP Phân quyền tài khoản theo ban chuyên môn (`MemberPermissionsByCommittee`).
@@ -99,8 +126,17 @@
 #       (1) [Lưu & Chuyển chức năng]: Lưu thay đổi vào CSDL & localStorage, phát sự kiện sync, rồi mới tiếp tục điều hướng.
 #       (2) [Rời đi không lưu]: Hủy bỏ các thay đổi draft chưa lưu, khôi phục trạng thái cũ, rồi mới tiếp tục điều hướng.
 #       (3) [Ở lại chỉnh sửa]: Hủy lệnh điều hướng, đóng modal và giữ nguyên giao diện để tiếp tục chỉnh sửa.
-#     + Backend API RBAC Enforcement: Các service backend (ví dụ `MembersService`) bắt buộc phải gọi `checkActionPermission(userId, actionCode)` kiểm tra cả `crm_member_permissions` (personal override) và `crm_permission_matrix` (bảng `app_settings`), chặn đứng 403 Forbidden các hành vi thêm/sửa/xóa/phê duyệt trái phép khi quyền đã bị thu hồi trong cấu hình hệ thống.
-#   - Thu hồi quyền tức thì: Khi quyền hạn/thao tác bị thay đổi, hệ thống phải lập tức ẩn chức năng/nút thao tác khỏi giao diện. Nếu người dùng bấm vào khi chưa kịp ẩn: Bắt buộc hiển thị Toast: "Tài khoản của bạn đã bị thay đổi quyền không còn quyền sử dụng chức năng [Tên chức năng], không còn quyền thao tác [Tên thao tác]" và tự động đăng xuất đá văng ra màn hình đăng nhập.
+#   - Xử Lý Thay Đổi Quyền Thời Gian Thực (Realtime Permission Revocation & Center Popup Reload):
+#     + Khi tài khoản B đang thao tác (chưa lưu, chưa xóa, đang điền biểu mẫu) mà tài khoản A (Quản trị viên/Chủ tịch) thay đổi quyền thao tác của B trong hệ thống:
+#     + Khi tài khoản B bấm Lưu, Xóa, Chỉnh sửa, Phê duyệt: Hệ thống lập tức chặn hành động và HIỂN THỊ POPUP THÔNG BÁO Ở CHÍNH GIỮA MÀN HÌNH (`GlobalPermissionRevokedModal`): "Quyền hạn của bạn đã bị thay đổi bởi Quản trị viên. Hệ thống sẽ tải lại để áp dụng cấu hình phân quyền mới nhất."
+#     + Tự động làm mới trang (`window.location.reload()`) sau 4 giây đếm ngược hoặc khi người dùng bấm nút xác nhận. TUYỆT ĐỐI KHÔNG xóa token phiên đăng nhập hay đá văng ra màn hình đăng nhập, đảm bảo tài khoản B tiếp tục sử dụng hệ thống với đúng quyền hạn mới được cập nhật.
+#   - Chuẩn Hóa Nhận Diện Màn Đăng Nhập CRM (`/auth`):
+#     + Góc trên bên trái sử dụng biểu tượng thương hiệu chính thức của CEO 1983 đồng bộ với tab web (`/ceo1983-favicon.png`).
+#     + Form đăng nhập trung tâm loại bỏ hoàn toàn dòng phụ đề rườm rà, chỉ giữ lại tiêu đề trang trọng "Đăng nhập Hệ thống".
+#   - Chuẩn Trợ Lý AI Điều Hành & Điều Hướng Tự Động (Autonomous AI Navigation & 19-Module Training):
+#     + Bộ Não Trí Tuệ Toàn Diện: Trợ lý AI được nạp toàn bộ tri thức 19 module API hệ thống (members, events, voting, business-card, marketplace, opportunities, documents, sponsors, finance, tasks, charity, meetings, permissions, activity-log, notifications, users, app-settings, ai).
+#     + Phân Tích Ngữ Cảnh Xã Giao & 'Linh Tinh': Với các câu hỏi mở, đời sống, tâm lý, công việc hoặc giải tỏa stress, AI phân tích sâu sắc ngữ cảnh và trả lời với sự thấu cảm, tinh tế, dí dỏm và điềm đạm của Senior Executive Assistant.
+#     + Tự Động Nhảy Màn Hình Khi Hỏi Thao Tác: Khi người dùng hỏi "hướng dẫn", "cách", "làm sao", "ở đâu", "xem", "tạo", v.v., hệ thống BẮT BUỘC tự động nhảy về đúng màn hình thao tác ngay lập tức (`intent: "navigate"`), không được stalling hỏi "Quý Anh/Chị có muốn tôi hướng dẫn không?" làm mất thời gian người dùng; đồng thời hiển thị nút CTA `[⚡ Đến ngay: <tên_tính_năng>]` trực tiếp trong bong bóng chat.
 #   - Luồng Quét Mã Sự Kiện (QR Check-In): Khi tài khoản A có mã vé/mã đại biểu, tài khoản B (có quyền soát vé) quét mã của A thì B phải thấy đầy đủ thông tin đăng ký của A (Tên, SĐT, Công ty, Chức vụ, Ghế ngồi, Số may mắn, Hạng vé). Hệ thống phải phân biệt rõ ràng mã QR của A thuộc sự kiện nào, hiển thị tiêu đề sự kiện nổi bật và bắn cảnh báo rực đỏ nếu vé không trùng với sự kiện đang soát tại bàn.
 #   - Lưu trữ Ma trận Phân quyền: Đồng bộ trực tiếp vào CSDL PostgreSQL (bảng `public.app_settings` với `key = 'crm_permission_matrix'`) thông qua API `/admin/permission-matrix`, kết hợp `localStorage` để tăng tốc độ load và fallback.
 #   - Luồng Công Việc (Tasks Notification): Khi tạo/giao việc cho hội viên, hệ thống tự động tra cứu tài khoản PostgreSQL và bắn thông báo trực tiếp vào `public.business_notifications` (chuông CRM & Web) và `public.member_notifications` (App Hiệp Hội).
@@ -112,11 +148,13 @@
 #   - Tuyệt đối KHÔNG nối chuỗi SQL thủ công (tránh triệt để SQL Injection).
 #
 # [BẮT BUỘC 6] UI/UX & Theme Chuẩn CEO 1983:
-#   - Màu sắc bắt buộc theo chuẩn CEO 1983:
-#     + Màu chủ đạo (Primary): Deep Cobalt Navy (`#003B95` / `#00224F`) cho Nút chính, Header, Thanh điều hướng, Huy hiệu (`bg-[#003B95]`, `text-white`).
-#     + Màu nhấn hoàng gia (Accent): Warm Amber Gold (`#F59E0B` / `#D97706`) cho Huy hiệu VIP, Viền nổi bật, Sao danh dự, Trạng thái đặc biệt.
-#     + Tuyệt đối KHÔNG sử dụng màu vàng sâm banh gradient của ViOne cho ứng dụng CEO 1983.
-#     + Tuyệt đối KHÔNG sử dụng nút màu đen đặc u ám ở Chế độ sáng (Light mode).
+#   - Màu sắc bắt buộc theo chuẩn Brandbook HanoiBA CEO 1983:
+#     + Màu chủ đạo (Primary): Deep Cobalt Navy (`#003B95`, `#002B70`, `#001D4A`) cho Nút chính, Header, Thanh điều hướng, Thẻ card, Nền modal và Huy hiệu (`bg-[#003B95]`, `text-white`).
+#     + Màu nhấn hoàng kim (Accent): Warm Amber Gold (`#F59E0B`, `#D97706`, `#B45309`, `#FEF3C7`) cho Huy hiệu VIP, Viền nổi bật mạ vàng (`border-amber-400/40`), Sao danh dự, Trạng thái đặc biệt, Ánh sáng đổ bóng vàng ấm (`shadow-[0_4px_24px_rgba(245,158,11,0.2)]`).
+#     + Tuyệt đối KHÔNG sử dụng màu tím ViOne (`#2E3192`, `#19194D`) hay màu vàng sâm banh gradient của ViOne cho ứng dụng CEO 1983.
+#     + Tuyệt đối KHÔNG sử dụng nút màu đen đặc u ám ở Chế độ sáng (Light mode) hoặc để giao diện đơn điệu trắng/đen/xanh thiếu vắng màu vàng hoàng kim nhận diện thương hiệu.
+#     + Bóc tách lỗi Validate API tập trung tại `api-client.ts`: Tự động phân rã mảng lỗi HTTP 400/422 từ backend DTO validator thành tiếng Việt rõ nghĩa và phát sự kiện `vba:api_validation_error`.
+#     + Phân quyền thời gian thực CSDL (`RolesGuard`): Truy vấn trực tiếp database tại thời điểm request, lập tức từ chối 403 `PERMISSION_REVOKED` nếu vai trò bị thu hồi hoặc tài khoản bị khóa/đình chỉ (`suspended`/`inactive`/`banned`).
 #
 # [BẮT BUỘC 7] Kiến trúc Thư mục Đóng gói theo Chức năng (Feature-First / Domain Co-location Architecture):
 #   - Khi phát triển chức năng mới hoặc sửa chức năng có sẵn: Bắt buộc gom toàn bộ mã nguồn của chức năng đó vào ĐÚNG thư mục mang tên chức năng (`features/<ten-chuc-nang>/` hoặc module tương ứng).
@@ -146,10 +184,10 @@
 #     + Tab 1: 1. Ma Trận Phân Quyền Vai Trò:
 #       - Bảng phẳng, tối giản, chuyên nghiệp.
 #       - Hàng (Rows): 30 chức năng chuẩn từ Sidebar.tsx phân loại theo 8 nhóm danh mục Sidebar.
-#       - Cột (Columns): Đúng 5 vai trò cốt lõi (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên).
+#       - Cột (Columns): Đúng 5 vai trò cốt lõi (Quản trị, Admin, Tổng thư ký, Ban thư ký, Thành viên). Tuyệt đối không dùng vai trò Trưởng ban chung.
 #       - Giao điểm: Checkbox/Toggle phân quyền Xem, Thêm, Sửa, Xóa, Duyệt, Quản lý.
 #     + Tab 2: 2. Phân Quyền Tài Khoản Thành Viên:
-#       - Bảng danh sách hội viên: Cột "Vai trò" (5 vai trò: Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên) và Cột "Ban chuyên môn" (7 ban: Ban Thành viên, Ban xúc tiến, Ban thiện nguyện, Ban truyền thông, Ban quản trị, Ban tài chính, Hội viên ceo1983).
+#       - Bảng danh sách hội viên: Cột "Vai trò" (Quản trị, Admin, Tổng thư ký, Ban thư ký, 5 Trưởng ban chuyên môn, Thành viên) và Cột "Ban chuyên môn" (Ban Thành viên, Ban xúc tiến, Ban thiện nguyện, Ban truyền thông, Ban quản trị, Ban tài chính, Ban thư ký, Hội viên ceo1983).
 #       - Chỉ Quản trị hoặc Admin mới có quyền chỉnh sửa và lưu phân quyền thành viên.
 #     + Tab 3: 3. Thẩm Định 6 Ban Chuyên Môn:
 #       - Bỏ hoàn toàn cột "Cấp" và phân loại "Cấp 1 - 5".
@@ -867,10 +905,113 @@
 #     + Re-key Optimistic Message: Khi API `send()` trả về `{ ok: true, id: serverGeneratedUuid }`, BẮT BUỘC cập nhật ngay lập tức `id` của tin nhắn optimistic từ `local-...` thành UUID chính thức của server.
 #     + Thuật Toán Deduplication Theo Khoảng Thời Gian Thực (Sliding Window):
 #       * TUYỆT ĐỐI KHÔNG dùng phép chia slot thời gian tĩnh dạng `Math.floor(timeMs / 15000)` do gây lỗi tách bucket tại ranh giới giây.
-#       * BẮT BUỘC dùng thuật toán sliding window so sánh độ lệch thời gian thực `diff < 45000` (45 giây) kết hợp kiểm tra `m.mine` và nội dung text đã `.trim()`. Khi phát hiện trùng lặp, BẮT BUỘC ưu tiên giữ tin nhắn có ID chính thức từ server.
-#     + Dọn Dẹp Bộ Nhớ Đệm Tự Động: Khi `effectiveData.messages` trả về từ server, BẮT BUỘC chạy effect lọc bỏ các tin nhắn local optimistic trùng lặp để giải phóng `localStorage`, ngăn chặn việc tồn đọng tin nhắn cũ giữa các phiên đăng nhập.
-#   - Nhận Diện Nút Nhắn Tin Danh Bạ CEO 1983 Siêu Đậm Nét (`association.members.tsx`):
-#     + Viền: BẮT BUỘC dùng `border-2 border-blue-600 dark:border-blue-400`.
-#     + Nền & Chữ: `bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300`.
-#     + Biểu tượng: `<MessageSquare className="h-4.5 w-4.5 stroke-[2.6] fill-blue-600/25 group-hover:fill-white/30 group-hover:text-white text-blue-700 dark:text-blue-300 transition-colors" />` với nét vẽ dày 2.6px và màu đổ fill 25% giúp bong bóng chat đậm đà, không bị rỗng và sắc nét tuyệt đối.
+# [BẮT BUỘC 54] Chuẩn Hóa Phân Quyền Vai Trò: Loại Bỏ Triệt Để "Trưởng Ban Chung" & Bổ Sung Ban Thư Ký:
+#   - Loại Bỏ Triệt Để Role "Trưởng ban chung" (`truong_ban`):
+#     + TUYỆT ĐỐI KHÔNG sử dụng role chung chung `truong_ban` ("Trưởng ban" / "Trưởng ban (Chung)") trong bất kỳ component, hook, route hay endpoint backend nào.
+#     + Mọi chức danh Trưởng ban BẮT BUỘC phải phân định đúng 5 ban chuyên môn độc lập:
+#       * Trưởng ban Truyền thông (`truong_ban_truyen_thong` / `BTT`)
+#       * Trưởng ban Thành viên (`truong_ban_thanh_vien` / `BTV`)
+#       * Trưởng ban Xúc tiến thương mại (`truong_ban_xuc_tien` / `BXT`)
+#       * Trưởng ban Tài chính (`truong_ban_tai_chinh` / `BTC`)
+#       * Trưởng ban Thiện nguyện (`truong_ban_thien_nguyen` / `BTN`)
+#   - Bổ Sung Vai Trò Ban Thư Ký (`ban_thu_ky`):
+#     + Danh mục 10 vai trò chuẩn hóa toàn diện trên toàn hệ thống CEO 1983:
+#       1. `quan_tri` (Quản trị)
+#       2. `admin` (Admin)
+#       3. `tong_thu_ky` (Tổng thư ký)
+#       4. `ban_thu_ky` (Ban thư ký)
+#       5. `truong_ban_truyen_thong` (Trưởng ban Truyền thông)
+#       6. `truong_ban_thanh_vien` (Trưởng ban Thành viên)
+#       7. `truong_ban_xuc_tien` (Trưởng ban Xúc tiến thương mại)
+#       8. `truong_ban_tai_chinh` (Trưởng ban Tài chính)
+#       9. `truong_ban_thien_nguyen` (Trưởng ban Thiện nguyện)
+#       10. `thanh_vien` / `member` (Thành viên)
+#     + Ban Thư Ký chịu trách nhiệm phụ trách công tác hành chính, lập biên bản, chuẩn bị tài liệu đại hội và hỗ trợ điều phối.
+#     + TUYỆT ĐỐI KHÔNG cấp quyền phê duyệt kết nạp hội viên cho Ban Thư Ký (chỉ Ban Thành Viên hoặc Ban Quản Trị mới có thẩm quyền).
+#
+# [BẮT BUỘC 55] Quy Chuẩn 9 Trụ Cột Nền Tảng Vận Hành CEO 1983 (Events, Calls, Swipes, Connections, QR, Sockets, CRM Sync):
+#   1. Quản Lý Sự Kiện & Lịch Sử Sự Kiện:
+#      - Sự kiện đã qua ngày kết thúc BẮT BUỘC tự động ẩn khỏi danh mục sắp tới (Upcoming events / Coverflow) và CHỈ hiển thị trong tab "Lịch sử sự kiện".
+#      - TUYỆT ĐỐI KHÔNG dùng mock data fallback giả lập (`ev-1`..`ev-5`). Chỉ hiển thị sự kiện thật từ backend CSDL.
+#      - Quy trình hủy đăng ký sự kiện BẮT BUỘC qua Modal chuyên dụng có chọn lý do hủy, TUYỆT ĐỐI KHÔNG dùng `window.prompt`.
+#   2. Chuông Báo & Màn Hình Cuộc Gọi Đến Kể Cả Khi Đóng / Mở App:
+#      - Backend gateway BẮT BUỘC cache cuộc gọi đang gọi (`activeCalls` TTL 45s), cung cấp API `GET /me/active-call` và socket event `call:check_active`.
+#      - Frontend `GlobalIncomingCallModal` BẮT BUỘC lắng nghe `visibilitychange`, `focus` và socket reconnect để tự động hiển thị cuộc gọi đang đổ chuông ngay khi người dùng vừa mở lại ứng dụng.
+#   3. Mở Khóa Thao Tác Vuốt Ngang Danh Mục (Horizontal Touch Swipe):
+#      - Các thanh cuộn ngang danh mục (`.overflow-x-auto`) TUYỆT ĐỐI KHÔNG được chứa thuộc tính `touch-action: pan-y;` vì sẽ chặn đứng thao tác vuốt ngang của người dùng trên thiết bị di động cảm ứng.
+#   4. Nhận Diện Hội Viên Đã Kết Nối & Nút Hủy Kết Nối:
+#      - Trong danh bạ và tab khám phá, tài khoản đã kết nối BẮT BUỘC hiển thị rõ ràng huy hiệu ngọc lục bảo `✓ Đã kết nối` và có nút trực tiếp `Hủy kết nối` (màu đỏ / `UserX`) kèm xác nhận.
+#   5. Soát Vé QR Tham Gia Sự Kiện:
+#      - Hàm quét vé BẮT BUỘC giải mã `data` query param từ URL, so khớp thông minh cả mã JSON, ticketId số, số điện thoại hoặc họ tên hội viên, cập nhật trạng thái `checkin_status = 'checked_in'`.
+#   6. Quét Mã QR Đối Tác & Popup Kết Nối Tức Thì:
+#      - Khi camera giải mã thành công mã QR danh thiếp đối tác, BẮT BUỘC lập tức hiển thị thẻ đề xuất kết nối tương tác với tiêu đề "Gửi Lời Mời Kết Nối Từ Tài Khoản Của Bạn", ô nhập lời nhắn cá nhân và nút bấm 1 chạm "Kết Nối Ngay Với CEO [Tên]".
+#   7. Chuẩn Hóa Realtime Socket Room Join:
+#      - Handler socket `join_room` và `leave_room` BẮT BUỘC chấp nhận cả payload dạng string nguyên bản và payload dạng JSON object (`{ userId, roomId }`).
+#   8. Xóa Hội Viên CRM Cascade Doanh Nghiệp & Chặn Đăng Nhập:
+#      - Khi xóa hội viên tại CRM hiệp hội, backend BẮT BUỘC cascade delete toàn bộ: `companies`, `vione_companies`, danh thiếp, permissions, `vione_users` và tài khoản `auth.users`.
+#      - Tài khoản bị xóa khi đăng nhập BẮT BUỘC trả về thông báo lỗi chuẩn xác: "Tài khoản hoặc mật khẩu không chính xác hoặc đã bị xóa".
+#   9. Đồng Bộ 2 Chiều Lịch Hẹn Gặp 1-on-1 Sang CRM & Hỗ Trợ Hủy Lịch:
+#      - Lịch hẹn kết nối 1-on-1 tạo từ Mobile BẮT BUỘC ghi đồng bộ 2 chiều (dual-write) sang bảng `public.meetings` của CRM với tiền tố mã `MT-CONN-...` và phòng ban "Hẹn gặp kết nối 1-1".
+#      - Người được mời BẮT BUỘC nhìn thấy lời mời hẹn gặp trong tab `meetings` trên mobile; cả Mobile và CRM BẮT BUỘC có nút "Hủy hẹn" / "Hủy họp" kèm modal nhập lý do và phát thông báo đồng bộ.
+#
+# [BẮT BUỘC 56] Kiến Trúc AI Trợ Lý Giọng Nói Đa Tầng (Multi-Tier Voice Engine) Cho Android APK & Web Browser:
+#   1. Nhận Diện Giọng Nói (Speech-to-Text / STT):
+#      - Android APK (Capacitor WebView): BẮT BUỘC sử dụng Cầu nối Native `NativeBridge.startSpeechRecognition()` thông qua `android.speech.SpeechRecognizer` tầng Java với locale `vi-VN`.
+#        + TUYỆT ĐỐI KHÔNG phụ thuộc duy nhất vào `window.webkitSpeechRecognition` trong môi trường WebView vì Android WebView mặc định thiếu cloud speech service và sẽ trả về lỗi `not-allowed` / `service-not-allowed`.
+#      - Trình duyệt Web (Chrome / Safari / Firefox): Sử dụng Web Speech API tiêu chuẩn (`webkitSpeechRecognition` / `SpeechRecognition`).
+#      - Chốt Chặn Dự Phòng Âm Thanh Nhị Phân (Binary Audio Streaming Fallback):
+#        + Song song với STT, `MediaRecorder` BẮT BUỘC luôn sẵn sàng ghi âm stream micro (không bị chặn bởi `!recognitionRef.current`).
+#        + Tích hợp Smart VAD (Voice Activity Detection): Tự động phát hiện im lặng sau 1.8 giây không phát hiện âm thanh (`rms < 0.04`) để tự dừng thu âm và gửi binary audio blob lên backend `/api/ai/ask-voice`.
+#   2. Phát Âm Trả Lời (Text-to-Speech / TTS 3 Tiers):
+#      - Tier 1 (Native Android APK): Gọi `NativeBridge.speak(text)` thông qua `android.speech.tts.TextToSpeech` cục bộ của hệ điều hành với độ trễ 0ms.
+#      - Tier 2 (Web Browser): Gọi `window.speechSynthesis.speak(utterance)` khi danh sách giọng đọc `getVoices()` có sẵn.
+#      - Tier 3 (HTML5 Audio Fallback): Gọi Google Translate TTS API hoặc backend audio synthesizer thông qua thẻ `<audio>` ẩn (`audioPlayerRef`) khi WebView hoặc trình duyệt không có giọng đọc cục bộ.
+#   3. Chuẩn Hóa MIME Type Cho Backend LLM (Gemini Audio):
+#      - Khi gửi file âm thanh lên Google Gemini Multimodal API, BẮT BUỘC chuẩn hóa MIME type bằng `mimeType.split(';')[0].trim()` (ví dụ `audio/webm;codecs=opus` phải rút gọn thành `audio/webm`).
+#      - TUYỆT ĐỐI KHÔNG gửi chuỗi MIME có kèm codec parameter vào Gemini API vì sẽ gây lỗi `400 Bad Request`.
+#
+# [BẮT BUỘC 57] Đồng Bộ Cuộc Gọi & Thông Báo Nền Di Động (Mobile Background Calls & WebRTC Sync):
+#   1. Thông Báo Cuộc Gọi & Tin Nhắn Ngoài Màn Hình Khóa (Background Push Service):
+#      - App CEO 1983 Mobile BẮT BUỘC duy trì Foreground/Background Service (`CeoNotificationSyncService` trên Android) với cơ chế đồng bộ ngầm định kỳ (polling API `/me/active-call`, `/notifications`).
+#      - Khi phát hiện cuộc gọi đến hoặc tin nhắn mới, BẮT BUỘC bắn Heads-up Notification ngoài màn hình khóa / thanh thông báo điện thoại với cờ `PRIORITY_MAX`, âm thanh chuông gọi và nút bấm trực tiếp "Nghe" / "Từ chối" mà KHÔNG cần người dùng phải mở ứng dụng trước.
+#   2. Triệt Tiêu Lỗi Trùng Lặp Cuộc Gọi (Call Deduplication) & Đồng Bộ Kết Thúc (Termination Sync):
+#      - Gateway WebRTC (`connect-app.gateway.ts`) BẮT BUỘC kiểm tra trạng thái cuộc gọi (`isBusy`, `callDebounce`), ngăn chặn khởi tạo song song 2 cuộc gọi cùng lúc giữa 2 tài khoản.
+#      - Khi một đầu kết thúc cuộc gọi (`hangup` / `call_ended`), backend BẮT BUỘC phát sự kiện `call:ended` tới toàn bộ socket rooms và đầu bên kia BẮT BUỘC tự động đóng modal, ngừng rung/chuông ngay lập tức.
+#
+# [BẮT BUỘC 58] Chuẩn Hóa CRM Hiệp Hội & Giao Diện Người Dùng (CRM RBAC, Dashboards & Finance Excel):
+#   1. Ma Trận Phân Quyền (`RbacPermissionMatrix`):
+#      - Bổ sung đầy đủ các vai trò Trưởng ban chuyên trách (`truong_ban_truyen_thong`, `truong_ban_thanh_vien`, `truong_ban_xuc_tien`, `truong_ban_tai_chinh`, `truong_ban_thien_nguyen`, `truong_ban_quan_tri`).
+#      - LOẠI BỎ GẤP vai trò `ban_thu_ky` (chuyển sang `tong_thu_ky` hoặc `Ban Quản trị`).
+#      - Loại bỏ nút "Lưu toàn bộ" cạnh nút "+ Thêm quyền"; nút "+ Thêm chức năng" BẮT BUỘC tự động quét/phát hiện các route và chức năng mới của hệ thống và lưu trực tiếp vào CSDL.
+#   2. Phân Quyền Tài Khoản (`MemberPermissionsByCommittee`):
+#      - Bỏ hoàn toàn các từ ngữ "gấp cấp", "cấp" (thay bằng "Bật" / "Tắt", "bật thêm").
+#      - Đổi nút "Tùy chỉnh quyền" thành "Chỉnh sửa", bổ sung thêm thao tác "Xem" (chi tiết) và "Xóa" (xóa bỏ quyền ghi đè, hoàn trả quyền gốc), đảm bảo 3 phân hệ liên thông mật thiết.
+#   3. Trình Chiếu Mã QR Sự Kiện Đã Đăng Ký (QR Slide):
+#      - Hiển thị dạng Slide/Carousel tối đa 3 mã QR của các sự kiện đã đăng ký thành công, kèm text "Xem tất cả" mở Modal tra cứu đầy đủ.
+#   4. Bộ Lọc Trạng Thái Toàn Bộ Dashboard (Dynamic Status Filter):
+#      - Mọi màn hình Dashboard (`ExecutiveDashboard`, `events-overview`, `finance-report`) BẮT BUỘC có bộ lọc trạng thái (Tất cả, Đang hoạt động, Chờ duyệt, v.v.) gọi API CSDL thực tế và tính toán lại các chỉ số KPI/bảng biểu trực tiếp.
+#   5. Quản Lý Tài Chính (Khoản Thu & Khoản Chi):
+#      - BẮT BUỘC có đồng thời nút "Xuất Excel" và "Import Excel" (`FinanceExcelImportModal`) cho cả Khoản thu (`income.tsx`) và Khoản chi & Tạm ứng (`expenses.tsx`), hỗ trợ tải file mẫu chuẩn, xác thực dữ liệu và ghi trực tiếp vào CSDL.
+#   6. Chuẩn Hóa Ngôn Ngữ Giao Diện (Zero Technical Jargon):
+#      - TUYỆT ĐỐI KHÔNG để lộ các thuật ngữ kỹ thuật như "SQL", "PostgreSQL", "public.<table_name>", "RESTful API", "Cấp bậc" trên giao diện người dùng app CEO 1983 và CRM hiệp hội.
+#
+# [BẮT BUỘC 59] Xử Lý Khoảng Trắng Nhập Liệu (Stream Space / Auto-Trim) & Đồng Bộ Tài Liệu Kỹ Năng Tiếng Việt:
+#   1. Tự Động Cắt Bỏ Khoảng Trắng Thừa Ô Nhập Liệu (Auto-Trim Whitespace):
+#      - TOÀN BỘ ô nhập liệu (`<input>`, `<textarea>`) trong hệ sinh thái Web CRM và App CEO 1983 BẮT BUỘC có cơ chế tự động cắt bỏ khoảng trắng thừa đầu cuối (Auto-trim whitespace) khi mất tiêu điểm (`onBlur` / `focusout`).
+#      - Sử dụng bộ lắng nghe toàn cầu (`setupGlobalInputTrimmer` trong `__root.tsx`) kết hợp các thành phần UI nền tảng (`Input`, `Textarea`):
+#        + Bỏ qua trường mật khẩu (`type="password"`), trường file, checkbox, radio để bảo toàn dữ liệu bảo mật.
+#        + Tự động cập nhật thuộc tính thông qua prototype descriptor (`HTMLInputElement.prototype` / `HTMLTextAreaElement.prototype`) và phát sinh synthetic event `input`, `change` để React Virtual DOM, React Hook Form, TanStack Form và native event listeners lập tức đồng bộ giá trị sạch.
+#        + Ngăn chặn tình trạng nhập toàn khoảng trắng ("   ") khiến trường dữ liệu bị lưu rác vào CSDL.
+#   2. Đồng Bộ Hóa 100% File SKILL Sang Tiếng Việt:
+#      - Toàn bộ các tệp tài liệu kỹ năng AI (`SKILL.md`) trong dự án bao gồm:
+#        * Hệ thống hiệp hội (`.agents/skills/ceo1983-association/SKILL.md`)
+#        * Ứng dụng di động (`apps/mobile_ceo1983/docs/SKILL.md`, `.agents/skills/ceo1983-mobile/SKILL.md`)
+#        * Frontend Web PWA (`apps/ceo1983_app_fe/docs/SKILL.md`)
+#        * Backend NestJS API (`apps/ceo1983_app_be/docs/SKILL.md`)
+#        BẮT BUỘC duy trì ngôn ngữ tiếng Việt chuyên nghiệp, cấu trúc rõ ràng, chuẩn định dạng YAML frontmatter để các Agent và trợ lý lập trình tiếp nhận chuẩn xác.
+
+
+
+
+
 

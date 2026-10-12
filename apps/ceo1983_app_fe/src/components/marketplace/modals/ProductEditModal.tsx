@@ -65,7 +65,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       >
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <Pencil className="h-5 w-5 text-[#2E3192] dark:text-amber-400" />
+            <Pencil className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
             {isEn ? "Edit Product / Service" : "Chỉnh Sửa Sản Phẩm / Dịch Vụ"}
           </h3>
           <button
@@ -234,8 +234,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
             <button
               type="submit"
               disabled={updatingProduct}
-              style={{ color: "#ffffff" }}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#2E3192] hover:bg-[#232677] py-2.5 text-xs font-bold text-white shadow-md shadow-[#2E3192]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
             >
               <span>{updatingProduct ? (isEn ? "Saving..." : "Đang lưu...") : (isEn ? "Save Changes" : "Lưu Thay Đổi")}</span>
             </button>

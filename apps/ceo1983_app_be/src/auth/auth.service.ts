@@ -46,10 +46,34 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { username: user.username, sub: user.id, name: user.name, email: user.email };
+    const details = await this.usersService.getAccountDetails(user.id);
+    const resolvedRole = details?.role || 'member';
+    const roleList = details?.roles || [resolvedRole];
+    const execRole = details?.executive_role || details?.executiveRole || 'Hội viên';
+    const department = details?.department || 'Hội viên ceo1983';
+
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      id: user.id,
+      name: user.name || details?.name,
+      email: user.email || details?.email,
+      role: resolvedRole,
+      roles: roleList,
+      executive_role: execRole,
+      executiveRole: execRole,
+      department: department,
+      memberId: details?.memberId || null,
+      memberCode: details?.memberCode || null,
+      isPresident: Boolean(details?.isPresident),
+      isAdmin: Boolean(details?.isAdmin),
+      isExecutive: Boolean(details?.isExecutive),
+      isGeneralSecretary: Boolean(details?.isGeneralSecretary),
+      isDepartmentLeader: Boolean(details?.isDepartmentLeader),
+    };
     const refreshPayload = { sub: user.id, type: 'refresh' };
     const mustChangePassword = await this.usersService.checkMustChangePassword(user.id);
-    
+
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),
       refresh_token: this.jwtService.sign(refreshPayload, { expiresIn: '7d' }),
@@ -57,10 +81,22 @@ export class AuthService {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email,
-        name: user.name,
-        avatar_url: user.avatar_url,
+        email: user.email || details?.email,
+        name: user.name || details?.name,
+        avatar_url: user.avatar_url || details?.avatar_url,
         mustChangePassword,
+        role: resolvedRole,
+        roles: roleList,
+        executive_role: execRole,
+        executiveRole: execRole,
+        department: department,
+        memberCode: details?.memberCode || null,
+        memberId: details?.memberId || null,
+        isPresident: Boolean(details?.isPresident),
+        isAdmin: Boolean(details?.isAdmin),
+        isExecutive: Boolean(details?.isExecutive),
+        isGeneralSecretary: Boolean(details?.isGeneralSecretary),
+        isDepartmentLeader: Boolean(details?.isDepartmentLeader),
       },
     };
   }
@@ -75,7 +111,31 @@ export class AuthService {
       if (!user) {
         throw new UnauthorizedException('Tài khoản người dùng không tồn tại');
       }
-      const payload = { username: user.username, sub: user.id, name: user.name, email: user.email };
+      const details = await this.usersService.getAccountDetails(user.id);
+      const resolvedRole = details?.role || 'member';
+      const roleList = details?.roles || [resolvedRole];
+      const execRole = details?.executive_role || details?.executiveRole || 'Hội viên';
+      const department = details?.department || 'Hội viên ceo1983';
+
+      const payload = {
+        username: user.username,
+        sub: user.id,
+        id: user.id,
+        name: user.name || details?.name,
+        email: user.email || details?.email,
+        role: resolvedRole,
+        roles: roleList,
+        executive_role: execRole,
+        executiveRole: execRole,
+        department: department,
+        memberId: details?.memberId || null,
+        memberCode: details?.memberCode || null,
+        isPresident: Boolean(details?.isPresident),
+        isAdmin: Boolean(details?.isAdmin),
+        isExecutive: Boolean(details?.isExecutive),
+        isGeneralSecretary: Boolean(details?.isGeneralSecretary),
+        isDepartmentLeader: Boolean(details?.isDepartmentLeader),
+      };
       const newRefreshPayload = { sub: user.id, type: 'refresh' };
       return {
         access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),
@@ -83,9 +143,21 @@ export class AuthService {
         user: {
           id: user.id,
           username: user.username,
-          email: user.email,
-          name: user.name,
-          avatar_url: user.avatar_url,
+          email: user.email || details?.email,
+          name: user.name || details?.name,
+          avatar_url: user.avatar_url || details?.avatar_url,
+          role: resolvedRole,
+          roles: roleList,
+          executive_role: execRole,
+          executiveRole: execRole,
+          department: department,
+          memberCode: details?.memberCode || null,
+          memberId: details?.memberId || null,
+          isPresident: Boolean(details?.isPresident),
+          isAdmin: Boolean(details?.isAdmin),
+          isExecutive: Boolean(details?.isExecutive),
+          isGeneralSecretary: Boolean(details?.isGeneralSecretary),
+          isDepartmentLeader: Boolean(details?.isDepartmentLeader),
         },
       };
     } catch (e) {

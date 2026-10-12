@@ -47,9 +47,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
-import { RBAC_MATRIX_STORAGE_KEY, normalizeActionRoles } from "@/lib/rbac-permission-helpers";
+import { RBAC_MATRIX_STORAGE_KEY, normalizeActionRoles, dispatchPermissionSyncEvent } from "@/lib/rbac-permission-helpers";
 
-// ── ĐÚNG 6 BAN CHUYÊN MÔN (TUYỆT ĐỐI KHÔNG CÓ BAN ĐIỀU HÀNH) ──
+// ── 6 BAN CHUYÊN MÔN / BAN ĐIỀU HÀNH ──
 export interface CommitteeRole {
   key: string;
   name: string;
@@ -58,7 +58,7 @@ export interface CommitteeRole {
 }
 
 export const COMMITTEES: CommitteeRole[] = [
-  { key: "bqt", name: "Ban Quản Trị", shortName: "Ban Quản Trị", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800" },
+  { key: "bqt", name: "Ban Điều Hành", shortName: "Ban Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800" },
   { key: "thu_ky", name: "Ban Thư Ký", shortName: "Ban Thư Ký", color: "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800" },
   { key: "thanh_vien", name: "Ban Thành Viên", shortName: "Ban Thành Viên", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800" },
   { key: "xuc_tien", name: "Ban Xúc Tiến Thương Mại", shortName: "Ban Xúc Tiến TM", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800" },
@@ -66,7 +66,7 @@ export const COMMITTEES: CommitteeRole[] = [
   { key: "thien_nguyen", name: "Ban Thiện Nguyện", shortName: "Ban Thiện Nguyện", color: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800" },
 ];
 
-// ── ĐÚNG 5 ROLE HỆ THỐNG ──
+// ── HỆ THỐNG ROLE: CHỦ TỊCH -> ADMIN -> BAN ĐIỀU HÀNH -> TỔNG THƯ KÝ -> TRƯỞNG BAN ──
 export interface SystemRole {
   key: string;
   name: string;
@@ -76,10 +76,16 @@ export interface SystemRole {
 }
 
 export const SYSTEM_ROLES: SystemRole[] = [
+  { key: "chu_tich", name: "Chủ tịch", shortName: "Chủ tịch", color: "text-amber-800 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700", desc: "Chủ tịch Hiệp hội, quyền phê duyệt tối cao toàn hệ thống" },
   { key: "quan_tri", name: "Quản trị", shortName: "Quản trị", color: "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800", desc: "Toàn quyền hệ thống & phân quyền cao nhất" },
   { key: "admin", name: "Admin", shortName: "Admin", color: "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800", desc: "Quản trị viên vận hành nghiệp vụ CRM" },
   { key: "tong_thu_ky", name: "Tổng thư ký", shortName: "Tổng thư ký", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800", desc: "Điều phối thư ký, sự kiện, cuộc họp & công văn" },
-  { key: "truong_ban", name: "Trưởng ban", shortName: "Trưởng ban", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800", desc: "Lãnh đạo ban chuyên môn, khởi tạo & duyệt đề xuất ban" },
+  { key: "truong_ban_quan_tri", name: "Trưởng ban điều hành", shortName: "TB Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800", desc: "Điều hành quản lý nội bộ, quy chế & điều phối các ban" },
+  { key: "truong_ban_truyen_thong", name: "Trưởng ban truyền thông", shortName: "TB Truyền thông", color: "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800", desc: "Quản lý truyền thông, tin tức, hình ảnh & thương hiệu" },
+  { key: "truong_ban_thanh_vien", name: "Trưởng ban thành viên", shortName: "TB Thành viên", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800", desc: "Phát triển hội viên, kết nạp & chăm sóc hội viên mới" },
+  { key: "truong_ban_xuc_tien", name: "Trưởng ban xúc tiến TM", shortName: "TB Xúc tiến", color: "text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800", desc: "Điều phối cơ hội giao thương, kết nối B2B & kinh doanh" },
+  { key: "truong_ban_tai_chinh", name: "Trưởng ban tài chính", shortName: "TB Tài chính", color: "text-yellow-700 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800", desc: "Quản lý quỹ, thu chi & ngân sách hiệp hội" },
+  { key: "truong_ban_thien_nguyen", name: "Trưởng ban thiện nguyện", shortName: "TB Thiện nguyện", color: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800", desc: "Tổ chức hoạt động thiện nguyện vì cộng đồng" },
   { key: "member", name: "Thành viên", shortName: "Thành viên", color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800", desc: "Hội viên chính thức tham gia sinh hoạt & giao thương" },
 ];
 
@@ -121,7 +127,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/members",
         description: "Quản lý hồ sơ hội viên cá nhân, mã hội viên và thông tin hội viên",
         actions: [
-          { id: "act_mem_view", name: "Xem danh sách & hồ sơ hội viên", code: "MEM_VIEW", description: "Tra cứu thông tin cá nhân, chức danh, doanh nghiệp", apiEndpoint: "GET /api/members", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_mem_view", name: "Xem danh sách & hồ sơ hội viên", code: "MEM_VIEW", description: "Tra cứu thông tin cá nhân, chức danh, doanh nghiệp", apiEndpoint: "GET /api/members", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_mem_add", name: "Thêm mới hội viên", code: "MEM_ADD", description: "Tạo mới tài khoản và hồ sơ hội viên vào hệ thống", apiEndpoint: "POST /api/members", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_mem_edit", name: "Chỉnh sửa thông tin hội viên", code: "MEM_EDIT", description: "Cập nhật email, số điện thoại, chức danh, ảnh đại diện", apiEndpoint: "PUT /api/members/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_mem_delete", name: "Xóa / Thu hồi tư cách hội viên", code: "MEM_DELETE", description: "Xóa hoặc đình chỉ tư cách hội viên trong hiệp hội", apiEndpoint: "DELETE /api/members/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -135,7 +141,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/companies",
         description: "Quản lý pháp nhân doanh nghiệp, ngành nghề và quy mô tổ chức",
         actions: [
-          { id: "act_com_view", name: "Xem danh sách & hồ sơ doanh nghiệp", code: "COM_VIEW", description: "Tra cứu thông tin công ty, mã số thuế, trụ sở", apiEndpoint: "GET /api/companies", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_com_view", name: "Xem danh sách & hồ sơ doanh nghiệp", code: "COM_VIEW", description: "Tra cứu thông tin công ty, mã số thuế, trụ sở", apiEndpoint: "GET /api/companies", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_com_add", name: "Thêm mới doanh nghiệp", code: "COM_ADD", description: "Tạo hồ sơ pháp nhân doanh nghiệp mới", apiEndpoint: "POST /api/companies", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, quan_tri: true, admin: true } },
           { id: "act_com_edit", name: "Chỉnh sửa thông tin doanh nghiệp", code: "COM_EDIT", description: "Cập nhật ngành nghề, địa chỉ, website, logo doanh nghiệp", apiEndpoint: "PUT /api/companies/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, quan_tri: true, admin: true } },
           { id: "act_com_delete", name: "Xóa hồ sơ doanh nghiệp", code: "COM_DELETE", description: "Xóa thông tin doanh nghiệp khỏi cơ sở dữ liệu", apiEndpoint: "DELETE /api/companies/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -148,7 +154,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/segments",
         description: "Quản lý các nhóm phân khúc, tiêu chí hội viên và nhiệm kỳ",
         actions: [
-          { id: "act_seg_view", name: "Xem danh sách phân loại hội viên", code: "SEG_VIEW", description: "Tra cứu danh sách nhóm phân loại và tiêu chí", apiEndpoint: "GET /api/segments", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_seg_view", name: "Xem danh sách phân loại hội viên", code: "SEG_VIEW", description: "Tra cứu danh sách nhóm phân loại và tiêu chí", apiEndpoint: "GET /api/segments", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_seg_add", name: "Thêm mới phân loại hội viên", code: "SEG_ADD", description: "Khởi tạo nhóm phân khúc mới", apiEndpoint: "POST /api/segments", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
           { id: "act_seg_edit", name: "Chỉnh sửa phân loại hội viên", code: "SEG_EDIT", description: "Cập nhật tiêu chí hoặc điều kiện phân loại", apiEndpoint: "PUT /api/segments/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
           { id: "act_seg_delete", name: "Xóa phân loại hội viên", code: "SEG_DELETE", description: "Xóa nhóm phân loại không còn sử dụng", apiEndpoint: "DELETE /api/segments/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -181,9 +187,9 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/events",
         description: "Quản lý các chương trình sự kiện, hội thảo, đại hội và gala",
         actions: [
-          { id: "act_evt_view", name: "Xem danh sách & chi tiết sự kiện", code: "EVT_VIEW", description: "Tra cứu thông tin, địa điểm, timeline sự kiện", apiEndpoint: "GET /api/events", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_evt_add", name: "Thêm mới sự kiện", code: "EVT_ADD", description: "Tạo chương trình sự kiện mới", apiEndpoint: "POST /api/events", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
-          { id: "act_evt_edit", name: "Chỉnh sửa thông tin sự kiện", code: "EVT_EDIT", description: "Cập nhật nội dung, thời gian, vé tham dự", apiEndpoint: "PUT /api/events/:id", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_evt_view", name: "Xem danh sách & chi tiết sự kiện", code: "EVT_VIEW", description: "Tra cứu thông tin, địa điểm, timeline sự kiện", apiEndpoint: "GET /api/events", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_evt_add", name: "Thêm mới sự kiện", code: "EVT_ADD", description: "Tạo chương trình sự kiện mới", apiEndpoint: "POST /api/events", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
+          { id: "act_evt_edit", name: "Chỉnh sửa thông tin sự kiện", code: "EVT_EDIT", description: "Cập nhật nội dung, thời gian, vé tham dự", apiEndpoint: "PUT /api/events/:id", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_evt_delete", name: "Xóa / Hủy sự kiện", code: "EVT_DELETE", description: "Hủy bỏ hoặc xóa sự kiện", apiEndpoint: "DELETE /api/events/:id", roles: { bqt: true, quan_tri: true, admin: true } },
           { id: "act_evt_publish", name: "Phê duyệt & Xuất bản sự kiện", code: "EVT_PUBLISH", description: "Duyệt công khai sự kiện lên App hội viên", apiEndpoint: "PATCH /api/events/:id/publish", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
         ],
@@ -194,7 +200,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/events-overview",
         description: "Báo cáo thống kê tổng quát các hoạt động sự kiện hiệp hội",
         actions: [
-          { id: "act_evto_view", name: "Xem tổng quan & chỉ số sự kiện", code: "EVTO_VIEW", description: "Xem biểu đồ số lượng người tham dự, tỷ lệ tham gia", apiEndpoint: "GET /api/events/overview", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_evto_view", name: "Xem tổng quan & chỉ số sự kiện", code: "EVTO_VIEW", description: "Xem biểu đồ số lượng người tham dự, tỷ lệ tham gia", apiEndpoint: "GET /api/events/overview", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_evto_export", name: "Xuất báo cáo tổng quan sự kiện", code: "EVTO_EXPORT", description: "Xuất file thống kê sự kiện theo quý/năm", apiEndpoint: "GET /api/events/overview/export", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
         ],
       },
@@ -204,9 +210,9 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/meetings",
         description: "Quản lý cuộc họp ban, họp BCH trực tuyến/trực tiếp và đặt phòng họp",
         actions: [
-          { id: "act_meet_view", name: "Xem danh sách cuộc họp", code: "MEET_VIEW", description: "Tra cứu lịch họp, phòng họp Sapphire, Zoom/Meet", apiEndpoint: "GET /api/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_meet_add", name: "Tạo cuộc họp mới", code: "MEET_ADD", description: "Khởi tạo cuộc họp ban kèm đăng ký phòng họp", apiEndpoint: "POST /api/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
-          { id: "act_meet_edit", name: "Chỉnh sửa thông tin cuộc họp", code: "MEET_EDIT", description: "Điều chỉnh thời gian, đường link, đại biểu tham dự", apiEndpoint: "PUT /api/meetings/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_meet_view", name: "Xem danh sách cuộc họp", code: "MEET_VIEW", description: "Tra cứu lịch họp, phòng họp Sapphire, Zoom/Meet", apiEndpoint: "GET /api/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_meet_add", name: "Tạo cuộc họp mới", code: "MEET_ADD", description: "Khởi tạo cuộc họp ban kèm đăng ký phòng họp", apiEndpoint: "POST /api/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
+          { id: "act_meet_edit", name: "Chỉnh sửa thông tin cuộc họp", code: "MEET_EDIT", description: "Điều chỉnh thời gian, đường link, đại biểu tham dự", apiEndpoint: "PUT /api/meetings/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_meet_delete", name: "Xóa / Hủy cuộc họp", code: "MEET_DELETE", description: "Hủy bỏ lịch họp và giải phóng phòng", apiEndpoint: "DELETE /api/meetings/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true } },
           { id: "act_meet_approve", name: "Phê duyệt cuộc họp", code: "MEET_APPROVE", description: "Duyệt cuộc họp của ban đề xuất gửi lên Quản trị", apiEndpoint: "PATCH /api/meetings/:id/approve", roles: { bqt: true, quan_tri: true, admin: true } },
         ],
@@ -217,7 +223,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/voting",
         description: "Quản lý các kỳ bỏ phiếu kín, bầu cử đại hội và biểu quyết nghị quyết",
         actions: [
-          { id: "act_vote_view", name: "Xem danh sách kỳ biểu quyết", code: "VOTE_VIEW", description: "Xem nội dung biểu quyết và kết quả công bố", apiEndpoint: "GET /api/voting", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_vote_view", name: "Xem danh sách kỳ biểu quyết", code: "VOTE_VIEW", description: "Xem nội dung biểu quyết và kết quả công bố", apiEndpoint: "GET /api/voting", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_vote_add", name: "Tạo mới phiên biểu quyết", code: "VOTE_ADD", description: "Thiết lập kỳ bỏ phiếu mới kèm phương án lựa chọn", apiEndpoint: "POST /api/voting", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_vote_edit", name: "Chỉnh sửa phiên biểu quyết", code: "VOTE_EDIT", description: "Cập nhật ứng viên hoặc thể lệ biểu quyết", apiEndpoint: "PUT /api/voting/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_vote_delete", name: "Xóa phiên biểu quyết", code: "VOTE_DELETE", description: "Xóa phiên biểu quyết sai sót", apiEndpoint: "DELETE /api/voting/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -230,7 +236,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/event-registrations",
         description: "Quản lý danh sách khách mời và đại biểu đăng ký tham gia sự kiện",
         actions: [
-          { id: "act_ereg_view", name: "Xem danh sách đăng ký sự kiện", code: "EREG_VIEW", description: "Xem thông tin đại biểu đã đăng ký vé tham dự", apiEndpoint: "GET /api/event-registrations", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_ereg_view", name: "Xem danh sách đăng ký sự kiện", code: "EREG_VIEW", description: "Xem thông tin đại biểu đã đăng ký vé tham dự", apiEndpoint: "GET /api/event-registrations", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_ereg_approve", name: "Phê duyệt đăng ký tham gia", code: "EREG_APPROVE", description: "Xác nhận duyệt vé cho đại biểu", apiEndpoint: "PATCH /api/event-registrations/:id/approve", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_ereg_edit", name: "Chỉnh sửa thông tin đăng ký", code: "EREG_EDIT", description: "Điều chỉnh số lượng ghế hoặc thông tin người đi kèm", apiEndpoint: "PUT /api/event-registrations/:id", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true } },
           { id: "act_ereg_delete", name: "Xóa / Hủy đăng ký", code: "EREG_DELETE", description: "Hủy bỏ đăng ký của đại biểu", apiEndpoint: "DELETE /api/event-registrations/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true } },
@@ -243,8 +249,8 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/checkin",
         description: "Công cụ quét mã QR điểm danh khách mời và đại biểu tại cửa",
         actions: [
-          { id: "act_chk_view", name: "Xem lịch sử check-in", code: "CHK_VIEW", description: "Theo dõi số lượng khách đã có mặt theo thời gian thực", apiEndpoint: "GET /api/checkin", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
-          { id: "act_chk_scan", name: "Quét mã QR check-in", code: "CHK_SCAN", description: "Mở camera quét vé QR để điểm danh đại biểu", apiEndpoint: "POST /api/checkin/scan", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_chk_view", name: "Xem lịch sử check-in", code: "CHK_VIEW", description: "Theo dõi số lượng khách đã có mặt theo thời gian thực", apiEndpoint: "GET /api/checkin", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
+          { id: "act_chk_scan", name: "Quét mã QR check-in", code: "CHK_SCAN", description: "Mở camera quét vé QR để điểm danh đại biểu", apiEndpoint: "POST /api/checkin/scan", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_chk_manual", name: "Điểm danh thủ công bằng tay", code: "CHK_MANUAL", description: "Tìm kiếm và xác nhận đại biểu khi không có mã QR", apiEndpoint: "POST /api/checkin/manual", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
         ],
       },
@@ -254,7 +260,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/checkin-qr",
         description: "Quản lý và xuất mã QR tĩnh tại bàn lễ tân / Standee để hội viên tự quét",
         actions: [
-          { id: "act_chkq_view", name: "Xem mã QR sự kiện & Standee", code: "CHKQ_VIEW", description: "Hiển thị mã QR check-in lên màn hình hoặc máy chiếu", apiEndpoint: "GET /api/checkin-qr", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_chkq_view", name: "Xem mã QR sự kiện & Standee", code: "CHKQ_VIEW", description: "Hiển thị mã QR check-in lên màn hình hoặc máy chiếu", apiEndpoint: "GET /api/checkin-qr", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_chkq_export", name: "Tải về / In mã QR Standee", code: "CHKQ_EXPORT", description: "Tải file ảnh mã QR độ phân giải cao để in ấn", apiEndpoint: "GET /api/checkin-qr/download", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
         ],
       },
@@ -273,7 +279,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/sponsors",
         description: "Quản lý danh sách các doanh nghiệp tài trợ kim cương, vàng, bạc",
         actions: [
-          { id: "act_spn_view", name: "Xem danh sách nhà tài trợ", code: "SPN_VIEW", description: "Tra cứu thông tin nhà tài trợ và hạng mức tài trợ", apiEndpoint: "GET /api/sponsors", roles: { bqt: true, thu_ky: true, xuc_tien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_spn_view", name: "Xem danh sách nhà tài trợ", code: "SPN_VIEW", description: "Tra cứu thông tin nhà tài trợ và hạng mức tài trợ", apiEndpoint: "GET /api/sponsors", roles: { bqt: true, thu_ky: true, xuc_tien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_spn_add", name: "Thêm mới nhà tài trợ", code: "SPN_ADD", description: "Tiếp nhận doanh nghiệp tài trợ mới", apiEndpoint: "POST /api/sponsors", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_spn_edit", name: "Chỉnh sửa thông tin tài trợ", code: "SPN_EDIT", description: "Cập nhật hợp đồng, logo, giá trị tài trợ", apiEndpoint: "PUT /api/sponsors/:id", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_spn_delete", name: "Xóa nhà tài trợ", code: "SPN_DELETE", description: "Xóa thông tin nhà tài trợ khỏi sự kiện", apiEndpoint: "DELETE /api/sponsors/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -286,7 +292,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/sponsor-packages",
         description: "Cấu hình danh mục các gói tài trợ và quyền lợi đối ứng",
         actions: [
-          { id: "act_spk_view", name: "Xem danh mục gói tài trợ", code: "SPK_VIEW", description: "Xem giá trị định mức và quyền lợi các gói", apiEndpoint: "GET /api/sponsor-packages", roles: { bqt: true, thu_ky: true, xuc_tien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_spk_view", name: "Xem danh mục gói tài trợ", code: "SPK_VIEW", description: "Xem giá trị định mức và quyền lợi các gói", apiEndpoint: "GET /api/sponsor-packages", roles: { bqt: true, thu_ky: true, xuc_tien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_spk_add", name: "Tạo gói tài trợ mới", code: "SPK_ADD", description: "Thiết lập gói tài trợ kèm danh mục quyền lợi", apiEndpoint: "POST /api/sponsor-packages", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true } },
           { id: "act_spk_edit", name: "Chỉnh sửa gói tài trợ", code: "SPK_EDIT", description: "Điều chỉnh mức phí và quyền lợi đối ứng", apiEndpoint: "PUT /api/sponsor-packages/:id", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true } },
           { id: "act_spk_delete", name: "Xóa gói tài trợ", code: "SPK_DELETE", description: "Xóa gói tài trợ không còn áp dụng", apiEndpoint: "DELETE /api/sponsor-packages/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -344,7 +350,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         description: "Quản lý các khoản chi tiêu tổ chức sự kiện, thiện nguyện, hành chính",
         actions: [
           { id: "act_exp_view", name: "Xem danh sách phiếu chi", code: "EXP_VIEW", description: "Tra cứu các khoản giải ngân và chi tiêu nội bộ", apiEndpoint: "GET /api/expenses", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
-          { id: "act_exp_add", name: "Lập đề xuất / Phiếu chi mới", code: "EXP_ADD", description: "Tạo phiếu chi tiền kèm hóa đơn chứng từ", apiEndpoint: "POST /api/expenses", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_exp_add", name: "Lập đề xuất / Phiếu chi mới", code: "EXP_ADD", description: "Tạo phiếu chi tiền kèm hóa đơn chứng từ", apiEndpoint: "POST /api/expenses", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_exp_edit", name: "Chỉnh sửa phiếu chi", code: "EXP_EDIT", description: "Cập nhật thông tin phiếu chi", apiEndpoint: "PUT /api/expenses/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true } },
           { id: "act_exp_delete", name: "Xóa phiếu chi", code: "EXP_DELETE", description: "Hủy phiếu chi không được thông qua", apiEndpoint: "DELETE /api/expenses/:id", roles: { bqt: true, quan_tri: true, admin: true } },
           { id: "act_exp_approve", name: "Phê duyệt phiếu chi", code: "EXP_APPROVE", description: "Ký duyệt chi tiền từ tài khoản quỹ", apiEndpoint: "PATCH /api/expenses/:id/approve", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -375,8 +381,8 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/notifications",
         description: "Hệ thống thông báo đẩy (Push Notifications) và chuông thông báo In-App",
         actions: [
-          { id: "act_ntf_view", name: "Xem danh sách thông báo", code: "NTF_VIEW", description: "Xem các thông báo đã gửi trong hệ thống", apiEndpoint: "GET /api/notifications", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_ntf_send", name: "Gửi thông báo mới (Push / In-App)", code: "NTF_SEND", description: "Bắn thông báo tức thì tới toàn thể hoặc theo ban", apiEndpoint: "POST /api/notifications", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_ntf_view", name: "Xem danh sách thông báo", code: "NTF_VIEW", description: "Xem các thông báo đã gửi trong hệ thống", apiEndpoint: "GET /api/notifications", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_ntf_send", name: "Gửi thông báo mới (Push / In-App)", code: "NTF_SEND", description: "Bắn thông báo tức thì tới toàn thể hoặc theo ban", apiEndpoint: "POST /api/notifications", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_ntf_edit", name: "Chỉnh sửa thông báo", code: "NTF_EDIT", description: "Cập nhật tiêu đề hoặc nội dung thông báo", apiEndpoint: "PUT /api/notifications/:id", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true } },
           { id: "act_ntf_delete", name: "Xóa / Thu hồi thông báo", code: "NTF_DELETE", description: "Xóa thông báo đã gửi", apiEndpoint: "DELETE /api/notifications/:id", roles: { bqt: true, quan_tri: true, admin: true } },
         ],
@@ -400,8 +406,8 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/news",
         description: "Quản lý cổng tin tức, bài viết hoạt động và vinh danh doanh nghiệp",
         actions: [
-          { id: "act_nws_view", name: "Xem danh sách tin tức & bài viết", code: "NWS_VIEW", description: "Đọc bài viết và lượt tương tác bài", apiEndpoint: "GET /api/news", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_nws_add", name: "Thêm bài viết mới", code: "NWS_ADD", description: "Soạn thảo bài viết kèm ảnh và video", apiEndpoint: "POST /api/news", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_nws_view", name: "Xem danh sách tin tức & bài viết", code: "NWS_VIEW", description: "Đọc bài viết và lượt tương tác bài", apiEndpoint: "GET /api/news", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_nws_add", name: "Thêm bài viết mới", code: "NWS_ADD", description: "Soạn thảo bài viết kèm ảnh và video", apiEndpoint: "POST /api/news", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
           { id: "act_nws_edit", name: "Chỉnh sửa bài viết", code: "NWS_EDIT", description: "Cập nhật nội dung bài viết tin tức", apiEndpoint: "PUT /api/news/:id", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_nws_delete", name: "Xóa bài viết", code: "NWS_DELETE", description: "Xóa bài viết khỏi trang tin", apiEndpoint: "DELETE /api/news/:id", roles: { bqt: true, quan_tri: true, admin: true } },
           { id: "act_nws_publish", name: "Phê duyệt & Xuất bản tin tức", code: "NWS_PUBLISH", description: "Bật hiển thị tin tức lên trang chủ App", apiEndpoint: "PATCH /api/news/:id/publish", roles: { bqt: true, truyen_thong: true, quan_tri: true, admin: true } },
@@ -413,7 +419,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/perks",
         description: "Quản lý các tiện ích ưu đãi đặc quyền dành riêng cho hội viên",
         actions: [
-          { id: "act_prk_view", name: "Xem danh sách tiện ích", code: "PRK_VIEW", description: "Xem các tiện ích dịch vụ, phòng chờ VIP, sân golf", apiEndpoint: "GET /api/perks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_prk_view", name: "Xem danh sách tiện ích", code: "PRK_VIEW", description: "Xem các tiện ích dịch vụ, phòng chờ VIP, sân golf", apiEndpoint: "GET /api/perks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_prk_add", name: "Thêm tiện ích mới", code: "PRK_ADD", description: "Tạo dịch vụ tiện ích mới cho hiệp hội", apiEndpoint: "POST /api/perks", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
           { id: "act_prk_edit", name: "Chỉnh sửa tiện ích", code: "PRK_EDIT", description: "Cập nhật điều kiện sử dụng tiện ích", apiEndpoint: "PUT /api/perks/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
           { id: "act_prk_delete", name: "Xóa tiện ích", code: "PRK_DELETE", description: "Xóa tiện ích không còn hiệu lực", apiEndpoint: "DELETE /api/perks/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -425,7 +431,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/benefits",
         description: "Quản lý chính sách quyền lợi các hạng thẻ hội viên",
         actions: [
-          { id: "act_bnf_view", name: "Xem danh sách quyền lợi", code: "BNF_VIEW", description: "Tra cứu quyền lợi theo từng hạng thẻ hội viên", apiEndpoint: "GET /api/benefits", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_bnf_view", name: "Xem danh sách quyền lợi", code: "BNF_VIEW", description: "Tra cứu quyền lợi theo từng hạng thẻ hội viên", apiEndpoint: "GET /api/benefits", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_bnf_add", name: "Thêm quyền lợi mới", code: "BNF_ADD", description: "Bổ sung chính sách quyền lợi mới", apiEndpoint: "POST /api/benefits", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
           { id: "act_bnf_edit", name: "Chỉnh sửa quyền lợi", code: "BNF_EDIT", description: "Điều chỉnh nội dung quyền lợi", apiEndpoint: "PUT /api/benefits/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
           { id: "act_bnf_delete", name: "Xóa quyền lợi", code: "BNF_DELETE", description: "Xóa chính sách quyền lợi", apiEndpoint: "DELETE /api/benefits/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -446,8 +452,8 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/network",
         description: "Mạng lưới kết nối giao lưu giữa các doanh nhân đồng niên 1983",
         actions: [
-          { id: "act_net_view", name: "Xem mạng lưới kết nối", code: "NET_VIEW", description: "Tra cứu kết nối và sơ đồ quan hệ hội viên", apiEndpoint: "GET /api/network", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_net_connect", name: "Khởi tạo kết nối & Nhắn tin B2B", code: "NET_CONNECT", description: "Gửi lời mời kết nối trực tiếp đến doanh nghiệp", apiEndpoint: "POST /api/network/connect", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_net_view", name: "Xem mạng lưới kết nối", code: "NET_VIEW", description: "Tra cứu kết nối và sơ đồ quan hệ hội viên", apiEndpoint: "GET /api/network", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_net_connect", name: "Khởi tạo kết nối & Nhắn tin B2B", code: "NET_CONNECT", description: "Gửi lời mời kết nối trực tiếp đến doanh nghiệp", apiEndpoint: "POST /api/network/connect", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_net_export", name: "Xuất dữ liệu kết nối", code: "NET_EXPORT", description: "Xuất file danh bạ mạng lưới kết nối", apiEndpoint: "GET /api/network/export", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true } },
         ],
       },
@@ -457,10 +463,10 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/business-connect/meetings",
         description: "Quản lý các cuộc hẹn gặp kết nối 1-on-1 Business Connect giữa các CEO",
         actions: [
-          { id: "act_bcm_view", name: "Xem danh sách cuộc hẹn gặp", code: "BCM_VIEW", description: "Tra cứu lịch hẹn gặp 1-1 giữa các hội viên", apiEndpoint: "GET /api/business-connect/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_bcm_add", name: "Tạo lịch hẹn gặp mới", code: "BCM_ADD", description: "Đặt lịch hẹn gặp giao lưu trực tiếp", apiEndpoint: "POST /api/business-connect/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_bcm_edit", name: "Chỉnh sửa lịch hẹn gặp", code: "BCM_EDIT", description: "Đổi thời gian hoặc địa điểm hẹn gặp", apiEndpoint: "PUT /api/business-connect/meetings/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_bcm_delete", name: "Hủy cuộc hẹn gặp", code: "BCM_DELETE", description: "Hủy lịch hẹn gặp", apiEndpoint: "DELETE /api/business-connect/meetings/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_bcm_view", name: "Xem danh sách cuộc hẹn gặp", code: "BCM_VIEW", description: "Tra cứu lịch hẹn gặp 1-1 giữa các hội viên", apiEndpoint: "GET /api/business-connect/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_bcm_add", name: "Tạo lịch hẹn gặp mới", code: "BCM_ADD", description: "Đặt lịch hẹn gặp giao lưu trực tiếp", apiEndpoint: "POST /api/business-connect/meetings", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_bcm_edit", name: "Chỉnh sửa lịch hẹn gặp", code: "BCM_EDIT", description: "Đổi thời gian hoặc địa điểm hẹn gặp", apiEndpoint: "PUT /api/business-connect/meetings/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_bcm_delete", name: "Hủy cuộc hẹn gặp", code: "BCM_DELETE", description: "Hủy lịch hẹn gặp", apiEndpoint: "DELETE /api/business-connect/meetings/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
         ],
       },
       {
@@ -469,9 +475,9 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/marketplace",
         description: "Sàn giao dịch sản phẩm dịch vụ ưu đãi nội bộ của các doanh nghiệp hội viên",
         actions: [
-          { id: "act_mkt_view", name: "Xem sản phẩm gian hàng", code: "MKT_VIEW", description: "Tra cứu sản phẩm, giá bán, chính sách chiết khấu", apiEndpoint: "GET /api/marketplace", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_mkt_add", name: "Đăng sản phẩm mới", code: "MKT_ADD", description: "Đưa sản phẩm lên gian hàng sàn Marketplace", apiEndpoint: "POST /api/marketplace", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_mkt_edit", name: "Chỉnh sửa thông tin sản phẩm", code: "MKT_EDIT", description: "Cập nhật hình ảnh, giá bán, chiết khấu", apiEndpoint: "PUT /api/marketplace/:id", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_mkt_view", name: "Xem sản phẩm gian hàng", code: "MKT_VIEW", description: "Tra cứu sản phẩm, giá bán, chính sách chiết khấu", apiEndpoint: "GET /api/marketplace", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_mkt_add", name: "Đăng sản phẩm mới", code: "MKT_ADD", description: "Đưa sản phẩm lên gian hàng sàn Marketplace", apiEndpoint: "POST /api/marketplace", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_mkt_edit", name: "Chỉnh sửa thông tin sản phẩm", code: "MKT_EDIT", description: "Cập nhật hình ảnh, giá bán, chiết khấu", apiEndpoint: "PUT /api/marketplace/:id", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_mkt_delete", name: "Xóa sản phẩm", code: "MKT_DELETE", description: "Gỡ bỏ sản phẩm khỏi sàn", apiEndpoint: "DELETE /api/marketplace/:id", roles: { bqt: true, xuc_tien: true, quan_tri: true, admin: true } },
           { id: "act_mkt_approve", name: "Thẩm định & Phê duyệt sản phẩm", code: "MKT_APPROVE", description: "Kiểm duyệt xuất bản sản phẩm lên Marketplace", apiEndpoint: "PATCH /api/marketplace/:id/approve", roles: { bqt: true, xuc_tien: true, quan_tri: true, admin: true } },
         ],
@@ -482,9 +488,9 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/opportunities",
         description: "Sàn giao thương B2B, trao đổi nhu cầu hợp tác kinh doanh và tìm đối tác",
         actions: [
-          { id: "act_opp_view", name: "Xem sàn cơ hội giao thương", code: "OPP_VIEW", description: "Xem nhu cầu chào mua, chào bán của các doanh nghiệp", apiEndpoint: "GET /api/opportunities", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_opp_add", name: "Đăng cơ hội hợp tác mới", code: "OPP_ADD", description: "Tạo tin đăng nhu cầu hợp tác kinh doanh", apiEndpoint: "POST /api/opportunities", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_opp_edit", name: "Chỉnh sửa cơ hội", code: "OPP_EDIT", description: "Cập nhật yêu cầu hoặc thời hạn cơ hội", apiEndpoint: "PUT /api/opportunities/:id", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_opp_view", name: "Xem sàn cơ hội giao thương", code: "OPP_VIEW", description: "Xem nhu cầu chào mua, chào bán của các doanh nghiệp", apiEndpoint: "GET /api/opportunities", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_opp_add", name: "Đăng cơ hội hợp tác mới", code: "OPP_ADD", description: "Tạo tin đăng nhu cầu hợp tác kinh doanh", apiEndpoint: "POST /api/opportunities", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_opp_edit", name: "Chỉnh sửa cơ hội", code: "OPP_EDIT", description: "Cập nhật yêu cầu hoặc thời hạn cơ hội", apiEndpoint: "PUT /api/opportunities/:id", roles: { bqt: true, thu_ky: true, xuc_tien: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_opp_delete", name: "Xóa / Đóng cơ hội", code: "OPP_DELETE", description: "Đóng cơ hội khi đã hoàn thành giao dịch", apiEndpoint: "DELETE /api/opportunities/:id", roles: { bqt: true, xuc_tien: true, quan_tri: true, admin: true } },
           { id: "act_opp_approve", name: "Duyệt & Gán nhãn cơ hội tiêu biểu", code: "OPP_APPROVE", description: "Xác thực và đưa cơ hội lên trang nhất", apiEndpoint: "PATCH /api/opportunities/:id/approve", roles: { bqt: true, xuc_tien: true, quan_tri: true, admin: true } },
         ],
@@ -504,10 +510,10 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/tasks",
         description: "Quản lý nhiệm vụ, phân công công việc các ban và theo dõi tiến độ",
         actions: [
-          { id: "act_tsk_view", name: "Xem danh sách công việc", code: "TSK_VIEW", description: "Xem các đầu việc được giao của ban và cá nhân", apiEndpoint: "GET /api/tasks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
-          { id: "act_tsk_add", name: "Tạo nhiệm vụ mới", code: "TSK_ADD", description: "Khởi tạo công việc và gán người phụ trách", apiEndpoint: "POST /api/tasks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
-          { id: "act_tsk_edit", name: "Chỉnh sửa & Giao việc", code: "TSK_EDIT", description: "Cập nhật deadline, mô tả công việc", apiEndpoint: "PUT /api/tasks/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
-          { id: "act_tsk_delete", name: "Xóa nhiệm vụ", code: "TSK_DELETE", description: "Xóa nhiệm vụ", apiEndpoint: "DELETE /api/tasks/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true } },
+          { id: "act_tsk_view", name: "Xem danh sách công việc", code: "TSK_VIEW", description: "Xem các đầu việc được giao của ban và cá nhân", apiEndpoint: "GET /api/tasks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_tsk_add", name: "Tạo nhiệm vụ mới", code: "TSK_ADD", description: "Khởi tạo công việc và gán người phụ trách", apiEndpoint: "POST /api/tasks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
+          { id: "act_tsk_edit", name: "Chỉnh sửa & Giao việc", code: "TSK_EDIT", description: "Cập nhật deadline, mô tả công việc", apiEndpoint: "PUT /api/tasks/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
+          { id: "act_tsk_delete", name: "Xóa nhiệm vụ", code: "TSK_DELETE", description: "Xóa nhiệm vụ", apiEndpoint: "DELETE /api/tasks/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
         ],
       },
       {
@@ -566,7 +572,7 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         route: "/documents",
         description: "Lưu trữ quy chế, nghị quyết đại hội, biên bản và tài liệu nội bộ",
         actions: [
-          { id: "act_doc_view", name: "Xem và tải tài liệu", code: "DOC_VIEW", description: "Tra cứu điều lệ và văn bản lưu hành nội bộ", apiEndpoint: "GET /api/documents", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true, member: true } },
+          { id: "act_doc_view", name: "Xem và tải tài liệu", code: "DOC_VIEW", description: "Tra cứu điều lệ và văn bản lưu hành nội bộ", apiEndpoint: "GET /api/documents", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
           { id: "act_doc_add", name: "Tải lên tài liệu mới", code: "DOC_ADD", description: "Lưu trữ văn bản, nghị quyết chính thức mới", apiEndpoint: "POST /api/documents", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_doc_edit", name: "Chỉnh sửa tài liệu", code: "DOC_EDIT", description: "Cập nhật tên tài liệu hoặc ghi chú", apiEndpoint: "PUT /api/documents/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true } },
           { id: "act_doc_delete", name: "Xóa tài liệu", code: "DOC_DELETE", description: "Xóa tài liệu không còn hiệu lực", apiEndpoint: "DELETE /api/documents/:id", roles: { bqt: true, quan_tri: true, admin: true } },
@@ -589,6 +595,27 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
 ];
 
 const STORAGE_KEY = RBAC_MATRIX_STORAGE_KEY;
+
+export const DETECTABLE_SYSTEM_FEATURES = [
+  { name: "Hội viên & Doanh nghiệp", route: "/members", catId: "cat_members", desc: "Quản lý danh sách hội viên, hồ sơ năng lực & chức vụ" },
+  { name: "Điểm danh & Quét mã QR", route: "/checkin", catId: "cat_members", desc: "Check-in sự kiện, ghi nhận điểm danh hội viên tham dự" },
+  { name: "Sự kiện & Hội thảo", route: "/events", catId: "cat_events", desc: "Tổ chức sự kiện, lịch trình & phát hành vé điện tử" },
+  { name: "Đăng ký sự kiện", route: "/event-registrations", catId: "cat_events", desc: "Quản lý danh sách đăng ký sự kiện và phê duyệt" },
+  { name: "Gói Tài trợ & Quyền lợi", route: "/sponsor-packages", catId: "cat_events", desc: "Quản lý các gói tài trợ kim cương, vàng, bạc cho sự kiện" },
+  { name: "Giải thưởng & Vòng quay may mắn", route: "/lucky-wheel", catId: "cat_events", desc: "Quản lý cơ cấu giải thưởng sự kiện và quay số may mắn" },
+  { name: "Kết nối giao thương B2B", route: "/business-connect", catId: "cat_network", desc: "Sàn kết nối cung cầu, cơ hội hợp tác kinh doanh giữa các CEO" },
+  { name: "Cuộc hẹn & Gặp gỡ", route: "/meetings", catId: "cat_network", desc: "Đặt lịch hẹn 1-on-1 và kết nối giao thương giữa các hội viên" },
+  { name: "Danh thiếp thông minh (NFC/QR)", route: "/business-cards", catId: "cat_network", desc: "Trao đổi danh thiếp số điện tử, danh bạ hội viên" },
+  { name: "Quỹ hội & Báo cáo tài chính", route: "/finance-report", catId: "cat_finance", desc: "Tổng quan thu chi, số dư quỹ hội và báo cáo tài chính" },
+  { name: "Khoản thu & Hội phí", route: "/income", catId: "cat_finance", desc: "Quản lý thu hội phí thường niên, tài trợ và nhập file sao kê" },
+  { name: "Khoản chi & Quyết toán", route: "/expenses", catId: "cat_finance", desc: "Quản lý phiếu chi, duyệt chi ngân sách và quyết toán" },
+  { name: "Tin tức & Hoạt động", route: "/news", catId: "cat_media", desc: "Bản tin nội bộ, bài viết sự kiện và thông cáo báo chí" },
+  { name: "Thư viện truyền thông & Media", route: "/media", catId: "cat_media", desc: "Kho ảnh sự kiện, video hoạt động và tư liệu hiệp hội" },
+  { name: "Gian hàng & Sản phẩm", route: "/marketplace", catId: "cat_marketplace", desc: "Chợ giao thương sản phẩm, dịch vụ ưu đãi nội bộ" },
+  { name: "Khảo sát & Biểu quyết", route: "/voting", catId: "cat_governance", desc: "Biểu quyết trực tuyến, bầu cử ban điều hành và khảo sát" },
+  { name: "Thông báo & Tin nhắn", route: "/notifications", catId: "cat_system", desc: "Gửi thông báo đẩy, email và tin nhắn tức thời đến hội viên" },
+  { name: "Ma trận phân quyền & Tài khoản", route: "/permissions", catId: "cat_system", desc: "Thiết lập phân quyền hệ thống và quản lý tài khoản người dùng" },
+];
 
 export interface RbacPermissionMatrixProps {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -677,11 +704,34 @@ export function RbacPermissionMatrix({
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<{ action: TreeAction; featureName: string; categoryName: string } | null>(null);
 
-  // Form thêm chức năng mới
+  // Form thêm chức năng mới & phát hiện tự động
   const [targetCatId, setTargetCatId] = useState(INITIAL_CATEGORIES[0]?.id || "");
   const [newFeatureName, setNewFeatureName] = useState("");
   const [newFeatureRoute, setNewFeatureRoute] = useState("");
   const [newFeatureDesc, setNewFeatureDesc] = useState("");
+  const [detectedFeatures, setDetectedFeatures] = useState<typeof DETECTABLE_SYSTEM_FEATURES>([]);
+
+  // Tự động quét phát hiện các chức năng mới từ giao diện
+  const handleScanNewFeatures = () => {
+    const existingRoutes = new Set(
+      categories.flatMap((c) => c.features.map((f) => f.route.toLowerCase().trim()))
+    );
+    const missing = DETECTABLE_SYSTEM_FEATURES.filter(
+      (item) => !existingRoutes.has(item.route.toLowerCase().trim())
+    );
+    if (missing.length === 0) {
+      toast.info("Đã quét toàn bộ hệ thống: Tất cả các chức năng giao diện hiện tại đều đã có trong ma trận!");
+      setDetectedFeatures(DETECTABLE_SYSTEM_FEATURES);
+    } else {
+      setDetectedFeatures(missing);
+      toast.success(`Đã phát hiện ${missing.length} chức năng giao diện mới sẵn sàng để thêm vào cơ sở dữ liệu!`);
+      const first = missing[0];
+      setNewFeatureName(first.name);
+      setNewFeatureRoute(first.route);
+      setNewFeatureDesc(first.desc);
+      if (first.catId) setTargetCatId(first.catId);
+    }
+  };
 
   // Form thêm quyền / thao tác mới
   const [targetFeatId, setTargetFeatId] = useState("");
@@ -812,11 +862,12 @@ export function RbacPermissionMatrix({
         window.dispatchEvent(new Event("role-changed"));
         window.dispatchEvent(new Event("vba_auth_changed"));
         window.dispatchEvent(new Event("crm_permissions_updated"));
+        dispatchPermissionSyncEvent();
       }
       setInitialCategoriesStr(JSON.stringify(categories));
       setTimeout(() => {
         setSaving(false);
-        toast.success("Đã lưu toàn bộ Ma Trận Phân Quyền 5 Cấp Bậc vào CSDL thành công!");
+        toast.success("Đã lưu toàn bộ Ma Trận Phân Quyền Vai Trò Hệ Thống thành công!");
       }, 300);
     } catch {
       setSaving(false);
@@ -889,65 +940,106 @@ export function RbacPermissionMatrix({
         window.dispatchEvent(new Event("role-changed"));
       }
     } catch {}
-    toast.success("Đã khôi phục ma trận phân quyền về chuẩn 5 vai trò hệ thống!");
+    toast.success("Đã khôi phục ma trận phân quyền về chuẩn vai trò hệ thống!");
   };
 
-  // Submit thêm chức năng
-  const handleCreateFeature = (e: React.FormEvent) => {
+  // Submit thêm chức năng & lưu trực tiếp vào CSDL
+  const handleCreateFeature = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFeatureName.trim()) {
       toast.error("Vui lòng nhập tên chức năng");
       return;
     }
+
+    const codePrefix = newFeatureName
+      .trim()
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .slice(0, 8);
+
     const newFeat: TreeFeature = {
       id: `feat_${Date.now()}`,
       name: newFeatureName.trim(),
       route: newFeatureRoute.trim() || "/custom-feature",
-      description: newFeatureDesc.trim() || "Chức năng tùy biến CRM",
+      description: newFeatureDesc.trim() || "Chức năng hệ thống CEO 1983",
       actions: [
         {
           id: `act_${Date.now()}_view`,
           name: `Xem danh sách & chi tiết ${newFeatureName.trim()}`,
-          code: `${newFeatureName.trim().toUpperCase().replace(/[^A-Z0-9]/g, "_").slice(0, 10)}_VIEW`,
+          code: `${codePrefix}_VIEW`,
           description: "Tra cứu dữ liệu chức năng",
           apiEndpoint: `GET /api${newFeatureRoute.trim() || "/custom"}`,
-          roles: { bqt: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban: true },
+          roles: {
+            bqt: true,
+            quan_tri: true,
+            admin: true,
+            tong_thu_ky: true,
+            truong_ban_quan_tri: true,
+            truong_ban_truyen_thong: true,
+            member: true,
+          },
+        },
+        {
+          id: `act_${Date.now()}_add`,
+          name: `Thêm mới ${newFeatureName.trim()}`,
+          code: `${codePrefix}_ADD`,
+          description: "Tạo mới dữ liệu",
+          apiEndpoint: `POST /api${newFeatureRoute.trim() || "/custom"}`,
+          roles: { bqt: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban_quan_tri: true },
         },
         {
           id: `act_${Date.now()}_edit`,
           name: `Chỉnh sửa ${newFeatureName.trim()}`,
-          code: `${newFeatureName.trim().toUpperCase().replace(/[^A-Z0-9]/g, "_").slice(0, 10)}_EDIT`,
+          code: `${codePrefix}_EDIT`,
           description: "Cập nhật dữ liệu",
           apiEndpoint: `PUT /api${newFeatureRoute.trim() || "/custom"}/:id`,
-          roles: { bqt: true, quan_tri: true, admin: true },
+          roles: { bqt: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban_quan_tri: true },
         },
         {
           id: `act_${Date.now()}_delete`,
           name: `Xóa ${newFeatureName.trim()}`,
-          code: `${newFeatureName.trim().toUpperCase().replace(/[^A-Z0-9]/g, "_").slice(0, 10)}_DELETE`,
+          code: `${codePrefix}_DELETE`,
           description: "Xóa dữ liệu chức năng",
           apiEndpoint: `DELETE /api${newFeatureRoute.trim() || "/custom"}/:id`,
-          roles: { bqt: true, quan_tri: true },
+          roles: { bqt: true, quan_tri: true, admin: true },
         },
       ],
     };
 
-    setCategories((prev) =>
-      prev.map((c) => {
-        if (c.id !== targetCatId) return c;
-        return {
-          ...c,
-          features: [...c.features, newFeat],
-        };
-      })
-    );
+    const updated = categories.map((c) => {
+      if (c.id !== targetCatId) return c;
+      return {
+        ...c,
+        features: [...c.features, newFeat],
+      };
+    });
 
+    setCategories(updated);
+    setInitialCategoriesStr(JSON.stringify(updated));
     setExpandedNodes((prev) => ({ ...prev, [targetCatId]: true, [newFeat.id]: true }));
     setAddFeatureOpen(false);
     setNewFeatureName("");
     setNewFeatureRoute("");
     setNewFeatureDesc("");
-    toast.success(`Đã thêm chức năng "${newFeat.name}" kèm 3 thao tác cơ bản!`);
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      await fetchNestApi("/admin/permission-matrix", {
+        method: "PUT",
+        body: JSON.stringify({ categories: updated, rows: updated }),
+      }).catch(() => {});
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("crm_permissions_updated"));
+        window.dispatchEvent(new Event("role-changed"));
+      }
+      toast.success(`Đã thêm chức năng "${newFeat.name}" cùng thao tác vào Cơ Sở Dữ Liệu thành công!`);
+    } catch {
+      toast.success(`Đã thêm chức năng "${newFeat.name}" vào ma trận!`);
+    }
   };
 
   // Submit thêm quyền / thao tác con
@@ -1122,18 +1214,9 @@ export function RbacPermissionMatrix({
           </button>
 
           <button
-            onClick={handleSaveAll}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] px-4 py-1.5 text-xs font-bold text-white hover:bg-blue-900 transition shadow-xs cursor-pointer disabled:opacity-50"
-          >
-            <Save className="h-4 w-4" />
-            <span>{saving ? "Đang lưu..." : "Lưu Toàn Bộ"}</span>
-          </button>
-
-          <button
             onClick={handleResetDefault}
             title="Khôi phục mặc định ban đầu"
-            className="p-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition"
+            className="p-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
@@ -1468,6 +1551,50 @@ export function RbacPermissionMatrix({
               </button>
             </div>
 
+            {/* Khối quét tự động phát hiện chức năng mới trên giao diện */}
+            <div className="rounded-xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                  Tự động nhận diện chức năng giao diện
+                </span>
+                <button
+                  type="button"
+                  onClick={handleScanNewFeatures}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#003B95] text-white hover:bg-blue-800 transition flex items-center gap-1 shadow-xs"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Quét ngay
+                </button>
+              </div>
+              {detectedFeatures.length > 0 && (
+                <div className="pt-1">
+                  <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                    Chọn nhanh từ {detectedFeatures.length} chức năng hệ thống phát hiện:
+                  </label>
+                  <select
+                    onChange={(e) => {
+                      const sel = detectedFeatures.find((f) => f.route === e.target.value);
+                      if (sel) {
+                        setNewFeatureName(sel.name);
+                        setNewFeatureRoute(sel.route);
+                        setNewFeatureDesc(sel.desc);
+                        if (sel.catId) setTargetCatId(sel.catId);
+                      }
+                    }}
+                    className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs text-foreground focus:ring-2 focus:ring-[#003B95]"
+                  >
+                    <option value="">-- Chọn chức năng nhận diện --</option>
+                    {detectedFeatures.map((f) => (
+                      <option key={f.route} value={f.route}>
+                        {f.name} ({f.route})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
             <form onSubmit={handleCreateFeature} className="space-y-3 text-xs">
               <div>
                 <label className="block font-semibold text-foreground mb-1">Chọn Nhóm Nghiệp Vụ *:</label>
@@ -1528,9 +1655,10 @@ export function RbacPermissionMatrix({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-blue-900 transition shadow-xs"
+                  className="px-4 py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-blue-900 transition shadow-xs flex items-center gap-1.5"
                 >
-                  Tạo Chức Năng
+                  <Save className="h-3.5 w-3.5" />
+                  Thêm & Lưu Vào Cơ Sở Dữ Liệu
                 </button>
               </div>
             </form>

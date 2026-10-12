@@ -727,7 +727,7 @@ function CardScreen() {
               id="tour-card-qr-scan"
               type="button"
               onClick={() => setScanModalOpen(true)}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] px-4 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 hover:opacity-95 transition cursor-pointer"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] border border-amber-400/40 px-4 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 hover:opacity-95 transition cursor-pointer"
             >
               <ScanLine className="h-4.5 w-4.5 text-white" />
               <span>Quét QR</span>
@@ -1635,7 +1635,7 @@ function EditCardModal({
           <button
             onClick={submit}
             disabled={busy}
-            className="flex-1 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] hover:opacity-95 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-[#003B95]/30 disabled:opacity-60 transition cursor-pointer flex items-center justify-center gap-2"
+            className="flex-1 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] border border-amber-400/40 hover:opacity-95 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-[#003B95]/30 disabled:opacity-60 transition cursor-pointer flex items-center justify-center gap-2"
           >
             {busy ? "Đang lưu..." : "Lưu thay đổi"}
           </button>

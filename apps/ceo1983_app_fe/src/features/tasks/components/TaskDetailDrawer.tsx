@@ -785,10 +785,22 @@ export function TaskDetailDrawer({
           {activeTab === 'details' && (
             <div className="space-y-6">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md mb-2">
-                  <Building className="w-3.5 h-3.5 text-slate-500" />
-                  {task.department}
-                </span>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
+                    <Building className="w-3.5 h-3.5 text-slate-500" />
+                    {task.department}
+                  </span>
+                  {task.category && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2.5 py-1 rounded-md">
+                      {task.category}
+                    </span>
+                  )}
+                  {task.budget && (task.budget.estimated || task.budget.actual) && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/60 px-2.5 py-1 rounded-md font-mono">
+                      💰 Dự toán: {(task.budget.estimated || 0).toLocaleString('vi-VN')} đ
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-snug">
                   {task.title}
                 </h2>
@@ -887,7 +899,7 @@ export function TaskDetailDrawer({
                 <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
                   <div className="text-slate-400 font-medium mb-1">Người giao việc / Giám sát</div>
                   <div className="font-bold text-slate-900 dark:text-slate-100 mt-1">
-                    {task.supervisor?.name || 'Ban Quản trị'}
+                    {task.supervisor?.name || 'Ban Điều Hành'}
                   </div>
                   {task.supervisor?.role && (
                     <div className="text-[10px] text-slate-400">{task.supervisor.role}</div>
@@ -987,6 +999,26 @@ export function TaskDetailDrawer({
                   </h4>
                   <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
                     {task.deliverables}
+                  </div>
+                </div>
+              )}
+
+              {/* Acceptance Criteria */}
+              {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Tiêu chí nghiệm thu công việc ({task.acceptanceCriteria.length})
+                  </h4>
+                  <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/30 p-3 dark:border-emerald-900/30 dark:bg-emerald-950/10">
+                    {task.acceptanceCriteria.map((crit, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs text-slate-800 dark:text-slate-200">
+                        <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                          ✓
+                        </span>
+                        <span>{crit}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

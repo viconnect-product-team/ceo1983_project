@@ -86,7 +86,7 @@ function VerifyScreen() {
           </p>
           <Link
             to="/association"
-            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/60 bg-[#2E3192] hover:bg-[#252876] px-5 py-3 text-[13px] font-bold text-white shadow-md transition"
+            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-amber-400/40 bg-[#003B95] hover:bg-[#002B70] px-5 py-3 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 transition"
           >
             <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội CEO 1983
           </Link>
@@ -166,7 +166,7 @@ function VerifyScreen() {
 
       <Link
         to="/association"
-        className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-[#2E3192]/60 bg-[#2E3192] hover:bg-[#252876] py-3.5 text-[14px] font-bold text-white shadow-xl shadow-[#2E3192]/25 transition active:scale-[0.99]"
+        className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-amber-400/40 bg-[#003B95] hover:bg-[#002B70] py-3.5 text-[14px] font-bold text-white shadow-xl shadow-[#003B95]/25 transition active:scale-[0.99]"
       >
         <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội CEO 1983
       </Link>
@@ -187,7 +187,7 @@ function Row({
 }) {
   return (
     <div className="flex items-center gap-3.5">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#2E3192]/20 border border-[#2E3192]/30 text-blue-400">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#003B95]/30 border border-amber-400/40 text-amber-300">
         <Icon className="h-4.5 w-4.5" />
       </span>
       <div className="min-w-0">

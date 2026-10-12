@@ -322,6 +322,13 @@ export function Sidebar({
     isBTN,
     isBTC,
     isHVT,
+    isTongThuKy,
+    isBanThuKy,
+    isTruongBanTruyenThong,
+    isTruongBanThanhVien,
+    isTruongBanXucTien,
+    isTruongBanTaiChinh,
+    isTruongBanThienNguyen,
     canManageMembers,
     canManageFinance,
     canManageMedia,
@@ -331,14 +338,35 @@ export function Sidebar({
     setRoleOverride,
   } = roleState;
 
-  // Xác định 1 trong 5 vai trò hệ thống CRM cốt lõi
+  // Xác định vai trò hệ thống CRM cốt lõi
   const currentRoleKey: SystemRoleKey = useMemo(() => {
     if (isPlatformAdmin) return "quan_tri";
     if (isBQT) return "admin";
-    if (isBTK) return "tong_thu_ky";
-    if (isBTT || isBXT || isBTV || isBTN) return "truong_ban";
+    if (isTongThuKy) return "tong_thu_ky";
+    if (isBanThuKy || isBTK) return "tong_thu_ky";
+    if (isTruongBanTruyenThong || isBTT) return "truong_ban_truyen_thong";
+    if (isTruongBanThanhVien || isBTV) return "truong_ban_thanh_vien";
+    if (isTruongBanXucTien || isBXT) return "truong_ban_xuc_tien";
+    if (isTruongBanTaiChinh || isBTC) return "truong_ban_tai_chinh";
+    if (isTruongBanThienNguyen || isBTN) return "truong_ban_thien_nguyen";
     return "member";
-  }, [isPlatformAdmin, isBQT, isBTK, isBTT, isBXT, isBTV, isBTN]);
+  }, [
+    isPlatformAdmin,
+    isBQT,
+    isTongThuKy,
+    isBanThuKy,
+    isBTK,
+    isTruongBanTruyenThong,
+    isBTT,
+    isTruongBanThanhVien,
+    isBTV,
+    isTruongBanXucTien,
+    isBXT,
+    isTruongBanTaiChinh,
+    isBTC,
+    isTruongBanThienNguyen,
+    isBTN,
+  ]);
 
   const [matrixRevision, setMatrixRevision] = useState(0);
   useEffect(() => {

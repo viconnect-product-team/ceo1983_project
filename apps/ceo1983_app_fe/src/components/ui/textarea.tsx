@@ -1,9 +1,16 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { trimInputElement } from "@/lib/input-trim-helper";
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<"textarea">>(
-  ({ className, ...props }, ref) => {
+  ({ className, onBlur, ...props }, ref) => {
+    const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      // Auto-trim space when losing focus
+      trimInputElement(e.currentTarget);
+      onBlur?.(e);
+    };
+
     return (
       <textarea
         className={cn(
@@ -11,6 +18,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<"tex
           className,
         )}
         ref={ref}
+        onBlur={handleBlur}
         {...props}
       />
     );

@@ -37,7 +37,7 @@ export const Route = createFileRoute("/association/permissions")({
 export interface MemberPermissionProfile {
   memberCode: string;
   boardName: string;
-  boardRole: "quan_tri" | "admin" | "tong_thu_ky" | "truong_ban" | "thanh_vien" | string;
+  boardRole: "quan_tri" | "admin" | "tong_thu_ky" | "ban_thu_ky" | "truong_ban_truyen_thong" | "truong_ban_thanh_vien" | "truong_ban_xuc_tien" | "truong_ban_tai_chinh" | "truong_ban_thien_nguyen" | "thanh_vien" | string;
   canManageEvents: boolean;
   canManageNews: boolean;
   canManageMarketplace: boolean;
@@ -52,6 +52,7 @@ const BOARD_OPTIONS = [
   "Ban xúc tiến",
   "Ban thiện nguyện",
   "Ban truyền thông",
+  "Ban thư ký",
   "Ban quản trị",
   "Ban tài chính",
   "Hội viên ceo1983",
@@ -61,9 +62,14 @@ const ROLE_LABELS: Record<string, string> = {
   "quan_tri": "Quản trị",
   "admin": "Admin",
   "tong_thu_ky": "Tổng thư ký",
-  "truong_ban": "Trưởng ban",
+  "ban_thu_ky": "Ban thư ký",
+  "thu_ky": "Ban thư ký",
+  "truong_ban_truyen_thong": "Trưởng ban Truyền thông",
+  "truong_ban_thanh_vien": "Trưởng ban Thành viên",
+  "truong_ban_xuc_tien": "Trưởng ban Xúc tiến",
+  "truong_ban_tai_chinh": "Trưởng ban Tài chính",
+  "truong_ban_thien_nguyen": "Trưởng ban Thiện nguyện",
   "thanh_vien": "Thành viên",
-  "truong-ban": "Trưởng ban",
   "hoi-vien": "Thành viên",
   "member": "Thành viên",
 };
@@ -186,8 +192,8 @@ function AssociationPermissionsScreen() {
       window.dispatchEvent(new CustomEvent("vba_auth_changed"));
     }
 
-    toast.success("Đã lưu phân quyền hội viên vào Database!", {
-      description: `Quyền hạn của ${editingMemberCode} đã được cập nhật RESTful API thành công.`,
+    toast.success("Đã lưu phân quyền hội viên thành công!", {
+      description: `Quyền hạn của ${editingMemberCode} đã được cập nhật vào hệ thống.`,
     });
     setEditingMemberCode(null);
     setDraftPermission(null);
@@ -433,18 +439,53 @@ function AssociationPermissionsScreen() {
                         </label>
                         <select
                           value={draftPermission.boardRole}
-                          onChange={(e) =>
-                            setDraftPermission({
-                              ...draftPermission,
-                              boardRole: e.target.value as MemberPermissionProfile["boardRole"],
-                            })
-                          }
+                          onChange={(e) => {
+                            const newRole = e.target.value as MemberPermissionProfile["boardRole"];
+                            const updated = { ...draftPermission, boardRole: newRole };
+                            if (newRole === "truong_ban_truyen_thong") {
+                              updated.boardName = "Ban truyền thông";
+                              updated.canManageNews = true;
+                              updated.canManageEvents = true;
+                            } else if (newRole === "truong_ban_thanh_vien") {
+                              updated.boardName = "Ban Thành viên";
+                              updated.canManageMembers = true;
+                            } else if (newRole === "truong_ban_xuc_tien") {
+                              updated.boardName = "Ban xúc tiến";
+                              updated.canManageMarketplace = true;
+                            } else if (newRole === "truong_ban_tai_chinh") {
+                              updated.boardName = "Ban tài chính";
+                            } else if (newRole === "truong_ban_thien_nguyen") {
+                              updated.boardName = "Ban thiện nguyện";
+                            } else if (newRole === "tong_thu_ky") {
+                              updated.boardName = "Ban quản trị";
+                              updated.canManageVoting = true;
+                              updated.canManageEvents = true;
+                            } else if (newRole === "ban_thu_ky") {
+                              updated.boardName = "Ban thư ký";
+                              updated.canManageEvents = true;
+                              updated.canManageNews = true;
+                              updated.canManageVoting = true;
+                            } else if (newRole === "admin" || newRole === "quan_tri") {
+                              updated.isAdmin = true;
+                              updated.canManageEvents = true;
+                              updated.canManageNews = true;
+                              updated.canManageMarketplace = true;
+                              updated.canManageVoting = true;
+                              updated.canManageMembers = true;
+                            }
+                            setDraftPermission(updated);
+                          }}
                           className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] cursor-pointer"
                         >
                           <option value="quan_tri">Quản trị</option>
                           <option value="admin">Admin</option>
                           <option value="tong_thu_ky">Tổng thư ký</option>
-                          <option value="truong_ban">Trưởng ban</option>
+                          <option value="ban_thu_ky">Ban thư ký</option>
+                          <option value="truong_ban_truyen_thong">Trưởng ban Truyền thông</option>
+                          <option value="truong_ban_thanh_vien">Trưởng ban Thành viên</option>
+                          <option value="truong_ban_xuc_tien">Trưởng ban Xúc tiến</option>
+                          <option value="truong_ban_tai_chinh">Trưởng ban Tài chính</option>
+                          <option value="truong_ban_thien_nguyen">Trưởng ban Thiện nguyện</option>
                           <option value="thanh_vien">Thành viên</option>
                         </select>
                       </div>

@@ -16,12 +16,14 @@ import {
   Banknote,
   Building,
   UserCheck,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { Card } from "@/components/ui/card";
+import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
 import {
   createTransactionFn,
   deleteTransactionFn,
@@ -143,6 +145,7 @@ function IncomePage() {
   const deleteFn = useServerFn(deleteTransactionFn);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -337,6 +340,13 @@ function IncomePage() {
             >
               <Download className="h-4 w-4 text-muted-foreground" />
               {t("common.exportExcel")}
+            </button>
+            <button
+              onClick={() => setImportModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+            >
+              <Upload className="h-4 w-4 text-emerald-600" />
+              Import Excel
             </button>
             <button
               onClick={() => openCreate("event_walkin", "cash")}
@@ -766,6 +776,14 @@ function IncomePage() {
           </div>
         </div>
       )}
+
+      {/* Import Excel Modal */}
+      <FinanceExcelImportModal
+        type="income"
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImportSuccess={() => router.invalidate()}
+      />
     </AppShell>
   );
 }

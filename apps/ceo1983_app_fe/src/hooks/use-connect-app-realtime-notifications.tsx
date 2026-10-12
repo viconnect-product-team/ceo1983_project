@@ -6,7 +6,7 @@ import { useViewerUserId } from "./use-viewer-user-id";
 import { notificationKeys } from "./use-bc-notifications";
 import { bcMobileHomeKeys } from "./use-business-connect-home";
 import { GlobalNetworkSDK } from "@/lib/global-network/network.sdk";
-import { sendExternalNotification } from "@/lib/notification-permissions";
+import { sendExternalNotification, registerNativePushUser } from "@/lib/notification-permissions";
 
 // Global cache of recent notifications / connection event keys to strictly prevent double toasts across components & re-renders
 const globalRecentToastKeys = new Map<string, number>();
@@ -15,6 +15,17 @@ export function useConnectAppRealtimeNotifications() {
   const qc = useQueryClient();
   const viewerUserId = useViewerUserId();
   const socket = useConnectAppSocket();
+
+  useEffect(() => {
+    if (!viewerUserId) return;
+    const token =
+      (typeof window !== "undefined"
+        ? localStorage.getItem("vibe_token") ||
+          localStorage.getItem("token") ||
+          localStorage.getItem("access_token")
+        : null) || "";
+    registerNativePushUser(viewerUserId, token);
+  }, [viewerUserId]);
 
   useEffect(() => {
     if (!socket || !viewerUserId || !qc) return;

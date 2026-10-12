@@ -485,7 +485,7 @@ function NotifyPage() {
               onClick={() => handlePushToMessages(n)}
               disabled={pushingId === n.id}
               title="Đưa thông báo này vào Kênh tin nhắn Hiệp Hội để hội viên xem trong mục Tin nhắn"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#2E3192]/30 bg-[#2E3192]/10 hover:bg-[#2E3192] hover:text-white px-2.5 py-1 text-xs font-bold text-[#2E3192] dark:text-indigo-300 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#003B95]/40 bg-[#003B95]/10 hover:bg-[#003B95] hover:text-white px-2.5 py-1 text-xs font-bold text-[#003B95] dark:text-amber-400 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
             >
               <MessageSquare className="h-3.5 w-3.5" />
               <span>{pushingId === n.id ? "Đang đẩy..." : "Đưa vào tin nhắn"}</span>

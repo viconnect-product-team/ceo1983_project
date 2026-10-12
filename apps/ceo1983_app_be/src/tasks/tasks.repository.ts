@@ -202,4 +202,29 @@ export class TasksRepository {
       this.logger.warn(`Lỗi ghi member_notification: ${err.message}`);
     });
   }
+
+  async getMembersForAssignment(deptKeyword?: string): Promise<any[]> {
+    try {
+      if (deptKeyword) {
+        return await this.prisma.$queryRaw<any[]>`
+          SELECT id, name, email, phone, company, position, department, executive_role, avatar_url, user_id
+          FROM public.members
+          WHERE status = 'approved' AND (
+            department ILIKE '%' || ${deptKeyword} || '%'
+            OR executive_role ILIKE '%' || ${deptKeyword} || '%'
+          )
+          ORDER BY name ASC
+        `.catch(() => []);
+      }
+      return await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, email, phone, company, position, department, executive_role, avatar_url, user_id
+        FROM public.members
+        WHERE status = 'approved'
+        ORDER BY department ASC, name ASC
+      `.catch(() => []);
+    } catch (err: any) {
+      this.logger.warn(`Could not load members from DB: ${err.message}`);
+      return [];
+    }
+  }
 }

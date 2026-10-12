@@ -176,7 +176,7 @@ export function GuidedTourModal({
           {/* Header Row: Screen title + Step counter badge + Close */}
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-white/10 pb-2.5">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-[#19194D] to-[#003B95] text-white border border-blue-400/40 shadow-xs">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-[#001D4A] to-[#003B95] text-white border border-amber-400/40 shadow-xs">
                 BƯỚC {currentStep + 1} / {steps.length}
               </span>
               <span className="text-[11px] font-bold text-slate-600 dark:text-blue-200/90 truncate max-w-[190px]">

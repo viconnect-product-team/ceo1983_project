@@ -847,10 +847,10 @@ function NotificationsScreen() {
               disabled={marking || !hasUnread || filter === "dismissed"}
               aria-label={t("m.notifications.markAllRead")}
               title={t("m.notifications.markAllRead")}
-              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border-2 border-[#2E3192] bg-[#2E3192] text-white hover:bg-[#19194D] transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-amber-400/50 bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
             >
               {marking ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin text-amber-300" />
               ) : (
                 <CheckCheck className="h-4.5 w-4.5 stroke-[2.5]" />
               )}
@@ -907,7 +907,7 @@ function NotificationsScreen() {
                 aria-pressed={active}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   active
-                    ? "bg-[#2E3192] text-white font-black shadow-md scale-[1.02]"
+                    ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 border border-amber-400/50 font-black shadow-md scale-[1.02]"
                     : "text-slate-700 dark:text-slate-200 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
@@ -1042,8 +1042,8 @@ function NotificationsScreen() {
               label: "Khách hàng B2B",
             },
             event: {
-              iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
-              badge: "bg-blue-50 text-[#2E3192] dark:bg-blue-950/80 dark:text-amber-300 border-blue-200 dark:border-blue-800 font-bold",
+              iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
+              badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700 font-bold",
               label: "Sự kiện",
             },
             fee: {
@@ -1052,19 +1052,19 @@ function NotificationsScreen() {
               label: "Hội phí",
             },
             network: {
-              iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
-              badge: "bg-blue-50 text-[#2E3192] dark:bg-slate-800 dark:text-amber-300 border-[#2E3192]/30 dark:border-amber-500/30 font-bold",
+              iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
+              badge: "bg-amber-50 text-amber-700 dark:bg-slate-800 dark:text-amber-300 border-amber-500/30 font-bold",
               label: "Kết nối",
             },
             info: {
-              iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
+              iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
               badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 font-bold",
               label: "Hệ thống",
             },
           };
 
           const theme = typeTheme[n.type] || {
-            iconBg: "bg-[#2E3192] text-white border-[#19194D] shadow-xs",
+            iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
             badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 font-bold",
             label: "Thông báo",
           };
@@ -1079,13 +1079,13 @@ function NotificationsScreen() {
               }}
               className={`relative flex gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden cursor-pointer ${
                 n.unread
-                  ? "bg-white dark:bg-[#0F172A] border-2 border-[#2E3192]/40 dark:border-[#2E3192]/60 shadow-sm"
+                  ? "bg-white dark:bg-[#0F172A] border-2 border-amber-500/40 dark:border-amber-500/60 shadow-[0_4px_16px_rgba(245,158,11,0.12)]"
                   : "bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
-              {/* Vertical Indicator on Unread - Blue Navy */}
+              {/* Vertical Indicator on Unread - Amber Gold */}
               {n.unread && (
-                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#2E3192]" />
+                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-amber-500" />
               )}
 
               <span className={`grid h-8.5 w-8.5 shrink-0 place-items-center rounded-xl border shadow-xs ${theme.iconBg}`}>
@@ -1159,7 +1159,7 @@ function NotificationsScreen() {
                         }
                       }}
                       aria-label={t("m.notifications.lead.openDetail")}
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#2E3192] dark:text-amber-400 transition hover:bg-amber-50 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-amber-600 dark:text-amber-400 transition hover:bg-amber-50 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
                     >
                       {openingLeadId === n.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1287,10 +1287,9 @@ function NotificationsScreen() {
                                 const targetChannel = getChannelOrPeerForNotif(n);
                                 void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                              style={{ color: "#ffffff" }}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 px-3 py-1.5 text-[11px] font-bold text-amber-300 shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                             >
-                              <MessageSquare className="h-3.5 w-3.5 text-white" />
+                              <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
                               <span>Xem tin nhắn</span>
                             </button>
                           )}
@@ -1367,7 +1366,7 @@ function NotificationsScreen() {
             restoreDialogFocus();
           }}
         >
-          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-[#2E3192]/10 dark:bg-amber-500/20 text-[#2E3192] dark:text-amber-400 mb-1 ring-8 ring-[#2E3192]/5">
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 mb-1 ring-8 ring-amber-500/10 border border-amber-500/30">
             <EyeOff className="h-6 w-6" />
           </div>
           <AlertDialogHeader className="text-center sm:text-center space-y-1.5">
@@ -1390,8 +1389,7 @@ function NotificationsScreen() {
                 if (confirmDismiss) onDismiss(confirmDismiss);
                 setConfirmDismiss(null);
               }}
-              style={{ color: "#ffffff" }}
-              className="w-full h-11 !m-0 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white text-[13.5px] font-bold shadow-md shadow-[#2E3192]/25 transition cursor-pointer flex items-center justify-center"
+              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 text-[13.5px] font-bold shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition cursor-pointer flex items-center justify-center"
             >
               Ẩn ngay
             </AlertDialogAction>
@@ -1454,7 +1452,7 @@ function NotificationsScreen() {
             restoreDialogFocus();
           }}
         >
-          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-[#2E3192]/10 dark:bg-amber-500/20 text-[#2E3192] dark:text-amber-400 mb-1 ring-8 ring-[#2E3192]/5">
+          <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 mb-1 ring-8 ring-amber-500/10 border border-amber-500/30">
             <EyeOff className="h-6 w-6" />
           </div>
           <AlertDialogHeader className="text-center sm:text-center space-y-1.5">
@@ -1474,8 +1472,7 @@ function NotificationsScreen() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={executeDismissAll}
-              style={{ color: "#ffffff" }}
-              className="w-full h-11 !m-0 rounded-xl bg-[#2E3192] hover:bg-[#19194D] text-white text-[13.5px] font-bold shadow-md shadow-[#2E3192]/25 transition cursor-pointer flex items-center justify-center"
+              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 text-[13.5px] font-bold shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition cursor-pointer flex items-center justify-center"
             >
               Ẩn tất cả
             </AlertDialogAction>
@@ -1486,10 +1483,10 @@ function NotificationsScreen() {
       {/* MODAL 4: XEM CHI TIẾT THÔNG BÁO */}
       {selectedNotif && (
         <Dialog open={!!selectedNotif} onOpenChange={(open) => !open && setSelectedNotif(null)}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] space-y-4">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-5 rounded-3xl border border-amber-500/30 bg-[var(--vba-surface,#fff)] space-y-4 shadow-2xl">
             <DialogHeader className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                   {selectedNotif.type === "fee" ? "Hội phí" : selectedNotif.type === "event" ? "Sự kiện" : selectedNotif.type === "opportunity" ? "Cơ hội B2B" : "Thông báo"}
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -1501,7 +1498,7 @@ function NotificationsScreen() {
               </DialogTitle>
               <div className="text-xs text-slate-500 dark:text-slate-400 text-left flex items-center gap-1">
                 <span>Người gửi:</span>
-                <span className="font-semibold text-[#2E3192] dark:text-amber-400">Ban Thư Ký CLB Doanh Nhân CEO 1983</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">Ban Thư Ký CLB Doanh Nhân CEO 1983</span>
               </div>
             </DialogHeader>
 

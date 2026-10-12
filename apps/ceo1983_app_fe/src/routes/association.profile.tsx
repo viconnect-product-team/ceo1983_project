@@ -796,7 +796,7 @@ export default function ProfileScreen() {
           <Link
             to="/association/settings"
             aria-label={isEn ? "Account settings" : "Cài đặt tài khoản"}
-            className="text-[#2E3192] dark:text-amber-400 hover:text-[#19194D] p-1"
+            className="text-amber-500 hover:text-amber-600 p-1 transition-colors"
           >
             <Settings className="h-5 w-5" />
           </Link>
@@ -804,8 +804,8 @@ export default function ProfileScreen() {
       />
 
       {/* ── COMPACT MEMBER IDENTITY CARD (Liên kết trực tiếp tới Thẻ Hội Viên & Hồ Sơ) ── */}
-      <div id="tour-profile-card" className="mx-4 mt-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-xs">
-        <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#00224F] via-[#003B95] to-[#0A1A3A]">
+      <div id="tour-profile-card" className="mx-4 mt-4 overflow-hidden rounded-2xl border-2 border-amber-500/40 bg-white dark:bg-[#0F172A] shadow-[0_6px_25px_-5px_rgba(245,158,11,0.2)]">
+        <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] border-b border-amber-400/30">
           {displayCover && !coverError ? (
             <img
               src={displayCover}
@@ -814,7 +814,7 @@ export default function ProfileScreen() {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-r from-[#00224F] via-[#003B95] to-[#0A1A3A]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent pointer-events-none" />
 
@@ -822,7 +822,7 @@ export default function ProfileScreen() {
             <BadgeCheck className="h-3.5 w-3.5 text-amber-400" />
             <span>Hội viên chính thức CEO 1983</span>
           </div>
-          <div className="absolute bottom-2.5 left-4 text-[11px] font-medium text-blue-100/90 drop-shadow-xs">
+          <div className="absolute bottom-2.5 left-4 text-[11px] font-medium text-amber-200/90 drop-shadow-xs">
             Mã định danh: <span className="font-mono font-bold text-white">{member?.code || "CEO1983-VIP"}</span>
           </div>
         </div>
@@ -835,10 +835,10 @@ export default function ProfileScreen() {
                   src={resolvedAvatar}
                   alt={profileName || member?.name}
                   onError={handleAvatarLoadError}
-                  className="h-20 w-20 rounded-2xl border-4 border-white dark:border-[#0F172A] object-cover shadow-md bg-white"
+                  className="h-20 w-20 rounded-2xl border-3 border-amber-400/80 object-cover shadow-md bg-white"
                 />
               ) : (
-                <div className="h-20 w-20 rounded-2xl border-4 border-white dark:border-[#0F172A] bg-gradient-to-br from-[#003B95] to-[#00224F] text-white font-black text-xl grid place-items-center shadow-md">
+                <div className="h-20 w-20 rounded-2xl border-3 border-amber-400/80 bg-gradient-to-br from-[#003B95] to-[#001D4A] text-amber-300 font-black text-xl grid place-items-center shadow-md">
                   {initials(profileName || member?.name)}
                 </div>
               )}
@@ -846,11 +846,11 @@ export default function ProfileScreen() {
 
             <Link
               to="/association/card"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold px-3.5 py-2 text-xs shadow-md transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 font-bold px-3.5 py-2 text-xs shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition active:scale-95 cursor-pointer"
             >
-              <CreditCard className="h-4 w-4 text-white" />
+              <CreditCard className="h-4 w-4 text-amber-400" />
               <span>{isEn ? "Member Card & Contract" : "Thẻ Hội Viên & Hồ Sơ"}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-white" />
+              <ChevronRight className="h-3.5 w-3.5 text-amber-300" />
             </Link>
           </div>
 
@@ -861,11 +861,11 @@ export default function ProfileScreen() {
               </h2>
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              <Phone className="h-3.5 w-3.5 text-[#2E3192] dark:text-amber-400 shrink-0" />
+              <Phone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
               <span>{displayPhone}</span>
             </div>
             <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <Building2 className="h-3.5 w-3.5 text-amber-500/80 shrink-0" />
               <span className="truncate">{profileCompany || (member as any)?.company || "CLB Doanh Nhân CEO 1983"}</span>
             </p>
           </div>
@@ -878,7 +878,7 @@ export default function ProfileScreen() {
         <div className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {isEn ? "Functional Modules" : "Phân hệ chức năng"}
         </div>
-        <div className="divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-xs">
+        <div className="divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-amber-500/25 bg-white dark:bg-[#0F172A] shadow-xs">
           {menu.map((m: any) => {
             const Icon = m.icon;
             const itemTourId =
@@ -896,7 +896,7 @@ export default function ProfileScreen() {
                   onClick={m.onClick}
                   className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-amber-50/50 dark:hover:bg-slate-800/60 cursor-pointer"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50/80 dark:bg-[#14223E] text-[#2E3192] dark:text-amber-400 border border-blue-100 dark:border-blue-900/40">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/25">
                     <Icon className="h-4.5 w-4.5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -915,7 +915,7 @@ export default function ProfileScreen() {
                 to={m.to}
                 className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-amber-50/50 dark:hover:bg-slate-800/60"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50/80 dark:bg-[#14223E] text-[#2E3192] dark:text-amber-400 border border-blue-100 dark:border-blue-900/40">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/25">
                   <Icon className="h-4.5 w-4.5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -935,7 +935,7 @@ export default function ProfileScreen() {
                         search: { tab: "cards", action: "create" },
                       });
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#2E3192] dark:text-blue-400 hover:bg-[#2E3192] hover:text-white transition-colors cursor-pointer mr-1 shrink-0"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-colors cursor-pointer mr-1 shrink-0 border border-amber-500/30"
                     title={isEn ? "Create new card" : "Tạo danh thiếp số mới"}
                   >
                     <Plus className="h-4 w-4" />
@@ -954,7 +954,7 @@ export default function ProfileScreen() {
           <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             {isEn ? "Appearance & Theme" : "Giao diện & Chế độ màu"}
           </span>
-          <span className="text-[11px] font-bold text-[#2E3192] dark:text-amber-400">
+          <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
             {theme === "light" ? (isEn ? "Light" : "Sáng") : (isEn ? "Dark" : "Tối")}
           </span>
         </div>
@@ -970,14 +970,14 @@ export default function ProfileScreen() {
                 onClick={() => setTheme(opt.mode)}
                 className={`flex flex-col items-center justify-center gap-2 rounded-2xl p-3 text-center transition-all cursor-pointer border ${
                   active
-                    ? "border-[#2E3192] dark:border-amber-500 bg-blue-50 dark:bg-[#14223E] shadow-md scale-[1.02]"
+                    ? "border-amber-500 bg-amber-50/50 dark:bg-[#14223E] shadow-md scale-[1.02]"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] hover:border-slate-300 dark:hover:border-slate-700"
                 }`}
               >
                 <div
                   className={`flex h-9 w-9 items-center justify-center rounded-xl ${
                     active
-                      ? "bg-[#2E3192] text-white shadow-xs"
+                      ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 shadow-xs border border-amber-400/40"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                   }`}
                 >
@@ -999,7 +999,7 @@ export default function ProfileScreen() {
           <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             {isEn ? "App Language (8 Languages)" : "Ngôn ngữ ứng dụng (8 Ngôn ngữ)"}
           </span>
-          <span className="text-[11px] font-bold text-[#2E3192] dark:text-amber-400">
+          <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
             {lang === "vi" ? "Tiếng Việt" : "English"}
           </span>
         </div>
@@ -1017,7 +1017,7 @@ export default function ProfileScreen() {
               }}
               className={`flex items-center justify-between rounded-xl p-3 border text-xs font-semibold transition cursor-pointer ${
                 lang === l.code
-                  ? "border-[#2E3192] dark:border-amber-500 bg-blue-50 dark:bg-[#14223E] text-[#2E3192] dark:text-amber-300 shadow-xs font-bold"
+                  ? "border-amber-500 bg-amber-50/50 dark:bg-[#14223E] text-amber-700 dark:text-amber-300 shadow-xs font-bold"
                   : "border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
@@ -1025,7 +1025,7 @@ export default function ProfileScreen() {
                 <span className="text-base">{l.flag}</span>
                 <span className="truncate">{l.name}</span>
               </span>
-              {lang === l.code && <Check className="h-4 w-4 shrink-0 text-[#2E3192] dark:text-amber-400" />}
+              {lang === l.code && <Check className="h-4 w-4 shrink-0 text-amber-500" />}
             </button>
           ))}
         </div>
@@ -1095,17 +1095,17 @@ export default function ProfileScreen() {
       })()}
 
       {/* ── TRỢ LÝ ĐIỀU KHIỂN GIỌNG NÓI AI (VOICE AI NAVIGATION ASSISTANT SWITCH) ── */}
-      <div className="mx-4 mt-4 rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-50/70 to-indigo-50/50 dark:from-[#0f1d38]/80 dark:to-[#16203a]/80 p-4 shadow-xs">
+      <div className="mx-4 mt-4 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-50/40 via-blue-50/20 to-transparent dark:from-[#001D4A]/50 dark:to-[#002B70]/30 p-4 shadow-xs">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#003B95] to-[#002B70] border border-amber-400/40 text-amber-300 shadow-md shadow-[#003B95]/25">
               <Bot className="h-5 w-5 animate-pulse" />
             </div>
             <div>
               <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>{isEn ? "AI Voice Assistant" : "Trợ lý Điều khiển Giọng nói AI"}</span>
                 {voiceAiEnabled ? (
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-blue-600 text-white">
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-[#003B95] text-amber-300 border border-amber-400/40">
                     {isEn ? "Active" : "Đang bật"}
                   </span>
                 ) : (
@@ -1207,7 +1207,7 @@ export default function ProfileScreen() {
         <button
           type="button"
           onClick={logout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-bold text-white bg-[#2E3192] hover:bg-[#19194D] active:scale-[0.99] transition-all cursor-pointer shadow-md"
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-bold text-white bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 active:scale-[0.99] transition-all cursor-pointer shadow-md"
         >
           <LogOut className="h-4 w-4 text-white" /> {isEn ? "Sign out" : "Đăng xuất tài khoản"}
         </button>

@@ -170,7 +170,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
     >
       <div className="relative flex h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border-2 border-[#003B95]/40 bg-white dark:bg-[#071228] text-slate-900 dark:text-white shadow-2xl animate-scale-in">
         {/* Header Bar: Executive Navy & CEO 1983 Blue Accents */}
-        <div className="shrink-0 flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3.5 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#19194D] text-white">
+        <div className="shrink-0 flex items-center justify-between border-b border-amber-400/40 px-4 sm:px-6 py-3.5 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-white shadow-xs">
               <Compass className="h-5 w-5" />
@@ -179,8 +179,8 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-black tracking-tight text-white flex items-center gap-1.5">
                   <span>HƯỚNG DẪN THAO TÁC TỪNG MÀN HÌNH</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/40 uppercase font-black">
-                    Chuẩn Mobile Banking
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 uppercase font-black">
+                    Chuẩn CEO 1983
                   </span>
                 </h3>
               </div>
@@ -194,10 +194,10 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             <button
               type="button"
               onClick={() => handleLaunchLiveTour(currentScreen)}
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-white bg-gradient-to-r from-[#003B95] to-[#19194D] hover:brightness-110 px-3.5 py-1.5 rounded-xl transition shadow-md cursor-pointer border border-blue-400/40 active:scale-95"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-white bg-gradient-to-r from-[#003B95] to-[#002B70] hover:brightness-110 px-3.5 py-1.5 rounded-xl transition shadow-md cursor-pointer border border-amber-400/40 active:scale-95"
               title="Khởi động chỉ dẫn trực tiếp trên màn hình này"
             >
-              <Sparkles className="h-3.5 w-3.5 text-sky-300" />
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
               <span>Chạy Tour Trực Tiếp</span>
             </button>
             <button
@@ -282,7 +282,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                         <div
                           className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 border transition ${
                             isSelected
-                              ? "bg-gradient-to-br from-[#003B95] to-[#19194D] text-white border-blue-400/40"
+                              ? "bg-gradient-to-br from-[#003B95] to-[#002B70] text-white border-amber-400/40"
                               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10"
                           }`}
                         >
@@ -292,7 +292,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                           <div className="flex items-center gap-1.5">
                             <span
                               className={`text-[9.5px] font-black uppercase tracking-wider ${
-                                isSelected ? "text-[#003B95] dark:text-sky-300" : "text-slate-400"
+                                isSelected ? "text-[#003B95] dark:text-amber-400" : "text-slate-400"
                               }`}
                             >
                               {screen.badge}
@@ -312,7 +312,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                       </div>
                       <ChevronRight
                         className={`h-4 w-4 shrink-0 transition ${
-                          isSelected ? "text-[#003B95] dark:text-sky-400 translate-x-0.5" : "text-slate-300 dark:text-slate-600"
+                          isSelected ? "text-[#003B95] dark:text-amber-400 translate-x-0.5" : "text-slate-300 dark:text-slate-600"
                         }`}
                       />
                     </button>
@@ -325,9 +325,9 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                 <button
                   type="button"
                   onClick={() => handleLaunchLiveTour(currentScreen)}
-                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm hover:brightness-110 active:scale-95 transition cursor-pointer border border-blue-400/40"
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm hover:brightness-110 active:scale-95 transition cursor-pointer border border-amber-400/40"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-sky-300" />
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" />
                   <span>Trải Nghiệm Màn Này Ngay →</span>
                 </button>
               </div>
@@ -419,7 +419,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
               <div className="rounded-3xl border-2 border-[#003B95]/30 bg-white dark:bg-[#071228] p-5 shadow-lg space-y-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-white/10 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#003B95] to-[#19194D] text-white border border-blue-400/40 text-xs font-black uppercase tracking-wider">
+                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#003B95] to-[#002B70] text-white border border-amber-400/40 text-xs font-black uppercase tracking-wider">
                       BƯỚC {activeStepIndex + 1}: {activeStep.title}
                     </span>
                     <span className="text-lg">{activeStep.icon}</span>
@@ -507,7 +507,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                       <button
                         type="button"
                         onClick={() => setActiveStepIndex((prev) => prev + 1)}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] text-white font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer border border-blue-400/40 flex items-center gap-1.5"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] text-white font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer border border-amber-400/40 flex items-center gap-1.5"
                       >
                         <span>Bước tiếp theo</span>
                         <ArrowRight className="h-3.5 w-3.5 text-white" />
@@ -516,7 +516,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                       <button
                         type="button"
                         onClick={() => handleLaunchLiveTour(currentScreen)}
-                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] text-white font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer border border-blue-400/40 flex items-center gap-1.5"
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] text-white font-black text-xs shadow-md hover:brightness-110 active:scale-95 transition cursor-pointer border border-amber-400/40 flex items-center gap-1.5"
                       >
                         <Sparkles className="h-3.5 w-3.5 text-white" />
                         <span>Chạy thử ngay trên màn này</span>

@@ -971,7 +971,7 @@ function Home() {
     <div className="vba-animate min-h-full">
       {/* ── CỐ ĐỊNH HEADER LOGO VÀ NOTIFICATIONS (BỎ ICON CHỤP ẢNH, GIỮ LOGO CHUẨN CEO1983) ── */}
       <header
-        className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 dark:border-[var(--vba-border)] bg-white/95 dark:bg-[#070D1A]/95 px-4 backdrop-blur-md shadow-xs"
+        className="sticky top-0 z-40 flex items-center justify-between border-b border-amber-500/25 bg-white/95 dark:bg-[#070D1A]/95 px-4 backdrop-blur-md shadow-[0_2px_12px_rgba(245,158,11,0.06)]"
         style={{
           paddingTop: "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
           minHeight: "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + 52px)",
@@ -985,19 +985,18 @@ function Home() {
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
             }}
-            className="h-8 max-w-[150px] object-contain"
+            className="h-8 max-w-[150px] object-contain drop-shadow-xs"
           />
         </div>
 
         {/* Thông báo */}
         <div className="flex items-center gap-2">
-
           <Link
             to="/association/notifications"
             aria-label={t("m.index.notifAria")}
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#14223E] text-[#003B95] dark:text-blue-400 shadow-xs transition hover:scale-105 active:scale-95 hover:border-[#003B95]/50 touch-press"
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-50/80 dark:bg-[#14223E] text-amber-600 dark:text-amber-400 shadow-xs transition hover:scale-105 active:scale-95 hover:border-amber-500/70 touch-press"
           >
-            <Bell className="h-4.5 w-4.5 stroke-[2]" />
+            <Bell className="h-4.5 w-4.5 stroke-[2.2]" />
             {unreadNotifCount > 0 && (
               <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900 shadow-xs animate-pulse">
                 {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
@@ -1013,11 +1012,11 @@ function Home() {
       <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
 
       {/* Hero Banner with Classic Cobalt Navy Atmosphere */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#003B95]/15 via-blue-500/5 to-transparent">
+      <div className="relative overflow-hidden bg-gradient-to-b from-[#003B95]/20 via-amber-500/5 to-transparent">
         <SeasonalEventHeader />
 
-        <div className="absolute -top-10 -left-10 h-44 w-44 rounded-full bg-[#003B95]/20 blur-3xl pointer-events-none" />
-        <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
+        <div className="absolute -top-10 -left-10 h-44 w-44 rounded-full bg-[#003B95]/25 blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-amber-500/15 blur-2xl pointer-events-none" />
 
         <img
           src={heroImg}
@@ -1031,16 +1030,16 @@ function Home() {
         <div className="relative z-10 px-4 pb-14 pt-3" />
       </div>
 
-      {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE (ĐÃ TINH GỌN CHUẨN YÊU CẦU) ── */}
+      {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE (ĐÃ TINH GỌN CHUẨN YÊU CẦU CEO 1983) ── */}
       <div
         id="tour-member-card"
         onClick={() => setProfileSheetOpen(true)}
-        className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] shadow-md transition hover:border-[#003B95]/40 cursor-pointer active:scale-[0.99] group"
+        className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border-2 border-amber-500/40 hover:border-amber-500/70 bg-white dark:bg-[#0E172A] shadow-[0_6px_25px_-5px_rgba(245,158,11,0.22)] transition hover:shadow-[0_8px_30px_-5px_rgba(245,158,11,0.32)] cursor-pointer active:scale-[0.99] group"
         title="Bấm để xem hồ sơ hội viên chi tiết"
       >
-        {/* Ảnh bìa to rộng */}
+        {/* Ảnh bìa to rộng mang sắc thái Royal Navy & Gold */}
         <div 
-          className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]"
+          className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] border-b border-amber-400/30"
         >
           {coverPhoto && !coverError ? (
             <img
@@ -1053,13 +1052,13 @@ function Home() {
               className="h-full w-full object-cover opacity-85"
             />
           ) : (
-            <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0A1A3A]">
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#003B95_1px,transparent_1px)] [background-size:16px_16px]" />
+            <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A]">
+              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
 
-          {/* Logo công ty hội viên trên ảnh bìa ở góc phải: Sang trọng, rõ nét */}
+          {/* Logo công ty hội viên trên ảnh bìa ở góc phải: Sang trọng, viền vàng kim */}
           <div 
             onClick={(e) => {
               e.stopPropagation();
@@ -1068,7 +1067,7 @@ function Home() {
             className="absolute top-2.5 right-3 z-10 cursor-pointer"
             title="Bấm vào để tải lên hoặc đổi Logo công ty"
           >
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-white/70 dark:border-slate-700 shadow-sm transition group hover:bg-white dark:hover:bg-slate-900">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-amber-400/60 dark:border-amber-500/50 shadow-sm transition group hover:bg-white dark:hover:bg-slate-900">
               <img
                 src={resolveMediaUrl(displayCompanyLogo) || displayCompanyLogo}
                 alt="Company Logo"
@@ -1077,7 +1076,7 @@ function Home() {
                 }}
                 className="h-6 sm:h-7 w-auto max-w-[110px] object-contain filter drop-shadow-xs"
               />
-              <span className="text-[10px] text-slate-700 dark:text-slate-300 font-bold flex items-center gap-0.5">
+              <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-0.5">
                 <Camera className="h-2.5 w-2.5 text-amber-500" />
                 <span className="hidden group-hover:inline-block">Đổi</span>
               </span>
@@ -1085,10 +1084,10 @@ function Home() {
           </div>
         </div>
 
-        {/* Thân thẻ với Avatar dập viền trắng đè lên ảnh bìa */}
+        {/* Thân thẻ với Avatar dập viền vàng kim nổi bật đè lên ảnh bìa */}
         <div className="px-4 pb-3 pt-0 relative">
           <div className="flex items-end justify-between -mt-8 mb-2.5">
-            {/* Avatar tròn to dập viền trắng nổi bật có chấm xanh online (Click để đổi avatar) */}
+            {/* Avatar tròn to dập viền vàng hoàng kim nổi bật có chấm xanh online (Click để đổi avatar) */}
             <div 
               onClick={(e) => {
                 e.stopPropagation();
@@ -1102,16 +1101,21 @@ function Home() {
                   src={displayAvatar}
                   alt={displayName}
                   onError={() => setAvatarError(true)}
-                  className="h-16 w-16 shrink-0 rounded-full object-cover ring-3 ring-white dark:ring-[#0F172A] shadow-md bg-slate-100 dark:bg-slate-800"
+                  className="h-16 w-16 shrink-0 rounded-full object-cover ring-3 ring-amber-400/80 shadow-md bg-slate-100 dark:bg-slate-800"
                 />
               ) : (
-                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#19194D] text-[18px] font-black text-white ring-3 ring-white dark:ring-[#0F172A] shadow-md">
+                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#001D4A] text-[18px] font-black text-amber-300 ring-3 ring-amber-400/80 shadow-md">
                   {initials(displayName)}
                 </span>
               )}
-              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0F172A]" />
+              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0E172A]" />
             </div>
 
+            {/* Huy hiệu thành viên VIP CEO 1983 Vàng Kim */}
+            <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[11px] font-black shadow-2xs">
+              <Crown className="h-3 w-3 text-amber-500" />
+              <span>HỘI VIÊN CHÍNH THỨC</span>
+            </div>
           </div>
 
           {/* Thông tin hội viên & doanh nghiệp — Bấm mở popup hồ sơ từ dưới lên */}
@@ -1120,37 +1124,37 @@ function Home() {
             className="space-y-1 cursor-pointer transition hover:opacity-90 active:scale-[0.99] rounded-xl p-1 -m-1"
             title="Bấm để xem hồ sơ cá nhân chi tiết (Ảnh, Profile, Facebook...)"
           >
-            {/* Tên công ty của hội viên (không có logo phụ cạnh tên công ty) */}
-            <div className="text-xs sm:text-[13px] font-extrabold uppercase tracking-wide text-[#003B95] dark:text-blue-400 truncate">
+            {/* Tên công ty của hội viên */}
+            <div className="text-xs sm:text-[13px] font-black uppercase tracking-wide text-[#003B95] dark:text-blue-300 truncate">
               {displayCompany}
             </div>
 
-            {/* Tên hội viên & Huy hiệu xác thực */}
+            {/* Tên hội viên & Huy hiệu vàng xác thực */}
             <div className="flex items-center gap-1.5">
               <span className="truncate text-[17px] font-black text-slate-900 dark:text-white">
                 {displayName}
               </span>
-              <BadgeCheck className="h-4.5 w-4.5 shrink-0 text-[#0284c7] dark:text-sky-400" />
+              <BadgeCheck className="h-4.5 w-4.5 shrink-0 text-amber-500" />
             </div>
 
             {/* Chức danh / Profile hội viên */}
             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-600 dark:text-slate-400">
-              <Briefcase className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+              <Briefcase className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
               <span className="truncate">{displayTitle}</span>
             </div>
 
             {/* Số điện thoại */}
             <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-700 dark:text-slate-300">
-              <Phone className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-              <span>{displayPhone}</span>
+              <Phone className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="font-bold text-[#003B95] dark:text-blue-300">{displayPhone}</span>
             </div>
           </div>
 
-          {/* Footer của thẻ hội viên: Chỉ để DUY NHẤT icon chỉnh sửa nhanh gọn gàng */}
-          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+          {/* Footer của thẻ hội viên: Nút liên kết và icon chỉnh sửa nhanh sang trọng */}
+          <div className="mt-3 pt-2.5 border-t border-amber-500/20 flex items-center justify-between gap-2">
             <span
               onClick={() => setProfileSheetOpen(true)}
-              className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer hover:text-[#003B95] dark:hover:text-blue-400 transition-colors"
+              className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1 cursor-pointer hover:underline transition-colors"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span>Xem hồ sơ & liên kết cá nhân →</span>
@@ -1162,11 +1166,11 @@ function Home() {
                 e.stopPropagation();
                 setQuickEditOpen(true);
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-700 dark:text-slate-200 hover:text-[#003B95] dark:hover:text-blue-300 hover:border-blue-300 shadow-2xs transition-all cursor-pointer active:scale-95"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-400/50 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 text-amber-700 dark:text-amber-300 shadow-2xs transition-all cursor-pointer active:scale-95"
               title="Chỉnh sửa nhanh hồ sơ"
               aria-label="Chỉnh sửa nhanh hồ sơ"
             >
-              <Pencil className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+              <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </button>
           </div>
         </div>
@@ -1301,16 +1305,16 @@ function Home() {
       <div className="mx-4 mt-5">
         <div className="mb-3 flex items-center justify-between">
           <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#003B95] text-amber-300 text-xs shadow-xs">
-              <Calendar className="h-3.5 w-3.5" />
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 text-xs border border-amber-500/40 shadow-xs">
+              <Calendar className="h-3.5 w-3.5 text-amber-400" />
             </span>
-            <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-[#003B95] dark:group-hover:text-amber-400 flex items-center gap-1">
+            <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-amber-500 transition-colors flex items-center gap-1">
               <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
               <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
               <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </h2>
           </Link>
-          <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-[#003B95] dark:text-amber-400 hover:underline p-1">
+          <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400 hover:underline p-1">
             <span>{isEn ? "See all" : "Xem tất cả"}</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </Link>
@@ -1318,8 +1322,8 @@ function Home() {
 
         {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, tối đa 5 sự kiện */}
         {displayEvents.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-slate-800">
-            <Calendar className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600 mb-1.5" />
+          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
+            <Calendar className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
             <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
               {isEn ? "No upcoming events scheduled" : "Chưa có sự kiện mới được lên lịch"}
             </p>
@@ -1341,8 +1345,8 @@ function Home() {
                     isSingle ? "w-full" : "w-[245px] max-w-[78%] min-w-[215px]"
                   }`}
                 >
-                  {/* Poster Box */}
-                  <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-900 shadow-sm group-hover:shadow-md transition-all group-hover:border-sky-400/50">
+                  {/* Poster Box with Amber Gold Border */}
+                  <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-amber-500/30 group-hover:border-amber-400/80 bg-slate-900 shadow-sm group-hover:shadow-[0_4px_20px_rgba(245,158,11,0.25)] transition-all">
                     <img
                       src={realImg}
                       alt={realTitle}
@@ -1363,7 +1367,7 @@ function Home() {
                       <div className="flex items-center">
                         <EventCountdownMiniBadge event={ev} index={pIdx} />
                       </div>
-                      <h3 className="line-clamp-1 text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-sky-300 transition-colors">
+                      <h3 className="line-clamp-1 text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-300 transition-colors">
                         {realTitle}
                       </h3>
                     </div>
@@ -1376,7 +1380,7 @@ function Home() {
       </div>
 
       {/* ── 2. ƯU ĐÃI HỘI VIÊN & ĐỐI TÁC ── */}
-      <div className="relative mx-4 mt-5 flex items-center gap-3 overflow-hidden rounded-2xl vba-card p-4 shadow-xs border border-amber-500/30">
+      <div className="relative mx-4 mt-5 flex items-center gap-3 overflow-hidden rounded-2xl vba-card p-4 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.18)] border border-amber-500/40">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-start gap-1.5">
             <Crown className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500" />
@@ -1397,15 +1401,14 @@ function Home() {
           </p>
           <Link
             to="/association/perks"
-            className="mt-3 inline-block rounded-xl bg-[#2E3192] hover:bg-[#19194D] px-3.5 py-1.5 text-[10.5px] font-bold text-white shadow-xs transition active:scale-95 touch-press"
-            style={{ color: "#ffffff" }}
+            className="mt-3 inline-block rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 px-3.5 py-1.5 text-[10.5px] font-bold text-amber-300 shadow-[0_2px_10px_rgba(245,158,11,0.2)] hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition active:scale-95 touch-press"
           >
             {isEn ? "View perks now" : "Xem ưu đãi ngay"}
           </Link>
         </div>
 
         <div className="relative shrink-0">
-          <span className="absolute inset-0 rounded-full bg-blue-400/20 blur-md animate-pulse pointer-events-none" />
+          <span className="absolute inset-0 rounded-full bg-amber-400/20 blur-md animate-pulse pointer-events-none" />
           <img
             src={giftImg}
             alt="Quà tặng ưu đãi"
@@ -1420,23 +1423,23 @@ function Home() {
 
       {/* ── 3. CHIA SẺ CƠ HỘI & MARKETPLACE ── */}
       <div id="tour-opportunities-stats" className="mx-4 mt-4 grid grid-cols-2 gap-3">
-        {/* Chia sẻ cơ hội - Nút bấm Cobalt Navy */}
+        {/* Chia sẻ cơ hội - Deep Navy viền Vàng Kim */}
         <Link
           to="/association/opportunities"
-          className="group relative vba-card flex flex-col justify-between p-4 transition hover:border-[#2E3192]/50 shadow-xs overflow-hidden touch-press"
+          className="group relative vba-card flex flex-col justify-between p-4 transition border border-amber-500/30 hover:border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.1)] hover:shadow-[0_4px_20px_rgba(245,158,11,0.22)] overflow-hidden touch-press rounded-2xl"
         >
-          <span className="absolute -inset-px rounded-2xl border border-[#2E3192]/30 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
+          <span className="absolute -inset-px rounded-2xl border border-amber-400/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50/80 dark:bg-[#14223E] text-[#2E3192] dark:text-blue-400 shadow-xs overflow-hidden border border-[#2E3192]/20">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-xs overflow-hidden border border-amber-500/30">
                 <img
                   src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Hand%20gestures/Handshake.png"
                   alt="Chia sẻ cơ hội"
                   className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
                 />
               </div>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 dark:bg-blue-400/15 border border-blue-500/25 text-[#003B95] dark:text-blue-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>{totalOpportunitiesCount}+</span>
                 <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400">{isEn ? "deals" : "cơ hội"}</span>
@@ -1458,7 +1461,7 @@ function Home() {
           </div>
 
           <span
-            className="mt-3.5 inline-flex self-start rounded-xl bg-[#F0F4FA] dark:bg-slate-800 text-[#003B95] dark:text-blue-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95"
+            className="mt-3.5 inline-flex self-start rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-700 dark:text-amber-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95"
           >
             {isEn ? "Explore now" : "Khám phá ngay"}
           </span>
@@ -1468,20 +1471,20 @@ function Home() {
         <Link
           to="/association/products"
           search={{ action: undefined }}
-          className="group relative vba-card flex flex-col justify-between p-4 transition hover:border-[#2E3192]/50 shadow-xs overflow-hidden cursor-pointer touch-press"
+          className="group relative vba-card flex flex-col justify-between p-4 transition border border-amber-500/30 hover:border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.1)] hover:shadow-[0_4px_20px_rgba(245,158,11,0.22)] overflow-hidden cursor-pointer touch-press rounded-2xl"
         >
-          <span className="absolute -inset-px rounded-2xl border border-[#2E3192]/30 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
+          <span className="absolute -inset-px rounded-2xl border border-amber-400/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50/80 dark:bg-[#14223E] text-[#2E3192] dark:text-blue-400 shadow-xs overflow-hidden border border-[#2E3192]/20">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-xs overflow-hidden border border-amber-500/30">
                 <img
                   src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Package.png"
                   alt="Marketplace"
                   className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
                 />
               </div>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 dark:bg-amber-400/15 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                 <span>{totalProductsCount}+</span>
                 <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400">{isEn ? "items" : "sản phẩm"}</span>
@@ -1502,7 +1505,7 @@ function Home() {
             </div>
           </div>
 
-          {/* Nút Khám phá sàn - Chuẩn màu xanh CEO chữ trắng */}
+          {/* Nút Khám phá sàn - Gradient Deep Navy viền Vàng Kim */}
           <button
             type="button"
             onClick={(e) => {
@@ -1513,8 +1516,7 @@ function Home() {
                 search: { action: "create" } as any,
               });
             }}
-            className="mt-3.5 inline-flex self-start rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95 cursor-pointer z-10 touch-press"
-            style={{ color: "#ffffff" }}
+            className="mt-3.5 inline-flex self-start rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition active:scale-95 cursor-pointer z-10 touch-press"
           >
             {isEn ? "Post now" : "Đăng ngay"}
           </button>
@@ -1525,14 +1527,16 @@ function Home() {
       <div className="mx-4 mt-6">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Building2 className="h-4.5 w-4.5 shrink-0 text-[#2E3192] dark:text-amber-400" />
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
+              <Building2 className="h-3.5 w-3.5 text-amber-400" />
+            </span>
             <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
               {isEn ? "New Member Enterprises" : "Doanh nghiệp mới gia nhập"}
             </h2>
           </div>
           <Link
             to="/association/members"
-            className="flex items-center text-[11px] font-bold text-[#2E3192] dark:text-amber-400 transition hover:underline"
+            className="flex items-center text-[11px] font-bold text-amber-600 dark:text-amber-400 transition hover:underline"
           >
             <span>{isEn ? "Directory" : "Xem danh bạ"}</span>
             <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
@@ -1540,8 +1544,8 @@ function Home() {
         </div>
 
         {directoryMembers.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-slate-800">
-            <Users className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600 mb-1.5" />
+          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
+            <Users className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
             <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
               {isEn ? "No new enterprise members recorded this week" : "Chưa có doanh nghiệp mới tuần này"}
             </p>
@@ -1552,16 +1556,16 @@ function Home() {
               <Link
                 key={m.code}
                 to="/association/members"
-                className="vba-card flex items-center gap-2.5 rounded-xl p-2.5 shadow-xs transition hover:border-amber-500/50"
+                className="vba-card flex items-center gap-2.5 rounded-xl p-2.5 shadow-xs border border-amber-500/25 hover:border-amber-400 transition"
               >
                 {m.avatar ? (
                   <img
                     src={resolveMediaUrl(m.avatar) || m.avatar}
                     alt={m.name}
-                    className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                    className="h-9 w-9 shrink-0 rounded-lg object-cover ring-2 ring-amber-400/50"
                   />
                 ) : (
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#2E3192] text-[12px] font-black text-white shadow-xs">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-[12px] font-black text-amber-300 ring-1 ring-amber-400/50 shadow-xs">
                     {initials(m.name)}
                   </div>
                 )}
@@ -1583,8 +1587,8 @@ function Home() {
       <div id="tour-recent-history" className="mx-4 mt-6">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#003B95] text-amber-300 shadow-xs">
-              <History className="h-3.5 w-3.5" />
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
+              <History className="h-3.5 w-3.5 text-amber-400" />
             </span>
             <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
               {isEn ? "Activity & Transactions" : "Lịch sử hoạt động & Giao dịch"}
@@ -1592,7 +1596,7 @@ function Home() {
           </div>
           <Link
             to="/association/history"
-            className="flex items-center text-[11px] font-bold text-[#003B95] dark:text-amber-400 transition hover:underline"
+            className="flex items-center text-[11px] font-bold text-amber-600 dark:text-amber-400 transition hover:underline"
           >
             <span>{isEn ? "View details" : "Xem chi tiết"}</span>
             <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
@@ -1603,9 +1607,9 @@ function Home() {
         <div className="grid grid-cols-3 gap-2 mb-3">
           <Link
             to="/association/history"
-            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group hover:border-[#003B95]/40 transition active:scale-95"
+            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group border border-amber-500/25 hover:border-amber-400 transition active:scale-95 shadow-xs"
           >
-            <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-[#003B95] dark:text-blue-300 mb-1.5 group-hover:scale-110 transition-transform">
+            <div className="h-8 w-8 rounded-lg bg-amber-500/10 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5 group-hover:scale-110 transition-transform border border-amber-500/20">
               <Handshake className="h-4 w-4" />
             </div>
             <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Kết nối B2B</span>
@@ -1614,9 +1618,9 @@ function Home() {
 
           <Link
             to="/association/history"
-            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group hover:border-[#003B95]/40 transition active:scale-95"
+            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group border border-amber-500/25 hover:border-amber-400 transition active:scale-95 shadow-xs"
           >
-            <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5 group-hover:scale-110 transition-transform">
+            <div className="h-8 w-8 rounded-lg bg-amber-500/10 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5 group-hover:scale-110 transition-transform border border-amber-500/20">
               <Calendar className="h-4 w-4" />
             </div>
             <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Vé sự kiện</span>
@@ -1625,9 +1629,9 @@ function Home() {
 
           <Link
             to="/association/history"
-            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group hover:border-[#003B95]/40 transition active:scale-95"
+            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group border border-amber-500/25 hover:border-amber-400 transition active:scale-95 shadow-xs"
           >
-            <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform">
+            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform border border-emerald-500/20">
               <CreditCard className="h-4 w-4" />
             </div>
             <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Hội phí & Quỹ</span>
@@ -1636,7 +1640,7 @@ function Home() {
         </div>
 
         {/* Recent Items Preview List */}
-        <div className="rounded-2xl vba-card p-3 shadow-xs divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="rounded-2xl vba-card p-3 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 border border-amber-500/25">
           {recentActivitiesList.slice(0, 3).map((act, idx) => (
             <Link
               key={act.id || idx}
@@ -1646,10 +1650,10 @@ function Home() {
               <div
                 className={`h-8 w-8 rounded-xl shrink-0 flex items-center justify-center shadow-xs ${
                   act.type === "event"
-                    ? "bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                    ? "bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-500/30"
                     : act.type === "payment"
-                    ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
-                    : "bg-blue-100/80 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300"
+                    ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/30"
+                    : "bg-blue-100/80 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-500/30"
                 }`}
               >
                 {act.type === "event" ? (
@@ -1661,7 +1665,7 @@ function Home() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="line-clamp-1 text-[12px] font-bold text-[var(--vba-text)] group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors">
+                <div className="line-clamp-1 text-[12px] font-bold text-[var(--vba-text)] group-hover:text-amber-500 transition-colors">
                   {act.title}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
@@ -1670,7 +1674,7 @@ function Home() {
                   <span className="shrink-0">{formatNewsDate(act.date)}</span>
                 </div>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
             </Link>
           ))}
         </div>
@@ -1680,14 +1684,16 @@ function Home() {
       <div className="mx-4 mt-6">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Newspaper className="h-4.5 w-4.5 shrink-0 text-[#2E3192] dark:text-amber-400" />
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
+              <Newspaper className="h-3.5 w-3.5 text-amber-400" />
+            </span>
             <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
               {isEn ? "Club Activities & News" : "Tin hoạt động CLB"}
             </h2>
           </div>
           <Link
             to="/association/news"
-            className="flex items-center text-[11px] font-bold text-[#2E3192] dark:text-amber-400 transition hover:underline"
+            className="flex items-center text-[11px] font-bold text-amber-600 dark:text-amber-400 transition hover:underline"
           >
             <span>{isEn ? "View all" : "Xem tất cả"}</span>
             <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
@@ -1695,8 +1701,8 @@ function Home() {
         </div>
 
         {newsItems.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-slate-800">
-            <Newspaper className="mx-auto h-7 w-7 text-slate-300 dark:text-slate-600 mb-1.5" />
+          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
+            <Newspaper className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
             <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
               {isEn ? "No newly published club news" : "Chưa có bản tin mới trong tuần"}
             </p>
@@ -1710,10 +1716,10 @@ function Home() {
                 <Link
                   key={item.id}
                   to="/association/news"
-                  className="vba-card group flex items-center gap-3 rounded-2xl p-2.5 sm:p-3 shadow-xs transition hover:border-amber-500/50 hover:shadow-md"
+                  className="vba-card group flex items-center gap-3 rounded-2xl p-2.5 sm:p-3 shadow-xs border border-amber-500/25 hover:border-amber-400 hover:shadow-[0_4px_16px_rgba(245,158,11,0.18)] transition"
                 >
                   {/* Photo thumbnail */}
-                  <div className="relative h-20 w-24 sm:h-22 sm:w-28 shrink-0 overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-900">
+                  <div className="relative h-20 w-24 sm:h-22 sm:w-28 shrink-0 overflow-hidden rounded-xl border border-amber-500/30 bg-slate-900">
                     <img
                       src={newsImg}
                       alt={item.title}
@@ -1721,14 +1727,14 @@ function Home() {
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
                     {item.category && (
-                      <span className="absolute bottom-1 left-1 rounded bg-black/70 backdrop-blur-xs px-1.5 py-0.5 text-[8.5px] font-bold text-amber-300">
+                      <span className="absolute bottom-1 left-1 rounded bg-black/70 backdrop-blur-xs px-1.5 py-0.5 text-[8.5px] font-bold text-amber-300 border border-amber-400/40">
                         {item.category}
                       </span>
                     )}
                   </div>
 
                   <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
-                    <div className="line-clamp-2 text-[13px] font-bold text-[var(--vba-text)] leading-snug group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors">
+                    <div className="line-clamp-2 text-[13px] font-bold text-[var(--vba-text)] leading-snug group-hover:text-amber-500 transition-colors">
                       {item.title}
                     </div>
                     <div className="mt-1.5 flex items-center gap-2 text-[10.5px] text-slate-400 dark:text-slate-500">
@@ -1739,7 +1745,7 @@ function Home() {
                       </span>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-amber-500 transition-colors" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
                 </Link>
               );
             })}

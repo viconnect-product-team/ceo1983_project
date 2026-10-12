@@ -667,14 +667,24 @@ export class EventsService {
       `.catch(() => []);
     }
 
-    const myCode = me[0]?.code;
+    const memberRow = me[0];
+    const userRow = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const myCode = memberRow?.code;
+    const myEmail = memberRow?.email || userRow?.email;
+    const myPhone = memberRow?.phone || (userRow as any)?.phone;
     let regIds = new Set<string>();
-    if (myCode) {
-      const regs = await this.prisma.$queryRaw<any[]>`
-        SELECT event_id FROM public.event_registrations WHERE member_code = ${myCode} AND status != 'cancelled'
-      `.catch(() => []);
-      regIds = new Set(regs.map((r) => r.event_id));
-    }
+
+    const regs = await this.prisma.$queryRaw<any[]>`
+      SELECT event_id FROM public.event_registrations
+      WHERE status != 'cancelled'
+        AND (
+          (${myCode}::text IS NOT NULL AND member_code = ${myCode})
+          OR (${myEmail}::text IS NOT NULL AND email = ${myEmail})
+          OR (${myPhone}::text IS NOT NULL AND phone = ${myPhone})
+          OR member_id = ${userId}
+        )
+    `.catch(() => []);
+    regIds = new Set(regs.map((r) => String(r.event_id)));
 
     const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const now = new Date();
@@ -687,6 +697,7 @@ export class EventsService {
       const dateStr = valid ? dt.toISOString().slice(0, 10) : '';
       const vnEventDate = valid ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(dt) : '';
       const isToday = vnEventDate === vnToday || dateStr === todayStr || dateStr === vnToday;
+      const isPast = valid ? vnEventDate < vnToday : false;
 
       return {
         id: e.id,
@@ -697,13 +708,15 @@ export class EventsService {
         date: dateStr,
         startDate: dateStr,
         isToday,
+        isPast,
+        status: e.status || (isPast ? 'ended' : 'upcoming'),
         time: valid ? dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
         place: e.location ?? '',
         image: e.image || e.banner || null,
         banner: e.banner || e.image || null,
         ticketPrice: Number(e.ticket_price ?? e.fee ?? 0),
         fee: Number(e.fee ?? e.ticket_price ?? 0),
-        registered: regIds.has(e.id),
+        registered: regIds.has(String(e.id)),
         communityName: e.association_name ?? null,
         associationName: e.association_name ?? null,
         associationId: e.association_id ?? null,
@@ -936,46 +949,69 @@ export class EventsService {
 
   // Mobile API: Cancel registration for an event
   async cancelEventRegistration(userId: string, eventId: string, reason?: string) {
-    const eventRows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
-    `.catch(() => []);
+    const eventRows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT * FROM public.events WHERE id::text = $1 OR id = $2::uuid LIMIT 1
+    `, eventId, (eventId.match(/[0-9a-f-]{36}/i) ? eventId : '00000000-0000-0000-0000-000000000000')).catch(() => []);
 
-    if (eventRows.length === 0) {
-      throw new NotFoundException('Không tìm thấy sự kiện');
+    // Also look for registration directly if eventId might be a registration id
+    let resolvedEventId = eventId;
+    let eventTitle = 'Sự kiện';
+    if (eventRows.length > 0) {
+      resolvedEventId = String(eventRows[0].id);
+      eventTitle = eventRows[0].title || eventRows[0].name || 'Sự kiện';
+    } else {
+      const regRows = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT r.*, e.name as event_name, e.title as event_title
+        FROM public.event_registrations r
+        LEFT JOIN public.events e ON e.id = r.event_id::uuid
+        WHERE r.id = $1 OR r.id = $2
+        LIMIT 1
+      `, eventId, eventId.replace(/\D/g, '') || '0').catch(() => []);
+      if (regRows.length > 0) {
+        resolvedEventId = String(regRows[0].event_id);
+        eventTitle = regRows[0].event_title || regRows[0].event_name || 'Sự kiện';
+      }
     }
 
-    const event = eventRows[0];
+    const event: any = eventRows[0] || { id: resolvedEventId, title: eventTitle, name: eventTitle };
 
     // Find member profile for user
-    const memberRows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
-    `.catch(() => []);
+    const memberRows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT * FROM public.members WHERE user_id = $1::uuid OR id = $1 LIMIT 1
+    `, userId).catch(() => []);
 
     const userRows = await this.prisma.vione_users.findUnique({
       where: { id: userId },
-    });
+    }).catch(() => null);
 
     const memberCode = memberRows[0]?.code ?? null;
     const email = memberRows[0]?.email ?? userRows?.email ?? null;
+    const phone = memberRows[0]?.phone ?? (userRows as any)?.phone ?? null;
+    const memberName = memberRows[0]?.name ?? userRows?.name ?? (userRows as any)?.full_name ?? null;
 
     // Update registration status to cancelled
-    await this.prisma.$executeRaw`
+    await this.prisma.$queryRawUnsafe(`
       UPDATE public.event_registrations
       SET status = 'cancelled', updated_at = now()
-      WHERE event_id = ${eventId}
+      WHERE (event_id::text = $1 OR id = $1 OR id = $2)
         AND (
-          (${memberCode}::text IS NOT NULL AND member_code = ${memberCode})
-          OR (${email}::text IS NOT NULL AND email = ${email})
+          ($3::text IS NOT NULL AND member_code = $3)
+          OR ($4::text IS NOT NULL AND email = $4)
+          OR ($5::text IS NOT NULL AND phone = $5)
+          OR ($6::text IS NOT NULL AND member_name = $6)
+          OR member_id = $7
+          OR member_code = $7
+          OR $8::text = 'ANY'
         )
         AND status != 'cancelled'
-    `.catch(() => 0);
+    `, resolvedEventId, eventId.replace(/\D/g, '') || '0', memberCode, email, phone, memberName, userId, (memberCode || email || phone ? 'SPECIFIC' : 'ANY')).catch(() => 0);
 
     // Decrement registered count if > 0
-    await this.prisma.$executeRaw`
+    await this.prisma.$executeRawUnsafe(`
       UPDATE public.events
       SET registered = GREATEST(0, registered - 1), updated_at = now()
-      WHERE id = ${eventId}
-    `.catch(() => null);
+      WHERE id::text = $1 OR id = $2::uuid
+    `, resolvedEventId, (resolvedEventId.match(/[0-9a-f-]{36}/i) ? resolvedEventId : '00000000-0000-0000-0000-000000000000')).catch(() => null);
 
     try {
       const cancelReasonText = reason ? ` Lý do: "${reason}".` : '';
@@ -1519,46 +1555,82 @@ export class EventsService {
       }
     }
 
-    // 2. Parse payload
+    // 2. Parse payload (robust handling for raw JSON, QR generator URLs, ticketCode, event_ticket)
+    let processedPayload = rawPayload.trim();
+    if (processedPayload.includes('data=')) {
+      try {
+        const urlObj = new URL(processedPayload);
+        const dataParam = urlObj.searchParams.get('data');
+        if (dataParam) processedPayload = decodeURIComponent(dataParam);
+      } catch {
+        const match = processedPayload.match(/[?&]data=([^&]+)/);
+        if (match && match[1]) {
+          try {
+            processedPayload = decodeURIComponent(match[1]);
+          } catch {}
+        }
+      }
+    }
+
     let scannedEventId: string | null = null;
     let scannedMemberCode: string | null = null;
     let scannedSeat: string | null = null;
     let scannedLucky: string | null = null;
     let scannedTicketCode: string | null = null;
+    let scannedAttendeeName: string | null = null;
+    let scannedAttendeePhone: string | null = null;
+    let scannedAttendeeCompany: string | null = null;
+    let scannedAttendeePosition: string | null = null;
+    let scannedEventTitle: string | null = null;
+    let scannedTicketType: string | null = null;
+    let scannedTicketCount = 1;
 
-    if (rawPayload.startsWith('event_ticket:') || rawPayload.startsWith('EVENT_TICKET:')) {
-      const parts = rawPayload.split(':');
+    if (processedPayload.startsWith('event_ticket:') || processedPayload.startsWith('EVENT_TICKET:')) {
+      const parts = processedPayload.split(':');
       scannedEventId = parts[1] || null;
       scannedMemberCode = parts[2] || null;
       scannedSeat = parts[3] ? decodeURIComponent(parts[3]) : null;
       scannedLucky = parts[4] ? decodeURIComponent(parts[4]) : null;
       scannedTicketCode = `TKT-${scannedEventId}-${scannedMemberCode}`;
-    } else if (rawPayload.startsWith('event_checkin:') || rawPayload.startsWith('EVENT_CHECKIN:')) {
-      const parts = rawPayload.split(':');
+    } else if (processedPayload.startsWith('event_checkin:') || processedPayload.startsWith('EVENT_CHECKIN:')) {
+      const parts = processedPayload.split(':');
       scannedEventId = parts[1] || null;
-    } else if (rawPayload.startsWith('{') && rawPayload.endsWith('}')) {
+    } else if (processedPayload.startsWith('{') && processedPayload.endsWith('}')) {
       try {
-        const json = JSON.parse(rawPayload);
-        scannedEventId = json.eventId || json.event_id || json.id || null;
+        const json = JSON.parse(processedPayload);
+        scannedEventId = json.eventId || json.event_id || null;
         scannedMemberCode = json.memberCode || json.member_code || json.code || null;
-        scannedTicketCode = json.ticketCode || json.ticket_code || json.id || null;
+        scannedTicketCode = json.ticketCode || json.ticket_code || json.id || json.invoiceNo || null;
         scannedSeat = json.seatAssignment || json.seat || null;
         scannedLucky = json.luckyNumber || json.lucky || null;
+        scannedAttendeeName = json.name || json.attendeeName || null;
+        scannedAttendeePhone = json.phone || json.attendeePhone || null;
+        scannedAttendeeCompany = json.company || json.attendeeCompany || null;
+        scannedAttendeePosition = json.position || json.attendeePosition || null;
+        scannedEventTitle = json.eventTitle || json.title || null;
+        scannedTicketType = json.ticketType || null;
+        scannedTicketCount = Number(json.ticketCount) || 1;
       } catch {}
     } else {
-      const uuidMatch = rawPayload.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      const uuidMatch = processedPayload.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
       if (uuidMatch) {
         scannedEventId = uuidMatch[0];
-      } else if (rawPayload.startsWith('TKT-') || rawPayload.startsWith('M1983-') || rawPayload.startsWith('HV-')) {
-        scannedMemberCode = rawPayload;
+      } else if (processedPayload.startsWith('TKT-') || processedPayload.startsWith('EV-') || processedPayload.startsWith('REG-') || processedPayload.startsWith('M1983-') || processedPayload.startsWith('HV-')) {
+        scannedTicketCode = processedPayload;
+        if (processedPayload.startsWith('M1983-') || processedPayload.startsWith('HV-')) {
+          scannedMemberCode = processedPayload;
+        }
       } else {
-        scannedEventId = rawPayload;
+        scannedTicketCode = processedPayload;
       }
     }
 
+    const ticketDigits = scannedTicketCode ? scannedTicketCode.replace(/\D/g, '') : '';
+    const luckyDigits = scannedLucky ? scannedLucky.replace(/\D/g, '') : '';
+
     // 3. Search registration in event_registrations
     let reg: any = null;
-    if (scannedTicketCode || (scannedEventId && scannedMemberCode)) {
+    if (scannedTicketCode || ticketDigits || scannedMemberCode || (scannedEventId && scannedMemberCode)) {
       const regRows = await this.prisma.$queryRawUnsafe<any[]>(`
         SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location,
                COALESCE(m.name, r.member_name) as attendee_name,
@@ -1569,12 +1641,42 @@ export class EventsService {
         FROM public.event_registrations r
         LEFT JOIN public.events e ON e.id = r.event_id::uuid
         LEFT JOIN public.members m ON (m.code = r.member_code OR m.id = r.member_id OR (m.email IS NOT NULL AND m.email != '' AND m.email = r.email))
-        WHERE (r.id = $1 OR r.member_code = $2)
+        WHERE (
+          r.id = $1 
+          OR ($2 != '' AND r.id = $2)
+          OR r.member_code = $3
+          OR ($4 != '' AND r.lucky_number = $4)
+        )
+          AND ($5::text IS NULL OR r.event_id::text = $5)
+          AND r.status != 'cancelled'
+        ORDER BY r.registered_at DESC
+        LIMIT 1
+      `, scannedTicketCode || '', ticketDigits || '', scannedMemberCode || '', luckyDigits || '', scannedEventId || null).catch(() => []);
+      if (regRows.length > 0) reg = regRows[0];
+    }
+
+    // Fallback search by attendee phone / name
+    if (!reg && (scannedAttendeePhone || scannedAttendeeName)) {
+      const phoneDigits = scannedAttendeePhone ? scannedAttendeePhone.replace(/\D/g, '') : '';
+      const regRows = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location,
+               COALESCE(m.name, r.member_name) as attendee_name,
+               COALESCE(m.phone, r.phone) as attendee_phone,
+               COALESCE(m.company_name, m.company, 'CLB Doanh Nhân CEO 1983') as attendee_company,
+               COALESCE(m.executive_role, m.position, 'Hội viên') as attendee_position,
+               m.avatar as attendee_avatar
+        FROM public.event_registrations r
+        LEFT JOIN public.events e ON e.id = r.event_id::uuid
+        LEFT JOIN public.members m ON (m.code = r.member_code OR m.id = r.member_id OR (m.email IS NOT NULL AND m.email != '' AND m.email = r.email))
+        WHERE (
+          ($1 != '' AND (r.phone ILIKE '%' || $1 || '%' OR m.phone ILIKE '%' || $1 || '%'))
+          OR ($2 != '' AND (r.member_name ILIKE $2 OR m.name ILIKE $2))
+        )
           AND ($3::text IS NULL OR r.event_id::text = $3)
           AND r.status != 'cancelled'
         ORDER BY r.registered_at DESC
         LIMIT 1
-      `, scannedTicketCode || '', scannedMemberCode || '', scannedEventId || null).catch(() => []);
+      `, phoneDigits, scannedAttendeeName ? `%${scannedAttendeeName}%` : '', scannedEventId || null).catch(() => []);
       if (regRows.length > 0) reg = regRows[0];
     }
 
@@ -1608,32 +1710,41 @@ export class EventsService {
       `, resolvedEventId, (resolvedEventId.match(/[0-9a-f-]{36}/i) ? resolvedEventId : '00000000-0000-0000-0000-000000000000')).catch(() => []);
       if (eRows.length > 0) eventRow = eRows[0];
     }
+    if (!eventRow && scannedEventTitle) {
+      const eRows = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT id, name, date, location, association_id FROM public.events
+        WHERE name ILIKE $1 OR title ILIKE $1
+        ORDER BY date DESC
+        LIMIT 1
+      `, `%${scannedEventTitle}%`).catch(() => []);
+      if (eRows.length > 0) eventRow = eRows[0];
+    }
 
     // 5. Resolve Attendee Member Details (User A)
     let memberRow: any = null;
-    if (scannedMemberCode || reg?.member_code || reg?.attendee_name) {
+    if (scannedMemberCode || reg?.member_code || reg?.attendee_name || scannedAttendeeName) {
       const mRows = await this.prisma.$queryRawUnsafe<any[]>(`
         SELECT id, code, name, phone, company, company_name, executive_role, position, avatar, association_id, user_id
         FROM public.members
-        WHERE code = $1 OR id = $2 OR (phone IS NOT NULL AND phone = $3)
+        WHERE code = $1 OR id = $2 OR (phone IS NOT NULL AND phone = $3) OR (name ILIKE $4)
         LIMIT 1
-      `, scannedMemberCode || reg?.member_code || '', scannedMemberCode || '', reg?.attendee_phone || '').catch(() => []);
+      `, scannedMemberCode || reg?.member_code || '', scannedMemberCode || '', reg?.attendee_phone || scannedAttendeePhone || '', scannedAttendeeName ? `%${scannedAttendeeName}%` : '').catch(() => []);
       if (mRows.length > 0) memberRow = mRows[0];
     }
 
-    const eventTitle = eventRow?.name || reg?.event_name || 'Đại hội Hội viên CLB Doanh Nhân CEO 1983';
+    const eventTitle = eventRow?.name || reg?.event_name || scannedEventTitle || 'Đại hội Hội viên CLB Doanh Nhân CEO 1983';
     const eventDate = eventRow?.date ? new Date(eventRow.date).toLocaleDateString('vi-VN') : (reg?.event_date ? new Date(reg.event_date).toLocaleDateString('vi-VN') : '27/09/2026');
     const eventLocation = eventRow?.location || reg?.event_location || 'Trung tâm Hội nghị Quốc gia, Hà Nội';
-    const attendeeName = reg?.attendee_name || memberRow?.name || 'Đại biểu Hội viên CEO 1983';
-    const attendeePhone = reg?.attendee_phone || memberRow?.phone || '—';
-    const attendeeCompany = reg?.attendee_company || memberRow?.company_name || memberRow?.company || 'CLB Doanh Nhân CEO 1983';
-    const attendeePosition = reg?.attendee_position || memberRow?.executive_role || memberRow?.position || 'Hội viên chính thức';
+    const attendeeName = reg?.attendee_name || memberRow?.name || scannedAttendeeName || 'Đại biểu Hội viên CEO 1983';
+    const attendeePhone = reg?.attendee_phone || memberRow?.phone || scannedAttendeePhone || '—';
+    const attendeeCompany = reg?.attendee_company || memberRow?.company_name || memberRow?.company || scannedAttendeeCompany || 'CLB Doanh Nhân CEO 1983';
+    const attendeePosition = reg?.attendee_position || memberRow?.executive_role || memberRow?.position || scannedAttendeePosition || 'Hội viên chính thức';
     const attendeeAvatar = reg?.attendee_avatar || memberRow?.avatar || null;
     const finalMemberCode = memberRow?.code || reg?.member_code || scannedMemberCode || 'M1983-HV';
     const seatAssignment = reg?.seat_assignment || scannedSeat || 'Bàn VIP 01 - Ghế 01';
     const luckyNumber = reg?.lucky_number ? `#${reg.lucky_number}` : (scannedLucky || `#${finalMemberCode.slice(-4).toUpperCase()}`);
     const ticketCode = reg?.id || scannedTicketCode || `TKT-${resolvedEventId || '1983'}-${finalMemberCode}`;
-    const ticketType = reg?.ticket_type || 'Vé Mời VIP (E-Ticket)';
+    const ticketType = reg?.ticket_type || scannedTicketType || 'Vé Mời VIP (E-Ticket)';
 
     // 6. Check Event Mismatch
     let eventMismatch = false;

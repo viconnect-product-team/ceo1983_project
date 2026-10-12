@@ -127,6 +127,14 @@ export interface TaskItem {
   status: TaskStatus;
   priority: TaskPriority;
   startDate: string;
+  category?: string;
+  budget?: {
+    estimated?: number;
+    actual?: number;
+    currency?: string;
+  };
+  acceptanceCriteria?: string[];
+  customFields?: Array<{ key: string; label: string; value: string }>;
   dueDate: string;
   progress: number;
   description: string;
@@ -143,11 +151,13 @@ export interface TaskItem {
 }
 
 export const TASK_DEPARTMENTS = [
-  'Ban Quản trị',
+  'Ban Điều Hành',
   'Ban Thư ký',
+  'Ban Sự kiện',
   'Ban Truyền thông',
   'Ban Xúc tiến',
   'Ban Thành viên',
+  'Ban Tài chính',
   'Ban Thiện nguyện',
 ] as const;
 

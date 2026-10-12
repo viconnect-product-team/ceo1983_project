@@ -322,6 +322,19 @@ export const cancelMeetingFn = createServerFn({ method: "POST" })
       .eq("code", data.id);
     if (error) throw new Error(error.message);
 
+    // If this was a 1-on-1 connection appointment, dual-cancel in business_meetings
+    if (data.id.startsWith("MT-CONN-")) {
+      const apptId = data.id.replace("MT-CONN-", "");
+      await db
+        .from("business_meetings")
+        .update({
+          status: "cancelled",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", apptId)
+        .catch(() => {});
+    }
+
     await logActivity(db, {
       action: "Hủy cuộc họp và phát thông báo",
       target: data.id,

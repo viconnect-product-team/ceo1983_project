@@ -112,3 +112,30 @@ export function sendExternalNotification(title: string, options?: SendNotificati
     console.warn("[sendExternalNotification:web] failed", err);
   }
 }
+
+/**
+ * Register current logged-in user with Android Native Background Sync service.
+ * Enables push notifications for incoming calls, messages & events even when phone is locked or app is in background.
+ */
+export function registerNativePushUser(userId: string, token?: string): void {
+  if (isAndroidNative() && userId) {
+    try {
+      (window as any).AndroidNative?.registerPushUser?.(userId, token || "");
+    } catch (err) {
+      console.warn("[registerNativePushUser] failed", err);
+    }
+  }
+}
+
+/**
+ * Cancel / dismiss a specific notification in Android notification shade
+ */
+export function dismissNativeNotification(tag: string): void {
+  if (isAndroidNative() && tag) {
+    try {
+      (window as any).AndroidNative?.cancelNotification?.(tag);
+    } catch (err) {
+      console.warn("[dismissNativeNotification] failed", err);
+    }
+  }
+}

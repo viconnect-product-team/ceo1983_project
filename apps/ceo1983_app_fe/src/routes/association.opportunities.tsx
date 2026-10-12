@@ -810,29 +810,29 @@ function OpportunitiesScreen() {
           const curViews = cur.views || 0;
 
           return (
-            <div className="self-stretch bg-sky-950 rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex flex-col justify-start items-start overflow-hidden shadow-md">
-              <div className="self-stretch bg-blue-900 rounded-2xl shadow-[0px_12px_24px_0px_rgba(0,32,135,0.12)] outline outline-1 outline-offset-[-1px] outline-indigo-100 flex flex-col justify-start items-start overflow-hidden">
+            <div className="self-stretch bg-[#001D4A] rounded-2xl border-2 border-amber-400/50 flex flex-col justify-start items-start overflow-hidden shadow-xl shadow-[#003B95]/15">
+              <div className="self-stretch bg-gradient-to-b from-[#002B70] to-[#001D4A] rounded-2xl flex flex-col justify-start items-start overflow-hidden">
                 {/* Poster Banner */}
                 <div className="self-stretch h-40 relative inline-flex justify-start items-start">
                   <img src={curImage} alt={curTitle} className="w-full h-40 object-cover" />
-                  <div className="w-full h-40 left-0 top-0 absolute bg-gradient-to-b from-black/0 to-blue-900/80" />
+                  <div className="w-full h-40 left-0 top-0 absolute bg-gradient-to-b from-black/0 to-[#001D4A]" />
                   <div className="w-[calc(100%-24px)] left-[12px] top-[12px] absolute flex justify-between items-center">
-                    <div className="px-2 py-1 bg-amber-600 rounded-md flex justify-start items-start shadow-xs">
-                      <div className="justify-start text-white text-[10px] font-extrabold font-['Inter']">
+                    <div className="px-2 py-1 bg-amber-500 rounded-md flex justify-start items-start shadow-xs">
+                      <div className="justify-start text-slate-950 text-[10px] font-black font-['Inter']">
                         {curTag.toUpperCase()}
                       </div>
                     </div>
                     {curViews > 0 && (
-                      <div className="px-2 py-1 bg-black/40 rounded-md flex justify-start items-start backdrop-blur-xs">
-                        <div className="justify-start text-white text-[10px] font-semibold font-['Inter']">
+                      <div className="px-2 py-1 bg-black/60 rounded-md flex justify-start items-start backdrop-blur-xs border border-white/20">
+                        <div className="justify-start text-amber-300 text-[10px] font-semibold font-['Inter']">
                           👁 {curViews.toLocaleString()} lượt xem
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className="px-2.5 py-1.5 left-[12px] top-[115px] absolute bg-amber-100 rounded-md flex justify-start items-start shadow-xs">
-                    <div className="justify-start text-amber-600 text-xs font-bold font-['Inter']">
-                      Budget: {curBudget}
+                  <div className="px-2.5 py-1.5 left-[12px] top-[115px] absolute bg-amber-400/90 backdrop-blur-xs rounded-md flex justify-start items-start shadow-xs border border-amber-300">
+                    <div className="justify-start text-slate-950 text-xs font-black font-['Inter']">
+                      Ngân sách: {curBudget}
                     </div>
                   </div>
                 </div>
@@ -841,7 +841,7 @@ function OpportunitiesScreen() {
                 <div className="self-stretch p-4 flex flex-col justify-start items-start gap-3">
                   <div
                     onClick={() => cur && handleOpenOppDetail(cur)}
-                    className="self-stretch justify-start text-white text-base font-bold font-['Inter'] leading-5 cursor-pointer hover:text-amber-200 transition-colors"
+                    className="self-stretch justify-start text-white text-base font-bold font-['Inter'] leading-5 cursor-pointer hover:text-amber-300 transition-colors"
                   >
                     {curTitle}
                   </div>
@@ -849,7 +849,7 @@ function OpportunitiesScreen() {
                   <div className="self-stretch inline-flex justify-between items-center">
                     <div className="flex justify-start items-center gap-2">
                       <img
-                        className="size-6 rounded-full object-cover border border-white/30"
+                        className="size-6 rounded-full object-cover border-2 border-amber-400/60"
                         src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&auto=format&fit=crop&q=80"
                         alt={curAuthor}
                       />
@@ -857,12 +857,12 @@ function OpportunitiesScreen() {
                         <div className="justify-start text-white text-xs font-bold font-['Inter']">
                           {curAuthor}
                         </div>
-                        <div className="justify-start text-indigo-100 text-[10px] font-normal font-['Inter']">
+                        <div className="justify-start text-amber-200/90 text-[10px] font-medium font-['Inter']">
                           {curCompany}
                         </div>
                       </div>
                     </div>
-                    <div className="justify-start text-indigo-100 text-xs font-normal font-['Inter']">
+                    <div className="justify-start text-amber-200/80 text-xs font-medium font-['Inter']">
                       Hạn chót: {curDeadline}
                     </div>
                   </div>
@@ -870,11 +870,10 @@ function OpportunitiesScreen() {
                     <button
                       type="button"
                       onClick={() => cur && handleOpenOppDetail(cur)}
-                      className="w-full px-3 py-2.5 bg-white rounded-lg flex justify-center items-center gap-1.5 hover:bg-slate-100 transition active:scale-95 cursor-pointer shadow-xs"
+                      className="w-full px-3 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl flex justify-center items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md font-bold text-xs"
                     >
-                      <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">
-                        Liên hệ ngay
-                      </div>
+                      <Sparkles className="h-4 w-4" />
+                      <span>Xem chi tiết & Đàm phán ngay</span>
                     </button>
                   </div>
                 </div>

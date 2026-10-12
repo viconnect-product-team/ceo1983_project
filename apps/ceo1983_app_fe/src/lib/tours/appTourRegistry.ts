@@ -108,7 +108,7 @@ export const APP_SCREEN_TOURS: ScreenGuideItem[] = [
     badge: "Màn 2/10",
     iconName: "CreditCard",
     category: "card-ai",
-    themeColor: "#19194D",
+    themeColor: "#003B95",
     screenSummary: "Tấm danh thiếp số 5.0 chuẩn mực quốc tế của CEO 1983. Hỗ trợ chạm thẻ NFC vào lưng điện thoại đối tác, quét card visit giấy bằng AI và cài đặt quyền riêng tư.",
     mockupMockTitle: "Danh Thiếp Số CEO 1983",
     mockupElements: [

@@ -17,8 +17,11 @@ export type AppRole = "platform_admin" | "admin" | "moderator" | "member" | stri
 export type RoleState = {
   roles: AppRole[];
   srsRole: SrsRole;
+  isPresident: boolean;
+  isChuTich: boolean;
   isPlatformAdmin: boolean;
   isAdmin: boolean;
+  isBanDieuHanh: boolean;
   isModerator: boolean;
   isBQT: boolean;
   isBTK: boolean;
@@ -26,8 +29,19 @@ export type RoleState = {
   isBXT: boolean;
   isBTV: boolean;
   isBTN: boolean;
-  isBTC: boolean; // backward-compatibility alias
+  isBTC: boolean;
   isHVT: boolean;
+  isTruongBanTruyenThong: boolean;
+  isTruongBanThanhVien: boolean;
+  isTruongBanXucTien: boolean;
+  isTruongBanTaiChinh: boolean;
+  isTruongBanThienNguyen: boolean;
+  isTongThuKy: boolean;
+  isGeneralSecretary: boolean;
+  isBanThuKy: boolean;
+  isTruongBan: boolean;
+  isDepartmentLeader: boolean;
+  userDepartment: string;
   canManageMembers: boolean;
   canApproveMembers: boolean;
   canRenewMembers: boolean;
@@ -101,106 +115,150 @@ export function useRole(): RoleState {
 
     const userEmail = String(userObj?.email || member?.email || user?.email || "").toLowerCase();
 
-    // 0. Ưu tiên: admin@connect.vn và admin1@connect.vn là vai trò ADMIN (BQT), không phải Quản Trị Hệ Thống (ADM/Superadmin)
-    if (userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") {
-      return "BQT";
+    // 1. CHỦ TỊCH (Cấp cao nhất của Hiệp hội)
+    if (
+      user?.isPresident ||
+      primaryRole === "chu_tich" ||
+      primaryRole === "president" ||
+      rList.includes("chu_tich") ||
+      rList.includes("president") ||
+      execRole.includes("chủ tịch") ||
+      execRole.includes("president") ||
+      userEmail.includes("chutich")
+    ) {
+      return "chu_tich";
     }
 
-    // ADM (Super Admin / Platform Admin / Quản Trị)
+    // 2. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
     if (
-      rList.includes("platform_admin") ||
-      rList.includes("superadmin") ||
-      rList.includes("quan_tri") ||
-      rList.includes("quantri") ||
+      userEmail === "admin@connect.vn" ||
+      userEmail === "admin1@connect.vn" ||
+      userEmail.startsWith("admin") ||
+      primaryRole === "admin" ||
+      primaryRole === "quan_tri" ||
       primaryRole === "platform_admin" ||
       primaryRole === "superadmin" ||
-      primaryRole === "quan_tri" ||
-      primaryRole === "quantri" ||
-      userEmail.startsWith("quantri") ||
-      userEmail.includes("superadmin")
+      rList.includes("admin") ||
+      rList.includes("platform_admin") ||
+      rList.includes("quan_tri") ||
+      rList.includes("superadmin")
     ) {
-      return "ADM";
+      return "admin";
     }
 
-    // 1. BTV (Ban Thành Viên) - Ban Thành Viên kiểm duyệt và thẩm định kết nạp hội viên
+    // 3. BAN ĐIỀU HÀNH (Thay thế Ban Quản Trị cũ, cấp điều hành hiệp hội)
     if (
+      primaryRole === "ban_dieu_hanh" ||
+      execRole === "ban_dieu_hanh" ||
+      execRole === "bqt" ||
+      execRole === "pho_chu_tich" ||
+      execRole === "vice_president" ||
+      execRole.includes("phó chủ tịch") ||
+      execRole.includes("điều hành") ||
+      dept.includes("điều hành") ||
+      dept.includes("quản trị") ||
+      rList.includes("ban_dieu_hanh") ||
+      rList.includes("bqt")
+    ) {
+      return "ban_dieu_hanh";
+    }
+
+    // 4. Trưởng Ban Truyền Thông (BTT / truong_ban_truyen_thong)
+    if (
+      rList.includes("truong_ban_truyen_thong") ||
+      rList.includes("btt") ||
+      primaryRole === "truong_ban_truyen_thong" ||
+      execRole === "truong_ban_truyen_thong" ||
+      userEmail.includes("truyenthong") ||
+      (execRole.includes("trưởng ban") && dept.includes("truyền thông")) ||
+      (execRole.includes("truyền thông") && !execRole.includes("thành viên"))
+    ) {
+      return "truong_ban_truyen_thong";
+    }
+
+    // 5. Trưởng Ban Thành Viên (BTV / truong_ban_thanh_vien)
+    if (
+      rList.includes("truong_ban_thanh_vien") ||
       rList.includes("btv") ||
       rList.includes("ban_thanh_vien") ||
       rList.includes("phat_trien_hoi_vien") ||
+      primaryRole === "truong_ban_thanh_vien" ||
+      execRole === "truong_ban_thanh_vien" ||
       userEmail.includes("thanhvien") ||
+      (execRole.includes("trưởng ban") && dept.includes("thành viên")) ||
       (dept.includes("thành viên") && !dept.includes("hội viên") && !dept.includes("ceo 1983")) ||
-      execRole.includes("ban thành viên") ||
-      execRole.includes("thành viên")
+      execRole.includes("ban thành viên")
     ) {
-      return "BTV";
+      return "truong_ban_thanh_vien";
     }
 
-    // 2. BTK (Ban Thư Ký - Điều phối họp & văn bản số)
+    // 6. Trưởng Ban Xúc Tiến Thương Mại (BXT / truong_ban_xuc_tien)
     if (
-      rList.includes("btk") ||
+      rList.includes("truong_ban_xuc_tien") ||
+      rList.includes("bxt") ||
+      rList.includes("xuc_tien") ||
+      rList.includes("thuong_mai") ||
+      primaryRole === "truong_ban_xuc_tien" ||
+      execRole === "truong_ban_xuc_tien" ||
+      userEmail.includes("xuctien") ||
+      (execRole.includes("trưởng ban") && dept.includes("xúc tiến")) ||
+      execRole.includes("xúc tiến")
+    ) {
+      return "truong_ban_xuc_tien";
+    }
+
+    // 7. Trưởng Ban Tài Chính (BTC / truong_ban_tai_chinh)
+    if (
+      rList.includes("truong_ban_tai_chinh") ||
+      rList.includes("btc") ||
+      rList.includes("tai_chinh") ||
+      primaryRole === "truong_ban_tai_chinh" ||
+      execRole === "truong_ban_tai_chinh" ||
+      userEmail.includes("taichinh") ||
+      (execRole.includes("trưởng ban") && dept.includes("tài chính")) ||
+      execRole.includes("tài chính")
+    ) {
+      return "truong_ban_tai_chinh";
+    }
+
+    // 8. Trưởng Ban Thiện Nguyện (BTN / truong_ban_thien_nguyen)
+    if (
+      rList.includes("truong_ban_thien_nguyen") ||
+      rList.includes("btn") ||
+      rList.includes("thien_nguyen") ||
+      rList.includes("an_sinh") ||
+      primaryRole === "truong_ban_thien_nguyen" ||
+      execRole === "truong_ban_thien_nguyen" ||
+      userEmail.includes("thiennguyen") ||
+      (execRole.includes("trưởng ban") && dept.includes("thiện nguyện")) ||
+      execRole.includes("thiện nguyện")
+    ) {
+      return "truong_ban_thien_nguyen";
+    }
+
+    // 9. Tổng Thư Ký (tong_thu_ky)
+    if (
       rList.includes("tong_thu_ky") ||
-      rList.includes("thu_ky") ||
+      primaryRole === "tong_thu_ky" ||
+      execRole === "tong_thu_ky" ||
       userEmail.includes("tongthuky") ||
+      execRole.includes("tổng thư ký")
+    ) {
+      return "tong_thu_ky";
+    }
+
+    // 10. Ban Thư Ký (BTK / ban_thu_ky)
+    if (
+      rList.includes("ban_thu_ky") ||
+      rList.includes("btk") ||
+      rList.includes("thu_ky") ||
+      primaryRole === "ban_thu_ky" ||
+      execRole === "ban_thu_ky" ||
       userEmail.includes("thuky") ||
       execRole.includes("thư ký") ||
       dept.includes("thư ký")
     ) {
-      return "BTK";
-    }
-
-    // 3. BTT (Ban Truyền Thông & Sự Kiện)
-    if (
-      rList.includes("btt") ||
-      rList.includes("truyen_thong") ||
-      userEmail.includes("truyenthong") ||
-      execRole.includes("truyền thông") ||
-      dept.includes("truyền thông")
-    ) {
-      return "BTT";
-    }
-
-    // 4. BXT (Ban Xúc Tiến Thương Mại & Cơ Hội B2B)
-    if (
-      rList.includes("bxt") ||
-      rList.includes("xuc_tien") ||
-      rList.includes("thuong_mai") ||
-      userEmail.includes("xuctien") ||
-      execRole.includes("xúc tiến") ||
-      dept.includes("xúc tiến")
-    ) {
-      return "BXT";
-    }
-
-    // 5. BTN (Ban Thiện Nguyện & An Sinh Xã Hội)
-    if (
-      rList.includes("btn") ||
-      rList.includes("thien_nguyen") ||
-      rList.includes("an_sinh") ||
-      userEmail.includes("thiennguyen") ||
-      execRole.includes("thiện nguyện") ||
-      dept.includes("thiện nguyện")
-    ) {
-      return "BTN";
-    }
-
-    // 6. BQT (Ban Quản Trị / Ban Thường Trực / Chủ Tịch / Phó Chủ Tịch / Admin)
-    if (
-      rList.includes("admin") ||
-      rList.includes("bqt") ||
-      rList.includes("board_director") ||
-      primaryRole === "admin" ||
-      primaryRole === "association_admin" ||
-      userEmail === "admin@connect.vn" ||
-      userEmail === "admin1@connect.vn" ||
-      userEmail.startsWith("admin") ||
-      execRole.includes("quản trị") ||
-      execRole.includes("chủ tịch") ||
-      execRole.includes("president") ||
-      dept.includes("quản trị") ||
-      dept.includes("thường trực") ||
-      dept.includes("điều hành")
-    ) {
-      return "BQT";
+      return "ban_thu_ky";
     }
 
     // Mặc định: HVT (Hội Viên Thường)
@@ -354,20 +412,45 @@ export function useRole(): RoleState {
     }
   };
 
-  const isPlatformAdmin = srsRole === "ADM";
-  const isBQT =
-    (srsRole === "BQT" || isPlatformAdmin) &&
-    (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin);
-  const isBTK = srsRole === "BTK" || isBQT;
-  const isBTT = srsRole === "BTT" || isBQT;
-  const isBXT = srsRole === "BXT" || isBQT;
-  const isBTV = srsRole === "BTV" || isBQT;
-  const isBTN = srsRole === "BTN" || isBQT;
-  const isBTC = isBQT; // backward compatibility fallback
-  const isHVT = srsRole === "HVT";
+  const isPresident =
+    srsRole === "chu_tich" ||
+    Boolean(user?.isPresident) ||
+    user?.role === "chu_tich" ||
+    user?.role === "president" ||
+    String(user?.executiveRole).toLowerCase().includes("chủ tịch");
+  const isChuTich = isPresident;
+  const isPlatformAdmin = srsRole === "ADM" || isPresident;
+  const isBanDieuHanh =
+    srsRole === "ban_dieu_hanh" ||
+    srsRole === "BQT" ||
+    Boolean(user?.isExecutive) ||
+    isPresident;
+  const isBQT = isBanDieuHanh;
   const isAdmin =
-    (isPlatformAdmin || isBQT) && (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin);
-  const isModerator = isAdmin || isBTK || isBTT || isBXT || isBTV || isBTN;
+    (isPresident || isPlatformAdmin || srsRole === "admin" || srsRole === "quan_tri" || isBanDieuHanh || Boolean(user?.isAdmin)) &&
+    (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin || isPresident);
+  const isTongThuKy = srsRole === "tong_thu_ky" || Boolean(user?.isGeneralSecretary) || isPresident || isAdmin;
+  const isBanThuKy = srsRole === "ban_thu_ky" || srsRole === "BTK" || isTongThuKy;
+  const isBTK = isBanThuKy;
+  const isBTT = srsRole === "BTT" || srsRole === "truong_ban_truyen_thong" || isBQT;
+  const isBXT = srsRole === "BXT" || srsRole === "truong_ban_xuc_tien" || isBQT;
+  const isBTV = srsRole === "BTV" || srsRole === "truong_ban_thanh_vien" || isBQT;
+  const isBTN = srsRole === "BTN" || srsRole === "truong_ban_thien_nguyen" || isBQT;
+  const isBTC = srsRole === "BTC" || srsRole === "truong_ban_tai_chinh" || isBQT;
+  const isHVT = srsRole === "HVT" || srsRole === "member";
+  const isTruongBanTruyenThong = isBTT;
+  const isTruongBanThanhVien = isBTV;
+  const isTruongBanXucTien = isBXT;
+  const isTruongBanTaiChinh = isBTC;
+  const isTruongBanThienNguyen = isBTN;
+  const isTruongBan =
+    Boolean(user?.isDepartmentLeader) ||
+    isTruongBanTruyenThong ||
+    isTruongBanThanhVien ||
+    isTruongBanXucTien ||
+    isTruongBanTaiChinh ||
+    isTruongBanThienNguyen;
+  const isModerator = isAdmin || isTruongBan || isBTK;
 
   // Granular RBAC Matrix per SRS Part 2.2
   const grantedPermissions = useMemo(() => {
@@ -513,8 +596,11 @@ export function useRole(): RoleState {
   return {
     roles,
     srsRole,
+    isPresident,
+    isChuTich,
     isPlatformAdmin,
     isAdmin,
+    isBanDieuHanh,
     isModerator,
     isBQT,
     isBTK,
@@ -524,6 +610,17 @@ export function useRole(): RoleState {
     isBTN,
     isBTC,
     isHVT,
+    isTruongBanTruyenThong,
+    isTruongBanThanhVien,
+    isTruongBanXucTien,
+    isTruongBanTaiChinh,
+    isTruongBanThienNguyen,
+    isTongThuKy,
+    isGeneralSecretary: isTongThuKy,
+    isBanThuKy,
+    isTruongBan,
+    isDepartmentLeader: isTruongBan,
+    userDepartment: user?.department || '',
     canManageMembers,
     canApproveMembers,
     canRenewMembers,

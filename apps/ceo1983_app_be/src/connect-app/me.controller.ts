@@ -1,11 +1,26 @@
 import { Controller, Get, Post, Put, Patch, Delete, Body, Request, UseGuards, Query, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
+import { ConnectAppGateway } from './connect-app.gateway';
 
 @Controller(['me', 'connect-app/me'])
 @UseGuards(JwtAuthGuard)
 export class MeController {
-  constructor(private readonly connectAppService: ConnectAppService) {}
+  constructor(
+    private readonly connectAppService: ConnectAppService,
+    private readonly gateway: ConnectAppGateway,
+  ) {}
+
+  @Get('active-call')
+  async getMyActiveCall(@Request() req) {
+    const call = this.gateway.getActiveCallForUser(req.user.id);
+    return { ok: true, call };
+  }
+
+  @Post('end-call')
+  async endCall(@Request() req, @Body() body: { callId?: string; targetUserId?: string }) {
+    return this.gateway.endCallForUser(req.user.id, body?.callId, body?.targetUserId);
+  }
 
   @Get('profile')
   async getMyProfile(@Request() req) {

@@ -219,7 +219,7 @@ export function Ceo1983BusinessCardVisit({
       />
 
       {/* 2D Flat Luxury Executive Card Container - No Flip, Clean & Direct */}
-      <div className="relative w-full aspect-[16/10] sm:aspect-[1.7/1] rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/80 bg-white overflow-hidden select-none">
+      <div className="relative w-full aspect-[16/10] sm:aspect-[1.7/1] rounded-2xl shadow-[0_8px_30px_-5px_rgba(245,158,11,0.22)] border-2 border-amber-400/60 bg-gradient-to-br from-white via-amber-50/15 to-white overflow-hidden select-none">
         {/* ==================================================================== */}
         {/* MẶT THẺ DOANH NHÂN VIP: LOGO CÔNG TY & MÃ QR GÓC PHẢI, AVATAR DẬP NỔI */}
         {/* ==================================================================== */}
@@ -251,7 +251,7 @@ export function Ceo1983BusinessCardVisit({
           <div className="relative z-10 flex items-start justify-between gap-3">
             {/* Top-Left: Tên công ty to rõ ràng */}
             <div className="min-w-0 flex-1 pr-2">
-              <span className="block text-sm sm:text-base font-black uppercase tracking-wider text-[#19194D] line-clamp-2">
+              <span className="block text-sm sm:text-base font-black uppercase tracking-wider text-[#002B70] line-clamp-2">
                 {company}
               </span>
             </div>
@@ -275,8 +275,8 @@ export function Ceo1983BusinessCardVisit({
                     style={{ mixBlendMode: "screen" }}
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-[9px] font-bold text-slate-400 leading-none gap-0.5">
-                    <Building2 className="h-4 w-4 text-slate-400" />
+                  <div className="flex flex-col items-center justify-center text-[9px] font-bold text-amber-500/80 leading-none gap-0.5">
+                    <Building2 className="h-4 w-4 text-amber-500" />
                     <span>Logo Cty</span>
                   </div>
                 )}
@@ -297,7 +297,7 @@ export function Ceo1983BusinessCardVisit({
           <div className="relative z-10 my-auto flex items-center gap-3 sm:gap-4 pl-0.5">
             {/* Avatar dập viền nổi trực tiếp trên mặt thẻ */}
             <div className="relative shrink-0">
-              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-2 ring-[#003B95]/30 bg-slate-100 shadow-md grid place-items-center">
+              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-3 ring-amber-400/80 bg-slate-100 shadow-md grid place-items-center">
                 {avatarUrl ? (
                   <img
                     src={resolveMediaUrl(avatarUrl) || avatarUrl}
@@ -305,7 +305,7 @@ export function Ceo1983BusinessCardVisit({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-base sm:text-lg font-black text-[#003B95]">
+                  <span className="grid h-full w-full place-items-center bg-gradient-to-tr from-[#002B70] to-[#003B95] text-base sm:text-lg font-black text-amber-300">
                     {name
                       .trim()
                       .split(/\s+/)
@@ -319,16 +319,16 @@ export function Ceo1983BusinessCardVisit({
               <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
 
-            {/* Thông tin tên & số điện thoại (Đã bỏ email và chức danh theo yêu cầu) */}
+            {/* Thông tin tên & số điện thoại */}
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-black tracking-wide text-[#19194D] uppercase leading-tight font-sans line-clamp-1">
+              <h1 className="text-lg sm:text-xl font-black tracking-wide text-[#002B70] uppercase leading-tight font-sans line-clamp-1">
                 {name}
               </h1>
 
               {/* Thông tin liên hệ điện thoại */}
               {phone && (
                 <div className="mt-2 flex items-center gap-2 text-xs sm:text-[13px] text-[#1E293B]">
-                  <Phone className="w-3.5 h-3.5 text-[#003B95] shrink-0" />
+                  <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <a href={`tel:${phone}`} className="font-bold text-[#003B95] hover:underline truncate">
                     {phone}
                   </a>
@@ -346,17 +346,17 @@ export function Ceo1983BusinessCardVisit({
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M 0,40 C 25,65 50,120 135,120 L 0,120 Z" fill="#1B2456" />
-              <path d="M 0,55 C 20,80 40,120 110,120 L 0,120 Z" fill="#141B41" />
+              <path d="M 0,40 C 25,65 50,120 135,120 L 0,120 Z" fill="#002B70" />
+              <path d="M 0,55 C 20,80 40,120 110,120 L 0,120 Z" fill="#001D4A" />
               <path
                 d="M 0,38 C 28,68 55,115 140,115 L 430,115 C 470,115 490,117 500,120"
-                stroke="#F58220"
+                stroke="#F59E0B"
                 strokeWidth="5"
                 strokeLinecap="round"
               />
               <path
                 d="M 0,34 C 28,65 58,113 145,113 L 425,113"
-                stroke="#FDBA74"
+                stroke="#FDE68A"
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 opacity="0.8"
@@ -366,16 +366,16 @@ export function Ceo1983BusinessCardVisit({
         </div>
       </div>
 
-      {/* CÁC NÚT ĐIỀU HƯỚNG VÀ HÀNH ĐỘNG DƯỚI DANH THIẾP (ĐÃ BỎ NÚT LẬT THẺ) */}
+      {/* CÁC NÚT ĐIỀU HƯỚNG VÀ HÀNH ĐỘNG DƯỚI DANH THIẾP */}
       {showActions && (
         <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
           {/* Nút Mã QR (Mở modal căn giữa màn hình) */}
           <button
             type="button"
             onClick={() => setQrModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#003B95] hover:bg-[#002B70] text-white transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 transition-all shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] active:scale-95 cursor-pointer"
           >
-            <QrCode className="w-3.5 h-3.5" />
+            <QrCode className="w-3.5 h-3.5 text-amber-400" />
             <span>Mã QR</span>
           </button>
 
@@ -383,10 +383,10 @@ export function Ceo1983BusinessCardVisit({
           <button
             type="button"
             onClick={() => setCaptureModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-amber-50/40 text-amber-800 dark:text-amber-300 border border-amber-500/30 transition-all shadow-xs active:scale-95 cursor-pointer"
             title="Chụp ảnh danh thiếp lưu danh bạ số hoặc đổi nền thẻ"
           >
-            <Camera className="w-3.5 h-3.5 text-slate-700" />
+            <Camera className="w-3.5 h-3.5 text-amber-500" />
             <span>Chụp Danh Thiếp</span>
           </button>
 
@@ -394,9 +394,9 @@ export function Ceo1983BusinessCardVisit({
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#19194D] to-[#252870] hover:brightness-110 text-white transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 transition-all shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] active:scale-95 cursor-pointer"
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Share2 className="w-3.5 h-3.5 text-amber-400" />
             <span>Chia Sẻ</span>
           </button>
 
@@ -404,7 +404,7 @@ export function Ceo1983BusinessCardVisit({
           <button
             type="button"
             onClick={handleCopyLink}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-amber-500/30 bg-white dark:bg-slate-800 hover:bg-amber-50/30 text-amber-800 dark:text-amber-300 transition-all shadow-xs active:scale-95 cursor-pointer"
           >
             {copied ? (
               <>
@@ -413,7 +413,7 @@ export function Ceo1983BusinessCardVisit({
               </>
             ) : (
               <>
-                <Globe className="w-3.5 h-3.5 text-slate-500" />
+                <Globe className="w-3.5 h-3.5 text-amber-500" />
                 <span>Sao Chép Link</span>
               </>
             )}

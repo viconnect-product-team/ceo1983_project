@@ -161,10 +161,14 @@ function CrmAdminAuthPage() {
         <div className="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-blue-500/20 blur-[120px]" />
         <div className="pointer-events-none absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-sky-400/15 blur-[100px]" />
 
-        {/* Top: Monogram App Badge */}
+        {/* Top: Brand App Badge */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md">
-            <span className="text-xl font-black text-[#003B95] tracking-tight">V</span>
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md p-1.5 overflow-hidden">
+            <img
+              src="/ceo1983-favicon.png"
+              alt="CEO 1983"
+              className="h-full w-full object-contain"
+            />
           </div>
           <div className="text-sm font-bold tracking-wider uppercase text-blue-100">
             CLB Doanh nhân CEO 1983
@@ -232,9 +236,6 @@ function CrmAdminAuthPage() {
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Đăng nhập Hệ thống
             </h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Cổng quản trị thông tin CRM Hiệp hội Doanh nghiệp CEO 1983
-            </p>
           </div>
 
           {/* Error Message Box */}

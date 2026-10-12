@@ -28,6 +28,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { registerServiceWorker } from "@/lib/register-sw";
 import { isTenantHost } from "@/lib/tenant";
+import { setupGlobalInputTrimmer } from "@/lib/input-trim-helper";
 
 const LANG_STORAGE_KEY = "vba.lang";
 
@@ -48,6 +49,7 @@ import { MockModeBanner } from "@/components/MockModeBanner";
 import { VoiceNavAssistant } from "@/components/ai/VoiceNavAssistant";
 import { ViOneVoiceAssistant } from "@/components/ai/ViOneVoiceAssistant";
 import { IosInstallPrompt } from "@/components/member/IosInstallPrompt";
+import { GlobalPermissionRevokedModal } from "@/components/common/GlobalPermissionRevokedModal";
 
 import appCss from "../styles.css?url";
 
@@ -323,6 +325,11 @@ function RootComponent() {
     registerServiceWorker();
   }, []);
 
+  // Auto-trim whitespace (stream space) across all inputs and textareas in CRM and Mobile app
+  useEffect(() => {
+    return setupGlobalInputTrimmer();
+  }, []);
+
   // Stale-deploy recovery: when a new build ships, cached HTML/JS can point at
   // chunk URLs that no longer exist. The dynamic import rejects and the page
   // dies with a blank/error screen. Reload once (guarded) to pick up the new
@@ -463,6 +470,7 @@ function RootComponent() {
             <GlobalRealtimeNotifications />
             <GlobalVoiceNavAssistant />
             <GlobalViOneVoiceAssistant />
+            <GlobalPermissionRevokedModal />
             <AuthGate>
               <Outlet />
             </AuthGate>

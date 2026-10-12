@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { useViewerUserId } from "@/hooks/use-viewer-user-id";
 import { useAuth } from "@/context/AuthContext";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { safeRandomUUID } from "@/lib/utils";
 
 export interface CeoCallRecordPayload {
@@ -99,6 +99,7 @@ export function CeoWebRtcCallModal({
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const queuedCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const callIdRef = useRef<string>(callIdProp || safeRandomUUID());
+  const initiatedRef = useRef(false);
   const hasRecordedRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const dialIntervalRef = useRef<any>(null);
@@ -198,16 +199,34 @@ export function CeoWebRtcCallModal({
       pcRef.current = null;
     }
 
+    const duration = callStatusRef.current === "connected" ? callSecondsRef.current : 0;
+
     // Emit end call signal to peer
     try {
       const socket = getConnectAppSocket();
       socket.emit("call:end", {
         callId: callIdRef.current,
         targetUserId: peerUserIdRef.current,
+        callerUserId: viewerUserId,
+        duration,
       });
+      // Fallback HTTP call to ensure backend cleans up active call state
+      fetchNestApi("/me/end-call", {
+        method: "POST",
+        body: JSON.stringify({
+          callId: callIdRef.current,
+          targetUserId: peerUserIdRef.current,
+        }),
+      }).catch(() => {});
     } catch {}
 
-    const duration = callStatusRef.current === "connected" ? callSecondsRef.current : 0;
+    // Dismiss any native system notification
+    if (typeof window !== "undefined" && (window as any).AndroidNative?.cancelNotification) {
+      try {
+        (window as any).AndroidNative.cancelNotification(`call-${callIdRef.current}`);
+      } catch {}
+    }
+
     if (onEndCallRef.current) {
       onEndCallRef.current({
         callType: typeRef.current,
@@ -216,7 +235,7 @@ export function CeoWebRtcCallModal({
       });
     }
     onCloseRef.current?.();
-  }, [stopOutgoingTone]);
+  }, [stopOutgoingTone, viewerUserId]);
 
   finishCallRef.current = finishCall;
 
@@ -225,6 +244,7 @@ export function CeoWebRtcCallModal({
     if (!open) return;
 
     hasRecordedRef.current = false;
+    initiatedRef.current = false;
     setCallSeconds(0);
     callSecondsRef.current = 0;
     setCallStatus(isIncomingAcceptance ? "connected" : "calling");
@@ -385,8 +405,9 @@ export function CeoWebRtcCallModal({
           }
         };
 
-        // 5. If caller: emit call:initiate
-        if (!isIncomingAcceptance && peerUserId && viewerUserId) {
+        // 5. If caller: emit call:initiate (guarded against duplicate emissions)
+        if (!isIncomingAcceptance && peerUserId && viewerUserId && !initiatedRef.current) {
+          initiatedRef.current = true;
           socket.emit("call:initiate", {
             callId: callIdRef.current,
             recipientUserId: peerUserId,
@@ -702,10 +723,10 @@ export function CeoWebRtcCallModal({
                     <img
                       src={resolveMediaUrl(peerAvatar) || peerAvatar}
                       alt={peerName}
-                      className="h-24 w-24 rounded-full object-cover ring-4 ring-[#2E3192]/60 shadow-xl"
+                      className="h-24 w-24 rounded-full object-cover ring-4 ring-amber-400/60 shadow-xl"
                     />
                   ) : (
-                    <div className="h-24 w-24 rounded-full bg-gradient-to-tr from-[#2E3192] to-[#19194D] grid place-items-center text-2xl font-black text-white ring-4 ring-amber-400/40 shadow-xl">
+                    <div className="h-24 w-24 rounded-full bg-gradient-to-tr from-[#001D4A] to-[#003B95] grid place-items-center text-2xl font-black text-white ring-4 ring-amber-400/40 shadow-xl">
                       {peerName ? peerName.charAt(0).toUpperCase() : "C"}
                     </div>
                   )}
@@ -740,18 +761,18 @@ export function CeoWebRtcCallModal({
             <div className="relative">
               {callStatus === "calling" && (
                 <>
-                  <div className="absolute -inset-6 rounded-full bg-[#2E3192]/30 animate-ping opacity-60" />
-                  <div className="absolute -inset-10 rounded-full bg-[#2E3192]/15 animate-pulse opacity-40" />
+                  <div className="absolute -inset-6 rounded-full bg-[#003B95]/40 animate-ping opacity-60" />
+                  <div className="absolute -inset-10 rounded-full bg-amber-400/20 animate-pulse opacity-40" />
                 </>
               )}
               {peerAvatar ? (
                 <img
                   src={resolveMediaUrl(peerAvatar) || peerAvatar}
                   alt={peerName}
-                  className="relative h-32 w-32 rounded-full object-cover ring-4 ring-[#2E3192]/80 shadow-2xl"
+                  className="relative h-32 w-32 rounded-full object-cover ring-4 ring-amber-400/80 shadow-2xl"
                 />
               ) : (
-                <div className="relative grid h-32 w-32 place-items-center rounded-full bg-gradient-to-tr from-[#2E3192] to-[#19194D] text-white text-4xl font-black ring-4 ring-amber-400/40 shadow-2xl">
+                <div className="relative grid h-32 w-32 place-items-center rounded-full bg-gradient-to-tr from-[#001D4A] to-[#003B95] text-white text-4xl font-black ring-4 ring-amber-400/40 shadow-2xl">
                   {peerName ? peerName.charAt(0).toUpperCase() : "C"}
                 </div>
               )}

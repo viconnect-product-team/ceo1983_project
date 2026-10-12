@@ -179,7 +179,7 @@ export function PrivacySettingsModal({ open, onClose, onUpdated }: PrivacySettin
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md p-0 overflow-hidden border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b1329] text-slate-900 dark:text-white sm:rounded-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-[#19194D] via-[#003B95] to-[#0f4c9c] p-4 text-white">
+        <div className="relative bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] border-b border-amber-400/30 p-4 text-white">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-xs border border-white/25">
               <ShieldCheck className="h-5 w-5 text-amber-400" />

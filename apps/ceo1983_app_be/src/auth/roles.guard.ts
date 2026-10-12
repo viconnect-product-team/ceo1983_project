@@ -35,51 +35,83 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    // 1. Gather all roles from JWT payload
-    const userRoles: string[] = [];
-    if (Array.isArray(user.roles)) {
-      userRoles.push(...user.roles);
-    }
-    if (user.role) {
-      userRoles.push(user.role);
-    }
-    if (user.srsRole) {
-      userRoles.push(user.srsRole);
-    }
-
-    // 2. Fallback to DB to retrieve all assigned roles
+    // 1. Kiểm tra vai trò thời gian thực trực tiếp từ CSDL (Realtime DB Authorization)
+    // Đảm bảo khi Quản trị viên thay đổi phân quyền trong DB, API lập tức chặn ngay hành vi thao tác
+    const dbRoles: string[] = [];
     if (user.id) {
       try {
-        const dbRoles = await this.prisma.$queryRaw<any[]>`
+        const urRows = await this.prisma.$queryRaw<any[]>`
           SELECT role::text FROM public.user_roles WHERE user_id = ${user.id}::uuid
         `.catch(() => []);
-        userRoles.push(...dbRoles.map((r) => r.role));
+        dbRoles.push(...urRows.map((r) => r.role));
 
-        const memRoles = await this.prisma.$queryRaw<any[]>`
+        const memRows = await this.prisma.$queryRaw<any[]>`
           SELECT role::text FROM public.memberships WHERE user_id = ${user.id}::uuid
         `.catch(() => []);
-        userRoles.push(...memRoles.map((r) => r.role));
+        dbRoles.push(...memRows.map((r) => r.role));
+
+        // Kiểm tra vai trò ban điều hành & chức vụ trong bảng members
+        const memberRows = await this.prisma.$queryRaw<any[]>`
+          SELECT executive_role::text, department::text, status::text 
+          FROM public.members 
+          WHERE user_id = ${user.id}::uuid OR id::text = ${user.id}::text 
+          LIMIT 1
+        `.catch(() => []);
+        if (memberRows.length > 0) {
+          const m = memberRows[0];
+          if (m.executive_role) dbRoles.push(m.executive_role);
+          if (m.department) dbRoles.push(m.department);
+          // Nếu hội viên bị đình chỉ hoặc vô hiệu hóa trong DB, lập tức chặn
+          if (m.status === 'suspended' || m.status === 'inactive' || m.status === 'banned') {
+            throw new ForbiddenException(
+              'Tài khoản của bạn đã bị tạm khóa hoặc thu hồi quyền truy cập. Vui lòng liên hệ Ban Điều Hành.',
+            );
+          }
+        }
 
         const vUsers = await this.prisma.$queryRaw<any[]>`
-          SELECT email, username FROM public.vione_users WHERE id = ${user.id}::uuid LIMIT 1
+          SELECT email, username, role, status FROM public.vione_users WHERE id = ${user.id}::uuid LIMIT 1
         `.catch(() => []);
-        if (vUsers.some((u: any) => u.email?.toLowerCase().includes('admin') || u.username?.toLowerCase().includes('admin'))) {
-          userRoles.push('admin', 'platform_admin', 'adm');
+        if (vUsers.length > 0) {
+          const vu = vUsers[0];
+          if (vu.status === 'inactive' || vu.status === 'suspended' || vu.status === 'banned') {
+            throw new ForbiddenException(
+              'Tài khoản của bạn đã bị vô hiệu hóa bởi Quản trị viên.',
+            );
+          }
+          if (vu.role) dbRoles.push(vu.role);
+          if (vu.email?.toLowerCase().includes('admin') || vu.username?.toLowerCase().includes('admin')) {
+            dbRoles.push('admin', 'platform_admin', 'adm');
+          }
         }
       } catch (err) {
-        console.warn('[RolesGuard] Failed to fetch db roles:', err);
+        if (err instanceof ForbiddenException) throw err;
+        console.warn('[RolesGuard] Realtime DB roles query error:', err);
       }
     }
 
-    const normalizedUserRoles = userRoles.map((r) => String(r).toLowerCase().trim());
+    // 2. Nếu DB có bản ghi phân quyền, dùng trực tiếp danh sách DB roles (chân lý thời gian thực);
+    // Nếu DB chưa có bản ghi (ví dụ tài khoản hệ thống ảo), fallback về JWT payload
+    const effectiveRoles: string[] = dbRoles.length > 0 ? dbRoles : [];
+    if (effectiveRoles.length === 0) {
+      if (Array.isArray(user.roles)) effectiveRoles.push(...user.roles);
+      if (user.role) effectiveRoles.push(user.role);
+      if (user.srsRole) effectiveRoles.push(user.srsRole);
+    }
 
-    // SuperAdmin / Platform Admin / ADM / Admin / BQT bypass
+    const normalizedUserRoles = effectiveRoles.map((r) => String(r).toLowerCase().trim());
+
+    // SuperAdmin / Platform Admin / ADM / Admin / Chủ tịch / Ban Điều Hành bypass
     if (
       normalizedUserRoles.includes('platform_admin') ||
       normalizedUserRoles.includes('superadmin') ||
       normalizedUserRoles.includes('adm') ||
       normalizedUserRoles.includes('admin') ||
-      normalizedUserRoles.includes('bqt')
+      normalizedUserRoles.includes('quan_tri') ||
+      normalizedUserRoles.includes('chu_tich') ||
+      normalizedUserRoles.includes('chủ tịch') ||
+      normalizedUserRoles.includes('bqt') ||
+      normalizedUserRoles.includes('ban_dieu_hanh')
     ) {
       return true;
     }
@@ -90,7 +122,7 @@ export class RolesGuard implements CanActivate {
 
     if (!hasPermission) {
       throw new ForbiddenException(
-        `Bạn không có quyền thực hiện thao tác này (yêu cầu một trong các quyền: ${requiredRoles.join(', ')})`,
+        `Quyền hạn của bạn đã bị thay đổi hoặc bạn không có quyền thực hiện thao tác này (yêu cầu một trong các quyền: ${requiredRoles.join(', ')})`,
       );
     }
 

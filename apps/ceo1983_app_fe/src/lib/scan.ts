@@ -7,6 +7,11 @@ export function extractScanCode(raw: string): string {
   const value = (raw || "").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").trim();
   if (!value) return "";
 
+  // 0. If payload is JSON directly, return as is
+  if (value.startsWith("{") && value.endsWith("}")) {
+    return value;
+  }
+
   // 1. If payload is a vCard, parse internal URL, NOTE, or code
   if (value.includes("BEGIN:VCARD")) {
     const urlMatch = /URL(?:;[^:]+)?:(\S+)/i.exec(value);
@@ -27,7 +32,16 @@ export function extractScanCode(raw: string): string {
   // 2. URL-style payloads
   try {
     const url = new URL(value);
+    // If QR image generator URL (e.g. qrserver data param), extract embedded payload
+    const dataParam = url.searchParams.get("data");
+    if (dataParam) {
+      const decodedData = decodeURIComponent(dataParam).trim();
+      return extractScanCode(decodedData);
+    }
+
     const code =
+      url.searchParams.get("ticketCode") ??
+      url.searchParams.get("ticket") ??
       url.searchParams.get("code") ??
       url.searchParams.get("c") ??
       url.searchParams.get("t") ??
@@ -37,12 +51,15 @@ export function extractScanCode(raw: string): string {
     // Segments for /card/CODE, /verify/CODE, /c/TOKEN, /checkin/UUID
     const segs = url.pathname.split("/").filter(Boolean);
     const lastSeg = segs.pop();
-    if (lastSeg) return decodeURIComponent(lastSeg).trim();
+    if (lastSeg && !lastSeg.includes("create-qr-code") && !lastSeg.includes("qr")) {
+      return decodeURIComponent(lastSeg).trim();
+    }
   } catch {
     // Not a full URL — check for query params embedded in partial URLs
-    const qMatch = /[?&](?:code|c|t)=([^&\s]+)/i.exec(value);
+    const qMatch = /[?&](?:data|ticketCode|ticket|code|c|t)=([^&\s]+)/i.exec(value);
     if (qMatch && qMatch[1]) {
-      return decodeURIComponent(qMatch[1]).trim();
+      const decoded = decodeURIComponent(qMatch[1]).trim();
+      return extractScanCode(decoded);
     }
   }
 

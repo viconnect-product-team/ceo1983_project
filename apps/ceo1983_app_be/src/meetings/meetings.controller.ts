@@ -64,10 +64,21 @@ export class MeetingsController {
   async respondConnectionAppointment(
     @Request() req: any,
     @Param('id') id: string,
-    @Body('status') status: 'accepted' | 'declined' | 'confirmed',
+    @Body() body: any,
   ) {
     const userId = req.user.id || req.user.sub;
+    const status = body?.status || (body?.action === 'accept' ? 'confirmed' : 'declined');
     return this.meetingsService.respondConnectionAppointment(userId, id, status);
+  }
+
+  @Post('connection-appointments/:id/cancel')
+  async cancelConnectionAppointment(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.cancelConnectionAppointment(userId, id, body?.reason);
   }
 
   @Post('workspace/list')

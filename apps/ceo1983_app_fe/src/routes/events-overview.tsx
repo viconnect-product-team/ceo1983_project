@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { CalendarDays, MapPin, Search, Users, UserCheck, Ticket } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, MapPin, Search, Users, UserCheck, Ticket, Filter } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { fetchNestApi } from "@/lib/api-client";
 import type { EventOverviewRow } from "@/lib/events-overview.functions";
@@ -69,19 +70,46 @@ function Rate({ value, total }: { value: number; total: number }) {
 
 function EventsOverviewPage() {
   const t = useT();
-  const rows = (Route.useLoaderData() || []) as EventOverviewRow[];
+  const initialRows = (Route.useLoaderData() || []) as EventOverviewRow[];
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const overviewQ = useQuery({
+    queryKey: ["events-overview-api", statusFilter],
+    queryFn: async () => {
+      try {
+        const query = statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
+        const res = await fetchNestApi<EventOverviewRow[]>(`/events/overview${query}`);
+        if (Array.isArray(res) && res.length > 0) return res;
+      } catch {}
+      return initialRows;
+    },
+    initialData: initialRows,
+  });
+
+  const rows = overviewQ.data || initialRows;
 
   const filtered = useMemo(() => {
+    let list = rows;
+    if (statusFilter !== "all") {
+      list = list.filter((r) => {
+        const s = String(r.status || "").toLowerCase();
+        if (statusFilter === "upcoming") return s === "upcoming" || s === "draft";
+        if (statusFilter === "ongoing") return s === "ongoing" || s === "published";
+        if (statusFilter === "completed") return s === "completed" || s === "ended";
+        if (statusFilter === "cancelled") return s === "cancelled";
+        return s === statusFilter;
+      });
+    }
     const term = q.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter(
+    if (!term) return list;
+    return list.filter(
       (r: EventOverviewRow) =>
         r.name.toLowerCase().includes(term) ||
         r.location.toLowerCase().includes(term) ||
         r.status.toLowerCase().includes(term),
     );
-  }, [rows, q]);
+  }, [rows, q, statusFilter]);
 
   const totals = useMemo(
     () =>
@@ -109,7 +137,62 @@ function EventsOverviewPage() {
           </p>
         </header>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Bộ lọc trạng thái sự kiện gọi theo Database API */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-border bg-card shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+            <Filter className="h-4 w-4 text-[#003B95]" />
+            <span>Lọc Trạng Thái Sự Kiện:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              { key: "all", label: "Tất cả sự kiện", count: rows.length },
+              {
+                key: "upcoming",
+                label: "Sắp diễn ra",
+                count: rows.filter((r) => r.status === "upcoming" || r.status === "draft").length,
+              },
+              {
+                key: "ongoing",
+                label: "Đang diễn ra",
+                count: rows.filter((r) => r.status === "ongoing" || r.status === "published").length,
+              },
+              {
+                key: "completed",
+                label: "Đã kết thúc",
+                count: rows.filter((r) => r.status === "completed" || r.status === "ended").length,
+              },
+              {
+                key: "cancelled",
+                label: "Đã hủy",
+                count: rows.filter((r) => r.status === "cancelled").length,
+              },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setStatusFilter(tab.key)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  statusFilter === tab.key
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    statusFilter === tab.key
+                      ? "bg-white/20 text-white"
+                      : "bg-background text-muted-foreground border border-border"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi label={t("eventsOverview.kpiEvents")} value={totals.events} icon={CalendarDays} />
           <Kpi
             label={t("eventsOverview.kpiRegistrations")}

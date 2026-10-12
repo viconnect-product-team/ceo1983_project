@@ -1,10 +1,18 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { trimInputElement } from "@/lib/input-trim-helper";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, onBlur, ...props }, ref) => {
     const isEmail = type === "email";
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      // Auto-trim space when losing focus
+      trimInputElement(e.currentTarget);
+      onBlur?.(e);
+    };
+
     return (
       <input
         type={type}
@@ -16,6 +24,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className,
         )}
         ref={ref}
+        onBlur={handleBlur}
         {...props}
       />
     );

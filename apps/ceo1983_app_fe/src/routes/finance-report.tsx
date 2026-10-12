@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
+import { useQuery } from "@tanstack/react-query";
+import { fetchNestApi } from "@/lib/api-client";
 import { listTransactionsFn, type Transaction } from "@/lib/finance.functions";
 import { useFmt, useT } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv";
@@ -166,12 +168,34 @@ function FinanceReport() {
   const [period, setPeriod] = useState<PeriodFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  // Filtered by search & type
+  const txQuery = useQuery({
+    queryKey: ["finance-report-data", statusFilter],
+    queryFn: async () => {
+      try {
+        const query = statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
+        const res = await fetchNestApi<Transaction[]>(`/admin/transactions${query}`);
+        if (Array.isArray(res) && res.length > 0) return res;
+      } catch {}
+      return rawTransactions;
+    },
+    initialData: rawTransactions,
+  });
+
+  const activeRawTransactions = txQuery.data || rawTransactions;
+
+  // Filtered by search, type & status
   const transactions = useMemo(() => {
-    return rawTransactions.filter((tx) => {
+    return activeRawTransactions.filter((tx) => {
       if (typeFilter !== "all" && tx.type !== typeFilter) return false;
+      if (statusFilter !== "all") {
+        const st = String(tx.status || "").toLowerCase();
+        if (statusFilter === "completed" && st !== "completed" && st !== "paid") return false;
+        if (statusFilter === "pending" && st !== "pending" && st !== "unpaid") return false;
+        if (statusFilter === "cancelled" && st !== "cancelled") return false;
+      }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
@@ -183,7 +207,7 @@ function FinanceReport() {
       }
       return true;
     });
-  }, [rawTransactions, typeFilter, searchQuery]);
+  }, [activeRawTransactions, typeFilter, statusFilter, searchQuery]);
 
   const tc = useTableControls<Transaction>(
     transactions,
@@ -310,11 +334,22 @@ function FinanceReport() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as any)}
-            className="rounded-xl border border-input bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground outline-none"
+            className="rounded-xl border border-input bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground outline-none cursor-pointer"
           >
             <option value="all">Tất cả giao dịch</option>
             <option value="income">Chỉ khoản thu (+)</option>
             <option value="expense">Chỉ khoản chi (-)</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-xl border border-input bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground outline-none cursor-pointer"
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="completed">Đã hoàn thành / Đã thanh toán</option>
+            <option value="pending">Chờ phê duyệt</option>
+            <option value="cancelled">Đã hủy / Từ chối</option>
           </select>
         </div>
       </div>

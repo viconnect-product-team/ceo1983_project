@@ -12,21 +12,29 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { TasksService } from './tasks.service';
 import { TaskItem, TaskFilterDto, CreateTaskDto, UpdateTaskDto } from './dto';
 
 @Controller('tasks')
+@UseGuards(OptionalJwtAuthGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  @Get('assignable-members')
+  async getAssignableMembers(@Request() req: any) {
+    return this.tasksService.getAssignableMembers(req?.user);
+  }
+
   @Get()
   async getTasks(
+    @Request() req: any,
     @Query('department') department?: string,
     @Query('status') status?: string,
     @Query('priority') priority?: string,
     @Query('keyword') keyword?: string,
   ) {
-    return this.tasksService.getAllTasks({ department, status, priority, keyword });
+    return this.tasksService.getAllTasks({ department, status, priority, keyword }, req?.user);
   }
 
   @Get(':id')
@@ -36,14 +44,14 @@ export class TasksController {
 
   @Post()
   async createTask(@Request() req: any, @Body() data: Partial<TaskItem>) {
-    const creator = req?.user?.fullName || req?.user?.name || 'Ban Quản trị';
-    return this.tasksService.createTask(data, creator);
+    const creator = req?.user?.fullName || req?.user?.name || 'Ban Điều Hành';
+    return this.tasksService.createTask(data, creator, req?.user);
   }
 
   @Put(':id')
   async updateTask(@Request() req: any, @Param('id') id: string, @Body() data: Partial<TaskItem>) {
-    const updater = req?.user?.fullName || req?.user?.name || 'Người quản trị';
-    return this.tasksService.updateTask(id, data, updater);
+    const updater = req?.user?.fullName || req?.user?.name || 'Ban Điều Hành';
+    return this.tasksService.updateTask(id, data, updater, req?.user);
   }
 
   @Patch(':id/status')

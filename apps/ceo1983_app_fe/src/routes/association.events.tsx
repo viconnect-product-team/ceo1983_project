@@ -34,6 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
   History,
+  AlertTriangle,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ import {
   EventSuccessNoticeModal,
   EventTicketPassModal,
 } from "@/components/events/modals";
+import { RegisteredEventsQrSlider } from "@/components/events/RegisteredEventsQrSlider";
 
 export const Route = createFileRoute("/association/events")({
   component: EventsScreen,
@@ -234,6 +236,20 @@ export function formatEventDateBadge(dateVal?: string, fallbackIndex: number = 0
   return defaultDates[fallbackIndex % defaultDates.length];
 }
 
+export function isEventPast(event: MyEvent): boolean {
+  if (!event) return false;
+  if ((event as any).isPast !== undefined) return Boolean((event as any).isPast);
+  if ((event as any).status === "ended" || (event as any).status === "completed" || (event as any).status === "cancelled") return true;
+  if (!event.date) return false;
+  const d = new Date(event.date);
+  if (isNaN(d.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDay = new Date(d);
+  eventDay.setHours(23, 59, 59, 999);
+  return eventDay < today;
+}
+
 export function makeTicketQrUrl(ticketData: {
   ticketCode: string;
   attendeeName: string;
@@ -313,6 +329,8 @@ function EventPosterCard({
   registered,
   isFree,
   price,
+  isPast = false,
+  onUnregister,
   variant = "default",
 }: {
   event: MyEvent;
@@ -323,6 +341,8 @@ function EventPosterCard({
   registered: boolean;
   isFree: boolean;
   price: number;
+  isPast?: boolean;
+  onUnregister?: (e: MyEvent, evt: React.MouseEvent) => void;
   variant?: "hero" | "grid" | "default";
 }) {
   const rawImg = (event as any).image;
@@ -390,7 +410,12 @@ function EventPosterCard({
 
         {/* Bottom Left: Live Registration Chip */}
         <div className="absolute bottom-2.5 left-2.5 z-10">
-          {registered ? (
+          {isPast ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/90 text-slate-200 text-[10px] font-bold px-2.5 py-0.5 backdrop-blur-md shadow-md border border-slate-600/30">
+              <Clock className="h-3 w-3" />
+              Đã kết thúc
+            </span>
+          ) : registered ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 text-white text-[10px] font-bold px-2.5 py-0.5 backdrop-blur-md shadow-md border border-blue-400/30">
               <Check className="h-3 w-3 stroke-[3]" />
               Đã đăng ký
@@ -446,30 +471,45 @@ function EventPosterCard({
         <div className="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-medium text-slate-400">
-              {registered ? "Đã giữ chỗ thành công" : "Mở cho toàn thể Hội viên"}
+              {isPast ? "Lưu giữ tài liệu & hình ảnh" : registered ? "Đã giữ chỗ thành công" : "Mở cho toàn thể Hội viên"}
             </span>
-            <button
-              id={index === 0 ? "tour-events-calendar-sync" : undefined}
-              type="button"
-              onClick={(evt) => {
-                evt.stopPropagation();
-                toast.success("Đã đồng bộ sự kiện vào Calendar trên điện thoại thành công!");
-              }}
-              title="Đồng bộ vào lịch điện thoại"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-300/40 text-[10px] font-bold hover:bg-amber-100 transition cursor-pointer"
-            >
-              <Calendar className="h-3 w-3" />
-              <span>Lịch</span>
-            </button>
+            {!isPast && (
+              <button
+                id={index === 0 ? "tour-events-calendar-sync" : undefined}
+                type="button"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  toast.success("Đã đồng bộ sự kiện vào Calendar trên điện thoại thành công!");
+                }}
+                title="Đồng bộ vào lịch điện thoại"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-300/40 text-[10px] font-bold hover:bg-amber-100 transition cursor-pointer"
+              >
+                <Calendar className="h-3 w-3" />
+                <span>Lịch</span>
+              </button>
+            )}
           </div>
 
-          <span
-            id={index === 0 ? "tour-events-register-btn" : undefined}
-            className="inline-flex items-center gap-1 text-[11.5px] font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform"
-          >
-            <span>{registered ? "Xem vé" : "Đăng ký vé"}</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </span>
+          <div className="flex items-center gap-2">
+            {registered && !isPast && onUnregister && (
+              <button
+                type="button"
+                onClick={(evt) => onUnregister(event, evt)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[11px] font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer active:scale-95"
+                title="Hủy vé đăng ký tham gia"
+              >
+                <X className="h-3.5 w-3.5 stroke-[2.5]" />
+                <span>Hủy vé</span>
+              </button>
+            )}
+            <span
+              id={index === 0 ? "tour-events-register-btn" : undefined}
+              className="inline-flex items-center gap-1 text-[11.5px] font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform"
+            >
+              <span>{isPast ? "Xem kỷ yếu" : registered ? "Xem vé" : "Đăng ký vé"}</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -485,68 +525,7 @@ function UpcomingEventsCoverflow({
   onSelectEvent: (e: MyEvent) => void;
 }) {
   const fiveEvents = useMemo(() => {
-    const list: MyEvent[] = [...events];
-    if (list.length < 5) {
-      const fallbackList: MyEvent[] = [
-        {
-          id: "ev-1",
-          title: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026",
-          date: "2026-09-27",
-          time: "07:30 - 13:00",
-          place: "Trung tâm Hội nghị Quốc gia, Hà Nội",
-          day: 27,
-          month: 9,
-          image: defaultEventImages[0],
-        } as any,
-        {
-          id: "ev-2",
-          title: "Gala Dinner Thượng Đỉnh: Xúc tiến đầu tư & Hợp tác chiến lược",
-          date: "2026-10-15",
-          time: "18:00 - 21:30",
-          place: "Khách sạn JW Marriott, Hà Nội",
-          day: 15,
-          month: 10,
-          image: defaultEventImages[1],
-        } as any,
-        {
-          id: "ev-3",
-          title: "Workshop Chuyên đề: Tiếp Nối Cơ Nghiệp Gia Đình Đa Thế Hệ",
-          date: "2026-10-28",
-          time: "08:00 - 11:30",
-          place: "Tòa nhà CEO Tower, Hà Nội",
-          day: 28,
-          month: 10,
-          image: defaultEventImages[2],
-        } as any,
-        {
-          id: "ev-4",
-          title: "Diễn đàn Kinh tế & Chuyển đổi số Doanh nghiệp 2026",
-          date: "2026-11-12",
-          time: "08:30 - 12:00",
-          place: "Khách sạn Lotte, Hà Nội",
-          day: 12,
-          month: 11,
-          image: defaultEventImages[3],
-        } as any,
-        {
-          id: "ev-5",
-          title: "Tọa đàm Giao thương B2B & Kết nối Chuỗi Cung ứng Toàn Cầu",
-          date: "2026-11-25",
-          time: "14:00 - 17:30",
-          place: "Vinpearl Landmark 81",
-          day: 25,
-          month: 11,
-          image: defaultEventImages[4],
-        } as any,
-      ];
-      for (const fb of fallbackList) {
-        if (list.length >= 5) break;
-        if (!list.some((x) => x.id === fb.id)) {
-          list.push(fb);
-        }
-      }
-    }
-    return list.slice(0, 5);
+    return events.slice(0, 5);
   }, [events]);
 
   const [activeIdx, setActiveIdx] = useState(0);
@@ -554,12 +533,14 @@ function UpcomingEventsCoverflow({
 
   // Tự động chạy tuần hoàn từ phải sang trái (activeIdx tăng dần)
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || fiveEvents.length === 0) return;
     const timer = setInterval(() => {
       setActiveIdx((prev) => (prev + 1) % fiveEvents.length);
     }, 3800);
     return () => clearInterval(timer);
   }, [isPaused, fiveEvents.length]);
+
+  if (fiveEvents.length === 0) return null;
 
   return (
     <div
@@ -731,9 +712,11 @@ function EventsScreen() {
   const [localRegistered, setLocalRegistered] = useState<Record<string, boolean>>({});
 
   // Category & bookmark state
-  const [eventCategory, setEventCategory] = useState<"all" | "free" | "paid" | "registered" | "bookmarked">("all");
+  const [eventCategory, setEventCategory] = useState<"all" | "free" | "paid" | "registered" | "bookmarked" | "history">("all");
   const [eventsPage, setEventsPage] = useState(1);
   const EVENTS_PER_PAGE = 4;
+  const [cancellingEvent, setCancellingEvent] = useState<MyEvent | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>("Có việc bận đột xuất");
 
   const [bookmarkedIds, setBookmarkedIds] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
@@ -843,9 +826,11 @@ function EventsScreen() {
   };
 
   const events = serverEvents || [];
+  const upcomingEvents = events.filter((e) => !isEventPast(e));
+  const pastEvents = events.filter((e) => isEventPast(e));
 
-  const freeEvents = events.filter((e) => isEventFree(e));
-  const paidEvents = events.filter((e) => !isEventFree(e));
+  const freeEvents = upcomingEvents.filter((e) => isEventFree(e));
+  const paidEvents = upcomingEvents.filter((e) => !isEventFree(e));
   const registeredEvents = events.filter((e) => isRegistered(e));
   const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
 
@@ -858,7 +843,9 @@ function EventsScreen() {
       ? registeredEvents
       : eventCategory === "bookmarked"
       ? bookmarkedEventsList
-      : events;
+      : eventCategory === "history"
+      ? pastEvents
+      : upcomingEvents;
 
   // Open registration modal with auto prefilled user profile
   function handleOpenRegister(e: MyEvent, evt?: React.MouseEvent) {
@@ -1073,13 +1060,18 @@ function EventsScreen() {
 
   }
 
-  async function unregister(id: string, evt?: React.MouseEvent) {
+  function handleOpenCancelModal(ev: MyEvent, evt?: React.MouseEvent) {
     if (evt) evt.stopPropagation();
-    const reasonPrompt = window.prompt("Vui lòng nhập lý do hủy tham dự sự kiện (nếu có):", "Có việc bận đột xuất");
-    if (reasonPrompt === null) return;
+    setCancellingEvent(ev);
+    setCancelReason("Có việc bận đột xuất");
+  }
+
+  async function handleConfirmCancel() {
+    if (!cancellingEvent) return;
+    const id = cancellingEvent.id;
     setBusy(id);
     try {
-      await doCancel({ data: { eventId: id, reason: reasonPrompt.trim() || undefined } });
+      await doCancel({ data: { eventId: id, reason: cancelReason?.trim() || undefined } });
       setLocalRegistered((prev) => ({ ...prev, [id]: false }));
       if (selectedEvent?.id === id) {
         setSelectedEvent((prev) => prev ? { ...prev, registered: false } : null);
@@ -1092,6 +1084,7 @@ function EventsScreen() {
         window.dispatchEvent(new Event("vba.history.changed"));
       } catch {}
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
+      setCancellingEvent(null);
       reload();
     } catch (e) {
       setLocalRegistered((prev) => ({ ...prev, [id]: false }));
@@ -1106,9 +1099,16 @@ function EventsScreen() {
         window.dispatchEvent(new Event("vba.history.changed"));
       } catch {}
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
+      setCancellingEvent(null);
     } finally {
       setBusy(null);
     }
+  }
+
+  async function unregister(id: string, evt?: React.MouseEvent) {
+    if (evt) evt.stopPropagation();
+    const ev = events.find((x) => x.id === id) || ({ id, title: "Sự kiện" } as MyEvent);
+    handleOpenCancelModal(ev, evt);
   }
 
   const paginatedEvents = useMemo(() => {
@@ -1213,80 +1213,36 @@ function EventsScreen() {
         </div>
 
         <UpcomingEventsCoverflow
-          events={events}
+          events={upcomingEvents}
           onSelectEvent={handleSelectEvent}
         />
       </div>
 
-      {/* Vé Sự Kiện Của Tôi */}
-      <div className="px-4 pt-1">
-        <button
-          type="button"
-          onClick={() => {
-            if (registeredEvents.length > 0) {
-              const regEvt = registeredEvents[0];
-              const evIdx = events.findIndex((x) => x.id === regEvt.id);
-              const invoiceCode = `REG-${regEvt.id.slice(0, 8).toUpperCase()}`;
-              const lucky = `#${(1000 + (evIdx >= 0 ? evIdx : 1) * 337) % 9000 + 1000}`;
-              const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
-              const attendeePhone = member?.phone || "";
-              const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
-              const attendeePosition = member?.title || "Hội viên chính thức";
-              setTicketPassModal({
-                eventTitle: regEvt.title,
-                ticketCode: invoiceCode,
-                luckyNumber: lucky,
-                ticketType: "Standard VIP",
-                ticketCount: 1,
-                isFree: isEventFree(regEvt),
-                date: regEvt.date || "",
-                time: regEvt.time || "",
-                location: regEvt.place || "Hà Nội",
-                attendeeName,
-                attendeePhone,
-                attendeeCompany,
-                attendeePosition,
-                qrUrl: makeTicketQrUrl({
-                  ticketCode: invoiceCode,
-                  attendeeName,
-                  attendeePhone,
-                  attendeeCompany,
-                  attendeePosition,
-                  eventTitle: regEvt.title,
-                  eventDate: regEvt.date ? formatDisplayDate(regEvt.date) : "27/09/2026",
-                  eventLocation: regEvt.place || "Hà Nội",
-                  ticketType: "Standard VIP",
-                  seatAssignment: "Bàn VIP 08 - Ghế 02",
-                  luckyNumber: lucky,
-                  ticketCount: 1,
-                }),
-              });
-            } else {
-              setEventCategory("registered");
-              toast.info(isEn ? "You have not registered for any events yet." : "Bạn chưa đăng ký sự kiện nào. Hãy chọn sự kiện bên dưới và đăng ký nhé!");
-            }
-          }}
-          className="w-full text-left rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-slate-900/80 backdrop-blur-md flex items-center gap-3 p-3 shadow-xs hover:border-amber-400/50 cursor-pointer transition active:scale-[0.99]"
-        >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-500 border border-amber-500/30 shadow-xs">
-            <Ticket className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>{isEn ? "My Event Passes" : "Vé Sự Kiện Của Tôi"}</span>
-              {registeredEvents.length > 0 && (
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.2 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                  {registeredEvents.length} vé
-                </span>
-              )}
-            </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {isEn ? "View your confirmed ticket and QR pass for organizers to scan" : "Xem thẻ vé điện tử & mã QR để Ban Tổ Chức quét khi đến sự kiện"}
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-slate-400 shrink-0" />
-        </button>
-      </div>
+      {/* Vé Sự Kiện Của Tôi - Slide Carousel hiển thị trực tiếp tối đa 3 mã QR + nút Xem Tất Cả */}
+      <RegisteredEventsQrSlider
+        isEn={isEn}
+        registeredEvents={registeredEvents}
+        events={events}
+        member={member}
+        user={user}
+        isEventFree={isEventFree}
+        formatDisplayDate={formatDisplayDate}
+        makeTicketQrUrl={makeTicketQrUrl}
+        onSelectTicketPass={(ticketPassData) => setTicketPassModal(ticketPassData)}
+        onViewAll={() => {
+          if (registeredEvents.length > 0) {
+            setAllTicketsModalOpen(true);
+          } else {
+            setEventCategory("all");
+            toast.info(isEn ? "You have not registered for any events yet." : "Bạn chưa đăng ký sự kiện nào. Hãy chọn sự kiện bên dưới để đăng ký nhé!");
+          }
+        }}
+        onExploreEvents={() => {
+          setEventCategory("all");
+          const el = document.getElementById("tour-events-tabs");
+          if (el) el.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
 
       {/* 3. Section: List các sự kiện với menu phân chia & phân trang riêng biệt */}
       <div className="px-4 pt-3 space-y-3">
@@ -1300,14 +1256,15 @@ function EventsScreen() {
           </span>
         </div>
 
-        {/* Menu phân chia: Tất cả, Đã đăng ký, Miễn phí, Có phí, Đã đánh dấu */}
+        {/* Menu phân chia: Sắp diễn ra, Đã đăng ký, Miễn phí, Có phí, Đã lưu, Lịch sử sự kiện */}
         <div id="tour-events-tabs" className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
           {[
-            { id: "all", label: isEn ? "All" : "Tất cả", count: events.length },
+            { id: "all", label: isEn ? "Upcoming" : "Sắp diễn ra", count: upcomingEvents.length },
             { id: "registered", label: isEn ? "Registered" : "Đã đăng ký", count: registeredEvents.length },
             { id: "free", label: isEn ? "Free" : "Miễn phí", count: freeEvents.length },
             { id: "paid", label: isEn ? "Paid" : "Có phí", count: paidEvents.length },
             { id: "bookmarked", label: isEn ? "Bookmarked" : "Đã lưu", count: bookmarkedEventsList.length },
+            { id: "history", label: isEn ? "History" : "Lịch sử sự kiện", count: pastEvents.length },
           ].map((tabItem) => {
             const active = eventCategory === tabItem.id;
             return (
@@ -1397,6 +1354,8 @@ function EventsScreen() {
                   registered={isRegistered(e)}
                   isFree={isEventFree(e)}
                   price={getEventPrice(e)}
+                  isPast={isEventPast(e)}
+                  onUnregister={(evtObj, evt) => handleOpenCancelModal(evtObj, evt)}
                   variant="default"
                 />
               );
@@ -1450,33 +1409,48 @@ function EventsScreen() {
         )}
       </div>
 
-      {/* 4. Section: Sự kiện xem gần đây (recently-viewed) */}
-      <div className="px-4 mt-6 flex flex-col items-start gap-[12px] w-full max-w-[390px] mx-auto">
+      {/* 4. Section: Sự kiện xem gần đây (recently-viewed) - vừa vặn kích thước section trên */}
+      <div className="px-4 mt-6 space-y-3 w-full">
         {/* SỰ KIỆN XEM GẦN ĐÂY */}
-        <div className="font-['Inter'] font-bold text-[14px] leading-[17px] text-[#001B54] dark:text-white uppercase tracking-tight">
-          SỰ KIỆN XEM GẦN ĐÂY
+        <div className="flex items-center justify-between">
+          <div className="font-['Inter'] font-bold text-[13px] sm:text-[14px] leading-tight text-[#001B54] dark:text-white uppercase tracking-tight flex items-center gap-1.5">
+            <Clock className="h-4 w-4 text-amber-500" />
+            <span>SỰ KIỆN XEM GẦN ĐÂY</span>
+          </div>
+          <span className="text-[11px] font-medium text-slate-400">
+            {displayedRecentItems.length} sự kiện
+          </span>
         </div>
 
-        {/* Frame: Horizontal Row */}
-        <div className="flex flex-row items-start gap-[12px] overflow-x-auto no-scrollbar w-full py-0.5">
-          {displayedRecentItems.map((item) => (
+        {/* Grid 2 cột dàn đều vừa khít 100% kích thước section trên */}
+        <div className="grid grid-cols-2 gap-3 w-full">
+          {displayedRecentItems.slice(0, 2).map((item) => (
             <div
               key={item.id}
               onClick={() => handleSelectEvent(item.event)}
-              className="box-border flex flex-col items-start p-[12px] gap-[8px] w-[160px] h-[127px] bg-[#FFFFFF] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 rounded-[12px] shrink-0 cursor-pointer shadow-xs hover:shadow-md transition active:scale-[0.98]"
+              className="group box-border flex flex-col items-start p-2.5 sm:p-3 gap-2 w-full bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl cursor-pointer shadow-xs hover:shadow-md hover:border-[#003B95]/40 dark:hover:border-blue-500/40 transition active:scale-[0.98]"
             >
-              {/* Rectangle: Poster */}
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-[136px] h-[80px] rounded-[8px] object-cover shrink-0 select-none pointer-events-none"
-              />
+              {/* Rectangle: Poster full width của cột */}
+              <div className="w-full h-24 sm:h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 shrink-0 relative">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 select-none pointer-events-none"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 pointer-events-none" />
+              </div>
               {/* Title */}
               <div
                 title={item.title}
-                className="w-[136px] h-[15px] font-['Inter'] font-bold text-[12px] leading-[15px] text-[#001B54] dark:text-white truncate"
+                className="w-full font-['Inter'] font-bold text-[12px] sm:text-[13px] leading-snug text-[#001B54] dark:text-white line-clamp-1"
               >
                 {item.title}
+              </div>
+              <div className="w-full flex items-center justify-between text-[10.5px] text-slate-400 -mt-0.5">
+                <span className="truncate">CEO 1983</span>
+                <span className="text-amber-600 dark:text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform flex items-center">
+                  Xem <ArrowRight className="h-3 w-3 inline ml-0.5" />
+                </span>
               </div>
             </div>
           ))}
@@ -1484,10 +1458,10 @@ function EventsScreen() {
       </div>
 
       {/* 5. Footer: Thiết kế tối giản, thanh lịch, chuẩn xu hướng hiện đại */}
-      <div className="mx-4 mt-6 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-3.5 sm:p-4 text-slate-800 dark:text-slate-100 shadow-xs">
+      <div className="mx-4 mt-6 rounded-2xl border border-amber-500/30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 text-slate-800 dark:text-slate-100 shadow-[0_4px_16px_rgba(245,158,11,0.1)]">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#2E3192]/10 dark:bg-blue-500/15 text-[#2E3192] dark:text-amber-400 shrink-0">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30 shrink-0">
               <Sparkles className="h-4.5 w-4.5" />
             </div>
             <div>
@@ -1501,9 +1475,9 @@ function EventsScreen() {
           </div>
           <Link
             to="/association/messages"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#2E3192] hover:bg-[#232677] text-white px-3.5 py-2 text-xs font-bold shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 px-3.5 py-2 text-xs font-bold shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition active:scale-95 shrink-0 cursor-pointer"
           >
-            <span>Liên hệ Ban Thư Ký</span>
+            <span>Liên hệ Ban Truyền Thông</span>
             <ArrowRight className="h-3.5 w-3.5 text-amber-300" />
           </Link>
         </div>
@@ -1653,6 +1627,96 @@ function EventsScreen() {
         ticketPassModal={ticketPassModal}
         onClose={() => setTicketPassModal(null)}
       />
+
+      {/* Dialog Hủy Đăng Ký Sự Kiện Chuyên Nghiệp */}
+      <Dialog open={!!cancellingEvent} onOpenChange={(open) => !open && setCancellingEvent(null)}>
+        <DialogContent className="max-w-md w-[92vw] p-0 overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-2xl">
+          <div className="bg-gradient-to-r from-rose-600 to-red-500 p-5 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-white">
+                  {isEn ? "Cancel Event Registration" : "Hủy đăng ký sự kiện"}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-rose-100 mt-0.5">
+                  {cancellingEvent?.title}
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200/70 rounded-xl flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 leading-relaxed">
+                {isEn
+                  ? "Releasing your ticket will open this seat for other members. Are you sure you want to cancel?"
+                  : "Sau khi hủy, mã vé tham dự và vị trí chỗ ngồi của bạn sẽ được giải phóng để đại biểu khác đăng ký."}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-2">
+                {isEn ? "Reason for cancellation:" : "Lý do hủy tham gia:"}
+              </label>
+              <div className="space-y-2">
+                {[
+                  "Có việc bận đột xuất",
+                  "Trùng lịch công tác / hội nghị khác",
+                  "Lý do sức khỏe / cá nhân khác",
+                ].map((reason) => (
+                  <label
+                    key={reason}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
+                      cancelReason === reason
+                        ? "bg-rose-50/70 border-rose-300 text-rose-900 font-medium"
+                        : "bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="cancel_reason"
+                      value={reason}
+                      checked={cancelReason === reason}
+                      onChange={() => setCancelReason(reason)}
+                      className="text-rose-600 focus:ring-rose-500 w-3.5 h-3.5"
+                    />
+                    <span>{reason}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setCancellingEvent(null)}
+                disabled={busy === cancellingEvent?.id}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all shadow-sm"
+              >
+                {isEn ? "Keep Ticket" : "Giữ lại vé"}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancel}
+                disabled={busy === cancellingEvent?.id}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 active:scale-[0.98] text-white text-xs font-semibold shadow-md shadow-rose-200 transition-all flex items-center justify-center gap-1.5"
+              >
+                {busy === cancellingEvent?.id ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{isEn ? "Cancelling..." : "Đang hủy..."}</span>
+                  </>
+                ) : (
+                  <span>{isEn ? "Confirm Cancel" : "Xác nhận hủy vé"}</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

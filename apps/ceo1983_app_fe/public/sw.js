@@ -91,3 +91,55 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+// 4. Background Push Notification & Incoming Calls
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  try {
+    const data = event.data.json();
+    const title = data.title || "CEO 1983";
+    const isCall = data.type === "call" || data.tag?.startsWith("call-");
+    const options = {
+      body: data.body || "",
+      icon: data.icon || "/app-icon.png",
+      badge: "/favicon.png",
+      tag: data.tag || `notif-${Date.now()}`,
+      data: data.url || (isCall ? "/association/messages" : "/association"),
+      vibrate: isCall ? [500, 250, 500, 250, 500] : [200, 100, 200],
+      requireInteraction: isCall,
+      actions: isCall
+        ? [
+            { action: "accept", title: "Trả lời" },
+            { action: "decline", title: "Từ chối" },
+          ]
+        : [],
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch {
+    const text = event.data ? event.data.text() : "";
+    event.waitUntil(
+      self.registration.showNotification("CEO 1983", {
+        body: text || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
+        icon: "/app-icon.png",
+      })
+    );
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data || "/association";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if ("focus" in client) {
+          client.navigate(urlToOpen);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
