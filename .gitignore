@@ -54,3 +54,6 @@ release_apk/
 *.apk
 *.ipa
 *.aab
+
+# Scratch & Temporary Scripts
+scratch/

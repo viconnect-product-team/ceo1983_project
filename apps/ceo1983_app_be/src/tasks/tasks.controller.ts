@@ -22,8 +22,8 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get('assignable-members')
-  async getAssignableMembers(@Request() req: any) {
-    return this.tasksService.getAssignableMembers(req?.user);
+  async getAssignableMembers(@Request() req: any, @Query('department') department?: string) {
+    return this.tasksService.getAssignableMembers(req?.user, department);
   }
 
   @Get()

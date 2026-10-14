@@ -163,6 +163,19 @@ export function parseMessageContent(rawBody: string): ParsedContent {
   let body = rawBody;
   let replyQuote: ReplyQuoteData | undefined;
 
+  // Shopee-style Product / Opportunity Inquiry Card
+  if (body.startsWith("[ITEM_INQUIRY]")) {
+    try {
+      const jsonStr = body.replace("[ITEM_INQUIRY]", "").trim();
+      const inquiryData = JSON.parse(jsonStr);
+      return {
+        replyQuote,
+        type: "item_inquiry",
+        data: inquiryData,
+      };
+    } catch {}
+  }
+
   // B2B Meeting Connection Invite (Requirement 11)
   if (body.startsWith("[B2B_CONNECT_INVITE]")) {
     try {
@@ -338,6 +351,27 @@ export function formatMessagePreview(raw?: any): string {
     }
     if (/\[action:ticket/i.test(text)) {
       return "🎟️ [Vé điện tử] Xác nhận vé sự kiện & mã QR Check-in";
+    }
+    if (text.includes("[ITEM_INQUIRY]")) {
+      try {
+        const jsonStr = text.slice(text.indexOf("[ITEM_INQUIRY]") + 14).trim();
+        const data = JSON.parse(jsonStr);
+        const title = data.title || data.name || "Sản phẩm / Cơ hội";
+        const kind = data.type === "product" ? "🛍️ [Hỏi sản phẩm]" : "💼 [Hỏi cơ hội]";
+        return `${kind} ${title}`;
+      } catch {
+        return "🛍️ [Hỏi mua / Kết nối kinh doanh]";
+      }
+    }
+    if (text.includes("[B2B_CONNECT_INVITE]")) {
+      try {
+        const jsonStr = text.slice(text.indexOf("[B2B_CONNECT_INVITE]") + 20).trim();
+        const data = JSON.parse(jsonStr);
+        const title = data.title || data.topic || data.purpose || "Hẹn gặp 1-1";
+        return `🤝 [Hẹn gặp 1-1] ${title}`;
+      } catch {
+        return "🤝 [Lời mời kết nối 1-1]";
+      }
     }
     if (
       /\[image:(https?:\/\/[^|\]]+)(?:\|([^\]]*))?\]/i.test(text) ||

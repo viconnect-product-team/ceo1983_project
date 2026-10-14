@@ -71,180 +71,7 @@ function fmtTime(iso?: string | null) {
   return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 }
 
-type Tab = "connections" | "payments" | "events" | "activity";
-
-// Fallback demo data for CEO 1983 so that every category operates reliably
-const DEFAULT_CONNECTIONS = [
-  {
-    id: "conn-demo-1",
-    targetCode: "HV-198301",
-    targetName: "Nguyễn Văn Hùng",
-    targetCompany: "Tập Đoàn Hùng Hậu Holdings",
-    targetTitle: "Chủ tịch HĐQT & Tổng Giám Đốc",
-    targetAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-    opportunityTitle: "Hợp tác đầu tư chuỗi logistics & kho bãi thông minh",
-    purpose: "Đề xuất gặp mặt trao đổi phương án liên kết vận hành và cung ứng giải pháp kho vận đa phương tiện.",
-    status: "accepted",
-    createdAt: "2026-03-20T09:30:00Z",
-  },
-  {
-    id: "conn-demo-2",
-    targetCode: "HV-198318",
-    targetName: "Trần Thị Mai Phương",
-    targetCompany: "Công Ty Cổ Phần Công Nghệ VIBank",
-    targetTitle: "Giám Đốc Khối Ngân Hàng Số",
-    targetAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80",
-    opportunityTitle: "Tích hợp cổng thanh toán B2B & gói tín dụng ưu đãi hội viên",
-    purpose: "Mong muốn kết nối kết hợp chương trình tài trợ vốn lưu động lãi suất ưu đãi cho hội viên CLB CEO 1983.",
-    status: "pending",
-    createdAt: "2026-03-24T14:15:00Z",
-  },
-  {
-    id: "conn-demo-3",
-    targetCode: "HV-198345",
-    targetName: "Lê Hoàng Long",
-    targetCompany: "Tập Đoàn Bất Động Sản An Gia",
-    targetTitle: "Phó Tổng Giám Đốc Phát Triển Dự Án",
-    targetAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
-    opportunityTitle: "Tìm kiếm nhà thầu MEP & nội thất thông minh",
-    purpose: "Hẹn gặp tại buổi Coffee CEO sáng thứ 5 để bàn chi tiết hồ sơ năng lực.",
-    status: "accepted",
-    createdAt: "2026-03-18T10:00:00Z",
-  },
-];
-
-const DEFAULT_PAYMENTS = [
-  {
-    id: "INV-2026-CEO1983",
-    invoice: "INV-2026-001983",
-    description: "Hội phí thường niên 2026 - Doanh nghiệp tiêu biểu CEO 1983",
-    amount: 15000000,
-    status: "paid",
-    method: "bank",
-    date: "2026-01-15T08:30:00Z",
-    termStart: "2026-01-01",
-    termEnd: "2026-12-31",
-    ref: "TRAN-2026-0115-9988",
-    payerName: "Hội viên chính thức CLB CEO 1983",
-  },
-  {
-    id: "INV-2026-EVT01",
-    invoice: "INV-EVT-2026-0927",
-    description: "Vé VIP Đại Hội Hội Viên CLB CEO 1983 & Gala Dinner",
-    amount: 1500000,
-    status: "paid",
-    method: "card",
-    date: "2026-03-10T16:45:00Z",
-    termStart: null,
-    termEnd: null,
-    ref: "TRAN-2026-0310-4421",
-    payerName: "Hội viên chính thức CLB CEO 1983",
-  },
-  {
-    id: "INV-2025-CEO1983",
-    invoice: "INV-2025-001983",
-    description: "Hội phí thường niên 2025 - Doanh nghiệp tiêu biểu CEO 1983",
-    amount: 15000000,
-    status: "paid",
-    method: "bank",
-    date: "2025-01-18T10:20:00Z",
-    termStart: "2025-01-01",
-    termEnd: "2025-12-31",
-    ref: "TRAN-2025-0118-1122",
-    payerName: "Hội viên chính thức CLB CEO 1983",
-  },
-];
-
-const DEFAULT_EVENTS = [
-  {
-    id: "ev-rec-1",
-    eventId: "ev-1",
-    name: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp Tiêu biểu 2026",
-    date: "2026-09-27T08:00:00Z",
-    place: "Trung tâm Hội nghị Quốc gia, Hà Nội",
-    checkedIn: true,
-    checkedInAt: "2026-09-27T07:45:00Z",
-    ticketCode: "EV-CEO1983-VIP01",
-    luckyNumber: "#1983",
-    ticketType: "VIP Gold Pass",
-    seat: "Bàn VIP 08 - Ghế 02",
-    ticketCount: 1,
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "ev-rec-2",
-    eventId: "ev-digital-forum",
-    name: "Diễn đàn kinh tế số & Quản trị doanh nghiệp kỷ nguyên AI",
-    date: "2026-10-15T08:30:00Z",
-    place: "Khách sạn Lotte Hotel Hanoi",
-    checkedIn: false,
-    checkedInAt: null,
-    ticketCode: "EV-AI2026-8899",
-    luckyNumber: "#2026",
-    ticketType: "Executive Standard",
-    seat: "Khu vực B - Bàn 04",
-    ticketCount: 1,
-    image: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: "ev-rec-3",
-    eventId: "ev-executive-dinner",
-    name: "CEO Executive Dinner: Kết nối & Dạ tiệc doanh nhân",
-    date: "2026-11-20T18:00:00Z",
-    place: "Khách sạn JW Marriott, Hà Nội",
-    checkedIn: false,
-    checkedInAt: null,
-    ticketCode: "EV-DINNER-3344",
-    luckyNumber: "#5566",
-    ticketType: "VIP Dining Pass",
-    seat: "Bàn Tròn Danh Dự 02",
-    ticketCount: 1,
-    image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80",
-  },
-];
-
-const DEFAULT_ACTIVITIES = [
-  {
-    id: "act-def-1",
-    type: "event",
-    category: "Sự kiện",
-    title: "Đã hoàn tất đăng ký vé tham dự Đại Hội CEO 1983",
-    detail: "Mã vé EV-CEO1983-VIP01 · Số may mắn #1983",
-    date: "2026-03-24T15:20:00Z",
-  },
-  {
-    id: "act-def-2",
-    type: "payment",
-    category: "Đóng phí",
-    title: "Thanh toán thành công Hội phí thường niên 2026",
-    detail: "Hóa đơn INV-2026-001983 · Số tiền: 15.000.000 đ",
-    date: "2026-01-15T08:30:00Z",
-  },
-  {
-    id: "act-def-3",
-    type: "connection",
-    category: "Kết nối",
-    title: "Kết nối thành công với TGĐ Nguyễn Văn Hùng",
-    detail: "Đã xác nhận kết nối giao thương logistics và kho bãi",
-    date: "2026-03-21T11:00:00Z",
-  },
-  {
-    id: "act-def-4",
-    type: "checkin",
-    category: "Check-in",
-    title: "Quét mã Check-in tham dự sự kiện Hội chợ B2B",
-    detail: "Cổng check-in số 2 · Thời gian: 08:12",
-    date: "2026-02-28T08:12:00Z",
-  },
-  {
-    id: "act-def-5",
-    type: "system",
-    category: "Hồ sơ",
-    title: "Cập nhật hồ sơ danh thiếp số thông minh",
-    detail: "Đồng bộ thông tin doanh nghiệp & liên kết tài khoản ngân hàng",
-    date: "2026-01-10T14:00:00Z",
-  },
-];
+type Tab = "connections" | "events" | "activity";
 
 function HistoryScreen() {
   const t = useT();
@@ -256,56 +83,54 @@ function HistoryScreen() {
   // Sub-filters & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [connectionFilter, setConnectionFilter] = useState<"all" | "accepted" | "pending">("all");
-  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending">("all");
   const [eventFilter, setEventFilter] = useState<"all" | "upcoming" | "checkedIn">("all");
   const [activityFilter, setActivityFilter] = useState<string>("all");
 
   // Modals state
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
 
-  // 1. Connection List State
+  // 1. Connection List State - Only populated when user sends connection requests
   const [connectionList, setConnectionList] = useState<any[]>(() => {
-    if (typeof window === "undefined") return DEFAULT_CONNECTIONS;
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem("vba_sent_connection_requests");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
-      return DEFAULT_CONNECTIONS;
+      return [];
     } catch {
-      return DEFAULT_CONNECTIONS;
+      return [];
     }
   });
 
-  // 2. Local Registered Events State
+  // 2. Local Registered Events State - Only populated when user registers for events
   const [localEvents, setLocalEvents] = useState<any[]>(() => {
-    if (typeof window === "undefined") return DEFAULT_EVENTS;
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem("vba_registered_event_records");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
-      return DEFAULT_EVENTS;
+      return [];
     } catch {
-      return DEFAULT_EVENTS;
+      return [];
     }
   });
 
-  // 3. Local Activities State
+  // 3. Local Activities State - Only populated by real member actions
   const [localActivities, setLocalActivities] = useState<any[]>(() => {
-    if (typeof window === "undefined") return DEFAULT_ACTIVITIES;
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem("vba_recent_activities");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
-      return DEFAULT_ACTIVITIES;
+      return [];
     } catch {
-      return DEFAULT_ACTIVITIES;
+      return [];
     }
   });
 
@@ -316,19 +141,25 @@ function HistoryScreen() {
         const storedConn = localStorage.getItem("vba_sent_connection_requests");
         if (storedConn) {
           const parsed = JSON.parse(storedConn);
-          if (Array.isArray(parsed) && parsed.length > 0) setConnectionList(parsed);
+          if (Array.isArray(parsed)) setConnectionList(parsed);
+        } else {
+          setConnectionList([]);
         }
 
         const storedEvents = localStorage.getItem("vba_registered_event_records");
         if (storedEvents) {
           const parsed = JSON.parse(storedEvents);
-          if (Array.isArray(parsed) && parsed.length > 0) setLocalEvents(parsed);
+          if (Array.isArray(parsed)) setLocalEvents(parsed);
+        } else {
+          setLocalEvents([]);
         }
 
         const storedAct = localStorage.getItem("vba_recent_activities");
         if (storedAct) {
           const parsed = JSON.parse(storedAct);
-          if (Array.isArray(parsed) && parsed.length > 0) setLocalActivities(parsed);
+          if (Array.isArray(parsed)) setLocalActivities(parsed);
+        } else {
+          setLocalActivities([]);
         }
       } catch {}
     };
@@ -378,73 +209,7 @@ function HistoryScreen() {
     });
   }, [allConnections, connectionFilter, searchQuery]);
 
-  // 2. All Payments
-  const allPayments = useMemo(() => {
-    const list: any[] = [];
-    const seenIds = new Set<string>();
-
-    // From server
-    if (data?.payments && data.payments.length > 0) {
-      for (const p of data.payments) {
-        if (!seenIds.has(p.id)) {
-          seenIds.add(p.id);
-          list.push(p);
-        }
-      }
-    }
-
-    // From local registered events with fee
-    for (const evt of localEvents) {
-      if (evt.totalAmount && evt.totalAmount > 0) {
-        const pId = `PAY-${evt.ticketCode || evt.id}`;
-        if (!seenIds.has(pId)) {
-          seenIds.add(pId);
-          list.push({
-            id: pId,
-            invoice: evt.ticketCode || "EVT-TICKET",
-            description: `Vé sự kiện: ${evt.name}`,
-            amount: evt.totalAmount,
-            status: "paid",
-            method: "bank",
-            date: evt.registeredAt || evt.date || new Date().toISOString(),
-            ref: `EVT-REF-${evt.luckyNumber || "VIP"}`,
-          });
-        }
-      }
-    }
-
-    // From defaults
-    for (const def of DEFAULT_PAYMENTS) {
-      if (!seenIds.has(def.id)) {
-        seenIds.add(def.id);
-        list.push(def);
-      }
-    }
-
-    return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [data?.payments, localEvents]);
-
-  const filteredPayments = useMemo(() => {
-    return allPayments.filter((p) => {
-      if (paymentFilter === "paid" && p.status !== "paid") return false;
-      if (paymentFilter === "pending" && p.status === "paid") return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const desc = (p.description || "").toLowerCase();
-        const inv = (p.invoice || "").toLowerCase();
-        return desc.includes(q) || inv.includes(q);
-      }
-      return true;
-    });
-  }, [allPayments, paymentFilter, searchQuery]);
-
-  const totalSpent = useMemo(() => {
-    return allPayments
-      .filter((p) => p.status === "paid")
-      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  }, [allPayments]);
-
-  // 3. All Events
+  // 2. All Events
   const allEvents = useMemo(() => {
     const list: any[] = [];
     const seenEventNames = new Set<string>();
@@ -492,15 +257,6 @@ function HistoryScreen() {
       }
     }
 
-    // From defaults
-    for (const d of DEFAULT_EVENTS) {
-      const nameKey = (d.name || "").trim().toLowerCase();
-      if (!seenEventNames.has(nameKey)) {
-        seenEventNames.add(nameKey);
-        list.push(d);
-      }
-    }
-
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [localEvents, data?.events]);
 
@@ -542,14 +298,6 @@ function HistoryScreen() {
       }
     }
 
-    // From defaults
-    for (const d of DEFAULT_ACTIVITIES) {
-      if (!seenTitles.has(d.title)) {
-        seenTitles.add(d.title);
-        list.push(d);
-      }
-    }
-
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [localActivities, data?.activities]);
 
@@ -569,18 +317,12 @@ function HistoryScreen() {
     });
   }, [allActivities, activityFilter, searchQuery]);
 
-  const tabs: { key: Tab; label: string; icon: typeof ReceiptText; count: number }[] = [
+  const tabs: { key: Tab; label: string; icon: any; count: number }[] = [
     {
       key: "connections",
       label: "Kết nối",
       icon: Handshake as any,
       count: allConnections.length,
-    },
-    {
-      key: "payments",
-      label: t("m.history.tabPayments") || "Đóng phí",
-      icon: ReceiptText,
-      count: allPayments.length,
     },
     {
       key: "events",
@@ -600,7 +342,7 @@ function HistoryScreen() {
     <div className="vba-animate pb-24 min-h-screen bg-slate-50/50 dark:bg-slate-950">
       <MemberHeader
         title={t("m.history.title") || "Lịch sử & Giao dịch"}
-        subtitle={t("m.history.subtitle") || "Theo dõi kết nối, hội phí, vé sự kiện & hoạt động"}
+        subtitle={t("m.history.subtitle") || "Theo dõi kết nối, vé sự kiện & hoạt động"}
         back
       />
 
@@ -643,11 +385,9 @@ function HistoryScreen() {
             placeholder={
               tab === "connections"
                 ? "Tìm theo tên đối tác, công ty..."
-                : tab === "payments"
-                  ? "Tìm mã hóa đơn, nội dung nộp phí..."
-                  : tab === "events"
-                    ? "Tìm tên sự kiện, mã vé, địa điểm..."
-                    : "Tìm nội dung hoạt động..."
+                : tab === "events"
+                  ? "Tìm tên sự kiện, mã vé, địa điểm..."
+                  : "Tìm nội dung hoạt động..."
             }
             className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#001B54] transition shadow-2xs"
           />
@@ -698,44 +438,6 @@ function HistoryScreen() {
                 }`}
               >
                 Đang chờ ({allConnections.filter((c) => c.status === "pending").length})
-              </button>
-            </>
-          )}
-
-          {tab === "payments" && (
-            <>
-              <button
-                type="button"
-                onClick={() => setPaymentFilter("all")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  paymentFilter === "all"
-                    ? "bg-[#001B54] text-white border-[#001B54] font-bold"
-                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
-              >
-                Tất cả ({allPayments.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentFilter("paid")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  paymentFilter === "paid"
-                    ? "bg-[#001B54] text-white border-[#001B54] font-bold"
-                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
-              >
-                Đã thanh toán ({allPayments.filter((p) => p.status === "paid").length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentFilter("pending")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  paymentFilter === "pending"
-                    ? "bg-[#001B54] text-white border-[#001B54] font-bold"
-                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
-              >
-                Chờ xử lý ({allPayments.filter((p) => p.status !== "paid").length})
               </button>
             </>
           )}
@@ -801,17 +503,6 @@ function HistoryScreen() {
                 }`}
               >
                 Kết nối
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivityFilter("đóng phí")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  activityFilter === "đóng phí"
-                    ? "bg-[#001B54] text-white border-[#001B54] font-bold"
-                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
-              >
-                Đóng phí
               </button>
               <button
                 type="button"
@@ -987,84 +678,7 @@ function HistoryScreen() {
           )
         )}
 
-        {/* ================= TAB 2: ĐÓNG PHÍ (PAYMENTS) ================= */}
-        {tab === "payments" && (
-          <div className="space-y-3">
-            {/* Financial Overview Card */}
-            <div className="rounded-2xl bg-gradient-to-br from-[#001B54] to-[#002B70] p-4 text-white shadow-md">
-              <div className="flex items-center justify-between text-xs text-white/80">
-                <span>Tổng chi tiêu & Hội phí đã hoàn tất</span>
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
-              </div>
-              <div className="mt-1 text-2xl font-black tracking-tight text-white">
-                {fmtVND(totalSpent)}
-              </div>
-              <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] text-white/80">
-                <span>Đã đóng: {allPayments.filter((p) => p.status === "paid").length} hóa đơn</span>
-                <button
-                  type="button"
-                  onClick={() => navigate({ to: "/association/renew" })}
-                  className="inline-flex items-center gap-1 bg-white text-[#001B54] px-2.5 py-1 rounded-lg font-bold text-[11px] hover:bg-slate-100 transition shadow-xs cursor-pointer"
-                >
-                  <span>Gia hạn hội viên</span>
-                  <ChevronRight className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-
-            {filteredPayments.length === 0 ? (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-2">
-                <ReceiptText className="h-8 w-8 mx-auto text-slate-300 dark:text-slate-600" />
-                <p className="text-xs text-slate-500 dark:text-slate-400">Không tìm thấy giao dịch nào</p>
-              </div>
-            ) : (
-              filteredPayments.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => setSelectedInvoice(p)}
-                  className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs hover:border-[#001B54]/40 transition cursor-pointer flex items-center gap-3"
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 dark:bg-blue-950/50 text-[#001B54] dark:text-blue-300">
-                    <ReceiptText className="h-5 w-5" />
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-1">
-                      {p.description || p.invoice}
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                      <span>{p.invoice}</span>
-                      <span>·</span>
-                      <span>{fmtDate(p.date)}</span>
-                      {p.method && (
-                        <span className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.2 text-[9.5px] font-bold text-slate-600 dark:text-slate-400 uppercase">
-                          {p.method}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="text-[13px] font-black text-slate-900 dark:text-white">
-                      {fmtVND(p.amount)}
-                    </div>
-                    <span
-                      className={`inline-flex items-center gap-0.5 text-[10px] font-bold mt-0.5 ${
-                        p.status === "paid"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-amber-600 dark:text-amber-400"
-                      }`}
-                    >
-                      {p.status === "paid" ? "Đã thanh toán" : "Chờ xử lý"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ================= TAB 3: SỰ KIỆN (EVENTS) ================= */}
+        {/* ================= TAB 2: SỰ KIỆN (EVENTS) ================= */}
         {tab === "events" && (
           filteredEvents.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-3 shadow-xs">
@@ -1285,93 +899,6 @@ function HistoryScreen() {
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>Lưu vé</span>
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* ================= DIALOG 2: INVOICE RECEIPT MODAL ================= */}
-      {selectedInvoice && (
-        <Dialog open={Boolean(selectedInvoice)} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
-          <DialogContent className="max-w-sm rounded-3xl p-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <DialogHeader className="text-center">
-              <span className="inline-flex items-center justify-center gap-1 text-[10px] font-black uppercase tracking-wider text-[#001B54] dark:text-blue-300">
-                <ReceiptText className="h-3 w-3" />
-                CLB Doanh Nhân CEO 1983
-              </span>
-              <DialogTitle className="text-base font-black text-slate-900 dark:text-white mt-1">
-                Biên Lai Thanh Toán
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                Chứng từ giao dịch tài chính ghi nhận trên hệ thống Hiệp hội
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="mt-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 p-4 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-              <div className="text-center pb-3 border-b border-slate-200 dark:border-slate-700">
-                <div className="text-xs text-slate-400 uppercase font-medium">Số tiền đã nộp</div>
-                <div className="text-2xl font-black text-[#001B54] dark:text-blue-300 mt-0.5">
-                  {fmtVND(selectedInvoice.amount)}
-                </div>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 mt-2">
-                  <CheckCircle2 className="h-3 w-3" />
-                  <span>Giao dịch thành công</span>
-                </span>
-              </div>
-
-              <div className="space-y-2 text-[11.5px]">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Mã hóa đơn:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{selectedInvoice.invoice}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Khoản mục:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 text-right max-w-[180px] line-clamp-1">
-                    {selectedInvoice.description}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Thời gian:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {fmtDate(selectedInvoice.date)} {fmtTime(selectedInvoice.date)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Hình thức:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 uppercase">
-                    {selectedInvoice.method || "Chuyển khoản"}
-                  </span>
-                </div>
-                {selectedInvoice.ref && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Mã tham chiếu:</span>
-                    <span className="font-mono text-[10.5px] text-slate-600 dark:text-slate-400">
-                      {selectedInvoice.ref}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedInvoice(null)}
-                className="flex-1 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition cursor-pointer"
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  toast.success("Đã xuất biên lai thanh toán!");
-                  setSelectedInvoice(null);
-                }}
-                className="flex-1 py-2 rounded-xl bg-[#001B54] hover:bg-[#002B70] text-xs font-bold text-white transition shadow-xs cursor-pointer inline-flex items-center justify-center gap-1"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Xuất biên lai</span>
               </button>
             </div>
           </DialogContent>

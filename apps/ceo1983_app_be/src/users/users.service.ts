@@ -250,12 +250,30 @@ export class UsersService {
       const dept = normalizedDept.toLowerCase();
       const userEmail = (user.email || user.username || '').toLowerCase();
 
+      // 0. ADMIN / QUẢN TRỊ VIÊN KỸ THUẬT HỆ THỐNG & CRM
+      const isSystemAdminUser =
+        user.id === '00000000-0000-0000-0000-000000000000' ||
+        user.id === '00000000-0000-4000-8000-000000000002' ||
+        user.username === 'admin@connect.vn' ||
+        user.email === 'admin@connect.vn' ||
+        userEmail === 'admin@connect.vn' ||
+        userEmail === 'admin1@connect.vn';
+
+      if (isSystemAdminUser) {
+        primaryRole = 'admin';
+        if (!roleList.includes('admin')) roleList.push('admin');
+        if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
+        if (!roleList.includes('bqt')) roleList.push('bqt');
+        if (!roleList.includes('moderator')) roleList.push('moderator');
+      }
+
       // 1. CHỦ TỊCH (Cấp cao nhất của Hiệp hội)
       const isPresidentUser =
-        exec.includes('chủ tịch') ||
-        exec.includes('president') ||
-        exec === 'chu_tich' ||
-        userEmail.includes('chutich');
+        !isSystemAdminUser &&
+        (exec.includes('chủ tịch') ||
+          exec.includes('president') ||
+          exec === 'chu_tich' ||
+          userEmail.includes('chutich'));
 
       if (isPresidentUser) {
         primaryRole = 'chu_tich';
@@ -267,9 +285,116 @@ export class UsersService {
         if (!roleList.includes('bqt')) roleList.push('bqt');
       }
 
-      // 2. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
-      const isAdminUser =
+      // 2. TỔNG THƯ KÝ
+      const isGeneralSecretary =
+        !isSystemAdminUser &&
         !isPresidentUser &&
+        (exec === 'tong_thu_ky' ||
+          (exec.includes('thư ký') && exec.includes('tổng')) ||
+          userEmail.includes('tongthuky'));
+
+      if (isGeneralSecretary) {
+        primaryRole = 'tong_thu_ky';
+        if (!roleList.includes('tong_thu_ky')) roleList.push('tong_thu_ky');
+        if (!roleList.includes('ban_thu_ky')) roleList.push('ban_thu_ky');
+        if (!roleList.includes('btk')) roleList.push('btk');
+        if (!roleList.includes('moderator')) roleList.push('moderator');
+        if (!roleList.includes('admin')) roleList.push('admin');
+      }
+
+      // 3. BAN ĐIỀU HÀNH (Cấp lãnh đạo điều hành hiệp hội)
+      const isExecutiveUser =
+        !isSystemAdminUser &&
+        !isPresidentUser &&
+        !isGeneralSecretary &&
+        (exec === 'ban_dieu_hanh' ||
+          exec === 'truong_ban_dieu_hanh' ||
+          exec === 'pho_chu_tich' ||
+          exec === 'vice_president' ||
+          exec.includes('phó chủ tịch') ||
+          exec.includes('điều hành') ||
+          dept.includes('điều hành') ||
+          userEmail.includes('dieuhanh'));
+
+      if (isExecutiveUser) {
+        primaryRole = 'ban_dieu_hanh';
+        if (!roleList.includes('ban_dieu_hanh')) roleList.push('ban_dieu_hanh');
+        if (!roleList.includes('moderator')) roleList.push('moderator');
+        if (!roleList.includes('admin')) roleList.push('admin');
+      }
+
+      // 4. TRƯỞNG BAN CÁC BAN CHUYÊN MÔN
+      let isDepartmentLeader = false;
+      if (!isSystemAdminUser && !isPresidentUser && !isGeneralSecretary && !isExecutiveUser) {
+        if (exec.includes('truyền thông') || dept.includes('truyền thông') || userEmail.includes('truyenthong')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('truyenthong')) {
+            primaryRole = 'truong_ban_truyen_thong';
+            isDepartmentLeader = true;
+            if (!roleList.includes('truong_ban_truyen_thong')) roleList.push('truong_ban_truyen_thong');
+            if (!roleList.includes('btt')) roleList.push('btt');
+            if (!roleList.includes('moderator')) roleList.push('moderator');
+            if (!roleList.includes('admin')) roleList.push('admin');
+          } else {
+            if (!roleList.includes('btt')) roleList.push('btt');
+          }
+        } else if (exec.includes('thành viên') || (dept.includes('thành viên') && !dept.includes('hội viên')) || userEmail.includes('thanhvien')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('thanhvien')) {
+            primaryRole = 'truong_ban_thanh_vien';
+            isDepartmentLeader = true;
+            if (!roleList.includes('truong_ban_thanh_vien')) roleList.push('truong_ban_thanh_vien');
+            if (!roleList.includes('btv')) roleList.push('btv');
+            if (!roleList.includes('moderator')) roleList.push('moderator');
+            if (!roleList.includes('admin')) roleList.push('admin');
+          } else {
+            if (!roleList.includes('btv')) roleList.push('btv');
+          }
+        } else if (exec.includes('xúc tiến') || dept.includes('xúc tiến') || userEmail.includes('xuctien')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('xuctien')) {
+            primaryRole = 'truong_ban_xuc_tien';
+            isDepartmentLeader = true;
+            if (!roleList.includes('truong_ban_xuc_tien')) roleList.push('truong_ban_xuc_tien');
+            if (!roleList.includes('bxt')) roleList.push('bxt');
+            if (!roleList.includes('moderator')) roleList.push('moderator');
+            if (!roleList.includes('admin')) roleList.push('admin');
+          } else {
+            if (!roleList.includes('bxt')) roleList.push('bxt');
+          }
+        } else if (exec.includes('tài chính') || dept.includes('tài chính') || userEmail.includes('taichinh')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('taichinh')) {
+            primaryRole = 'truong_ban_tai_chinh';
+            isDepartmentLeader = true;
+            if (!roleList.includes('truong_ban_tai_chinh')) roleList.push('truong_ban_tai_chinh');
+            if (!roleList.includes('btc')) roleList.push('btc');
+            if (!roleList.includes('moderator')) roleList.push('moderator');
+            if (!roleList.includes('admin')) roleList.push('admin');
+          } else {
+            if (!roleList.includes('btc')) roleList.push('btc');
+          }
+        } else if (exec.includes('thiện nguyện') || dept.includes('thiện nguyện') || userEmail.includes('thiennguyen')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('thiennguyen')) {
+            primaryRole = 'truong_ban_thien_nguyen';
+            isDepartmentLeader = true;
+            if (!roleList.includes('truong_ban_thien_nguyen')) roleList.push('truong_ban_thien_nguyen');
+            if (!roleList.includes('btn')) roleList.push('btn');
+            if (!roleList.includes('moderator')) roleList.push('moderator');
+            if (!roleList.includes('admin')) roleList.push('admin');
+          } else {
+            if (!roleList.includes('btn')) roleList.push('btn');
+          }
+        } else if (exec.includes('thư ký') || dept.includes('thư ký') || userEmail.includes('thuky')) {
+          primaryRole = 'ban_thu_ky';
+          if (!roleList.includes('ban_thu_ky')) roleList.push('ban_thu_ky');
+          if (!roleList.includes('btk')) roleList.push('btk');
+        }
+      }
+
+      // 5. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
+      const isAdminUser =
+        !isSystemAdminUser &&
+        !isPresidentUser &&
+        !isGeneralSecretary &&
+        !isExecutiveUser &&
+        !isDepartmentLeader &&
         (user.id === '00000000-0000-0000-0000-000000000000' ||
           user.id === '00000000-0000-4000-8000-000000000002' ||
           user.username === 'admin@connect.vn' ||
@@ -287,99 +412,6 @@ export class UsersService {
         primaryRole = 'admin';
         if (!roleList.includes('admin')) roleList.push('admin');
         if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
-      }
-
-      // 3. BAN ĐIỀU HÀNH (Thay thế Ban Quản Trị cũ, cấp lãnh đạo điều hành hiệp hội)
-      const isExecutiveUser =
-        !isPresidentUser &&
-        !isAdminUser &&
-        (exec === 'ban_dieu_hanh' ||
-          exec === 'truong_ban_dieu_hanh' ||
-          exec === 'pho_chu_tich' ||
-          exec === 'vice_president' ||
-          exec === 'bqt' ||
-          exec === 'truong_ban_quan_tri' ||
-          exec.includes('phó chủ tịch') ||
-          exec.includes('điều hành') ||
-          dept.includes('điều hành') ||
-          dept.includes('quản trị'));
-
-      if (isExecutiveUser) {
-        primaryRole = 'ban_dieu_hanh';
-        if (!roleList.includes('ban_dieu_hanh')) roleList.push('ban_dieu_hanh');
-        if (!roleList.includes('bqt')) roleList.push('bqt');
-        if (!roleList.includes('moderator')) roleList.push('moderator');
-      }
-
-      // 4. TỔNG THƯ KÝ
-      const isGeneralSecretary =
-        !isPresidentUser &&
-        !isAdminUser &&
-        !isExecutiveUser &&
-        (exec === 'tong_thu_ky' ||
-          (exec.includes('thư ký') && exec.includes('tổng')) ||
-          userEmail.includes('tongthuky'));
-
-      if (isGeneralSecretary) {
-        primaryRole = 'tong_thu_ky';
-        if (!roleList.includes('tong_thu_ky')) roleList.push('tong_thu_ky');
-        if (!roleList.includes('ban_thu_ky')) roleList.push('ban_thu_ky');
-        if (!roleList.includes('btk')) roleList.push('btk');
-        if (!roleList.includes('moderator')) roleList.push('moderator');
-      }
-
-      // 5. TRƯỞNG BAN CÁC BAN CHUYÊN MÔN
-      if (!isPresidentUser && !isAdminUser && !isExecutiveUser && !isGeneralSecretary) {
-        if (exec.includes('truyền thông') || dept.includes('truyền thông') || userEmail.includes('truyenthong')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('truyenthong')) {
-            primaryRole = 'truong_ban_truyen_thong';
-            if (!roleList.includes('truong_ban_truyen_thong')) roleList.push('truong_ban_truyen_thong');
-            if (!roleList.includes('btt')) roleList.push('btt');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-          } else {
-            if (!roleList.includes('btt')) roleList.push('btt');
-          }
-        } else if (exec.includes('thành viên') || (dept.includes('thành viên') && !dept.includes('hội viên')) || userEmail.includes('thanhvien')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('thanhvien')) {
-            primaryRole = 'truong_ban_thanh_vien';
-            if (!roleList.includes('truong_ban_thanh_vien')) roleList.push('truong_ban_thanh_vien');
-            if (!roleList.includes('btv')) roleList.push('btv');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-          } else {
-            if (!roleList.includes('btv')) roleList.push('btv');
-          }
-        } else if (exec.includes('xúc tiến') || dept.includes('xúc tiến') || userEmail.includes('xuctien')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('xuctien')) {
-            primaryRole = 'truong_ban_xuc_tien';
-            if (!roleList.includes('truong_ban_xuc_tien')) roleList.push('truong_ban_xuc_tien');
-            if (!roleList.includes('bxt')) roleList.push('bxt');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-          } else {
-            if (!roleList.includes('bxt')) roleList.push('bxt');
-          }
-        } else if (exec.includes('tài chính') || dept.includes('tài chính') || userEmail.includes('taichinh')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('taichinh')) {
-            primaryRole = 'truong_ban_tai_chinh';
-            if (!roleList.includes('truong_ban_tai_chinh')) roleList.push('truong_ban_tai_chinh');
-            if (!roleList.includes('btc')) roleList.push('btc');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-          } else {
-            if (!roleList.includes('btc')) roleList.push('btc');
-          }
-        } else if (exec.includes('thiện nguyện') || dept.includes('thiện nguyện') || userEmail.includes('thiennguyen')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('thiennguyen')) {
-            primaryRole = 'truong_ban_thien_nguyen';
-            if (!roleList.includes('truong_ban_thien_nguyen')) roleList.push('truong_ban_thien_nguyen');
-            if (!roleList.includes('btn')) roleList.push('btn');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-          } else {
-            if (!roleList.includes('btn')) roleList.push('btn');
-          }
-        } else if (exec.includes('thư ký') || dept.includes('thư ký') || userEmail.includes('thuky')) {
-          primaryRole = 'ban_thu_ky';
-          if (!roleList.includes('ban_thu_ky')) roleList.push('ban_thu_ky');
-          if (!roleList.includes('btk')) roleList.push('btk');
-        }
       }
 
       if (roleList.length === 0) {

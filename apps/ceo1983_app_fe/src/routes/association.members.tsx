@@ -1024,10 +1024,10 @@ function MembersScreen() {
         <button
           type="button"
           onClick={() => setInviteModalOpen(true)}
-          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2.5 text-[12px] font-bold text-white shadow-md active:scale-95 transition cursor-pointer whitespace-nowrap"
+          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 px-3.5 py-2.5 text-[12px] font-black text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer whitespace-nowrap"
           title="Mời hội viên tham gia danh bạ CEO"
         >
-          <UserPlus className="h-4 w-4 text-amber-300 shrink-0" />
+          <UserPlus className="h-4 w-4 text-slate-950 shrink-0" />
           <span className="hidden sm:inline">Thêm CEO</span>
         </button>
       </div>
@@ -1041,11 +1041,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("connected")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "connected"
-              ? "bg-[#003B95] text-white shadow-sm ring-1 ring-[#003B95]"
+              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <UserCheck className="h-3.5 w-3.5 text-amber-300" />
+          <UserCheck className={`h-3.5 w-3.5 ${tab === "connected" ? "text-slate-950" : "text-amber-500"}`} />
           <span>Danh bạ ({connectedMembers.length})</span>
         </button>
 
@@ -1053,11 +1053,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("discover")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "discover"
-              ? "bg-[#003B95] text-white shadow-sm ring-1 ring-[#003B95]"
+              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <Compass className="h-3.5 w-3.5" />
+          <Compass className={`h-3.5 w-3.5 ${tab === "discover" ? "text-slate-950" : "text-amber-500"}`} />
           <span>Khám phá ({discoverMembers.length})</span>
         </button>
 
@@ -1065,11 +1065,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("sent")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "sent"
-              ? "bg-[#003B95] text-white shadow-sm ring-1 ring-[#003B95]"
+              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <Clock className="h-3.5 w-3.5" />
+          <Clock className={`h-3.5 w-3.5 ${tab === "sent" ? "text-slate-950" : "text-amber-500"}`} />
           <span>Lời mời ({sentList.length})</span>
         </button>
 
@@ -1077,11 +1077,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("meetings")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "meetings"
-              ? "bg-[#003B95] text-white shadow-sm ring-1 ring-[#003B95]"
+              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <Handshake className="h-3.5 w-3.5 text-amber-500" />
+          <Handshake className={`h-3.5 w-3.5 ${tab === "meetings" ? "text-slate-950" : "text-amber-500"}`} />
           <span>Lịch hẹn ({meetingsList.length})</span>
         </button>
       </div>
@@ -1116,9 +1116,9 @@ function MembersScreen() {
                   <button
                     type="button"
                     onClick={() => handleSelectTab("discover")}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-4 py-2.5 text-[12px] font-bold shadow-md transition active:scale-95 cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-4 py-2.5 text-[12px] shadow-md shadow-amber-500/20 transition active:scale-95 cursor-pointer"
                   >
-                    <Compass className="h-4 w-4 text-amber-300" />
+                    <Compass className="h-4 w-4 text-slate-950" />
                     <span>Tìm CEO để kết nối ngay</span>
                   </button>
                   <button
@@ -1462,9 +1462,9 @@ function MembersScreen() {
                         <button
                           type="button"
                           onClick={() => handleConnect(m)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-1.5 text-[11px] font-bold shadow-xs active:scale-95 transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-3 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer"
                         >
-                          <UserPlus className="h-3.5 w-3.5 text-amber-300" />
+                          <UserPlus className="h-3.5 w-3.5 text-slate-950" />
                           <span>Kết nối</span>
                         </button>
                       )}
@@ -1643,9 +1643,9 @@ function MembersScreen() {
                         <button
                           type="button"
                           onClick={() => handleOpenChat(partnerChatCode, partnerDisplayName)}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#003B95] hover:bg-blue-900 text-white text-[11px] font-bold shadow-xs active:scale-95 transition cursor-pointer flex items-center gap-1"
+                          className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer flex items-center gap-1"
                         >
-                          <MessageSquare className="h-3.5 w-3.5" />
+                          <MessageSquare className="h-3.5 w-3.5 text-slate-950" />
                           <span>Nhắn tin</span>
                         </button>
 

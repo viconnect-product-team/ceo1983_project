@@ -1,7 +1,7 @@
 services:
   frontend:
-    image: ${FRONTEND_IMAGE_NAME:-vione-frontend}:latest
-    container_name: vione-frontend-prod
+    image: ${FRONTEND_IMAGE_NAME:-ceo1983-frontend}:latest
+    container_name: ceo1983-frontend-prod
     restart: always
     env_file:
       - .env
@@ -15,11 +15,11 @@ services:
     depends_on:
       - backend
     networks:
-      - vione-network
+      - ceo1983-network
 
   backend:
-    image: ${BACKEND_IMAGE_NAME:-vione-backend}:latest
-    container_name: vione-backend-prod
+    image: ${BACKEND_IMAGE_NAME:-ceo1983-backend}:latest
+    container_name: ceo1983-backend-prod
     restart: always
     env_file:
       - .env
@@ -31,11 +31,11 @@ services:
     depends_on:
       - minio
     networks:
-      - vione-network
+      - ceo1983-network
 
   minio:
     image: minio/minio:latest
-    container_name: vione-minio-prod
+    container_name: ceo1983-minio-prod
     restart: always
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
@@ -44,15 +44,15 @@ services:
       - "9050:9000"
       - "9051:9001"
     volumes:
-      - vione-minio-data-prod:/data
+      - ceo1983-minio-data-prod:/data
     command: server /data --console-address ":9001"
     networks:
-      - vione-network
+      - ceo1983-network
 
 volumes:
-  vione-minio-data-prod:
+  ceo1983-minio-data-prod:
     driver: local
 
 networks:
-  vione-network:
+  ceo1983-network:
     driver: bridge

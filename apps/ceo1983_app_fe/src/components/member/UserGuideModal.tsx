@@ -595,7 +595,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                     </span>
                     <a
                       href="tel:0983000001"
-                      className="px-2.5 py-1 rounded-lg bg-[#003B95] text-white font-bold text-[11px] hover:bg-[#002B70] transition shadow-xs"
+                      className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-[11px] transition shadow-xs shadow-amber-500/20"
                     >
                       Gọi ngay
                     </a>

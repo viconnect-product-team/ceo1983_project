@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { X, IdCard, QrCode, Nfc, Check, ShieldAlert, XCircle } from "lucide-react";
+import { X, IdCard, QrCode, Nfc, Check, ShieldAlert, XCircle, ExternalLink } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { nfcSupport, type NfcSupport } from "@/lib/business-card-nfc";
 import { resolveTheme } from "@/lib/business-card/business-card.share";
@@ -165,6 +165,16 @@ export function CardPreviewModal({
               )}
             </div>
           </div>
+
+          <a
+            href={`/b/${slug}?preview=true`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white py-2.5 px-4 text-[13px] font-bold shadow-sm transition-all"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Xem giao diện đầy đủ
+          </a>
         </div>
       </div>
     </div>

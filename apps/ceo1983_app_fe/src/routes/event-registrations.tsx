@@ -6,8 +6,10 @@ import {
   CheckCircle2,
   Clock,
   Coins,
+  Crown,
   Download,
   FileText,
+  Layers,
   MapPin,
   QrCode,
   Search,
@@ -16,6 +18,7 @@ import {
   Trash2,
   Users,
   Utensils,
+  ArrowLeftRight,
   X,
   XCircle,
   RefreshCw,
@@ -100,7 +103,10 @@ function RegPage() {
   }, []);
 
   const EVENTS = eventsList;
-  const REGISTRATIONS = registrationsList;
+  // Dữ liệu người hủy tham dự biến mất hoàn toàn khỏi CRM theo yêu cầu
+  const REGISTRATIONS = useMemo(() => {
+    return registrationsList.filter((r) => r.status !== "cancelled");
+  }, [registrationsList]);
 
   const updateSeating = useServerFn(updateRegistrationSeatingFn);
   const recordCash = useServerFn(recordWalkInCashPaymentFn);
@@ -138,10 +144,14 @@ function RegPage() {
 
   // Map of occupied seats for Cinema seating visual chart
   const occupiedSeatsMap = useMemo(() => {
-    const map: Record<string, { attendeeName: string; attendeeCode?: string; company?: string; ticketType?: string; status?: string }> = {};
+    const map: Record<
+      string,
+      { registrationId?: string; attendeeName: string; attendeeCode?: string; company?: string; ticketType?: string; status?: string }
+    > = {};
     REGISTRATIONS.forEach((r) => {
-      if (r.seatAssignment && r.id !== selectedReg?.id) {
+      if (r.seatAssignment && r.status !== "cancelled" && r.id !== selectedReg?.id) {
         const info = {
+          registrationId: r.id,
           attendeeName: r.memberName,
           attendeeCode: r.memberCode,
           company: r.company || "",
@@ -203,8 +213,8 @@ function RegPage() {
 
   const confirmed = REGISTRATIONS.filter((r) => r.status === "confirmed").length;
   const paidCount = REGISTRATIONS.filter((r) => r.paymentStatus === "paid").length;
-  const pendingCount = REGISTRATIONS.filter((r) => r.paymentStatus !== "paid" && r.status !== "cancelled").length;
-  const cancelled = REGISTRATIONS.filter((r) => r.status === "cancelled").length;
+  const pendingCount = REGISTRATIONS.filter((r) => r.paymentStatus !== "paid").length;
+  const seatedCount = REGISTRATIONS.filter((r) => !!r.seatAssignment).length;
 
   const handleOpenSeating = (r: Registration) => {
     setSelectedReg(r);
@@ -212,8 +222,46 @@ function RegPage() {
     setSeatingModalOpen(true);
   };
 
+  const handleMoveSeat = async (fromSeat: string, toSeat: string, occupant: any) => {
+    const targetReg = REGISTRATIONS.find(
+      (r) =>
+        r.id === occupant.registrationId ||
+        r.seatAssignment === fromSeat ||
+        r.memberName === occupant.attendeeName,
+    );
+    if (!targetReg) {
+      toast.error("Không tìm thấy thông tin đại biểu cần chuyển ghế");
+      return;
+    }
+
+    try {
+      await updateSeating({
+        data: {
+          registrationId: targetReg.id,
+          seatAssignment: toSeat,
+        },
+      });
+
+      setRegistrationsList((prev) =>
+        prev.map((r) => (r.id === targetReg.id ? { ...r, seatAssignment: toSeat } : r)),
+      );
+      if (selectedReg && selectedReg.id === targetReg.id) {
+        setSelectedReg((prev) => (prev ? { ...prev, seatAssignment: toSeat } : null));
+        setSeatInput(toSeat);
+      }
+
+      toast.success(`Đã chuyển đại biểu ${targetReg.memberName} sang ${toSeat}`);
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi chuyển chỗ ngồi");
+    }
+  };
+
   const handleSaveSeating = async () => {
-    if (!selectedReg || !seatInput.trim()) return;
+    if (!selectedReg || !seatInput.trim()) {
+      setSeatingModalOpen(false);
+      return;
+    }
     setSubmitting(true);
     try {
       await updateSeating({
@@ -222,6 +270,9 @@ function RegPage() {
           seatAssignment: seatInput.trim(),
         },
       });
+      setRegistrationsList((prev) =>
+        prev.map((r) => (r.id === selectedReg.id ? { ...r, seatAssignment: seatInput.trim() } : r)),
+      );
       toast.success(`Đã xếp chỗ cho ${selectedReg.memberName}: ${seatInput.trim()}`);
       setSeatingModalOpen(false);
       await router.invalidate();
@@ -409,10 +460,21 @@ function RegPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
+                setSelectedReg(null);
+                setSeatInput("");
+                setSeatingModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-muted px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition cursor-pointer"
+            >
+              <Layers className="h-4 w-4 text-primary" />
+              Sơ Đồ Xếp Chỗ
+            </button>
+            <button
+              onClick={() => {
                 setAttendeeMode("qr");
                 setAddAttendeeModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition cursor-pointer"
             >
               <QrCode className="h-4 w-4" />
               + Quét QR / Thêm người tham gia
@@ -445,10 +507,10 @@ function RegPage() {
           icon={<Clock className="h-4 w-4" />}
         />
         <StatCard
-          label="Đã Hủy / Quá Hạn Nhắc"
-          value={cancelled}
-          tone="danger"
-          icon={<XCircle className="h-4 w-4" />}
+          label="Đã Xếp Chỗ Ngồi"
+          value={seatedCount}
+          tone="info"
+          icon={<Crown className="h-4 w-4" />}
         />
       </div>
 
@@ -492,7 +554,6 @@ function RegPage() {
           <option value="all">{t("common.allStatuses")}</option>
           <option value="confirmed">{t("reg.status.confirmed")}</option>
           <option value="waitlist">{t("reg.status.waitlist")}</option>
-          <option value="cancelled">{t("reg.status.cancelled")}</option>
         </select>
       </div>
 
@@ -695,16 +756,23 @@ function RegPage() {
       </div>
 
       {/* Seating Assignment Modal with Cinema-Style Graphical Map */}
-      {seatingModalOpen && selectedReg && (
+      {seatingModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4 backdrop-blur-xs overflow-y-auto">
-          <div className="w-full max-w-3xl rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-2xl my-auto max-h-[95vh] overflow-y-auto">
+          <div className="w-full max-w-4xl rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-2xl my-auto max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-                  <span>Sơ Đồ Xếp Chỗ Sự Kiện (Hội Trường / Bàn Tiệc Gala)</span>
+                  <Layers className="h-5 w-5 text-primary" />
+                  <span>Sơ Đồ Xếp Chỗ & Điều Phối Sự Kiện (Hội Trường / Bàn Tiệc Gala)</span>
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Đang xếp chỗ cho: <strong className="text-foreground font-semibold">{selectedReg.memberName}</strong> ({selectedReg.memberCode}) · Vé: {selectedReg.ticketType || "VIP"}
+                  {selectedReg ? (
+                    <>
+                      Đang xếp chỗ cho: <strong className="text-foreground font-semibold">{selectedReg.memberName}</strong> ({selectedReg.memberCode}) · Vé: {selectedReg.ticketType || "VIP"}
+                    </>
+                  ) : (
+                    "Kéo thả hoặc click chọn đại biểu để chuyển/đổi vị trí ngồi nhanh chóng trên sơ đồ."
+                  )}
                 </p>
               </div>
               <button
@@ -721,61 +789,66 @@ function RegPage() {
                 currentSeat={seatInput}
                 occupiedSeats={occupiedSeatsMap}
                 onSelectSeat={(seatLabel) => setSeatInput(seatLabel)}
+                onMoveSeat={handleMoveSeat}
               />
             </div>
 
             {/* Selected Seat Text & Quick Overrides */}
-            <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <label className="text-xs font-semibold text-foreground">
-                  Vị trí đã chọn (Tự động hiển thị khi quét QR check-in):
-                </label>
-                <input
-                  type="text"
-                  value={seatInput}
-                  onChange={(e) => setSeatInput(e.target.value)}
-                  placeholder="Click vào ghế trên sơ đồ hoặc nhập trực tiếp..."
-                  className="w-full sm:w-80 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 outline-none focus:border-primary"
-                />
-              </div>
+            {selectedReg && (
+              <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="text-xs font-semibold text-foreground">
+                    Vị trí đã chọn cho {selectedReg.memberName} (Tự động hiển thị khi quét QR check-in):
+                  </label>
+                  <input
+                    type="text"
+                    value={seatInput}
+                    onChange={(e) => setSeatInput(e.target.value)}
+                    placeholder="Click vào ghế trên sơ đồ hoặc nhập trực tiếp..."
+                    className="w-full sm:w-80 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 outline-none focus:border-primary"
+                  />
+                </div>
 
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] font-medium text-muted-foreground">Chọn nhanh:</span>
-                {[
-                  "Hàng VIP A - Ghế A-01",
-                  "Hàng VIP B - Ghế B-02",
-                  "Bàn VIP 01 - Ban Chủ Tọa - Ghế 1",
-                  "Bàn VIP 02 - Khách Mời Danh Dự - Ghế 1",
-                  "Bàn 03 - Ban Xúc Tiến B2B - Ghế 1",
-                  "Bàn 04 - Hội Viên CEO 1983 - Ghế 1",
-                  "Khu Khách Mời Tự Do",
-                ].map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setSeatInput(preset)}
-                    className="rounded-lg border border-border bg-secondary/70 px-2 py-0.5 text-[11px] font-medium text-foreground hover:border-primary hover:bg-secondary cursor-pointer"
-                  >
-                    {preset}
-                  </button>
-                ))}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] font-medium text-muted-foreground">Chọn nhanh:</span>
+                  {[
+                    "Hàng VIP A - Ghế A-01",
+                    "Hàng VIP B - Ghế B-02",
+                    "Bàn VIP 01 - Ban Chủ Tọa - Ghế 1",
+                    "Bàn VIP 02 - Khách Mời Danh Dự - Ghế 1",
+                    "Bàn 03 - Ban Xúc Tiến B2B - Ghế 1",
+                    "Bàn 04 - Hội Viên CEO 1983 - Ghế 1",
+                    "Khu Khách Mời Tự Do",
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setSeatInput(preset)}
+                      className="rounded-lg border border-border bg-secondary/70 px-2 py-0.5 text-[11px] font-medium text-foreground hover:border-primary hover:bg-secondary cursor-pointer"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="mt-6 flex items-center justify-end gap-2">
               <button
                 onClick={() => setSeatingModalOpen(false)}
-                className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-muted"
+                className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer"
               >
-                Hủy
+                {selectedReg ? "Hủy" : "Đóng"}
               </button>
-              <button
-                onClick={handleSaveSeating}
-                disabled={submitting}
-                className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:opacity-95 disabled:opacity-50"
-              >
-                {submitting ? "Đang lưu..." : "Xác Nhận Xếp Chỗ"}
-              </button>
+              {selectedReg && (
+                <button
+                  onClick={handleSaveSeating}
+                  disabled={submitting}
+                  className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:opacity-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {submitting ? "Đang lưu..." : "Xác Nhận Xếp Chỗ"}
+                </button>
+              )}
             </div>
           </div>
         </div>

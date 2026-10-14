@@ -60,16 +60,18 @@ export function parseNumericValue(val: string | number, curr: CurrencyType): num
   return Number.isFinite(num) ? num : 0;
 }
 
-export function parsePriceToNumber(priceVal: string | number | null | undefined): number {
+export function parsePriceToNumber(priceVal: string | number | null | undefined, curr: CurrencyType = "VND"): number {
   if (priceVal === undefined || priceVal === null || priceVal === "") return 0;
   if (typeof priceVal === "number") return Number.isFinite(priceVal) ? priceVal : 0;
   const str = String(priceVal).trim();
-  const dotCount = (str.match(/\./g) || []).length;
-  // If multiple dots, or single dot followed by 3 digits without comma (Vietnamese thousand separator)
-  if (dotCount > 1 || (dotCount === 1 && !str.includes(",") && /^\d+\.\d{3}$/.test(str))) {
-    return parseInt(str.replace(/\D/g, ""), 10) || 0;
+  if (curr === "VND") {
+    // In VND, all dots and commas are thousand separators, NEVER decimal points
+    const digits = str.replace(/\D/g, "");
+    return digits ? parseInt(digits, 10) : 0;
   }
-  return parseFloat(str.replace(/,/g, "").replace(/[^0-9.]/g, "")) || 0;
+  const clean = str.replace(/[^0-9.]/g, "");
+  const num = parseFloat(clean);
+  return Number.isFinite(num) ? num : 0;
 }
 
 export function FormattedCurrencyInput({
@@ -101,19 +103,10 @@ export function FormattedCurrencyInput({
 
   // Sync external value changes safely without overriding in-progress typing
   useEffect(() => {
+    if (isFocusedRef.current) return;
     const formatted = curr === "USD" ? formatUsd(value) : formatVnd(value);
-    const externalNum = parsePriceToNumber(value);
-    const currentNum = parsePriceToNumber(displayValue);
-
-    if (isFocusedRef.current) {
-      // If user is actively typing, only override if external value changed radically (e.g. form reset)
-      if (externalNum !== currentNum) {
-        setDisplayValue(formatted);
-      }
-    } else {
-      if (formatted !== displayValue) {
-        setDisplayValue(formatted);
-      }
+    if (formatted !== displayValue) {
+      setDisplayValue(formatted);
     }
   }, [value, curr]);
 
@@ -169,8 +162,7 @@ export function FormattedCurrencyInput({
     const cursor = e.target.selectionStart ?? raw.length;
 
     if (curr === "VND") {
-      // Digits to the right of cursor before reformatting (invariant anchor)
-      const digitsToRight = raw.slice(cursor).replace(/\D/g, "").length;
+      const digitsBeforeCursor = raw.slice(0, cursor).replace(/\D/g, "").length;
       const digitsOnly = raw.replace(/\D/g, "");
 
       if (!digitsOnly) {
@@ -183,27 +175,24 @@ export function FormattedCurrencyInput({
       const cleanDigits = digitsOnly.replace(/^0+(?=\d)/, "");
       const formatted = cleanDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-      // If no separators changed and raw matches cleanDigits, do not force selection range
-      if (raw === formatted && cleanDigits.length <= 3) {
-        nextCursorPosRef.current = null;
+      let newCursor = 0;
+      if (digitsBeforeCursor === 0) {
+        newCursor = 0;
       } else {
-        // Calculate cursor position from right side invariant
-        let newCursor = formatted.length;
-        if (digitsToRight > 0) {
-          let count = 0;
-          for (let i = formatted.length - 1; i >= 0; i--) {
-            if (/\d/.test(formatted[i])) {
-              count++;
-              if (count === digitsToRight) {
-                newCursor = i;
-                break;
-              }
-            }
+        let countedDigits = 0;
+        for (let i = 0; i < formatted.length; i++) {
+          if (/\d/.test(formatted[i])) {
+            countedDigits++;
+          }
+          if (countedDigits === digitsBeforeCursor) {
+            newCursor = i + 1;
+            break;
           }
         }
-        nextCursorPosRef.current = newCursor;
+        if (newCursor === 0) newCursor = formatted.length;
       }
 
+      nextCursorPosRef.current = newCursor;
       setDisplayValue(formatted);
       const numVal = parseInt(cleanDigits, 10) || 0;
       onChange(formatted, numVal, "VND");
@@ -312,14 +301,12 @@ export function FormattedCurrencyInput({
           isComposingRef.current = false;
           handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
         }}
-        onFocus={(e) => {
+        onFocus={() => {
           isFocusedRef.current = true;
           if (displayValue === "0" || displayValue === "0 đ" || displayValue === "$0") {
             setDisplayValue("");
             nextCursorPosRef.current = null;
             onChange("", 0, curr);
-          } else {
-            e.target.select();
           }
         }}
         onBlur={() => {

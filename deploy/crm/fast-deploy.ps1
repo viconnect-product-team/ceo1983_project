@@ -64,9 +64,9 @@ try {
                 Write-Host "`n[0/5] Build Frontend CRM Platform (Web) cuc bo voi Scope = crm_platform..." -ForegroundColor Cyan
                 $env:NODE_OPTIONS = "--max-old-space-size=4096"
                 $env:VITE_APP_SCOPE = "crm_platform"
-                $env:VITE_APP_NAME = "ViOne CRM Platform"
+                $env:VITE_APP_NAME = "CEO 1983 CRM Admin"
                 if ($EnableHttps) {
-                    $env:VITE_PUBLIC_APP_URL = "https://14.225.217.232:5443"
+                    $env:VITE_PUBLIC_APP_URL = "https://crm.ceo1983.viconnect.vn"
                 } else {
                     $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5004"
                 }
@@ -197,7 +197,7 @@ try {
         $remoteLoadCmd += "docker load -i crm-frontend.tar.gz; rm -f crm-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.crm 2>/dev/null || true; touch .env.crm; sed -i 's/\r//g' .env.crm docker-compose.yml; docker network create ceo1983-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
 
     Invoke-CheckedCommand -Description "Thuc thi cau truc container doc lap Web CRM Platform" -MaxRetries 3 -Action {
         ssh @SSH_OPTS "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD

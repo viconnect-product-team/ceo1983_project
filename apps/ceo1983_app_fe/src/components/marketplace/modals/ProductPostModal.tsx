@@ -62,7 +62,35 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
   formDesc,
   setFormDesc,
 }) => {
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+
   if (!isOpen || typeof document === "undefined") return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: Record<string, string> = {};
+    if (!formCompany.trim()) {
+      newErrors.company = isEn ? "Please enter company / brand name" : "Vui lòng nhập tên doanh nghiệp / thương hiệu";
+    }
+    if (!formName.trim()) {
+      newErrors.name = isEn ? "Please enter product name" : "Vui lòng nhập tên sản phẩm / dịch vụ";
+    }
+    const cleanPrice = Number(formPrice.replace(/\D/g, ""));
+    if (!formPrice.trim() || isNaN(cleanPrice) || cleanPrice <= 0) {
+      newErrors.price = isEn ? "Please enter a valid price (> 0)" : "Vui lòng nhập giá ưu đãi hội viên (> 0 đ)";
+    }
+    if (!formDesc.trim()) {
+      newErrors.desc = isEn ? "Please enter product description" : "Vui lòng nhập mô tả sản phẩm & cam kết chất lượng";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error(isEn ? "Please complete all required fields (*)" : "Vui lòng điền đầy đủ các thông tin bắt buộc (*)");
+      return;
+    }
+    setErrors({});
+    onSubmit(e);
+  };
 
   return createPortal(
     <div
@@ -87,7 +115,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:thin]">
             {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
             <div className="rounded-2xl border border-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10 p-3.5 space-y-3">
@@ -98,16 +126,25 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
 
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                  {isEn ? "Company / Brand Name *" : "Tên Doanh Nghiệp / Thương Hiệu *"}
+                  {isEn ? "Company / Brand Name" : "Tên Doanh Nghiệp / Thương Hiệu"} <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <input
                   type="text"
-                  required
                   value={formCompany}
-                  onChange={(e) => setFormCompany(e.target.value)}
+                  onChange={(e) => {
+                    setFormCompany(e.target.value);
+                    if (errors.company) setErrors((prev) => ({ ...prev, company: "" }));
+                  }}
                   placeholder={isEn ? "Company name" : "Ví dụ: Công ty Cổ phần Công nghệ ABC"}
-                  className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
+                  className={`w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition ${
+                    errors.company ? "ring-2 ring-rose-500" : "ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
+                  }`}
                 />
+                {errors.company && (
+                  <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
+                    {errors.company}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -171,7 +208,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
               {/* Photo Upload */}
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                  {isEn ? "Product Image (Clear & Required)" : "Ảnh sản phẩm (Bắt buộc & Rõ nét)"}
+                  {isEn ? "Product Image" : "Ảnh sản phẩm (Rõ nét)"}
                 </label>
                 {formPhoto ? (
                   <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
@@ -222,16 +259,25 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
 
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                  {isEn ? "Product / Service Name *" : "Tên sản phẩm / Dịch vụ *"}
+                  {isEn ? "Product / Service Name" : "Tên sản phẩm / Dịch vụ"} <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <input
                   type="text"
-                  required
                   value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  onChange={(e) => {
+                    setFormName(e.target.value);
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                  }}
                   placeholder={isEn ? "e.g. Enterprise Cloud Solution..." : "Ví dụ: Gói giải pháp chuyển đổi số doanh nghiệp..."}
-                  className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
+                  className={`w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition ${
+                    errors.name ? "ring-2 ring-rose-500" : "ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
+                  }`}
                 />
+                {errors.name && (
+                  <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -249,16 +295,25 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
                 </div>
                 <div>
                   <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                    {isEn ? "VIP Member Price *" : "Giá ưu đãi Hội viên *"}
+                    {isEn ? "VIP Member Price" : "Giá ưu đãi Hội viên"} <span className="text-rose-500 font-bold">*</span>
                   </label>
                   <StandardCurrencyInput
-                    required
                     value={formPrice}
-                    onChange={(formatted) => setFormPrice(formatted)}
+                    onChange={(formatted) => {
+                      setFormPrice(formatted);
+                      if (errors.price) setErrors((prev) => ({ ...prev, price: "" }));
+                    }}
                     placeholder="Ví dụ: 15.000.000 đ"
                     unit="đ"
-                    className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700"
+                    className={`w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition ${
+                      errors.price ? "ring-2 ring-rose-500" : "ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
+                    }`}
                   />
+                  {errors.price && (
+                    <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
+                      {errors.price}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -292,15 +347,25 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
 
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                  {isEn ? "Description & Quality Commitment" : "Mô tả sản phẩm & Cam kết chất lượng"}
+                  {isEn ? "Description & Quality Commitment" : "Mô tả sản phẩm & Cam kết chất lượng"} <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <textarea
                   rows={2}
                   value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
+                  onChange={(e) => {
+                    setFormDesc(e.target.value);
+                    if (errors.desc) setErrors((prev) => ({ ...prev, desc: "" }));
+                  }}
                   placeholder={isEn ? "Describe specs, warranty, exclusive member discounts..." : "Mô tả thông số, chính sách bảo hành, ưu đãi riêng cho hội viên CEO 1983..."}
-                  className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 resize-none"
+                  className={`w-full rounded-xl border-0 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none resize-none transition ${
+                    errors.desc ? "ring-2 ring-rose-500" : "ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
+                  }`}
                 />
+                {errors.desc && (
+                  <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
+                    {errors.desc}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -308,7 +373,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
           <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-900/50">
             <button
               type="submit"
-              className="w-full rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer"
+              className="w-full rounded-xl bg-white hover:bg-slate-50 text-[#003B95] border border-[#003B95] py-2.5 text-xs font-bold shadow-xs active:scale-98 transition cursor-pointer"
             >
               {isEn ? "Publish Product to Marketplace" : "Đăng Sản Phẩm Lên Gian Hàng"}
             </button>

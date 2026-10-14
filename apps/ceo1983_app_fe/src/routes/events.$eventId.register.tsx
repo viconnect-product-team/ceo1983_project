@@ -81,6 +81,11 @@ function GuestEventRegistrationPage() {
   const ticketPrice = Number(event.ticket_price || event.ticketPrice || event.fee || 0);
   const isFree = ticketPrice === 0;
   const totalAmount = ticketPrice * ticketCount;
+  const isFull = (() => {
+    const cap = Number(event.capacity || event.maxAttendees || event.maxSeats || 0);
+    const reg = Number(event.registered || event.registeredCount || event.attendeesCount || 0);
+    return cap > 0 && reg >= cap;
+  })();
 
   const handleCopy = async (text: string, fieldName: string) => {
     try {
@@ -120,7 +125,25 @@ function GuestEventRegistrationPage() {
           ticketCount,
           note: note.trim(),
         }),
-      }).catch(() => null);
+      }).catch((err: any) => {
+        return { ok: false, error: err };
+      });
+
+      // Kiểm tra trạng thái hết chỗ (Sold Out)
+      if (res && (res.status === "sold_out" || res.isSoldOut || (res.message && res.message.includes("Hết chỗ")))) {
+        setResult({
+          isSoldOut: true,
+          status: "sold_out",
+          message:
+            res.message ||
+            "Rất tiếc, sự kiện đã đủ số lượng đại biểu tham dự (Hết chỗ). Ban Tổ Chức đã gửi email cảm ơn sự quan tâm của Quý Anh/Chị và lưu trữ thông tin cho sự kiện tiếp theo.",
+          fullName: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          eventTitle: event.name || event.title,
+        });
+        toast.info("Sự kiện đã đủ số lượng đại biểu tham dự (Hết chỗ).");
+        return;
+      }
 
       if (res && res.ok) {
         setResult(res);
@@ -129,56 +152,150 @@ function GuestEventRegistrationPage() {
             ? `Đăng ký thành công! Mã quay thưởng: #${res.luckyNumber}`
             : `Đăng ký thành công! Vui lòng quét mã VietQR để thanh toán phí.`
         );
-      } else {
-        // 2. Client-side Fallback an toàn: Tự sinh mã vé và mã VietQR chuẩn xác
-        const fallbackRegId = `GUEST-${Date.now().toString(36).toUpperCase()}`;
-        const fallbackLuckyNum = Math.floor(1000 + Math.random() * 9000);
-        const fallbackInvoice = `EV${fallbackRegId}`;
-        const fallbackVietQrUrl = isFree
-          ? ""
-          : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(
-              `${fallbackInvoice} ${phone.trim()}`
-            )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`;
-        const fallbackQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-          fallbackRegId
-        )}`;
-
-        const clientResult = {
-          ok: true,
-          registered: true,
-          registrationId: fallbackRegId,
-          luckyNumber: fallbackLuckyNum,
-          isFree,
-          totalAmount,
-          vietQrUrl: fallbackVietQrUrl,
-          qrCodeUrl: fallbackQrCodeUrl,
-          fullName: fullName.trim(),
-          phone: phone.trim(),
-          email: email.trim().toLowerCase(),
-          company: company.trim(),
-          position: position.trim(),
-          eventTitle: event.name || event.title,
-          eventDate: event.date,
-          eventLocation: event.location,
-        };
-
-        // Lưu local cache
-        try {
-          localStorage.setItem(`guest_ticket_${fallbackRegId}`, JSON.stringify(clientResult));
-        } catch {}
-
-        setResult(clientResult);
-        toast.success(
-          isFree
-            ? `Đăng ký thành công! Mã vé: ${fallbackRegId}`
-            : `Đăng ký thành công! Vui lòng quét mã VietQR để thanh toán.`
-        );
+        return;
       }
+
+      if (isFull) {
+        setResult({
+          isSoldOut: true,
+          status: "sold_out",
+          message:
+            "Rất tiếc, sự kiện đã đủ số lượng đại biểu tham dự (Hết chỗ). Ban Tổ Chức đã gửi email cảm ơn sự quan tâm của Quý Anh/Chị và lưu trữ thông tin cho sự kiện tiếp theo.",
+          fullName: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          eventTitle: event.name || event.title,
+        });
+        toast.info("Sự kiện đã đủ số lượng đại biểu tham dự (Hết chỗ).");
+        return;
+      }
+
+      // 2. Client-side Fallback an toàn: Tự sinh mã vé và mã VietQR chuẩn xác
+      const fallbackRegId = `GUEST-${Date.now().toString(36).toUpperCase()}`;
+      const fallbackLuckyNum = Math.floor(1000 + Math.random() * 9000);
+      const fallbackInvoice = `EV${fallbackRegId}`;
+      const fallbackVietQrUrl = isFree
+        ? ""
+        : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(
+            `${fallbackInvoice} ${phone.trim()}`
+          )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`;
+      const fallbackQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+        fallbackRegId
+      )}`;
+
+      const clientResult = {
+        ok: true,
+        registered: true,
+        registrationId: fallbackRegId,
+        luckyNumber: fallbackLuckyNum,
+        isFree,
+        totalAmount,
+        vietQrUrl: fallbackVietQrUrl,
+        qrCodeUrl: fallbackQrCodeUrl,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim().toLowerCase(),
+        company: company.trim(),
+        position: position.trim(),
+        eventTitle: event.name || event.title,
+        eventDate: event.date,
+        eventLocation: event.location,
+      };
+
+      // Lưu local cache
+      try {
+        localStorage.setItem(`guest_ticket_${fallbackRegId}`, JSON.stringify(clientResult));
+      } catch {}
+
+      setResult(clientResult);
+      toast.success(
+        isFree
+          ? `Đăng ký thành công! Mã vé: ${fallbackRegId}`
+          : `Đăng ký thành công! Vui lòng quét mã VietQR để thanh toán.`
+      );
     } catch (err: any) {
       toast.error(err?.message || "Đăng ký không thành công. Vui lòng thử lại!");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // 1. SOLD OUT VIEW (THÔNG BÁO HẾT CHỖ LỊCH THIỆP)
+  if (result?.isSoldOut) {
+    return (
+      <div className="min-h-screen bg-[#F0F4F9] py-8 sm:py-16 px-4 flex items-center justify-center font-sans text-slate-800">
+        <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          {/* Header Gradient */}
+          <div className="bg-gradient-to-r from-[#002B70] via-[#003B95] to-[#0A4DB0] px-6 py-8 text-white text-center relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400/20 border border-amber-400/40 text-amber-300 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+              THÔNG BÁO TỪ BAN TỔ CHỨC
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-white px-2 leading-snug">
+              SỰ KIỆN ĐÃ ĐỦ SỐ LƯỢNG ĐẠI BIỂU (HẾT CHỖ)
+            </h1>
+            <p className="text-blue-100 text-xs mt-2 font-medium">
+              {result.eventTitle || event.name}
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-5 text-left space-y-3">
+              <div className="font-bold text-amber-950 text-sm sm:text-base">
+                Kính gửi Quý Anh/Chị {result.fullName || "Đại biểu"},
+              </div>
+              <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">
+                Ban Tổ Chức CLB Doanh Nhân CEO 1983 xin chân thành cảm ơn sự quan tâm sâu sắc của Quý Anh/Chị đối với chương trình. Do số lượng đăng ký tham dự đã đạt tối đa sức chứa khán phòng nhằm đảm bảo công tác đón tiếp và kết nối giao thương chu đáo nhất, cổng đăng ký trực tuyến đã tạm thời đóng.
+              </p>
+              <div className="bg-white/80 rounded-xl p-3.5 border border-amber-200/60 text-xs text-amber-950 space-y-1">
+                <p className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  Email thông báo chi tiết đã được gửi tới:{" "}
+                  <span className="font-mono text-blue-700 underline">{result.email}</span>
+                </p>
+                <p className="text-slate-600">
+                  Thông tin kết nối doanh nghiệp của Quý Anh/Chị đã được Ban Thư ký lưu trữ ưu tiên cho các chương trình giao thương và sự kiện tiếp theo của CLB.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs text-slate-600 space-y-2">
+              <div className="font-bold text-slate-800 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-amber-500" />
+                Hỗ Trợ Đại Biểu & Doanh Nhân:
+              </div>
+              <p>
+                Hotline Ban Thư Ký CLB CEO 1983:{" "}
+                <a href="tel:0983198383" className="font-bold text-[#003B95] hover:underline">
+                  0983 1983 83
+                </a>{" "}
+                · Email: <span className="font-medium text-slate-700">bancskh@ceo1983.com</span>
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setResult(null)}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 text-slate-500" />
+                Quay Lại Trang Sự Kiện
+              </button>
+              <a
+                href="https://ceo1983.com"
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/20 transition"
+              >
+                Trang Chủ CLB CEO 1983
+                <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // SUCCESS CONFIRMATION VIEW (TEMPLATE KẾT QUẢ)
@@ -400,10 +517,10 @@ function GuestEventRegistrationPage() {
                 href="https://ceo1983.com"
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs sm:text-sm shadow-md transition"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/20 transition"
               >
                 Trang Chủ CLB CEO 1983
-                <ExternalLink className="w-3.5 h-3.5 text-amber-300" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
               </a>
             </div>
           </div>
@@ -412,13 +529,13 @@ function GuestEventRegistrationPage() {
     );
   }
 
-  // REGISTRATION FORM VIEW
+  // 3. REGISTRATION FORM VIEW (CHUẨN FORM GOOGLE / CEO FORMS THEO HÌNH 2)
   return (
     <div className="min-h-screen bg-[#F0F4F9] py-8 sm:py-12 px-3 sm:px-6 font-sans text-slate-800">
-      <div className="max-w-2xl mx-auto space-y-5">
-        {/* Event Header Card */}
+      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-5">
+        {/* CARD 0: FORM HEADER (BANNER & EVENT INFO - TƯƠNG TỰ GOOGLE FORM TOP CARD) */}
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="h-3 bg-gradient-to-r from-[#002B70] via-[#003B95] to-amber-500" />
+          <div className="h-3.5 bg-gradient-to-r from-[#002B70] via-[#003B95] to-amber-500" />
 
           <div className="p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-4">
@@ -427,12 +544,16 @@ function GuestEventRegistrationPage() {
               </div>
               <div>
                 <div className="text-xs font-bold text-amber-600 uppercase tracking-wider">
-                  CLB Doanh Nhân CEO 1983 · Ban Tổ Chức
+                  CLB Doanh Nhân CEO 1983 · HanoiBA
                 </div>
                 <div className="text-xs text-slate-500 font-semibold">
-                  Phiếu Đăng Ký Khách Mời & Nhận Vé Tham Dự Điện Tử
+                  Ban Tổ Chức Sự Kiện & Ban Thư Ký
                 </div>
               </div>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 text-[#003B95] rounded-full text-[11px] font-bold uppercase tracking-wider mb-2">
+              ✦ BẢN ĐĂNG KÝ ĐẠI BIỂU & B2B MATCHMAKING ✦
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-[#003B95] leading-tight mb-4">
@@ -454,14 +575,14 @@ function GuestEventRegistrationPage() {
               )}
             </div>
 
-            {/* Fee Box */}
+            {/* Fee / Pricing Summary Box */}
             <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-4 rounded-2xl">
               <div>
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wide block">
-                  Phí tham dự sự kiện
+                  Phí tham dự chương trình
                 </span>
-                <span className="text-xs text-slate-400">
-                  {isFree ? "Miễn phí toàn bộ chương trình" : "Bao gồm tiệc trà và tài liệu"}
+                <span className="text-xs text-slate-500">
+                  {isFree ? "Miễn phí toàn bộ sự kiện & quay số trúng thưởng" : "Bao gồm tiệc trà, tài liệu & kết nối giao thương"}
                 </span>
               </div>
               <div>
@@ -476,166 +597,207 @@ function GuestEventRegistrationPage() {
                 )}
               </div>
             </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-rose-600 font-medium">
+              <span>* Biểu thị câu hỏi bắt buộc</span>
+              <span className="text-slate-400">Thời gian điền: ~ 1 phút</span>
+            </div>
           </div>
         </div>
 
-        {/* Registration Form Card */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-4">
-            <div className="border-b border-slate-100 pb-3">
-              <h2 className="text-base font-bold text-[#003B95] flex items-center gap-2">
-                <User className="w-4 h-4 text-amber-500" />
-                Thông tin người tham dự (Khách mời mới)
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Vui lòng điền thông tin chính xác để nhận mã vé điện tử và số quay thưởng Lucky Draw qua email.
+        {isFull && (
+          <div className="bg-amber-50 border-2 border-amber-400 rounded-3xl p-5 text-amber-900 flex items-start gap-3 shadow-xs">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-sm">Sự kiện đã đủ số lượng đại biểu đăng ký (Hết chỗ)</h3>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Cổng đăng ký trực tuyến cho sự kiện này đã đủ số lượng theo quy định đón tiếp. Quý khách vui lòng liên hệ Ban Tổ Chức (Hotline: 0983 1983 83) để được hỗ trợ.
               </p>
             </div>
+          </div>
+        )}
 
-            <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
-                Họ và tên của Quý khách <span className="text-rose-500">*</span>
-              </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* CARD 1: HỌ VÀ TÊN */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
+            <label className="block text-sm sm:text-base font-bold text-slate-800">
+              1. Họ và tên của Quý Đại biểu <span className="text-rose-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500">
+              Tên sẽ được in trên thẻ đeo đại biểu và số thứ tự Lucky Draw.
+            </p>
+            <div className="relative pt-1">
+              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
               <input
                 type="text"
                 required
                 placeholder="Ví dụ: Nguyễn Văn Hoàng"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/50"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/60 transition"
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
-                  Số điện thoại liên hệ <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="tel"
-                    required
-                    placeholder="0983xxxxxx"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/50"
-                  />
-                </div>
-              </div>
+          {/* CARD 2: ĐỊA CHỈ EMAIL */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
+            <label className="block text-sm sm:text-base font-bold text-slate-800">
+              2. Địa chỉ Email chính thức nhận vé & mã QR <span className="text-rose-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500">
+              Hệ thống sẽ gửi vé điện tử E-Ticket (hoặc hóa đơn VietQR) qua địa chỉ email này.
+            </p>
+            <div className="relative pt-1">
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
+              <input
+                type="email"
+                required
+                placeholder="hoang.nguyen@congty.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/60 transition"
+              />
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
-                  Email nhận vé & mã QR <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="hoang.nguyen@congty.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/50"
-                  />
-                </div>
-              </div>
+          {/* CARD 3: SỐ ĐIỆN THOẠI / ZALO */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
+            <label className="block text-sm sm:text-base font-bold text-slate-800">
+              3. Số điện thoại liên hệ (Ưu tiên số dùng Zalo) <span className="text-rose-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500">
+              Dùng để Ban Thư ký gửi tin nhắn nhắc lịch và hỗ trợ check-in tại bàn lễ tân.
+            </p>
+            <div className="relative pt-1">
+              <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
+              <input
+                type="tel"
+                required
+                placeholder="0983xxxxxx"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/60 transition"
+              />
+            </div>
+          </div>
+
+          {/* CARD 4: DOANH NGHIỆP & CHỨC VỤ */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-4">
+            <div>
+              <label className="block text-sm sm:text-base font-bold text-slate-800">
+                4. Thông tin Doanh nghiệp & Vị trí công tác
+              </label>
+              <p className="text-xs text-slate-500 mt-1">
+                Phục vụ sắp xếp vị trí bàn đại biểu và giới thiệu kết nối giao thương B2B.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div>
-                <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
-                  Cơ quan / Tên Doanh nghiệp
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Tên Doanh nghiệp / Tổ chức
                 </label>
                 <div className="relative">
-                  <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
                     placeholder="Công ty CP Tập Đoàn..."
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/50"
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Chức vụ / Vị trí
                 </label>
                 <div className="relative">
-                  <Briefcase className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <Briefcase className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
-                    placeholder="Tổng Giám Đốc, Chủ Tịch HĐQT..."
+                    placeholder="Chủ tịch, CEO, Giám Đốc..."
                     value={position}
                     onChange={(e) => setPosition(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/50"
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/60"
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Ticket count */}
-            <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
-                Số lượng vé tham dự
-              </label>
-              <div className="flex flex-wrap items-center gap-3">
-                <select
-                  value={ticketCount}
-                  onChange={(e) => setTicketCount(Number(e.target.value))}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/50"
-                >
-                  <option value={1}>1 Vé (Cá nhân tham dự)</option>
-                  <option value={2}>2 Vé (Kèm đối tác / Đồng nghiệp)</option>
-                  <option value={3}>3 Vé</option>
-                  <option value={5}>5 Vé (Đoàn doanh nghiệp)</option>
-                </select>
+          {/* CARD 5: SỐ LƯỢNG VÉ & PHÍ */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
+            <label className="block text-sm sm:text-base font-bold text-slate-800">
+              5. Số lượng vé tham dự
+            </label>
+            <p className="text-xs text-slate-500">
+              Lựa chọn số lượng vé dành cho cá nhân hoặc đoàn doanh nghiệp tham dự.
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <select
+                value={ticketCount}
+                onChange={(e) => setTicketCount(Number(e.target.value))}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/60 font-medium"
+              >
+                <option value={1}>1 Vé (Cá nhân tham dự)</option>
+                <option value={2}>2 Vé (Kèm đối tác / Đồng nghiệp)</option>
+                <option value={3}>3 Vé</option>
+                <option value={5}>5 Vé (Đoàn doanh nghiệp)</option>
+              </select>
 
-                {!isFree && (
-                  <span className="text-xs text-slate-500 font-medium">
-                    Tổng chi phí thanh toán:{" "}
-                    <strong className="text-amber-600 font-black text-sm">
-                      {new Intl.NumberFormat("vi-VN").format(totalAmount)} đ
-                    </strong>
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
-                Ghi chú hoặc câu hỏi cho Ban Tổ Chức (không bắt buộc)
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Yêu cầu kết nối giao thương với ngành nghề cụ thể, câu hỏi dành cho diễn giả..."
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/50"
-              />
+              {!isFree && (
+                <span className="text-xs text-slate-600 font-medium bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+                  Tổng chi phí:{" "}
+                  <strong className="text-amber-700 font-black text-sm">
+                    {new Intl.NumberFormat("vi-VN").format(totalAmount)} đ
+                  </strong>
+                </span>
+              )}
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-gradient-to-r from-[#003B95] to-[#0A4DB0] hover:from-[#002B70] hover:to-[#003B95] text-white font-black text-sm sm:text-base shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 cursor-pointer"
-          >
-            {submitting ? (
-              <>Đang gửi thông tin đăng ký...</>
-            ) : (
-              <>
-                <Send className="w-4 h-4 text-amber-300" />
-                {isFree
-                  ? "Xác Nhận Đăng Ký & Nhận Vé Điện Tử Miễn Phí"
-                  : `Xác Nhận Đăng Ký & Nhận Mã VietQR Thanh Toán (${new Intl.NumberFormat("vi-VN").format(
-                      totalAmount
-                    )} đ)`}
-              </>
-            )}
-          </button>
+          {/* CARD 6: NỘI DUNG KẾT NỐI B2B / GHI CHÚ */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
+            <label className="block text-sm sm:text-base font-bold text-slate-800">
+              6. Mong muốn kết nối B2B hoặc câu hỏi cho Diễn giả
+            </label>
+            <p className="text-xs text-slate-500">
+              Quý khách có thể ghi ngành nghề mong muốn tìm đối tác hoặc câu hỏi gửi tới Ban Tổ Chức (không bắt buộc).
+            </p>
+            <textarea
+              rows={3}
+              placeholder="Ví dụ: Mong muốn tìm kiếm đối tác ngành Xây dựng / Logistics, tìm hiểu cơ hội hợp tác..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#003B95] bg-slate-50/60"
+            />
+          </div>
+
+          {/* SUBMIT BUTTON CARD */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={submitting || isFull}
+              className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm sm:text-base shadow-xl hover:shadow-2xl shadow-amber-500/25 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {submitting ? (
+                <>Đang gửi thông tin đăng ký...</>
+              ) : isFull ? (
+                <>Sự Kiện Đã Đủ Số Lượng Đại Biểu (Hết Chỗ)</>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 text-slate-950" />
+                  {isFree
+                    ? "Gửi Bản Đăng Ký & Nhận Vé Điện Tử E-Ticket (0đ)"
+                    : `Gửi Bản Đăng Ký & Nhận Mã VietQR (${new Intl.NumberFormat("vi-VN").format(
+                        totalAmount
+                      )} đ)`}
+                </>
+              )}
+            </button>
+          </div>
         </form>
 
         <div className="text-center text-xs text-slate-400 pt-3 pb-12 space-y-1">

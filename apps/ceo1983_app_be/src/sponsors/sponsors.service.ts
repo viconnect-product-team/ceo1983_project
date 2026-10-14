@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { SponsorsRepository } from './sponsors.repository';
+import { MailService } from '../mail/mail.service';
 import {
   SponsorTier,
   SponsorType,
@@ -30,7 +31,10 @@ export {
 
 @Injectable()
 export class SponsorsService {
-  constructor(private readonly sponsorsRepo: SponsorsRepository) {}
+  constructor(
+    private readonly sponsorsRepo: SponsorsRepository,
+    private readonly mailService: MailService,
+  ) {}
 
   private async resolveAssociationId(assocId?: string): Promise<string> {
     if (assocId) return assocId;
@@ -241,7 +245,16 @@ export class SponsorsService {
       contact, email, phone, amount, events, safeSince, status, associationId,
     );
 
-    return this.getSponsorById(id);
+    const createdSponsor = await this.getSponsorById(id);
+
+    // Tự động gửi email tri ân tới Nhà tài trợ nếu có địa chỉ email
+    if (createdSponsor.email && createdSponsor.email.includes('@')) {
+      this.sendSponsorThankYouEmail(createdSponsor).catch((err) => {
+        console.error(`[SponsorsService] Auto send thank-you email failed for sponsor ${id} (${createdSponsor.email}):`, err);
+      });
+    }
+
+    return createdSponsor;
   }
 
   async updateSponsor(id: string, dto: Partial<CreateSponsorDto>) {
@@ -436,5 +449,185 @@ export class SponsorsService {
   async deletePrize(id: string) {
     await this.sponsorsRepo.deletePrizeRaw(id);
     return { ok: true, id };
+  }
+
+  // ── SPONSOR THANK-YOU EMAIL ────────────────────────────────────────────────
+
+  async sendSponsorThankYouEmailById(id: string) {
+    const sponsor = await this.getSponsorById(id);
+    if (!sponsor.email || !sponsor.email.includes('@')) {
+      throw new BadRequestException('Nhà tài trợ chưa có thông tin email hợp lệ để nhận thư tri ân.');
+    }
+    return this.sendSponsorThankYouEmail(sponsor);
+  }
+
+  async sendSponsorThankYouEmail(sponsor: {
+    id: string;
+    name: string;
+    contact?: string;
+    email: string;
+    phone?: string;
+    tier?: string;
+    packageType?: string;
+    inKindDescription?: string;
+    amount?: number;
+    since?: string;
+  }) {
+    const to = (sponsor.email || '').trim();
+    if (!to || !to.includes('@')) {
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const tierLabels: Record<string, { label: string; color: string; bg: string; border: string }> = {
+      diamond: { label: 'KIM CƯƠNG', color: '#4338ca', bg: '#e0e7ff', border: '#a5b4fc' },
+      platinum: { label: 'BẠCH KIM', color: '#0369a1', bg: '#e0f2fe', border: '#7dd3fc' },
+      gold: { label: 'VÀNG (GOLD)', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
+      silver: { label: 'BẠC (SILVER)', color: '#475569', bg: '#f1f5f9', border: '#cbd5e1' },
+      bronze: { label: 'ĐỒNG (BRONZE)', color: '#9a3412', bg: '#ffedd5', border: '#fdba74' },
+    };
+    const currentTier = tierLabels[sponsor.tier?.toLowerCase() || 'bronze'] || tierLabels.bronze;
+
+    const formattedAmount = Number(sponsor.amount || 0) > 0
+      ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(sponsor.amount))
+      : (sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật' : '0 đ');
+
+    const packageTypeLabel = sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật / Sản phẩm dịch vụ' : 'Tài trợ Tài chính (Tiền mặt)';
+    const safeSince = sponsor.since ? String(sponsor.since).slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const greetingName = sponsor.contact ? `${sponsor.contact} (Đại diện ${sponsor.name})` : sponsor.name;
+
+    const subject = `[CLB CEO 1983] Thư Tri Ân & Vinh Danh Nhà Tài Trợ — ${sponsor.name}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px; color: #1e293b; }
+    .email-wrapper { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0, 27, 84, 0.12); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001B54 0%, #002B7A 50%, #001238 100%); padding: 40px 32px; text-align: center; color: #ffffff; position: relative; }
+    .gold-badge { display: inline-block; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; }
+    .brand-title { font-size: 23px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; letter-spacing: 0.5px; }
+    .brand-sub { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; line-height: 1.5; font-weight: 400; }
+    .body-content { padding: 36px 32px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #001B54; margin-bottom: 16px; line-height: 1.5; }
+    .paragraph { font-size: 14px; line-height: 1.7; color: #334155; margin-bottom: 16px; text-align: justify; }
+    .card-highlight { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin: 24px 0; border-top: 4px solid #f59e0b; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #001B54; margin-bottom: 16px; letter-spacing: 0.8px; }
+    .info-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .info-table td { padding: 9px 0; vertical-align: top; border-bottom: 1px dashed #e2e8f0; }
+    .info-table tr:last-child td { border-bottom: none; }
+    .info-label { color: #64748b; font-weight: 500; width: 38%; }
+    .info-val { color: #0f172a; font-weight: 700; text-align: right; }
+    .tier-pill { display: inline-block; padding: 3px 12px; border-radius: 9999px; font-weight: 800; font-size: 12px; }
+    .benefits-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 14px; padding: 20px; margin: 24px 0; }
+    .benefits-title { font-size: 13px; font-weight: 800; color: #1e40af; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .benefit-item { font-size: 13px; color: #1e3a8a; margin-bottom: 6px; line-height: 1.5; }
+    .signature { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: right; }
+    .sign-role { font-size: 13px; font-weight: 700; color: #001B54; text-transform: uppercase; margin-bottom: 4px; }
+    .sign-org { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+    .sign-rep { font-size: 14px; font-weight: 800; color: #d97706; }
+    .footer { background: #001338; padding: 26px; text-align: center; color: rgba(255, 255, 255, 0.6); font-size: 11.5px; line-height: 1.6; }
+    .footer strong { color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="header">
+      <div class="gold-badge">✦ ĐỐI TÁC CHIẾN LƯỢC — CEO 1983 ✦</div>
+      <h1 class="brand-title">CLB DOANH NHÂN CEO 1983</h1>
+      <p class="brand-sub">Trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA)<br>Kết nối bền vững — Kiến tạo thịnh vượng — Vươn tầm doanh nhân</p>
+    </div>
+
+    <div class="body-content">
+      <div class="greeting">Kính gửi: ${greetingName},</div>
+
+      <p class="paragraph">
+        Ban Chấp hành <strong>CLB Doanh Nhân CEO 1983</strong> và Ban Tổ chức xin trân trọng gửi tới Quý Doanh nghiệp lời chào trân trọng, lời tri ân sâu sắc cùng lời chúc sức khỏe, thịnh vượng và ngày càng phát triển vững bền.
+      </p>
+
+      <p class="paragraph">
+        Chúng tôi vô cùng vinh hạnh và trân quý khi nhận được sự đồng hành, tài trợ quý báu từ Quý Đơn vị trong các hoạt động, sự kiện và chương trình kết nối giao thương chiến lược của Hiệp hội. Sự chung tay, tin tưởng của Quý Nhà tài trợ chính là động lực to lớn tạo nên sự thành công rực rỡ và giá trị lan tỏa mạnh mẽ trong cộng đồng doanh nhân.
+      </p>
+
+      <div class="card-highlight">
+        <div class="card-title">✦ THÔNG TIN GÓI TÀI TRỢ GHI NHẬN</div>
+        <table class="info-table">
+          <tr>
+            <td class="info-label">Đơn vị tài trợ:</td>
+            <td class="info-val">${sponsor.name}</td>
+          </tr>
+          ${sponsor.contact ? `<tr><td class="info-label">Đại diện liên hệ:</td><td class="info-val">${sponsor.contact}</td></tr>` : ''}
+          <tr>
+            <td class="info-label">Hạng tài trợ:</td>
+            <td class="info-val">
+              <span class="tier-pill" style="color: ${currentTier.color}; background-color: ${currentTier.bg}; border: 1px solid ${currentTier.border};">
+                ${currentTier.label}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td class="info-label">Hình thức:</td>
+            <td class="info-val">${packageTypeLabel}</td>
+          </tr>
+          ${sponsor.packageType === 'in_kind' && sponsor.inKindDescription ? `
+          <tr>
+            <td class="info-label">Mô tả hiện vật:</td>
+            <td class="info-val">${sponsor.inKindDescription}</td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td class="info-label">Giá trị tài trợ:</td>
+            <td class="info-val" style="color: #001B54; font-size: 15px; font-weight: 800;">${formattedAmount}</td>
+          </tr>
+          <tr>
+            <td class="info-label">Thời gian đồng hành:</td>
+            <td class="info-val">${safeSince}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="benefits-box">
+        <div class="benefits-title">★ CAM KẾT QUYỀN LỢI ĐẶC QUYỀN</div>
+        <div class="benefit-item">✓ Vinh danh trang trọng thương hiệu trên toàn bộ backdrop, kỷ yếu, ấn phẩm và truyền thông số của CLB.</div>
+        <div class="benefit-item">✓ Bố trí gian hàng / vị trí trưng bày VIP giới thiệu giải pháp sản phẩm trực tiếp đến hàng trăm CEO đối tác.</div>
+        <div class="benefit-item">✓ Quyền lợi kết nối giao thương 1-1 độc quyền cùng Ban Lãnh đạo và mạng lưới Hội viên HanoiBA.</div>
+        <div class="benefit-item">✓ Trao kỷ niệm chương và thư tri ân trang trọng tại Gala sự kiện chính thức.</div>
+      </div>
+
+      <p class="paragraph">
+        Đại diện Ban Vận động Tài trợ và Ban Thư ký CLB sẽ chủ động liên hệ trực tiếp với Anh/Chị để thống nhất các tài liệu thiết kế thương hiệu, video clip trình chiếu và các khâu chuẩn bị nhằm mang lại hiệu quả nhận diện cao nhất cho Quý Đơn vị.
+      </p>
+
+      <p class="paragraph" style="margin-bottom: 0;">
+        Một lần nữa, xin kính chúc Quý Doanh nghiệp ngày càng bứt phá mạnh mẽ, liên tục mở rộng thị phần và đạt được những bước tiến rực rỡ trong tương lai!
+      </p>
+
+      <div class="signature">
+        <div class="sign-role">TM. BAN CHẤP HÀNH CLB DOANH NHÂN CEO 1983</div>
+        <div class="sign-org">Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA)</div>
+        <div class="sign-rep">Ban Vận động Tài trợ & Đối ngoại</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <strong>CLB DOANH NHÂN CEO 1983 — HANOIBA</strong><br>
+      Tòa nhà Hội Doanh nghiệp Trẻ Hà Nội, Cung Trí Thức, Cầu Giấy, Hà Nội<br>
+      Email: bch@ceo1983.vn | Website: ceo1983.vn | Hotline VIP: 0983.198.383
+    </div>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    return this.mailService.dispatchSmtpEmail({
+      to,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[SPONSOR_THANK_YOU] SponsorId: ${sponsor.id} | Tier: ${sponsor.tier}`,
+    });
   }
 }

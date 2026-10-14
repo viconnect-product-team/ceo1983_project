@@ -36,6 +36,18 @@ export interface SendEventTicketEmailOptions {
   bankOwner?: string;
 }
 
+export interface SendEventSoldOutEmailOptions {
+  to: string;
+  fullName: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  eventTitle: string;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
+}
+
 export interface SendAppWelcomeEmailOptions {
   to: string;
   fullName: string;
@@ -564,6 +576,134 @@ export class MailService {
       html,
       fromName: 'Ban Tổ Chức Sự Kiện CEO 1983',
       auditContext: `[EVENT_TICKET_EMAIL] RegId: ${registrationId} | Event: ${eventTitle} | Name: ${fullName}`,
+    });
+  }
+
+  /**
+   * Gửi email cảm ơn và thông báo sự kiện đã đủ số lượng đại biểu (hết chỗ/sold-out)
+   */
+  async sendEventSoldOutEmail(options: SendEventSoldOutEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      phone,
+      company,
+      position,
+      eventTitle,
+      eventDate = 'Sắp diễn ra',
+      eventTime = '08:30 - 12:00',
+      eventLocation = 'Hà Nội',
+    } = options;
+
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`Cannot send event sold-out email: invalid destination email "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const subject = `[CLB CEO 1983] Thư Cảm Ơn Sự Quan Tâm & Thông Báo Kín Chỗ: ${eventTitle} — ${fullName}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 55%, #0B192C 100%); padding: 36px 28px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 21px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff; line-height: 1.35; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .content { padding: 32px 28px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.65; color: #475569; margin-bottom: 22px; }
+    .notice-card { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+    .notice-title { font-size: 14px; font-weight: 800; color: #92400e; margin: 0 0 8px 0; display: flex; items-center: center; }
+    .notice-desc { font-size: 13px; line-height: 1.6; color: #78350f; margin: 0; }
+    .details-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+    .details-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    .details-table td.label { width: 36%; color: #64748b; font-weight: 600; }
+    .details-table td.val { font-weight: 700; color: #0f172a; }
+    .support-card { background: #f8fafc; border-radius: 14px; padding: 18px; border: 1px dashed #cbd5e1; margin-bottom: 24px; font-size: 13px; color: #475569; line-height: 1.6; }
+    .footer { background: #0f172a; padding: 24px; text-align: center; color: #94a3b8; font-size: 12px; line-height: 1.6; }
+    .footer a { color: #f59e0b; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">CLB DOANH NHÂN CEO 1983 • HANOIBA</div>
+      <h1 class="title">THƯ CẢM ƠN SỰ QUAN TÂM</h1>
+      <p class="subtitle">${eventTitle}</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Quý Anh/Chị: <span style="color: #003B95;">${fullName}</span>,</div>
+      
+      <p class="intro">
+        Ban Tổ Chức <strong>CLB Doanh Nhân CEO 1983</strong> xin trân trọng cảm ơn Quý Anh/Chị${company ? ` cùng <strong>${company}</strong>` : ''} đã dành sự quan tâm và đăng ký tham gia sự kiện <strong>${eventTitle}</strong>.
+      </p>
+
+      <div class="notice-card">
+        <div class="notice-title">⚠️ THÔNG BÁO VỀ SỐ LƯỢNG ĐẠI BIỂU</div>
+        <p class="notice-desc">
+          Do quy mô khán phòng có giới hạn và số lượng đại biểu đăng ký đã đạt <strong>100% sức chứa tối đa</strong>, Ban Tổ Chức rất tiếc chưa thể cấp vé tham dự chính thức cho Quý Anh/Chị tại sự kiện lần này.
+        </p>
+      </div>
+
+      <table class="details-table">
+        <tr>
+          <td class="label">Sự kiện:</td>
+          <td class="val">${eventTitle}</td>
+        </tr>
+        <tr>
+          <td class="label">Thời gian:</td>
+          <td class="val">${eventTime} • Ngày ${eventDate}</td>
+        </tr>
+        <tr>
+          <td class="label">Địa điểm:</td>
+          <td class="val">${eventLocation}</td>
+        </tr>
+        <tr>
+          <td class="label">Người đăng ký:</td>
+          <td class="val">${fullName}${phone ? ` (${phone})` : ''}</td>
+        </tr>
+        ${company ? `<tr><td class="label">Doanh nghiệp:</td><td class="val">${company}${position ? ` • ${position}` : ''}</td></tr>` : ''}
+        <tr>
+          <td class="label">Trạng thái:</td>
+          <td class="val" style="color: #d97706;">Đã ghi nhận danh sách chờ (Waitlist)</td>
+        </tr>
+      </table>
+
+      <div class="support-card">
+        <strong style="color: #003B95;">✦ ĐẶC QUYỀN DÀNH CHO QUÝ KHÁCH:</strong><br>
+        Thông tin của Quý Anh/Chị đã được lưu trữ trang trọng trong hệ thống mạng lưới kết nối doanh nhân của CLB CEO 1983. Chúng tôi sẽ ưu tiên gửi thư mời danh dự sớm nhất tại các chương trình diễn đàn xúc tiến thương mại B2B, tọa đàm kinh tế và dạ tiệc kết nối tiếp theo.
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin: 0;">
+        Nếu Quý Anh/Chị cần hỗ trợ thêm thông tin hoặc muốn tìm hiểu thủ tục gia nhập chính thức Hiệp hội CEO 1983, vui lòng liên hệ Ban Thư Ký CLB qua Hotline: <strong style="color: #0f172a;">0988 198 300</strong> hoặc Email: <strong style="color: #0f172a;">bientap@ceo1983.vn</strong>.
+      </p>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 6px 0; font-weight: 700; color: #f8fafc;">CLB DOANH NHÂN CEO 1983 (HANOIBA)</p>
+      <p style="margin: 0 0 10px 0;">Tầng 6, Tòa nhà VIONE, Số 83 Vũ Trọng Phụng, Thanh Xuân, Hà Nội</p>
+      <p style="margin: 0;">Hotline: 0988 198 300 • Website: <a href="https://ceo1983.vn">ceo1983.vn</a></p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'Ban Tổ Chức Sự Kiện CEO 1983',
+      auditContext: `[EVENT_SOLDOUT_EMAIL] Event: ${eventTitle} | Name: ${fullName} | Email: ${cleanTo}`,
     });
   }
 

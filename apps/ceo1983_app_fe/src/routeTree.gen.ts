@@ -45,6 +45,7 @@ import { Route as EventsRouteImport } from './routes/events'
 import { Route as EventRegistrationsRouteImport } from './routes/event-registrations'
 import { Route as EmailMarketingRouteImport } from './routes/email-marketing'
 import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as DepartmentsRouteImport } from './routes/departments'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as ConnectAppRouteImport } from './routes/connect-app'
 import { Route as ConnectRouteImport } from './routes/connect'
@@ -58,6 +59,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AssociationRouteImport } from './routes/association'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as AccountSettingsRouteImport } from './routes/account-settings'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlatformIndexRouteImport } from './routes/platform.index'
@@ -79,6 +81,7 @@ import { Route as PlatformRenewalAuditRouteImport } from './routes/platform.rene
 import { Route as PlatformPermissionsRouteImport } from './routes/platform.permissions'
 import { Route as PlatformIntroductionOperationsRouteImport } from './routes/platform.introduction-operations'
 import { Route as PlatformAuditRouteImport } from './routes/platform.audit'
+import { Route as PlatformAiUsersRouteImport } from './routes/platform.ai-users'
 import { Route as PlatformAiAuditRouteImport } from './routes/platform.ai-audit'
 import { Route as PlatformAdminsRouteImport } from './routes/platform.admins'
 import { Route as OpportunitiesIdRouteImport } from './routes/opportunities.$id'
@@ -413,6 +416,11 @@ const DocumentsRoute = DocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DepartmentsRoute = DepartmentsRouteImport.update({
+  id: '/departments',
+  path: '/departments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoRoute = DemoRouteImport.update({
   id: '/demo',
   path: '/demo',
@@ -476,6 +484,11 @@ const AiRoute = AiRouteImport.update({
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
@@ -582,6 +595,11 @@ const PlatformIntroductionOperationsRoute =
 const PlatformAuditRoute = PlatformAuditRouteImport.update({
   id: '/platform/audit',
   path: '/platform/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformAiUsersRoute = PlatformAiUsersRouteImport.update({
+  id: '/platform/ai-users',
+  path: '/platform/ai-users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlatformAiAuditRoute = PlatformAiAuditRouteImport.update({
@@ -1402,6 +1420,7 @@ const ApiPublicAvatarOwnerFileRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account-settings': typeof AccountSettingsRouteWithChildren
+  '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
   '/association': typeof AssociationRouteWithChildren
@@ -1415,6 +1434,7 @@ export interface FileRoutesByFullPath {
   '/connect': typeof ConnectRouteWithChildren
   '/connect-app': typeof ConnectAppRouteWithChildren
   '/demo': typeof DemoRoute
+  '/departments': typeof DepartmentsRoute
   '/documents': typeof DocumentsRouteWithChildren
   '/email-marketing': typeof EmailMarketingRoute
   '/event-registrations': typeof EventRegistrationsRoute
@@ -1529,6 +1549,7 @@ export interface FileRoutesByFullPath {
   '/opportunities/$id': typeof OpportunitiesIdRouteWithChildren
   '/platform/admins': typeof PlatformAdminsRoute
   '/platform/ai-audit': typeof PlatformAiAuditRoute
+  '/platform/ai-users': typeof PlatformAiUsersRoute
   '/platform/audit': typeof PlatformAuditRoute
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
@@ -1626,6 +1647,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
   '/auth': typeof AuthRoute
@@ -1635,6 +1657,7 @@ export interface FileRoutesByTo {
   '/checkin-qr': typeof CheckinQrRoute
   '/connect': typeof ConnectRouteWithChildren
   '/demo': typeof DemoRoute
+  '/departments': typeof DepartmentsRoute
   '/email-marketing': typeof EmailMarketingRoute
   '/event-registrations': typeof EventRegistrationsRoute
   '/events-overview': typeof EventsOverviewRoute
@@ -1728,6 +1751,7 @@ export interface FileRoutesByTo {
   '/opportunities/$id': typeof OpportunitiesIdRouteWithChildren
   '/platform/admins': typeof PlatformAdminsRoute
   '/platform/ai-audit': typeof PlatformAiAuditRoute
+  '/platform/ai-users': typeof PlatformAiUsersRoute
   '/platform/audit': typeof PlatformAuditRoute
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
@@ -1822,6 +1846,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account-settings': typeof AccountSettingsRouteWithChildren
+  '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/ai': typeof AiRoute
   '/association': typeof AssociationRouteWithChildren
@@ -1835,6 +1860,7 @@ export interface FileRoutesById {
   '/connect': typeof ConnectRouteWithChildren
   '/connect-app': typeof ConnectAppRouteWithChildren
   '/demo': typeof DemoRoute
+  '/departments': typeof DepartmentsRoute
   '/documents': typeof DocumentsRouteWithChildren
   '/email-marketing': typeof EmailMarketingRoute
   '/event-registrations': typeof EventRegistrationsRoute
@@ -1949,6 +1975,7 @@ export interface FileRoutesById {
   '/opportunities/$id': typeof OpportunitiesIdRouteWithChildren
   '/platform/admins': typeof PlatformAdminsRoute
   '/platform/ai-audit': typeof PlatformAiAuditRoute
+  '/platform/ai-users': typeof PlatformAiUsersRoute
   '/platform/audit': typeof PlatformAuditRoute
   '/platform/introduction-operations': typeof PlatformIntroductionOperationsRoute
   '/platform/permissions': typeof PlatformPermissionsRoute
@@ -2049,6 +2076,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account-settings'
+    | '/accounts'
     | '/activity'
     | '/ai'
     | '/association'
@@ -2062,6 +2090,7 @@ export interface FileRouteTypes {
     | '/connect'
     | '/connect-app'
     | '/demo'
+    | '/departments'
     | '/documents'
     | '/email-marketing'
     | '/event-registrations'
@@ -2176,6 +2205,7 @@ export interface FileRouteTypes {
     | '/opportunities/$id'
     | '/platform/admins'
     | '/platform/ai-audit'
+    | '/platform/ai-users'
     | '/platform/audit'
     | '/platform/introduction-operations'
     | '/platform/permissions'
@@ -2273,6 +2303,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accounts'
     | '/activity'
     | '/ai'
     | '/auth'
@@ -2282,6 +2313,7 @@ export interface FileRouteTypes {
     | '/checkin-qr'
     | '/connect'
     | '/demo'
+    | '/departments'
     | '/email-marketing'
     | '/event-registrations'
     | '/events-overview'
@@ -2375,6 +2407,7 @@ export interface FileRouteTypes {
     | '/opportunities/$id'
     | '/platform/admins'
     | '/platform/ai-audit'
+    | '/platform/ai-users'
     | '/platform/audit'
     | '/platform/introduction-operations'
     | '/platform/permissions'
@@ -2468,6 +2501,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account-settings'
+    | '/accounts'
     | '/activity'
     | '/ai'
     | '/association'
@@ -2481,6 +2515,7 @@ export interface FileRouteTypes {
     | '/connect'
     | '/connect-app'
     | '/demo'
+    | '/departments'
     | '/documents'
     | '/email-marketing'
     | '/event-registrations'
@@ -2595,6 +2630,7 @@ export interface FileRouteTypes {
     | '/opportunities/$id'
     | '/platform/admins'
     | '/platform/ai-audit'
+    | '/platform/ai-users'
     | '/platform/audit'
     | '/platform/introduction-operations'
     | '/platform/permissions'
@@ -2694,6 +2730,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountSettingsRoute: typeof AccountSettingsRouteWithChildren
+  AccountsRoute: typeof AccountsRoute
   ActivityRoute: typeof ActivityRoute
   AiRoute: typeof AiRoute
   AssociationRoute: typeof AssociationRouteWithChildren
@@ -2707,6 +2744,7 @@ export interface RootRouteChildren {
   ConnectRoute: typeof ConnectRouteWithChildren
   ConnectAppRoute: typeof ConnectAppRouteWithChildren
   DemoRoute: typeof DemoRoute
+  DepartmentsRoute: typeof DepartmentsRoute
   DocumentsRoute: typeof DocumentsRouteWithChildren
   EmailMarketingRoute: typeof EmailMarketingRoute
   EventRegistrationsRoute: typeof EventRegistrationsRoute
@@ -2755,6 +2793,7 @@ export interface RootRouteChildren {
   MembersMemberIdRoute: typeof MembersMemberIdRoute
   PlatformAdminsRoute: typeof PlatformAdminsRoute
   PlatformAiAuditRoute: typeof PlatformAiAuditRoute
+  PlatformAiUsersRoute: typeof PlatformAiUsersRoute
   PlatformAuditRoute: typeof PlatformAuditRoute
   PlatformIntroductionOperationsRoute: typeof PlatformIntroductionOperationsRoute
   PlatformPermissionsRoute: typeof PlatformPermissionsRoute
@@ -3025,6 +3064,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/departments': {
+      id: '/departments'
+      path: '/departments'
+      fullPath: '/departments'
+      preLoaderRoute: typeof DepartmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo': {
       id: '/demo'
       path: '/demo'
@@ -3114,6 +3160,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account-settings': {
@@ -3261,6 +3314,13 @@ declare module '@tanstack/react-router' {
       path: '/platform/audit'
       fullPath: '/platform/audit'
       preLoaderRoute: typeof PlatformAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/platform/ai-users': {
+      id: '/platform/ai-users'
+      path: '/platform/ai-users'
+      fullPath: '/platform/ai-users'
+      preLoaderRoute: typeof PlatformAiUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/platform/ai-audit': {
@@ -4994,6 +5054,7 @@ const AdminBusinessCardsRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountSettingsRoute: AccountSettingsRouteWithChildren,
+  AccountsRoute: AccountsRoute,
   ActivityRoute: ActivityRoute,
   AiRoute: AiRoute,
   AssociationRoute: AssociationRouteWithChildren,
@@ -5007,6 +5068,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConnectRoute: ConnectRouteWithChildren,
   ConnectAppRoute: ConnectAppRouteWithChildren,
   DemoRoute: DemoRoute,
+  DepartmentsRoute: DepartmentsRoute,
   DocumentsRoute: DocumentsRouteWithChildren,
   EmailMarketingRoute: EmailMarketingRoute,
   EventRegistrationsRoute: EventRegistrationsRoute,
@@ -5055,6 +5117,7 @@ const rootRouteChildren: RootRouteChildren = {
   MembersMemberIdRoute: MembersMemberIdRoute,
   PlatformAdminsRoute: PlatformAdminsRoute,
   PlatformAiAuditRoute: PlatformAiAuditRoute,
+  PlatformAiUsersRoute: PlatformAiUsersRoute,
   PlatformAuditRoute: PlatformAuditRoute,
   PlatformIntroductionOperationsRoute: PlatformIntroductionOperationsRoute,
   PlatformPermissionsRoute: PlatformPermissionsRoute,

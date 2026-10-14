@@ -113,4 +113,51 @@ export class AiController {
     await this.aiService.clearActivityLog();
     return { ok: true };
   }
+
+  // ==========================================
+  // AI QUOTA & USER MANAGEMENT (50 QUESTIONS LIMIT)
+  // ==========================================
+
+  /** GET /api/ai/quota — Lấy hạn mức 50 câu hỏi của tài khoản hiện tại */
+  @Get('quota')
+  async getMyQuota(@Request() req: any) {
+    const quota = await this.aiService.getUserQuota(req.user.id);
+    return { ok: true, data: quota };
+  }
+
+  /** POST /api/ai/quota/record — Ghi nhận 1 câu hỏi và kiểm tra hạn mức */
+  @Post('quota/record')
+  async recordQuestion(@Request() req: any, @Body() body: { question?: string }) {
+    const result = await this.aiService.checkAndIncrementUserQuota(req.user.id, body.question);
+    return { ok: result.allowed, data: result.quota };
+  }
+
+  /** GET /api/ai/admin/users — Danh sách người dùng, thống kê và tình trạng hạn mức AI */
+  @Get('admin/users')
+  async listUsersAiUsage(@Request() req: any) {
+    const search = req.query?.search as string | undefined;
+    const status = req.query?.status as string | undefined;
+    const res = await this.aiService.listUsersAiUsage({ search, status });
+    return { ok: true, data: res };
+  }
+
+  /** POST /api/ai/admin/users/reset — Cấp thêm câu hỏi hoặc đặt lại về 0 */
+  @Post('admin/users/reset')
+  async resetOrAdjustUserQuota(
+    @Request() req: any,
+    @Body() body: { userId: string; resetCount?: boolean; addExtra?: number; newLimit?: number; unblock?: boolean }
+  ) {
+    const res = await this.aiService.resetOrAdjustUserQuota(body.userId, body);
+    return res;
+  }
+
+  /** POST /api/ai/admin/users/block — Khóa hoặc mở khóa quyền AI của người dùng */
+  @Post('admin/users/block')
+  async toggleBlockUserAi(
+    @Request() req: any,
+    @Body() body: { userId: string; blocked: boolean }
+  ) {
+    const res = await this.aiService.toggleBlockUserAi(body.userId, body.blocked);
+    return res;
+  }
 }

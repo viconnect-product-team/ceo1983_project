@@ -82,6 +82,7 @@ import {
   ShieldCheck,
   Plus,
   Users,
+  ShoppingBag,
 } from "lucide-react";
 import { CeoWebRtcCallModal } from "@/components/common/CeoWebRtcCallModal";
 import { MemberProfileModal } from "@/components/member/MemberProfileModal";
@@ -175,6 +176,68 @@ export function ChatThread({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const lastCallLogTimeRef = useRef<number>(0);
+
+  // Shopee-style Pending Product / Opportunity Inquiry
+  const [pendingInquiry, setPendingInquiry] = useState<any | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("vba_pending_chat_inquiry");
+      if (raw) {
+        const item = JSON.parse(raw);
+        if (item && (!item.targetCode || String(item.targetCode).toLowerCase() === String(peer.peerCode).toLowerCase())) {
+          return item;
+        }
+      }
+    } catch {}
+    return null;
+  });
+
+  const handleSendPendingInquiry = useCallback(async (inquiryToSend?: any) => {
+    const item = inquiryToSend || pendingInquiry;
+    if (!item) return;
+    const msgText = `[ITEM_INQUIRY]${JSON.stringify({
+      itemType: item.itemType || "product",
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      originalPrice: item.originalPrice,
+      image: item.image,
+      company: item.company,
+      category: item.category,
+      sellerName: item.sellerName,
+      unit: item.unit,
+      note: item.note,
+    })}`;
+
+    try {
+      setSending(true);
+      await send({ data: { peerCode: peer.peerCode, text: msgText } });
+      toast.success(
+        item.itemType === "opportunity"
+          ? "Đã gửi thông tin cơ hội quan tâm tới người đăng!"
+          : "Đã gửi thông tin sản phẩm hỏi shop thành công!"
+      );
+      setPendingInquiry(null);
+      try {
+        localStorage.removeItem("vba_pending_chat_inquiry");
+      } catch {}
+      fetchDirectMessages();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể gửi thông tin sản phẩm");
+    } finally {
+      setSending(false);
+    }
+  }, [pendingInquiry, peer.peerCode, send, fetchDirectMessages]);
+
+  useEffect(() => {
+    if (pendingInquiry && pendingInquiry.autoSend) {
+      const timer = setTimeout(() => {
+        handleSendPendingInquiry(pendingInquiry);
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingInquiry, handleSendPendingInquiry]);
 
   const triggerHaptic = (ms = 20) => {
     try {
@@ -638,10 +701,26 @@ export function ChatThread({
       map.set(m.id, m);
     }
 
-    const all = Array.from(map.values()).sort(
+    const sorted = Array.from(map.values()).sort(
       (a, b) =>
         new Date(a.createdAt || a.time).getTime() - new Date(b.createdAt || b.time).getTime(),
     );
+
+    // Triệt tiêu hoàn toàn lỗi xuất hiện 2 cuộc gọi khi bấm kết thúc cuộc gọi
+    const all: ChatMessage[] = [];
+    let lastCallTimestamp = 0;
+    for (const m of sorted) {
+      const isCall = (m.text || "").trim().startsWith("[call:");
+      if (isCall) {
+        const mTime = new Date(m.createdAt || m.time).getTime();
+        const validTime = isNaN(mTime) ? Date.now() : mTime;
+        if (lastCallTimestamp > 0 && Math.abs(validTime - lastCallTimestamp) < 60000) {
+          continue; // Bỏ qua bản ghi cuộc gọi thứ 2 bị lặp
+        }
+        lastCallTimestamp = validTime;
+      }
+      all.push(m);
+    }
 
     // Nếu là Kênh Ban chuyên môn của Hiệp hội và chưa có tin nhắn, tự động nạp tin tức chính thức
     if (all.length === 0 && peer.peerCode.startsWith("channel_")) {
@@ -806,7 +885,7 @@ export function ChatThread({
   const respondConnFn = useServerFn(respondMemberConnectionFn);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connState, setConnState] = useState({
-    isConnected: Boolean(peer.isConnected),
+    isConnected: true,
     isPending: Boolean(peer.isPending),
     isOutgoingPending: Boolean(peer.isOutgoingPending),
     isIncomingPending: Boolean(peer.isIncomingPending),
@@ -1060,6 +1139,10 @@ export function ChatThread({
   };
 
   const sendCallLogMessage = async (callPayload: string) => {
+    const now = Date.now();
+    if (now - lastCallLogTimeRef.current < 8000) return;
+    lastCallLogTimeRef.current = now;
+
     const tempId = "local-call-" + Date.now();
     const optimisticMsg: ChatMessage = {
       id: tempId,
@@ -1371,7 +1454,7 @@ export function ChatThread({
                           : "text-slate-500 dark:text-slate-400"
                       }`}
                     >
-                      {connState.isConnected ? "Đã kết nối" : "Chưa kết nối"}
+                      {connState.isConnected ? "Mở trao đổi trực tiếp" : "Chưa kết nối"}
                     </span>
                     <span className="text-slate-300 dark:text-slate-600">·</span>
                     <span
@@ -1480,6 +1563,8 @@ export function ChatThread({
           peerTitle={(peer as any)?.title || (matchedMember as any)?.title || "Hội viên CEO 1983"}
           onClose={() => setCallModal({ open: false, type: "audio" })}
           onEndCall={(result) => {
+            // Chỉ người gọi (initiator) mới gửi bản ghi cuộc gọi vào thread để tránh bị xuất hiện 2 cuộc gọi
+            if (!result.isCaller) return;
             const callPayload = `[call:${result.callType}|duration:${result.duration}|status:${result.status}]`;
             void sendCallLogMessage(callPayload);
           }}
@@ -1587,7 +1672,8 @@ export function ChatThread({
                             }}
                             className={`relative rounded-2xl shadow-xs transition-all select-none ${
                               content.type === "action_payment" ||
-                              content.type === "b2b_connect_invite"
+                              content.type === "b2b_connect_invite" ||
+                              content.type === "item_inquiry"
                                 ? "rounded-2xl bg-transparent border-0 shadow-none p-0 max-w-full"
                                 : content.type === "action_meeting"
                                   ? "max-w-full overflow-hidden border border-amber-500/30"
@@ -1809,6 +1895,74 @@ export function ChatThread({
                                     Đang chờ đối tác phản hồi...
                                   </div>
                                 )}
+                              </div>
+                            ) : content.type === "item_inquiry" ? (
+                              /* Shopee Style Product / Opportunity Inquiry Card */
+                              <div className="p-3.5 space-y-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-orange-500/40 rounded-2xl shadow-md min-w-[270px] max-w-sm">
+                                {/* Shopee Badge Header */}
+                                <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800 pb-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="grid h-6 w-6 place-items-center rounded-lg bg-[#EE4D2D]/15 text-[#EE4D2D]">
+                                      {content.data.itemType === "opportunity" ? (
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                      ) : (
+                                        <ShoppingBag className="h-3.5 w-3.5" />
+                                      )}
+                                    </div>
+                                    <span className="text-[11px] font-black tracking-wide uppercase text-[#EE4D2D]">
+                                      {content.data.itemType === "opportunity" ? "Cơ hội quan tâm" : "Sản phẩm quan tâm"}
+                                    </span>
+                                  </div>
+                                  <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                                    Hỏi Shop
+                                  </span>
+                                </div>
+
+                                {/* Product / Opportunity Horizontal Card */}
+                                <div className="flex gap-3 items-center rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200/80 dark:border-slate-700/80">
+                                  <div className="relative h-16 w-16 rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs">
+                                    <img
+                                      src={content.data.image || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&auto=format&fit=crop&q=80"}
+                                      alt={content.data.title}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0 space-y-1">
+                                    <h4 className="text-[12px] font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
+                                      {content.data.title}
+                                    </h4>
+                                    <div className="text-[13px] font-black text-[#EE4D2D]">
+                                      {typeof content.data.price === "number"
+                                        ? `${content.data.price.toLocaleString("vi-VN")} ₫`
+                                        : content.data.price || "Giá liên hệ"}
+                                    </div>
+                                    {content.data.company && (
+                                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                                        <Building2 className="h-3 w-3 shrink-0 text-slate-400" />
+                                        <span>{content.data.company}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Message Prompt */}
+                                <div className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed bg-amber-50/50 dark:bg-amber-950/20 p-2 rounded-xl border border-amber-200/40 dark:border-amber-900/30">
+                                  <p className="text-[9.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-0.5">
+                                    Nội dung liên hệ:
+                                  </p>
+                                  {content.data.note || (content.data.itemType === "opportunity"
+                                    ? "Tôi rất quan tâm đến cơ hội hợp tác này. Hãy kết nối trao đổi chi tiết nhé!"
+                                    : "Tôi đang quan tâm đến sản phẩm này. Vui lòng tư vấn thêm cho tôi!")}
+                                </div>
+
+                                {/* Action Link to View Details */}
+                                <Link
+                                  to={content.data.itemType === "opportunity" ? "/association/opportunities" : "/association/products"}
+                                  className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-gradient-to-r from-[#003B95] to-[#19194D] text-white text-[11px] font-bold hover:opacity-95 transition shadow-xs"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  <span>{content.data.itemType === "opportunity" ? "Xem chi tiết cơ hội" : "Xem chi tiết sản phẩm"}</span>
+                                </Link>
                               </div>
                             ) : content.type === "action_meeting" ? (
                               /* Action Card: Meeting Invitation */
@@ -2327,6 +2481,59 @@ export function ChatThread({
           >
             <X className="h-3.5 w-3.5" />
           </button>
+        </div>
+      )}
+
+      {/* Shopee Style Product / Opportunity Inquiry Floating Banner */}
+      {pendingInquiry && (
+        <div className="border-t border-orange-200 dark:border-orange-950/60 bg-gradient-to-r from-orange-50 via-amber-50 to-white dark:from-orange-950/40 dark:via-slate-900 dark:to-slate-900 px-3.5 py-2.5 flex items-center justify-between gap-3 shadow-md animate-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="relative size-12 rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-orange-300 dark:border-orange-800 shrink-0 shadow-xs">
+              <img
+                src={pendingInquiry.image || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&auto=format&fit=crop&q=80"}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase text-[#EE4D2D] bg-[#EE4D2D]/10 px-1.5 py-0.5 rounded">
+                  {pendingInquiry.itemType === "opportunity" ? "Cơ hội" : "Sản phẩm"}
+                </span>
+                <h4 className="text-[12px] font-bold text-slate-900 dark:text-white truncate">
+                  {pendingInquiry.title}
+                </h4>
+              </div>
+              <div className="text-[12px] font-black text-[#EE4D2D] mt-0.5">
+                {typeof pendingInquiry.price === "number"
+                  ? `${pendingInquiry.price.toLocaleString("vi-VN")} ₫`
+                  : pendingInquiry.price || "Giá thỏa thuận"}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleSendPendingInquiry()}
+              disabled={sending}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#EE4D2D] to-orange-600 hover:from-orange-600 hover:to-[#EE4D2D] text-white text-[11.5px] font-bold shadow-md shadow-orange-500/20 active:scale-95 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <Send className="size-3.5" />
+              <span>Gửi hỏi shop</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPendingInquiry(null);
+                try {
+                  localStorage.removeItem("vba_pending_chat_inquiry");
+                } catch {}
+              }}
+              className="size-7 grid place-items-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white transition cursor-pointer"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
       )}
 

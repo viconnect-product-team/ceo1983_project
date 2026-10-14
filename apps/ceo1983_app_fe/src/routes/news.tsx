@@ -229,6 +229,8 @@ function NewsPage() {
         submitLabel={editing ? t("common.save") : t("common.create")}
         cancelLabel={t("common.cancel")}
         onSubmit={onSubmit}
+        onDelete={editing ? () => onDelete(editing) : undefined}
+        isDeleting={editing ? deletingId === editing.id : false}
         onClose={() => {
           setOpen(false);
           setEditing(null);

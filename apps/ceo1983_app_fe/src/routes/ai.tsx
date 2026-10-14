@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Sparkles,
@@ -83,6 +83,10 @@ import { askAssociationAiFn } from "@/lib/ai.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/ai")({
+  beforeLoad: () => {
+    // Hoàn toàn chặn trợ lý AI xuất hiện trong hệ thống CRM
+    throw redirect({ to: "/" });
+  },
   head: () => ({
     meta: [
       { title: "Trợ lý AI — Nền tảng quản trị Hiệp hội" },

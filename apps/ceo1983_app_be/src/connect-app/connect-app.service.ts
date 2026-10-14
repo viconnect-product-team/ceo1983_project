@@ -1183,7 +1183,7 @@ export class ConnectAppService implements OnModuleInit {
     return { ok: true, deleted: ids.length };
   }
 
-  async listMyMemberNotifications(userId: string) {
+  async listMyMemberNotifications(userId: string, personalOnly = false) {
     const users = await this.prisma.$queryRaw<any[]>`
       SELECT id, email, phone, created_at FROM public.users WHERE id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
@@ -1204,20 +1204,25 @@ export class ConnectAppService implements OnModuleInit {
       if (m.code) recipientKeys.push(String(m.code));
     }
 
-    const [broadcast, personal, business] = await Promise.all([
-      this.prisma.$queryRaw<any[]>`
+    const broadcastPromise = personalOnly
+      ? Promise.resolve([])
+      : this.prisma.$queryRaw<any[]>`
         SELECT id, code, title, body, audience, sent_at, created_at, app_scope, target_app, target_channel, pushed_to_messages
         FROM public.notifications
         WHERE (status = 'sent' OR status = 'active' OR status IS NULL)
-          AND (app_scope = 'association_app' OR app_scope = 'all' OR app_scope IS NULL
-               OR target_app = 'association_app' OR target_app = 'all' OR target_app IS NULL)
+          AND (app_scope = 'association_app' OR app_scope = 'all'
+               OR target_app = 'association_app' OR target_app = 'all')
         ORDER BY COALESCE(sent_at, created_at) DESC
         LIMIT 30
-      `.catch(() => []),
+      `.catch(() => []);
+
+    const [broadcast, personal, business] = await Promise.all([
+      broadcastPromise,
       this.prisma.$queryRaw<any[]>`
         SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
         FROM public.member_notifications
         WHERE recipient_id::text = ANY(${recipientKeys}::text[])
+          AND COALESCE(type, '') != 'crm_system'
         ORDER BY created_at DESC
         LIMIT 50
       `.catch(() => []),
@@ -1226,6 +1231,9 @@ export class ConnectAppService implements OnModuleInit {
         FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid
           AND (app_scope = 'association_app' OR target_app = 'association_app' OR app_scope = 'all' OR target_app = 'all' OR app_scope IS NULL)
+          AND COALESCE(app_scope, '') != 'crm'
+          AND COALESCE(target_app, '') != 'crm'
+          AND COALESCE(target_app, '') != 'crm_web'
         ORDER BY created_at DESC
         LIMIT 40
       `.catch(() => []),
@@ -2080,16 +2088,17 @@ export class ConnectAppService implements OnModuleInit {
 
     if (rows.length > 0 && rows[0].value) {
       const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+      const isEnabled = val.enabled === true && val.themeId !== 'none';
       return {
-        themeId: val.themeId || 'classic',
-        enabled: val.enabled !== false,
+        themeId: isEnabled ? (val.themeId || 'classic') : 'none',
+        enabled: isEnabled,
         updatedAt: val.updatedAt || null,
       };
     }
 
     return {
-      themeId: 'classic',
-      enabled: true,
+      themeId: 'none',
+      enabled: false,
       updatedAt: null,
     };
   }

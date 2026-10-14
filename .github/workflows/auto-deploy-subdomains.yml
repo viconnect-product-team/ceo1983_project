@@ -1,0 +1,163 @@
+name: Auto Deploy Subdomains (CEO 1983 & CRM)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - '**.md'
+      - 'document/**'
+      - '.gitignore'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Phân hệ triển khai (all / mobile / crm / ssl)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - mobile
+          - crm
+          - ssl
+
+jobs:
+  quality-check:
+    name: Kiểm Tra Chất Lượng Mã Nguồn (TypeScript Typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Khởi tạo môi trường Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Cài đặt dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Kiểm tra lỗi TypeScript Frontend (Exit code 0)
+        run: |
+          cd apps/ceo1983_app_fe
+          npx tsc --noEmit
+
+      - name: Kiểm tra lỗi TypeScript Backend (Exit code 0)
+        run: |
+          cd apps/ceo1983_app_be
+          npx tsc --noEmit
+
+  build-and-deploy:
+    name: Đóng Gói Docker & Triển Khai Lên Subdomains
+    needs: quality-check
+    runs-on: ubuntu-latest
+    env:
+      SERVER_IP: ${{ secrets.REMOTE_HOST || '14.225.217.232' }}
+      SERVER_USER: ${{ secrets.REMOTE_USER || 'root' }}
+    steps:
+      - name: Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Khởi tạo môi trường Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Cài đặt dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Frontend với Heap Memory 8GB (Chống tràn RAM)
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+        run: |
+          npm run build --prefix apps/ceo1983_app_fe
+
+      - name: Thiết lập Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Images cục bộ trên runner
+        run: |
+          # 1. Build Frontend Image từ bản build .output vừa hoàn thành
+          docker build -t ceo1983-frontend:latest -f deploy/ceo1983/Dockerfile.frontend .
+          docker tag ceo1983-frontend:latest crm-frontend:latest
+
+          # 2. Build Backend Image từ root Dockerfile.backend
+          docker build -t ceo1983-backend:latest -f Dockerfile.backend .
+          docker tag ceo1983-backend:latest crm-backend:latest
+
+          # 3. Nén images thành tar.gz để truyền nhanh qua SSH
+          mkdir -p dist-images
+          docker save ceo1983-frontend:latest crm-frontend:latest | gzip -1 > dist-images/frontend-images.tar.gz
+          docker save ceo1983-backend:latest crm-backend:latest | gzip -1 > dist-images/backend-images.tar.gz
+
+      - name: Đẩy images và cấu hình sang Server VPS qua SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
+          password: ${{ secrets.SSH_PASSWORD || '' }}
+          source: "dist-images/*.tar.gz,deploy/**"
+          target: "/root/deploy-cache/"
+          strip_components: 0
+
+      - name: Kích hoạt Container & Cập nhật Subdomains trên Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
+          password: ${{ secrets.SSH_PASSWORD || '' }}
+          script: |
+            set -e
+            echo ">>> [1/5] Nạp Docker Images vào Docker Daemon trên VPS..."
+            cd /root/deploy-cache/
+            if [ -f dist-images/frontend-images.tar.gz ]; then
+              docker load < dist-images/frontend-images.tar.gz
+              rm -f dist-images/frontend-images.tar.gz
+            fi
+            if [ -f dist-images/backend-images.tar.gz ]; then
+              docker load < dist-images/backend-images.tar.gz
+              rm -f dist-images/backend-images.tar.gz
+            fi
+
+            echo ">>> [2/5] Đảm bảo mạng nội bộ ceo1983-network..."
+            docker network create ceo1983-network 2>/dev/null || true
+
+            echo ">>> [3/5] Đồng bộ và khởi động Mobile CEO 1983 (https://ceo1983.viconnect.vn)..."
+            mkdir -p /root/association
+            cp -rf deploy/ceo1983/* /root/association/ 2>/dev/null || true
+            cd /root/association
+            sed -i 's/\r$//' docker-compose.yml .env.association 2>/dev/null || true
+            docker compose -f docker-compose.yml stop 2>/dev/null || true
+            docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true
+            docker compose -f docker-compose.yml up -d --force-recreate
+
+            echo ">>> [4/5] Đồng bộ và khởi động CRM Hiệp Hội (https://crm.ceo1983.viconnect.vn)..."
+            mkdir -p /root/crm
+            cp -rf deploy/crm/* /root/crm/ 2>/dev/null || true
+            cd /root/crm
+            sed -i 's/\r$//' docker-compose.yml .env.crm 2>/dev/null || true
+            docker compose -f docker-compose.yml stop 2>/dev/null || true
+            docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true
+            docker compose -f docker-compose.yml up -d --force-recreate
+
+            echo ">>> [5/5] Cập nhật Nginx Reverse Proxy SSL..."
+            mkdir -p /root/ssl-proxy
+            cp -rf deploy/ssl/* /root/ssl-proxy/ 2>/dev/null || true
+            cd /root/ssl-proxy
+            sed -i 's/\r$//' nginx.conf docker-compose.ssl.yml setup-ssl.sh 2>/dev/null || true
+            bash setup-ssl.sh
+
+            echo "=========================================================================="
+            echo " AUTO DEPLOY SUBDOMAINS HOÀN TẤT THÀNH CÔNG!"
+            echo " 1. Mobile CEO 1983 Subdomain : https://ceo1983.viconnect.vn"
+            echo " 2. Web CRM Subdomain         : https://crm.ceo1983.viconnect.vn"
+            echo " 3. Test Dev Link Mobile      : http://14.225.217.232:5002 | https://14.225.217.232:5444"
+            echo " 4. Test Dev Link CRM         : http://14.225.217.232:5004 | https://14.225.217.232:5443"
+            echo "=========================================================================="

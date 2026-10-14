@@ -58,20 +58,76 @@ public class CeoNotificationSyncService extends Service {
     private static final String CHANNEL_MESSAGES_ID = "ceo1983_channel_messages";
     private static final String CHANNEL_SERVICE_ID = "ceo1983_channel_service";
 
+    private static final int SERVICE_NOTIFICATION_ID = 198301;
+
+    public static void startSync(Context context, String userId, String token) {
+        startSync(context, userId, token, null);
+    }
+
+    public static void startSync(Context context, String userId, String token, String serverUrl) {
+        if (context == null) return;
+        try {
+            Intent intent = new Intent(context, CeoNotificationSyncService.class);
+            intent.setAction(ACTION_START);
+            intent.putExtra(KEY_USER_ID, userId);
+            intent.putExtra(KEY_TOKEN, token);
+            if (serverUrl != null && !serverUrl.isEmpty()) {
+                intent.putExtra(KEY_SERVER_URL, serverUrl);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting sync service: " + e.getMessage());
+        }
+    }
+
+    public static void stopSync(Context context) {
+        if (context == null) return;
+        try {
+            Intent intent = new Intent(context, CeoNotificationSyncService.class);
+            intent.setAction(ACTION_STOP);
+            context.stopService(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping sync service: " + e.getMessage());
+        }
+    }
+
     private boolean mIsRunning = false;
     private Thread mWorkerThread;
     private String mLastActiveCallId = null;
     private final Set<String> mSeenNotifIds = new HashSet<>();
+    private boolean mHasSeededInitialNotifs = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannels();
         trustAllCertificates();
+        startForegroundServiceNotification();
+    }
+
+    private void startForegroundServiceNotification() {
+        try {
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_SERVICE_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("CEO 1983")
+                .setContentText("Dịch vụ nhận cuộc gọi & thông báo đang chạy nền")
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setOngoing(true)
+                .setShowWhen(false);
+
+            startForeground(SERVICE_NOTIFICATION_ID, builder.build());
+        } catch (Exception e) {
+            Log.w(TAG, "startForeground error: " + e.getMessage());
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        startForegroundServiceNotification();
         if (intent != null) {
             String action = intent.getAction();
             if (ACTION_STOP.equals(action)) {
@@ -147,7 +203,11 @@ public class CeoNotificationSyncService extends Service {
 
     private void checkActiveCall(String baseUrl, String userId, String token) {
         try {
-            String target = baseUrl.replaceAll("/+$", "") + "/me/active-call";
+            String apiBase = baseUrl.replaceAll("/+$", "");
+            if (!apiBase.endsWith("/api")) {
+                apiBase += "/api";
+            }
+            String target = apiBase + "/me/active-call";
             HttpURLConnection conn = createConnection(target, token, userId);
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
@@ -186,7 +246,12 @@ public class CeoNotificationSyncService extends Service {
 
     private void checkNewNotifications(String baseUrl, String userId, String token) {
         try {
-            String target = baseUrl.replaceAll("/+$", "") + "/me/notifications?unreadOnly=true&limit=3";
+            String apiBase = baseUrl.replaceAll("/+$", "");
+            if (!apiBase.endsWith("/api")) {
+                apiBase += "/api";
+            }
+            // Chỉ đồng bộ thông báo cá nhân của tài khoản CEO 1983, không đẩy thông báo broadcast từ CRM
+            String target = apiBase + "/me/notifications/member?personalOnly=true";
             HttpURLConnection conn = createConnection(target, token, userId);
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
@@ -198,22 +263,43 @@ public class CeoNotificationSyncService extends Service {
                 JSONObject res = new JSONObject(body);
                 JSONArray list = res.optJSONArray("notifications");
                 if (list != null && list.length() > 0) {
+                    if (!mHasSeededInitialNotifs) {
+                        // Lần đầu chạy khi app khởi động: ghi nhớ các thông báo cũ để không nổ thông báo dồn dập
+                        for (int i = 0; i < list.length(); i++) {
+                            JSONObject notif = list.getJSONObject(i);
+                            String id = notif.optString("id");
+                            if (!id.isEmpty()) {
+                                mSeenNotifIds.add(id);
+                            }
+                        }
+                        mHasSeededInitialNotifs = true;
+                        return;
+                    }
+
                     for (int i = 0; i < list.length(); i++) {
                         JSONObject notif = list.getJSONObject(i);
+                        boolean unread = notif.optBoolean("unread", true);
+                        if (!unread) continue;
+
+                        boolean isBroadcast = notif.optBoolean("isBroadcast", false);
+                        if (isBroadcast) continue;
+
                         String id = notif.optString("id");
                         if (!id.isEmpty() && !mSeenNotifIds.contains(id)) {
                             mSeenNotifIds.add(id);
                             // Avoid flooding initial history
-                            if (mSeenNotifIds.size() > 50) {
+                            if (mSeenNotifIds.size() > 100) {
                                 mSeenNotifIds.clear();
                                 mSeenNotifIds.add(id);
                             }
-                            String title = notif.optString("title", "CEO 1983");
+                            String title = notif.optString("title", "Hiệp hội CEO 1983");
                             String content = notif.optString("body", "Bạn có thông báo mới");
-                            String type = notif.optString("type", "message");
+                            String type = notif.optString("type", notif.optString("refType", "message"));
                             triggerMessageAlert(title, content, type, id);
                         }
                     }
+                } else {
+                    mHasSeededInitialNotifs = true;
                 }
             }
         } catch (Exception ignored) {}
@@ -372,6 +458,15 @@ public class CeoNotificationSyncService extends Service {
             msgChannel.enableVibration(true);
             msgChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             manager.createNotificationChannel(msgChannel);
+
+            NotificationChannel serviceChannel = new NotificationChannel(
+                CHANNEL_SERVICE_ID,
+                "Dịch vụ nền CEO 1983",
+                NotificationManager.IMPORTANCE_MIN
+            );
+            serviceChannel.setDescription("Giữ kết nối nhận cuộc gọi và tin nhắn khi tắt màn hình");
+            serviceChannel.setShowBadge(false);
+            manager.createNotificationChannel(serviceChannel);
         }
     }
 

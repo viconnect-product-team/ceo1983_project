@@ -522,19 +522,20 @@ function OpportunitiesScreen() {
     setPageOpps(1);
   }, [q, tab]);
 
-  async function interest(id: string) {
+  async function interest(id: string, targetOpp?: any) {
+    const opp = targetOpp || (opportunities || []).find((x) => x.id === id);
     setBusy(id);
     try {
       await doInterest({ data: { opportunityId: id } });
       setInterestedIds((prev) => [...prev, id]);
-      toast.success("Đã gửi thông báo quan tâm kết nối tới người đăng!");
       reload();
     } catch (e) {
       setInterestedIds((prev) => [...prev, id]);
-      toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
     } finally {
       setBusy(null);
     }
+
+    toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
   }
 
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
@@ -765,122 +766,6 @@ function OpportunitiesScreen() {
           </div>
         </div>
 
-        {/* 2. FEATURED OPPORTUNITY CARD */}
-        {(() => {
-          const cur = featuredList[0] || list[0];
-          if (!cur) {
-            return (
-              <div className="self-stretch p-5 bg-gradient-to-br from-sky-950 via-blue-900 to-slate-900 rounded-2xl outline outline-1 outline-offset-[-1px] outline-blue-700/30 flex flex-col justify-start items-start gap-3 shadow-md text-white">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 bg-amber-500/20 border border-amber-400/40 rounded-lg text-amber-300 text-[10px] font-bold">
-                    KẾT NỐI B2B
-                  </span>
-                  <span className="text-xs text-blue-200">CLB Doanh Nhân CEO 1983</span>
-                </div>
-                <h3 className="text-sm sm:text-base font-bold text-white">
-                  Chưa có cơ hội nổi bật nào được đăng tải
-                </h3>
-                <p className="text-xs text-blue-100/80 leading-relaxed">
-                  Hãy là người tiên phong chia sẻ nhu cầu mua sắm, dự án hợp tác hoặc chào hàng B2B tới mạng lưới 1983+ lãnh đạo doanh nghiệp.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setCreateModalOpen(true)}
-                  className="mt-1 px-4 py-2.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-md shadow-[#003B95]/20 flex items-center gap-1.5"
-                >
-                  <Plus className="size-4" />
-                  <span>Đăng cơ hội ngay</span>
-                </button>
-              </div>
-            );
-          }
-
-          const curImage =
-            (cur?.image ? resolveMediaUrl(cur.image) || cur.image : null) ||
-            "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&auto=format&fit=crop&q=80";
-          const curTag = normalizeTag(cur.tag);
-          const curBudget = formatSmartPrice(cur.value);
-          const curTitle = cur.title;
-          const curAuthor = cur.posterName || cur.contactName || "Hội viên CEO 1983";
-          const curCompany = cur.company || "CLB Doanh Nhân CEO 1983";
-          const curDeadline =
-            cur.deadline || cur.time
-              ? new Date(cur.deadline || cur.time || "").toLocaleDateString("vi-VN")
-              : "Đang mở tiếp nhận";
-          const curViews = cur.views || 0;
-
-          return (
-            <div className="self-stretch bg-[#001D4A] rounded-2xl border-2 border-amber-400/50 flex flex-col justify-start items-start overflow-hidden shadow-xl shadow-[#003B95]/15">
-              <div className="self-stretch bg-gradient-to-b from-[#002B70] to-[#001D4A] rounded-2xl flex flex-col justify-start items-start overflow-hidden">
-                {/* Poster Banner */}
-                <div className="self-stretch h-40 relative inline-flex justify-start items-start">
-                  <img src={curImage} alt={curTitle} className="w-full h-40 object-cover" />
-                  <div className="w-full h-40 left-0 top-0 absolute bg-gradient-to-b from-black/0 to-[#001D4A]" />
-                  <div className="w-[calc(100%-24px)] left-[12px] top-[12px] absolute flex justify-between items-center">
-                    <div className="px-2 py-1 bg-amber-500 rounded-md flex justify-start items-start shadow-xs">
-                      <div className="justify-start text-slate-950 text-[10px] font-black font-['Inter']">
-                        {curTag.toUpperCase()}
-                      </div>
-                    </div>
-                    {curViews > 0 && (
-                      <div className="px-2 py-1 bg-black/60 rounded-md flex justify-start items-start backdrop-blur-xs border border-white/20">
-                        <div className="justify-start text-amber-300 text-[10px] font-semibold font-['Inter']">
-                          👁 {curViews.toLocaleString()} lượt xem
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="px-2.5 py-1.5 left-[12px] top-[115px] absolute bg-amber-400/90 backdrop-blur-xs rounded-md flex justify-start items-start shadow-xs border border-amber-300">
-                    <div className="justify-start text-slate-950 text-xs font-black font-['Inter']">
-                      Ngân sách: {curBudget}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Details & Actions */}
-                <div className="self-stretch p-4 flex flex-col justify-start items-start gap-3">
-                  <div
-                    onClick={() => cur && handleOpenOppDetail(cur)}
-                    className="self-stretch justify-start text-white text-base font-bold font-['Inter'] leading-5 cursor-pointer hover:text-amber-300 transition-colors"
-                  >
-                    {curTitle}
-                  </div>
-                  <div className="self-stretch h-0 border border-white/10"></div>
-                  <div className="self-stretch inline-flex justify-between items-center">
-                    <div className="flex justify-start items-center gap-2">
-                      <img
-                        className="size-6 rounded-full object-cover border-2 border-amber-400/60"
-                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&auto=format&fit=crop&q=80"
-                        alt={curAuthor}
-                      />
-                      <div className="inline-flex flex-col justify-start items-start gap-0.5">
-                        <div className="justify-start text-white text-xs font-bold font-['Inter']">
-                          {curAuthor}
-                        </div>
-                        <div className="justify-start text-amber-200/90 text-[10px] font-medium font-['Inter']">
-                          {curCompany}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="justify-start text-amber-200/80 text-xs font-medium font-['Inter']">
-                      Hạn chót: {curDeadline}
-                    </div>
-                  </div>
-                  <div className="self-stretch pt-1 inline-flex justify-start items-start">
-                    <button
-                      type="button"
-                      onClick={() => cur && handleOpenOppDetail(cur)}
-                      className="w-full px-3 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl flex justify-center items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md font-bold text-xs"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      <span>Xem chi tiết & Đàm phán ngay</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
 
         {/* 3. SEARCH & CHIPS */}
         <div className="self-stretch flex flex-col gap-2.5">
@@ -1118,7 +1003,7 @@ function OpportunitiesScreen() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                interest(o.id);
+                                interest(o.id, o);
                               }}
                               disabled={busy === o.id}
                               className="px-4 py-1.5 bg-sky-950 hover:bg-sky-900 rounded-md flex justify-start items-start text-white text-xs font-bold font-['Inter'] cursor-pointer transition active:scale-95 disabled:opacity-50"
@@ -1268,7 +1153,7 @@ function OpportunitiesScreen() {
         target={negotiateTarget}
         initialPurpose={
           negotiateOpp
-            ? `Hẹn gặp 1-1 đàm phán cơ hội: "${negotiateOpp.title}"`
+            ? `Chào Quý CEO, tôi rất quan tâm đến cơ hội "${negotiateOpp.title}" mà bạn đã chia sẻ và mong muốn hẹn gặp kết nối 1-1 để trao đổi chi tiết về tiềm năng hợp tác.`
             : "Hẹn gặp 1-1 đàm phán hợp tác kinh doanh"
         }
         initialOpportunityId={negotiateOpp?.id}

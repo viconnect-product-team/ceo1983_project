@@ -247,9 +247,9 @@ function MeetingsWorkspacePage() {
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold shadow-md cursor-pointer transition hover:bg-blue-800 bg-[#003B95] text-white"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black shadow-md shadow-amber-500/20 cursor-pointer transition bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950"
           >
-            <Plus className="h-4 w-4 text-amber-400" />
+            <Plus className="h-4 w-4 text-slate-950" />
             <span>Lên Lịch Hẹn 1-on-1 Mới</span>
           </button>
         </div>
@@ -314,9 +314,9 @@ function MeetingsWorkspacePage() {
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold shadow-md cursor-pointer transition hover:bg-blue-800 bg-[#003B95] text-white"
+              className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black shadow-md shadow-amber-500/20 cursor-pointer transition bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950"
             >
-              <Plus className="h-4 w-4 text-amber-400" />
+              <Plus className="h-4 w-4 text-slate-950" />
               <span>Tạo Cuộc Gặp Ngay</span>
             </button>
           </div>

@@ -13,8 +13,9 @@ Tài liệu Đặc tả Yêu cầu Phần mềm (Software Requirements Specifica
 Ứng dụng di động không đơn thuần là một kênh tra cứu thông tin thông thường, mà được định vị là:
 - **Tấm Danh Thiếp Số Quyền Năng**: Đại diện cho phong thái, đẳng cấp và uy tín thương hiệu của từng chủ doanh nghiệp sinh năm Quý Hợi 1983.
 - **Văn Phòng Điều Hành Bỏ Túi**: Giúp doanh nhân nhận chỉ đạo, duyệt tiến độ công việc, tham dự sự kiện và giao thương B2B mọi lúc, mọi nơi ngay trên chiếc điện thoại di động.
+- **Tên miền truy cập Web App Mobile**: `https://ceo1983.viconnect.vn/`
 
-*Tài liệu cam kết tuân thủ nghiêm ngặt quy định: Chuẩn hóa toàn bộ công nghệ kết nối hội viên bằng cụm từ chính thức: "Thẻ thông minh doanh nhân / Công nghệ chạm thẻ thông minh 1 chạm", sử dụng văn phong quản trị hiệp hội sang trọng.*
+*Tài liệu cam kết tuân thủ nghiêm ngặt quy định: Chuẩn hóa toàn bộ công nghệ kết nối hội viên bằng cụm từ chính thức: "Thẻ điện tử hội viên & Quét mã QR kết nối động", sử dụng văn phong quản trị hiệp hội sang trọng.*
 
 ---
 
@@ -24,7 +25,7 @@ Tài liệu Đặc tả Yêu cầu Phần mềm (Software Requirements Specifica
 Ứng dụng kết hợp sức mạnh của giao diện Web siêu mượt mà với tầng Cầu nối Hệ điều hành Native (Android Java / iOS Swift):
 - **Tầng Giao diện Cảm ứng**: Tối ưu hóa phản hồi chạm vuốt dưới 0.1 giây, hiệu ứng kính mờ hoàng gia (Glassmorphism) và bảng màu chuẩn thương hiệu HanoiBA CEO 1983.
 - **Tầng Dịch vụ Nền Native (Background Services)**: Tích hợp dịch vụ gọi điện hệ điều hành (Android ConnectionService và iOS CallKit) đảm bảo chuông cuộc gọi khẩn cấp đổ vang và hiện giao diện nhận cuộc gọi ngay trên màn hình khóa kể cả khi ứng dụng đang đóng hoàn toàn.
-- **Tầng Nhận diện Giọng nói Tiếng Việt (Dual-Engine Voice AI)**: Tích hợp trợ lý giọng nói thông minh nhận lệnh tiếng Việt tự nhiên và điều hướng màn hình tức thì.
+- **Tầng Trợ Lý AI Chat Doanh Nhân (OpenRouter AI Assistant)**: Tích hợp trợ lý trí tuệ nhân tạo chuyên sâu thuần Chat (OpenRouter API - mô hình Gemini 2.0 Flash / GPT-4o Mini), giải đáp thông tin sự kiện, kết nối cơ hội giao thương B2B, tra cứu văn kiện và điều phối hội viên; loại bỏ hoàn toàn nhận diện giọng nói (Voice AI) và bảo đảm phân lập tuyệt đối chỉ phục vụ hội viên mobile, không can thiệp vào Web CRM.
 
 ### 2.2. Cơ chế Đồng bộ Hai Chiều với Web CRM
 Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được giao và vé mời sự kiện đều được đồng bộ hai chiều liên tục với Cổng Quản trị CRM Hiệp hội. Nếu Quản trị viên thay đổi phân quyền của hội viên trên CRM, ứng dụng di động lập tức nhận diện và cập nhật thẩm quyền mà không làm gián đoạn phiên làm việc.
@@ -33,10 +34,10 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 
 # PHẦN 3: ĐẶC TẢ YÊU CẦU CHỨC NĂNG CHI TIẾT TỪNG PHÂN HỆ DI ĐỘNG
 
-## 3.1. Phân hệ Đăng Nhập Sinh Trắc Học & Thẻ Thông Minh Doanh Nhân 1 Chạm
+## 3.1. Phân hệ Đăng Nhập Sinh Trắc Học & Thẻ Điện Tử Hội Viên 83
 
 ### 3.1.1. Thông tin chung
-- **Mục tiêu**: Cung cấp giải pháp đăng nhập an toàn, tiện lợi và đẳng cấp cho doanh nhân. Cho phép đăng nhập tức thì thông qua Sinh trắc học vân tay / khuôn mặt (FaceID / Fingerprint), Số điện thoại chính danh kèm mã OTP, hoặc **Công nghệ chạm Thẻ thông minh doanh nhân 1 chạm** vào mặt sau điện thoại.
+- **Mục tiêu**: Cung cấp giải pháp đăng nhập an toàn, tiện lợi và đẳng cấp cho doanh nhân. Cho phép đăng nhập tức thì thông qua Sinh trắc học vân tay / khuôn mặt (FaceID / Fingerprint), Số điện thoại chính danh kèm mã OTP, hoặc **Quét Mã QR Đăng Nhập Nhanh** trên Thẻ điện tử hội viên.
 - **Cơ chế an toàn**: Bảo vệ tài khoản khỏi truy cập trái phép, tự động khóa phiên khi nhập sai mã quá số lần quy định.
 
 ### 3.1.2. Màn hình
@@ -47,27 +48,27 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - **3.1.2.5. Chỉ định người trợ giúp kích hoạt thẻ**: Nút gọi nhanh hotline hỗ trợ của Ban Thư Ký.
 - **3.1.2.6. Lịch sử đăng nhập & Thiết bị**: Bảng kê khai các thiết bị đã từng truy cập tài khoản.
 - **3.1.2.7. Đăng xuất an toàn**: Hộp thoại xác nhận đăng xuất và bảo mật dữ liệu lưu trong máy.
-- **3.1.2.8. Màn hình Hướng dẫn Chạm Thẻ Thông Minh 1 Chạm**: Hoạt ảnh gợn sóng vàng hướng dẫn đưa tấm thẻ chạm vào lưng điện thoại để đăng nhập trong 0.5 giây.
+- **3.1.2.8. Màn hình Hướng dẫn Quét Mã QR Thẻ Điện Tử**: Hoạt ảnh quét mã QR sang trọng hướng dẫn sử dụng camera quét mã trên thẻ điện tử để đăng nhập trong 0.5 giây.
 
 ### 3.1.3. Mô tả chi tiết màn hình
 #### 3.1.3.1. Màn hình Lựa chọn Phương thức Xác thực
 - Logo câu lạc bộ CEO 1983 mạ vàng dập nổi chính giữa màn hình.
-- 3 nút bấm kích thước lớn: [Sinh trắc học FaceID], [Chạm Thẻ thông minh doanh nhân 1 chạm], [Số điện thoại & OTP].
+- 3 nút bấm kích thước lớn: [Sinh trắc học FaceID], [Quét Mã QR Đăng Nhập Nhanh], [Số điện thoại & OTP].
 
 #### 3.1.3.2. Biểu mẫu Đăng nhập & Xác thực Bảo mật
 | Tên trường | Nhãn hiển thị | Kiểu dữ liệu | Bắt buộc | Giá trị mặc định | Dải giá trị cho phép | Quy tắc kiểm tra (Validation) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `loginMethod` | Phương thức đăng nhập | Chọn một | Có | Sinh trắc học | Sinh trắc học, Chạm thẻ, Số điện thoại | Xem quy tắc giao diện động |
+| `loginMethod` | Phương thức đăng nhập | Chọn một | Có | Sinh trắc học | Sinh trắc học, Quét mã QR, Số điện thoại | Xem quy tắc giao diện động |
 | `phoneNumber` | Số điện thoại chính danh | Số điện thoại | Có | Rỗng | 10 số (đầu số 03, 05, 07, 08, 09) | Kiểm tra số di động Việt Nam hợp lệ |
 | `otpCode` | Mã xác thực bảo mật | Ký tự số | Có | Rỗng | 6 chữ số | Nhận qua tin nhắn SMS trong 60 giây |
-| `smartCardUid`| Mã định danh thẻ thông minh| Ký tự an toàn | Không | Rỗng | Chuỗi mã hóa độc bản trên thẻ | Đọc tự động qua công nghệ chạm thẻ 1 chạm |
+| `smartCardUid`| Mã định danh thẻ điện tử | Ký tự an toàn | Không | Rỗng | Chuỗi mã hóa độc bản trên thẻ | Đọc tự động qua quét mã QR động |
 | `isBiometricOn`| Kích hoạt FaceID/Vân tay| Bật/Tắt | Có | Bật | Bật hoặc Tắt | Lưu khóa bảo mật trong phân vùng an toàn |
 
 - **Hành vi tương tác giao diện động theo giá trị chọn (Select-State UI Dependencies)**:
-  - *Khi chọn "Phương thức đăng nhập" = "Chạm Thẻ thông minh doanh nhân"*:
-    - Ứng dụng **kích hoạt bộ phận cảm biến chạm thẻ thông minh 1 chạm** của điện thoại.
-    - Màn hình hiển thị hoạt ảnh gợn sóng màu vàng Amber Gold hướng dẫn: *"Vui lòng đưa tấm Thẻ thông minh doanh nhân CEO 1983 chạm nhẹ vào phần trên lưng điện thoại..."*.
-    - Khi nhận diện chip thành công, máy rung nhẹ 1 nhịp (Haptic feedback), tự động đối soát mã thẻ với máy chủ và chuyển thẳng vào màn hình chính sau 0.5 giây mà không cần nhập mật khẩu.
+  - *Khi chọn "Phương thức đăng nhập" = "Quét mã QR"*:
+    - Ứng dụng **kích hoạt camera quét mã QR bảo mật** của điện thoại.
+    - Màn hình hiển thị khung ngắm quét mã màu vàng Amber Gold hướng dẫn: *"Vui lòng đưa camera quét mã QR định danh trên Thẻ điện tử hội viên CEO 1983..."*.
+    - Khi nhận diện mã QR thành công, máy rung nhẹ 1 nhịp (Haptic feedback), tự động đối soát mã thẻ với máy chủ và chuyển thẳng vào màn hình chính sau 0.5 giây mà không cần nhập mật khẩu.
   - *Khi chọn "Phương thức đăng nhập" = "Sinh trắc học"*:
     - Ứng dụng lập tức gọi giao diện xác thực FaceID hoặc vân tay của hệ điều hành điện thoại. Nếu xác thực thành công, màn hình tự động mở khóa.
   - *Khi chọn "Phương thức đăng nhập" = "Số điện thoại"*:
@@ -87,21 +88,21 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - Cung cấp số điện thoại đường dây nóng của Tổng thư ký và Ban Thư Ký để trợ giúp kích hoạt thẻ.
 
 #### 3.1.3.7. Xem chi tiết thông tin thiết bị
-- Kiểm tra tính bảo mật của thiết bị và trạng thái chứng thực của thẻ thông minh doanh nhân.
+- Kiểm tra tính bảo mật của thiết bị và trạng thái chứng thực của thẻ điện tử hội viên.
 
 ### 3.1.4. Luồng nghiệp vụ
-- **3.1.4.1. Lựa chọn phương thức xác thực**: Doanh nhân chọn Chạm thẻ thông minh, FaceID hoặc OTP.
+- **3.1.4.1. Lựa chọn phương thức xác thực**: Doanh nhân chọn Quét mã QR thẻ điện tử, FaceID hoặc OTP.
 - **3.1.4.2. Lưu nháp thông tin ứng tuyển kết nạp**: Đăng ký thông tin ban đầu khi nộp đơn vào câu lạc bộ.
-- **3.1.4.3. Xác thực & Đăng nhập chính thức**: Chạm thẻ thông minh hoặc nhìn vào màn hình FaceID trong 0.5 giây.
+- **3.1.4.3. Xác thực & Đăng nhập chính thức**: Quét mã QR thẻ điện tử hoặc nhìn vào màn hình FaceID trong 0.5 giây.
 - **3.1.4.4. Đăng xuất an toàn**: Đăng xuất tài khoản khỏi thiết bị.
 - **3.1.4.5. Xem chi tiết phiên đăng nhập**: Kiểm tra các thiết bị đang đồng thời đăng nhập tài khoản.
 - **3.1.4.6. Xuất nhật ký bảo mật**: Đồng bộ nhật ký an ninh lên máy chủ CRM.
 
 ### 3.1.5. Đặc tả tương tác giao tiếp dữ liệu / API
-- **3.1.5.1. Gửi yêu cầu xác thực thẻ thông minh**: Gửi chuỗi mã hóa đọc từ chip thẻ thông minh; Máy chủ xác minh tính hợp lệ và trả về thông tin đăng nhập.
+- **3.1.5.1. Gửi yêu cầu xác thực thẻ điện tử**: Gửi chuỗi mã hóa đọc từ mã QR thẻ điện tử; Máy chủ xác minh tính hợp lệ và trả về thông tin đăng nhập.
 - **3.1.5.2. Gửi mã OTP đăng nhập**: Gửi số điện thoại; Máy chủ kiểm tra danh bạ hội viên chính danh và gửi mã SMS OTP 6 số.
 - **3.1.5.3. Xác thực mã OTP**: Gửi mã OTP; Máy chủ xác nhận và trả về mã phiên đăng nhập an toàn.
-- **3.1.5.4. Kích hoạt liên kết thẻ thông minh mới**: Ghi nhận mã thẻ thông minh vào hồ sơ hội viên.
+- **3.1.5.4. Kích hoạt liên kết thẻ điện tử mới**: Ghi nhận mã thẻ điện tử vào hồ sơ hội viên.
 - **3.1.5.5. Cập nhật trạng thái sinh trắc học**: Đồng bộ trạng thái bảo mật của thiết bị.
 - **3.1.5.6. Làm mới phiên đăng nhập (Refresh Session)**: Tự động duy trì phiên làm việc không bị gián đoạn.
 - **3.1.5.7. Hủy phiên làm việc (Đăng xuất)**: Thu hồi mã truy cập trên máy chủ.
@@ -109,27 +110,27 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 
 ---
 
-## 3.2. Phân hệ Danh Thiếp Số Quyền Năng & Công Nghệ Chạm Thẻ Thông Minh 1 Chạm
+## 3.2. Phân hệ Danh Thiếp Số Quyền Năng & Thẻ Điện Tử Hội Viên 83
 
 ### 3.2.1. Thông tin chung
-- **Mục tiêu**: Biến chiếc điện thoại di động và tấm Thẻ thông minh doanh nhân mạ vàng thành công cụ kết nối giao thương quyền năng số 1. Chỉ cần một thao tác chạm nhẹ lưng điện thoại hoặc thẻ thông minh vào điện thoại đối tác, toàn bộ hồ sơ năng lực doanh nghiệp, website, mã số thuế và thông tin liên hệ được truyền tải trọn vẹn tức thì mà đối tác không cần cài đặt ứng dụng.
-- **Chuẩn hóa công nghệ chạm thẻ 1 chạm**: Tích hợp chip thông minh bảo mật cao và mã QR định danh động chống sao chép.
+- **Mục tiêu**: Biến chiếc điện thoại di động và Thẻ điện tử hội viên 3D VIP mạ vàng thành công cụ kết nối giao thương quyền năng số 1. Chỉ cần một thao tác quét mã QR động cá nhân hóa hoặc gửi liên kết danh thiếp số sang điện thoại đối tác, toàn bộ hồ sơ năng lực doanh nghiệp, website, mã số thuế và thông tin liên hệ được truyền tải trọn vẹn tức thì mà đối tác không cần cài đặt ứng dụng.
+- **Chuẩn hóa công nghệ kết nối động**: Tích hợp mã QR định danh động chống sao chép và liên kết web doanh nhân số độc bản.
 
 ### 3.2.2. Màn hình
 - **3.2.2.1. Tìm kiếm mẫu danh thiếp**: Xem trước các phong cách thiết kế danh thiếp doanh nhân sang trọng (Vàng Ánh Kim, Xanh Hoàng Gia, Đen Doanh Nhân).
 - **3.2.2.2. Danh sách danh thiếp đã lưu**: Sổ lưu danh thiếp điện tử của các đối tác đã kết nối giao thương.
 - **3.2.2.3. Màn hình Trình diễn Danh thiếp Số 3D**: Tấm danh thiếp điện tử 3D chuyển động mượt mà theo góc nghiêng của điện thoại (hiệu ứng con quay hồi chuyển Gyroscope).
 - **3.2.2.4. Chỉnh sửa thông tin danh thiếp**: Cập nhật khẩu hiệu kinh doanh, liên kết mạng xã hội (LinkedIn, Zalo, Website).
-- **3.2.2.5. Chỉ định thông tin ưu tiên chia sẻ**: Chọn những thông tin được phép công khai khi chạm thẻ với đối tác mới.
-- **3.2.2.6. Lịch sử chạm thẻ & Kết nối**: Thống kê số lượt đối tác đã chạm thẻ hoặc quét mã xem danh thiếp của doanh nhân.
-- **3.2.2.7. Tạm khóa thẻ thông minh**: Chức năng khóa tức thời chip thẻ thông minh nếu hội viên làm thất lạc thẻ vật lý.
-- **3.2.2.8. Màn hình Chạm Thẻ Chia sẻ 1 Chạm**: Màn hình kích hoạt sẵn sàng truyền tải dữ liệu 1 chạm sang điện thoại đối tác.
+- **3.2.2.5. Chỉ định thông tin ưu tiên chia sẻ**: Chọn những thông tin được phép công khai khi kết nối với đối tác mới.
+- **3.2.2.6. Lịch sử kết nối & Quét mã**: Thống kê số lượt đối tác đã quét mã xem danh thiếp của doanh nhân.
+- **3.2.2.7. Tạm khóa thẻ điện tử**: Chức năng tạm khóa mã QR danh thiếp nếu hội viên có nhu cầu bảo mật riêng tư.
+- **3.2.2.8. Màn hình Chia Sẻ Mã QR Động 1 Chạm**: Màn hình hiển thị mã QR động sẵn sàng quét tức thì sang điện thoại đối tác.
 
 ### 3.2.3. Mô tả chi tiết màn hình
 #### 3.2.3.1. Màn hình Trình diễn Danh thiếp Số 3D
-- Hiển thị mô phỏng tấm Thẻ thông minh doanh nhân mạ vàng Warm Amber Gold với logo CEO 1983 và họ tên doanh nhân dập nổi.
+- Hiển thị mô phỏng Thẻ điện tử hội viên 3D VIP mạ vàng Warm Amber Gold với logo CEO 1983 và họ tên doanh nhân dập nổi.
 - Khi nghiêng điện thoại, ánh kim trên thẻ phản chiếu chuyển động chân thực.
-- 2 nút bấm nổi bật: *[Chạm Thẻ Chia Sẻ 1 Chạm]* và *[Lưu Vào Danh Bạ Điện Thoại (.vcf)]*.
+- 2 nút bấm nổi bật: *[Quét Mã QR Kết Nối]* và *[Lưu Vào Danh Bạ Điện Thoại (.vcf)]*.
 
 #### 3.2.3.2. Biểu mẫu Tùy biến Nội dung Danh thiếp
 | Tên trường | Nhãn hiển thị | Kiểu dữ liệu | Bắt buộc | Giá trị mặc định | Dải giá trị cho phép | Quy tắc kiểm tra (Validation) |
@@ -146,21 +147,21 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
   - *Khi chọn "Phong cách thiết kế thẻ" = "Vàng Kim HanoiBA"*:
     - Thẻ danh thiếp đổi sang tông màu Deep Cobalt Navy kết hợp viền hoa văn vàng mạ Warm Amber Gold sang trọng.
   - *Khi chọn "Mức độ riêng tư" = "Chỉ hội viên CEO1983"*:
-    - Hệ thống **tự động ẩn số điện thoại cá nhân** khi người chạm thẻ là khách bên ngoài câu lạc bộ; chỉ hiển thị địa chỉ email và trang web công ty.
+    - Hệ thống **tự động ẩn số điện thoại cá nhân** khi người xem danh thiếp là khách bên ngoài câu lạc bộ; chỉ hiển thị địa chỉ email và trang web công ty.
   - *Khi bật "Hiển thị Hồ sơ năng lực"* = Bật:
     - Ứng dụng **hiển thị thêm nút bấm**: *[Tải lên Profile Công ty (PDF)]* (tối đa 20MB).
 
-#### 3.2.3.3. Danh sách Đối tác đã chạm thẻ lưu về máy
-- Sổ danh thiếp số hiển thị avatar đối tác, công ty, thời gian và địa điểm chạm thẻ.
+#### 3.2.3.3. Danh sách Đối tác đã kết nối lưu về máy
+- Sổ danh thiếp số hiển thị avatar đối tác, công ty, thời gian và địa điểm kết nối.
 
 #### 3.2.3.4. Lịch sử tương tác thẻ
-- Biểu đồ thống kê: Lượt chạm thẻ trong tháng, số đối tác đã lưu thông tin vào danh bạ máy.
+- Biểu đồ thống kê: Lượt quét mã QR trong tháng, số đối tác đã lưu thông tin vào danh bạ máy.
 
-#### 3.2.3.5. Hộp thoại Khóa thẻ thông minh khẩn cấp
-- Cảnh báo vô hiệu hóa chip thẻ thông minh vật lý khi bị thất lạc.
+#### 3.2.3.5. Hộp thoại Khóa mã thẻ khẩn cấp
+- Cảnh báo vô hiệu hóa mã QR thẻ điện tử khi cần bảo mật riêng tư.
 
 #### 3.2.3.6. Popup Chọn nhóm đối tác phân loại
-- Gắn nhãn đối tác vừa chạm thẻ: Khách hàng tiềm năng, Nhà cung cấp, Bạn đồng môn 1983.
+- Gắn nhãn đối tác vừa kết nối: Khách hàng tiềm năng, Nhà cung cấp, Bạn đồng môn 1983.
 
 #### 3.2.3.7. Xem chi tiết danh thiếp đối tác
 - Xem đầy đủ hồ sơ năng lực và các sản phẩm đối tác đang kinh doanh trên sàn B2B.
@@ -168,8 +169,8 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 ### 3.2.4. Luồng nghiệp vụ
 - **3.2.4.1. Mở danh thiếp số**: Mở ứng dụng di động -> Tấm danh thiếp 3D sẵn sàng chia sẻ.
 - **3.2.4.2. Lưu nháp chỉnh sửa danh thiếp**: Nhập tài khoản mạng xã hội mới để xem trước hiển thị.
-- **3.2.4.3. Kích hoạt Chạm Thẻ Thông Minh 1 Chạm**: Đưa thẻ hoặc lưng điện thoại chạm nhẹ vào điện thoại đối tác -> Màn hình điện thoại đối tác tự động bật trang danh thiếp đầy đủ.
-- **3.2.4.4. Tạm khóa chip thẻ**: Khóa thẻ khi bị rơi mất.
+- **3.2.4.3. Kích hoạt Quét Mã QR Kết Nối Động**: Mở mã QR động trên ứng dụng -> Đối tác dùng camera điện thoại quét mã -> Màn hình điện thoại đối tác tự động bật trang danh thiếp đầy đủ.
+- **3.2.4.4. Tạm khóa mã thẻ**: Khóa mã QR chia sẻ khi có yêu cầu bảo mật.
 - **3.2.4.5. Xem chi tiết thông tin đối tác**: Lưu đối tác vào danh bạ điện thoại bằng 1 chạm (.vcf).
 - **3.2.4.6. Đồng bộ danh bạ hội viên**: Tự động cập nhật danh bạ các doanh nhân mới kết nạp vào máy.
 
@@ -177,9 +178,9 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - **3.2.5.1. Lấy dữ liệu danh thiếp số cá nhân**: Trả về toàn bộ thông tin cá nhân, doanh nghiệp và liên kết mạng xã hội.
 - **3.2.5.2. Sinh mã QR định danh động**: Sinh mã bảo mật thay đổi theo từng phút.
 - **3.2.5.3. Cập nhật nội dung danh thiếp**: Lưu thông tin chỉnh sửa và đồng bộ tức thì lên đám mây.
-- **3.2.5.4. Ghi nhận lượt chạm thẻ thông minh**: Ghi vết thời gian và mã thiết bị chạm thẻ phục vụ báo cáo giao thương.
+- **3.2.5.4. Ghi nhận lượt quét mã kết nối**: Ghi vết thời gian và mã thiết bị kết nối phục vụ báo cáo giao thương.
 - **3.2.5.5. Tải tệp danh bạ điện tử (.vcf)**: Trả về tệp danh bạ chuẩn vCard để lưu thẳng vào bộ nhớ máy điện thoại.
-- **3.2.5.6. Khóa / Mở khóa thẻ thông minh**: Cập nhật trạng thái an toàn của chip thẻ trên máy chủ.
+- **3.2.5.6. Khóa / Mở khóa mã thẻ điện tử**: Cập nhật trạng thái an toàn của mã thẻ trên máy chủ.
 - **3.2.5.7. Xóa liên kết đối tác**: Xóa danh thiếp đối tác khỏi danh mục lưu trữ.
 - **3.2.5.8. Lấy danh mục giao diện mẫu**: Trả về các phong cách thiết kế danh thiếp cao cấp.
 
@@ -455,33 +456,43 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - Màn hình theo dõi trực tiếp kết quả quay số trúng thưởng trên sân khấu.
 
 ### 3.6.4. Luồng nghiệp vụ
-- **3.6.4.1. Đăng ký vé sự kiện**: Chọn sự kiện -> Xác nhận thông tin đại biểu -> Nhận vé điện tử vào ví.
+- **3.6.4.1. Đăng ký vé sự kiện & Kiểm tra sức chứa**: 
+  - Chọn sự kiện -> Hệ thống kiểm tra số lượng đại biểu đã đăng ký so với sức chứa tối đa (`capacity > 0 && registeredCount >= capacity`).
+  - Nếu đã đủ số lượng (hết chỗ): Khóa toàn bộ form, thay nút đăng ký bằng badge "Đã đủ số lượng đại biểu (Hết chỗ)" kèm biểu tượng khóa, ném lỗi máy chủ chặn hoàn toàn hành vi gửi đơn đăng ký.
+  - Nếu còn chỗ: Mở modal đăng ký có cấu trúc cuộn chuẩn di động (Header cố định, Body cuộn mượt độc lập `touch-pan-y`, Footer cố định đáy màn hình `pb-[max(0.75rem,env(safe-area-inset-bottom))]` đảm bảo nút bấm xác nhận luôn hiển thị rõ ràng và người dùng cuộn mượt mà không bị kẹt).
 - **3.6.4.2. Lưu nháp đăng ký vé**: Điền thông tin khách mời lưu tạm.
 - **3.6.4.3. Xuất vé chính thức**: Phân bổ bàn tiệc VIP và sinh mã QR định danh duy nhất.
 - **3.6.4.4. Hủy vé tham dự**: Hủy đăng ký vé trước 24 giờ.
-- **3.6.4.5. Điểm danh cổng 0.1 giây**: Đưa mã QR cuống vé trước camera lễ tân để hoàn tất điểm danh.
-- **3.6.4.6. Tham gia quay số may mắn**: Hệ thống tự động đưa mã vé đã check-in vào lồng quay số trúng thưởng.
+- **3.6.4.5. Điểm danh cổng 0.1 giây & Phân quyền Soát vé Chặt chẽ**: 
+  - Đưa mã QR cuống vé trước camera lễ tân để hoàn tất điểm danh.
+  - Phân quyền Quét mã QR: Tiện ích "Quét mã QR Check-in sự kiện" trên app mobile CHỈ HIỂN THỊ cho hội viên thuộc Ban Truyền Thông (hoặc Ban Điều Hành / Admin) VÀ ĐỒNG THỜI đã được ban tổ chức chọn vào danh sách người soát vé (`qrScanners` / `qrStaff`) của sự kiện đó. Các hội viên khác không nhìn thấy tính năng soát vé để bảo đảm tính an ninh trật tự.
+- **3.6.4.6. Sơ đồ xếp chỗ rạp chiếu tinh gọn**: Giao diện sơ đồ ghế rạp chiếu phim tinh gọn, sang trọng. Toàn bộ ghế đã được xếp chỗ hiển thị trực tiếp mã ghế và TÊN người ngồi ngay trên mặt ghế, kèm danh bạ tìm kiếm nhanh đại biểu và vị trí ngồi bên dưới.
+- **3.6.4.7. Tham gia quay số may mắn**: Hệ thống tự động đưa mã vé đã check-in vào lồng quay số trúng thưởng.
 
 ### 3.6.5. Đặc tả tương tác giao tiếp dữ liệu / API
-- **3.6.5.1. Lấy danh sách sự kiện mở đăng ký**: Trả về các sự kiện sắp diễn ra kèm số vé còn lại.
+- **3.6.5.1. Lấy danh sách sự kiện mở đăng ký**: Trả về các sự kiện sắp diễn ra kèm số vé còn lại, chỉ số `capacity`, `registeredCount`, `isFull: capacity > 0 && registeredCount >= capacity` và danh sách cán bộ quét mã `qrScanners`.
 - **3.6.5.2. Lấy chi tiết cuống vé và mã QR**: Tải thông tin cuống vé, vị trí bàn tiệc và mã QR mã hóa an toàn.
-- **3.6.5.3. Đăng ký vé sự kiện chính thức**: Gửi thông tin đăng ký; Máy chủ kiểm tra số lượng chỗ ngồi còn trống và cấp vé.
+- **3.6.5.3. Đăng ký vé sự kiện chính thức**: Gửi thông tin đăng ký; Máy chủ kiểm tra nghiêm ngặt `capacity > 0 && registeredCount >= capacity`, nếu đã đầy sẽ ném ngoại lệ `BadRequestException('Sự kiện đã đủ số lượng đại biểu đăng ký (Hết chỗ)')`.
 - **3.6.5.4. Lưu nháp đăng ký vé**: Lưu thông tin đăng ký dự thảo.
 - **3.6.5.5. Cập nhật trạng thái điểm danh**: Nhận tín hiệu xác nhận đã vào cửa từ bàn lễ tân.
-- **3.6.5.6. Đổi vị trí chỗ ngồi**: Gửi yêu cầu chuyển bàn tiệc.
+- **3.6.5.6. Đổi vị trí chỗ ngồi**: Gửi yêu cầu chuyển bàn tiệc hoặc ghế rạp chiếu.
 - **3.6.5.7. Hủy vé sự kiện**: Hủy vé và trả lại chỗ trống cho khán phòng.
 - **3.6.5.8. Lấy danh sách trúng thưởng Lucky Draw**: Nhận thông báo trúng thưởng từ ban tổ chức.
 
 ---
 
-## 3.7. Phân hệ Đàm Thoại Nội Bộ Bảo Mật, Cuộc Gọi Nền Native & Trợ Lý Giọng Nói (Voice AI)
+## 3.7. Phân hệ Đàm Thoại Nội Bộ Bảo Mật, Cuộc Gọi Nền Native & Trợ Lý AI Chat Doanh Nhân (OpenRouter AI Assistant)
 
 ### 3.7.1. Thông tin chung
 - **Mục tiêu**: Cung cấp kênh liên lạc đặc quyền, bảo mật tuyệt đối dành riêng cho các chủ doanh nghiệp CEO 1983. Hỗ trợ đàm thoại thoại (Voice call) và đàm thoại video (Video call) chất lượng cao chuẩn HD, mã hóa đầu cuối bảo vệ bí mật kinh doanh.
 - **Dịch vụ thông báo cuộc gọi nền native trên điện thoại**:
   - Khi có cuộc gọi đến, chuông điện thoại đổ vang và hiện giao diện cuộc gọi với 2 nút "Nghe" / "Từ chối" ngay trên màn hình khóa kể cả khi ứng dụng đang đóng hoàn toàn.
   - Kết thúc cuộc gọi tức thì ở cả hai đầu khi một bên gác máy (0ms trễ), không để chuông ảo đổ tiếp.
-- **Trợ lý giọng nói doanh nhân thông minh (Voice AI)**: Cho phép ra lệnh bằng giọng nói tiếng Việt tự nhiên: "Mở danh sách sự kiện", "Xem hội phí", "Tìm doanh nghiệp xây dựng"; hệ thống tự động chuyển hướng màn hình tức thì.
+- **Trợ lý AI Chat Doanh nhân (OpenRouter AI Assistant)**: 
+  - Chatbot trí tuệ nhân tạo chuyên sâu tích hợp trực tiếp trên ứng dụng di động, kết nối OpenRouter API (`google/gemini-2.0-flash-001`, fallback `openai/gpt-4o-mini`).
+  - Nắm giữ toàn bộ tri thức thời gian thực về hồ sơ hội viên, danh sách ban chuyên môn, sự kiện sắp diễn ra và cơ hội giao thương B2B.
+  - Loại bỏ hoàn toàn nhận diện giọng nói (Voice AI / Speech recognition / Speech synthesis / Voice HUD) để bảo đảm bảo mật tối đa và trải nghiệm văn bản tập trung.
+  - Phân vùng hoạt động nghiêm ngặt: Chỉ hoạt động trên Ứng dụng Di động hội viên (`/association/*`, `/m/*`); TUYỆT ĐỐI KHÔNG xuất hiện trên Web CRM.
 
 ### 3.7.2. Màn hình
 - **3.7.2.1. Tìm kiếm hội viên để đàm thoại**: Tìm nhanh bạn đồng môn theo tên hoặc số điện thoại trong danh bạ nội bộ.
@@ -491,27 +502,26 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - **3.7.2.5. Chỉ định thiết bị âm thanh**: Chọn đàm thoại qua tai nghe Bluetooth, loa thoại hoặc loa ngoài.
 - **3.7.2.6. Nhật ký chất lượng cuộc gọi**: Đánh giá chất lượng âm thanh 5 sao sau khi kết thúc cuộc đàm thoại.
 - **3.7.2.7. Chặn cuộc gọi làm phiền**: Tùy chọn chỉ nhận cuộc gọi từ các hội viên trong danh bạ chính danh.
-- **3.7.2.8. Màn hình Trợ lý Giọng nói Doanh nhân (Voice AI Dialog)**: Màn hình kích hoạt trợ lý AI với quả cầu sóng âm phát sáng ánh kim Warm Amber Gold chuyển động theo giọng nói tiếng Việt.
+- **3.7.2.8. Màn hình Trợ lý AI Chat Doanh nhân (Ceo1983ChatAssistant Drawer)**: Giao diện trò chuyện tương tác trực tuyến với trợ lý AI, hiển thị câu hỏi gợi ý nhanh, lịch sử hội thoại và bong bóng câu trả lời định dạng markdown chuẩn mực.
 
 ### 3.7.3. Mô tả chi tiết màn hình
 #### 3.7.3.1. Màn hình Đàm thoại Đang kết nối (In-Call UI)
 - Avatar đối tác hiển thị kích thước lớn trang trọng ở giữa màn hình kèm tên công ty và huy hiệu CEO 1983.
 - Đồng hồ đếm thời gian đàm thoại độ chính xác từng giây. Các nút điều khiển cảm ứng kích thước lớn: [Tắt tiếng (Mute)], [Bật Loa Ngoài (Speaker)], [Bật/Tắt Camera Video], [Gác máy / Kết thúc] (Màu đỏ).
 
-#### 3.7.3.2. Màn hình Trợ lý Giọng nói Doanh nhân (Voice AI)
+#### 3.7.3.2. Màn hình Trợ lý AI Chat Doanh nhân (OpenRouter Chat Assistant)
 | Thành phần giao diện | Loại điều khiển | Hành vi tương tác | Phản hồi của hệ thống |
 | :--- | :--- | :--- | :--- |
-| `voiceButton` | Nút micro nổi | Chạm giữ hoặc bấm 1 lần để nói | Quả cầu sóng âm bừng sáng màu vàng Amber Gold, lắng nghe giọng nói |
-| `speechRecognition`| Bộ nhận diện giọng nói | Nói tiếng Việt tự nhiên | Chuyển giọng nói thành văn bản thời gian thực trên màn hình |
-| `aiResponse` | Phản hồi trợ lý | Phát âm thanh giọng nữ lịch thiệp | Tự động điều hướng màn hình ngay tức thì theo yêu cầu |
+| `aiChatButton` | Nút bong bóng AI nổi | Chạm mở cửa sổ chat trợ lý | Hiển thị giao diện Drawer chat trợ lý doanh nhân sang trọng |
+| `chatInput` | Ô nhập tin nhắn văn bản | Gõ câu hỏi hoặc chọn câu gợi ý | Hiển thị tin nhắn gửi đi với huy hiệu hội viên chính danh |
+| `aiResponseBubble` | Bong bóng câu trả lời AI | Đọc phản hồi định dạng đẹp | Phản hồi chi tiết sự kiện, ban ngành, đối tác trong 1-2 giây |
+| `quickPromptChips` | Thẻ câu hỏi nhanh | Chạm vào câu hỏi mẫu | Tự động gửi câu hỏi: "Sự kiện sắp tới?", "Cơ hội giao thương mới?" |
 
-- **Quy tắc điều hướng tức thời của Trợ lý Giọng nói (Voice AI Command Navigation)**:
-  - *Khi người dùng nói: "Mở danh sách sự kiện" hoặc "Xem lịch đại hội"*:
-    - Trợ lý AI lập tức đáp: *"Dạ, em đang mở danh sách sự kiện sắp tới cho anh/chị"* và **tự động chuyển hướng ngay sang màn hình Danh sách sự kiện** trong 0.2 giây.
-  - *Khi người dùng nói: "Xem hội phí của tôi" hoặc "Hội phí năm nay"*:
-    - Trợ lý AI tự động chuyển ngay sang màn hình Hóa đơn hội phí & Mã thanh toán VietQR Napas 24/7.
-  - *Khi người dùng nói: "Tìm đối tác xây dựng"*:
-    - Trợ lý AI tự động mở Sàn giao thương B2B và lọc sẵn từ khóa ngành nghề tương ứng.
+- **Quy tắc phản hồi & phân vùng của Trợ lý AI Chat**:
+  - *Khi hội viên hỏi về sự kiện*: Trợ lý AI trích xuất danh sách sự kiện sắp diễn ra gần nhất kèm thời gian, địa điểm và đường dẫn đăng ký vé.
+  - *Khi hội viên hỏi về cơ hội giao thương*: AI tổng hợp các nhu cầu mua bán, khớp nối B2B mới nhất của các doanh nghiệp trong hiệp hội.
+  - *Khi hội viên hỏi về cơ cấu tổ chức*: AI giải thích rõ ràng chức năng nhiệm vụ của 7 Ban Chuyên Môn và hướng dẫn liên hệ đầu mối phụ trách.
+  - *Bảo đảm phân lập*: Tuyệt đối không nhúng trợ lý AI vào các trang điều hành quản trị CRM.
 
 #### 3.7.3.3. Màn hình Đổ chuông Màn hình khóa Native (Lock Screen Call)
 - Khi máy bị khóa, chuông điện thoại vang to, màn hình sáng bừng hiển thị tên người gọi, chức vụ trong CLB và 2 nút trượt nghe / từ chối.
@@ -532,7 +542,7 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - **3.7.4.1. Khởi tạo cuộc đàm thoại nội bộ**: Chọn bạn đồng môn trong danh bạ -> Bấm nút Gọi thoại hoặc Gọi video.
 - **3.7.4.2. Xử lý cuộc gọi đến ở chế độ nền**: Dịch vụ nền native đánh thức điện thoại, phát chuông cuộc gọi khẩn.
 - **3.7.4.3. Kết thúc cuộc đàm thoại**: Khi một bên bấm nút Kết thúc màu đỏ, máy chủ lập tức giải phóng kênh truyền thông; đầu dây bên kia ngừng chuông và đóng màn hình cuộc gọi ngay tức thì (0ms trễ).
-- **3.7.4.4. Ra lệnh bằng giọng nói (Voice AI)**: Bấm nút micro -> Ra lệnh -> Trợ lý tự động điều hướng màn hình.
+- **3.7.4.4. Tương tác với Trợ lý AI Chat**: Bấm nút trợ lý AI nổi góc phải -> Nhập câu hỏi hoặc chọn gợi ý -> Trợ lý phản hồi thông minh dựa trên dữ liệu hiệp hội.
 - **3.7.4.5. Xem chi tiết cuộc gọi nhỡ**: Nhận thông báo cuộc gọi nhỡ và gọi lại cho đối tác.
 - **3.7.4.6. Báo cáo chất lượng đàm thoại**: Gửi dữ liệu độ ổn định đường truyền về trung tâm kỹ thuật.
 
@@ -541,7 +551,7 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - **3.7.5.2. Nhận tín hiệu trả lời cuộc gọi**: Kết nối luồng âm thanh/hình ảnh mã hóa đầu cuối.
 - **3.7.5.3. Bắn tín hiệu ngắt cuộc gọi thời gian thực**: Phát tín hiệu kết thúc cuộc gọi tức thì tới cả hai thiết bị.
 - **3.7.5.4. Đẩy thông báo cuộc gọi nền native**: Gửi tín hiệu thông báo ưu tiên cao qua dịch vụ thông báo nền của điện thoại.
-- **3.7.5.5. Xử lý nhận dạng câu lệnh giọng nói (Voice AI)**: Phân tích ngữ nghĩa câu lệnh tiếng Việt và trả về đích điều hướng màn hình.
+- **3.7.5.5. Xử lý truy vấn Trợ lý AI (OpenRouter API)**: Gửi prompt ngữ cảnh hội viên tới OpenRouter endpoint (`google/gemini-2.0-flash-001`), nhận phản hồi streaming hoặc kết quả văn bản tức thời.
 - **3.7.5.6. Lưu nhật ký cuộc đàm thoại**: Ghi vết thời gian bắt đầu, kết thúc và chất lượng kết nối.
 - **3.7.5.7. Lấy danh sách cuộc gọi gần đây**: Trả về lịch sử cuộc gọi nội bộ phân trang.
 - **3.7.5.8. Lấy cấu hình máy chủ thoại bảo mật**: Thiết lập thông số mã hóa bảo vệ bí mật kinh doanh.
@@ -608,6 +618,75 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 
 ---
 
+## 3.10. Phân hệ Nâng cấp & Hoàn thiện Nghiệp vụ Ứng dụng Di động (Sprint 2026-10)
+
+### 3.10.1. UC-MOB-MKT-01: Tính Toán & Hiển Thị Thống Kê Tổng Giá Trị & Số Lượng Marketplace B2B
+- **Mục tiêu**: Hiển thị chính xác tổng số lượng sản phẩm đang giao thương và tổng giá trị hàng hóa niêm yết trên gian hàng B2B của hiệp hội tại màn hình Marketplace di động.
+- **Màn hình**: `/association/products`.
+- **Tác nhân**: Doanh nhân hội viên, Ban Xúc tiến Thương mại.
+- **Luồng sự kiện chính**:
+  1. Hội viên mở tab "Gian hàng B2B" trên ứng dụng di động.
+  2. Hệ thống gọi API lấy danh sách sản phẩm gian hàng: `GET /b2b-products/public` (hoặc `GET /b2b-products/my-products`).
+  3. Giao diện thực hiện tổng hợp dữ liệu thời gian thực:
+     - **Tổng số lượng sản phẩm**: `products.length` (hoặc tổng `quantity`/`stock` của từng sản phẩm nếu có quản lý tồn kho).
+     - **Tổng giá trị thị trường**: Tổng `(price * stock)` hoặc tổng giá trị niêm yết của tất cả mặt hàng, định dạng phân tách hàng nghìn VNĐ rõ ràng (ví dụ: `15.850.000.000 VNĐ`).
+     - Hiển thị nổi bật trên 2 thẻ chỉ số thống kê đầu trang, giải quyết triệt để lỗi hiển thị trống, NaN hoặc 0đ.
+- **Đặc tả API**:
+  - `GET /b2b-products/public?association_id=c1983000-0000-4000-8000-000000001983`: Lấy danh sách sản phẩm gian hàng kèm giá bán (`price`), tồn kho (`stock`), hình ảnh và doanh nghiệp sở hữu.
+- **CSDL & Bảng liên kết**:
+  - Bảng `public.b2b_products` JOIN `public.organizations` ON `organizations.id = b2b_products.organization_id`.
+
+### 3.10.2. UC-MOB-QRC-02: Chuẩn Hóa Mẫu Vé Điện Tử Check-in & Phân Quyền Nút Quét QR Footer Theo Danh Sách Cán Bộ CRM
+- **Mục tiêu**: Đồng bộ thiết kế cuống vé điện tử sự kiện theo chuẩn giao diện VIP (Ảnh 2/3); đồng thời phân quyền bảo mật tuyệt đối cho nút quét mã QR Check-in ở thanh Footer điều hướng (`MemberShell.tsx`), chỉ hiển thị nút này khi tài khoản được Admin tick chọn ủy quyền soát vé tại CRM sự kiện.
+- **Màn hình**:
+  - Cuống vé sự kiện của hội viên / khách mời: Modal/Trang chi tiết vé sự kiện.
+  - Thanh Footer chính của App Mobile (`MemberShell.tsx`).
+- **Tác nhân**: Đại biểu tham dự sự kiện, Cán bộ được phân công soát vé sự kiện.
+- **Luồng sự kiện chính**:
+  1. **Hiển thị Vé Điện Tử & Thẻ Check-in Sự Kiện Chuẩn**:
+     - Khi hội viên bấm "Xem vé của tôi" hoặc quét vé, giao diện hiển thị thẻ vé điện tử sang trọng (Khung Deep Cobalt Navy bo góc, viền Warm Amber Gold):
+       - Tiêu đề: *VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC* / *VIP EVENT PASS 2026*.
+       - Tên sự kiện & Địa điểm tổ chức.
+       - Khung mã QR độ nét cao trung tâm, bên dưới hiển thị mã vé: `REG-EV-xxxx` (Ví dụ: `REG-EV-MV7E3`).
+       - Thông tin đại biểu: Họ tên, Chức vụ hiệp hội, Tên doanh nghiệp, Thời gian diễn ra sự kiện, Hạng vé.
+       - Khung vị trí bàn tiệc (Hệ thống xếp tự động): `Bàn VIP xx - Ghế xx`.
+       - Số may mắn (Quay thưởng Lucky Draw): `#xxxx` (nổi bật trên nền vàng hổ phách).
+       - Khung lưu ý chỗ ngồi và xuất trình mã QR cho Ban Lễ tân tại hội trường.
+  2. **Phân quyền Nút Quét QR Check-in ở Thanh Footer (`MemberShell.tsx`)**:
+     - *Quy tắc kiểm soát bảo mật*: Nút quét mã QR tròn ở chính giữa Footer là công cụ nghiệp vụ nội bộ, TUYỆT ĐỐI KHÔNG HIỂN THỊ cho toàn bộ người dùng thông thường.
+     - *Điều kiện hiển thị*: Nút chỉ được phép xuất hiện khi và chỉ khi:
+       a. Đang có sự kiện diễn ra hoặc sắp diễn ra trong ngày thuộc hiệp hội.
+       b. Tài khoản đang đăng nhập được Admin/Ban tổ chức tick chọn quyền xử lý quét mã QR tại CRM sự kiện (ID tài khoản hoặc ID hội viên nằm trong danh sách `qr_staff_ids` / `qr_scanners` của sự kiện).
+       c. Kể cả tài khoản thuộc Ban Truyền thông nhưng KHÔNG được tick chọn trong sự kiện cụ thể này thì nút quét QR ở footer cũng HOÀN TOÀN BỊ ẨN.
+- **Đặc tả API**:
+  - `GET /events/:id/my-ticket`: Lấy vé sự kiện của người dùng đăng nhập kèm mã vé, QR, bàn tiệc, số quay thưởng.
+  - `GET /events/checkin-permission`: Trả về quyền hạn soát vé của tài khoản (`{ canScan: boolean, activeEventId?: string }`) dựa trên danh sách `qr_staff_ids` của sự kiện đang mở.
+- **CSDL & Bảng liên kết**:
+  - `public.events`: cột `qr_staff_ids` (UUID array hoặc JSONB array chứa danh sách user ID được cấp phép soát vé).
+  - `public.event_registrations`: lưu `ticket_code`, `status`, `lucky_draw_number`, `seat_table`.
+
+### 3.10.3. UC-MOB-NOT-03: Chuẩn Hóa Phân Loại Thông Báo, Dấu Chấm Xanh Chưa Đọc, Rút Gọn Nội Dung & Thao Tác Vuốt Ngang Xóa Thông Báo
+- **Mục tiêu**: Sửa triệt để lỗi lẫn lộn nội dung thông báo tin nhắn chat thành thông báo đóng hội phí; thay thế nhãn "MỚI" thô cứng bằng dấu chấm xanh tinh tế; bỏ icon cố định; tối ưu độ dài danh sách và hỗ trợ vuốt ngang sang trái (Swipe Left) để xóa thông báo nhanh chóng.
+- **Màn hình**: `/association/notifications`.
+- **Tác nhân**: Hội viên sử dụng ứng dụng di động.
+- **Luồng sự kiện chính**:
+  1. **Phân loại & Nội dung thông báo**:
+     - Với thông báo có tin nhắn mới (`type === 'chat'` hoặc `ref_type === 'chat'`): Hiển thị tiêu đề "Tin nhắn mới từ [Tên người gửi]" và nội dung tóm tắt tin nhắn. Tuyệt đối không nhúng mẫu thông báo đóng hội phí hay nhắc nợ tài chính vào thông báo tin nhắn.
+     - Với thông báo tài chính/hội phí (`type === 'fee'`): Hiển thị đúng kỳ hội phí, hạn đóng và số tiền cần nộp.
+  2. **Giao diện & Trải nghiệm**:
+     - *Dấu chấm xanh chưa đọc*: Bỏ chữ "MỚI", thay bằng dấu chấm tròn xanh dương tinh tế (`w-2.5 h-2.5 rounded-full bg-blue-600`) ở góc thông báo chưa đọc.
+     - *Bỏ icon cố định*: Loại bỏ các khối icon hộp cứng nhắc theo từng loại, tối ưu hóa không gian cho văn bản.
+     - *Rút gọn nội dung*: Hiển thị tối đa 2 dòng văn bản tóm tắt (`line-clamp-2`). Khi hội viên nhấp vào thông báo, ứng dụng mở Modal chi tiết hiển thị toàn văn nội dung và chuyển trạng thái thông báo thành đã đọc.
+     - *Vuốt ngang để xóa (Swipe to Delete)*: Người dùng có thể vuốt thẻ thông báo sang trái để lộ nút Xóa màu đỏ và bấm để xóa ngay, hoặc vuốt hết cỡ để xóa tức thì. Bỏ hoàn toàn chức năng "Ẩn thông báo".
+- **Đặc tả API**:
+  - `GET /member-notifications`: Lấy danh sách thông báo của hội viên.
+  - `DELETE /member-notifications/:id`: Xóa vĩnh viễn thông báo.
+  - `PATCH /member-notifications/:id/read`: Đánh dấu đã đọc thông báo.
+- **CSDL & Bảng liên kết**:
+  - Bảng `public.member_notifications`: `id`, `member_id`, `type`, `title`, `content`, `is_read`, `created_at`.
+
+---
+
 # PHẦN 4: ĐẶC TẢ YÊU CẦU PHI CHỨC NĂNG ỨNG DỤNG DI ĐỘNG (NON-FUNCTIONAL REQUIREMENTS - NFR)
 
 ### 4.1. Yêu cầu về Hiệu năng & Trải nghiệm Cảm ứng (Mobile Performance)
@@ -625,13 +704,13 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 2. **Gác máy Tức thì Không Độ trễ (0ms Latency Hangup)**: Khi một bên gác máy hoặc từ chối cuộc gọi, hệ thống máy chủ lập tức giải phóng kênh và ra lệnh cho thiết bị bên kia dừng chuông và đóng modal ngay tức thì, triệt tiêu hoàn toàn lỗi chuông ảo tiếp tục đổ.
 
 ### 4.4. Yêu cầu về Tính sẵn sàng Ngoại tuyến (Offline-First Capability)
-1. **Lưu trữ Danh bạ & Danh thiếp Ngoại tuyến**: Thông tin danh bạ hội viên đã kết nối và tấm danh thiếp số cá nhân được lưu trữ an toàn trong bộ nhớ máy, cho phép tra cứu và chạm thẻ chia sẻ ngay cả khi ở trên máy bay hoặc vùng mất sóng di động.
+1. **Lưu trữ Danh bạ & Danh thiếp Ngoại tuyến**: Thông tin danh bạ hội viên đã kết nối và tấm danh thiếp số cá nhân được lưu trữ an toàn trong bộ nhớ máy, cho phép tra cứu và quét mã chia sẻ ngay cả khi ở trên máy bay hoặc vùng mất sóng di động.
 2. **Ví vé Sự kiện Ngoại tuyến**: Mã QR vé sự kiện và thông tin bàn tiệc VIP được lưu sẵn trong ví vé, sẵn sàng xuất trình check-in tại hội trường mà không phụ thuộc vào tốc độ mạng 4G.
 
 ### 4.5. Yêu cầu về Thiết kế Giao diện & Trải nghiệm Doanh nhân (Design & UX Standards)
 1. **Bảng màu Nhận diện HanoiBA CEO 1983 Sang trọng**:
    - Sử dụng thống nhất: **Deep Cobalt Navy** kết hợp **Warm Amber Gold**.
-   - Bo góc mềm mại, viền vàng kim loại và hiệu ứng rung phản hồi chân thực (Haptic Feedback) khi chạm thẻ thông minh.
+   - Bo góc mềm mại, viền vàng kim loại và hiệu ứng rung phản hồi chân thực (Haptic Feedback) khi quét mã thành công.
 2. **Quy tắc Tự động Cắt Khoảng Trắng (Auto-trim Whitespace)**: Toàn bộ ô nhập liệu tự động loại bỏ khoảng trắng thừa đầu cuối.
 3. **Quy chuẩn Tiền tệ & Ngày tháng**: Hiển thị tiền tệ dấu chấm VNĐ và ngày tháng dd/mm/yyyy.
 
@@ -646,7 +725,7 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 | Mã tiêu chí | Hạng mục kiểm tra | Tiêu chuẩn đạt nghiệm thu 100% |
 | :--- | :--- | :--- |
 | **AC-M01** | Toàn vẹn 9 phân hệ di động | 100% các phân hệ từ 3.1 đến 3.9 hoạt động mượt mà, chính xác theo kịch bản. |
-| **AC-M02** | Chạm Thẻ thông minh 1 chạm | Đưa thẻ hoặc lưng điện thoại chạm nhẹ đối tác truyền tải hồ sơ tức thì dưới 1 giây mà đối tác không cần cài app. |
+| **AC-M02** | Thẻ điện tử & Quét mã QR kết nối động | Quét mã QR động hoặc chia sẻ liên kết truyền tải hồ sơ tức thì dưới 1 giây mà đối tác không cần cài app. |
 | **AC-M03** | Chuông báo nền native cuộc gọi | Đổ chuông màn hình khóa khi app đang đóng; gác máy tức thì 0ms độ trễ cả hai đầu. |
 | **AC-M04** | Trợ lý giọng nói Voice AI | Nhận diện tiếng Việt tự nhiên và tự động điều hướng màn hình ngay tức thì. |
 | **AC-M05** | Ví vé sự kiện & Check-in 0.1s | Mở vé cuống VIP tăng sáng màn hình; quét QR điểm danh tức thì tại bàn lễ tân. |

@@ -223,6 +223,7 @@
   "myperm.allowed": "Được phép",
   "myperm.denied": "Không được phép",
   "platform.tab.aiaudit": "Nhật ký AI",
+  "platform.tab.aiUsers": "Hạn mức & Người dùng AI",
   "aiaudit.title": "Nhật ký yêu cầu Trợ lý AI",
   "aiaudit.subtitle": "Lọc và xem chi tiết các yêu cầu AI theo hiệp hội, người dùng và thời gian",
   "aiaudit.filter.assoc": "Hiệp hội",

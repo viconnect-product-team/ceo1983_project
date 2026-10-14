@@ -820,16 +820,16 @@ export function FinanceExcelImportModal({
               type="button"
               onClick={handleImportSubmit}
               disabled={importing || selectedIndices.size === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-[#003B95] text-white hover:bg-[#002B70] shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 transition-all disabled:opacity-50"
             >
               {importing ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
                   Đang import ({progress.current}/{progress.total})...
                 </>
               ) : (
                 <>
-                  <Check className="h-4 w-4" />
+                  <Check className="h-4 w-4 text-slate-950" />
                   Xác nhận Import ({selectedIndices.size} dòng)
                 </>
               )}

@@ -28,9 +28,12 @@ import { PageHeader } from "@/components/dashboard/PageKit";
 import {
   setActiveEventThemeType,
   getActiveEventThemeType,
+  isEventThemeEnabled,
+  setEventThemeEnabled,
   getEffectiveThemeOption,
   getCustomThemeConfig,
   saveCustomThemeConfig,
+  DEFAULT_BASE_THEME,
   FESTIVAL_THEMES,
   type FestivalThemeOption,
   type LayoutGridCols,
@@ -48,11 +51,12 @@ export const Route = createFileRoute("/admin/landing-templates")({
 export const THEME_CHANGE_EVENT = "ceo1983-theme-changed";
 
 export function getActiveAppThemeId(): string {
-  if (typeof window === "undefined") return "default";
+  if (typeof window === "undefined") return "none";
+  if (!isEventThemeEnabled()) return "none";
   try {
-    return localStorage.getItem("ceo1983_active_theme") || "default";
+    return localStorage.getItem("ceo1983_active_theme") || "none";
   } catch {
-    return "default";
+    return "none";
   }
 }
 
@@ -139,11 +143,21 @@ const ICON_PRESET_SETS: Record<string, Record<string, string>> = {
     library: "📜",
     fees: "💎",
   },
+  "ceo1983-birthday": {
+    card: "🎂",
+    members: "🎉",
+    checkin: "✨",
+    perks: "🎁",
+    voting: "👑",
+    history: "📜",
+    library: "📁",
+    fees: "💎",
+  },
 };
 
 export function AdminThemeManagementPage() {
   const [activeTab, setActiveTab] = useState<"catalog" | "studio">("catalog");
-  const [activeThemeId, setActiveThemeIdState] = useState<string>("default");
+  const [activeThemeId, setActiveThemeIdState] = useState<string>("none");
   const [previewingTheme, setPreviewingTheme] = useState<FestivalThemeOption | null>(null);
 
   // Customizer state
@@ -168,7 +182,7 @@ export function AdminThemeManagementPage() {
   });
 
   useEffect(() => {
-    const current = getActiveAppThemeId();
+    const current = isEventThemeEnabled() ? getActiveAppThemeId() : "none";
     setActiveThemeIdState(current);
 
     const savedConfig = getCustomThemeConfig();
@@ -189,10 +203,17 @@ export function AdminThemeManagementPage() {
 
     void fetchNestApi<{ themeId: string; enabled: boolean; customConfig?: any }>("/admin/active-theme")
       .then((res) => {
+        if (res?.enabled === false || res?.themeId === "none" || !res?.themeId) {
+          setActiveThemeIdState("none");
+          setActiveAppThemeId("none");
+          setEventThemeEnabled(false);
+          return;
+        }
         if (res?.themeId) {
           const crmId = res.themeId === "christmas" ? "noel" : res.themeId === "classic" ? "default" : res.themeId;
           setActiveThemeIdState(crmId);
           setActiveAppThemeId(crmId);
+          setEventThemeEnabled(true);
           if (res.customConfig) {
             saveCustomThemeConfig(res.customConfig);
           }
@@ -222,6 +243,7 @@ export function AdminThemeManagementPage() {
     const targetType = theme.id;
     const crmId = theme.id === "christmas" ? "noel" : theme.id === "classic" ? "default" : theme.id;
 
+    setEventThemeEnabled(true);
     setActiveEventThemeType(targetType);
     setActiveAppThemeId(crmId);
     setActiveThemeIdState(crmId);
@@ -276,6 +298,7 @@ export function AdminThemeManagementPage() {
     };
 
     saveCustomThemeConfig(customConfig);
+    setEventThemeEnabled(true);
     setActiveEventThemeType("custom");
     setActiveAppThemeId("custom");
     setActiveThemeIdState("custom");
@@ -298,7 +321,28 @@ export function AdminThemeManagementPage() {
     });
   };
 
-  const effectiveActive = getEffectiveThemeOption();
+  const handleDeactivateTheme = async () => {
+    setEventThemeEnabled(false);
+    setActiveEventThemeType("none");
+    setActiveAppThemeId("none");
+    setActiveThemeIdState("none");
+
+    try {
+      await fetchNestApi("/admin/active-theme", {
+        method: "PUT",
+        body: JSON.stringify({ themeId: "none", enabled: false }),
+      });
+    } catch (e: any) {
+      console.warn("Could not save deactivate theme to backend:", e);
+    }
+
+    toast.success("Đã tắt chủ đề, trở về giao diện gốc chuẩn của Hiệp hội!", {
+      description: "Toàn bộ App CEO 1983 sử dụng giao diện mặc định ban đầu (không áp dụng chủ đề).",
+    });
+  };
+
+  const isEnabled = isEventThemeEnabled() && getEffectiveThemeOption().id !== "none";
+  const effectiveActive = isEnabled ? getEffectiveThemeOption() : DEFAULT_BASE_THEME;
 
   return (
     <AppShell>
@@ -308,11 +352,20 @@ export function AdminThemeManagementPage() {
         actions={
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              onClick={handleDeactivateTheme}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 text-xs font-bold shadow-xs cursor-pointer transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Bỏ áp dụng (Về giao diện mặc định)</span>
+            </button>
+            <button
+              type="button"
               onClick={() => handleApplyPresetTheme(FESTIVAL_THEMES[0])}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-card text-foreground hover:bg-muted text-xs font-semibold shadow-xs cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>Khôi phục Hoàng Gia Mặc Định</span>
+              <span>Chủ đề Hoàng Gia</span>
             </button>
           </div>
         }
@@ -323,17 +376,26 @@ export function AdminThemeManagementPage() {
         <div
           className="relative overflow-hidden rounded-2xl border p-6 shadow-sm transition-all duration-300"
           style={{
-            borderColor: `${effectiveActive.accentColor}50`,
-            background: effectiveActive.bannerGradient,
+            borderColor: isEnabled ? `${effectiveActive.accentColor}50` : "rgba(148, 163, 184, 0.3)",
+            background: isEnabled
+              ? effectiveActive.bannerGradient
+              : "linear-gradient(135deg, #0a1128 0%, #1c2541 50%, #003B95 100%)",
           }}
         >
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-white">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-xs font-bold backdrop-blur-md">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  ĐANG KÍCH HOẠT TRÊN APP HIỆP HỘI
-                </span>
+                {isEnabled ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-xs font-bold backdrop-blur-md">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    ĐANG KÍCH HOẠT TRÊN APP HIỆP HỘI
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-bold backdrop-blur-md">
+                    <span className="h-2 w-2 rounded-full bg-blue-400" />
+                    GIAO DIỆN GỐC MẶC ĐỊNH (CHƯA ÁP DỤNG CHỦ ĐỀ)
+                  </span>
+                )}
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30">
                   {effectiveActive.badge}
                 </span>
@@ -347,19 +409,33 @@ export function AdminThemeManagementPage() {
                 <span>{effectiveActive.name}</span>
               </h2>
               <p className="text-xs sm:text-sm text-white/90 leading-relaxed drop-shadow-sm">
-                {effectiveActive.tagline}
+                {isEnabled
+                  ? effectiveActive.tagline
+                  : "Ứng dụng CEO 1983 hiện hiển thị giao diện cơ bản nguyên bản chuẩn nhận diện thương hiệu, không kích hoạt banner lễ hội hay đổi icon."}
               </p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setPreviewingTheme(effectiveActive)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/30 bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition shadow-xs backdrop-blur-md cursor-pointer"
-              >
-                <Eye className="w-4 h-4 text-amber-300" />
-                <span>Xem Chi Tiết</span>
-              </button>
+              {isEnabled && (
+                <button
+                  type="button"
+                  onClick={handleDeactivateTheme}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-400/40 bg-red-500/20 hover:bg-red-500/30 text-white text-xs font-bold transition shadow-xs backdrop-blur-md cursor-pointer"
+                >
+                  <X className="w-4 h-4 text-red-200" />
+                  <span>Bỏ Áp Dụng (Về Mặc Định)</span>
+                </button>
+              )}
+              {isEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewingTheme(effectiveActive)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/30 bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition shadow-xs backdrop-blur-md cursor-pointer"
+                >
+                  <Eye className="w-4 h-4 text-amber-300" />
+                  <span>Xem Chi Tiết</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -410,9 +486,10 @@ export function AdminThemeManagementPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {FESTIVAL_THEMES.filter((t) => t.id !== "custom" && t.id !== "none").map((theme) => {
                 const isActive =
-                  activeThemeId === theme.id ||
-                  (theme.id === "christmas" && activeThemeId === "noel") ||
-                  (theme.id === "classic" && activeThemeId === "default");
+                  isEnabled &&
+                  (activeThemeId === theme.id ||
+                    (theme.id === "christmas" && activeThemeId === "noel") ||
+                    (theme.id === "classic" && activeThemeId === "default"));
 
                 return (
                   <div
@@ -479,18 +556,28 @@ export function AdminThemeManagementPage() {
                         >
                           Tùy Biến Thêm
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleApplyPresetTheme(theme)}
-                          disabled={isActive}
-                          className={`flex-1 rounded-xl py-2 text-xs font-bold transition text-center shadow-xs cursor-pointer ${
-                            isActive
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 cursor-default"
-                              : "bg-amber-500 hover:bg-amber-600 text-white"
-                          }`}
-                        >
-                          {isActive ? "Đang áp dụng" : "Áp dụng ngay"}
-                        </button>
+                        {isActive ? (
+                          <button
+                            type="button"
+                            onClick={handleDeactivateTheme}
+                            className="flex-1 rounded-xl py-2 text-xs font-bold transition text-center shadow-xs cursor-pointer bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30"
+                          >
+                            Bỏ áp dụng
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleApplyPresetTheme(theme)}
+                            disabled={isActive}
+                            className={`flex-1 rounded-xl py-2 text-xs font-bold transition text-center shadow-xs cursor-pointer ${
+                              isActive
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 cursor-default"
+                                : "bg-amber-500 hover:bg-amber-600 text-white"
+                            }`}
+                          >
+                            {isActive ? "Đang áp dụng" : "Áp dụng ngay"}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

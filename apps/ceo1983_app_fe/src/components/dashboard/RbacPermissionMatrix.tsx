@@ -47,7 +47,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
-import { RBAC_MATRIX_STORAGE_KEY, normalizeActionRoles, dispatchPermissionSyncEvent } from "@/lib/rbac-permission-helpers";
+import { RBAC_MATRIX_STORAGE_KEY, normalizeActionRoles, dispatchPermissionSyncEvent, getCustomDepartments } from "@/lib/rbac-permission-helpers";
 
 // ── 6 BAN CHUYÊN MÔN / BAN ĐIỀU HÀNH ──
 export interface CommitteeRole {
@@ -58,7 +58,7 @@ export interface CommitteeRole {
 }
 
 export const COMMITTEES: CommitteeRole[] = [
-  { key: "bqt", name: "Ban Điều Hành", shortName: "Ban Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800" },
+  { key: "dieu_hanh", name: "Ban Điều Hành", shortName: "Ban Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800" },
   { key: "thu_ky", name: "Ban Thư Ký", shortName: "Ban Thư Ký", color: "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800" },
   { key: "thanh_vien", name: "Ban Thành Viên", shortName: "Ban Thành Viên", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800" },
   { key: "xuc_tien", name: "Ban Xúc Tiến Thương Mại", shortName: "Ban Xúc Tiến TM", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800" },
@@ -76,18 +76,38 @@ export interface SystemRole {
 }
 
 export const SYSTEM_ROLES: SystemRole[] = [
-  { key: "chu_tich", name: "Chủ tịch", shortName: "Chủ tịch", color: "text-amber-800 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700", desc: "Chủ tịch Hiệp hội, quyền phê duyệt tối cao toàn hệ thống" },
   { key: "quan_tri", name: "Quản trị", shortName: "Quản trị", color: "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800", desc: "Toàn quyền hệ thống & phân quyền cao nhất" },
+  { key: "chu_tich", name: "Chủ tịch", shortName: "Chủ tịch", color: "text-amber-800 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700", desc: "Chủ tịch Hiệp hội, quyền phê duyệt tối cao toàn hệ thống" },
   { key: "admin", name: "Admin", shortName: "Admin", color: "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800", desc: "Quản trị viên vận hành nghiệp vụ CRM" },
   { key: "tong_thu_ky", name: "Tổng thư ký", shortName: "Tổng thư ký", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800", desc: "Điều phối thư ký, sự kiện, cuộc họp & công văn" },
-  { key: "truong_ban_quan_tri", name: "Trưởng ban điều hành", shortName: "TB Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800", desc: "Điều hành quản lý nội bộ, quy chế & điều phối các ban" },
-  { key: "truong_ban_truyen_thong", name: "Trưởng ban truyền thông", shortName: "TB Truyền thông", color: "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800", desc: "Quản lý truyền thông, tin tức, hình ảnh & thương hiệu" },
-  { key: "truong_ban_thanh_vien", name: "Trưởng ban thành viên", shortName: "TB Thành viên", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800", desc: "Phát triển hội viên, kết nạp & chăm sóc hội viên mới" },
-  { key: "truong_ban_xuc_tien", name: "Trưởng ban xúc tiến TM", shortName: "TB Xúc tiến", color: "text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800", desc: "Điều phối cơ hội giao thương, kết nối B2B & kinh doanh" },
-  { key: "truong_ban_tai_chinh", name: "Trưởng ban tài chính", shortName: "TB Tài chính", color: "text-yellow-700 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800", desc: "Quản lý quỹ, thu chi & ngân sách hiệp hội" },
-  { key: "truong_ban_thien_nguyen", name: "Trưởng ban thiện nguyện", shortName: "TB Thiện nguyện", color: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800", desc: "Tổ chức hoạt động thiện nguyện vì cộng đồng" },
+  { key: "truong_ban_dieu_hanh", name: "Trưởng ban điều hành", shortName: "Trưởng ban Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800", desc: "Điều hành quản lý nội bộ, quy chế & điều phối các ban" },
+  { key: "truong_ban_truyen_thong", name: "Trưởng ban truyền thông", shortName: "Trưởng ban Truyền Thông", color: "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800", desc: "Quản lý truyền thông, tin tức, hình ảnh & thương hiệu" },
+  { key: "truong_ban_thanh_vien", name: "Trưởng ban thành viên", shortName: "Trưởng ban Thành Viên", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800", desc: "Phát triển hội viên, kết nạp & chăm sóc hội viên mới" },
+  { key: "truong_ban_xuc_tien", name: "Trưởng ban xúc tiến TM", shortName: "Trưởng ban Xúc Tiến TM", color: "text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800", desc: "Điều phối cơ hội giao thương, kết nối B2B & kinh doanh" },
+  { key: "truong_ban_tai_chinh", name: "Trưởng ban tài chính", shortName: "Trưởng ban Tài Chính", color: "text-yellow-700 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800", desc: "Quản lý quỹ, thu chi & ngân sách hiệp hội" },
+  { key: "truong_ban_thien_nguyen", name: "Trưởng ban thiện nguyện", shortName: "Trưởng ban Thiện Nguyện", color: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800", desc: "Tổ chức hoạt động thiện nguyện vì cộng đồng" },
   { key: "member", name: "Thành viên", shortName: "Thành viên", color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800", desc: "Hội viên chính thức tham gia sinh hoạt & giao thương" },
 ];
+
+export function getDynamicSystemRoles(): SystemRole[] {
+  const customDepts = typeof window !== "undefined" ? getCustomDepartments() : [];
+  const baseRoles = [...SYSTEM_ROLES];
+
+  customDepts.forEach((d) => {
+    const roleKey = `truong_ban_${d.code.toLowerCase().replace(/[^a-z0-9_]/g, "_")}`;
+    if (!baseRoles.some((r) => r.key === roleKey)) {
+      baseRoles.push({
+        key: roleKey,
+        name: d.headTitle || `Trưởng ${d.name}`,
+        shortName: `Trưởng ${d.name}`,
+        color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
+        desc: `Trưởng ban chuyên môn ${d.name}`,
+      });
+    }
+  });
+
+  return baseRoles;
+}
 
 export interface TreeAction {
   id: string;
@@ -244,24 +264,14 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
         ],
       },
       {
-        id: "feat_checkin",
-        name: "Check-in (QR)",
-        route: "/checkin",
-        description: "Công cụ quét mã QR điểm danh khách mời và đại biểu tại cửa",
+        id: "feat_lucky_draw",
+        name: "Bốc thăm trúng thưởng",
+        route: "/lucky-draw",
+        description: "Quản lý chương trình quay số may mắn, cơ cấu giải thưởng sự kiện và trao quà",
         actions: [
-          { id: "act_chk_view", name: "Xem lịch sử check-in", code: "CHK_VIEW", description: "Theo dõi số lượng khách đã có mặt theo thời gian thực", apiEndpoint: "GET /api/checkin", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
-          { id: "act_chk_scan", name: "Quét mã QR check-in", code: "CHK_SCAN", description: "Mở camera quét vé QR để điểm danh đại biểu", apiEndpoint: "POST /api/checkin/scan", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
-          { id: "act_chk_manual", name: "Điểm danh thủ công bằng tay", code: "CHK_MANUAL", description: "Tìm kiếm và xác nhận đại biểu khi không có mã QR", apiEndpoint: "POST /api/checkin/manual", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
-        ],
-      },
-      {
-        id: "feat_checkin_qr",
-        name: "Mã QR check-in sự kiện",
-        route: "/checkin-qr",
-        description: "Quản lý và xuất mã QR tĩnh tại bàn lễ tân / Standee để hội viên tự quét",
-        actions: [
-          { id: "act_chkq_view", name: "Xem mã QR sự kiện & Standee", code: "CHKQ_VIEW", description: "Hiển thị mã QR check-in lên màn hình hoặc máy chiếu", apiEndpoint: "GET /api/checkin-qr", roles: { bqt: true, thu_ky: true, thanh_vien: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true } },
-          { id: "act_chkq_export", name: "Tải về / In mã QR Standee", code: "CHKQ_EXPORT", description: "Tải file ảnh mã QR độ phân giải cao để in ấn", apiEndpoint: "GET /api/checkin-qr/download", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
+          { id: "act_lkd_view", name: "Xem danh sách chương trình bốc thăm", code: "LKD_VIEW", description: "Xem thể lệ, giải thưởng và danh sách người trúng giải", apiEndpoint: "GET /api/lucky-draw", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_lkd_spin", name: "Thực hiện quay số & Bốc thăm", code: "LKD_SPIN", description: "Kích hoạt vòng quay bốc thăm trực tiếp trên sân khấu", apiEndpoint: "POST /api/lucky-draw/spin", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
+          { id: "act_lkd_edit", name: "Cấu hình giải thưởng & Thể lệ", code: "LKD_EDIT", description: "Thiết lập cơ cấu giải thưởng và phần quà", apiEndpoint: "PUT /api/lucky-draw/:id", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
         ],
       },
     ],
@@ -556,6 +566,33 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
     iconName: "ShieldCheck",
     features: [
       {
+        id: "feat_departments",
+        name: "Ban chuyên môn",
+        route: "/departments",
+        description: "Quản lý 6 Ban chuyên môn, sơ đồ cơ cấu tổ chức và phân bổ nhân sự các ban",
+        actions: [
+          { id: "act_dep_view", name: "Xem danh sách ban & thành viên", code: "DEP_VIEW", description: "Xem cơ cấu ban và nhân sự trực thuộc", apiEndpoint: "GET /api/departments", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_dep_add", name: "Thêm ban công tác mới", code: "DEP_ADD", description: "Thành lập ban chuyên môn mới", apiEndpoint: "POST /api/departments", roles: { bqt: true, quan_tri: true, admin: true } },
+          { id: "act_dep_edit", name: "Chỉnh sửa thông tin ban", code: "DEP_EDIT", description: "Cập nhật mô tả, quy chế hoạt động của ban", apiEndpoint: "PUT /api/departments/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
+          { id: "act_dep_assign", name: "Phân bổ nhân sự vào ban", code: "DEP_ASSIGN", description: "Bổ nhiệm trưởng ban, phó ban và thành viên", apiEndpoint: "POST /api/departments/:id/assign", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
+          { id: "act_dep_delete", name: "Giải thể / Xóa ban", code: "DEP_DELETE", description: "Xóa ban chuyên môn không còn hoạt động", apiEndpoint: "DELETE /api/departments/:id", roles: { bqt: true, quan_tri: true, admin: true } },
+        ],
+      },
+      {
+        id: "feat_accounts",
+        name: "Quản lý tài khoản",
+        route: "/accounts",
+        description: "Quản lý tài khoản người dùng, cấp vai trò hệ thống, khóa/mở khóa tài khoản",
+        actions: [
+          { id: "act_acc_view", name: "Xem danh sách tài khoản", code: "ACC_VIEW", description: "Tra cứu tài khoản đăng nhập và vai trò", apiEndpoint: "GET /api/accounts", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
+          { id: "act_acc_add", name: "Tạo mới tài khoản", code: "ACC_ADD", description: "Khởi tạo tài khoản đăng nhập mới", apiEndpoint: "POST /api/accounts", roles: { bqt: true, quan_tri: true, admin: true } },
+          { id: "act_acc_edit", name: "Phân vai trò & quyền hạn", code: "ACC_EDIT", description: "Cấp quyền vai trò Admin, Chủ tịch, Trưởng ban", apiEndpoint: "PUT /api/accounts/:id", roles: { bqt: true, quan_tri: true, admin: true } },
+          { id: "act_acc_lock", name: "Khóa / Mở khóa tài khoản", code: "ACC_LOCK", description: "Tạm khóa hoặc kích hoạt lại tài khoản", apiEndpoint: "POST /api/accounts/:id/lock", roles: { bqt: true, quan_tri: true, admin: true } },
+          { id: "act_acc_reset_pwd", name: "Đặt lại mật khẩu", code: "ACC_RESET_PWD", description: "Cấp lại mật khẩu mới cho tài khoản", apiEndpoint: "POST /api/accounts/:id/reset-password", roles: { bqt: true, quan_tri: true, admin: true } },
+          { id: "act_acc_delete", name: "Xóa tài khoản", code: "ACC_DELETE", description: "Xóa tài khoản khỏi hệ thống", apiEndpoint: "DELETE /api/accounts/:id", roles: { bqt: true, quan_tri: true, admin: true } },
+        ],
+      },
+      {
         id: "feat_permissions",
         name: "Ma trận phân quyền",
         route: "/permissions",
@@ -578,18 +615,6 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
           { id: "act_doc_delete", name: "Xóa tài liệu", code: "DOC_DELETE", description: "Xóa tài liệu không còn hiệu lực", apiEndpoint: "DELETE /api/documents/:id", roles: { bqt: true, quan_tri: true, admin: true } },
         ],
       },
-      {
-        id: "feat_business_cards",
-        name: "Quản lý Thẻ Doanh Nhân",
-        route: "/admin/business-cards",
-        description: "Quản lý phôi danh thiếp điện tử thông minh và thẻ hội viên vật lý NFC",
-        actions: [
-          { id: "act_crd_view", name: "Xem danh sách Thẻ Doanh Nhân", code: "CRD_VIEW", description: "Tra cứu thẻ thông minh của các thành viên", apiEndpoint: "GET /api/admin/business-cards", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true, tong_thu_ky: true } },
-          { id: "act_crd_add", name: "Cấp mới Thẻ Doanh Nhân", code: "CRD_ADD", description: "Gán mã thẻ NFC và kích hoạt danh thiếp số mới", apiEndpoint: "POST /api/admin/business-cards", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true } },
-          { id: "act_crd_edit", name: "Chỉnh sửa thông tin thẻ", code: "CRD_EDIT", description: "Cập nhật template hoặc liên kết thẻ", apiEndpoint: "PUT /api/admin/business-cards/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true } },
-          { id: "act_crd_delete", name: "Khóa / Xóa Thẻ Doanh Nhân", code: "CRD_DELETE", description: "Thu hồi hoặc khóa thẻ khi mất/hỏng", apiEndpoint: "DELETE /api/admin/business-cards/:id", roles: { bqt: true, quan_tri: true, admin: true } },
-        ],
-      },
     ],
   },
 ];
@@ -598,14 +623,14 @@ const STORAGE_KEY = RBAC_MATRIX_STORAGE_KEY;
 
 export const DETECTABLE_SYSTEM_FEATURES = [
   { name: "Hội viên & Doanh nghiệp", route: "/members", catId: "cat_members", desc: "Quản lý danh sách hội viên, hồ sơ năng lực & chức vụ" },
-  { name: "Điểm danh & Quét mã QR", route: "/checkin", catId: "cat_members", desc: "Check-in sự kiện, ghi nhận điểm danh hội viên tham dự" },
+  { name: "Ban chuyên môn & Công tác", route: "/departments", catId: "cat_admin", desc: "Quản lý 6 Ban chuyên môn và phân công nhân sự ban" },
+  { name: "Tài khoản & Phân quyền", route: "/accounts", catId: "cat_admin", desc: "Quản lý tài khoản đăng nhập, cấp quyền và bảo mật" },
+  { name: "Bốc thăm trúng thưởng", route: "/lucky-draw", catId: "cat_events", desc: "Quản lý chương trình quay số may mắn & giải thưởng sự kiện" },
   { name: "Sự kiện & Hội thảo", route: "/events", catId: "cat_events", desc: "Tổ chức sự kiện, lịch trình & phát hành vé điện tử" },
   { name: "Đăng ký sự kiện", route: "/event-registrations", catId: "cat_events", desc: "Quản lý danh sách đăng ký sự kiện và phê duyệt" },
   { name: "Gói Tài trợ & Quyền lợi", route: "/sponsor-packages", catId: "cat_events", desc: "Quản lý các gói tài trợ kim cương, vàng, bạc cho sự kiện" },
-  { name: "Giải thưởng & Vòng quay may mắn", route: "/lucky-wheel", catId: "cat_events", desc: "Quản lý cơ cấu giải thưởng sự kiện và quay số may mắn" },
   { name: "Kết nối giao thương B2B", route: "/business-connect", catId: "cat_network", desc: "Sàn kết nối cung cầu, cơ hội hợp tác kinh doanh giữa các CEO" },
   { name: "Cuộc hẹn & Gặp gỡ", route: "/meetings", catId: "cat_network", desc: "Đặt lịch hẹn 1-on-1 và kết nối giao thương giữa các hội viên" },
-  { name: "Danh thiếp thông minh (NFC/QR)", route: "/business-cards", catId: "cat_network", desc: "Trao đổi danh thiếp số điện tử, danh bạ hội viên" },
   { name: "Quỹ hội & Báo cáo tài chính", route: "/finance-report", catId: "cat_finance", desc: "Tổng quan thu chi, số dư quỹ hội và báo cáo tài chính" },
   { name: "Khoản thu & Hội phí", route: "/income", catId: "cat_finance", desc: "Quản lý thu hội phí thường niên, tài trợ và nhập file sao kê" },
   { name: "Khoản chi & Quyết toán", route: "/expenses", catId: "cat_finance", desc: "Quản lý phiếu chi, duyệt chi ngân sách và quyết toán" },
@@ -865,10 +890,10 @@ export function RbacPermissionMatrix({
         dispatchPermissionSyncEvent();
       }
       setInitialCategoriesStr(JSON.stringify(categories));
+      toast.success("Đã lưu toàn bộ Ma Trận Phân Quyền Vai Trò Hệ Thống thành công!");
       setTimeout(() => {
         setSaving(false);
-        toast.success("Đã lưu toàn bộ Ma Trận Phân Quyền Vai Trò Hệ Thống thành công!");
-      }, 300);
+      }, 200);
     } catch {
       setSaving(false);
       toast.error("Lỗi lưu ma trận");
@@ -943,6 +968,44 @@ export function RbacPermissionMatrix({
     toast.success("Đã khôi phục ma trận phân quyền về chuẩn vai trò hệ thống!");
   };
 
+  // Toggle toàn bộ quyền của 1 cột (Role hoặc Ban chuyên môn)
+  const handleToggleColumnAll = (colKey: string, colName: string) => {
+    let totalActions = 0;
+    let enabledActions = 0;
+
+    categories.forEach((cat) => {
+      cat.features.forEach((feat) => {
+        feat.actions.forEach((act) => {
+          totalActions++;
+          if (act.roles[colKey]) enabledActions++;
+        });
+      });
+    });
+
+    const targetValue = enabledActions < totalActions;
+
+    const updated = categories.map((cat) => ({
+      ...cat,
+      features: cat.features.map((feat) => ({
+        ...feat,
+        actions: feat.actions.map((act) => ({
+          ...act,
+          roles: {
+            ...act.roles,
+            [colKey]: targetValue,
+          },
+        })),
+      })),
+    }));
+
+    setCategories(updated);
+    toast.success(
+      targetValue
+        ? `Đã chọn TẤT CẢ quyền cho cột "${colName}"!`
+        : `Đã bỏ chọn tất cả quyền cho cột "${colName}"!`
+    );
+  };
+
   // Submit thêm chức năng & lưu trực tiếp vào CSDL
   const handleCreateFeature = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -973,11 +1036,11 @@ export function RbacPermissionMatrix({
           description: "Tra cứu dữ liệu chức năng",
           apiEndpoint: `GET /api${newFeatureRoute.trim() || "/custom"}`,
           roles: {
-            bqt: true,
+            dieu_hanh: true,
             quan_tri: true,
             admin: true,
             tong_thu_ky: true,
-            truong_ban_quan_tri: true,
+            truong_ban_dieu_hanh: true,
             truong_ban_truyen_thong: true,
             member: true,
           },
@@ -988,7 +1051,7 @@ export function RbacPermissionMatrix({
           code: `${codePrefix}_ADD`,
           description: "Tạo mới dữ liệu",
           apiEndpoint: `POST /api${newFeatureRoute.trim() || "/custom"}`,
-          roles: { bqt: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban_quan_tri: true },
+          roles: { dieu_hanh: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban_dieu_hanh: true },
         },
         {
           id: `act_${Date.now()}_edit`,
@@ -996,7 +1059,7 @@ export function RbacPermissionMatrix({
           code: `${codePrefix}_EDIT`,
           description: "Cập nhật dữ liệu",
           apiEndpoint: `PUT /api${newFeatureRoute.trim() || "/custom"}/:id`,
-          roles: { bqt: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban_quan_tri: true },
+          roles: { dieu_hanh: true, quan_tri: true, admin: true, tong_thu_ky: true, truong_ban_dieu_hanh: true },
         },
         {
           id: `act_${Date.now()}_delete`,
@@ -1004,7 +1067,7 @@ export function RbacPermissionMatrix({
           code: `${codePrefix}_DELETE`,
           description: "Xóa dữ liệu chức năng",
           apiEndpoint: `DELETE /api${newFeatureRoute.trim() || "/custom"}/:id`,
-          roles: { bqt: true, quan_tri: true, admin: true },
+          roles: { dieu_hanh: true, quan_tri: true, admin: true },
         },
       ],
     };
@@ -1144,8 +1207,35 @@ export function RbacPermissionMatrix({
     return list;
   }, [categories]);
 
-  // Cột hiển thị: Cố định 5 Vai Trò Hệ Thống (Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên)
-  const activeColumns = SYSTEM_ROLES;
+  // Cột hiển thị: Vai trò hệ thống bao gồm cả các Trưởng ban mới được tạo ra
+  const [dynamicRoles, setDynamicRoles] = useState<SystemRole[]>(() => getDynamicSystemRoles());
+
+  useEffect(() => {
+    const handleDeptUpdate = () => {
+      setDynamicRoles(getDynamicSystemRoles());
+    };
+    window.addEventListener("ceo1983_departments_updated", handleDeptUpdate);
+    window.addEventListener("permission_sync_updated", handleDeptUpdate);
+    window.addEventListener("storage", handleDeptUpdate);
+    return () => {
+      window.removeEventListener("ceo1983_departments_updated", handleDeptUpdate);
+      window.removeEventListener("permission_sync_updated", handleDeptUpdate);
+      window.removeEventListener("storage", handleDeptUpdate);
+    };
+  }, []);
+
+  const activeColumns = dynamicRoles;
+
+  // Flat danh sách tất cả các chức năng theo đúng thứ tự Sidebar CRM (bỏ hàng nhóm)
+  const flatFeatures = useMemo(() => {
+    return filteredCategories.flatMap((cat) =>
+      cat.features.map((feat) => ({
+        feat,
+        catId: cat.id,
+        catName: cat.name,
+      }))
+    );
+  }, [filteredCategories]);
 
   return (
     <div className="space-y-4">
@@ -1169,10 +1259,10 @@ export function RbacPermissionMatrix({
             )}
           </div>
 
-          {/* Huy hiệu 5 Vai Trò Hệ Thống Cố Định Hàng Ngang */}
+          {/* Huy hiệu Ma Trận Phân Quyền */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-300 shadow-xs">
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span>5 Vai Trò Cốt Lõi: Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên</span>
+            <span>Ma Trận Phân Quyền</span>
           </div>
 
           {/* Mở rộng / Thu gọn */}
@@ -1251,9 +1341,9 @@ export function RbacPermissionMatrix({
               type="button"
               onClick={handleSaveAll}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#003B95] text-white font-bold text-xs hover:bg-blue-900 transition shadow-xs cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs transition shadow-xs shadow-amber-500/20 cursor-pointer disabled:opacity-50"
             >
-              <Save className="h-3.5 w-3.5" />
+              <Save className="h-3.5 w-3.5 text-slate-950" />
               <span>{saving ? "Đang lưu..." : "Lưu Thay Đổi"}</span>
             </button>
           </div>
@@ -1261,194 +1351,181 @@ export function RbacPermissionMatrix({
       )}
 
       {/* ── BẢNG MA TRẬN DẠNG CÂY (TREE MATRIX TABLE) ── */}
+      {/* ── BẢNG MA TRẬN DẠNG CÂY (TREE MATRIX TABLE) ── */}
       <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">
         <table className="w-full text-left border-collapse min-w-[1100px]">
-          {/* Header Bảng: Tên Chức Năng / Thao Tác (Tree) | Các Cột Phân Quyền | Cột Thao Tác */}
+          {/* Header Bảng: Cố định 2 cột bên trái & Cột Thao tác bên phải */}
           <thead>
             <tr className="border-b border-border bg-muted/60 text-xs font-bold text-foreground uppercase tracking-wider">
-              <th className="py-3 px-4 w-[420px]">
+              {/* Cột 1 Cố định bên trái: Tên Nhóm / Chức Năng */}
+              <th className="sticky left-0 z-30 bg-muted/95 backdrop-blur-xs py-3 px-4 w-[220px] min-w-[220px] border-r border-border/60 shadow-xs">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="h-4 w-4 text-[#003B95]" />
-                  <span>Cây Chức Năng & Thao Tác Chi Tiết (Menu Sidebar CRM)</span>
+                  <span>Chức Năng</span>
                 </div>
               </th>
 
-              {/* Các Cột Ban Chuyên Môn (6 Ban) HOẶC Vai Trò Hệ Thống (5 Roles) */}
-              {activeColumns.map((col) => (
-                <th key={col.key} className="py-3 px-2 text-center min-w-[95px]">
-                  <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-extrabold border ${col.color}`}>
-                    {col.shortName}
-                  </span>
-                </th>
-              ))}
+              {/* Cột 2 Cố định bên trái: Quyền / Thao tác con */}
+              <th className="sticky left-[220px] z-30 bg-muted/95 backdrop-blur-xs py-3 px-4 w-[240px] min-w-[240px] border-r border-border/60 shadow-xs">
+                <span>Quyền Thao Tác</span>
+              </th>
 
-              {/* Cột Thao tác */}
-              <th className="py-3 px-4 text-center w-[120px]">Thao Tác</th>
+              {/* Các Cột Ban Chuyên Môn (6 Ban) HOẶC Vai Trò Hệ Thống (5 Roles) - Cuộn ngang */}
+              {activeColumns.map((col) => {
+                let totalActions = 0;
+                let activeCount = 0;
+                categories.forEach((cat) => {
+                  cat.features.forEach((feat) => {
+                    feat.actions.forEach((act) => {
+                      totalActions++;
+                      if (act.roles[col.key]) activeCount++;
+                    });
+                  });
+                });
+                const isAllChecked = totalActions > 0 && activeCount === totalActions;
+                const isIndeterminate = activeCount > 0 && activeCount < totalActions;
+
+                return (
+                  <th key={col.key} className="py-2.5 px-2 text-center min-w-[125px] align-top">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border ${col.color}`}>
+                        {col.shortName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleColumnAll(col.key, col.shortName)}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer ${
+                          isAllChecked
+                            ? "bg-[#003B95] text-white border-[#003B95]"
+                            : isIndeterminate
+                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                            : "bg-muted/70 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                        }`}
+                        title={`Chọn / bỏ chọn tất cả quyền cho cột ${col.name}`}
+                      >
+                        <CheckSquare className="h-3 w-3" />
+                        <span>{isAllChecked ? "Bỏ chọn hết" : "Chọn tất cả"}</span>
+                      </button>
+                    </div>
+                  </th>
+                );
+              })}
+
+              {/* Cột Cố định bên phải: Thao Tác */}
+              <th className="sticky right-0 z-30 bg-muted/95 backdrop-blur-xs py-3 px-3 text-center w-[100px] min-w-[100px] border-l border-border/60 shadow-xs">
+                Thao Tác
+              </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-border/60 text-xs">
-            {filteredCategories.map((cat) => {
-              const isCatExpanded = expandedNodes[cat.id] ?? true;
+            {flatFeatures.map(({ feat, catId, catName }) => {
+              const isFeatExpanded = expandedNodes[feat.id] ?? true;
 
               return (
-                <React.Fragment key={cat.id}>
-                  {/* LEVEL 1: NHÓM CHỨC NĂNG (CATEGORY ROOT THEO SIDEBAR CRM) */}
-                  <tr className="bg-muted/40 font-bold hover:bg-muted/70 transition-colors">
-                    <td colSpan={1 + activeColumns.length + 1} className="py-2.5 px-4">
-                      <div className="flex items-center justify-between">
-                        <button
-                          onClick={() => toggleExpand(cat.id)}
-                          className="flex items-center gap-2 text-xs font-black text-foreground hover:text-[#003B95] transition cursor-pointer"
-                        >
-                          {isCatExpanded ? <ChevronDown className="h-4 w-4 text-[#003B95]" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                          <span className="uppercase tracking-wider">{cat.name}</span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            {cat.features.length} chức năng CRM
-                          </span>
-                        </button>
+                <React.Fragment key={feat.id}>
+                  {/* DÒNG TIÊU ĐỀ CHỨC NĂNG (THEO CHUẨN MENU SIDEBAR CRM, ĐÃ BỎ NHÓM) */}
+                  <tr className="bg-secondary/25 hover:bg-secondary/45 font-semibold border-b border-border/40">
+                    {/* Cột 1 cố định: Tên chức năng con */}
+                    <td className="sticky left-0 z-15 bg-secondary/95 backdrop-blur-xs py-2.5 px-4 border-r border-border/40 shadow-xs">
+                      <button
+                        onClick={() => toggleExpand(feat.id)}
+                        className="flex items-center gap-2 text-xs text-foreground hover:text-amber-500 font-bold transition cursor-pointer"
+                      >
+                        {isFeatExpanded ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-amber-500" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                        <span>{feat.name}</span>
+                      </button>
+                    </td>
 
-                        <span className="text-[10px] font-normal text-muted-foreground">
-                          {cat.features.reduce((acc, f) => acc + f.actions.length, 0)} thao tác chi tiết
-                        </span>
+                    {/* Cột 2 cố định: Số quyền */}
+                    <td className="sticky left-[220px] z-15 bg-secondary/95 backdrop-blur-xs py-2.5 px-4 text-muted-foreground border-r border-border/40 shadow-xs">
+                      <span className="text-[10px] text-muted-foreground">
+                        ({feat.actions.length} thao tác)
+                      </span>
+                    </td>
+
+                    {/* Cột các roles: Trống ở dòng tiêu đề chức năng */}
+                    {activeColumns.map((col) => (
+                      <td key={col.key} className="py-2.5 px-2 text-center text-muted-foreground/30 text-[10px]">
+                        —
+                      </td>
+                    ))}
+
+                    {/* Cột thao tác của Chức Năng cố định phải: Nút Lưu quyền & Xóa chức năng */}
+                    <td className="sticky right-0 z-15 bg-secondary/95 backdrop-blur-xs py-2.5 px-3 text-center border-l border-border/40 shadow-xs">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleSaveFeaturePermissions(feat.name)}
+                          title="Lưu quyền cho chức năng này"
+                          className="p-1 rounded-lg hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 transition cursor-pointer"
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFeature(catId, feat.id, feat.name)}
+                          title="Xóa chức năng"
+                          className="p-1 rounded-lg hover:bg-destructive/10 text-destructive transition cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
 
-                  {/* LEVEL 2: CÁC CHỨC NĂNG CON (FEATURES CHUẨN XÁC THEO TỪNG MENU ITEM CỦA SIDEBAR) */}
-                  {isCatExpanded &&
-                    cat.features.map((feat) => {
-                      const isFeatExpanded = expandedNodes[feat.id] ?? true;
+                  {/* LEVEL 2: CÁC THAO TÁC CON CHI TIẾT (ACTIONS) */}
+                  {isFeatExpanded &&
+                    feat.actions.map((action) => (
+                      <tr key={action.id} className="hover:bg-primary/5 transition-colors border-b border-border/30">
+                        {/* Cột 1 cố định: Tên chức năng cha */}
+                        <td className="sticky left-0 z-10 bg-card py-2 px-4 text-xs font-medium text-muted-foreground border-r border-border/40 shadow-xs truncate">
+                          {feat.name}
+                        </td>
 
-                      return (
-                        <React.Fragment key={feat.id}>
-                          {/* DÒNG TIÊU ĐỀ CHỨC NĂNG */}
-                          <tr className="bg-secondary/20 hover:bg-secondary/40 font-semibold border-b border-border/40">
-                            <td className="py-2 px-4 pl-8">
-                              <div className="flex items-center justify-between gap-2">
-                                <button
-                                  onClick={() => toggleExpand(feat.id)}
-                                  className="flex items-center gap-2 text-xs text-foreground hover:text-blue-600 transition cursor-pointer"
-                                >
-                                  {isFeatExpanded ? <ChevronDown className="h-3.5 w-3.5 text-blue-600" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                                  <span className="font-bold">{feat.name}</span>
-                                  <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                    {feat.route}
-                                  </code>
-                                </button>
-                                <span className="text-[10px] text-muted-foreground">
-                                  ({feat.actions.length} thao tác con)
-                                </span>
-                              </div>
+                        {/* Cột 2 cố định: Tên thao tác */}
+                        <td className="sticky left-[220px] z-10 bg-card py-2 px-4 text-xs font-semibold text-foreground border-r border-border/40 shadow-xs">
+                          {action.name}
+                        </td>
+
+                        {/* CÁC Ô TÍCH CHECKBOX CHO VAI TRÒ HỆ THỐNG */}
+                        {activeColumns.map((col) => {
+                          const isChecked = !!action.roles[col.key];
+
+                          return (
+                            <td key={col.key} className="py-2 px-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePermission(catId, feat.id, action.id, col.key)}
+                                className={`inline-flex items-center justify-center h-5 w-5 rounded border transition cursor-pointer ${
+                                  isChecked
+                                    ? "bg-amber-500 border-amber-500 text-slate-950 shadow-xs"
+                                    : "border-border bg-background hover:border-amber-500/50 text-transparent"
+                                }`}
+                                title={`${isChecked ? "Bỏ quyền" : "Cấp quyền"} cho ${col.name}`}
+                              >
+                                <Check className="h-3 w-3 stroke-[3]" />
+                              </button>
                             </td>
+                          );
+                        })}
 
-                            {/* Cột các ban / roles: Trống ở dòng tiêu đề chức năng */}
-                            {activeColumns.map((col) => (
-                              <td key={col.key} className="py-2 px-2 text-center text-muted-foreground/30 text-[10px]">
-                                —
-                              </td>
-                            ))}
-
-                            {/* Cột thao tác của Chức Năng: Nút Lưu quyền nhanh & Xóa chức năng */}
-                            <td className="py-2 px-3 text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  onClick={() => handleSaveFeaturePermissions(feat.name)}
-                                  title="Lưu quyền cho chức năng này"
-                                  className="p-1 rounded-lg hover:bg-primary/10 text-primary transition"
-                                >
-                                  <Save className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteFeature(cat.id, feat.id, feat.name)}
-                                  title="Xóa chức năng"
-                                  className="p-1 rounded-lg hover:bg-destructive/10 text-destructive transition"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-
-                          {/* LEVEL 3: CÁC THAO TÁC CON CHI TIẾT (ACTIONS: XEM, THÊM, SỬA, XÓA, DUYỆT, XUẤT...) */}
-                          {isFeatExpanded &&
-                            feat.actions.map((action) => (
-                              <tr key={action.id} className="hover:bg-primary/5 transition-colors border-b border-border/30">
-                                {/* Tên thao tác & Mã quyền */}
-                                <td className="py-2 px-4 pl-14">
-                                  <div className="flex flex-col">
-                                    <span className="text-xs font-medium text-foreground">
-                                      {action.name}
-                                    </span>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase bg-muted/60 px-1 rounded">
-                                        {action.code}
-                                      </span>
-                                      {action.description && (
-                                        <span className="text-[10px] text-muted-foreground truncate max-w-[240px]">
-                                          {action.description}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-
-                                {/* CÁC Ô TÍCH CHECKBOX CHO BAN CHUYÊN MÔN HOẶC VAI TRÒ HỆ THỐNG */}
-                                {activeColumns.map((col) => {
-                                  const isChecked = !!action.roles[col.key];
-
-                                  return (
-                                    <td key={col.key} className="py-2 px-2 text-center">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleTogglePermission(cat.id, feat.id, action.id, col.key)}
-                                        className={`inline-flex items-center justify-center h-5 w-5 rounded border transition cursor-pointer ${
-                                          isChecked
-                                            ? "bg-[#003B95] border-[#003B95] text-white shadow-xs"
-                                            : "border-border bg-background hover:border-[#003B95]/50 text-transparent"
-                                        }`}
-                                        title={`${isChecked ? "Bỏ quyền" : "Cấp quyền"} cho ${col.name}`}
-                                      >
-                                        <Check className="h-3 w-3 stroke-[3]" />
-                                      </button>
-                                    </td>
-                                  );
-                                })}
-
-                                {/* CỘT THAO TÁC (XEM CHI TIẾT, XÓA THAO TÁC) */}
-                                <td className="py-2 px-3 text-center">
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    {/* Nút Xem chi tiết */}
-                                    <button
-                                      onClick={() => {
-                                        setSelectedDetail({
-                                          action,
-                                          featureName: feat.name,
-                                          categoryName: cat.name,
-                                        });
-                                        setDetailModalOpen(true);
-                                      }}
-                                      title="Xem chi tiết quyền"
-                                      className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition"
-                                    >
-                                      <Eye className="h-3.5 w-3.5" />
-                                    </button>
-
-                                    {/* Nút Xóa thao tác */}
-                                    <button
-                                      onClick={() => handleDeleteAction(cat.id, feat.id, action.id, action.name)}
-                                      title="Xóa thao tác này"
-                                      className="p-1 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                        </React.Fragment>
-                      );
-                    })}
+                        {/* CỘT THAO TÁC CỐ ĐỊNH PHẢI: ĐÃ BỎ NÚT XEM CHI TIẾT THEO YÊU CẦU */}
+                        <td className="sticky right-0 z-10 bg-card py-2 px-3 text-center border-l border-border/40 shadow-xs">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleDeleteAction(catId, feat.id, action.id, action.name)}
+                              title="Xóa thao tác này"
+                              className="p-1 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                 </React.Fragment>
               );
             })}
@@ -1561,9 +1638,9 @@ export function RbacPermissionMatrix({
                 <button
                   type="button"
                   onClick={handleScanNewFeatures}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[#003B95] text-white hover:bg-blue-800 transition flex items-center gap-1 shadow-xs"
+                  className="px-2.5 py-1 text-xs font-black rounded-lg bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 transition flex items-center gap-1 shadow-xs shadow-amber-500/20"
                 >
-                  <RefreshCw className="h-3 w-3" />
+                  <RefreshCw className="h-3 w-3 text-slate-950" />
                   Quét ngay
                 </button>
               </div>
@@ -1655,9 +1732,9 @@ export function RbacPermissionMatrix({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-blue-900 transition shadow-xs flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black transition shadow-xs shadow-amber-500/20 flex items-center gap-1.5"
                 >
-                  <Save className="h-3.5 w-3.5" />
+                  <Save className="h-3.5 w-3.5 text-slate-950" />
                   Thêm & Lưu Vào Cơ Sở Dữ Liệu
                 </button>
               </div>

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
+import { ConnectMessengerService } from './messenger.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -8,20 +9,44 @@ export class ConnectMarketplaceService {
   constructor(
     private prisma: PrismaService,
     private gateway: ConnectAppGateway,
+    @Inject(forwardRef(() => ConnectMessengerService))
+    private messengerService: ConnectMessengerService,
   ) {}
 
   async listActiveProducts() {
     try {
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT p.*, a.name as association_name,
-               COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as seller_name,
-               COALESCE(m.cover_url, u.avatar_url, '') as seller_avatar,
-               COALESCE(m.phone, '') as seller_phone,
-               COALESCE(p.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as seller_company
+               COALESCE(
+                 NULLIF(up.display_name, ''),
+                 NULLIF(u.name, ''),
+                 NULLIF(m.name, ''),
+                 NULLIF(m.contact, ''),
+                 'Hội viên CLB'
+               ) as seller_name,
+               COALESCE(
+                 NULLIF(up.avatar_url, ''),
+                 NULLIF(u.avatar_url, ''),
+                 NULLIF(m.avatar, ''),
+                 NULLIF(m.cover_url, ''),
+                 ''
+               ) as seller_avatar,
+               COALESCE(
+                 NULLIF(m.phone, ''),
+                 ''
+               ) as seller_phone,
+               COALESCE(
+                 NULLIF(p.company, ''),
+                 NULLIF(up.company_name, ''),
+                 NULLIF(m.company_name, ''),
+                 NULLIF(bi.company_name, ''),
+                 'CLB Doanh Nhân CEO 1983'
+               ) as seller_company
         FROM public.products p
         LEFT JOIN public.associations a ON p.association_id = a.id
         LEFT JOIN public.members m ON (p.seller_id = m.user_id::text OR p.seller_id = m.id OR p.seller_id = m.code)
-        LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text)
+        LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text OR (m.user_id IS NOT NULL AND m.user_id = u.id))
+        LEFT JOIN public.user_profiles up ON (u.id = up.user_id)
         LEFT JOIN public.business_identities bi ON (p.seller_id = bi.owner_user_id::text)
         WHERE p.status = 'active'
         ORDER BY p.created_at DESC
@@ -170,13 +195,35 @@ export class ConnectMarketplaceService {
   async listMarketplaceProducts(query?: any) {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT p.*,
-             COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as seller_name,
-             COALESCE(m.cover_url, u.avatar_url, '') as seller_avatar,
-             COALESCE(m.phone, '') as seller_phone,
-             COALESCE(p.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as seller_company
+             COALESCE(
+               NULLIF(up.display_name, ''),
+               NULLIF(u.name, ''),
+               NULLIF(m.name, ''),
+               NULLIF(m.contact, ''),
+               'Hội viên CLB'
+             ) as seller_name,
+             COALESCE(
+               NULLIF(up.avatar_url, ''),
+               NULLIF(u.avatar_url, ''),
+               NULLIF(m.avatar, ''),
+               NULLIF(m.cover_url, ''),
+               ''
+             ) as seller_avatar,
+             COALESCE(
+               NULLIF(m.phone, ''),
+               ''
+             ) as seller_phone,
+             COALESCE(
+               NULLIF(p.company, ''),
+               NULLIF(up.company_name, ''),
+               NULLIF(m.company_name, ''),
+               NULLIF(bi.company_name, ''),
+               'CLB Doanh Nhân CEO 1983'
+             ) as seller_company
       FROM public.products p
       LEFT JOIN public.members m ON (p.seller_id = m.user_id::text OR p.seller_id = m.id OR p.seller_id = m.code)
-      LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text)
+      LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text OR (m.user_id IS NOT NULL AND m.user_id = u.id))
+      LEFT JOIN public.user_profiles up ON (u.id = up.user_id)
       LEFT JOIN public.business_identities bi ON (p.seller_id = bi.owner_user_id::text)
       ORDER BY p.created_at DESC
     `.catch((err) => {
@@ -232,13 +279,35 @@ export class ConnectMarketplaceService {
   async getMarketplaceProductById(id: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT p.*,
-             COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as seller_name,
-             COALESCE(m.cover_url, u.avatar_url, '') as seller_avatar,
-             COALESCE(m.phone, '') as seller_phone,
-             COALESCE(p.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as seller_company
+             COALESCE(
+               NULLIF(up.display_name, ''),
+               NULLIF(u.name, ''),
+               NULLIF(m.name, ''),
+               NULLIF(m.contact, ''),
+               'Hội viên CLB'
+             ) as seller_name,
+             COALESCE(
+               NULLIF(up.avatar_url, ''),
+               NULLIF(u.avatar_url, ''),
+               NULLIF(m.avatar, ''),
+               NULLIF(m.cover_url, ''),
+               ''
+             ) as seller_avatar,
+             COALESCE(
+               NULLIF(m.phone, ''),
+               ''
+             ) as seller_phone,
+             COALESCE(
+               NULLIF(p.company, ''),
+               NULLIF(up.company_name, ''),
+               NULLIF(m.company_name, ''),
+               NULLIF(bi.company_name, ''),
+               'CLB Doanh Nhân CEO 1983'
+             ) as seller_company
       FROM public.products p
       LEFT JOIN public.members m ON (p.seller_id = m.user_id::text OR p.seller_id = m.id OR p.seller_id = m.code)
-      LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text)
+      LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text OR (m.user_id IS NOT NULL AND m.user_id = u.id))
+      LEFT JOIN public.user_profiles up ON (u.id = up.user_id)
       LEFT JOIN public.business_identities bi ON (p.seller_id = bi.owner_user_id::text)
       WHERE p.id = ${id} LIMIT 1
     `.catch(() => []);
@@ -480,9 +549,9 @@ export class ConnectMarketplaceService {
     let assocId = 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d';
     try {
       prodRows = await this.prisma.$queryRaw<any[]>`
-        SELECT p.title, p.seller_id, p.association_id, m.user_id as seller_user_id, m.id as member_id
+        SELECT p.title, p.seller_id, p.association_id, m.user_id as seller_user_id, m.id as member_id, m.code as member_code
         FROM public.products p
-        LEFT JOIN public.members m ON (m.user_id::text = p.seller_id::text OR m.id::text = p.seller_id::text)
+        LEFT JOIN public.members m ON (m.user_id::text = p.seller_id::text OR m.id::text = p.seller_id::text OR m.code::text = p.seller_id::text)
         WHERE p.id = ${data.productId} LIMIT 1
       `.catch((err) => {
         console.warn('Error querying product for quote ownership check:', err?.message);
@@ -618,6 +687,28 @@ export class ConnectMarketplaceService {
           action: { targetRoute: '/marketplace' },
           safeDisplayData: { title: notifTitle, body: notifBody },
         });
+
+        // 5. PUSH TO MESSENGER: Push quote template into seller's direct chat inbox
+        try {
+          const targetPeer = prod.member_code || prod.member_id || prod.seller_user_id || prod.seller_id;
+          if (targetPeer && this.messengerService) {
+            const quoteChatTemplate = 
+`📋 [YÊU CẦU BÁO GIÁ SẢN PHẨM]
+───────────────
+🛍️ Sản phẩm: ${prodTitle}
+🔢 Số lượng: ${data.quantity ?? 1}
+👤 Người yêu cầu: ${buyerName}
+📞 Số điện thoại: ${buyerPhone || 'Chưa cung cấp'}
+💬 Lời nhắn: ${data.message ? data.message : 'Tôi quan tâm đến sản phẩm này, vui lòng gửi báo giá chi tiết và chính sách ưu đãi cho hội viên CLB CEO 1983.'}
+───────────────
+⚡ Thời gian gửi: ${new Date().toLocaleString('vi-VN')}
+🆔 Mã báo giá: ${id}`;
+
+            await this.messengerService.sendMemberMessage(userId, String(targetPeer), quoteChatTemplate);
+          }
+        } catch (chatErr: any) {
+          console.warn('Failed to push quote template into chat:', chatErr?.message);
+        }
       }
     } catch (e: any) {
       console.warn('Failed to send seller quote notification:', e?.message);

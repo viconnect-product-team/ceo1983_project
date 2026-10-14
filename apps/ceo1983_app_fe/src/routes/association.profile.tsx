@@ -54,7 +54,7 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
-import { isEventThemeEnabled, setEventThemeEnabled, getCrmAppliedTheme, FESTIVAL_THEMES, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
+import { isEventThemeEnabled, setEventThemeEnabled, getCrmAppliedTheme, getEffectiveThemeOption, DEFAULT_BASE_THEME, FESTIVAL_THEMES, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
 import { isVoiceAiEnabled, setVoiceAiEnabled } from "@/components/ai/VoiceNavAssistant";
 import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { user, logout: authLogout } = useAuth();
-  const { isAdmin: isPlatformOrTenantAdmin, isPlatformAdmin, isBQT } = useRole();
+  const { isAdmin: isPlatformOrTenantAdmin, isPlatformAdmin, isBQT, srsRole } = useRole();
   const fetchMember = useServerFn(getMyMember);
   const updateProfileFn = useServerFn(updateMyProfile);
   const fetchDirectory = useServerFn(listMembers);
@@ -114,7 +114,15 @@ export default function ProfileScreen() {
   const userRole = String((user as any)?.role || "").toLowerCase();
   const memberRole = String((member as any)?.role || "").toLowerCase();
 
-  const isBQTOrAdmin = Boolean(
+  const isBQTOrAdmin: boolean = Boolean(
+    isPlatformOrTenantAdmin ||
+    isPlatformAdmin ||
+    isBQT ||
+    srsRole === "admin" ||
+    srsRole === "quan_tri" ||
+    srsRole === "ADM" ||
+    srsRole === "BQT" ||
+    srsRole === "ban_dieu_hanh" ||
     userRole === "admin" ||
     userRole === "quan_tri" ||
     userRole === "quantri" ||
@@ -124,12 +132,12 @@ export default function ProfileScreen() {
     memberRole === "quan_tri" ||
     memberRole === "quantri" ||
     memberRole === "association_admin" ||
-    isPlatformAdmin ||
-    isBQT ||
     (member as any)?.department === "Ban Quản Trị" ||
+    (member as any)?.department === "Ban Điều Hành" ||
     (member as any)?.department === "Ban Thường Trực CLB" ||
     String((member as any)?.executiveRole || "").toLowerCase().includes("chủ tịch") ||
-    String((member as any)?.department || "").toLowerCase().includes("quản trị")
+    String((member as any)?.department || "").toLowerCase().includes("quản trị") ||
+    String((member as any)?.department || "").toLowerCase().includes("điều hành")
   );
   const hasAdminPrivilege = isBQTOrAdmin;
 
@@ -788,436 +796,698 @@ export default function ProfileScreen() {
   }, [realMembers, conversations, member?.code, user?.id]);
 
   return (
-    <div className="vba-animate min-h-full pb-28 text-slate-900 dark:text-white">
-      <MemberHeader
-        title={isEn ? "Profile & Administration" : "Trang Cá Nhân & Quản Trị"}
-        back
-        right={
-          <Link
-            to="/association/settings"
-            aria-label={isEn ? "Account settings" : "Cài đặt tài khoản"}
-            className="text-amber-500 hover:text-amber-600 p-1 transition-colors"
-          >
-            <Settings className="h-5 w-5" />
-          </Link>
-        }
-      />
-
-      {/* ── COMPACT MEMBER IDENTITY CARD (Liên kết trực tiếp tới Thẻ Hội Viên & Hồ Sơ) ── */}
-      <div id="tour-profile-card" className="mx-4 mt-4 overflow-hidden rounded-2xl border-2 border-amber-500/40 bg-white dark:bg-[#0F172A] shadow-[0_6px_25px_-5px_rgba(245,158,11,0.2)]">
-        <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] border-b border-amber-400/30">
-          {displayCover && !coverError ? (
-            <img
-              src={displayCover}
-              alt="Cover Photo"
-              onError={() => setCoverError(true)}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A]" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent pointer-events-none" />
-
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[10.5px] font-bold backdrop-blur-md shadow-xs">
-            <BadgeCheck className="h-3.5 w-3.5 text-amber-400" />
-            <span>Hội viên chính thức CEO 1983</span>
-          </div>
-          <div className="absolute bottom-2.5 left-4 text-[11px] font-medium text-amber-200/90 drop-shadow-xs">
-            Mã định danh: <span className="font-mono font-bold text-white">{member?.code || "CEO1983-VIP"}</span>
-          </div>
-        </div>
-
-        <div className="px-4 pb-4 pt-0">
-          <div className="flex items-end justify-between -mt-10 mb-3">
-            <div className="relative">
-              {resolvedAvatar && !avatarError ? (
-                <img
-                  src={resolvedAvatar}
-                  alt={profileName || member?.name}
-                  onError={handleAvatarLoadError}
-                  className="h-20 w-20 rounded-2xl border-3 border-amber-400/80 object-cover shadow-md bg-white"
-                />
-              ) : (
-                <div className="h-20 w-20 rounded-2xl border-3 border-amber-400/80 bg-gradient-to-br from-[#003B95] to-[#001D4A] text-amber-300 font-black text-xl grid place-items-center shadow-md">
-                  {initials(profileName || member?.name)}
-                </div>
-              )}
-            </div>
-
+    <div className="vba-animate min-h-full pb-28 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center">
+      <div className="w-full max-w-md flex flex-col justify-start items-stretch gap-4">
+        <MemberHeader
+          title={isEn ? "Profile" : "Trang cá nhân"}
+          back
+          right={
             <Link
-              to="/association/card"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 font-bold px-3.5 py-2 text-xs shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition active:scale-95 cursor-pointer"
+              to="/association/settings"
+              aria-label={isEn ? "Account settings" : "Cài đặt tài khoản"}
+              className="text-[#2D2E8B] dark:text-blue-400 hover:text-[#002B70] p-1 transition-colors"
             >
-              <CreditCard className="h-4 w-4 text-amber-400" />
-              <span>{isEn ? "Member Card & Contract" : "Thẻ Hội Viên & Hồ Sơ"}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-amber-300" />
+              <Settings className="h-5 w-5" />
             </Link>
-          </div>
+          }
+        />
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-black text-slate-900 dark:text-white">
-                {profileName || member?.name || "Doanh Nhân CEO 1983"}
-              </h2>
+        {/* ── CARD THÔNG TIN HỘI VIÊN (Header User Info Card) ── */}
+        <div className="w-full px-4 inline-flex justify-between items-center">
+          <div
+            onClick={() => navigate({ to: "/association/card" as any })}
+            className="flex-1 px-3 py-3.5 bg-white dark:bg-[#0F172A] rounded-2xl flex justify-between items-center border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex justify-start items-center gap-2.5 min-w-0">
+              <div className="size-12 relative shrink-0">
+                {resolvedAvatar && !avatarError ? (
+                  <img
+                    src={resolvedAvatar}
+                    alt={profileName || member?.name}
+                    onError={handleAvatarLoadError}
+                    className="size-12 rounded-full object-cover shadow-xs border border-slate-200 dark:border-slate-700"
+                  />
+                ) : (
+                  <div className="size-12 bg-blue-950 rounded-full flex items-center justify-center text-white text-xl font-bold font-['SF_Pro',system-ui,sans-serif]">
+                    {initials(profileName || member?.name || "Trần Tuấn Anh")}
+                  </div>
+                )}
+              </div>
+              <div className="inline-flex flex-col justify-center items-start gap-1 min-w-0">
+                <div className="justify-start text-slate-900 dark:text-white text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                  {profileName || member?.name || "Trần Tuấn Anh"}
+                  {isAdmin ? " (Platform Admin)" : ""}
+                </div>
+                <div className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-[30px] inline-flex justify-center items-center gap-1">
+                  <img
+                    src="/icons/profile/check-verified-02.svg"
+                    alt="Verified"
+                    className="size-3.5 shrink-0"
+                  />
+                  <div className="justify-start text-emerald-600 dark:text-emerald-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4">
+                    {isEn ? "Official CEO 1983 Member" : "Hội viên chính thức CEO 1983"}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              <Phone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-              <span>{displayPhone}</span>
+            <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+              <img
+                src="/icons/profile/chevron-right.svg"
+                alt="Go"
+                className="w-4 h-4 object-contain opacity-70"
+              />
             </div>
-            <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5 text-amber-500/80 shrink-0" />
-              <span className="truncate">{profileCompany || (member as any)?.company || "CLB Doanh Nhân CEO 1983"}</span>
-            </p>
           </div>
         </div>
-      </div>
 
-
-      {/* ── NAVIGATION MENU (Phân hệ chức năng) ── */}
-      <div className="mx-4 mt-6">
-        <div className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          {isEn ? "Functional Modules" : "Phân hệ chức năng"}
-        </div>
-        <div className="divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-amber-500/25 bg-white dark:bg-[#0F172A] shadow-xs">
-          {menu.map((m: any) => {
-            const Icon = m.icon;
-            const itemTourId =
-              m.icon === BookOpen
-                ? "tour-profile-guide-btn"
-                : m.icon === Headphones
-                ? "tour-profile-hotline-btn"
-                : undefined;
-            if (m.onClick) {
-              return (
-                <button
-                  key={m.label}
-                  id={itemTourId}
-                  type="button"
-                  onClick={m.onClick}
-                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-amber-50/50 dark:hover:bg-slate-800/60 cursor-pointer"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                    <Icon className="h-4.5 w-4.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-bold text-slate-900 dark:text-white">
-                      {m.label}
-                    </div>
-                    <div className="text-[10.5px] text-slate-500 dark:text-slate-400">{m.desc}</div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                </button>
-              );
-            }
-            return (
+        {/* ── SECTION 1: DANH THIẾP & HỘI VIÊN ── */}
+        <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
+          <div className="self-stretch flex flex-col justify-start items-start gap-3">
+            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+              {isEn ? "Business Card & Members" : "Danh thiếp & hội viên"}
+            </div>
+            <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
+              {/* Item 1: Quản lý danh thiếp số */}
               <Link
-                key={m.label}
-                to={m.to}
-                className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-amber-50/50 dark:hover:bg-slate-800/60"
+                to="/association/business-cards"
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                  <Icon className="h-4.5 w-4.5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-bold text-slate-900 dark:text-white">
-                    {m.label}
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/fa7-regular_contact-card.svg"
+                        alt="Card"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Digital Business Card" : "Quản lý danh thiếp số"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Design & share electronic business card" : "Thiết kế & chia sẻ danh thiếp số cá nhân"}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400">{m.desc}</div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
                 </div>
-                {m.hasAddAction && (
+              </Link>
+
+              {/* Item 2: Danh bạ hội viên CLB */}
+              <Link
+                to="/association/members"
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/fluent-mdl2_contact-list.svg"
+                        alt="Directory"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Club Member Directory" : "Danh bạ hội viên CLB"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Search & connect with members" : "Tìm kiếm & kết nối hội viên CEO 1983"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 2: HOẠT ĐỘNG & KINH DOANH ── */}
+        <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
+          <div className="self-stretch flex flex-col justify-start items-start gap-3">
+            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+              {isEn ? "Activities & Business" : "Hoạt động & kinh doanh"}
+            </div>
+            <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
+              {/* Item 1: Cơ hội giao thương B2B */}
+              <Link
+                to="/association/opportunities"
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/streamline_shipment-remove.svg"
+                        alt="B2B"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "B2B Trade Opportunities" : "Cơ hội giao thương B2B"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Commercial demand & investment" : "Nhu cầu mua, bán & hợp tác đầu tư"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </Link>
+
+              {/* Item 2: Gian hàng sản phẩm */}
+              <Link
+                to="/association/products"
+                search={{}}
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/akar-icons_book.svg"
+                        alt="Showcase"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Product Showcase" : "Gian hàng sản phẩm"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Showcase enterprise products & services" : "Showcase sản phẩm & dịch vụ doanh nghiệp"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </Link>
+
+              {/* Item 3: Lịch sử hoạt động & giao dịch */}
+              <Link
+                to="/association/history"
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/akar-icons_history.svg"
+                        alt="History"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "History & Transactions" : "Lịch sử hoạt động & giao dịch"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Trading log & event participation" : "Nhật ký giao dịch, giao thương & tham gia sự kiện"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 3: CÀI ĐẶT ỨNG DỤNG ── */}
+        <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
+          <div className="self-stretch flex flex-col justify-start items-start gap-3">
+            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+              {isEn ? "App Settings" : "Cài đặt ứng dụng"}
+            </div>
+            <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
+              {/* Item 1: Thông báo & lời mời */}
+              <Link
+                to="/association/notifications"
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/bell-01.svg"
+                        alt="Bell"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Notifications & Invites" : "Thông báo & lời mời"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Messages & connection approvals" : "Cập nhật tin nhắn & phê duyệt kết nối"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </Link>
+
+              {/* Item 2: Hướng dẫn sử dụng ứng dụng */}
+              <button
+                type="button"
+                onClick={() => setUserGuideOpen(true)}
+                className="w-full self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/streamline-sharp_customer-support-1-solid.svg"
+                        alt="Support"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "User Guide Handbook" : "Hướng dẫn sử dụng ứng dụng"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "10 core features, card scan" : "Chỉ dẫn chi tiết 10 chức năng cốt lõi, quét card"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </button>
+
+              {/* Item 3: Ngôn ngữ ứng dụng */}
+              <button
+                type="button"
+                onClick={() => {
+                  const nextLang = lang === "vi" ? "en" : "vi";
+                  setLang(nextLang);
+                  toast.success(nextLang === "en" ? "Switched to English" : "Đã chuyển sang Tiếng Việt");
+                }}
+                className="w-full self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/heroicons_language-20-solid.svg"
+                        alt="Language"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "App Language" : "Ngôn ngữ ứng dụng"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {lang === "vi" ? "Tiếng Việt (8 ngôn ngữ tổng cộng)" : "English (8 languages total)"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </button>
+
+              {/* Item 4: Chủ đề sự kiện từ CRM */}
+              {(() => {
+                const crmHasTheme = crmThemeId && crmThemeId !== "none";
+                const isEnabled = eventThemeEnabled && crmHasTheme;
+                const currentThemeOption = isEnabled ? getEffectiveThemeOption() : DEFAULT_BASE_THEME;
+                return (
+                  <div className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
+                    <div className="self-stretch inline-flex justify-between items-center">
+                      <div className="flex justify-start items-center gap-3 min-w-0">
+                        <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                          <span className="text-2xl leading-none select-none">
+                            {isEnabled ? (currentThemeOption.iconEmoji || "✨") : "✨"}
+                          </span>
+                        </div>
+                        <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                          <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                            {crmHasTheme
+                              ? (isEnabled
+                                  ? (currentThemeOption.name || (isEn ? "Event Theme Active" : "Chủ đề sự kiện"))
+                                  : (isEn ? "Standard Interface (Theme Off)" : "Giao diện gốc (Đã tắt chủ đề)"))
+                              : (isEn ? "Standard Interface (No Theme)" : "Giao diện gốc mặc định")}
+                          </div>
+                          <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                            {crmHasTheme
+                              ? (isEnabled
+                                  ? (currentThemeOption.tagline || (isEn ? "Applied from CRM" : "Đang áp dụng chủ đề từ CRM"))
+                                  : (isEn ? "Using default UI for this account" : "Tài khoản đang dùng giao diện gốc"))
+                              : (isEn ? "No event theme applied from CRM" : "Chưa có chủ đề nào được áp dụng từ CRM")}
+                          </div>
+                        </div>
+                      </div>
+                      {crmHasTheme ? (
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={eventThemeEnabled}
+                          data-state={eventThemeEnabled ? "On" : "Off"}
+                          onClick={async () => {
+                            const next = !eventThemeEnabled;
+                            setEventThemeEnabled(next, user?.email || user?.id);
+                            setEventThemeState(next);
+                            if (!next && hasAdminPrivilege) {
+                              try {
+                                await fetchNestApi("/admin/active-theme", {
+                                  method: "PUT",
+                                  body: JSON.stringify({ themeId: "none", enabled: false }),
+                                });
+                              } catch (e) {
+                                console.warn("Could not sync deactivate theme to backend:", e);
+                              }
+                            }
+                            toast.success(
+                              next
+                                ? (isEn ? `Turned on event theme for this account` : `Đã bật hiển thị chủ đề từ CRM cho tài khoản`)
+                                : (isEn ? "Switched to standard interface" : "Đã tắt chủ đề, dùng giao diện gốc cho tài khoản")
+                            );
+                          }}
+                          className={`w-14 h-7 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                            eventThemeEnabled ? "bg-[#34C759]" : "bg-slate-300 dark:bg-slate-700"
+                          }`}
+                        >
+                          <div
+                            className={`w-6 h-6 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                              eventThemeEnabled ? "translate-x-7" : "translate-x-0.5"
+                            }`}
+                          />
+                        </button>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full shrink-0">
+                          {isEn ? "Default" : "Mặc định"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Item 5: Giao diện tối màu */}
+              <div className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex-1 flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/moon-02.svg"
+                        alt="Dark"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Dark Mode" : "Giao diện tối màu"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {theme === "dark" ? (isEn ? "Night executive style" : "Ban đêm sang trọng, dịu mắt") : (isEn ? "Daylight executive style" : "Tươi sáng, tinh tế")}
+                      </div>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      void navigate({
-                        to: "/association/business-cards",
-                        search: { tab: "cards", action: "create" },
-                      });
+                    role="switch"
+                    aria-checked={theme === "dark"}
+                    data-state={theme === "dark" ? "On" : "Off"}
+                    onClick={() => {
+                      const nextMode = theme === "dark" ? "light" : "dark";
+                      setTheme(nextMode);
+                      toast.success(nextMode === "dark" ? "Đã bật giao diện tối" : "Đã chuyển về giao diện sáng");
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-colors cursor-pointer mr-1 shrink-0 border border-amber-500/30"
-                    title={isEn ? "Create new card" : "Tạo danh thiếp số mới"}
+                    className={`w-14 h-7 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                      theme === "dark" ? "bg-[#34C759]" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
                   >
-                    <Plus className="h-4 w-4" />
+                    <div
+                      className={`w-6 h-6 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                        theme === "dark" ? "translate-x-7" : "translate-x-0.5"
+                      }`}
+                    />
                   </button>
-                )}
-                <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" />
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── THEME & APPEARANCE PICKER ── */}
-      <div className="mx-4 mt-6">
-        <div className="mb-2.5 flex items-center justify-between">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            {isEn ? "Appearance & Theme" : "Giao diện & Chế độ màu"}
-          </span>
-          <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
-            {theme === "light" ? (isEn ? "Light" : "Sáng") : (isEn ? "Dark" : "Tối")}
-          </span>
-        </div>
-
-        <div id="tour-profile-theme" className="grid grid-cols-2 gap-2.5">
-          {themeOptions.map((opt) => {
-            const Icon = opt.icon;
-            const active = theme === opt.mode;
-            return (
-              <button
-                key={opt.mode}
-                type="button"
-                onClick={() => setTheme(opt.mode)}
-                className={`flex flex-col items-center justify-center gap-2 rounded-2xl p-3 text-center transition-all cursor-pointer border ${
-                  active
-                    ? "border-amber-500 bg-amber-50/50 dark:bg-[#14223E] shadow-md scale-[1.02]"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] hover:border-slate-300 dark:hover:border-slate-700"
-                }`}
-              >
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                    active
-                      ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 shadow-xs border border-amber-400/40"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
                 </div>
-                <div className="text-[12px] font-bold text-slate-900 dark:text-white">
-                  {opt.label}
-                </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">{opt.desc}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+              </div>
 
-      {/* ── LANGUAGE SELECTOR (Chuyển đổi ngôn ngữ hoạt động lập tức) ── */}
-      <div className="mx-4 mt-6">
-        <div className="mb-2.5 flex items-center justify-between">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            {isEn ? "App Language (8 Languages)" : "Ngôn ngữ ứng dụng (8 Ngôn ngữ)"}
-          </span>
-          <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
-            {lang === "vi" ? "Tiếng Việt" : "English"}
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { code: "vi" as const, name: "Tiếng Việt", flag: "🇻🇳" },
-            { code: "en" as const, name: "English", flag: "🇬🇧" },
-          ].map((l) => (
-            <button
-              key={l.code}
-              type="button"
-              onClick={() => {
-                setLang(l.code);
-                toast.success(l.code === "en" ? "Switched to English" : `Đã chuyển sang ${l.name}`);
-              }}
-              className={`flex items-center justify-between rounded-xl p-3 border text-xs font-semibold transition cursor-pointer ${
-                lang === l.code
-                  ? "border-amber-500 bg-amber-50/50 dark:bg-[#14223E] text-amber-700 dark:text-amber-300 shadow-xs font-bold"
-                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <span className="text-base">{l.flag}</span>
-                <span className="truncate">{l.name}</span>
-              </span>
-              {lang === l.code && <Check className="h-4 w-4 shrink-0 text-amber-500" />}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── SEASONAL FESTIVAL THEME SWITCH ── */}
-      {(() => {
-        const themeToDisplay = crmThemeId ? FESTIVAL_THEMES.find((t) => t.id === crmThemeId) : FESTIVAL_THEMES[0];
-        const appliedTheme = themeToDisplay || FESTIVAL_THEMES[0];
-
-        return (
-          <div className="mx-4 mt-6 rounded-2xl border border-blue-500/30 bg-blue-50/50 dark:bg-[#14223E]/80 p-4 shadow-xs">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#003B95]/15 text-[#003B95] dark:text-blue-400 border border-[#003B95]/30">
-                  <span className="text-xl select-none">{appliedTheme.iconEmoji}</span>
-                </div>
-                <div>
-                  <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>{appliedTheme.name}</span>
-                    {eventThemeEnabled ? (
-                      <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-[#003B95] text-white">
-                        {isEn ? "Active" : "Đang bật"}
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                        {isEn ? "Default Off" : "Đang tắt"}
-                      </span>
-                    )}
+              {/* Item 6: Trợ lý điều khiển giọng nói AI */}
+              <div className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5">
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex-1 flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/ri_robot-2-line.svg"
+                        alt="Voice AI"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "AI Voice Assistant" : "Trợ lý điều khiển giọng nói AI"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {voiceAiEnabled ? (isEn ? "Voice bot floating on screen" : "Hiển thị trợ lý AI điều hướng giọng nói") : (isEn ? "Voice bot is hidden" : "Đang ẩn robot trợ lý giọng nói")}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                    {eventThemeEnabled
-                      ? appliedTheme.tagline
-                      : (isEn ? "Switched to standard executive theme" : "Giao diện Doanh nhân Chuẩn CEO 1983")}
-                  </p>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={voiceAiEnabled}
+                    data-state={voiceAiEnabled ? "On" : "Off"}
+                    onClick={() => {
+                      const next = !voiceAiEnabled;
+                      setVoiceAiState(next);
+                      setVoiceAiEnabled(next);
+                      toast.success(
+                        next
+                          ? (isEn ? "AI Voice Assistant Activated! 🤖" : "Đã bật Trợ lý Giọng nói AI! 🤖")
+                          : (isEn ? "AI Voice Assistant Disabled" : "Đã tắt Trợ lý Giọng nói AI")
+                      );
+                    }}
+                    className={`w-14 h-7 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                      voiceAiEnabled ? "bg-[#34C759]" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                        voiceAiEnabled ? "translate-x-7" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Switch Toggle */}
+        {/* ── SECTION 4: CÀI ĐẶT TÀI KHOẢN ── */}
+        <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
+          <div className="self-stretch flex flex-col justify-start items-start gap-3">
+            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+              {isEn ? "Account Settings" : "Cài đặt tài khoản"}
+            </div>
+            <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
+              {/* Item 1: Bảo mật tài khoản */}
+              <Link
+                to="/association/settings"
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/lock-unlocked-01.svg"
+                        alt="Security"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Account Security" : "Bảo mật tài khoản"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Password, sessions & security" : "Đổi mật khẩu, phiên đăng nhập & bảo mật"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </Link>
+
+              {/* Item 2: Liên hệ ban thư ký */}
               <button
                 type="button"
-                role="switch"
-                aria-checked={eventThemeEnabled}
-                onClick={() => {
-                  const next = !eventThemeEnabled;
-                  setEventThemeEnabled(next);
-                  setEventThemeState(next);
-                  toast.success(
-                    next
-                      ? `Đã kích hoạt ${appliedTheme.name}!`
-                      : (isEn ? "Switched to Standard CEO 1983 Theme" : "Đã chuyển về Giao diện Chuẩn CEO 1983")
-                  );
-                }}
-                className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-                  eventThemeEnabled ? "bg-[#003B95]" : "bg-slate-300 dark:bg-slate-700"
-                }`}
+                onClick={() => setContactSupportOpen(true)}
+                className="w-full self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
-                <span
-                  className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    eventThemeEnabled ? "translate-x-5.5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── TRỢ LÝ ĐIỀU KHIỂN GIỌNG NÓI AI (VOICE AI NAVIGATION ASSISTANT SWITCH) ── */}
-      <div className="mx-4 mt-4 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-50/40 via-blue-50/20 to-transparent dark:from-[#001D4A]/50 dark:to-[#002B70]/30 p-4 shadow-xs">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#003B95] to-[#002B70] border border-amber-400/40 text-amber-300 shadow-md shadow-[#003B95]/25">
-              <Bot className="h-5 w-5 animate-pulse" />
-            </div>
-            <div>
-              <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>{isEn ? "AI Voice Assistant" : "Trợ lý Điều khiển Giọng nói AI"}</span>
-                {voiceAiEnabled ? (
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-[#003B95] text-amber-300 border border-amber-400/40">
-                    {isEn ? "Active" : "Đang bật"}
-                  </span>
-                ) : (
-                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    {isEn ? "Disabled" : "Đang tắt"}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                {voiceAiEnabled
-                  ? (isEn ? "Robot icon floating on screen to navigate by voice command" : "Hiển thị Robot thông minh trên màn hình để ra lệnh mở các danh mục")
-                  : (isEn ? "Voice AI assistant is hidden" : "Đang ẩn robot trợ lý giọng nói")}
-              </p>
-            </div>
-          </div>
-
-          {/* Switch Toggle */}
-          <button
-            type="button"
-            role="switch"
-            aria-checked={voiceAiEnabled}
-            onClick={() => {
-              const next = !voiceAiEnabled;
-              setVoiceAiState(next);
-              setVoiceAiEnabled(next);
-              toast.success(
-                next
-                  ? (isEn ? "AI Voice Assistant Activated! 🤖" : "Đã bật Trợ lý Giọng nói AI! 🤖")
-                  : (isEn ? "AI Voice Assistant Disabled" : "Đã tắt Trợ lý Giọng nói AI")
-              );
-            }}
-            className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-              voiceAiEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                voiceAiEnabled ? "translate-x-5.5" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* ── BQT ADMIN PHÂN QUYỀN HỘI VIÊN (Req 17) ── */}
-      {hasAdminPrivilege && (
-        <div className="mx-4 mt-4 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500 text-slate-950 font-black shadow-xs">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    PHÂN QUYỀN HỘI VIÊN BQT
-                  </h3>
-                  <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-black text-amber-700 dark:text-amber-300 border border-amber-400/30 uppercase">
-                    Admin
-                  </span>
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/phone-01.svg"
+                        alt="Phone"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Contact Secretariat" : "Liên hệ ban thư ký"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Hotline, call center, zalo OA & inquiry" : "Hotline, tổng đài, zalo QA & gửi yêu cầu hỗ trợ"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                  Cấp quyền điều hành Sự kiện, Bản tin, Marketplace, Biểu quyết
-                </p>
-              </div>
+              </button>
+
+              {/* Item 3: Phân quyền hội viên & BQT */}
+              <Link
+                to="/association/permissions"
+                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <img
+                        src="/icons/profile/shield-tick.svg"
+                        alt="Permissions"
+                        className="size-7 object-contain"
+                      />
+                    </div>
+                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        {isEn ? "Permissions Management" : "Phân quyền hội viên & BQT"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                        {isEn ? "Executive, secretariat & committee rights" : "Cấp quyền ban chấp hành, ban thư ký & phân ban"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src="/icons/profile/chevron-right.svg"
+                      alt="Arrow"
+                      className="w-4 h-4 object-contain opacity-70"
+                    />
+                  </div>
+                </div>
+              </Link>
             </div>
-            <Link
-              to="/association/permissions"
-              className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#003B95] text-white text-xs font-bold shadow-xs hover:bg-[#002B70] transition active:scale-95"
-            >
-              <span>Phân quyền</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
           </div>
         </div>
-      )}
 
-      {/* ── SUPPORT & LOGOUT ── */}
-      <div className="mx-4 mt-6 space-y-2.5">
-
-        <div className="grid grid-cols-2 gap-2">
+        {/* ── ACTION BUTTONS: CHIA SẺ, CÀI APP, ĐĂNG XUẤT ── */}
+        <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5 mt-2">
+          {/* Nút 1: Chia sẻ link cài App */}
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent("open-share-app-modal"))}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 py-3 text-[12px] font-black shadow-sm transition active:scale-95 cursor-pointer touch-press"
+            className="self-stretch px-5 py-2.5 rounded-[48px] border border-[#2D2E8B] dark:border-blue-400 bg-transparent hover:bg-[#2D2E8B]/5 dark:hover:bg-blue-400/10 text-[#2D2E8B] dark:text-blue-300 inline-flex justify-center items-center gap-2.5 font-medium font-['SF_Pro',system-ui,sans-serif] text-base transition active:scale-95 cursor-pointer"
           >
-            <Share2 className="h-4 w-4" />
-            <span>{isEn ? "Share App Link" : "Gửi link cài App"}</span>
+            <div className="size-6 relative overflow-hidden flex items-center justify-center">
+              <img src="/icons/profile/share-01.svg" alt="Share" className="size-5 object-contain" />
+            </div>
+            <div className="justify-start text-base font-normal font-['SF_Pro',system-ui,sans-serif] leading-5">
+              {isEn ? "Share App Link" : "Chia sẻ link cài App"}
+            </div>
           </button>
+
+          {/* Nút 2: Cài lên màn hình chính */}
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent("open-install-prompt"))}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-white dark:bg-[#0F172A] py-3 text-[12px] font-bold text-[#003B95] dark:text-amber-400 shadow-xs transition hover:bg-amber-50 dark:hover:bg-[#14223E] active:scale-95 cursor-pointer touch-press"
+            className="self-stretch px-5 py-2.5 rounded-[48px] border border-[#2D2E8B] dark:border-blue-400 bg-transparent hover:bg-[#2D2E8B]/5 dark:hover:bg-blue-400/10 text-[#2D2E8B] dark:text-blue-300 inline-flex justify-center items-center gap-2.5 font-medium font-['SF_Pro',system-ui,sans-serif] text-base transition active:scale-95 cursor-pointer"
           >
-            <Smartphone className="h-4 w-4 text-amber-500" />
-            <span>{isEn ? "Install to Screen" : "Cài lên MH chính"}</span>
+            <div className="size-6 relative overflow-hidden flex items-center justify-center">
+              <img src="/icons/profile/phone-01.svg" alt="Install" className="size-5 object-contain" />
+            </div>
+            <div className="justify-start text-base font-normal font-['SF_Pro',system-ui,sans-serif] leading-5">
+              {isEn ? "Install to Home Screen" : "Cài lên màn hình chính"}
+            </div>
+          </button>
+
+          {/* Nút 3: Đăng xuất tài khoản */}
+          <button
+            type="button"
+            onClick={logout}
+            className="self-stretch px-5 py-2.5 bg-[#FF3B30] hover:bg-red-600 active:scale-95 text-white rounded-[48px] inline-flex justify-center items-center gap-2.5 font-medium font-['SF_Pro',system-ui,sans-serif] text-base shadow-sm transition cursor-pointer"
+          >
+            <div className="size-6 relative overflow-hidden flex items-center justify-center">
+              <img src="/icons/profile/log-out-01.svg" alt="Logout" className="size-5 object-contain" />
+            </div>
+            <div className="justify-start text-white text-base font-normal font-['SF_Pro',system-ui,sans-serif] leading-5">
+              {isEn ? "Log Out Account" : "Đăng xuất tài khoản"}
+            </div>
           </button>
         </div>
-        <button
-          type="button"
-          onClick={logout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-bold text-white bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 active:scale-[0.99] transition-all cursor-pointer shadow-md"
-        >
-          <LogOut className="h-4 w-4 text-white" /> {isEn ? "Sign out" : "Đăng xuất tài khoản"}
-        </button>
+
+        {/* ── MODALS: HƯỚNG DẪN SỬ DỤNG VÀ LIÊN HỆ CÁC BAN ── */}
+        <UserGuideModal open={userGuideOpen} onClose={() => setUserGuideOpen(false)} />
+        <ContactSupportModal open={contactSupportOpen} onClose={() => setContactSupportOpen(false)} />
       </div>
-
-
-
-      {/* ── MODALS: HƯỚNG DẪN SỬ DỤNG VÀ LIÊN HỆ CÁC BAN ── */}
-      <UserGuideModal open={userGuideOpen} onClose={() => setUserGuideOpen(false)} />
-      <ContactSupportModal open={contactSupportOpen} onClose={() => setContactSupportOpen(false)} />
     </div>
   );
 }

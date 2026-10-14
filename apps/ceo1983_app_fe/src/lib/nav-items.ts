@@ -48,7 +48,6 @@ export const navGroups: NavGroup[] = [
   {
     items: [
       { key: "nav.dashboard", icon: LayoutDashboard, to: "/" },
-      { key: "nav.ai", icon: Sparkles, to: "/ai" },
     ],
   },
   {

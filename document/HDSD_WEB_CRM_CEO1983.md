@@ -27,3 +27,32 @@
 1. Duyệt hồ sơ hội viên mới và gửi thư thông báo.
 2. Theo dõi đóng phí niên liễm qua cổng VietQR Napas 24/7.
 3. Thiết kế sơ đồ khán phòng và kiểm soát cổng soát vé QR tại sự kiện.
+
+### BÀI 5: QUẢN TRỊ KHO VĂN KIỆN SỐ, BIỂU MẪU & MẪU THƯ THÔNG BÁO TỰ ĐỘNG (/documents)
+1. Truy cập phân hệ "Văn bản & Tài liệu":
+   - Lọc nhanh theo 8 Ban chuyên môn: Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến Thương Mại, Ban Tài Chính, Ban Thiện Nguyện, Ban Thư Ký, Biểu mẫu chung.
+   - Lọc theo định dạng tệp: Tất cả, PDF, DOCX, XLSX, PPTX và sắp xếp Mới nhất / Cũ nhất.
+2. Quản lý Mẫu thư điện tử thông báo tự động (MailTemplateManager):
+   - Nhấp chọn các Chip Biến Số thông minh (`[Họ và tên hội viên]`, `[Tên doanh nghiệp]`, `[Số tiền hội phí]`, `[Hạn thanh toán]`, `[Mã VietQR tự động]`) để tự động điền dữ liệu cá nhân hóa cho từng hội viên.
+   - Giao diện thẻ Doanh nhân Executive Card phong cách tối giản thanh lịch, hỗ trợ xem trước (Live Preview) trực quan.
+
+### BÀI 6: MẠNG LƯỚI DOANH NHÂN & NHẮN TIN TRAO ĐỔI NGHIỆP VỤ 1-ON-1 (/network)
+1. Tra cứu danh bạ cán bộ và hội viên phân nhóm theo từng Ban chuyên môn.
+2. Bấm nút "Nhắn tin trao đổi" tại bất kỳ thẻ tài khoản nào để mở ngay lập tức luồng hội thoại 1-on-1 trong không gian làm việc CRM mà không cần gửi yêu cầu kết nối bạn bè trước.
+3. Khởi tạo hội thoại mới qua nút "Hội thoại mới", chọn thành viên theo ban và trao đổi công việc kèm phản hồi thông báo tức thì.
+
+### BÀI 7: QUẢN LÝ BAN CHUYÊN MÔN ĐỘC LẬP (/departments)
+1. Truy cập phân hệ "Ban chuyên môn" trên thanh điều hướng bên trái CRM.
+2. Tìm kiếm nhanh các Ban theo tên, mã viết tắt hoặc chức danh phụ trách.
+3. Bấm nút "+ Thêm Ban Mới" ngay cạnh ô tìm kiếm để thành lập ban mới (nhập Tên ban, Mã viết tắt, Màu sắc nhận diện, Trưởng ban phụ trách và Mô tả nhiệm vụ).
+4. Sử dụng cột Thao tác cố định bên phải để Xem chi tiết, Chỉnh sửa thông tin ban hoặc Xóa ban.
+5. Danh sách ban chuyên môn được tự động đồng bộ sang Ma trận phân quyền và luồng giao việc.
+
+### BÀI 8: QUẢN LÝ TÀI KHOẢN & GÁN VAI TRÒ ROLE (/accounts)
+1. Truy cập phân hệ "Quản lý tài khoản" trên thanh điều hướng bên trái CRM.
+2. Tìm kiếm tài khoản theo Họ tên, Email, Mã hội viên hoặc Tên doanh nghiệp.
+3. Bấm nút "+ Thêm Tài Khoản" ngay cạnh ô tìm kiếm để tạo tài khoản vận hành mới.
+4. Sử dụng nút "Gán vai trò / Phân quyền" tại cột Thao tác để cấp phát trực tiếp chức vụ điều hành (Chủ tịch, Admin, Ban Điều Hành, Tổng thư ký, Trưởng ban chuyên môn, Ban thư ký, Hội viên) cho từng tài khoản.
+5. Bảng dữ liệu hỗ trợ cuộn ngang với 2 cột cố định bên trái (Tài khoản) và bên phải (Thao tác).
+
+

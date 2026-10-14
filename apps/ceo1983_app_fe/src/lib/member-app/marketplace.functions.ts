@@ -15,6 +15,7 @@ export type MyProduct = {
   description?: string;
   imageUrl?: string;
   price?: string;
+  priceNumber?: number;
   originalPrice?: string;
   memberPrice?: string;
   sellerId?: string;
@@ -39,7 +40,7 @@ export const listMyProducts = createServerFn({ method: "GET" })
         const img = (Array.isArray(p.imageUrls) && p.imageUrls.length > 0 ? p.imageUrls[0] : null) ||
                     (Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls[0] : null) ||
                     p.imageUrl || p.image_url || p.image || null;
-        const numPrice = Number(p.price || 0);
+        const numPrice = Number(p.price || p.priceNumber || 0) || (parseInt(String(p.price || "").replace(/\D/g, ""), 10) || 0);
         const formattedPrice = p.priceText || (numPrice > 0 ? `${numPrice.toLocaleString("vi-VN")} đ` : (p.price ? String(p.price) : "Thỏa thuận"));
         return {
           id: String(p.id),
@@ -51,6 +52,7 @@ export const listMyProducts = createServerFn({ method: "GET" })
           time: p.createdAt || p.created_at || p.time || new Date().toISOString(),
           imageUrl: img,
           price: formattedPrice,
+          priceNumber: numPrice,
           originalPrice: p.originalPrice || p.original_price ? `${Number(p.originalPrice || p.original_price).toLocaleString("vi-VN")} đ` : undefined,
           memberPrice: p.memberPrice || p.member_price ? `${Number(p.memberPrice || p.member_price).toLocaleString("vi-VN")} đ` : undefined,
           sellerId: p.sellerId || p.seller_id || p.userId || p.user_id || p.authorId || p.author_id,

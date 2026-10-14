@@ -10,7 +10,7 @@ export type Document = {
   size: string;
   uploadedAt: string;
   uploadedBy: string;
-  type: "pdf" | "docx" | "xlsx" | "pptx";
+  type: "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "txt" | "csv" | "zip" | "rar" | "png" | "jpg" | "jpeg" | "other";
 };
 
 export const listDocumentsFn = createServerFn({ method: "GET" })
@@ -26,7 +26,23 @@ const docInput = z.object({
   category: z.string().min(1).max(100),
   size: z.string().max(40).default(""),
   uploadedBy: z.string().max(120).default(""),
-  type: z.enum(["pdf", "docx", "xlsx", "pptx"]),
+  type: z.enum([
+    "pdf",
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "ppt",
+    "pptx",
+    "txt",
+    "csv",
+    "zip",
+    "rar",
+    "png",
+    "jpg",
+    "jpeg",
+    "other",
+  ]),
   filePath: z.string().max(500).default(""),
 });
 

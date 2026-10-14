@@ -9,7 +9,7 @@
 
 Trọng tâm thiết kế hướng tới: **Sang trọng, Tối giản, Mượt mà và Đậm chất Doanh nhân bản lĩnh**. Mọi thao tác đều được tối ưu hóa cho màn hình cảm ứng di động với thời gian phản hồi tức thì.
 
-*Tài liệu cam kết tuân thủ nghiêm ngặt quy định: Chuẩn hóa toàn bộ công nghệ kết nối hội viên bằng cụm từ chính thức: "Thẻ thông minh doanh nhân / Công nghệ chạm thẻ thông minh 1 chạm", sử dụng toàn bộ bằng ngôn từ quản trị kinh doanh thực tiễn.*
+*Tài liệu cam kết tuân thủ nghiêm ngặt quy định: Chuẩn hóa toàn bộ công nghệ kết nối hội viên bằng cụm từ chính thức: "Thẻ điện tử hội viên & Quét mã QR kết nối động", sử dụng toàn bộ bằng ngôn từ quản trị kinh doanh thực tiễn.*
 
 ---
 
@@ -17,20 +17,20 @@ Trọng tâm thiết kế hướng tới: **Sang trọng, Tối giản, Mượt 
 1. **Định vị sản phẩm**:
    - Ứng dụng di động không đơn thuần là một kênh tra cứu thông tin, mà là **Tấm Danh Thiếp Số Quyền Năng** và **Văn Phòng Điều Hành Bỏ Túi** của từng chủ doanh nghiệp.
 2. **Đặc quyền độc bản dành riêng cho hội viên**:
-   - Sở hữu Tấm Thẻ thông minh doanh nhân điện tử mạ vàng độc bản tích hợp chip thông minh 1 chạm.
+   - Sở hữu Thẻ điện tử hội viên 3D VIP mạ vàng độc bản tích hợp mã QR kết nối động.
    - Nhận chỉ đạo công việc và tài liệu mật từ Ban Điều Hành ngay trên điện thoại.
    - Nhận vé mời sự kiện VIP và quyền lợi check-in không chạm tại các diễn đàn kinh tế lớn.
    - Đàm thoại nội bộ độ nét cao với chuông báo nền khóa màn hình, không bị quấy rầy bởi cuộc gọi rác.
 
 ---
 
-# CHƯƠNG 2: THẺ THÔNG MINH DOANH NHÂN & CÔNG NGHỆ CHẠM THẺ 1 CHẠM
-1. **Tấm Thẻ thông minh doanh nhân mạ vàng**:
+# CHƯƠNG 2: THẺ ĐIỆN TỬ HỘI VIÊN & QUÉT MÃ QR KẾT NỐI ĐỘNG
+1. **Thẻ điện tử hội viên 3D VIP mạ vàng**:
    - Thiết kế ánh kim vàng sang trọng Warm Amber Gold trên nền xanh Deep Cobalt Navy của hiệp hội.
    - Thể hiện đầy đủ mã hội viên chính danh, họ tên, chức vụ, tên công ty và logo dập nổi CEO 1983.
-2. **Công nghệ Chạm thẻ thông minh 1 chạm (Truyền tải thông tin tức thì)**:
-   - Tích hợp chip thông minh bảo mật cao: Chỉ cần đưa tấm thẻ hoặc lưng điện thoại chạm nhẹ vào điện thoại của đối tác, toàn bộ hồ sơ năng lực công ty, website, catalog sản phẩm và thông tin liên hệ được truyền tải trọn vẹn trong 1 giây mà đối tác không cần cài đặt ứng dụng.
-   - Tích hợp mã QR định danh động chống sao chép trái phép.
+2. **Công nghệ Quét mã QR kết nối động (Truyền tải thông tin tức thì)**:
+   - Tích hợp mã QR kết nối động và chia sẻ danh thiếp điện tử: Đối tác chỉ cần quét mã QR bằng camera điện thoại hoặc nhấn liên kết chia sẻ, toàn bộ hồ sơ năng lực công ty, website, catalog sản phẩm và thông tin liên hệ được truyền tải trọn vẹn trong 1 giây mà đối tác không cần cài đặt ứng dụng.
+   - Tích hợp mã QR định danh động bảo mật chống sao chép trái phép.
 
 ---
 

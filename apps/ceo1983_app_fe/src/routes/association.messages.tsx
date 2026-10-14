@@ -67,7 +67,7 @@ class MessagesErrorBoundary extends Component<
               this.setState({ hasError: false });
               window.location.reload();
             }}
-            className="mt-4 px-5 py-2.5 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-[#002B70] transition shadow-sm cursor-pointer"
+            className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black transition shadow-md shadow-amber-500/20 cursor-pointer"
           >
             Thử lại
           </button>

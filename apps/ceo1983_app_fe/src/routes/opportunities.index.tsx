@@ -48,6 +48,7 @@ import {
 } from "@/lib/opportunities.functions";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
+import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { useAuth } from "@/context/AuthContext";
 import { useTableControls } from "@/hooks/use-table-controls";
@@ -226,15 +227,23 @@ function OpportunityCard({
         <div className="flex gap-2">
           {isOwner ? (
             <>
+              <Link
+                to="/opportunities/$id/edit"
+                params={{ id: opp.id }}
+                className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary transition"
+                title={t("opp.action.edit") || "Chỉnh sửa"}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Link>
               <button
                 onClick={onToggle}
-                className="flex-1 rounded-lg border border-border bg-background py-2 text-xs font-medium hover:bg-secondary"
+                className="flex-1 rounded-lg border border-border bg-background py-2 text-xs font-medium hover:bg-secondary transition"
               >
                 {opp.status === "open" ? t("opp.action.close") : t("opp.action.reopen")}
               </button>
               <button
                 onClick={onDelete}
-                className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
+                className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition"
                 aria-label={t("opp.action.delete")}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -283,8 +292,9 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
   );
   const [contactTitle, setContactTitle] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -311,16 +321,36 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
       toast.error("Bạn không có quyền đăng cơ hội giao thương mới!");
       return;
     }
-    if (!title.trim() || !desc.trim() || !region.trim() || !industry.trim()) return;
+
+    const errMap: Record<string, string> = {};
+    if (!title.trim()) errMap.title = "Vui lòng nhập tiêu đề cơ hội";
+    if (!desc.trim()) errMap.desc = "Vui lòng nhập mô tả chi tiết cơ hội";
+    if (!region.trim()) errMap.region = "Vui lòng nhập khu vực";
+    if (!industry.trim()) errMap.industry = "Vui lòng nhập ngành nghề";
+    if (!deadline) errMap.deadline = "Vui lòng chọn hạn chót";
+
+    const numMin = budgetMin ? Number(budgetMin.replace(/\D/g, "")) : undefined;
+    const numMax = budgetMax ? Number(budgetMax.replace(/\D/g, "")) : undefined;
+    if (numMin && numMax && numMax < numMin) {
+      errMap.budgetMax = "Ngân sách tối đa phải lớn hơn hoặc bằng ngân sách tối thiểu";
+    }
+
+    if (Object.keys(errMap).length > 0) {
+      setErrors(errMap);
+      toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc (*)");
+      return;
+    }
+    setErrors({});
+
     await createOpp({
       data: {
-        title,
-        description: desc,
+        title: title.trim(),
+        description: desc.trim(),
         type,
-        budgetMin: budgetMin ? Number(budgetMin.replace(/\D/g, "")) : undefined,
-        budgetMax: budgetMax ? Number(budgetMax.replace(/\D/g, "")) : undefined,
-        region,
-        industry,
+        budgetMin: numMin,
+        budgetMax: numMax,
+        region: region.trim(),
+        industry: industry.trim(),
         deadline: new Date(deadline).toISOString(),
         emoji,
         contactName: contactName.trim() || undefined,
@@ -386,25 +416,51 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.titleField")}</label>
+            <label className="mb-1.5 block text-xs font-semibold">
+              {t("opp.form.titleField")} <span className="text-destructive">*</span>
+            </label>
             <input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errors.title) setErrors((prev) => ({ ...prev, title: "" }));
+              }}
               placeholder={t("opp.form.titlePh")}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                errors.title
+                  ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                  : "border-border focus:border-primary"
+              }`}
             />
+            {errors.title && (
+              <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                {errors.title}
+              </p>
+            )}
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.desc")}</label>
+            <label className="mb-1.5 block text-xs font-semibold">
+              {t("opp.form.desc")} <span className="text-destructive">*</span>
+            </label>
             <textarea
               value={desc}
-              onChange={(e) => setDesc(e.target.value)}
+              onChange={(e) => {
+                setDesc(e.target.value);
+                if (errors.desc) setErrors((prev) => ({ ...prev, desc: "" }));
+              }}
               rows={4}
-              required
               placeholder={t("opp.form.descPh")}
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className={`w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                errors.desc
+                  ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                  : "border-border focus:border-primary"
+              }`}
             />
+            {errors.desc && (
+              <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                {errors.desc}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -422,15 +478,28 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.deadline")} (dd/mm/yyyy)</label>
+              <label className="mb-1.5 block text-xs font-semibold">
+                {t("opp.form.deadline")} (dd/mm/yyyy) <span className="text-destructive">*</span>
+              </label>
               <StandardDateInput
                 value={deadline}
                 placeholder="dd/mm/yyyy (VD: 31/12/2026)"
-                onChange={(iso) => setDeadline(iso)}
-                required
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(iso) => {
+                  setDeadline(iso);
+                  if (errors.deadline) setErrors((prev) => ({ ...prev, deadline: "" }));
+                }}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                  errors.deadline
+                    ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                    : "border-border focus:border-primary"
+                }`}
               />
-              {deadline && (
+              {errors.deadline && (
+                <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                  {errors.deadline}
+                </p>
+              )}
+              {deadline && !errors.deadline && (
                 <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
                   <span>Hạn chót: {formatDisplayDate(deadline, { withWeekday: true })}</span>
                 </p>
@@ -479,50 +548,89 @@ function NewOpportunityModal({ onClose }: { onClose: () => void }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.region")}</label>
+              <label className="mb-1.5 block text-xs font-semibold">
+                {t("opp.form.region")} <span className="text-destructive">*</span>
+              </label>
               <input
                 value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                required
+                onChange={(e) => {
+                  setRegion(e.target.value);
+                  if (errors.region) setErrors((prev) => ({ ...prev, region: "" }));
+                }}
                 placeholder="VD: TP. Hồ Chí Minh"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                  errors.region
+                    ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                    : "border-border focus:border-primary"
+                }`}
               />
+              {errors.region && (
+                <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                  {errors.region}
+                </p>
+              )}
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.industry")}</label>
+              <label className="mb-1.5 block text-xs font-semibold">
+                {t("opp.form.industry")} <span className="text-destructive">*</span>
+              </label>
               <input
                 value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                required
+                onChange={(e) => {
+                  setIndustry(e.target.value);
+                  if (errors.industry) setErrors((prev) => ({ ...prev, industry: "" }));
+                }}
                 placeholder="VD: Sản xuất"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                  errors.industry
+                    ? "border-destructive ring-1 ring-destructive/30 focus:border-destructive"
+                    : "border-border focus:border-primary"
+                }`}
               />
+              {errors.industry && (
+                <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                  {errors.industry}
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMin")}
+                {t("opp.form.budgetMin")} (VNĐ)
               </label>
-              <FormattedCurrencyInput
+              <StandardCurrencyInput
                 value={budgetMin}
-                allowCurrencySwitch={true}
-                onChange={(val) => setBudgetMin(val)}
+                onChange={(formatted) => {
+                  setBudgetMin(formatted);
+                  if (errors.budgetMax) setErrors((prev) => ({ ...prev, budgetMax: "" }));
+                }}
                 placeholder="VD: 50.000.000"
+                unit="VNĐ"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
               />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold">
-                {t("opp.form.budgetMax")}
+                {t("opp.form.budgetMax")} (VNĐ)
               </label>
-              <FormattedCurrencyInput
+              <StandardCurrencyInput
                 value={budgetMax}
-                allowCurrencySwitch={true}
-                onChange={(val) => setBudgetMax(val)}
+                onChange={(formatted) => {
+                  setBudgetMax(formatted);
+                  if (errors.budgetMax) setErrors((prev) => ({ ...prev, budgetMax: "" }));
+                }}
                 placeholder="VD: 200.000.000"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
+                unit="VNĐ"
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none font-medium transition ${
+                  errors.budgetMax ? "border-destructive ring-1 ring-destructive/30" : "border-border focus:border-primary"
+                }`}
               />
+              {errors.budgetMax && (
+                <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                  {errors.budgetMax}
+                </p>
+              )}
             </div>
           </div>
           <div>

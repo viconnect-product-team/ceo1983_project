@@ -7,31 +7,31 @@ import {
   Download,
   Handshake,
   Lock,
+  Mail,
   Pencil,
   Plus,
   Search,
   Trash2,
   TrendingUp,
   UserPlus,
-  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
-import { PageHeader, Pill, StatCard, TableShell } from "@/components/dashboard/PageKit";
+import { PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useServerData } from "@/hooks/use-server-data";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
-import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import {
   createSponsorFn,
   deleteSponsorFn,
   listSponsorsFn,
+  sendSponsorThankYouEmailFn,
   updateSponsorFn,
   type Sponsor,
 } from "@/lib/sponsors.functions";
-import { SponsorOnboardWizard } from "@/components/dashboard/SponsorOnboardWizard";
+import { SponsorModal, type SponsorDraft } from "@/components/dashboard/SponsorModal";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 
@@ -68,79 +68,20 @@ function SponsorsPage() {
   const createFn = useServerFn(createSponsorFn);
   const updateFn = useServerFn(updateSponsorFn);
   const deleteFn = useServerFn(deleteSponsorFn);
-  const [open, setOpen] = useState(false);
+  const sendEmailFn = useServerFn(sendSponsorThankYouEmailFn);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Sponsor | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [onboardOpen, setOnboardOpen] = useState(false);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
 
-  const fields: CrudField[] = [
-    { name: "name", label: t("sponsors.col.name"), type: "text", required: true },
-    {
-      name: "sponsorType",
-      label: "Phân loại đối tác",
-      type: "select",
-      options: [
-        { value: "regular", label: "★ Thường xuyên ổn định" },
-        { value: "new", label: "✦ Nhà tài trợ mới" },
-      ],
-    },
-    {
-      name: "packageType",
-      label: "Hình thức tài trợ",
-      type: "select",
-      options: [
-        { value: "cash", label: "💵 Bằng Tiền (Chuyển khoản / Tiền mặt)" },
-        { value: "in_kind", label: "🎁 Bằng Hiện vật (Sản phẩm, quà tặng, dịch vụ)" },
-      ],
-    },
-    {
-      name: "inKindDescription",
-      label: "Mô tả hiện vật tài trợ (nếu có)",
-      type: "text",
-      placeholder: "Ví dụ: 200 bộ quà tặng cao cấp, Teabreak tiệc trà...",
-    },
-    {
-      name: "tier",
-      label: t("sponsors.col.tier"),
-      type: "select",
-      options: [
-        { value: "platinum", label: t("sponsors.tier.platinum") },
-        { value: "gold", label: t("sponsors.tier.gold") },
-        { value: "silver", label: t("sponsors.tier.silver") },
-        { value: "bronze", label: t("sponsors.tier.bronze") },
-      ],
-    },
-    { name: "contact", label: t("sponsors.col.contact"), type: "text" },
-    { name: "email", label: "Email", type: "text" },
-    { name: "phone", label: "Phone", type: "text" },
-    { name: "amount", label: "Giá trị / Định giá quy đổi (VNĐ)", type: "number" },
-    { name: "events", label: t("sponsors.col.events"), type: "number" },
-    {
-      name: "since",
-      label: t("sponsors.col.since"),
-      type: "text",
-      required: false,
-      placeholder: "YYYY-MM-DD (mặc định hôm nay)",
-    },
-    {
-      name: "status",
-      label: t("sponsors.col.status"),
-      type: "select",
-      options: [
-        { value: "active", label: t("sponsors.status.active") },
-        { value: "expired", label: t("sponsors.status.expired") },
-      ],
-    },
-  ];
-
-  const onSubmit = async (v: CrudValues) => {
+  const onSubmit = async (draft: SponsorDraft) => {
     setSubmitting(true);
     const payload = {
-      ...v,
+      ...draft,
       since:
-        v.since && String(v.since).trim()
-          ? String(v.since).trim()
+        draft.since && String(draft.since).trim()
+          ? String(draft.since).trim()
           : new Date().toISOString().slice(0, 10),
     };
     try {
@@ -149,15 +90,35 @@ function SponsorsPage() {
         toast.success(t("common.updated"));
       } else {
         await createFn({ data: payload as never });
-        toast.success(t("common.created"));
+        if (payload.email && payload.email.includes("@")) {
+          toast.success("Thêm nhà tài trợ thành công! Đã tự động gửi email tri ân đến đối tác.");
+        } else {
+          toast.success(t("common.created"));
+        }
       }
-      setOpen(false);
+      setModalOpen(false);
       setEditing(null);
       reload();
     } catch {
       toast.error(t("common.saveError"));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onResendThankYouEmail = async (s: Sponsor) => {
+    if (!s.email || !s.email.includes("@")) {
+      toast.error("Nhà tài trợ chưa có thông tin email hợp lệ");
+      return;
+    }
+    setSendingEmailId(s.id);
+    try {
+      await sendEmailFn({ data: { id: s.id } });
+      toast.success(`Đã gửi thư tri ân thành công tới ${s.email}`);
+    } catch {
+      toast.error("Không thể gửi email tri ân lúc này. Vui lòng thử lại sau.");
+    } finally {
+      setSendingEmailId(null);
     }
   };
 
@@ -181,81 +142,103 @@ function SponsorsPage() {
       .filter((s) => (sponsorTypeFilter === "all" ? true : s.sponsorType === sponsorTypeFilter))
       .filter((s) => (packageTypeFilter === "all" ? true : s.packageType === packageTypeFilter))
       .filter((s) => {
-        if (eventAssignedFilter === "assigned") return Boolean(s.isAssigned || s.assignedEvent);
-        if (eventAssignedFilter === "available") return !s.isAssigned && !s.assignedEvent;
-        return true;
+        if (eventAssignedFilter === "all") return true;
+        if (eventAssignedFilter === "assigned") return !!s.assignedEvent;
+        return !s.assignedEvent;
       })
       .filter(
         (s) =>
           !ql ||
           s.name.toLowerCase().includes(ql) ||
           s.contact.toLowerCase().includes(ql) ||
+          s.email.toLowerCase().includes(ql) ||
+          s.phone.toLowerCase().includes(ql) ||
           (s.inKindDescription && s.inKindDescription.toLowerCase().includes(ql)),
       );
-  }, [q, tier, sponsorTypeFilter, packageTypeFilter, eventAssignedFilter, SPONSORS]);
+  }, [SPONSORS, q, tier, sponsorTypeFilter, packageTypeFilter, eventAssignedFilter]);
 
   const tc = useTableControls<Sponsor>(
     filtered,
     {
-      code: (s) => s.id,
       name: (s) => s.name,
-      sponsorType: (s) => s.sponsorType,
-      packageType: (s) => s.packageType,
       tier: (s) => s.tier,
       contact: (s) => s.contact,
-      value: (s) => s.amount,
+      amount: (s) => s.amount,
       events: (s) => s.events,
       since: (s) => s.since,
       status: (s) => s.status,
     },
-    { initialSortKey: "value", initialSortDir: "desc", initialPageSize: 20 },
+    { initialSortKey: "amount", initialSortDir: "desc", initialPageSize: 20 },
   );
 
-  const totalAmount = SPONSORS.reduce((s, x) => s + x.amount, 0);
+  const totalAmount = useMemo(() => SPONSORS.reduce((acc, s) => acc + s.amount, 0), [SPONSORS]);
+
+  const exportCsv = () => {
+    const header = [
+      t("sponsors.col.code"),
+      t("sponsors.col.name"),
+      t("sponsors.col.tier"),
+      t("sponsors.col.contact"),
+      "Email",
+      "Phone",
+      t("sponsors.col.value"),
+      t("sponsors.col.since"),
+      t("sponsors.col.status"),
+    ];
+    const rows = filtered.map((s) => [
+      s.id,
+      `"${s.name.replace(/"/g, '""')}"`,
+      s.tier,
+      `"${s.contact.replace(/"/g, '""')}"`,
+      s.email,
+      s.phone,
+      s.amount,
+      s.since,
+      s.status,
+    ]);
+    const csv = [header.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sponsors-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("sponsors.exportToast"));
+  };
 
   return (
     <AppShell>
       <PageHeader
         title={t("sponsors.title")}
-        subtitle={t("sponsors.subtitle")}
+        subtitle="Hệ thống đối tác & nhà tài trợ chính thức đồng hành cùng Hiệp Hội Doanh Nhân CEO 1983"
         actions={
-          <>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted">
-              <Download className="h-4 w-4 text-muted-foreground" />
-              {t("common.export")}
-            </button>
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setOnboardOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+              onClick={exportCsv}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-muted transition cursor-pointer"
             >
-              <UserPlus className="h-4 w-4 text-primary" />
-              {t("onb.open")}
+              <Download className="h-4 w-4" />
+              <span>{t("common.exportCsv")}</span>
             </button>
-            <Link
-              to="/sponsor-packages"
-              search={{ tab: "prizes", eventId: "" }}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-500 hover:bg-amber-500/20 shadow-sm"
-            >
-              <Trophy className="h-4 w-4 text-amber-500" />
-              <span>Cơ Cấu Giải Thưởng Sự Kiện</span>
-            </Link>
             {can(PERMISSIONS.SPONSOR_CREATE) && (
               <button
                 onClick={() => {
                   setEditing(null);
-                  setOpen(true);
+                  setModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-primary-foreground shadow-md transition hover:opacity-90 active:scale-95 cursor-pointer"
                 style={{ background: "var(--gradient-primary)" }}
               >
                 <Plus className="h-4 w-4" />
-                {t("sponsors.add")}
+                <span>{t("sponsors.add")}</span>
               </button>
             )}
-          </>
+          </div>
         }
       />
 
+      {/* ── DASHBOARD STATS ── */}
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Tổng NTT & Giá Trị"
@@ -285,20 +268,21 @@ function SponsorsPage() {
         />
       </div>
 
+      {/* ── FILTER TOOLBAR ── */}
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="relative min-w-[240px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo tên, liên hệ, quà tặng hiện vật..."
-            className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm shadow-[var(--shadow-card)] focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+            placeholder="Tìm theo tên doanh nghiệp, người liên hệ, quà tặng hiện vật..."
+            className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-xs shadow-xs focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 text-foreground"
           />
         </div>
         <select
           value={sponsorTypeFilter}
           onChange={(e) => setSponsorTypeFilter(e.target.value as any)}
-          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+          className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs cursor-pointer"
         >
           <option value="all">Tất cả đối tác</option>
           <option value="regular">★ Thường xuyên ổn định</option>
@@ -307,7 +291,7 @@ function SponsorsPage() {
         <select
           value={packageTypeFilter}
           onChange={(e) => setPackageTypeFilter(e.target.value as any)}
-          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+          className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs cursor-pointer"
         >
           <option value="all">Tất cả hình thức</option>
           <option value="cash">💵 Bằng Tiền mặt/CK</option>
@@ -316,7 +300,7 @@ function SponsorsPage() {
         <select
           value={tier}
           onChange={(e) => setTier(e.target.value as Sponsor["tier"] | "all")}
-          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+          className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs cursor-pointer"
         >
           <option value="all">{t("sponsors.allTiers")}</option>
           <option value="platinum">{t("sponsors.tier.platinum")}</option>
@@ -327,7 +311,7 @@ function SponsorsPage() {
         <select
           value={eventAssignedFilter}
           onChange={(e) => setEventAssignedFilter(e.target.value as any)}
-          className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
+          className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs cursor-pointer"
         >
           <option value="all">Tất cả sự kiện</option>
           <option value="assigned">🔒 Đang tài trợ (Đã khóa)</option>
@@ -335,27 +319,46 @@ function SponsorsPage() {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+      {/* ── BẢNG DANH SÁCH NHÀ TÀI TRỢ (ĐÃ FIX ROW STRETCHING) ── */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         <div className="relative overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm">
+          <table className="w-full border-collapse text-left text-xs min-w-[1050px]">
             <thead>
-              <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">
+              <tr className="border-b border-border bg-muted/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <th className="w-12 px-3 py-3.5 text-center border-b border-border">
                   STT
                 </th>
-                <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">
+                <th className="w-20 px-3 py-3.5 border-b border-border whitespace-nowrap">
                   {t("sponsors.col.code")}
                 </th>
-                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.name")}</th>
-                <th className="px-4 py-3 border-b border-border">Phân loại đối tác</th>
-                <th className="px-4 py-3 border-b border-border">Hình thức gói</th>
-                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.tier")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.contact")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.value")}</th>
-                <th className="px-4 py-3 border-b border-border">Sự kiện & Trạng thái tài trợ</th>
-                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.since")}</th>
-                <th className="px-4 py-3 border-b border-border">{t("sponsors.col.status")}</th>
-                <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">
+                <th className="min-w-[240px] max-w-[320px] px-4 py-3.5 border-b border-border">
+                  {t("sponsors.col.name")}
+                </th>
+                <th className="min-w-[130px] px-3 py-3.5 border-b border-border whitespace-nowrap">
+                  Phân loại
+                </th>
+                <th className="min-w-[130px] px-3 py-3.5 border-b border-border whitespace-nowrap">
+                  Hình thức
+                </th>
+                <th className="min-w-[100px] px-3 py-3.5 border-b border-border whitespace-nowrap">
+                  {t("sponsors.col.tier")}
+                </th>
+                <th className="min-w-[190px] max-w-[240px] px-4 py-3.5 border-b border-border">
+                  {t("sponsors.col.contact")}
+                </th>
+                <th className="min-w-[125px] px-4 py-3.5 border-b border-border whitespace-nowrap text-right">
+                  {t("sponsors.col.value")}
+                </th>
+                <th className="min-w-[150px] px-3 py-3.5 border-b border-border whitespace-nowrap">
+                  Trạng thái tài trợ
+                </th>
+                <th className="min-w-[100px] px-3 py-3.5 border-b border-border whitespace-nowrap">
+                  {t("sponsors.col.since")}
+                </th>
+                <th className="min-w-[105px] px-3 py-3.5 border-b border-border whitespace-nowrap">
+                  {t("sponsors.col.status")}
+                </th>
+                <th className="w-20 px-4 py-3.5 text-right font-bold border-b border-border whitespace-nowrap">
                   {t("common.actions")}
                 </th>
               </tr>
@@ -364,32 +367,34 @@ function SponsorsPage() {
               {tc.pageRows.map((s, idx) => (
                 <tr
                   key={s.id}
-                  className="group border-b border-border/50 transition hover:bg-secondary/40"
+                  className="group transition-colors hover:bg-muted/40"
                 >
-                  <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                  <td className="px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground">
                     {(tc.page - 1) * tc.pageSize + idx + 1}
                   </td>
-                  <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-semibold text-primary group-hover:bg-muted/70 border-b border-border/50">
+                  <td className="px-3 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap">
                     {s.id}
                   </td>
-                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">
-                    {s.name}
+                  <td className="px-4 py-3">
+                    <div className="font-bold text-foreground text-xs leading-snug line-clamp-2" title={s.name}>
+                      {s.name}
+                    </div>
                   </td>
-                  <td className="px-4 py-3 border-b border-border/50">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     {s.sponsorType === "regular" ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 shadow-sm whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700 dark:text-emerald-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         ★ Thường xuyên
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-[11px] font-bold text-sky-700 dark:text-sky-300 shadow-sm whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10.5px] font-bold text-sky-700 dark:text-sky-300">
                         ✦ NTT mới
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 border-b border-border/50">
+                  <td className="px-3 py-3">
                     {s.packageType === "in_kind" ? (
-                      <div className="flex flex-col gap-0.5 max-w-[220px]">
+                      <div className="flex flex-col gap-0.5 max-w-[160px]">
                         <span className="inline-flex items-center gap-1 w-fit rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 whitespace-nowrap">
                           🎁 Hiện vật
                         </span>
@@ -403,95 +408,107 @@ function SponsorsPage() {
                         )}
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10.5px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
                         💵 Bằng Tiền
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 border-b border-border/50">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <span
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold text-primary-foreground"
+                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-bold text-primary-foreground"
                       style={{ background: TIER_COLOR[s.tier] }}
                     >
                       {t(TIER_KEY[s.tier])}
                     </span>
                   </td>
-                  <td className="px-4 py-3 border-b border-border/50">
-                    <div className="text-foreground">{s.contact}</div>
-                    <div className="text-[11px] text-muted-foreground">{s.email}</div>
+                  <td className="px-4 py-3">
+                    <div className="font-semibold text-foreground text-xs leading-snug line-clamp-1" title={s.contact}>
+                      {s.contact}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate" title={s.email}>
+                      {s.email}
+                    </div>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-foreground border-b border-border/50">
+                  <td className="px-4 py-3 font-mono font-bold text-foreground text-xs whitespace-nowrap text-right">
                     {fmt.money(s.amount)}
                   </td>
-                  <td className="px-4 py-3 border-b border-border/50">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     {s.assignedEvent ? (
-                      <div className="flex flex-col gap-1 max-w-[260px]">
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-primary">
-                          <CalendarDays className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span className="truncate" title={s.assignedEvent.name}>
-                            {s.assignedEvent.name}
-                          </span>
+                      <div className="flex flex-col gap-0.5 max-w-[180px]">
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-primary truncate" title={s.assignedEvent.name}>
+                          <CalendarDays className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{s.assignedEvent.name}</span>
                         </div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                            <Lock className="h-2.5 w-2.5" /> Gói{" "}
-                            {s.assignedEvent.packageName || s.assignedEvent.tier?.toUpperCase()}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-                          🔒 Đã khóa — Không áp dụng cho sự kiện khác
+                        <span className="inline-flex items-center gap-1 w-fit rounded px-1.5 py-0.2 text-[9.5px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                          <Lock className="h-2.5 w-2.5" /> Đã khóa
                         </span>
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="inline-flex items-center gap-1 w-fit rounded px-2 py-0.5 text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <Check className="h-3 w-3" /> Sẵn sàng tài trợ
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {s.events} sự kiện đã đồng hành
-                        </span>
-                      </div>
+                      <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <Check className="h-3 w-3" /> Sẵn sàng tài trợ
+                      </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground border-b border-border/50">
-                    {fmt.date(s.since)}
+                  <td className="px-3 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                    {s.since}
                   </td>
-                  <td className="px-4 py-3 border-b border-border/50">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <Pill color={s.status === "active" ? "success" : "neutral"}>
-                      {s.status === "active"
-                        ? t("sponsors.status.active")
-                        : t("sponsors.status.expired")}
+                      {t(`sponsors.status.${s.status}`)}
                     </Pill>
                   </td>
-                  <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       {can(PERMISSIONS.SPONSOR_EDIT) && (
-                        <button
-                          onClick={() => {
-                            setEditing(s);
-                            setOpen(true);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {can(PERMISSIONS.SPONSOR_DELETE) && (
-                        <button
-                          onClick={() => onDelete(s)}
-                          disabled={deletingId === s.id}
-                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        <>
+                          {s.email && s.email.includes("@") && (
+                            <button
+                              onClick={() => onResendThankYouEmail(s)}
+                              disabled={sendingEmailId === s.id}
+                              aria-label="Gửi lại thư tri ân"
+                              title={`Gửi lại thư tri ân tới ${s.email}`}
+                              className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition disabled:opacity-50 cursor-pointer"
+                            >
+                              <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              setEditing(s);
+                              setModalOpen(true);
+                            }}
+                            aria-label={t("common.edit")}
+                            title="Sửa thông tin nhà tài trợ"
+                            className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+                          >
+                            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(s)}
+                            disabled={deletingId === s.id}
+                            aria-label={t("common.delete")}
+                            title="Xóa nhà tài trợ"
+                            className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition disabled:opacity-50 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
                 </tr>
               ))}
+              {tc.total === 0 && (
+                <tr>
+                  <td colSpan={12} className="px-4 py-12 text-center text-xs text-muted-foreground">
+                    Không tìm thấy nhà tài trợ nào phù hợp với điều kiện tìm kiếm.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
         <Pagination
           page={tc.page}
           pageCount={tc.pageCount}
@@ -504,28 +521,16 @@ function SponsorsPage() {
         />
       </div>
 
-      <CrudModal
-        open={open}
-        title={editing ? t("common.editTitle") : t("sponsors.add")}
-        fields={fields}
-        initial={editing ? (editing as unknown as CrudValues) : undefined}
+      {/* Sponsor Create & Edit Modal with Package Auto-Extraction and VND format */}
+      <SponsorModal
+        open={modalOpen}
+        initial={editing}
         submitting={submitting}
-        submitLabel={editing ? t("common.save") : t("common.create")}
-        cancelLabel={t("common.cancel")}
-        onSubmit={onSubmit}
         onClose={() => {
-          setOpen(false);
+          setModalOpen(false);
           setEditing(null);
         }}
-      />
-
-      <SponsorOnboardWizard
-        open={onboardOpen}
-        onClose={() => setOnboardOpen(false)}
-        onCreated={() => {
-          setOnboardOpen(false);
-          reload();
-        }}
+        onSubmit={onSubmit}
       />
     </AppShell>
   );

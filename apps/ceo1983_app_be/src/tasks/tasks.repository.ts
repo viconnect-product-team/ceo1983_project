@@ -184,7 +184,7 @@ export class TasksRepository {
         title_key, body_key, safe_display_data, priority, status, delivered_at, dedupe_key, app_scope, target_app, created_at, updated_at
       ) VALUES (
         $1::uuid, $2::uuid, 'task', $3, 'task_assigned', 'task_created',
-        $4, $5, $6::jsonb, 'high', 'delivered', NOW(), $7, 'all', 'all', NOW(), NOW()
+        $4, $5, $6::jsonb, 'high', 'delivered', NOW(), $7, 'crm', 'crm_web', NOW(), NOW()
       )
     `, notifId, targetUserId, taskId, notifTitle, notifBody, safeData, dedupeKey).catch((err: any) => {
       this.logger.warn(`Lỗi ghi business_notification: ${err.message}`);
@@ -209,7 +209,7 @@ export class TasksRepository {
         return await this.prisma.$queryRaw<any[]>`
           SELECT id, name, email, phone, company, position, department, executive_role, avatar_url, user_id
           FROM public.members
-          WHERE status = 'approved' AND (
+          WHERE (status = 'approved' OR status = 'active' OR status IS NULL) AND (
             department ILIKE '%' || ${deptKeyword} || '%'
             OR executive_role ILIKE '%' || ${deptKeyword} || '%'
           )
@@ -219,7 +219,7 @@ export class TasksRepository {
       return await this.prisma.$queryRaw<any[]>`
         SELECT id, name, email, phone, company, position, department, executive_role, avatar_url, user_id
         FROM public.members
-        WHERE status = 'approved'
+        WHERE (status = 'approved' OR status = 'active' OR status IS NULL)
         ORDER BY department ASC, name ASC
       `.catch(() => []);
     } catch (err: any) {

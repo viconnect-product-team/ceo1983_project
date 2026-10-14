@@ -37,6 +37,8 @@ export const DEFAULT_SIDEBAR_LABELS: Record<string, string> = {
   "/activity": "Lịch sử hoạt động",
   "/admin/landing-templates": "Quản lý chủ đề",
   "/permissions": "Phân quyền hệ thống",
+  "/departments": "Quản lý Ban Chuyên Môn",
+  "/accounts": "Quản lý Tài Khoản",
   "/documents": "Tài liệu & Biểu mẫu",
   // Group keys:
   "nav.group.overview": "Tổng quan",

@@ -13,6 +13,20 @@ import { CreateEventDto, UpdateEventDto } from './dto';
 
 export { CreateEventDto, UpdateEventDto };
 
+function parseJsonArraySafe(val: any): any[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
@@ -172,9 +186,9 @@ export class EventsService {
       type,
       qrFields: r.qr_fields ?? ['registration_code'],
       description: r.description ?? '',
-      qrStaff: r.qr_scanners ?? [],
-      qrScanners: r.qr_scanners ?? [],
-      sponsors: r.sponsors ?? [],
+      qrStaff: parseJsonArraySafe(r.qr_scanners),
+      qrScanners: parseJsonArraySafe(r.qr_scanners),
+      sponsors: parseJsonArraySafe(r.sponsors),
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       associationId: r.association_id,
@@ -359,21 +373,21 @@ export class EventsService {
     if (eventId) {
       rows = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.event_registrations 
-        WHERE event_id = ${eventId}
+        WHERE event_id = ${eventId} AND status != 'cancelled'
         ORDER BY registered_at DESC
       `.catch(() => []);
     } else if (isPlatformAdmin && !associationId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.event_registrations ORDER BY registered_at DESC
+        SELECT * FROM public.event_registrations WHERE status != 'cancelled' ORDER BY registered_at DESC
       `.catch(() => []);
     } else if (assocId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.event_registrations WHERE association_id = ${assocId}::uuid ORDER BY registered_at DESC
+        SELECT * FROM public.event_registrations WHERE association_id = ${assocId}::uuid AND status != 'cancelled' ORDER BY registered_at DESC
       `.catch(() => []);
     } else {
-      // Fallback: lấy tất cả
+      // Fallback: lấy tất cả chưa bị hủy
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.event_registrations ORDER BY registered_at DESC
+        SELECT * FROM public.event_registrations WHERE status != 'cancelled' ORDER BY registered_at DESC
       `.catch(() => []);
     }
 
@@ -699,6 +713,10 @@ export class EventsService {
       const isToday = vnEventDate === vnToday || dateStr === todayStr || dateStr === vnToday;
       const isPast = valid ? vnEventDate < vnToday : false;
 
+      const capacityNum = Number(e.capacity ?? 0);
+      const regCount = Number(e.registered ?? 0);
+      const isFull = capacityNum > 0 && regCount >= capacityNum;
+
       return {
         id: e.id,
         day: valid ? String(dt.getDate()).padStart(2, '0') : '--',
@@ -716,7 +734,14 @@ export class EventsService {
         banner: e.banner || e.image || null,
         ticketPrice: Number(e.ticket_price ?? e.fee ?? 0),
         fee: Number(e.fee ?? e.ticket_price ?? 0),
+        capacity: capacityNum,
+        maxAttendees: capacityNum,
+        registeredCount: regCount,
+        isFull,
         registered: regIds.has(String(e.id)),
+        qrScanners: parseJsonArraySafe(e.qr_scanners),
+        qrStaff: parseJsonArraySafe(e.qr_scanners),
+        sponsors: parseJsonArraySafe(e.sponsors),
         communityName: e.association_name ?? null,
         associationName: e.association_name ?? null,
         associationId: e.association_id ?? null,
@@ -736,6 +761,11 @@ export class EventsService {
     }
 
     const event = eventRows[0];
+    const capacityNum = Number(event.capacity ?? 0);
+    const registeredNum = Number(event.registered ?? 0);
+    if (capacityNum > 0 && registeredNum >= capacityNum) {
+      throw new BadRequestException('Sự kiện đã đủ số lượng đại biểu đăng ký (Hết chỗ)');
+    }
 
     // Find member profile for user
     const memberRows = await this.prisma.$queryRaw<any[]>`
@@ -992,7 +1022,7 @@ export class EventsService {
     // Update registration status to cancelled
     await this.prisma.$queryRawUnsafe(`
       UPDATE public.event_registrations
-      SET status = 'cancelled', updated_at = now()
+      SET status = 'cancelled', seat_assignment = NULL, updated_at = now()
       WHERE (event_id::text = $1 OR id = $1 OR id = $2)
         AND (
           ($3::text IS NOT NULL AND member_code = $3)
@@ -1292,9 +1322,9 @@ export class EventsService {
         r.payment_status,
         r.checked_in_at,
         r.lucky_number,
-        COALESCE(m.company, u.company_name, 'Doanh nghiệp CEO 1983') as company,
-        COALESCE(m.position, u.job_title, 'CEO / Hội viên') as title,
-        COALESCE(m.phone, u.phone, '0983000001') as phone
+        COALESCE(m.company, 'Doanh nghiệp CEO 1983') as company,
+        COALESCE(m.position, 'CEO / Hội viên') as title,
+        COALESCE(m.phone, '0983000001') as phone
       FROM public.event_registrations r
       LEFT JOIN public.members m ON (m.code = r.member_code OR (r.email != '' AND m.email = r.email))
       LEFT JOIN public.vione_users u ON u.email = r.email
@@ -1386,9 +1416,9 @@ export class EventsService {
     const regRows = await this.prisma.$queryRaw<any[]>`
       SELECT 
         r.id, r.member_name as name, r.email, r.ticket_type, r.seat_assignment, r.payment_status, r.checked_in_at,
-        u.company_name as company, u.job_title as title, u.phone
+        COALESCE(m.company, 'Doanh nghiệp CEO 1983') as company, COALESCE(m.position, 'CEO / Hội viên') as title, COALESCE(m.phone, '0983000001') as phone
       FROM public.event_registrations r
-      LEFT JOIN public.vione_users u ON u.email = r.email
+      LEFT JOIN public.members m ON (m.code = r.member_code OR (r.email != '' AND m.email = r.email))
       WHERE r.id = ${attendeeId} LIMIT 1
     `.catch(() => [] as any[]);
 
@@ -2019,6 +2049,29 @@ export class EventsService {
 
     if (!fullName || !phone || !email) {
       throw new BadRequestException('Vui lòng điền đầy đủ Họ tên, Số điện thoại và Email để nhận vé');
+    }
+
+    const capacityNum = Number(event.capacity ?? 0);
+    const registeredNum = Number(event.registered ?? 0);
+    if (capacityNum > 0 && (registeredNum + ticketCount > capacityNum || registeredNum >= capacityNum)) {
+      await this.mailService.sendEventSoldOutEmail({
+        to: email,
+        fullName,
+        phone,
+        company,
+        position,
+        eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+        eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
+        eventTime: event.time || '08:30 - 12:00',
+        eventLocation: event.location || 'Hà Nội',
+      });
+      return {
+        ok: false,
+        status: 'sold_out',
+        isSoldOut: true,
+        eventTitle: event.title || event.name,
+        message: 'Rất tiếc, sự kiện đã đủ số lượng đại biểu tham dự (Hết chỗ). Ban Tổ Chức đã gửi email cảm ơn sự quan tâm của Quý Anh/Chị và lưu trữ thông tin cho sự kiện tiếp theo.',
+      };
     }
 
     const ticketPrice = (event.ticket_price !== undefined && event.ticket_price !== null)

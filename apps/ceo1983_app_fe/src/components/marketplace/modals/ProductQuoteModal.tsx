@@ -31,7 +31,26 @@ export const ProductQuoteModal: React.FC<ProductQuoteModalProps> = ({
   setQuoteNote,
   quoteSubmitting,
 }) => {
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+
   if (!isOpen || !quoteProduct || typeof document === "undefined") return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: Record<string, string> = {};
+    if (!quotePhone.trim()) {
+      newErrors.phone = isEn ? "Please enter your phone number" : "Vui lòng nhập số điện thoại liên hệ";
+    } else if (!/^[0-9+() -]{8,15}$/.test(quotePhone.trim())) {
+      newErrors.phone = isEn ? "Invalid phone number format" : "Số điện thoại không đúng định dạng";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+    onSubmit(e);
+  };
 
   return createPortal(
     <div
@@ -56,7 +75,7 @@ export const ProductQuoteModal: React.FC<ProductQuoteModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
             {/* Product Summary Preview */}
             <div className="flex items-center gap-3 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/30">
@@ -78,7 +97,6 @@ export const ProductQuoteModal: React.FC<ProductQuoteModalProps> = ({
               </label>
               <input
                 type="text"
-                required
                 value={quoteQty}
                 onChange={(e) => setQuoteQty(e.target.value)}
                 placeholder="Ví dụ: 1 gói, 50 bộ, triển khai 1 năm..."
@@ -88,19 +106,28 @@ export const ProductQuoteModal: React.FC<ProductQuoteModalProps> = ({
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {isEn ? "Contact Phone / Zalo" : "Số điện thoại / Zalo liên hệ của bạn *"}
+                {isEn ? "Contact Phone / Zalo" : "Số điện thoại / Zalo liên hệ của bạn"} <span className="text-rose-500 font-bold">*</span>
               </label>
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                 <input
                   type="tel"
-                  required
                   value={quotePhone}
-                  onChange={(e) => setQuotePhone(e.target.value)}
+                  onChange={(e) => {
+                    setQuotePhone(e.target.value);
+                    if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
+                  }}
                   placeholder="0988 123 456"
-                  className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                  className={`w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none transition ${
+                    errors.phone ? "ring-2 ring-rose-500" : "ring-0 focus:ring-1 focus:ring-[#003B95]"
+                  }`}
                 />
               </div>
+              {errors.phone && (
+                <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                  {errors.phone}
+                </p>
+              )}
             </div>
 
             <div>
@@ -121,9 +148,9 @@ export const ProductQuoteModal: React.FC<ProductQuoteModalProps> = ({
             <button
               type="submit"
               disabled={quoteSubmitting}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-[#003B95] border border-[#003B95] py-2.5 text-xs font-bold shadow-xs active:scale-98 transition cursor-pointer disabled:opacity-60"
             >
-              <Send className="h-3.5 w-3.5 text-amber-300" />
+              <Send className="h-3.5 w-3.5 text-[#003B95]" />
               <span>{quoteSubmitting ? (isEn ? "Sending request..." : "Đang gửi...") : (isEn ? "Send Quote Request Now" : "Gửi Yêu Cầu Báo Giá")}</span>
             </button>
           </div>

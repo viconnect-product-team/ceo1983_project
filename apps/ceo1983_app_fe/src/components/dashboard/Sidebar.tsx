@@ -76,8 +76,7 @@ const events: Item[] = [
   { key: "nav.meeting", icon: Users2, to: "/meetings" },
   { key: "nav.governance", icon: Vote, to: "/voting" },
   { key: "nav.eventReg", icon: ClipboardList, to: "/event-registrations" },
-  { key: "nav.checkin", icon: ScanLine, to: "/checkin" },
-  { key: "checkinQr.title", icon: QrCodeIcon, to: "/checkin-qr" },
+  { key: "nav.luckyDraw" as TKey, icon: Gift, to: "/lucky-draw", label: "Bốc thăm trúng thưởng" },
 ];
 const sponsors: Item[] = [
   { key: "nav.sponsors", icon: Handshake, to: "/sponsors" },
@@ -123,30 +122,24 @@ const permissionsGroup: Item[] = [
   {
     key: "nav.permissions" as TKey,
     icon: ShieldCheck,
-    to: "/permissions?tab=matrix",
+    to: "/permissions",
     label: "Ma trận phân quyền",
   },
   {
-    key: "nav.permissionUserActions" as any,
-    icon: UserCog,
-    to: "/permissions?tab=user_actions",
-    label: "Phân quyền tài khoản",
+    key: "nav.departments" as TKey,
+    icon: Building2,
+    to: "/departments",
+    label: "Quản lý Ban Chuyên Môn",
   },
   {
-    key: "nav.permissionRoleGroups" as any,
-    icon: Layers,
-    to: "/permissions?tab=role_groups",
-    label: "Thẩm quyền Ban & Cấp bậc",
+    key: "nav.accounts" as TKey,
+    icon: UserCog,
+    to: "/accounts",
+    label: "Quản lý Tài Khoản",
   },
 ];
 const admin: Item[] = [
   { key: "nav.documents", icon: FolderOpen, to: "/documents" },
-  {
-    key: "nav.bcAdmin",
-    icon: IdCard,
-    to: "/admin/business-cards",
-    label: "Quản lý Thẻ Doanh Nhân",
-  },
 ];
 
 const COLLAPSE_KEY = "vba.sidebar.collapsed";
@@ -340,8 +333,8 @@ export function Sidebar({
 
   // Xác định vai trò hệ thống CRM cốt lõi
   const currentRoleKey: SystemRoleKey = useMemo(() => {
-    if (isPlatformAdmin) return "quan_tri";
-    if (isBQT) return "admin";
+    if (isPlatformAdmin || srsRole === "quan_tri" || srsRole === "ADM") return "quan_tri";
+    if (isAdmin || isBQT || srsRole === "admin" || srsRole === "BQT" || srsRole === "ban_dieu_hanh") return "admin";
     if (isTongThuKy) return "tong_thu_ky";
     if (isBanThuKy || isBTK) return "tong_thu_ky";
     if (isTruongBanTruyenThong || isBTT) return "truong_ban_truyen_thong";
@@ -352,6 +345,8 @@ export function Sidebar({
     return "member";
   }, [
     isPlatformAdmin,
+    isAdmin,
+    srsRole,
     isBQT,
     isTongThuKy,
     isBanThuKy,
@@ -395,8 +390,8 @@ export function Sidebar({
   const canViewComm = isBQT || isBTT || isHVT; // News & media
   const canViewNetwork = true; // B2B Marketplace & networking
   const canViewBusinessConnect = true; // Card & 1-on-1 connections
-  const canViewSystem = isPlatformAdmin || srsRole === "BQT"; // System settings ONLY for ADM and BQT
-  const canViewPlatform = isPlatformAdmin || srsRole === "BQT"; // Permissions ONLY for ADM and BQT
+  const canViewSystem = isPlatformAdmin || isAdmin || isBQT || srsRole === "BQT" || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh"; // System settings
+  const canViewPlatform = isPlatformAdmin || isAdmin || isBQT || srsRole === "BQT" || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh"; // Permissions ONLY for ADM and BQT
 
   const location = useRouterState({ select: (s) => s?.location });
   const pathname = location?.pathname;
@@ -538,15 +533,16 @@ export function Sidebar({
   const filteredSystem = system.filter((it) => {
     if (!isAllowed(it.to)) return false;
     if (it.to === "/tasks") return true;
-    if (it.to === "/settings") return isPlatformAdmin || isBQT;
-    if (it.to === "/activity") return isPlatformAdmin || isBQT || isBTK;
-    if (it.to === "/admin/landing-templates") return isPlatformAdmin || isBQT || isBTT;
+    if (it.to === "/settings") return isPlatformAdmin || isAdmin || isBQT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
+    if (it.to === "/activity") return isPlatformAdmin || isAdmin || isBQT || isBTK || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
+    if (it.to === "/admin/landing-templates") return isPlatformAdmin || isAdmin || isBQT || isBTT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
     return true;
   });
 
   const filteredPermissions = permissionsGroup.filter((it) => {
-    if (!isAllowed("/permissions")) return false;
-    return isPlatformAdmin || isBQT;
+    const hasPerm = isPlatformAdmin || isAdmin || isBQT || srsRole === "BQT" || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh";
+    if (!hasPerm) return false;
+    return isAllowed(it.to || "/permissions");
   });
 
   const filteredAdmin = admin.filter((it) => {
@@ -555,7 +551,7 @@ export function Sidebar({
       return true;
     }
     if (it.to === "/admin/business-cards") {
-      return isPlatformAdmin || isBQT;
+      return isPlatformAdmin || isAdmin || isBQT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
     }
     return true;
   });

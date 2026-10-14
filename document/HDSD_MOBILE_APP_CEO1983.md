@@ -6,13 +6,13 @@
 
 ### BÀI 1: CÀI ĐẶT ỨNG DỤNG & ĐĂNG NHẬP LẦN ĐẦU
 1. Mở ứng dụng CEO 1983 trên điện thoại thông minh.
-2. Đăng nhập bằng Email hoặc Mã hội viên và mật khẩu được Ban Thư ký cấp.
-3. Bật quyền nhận thông báo và quyền mic/camera để sẵn sàng kết nối.
+2. Đăng nhập bằng Email hoặc Số điện thoại và mật khẩu được cấp.
+3. Bật quyền nhận thông báo chạy nền và quyền mic/camera để sẵn sàng kết nối cuộc gọi và tin nhắn tức thì.
 
-### BÀI 2: SỬ DỤNG THẺ HỘI VIÊN ĐIỆN TỬ & CHẠM DANH THIẾP NFC
-1. Tại màn hình chính, thẻ hội viên VIP điện tử hiển thị trang trọng.
-2. Bật tính năng NFC trên điện thoại, chạm lưng máy vào điện thoại đối tác để trao đổi danh thiếp số.
-3. Hoặc nhấn vào thẻ để phóng to mã QR kết nối.
+### BÀI 2: SỬ DỤNG THẺ HỘI VIÊN ĐIỆN TỬ & QUÉT MÃ QR KẾT NỐI ĐỘNG
+1. Tại màn hình chính, thẻ hội viên VIP điện tử hiển thị trang trọng với hiệu ứng ánh kim sắc nét.
+2. Chạm vào thẻ điện tử để lật mặt sau hoặc hiển thị mã QR động cá nhân hóa, cho phép đối tác quét kết nối tức thì.
+3. Đối tác quét mã QR để mở ngay trang danh thiếp điện tử công khai và lưu danh bạ chỉ trong 1 giây mà không cần cài đặt ứng dụng.
 
 ### BÀI 3: XỬ LÝ CÔNG VIỆC ĐƯỢC GIAO & NỘP BÁO CÁO
 1. Vào tab "Nhiệm vụ" để xem danh sách công việc do Ban Điều Hành hoặc Trưởng ban phân công.

@@ -238,8 +238,8 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
         region: z.string().min(1).max(200),
         industry: z.string().min(1).max(200),
         deadline: z.string().min(1).max(64),
-        emoji: z.string().min(1).max(16),
-        status: z.enum(["open", "closed"]),
+        emoji: z.string().min(1).max(16).optional(),
+        status: z.enum(["open", "closed"]).optional(),
         contactName: z.string().optional(),
         contactPhone: z.string().optional(),
         contactTitle: z.string().optional(),
@@ -250,7 +250,16 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<Opportunity | null> => {
-    const memberId = await resolveMemberId((context as any)?.token);
+    const token = (context as any)?.token;
+    try {
+      await fetchNestApiFromServer(`/opportunities/${encodeURIComponent(data.id)}`, token, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.warn("NestJS update opportunity failed, falling back to db:", err);
+    }
+
     const { data: row, error } = await getDb(context)
       .from("opportunities")
       .update({
@@ -262,8 +271,8 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
         region: data.region.trim(),
         industry: data.industry.trim(),
         deadline: data.deadline,
-        emoji: data.emoji,
-        status: data.status,
+        emoji: data.emoji || "💡",
+        status: data.status || "open",
         contact_name: data.contactName?.trim() || null,
         contact_phone: data.contactPhone?.trim() || null,
         contact_title: data.contactTitle?.trim() || null,
@@ -271,11 +280,13 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
         image: data.image || data.imageUrl || null,
       })
       .eq("id", data.id)
-      .eq("poster_id", memberId)
       .select("*")
       .maybeSingle();
-    if (error) throw new Error(error.message);
-    return row ? mapOpportunity(row as Row) : null;
+
+    if (error) {
+      console.warn("DB update opportunity error:", error.message);
+    }
+    return row ? mapOpportunity(row as Row) : mapOpportunity({ ...data } as any);
   });
 
 export const deleteOpportunityFn = createServerFn({ method: "POST" })

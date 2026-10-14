@@ -43,11 +43,11 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/context/AuthContext";
-import { SeasonalEventHeader, getEffectiveThemeOption } from "@/components/member/SeasonalEventHeader";
+import { SeasonalEventHeader, getEffectiveThemeOption, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
+import { useTheme } from "@/lib/theme";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
-import { AppThemeSelectorModal } from "@/components/member/AppThemeSelectorModal";
 import { BirthdayCelebrationModal } from "@/components/member/BirthdayCelebrationModal";
 import { toast } from "sonner";
 import { isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVisit";
@@ -79,6 +79,7 @@ import {
   type NewsItem,
   type MyHistory,
 } from "@/lib/member-app.functions";
+import { getReadNewsIds, markNewsAsRead } from "@/lib/news-read-tracker";
 import { useT, useLang } from "@/lib/i18n";
 import { AssociationContactSheet } from "@/components/member/AssociationContactSheet";
 import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
@@ -125,7 +126,7 @@ const quickActionDefs = [
     key: "m.index.qaCard",
     iconKey: "card",
     icon: IdCard,
-    to: "/association/card",
+    to: "/association/business-cards",
     customLabel: "Danh thiếp số",
     enLabel: "Digital Card",
     badgeId: "card",
@@ -144,15 +145,15 @@ const quickActionDefs = [
     badgeTextEn: "100+",
   },
   {
-    key: "m.index.qaCheckin",
-    iconKey: "checkin",
-    icon: QrCode,
-    to: "/association/checkin",
-    customLabel: "Quét Check-in",
-    enLabel: "Scan Check-in",
-    badgeId: "checkin",
-    badgeText: "1-Chạm",
-    badgeTextEn: "1-Tap",
+    key: "m.index.qaEvents",
+    iconKey: "events",
+    icon: Calendar,
+    to: "/association/events",
+    customLabel: "Sự kiện CLB",
+    enLabel: "Club Events",
+    badgeId: "events",
+    badgeText: "Mới",
+    badgeTextEn: "New",
   },
   {
     key: "m.index.qaPerks",
@@ -271,19 +272,56 @@ function Home() {
   }, [canScanQR, isAdmin, isPlatformAdmin, isBTC, isBQT, isBTK, isBTT, can, user]);
 
   const visibleQuickActions = useMemo(() => {
-    return quickActionDefs.filter((a) => {
-      if (a.key === "m.index.qaCheckin") {
-        return hasCheckinPermission;
-      }
-      return true;
-    });
-  }, [hasCheckinPermission]);
+    return quickActionDefs;
+  }, []);
   const [tourOpen, setTourOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
-  const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [effectiveTheme, setEffectiveTheme] = useState(() => getEffectiveThemeOption());
+
+  const { theme } = useTheme();
+  const isDark = theme === "dark" || (typeof document !== "undefined" && document.documentElement.classList.contains("dark"));
+
+  useEffect(() => {
+    void syncThemeFromBackend();
+  }, []);
+
+  const getActionIconStyle = (iconKey: string) => {
+    if (!isDark) {
+      return {
+        backgroundColor: `${effectiveTheme.primaryColor}18`,
+        borderColor: `${effectiveTheme.primaryColor}35`,
+        color: effectiveTheme.primaryColor,
+        boxShadow:
+          effectiveTheme.iconStyle === "glow-neon"
+            ? `0 0 12px ${effectiveTheme.accentColor}70`
+            : undefined,
+      };
+    }
+    // High-contrast, vibrant luminous styling for Dark Mode
+    const darkPalette: Record<string, { bg: string; border: string; color: string }> = {
+      card: { bg: "rgba(245, 158, 11, 0.18)", border: "rgba(245, 158, 11, 0.45)", color: "#FBBF24" },
+      members: { bg: "rgba(56, 189, 248, 0.18)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
+      checkin: { bg: "rgba(52, 211, 153, 0.18)", border: "rgba(52, 211, 153, 0.45)", color: "#34D399" },
+      perks: { bg: "rgba(251, 191, 36, 0.20)", border: "rgba(251, 191, 36, 0.50)", color: "#FDE047" },
+      voting: { bg: "rgba(167, 139, 250, 0.18)", border: "rgba(167, 139, 250, 0.45)", color: "#A78BFA" },
+      history: { bg: "rgba(96, 165, 250, 0.18)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
+      marketplace: { bg: "rgba(251, 113, 133, 0.18)", border: "rgba(251, 113, 133, 0.45)", color: "#FB7185" },
+      fees: { bg: "rgba(16, 185, 129, 0.18)", border: "rgba(16, 185, 129, 0.45)", color: "#10B981" },
+    };
+    const item = darkPalette[iconKey] || {
+      bg: "rgba(245, 158, 11, 0.18)",
+      border: "rgba(245, 158, 11, 0.45)",
+      color: effectiveTheme.accentColor || "#FBBF24",
+    };
+    return {
+      backgroundColor: item.bg,
+      borderColor: item.border,
+      color: item.color,
+      boxShadow: `0 0 10px ${item.border}`,
+    };
+  };
 
   useEffect(() => {
     const handleThemeUpdate = () => {
@@ -387,6 +425,69 @@ function Home() {
     user?.id ? `vba_history_${user.id}` : "vba_history",
     [user?.id]
   );
+
+  // Check quyền quét mã sự kiện trên mobile CEO 1983:
+  // Chỉ tài khoản được BQT phân công cụ thể trong danh sách qrScanners của sự kiện mới hiện nút soát vé
+  const canScanEventQr = useMemo(() => {
+    if (!serverEvents || !Array.isArray(serverEvents) || serverEvents.length === 0) {
+      return false;
+    }
+
+    const myIds = [
+      user?.id,
+      member?.id,
+      member?.code,
+      member?.phone,
+      member?.email,
+      (user as any)?.email,
+    ]
+      .filter(Boolean)
+      .map((x) => String(x).toLowerCase().trim());
+
+    return serverEvents.some((ev: any) => {
+      let scanners = ev.qrScanners || ev.qrStaff || ev.qr_scanners || ev.qr_staff_ids || [];
+      if (typeof scanners === "string") {
+        try {
+          scanners = JSON.parse(scanners);
+        } catch {
+          scanners = [];
+        }
+      }
+      if (!Array.isArray(scanners) || scanners.length === 0) return false;
+      return scanners.some((s: any) => {
+        if (typeof s === "string") {
+          const lower = s.toLowerCase().trim();
+          return myIds.some((id) => lower === id || lower.includes(id));
+        }
+        if (typeof s === "object" && s !== null) {
+          const objVals = [s.id, s.code, s.userId, s.memberCode, s.phone, s.email, s.name]
+            .filter(Boolean)
+            .map((x) => String(x).toLowerCase().trim());
+          return myIds.some((id) => objVals.includes(id));
+        }
+        return false;
+      });
+    });
+  }, [member, user, serverEvents]);
+
+  const [readNewsIds, setReadNewsIds] = useState<string[]>(() => getReadNewsIds());
+
+  useEffect(() => {
+    const handleNewsReadUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ readIds: string[] }>;
+      if (customEvent.detail?.readIds) {
+        setReadNewsIds(customEvent.detail.readIds);
+      } else {
+        setReadNewsIds(getReadNewsIds());
+      }
+    };
+    window.addEventListener("ceo1983_news_read_updated", handleNewsReadUpdated);
+    return () => window.removeEventListener("ceo1983_news_read_updated", handleNewsReadUpdated);
+  }, []);
+
+  const combinedNews = useMemo(() => {
+    return newsItems;
+  }, [newsItems]);
 
   // Client-side fetch trực tiếp từ NestJS /members/me bằng Bearer token của user hiện tại
   const [directMember, setDirectMember] = useState<MyMember | null>(null);
@@ -859,31 +960,41 @@ function Home() {
         });
       }
     }
-    if (list.length === 0) {
-      return [
-        {
-          id: "act-def-1",
-          type: "event" as const,
-          title: "Đăng ký vé tham gia Đại Hội CEO 1983",
-          detail: "Mã vé EV-CEO1983-VIP01 · Ghế B04",
-          date: "2026-03-24T15:20:00Z",
-        },
-        {
-          id: "act-def-2",
-          type: "connection" as const,
-          title: "Gửi lời mời kết nối B2B với Nguyễn Văn Hùng",
-          detail: "Hợp tác đầu tư chuỗi logistics & kho bãi thông minh",
-          date: "2026-03-20T09:30:00Z",
-        },
-        {
-          id: "act-def-3",
-          type: "payment" as const,
-          title: "Xác nhận hoàn tất Hội phí thường niên 2026",
-          detail: "Hóa đơn điện tử số INV-2026-001983",
-          date: "2026-02-15T11:00:00Z",
-        },
-      ];
+
+    if (typeof window !== "undefined") {
+      try {
+        const storedEvents = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        if (Array.isArray(storedEvents)) {
+          for (const ev of storedEvents) {
+            if (!list.some((item) => item.id === `ev-${ev.id || ev.eventId}`)) {
+              list.push({
+                id: `ev-${ev.id || ev.eventId}`,
+                type: "event",
+                title: `Tham gia: ${ev.name || ev.title || "Sự kiện CEO 1983"}`,
+                detail: ev.checkedIn ? "Đã check-in điểm danh tại sự kiện" : `Đã đăng ký vé · Số may mắn ${ev.luckyNumber || "#1983"}`,
+                date: ev.date || new Date().toISOString(),
+              });
+            }
+          }
+        }
+
+        const storedConn = JSON.parse(localStorage.getItem("vba_sent_connection_requests") || "[]");
+        if (Array.isArray(storedConn)) {
+          for (const conn of storedConn) {
+            if (!list.some((item) => item.id === `conn-${conn.id}`)) {
+              list.push({
+                id: `conn-${conn.id}`,
+                type: "connection",
+                title: `Kết nối với ${conn.targetName || "Hội viên"}`,
+                detail: conn.opportunityTitle || conn.purpose || "Yêu cầu kết nối giao thương",
+                date: conn.createdAt || new Date().toISOString(),
+              });
+            }
+          }
+        }
+      } catch {}
     }
+
     return list;
   }, [myHistory]);
 
@@ -947,7 +1058,7 @@ function Home() {
   const totalProductsValue = useMemo(() => {
     let sum = 0;
     for (const p of products) {
-      const priceVal = (p as any).priceNumber || p.price;
+      const priceVal = (p as any).priceNumber ?? (p as any).memberPrice ?? p.price;
       if (typeof priceVal === "number" && priceVal > 0) {
         sum += priceVal;
       } else if (typeof priceVal === "string") {
@@ -1011,12 +1122,26 @@ function Home() {
       <input type="file" ref={coverFileInputRef} className="hidden" accept="image/*" onChange={handleDirectCoverUpload} />
       <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
 
-      {/* Hero Banner with Classic Cobalt Navy Atmosphere */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#003B95]/20 via-amber-500/5 to-transparent">
+      {/* Hero Banner with Theme Dynamic Atmosphere */}
+      <div
+        className="relative overflow-hidden transition-all duration-500"
+        style={{
+          background:
+            effectiveTheme.id !== "classic" && effectiveTheme.id !== "none"
+              ? effectiveTheme.bannerGradient
+              : "linear-gradient(to bottom, rgba(0, 59, 149, 0.2), rgba(245, 158, 11, 0.05), transparent)",
+        }}
+      >
         <SeasonalEventHeader />
 
-        <div className="absolute -top-10 -left-10 h-44 w-44 rounded-full bg-[#003B95]/25 blur-3xl pointer-events-none" />
-        <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-amber-500/15 blur-2xl pointer-events-none" />
+        <div
+          className="absolute -top-10 -left-10 h-44 w-44 rounded-full blur-3xl pointer-events-none opacity-40"
+          style={{ backgroundColor: effectiveTheme.primaryColor }}
+        />
+        <div
+          className="absolute top-0 right-0 h-40 w-40 rounded-full blur-2xl pointer-events-none opacity-30"
+          style={{ backgroundColor: effectiveTheme.accentColor }}
+        />
 
         <img
           src={heroImg}
@@ -1058,28 +1183,24 @@ function Home() {
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
 
-          {/* Logo công ty hội viên trên ảnh bìa ở góc phải: Sang trọng, viền vàng kim */}
+          {/* Logo công ty hội viên chìm tinh tế xuống nền ảnh bìa */}
           <div 
             onClick={(e) => {
               e.stopPropagation();
               logoFileInputRef.current?.click();
             }}
             className="absolute top-2.5 right-3 z-10 cursor-pointer"
-            title="Bấm vào để tải lên hoặc đổi Logo công ty"
+            title="Logo công ty hội viên"
           >
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-amber-400/60 dark:border-amber-500/50 shadow-sm transition group hover:bg-white dark:hover:bg-slate-900">
+            <div className="px-2 py-1 rounded-lg bg-black/25 backdrop-blur-md border border-white/20 shadow-xs transition hover:bg-black/35">
               <img
                 src={resolveMediaUrl(displayCompanyLogo) || displayCompanyLogo}
                 alt="Company Logo"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/ceo1983-official-logo.png";
                 }}
-                className="h-6 sm:h-7 w-auto max-w-[110px] object-contain filter drop-shadow-xs"
+                className="h-6 w-auto max-w-[110px] object-contain filter drop-shadow-xs opacity-85 hover:opacity-100 transition-opacity"
               />
-              <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-0.5">
-                <Camera className="h-2.5 w-2.5 text-amber-500" />
-                <span className="hidden group-hover:inline-block">Đổi</span>
-              </span>
             </div>
           </div>
         </div>
@@ -1197,7 +1318,7 @@ function Home() {
               style={{ backgroundColor: effectiveTheme.primaryColor }}
             />
             <span>{isEn ? "Quick Actions" : "Tính năng nhanh"}</span>
-            {effectiveTheme.id !== "classic" && (
+            {effectiveTheme.id !== "classic" && effectiveTheme.id !== "none" && (
               <span
                 className="text-[10px] px-2 py-0.5 rounded-full font-bold shadow-2xs"
                 style={{
@@ -1220,7 +1341,10 @@ function Home() {
             const label = isEn ? a.enLabel : a.customLabel || t(a.key);
             const showBadge = a.badgeId ? !clearedBadges[a.badgeId] : false;
             const themeEmoji = effectiveTheme.actionIcons?.[a.iconKey as keyof typeof effectiveTheme.actionIcons];
-            const useEmojiIcon = (effectiveTheme.iconStyle === "3d-emoji" || effectiveTheme.id !== "classic") && Boolean(themeEmoji);
+            const useEmojiIcon =
+              (effectiveTheme.iconStyle === "3d-emoji" || (effectiveTheme.id !== "classic" && effectiveTheme.id !== "none")) &&
+              Boolean(themeEmoji);
+            const actionStyle = getActionIconStyle(a.iconKey);
 
             return (
               <Link
@@ -1240,14 +1364,11 @@ function Home() {
                     showBadge ? "ring-2 ring-red-500/40" : ""
                   }`}
                   style={{
-                    backgroundColor: `${effectiveTheme.primaryColor}18`,
+                    backgroundColor: actionStyle.backgroundColor,
                     borderWidth: "1px",
-                    borderColor: `${effectiveTheme.primaryColor}35`,
-                    color: effectiveTheme.primaryColor,
-                    boxShadow:
-                      effectiveTheme.iconStyle === "glow-neon"
-                        ? `0 0 12px ${effectiveTheme.accentColor}70`
-                        : undefined,
+                    borderColor: actionStyle.borderColor,
+                    color: actionStyle.color,
+                    boxShadow: actionStyle.boxShadow,
                   }}
                 >
                   {useEmojiIcon ? (
@@ -1255,7 +1376,7 @@ function Home() {
                       {themeEmoji}
                     </span>
                   ) : (
-                    <Icon className="h-5.5 w-5.5 stroke-[2]" style={{ color: effectiveTheme.primaryColor }} />
+                    <Icon className="h-5.5 w-5.5 stroke-[2.2]" style={{ color: actionStyle.color }} />
                   )}
 
                   {/* HIỆU ỨNG THÔNG BÁO HOẶC TUYẾT RƠI / HOA NỞ KHI CÓ BADGE */}
@@ -1279,7 +1400,7 @@ function Home() {
                     </div>
                   )}
                 </span>
-                <span className="text-center text-[10.5px] font-semibold leading-tight text-[var(--vba-text)] transition-colors group-hover:opacity-90 line-clamp-2">
+                <span className="text-center text-[10.5px] font-bold leading-tight text-slate-800 dark:text-slate-100 transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400 line-clamp-2">
                   {label}
                 </span>
               </Link>
@@ -1640,56 +1761,75 @@ function Home() {
         </div>
 
         {/* Recent Items Preview List */}
-        <div className="rounded-2xl vba-card p-3 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 border border-amber-500/25">
-          {recentActivitiesList.slice(0, 3).map((act, idx) => (
-            <Link
-              key={act.id || idx}
-              to="/association/history"
-              className="flex items-center gap-3 py-2.5 first:pt-0.5 last:pb-0.5 group hover:opacity-90 transition"
-            >
-              <div
-                className={`h-8 w-8 rounded-xl shrink-0 flex items-center justify-center shadow-xs ${
-                  act.type === "event"
-                    ? "bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-500/30"
-                    : act.type === "payment"
-                    ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/30"
-                    : "bg-blue-100/80 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-500/30"
-                }`}
+        {recentActivitiesList.length === 0 ? (
+          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/25">
+            <History className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
+            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+              {isEn ? "No recent activities recorded yet" : "Chưa có hoạt động nào được ghi nhận"}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              {isEn
+                ? "Your registered events, B2B connections, and transactions will appear here as you take action."
+                : "Các sự kiện đã đăng ký, kết nối B2B và giao dịch sẽ tự động hiển thị tại đây khi bạn thực hiện."}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl vba-card p-3 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 border border-amber-500/25">
+            {recentActivitiesList.slice(0, 3).map((act, idx) => (
+              <Link
+                key={act.id || idx}
+                to="/association/history"
+                className="flex items-center gap-3 py-2.5 first:pt-0.5 last:pb-0.5 group hover:opacity-90 transition"
               >
-                {act.type === "event" ? (
-                  <Calendar className="h-4 w-4" />
-                ) : act.type === "payment" ? (
-                  <CreditCard className="h-4 w-4" />
-                ) : (
-                  <Handshake className="h-4 w-4" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="line-clamp-1 text-[12px] font-bold text-[var(--vba-text)] group-hover:text-amber-500 transition-colors">
-                  {act.title}
+                <div
+                  className={`h-8 w-8 rounded-xl shrink-0 flex items-center justify-center shadow-xs ${
+                    act.type === "event"
+                      ? "bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-500/30"
+                      : act.type === "payment"
+                      ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/30"
+                      : "bg-blue-100/80 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-500/30"
+                  }`}
+                >
+                  {act.type === "event" ? (
+                    <Calendar className="h-4 w-4" />
+                  ) : act.type === "payment" ? (
+                    <CreditCard className="h-4 w-4" />
+                  ) : (
+                    <Handshake className="h-4 w-4" />
+                  )}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
-                  <span className="line-clamp-1">{act.detail || "Hoạt động ghi nhận trên hệ sinh thái CEO 1983"}</span>
-                  <span className="shrink-0">•</span>
-                  <span className="shrink-0">{formatNewsDate(act.date)}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="line-clamp-1 text-[12px] font-bold text-[var(--vba-text)] group-hover:text-amber-500 transition-colors">
+                    {act.title}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                    <span className="line-clamp-1">{act.detail || "Hoạt động ghi nhận trên hệ sinh thái CEO 1983"}</span>
+                    <span className="shrink-0">•</span>
+                    <span className="shrink-0">{formatNewsDate(act.date)}</span>
+                  </div>
                 </div>
-              </div>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
-            </Link>
-          ))}
-        </div>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* ── 6. TIN HOẠT ĐỘNG CLB (CHUẨN PHƯƠNG ÁN 1) ── */}
+      {/* ── 6. TIN TỨC CÂU LẠC BỘ (TỐI ĐA 5 TIN TỨC CÓ ẢNH & 1, 2 DÒNG THÔNG TIN) ── */}
       <div className="mx-4 mt-6">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
-              <Newspaper className="h-3.5 w-3.5 text-amber-400" />
+            <span className="grid h-7 w-7 place-items-center rounded-xl bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
+              <Newspaper className="h-4 w-4 text-amber-400" />
             </span>
-            <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
-              {isEn ? "Club Activities & News" : "Tin hoạt động CLB"}
-            </h2>
+            <div>
+              <h2 className="text-[13px] sm:text-[14px] font-extrabold uppercase tracking-wider text-[var(--vba-text)] flex items-center gap-2">
+                <span>{isEn ? "Club News & Updates" : "Tin tức câu lạc bộ"}</span>
+                <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[9.5px] font-bold text-[#003B95] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                  {Math.min(5, combinedNews.length)} tin mới
+                </span>
+              </h2>
+            </div>
           </div>
           <Link
             to="/association/news"
@@ -1700,7 +1840,7 @@ function Home() {
           </Link>
         </div>
 
-        {newsItems.length === 0 ? (
+        {combinedNews.length === 0 ? (
           <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
             <Newspaper className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
             <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
@@ -1708,50 +1848,101 @@ function Home() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2.5">
-            {newsItems.slice(0, 3).map((item, idx) => {
-              const rawImg = (item as any).image || (item as any).imageUrl || (item as any).coverUrl || (item as any).thumbnail;
-              const newsImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : DEFAULT_NEWS_THUMBNAILS[idx % DEFAULT_NEWS_THUMBNAILS.length];
-              return (
-                <Link
-                  key={item.id}
-                  to="/association/news"
-                  className="vba-card group flex items-center gap-3 rounded-2xl p-2.5 sm:p-3 shadow-xs border border-amber-500/25 hover:border-amber-400 hover:shadow-[0_4px_16px_rgba(245,158,11,0.18)] transition"
-                >
-                  {/* Photo thumbnail */}
-                  <div className="relative h-20 w-24 sm:h-22 sm:w-28 shrink-0 overflow-hidden rounded-xl border border-amber-500/30 bg-slate-900">
-                    <img
-                      src={newsImg}
-                      alt={item.title}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                    />
-                    {item.category && (
-                      <span className="absolute bottom-1 left-1 rounded bg-black/70 backdrop-blur-xs px-1.5 py-0.5 text-[8.5px] font-bold text-amber-300 border border-amber-400/40">
-                        {item.category}
-                      </span>
-                    )}
-                  </div>
+          <div className="space-y-3">
+            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 -mx-4 px-4 scrollbar-none snap-x snap-mandatory">
+              {combinedNews.slice(0, 5).map((item, idx) => {
+                const rawImg = (item as any).image || (item as any).imageUrl || (item as any).coverUrl || (item as any).thumbnail;
+                const newsImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : DEFAULT_NEWS_THUMBNAILS[idx % DEFAULT_NEWS_THUMBNAILS.length];
+                const isRead = readNewsIds.includes(item.id);
 
-                  <div className="min-w-0 flex-1 flex flex-col justify-between py-0.5">
-                    <div className="line-clamp-2 text-[13px] font-bold text-[var(--vba-text)] leading-snug group-hover:text-amber-500 transition-colors">
-                      {item.title}
+                return (
+                  <Link
+                    key={item.id}
+                    to="/association/news"
+                    search={{ articleId: item.id }}
+                    onClick={() => markNewsAsRead(item.id)}
+                    className="w-[260px] sm:w-[280px] shrink-0 snap-start flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-white/10 hover:border-[#003B95]/50 hover:shadow-md transition-all active:scale-[0.99] cursor-pointer overflow-hidden group"
+                  >
+                    {/* Photo thumbnail */}
+                    <div className="relative h-32 w-full overflow-hidden bg-slate-900">
+                      <img
+                        src={newsImg}
+                        alt={item.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      />
+                      {item.category && (
+                        <span className="absolute top-2 left-2 rounded-md bg-[#003B95]/90 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider border border-white/20">
+                          {item.category}
+                        </span>
+                      )}
+                      <div className="absolute top-2 right-2">
+                        {isRead ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] text-white/90 bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded-full">
+                            <Check className="h-2.5 w-2.5 text-emerald-400 stroke-[2.5]" />
+                            <span>Đã xem</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-white bg-[#003B95]/90 backdrop-blur-xs px-2 py-0.5 rounded-full border border-blue-400/40">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-300 animate-pulse" />
+                            <span>Mới</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-2 text-[10.5px] text-slate-400 dark:text-slate-500">
-                      <span>{formatNewsDate(item.time)}</span>
-                      <span>•</span>
-                      <span className="truncate max-w-[120px] font-medium text-slate-600 dark:text-slate-400">
-                        {item.author || "Ban Truyền Thông"}
-                      </span>
+
+                    {/* Body text & meta */}
+                    <div className="p-3 flex-1 flex flex-col justify-between">
+                      <h4 className="line-clamp-2 text-xs sm:text-[13px] font-bold text-slate-900 dark:text-white leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors">
+                        {item.title}
+                      </h4>
+
+                      <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-white/5 pt-2">
+                        <span className="truncate max-w-[130px] font-medium text-slate-600 dark:text-slate-400">
+                          {item.author || "Ban Truyền Thông"}
+                        </span>
+                        <span>{formatNewsDate(item.time)}</span>
+                      </div>
                     </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
-                </Link>
-              );
-            })}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
+
+      {/* ── TIỆN ÍCH ĐIỂM DANH SỰ KIỆN: QUÉT MÃ QR CHECK-IN (CHỈ HIỆN CHO BAN TRUYỀN THÔNG ĐƯỢC CHỌN) ── */}
+      {canScanEventQr && (
+        <div className="w-full px-4 mb-4">
+          <div className="rounded-2xl p-4 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] text-white shadow-sm flex items-center justify-between gap-3 border border-white/10">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-11 w-11 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
+                <QrCode className="h-6 w-6 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400 text-[#001D4A] text-[9.5px] font-black uppercase tracking-wider mb-1">
+                  <ShieldCheck className="h-3 w-3" />
+                  Ban Soát Vé Sự Kiện
+                </div>
+                <h4 className="text-xs sm:text-sm font-bold text-white leading-tight">
+                  {isEn ? "Event QR Check-in" : "Quét mã QR Check-in sự kiện"}
+                </h4>
+                <p className="text-[11px] text-white/80 mt-0.5 line-clamp-1">
+                  {isEn ? "1-tap check-in & ticket confirmation" : "Điểm danh nhanh 1-chạm & xác nhận vé tại quầy lễ tân"}
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/association/checkin"
+              className="shrink-0 px-3.5 py-2 rounded-xl bg-white text-[#003B95] text-xs font-bold shadow-xs hover:bg-white/90 transition active:scale-95 flex items-center gap-1 cursor-pointer"
+            >
+              <span>Quét ngay</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── MODAL MÃ QR HỘI VIÊN & QUÉT QR (DUAL TAB) ── */}
       <AssociationMemberQrModal
@@ -1861,11 +2052,7 @@ function Home() {
         storageKey="ceo1983_guided_tour_completed"
       />
 
-      {/* ── BẬT / TẮT & CHỌN CHỦ ĐỀ LỄ HỘI TRÊN APP (Req 6) ── */}
-      <AppThemeSelectorModal
-        open={themeModalOpen}
-        onClose={() => setThemeModalOpen(false)}
-      />
+
 
       {/* ── POPUP CHÚC MỪNG SINH NHẬT & TẶNG ƯU ĐÃI VIP (Req 4) ── */}
       <BirthdayCelebrationModal member={member} />

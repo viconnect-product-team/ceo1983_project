@@ -272,8 +272,8 @@ export class VotingService {
     eventName?: string;
     eventId?: string;
   }) {
-    const title = `🎉 Chúc mừng bạn đã trúng ${data.prize}!`;
-    const body = `Ban Tổ chức CLB Doanh Nhân CEO 1983 xin trân trọng chúc mừng Anh/Chị ${data.winnerName} (${data.winnerCompany || 'Hội viên'}, Số may mắn: #${data.luckyNumber || 'LUCKY'}) đã xuất sắc trúng giải thưởng "${data.prize}" tại sự kiện "${data.eventName || 'Sự kiện CEO 1983'}". Vui lòng liên hệ Ban Thư Ký để nhận giải!`;
+    const title = `🎁 [Ưu Đãi Trúng Thưởng] Chúc mừng bạn đã trúng ${data.prize}!`;
+    const body = `Ban Tổ chức CLB Doanh Nhân CEO 1983 xin trân trọng chúc mừng Anh/Chị ${data.winnerName} (${data.winnerCompany || 'Hội viên'}, Số may mắn: #${data.luckyNumber || 'LUCKY'}) đã xuất sắc trúng giải thưởng "${data.prize}" tại sự kiện "${data.eventName || 'Sự kiện CEO 1983'}". Phần thưởng đã được đẩy vào mục Ưu Đãi của bạn!`;
 
     const recipients = await this.votingRepo.findMemberForLuckyDraw(data.winnerCode, data.winnerName);
     const safeDisplayData = JSON.stringify({
@@ -284,15 +284,24 @@ export class VotingService {
       prize: data.prize,
       eventName: data.eventName,
       eventId: data.eventId,
-      type: 'lucky_draw_winner',
-      targetRoute: '/association/events',
+      type: 'perk_reward',
+      targetRoute: '/association/perks',
     });
 
     const targetUserId = recipients[0]?.id || userId;
     const targetMemberCode = recipients[0]?.code || data.winnerCode;
 
-    await this.votingRepo.sendLuckyDrawNotification(targetUserId, title, body, data.eventId || 'lucky-draw', safeDisplayData, targetMemberCode);
+    await this.votingRepo.sendLuckyDrawNotification(
+      targetUserId,
+      title,
+      body,
+      data.eventId || 'lucky-draw',
+      safeDisplayData,
+      targetMemberCode,
+      data.prize,
+      data.eventName
+    );
 
-    return { ok: true, recipient: data.winnerName, prize: data.prize };
+    return { ok: true, recipient: data.winnerName, prize: data.prize, targetRoute: '/association/perks' };
   }
 }

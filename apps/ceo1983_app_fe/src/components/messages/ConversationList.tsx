@@ -1534,7 +1534,7 @@ export function ConversationList({
                 <button
                   type="button"
                   onClick={() => setFilterModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-[#003B95] text-white text-xs font-bold shadow-md hover:bg-[#002b6e] cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Áp dụng bộ lọc
                 </button>

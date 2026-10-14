@@ -14,6 +14,17 @@ import * as crypto from 'crypto';
 
 export { CreateMeetingDto, UpdateMeetingDto, ConnectionAppointmentDto, UpdateMeetingStatusDto };
 
+function isUuid(val: any): boolean {
+  if (!val || typeof val !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val.trim());
+}
+
+function toValidUuid(val: any): string {
+  if (isUuid(val)) return val.trim();
+  const hash = crypto.createHash('md5').update(String(val || 'fallback')).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
 @Injectable()
 export class MeetingsService {
   constructor(
@@ -112,35 +123,85 @@ export class MeetingsService {
     }
 
     // 2. Tạo bản ghi cuộc họp trong public.business_meetings
+    const genMeetingId = crypto.randomUUID();
+    const [h, m] = (time || '09:30').split(':').map(Number);
+    const startDt = new Date(`${date}T${String(h || 9).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}:00Z`);
+    const endDt = new Date(startDt.getTime() + 60 * 60 * 1000);
+
     const meetingRows = await this.prisma.$queryRawUnsafe<any[]>(`
       INSERT INTO public.business_meetings (
-        id, title, description, meeting_type, status, timezone, created_by_user_id, created_at, updated_at
+        id, title, description, meeting_type, status, timezone, created_by_user_id, organizer_user_id,
+        scheduled_start_at, scheduled_end_at, source_type, association_id, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, '1on1', 'scheduled', 'Asia/Ho_Chi_Minh', $3::uuid, NOW(), NOW()
+        $1::uuid, $2, $3, 'networking'::public.business_meeting_type, 'proposed'::public.business_meeting_status,
+        'Asia/Ho_Chi_Minh', $4::uuid, $4::uuid, $5, $6, 'association'::public.business_meeting_source_type,
+        'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
       ) RETURNING id
-    `, title, `Đối tác: ${partnerName} (${partnerCompany}). Địa điểm: ${venue}. Ghi chú: ${notes}`, userId).catch(() => []);
+    `, genMeetingId, title, `Đối tác: ${partnerName} (${partnerCompany}). Địa điểm: ${venue}. Ghi chú: ${notes}`, userId, startDt, endDt).catch((err) => {
+      console.warn('business_meetings insert warning:', err?.message);
+      return [];
+    });
 
-    const meetingId = meetingRows[0]?.id ? String(meetingRows[0].id) : `meet_${Date.now()}`;
+    const meetingId = meetingRows[0]?.id ? String(meetingRows[0].id) : genMeetingId;
 
-    // 3. Ghi nhận người tổ chức (host)
+    // 3. Ghi nhận người tổ chức (host -> organizer)
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.business_meeting_participants (
         id, meeting_id, user_id, role, response_status, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1::uuid, $2::uuid, 'host', 'accepted', NOW(), NOW()
+        gen_random_uuid(), $1::uuid, $2::uuid, 'organizer'::public.business_meeting_participant_role, 'accepted'::public.business_meeting_response_status, NOW(), NOW()
       )
-    `, meetingId, userId).catch(() => {});
+    `, meetingId, userId).catch((err) => console.warn('host participant insert warning:', err?.message));
 
-    // 4. Ghi nhận người được mời (invitee)
+    // 4. Ghi nhận người được mời (invitee -> required)
     if (partnerUserId) {
       await this.prisma.$executeRawUnsafe(`
         INSERT INTO public.business_meeting_participants (
           id, meeting_id, user_id, role, response_status, created_at, updated_at
         ) VALUES (
-          gen_random_uuid(), $1::uuid, $2::uuid, 'invitee', 'pending', NOW(), NOW()
+          gen_random_uuid(), $1::uuid, $2::uuid, 'required'::public.business_meeting_participant_role, 'pending'::public.business_meeting_response_status, NOW(), NOW()
         )
-      `, meetingId, partnerUserId).catch(() => {});
+      `, meetingId, partnerUserId).catch((err) => console.warn('invitee participant insert warning:', err?.message));
     }
+
+    // 4b. Đồng bộ trực tiếp vào CRM public.meetings để hiển thị tức thì trên cả 2 màn hình CRM (/meetings và /business-connect/meetings)
+    const connCode = `MT-CONN-${Date.now().toString().slice(-6)}`;
+    const endH = String((h || 9) + 1).padStart(2, '0');
+    const endM = String(m || 0).padStart(2, '0');
+    const timeRange = `${time} - ${endH}:${endM}`;
+
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.meetings (
+        id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, association_id, created_at, updated_at
+      ) VALUES (
+        $1::uuid, $2, $3, 'general', $4::date, $5, $6, 2, 'upcoming', 'Hẹn gặp kết nối 1-1',
+        $7::jsonb, $8, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
+      ) ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        date = EXCLUDED.date,
+        time = EXCLUDED.time,
+        location = EXCLUDED.location,
+        target_members = EXCLUDED.target_members,
+        updated_at = NOW()
+    `,
+      meetingId,
+      connCode,
+      title,
+      date,
+      timeRange,
+      venue,
+      JSON.stringify({
+        hostName,
+        partnerName,
+        partnerPhone,
+        partnerCompany,
+        venue,
+        venueType,
+        notes,
+        onlineUrl: isOffline ? '' : venue,
+      }),
+      isOffline ? '' : venue
+    ).catch((err) => console.warn('meetings sync warning:', err?.message));
 
     // 5. TRIGGER PUSH NOTIFICATION CHO CUỘC HỌP OFFLINE
     if (isOffline) {
@@ -915,14 +976,52 @@ export class MeetingsService {
   async getConnectionAppointments(userId: string) {
     try {
       // 0. Thông tin thành viên hiện tại
+      const safeUserId = isUuid(userId) ? userId : null;
       const userMember = await this.prisma.$queryRawUnsafe<any[]>(`
-        SELECT id, code, user_id, phone, name FROM public.members WHERE user_id = $1::uuid OR id::text = $2::text LIMIT 1
-      `, userId, String(userId)).catch(() => []);
+        SELECT m.id, m.code, m.user_id, m.phone, m.name, m.executive_role, m.department, u.role as vione_role, mem.role as membership_role
+        FROM public.members m
+        LEFT JOIN public.vione_users u ON u.id = m.user_id
+        LEFT JOIN public.memberships mem ON mem.user_id = m.user_id
+        WHERE (${safeUserId ? 'm.user_id = $1::uuid OR' : ''} m.id::text = $2::text OR m.code = $2::text OR m.phone = $2::text)
+        LIMIT 1
+      `, ...(safeUserId ? [safeUserId, String(userId)] : [String(userId)])).catch(() => []);
       const myMemberId = userMember[0]?.id ? String(userMember[0].id) : null;
       const myMemberCode = userMember[0]?.code ? String(userMember[0].code) : null;
       const myUserId = userMember[0]?.user_id ? String(userMember[0].user_id) : String(userId);
       const myPhone = userMember[0]?.phone ? String(userMember[0].phone) : null;
       const myName = userMember[0]?.name ? String(userMember[0].name) : null;
+
+      const exRole = String(userMember[0]?.executive_role || '').toLowerCase();
+      const vRole = String(userMember[0]?.vione_role || '').toLowerCase();
+      const mRole = String(userMember[0]?.membership_role || '').toLowerCase();
+      const uDept = String(userMember[0]?.department || '').toLowerCase();
+      const isAdminUser = 
+        exRole.includes('admin') || 
+        exRole.includes('president') || 
+        exRole.includes('chủ tịch') || 
+        exRole.includes('tong_thu_ky') || 
+        exRole.includes('thư ký') || 
+        exRole.includes('ban_dieu_hanh') || 
+        exRole.includes('điều hành') || 
+        exRole.includes('truong_ban') || 
+        uDept.includes('quản trị') ||
+        uDept.includes('điều hành') ||
+        uDept.includes('thư ký') ||
+        vRole.includes('admin') || 
+        vRole.includes('system') || 
+        mRole.includes('admin') || 
+        mRole.includes('owner') ||
+        String(userId).startsWith('00000000') ||
+        String(userMember[0]?.code) === 'M1983-000';
+
+      const myIdentifiers = [
+        myUserId,
+        myMemberCode,
+        myMemberId,
+        myPhone,
+        myName,
+        userId,
+      ].filter(Boolean).map(x => String(x).toLowerCase().trim());
 
       // 1. Lấy các cuộc họp 1-on-1 từ public.business_meetings
       const meetingRows = await this.prisma.$queryRawUnsafe<any[]>(`
@@ -939,14 +1038,13 @@ export class MeetingsService {
           m.created_by_user_id,
           m.organizer_user_id,
           h.name as host_name,
-          h.company as host_company,
+          h.company_name as host_company,
           h.phone as host_phone,
           h.code as host_code,
-          h.avatar_url as host_avatar
+          h.avatar as host_avatar
         FROM public.business_meetings m
         LEFT JOIN public.members h ON (h.user_id = m.created_by_user_id OR h.user_id = m.organizer_user_id OR h.id::text = m.created_by_user_id::text)
-        WHERE m.meeting_type = '1on1' 
-           OR m.meeting_type IS NULL 
+        WHERE m.meeting_type IN ('networking'::public.business_meeting_type, 'in_person'::public.business_meeting_type, 'video_call'::public.business_meeting_type)
            OR m.title ILIKE '%kết nối%' 
            OR m.title ILIKE '%1-on-1%' 
            OR m.title ILIKE '%1-1%'
@@ -954,7 +1052,10 @@ export class MeetingsService {
            OR m.description ILIKE '%Đối tác:%'
         ORDER BY COALESCE(m.scheduled_start_at, m.created_at) DESC
         LIMIT 100
-      `).catch(() => []);
+      `).catch((err) => {
+        console.warn('business_meetings query warning:', err?.message);
+        return [];
+      });
 
       const meetingItems: any[] = [];
       const seenIds = new Set<string>();
@@ -970,17 +1071,17 @@ export class MeetingsService {
             p.user_id,
             mem.id as member_id,
             mem.name,
-            mem.company,
+            mem.company_name as company,
             mem.phone,
             mem.code,
-            mem.avatar_url
+            mem.avatar as avatar_url
           FROM public.business_meeting_participants p
           LEFT JOIN public.members mem ON (mem.user_id = p.user_id OR mem.id::text = p.user_id::text OR mem.code = p.user_id::text)
           WHERE p.meeting_id = $1::uuid
         `, m.id).catch(() => [] as any[]) as any[];
 
-        const hostPart = participants.find((p: any) => p.role === 'host' || p.role === 'organizer');
-        const inviteePart = participants.find((p: any) => p.role === 'invitee' || p.role === 'participant');
+        const hostPart = participants.find((p: any) => p.role === 'organizer' || p.role === 'host');
+        const inviteePart = participants.find((p: any) => p.role === 'required' || p.role === 'invitee' || p.role === 'optional');
 
         const hostName = hostPart?.name || m.host_name || 'Lãnh đạo Ban Điều Hành';
         const hostCompany = hostPart?.company || m.host_company || 'Hiệp hội CEO 1983';
@@ -1029,16 +1130,33 @@ export class MeetingsService {
                          venue.toLowerCase().includes('http') || 
                          venue.toLowerCase().includes('meet');
 
-        const isUserHost = String(m.created_by_user_id) === String(myUserId) || 
-                           String(m.organizer_user_id) === String(myUserId) || 
-                           (hostPart && (String(hostPart.user_id) === String(myUserId) || (myMemberCode && hostPart.code === myMemberCode) || (myPhone && hostPart.phone === myPhone)));
+        const isUserHost = String(m.created_by_user_id).toLowerCase() === String(myUserId).toLowerCase() || 
+                           String(m.organizer_user_id).toLowerCase() === String(myUserId).toLowerCase() || 
+                           (hostPart && (
+                             String(hostPart.user_id).toLowerCase() === String(myUserId).toLowerCase() ||
+                             (myMemberCode && hostPart.code === myMemberCode) ||
+                             (myPhone && hostPart.phone === myPhone) ||
+                             myIdentifiers.includes(String(hostPart.user_id).toLowerCase())
+                           )) ||
+                           (myName && hostName.toLowerCase().includes(myName.toLowerCase())) ||
+                           myIdentifiers.some(id => hostCode?.toLowerCase() === id || hostPhone === id);
         
         const isUserInvitee = !isUserHost && (
-          (inviteePart && (String(inviteePart.user_id) === String(myUserId) || (myMemberCode && inviteePart.code === myMemberCode) || (myPhone && inviteePart.phone === myPhone))) ||
+          (inviteePart && (
+            String(inviteePart.user_id).toLowerCase() === String(myUserId).toLowerCase() ||
+            (myMemberCode && inviteePart.code === myMemberCode) ||
+            (myPhone && inviteePart.phone === myPhone) ||
+            myIdentifiers.includes(String(inviteePart.user_id).toLowerCase())
+          )) ||
           (myName && partnerName.toLowerCase().includes(myName.toLowerCase())) ||
           (m.description && myName && m.description.toLowerCase().includes(myName.toLowerCase())) ||
-          (m.description && myPhone && m.description.includes(myPhone))
+          (m.description && myPhone && m.description.includes(myPhone)) ||
+          myIdentifiers.some(id => partnerCode?.toLowerCase() === id || partnerPhone === id || (m.description && m.description.toLowerCase().includes(id)))
         );
+
+        if (!isAdminUser && !isUserHost && !isUserInvitee) {
+          continue;
+        }
 
         meetingItems.push({
           id: String(m.id),
@@ -1093,8 +1211,25 @@ export class MeetingsService {
           partnerCompany = cm.target_members[1]?.company || partnerCompany;
         }
 
-        const isUserHost = myName && hostName.toLowerCase().includes(myName.toLowerCase());
-        const isUserInvitee = myName && partnerName.toLowerCase().includes(myName.toLowerCase());
+        const isUserHost = myIdentifiers.some(id => 
+          hostName.toLowerCase().includes(id) || 
+          hostCompany.toLowerCase().includes(id) ||
+          (Array.isArray(cm.target_members) && cm.target_members[0]?.code?.toLowerCase() === id) ||
+          (Array.isArray(cm.target_members) && cm.target_members[0]?.phone === id) ||
+          (Array.isArray(cm.target_members) && cm.target_members[0]?.userId?.toLowerCase() === id)
+        );
+
+        const isUserInvitee = !isUserHost && myIdentifiers.some(id => 
+          partnerName.toLowerCase().includes(id) || 
+          partnerCompany.toLowerCase().includes(id) ||
+          (Array.isArray(cm.target_members) && cm.target_members[1]?.code?.toLowerCase() === id) ||
+          (Array.isArray(cm.target_members) && cm.target_members[1]?.phone === id) ||
+          (Array.isArray(cm.target_members) && cm.target_members[1]?.userId?.toLowerCase() === id)
+        );
+
+        if (!isAdminUser && !isUserHost && !isUserInvitee) {
+          continue;
+        }
 
         meetingItems.push({
           id: cmCode,
@@ -1133,15 +1268,15 @@ export class MeetingsService {
           uc.created_at,
           uc.responded_at,
           req.name as req_name,
-          req.company as req_company,
+          req.company_name as req_company,
           req.phone as req_phone,
           req.code as req_code,
-          req.avatar_url as req_avatar,
+          req.avatar as req_avatar,
           rec.name as rec_name,
-          rec.company as rec_company,
+          rec.company_name as rec_company,
           rec.phone as rec_phone,
           rec.code as rec_code,
-          rec.avatar_url as rec_avatar
+          rec.avatar as rec_avatar
         FROM public.user_connections uc
         LEFT JOIN public.members req ON req.user_id = uc.requester_user_id
         LEFT JOIN public.members rec ON rec.user_id = uc.recipient_user_id
@@ -1153,6 +1288,13 @@ export class MeetingsService {
       for (const conn of acceptedConnections) {
         const connKey = `conn_${conn.id}`;
         if (seenIds.has(connKey)) continue;
+
+        const isUserHost = myIdentifiers.includes(String(conn.requester_user_id).toLowerCase());
+        const isUserInvitee = !isUserHost && myIdentifiers.includes(String(conn.recipient_user_id).toLowerCase());
+
+        if (!isAdminUser && !isUserHost && !isUserInvitee) {
+          continue;
+        }
 
         const dateObj = conn.responded_at ? new Date(conn.responded_at) : (conn.created_at ? new Date(conn.created_at) : new Date());
         const dateStr = dateObj.toISOString().slice(0, 10);
@@ -1179,8 +1321,8 @@ export class MeetingsService {
           status: 'confirmed',
           source: 'user_connection',
           createdAt: conn.created_at || new Date().toISOString(),
-          isUserHost: conn.requester_user_id === userId,
-          isUserInvitee: conn.recipient_user_id === userId,
+          isUserHost,
+          isUserInvitee,
         });
       }
 
@@ -1195,6 +1337,67 @@ export class MeetingsService {
   }
 
   /**
+   * Trả về danh sách cuộc họp hợp nhất cho CRM (/meetings & /business-connect/meetings)
+   */
+  async getAllUnifiedMeetings(userId: string) {
+    const connRes = await this.getConnectionAppointments(userId);
+    const connItems = connRes?.items || [];
+
+    const crmRows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, created_at, updated_at
+      FROM public.meetings
+      ORDER BY date DESC, created_at DESC
+    `).catch(() => []);
+
+    const mergedList: any[] = [];
+    const seen = new Set<string>();
+
+    for (const r of crmRows) {
+      const idStr = String(r.id);
+      seen.add(idStr);
+      if (r.code) seen.add(String(r.code));
+      mergedList.push(r);
+    }
+
+    for (const c of connItems) {
+      const idStr = String(c.id);
+      if (seen.has(idStr)) continue;
+      seen.add(idStr);
+
+      const isOnline = c.venueType === 'online' || String(c.venue || '').toLowerCase().includes('http');
+      mergedList.push({
+        id: c.id,
+        code: `MT-CONN-${idStr.slice(0, 8).toUpperCase()}`,
+        title: c.title || 'Cuộc gặp kết nối 1-on-1',
+        type: 'general',
+        date: c.date || new Date().toISOString().slice(0, 10),
+        time: c.time || '09:30 - 10:30',
+        location: c.venue || 'Văn phòng Hiệp hội CEO 1983',
+        attendees: 2,
+        status: c.status || 'upcoming',
+        department: 'Hẹn gặp kết nối 1-1',
+        target_members: {
+          hostName: c.hostName,
+          hostCompany: c.hostCompany,
+          hostPhone: c.hostPhone,
+          partnerName: c.partnerName,
+          partnerCompany: c.partnerCompany,
+          partnerPhone: c.partnerPhone,
+          venue: c.venue,
+          venueType: c.venueType,
+          notes: c.notes,
+          onlineUrl: isOnline ? c.venue : undefined,
+        },
+        zoom_url: isOnline ? c.venue : '',
+        created_at: c.createdAt || new Date().toISOString(),
+        updated_at: c.createdAt || new Date().toISOString(),
+      });
+    }
+
+    return mergedList;
+  }
+
+  /**
    * Tạo lịch hẹn kết nối 1-on-1 giữa 2 hội viên và bắn thông báo tới đối tác, đồng bộ vào CRM
    */
   async createConnectionAppointment(userId: string, data: any) {
@@ -1202,12 +1405,13 @@ export class MeetingsService {
     const meetingId = crypto.randomUUID();
 
     // 1. Tìm thông tin người gửi (Requester)
+    const safeUserId = isUuid(userId) ? userId : null;
     const requesterMembers = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT id, name, company, phone, code, avatar_url, user_id
       FROM public.members
-      WHERE user_id = $1::uuid OR id::text = $2::text
+      WHERE (${safeUserId ? 'user_id = $1::uuid OR' : ''} id::text = $2::text OR code = $2::text OR phone = $2::text)
       LIMIT 1
-    `, userId, String(userId)).catch(() => []);
+    `, ...(safeUserId ? [safeUserId, String(userId)] : [String(userId)])).catch(() => []);
     const reqMember = requesterMembers[0] || {};
     const requesterName = data.senderName || reqMember.name || 'Hội viên CEO 1983';
     const requesterCompany = data.senderCompany || reqMember.company || 'Doanh nghiệp CEO 1983';
@@ -1234,12 +1438,13 @@ export class MeetingsService {
     }
 
     if (!recipientMember && recipientUserId) {
+      const safeRecId = isUuid(recipientUserId) ? recipientUserId : null;
       const recMembers = await this.prisma.$queryRawUnsafe<any[]>(`
         SELECT id, name, company, phone, code, avatar_url, user_id
         FROM public.members
-        WHERE user_id = $1::uuid OR id::text = $2::text
+        WHERE (${safeRecId ? 'user_id = $1::uuid OR' : ''} id::text = $2::text OR code = $2::text)
         LIMIT 1
-      `, recipientUserId, String(recipientUserId)).catch(() => []);
+      `, ...(safeRecId ? [safeRecId, String(recipientUserId)] : [String(recipientUserId)])).catch(() => []);
       if (recMembers.length > 0) {
         recipientMember = recMembers[0];
         if (recipientMember.user_id) recipientUserId = recipientMember.user_id;
@@ -1304,51 +1509,56 @@ export class MeetingsService {
 
     const scheduledStartAt = new Date(`${date}T09:30:00Z`);
 
-    // 3. Tạo record trong public.business_meetings
+    const hostUuid = toValidUuid(reqMember?.user_id || userId);
+    const inviteeUuid = toValidUuid(recipientUserId || recipientMember?.user_id || recipientMember?.id || recipientCode || 'invitee');
+
+    // 3. Tạo record trong public.business_meetings với status='draft', meeting_type='networking'
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.business_meetings (
-        id, title, description, meeting_type, status, scheduled_start_at,
-        created_by_user_id, organizer_user_id, created_at, updated_at
+        id, title, description, meeting_type, status, timezone, source_type, association_id,
+        scheduling_mode, scheduled_start_at, scheduled_end_at, created_by_user_id, organizer_user_id,
+        created_at, updated_at
       ) VALUES (
-        $1::uuid, $2, $3, '1on1', 'pending', $4::timestamptz,
-        $5::uuid, $5::uuid, $6::timestamptz, $6::timestamptz
+        $1::uuid, $2, $3, 'networking'::public.business_meeting_type, 'draft'::public.business_meeting_status,
+        'Asia/Ho_Chi_Minh', 'association'::public.business_meeting_source_type, 'c1983000-0000-4000-8000-000000001983'::uuid,
+        'scheduled', $4::timestamptz, $5::timestamptz, $6::uuid, $6::uuid, NOW(), NOW()
       )
     `,
       meetingId,
       title,
-      `Đối tác: ${recipientName} (${recipientCompany}). Mục đích: ${purpose}. Địa điểm: ${venue}`,
+      `Đối tác: ${recipientName} (${recipientCompany}) [${recipientCode}]. Người mời: ${requesterName} (${requesterCompany}) [${requesterCode}]. Mục đích: ${purpose}. Địa điểm: ${venue}`,
       scheduledStartAt,
-      userId,
-      now,
-    ).catch(() => {});
+      new Date(scheduledStartAt.getTime() + 3600000),
+      hostUuid,
+    ).catch((err) => {
+      console.warn('Error inserting business_meetings:', err?.message);
+    });
 
-    // 4. Thêm người tham gia vào public.business_meeting_participants
+    // 4. Thêm người tham gia vào public.business_meeting_participants trong khi status='draft'
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.business_meeting_participants (
-        id, meeting_id, user_id, role, response_status, created_at, updated_at
-      ) VALUES (
-        $1::uuid, $2::uuid, $3::uuid, 'host', 'accepted', $4::timestamptz, $4::timestamptz
-      )
-    `, crypto.randomUUID(), meetingId, userId, now).catch(() => {});
+        id, meeting_id, user_id, role, response_status, joined_at, created_at, updated_at
+      ) VALUES 
+        (gen_random_uuid(), $1::uuid, $2::uuid, 'organizer'::public.business_meeting_participant_role, 'accepted'::public.business_meeting_response_status, NOW(), NOW(), NOW()),
+        (gen_random_uuid(), $1::uuid, $3::uuid, 'required'::public.business_meeting_participant_role, 'pending'::public.business_meeting_response_status, NOW(), NOW(), NOW())
+    `, meetingId, hostUuid, inviteeUuid).catch((err) => {
+      console.warn('Error inserting business_meeting_participants:', err?.message);
+    });
 
-    const inviteeParticipantId = recipientUserId || recipientMember?.id || null;
-    if (inviteeParticipantId) {
-      await this.prisma.$executeRawUnsafe(`
-        INSERT INTO public.business_meeting_participants (
-          id, meeting_id, user_id, role, response_status, created_at, updated_at
-        ) VALUES (
-          $1::uuid, $2::uuid, $3::uuid, 'invitee', 'pending', $4::timestamptz, $4::timestamptz
-        )
-      `, crypto.randomUUID(), meetingId, inviteeParticipantId, now).catch(() => {});
-    }
+    // 4.1 Cập nhật status thành 'proposed'
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.business_meetings
+      SET status = 'proposed'::public.business_meeting_status, updated_at = NOW()
+      WHERE id = $1::uuid
+    `, meetingId).catch(() => {});
 
     // 5. ĐỒNG BỘ DỮ LIỆU SANG CRM (Bảng public.meetings) ĐỂ CRM LUÔN CÓ THÔNG TIN CUỘC HẸN
     const crmMeetingCode = `MT-CONN-${meetingId.slice(0, 8).toUpperCase()}`;
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.meetings (
-        id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, created_at, updated_at
+        id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, association_id, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, 'general', $3::date, $4, $5, 2, 'upcoming', 'Hẹn gặp kết nối 1-1', $6::jsonb, $7, NOW(), NOW()
+        gen_random_uuid(), $1, $2, 'general', $3::date, $4, $5, 2, 'upcoming', 'Hẹn gặp kết nối 1-1', $6::jsonb, $7, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
       ) ON CONFLICT DO NOTHING
     `,
       crmMeetingCode,
@@ -1357,8 +1567,8 @@ export class MeetingsService {
       time,
       venue,
       JSON.stringify([
-        { name: requesterName, company: requesterCompany, phone: requesterPhone, code: requesterCode, role: 'Người mời' },
-        { name: recipientName, company: recipientCompany, code: recipientCode, role: 'Người được mời' }
+        { name: requesterName, company: requesterCompany, phone: requesterPhone, code: requesterCode, role: 'Người mời', userId: hostUuid },
+        { name: recipientName, company: recipientCompany, code: recipientCode, role: 'Người được mời', userId: inviteeUuid }
       ]),
       venueType === 'online' ? venue : '',
     ).catch((crmErr) => {
@@ -1466,15 +1676,15 @@ export class MeetingsService {
     // 2. Cập nhật status cuộc gặp trong public.business_meetings
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.business_meetings
-      SET status = $1, updated_at = $2::timestamptz
+      SET status = $1::public.business_meeting_status, updated_at = $2::timestamptz
       WHERE id = $3::uuid
     `, finalStatus, now, meetingId);
 
     // Cập nhật response_status của participant
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.business_meeting_participants
-      SET response_status = $1, updated_at = $2::timestamptz
-      WHERE meeting_id = $3::uuid AND (user_id = $4::uuid OR role = 'invitee')
+      SET response_status = $1::public.business_meeting_response_status, updated_at = $2::timestamptz
+      WHERE meeting_id = $3::uuid AND (user_id = $4::uuid OR role = 'required' OR role = 'invitee')
     `, finalStatus === 'confirmed' ? 'accepted' : 'declined', now, meetingId, userId).catch(() => {});
 
     // Đồng bộ sang CRM public.meetings
@@ -1494,7 +1704,7 @@ export class MeetingsService {
 
     // 3. Tìm thông tin người phản hồi (Responder)
     const responderMembers = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT name, company, code, avatar_url FROM public.members WHERE user_id = $1::uuid OR id::text = $2::text LIMIT 1
+      SELECT name, company_name as company, code, avatar as avatar_url FROM public.members WHERE user_id = $1::uuid OR id::text = $2::text LIMIT 1
     `, userId, String(userId)).catch(() => []);
     const responder = responderMembers[0] || {};
     const responderName = responder.name || 'Hội viên đối tác';
@@ -1585,14 +1795,14 @@ export class MeetingsService {
     // 2. Cập nhật status trong public.business_meetings
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.business_meetings
-      SET status = 'cancelled', updated_at = $1::timestamptz
+      SET status = 'cancelled'::public.business_meeting_status, updated_at = $1::timestamptz
       WHERE id = $2::uuid
     `, now, meetingId).catch(() => {});
 
     // Cập nhật response_status trong participants
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.business_meeting_participants
-      SET response_status = 'cancelled', updated_at = $1::timestamptz
+      SET response_status = 'declined'::public.business_meeting_response_status, updated_at = $1::timestamptz
       WHERE meeting_id = $2::uuid
     `, now, meetingId).catch(() => {});
 

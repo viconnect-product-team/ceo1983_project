@@ -95,15 +95,17 @@ function CheckinScreen() {
     "vba_registrations_checkin"
   );
 
-  // Find current user's registration from real DB
+  // Find current user's registration from real DB (ignoring cancelled ones)
   const myRealRegistration = useMemo(() => {
     if (!serverRegistrations || serverRegistrations.length === 0) return null;
     return (
       serverRegistrations.find(
         (r: any) =>
-          (member?.code && r.memberCode === member.code) ||
+          r.status !== "cancelled" &&
+          r.status !== "canceled" &&
+          ((member?.code && r.memberCode === member.code) ||
           (user?.email && r.email === user.email) ||
-          (user?.id && (r.userId === user.id || r.id === user.id))
+          (user?.id && (r.userId === user.id || r.id === user.id)))
       ) || null
     );
   }, [serverRegistrations, member, user]);
@@ -135,66 +137,81 @@ function CheckinScreen() {
     phone?: string | null;
     email?: string | null;
   } | null>(null);
-  // Registered event ticket pass for member
+
+  // Registered event ticket pass for member (ignore cancelled)
   const registeredEventPass = useMemo(() => {
     if (typeof window === "undefined") return null;
     try {
       const records = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
       if (Array.isArray(records) && records.length > 0) {
-        return records[0];
+        const valid = records.filter((r: any) => r.status !== "cancelled" && r.status !== "canceled");
+        return valid[0] || null;
       }
     } catch {}
     return null;
   }, []);
 
-  // Media Department override (for testing)
+  // Listen to event status changes (registration / cancellation)
+  useEffect(() => {
+    const handleEventsChanged = () => {
+      reloadRegistrations();
+    };
+    window.addEventListener("vba.events.changed", handleEventsChanged);
+    window.addEventListener("vba-event-registered", handleEventsChanged);
+    window.addEventListener("storage", handleEventsChanged);
+    return () => {
+      window.removeEventListener("vba.events.changed", handleEventsChanged);
+      window.removeEventListener("vba-event-registered", handleEventsChanged);
+      window.removeEventListener("storage", handleEventsChanged);
+    };
+  }, [reloadRegistrations]);
+
+  // Media Department override (for testing only)
   const [mediaOverride, setMediaOverride] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("vba_is_media_department_member") === "true";
   });
 
-  const isAdmin = useMemo(() => {
-    const uRole = String(user?.role || "").toLowerCase();
-    const mRole = String((member as any)?.executiveRole || (member as any)?.role || "").toLowerCase();
-    return Boolean(
-      uRole === "admin" ||
-      uRole === "quan_tri" ||
-      uRole === "superadmin" ||
-      uRole === "platform_admin" ||
-      uRole === "bqt" ||
-      mRole === "quan_tri" ||
-      mRole === "admin"
-    );
-  }, [user, member]);
-
-  // Events where current user is assigned as QR scanner in qr_scanners
+  // Events where current user is specifically assigned as QR scanner in qr_scanners
   const assignedEvents = useMemo(() => {
     if (!serverEventsData || serverEventsData.length === 0) return [];
-    if (isAdmin || mediaOverride) return serverEventsData;
+    if (mediaOverride) return serverEventsData;
+    const myIds = [
+      user?.id,
+      member?.id,
+      member?.code,
+      member?.phone,
+      member?.email,
+      (user as any)?.email,
+    ]
+      .filter(Boolean)
+      .map((x) => String(x).toLowerCase().trim());
+
     return serverEventsData.filter((ev: any) => {
-      const scanners = ev.qrScanners || ev.qrStaff || [];
-      if (!Array.isArray(scanners)) return false;
+      let scanners = ev.qrScanners || ev.qrStaff || ev.qr_scanners || ev.qr_staff_ids || [];
+      if (typeof scanners === "string") {
+        try {
+          scanners = JSON.parse(scanners);
+        } catch {
+          scanners = [];
+        }
+      }
+      if (!Array.isArray(scanners) || scanners.length === 0) return false;
       return scanners.some((s: any) => {
         if (typeof s === "string") {
-          return (
-            (member?.code && s.includes(member.code)) ||
-            (member?.name && s.includes(member.name)) ||
-            (member?.phone && s.includes(member.phone)) ||
-            (user?.id && s.includes(user.id))
-          );
+          const lower = s.toLowerCase().trim();
+          return myIds.some((id) => lower === id || lower.includes(id));
         }
         if (typeof s === "object" && s !== null) {
-          return (
-            (member?.id && s.id === member.id) ||
-            (member?.code && s.code === member.code) ||
-            (user?.id && (s.id === user.id || s.userId === user.id)) ||
-            (member?.phone && s.phone === member.phone)
-          );
+          const objVals = [s.id, s.code, s.userId, s.memberCode, s.phone, s.email, s.name]
+            .filter(Boolean)
+            .map((x) => String(x).toLowerCase().trim());
+          return myIds.some((id) => objVals.includes(id));
         }
         return false;
       });
     });
-  }, [serverEventsData, member, user, isAdmin, mediaOverride]);
+  }, [serverEventsData, member, user, mediaOverride]);
 
   const [selectedScannerEventId, setSelectedScannerEventId] = useState<string>("");
 
@@ -210,11 +227,12 @@ function CheckinScreen() {
     return assignedEvents.find((e: any) => e.id === selectedScannerEventId) || assignedEvents[0] || null;
   }, [assignedEvents, selectedScannerEventId]);
 
-  // Check if current user is allowed to scan (must be assigned to >= 1 event or be admin/tester)
+  // Check if current user is allowed to scan:
+  // Must be strictly selected in assignedEvents (qr_scanners of an event)
   const isMediaDepartment = useMemo(() => {
-    if (isAdmin || mediaOverride) return true;
+    if (mediaOverride) return true;
     return assignedEvents.length > 0;
-  }, [isAdmin, mediaOverride, assignedEvents]);
+  }, [mediaOverride, assignedEvents]);
 
   const toggleMediaOverride = () => {
     const next = !mediaOverride;
@@ -804,32 +822,101 @@ function CheckinScreen() {
     };
   }, [stopScan]);
 
+  const hasRealTicket = Boolean(myRealRegistration || registeredEventPass);
+
   // -------------------------------------------------------------
   // PERMISSION GATE: If user does NOT belong to Media Department
   // -------------------------------------------------------------
   if (!isMediaDepartment) {
+    if (!hasRealTicket) {
+      return (
+        <div className="vba-animate min-h-screen pb-16 bg-slate-50 dark:bg-[#070d19]">
+          <MemberHeader title="Thẻ Vé Sự Kiện Điện Tử" back />
+
+          <div className="p-4 sm:p-6 max-w-lg mx-auto">
+            <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-xs">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-[#003B95]/10 dark:bg-blue-950/40 border border-[#003B95]/20 flex items-center justify-center text-[#003B95] dark:text-blue-400 mb-4">
+                <Ticket className="w-8 h-8" />
+              </div>
+
+              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                Bạn chưa có vé sự kiện nào
+              </h3>
+
+              <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                Bạn chưa đăng ký tham gia sự kiện nào của CLB Doanh Nhân CEO 1983. Khi bạn đăng ký vé sự kiện thành công, thẻ vé điện tử và mã QR check-in điểm danh sẽ tự động xuất hiện tại đây.
+              </p>
+
+              <div className="mt-6 flex flex-col gap-2.5">
+                <Link
+                  to="/association/events"
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Khám phá sự kiện & Đăng ký vé</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/association" })}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                >
+                  Về trang chủ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const ticketEventTitle =
       myRealRegistration?.eventTitle ||
       registeredEventPass?.name ||
       activeEvent?.name ||
       activeEvent?.title ||
-      "Đại hội Hội viên CLB Doanh Nhân CEO 1983 & Tuyên dương Doanh Nghiệp 2026";
+      "Sự kiện Hiệp hội CEO 1983";
     const ticketEventDate = activeEvent?.date
       ? new Date(activeEvent.date).toLocaleDateString("vi-VN") + " • " + (activeEvent.time || "07:30")
-      : (registeredEventPass?.time || "27/09/2026 • 07:30");
+      : (registeredEventPass?.time || "Theo lịch sự kiện");
     const ticketEventLocation =
       activeEvent?.location || registeredEventPass?.place || "Trung tâm Hội nghị Quốc gia, Hà Nội";
     const attendeeName =
       myRealRegistration?.memberName || member?.name || user?.fullName || (user as any)?.name || "Đại biểu Hội viên CLB CEO 1983";
-    const attendeeMemberCode = myRealRegistration?.memberCode || member?.code || "M1983-001";
+    const attendeePosition =
+      myRealRegistration?.position ||
+      (member as any)?.jobTitle ||
+      (member as any)?.executiveRole ||
+      (member as any)?.title ||
+      "Thành viên, UV BCH";
+    const attendeeTicketType =
+      myRealRegistration?.ticketType ||
+      registeredEventPass?.ticketType ||
+      "Vé Tiêu Chuẩn (1 vé)";
+    const attendeeTime =
+      activeEvent?.time
+        ? `${activeEvent.time} | ${activeEvent.date ? new Date(activeEvent.date).toLocaleDateString("vi-VN") : "2026"}`
+        : (registeredEventPass?.time || "08:00 | 2026");
+    const attendeeMemberCode = myRealRegistration?.memberCode || member?.code || "M1983";
     const attendeeCompany =
       (member as any)?.companyName || (user as any)?.company || (member as any)?.company || "CLB Doanh nhân CEO 1983";
     const attendeeSeat =
       myRealRegistration?.seatAssignment || (member as any)?.seatAssignment || registeredEventPass?.seatAssignment || "Bàn VIP 02 - Ghế 04";
-    const attendeeLucky =
-      myRealRegistration?.luckyNumber || registeredEventPass?.luckyNumber || `#1983-${(member?.code || "88").slice(-3)}`;
+    const attendeeLuckyRaw =
+      myRealRegistration?.luckyNumber || registeredEventPass?.luckyNumber || `#${(member?.code || "88").slice(-3)}`;
+    const attendeeLucky = attendeeLuckyRaw.startsWith("#") ? attendeeLuckyRaw : `#${attendeeLuckyRaw}`;
     const myTicketCode =
-      myRealRegistration?.id || registeredEventPass?.ticketCode || `TKT-${activeEvent?.id || "EVT"}-${attendeeMemberCode}`;
+      myRealRegistration?.ticketCode ||
+      myRealRegistration?.id ||
+      registeredEventPass?.ticketCode ||
+      `TKT-${activeEvent?.id || "EVT"}-${attendeeMemberCode}`;
+    const displayTicketCode =
+      myRealRegistration?.ticketCode ||
+      registeredEventPass?.ticketCode ||
+      (myTicketCode.startsWith("REG-EV-")
+        ? myTicketCode
+        : `REG-EV-${(myRealRegistration?.id || attendeeMemberCode).replace(/[^a-zA-Z0-9]/g, "").slice(-5).toUpperCase()}`);
     const myQrPayload = `event_ticket:${activeEvent?.id || "EVT-1983"}:${attendeeMemberCode}:${encodeURIComponent(attendeeSeat)}:${encodeURIComponent(attendeeLucky)}`;
     const isChecked = Boolean(myRealRegistration?.checkedInAt) || Boolean(getCheckedInRegistry()[myTicketCode]);
 
@@ -838,47 +925,46 @@ function CheckinScreen() {
         <MemberHeader title="Thẻ Vé Sự Kiện Điện Tử" back />
 
         <div className="p-4 sm:p-6 max-w-lg mx-auto space-y-4">
-          {/* Official Event Ticket Pass Card */}
-          <div id="tour-checkin-ticket" className="overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-[0_8px_30px_rgba(245,158,11,0.2)]">
-            {/* Header ribbon */}
-            <div className="bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] px-4 py-3 text-center text-xs font-black text-amber-300 tracking-wider uppercase flex items-center justify-center gap-2 border-b border-amber-400/40">
-              <Sparkles className="h-4 w-4 text-amber-400" />
-              <span>THẺ VÉ ĐIỆN TỬ • ĐẠI BIỂU HỘI VIÊN CHÍNH THỨC</span>
+          {/* Official Event Ticket Pass Card matching Image 3 */}
+          <div id="tour-checkin-ticket" className="overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl">
+            {/* Header Ticket Banner */}
+            <div className="bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#002B70] p-4 text-white relative text-center">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-400/60 px-3 py-1 text-[11px] font-extrabold text-amber-300 uppercase tracking-wider mb-2">
+                <Sparkles className="h-3 w-3 text-amber-300" />
+                <span>VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-white leading-snug uppercase">
+                {ticketEventTitle}
+              </h3>
+              <p className="text-xs text-white/80 mt-1 flex items-center justify-center gap-1">
+                <span>📍</span>
+                <span>{ticketEventLocation}</span>
+              </p>
             </div>
 
-            <div className="p-6 text-center space-y-4">
-              <div>
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/40 px-3 py-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
-                  <BadgeCheck className="h-3.5 w-3.5 text-amber-500" />
-                  VIP EVENT PASS 2026
-                </span>
-                <h3 className="mt-2 text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug">
-                  {ticketEventTitle}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center justify-center gap-1.5 flex-wrap">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{ticketEventDate}</span>
-                  <span>•</span>
-                  <span>{ticketEventLocation}</span>
-                </p>
+            {/* Ticket Body with QR Code */}
+            <div className="p-4 sm:p-5 text-center space-y-3.5">
+              <div className="bg-white p-3.5 rounded-2xl border-2 border-dashed border-amber-400/60 inline-block shadow-sm">
+                <div className="relative mx-auto w-52 h-52 sm:w-56 sm:h-56 flex items-center justify-center">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(myQrPayload)}`}
+                    alt="QR Thẻ vé sự kiện"
+                    className="w-full h-full object-contain"
+                  />
+                  {isChecked && (
+                    <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs rounded-xl flex flex-col items-center justify-center text-emerald-400 p-3">
+                      <CheckCircle2 className="h-12 w-12 text-emerald-400 animate-bounce" />
+                      <span className="mt-2 text-sm font-black text-white">ĐÃ CHECK-IN THÀNH CÔNG</span>
+                      <span className="text-[11px] text-emerald-300 font-semibold">Chào mừng Quý Đại biểu!</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs font-mono font-black text-[#003B95] mt-2.5 tracking-wider">
+                  MÃ VÉ: {displayTicketCode}
+                </div>
               </div>
 
-              {/* QR Code Container */}
-              <div className="relative mx-auto w-60 h-60 rounded-3xl bg-white p-3 shadow-lg border-2 border-amber-400/80 flex flex-col items-center justify-center">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(myQrPayload)}`}
-                  alt="QR Thẻ vé sự kiện"
-                  className="w-full h-full object-contain"
-                />
-                {isChecked && (
-                  <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs rounded-3xl flex flex-col items-center justify-center text-emerald-400 p-3">
-                    <CheckCircle2 className="h-12 w-12 text-emerald-400 animate-bounce" />
-                    <span className="mt-2 text-sm font-black text-white">ĐÃ CHECK-IN THÀNH CÔNG</span>
-                    <span className="text-[11px] text-emerald-300 font-semibold">Chào mừng Quý Đại biểu!</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Status Badge */}
+              {/* Status Indicator */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border">
                 {isChecked ? (
                   <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
@@ -894,42 +980,60 @@ function CheckinScreen() {
               </div>
 
               {/* Attendee Details Card */}
-              <div id="tour-checkin-seat" className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-4 text-left space-y-2.5">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Đại biểu:</span>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">{attendeeName}</span>
+              <div id="tour-checkin-seat" className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3.5 border border-slate-200 dark:border-slate-700 text-xs text-left space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">Đại biểu tham dự:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{attendeeName}</span>
                 </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Mã hội viên:</span>
-                  <span className="text-xs font-mono font-bold text-[#003B95] dark:text-amber-400">{attendeeMemberCode}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">Chức vụ:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{attendeePosition}</span>
                 </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Đơn vị / Doanh nghiệp:</span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{attendeeCompany}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">Doanh nghiệp:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{attendeeCompany}</span>
                 </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Vị trí chỗ ngồi:</span>
-                  <span className="text-xs font-extrabold text-[#003B95] dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-300/60">
-                    {attendeeSeat}
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">Thời gian:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{attendeeTime}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">Hạng vé:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{attendeeTicketType}</span>
+                </div>
+
+                {/* Randomly Assigned Seat Display */}
+                <div className="flex justify-between items-center bg-indigo-50/80 dark:bg-indigo-950/40 rounded-lg p-2.5 border border-indigo-200/60 dark:border-indigo-800/60">
+                  <div className="text-left">
+                    <span className="text-[10px] font-bold text-indigo-800 dark:text-indigo-300 uppercase block">
+                      VỊ TRÍ CHỖ NGỒI (HỆ THỐNG XẾP TỰ ĐỘNG):
+                    </span>
+                    <span className="font-bold text-xs text-indigo-950 dark:text-indigo-100 mt-0.5 block">
+                      {attendeeSeat}
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-indigo-500/80 dark:text-indigo-400 text-right italic max-w-[120px] leading-tight">
+                    Chỉ BTT, BQT và Admin mới có quyền đổi chỗ
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Số may mắn bốc thăm:</span>
-                  <span className="text-xs font-extrabold text-[#003B95] dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-300/60">
+
+                {/* Lucky Draw Box */}
+                <div className="flex justify-between items-center bg-amber-50/80 dark:bg-amber-950/40 rounded-lg p-2 border border-amber-300/60 dark:border-amber-700/60">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    Số may mắn (Quay thưởng):
+                  </span>
+                  <span className="font-mono font-black text-sm text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-800 px-3 py-0.5 rounded-md border border-amber-400/50 shadow-xs">
                     {attendeeLucky}
                   </span>
                 </div>
               </div>
 
-              {/* Instructions banner */}
-              <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-4 border border-amber-200 dark:border-amber-800/80 text-left space-y-1.5">
-                <div className="flex items-center gap-2 text-xs font-black text-amber-900 dark:text-amber-300">
-                  <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Hướng dẫn điểm danh tại sự kiện:</span>
-                </div>
-                <p className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed">
-                  Quý Đại biểu vui lòng giữ màn hình sáng và <b>xuất trình mã QR trên thẻ này cho Ban Truyền Thông / Ban Tổ Chức</b> tại quầy đón tiếp để quét xác nhận check-in vào hội trường và nhận bộ tài liệu sự kiện.
-                </p>
+              {/* Informational notice */}
+              <div className="rounded-lg bg-blue-50/90 dark:bg-blue-950/60 p-3 text-[11px] leading-relaxed text-blue-900 dark:text-blue-300 text-left border border-blue-200/60 dark:border-blue-900/40">
+                ℹ️ <b>Lưu ý chỗ ngồi & check-in:</b> Chỗ ngồi được hệ thống phân bổ ngẫu nhiên theo bàn tiệc.
+                Khi đến sự kiện, Anh/Chị vui lòng xuất trình mã QR này để Ban Truyền Thông quét mã QR xác nhận và
+                hướng dẫn vào đúng vị trí bàn tiệc.
               </div>
 
               {/* Security & Permissions notice */}
@@ -1055,76 +1159,153 @@ function CheckinScreen() {
       </div>
 
       {checkinMethod === "ticket" ? (
-        <div className="px-4 pt-3">
-          <div className="overflow-hidden rounded-3xl border-2 border-[#003B95] bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl">
-            {/* Header ribbon */}
-            <div className="bg-[#003B95] px-4 py-2.5 text-center text-xs font-extrabold text-white tracking-wider uppercase">
-              Vé Điện Tử & Thẻ Check-in Sự Kiện
+        !hasRealTicket ? (
+          <div className="px-4 pt-3">
+            <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-xs">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-[#003B95]/10 dark:bg-blue-950/40 border border-[#003B95]/20 flex items-center justify-center text-[#003B95] dark:text-blue-400 mb-4">
+                <Ticket className="w-8 h-8" />
+              </div>
+
+              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                Bạn chưa có vé sự kiện nào
+              </h3>
+
+              <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                Bạn chưa đăng ký tham gia sự kiện nào của CLB Doanh Nhân CEO 1983. Khi bạn đăng ký vé sự kiện thành công, thẻ vé điện tử và mã QR check-in điểm danh sẽ tự động xuất hiện tại đây.
+              </p>
+
+              <div className="mt-6 flex flex-col gap-2.5 max-w-xs mx-auto">
+                <Link
+                  to="/association/events"
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span>Khám phá sự kiện & Đăng ký vé</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setCheckinMethod("scan")}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                >
+                  Chuyển sang Quét mã Standee sự kiện
+                </button>
+              </div>
             </div>
-            <div className="p-6 text-center space-y-4">
-              <div>
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-3 py-1 text-[11px] font-bold text-[#003B95] dark:text-blue-300">
-                  <Sparkles className="h-3 w-3" /> VIP EVENT PASS 2026
-                </span>
-                <h3 className="mt-2 text-base font-bold text-slate-900 dark:text-white leading-snug">
-                  {registeredEventPass?.eventTitle || "Đại hội Hội viên CLB Doanh Nhân CEO 1983 & Tuyên dương Doanh Nghiệp"}
+          </div>
+        ) : (
+          <div className="px-4 pt-3">
+            {/* Official Event Ticket Pass Card matching Image 3 */}
+            <div className="overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl">
+              {/* Header Ticket Banner */}
+              <div className="bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#002B70] p-4 text-white relative text-center">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-400/60 px-3 py-1 text-[11px] font-extrabold text-amber-300 uppercase tracking-wider mb-2">
+                  <Sparkles className="h-3 w-3 text-amber-300" />
+                  <span>VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-white leading-snug uppercase">
+                  {registeredEventPass?.name || myRealRegistration?.eventTitle || "Vé Sự Kiện CEO 1983"}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {registeredEventPass?.time || "27/09/2026 • 07:30"} • {registeredEventPass?.location || "Trung tâm Hội nghị Quốc gia, Hà Nội"}
+                <p className="text-xs text-white/80 mt-1 flex items-center justify-center gap-1">
+                  <span>📍</span>
+                  <span>{registeredEventPass?.place || activeEvent?.location || "InterContinental Hanoi Landmark72, Phạm Hùng, Hà Nội"}</span>
                 </p>
               </div>
 
-              {/* QR code container */}
-              <div className="mx-auto w-56 h-56 rounded-2xl bg-white p-3 shadow-md border-2 border-[#003B95] flex items-center justify-center">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(`event_ticket:${registeredEventPass?.eventId || registeredEventPass?.id || "EVT-1983-CONGRESS"}:${member?.code || "M1983-001"}:${encodeURIComponent((member as any)?.seatAssignment || "Bàn VIP 02 - Ghế 04")}:${encodeURIComponent(registeredEventPass?.luckyNumber || "#1983-88")}`)}`}
-                  alt="QR Vé sự kiện"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <p className="text-[11px] text-[#003B95] dark:text-blue-400 font-medium">
-                Xuất trình mã QR sự kiện này cho Ban Lễ tân hoặc Cán bộ soát vé tại cửa để quét check-in vào hội trường
-              </p>
+              {/* Ticket Body with QR Code */}
+              <div className="p-4 sm:p-5 text-center space-y-3.5">
+                <div className="bg-white p-3.5 rounded-2xl border-2 border-dashed border-amber-400/60 inline-block shadow-sm">
+                  <div className="relative mx-auto w-52 h-52 sm:w-56 sm:h-56 flex items-center justify-center">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
+                        `event_ticket:${registeredEventPass?.eventId || registeredEventPass?.id || myRealRegistration?.eventId || "EVT"}:${member?.code || "M1983"}:${encodeURIComponent((member as any)?.seatAssignment || registeredEventPass?.seatAssignment || "Bàn VIP 02 - Ghế 04")}:${encodeURIComponent(registeredEventPass?.luckyNumber || myRealRegistration?.luckyNumber || "#1983")}`
+                      )}`}
+                      alt="QR Vé sự kiện"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="text-xs font-mono font-black text-[#003B95] mt-2.5 tracking-wider">
+                    MÃ VÉ: {registeredEventPass?.ticketCode || myRealRegistration?.ticketCode || `REG-EV-${(myRealRegistration?.id || member?.code || "MV7E3").replace(/[^a-zA-Z0-9]/g, "").slice(-5).toUpperCase()}`}
+                  </div>
+                </div>
 
-              {/* Attendee Details Card */}
-              <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-4 text-left space-y-2.5">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Đại biểu:</span>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">{member?.name || (user as any)?.name || "Hội viên CLB CEO 1983"}</span>
-                </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Mã hội viên:</span>
-                  <span className="text-xs font-mono font-bold text-[#003B95] dark:text-blue-400">{member?.code || "M1983-001"}</span>
-                </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Chức vụ / Đơn vị:</span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{(member as any)?.companyName || member?.title || "CLB Doanh nhân CEO 1983"}</span>
-                </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Vị trí chỗ ngồi:</span>
-                  <span className="text-xs font-extrabold text-[#003B95] dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
-                    {(member as any)?.seatAssignment || "Bàn VIP 02 - Ghế 04"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Mã may mắn bốc thăm:</span>
-                  <span className="text-xs font-extrabold text-[#003B95] dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
-                    {registeredEventPass?.luckyNumber || `#1983-${(member?.code || "88").slice(-3)}`}
-                  </span>
-                </div>
-              </div>
+                {/* Attendee Details Card */}
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3.5 border border-slate-200 dark:border-slate-700 text-xs text-left space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Đại biểu tham dự:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">{member?.name || (user as any)?.name || "Hội viên CLB CEO 1983"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Chức vụ:</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{(member as any)?.executiveRole || (member as any)?.jobTitle || member?.title || "Thành viên, UV BCH"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Doanh nghiệp:</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{(member as any)?.companyName || (user as any)?.company || "Công ty thành viên CEO 1983"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Thời gian:</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {registeredEventPass?.date ? new Date(registeredEventPass.date).toLocaleDateString("vi-VN") : "20/10/2026"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 dark:text-slate-400">Hạng vé:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {registeredEventPass?.ticketType || myRealRegistration?.ticketType || "Vé Tiêu Chuẩn (1 vé)"}
+                    </span>
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => setCheckinMethod("scan")}
-                className="w-full py-3 rounded-xl bg-[#003B95] text-white font-bold text-xs hover:bg-[#002b6e] transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
-              >
-                <ScanLine className="h-4 w-4" />
-                <span>Chuyển sang Quét mã Standee sự kiện</span>
-              </button>
+                  {/* Randomly Assigned Seat Display */}
+                  <div className="flex justify-between items-center bg-indigo-50/80 dark:bg-indigo-950/40 rounded-lg p-2.5 border border-indigo-200/60 dark:border-indigo-800/60">
+                    <div className="text-left">
+                      <span className="text-[10px] font-bold text-indigo-800 dark:text-indigo-300 uppercase block">
+                        VỊ TRÍ CHỖ NGỒI (HỆ THỐNG XẾP TỰ ĐỘNG):
+                      </span>
+                      <span className="font-bold text-xs text-indigo-950 dark:text-indigo-100 mt-0.5 block">
+                        {registeredEventPass?.seatAssignment || (member as any)?.seatAssignment || "Bàn VIP 02 - Ghế 04"}
+                      </span>
+                    </div>
+                    <span className="text-[9.5px] text-indigo-500/80 dark:text-indigo-400 text-right italic max-w-[120px] leading-tight">
+                      Chỉ BTT, BQT và Admin mới có quyền đổi chỗ
+                    </span>
+                  </div>
+
+                  {/* Lucky Draw Box */}
+                  <div className="flex justify-between items-center bg-amber-50/80 dark:bg-amber-950/40 rounded-lg p-2 border border-amber-300/60 dark:border-amber-700/60">
+                    <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      Số may mắn (Quay thưởng):
+                    </span>
+                    <span className="font-mono font-black text-sm text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-800 px-3 py-0.5 rounded-md border border-amber-400/50 shadow-xs">
+                      {(() => {
+                        const lucky = registeredEventPass?.luckyNumber || myRealRegistration?.luckyNumber || "#2337";
+                        return lucky.startsWith("#") ? lucky : `#${lucky}`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Informational notice */}
+                <div className="rounded-lg bg-blue-50/90 dark:bg-blue-950/60 p-3 text-[11px] leading-relaxed text-blue-900 dark:text-blue-300 text-left border border-blue-200/60 dark:border-blue-900/40">
+                  ℹ️ <b>Lưu ý chỗ ngồi & check-in:</b> Chỗ ngồi được hệ thống phân bổ ngẫu nhiên theo bàn tiệc.
+                  Khi đến sự kiện, Anh/Chị vui lòng xuất trình mã QR này để Ban Truyền Thông quét mã QR xác nhận và
+                  hướng dẫn vào đúng vị trí bàn tiệc.
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCheckinMethod("scan")}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95"
+                >
+                  <ScanLine className="h-4 w-4 text-slate-950" />
+                  <span>Chuyển sang Quét mã Standee sự kiện</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )
       ) : (
         <>
           {/* Quick helper tip */}

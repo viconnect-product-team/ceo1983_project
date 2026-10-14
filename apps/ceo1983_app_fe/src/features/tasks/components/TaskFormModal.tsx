@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X,
   Plus,
@@ -6,6 +6,8 @@ import {
   Calendar,
   Building,
   User,
+  Users,
+  UserCheck,
   CheckCircle2,
   Flame,
   FileText,
@@ -25,6 +27,7 @@ import {
   Layers,
   ListChecks,
   Check,
+  Search,
 } from 'lucide-react';
 import type { TaskItem, TaskPriority, TaskStatus, TaskSubtask, TaskAttachment, MeetingPlatform } from '../types';
 import { TASK_DEPARTMENTS, TASK_PRIORITY_CONFIG, TASK_STATUS_CONFIG, MEETING_PLATFORMS } from '../types';
@@ -83,6 +86,9 @@ export function TaskFormModal({
   const [assigneeEmail, setAssigneeEmail] = useState('');
   const [assigneeName, setAssigneeName] = useState('');
   const [assigneeRole, setAssigneeRole] = useState('Phụ trách');
+  const [assignees, setAssignees] = useState<Array<{ id?: string; name: string; avatar?: string; role?: string; email?: string }>>([]);
+  const [selectedMemberToAdd, setSelectedMemberToAdd] = useState('');
+  const [customAssigneeInput, setCustomAssigneeInput] = useState('');
   const [supervisorName, setSupervisorName] = useState('Ban Điều Hành');
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
@@ -94,11 +100,9 @@ export function TaskFormModal({
   const [description, setDescription] = useState('');
   const [deliverables, setDeliverables] = useState('');
 
-  // Dynamic Task attributes: Budget, Acceptance Criteria, Attachments
+  // Dynamic Task attributes: Budget, Attachments
   const [estimatedBudget, setEstimatedBudget] = useState<string>('');
   const [actualBudget, setActualBudget] = useState<string>('');
-  const [acceptanceCriteria, setAcceptanceCriteria] = useState<string[]>([]);
-  const [newCriteria, setNewCriteria] = useState('');
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -116,10 +120,81 @@ export function TaskFormModal({
 
   // Delegation Scope & Assignable Members state
   const [allowedDepartments, setAllowedDepartments] = useState<string[]>([...TASK_DEPARTMENTS]);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>(() => {
+    if (defaultDepartment) return [defaultDepartment];
+    return [TASK_DEPARTMENTS[0]];
+  });
   const [canAssignAll, setCanAssignAll] = useState(true);
   const [memberList, setMemberList] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Automatic Creator Name and Role/Title (Requirement 4)
+  const creatorName = useMemo(() => {
+    return user?.fullName || user?.name || user?.username || 'Ban Quản trị';
+  }, [user]);
+
+  const creatorRole = useMemo(() => {
+    if (user?.title) return user.title;
+    if (isPresident) return 'Chủ tịch Hiệp hội';
+    if (isAdmin) return 'Quản trị viên';
+    if (isGeneralSecretary) return 'Tổng thư ký';
+    if (isDepartmentLeader) return `Trưởng ${userDepartment || 'Ban chuyên môn'}`;
+    if (user?.role === 'quan_tri') return 'Ban Quản trị';
+    if (user?.role === 'ban_dieu_hanh') return 'Ban Điều Hành';
+    return user?.role || 'Ban Điều Hành';
+  }, [user, isPresident, isAdmin, isGeneralSecretary, isDepartmentLeader, userDepartment]);
+
+  // Dynamic API call to fetch members of selected department(s)
+  const loadMembersForDepartments = useCallback(async (depts: string[]) => {
+    if (!depts || depts.length === 0) return;
+    setLoadingMembers(true);
+    try {
+      const q = encodeURIComponent(depts.join(','));
+      const res: any = await fetchNestApi(`/tasks/assignable-members?department=${q}`).catch(() => null);
+      if (res && Array.isArray(res.members) && res.members.length > 0) {
+        setMemberList(res.members);
+      } else {
+        const fallback: any = await fetchNestApi(`/members?department=${q}`).catch(() => null);
+        if (Array.isArray(fallback) && fallback.length > 0) {
+          setMemberList(fallback);
+        } else {
+          const allMems: any = await fetchNestApi(`/members`).catch(() => []);
+          if (Array.isArray(allMems)) {
+            const filtered = allMems.filter((m) => {
+              const d = (m.department || '').toLowerCase();
+              return depts.some((target) => d.includes(target.toLowerCase()) || target.toLowerCase().includes(d));
+            });
+            setMemberList(filtered.length > 0 ? filtered : allMems);
+          }
+        }
+      }
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, []);
+
+  const handleToggleDept = (deptName: string) => {
+    setSelectedDepartments((prev) => {
+      let next: string[];
+      if (prev.includes(deptName)) {
+        if (prev.length === 1) return prev; // Keep at least one selected
+        next = prev.filter((d) => d !== deptName);
+      } else {
+        next = [...prev, deptName];
+      }
+      setDepartment(next.join(', '));
+      void loadMembersForDepartments(next);
+      return next;
+    });
+  };
+
+  const handleDepartmentChange = (deptName: string) => {
+    setDepartment(deptName);
+    setSelectedDepartments([deptName]);
+    void loadMembersForDepartments([deptName]);
+  };
 
   // Fetch assignable members & allowed departments from backend
   useEffect(() => {
@@ -133,6 +208,7 @@ export function TaskFormModal({
             setAllowedDepartments(res.allowedDepartments);
             if (!initialData && !defaultDepartment) {
               setDepartment(res.allowedDepartments[0]);
+              setSelectedDepartments([res.allowedDepartments[0]]);
             }
           }
           if (Array.isArray(res.members)) {
@@ -167,6 +243,13 @@ export function TaskFormModal({
       setAssigneeEmail(initialData.assignee?.email || '');
       setAssigneeName(initialData.assignee?.name || '');
       setAssigneeRole(initialData.assignee?.role || '');
+      if (initialData.assignees && initialData.assignees.length > 0) {
+        setAssignees(initialData.assignees);
+      } else if (initialData.assignee?.name) {
+        setAssignees([initialData.assignee]);
+      } else {
+        setAssignees([]);
+      }
       setSupervisorName(initialData.supervisor?.name || 'Ban Điều Hành');
       setStatus(initialData.status || 'TODO');
       setPriority(initialData.priority || 'MEDIUM');
@@ -177,7 +260,6 @@ export function TaskFormModal({
       setDeliverables(initialData.deliverables || '');
       setSubtasks(initialData.subtasks || []);
       setAttachments(initialData.attachments || []);
-      setAcceptanceCriteria(initialData.acceptanceCriteria || []);
       setEstimatedBudget(
         initialData.budget?.estimated !== undefined ? String(initialData.budget.estimated) : '',
       );
@@ -208,7 +290,10 @@ export function TaskFormModal({
       setAssigneeEmail('');
       setAssigneeName('');
       setAssigneeRole('Phụ trách');
-      setSupervisorName(user?.name ? `${user.name} (Ban Điều Hành)` : 'Ban Điều Hành');
+      setAssignees([]);
+      setSelectedMemberToAdd('');
+      setCustomAssigneeInput('');
+      setSupervisorName(creatorName);
       setStatus(defaultStatus);
       setPriority('MEDIUM');
       setStartDate(defaultDate || new Date().toISOString().split('T')[0]);
@@ -222,7 +307,6 @@ export function TaskFormModal({
       setDeliverables('');
       setSubtasks([]);
       setAttachments([]);
-      setAcceptanceCriteria([]);
       setEstimatedBudget('');
       setActualBudget('');
 
@@ -233,21 +317,50 @@ export function TaskFormModal({
       setMeetingTime('');
       setMeetingNote('');
     }
-  }, [initialData, defaultStatus, open, defaultDepartment]);
+  }, [initialData, defaultStatus, open, defaultDepartment, creatorName, allowedDepartments]);
 
   if (!open) return null;
 
-  // Filter members list by currently selected department if restricted
-  const filteredMemberList = memberList.filter((m) => {
-    if (canAssignAll) {
+  // Filter members list by currently selected department (Requirement 1)
+  const deptMembers = useMemo(() => {
+    return memberList.filter((m) => {
       if (!department || department === 'ALL') return true;
-      const deptNormalized = department.replace(/^Ban\s+/i, '').toLowerCase().trim();
-      const mDept = (m.department || '').toLowerCase();
-      const mExec = (m.executive_role || m.executiveRole || '').toLowerCase();
-      return mDept.includes(deptNormalized) || mExec.includes(deptNormalized) || mDept.includes('hội viên');
+      const deptNormalized = department.replace(/^Ban\s+/i, '').toLowerCase().replace(/quản trị/g, 'điều hành').trim();
+      const mDept = (m.department || '').toLowerCase().replace(/quản trị/g, 'điều hành');
+      const mExec = (m.executive_role || m.executiveRole || '').toLowerCase().replace(/quản trị/g, 'điều hành');
+      const matched = mDept.includes(deptNormalized) || mExec.includes(deptNormalized) || deptNormalized.includes(mDept) || (deptNormalized.includes('thành viên') && mDept.includes('hội viên'));
+      if (!matched && !canAssignAll) return false;
+      if (!memberSearchQuery.trim()) return matched || canAssignAll;
+      const q = memberSearchQuery.toLowerCase().trim();
+      return (
+        (m.name || '').toLowerCase().includes(q) ||
+        (m.code || '').toLowerCase().includes(q) ||
+        (m.position || '').toLowerCase().includes(q) ||
+        (m.company || '').toLowerCase().includes(q) ||
+        (m.email || '').toLowerCase().includes(q)
+      );
+    });
+  }, [memberList, department, canAssignAll, memberSearchQuery]);
+
+  const toggleAssignee = (m: any) => {
+    const isAlreadySelected = assignees.some(
+      (a) => (a.id && a.id === m.id) || (a.name && a.name.toLowerCase() === m.name.toLowerCase())
+    );
+    if (isAlreadySelected) {
+      setAssignees((prev) => prev.filter((a) => (a.id ? a.id !== m.id : a.name.toLowerCase() !== m.name.toLowerCase())));
+    } else {
+      setAssignees((prev) => [
+        ...prev,
+        {
+          id: m.id,
+          name: m.name,
+          avatar: m.avatar_url || m.avatarUrl || m.avatar,
+          role: m.position || m.company || m.executive_role || 'Phụ trách',
+          email: m.email || '',
+        },
+      ]);
     }
-    return true;
-  });
+  };
 
   // Handle Subtasks
   const handleAddSubtask = () => {
@@ -267,16 +380,57 @@ export function TaskFormModal({
     setSubtasks((prev) => prev.filter((s) => s.id !== id));
   };
 
-  // Handle Acceptance Criteria
-  const handleAddCriteria = () => {
-    if (!newCriteria.trim()) return;
-    setAcceptanceCriteria((prev) => [...prev, newCriteria.trim()]);
-    setNewCriteria('');
+  const handleAddMemberToAssignees = (memberId: string) => {
+    if (!memberId) return;
+    const m = memberList.find((item) => item.id === memberId);
+    if (!m) return;
+    if (assignees.some((a) => (a.id && a.id === m.id) || a.name.toLowerCase() === m.name.toLowerCase())) {
+      toast.info('Người này đã có trong danh sách');
+      return;
+    }
+    setAssignees((prev) => [
+      ...prev,
+      {
+        id: m.id,
+        name: m.name,
+        avatar: m.avatar_url || m.avatarUrl || m.avatar,
+        role: m.position || m.company || m.executive_role || 'Phụ trách',
+        email: m.email || '',
+      },
+    ]);
+    setSelectedMemberToAdd('');
   };
 
-  const handleRemoveCriteria = (index: number) => {
-    setAcceptanceCriteria((prev) => prev.filter((_, idx) => idx !== index));
+  const handleAddCustomAssignee = () => {
+    if (!customAssigneeInput.trim()) return;
+    const trimmed = customAssigneeInput.trim();
+    if (assignees.some((a) => a.name.toLowerCase() === trimmed.toLowerCase())) {
+      toast.info('Người này đã có trong danh sách');
+      return;
+    }
+    setAssignees((prev) => [
+      ...prev,
+      {
+        name: trimmed,
+        role: 'Phụ trách',
+      },
+    ]);
+    setCustomAssigneeInput('');
   };
+
+  const handleRemoveAssignee = (index: number) => {
+    setAssignees((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleQuickProgress = (val: number) => {
+    setProgress(val);
+    if (val === 100) {
+      setStatus('DONE');
+    } else if (val > 0 && status === 'TODO') {
+      setStatus('IN_PROGRESS');
+    }
+  };
+
 
   // Handle Multi-format File Upload
   const handleTriggerUpload = () => {
@@ -360,22 +514,29 @@ export function TaskFormModal({
             }
           : undefined;
 
+      const primaryAssignee = assignees[0] || {
+        id: assigneeId || undefined,
+        name: assigneeName.trim() || 'Người quản trị',
+        email: assigneeEmail.trim() || undefined,
+        role: assigneeRole.trim(),
+      };
+
       await onSubmit({
         code: code.trim() || undefined,
         title: title.trim(),
         category,
         department,
         budget: budgetObj,
-        acceptanceCriteria: acceptanceCriteria.length > 0 ? acceptanceCriteria : undefined,
-        assignee: {
-          id: assigneeId || undefined,
-          name: assigneeName.trim() || 'Người quản trị',
-          email: assigneeEmail.trim() || undefined,
-          role: assigneeRole.trim(),
+        assignee: primaryAssignee,
+        assignees: assignees.length > 0 ? assignees : [primaryAssignee],
+        creator: {
+          id: user?.id,
+          name: creatorName,
+          role: creatorRole,
         },
         supervisor: {
-          name: supervisorName.trim() || 'Ban Điều Hành',
-          role: 'Giám sát',
+          name: supervisorName.trim() || creatorName,
+          role: creatorRole || 'Giám sát',
         },
         status,
         priority,
@@ -415,10 +576,10 @@ export function TaskFormModal({
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#003B95] shadow-xs" />
-              {isEditing ? 'Chỉnh sửa Công việc' : 'Giao Việc Mới (Task Delegation)'}
+              {isEditing ? 'Chỉnh sửa công việc' : 'Giao việc mới'}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Quy chuẩn điều phối nhiệm vụ, phân quyền dữ liệu và nghiệm thu kết quả hiệp hội CEO 1983
+              Phân công nhiệm vụ và theo dõi tiến độ
             </p>
           </div>
           <button
@@ -428,31 +589,6 @@ export function TaskFormModal({
           >
             <X className="w-5 h-5" />
           </button>
-        </div>
-
-        {/* Delegation Scope Notice Banner */}
-        <div className="px-6 py-2.5 bg-blue-50/70 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/50 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-medium">
-            <ShieldCheck className="w-4 h-4 text-[#003B95] dark:text-blue-400 shrink-0" />
-            <span>
-              {canAssignAll ? (
-                <>
-                  <strong className="font-bold">Cấp quyền:</strong> Chủ tịch / Quản trị viên — Có thể giao việc cho toàn bộ các Ban và Hội viên trong Hiệp hội.
-                </>
-              ) : isGeneralSecretary ? (
-                <>
-                  <strong className="font-bold">Cấp quyền:</strong> Tổng thư ký — Giới hạn phạm vi giao việc cho các thành viên Ban Thư Ký.
-                </>
-              ) : (
-                <>
-                  <strong className="font-bold">Cấp quyền:</strong> Trưởng ban — Giới hạn phạm vi giao việc cho các thành viên thuộc chính ban của mình.
-                </>
-              )}
-            </span>
-          </div>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-800 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
-            {canAssignAll ? 'Toàn quyền' : 'Theo Ban chuyên môn'}
-          </span>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
@@ -485,27 +621,32 @@ export function TaskFormModal({
             </div>
           </div>
 
-          {/* Department, Category, Priority */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-slate-500" />
-                Ban / Bộ phận phụ trách <span className="text-rose-500">*</span>
+          {/* Department Selection (Requirement 1) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5 text-[#003B95]" />
+                <span>Ban / Bộ phận phụ trách</span>
+                <span className="text-rose-500">*</span>
               </label>
-              <select
-                value={department}
-                disabled={!canAssignAll && allowedDepartments.length === 1}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none disabled:opacity-75 disabled:bg-slate-100 dark:disabled:bg-slate-800/60"
-              >
-                {allowedDepartments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
+              <span className="text-[11px] text-muted-foreground">Tự động tải danh sách hội viên theo ban</span>
             </div>
 
+            <select
+              value={department}
+              onChange={(e) => handleDepartmentChange(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 font-medium focus:border-[#003B95] outline-none"
+            >
+              {allowedDepartments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category & Priority */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-[#003B95]" />
@@ -543,72 +684,182 @@ export function TaskFormModal({
             </div>
           </div>
 
-          {/* People: Assignee & Supervisor */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-slate-500" />
-                  Người nhận việc (Assignee) <span className="text-rose-500">*</span>
-                </label>
-                {assigneeEmail && (
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium truncate max-w-[170px]" title={assigneeEmail}>
-                    {assigneeEmail}
-                  </span>
-                )}
+          {/* Creator Information & Authority (Requirement 4) */}
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-[#003B95]/10 dark:bg-[#003B95]/30 flex items-center justify-center text-[#003B95] dark:text-blue-300 flex-shrink-0 font-black text-sm">
+                <UserCheck className="w-4 h-4 text-[#003B95] dark:text-blue-300" />
               </div>
-              <div className="space-y-2">
-                {filteredMemberList.length > 0 && (
-                  <select
-                    value={assigneeId}
-                    onChange={(e) => {
-                      const selId = e.target.value;
-                      setAssigneeId(selId);
-                      const m = filteredMemberList.find((item) => item.id === selId);
-                      if (m) {
-                        setAssigneeName(m.name);
-                        setAssigneeEmail(m.email || '');
-                        setAssigneeRole(m.position || m.company || m.executive_role || 'Phụ trách');
-                      }
-                    }}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
-                  >
-                    <option value="">-- Chọn thành viên ({filteredMemberList.length}) --</option>
-                    {filteredMemberList.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.code ? `[${m.code}] ` : ''}{m.name} {m.department ? `(${m.department})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                <input
-                  type="text"
-                  required
-                  placeholder="Nhập tên người nhận việc..."
-                  value={assigneeName}
-                  onChange={(e) => {
-                    setAssigneeName(e.target.value);
-                    if (assigneeId) setAssigneeId('');
-                  }}
-                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
-                />
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground font-semibold flex items-center gap-1.5 flex-wrap">
+                  <span>Người giao việc:</span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+                    {creatorRole}
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5">
+                  {creatorName}
+                </div>
               </div>
             </div>
+            <div className="text-[11px] text-slate-500 italic hidden sm:block flex-shrink-0">
+              Tự động ghi nhận danh tính &amp; đẩy thông báo
+            </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Người giao việc / Cấp giám sát
+          {/* People: Assignee Multi-Select for Selected Department (Requirement 1) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#003B95]" />
+                <span>Hội viên thuộc ban &amp; Người xử lý công việc ({assignees.length})</span>
+                <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
-                placeholder="VD: Chủ tịch / Ban Điều Hành / Trưởng ban..."
-                value={supervisorName}
-                onChange={(e) => setSupervisorName(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
-              />
-              <p className="text-[11px] text-slate-400 mt-1">
-                Người có quyền thẩm định tiến độ và phê duyệt nghiệm thu công việc
-              </p>
+              <span className="text-[11px] text-muted-foreground">Chọn hội viên trong ban</span>
+            </div>
+
+            {/* Selected Assignees Chips */}
+            <div className="flex flex-wrap items-center gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 min-h-[46px]">
+              {assignees.length === 0 ? (
+                <span className="text-xs text-slate-400 italic">
+                  Chưa chọn người xử lý. Bấm vào hội viên bên dưới để chọn.
+                </span>
+              ) : (
+                assignees.map((a, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-xs font-medium text-blue-900 dark:text-blue-200"
+                  >
+                    {a.avatar ? (
+                      <img src={a.avatar} alt={a.name} className="w-4 h-4 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full bg-[#003B95] text-white text-[9px] flex items-center justify-center font-bold">
+                        {a.name.charAt(0)}
+                      </div>
+                    )}
+                    <span className="font-semibold">{a.name}</span>
+                    {a.role && <span className="text-[10px] text-blue-600/70 dark:text-blue-300/70">({a.role})</span>}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAssignee(idx)}
+                      className="text-slate-400 hover:text-rose-500 transition cursor-pointer ml-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
+
+            {/* Department Members Multi-select List / Grid */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3 bg-white dark:bg-slate-900/50 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span>Danh sách hội viên {department ? `(${department})` : ''}:</span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+                    {deptMembers.length} người
+                  </span>
+                </span>
+                <div className="relative w-44 sm:w-52">
+                  <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên..."
+                    value={memberSearchQuery}
+                    onChange={(e) => setMemberSearchQuery(e.target.value)}
+                    className="w-full pl-7 pr-2.5 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-[#003B95]"
+                  />
+                </div>
+              </div>
+
+              {loadingMembers ? (
+                <div className="py-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-[#003B95] border-t-transparent rounded-full animate-spin" />
+                  <span>Đang tải danh sách hội viên theo ban...</span>
+                </div>
+              ) : deptMembers.length === 0 ? (
+                <div className="py-4 text-center text-xs text-slate-400 italic">
+                  Không tìm thấy hội viên nào thuộc ban này hoặc phù hợp từ khóa. Bạn có thể nhập tên bên dưới.
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {deptMembers.map((m: any) => {
+                    const isSelected = assignees.some(
+                      (a) => (a.id && a.id === m.id) || (a.name && a.name.toLowerCase() === m.name.toLowerCase())
+                    );
+                    return (
+                      <button
+                        key={m.id || m.email || m.name}
+                        type="button"
+                        onClick={() => toggleAssignee(m)}
+                        className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition cursor-pointer border ${
+                          isSelected
+                            ? 'bg-blue-50/80 dark:bg-blue-950/40 border-[#003B95]/40 text-[#003B95] dark:text-blue-200'
+                            : 'bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {m.avatar_url || m.avatarUrl || m.avatar ? (
+                            <img
+                              src={m.avatar_url || m.avatarUrl || m.avatar}
+                              alt={m.name}
+                              className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-[#003B95] text-white text-[10px] flex items-center justify-center font-bold flex-shrink-0">
+                              {m.name ? m.name.charAt(0) : 'U'}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold truncate">
+                              {m.name}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground truncate">
+                              {m.position || m.company || m.executive_role || m.department || 'Hội viên'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex-shrink-0 ml-2">
+                          <div
+                            className={`w-4 h-4 rounded flex items-center justify-center border transition ${
+                              isSelected
+                                ? 'bg-[#003B95] border-[#003B95] text-white'
+                                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Custom assignee fallback */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Hoặc nhập tên người nhận việc ngoài danh sách..."
+                  value={customAssigneeInput}
+                  onChange={(e) => setCustomAssigneeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomAssignee();
+                    }
+                  }}
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomAssignee}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition"
+                >
+                  Thêm
+                </button>
+              </div>
             </div>
           </div>
 
@@ -660,17 +911,34 @@ export function TaskFormModal({
 
           {/* Progress Slider */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
-              <span>Tiến độ hoàn thành:</span>
-              <span className="font-mono text-[#003B95] dark:text-blue-400 font-bold text-sm">{progress}%</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Tiến độ: <span className="font-mono text-[#003B95] dark:text-blue-400 font-black">{progress}%</span>
+              </label>
+              <div className="flex items-center gap-1">
+                {[0, 25, 50, 75, 100].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => handleQuickProgress(val)}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                      progress === val
+                        ? 'bg-[#003B95] text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
+            </div>
             <input
               type="range"
               min="0"
               max="100"
               step="5"
               value={progress}
-              onChange={(e) => setProgress(Number(e.target.value))}
+              onChange={(e) => handleQuickProgress(Number(e.target.value))}
               className="w-full accent-[#003B95] cursor-pointer mt-1"
             />
           </div>
@@ -743,64 +1011,6 @@ export function TaskFormModal({
             />
           </div>
 
-          {/* Dynamic Acceptance Criteria (Tiêu chí nghiệm thu) */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-3">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <ListChecks className="w-4 h-4 text-emerald-600" />
-              Tiêu chí nghiệm thu công việc (Acceptance Criteria)
-            </label>
-            <p className="text-[11px] text-slate-500">
-              Các điều kiện bắt buộc người nhận việc phải hoàn thành để được phê duyệt nghiệm thu
-            </p>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="VD: Hoàn thành danh sách khách mời xác nhận tham gia trước 15/10..."
-                value={newCriteria}
-                onChange={(e) => setNewCriteria(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddCriteria();
-                  }
-                }}
-                className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-[#003B95] outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleAddCriteria}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1 transition shadow-xs"
-              >
-                <Plus className="w-3.5 h-3.5" /> Thêm tiêu chí
-              </button>
-            </div>
-
-            {acceptanceCriteria.length > 0 && (
-              <div className="space-y-1.5">
-                {acceptanceCriteria.map((crit, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 rounded-xl border border-emerald-100 dark:border-emerald-900/40 text-xs"
-                  >
-                    <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold">
-                        {idx + 1}
-                      </span>
-                      <span>{crit}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCriteria(idx)}
-                      className="text-slate-400 hover:text-rose-500 p-1"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Subtasks (Checklist) */}
           <div>

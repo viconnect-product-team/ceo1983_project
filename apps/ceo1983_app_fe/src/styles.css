@@ -501,10 +501,23 @@ html.hc .vba-gold-grad {
   box-shadow: 0 4px 14px -2px rgba(245, 158, 11, 0.40);
 }
 
-/* Ensure ALL buttons and pills with brand navy / amber / sky background strictly have pure white text */
+/* System-wide brand color update: Replace ALL bg-[#003B95] with white background and blue text */
+[class*="bg-[#003B95]"],
+[class*="hover:bg-[#003B95]"]:hover {
+  background-color: #ffffff !important;
+  color: #003B95 !important;
+  border: 1px solid #003B95 !important;
+}
+
+[class*="bg-[#003B95]"] *,
+[class*="hover:bg-[#003B95]"]:hover * {
+  color: #003B95 !important;
+  stroke: #003B95 !important;
+}
+
+/* Ensure other brand buttons and pills strictly have pure white text */
 .btn-navy,
 .bg-navy-brand,
-[class*="bg-[#003B95]"],
 [class*="bg-[#002B70]"],
 .btn-amber,
 .bg-amber-brand,
@@ -524,7 +537,6 @@ span.bg-sky-600,
 
 .btn-navy *,
 .bg-navy-brand *,
-[class*="bg-[#003B95]"] *,
 [class*="bg-[#002B70]"] *,
 .btn-amber *,
 .bg-amber-brand *,

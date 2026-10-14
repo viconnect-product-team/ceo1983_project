@@ -117,11 +117,25 @@ export interface TaskItem {
     role?: string;
     email?: string;
   };
+  assignees?: Array<{
+    id?: string;
+    name: string;
+    avatar?: string;
+    role?: string;
+    email?: string;
+  }>;
   supervisor: {
     id?: string;
     name: string;
     avatar?: string;
     role?: string;
+  };
+  creator?: {
+    id?: string;
+    name?: string;
+    avatar?: string;
+    role?: string;
+    email?: string;
   };
   collaborators?: Array<{ id: string; name: string; avatar?: string }>;
   status: TaskStatus;

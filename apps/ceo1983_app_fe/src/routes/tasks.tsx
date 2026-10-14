@@ -250,9 +250,9 @@ function TasksPage() {
             <button
               type="button"
               onClick={() => handleOpenCreate('TODO')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-[#002D73] shadow-md transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-slate-950" />
               Thêm công việc mới
             </button>
           </div>

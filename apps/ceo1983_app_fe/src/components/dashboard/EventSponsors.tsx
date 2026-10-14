@@ -108,8 +108,16 @@ export function EventSponsors({ sponsors: propSponsors }: { sponsors?: any[] }) 
   const { data: rawSponsors } = useServerData<Sponsor[]>(() => listSponsorsFn(), []);
 
   const allSponsors = useMemo(() => {
-    if (propSponsors && propSponsors.length > 0) {
-      return propSponsors.map((s: any) => ({
+    let parsedList = propSponsors;
+    if (typeof parsedList === "string") {
+      try {
+        parsedList = JSON.parse(parsedList);
+      } catch {
+        parsedList = [];
+      }
+    }
+    if (Array.isArray(parsedList) && parsedList.length > 0) {
+      return parsedList.map((s: any) => ({
         id: s.id || s.sponsorId || "",
         name: s.name || s.sponsorName || "",
         tier: s.tier || "bronze",

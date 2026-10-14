@@ -153,10 +153,10 @@ export function LuckyDrawLandingBanner({
 
   if (loading && events.length === 0) {
     return (
-      <div className={`relative overflow-hidden rounded-3xl border border-amber-500/20 bg-[#0B132B] p-10 text-center ${className}`}>
+      <div className={`relative overflow-hidden rounded-3xl border border-amber-500/30 bg-card p-10 text-center ${className}`}>
         <div className="flex flex-col items-center justify-center space-y-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
-          <p className="text-sm font-semibold text-amber-200">Đang tải dữ liệu sự kiện & giải thưởng từ Database...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">Đang tải dữ liệu sự kiện &amp; giải thưởng từ Database...</p>
         </div>
       </div>
     );
@@ -164,14 +164,14 @@ export function LuckyDrawLandingBanner({
 
   if (!currentEvent) {
     return (
-      <div className={`relative overflow-hidden rounded-3xl border border-amber-500/20 bg-[#0B132B] p-10 text-center ${className}`}>
+      <div className={`relative overflow-hidden rounded-3xl border border-amber-500/30 bg-card p-10 text-center ${className}`}>
         <div className="max-w-md mx-auto space-y-4">
           <ClickUpBadgeIcon name="Trophy" variant="yellow" size={28} />
-          <h3 className="text-lg font-bold text-white">Chưa có sự kiện bốc thăm nào</h3>
-          <p className="text-xs text-slate-400">Vui lòng khởi tạo sự kiện hoặc gói tài trợ trong hệ thống.</p>
+          <h3 className="text-lg font-bold text-foreground">Chưa có sự kiện bốc thăm nào</h3>
+          <p className="text-xs text-muted-foreground">Vui lòng khởi tạo sự kiện hoặc gói tài trợ trong hệ thống.</p>
           <button
             onClick={() => setSetupModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Thiết Lập Sự Kiện Mới</span>
@@ -182,17 +182,17 @@ export function LuckyDrawLandingBanner({
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border border-amber-500/30 bg-[#0B132B] shadow-2xl ${className}`}>
+    <div className={`relative overflow-hidden rounded-3xl border border-amber-500/40 bg-card text-foreground shadow-2xl ${className}`}>
       {/* Visual background image with gradient overlay */}
       <div className="absolute inset-0 pointer-events-none">
         <img
           src={currentEvent.coverUrl || "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1600&q=80"}
           alt={currentEvent.name}
-          className="h-full w-full object-cover opacity-25 filter blur-[1px] transition-all duration-700"
+          className="h-full w-full object-cover opacity-20 filter blur-[1px] transition-all duration-700"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#070D1F] via-[#0B132B]/95 to-[#0F172A]/90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-card/90 to-secondary/80 dark:from-[#070D1F] dark:via-[#0B132B]/95 dark:to-[#0F172A]/90" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       <div className="relative z-10 p-6 sm:p-8 lg:p-10 space-y-8">
@@ -215,7 +215,7 @@ export function LuckyDrawLandingBanner({
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                       isSelected
                         ? "bg-amber-500 text-slate-950 shadow-sm font-black"
-                        : "bg-slate-900/80 border border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:text-white"
+                        : "bg-secondary/80 border border-border text-foreground hover:bg-muted"
                     }`}
                   >
                     <Calendar className="w-3.5 h-3.5 shrink-0" />
@@ -229,10 +229,10 @@ export function LuckyDrawLandingBanner({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSetupModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800/90 hover:bg-slate-700 text-amber-300 border border-amber-500/40 transition shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-secondary hover:bg-muted text-foreground border border-border transition shadow-sm cursor-pointer"
               title="Cấu hình cơ cấu giải thưởng kết nối danh mục sản phẩm từ Database"
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4 text-amber-500" />
               <span>Quản Lý Giải Thưởng Sự Kiện</span>
             </button>
           </div>
@@ -241,51 +241,51 @@ export function LuckyDrawLandingBanner({
         {/* Hero Event Banner Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-8 space-y-4">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold text-amber-400/90">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
               <ClickUpIcon name="Flame" variant="orange" size={16} />
               <span>Tổng Giá Trị Giải Thưởng:</span>
-              <span className="text-base font-black text-amber-300">{currentEvent.totalPrizeValue}</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
+              <span className="text-base font-black text-amber-600 dark:text-amber-300">{currentEvent.totalPrizeValue}</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
                 Database Verified
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight drop-shadow-sm">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight tracking-tight drop-shadow-sm">
               {currentEvent.name}
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-300 max-w-3xl leading-relaxed">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-3xl leading-relaxed">
               {currentEvent.subtitle}
             </p>
 
             {/* Metadata Pills */}
-            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-slate-300 font-medium">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80">
-                <Calendar className="w-3.5 h-3.5 text-amber-400" />
+            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-foreground font-medium">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border">
+                <Calendar className="w-3.5 h-3.5 text-amber-500" />
                 <span>{currentEvent.date}</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80">
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
                 <span>{currentEvent.time}</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80">
-                <MapPin className="w-3.5 h-3.5 text-amber-400" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border">
+                <MapPin className="w-3.5 h-3.5 text-amber-500" />
                 <span className="truncate max-w-[280px] sm:max-w-md">{currentEvent.location}</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80">
-                <Ticket className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 border border-border">
+                <Ticket className="w-3.5 h-3.5 text-emerald-500" />
                 <span>{currentEvent.candidates?.length || 0} Đại biểu tham dự</span>
               </div>
             </div>
           </div>
 
           {/* Call to action card */}
-          <div className="lg:col-span-4 flex flex-col items-center justify-center p-6 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-slate-900/80 to-slate-950/90 text-center space-y-4 backdrop-blur-md shadow-xl">
+          <div className="lg:col-span-4 flex flex-col items-center justify-center p-6 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-secondary/70 to-card text-center space-y-4 backdrop-blur-md shadow-xl">
             <ClickUpBadgeIcon name="Dices" variant="gradient-gold" size={32} />
 
             <div>
-              <h3 className="text-lg font-black text-white">Vòng Quay May Mắn Trực Tiếp</h3>
-              <p className="text-xs text-slate-300 mt-1">
+              <h3 className="text-lg font-black text-foreground">Vòng Quay May Mắn Trực Tiếp</h3>
+              <p className="text-xs text-muted-foreground mt-1">
                 Bốc thăm tự động dựa trên mã đại biểu tham dự và cơ cấu quà tặng thực tế
               </p>
             </div>
@@ -307,26 +307,26 @@ export function LuckyDrawLandingBanner({
         </div>
 
         {/* Showcase: Danh Mục Ưu Đãi & Phần Thưởng Đặc Sắc */}
-        <div className="space-y-4 pt-4 border-t border-slate-800">
+        <div className="space-y-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ClickUpIcon name="Trophy" variant="yellow" size={20} />
-              <h2 className="text-lg font-bold text-white tracking-wide">
+              <h2 className="text-lg font-bold text-foreground tracking-wide">
                 Cơ Cấu Giải Thưởng &amp; Phần Thưởng Thực Tế Từ Doanh Nghiệp
               </h2>
             </div>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-muted-foreground">
               {currentEvent.prizes?.length || 0} hạng mục giải thưởng
             </span>
           </div>
 
           {(!currentEvent.prizes || currentEvent.prizes.length === 0) ? (
-            <div className="rounded-2xl border border-dashed border-slate-800 p-8 text-center space-y-2">
+            <div className="rounded-2xl border border-dashed border-border p-8 text-center space-y-2">
               <ClickUpIcon name="Gift" variant="mono" size={28} className="mx-auto" />
-              <p className="text-xs text-slate-400">Chưa có giải thưởng nào cho sự kiện này trong Database.</p>
+              <p className="text-xs text-muted-foreground">Chưa có giải thưởng nào cho sự kiện này trong Database.</p>
               <button
                 onClick={() => setSetupModalOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:underline font-bold"
+                className="inline-flex items-center gap-1.5 text-xs text-amber-500 hover:underline font-bold cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Thêm giải thưởng từ danh sách sản phẩm ngay</span>
@@ -338,17 +338,17 @@ export function LuckyDrawLandingBanner({
                 return (
                   <div
                     key={prize.id || idx}
-                    className="rounded-2xl border border-slate-800/80 bg-slate-900/70 hover:bg-slate-900/90 p-5 space-y-3 transition duration-200 hover:border-amber-500/40 hover:-translate-y-1 shadow-md group relative overflow-hidden"
+                    className="rounded-2xl border border-border bg-card hover:bg-secondary/40 p-5 space-y-3 transition duration-200 hover:border-amber-500/40 hover:-translate-y-1 shadow-md group relative overflow-hidden"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <ClickUpBadgeIcon name={prize.iconName || "Gift"} variant="purple" size={14} containerClassName="p-1.5 rounded-lg" />
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                           {prize.rankName}
                         </span>
                       </div>
 
-                      <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-md">
+                      <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-md">
                         {prize.value}
                       </span>
                     </div>
@@ -358,14 +358,14 @@ export function LuckyDrawLandingBanner({
                         <img
                           src={prize.imageUrl}
                           alt={prize.title}
-                          className="w-14 h-14 rounded-xl object-cover border border-slate-700 shrink-0 bg-slate-950"
+                          className="w-14 h-14 rounded-xl object-cover border border-border shrink-0 bg-muted"
                         />
                       )}
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2">
+                        <h3 className="text-sm font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
                           {prize.title}
                         </h3>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                           {prize.description}
                         </p>
                       </div>
@@ -462,11 +462,11 @@ function LuckyDrawSetupModal({
   const [newAmount, setNewAmount] = useState<number>(0);
   const [newSponsor, setNewSponsor] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newQuantity, setNewQuantity] = useState(1);
-  const [newTargetType, setNewTargetType] = useState<PrizeTargetType>("PRODUCT");
+  const [newTargetType, setNewTargetType] = useState<PrizeTargetType>("CUSTOM");
   const [newTargetId, setNewTargetId] = useState<string>("");
   const [newImageUrl, setNewImageUrl] = useState<string>("");
   const [newIconName, setNewIconName] = useState<string>("Crown");
+  const [newQuantity, setNewQuantity] = useState<number>(1);
   const [savingPrize, setSavingPrize] = useState(false);
 
   // Fetch real products & packages from database
@@ -690,11 +690,11 @@ function LuckyDrawSetupModal({
                       }}
                       className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white font-medium outline-none focus:border-amber-500 cursor-pointer"
                     >
-                      <option value="PRODUCT">📦 Sản Phẩm B2B Hội Viên (Từ Database)</option>
-                      <option value="SPONSOR_PACKAGE">🤝 Gói Tài Trợ Doanh Nghiệp (Từ Database)</option>
-                      <option value="VOUCHER">🏷️ Voucher / Dịch Vụ Ưu Đãi</option>
-                      <option value="CASH">💰 Hiện Kim / Tiền Mặt</option>
-                      <option value="CUSTOM">🎁 Quà Tặng Hiện Vật Tùy Chỉnh</option>
+                      <option value="CUSTOM">🎁 Tự tạo phần thưởng riêng theo sự kiện (Độc lập, không phụ thuộc marketplace)</option>
+                      <option value="VOUCHER">🏷️ Voucher / Ưu đãi đặc quyền sự kiện</option>
+                      <option value="CASH">💰 Hiện Kim / Tiền Mặt Trao Thưởng</option>
+                      <option value="PRODUCT">📦 Sản Phẩm B2B (Tùy chọn)</option>
+                      <option value="SPONSOR_PACKAGE">🤝 Gói Tài Trợ Doanh Nghiệp (Tùy chọn)</option>
                     </select>
                   </div>
 
@@ -1084,7 +1084,7 @@ function InteractiveLuckyDrawModal({
           eventName: event.name,
         }),
       }).catch(() => {});
-      toast.success(`Đã phát thông báo chúc mừng tới điện thoại và App của ${winner.name}!`);
+      toast.success(`Đã phát thông báo trúng thưởng và tự động đẩy phần thưởng vào mục Ưu Đãi của đại biểu ${winner.name}!`);
     } catch {
       toast.error("Không thể gửi thông báo");
     } finally {
@@ -1100,18 +1100,18 @@ function InteractiveLuckyDrawModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl overflow-hidden rounded-3xl border border-amber-500/40 bg-[#0B132B] text-white shadow-2xl p-6 sm:p-8"
+        className="w-full max-w-2xl overflow-hidden rounded-3xl border border-amber-500/40 bg-card text-foreground shadow-2xl p-6 sm:p-8 animate-in zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex items-center gap-3">
             <ClickUpBadgeIcon name="Trophy" variant="yellow" size={24} />
             <div>
-              <h3 className="text-lg font-bold text-white">Vòng Quay May Mắn Trực Tiếp</h3>
-              <p className="text-xs text-slate-400">{event.name}</p>
+              <h3 className="text-lg font-bold text-foreground">Vòng Quay May Mắn Trực Tiếp</h3>
+              <p className="text-xs text-muted-foreground">{event.name}</p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer">
+          <button onClick={onClose} className="rounded-xl p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -1119,12 +1119,12 @@ function InteractiveLuckyDrawModal({
         <div className="mt-5 space-y-5">
           {/* Select Prize */}
           <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1">Chọn Hạng Mục Giải Thưởng Bốc Thăm:</label>
+            <label className="block text-xs font-bold text-foreground mb-1">Chọn Hạng Mục Giải Thưởng Bốc Thăm:</label>
             <select
               value={selectedPrizeId}
               onChange={(e) => setSelectedPrizeId(e.target.value)}
               disabled={spinning}
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-xs font-bold text-amber-300 outline-none focus:border-amber-500"
+              className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 outline-none focus:border-amber-500"
             >
               {event.prizes.map((prz) => (
                 <option key={prz.id} value={prz.id}>
@@ -1135,25 +1135,25 @@ function InteractiveLuckyDrawModal({
           </div>
 
           {/* Random Slot Display */}
-          <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/40 bg-gradient-to-b from-slate-900 via-[#070D1F] to-slate-950 p-6 sm:p-8 text-center shadow-inner">
-            <div className="text-xs font-bold tracking-widest text-amber-400 uppercase">
+          <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/50 bg-gradient-to-b from-amber-500/10 via-background to-secondary/50 p-6 sm:p-8 text-center shadow-inner">
+            <div className="text-xs font-bold tracking-widest text-amber-600 dark:text-amber-400 uppercase">
               {spinning ? "ĐANG QUAY SỐ NGẪU NHIÊN..." : winner ? "CHÚC MỪNG ĐẠI BIỂU MAY MẮN!" : "MÃ SỐ BỐC THĂM ĐẠI BIỂU"}
             </div>
 
-            <div className="my-4 font-mono text-4xl sm:text-5xl font-extrabold tracking-wider text-amber-300 drop-shadow-md">
+            <div className="my-4 font-mono text-4xl sm:text-5xl font-extrabold tracking-wider text-amber-500 dark:text-amber-300 drop-shadow-md">
               {currentCandidate?.code || "CEO1983"}
             </div>
 
-            <div className="text-xl sm:text-2xl font-black text-white">
+            <div className="text-xl sm:text-2xl font-black text-foreground">
               {currentCandidate?.name || "Đại biểu tham dự"}
             </div>
 
-            <div className="text-xs sm:text-sm text-slate-400 mt-1">
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
               {currentCandidate?.company || "Doanh nghiệp CEO 1983"}
             </div>
 
             {currentCandidate?.seat && (
-              <div className="mt-2 inline-block rounded-full bg-slate-800/80 px-3 py-1 text-xs text-amber-300/80 font-medium">
+              <div className="mt-2 inline-block rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs text-amber-700 dark:text-amber-300 font-bold">
                 {currentCandidate.seat}
               </div>
             )}
@@ -1184,14 +1184,14 @@ function InteractiveLuckyDrawModal({
 
           {/* Winner History */}
           {history.length > 0 && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
-              <div className="text-xs font-bold text-slate-300">Lịch Sử Trúng Thưởng Đêm Nay:</div>
-              <div className="max-h-36 overflow-y-auto space-y-1.5 divide-y divide-slate-800/60 text-xs">
+            <div className="rounded-2xl border border-border bg-secondary/50 p-4 space-y-2">
+              <div className="text-xs font-bold text-foreground">Lịch Sử Trúng Thưởng Đêm Nay:</div>
+              <div className="max-h-36 overflow-y-auto space-y-1.5 divide-y divide-border text-xs">
                 {history.map((h, i) => (
-                  <div key={i} className="pt-1.5 flex items-center justify-between text-slate-300">
-                    <span className="font-bold text-amber-300">{h.prizeTitle}</span>
+                  <div key={i} className="pt-1.5 flex items-center justify-between text-foreground">
+                    <span className="font-bold text-amber-600 dark:text-amber-400">{h.prizeTitle}</span>
                     <span>
-                      {h.winner.name} ({h.winner.code}) · <span className="text-slate-500">{h.time}</span>
+                      {h.winner.name} ({h.winner.code}) · <span className="text-muted-foreground">{h.time}</span>
                     </span>
                   </div>
                 ))}

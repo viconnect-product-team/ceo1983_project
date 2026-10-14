@@ -164,7 +164,7 @@ export function MemberPermissionsByCommittee({
       (mCode ? memberPermsMap[mCode.toLowerCase()] : null) ||
       (mCode ? memberPermsMap[mCode.toUpperCase()] : null);
 
-    let canView = false;
+    let canView = true;
     let canAdd = false;
     let canEdit = false;
     let canDelete = false;
@@ -175,7 +175,7 @@ export function MemberPermissionsByCommittee({
       for (const feat of cat.features || []) {
         for (const act of feat.actions || []) {
           const cRoles = act.roles || {};
-          const isForRole = cRoles[role] === true || (role === "quan_tri" && cRoles["quan_tri"] !== false);
+          const isForRole = cRoles[role] === true || ((role === "quan_tri" || role === "chu_tich") && cRoles[role] !== false);
           const isForComm = cKey && cRoles[cKey] === true;
 
           // If role or committee has explicitly revoked (false)
@@ -185,7 +185,7 @@ export function MemberPermissionsByCommittee({
 
           if (isForRole || isForComm) {
             const code = (act.code || "").toUpperCase();
-            if (code.endsWith("_VIEW") || code.includes("VIEW")) canView = true;
+            if (code.endsWith("_VIEW") || code.includes("VIEW") || code.includes("READ")) canView = true;
             if (code.endsWith("_ADD") || code.includes("ADD") || code.includes("CREATE")) canAdd = true;
             if (code.endsWith("_EDIT") || code.includes("EDIT")) canEdit = true;
             if (code.endsWith("_DELETE") || code.includes("DELETE")) canDelete = true;
@@ -199,12 +199,13 @@ export function MemberPermissionsByCommittee({
     let hasOverride = false;
     if (profile && !profile.__reset) {
       hasOverride = true;
+      if (profile.canView !== undefined) canView = profile.canView;
       if (profile.canAdd !== undefined) canAdd = profile.canAdd;
       if (profile.canEdit !== undefined) canEdit = profile.canEdit;
       if (profile.canDelete !== undefined) canDelete = profile.canDelete;
       if (profile.canApprove !== undefined) canApprove = profile.canApprove;
       if (profile.isAdmin) {
-        canView = true;
+        canView = profile.canView !== false;
         canAdd = profile.canAdd !== false;
         canEdit = profile.canEdit !== false;
         canDelete = profile.canDelete !== false;
@@ -649,6 +650,19 @@ export function MemberPermissionsByCommittee({
                       {/* Effective Permission Badges */}
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-1.5">
+                          {/* View */}
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                              permState.canView
+                                ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300"
+                                : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300"
+                            }`}
+                            title={permState.canView ? "Được phép xem dữ liệu" : "Không có quyền xem dữ liệu (Bị khóa)"}
+                          >
+                            {permState.canView ? <CheckCircle2 className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
+                            Xem: {permState.canView ? "Bật" : "Tắt"}
+                          </span>
+
                           {/* Add */}
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
@@ -831,6 +845,7 @@ function CustomMemberPermissionModal({
   onReset: () => void;
   onClose: () => void;
 }) {
+  const [canView, setCanView] = useState<boolean>(initialOverride.canView !== false);
   const [canAdd, setCanAdd] = useState<boolean>(initialOverride.canAdd !== false);
   const [canEdit, setCanEdit] = useState<boolean>(initialOverride.canEdit !== false);
   const [canDelete, setCanDelete] = useState<boolean>(Boolean(initialOverride.canDelete));
@@ -852,6 +867,7 @@ function CustomMemberPermissionModal({
 
   const handleSave = () => {
     onSave({
+      canView,
       canAdd,
       canEdit,
       canDelete,
@@ -889,15 +905,28 @@ function CustomMemberPermissionModal({
         </div>
 
         <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-200/80 text-blue-900 text-xs dark:bg-blue-950/20 dark:border-blue-900/50 dark:text-blue-200">
-          💡 <strong>Nguyên tắc đồng bộ:</strong> Khi bạn gạt tắt thao tác <em>Thêm mới</em> ở đây, tài khoản này sẽ lập tức bị ẩn nút thêm mới và bị chặn tạo mới trên toàn hệ thống CRM, ngay cả khi vai trò của họ là Admin.
+          💡 <strong>Nguyên tắc đồng bộ:</strong> Khi bạn gạt tắt thao tác <em>Xem dữ liệu</em> hoặc <em>Thêm mới</em> ở đây, tài khoản này sẽ lập tức bị chặn xem/thao tác trên toàn hệ thống CRM, ngay cả khi vai trò của họ là Admin.
         </div>
 
         <div className="space-y-3 text-xs">
           <div className="font-bold text-foreground uppercase tracking-wider text-[11px]">
-            4 Thao tác cốt lõi:
+            5 Thao tác cốt lõi:
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <label className="flex items-center justify-between p-3 rounded-xl border border-border bg-background cursor-pointer hover:border-primary/50 transition">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5 text-sky-600" />
+                Xem dữ liệu
+              </span>
+              <input
+                type="checkbox"
+                checked={canView}
+                onChange={(e) => setCanView(e.target.checked)}
+                className="h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer"
+              />
+            </label>
+
             <label className="flex items-center justify-between p-3 rounded-xl border border-border bg-background cursor-pointer hover:border-primary/50 transition">
               <span className="font-semibold text-foreground flex items-center gap-1.5">
                 <Plus className="w-3.5 h-3.5 text-emerald-600" />
@@ -1039,9 +1068,9 @@ function CustomMemberPermissionModal({
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 text-xs font-bold rounded-xl bg-[#003B95] text-white hover:bg-[#002b6d] shadow-sm flex items-center gap-1.5 cursor-pointer transition"
+              className="px-5 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer transition"
             >
-              <Save className="w-3.5 h-3.5" />
+              <Save className="w-3.5 h-3.5 text-slate-950" />
               <span>Lưu Phân Quyền</span>
             </button>
           </div>
@@ -1128,29 +1157,51 @@ function MemberPermissionDetailModal({
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background col-span-2">
+              <span className="font-medium text-foreground flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5 text-sky-600" />
+                Xem dữ liệu hệ thống:
+              </span>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canView ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300" : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"}`}>
+                {permState.canView ? "Bật" : "Tắt"}
+              </span>
+            </div>
+
             <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
-              <span className="font-medium text-foreground">Thêm mới dữ liệu:</span>
+              <span className="font-medium text-foreground flex items-center gap-1.5">
+                <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                Thêm mới dữ liệu:
+              </span>
               <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canAdd ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"}`}>
                 {permState.canAdd ? "Bật" : "Tắt"}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
-              <span className="font-medium text-foreground">Chỉnh sửa dữ liệu:</span>
+              <span className="font-medium text-foreground flex items-center gap-1.5">
+                <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                Chỉnh sửa dữ liệu:
+              </span>
               <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canEdit ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" : "bg-muted text-muted-foreground"}`}>
                 {permState.canEdit ? "Bật" : "Tắt"}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
-              <span className="font-medium text-foreground">Xóa dữ liệu:</span>
+              <span className="font-medium text-foreground flex items-center gap-1.5">
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                Xóa dữ liệu:
+              </span>
               <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canDelete ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" : "bg-muted text-muted-foreground"}`}>
                 {permState.canDelete ? "Bật" : "Tắt"}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
-              <span className="font-medium text-foreground">Phê duyệt / Ký duyệt:</span>
+              <span className="font-medium text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                Phê duyệt / Ký duyệt:
+              </span>
               <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${permState.canApprove ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300" : "bg-muted text-muted-foreground"}`}>
                 {permState.canApprove ? "Bật" : "Tắt"}
               </span>
@@ -1169,9 +1220,9 @@ function MemberPermissionDetailModal({
           <button
             type="button"
             onClick={onEdit}
-            className="px-4 py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-blue-900 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs shadow-amber-500/20"
           >
-            <Pencil className="w-3.5 h-3.5" />
+            <Pencil className="w-3.5 h-3.5 text-slate-950" />
             Chỉnh Sửa Phân Quyền
           </button>
         </div>

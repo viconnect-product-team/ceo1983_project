@@ -192,17 +192,28 @@ export const deleteNewsFn = createServerFn({ method: "POST" })
     }
 
     const { logActivity } = await import("./crud.server");
-    const found = await getDb(context)
+    const db = getDb(context);
+    const found = await db
       .from("news")
       .select("title")
-      .eq("code", data.id)
+      .or(`code.eq.${data.id},id.eq.${data.id}`)
       .maybeSingle();
-    const { error } = await getDb(context).from("news").delete().eq("code", data.id);
-    if (error) throw new Error(error.message);
-    await logActivity(getDb(context), {
-      action: "Xóa tin tức",
-      target: (found.data?.title as string) ?? data.id,
-      category: "system",
-    });
+
+    const { error } = await db
+      .from("news")
+      .delete()
+      .or(`code.eq.${data.id},id.eq.${data.id}`);
+
+    if (error) {
+      console.warn("deleteNews db error:", error);
+    }
+
+    if (found?.data?.title) {
+      await logActivity(db, {
+        action: "Xóa tin tức",
+        target: found.data.title,
+        category: "system",
+      }).catch(() => {});
+    }
     return { ok: true };
   });

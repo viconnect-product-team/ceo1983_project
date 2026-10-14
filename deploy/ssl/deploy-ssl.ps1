@@ -1,4 +1,4 @@
-﻿param (
+param (
     [string]$ServerIp = "14.225.217.232",
     [string]$ServerUser = "root",
     [string]$RemotePath = "~/ssl-proxy"
@@ -16,7 +16,7 @@ Write-Host "`n[1/3] Tao thu muc $RemotePath tren may chu $ServerIp..." -Foregrou
 ssh "${ServerUser}@${ServerIp}" "mkdir -p $RemotePath"
 
 # 2. Dong bo cac tep tin cau hinh, chung chi SSL va kich ban thuc thi
-Write-Host "`n[2/3] Dong bo cau hinh SSL cho Web CRM (5443), CEO 1983 (5444) va ViOne App (5445)..." -ForegroundColor Cyan
+Write-Host "`n[2/3] Dong bo cau hinh SSL cho Web CRM (5443), CEO 1983 (5444 / 5445)..." -ForegroundColor Cyan
 $files = @(
     (Resolve-Path "$DEPLOY_DIR/nginx.conf").Path,
     (Resolve-Path "$DEPLOY_DIR/server.crt").Path,
@@ -33,8 +33,10 @@ $cmd = 'sed -i "s/\r$//" ~/ssl-proxy/setup-ssl.sh; bash ~/ssl-proxy/setup-ssl.sh
 ssh "${ServerUser}@${ServerIp}" $cmd
 
 Write-Host "`n=================================================================" -ForegroundColor Green
-Write-Host "KICH HOAT HTTPS DOC LAP CHO TOAN BO 3 HE THONG HOAN TAT!" -ForegroundColor Green
-Write-Host "1. Web CRM Quan tri & Landing (HTTPS)  : https://${ServerIp}:5443 (Domain: https://dev-crm.14-225-217-232.sslip.io:5443)" -ForegroundColor Yellow
-Write-Host "2. App Hiep Hoi CEO 1983 (HTTPS)       : https://${ServerIp}:5444 (Domain: https://dev-app.14-225-217-232.sslip.io:5444)" -ForegroundColor Yellow
-Write-Host "3. ViOne App Mang Xa Hoi (HTTPS)       : https://${ServerIp}:5445 (Domain: https://dev-vione.14-225-217-232.sslip.io:5445)" -ForegroundColor Yellow
+Write-Host "KICH HOAT HTTPS CHO HE THONG CEO 1983 HOAN TAT!" -ForegroundColor Green
+Write-Host "1. Subdomain Mobile App CEO 1983       : https://ceo1983.viconnect.vn" -ForegroundColor Yellow
+Write-Host "2. Subdomain Web CRM Hiep Hoi CEO 1983 : https://crm.ceo1983.viconnect.vn" -ForegroundColor Yellow
+Write-Host "3. Dev Link Mobile CEO 1983 (HTTPS)    : https://${ServerIp}:5444 (https://dev-app.14-225-217-232.sslip.io:5444)" -ForegroundColor Yellow
+Write-Host "4. Dev Link Web CRM Hiep Hoi (HTTPS)   : https://${ServerIp}:5443 (https://dev-crm.14-225-217-232.sslip.io:5443)" -ForegroundColor Yellow
+Write-Host "5. Dev Link Mobile Du Phong (HTTPS)    : https://${ServerIp}:5445" -ForegroundColor Yellow
 Write-Host "=================================================================" -ForegroundColor Green

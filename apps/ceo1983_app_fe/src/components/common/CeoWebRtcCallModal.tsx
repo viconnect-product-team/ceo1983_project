@@ -24,6 +24,8 @@ export interface CeoCallRecordPayload {
   callType: "audio" | "video";
   status: "completed" | "missed" | "declined";
   duration: number;
+  isCaller?: boolean;
+  callId?: string;
 }
 
 export interface CeoWebRtcCallModalProps {
@@ -232,6 +234,8 @@ export function CeoWebRtcCallModal({
         callType: typeRef.current,
         status: duration > 0 ? "completed" : status,
         duration,
+        isCaller: !isIncomingAcceptance,
+        callId: callIdRef.current,
       });
     }
     onCloseRef.current?.();

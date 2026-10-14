@@ -102,23 +102,23 @@ export function AssociationAppSignIn({
       `}</style>
 
       <div
-        className="relative z-10 mx-auto flex min-h-[100dvh] md:min-h-0 w-full max-w-md flex-col justify-between md:justify-center md:gap-4 px-6 py-6 my-auto md:border md:border-amber-500/20 md:bg-white/95 md:backdrop-blur-2xl md:rounded-3xl md:p-8 md:shadow-[0_20px_60px_-15px_rgba(0,59,149,0.15),0_0_0_1px_rgba(245,158,11,0.2)]"
+        className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center gap-3.5 sm:gap-4 px-6 py-6 my-auto md:border md:border-amber-500/20 md:bg-white/95 md:backdrop-blur-2xl md:rounded-3xl md:p-8 md:shadow-[0_20px_60px_-15px_rgba(0,59,149,0.15),0_0_0_1px_rgba(245,158,11,0.2)]"
         style={{
           paddingTop: "max(16px, env(safe-area-inset-top))",
           paddingBottom: "max(16px, env(safe-area-inset-bottom))",
         }}
       >
         {/* Top bar: Language Switcher aligned right */}
-        <div className="flex items-center justify-end shrink-0 pt-0.5">
+        <div className="flex items-center justify-end shrink-0">
           <LuxuryLangSwitcher variant="subtle-blue" />
         </div>
 
         {/* Brand Header: Only Large Logo */}
-        <div className="flex flex-col items-center justify-center text-center py-4 shrink-0">
+        <div className="flex flex-col items-center justify-center text-center py-1 sm:py-2 shrink-0">
           <img
             src="/ceo1983-logo.png"
             alt="CLB Doanh Nhân CEO 1983"
-            className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_25px_rgba(0,75,145,0.15)] transition-transform hover:scale-105 duration-300"
+            className="h-18 sm:h-22 w-auto object-contain drop-shadow-[0_8px_25px_rgba(0,75,145,0.15)] transition-transform hover:scale-105 duration-300"
           />
         </div>
 
@@ -142,7 +142,7 @@ export function AssociationAppSignIn({
                 )}
                 <Link
                   to="/association"
-                  className="px-2.5 py-1 text-[11.5px] font-bold text-white bg-[#003B95] hover:bg-[#002B70] rounded-lg transition shadow-xs"
+                  className="px-2.5 py-1 text-[11.5px] font-bold text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 rounded-lg transition shadow-xs"
                 >
                   Vào App →
                 </Link>
@@ -212,7 +212,7 @@ export function AssociationAppSignIn({
         >
           <div className="space-y-1">
             <label htmlFor="assoc-auth-id" className="block text-[12px] font-semibold text-slate-700 uppercase tracking-wide">
-              {lang === "en" ? "Email or Member Code" : "Email hoặc Mã hội viên"}
+              {lang === "en" ? "Email or Phone Number" : "Email hoặc Số điện thoại"}
             </label>
             <div className="relative">
               <User
@@ -225,7 +225,7 @@ export function AssociationAppSignIn({
                 autoComplete="username"
                 value={identifier}
                 onChange={(e) => onIdentifierChange(e.target.value)}
-                placeholder={lang === "en" ? "e.g. M1983-002 or email..." : "Ví dụ: M1983-002 hoặc email..."}
+                placeholder={lang === "en" ? "Enter email or phone number..." : "Nhập email hoặc số điện thoại..."}
                 className={fieldClass}
                 required
               />
@@ -324,7 +324,7 @@ export function AssociationAppSignIn({
         </form>
 
         {/* Member Activation & Register Button -> Chuyển đến Landing Page CEO 1983 theo Figma (/landing) */}
-        <div className="shrink-0 my-0.5">
+        <div className="shrink-0 mt-0.5">
           <Link
             to="/landing"
             search={{ apply: "true" }}
@@ -335,9 +335,6 @@ export function AssociationAppSignIn({
             <ChevronRight className="absolute right-4 h-4 w-4 text-amber-600" aria-hidden="true" />
           </Link>
         </div>
-
-        {/* Minimal Footer Spacer */}
-        <div className="shrink-0 py-1" />
       </div>
     </main>
   );

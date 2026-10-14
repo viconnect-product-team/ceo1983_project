@@ -185,6 +185,24 @@ export function listSuggestions(): Member[] {
   return MEMBERS.filter((m) => m.id !== CURRENT_USER_ID && getStatus(m.id) === "none");
 }
 
+export function getAllMessages(): ChatMessage[] {
+  return [..._messages];
+}
+
+export function listChatPeers(): Member[] {
+  const peerIds = new Set<string>();
+  for (const m of _messages) {
+    if (m.fromId && m.fromId !== CURRENT_USER_ID) peerIds.add(m.fromId);
+    if (m.toId && m.toId !== CURRENT_USER_ID && m.toId !== "me") peerIds.add(m.toId);
+  }
+  for (const [id, s] of _statuses.entries()) {
+    if (s === "connected") peerIds.add(id);
+  }
+  return MEMBERS.filter(
+    (m) => m.id !== CURRENT_USER_ID && (peerIds.has(m.id) || getStatus(m.id) === "connected"),
+  );
+}
+
 export function getThread(memberId: string): ChatMessage[] {
   return _messages
     .filter(

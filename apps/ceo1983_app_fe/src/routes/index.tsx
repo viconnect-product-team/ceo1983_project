@@ -161,7 +161,7 @@ function Index() {
 
 
 
-  // Only redirect to mobile app if explicitly scoped as association_app and NOT in CRM portal
+  // Redirect to mobile app if on ceo1983.viconnect.vn domain or scoped as association_app
   useEffect(() => {
     try {
       if (hasCallback) return;
@@ -169,10 +169,17 @@ function Index() {
       const isCrmPortal =
         search?.get("portal") === "crm" ||
         (typeof window !== "undefined" && sessionStorage.getItem("crm_portal") === "1");
+      const hostname = typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
+      const isCeo1983MobileDomain =
+        hostname === "ceo1983.viconnect.vn" ||
+        hostname.startsWith("dev-app.") ||
+        (hostname.includes("ceo1983") && !hostname.startsWith("crm."));
+
       const isPureMobileApp =
         typeof window !== "undefined" &&
-        import.meta.env.VITE_APP_SCOPE === "association_app" &&
-        !isCrmPortal;
+        (import.meta.env.VITE_APP_SCOPE === "association_app" || isCeo1983MobileDomain) &&
+        !isCrmPortal &&
+        hostname !== "crm.ceo1983.viconnect.vn";
 
       if (isPureMobileApp && window.location.pathname === "/") {
         navigate({ to: "/association", replace: true });
@@ -261,6 +268,12 @@ function usePostLoginRedirect(redirectAnonToLanding = false) {
 
 
       if (authStatus === 'out') {
+        const hostname = typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
+        if (hostname === "crm.ceo1983.viconnect.vn" || isCrmPortal) {
+          setStatus("redirecting");
+          navigate({ to: "/auth", search: { portal: "crm" } as any, replace: true });
+          return;
+        }
         if (redirectAnonToLanding) {
           setStatus("redirecting");
           navigate({ to: "/landing" });

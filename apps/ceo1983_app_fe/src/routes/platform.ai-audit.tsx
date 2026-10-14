@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bot, ShieldCheck, Search, X, RotateCcw, Eye } from "lucide-react";
+import { Bot, ShieldCheck, Search, X, RotateCcw, Eye, Users } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { PlatformShell } from "@/components/platform/PlatformShell";
 import { Card, PageHeader, Pill } from "@/components/dashboard/PageKit";
@@ -114,7 +114,19 @@ function AiAuditPage() {
 
   return (
     <PlatformShell>
-      <PageHeader title={t("aiaudit.title")} subtitle={t("aiaudit.subtitle")} />
+      <PageHeader
+        title={t("aiaudit.title")}
+        subtitle={t("aiaudit.subtitle")}
+        actions={
+          <Link
+            to="/platform/ai-users"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-sm transition hover:bg-muted"
+          >
+            <Users className="h-3.5 w-3.5 text-primary" />
+            Hạn Mức & Người Dùng AI
+          </Link>
+        }
+      />
 
       {/* Filters */}
       <Card className="mb-4 p-4">

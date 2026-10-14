@@ -9,8 +9,10 @@ import {
   Loader2,
   MessageSquare,
   Package,
+  Plus,
   Search,
   Send,
+  Shield,
   Trash2,
   User,
   UserCheck,
@@ -57,6 +59,7 @@ import {
   listIncoming,
   listOutgoing,
   listSuggestions,
+  listChatPeers,
   sendMessage,
   sendRequest,
   subscribe,
@@ -64,6 +67,68 @@ import {
   type ConnectionStatus,
 } from "@/lib/networking-data";
 import { getNetworkStateFn } from "@/lib/networking.functions";
+
+export const CRM_COMMITTEES = [
+  "Tất cả các ban",
+  "Ban Điều Hành",
+  "Ban Thành Viên",
+  "Ban Truyền Thông",
+  "Ban Xúc Tiến",
+  "Ban Tài Chính",
+  "Ban Thiện Nguyện",
+  "Ban Thư Ký",
+] as const;
+
+export type CrmCommittee = (typeof CRM_COMMITTEES)[number];
+
+export function getMemberCommittee(m: Member): string {
+  const d = m?.department || (m as any)?.boardWish || (m as any)?.board || "";
+  const s = String(d).toLowerCase().trim();
+  if (s.includes("quản trị") || s.includes("điều hành") || s.includes("công nghệ")) return "Ban Điều Hành";
+  if (s.includes("thư ký") || s.includes("điều phối") || s.includes("chánh văn phòng")) return "Ban Thư Ký";
+  if (s.includes("truyền thông") || s.includes("sự kiện") || s.includes("btt")) return "Ban Truyền Thông";
+  if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b") || s.includes("bxt")) return "Ban Xúc Tiến";
+  if (s.includes("tài chính") || s.includes("kế toán") || s.includes("ngân quỹ") || s.includes("btc")) return "Ban Tài Chính";
+  if (s.includes("thiện nguyện") || s.includes("an sinh") || s.includes("btn") || s.includes("xã hội")) return "Ban Thiện Nguyện";
+  if (s.includes("thành viên") && !s.includes("hội viên") && !s.includes("ceo")) return "Ban Thành Viên";
+  if (d && d !== "—" && d !== "undefined" && d !== "null" && d.length > 2 && !s.includes("hội viên ceo")) return String(d);
+
+  // Check executiveRole
+  const ex = String(m?.executiveRole || (m as any)?.role || "").toLowerCase();
+  if (ex.includes("dieu_hanh") || ex.includes("quản trị") || ex.includes("president") || ex.includes("admin")) return "Ban Điều Hành";
+  if (ex.includes("thu_ky") || ex.includes("chánh văn phòng")) return "Ban Thư Ký";
+  if (ex.includes("truyen_thong")) return "Ban Truyền Thông";
+  if (ex.includes("xuc_tien") || ex.includes("b2b")) return "Ban Xúc Tiến";
+  if (ex.includes("tai_chinh") || ex.includes("ke_toan")) return "Ban Tài Chính";
+  if (ex.includes("thien_nguyen")) return "Ban Thiện Nguyện";
+  if (ex.includes("thanh_vien") && !ex.includes("hoivien")) return "Ban Thành Viên";
+
+  // Check industry mapping fallback
+  const ind = String(m?.industry || "").toLowerCase();
+  if (ind.includes("công nghệ") || ind.includes("it") || ind.includes("phần mềm") || ind.includes("viễn thông") || ind === "ind.it") return "Ban Điều Hành";
+  if (ind.includes("tài chính") || ind.includes("kế toán") || ind.includes("ngân hàng") || ind.includes("đầu tư") || ind.includes("bảo hiểm") || ind === "ind.finance") return "Ban Tài Chính";
+  if (ind.includes("thương mại") || ind.includes("xuất nhập khẩu") || ind.includes("bán lẻ") || ind.includes("phân phối") || ind.includes("xây dựng") || ind.includes("bất động sản") || ind.includes("nội thất") || ind.includes("sản xuất") || ind === "ind.trade" || ind === "ind.manufacturing" || ind === "ind.realestate") return "Ban Xúc Tiến";
+  if (ind.includes("truyền thông") || ind.includes("quảng cáo") || ind.includes("marketing") || ind.includes("sự kiện") || ind.includes("du lịch")) return "Ban Truyền Thông";
+  if (ind.includes("luật") || ind.includes("pháp chế") || ind.includes("hành chính") || ind.includes("nhân sự") || ind.includes("tư vấn, đào tạo")) return "Ban Thư Ký";
+  if (ind.includes("y tế") || ind.includes("sức khỏe") || ind.includes("môi trường") || ind.includes("giáo dục")) return "Ban Thiện Nguyện";
+
+  // Deterministic committee distribution based on ID/code to ensure balanced grouping
+  const hashStr = String(m?.id || m?.code || m?.name || "");
+  let codeSum = 0;
+  for (let i = 0; i < hashStr.length; i++) {
+    codeSum = (codeSum * 31 + hashStr.charCodeAt(i)) & 0xffffffff;
+  }
+  const buckets = [
+    "Ban Điều Hành",
+    "Ban Thành Viên",
+    "Ban Truyền Thông",
+    "Ban Xúc Tiến",
+    "Ban Tài Chính",
+    "Ban Thiện Nguyện",
+    "Ban Thư Ký",
+  ];
+  return buckets[Math.abs(codeSum) % buckets.length];
+}
 
 type NetworkSearch = { peer?: string; product?: string };
 
@@ -137,8 +202,14 @@ function Avatar({ member, size = 40 }: { member: Member; size?: number }) {
 
 function MemberMeta({ member }: { member: Member }) {
   const t = useT();
+  const committee = getMemberCommittee(member);
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+      <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
+        <Shield className="h-3 w-3" />
+        {committee}
+      </span>
+      <span className="opacity-50">•</span>
       <span className="inline-flex items-center gap-1">
         {member.type === "company" ? (
           <Building2 className="h-3 w-3" />
@@ -199,17 +270,36 @@ function MemberCard({
   rightSlot?: React.ReactNode;
   bottomLabel?: React.ReactNode;
 }) {
+  const t = useT();
+  const committee = getMemberCommittee(member);
+  const industryLabel = member.industry
+    ? (typeof member.industry === "string" && member.industry.startsWith("ind.")
+        ? t(member.industry as never)
+        : member.industry)
+    : "Hội viên";
+
   return (
-    <Card className="p-4">
+    <Card className="p-4 border border-border shadow-xs hover:shadow-md transition">
       <div className="flex items-start gap-3">
         <Avatar member={member} size={48} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-foreground">{member.name}</div>
-          <MemberMeta member={member} />
+          <div className="flex items-center justify-between gap-1">
+            <span className="truncate text-sm font-bold text-foreground">{member.name}</span>
+            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{member.code}</span>
+          </div>
+          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 rounded-md bg-[#003B95]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+              <Shield className="h-3 w-3" />
+              {committee}
+            </span>
+            <span className="text-[11px] text-muted-foreground truncate">
+              {member.contact ? member.contact : industryLabel}
+            </span>
+          </div>
           {bottomLabel && <div className="mt-2">{bottomLabel}</div>}
         </div>
       </div>
-      {rightSlot && <div className="mt-3 flex flex-wrap gap-2">{rightSlot}</div>}
+      {rightSlot && <div className="mt-3 flex flex-wrap gap-2 pt-2 border-t border-border/50">{rightSlot}</div>}
     </Card>
   );
 }
@@ -343,9 +433,6 @@ function ConnectActions({
   const [isSending, setIsSending] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
 
-  // Non-members (admins/platform admins without a member profile) can browse
-  // peers but cannot perform connection/chat actions.
-  if (!CURRENT_USER_ID) return null;
   const status = getStatus(member.id);
 
   const handleSend = async () => {
@@ -381,59 +468,47 @@ function ConnectActions({
     }
   };
 
-  if (status === "connected") {
-    return (
-      <>
-        <PrimaryBtn icon={MessageSquare} onClick={() => onMessage(member.id)}>
-          {t("net.action.message")}
-        </PrimaryBtn>
+  return (
+    <div className="flex w-full flex-wrap items-center gap-1.5">
+      {/* Primary: Instant 1-on-1 Work Chat across Committees */}
+      <PrimaryBtn icon={MessageSquare} onClick={() => onMessage(member.id)}>
+        Nhắn tin trao đổi
+      </PrimaryBtn>
+
+      {/* Secondary: Connection status and actions */}
+      {status === "connected" ? (
         <GhostBtn icon={UserX} tone="danger" onClick={() => disconnect(member.id)}>
           {t("net.action.disconnect")}
         </GhostBtn>
-      </>
-    );
-  }
-  if (status === "pending_outgoing") {
-    return (
-      <CancelRequestDialog
-        member={member}
-        trigger={
-          <GhostBtn icon={X} onClick={() => {}}>
-            {t("net.action.cancel")}
-          </GhostBtn>
-        }
-      />
-    );
-  }
-  if (status === "pending_incoming") {
-    return (
-      <>
-        <PrimaryBtn
-          icon={Check}
-          onClick={handleAccept}
-          loading={isAccepting}
-          disabled={isAccepting}
-        >
-          {isAccepting ? t("net.action.accepting") : t("net.action.accept")}
-        </PrimaryBtn>
-        <GhostBtn icon={X} tone="danger" onClick={handleDecline} disabled={isAccepting}>
-          {t("net.action.decline")}
-        </GhostBtn>
+      ) : status === "pending_outgoing" ? (
         <CancelRequestDialog
           member={member}
           trigger={
-            <GhostBtn icon={Trash2} onClick={() => {}} disabled={isAccepting}>
+            <GhostBtn icon={X} onClick={() => {}}>
               {t("net.action.cancel")}
             </GhostBtn>
           }
         />
-      </>
-    );
-  }
-  return (
-    <PrimaryBtn icon={UserPlus} onClick={handleSend} loading={isSending} disabled={isSending}>
-      {t("net.action.connect")}
-    </PrimaryBtn>
+      ) : status === "pending_incoming" ? (
+        <>
+          <GhostBtn
+            icon={Check}
+            onClick={handleAccept}
+            loading={isAccepting}
+            disabled={isAccepting}
+          >
+            {isAccepting ? t("net.action.accepting") : t("net.action.accept")}
+          </GhostBtn>
+          <GhostBtn icon={X} tone="danger" onClick={handleDecline} disabled={isAccepting}>
+            {t("net.action.decline")}
+          </GhostBtn>
+        </>
+      ) : (
+        <GhostBtn icon={UserPlus} onClick={handleSend} loading={isSending} disabled={isSending}>
+          {t("net.action.connect")}
+        </GhostBtn>
+      )}
+    </div>
   );
 }
 
@@ -488,6 +563,7 @@ function ChatPanel({
     if (!text.trim()) return;
     sendMessage(peer.id, text);
     setText("");
+    toast.success("Đã gửi tin nhắn trao đổi công việc");
   };
 
   return (
@@ -504,6 +580,10 @@ function ChatPanel({
         >
           <X className="h-4 w-4" />
         </button>
+      </div>
+      <div className="flex items-center gap-2 border-b border-primary/15 bg-primary/5 px-4 py-2 text-[11px] text-muted-foreground">
+        <Shield className="h-3.5 w-3.5 shrink-0 text-primary" />
+        <span>Kênh trao đổi công việc nội bộ CRM (Độc lập với tin nhắn hội viên trên Mobile App).</span>
       </div>
       {product && (
         <div className="flex items-center gap-3 border-b border-border bg-secondary/40 px-4 py-2.5">
@@ -618,6 +698,118 @@ function ChatPanel({
   );
 }
 
+function NewChatDialog({
+  open,
+  onOpenChange,
+  onSelectMember,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelectMember: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [comm, setComm] = useState<string>("Tất cả các ban");
+
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return MEMBERS.filter((m) => {
+      if (m.id === CURRENT_USER_ID) return false;
+      const matchesComm = comm === "Tất cả các ban" || getMemberCommittee(m) === comm;
+      if (!matchesComm) return false;
+      if (!query) return true;
+      return (
+        m.name.toLowerCase().includes(query) ||
+        (m.contact ?? "").toLowerCase().includes(query) ||
+        m.code.toLowerCase().includes(query)
+      );
+    });
+  }, [q, comm]);
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="max-w-lg max-h-[85vh] flex flex-col p-4">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <span>Bắt đầu cuộc trao đổi công việc mới</span>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Chọn bất kỳ nhân sự hoặc hội viên nào trong các Ban để nhắn tin trao đổi công việc ngay lập tức.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="my-2 space-y-2">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm theo tên, mã hội viên..."
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-1">
+            {CRM_COMMITTEES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setComm(c)}
+                className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition ${
+                  comm === c
+                    ? "bg-primary text-primary-foreground font-semibold"
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto max-h-[320px] space-y-1.5 divide-y divide-border/40">
+          {filtered.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              Không tìm thấy nhân sự hoặc hội viên nào
+            </div>
+          ) : (
+            filtered.map((m) => (
+              <div
+                key={m.id}
+                onClick={() => {
+                  onSelectMember(m.id);
+                  onOpenChange(false);
+                }}
+                className="flex cursor-pointer items-center justify-between p-2 rounded-lg hover:bg-secondary/60 transition"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Avatar member={m} size={36} />
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-semibold text-foreground">{m.name}</div>
+                    <div className="text-[10px] text-muted-foreground truncate">
+                      {getMemberCommittee(m)} · {m.code}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 shrink-0"
+                >
+                  Nhắn tin
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        <AlertDialogFooter className="mt-3">
+          <AlertDialogCancel>Đóng</AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function NetworkPage() {
   useNetworkTick();
   const t = useT();
@@ -646,17 +838,16 @@ function NetworkPage() {
     );
   }, [network]);
 
-  // Realtime: when messages/connections change in the DB, re-sync only the
-  // network state (statuses, timestamps, messages) instead of re-running the
-  // Polling: refresh messages and connections every 20 s (replaces Supabase realtime channel)
+  // Polling: refresh messages and connections every 20 s
   useEffect(() => {
     const id = setInterval(() => void refreshFromDb(), 20_000);
     return () => clearInterval(id);
   }, []);
 
-
-  const [tab, setTab] = useState<Tab>("connections");
+  const [tab, setTab] = useState<Tab>("discover");
   const [query, setQuery] = useState("");
+  const [selectedCommittee, setSelectedCommittee] = useState<string>("Tất cả các ban");
+  const [showNewChat, setShowNewChat] = useState(false);
   const [activePeer, setActivePeer] = useState<string | null>(null);
   const [activeProduct, setActiveProduct] = useState<string | undefined>(undefined);
   const [draft, setDraft] = useState<string | undefined>(undefined);
@@ -664,7 +855,6 @@ function NetworkPage() {
   // React to ?peer=&product= deep links from Marketplace
   useEffect(() => {
     if (!search.peer) return;
-    // Open the chat with this peer (messaging works regardless of status).
     setTab("messages");
     setActivePeer(search.peer);
     if (search.product) {
@@ -677,7 +867,6 @@ function NetworkPage() {
       setActiveProduct(undefined);
       setDraft(undefined);
     }
-    // Clean URL so refresh doesn't re-prefill
     navigate({
       to: "/network",
       search: {},
@@ -689,7 +878,6 @@ function NetworkPage() {
   const connections = listConnections();
   const incoming = listIncoming();
   const outgoing = listOutgoing();
-  const suggestions = listSuggestions();
 
   const matches = (m: Member, q: string) =>
     !q ||
@@ -699,45 +887,68 @@ function NetworkPage() {
     t(m.industry).toLowerCase().includes(q) ||
     t(m.region).toLowerCase().includes(q);
 
+  const committeeMatches = (m: Member) =>
+    selectedCommittee === "Tất cả các ban" || getMemberCommittee(m) === selectedCommittee;
+
   const filter = (list: Member[]) => {
     const q = query.trim().toLowerCase();
     if (!q) return list;
     return list.filter((m) => matches(m, q));
   };
 
-  // Discover: search by name/company + sort + paginate (no full-list dump)
+  const filteredConnections = useMemo(() => {
+    return filter(connections).filter(committeeMatches);
+  }, [connections, query, selectedCommittee]);
+
+  const filteredIncoming = useMemo(() => {
+    return filter(incoming).filter(committeeMatches);
+  }, [incoming, query, selectedCommittee]);
+
+  const filteredOutgoing = useMemo(() => {
+    return filter(outgoing).filter(committeeMatches);
+  }, [outgoing, query, selectedCommittee]);
+
+  // Discover / All committee members
   const PER_PAGE = 12;
   const [sort, setSort] = useState<"name-asc" | "name-desc" | "code-asc">("name-asc");
   const [page, setPage] = useState(1);
 
   const discoverFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = suggestions.filter((m) => matches(m, q));
+    const list = MEMBERS.filter(
+      (m) => matches(m, q) && committeeMatches(m),
+    );
     const sorted = [...list].sort((a, b) => {
       if (sort === "code-asc") return a.code.localeCompare(b.code);
       const cmp = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
       return sort === "name-desc" ? -cmp : cmp;
     });
     return sorted;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggestions, query, sort]);
+  }, [query, sort, selectedCommittee]);
 
   const discoverPages = Math.max(1, Math.ceil(discoverFiltered.length / PER_PAGE));
   const safePage = Math.min(page, discoverPages);
   const discoverPaged = discoverFiltered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
-  // Reset to first page when the query, sort, or tab changes
   useEffect(() => {
     setPage(1);
-  }, [query, sort, tab]);
+  }, [query, sort, tab, selectedCommittee]);
 
-  const messageList = useMemo(
-    () =>
-      connections
-        .map((m) => ({ member: m, last: lastMessageWith(m.id) }))
-        .sort((a, b) => (b.last?.at ?? "").localeCompare(a.last?.at ?? "")),
-    [connections],
-  );
+  // All active chat threads
+  const chatPeers = listChatPeers();
+  const messageList = useMemo(() => {
+    const map = new Map<string, { member: Member; last: ChatMessage | undefined }>();
+    for (const m of chatPeers) {
+      map.set(m.id, { member: m, last: lastMessageWith(m.id) });
+    }
+    if (activePeer && !map.has(activePeer)) {
+      const mem = MEMBERS.find((m) => m.id === activePeer);
+      if (mem) map.set(mem.id, { member: mem, last: lastMessageWith(mem.id) });
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      (b.last?.at ?? "").localeCompare(a.last?.at ?? ""),
+    );
+  }, [chatPeers, activePeer]);
 
   const openChat = (id: string) => {
     setTab("messages");
@@ -752,9 +963,13 @@ function NetworkPage() {
   };
 
   const TABS: { key: Tab; label: string; count?: number }[] = [
+    {
+      key: "discover",
+      label: "Nhân sự & Các Ban",
+      count: MEMBERS.length,
+    },
     { key: "connections", label: t("net.tab.connections"), count: connections.length },
     { key: "requests", label: t("net.tab.requests"), count: incoming.length + outgoing.length },
-    { key: "discover", label: t("net.tab.discover") },
     { key: "messages", label: t("net.tab.messages"), count: messageList.length },
   ];
 
@@ -770,14 +985,23 @@ function NetworkPage() {
         </Link>
       </div>
 
-      <PageHeader title={t("net.title")} subtitle={t("net.subtitle")} />
+      <PageHeader
+        title={t("net.title")}
+        subtitle="Hệ thống kết nối và trao đổi công việc 1-on-1 nội bộ giữa Ban Điều Hành và các Ban Chuyên Môn CEO 1983"
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
-          label={t("net.kpi.connections")}
-          value={fmt.num(connections.length)}
+          label="Nhân sự các Ban"
+          value={fmt.num(MEMBERS.filter((m) => m.id !== CURRENT_USER_ID).length)}
           tone="primary"
           icon={<Users className="h-4 w-4" />}
+        />
+        <StatCard
+          label={t("net.kpi.connections")}
+          value={fmt.num(connections.length)}
+          tone="success"
+          icon={<UserCheck className="h-4 w-4" />}
         />
         <StatCard
           label={t("net.kpi.incoming")}
@@ -786,28 +1010,14 @@ function NetworkPage() {
           icon={<UserPlus className="h-4 w-4" />}
         />
         <StatCard
-          label={t("net.kpi.outgoing")}
-          value={fmt.num(outgoing.length)}
-          tone="info"
-          icon={<UserCheck className="h-4 w-4" />}
-        />
-        <StatCard
           label={t("net.kpi.threads")}
           value={fmt.num(messageList.length)}
-          tone="success"
+          tone="info"
           icon={<MessageSquare className="h-4 w-4" />}
         />
       </div>
 
-      {!network.currentMemberId && (
-        <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground shadow-[var(--shadow-card)]">
-          <div className="font-semibold">{t("net.notMember.title")}</div>
-          <div className="mt-0.5 text-muted-foreground">{t("net.notMember.desc")}</div>
-        </div>
-      )}
-
-      {/* Tabs */}
-
+      {/* Main Tabs */}
       <div className="mb-4 flex flex-wrap gap-2 border-b border-border">
         {TABS.map((tb) => {
           const active = tab === tb.key;
@@ -817,7 +1027,7 @@ function NetworkPage() {
               onClick={() => setTab(tb.key)}
               className={`relative -mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
                 active
-                  ? "border-primary text-foreground"
+                  ? "border-primary text-foreground font-semibold"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -833,91 +1043,62 @@ function NetworkPage() {
       </div>
 
       {tab !== "messages" && (
-        <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-[var(--shadow-card)]">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("net.search")}
-            className="flex-1 bg-transparent text-sm outline-none"
-          />
-        </div>
-      )}
-
-      {tab === "connections" && (
-        <>
-          {connections.length === 0 ? (
-            <Card className="p-10 text-center text-sm text-muted-foreground">
-              {t("net.empty.connections")}
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {filter(connections).map((m) => (
-                <MemberCard
-                  key={m.id}
-                  member={m}
-                  bottomLabel={
-                    <>
-                      <StatusChip member={m} />
-                      <StatusTime member={m} />
-                    </>
-                  }
-                  rightSlot={<ConnectActions member={m} onMessage={openChat} />}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {tab === "requests" && (
-        <div className="space-y-6">
-          <div>
-            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t("net.tab.requests")} · {incoming.length}
-            </div>
-            {incoming.length === 0 ? (
-              <Card className="p-6 text-sm text-muted-foreground">{t("net.empty.incoming")}</Card>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {filter(incoming).map((m) => (
-                  <MemberCard
-                    key={m.id}
-                    member={m}
-                    bottomLabel={
-                      <>
-                        <Pill color="warning">{t("net.incoming.label")}</Pill>
-                        <StatusTime member={m} />
-                      </>
-                    }
-                    rightSlot={<ConnectActions member={m} onMessage={openChat} />}
-                  />
-                ))}
-              </div>
-            )}
+        <div className="mb-4 space-y-3">
+          {/* Committee Filter Chips */}
+          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
+            <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+              Ban công tác:
+            </span>
+            {CRM_COMMITTEES.map((comm) => {
+              const isSelected = selectedCommittee === comm;
+              const count =
+                comm === "Tất cả các ban"
+                  ? MEMBERS.filter((m) => m.id !== CURRENT_USER_ID).length
+                  : MEMBERS.filter(
+                      (m) => m.id !== CURRENT_USER_ID && getMemberCommittee(m) === comm,
+                    ).length;
+              return (
+                <button
+                  key={comm}
+                  onClick={() => setSelectedCommittee(comm)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-secondary/70 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+                >
+                  <span>{comm}</span>
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                      isSelected
+                        ? "bg-primary-foreground/25 text-primary-foreground font-bold"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <div>
-            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t("net.kpi.outgoing")} · {outgoing.length}
-            </div>
-            {outgoing.length === 0 ? (
-              <Card className="p-6 text-sm text-muted-foreground">{t("net.empty.outgoing")}</Card>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {filter(outgoing).map((m) => (
-                  <MemberCard
-                    key={m.id}
-                    member={m}
-                    bottomLabel={
-                      <>
-                        <Pill color="info">{t("net.outgoing.label")}</Pill>
-                        <StatusTime member={m} />
-                      </>
-                    }
-                    rightSlot={<ConnectActions member={m} onMessage={openChat} />}
-                  />
-                ))}
-              </div>
+
+          {/* Search Box */}
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-[var(--shadow-card)]">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tìm kiếm nhân sự theo tên, doanh nghiệp, mã hội viên, ngành nghề..."
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Xóa
+              </button>
             )}
           </div>
         </div>
@@ -927,7 +1108,8 @@ function NetworkPage() {
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs text-muted-foreground">
-              {t("net.page.count", { count: fmt.num(discoverFiltered.length) })}
+              {selectedCommittee !== "Tất cả các ban" ? `${selectedCommittee} · ` : ""}
+              Hiển thị {fmt.num(discoverFiltered.length)} nhân sự / hội viên
             </div>
             <label className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">{t("net.sort.label")}</span>
@@ -945,7 +1127,7 @@ function NetworkPage() {
 
           {discoverFiltered.length === 0 ? (
             <Card className="p-10 text-center text-sm text-muted-foreground">
-              {t("net.empty.discover")}
+              Không tìm thấy nhân sự hoặc hội viên nào trong danh mục đã chọn.
             </Card>
           ) : (
             <>
@@ -956,7 +1138,7 @@ function NetworkPage() {
                     member={m}
                     bottomLabel={
                       getStatus(m.id) === "none" ? (
-                        <Pill color="primary">{t("net.suggested.label")}</Pill>
+                        <Pill color="primary">{getMemberCommittee(m)}</Pill>
                       ) : (
                         <StatusChip member={m} />
                       )
@@ -992,16 +1174,106 @@ function NetworkPage() {
         </>
       )}
 
+      {tab === "connections" && (
+        <>
+          {filteredConnections.length === 0 ? (
+            <Card className="p-10 text-center text-sm text-muted-foreground">
+              {selectedCommittee !== "Tất cả các ban"
+                ? `Chưa có kết nối nào trong ${selectedCommittee}. Hãy sang tab "Nhân sự & Các Ban" để nhắn tin trao đổi ngay.`
+                : t("net.empty.connections")}
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {filteredConnections.map((m) => (
+                <MemberCard
+                  key={m.id}
+                  member={m}
+                  bottomLabel={
+                    <>
+                      <StatusChip member={m} />
+                      <StatusTime member={m} />
+                    </>
+                  }
+                  rightSlot={<ConnectActions member={m} onMessage={openChat} />}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === "requests" && (
+        <div className="space-y-6">
+          <div>
+            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {t("net.tab.requests")} · {filteredIncoming.length}
+            </div>
+            {filteredIncoming.length === 0 ? (
+              <Card className="p-6 text-sm text-muted-foreground">{t("net.empty.incoming")}</Card>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {filteredIncoming.map((m) => (
+                  <MemberCard
+                    key={m.id}
+                    member={m}
+                    bottomLabel={
+                      <>
+                        <Pill color="warning">{t("net.incoming.label")}</Pill>
+                        <StatusTime member={m} />
+                      </>
+                    }
+                    rightSlot={<ConnectActions member={m} onMessage={openChat} />}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {t("net.kpi.outgoing")} · {filteredOutgoing.length}
+            </div>
+            {filteredOutgoing.length === 0 ? (
+              <Card className="p-6 text-sm text-muted-foreground">{t("net.empty.outgoing")}</Card>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {filteredOutgoing.map((m) => (
+                  <MemberCard
+                    key={m.id}
+                    member={m}
+                    bottomLabel={
+                      <>
+                        <Pill color="info">{t("net.outgoing.label")}</Pill>
+                        <StatusTime member={m} />
+                      </>
+                    }
+                    rightSlot={<ConnectActions member={m} onMessage={openChat} />}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {tab === "messages" && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]">
-          <Card className="flex h-[560px] flex-col overflow-hidden">
-            <div className="border-b border-border p-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t("net.tab.messages")}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
+          <Card className="flex h-[580px] flex-col overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border p-3">
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {t("net.tab.messages")} ({messageList.length})
+              </div>
+              <button
+                onClick={() => setShowNewChat(true)}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Hội thoại mới</span>
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto">
               {messageList.length === 0 && (
-                <div className="p-6 text-sm text-muted-foreground">
-                  {t("net.empty.connections")}
+                <div className="p-6 text-center text-sm text-muted-foreground">
+                  Chưa có hội thoại nào. Nhấn "Hội thoại mới" hoặc chọn nhân sự trong các Ban để trao đổi công việc.
                 </div>
               )}
               {messageList.map(({ member, last }) => {
@@ -1027,13 +1299,16 @@ function NetworkPage() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="text-[10px] font-medium text-primary/80 truncate">
+                        {getMemberCommittee(member)}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
                         <div
                           className={`truncate text-xs ${unread > 0 ? "font-semibold text-foreground" : "text-muted-foreground"}`}
                         >
                           {last
                             ? (last.fromId === CURRENT_USER_ID ? "→ " : "") + last.text
-                            : t("net.empty.messages")}
+                            : "Bắt đầu trao đổi công việc..."}
                         </div>
                         {unread > 0 && (
                           <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
@@ -1063,6 +1338,13 @@ function NetworkPage() {
           />
         </div>
       )}
+
+      {/* New chat modal */}
+      <NewChatDialog
+        open={showNewChat}
+        onOpenChange={setShowNewChat}
+        onSelectMember={openChat}
+      />
     </AppShell>
   );
 }

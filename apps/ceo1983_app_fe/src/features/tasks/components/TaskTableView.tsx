@@ -38,10 +38,12 @@ export function TaskTableView({
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-[13px] border-collapse">
+        <table className="w-full text-left text-[13px] border-collapse min-w-[950px]">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400 font-semibold">
-              <th className="py-3 px-4 w-[110px]">Mã CV</th>
+            <tr className="border-b border-slate-200 bg-slate-50/90 text-slate-600 dark:border-slate-800 dark:bg-slate-800/90 dark:text-slate-400 font-semibold">
+              <th className="sticky left-0 z-20 bg-slate-50 dark:bg-slate-800 py-3 px-4 w-[110px] min-w-[110px] border-r border-slate-200 dark:border-slate-800 shadow-xs">
+                Mã CV
+              </th>
               <th className="py-3 px-4 min-w-[240px]">Tên công việc</th>
               <th className="py-3 px-4 min-w-[180px]">Ban phụ trách</th>
               <th className="py-3 px-4 min-w-[160px]">Người thực hiện</th>
@@ -49,7 +51,9 @@ export function TaskTableView({
               <th className="py-3 px-4 w-[110px]">Ưu tiên</th>
               <th className="py-3 px-4 min-w-[140px]">Tiến độ</th>
               <th className="py-3 px-4 min-w-[140px]">Trạng thái</th>
-              <th className="py-3 px-4 w-[100px] text-right">Thao tác</th>
+              <th className="sticky right-0 z-20 bg-slate-50 dark:bg-slate-800 py-3 px-4 w-[110px] min-w-[110px] text-right border-l border-slate-200 dark:border-slate-800 shadow-xs">
+                Thao tác
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -66,8 +70,10 @@ export function TaskTableView({
                   className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
                   onClick={() => onTaskClick(task)}
                 >
-                  <td className="py-3 px-4 font-mono font-bold text-[#003B95] dark:text-blue-400 whitespace-nowrap">
-                    {task.code}
+                  <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 py-3 px-4 whitespace-nowrap border-r border-slate-100 dark:border-slate-800 shadow-xs">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20 font-mono">
+                      {task.code}
+                    </span>
                   </td>
 
                   <td className="py-3 px-4">
@@ -109,34 +115,68 @@ export function TaskTableView({
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                      <Building className="w-3 h-3 text-slate-500" />
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+                      <Building className="w-3 h-3 text-[#003B95] dark:text-blue-300" />
                       {task.department}
                     </span>
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {task.assignee.avatar ? (
-                        <img
-                          src={task.assignee.avatar}
-                          alt={task.assignee.name}
-                          className="w-6 h-6 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold">
-                          {task.assignee.name.charAt(0)}
+                    {task.assignees && task.assignees.length > 1 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center -space-x-1.5">
+                          {task.assignees.slice(0, 3).map((a, i) =>
+                            a.avatar ? (
+                              <img
+                                key={i}
+                                src={a.avatar}
+                                alt={a.name}
+                                title={a.name}
+                                className="w-6 h-6 rounded-full object-cover border border-white dark:border-slate-800"
+                              />
+                            ) : (
+                              <div
+                                key={i}
+                                title={a.name}
+                                className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold border border-white dark:border-slate-800"
+                              >
+                                {a.name.charAt(0)}
+                              </div>
+                            )
+                          )}
                         </div>
-                      )}
-                      <div>
-                        <div className="font-medium text-slate-800 dark:text-slate-200">
-                          {task.assignee.name}
+                        <div>
+                          <div className="font-medium text-slate-800 dark:text-slate-200">
+                            {task.assignees[0].name} <span className="text-xs text-muted-foreground">+{task.assignees.length - 1}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            {task.assignees.length} người thực hiện
+                          </div>
                         </div>
-                        {task.assignee.role && (
-                          <div className="text-[10px] text-slate-400">{task.assignee.role}</div>
-                        )}
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {task.assignee?.avatar ? (
+                          <img
+                            src={task.assignee.avatar}
+                            alt={task.assignee.name}
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold">
+                            {(task.assignee?.name || 'A').charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium text-slate-800 dark:text-slate-200">
+                            {task.assignee?.name}
+                          </div>
+                          {task.assignee?.role && (
+                            <div className="text-[10px] text-slate-400">{task.assignee.role}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
@@ -197,7 +237,7 @@ export function TaskTableView({
                   </td>
 
                   <td
-                    className="py-3 px-4 text-right whitespace-nowrap"
+                    className="sticky right-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 py-3 px-4 text-right whitespace-nowrap border-l border-slate-100 dark:border-slate-800 shadow-xs"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-end gap-1">

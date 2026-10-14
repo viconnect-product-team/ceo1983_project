@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fetchNestApiFromServer } from "./api-client";
 
 const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
@@ -110,12 +111,31 @@ function mapMeeting(m: Row): Meeting {
 export const listMeetingsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<Meeting[]> => {
-    const { data, error } = await getDb(context)
+    let nestData: any[] = [];
+    try {
+      const res = await fetchNestApiFromServer("/meetings", context.token);
+      if (Array.isArray(res)) nestData = res;
+    } catch {
+      // ignore
+    }
+
+    const { data } = await getDb(context)
       .from("meetings")
       .select("*")
       .order("date", { ascending: false });
-    if (error) throw error;
-    return (data ?? []).map((r: any) => mapMeeting(r as Row));
+
+    const rawList = Array.isArray(data) ? [...data] : [];
+    const seen = new Set<string>(rawList.map((r: any) => String(r.id || r.code)));
+
+    for (const item of nestData) {
+      const idKey = String(item.id || item.code);
+      if (!seen.has(idKey)) {
+        seen.add(idKey);
+        rawList.push(item);
+      }
+    }
+
+    return rawList.map((r: any) => mapMeeting(r as Row));
   });
 
 const meetingInput = z.object({

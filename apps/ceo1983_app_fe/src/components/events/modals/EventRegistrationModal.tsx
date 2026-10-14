@@ -10,6 +10,8 @@ import {
   FileText,
   Info,
   Send,
+  AlertTriangle,
+  Lock,
 } from "lucide-react";
 import {
   Dialog,
@@ -18,6 +20,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { isEventFull } from "@/lib/member-app.functions";
 
 export interface EventRegistrationModalProps {
   registeringEvent: any | null;
@@ -84,10 +87,14 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
   const isFree = rawPrice === 0;
   const totalCost = isFree ? 0 : rawPrice * actualCount;
 
+  const isFull = isEventFull(registeringEvent);
+
   return (
     <Dialog open={!!registeringEvent} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto p-4 rounded-2xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)]">
-        <DialogHeader>
+      <DialogContent
+        className="max-w-md max-h-[92vh] max-h-[92dvh] flex flex-col p-0 rounded-3xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] overflow-hidden shadow-2xl"
+      >
+        <DialogHeader className="shrink-0 p-4 border-b border-slate-100 dark:border-slate-800">
           <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Ticket className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
             <span>Đăng ký tham dự sự kiện</span>
@@ -97,7 +104,21 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="mt-2 space-y-3.5 text-xs">
+        {isFull && (
+          <div className="mx-4 mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-400/50 flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300">
+            <Lock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Sự kiện đã đủ số lượng đại biểu (Hết chỗ)</p>
+              <p className="text-[11px] opacity-90">Hệ thống đã tự động khóa cổng đăng ký cho sự kiện này. Vui lòng liên hệ Ban Tổ Chức.</p>
+            </div>
+          </div>
+        )}
+
+        <form onSubmit={onSubmit} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div
+            className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 space-y-3.5 text-xs select-text"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
           {/* Họ tên */}
           <div>
             <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">
@@ -298,9 +319,10 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
               </span>
             </div>
           </div>
+        </div>
 
-          {/* Action */}
-          <div className="pt-2 flex items-center justify-end gap-2.5">
+        {/* Action / Sticky Footer */}
+          <div className="shrink-0 p-3 sm:p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               disabled={submittingReg}
@@ -311,11 +333,16 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={submittingReg}
+              disabled={submittingReg || isFull}
               className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 text-white font-bold shadow-md shadow-[#003B95]/25 transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
             >
               {submittingReg ? (
                 <span>Đang xử lý...</span>
+              ) : isFull ? (
+                <>
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Sự kiện đã hết chỗ</span>
+                </>
               ) : (
                 <>
                   <Send className="h-3.5 w-3.5" />

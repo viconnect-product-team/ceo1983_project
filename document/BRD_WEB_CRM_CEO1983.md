@@ -152,9 +152,9 @@ Hệ thống CRM cam kết hiện thực hóa 6 mục tiêu định lượng:
 - **BR-44**: Nghiêm cấm đăng tải các mặt hàng cấm, hàng giả, hàng kém chất lượng hoặc các dịch vụ tài chính trái phép; vi phạm sẽ bị khai trừ khỏi hiệp hội ngay lập tức.
 - **BR-45**: Khi hai doanh nghiệp kết nối giao thương thành công, khuyến khích báo cáo giá trị hợp đồng để Ban Xúc tiến ghi nhận thành tích thi đua cho hội viên.
 
-### Nhóm 7: Thẻ Thông Minh Doanh Nhân & Công Nghệ Chạm Thẻ 1 Chạm
-- **BR-46**: Tấm Thẻ thông minh doanh nhân CEO 1983 tích hợp chip thông minh mạ vàng là tài sản định danh số cao cấp của từng hội viên chính danh.
-- **BR-47**: Công nghệ chạm thẻ thông minh 1 chạm (chạm thẻ hoặc lưng điện thoại vào điện thoại đối tác) bắt buộc truyền tải đầy đủ hồ sơ doanh nhân, website và thông tin liên hệ trong vòng dưới 1 giây mà đối tác không cần cài đặt ứng dụng.
+### Nhóm 7: Thẻ Điện Tử Hội Viên & Quét Mã QR Kết Nối Động
+- **BR-46**: Thẻ điện tử hội viên CEO 1983 với mã QR kết nối động và giao diện 3D ánh kim là tài sản định danh số cao cấp của từng hội viên chính danh.
+- **BR-47**: Công nghệ quét mã QR kết nối động và chia sẻ liên kết danh thiếp điện tử bắt buộc truyền tải đầy đủ hồ sơ doanh nhân, website và thông tin liên hệ trong vòng dưới 1 giây mà đối tác không cần cài đặt ứng dụng.
 
 ### Nhóm 8: Đàm Thoại Nội Bộ, Thông Báo Nền & Trợ Lý Giọng Nói
 - **BR-48**: Hệ thống đàm thoại thoại và video nội bộ phải đảm bảo kết thúc cuộc gọi tức thì ở cả hai đầu khi một bên gác máy (0ms độ trễ), không để chuông ảo đổ tiếp.

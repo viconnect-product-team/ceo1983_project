@@ -223,6 +223,7 @@
   "myperm.allowed": "Allowed",
   "myperm.denied": "Not allowed",
   "platform.tab.aiaudit": "AI audit log",
+  "platform.tab.aiUsers": "AI Users & Quota",
   "aiaudit.title": "AI request audit log",
   "aiaudit.subtitle": "Filter and inspect AI requests by association, user and time",
   "aiaudit.filter.assoc": "Association",

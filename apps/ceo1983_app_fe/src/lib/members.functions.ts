@@ -122,6 +122,8 @@ export const listPeersFn = createServerFn({ method: "GET" })
         feePaid: true,
         address: (r.address as string) ?? "",
         about: (r.about as string) ?? (r.personTitle as string) ?? "",
+        executiveRole: (r.executiveRole ?? r.executive_role ?? "") as string,
+        department: (r.department ?? r.board ?? r.boardWish ?? "") as string,
       }));
       return mapped.length > 0 ? mapped : DEFAULT_MEMBERS;
     }

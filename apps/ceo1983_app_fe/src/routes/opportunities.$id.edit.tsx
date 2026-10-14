@@ -47,21 +47,41 @@ function EditOpportunityPage() {
   const [contactPhone, setContactPhone] = useState(opp.contactPhone ?? "");
   const [contactTitle, setContactTitle] = useState(opp.contactTitle ?? "");
   const [image, setImage] = useState(opp.image || (opp as any).imageUrl || "");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Cho phép quản trị viên / nhân sự CRM chỉnh sửa cơ hội được đăng từ ứng dụng mobile
   const isOwner = opp.posterId === CURRENT_USER_ID;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !desc.trim() || !region.trim() || !industry.trim()) return;
+    const errMap: Record<string, string> = {};
+    if (!title.trim()) errMap.title = "Vui lòng nhập tiêu đề cơ hội";
+    if (!desc.trim()) errMap.desc = "Vui lòng nhập mô tả chi tiết cơ hội";
+    if (!region.trim()) errMap.region = "Vui lòng nhập khu vực";
+    if (!industry.trim()) errMap.industry = "Vui lòng nhập ngành nghề";
+    if (!deadline) errMap.deadline = "Vui lòng chọn hạn chót";
+
+    const numMin = budgetMin ? parseCurrencyInput(budgetMin) : undefined;
+    const numMax = budgetMax ? parseCurrencyInput(budgetMax) : undefined;
+    if (numMin && numMax && numMax < numMin) {
+      errMap.budgetMax = "Ngân sách tối đa phải lớn hơn hoặc bằng ngân sách tối thiểu";
+    }
+
+    if (Object.keys(errMap).length > 0) {
+      setErrors(errMap);
+      toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc (*)");
+      return;
+    }
+    setErrors({});
+
     await saveOpp({
       data: {
         id: opp.id,
         title: title.trim(),
         description: desc.trim(),
         type,
-        budgetMin: budgetMin ? parseCurrencyInput(budgetMin) : undefined,
-        budgetMax: budgetMax ? parseCurrencyInput(budgetMax) : undefined,
+        budgetMin: numMin,
+        budgetMax: numMax,
         region: region.trim(),
         industry: industry.trim(),
         deadline: new Date(deadline).toISOString(),
@@ -96,30 +116,46 @@ function EditOpportunityPage() {
       <PageHeader title={t("opp.edit.title")} subtitle={opp.title} />
 
       <Card className="mx-auto max-w-2xl">
-        <form onSubmit={submit} className="space-y-4 p-6">
+        <form onSubmit={submit} className="space-y-4 p-6" noValidate>
           <div className="flex items-center gap-2 text-sm font-semibold text-primary">
             <Sparkles className="h-4 w-4" /> {t("opp.edit.subtitle")}
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.titleField")}</label>
+            <label className="mb-1.5 block text-xs font-semibold">
+              {t("opp.form.titleField")} <span className="text-destructive">*</span>
+            </label>
             <input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errors.title) setErrors((prev) => ({ ...prev, title: "" }));
+              }}
+              placeholder="Nhập tiêu đề cơ hội..."
+              className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                errors.title ? "border-destructive ring-1 ring-destructive" : "border-border focus:border-primary"
+              }`}
             />
+            {errors.title && <p className="mt-1 text-xs font-semibold text-destructive">{errors.title}</p>}
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.desc")}</label>
+            <label className="mb-1.5 block text-xs font-semibold">
+              {t("opp.form.desc")} <span className="text-destructive">*</span>
+            </label>
             <textarea
               value={desc}
-              onChange={(e) => setDesc(e.target.value)}
+              onChange={(e) => {
+                setDesc(e.target.value);
+                if (errors.desc) setErrors((prev) => ({ ...prev, desc: "" }));
+              }}
               rows={5}
-              required
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              placeholder="Mô tả chi tiết nội dung, yêu cầu, quy mô..."
+              className={`w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                errors.desc ? "border-destructive ring-1 ring-destructive" : "border-border focus:border-primary"
+              }`}
             />
+            {errors.desc && <p className="mt-1 text-xs font-semibold text-destructive">{errors.desc}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -138,37 +174,58 @@ function EditOpportunityPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.deadline")} (dd/mm/yyyy)</label>
+              <label className="mb-1.5 block text-xs font-semibold">
+                {t("opp.form.deadline")} (dd/mm/yyyy) <span className="text-destructive">*</span>
+              </label>
               <StandardDateInput
                 value={deadline}
                 placeholder="dd/mm/yyyy (VD: 31/12/2026)"
-                onChange={(iso) => setDeadline(iso)}
-                required
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(iso) => {
+                  setDeadline(iso);
+                  if (errors.deadline) setErrors((prev) => ({ ...prev, deadline: "" }));
+                }}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                  errors.deadline ? "border-destructive ring-1 ring-destructive" : "border-border focus:border-primary"
+                }`}
               />
+              {errors.deadline && <p className="mt-1 text-xs font-semibold text-destructive">{errors.deadline}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.region")}</label>
+              <label className="mb-1.5 block text-xs font-semibold">
+                {t("opp.form.region")} <span className="text-destructive">*</span>
+              </label>
               <input
                 value={region}
                 placeholder="VD: Hà Nội & Miền Bắc"
-                onChange={(e) => setRegion(e.target.value)}
-                required
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(e) => {
+                  setRegion(e.target.value);
+                  if (errors.region) setErrors((prev) => ({ ...prev, region: "" }));
+                }}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                  errors.region ? "border-destructive ring-1 ring-destructive" : "border-border focus:border-primary"
+                }`}
               />
+              {errors.region && <p className="mt-1 text-xs font-semibold text-destructive">{errors.region}</p>}
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold">{t("opp.form.industry")}</label>
+              <label className="mb-1.5 block text-xs font-semibold">
+                {t("opp.form.industry")} <span className="text-destructive">*</span>
+              </label>
               <input
                 value={industry}
                 placeholder="VD: Bất động sản, CNTT, Xây dựng..."
-                onChange={(e) => setIndustry(e.target.value)}
-                required
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                onChange={(e) => {
+                  setIndustry(e.target.value);
+                  if (errors.industry) setErrors((prev) => ({ ...prev, industry: "" }));
+                }}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition ${
+                  errors.industry ? "border-destructive ring-1 ring-destructive" : "border-border focus:border-primary"
+                }`}
               />
+              {errors.industry && <p className="mt-1 text-xs font-semibold text-destructive">{errors.industry}</p>}
             </div>
           </div>
 
@@ -233,11 +290,17 @@ function EditOpportunityPage() {
               </label>
               <StandardCurrencyInput
                 value={budgetMax}
-                onChange={(formatted) => setBudgetMax(formatted)}
+                onChange={(formatted) => {
+                  setBudgetMax(formatted);
+                  if (errors.budgetMax) setErrors((prev) => ({ ...prev, budgetMax: "" }));
+                }}
                 placeholder="0"
                 unit="VNĐ"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary font-medium"
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition font-medium ${
+                  errors.budgetMax ? "border-destructive ring-1 ring-destructive" : "border-border focus:border-primary"
+                }`}
               />
+              {errors.budgetMax && <p className="mt-1 text-xs font-semibold text-destructive">{errors.budgetMax}</p>}
             </div>
           </div>
 

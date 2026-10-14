@@ -1,21 +1,23 @@
-import { type ReactNode, useEffect, useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { type ReactNode, useEffect, useState, useMemo } from "react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Home, Calendar, MessageSquare, User, QrCode, ChevronLeft, WifiOff } from "lucide-react";
 import { useT, useLang, type TKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
+import { fetchNestApi } from "@/lib/api-client";
 import authBg from "@/assets/connect-auth-bg.jpg";
 
 const NAVY = "#003B95";
 const emblem83 = "/ceo1983-emblem-8.png";
 
 import { PullToRefresh } from "@/components/member/PullToRefresh";
-import { useNavigate } from "@tanstack/react-router";
 import { IncomingConnectionModal } from "@/components/member/IncomingConnectionModal";
 import { NotificationPermissionBanner } from "@/components/business-connect/mobile/inbox/NotificationPermissionBanner";
 import {
   requestNotificationPermission,
   sendExternalNotification,
 } from "@/lib/notification-permissions";
+import { useAuth } from "@/context/AuthContext";
+import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { toast } from "sonner";
 
@@ -354,7 +356,7 @@ export function MemberHeader({
 
   return (
     <header
-      className="sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-amber-500/25 bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-xl transition-all shadow-xs select-none"
+      className="w-full sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/80 dark:border-slate-800/80 bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-xl transition-all shadow-xs select-none"
       style={{
         paddingTop:
           "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 16px) + 4px))",
@@ -367,7 +369,7 @@ export function MemberHeader({
           <button
             onClick={handleBack}
             aria-label={t("m.shell.back")}
-            className="grid h-9 w-9 place-items-center rounded-full text-amber-500 hover:text-amber-400 transition hover:bg-card/5 active:scale-90 cursor-pointer"
+            className="grid h-9 w-9 place-items-center rounded-full text-[#003B95] dark:text-blue-400 hover:text-[#002B70] transition hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 cursor-pointer"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -458,9 +460,89 @@ function useVirtualKeyboard() {
 function MemberTabBar() {
   const t = useT();
   const { lang } = useLang();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const keyboardOpen = useVirtualKeyboard();
   const [isMidAutumn, setIsMidAutumn] = useState(false);
+  const { user } = useAuth();
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+
+  // Check if current user is authorized as event QR scanner / check-in staff
+  const [canScanQr, setCanScanQr] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("vba_is_event_qr_scanner") === "true";
+  });
+
+  useEffect(() => {
+    if (!user) {
+      setCanScanQr(false);
+      return;
+    }
+    fetchNestApi<any[]>("/events")
+      .then((events) => {
+        if (!Array.isArray(events) || events.length === 0) {
+          setCanScanQr(false);
+          localStorage.removeItem("vba_is_event_qr_scanner");
+          return;
+        }
+        const userIdentifiers = [
+          user.id,
+          (user as any).memberCode,
+          (user as any).email,
+          (user as any).phone,
+          (user as any).name,
+        ]
+          .filter(Boolean)
+          .map((s) => String(s).toLowerCase().trim());
+
+        try {
+          const rawMem = localStorage.getItem("vba_my_member");
+          if (rawMem) {
+            const m = JSON.parse(rawMem);
+            if (m.code) userIdentifiers.push(String(m.code).toLowerCase().trim());
+            if (m.phone) userIdentifiers.push(String(m.phone).toLowerCase().trim());
+            if (m.id) userIdentifiers.push(String(m.id).toLowerCase().trim());
+          }
+        } catch {}
+
+        const isAuthorized = events.some((ev) => {
+          let scanners = ev.qr_scanners || ev.qrScanners || ev.qrStaff || ev.qr_staff_ids || [];
+          if (typeof scanners === "string") {
+            try {
+              scanners = JSON.parse(scanners);
+            } catch {
+              scanners = [];
+            }
+          }
+          if (!Array.isArray(scanners) || scanners.length === 0) return false;
+          return scanners.some((s: any) => {
+            if (typeof s === "string") {
+              const lower = s.toLowerCase().trim();
+              return userIdentifiers.some((id) => lower === id || lower.includes(id));
+            }
+            if (typeof s === "object" && s !== null) {
+              const objVals = [s.id, s.code, s.userId, s.memberCode, s.phone, s.email, s.name]
+                .filter(Boolean)
+                .map((x) => String(x).toLowerCase().trim());
+              return userIdentifiers.some((id) => objVals.includes(id));
+            }
+            return false;
+          });
+        });
+
+        setCanScanQr(isAuthorized);
+        localStorage.setItem("vba_is_event_qr_scanner", isAuthorized ? "true" : "false");
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const visibleTabs = tabs;
+
+  useEffect(() => {
+    const handleOpenQr = () => setQrModalOpen(true);
+    window.addEventListener("vba:open_qr_modal", handleOpenQr);
+    return () => window.removeEventListener("vba:open_qr_modal", handleOpenQr);
+  }, []);
 
   const tabLabels: Record<string, { vi: string; en: string }> = {
     "/association": { vi: "Trang chủ", en: "Home" },
@@ -588,9 +670,10 @@ function MemberTabBar() {
   if (keyboardOpen) return null;
 
   return (
-    <nav className="vba-bottom-bar fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none transition-all duration-200 select-none">
+    <>
+      <nav className="vba-bottom-bar fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none transition-all duration-200 select-none">
       <div
-        className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),18px)] pt-2 backdrop-blur-xl transition-all border-amber-500/30 shadow-[0_-4px_24px_rgba(245,158,11,0.12)]`}
+        className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),18px)] pt-2 backdrop-blur-xl transition-all border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]`}
       >
         {/* Festive Mid-Autumn Corner Dangling Lantern */}
         {isMidAutumn && (
@@ -619,7 +702,7 @@ function MemberTabBar() {
           </div>
         )}
 
-        {tabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActive(tab.to, tab.exact);
 
@@ -638,21 +721,24 @@ function MemberTabBar() {
           if (tab.center) {
             return (
               <div key={tab.to} className="relative flex flex-1 flex-col items-center justify-end">
-                <Link
-                  to={tab.to}
-                  onClick={handleTabClick}
-                  aria-label={t(tab.label)}
-                  className="-mt-7 relative flex flex-col items-center group active:scale-95 transition-transform"
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleTabClick();
+                    navigate({ to: "/association/card" as any });
+                  }}
+                  aria-label="Thẻ 83 & Quét mã QR kết nối"
+                  className="-mt-7 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none"
                 >
-                  {/* Gold Halo Aura */}
-                  <span className="absolute inset-0 -top-1 rounded-full bg-amber-400/25 blur-md animate-pulse pointer-events-none" />
+                  {/* Navy Halo Aura */}
+                  <span className="absolute inset-0 -top-1 rounded-full bg-[#003B95]/20 blur-md animate-pulse pointer-events-none" />
                   <span
-                    className="relative grid h-14 w-14 place-items-center rounded-2xl shadow-[0_8px_24px_-4px_rgba(245,158,11,0.5)] group-hover:scale-105 group-active:scale-92 transition-transform overflow-hidden p-2.5"
+                    className="relative grid h-14 w-14 place-items-center rounded-2xl shadow-[0_8px_20px_-4px_rgba(0,59,149,0.4)] group-hover:scale-105 group-active:scale-92 transition-transform overflow-hidden p-2.5"
                     style={{
                       background: "linear-gradient(135deg, #002B70 0%, #003B95 50%, #004BBB 100%)",
-                      border: "2.5px solid #F59E0B",
+                      border: "2px solid rgba(255, 255, 255, 0.4)",
                       boxShadow:
-                        "0 6px 20px rgba(245, 158, 11, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.35)",
+                        "0 6px 18px rgba(0, 59, 149, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
                     }}
                   >
                     <QrCode
@@ -667,7 +753,10 @@ function MemberTabBar() {
                       </span>
                     )}
                   </span>
-                </Link>
+                  <span className="text-[10px] font-semibold text-[#003B95] dark:text-blue-400 mt-1">
+                    Thẻ 83
+                  </span>
+                </button>
               </div>
             );
           }
@@ -741,31 +830,41 @@ function MemberTabBar() {
             >
               <div className="relative">
                 <Icon
-                  className={`h-5 w-5 transition-transform duration-150 ${active ? "scale-110" : ""}`}
-                  style={{ color: active ? "#D97706" : "var(--vba-text-dim)" }}
+                  className={`h-5 w-5 transition-transform duration-150 ${active ? "scale-110 text-[#003B95] dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}`}
                 />
                 {notificationBadge || seasonalBadge}
               </div>
               <span
                 className={`text-[10px] transition-colors select-none ${
                   active
-                    ? "font-extrabold text-amber-600 dark:text-amber-400 drop-shadow-xs"
-                    : "font-medium text-[var(--vba-text-dim)]"
+                    ? "font-extrabold text-[#003B95] dark:text-blue-400"
+                    : "font-medium text-slate-500 dark:text-slate-400"
                 }`}
               >
                 {lang === "en"
                   ? tabLabels[tab.to]?.en || t(tab.label)
                   : tabLabels[tab.to]?.vi || t(tab.label)}
               </span>
-              {/* Dot indicator màu vàng hoàng kim sáng lấp lánh khi tab active */}
+              {/* Dot indicator khi tab active */}
               {active && (
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400 shadow-sm shadow-amber-500/80 -mt-0.5 animate-in fade-in zoom-in duration-200" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#003B95] dark:bg-blue-400 shadow-sm shadow-[#003B95]/40 -mt-0.5 animate-in fade-in zoom-in duration-200" />
               )}
             </Link>
           );
         })}
       </div>
     </nav>
+    <AssociationMemberQrModal
+      open={qrModalOpen}
+      onClose={() => setQrModalOpen(false)}
+      defaultTab="my_qr"
+      memberCode={user?.member_code || user?.id || ""}
+      memberName={user?.full_name || user?.name || "Hội viên CLB CEO 1983"}
+      memberTitle={user?.title || "Hội viên chính thức"}
+      memberCompany={user?.company || "CLB Doanh Nhân CEO 1983"}
+      memberAvatar={user?.avatar_url || user?.avatar || null}
+    />
+    </>
   );
 }
 

@@ -48,6 +48,21 @@ export type ActionB2bInviteData = {
   createdAt: string;
 };
 
+export type ActionItemInquiryData = {
+  itemType: "product" | "opportunity";
+  id: string;
+  title: string;
+  price?: string | number;
+  originalPrice?: string | number;
+  image?: string;
+  company?: string;
+  category?: string;
+  sellerName?: string;
+  sellerCode?: string;
+  unit?: string;
+  note?: string;
+};
+
 export type ReplyQuoteData = {
   id?: string;
   senderName: string;
@@ -65,6 +80,7 @@ export type ParsedContent = {
   | { type: "action_meeting"; data: ActionMeetingData }
   | { type: "action_ticket"; data: ActionTicketData }
   | { type: "b2b_connect_invite"; data: ActionB2bInviteData }
+  | { type: "item_inquiry"; data: ActionItemInquiryData }
   | { type: "text"; text: string }
 );
 

@@ -11,6 +11,7 @@ import {
   ReceiptText,
   Bot,
   Activity,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
@@ -26,6 +27,11 @@ function useNav(): NavItem[] {
     { to: "/platform/permissions", label: t("platform.tab.permissions"), icon: KeyRound },
     { to: "/platform/audit", label: t("platform.tab.audit"), icon: ScrollText },
     { to: "/platform/ai-audit", label: t("platform.tab.aiaudit"), icon: Bot },
+    {
+      to: "/platform/ai-users",
+      label: t("platform.tab.aiUsers") || "Hạn mức & Người dùng AI",
+      icon: Users,
+    },
     {
       to: "/platform/renewal-audit",
       label: t("platform.tab.renewalAudit"),

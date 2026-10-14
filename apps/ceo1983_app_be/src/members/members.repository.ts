@@ -74,7 +74,7 @@ export class MembersRepository {
       if (assocId) {
         return this.prisma.$queryRaw<any[]>`
           SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
-                 m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
+                 m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
                  COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
                  COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
                  COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
@@ -95,7 +95,7 @@ export class MembersRepository {
       } else {
         return this.prisma.$queryRaw<any[]>`
           SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
-                 m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
+                 m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
                  COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
                  COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
                  COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
@@ -119,7 +119,7 @@ export class MembersRepository {
     if (assocId) {
       return this.prisma.$queryRaw<any[]>`
         SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
-               m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
+               m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
                COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
                COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
                COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
@@ -137,7 +137,7 @@ export class MembersRepository {
 
     return this.prisma.$queryRaw<any[]>`
       SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
-             m.industry, m.region, m.type, m.status, m.user_id, m.executive_role,
+             m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
              COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
              COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
              COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title

@@ -39,7 +39,7 @@ type Info = {
 
 const emptyTicket = (): TicketDraft => ({ name: "", price: "", quantity: "", description: "" });
 
-import { FormattedCurrencyInput, parsePriceToNumber } from "@/components/common/FormattedCurrencyInput";
+import { VndCurrencyInput, parseVndNumber } from "@/components/dashboard/VndCurrencyInput";
 import { StandardDateInput, formatToDdmmyyyy } from "@/components/common/StandardDateInput";
 
 const TYPE_OPTS: EventType[] = ["forum", "workshop", "networking", "training"];
@@ -112,23 +112,41 @@ export function EventWizard({
     return parts.join("|") || "REG-XXXXXX";
   }, [qrFields, tickets]);
 
-  if (!open) return null;
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateInfo = () => {
+    const errs: Record<string, string> = {};
     if (!info.name.trim()) {
-      toast.error(t("ewz.err.name"));
-      return false;
+      errs.name = "Vui lòng nhập tên sự kiện!";
     }
     if (!info.date.trim()) {
-      toast.error(t("ewz.err.date"));
+      errs.date = "Vui lòng chọn ngày diễn ra theo định dạng ngày/tháng/năm!";
+    }
+    if (!info.location.trim()) {
+      errs.location = "Vui lòng nhập địa điểm tổ chức sự kiện!";
+    }
+    if (!info.capacity.trim() || Number(info.capacity) <= 0) {
+      errs.capacity = "Vui lòng nhập số lượng đại biểu (sức chứa)!";
+    }
+
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast.error("Vui lòng điền đầy đủ các trường bắt buộc có dấu (*)");
       return false;
     }
     return true;
   };
 
   const validateTickets = () => {
-    if (tickets.some((tk) => !tk.name.trim())) {
-      toast.error(t("ewz.err.ticketName"));
+    const errs: Record<string, string> = {};
+    tickets.forEach((tk, idx) => {
+      if (!tk.name.trim()) {
+        errs[`ticket_${idx}_name`] = "Vui lòng nhập tên hạng vé!";
+      }
+    });
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast.error("Vui lòng nhập tên cho các hạng vé!");
       return false;
     }
     return true;
@@ -155,7 +173,7 @@ export function EventWizard({
     setSubmitting(true);
     try {
       const computedTicketPrice = tickets.length > 0
-        ? Math.max(0, ...tickets.map((tk) => parsePriceToNumber(tk.price)))
+        ? Math.max(0, ...tickets.map((tk) => parseVndNumber(tk.price)))
         : 0;
 
       const res = await fetchNestApi<{ event: EventItem }>("/events", {
@@ -179,7 +197,7 @@ export function EventWizard({
           qrFields,
           tickets: tickets.map((tk) => ({
             name: tk.name.trim(),
-            price: parsePriceToNumber(tk.price),
+            price: parseVndNumber(tk.price),
             quantity: parseInt(String(tk.quantity).replace(/\D/g, ""), 10) || 0,
             description: tk.description.trim(),
           })),
@@ -269,8 +287,8 @@ export function EventWizard({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5">
-          {step === 0 && <InfoStep info={info} setInfo={setInfo} />}
-          {step === 1 && <TicketStep tickets={tickets} setTickets={setTickets} />}
+          {step === 0 && <InfoStep info={info} setInfo={setInfo} errors={errors} setErrors={setErrors} />}
+          {step === 1 && <TicketStep tickets={tickets} setTickets={setTickets} errors={errors} setErrors={setErrors} />}
           {step === 2 && <QrStep qrFields={qrFields} toggleQr={toggleQr} sample={qrSample} />}
         </div>
 
@@ -325,7 +343,17 @@ const inputCls =
   "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
 const labelCls = "mb-1.5 block text-xs font-medium text-muted-foreground";
 
-function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void }) {
+function InfoStep({
+  info,
+  setInfo,
+  errors,
+  setErrors,
+}: {
+  info: Info;
+  setInfo: (v: Info) => void;
+  errors: Record<string, string>;
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) {
   const t = useT();
   const currentTpl = EVENT_TYPE_TEMPLATES[info.type as EventTypeKey] || EVENT_TYPE_TEMPLATES.forum;
 
@@ -443,15 +471,23 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
       {/* Editable Fields */}
       <div>
         <label className={labelCls} htmlFor="ewz-name">
-          {t("ewz.field.name")}
+          {t("ewz.field.name")} <span className="text-destructive font-bold">*</span>
         </label>
         <input
           id="ewz-name"
-          className={inputCls}
+          className={`${inputCls} ${errors.name ? "border-destructive ring-1 ring-destructive/30" : ""}`}
           placeholder="Nhập tên sự kiện (ví dụ: Gala Doanh Nhân CEO 1983 - Kỷ Niệm 10 Năm)..."
           value={info.name}
-          onChange={(e) => setInfo({ ...info, name: e.target.value })}
+          onChange={(e) => {
+            setInfo({ ...info, name: e.target.value });
+            if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+          }}
         />
+        {errors.name && (
+          <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+            {errors.name}
+          </p>
+        )}
       </div>
 
       {/* Event Banner / Photo Upload */}
@@ -502,43 +538,67 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls} htmlFor="ewz-date">
-            {t("ewz.field.date")} (dd/mm/yyyy)
+            {t("ewz.field.date")} (dd/mm/yyyy) <span className="text-destructive font-bold">*</span>
           </label>
           <StandardDateInput
             id="ewz-date"
-            className={inputCls}
+            className={`${inputCls} ${errors.date ? "border-destructive ring-1 ring-destructive/30" : ""}`}
             value={info.date}
             placeholder="dd/mm/yyyy (ví dụ: 25/10/2026)"
-            onChange={(isoVal) => setInfo({ ...info, date: isoVal })}
+            onChange={(isoVal) => {
+              setInfo({ ...info, date: isoVal });
+              if (errors.date) setErrors((prev) => ({ ...prev, date: "" }));
+            }}
           />
+          {errors.date && (
+            <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+              {errors.date}
+            </p>
+          )}
         </div>
         <div>
           <label className={labelCls} htmlFor="ewz-capacity">
-            {t("ewz.field.capacity")}
+            {t("ewz.field.capacity")} <span className="text-destructive font-bold">*</span>
           </label>
           <input
             id="ewz-capacity"
             type="number"
             min={0}
-            className={inputCls}
+            className={`${inputCls} ${errors.capacity ? "border-destructive ring-1 ring-destructive/30" : ""}`}
             placeholder="Ví dụ: 100 chỗ ngồi"
             value={info.capacity}
-            onChange={(e) => setInfo({ ...info, capacity: e.target.value })}
+            onChange={(e) => {
+              setInfo({ ...info, capacity: e.target.value });
+              if (errors.capacity) setErrors((prev) => ({ ...prev, capacity: "" }));
+            }}
           />
+          {errors.capacity && (
+            <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+              {errors.capacity}
+            </p>
+          )}
         </div>
       </div>
 
       <div>
         <label className={labelCls} htmlFor="ewz-location">
-          {t("ewz.field.location")}
+          {t("ewz.field.location")} <span className="text-destructive font-bold">*</span>
         </label>
         <input
           id="ewz-location"
-          className={inputCls}
+          className={`${inputCls} ${errors.location ? "border-destructive ring-1 ring-destructive/30" : ""}`}
           placeholder="Địa chỉ / Khách sạn tổ chức (ví dụ: Trung tâm Hội nghị Quốc gia, Hà Nội)..."
           value={info.location}
-          onChange={(e) => setInfo({ ...info, location: e.target.value })}
+          onChange={(e) => {
+            setInfo({ ...info, location: e.target.value });
+            if (errors.location) setErrors((prev) => ({ ...prev, location: "" }));
+          }}
         />
+        {errors.location && (
+          <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+            {errors.location}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -621,9 +681,13 @@ function InfoStep({ info, setInfo }: { info: Info; setInfo: (v: Info) => void })
 function TicketStep({
   tickets,
   setTickets,
+  errors,
+  setErrors,
 }: {
   tickets: TicketDraft[];
   setTickets: (v: TicketDraft[]) => void;
+  errors: Record<string, string>;
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }) {
   const t = useT();
   const update = (i: number, patch: Partial<TicketDraft>) =>
@@ -649,17 +713,33 @@ function TicketStep({
         {tickets.map((tk, i) => (
           <div key={i} className="rounded-xl border border-border bg-background p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <label htmlFor={`ewz-ticket-name-${i}`} className="sr-only">
-                {t("ewz.tickets.name")}
-              </label>
-              <input
-                id={`ewz-ticket-name-${i}`}
-                className={`${inputCls} font-medium`}
-                placeholder={t("ewz.tickets.namePh")}
-                aria-label={t("ewz.tickets.name")}
-                value={tk.name}
-                onChange={(e) => update(i, { name: e.target.value })}
-              />
+              <div className="flex-1">
+                <label htmlFor={`ewz-ticket-name-${i}`} className="sr-only">
+                  {t("ewz.tickets.name")}
+                </label>
+                <input
+                  id={`ewz-ticket-name-${i}`}
+                  className={`${inputCls} font-medium ${errors[`ticket_${i}_name`] ? "border-destructive ring-1 ring-destructive/30" : ""}`}
+                  placeholder={t("ewz.tickets.namePh")}
+                  aria-label={t("ewz.tickets.name")}
+                  value={tk.name}
+                  onChange={(e) => {
+                    update(i, { name: e.target.value });
+                    if (errors[`ticket_${i}_name`]) {
+                      setErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy[`ticket_${i}_name`];
+                        return copy;
+                      });
+                    }
+                  }}
+                />
+                {errors[`ticket_${i}_name`] && (
+                  <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
+                    {errors[`ticket_${i}_name`]}
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => remove(i)}
@@ -673,13 +753,13 @@ function TicketStep({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className={labelCls} htmlFor={`ewz-ticket-price-${i}`}>
-                    {t("ewz.tickets.price")} (VNĐ / USD)
+                    {t("ewz.tickets.price")} (VNĐ)
                   </label>
                   {(() => {
-                    const num = parsePriceToNumber(tk.price);
+                    const num = parseVndNumber(tk.price);
                     return num <= 0 ? (
                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
-                        Miễn phí (0đ / $0)
+                        Miễn phí (0đ)
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded">
@@ -688,19 +768,17 @@ function TicketStep({
                     );
                   })()}
                 </div>
-                <FormattedCurrencyInput
+                <VndCurrencyInput
                   id={`ewz-ticket-price-${i}`}
-                  ariaLabel={t("ewz.tickets.price")}
-                  placeholder="0 đ / $0 (0 là miễn phí)"
+                  placeholder="0 (0 là miễn phí)"
                   className={inputCls}
-                  value={tk.price}
-                  allowCurrencySwitch={true}
-                  onChange={(val) => update(i, { price: val })}
+                  value={parseVndNumber(tk.price)}
+                  onChange={(val) => update(i, { price: String(val) })}
                 />
                 <p className="mt-1 text-[10.5px] text-muted-foreground">
-                  {parsePriceToNumber(tk.price) <= 0
+                  {parseVndNumber(tk.price) <= 0
                     ? "Vé 0 đồng = Miễn phí tham dự."
-                    : "Từ 1 đ / $1 trở lên = Vé có phí bắt buộc thanh toán."}
+                    : "Từ 1 đ trở lên = Vé có phí bắt buộc thanh toán."}
                 </p>
               </div>
               <div>

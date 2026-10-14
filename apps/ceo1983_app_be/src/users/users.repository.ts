@@ -7,13 +7,67 @@ export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByUsername(username: string): Promise<vione_users | null> {
-    return this.prisma.vione_users
+    const input = (username || '').trim();
+    if (!input) return null;
+
+    // 1. Direct match on username or email
+    const user = await this.prisma.vione_users
       .findFirst({
         where: {
-          OR: [{ username }, { email: username }],
+          OR: [
+            { username: { equals: input, mode: 'insensitive' } },
+            { email: { equals: input, mode: 'insensitive' } },
+          ],
         },
       })
       .catch(() => null);
+
+    if (user) return user;
+
+    // 2. Phone lookup: clean digits
+    const cleanPhone = input.replace(/\D/g, '');
+    if (cleanPhone.length >= 9) {
+      const phoneVariants = [cleanPhone];
+      if (cleanPhone.startsWith('84')) {
+        phoneVariants.push('0' + cleanPhone.slice(2));
+      } else if (cleanPhone.startsWith('0')) {
+        phoneVariants.push('84' + cleanPhone.slice(1));
+      }
+
+      // Check public.members
+      const memberRows: any[] = (await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT user_id, email FROM public.members 
+         WHERE regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = ANY($1::text[]) 
+         LIMIT 1`,
+        phoneVariants
+      ).catch(() => [])) as any[];
+
+      if (memberRows.length > 0) {
+        if (memberRows[0].user_id) {
+          const u = await this.findById(memberRows[0].user_id);
+          if (u) return u;
+        }
+        if (memberRows[0].email) {
+          const u = await this.findByEmail(memberRows[0].email);
+          if (u) return u;
+        }
+      }
+
+      // Check public.user_profiles
+      const profileRows: any[] = (await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT user_id FROM public.user_profiles 
+         WHERE regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = ANY($1::text[]) 
+           AND user_id IS NOT NULL 
+         LIMIT 1`,
+        phoneVariants
+      ).catch(() => [])) as any[];
+
+      if (profileRows.length > 0 && profileRows[0]?.user_id) {
+        return this.findById(profileRows[0].user_id);
+      }
+    }
+
+    return null;
   }
 
   async findById(id: string): Promise<vione_users | null> {
@@ -149,6 +203,7 @@ export class UsersRepository {
     await this.prisma.$executeRawUnsafe(
       `UPDATE public.members 
        SET name = COALESCE($1, name),
+           contact = COALESCE($1, contact),
            avatar = COALESCE($2, avatar),
            email = COALESCE($3, email),
            industry = COALESCE($4, industry),

@@ -83,6 +83,29 @@ function formatMessagePreview(raw?: string | null, isFromMe?: boolean, youPrefix
     return `${prefix}💳 [Giao dịch] Thông báo thanh toán`;
   }
 
+  if (text.includes("[ITEM_INQUIRY]")) {
+    try {
+      const jsonStr = text.slice(text.indexOf("[ITEM_INQUIRY]") + 14).trim();
+      const data = JSON.parse(jsonStr);
+      const title = data.title || data.name || "Sản phẩm / Cơ hội";
+      const kind = data.type === "product" ? "🛍️ [Hỏi sản phẩm]" : "💼 [Hỏi cơ hội]";
+      return `${prefix}${kind} ${title}`;
+    } catch {
+      return `${prefix}🛍️ [Hỏi mua / Kết nối kinh doanh]`;
+    }
+  }
+
+  if (text.includes("[B2B_CONNECT_INVITE]")) {
+    try {
+      const jsonStr = text.slice(text.indexOf("[B2B_CONNECT_INVITE]") + 20).trim();
+      const data = JSON.parse(jsonStr);
+      const title = data.title || data.topic || data.purpose || "Hẹn gặp 1-1";
+      return `${prefix}🤝 [Hẹn gặp 1-1] ${title}`;
+    } catch {
+      return `${prefix}🤝 [Lời mời kết nối 1-1]`;
+    }
+  }
+
   // Image tag format: image:URL|NAME or image:URL or raw image url
   if (
     /\[image:(https?:\/\/[^|\]]+)(?:\|([^\]]*))?\]/i.test(text) ||

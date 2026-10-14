@@ -18,11 +18,13 @@ Tài liệu xác định rõ ràng:
 
 ### 1.2. Phạm vi hệ thống
 Hệ thống Cổng Quản trị Web CRM đóng vai trò là "Bộ não điều hành số" trung tâm của hiệp hội, kết nối liên thông thời gian thực với Ứng dụng Di động của các hội viên doanh nhân. Hệ thống phục vụ cho các cấp lãnh đạo: Chủ tịch, Admin quản trị, Ban Điều Hành, Tổng thư ký, 5 Trưởng ban chuyên môn (Thành viên, Xúc tiến thương mại, Tài chính, Truyền thông, Thiện nguyện) và Ban Thư ký câu lạc bộ.
+- **Tên miền Cổng Quản trị CRM**: `https://crm.ceo1983.viconnect.vn/`
+- **Tên miền Ứng dụng Di động Hội viên**: `https://ceo1983.viconnect.vn/`
 
 ### 1.3. Định nghĩa thuật ngữ & Từ viết tắt
 - **Hiệp hội / Câu lạc bộ**: CLB Doanh Nhân CEO 1983 trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).
 - **Hội viên chính danh**: Doanh nhân sinh năm 1983 (Quý Hợi), là người đại diện pháp luật hoặc lãnh đạo cấp cao của doanh nghiệp thành lập hợp pháp, đã được Ban Thành Viên thẩm định và cấp Mã số hội viên dạng `CEO-83xxx`.
-- **Thẻ thông minh doanh nhân / Công nghệ chạm thẻ thông minh 1 chạm**: Tấm thẻ định danh điện tử mạ vàng độc bản của hội viên tích hợp chip cảm ứng bảo mật cao; chỉ cần chạm nhẹ thẻ vào điện thoại là truyền tải tức thì hồ sơ doanh nhân, website và thông tin liên hệ trong vòng dưới 1 giây mà đối tác không cần cài ứng dụng.
+- **Thẻ điện tử hội viên & Quét mã QR kết nối động**: Thẻ định danh điện tử 3D VIP mạ vàng độc bản của hội viên tích hợp mã QR kết nối động và liên kết cá nhân hóa; chỉ cần quét mã QR bằng camera điện thoại là truyền tải tức thì hồ sơ doanh nhân, website và thông tin liên hệ trong vòng dưới 1 giây mà đối tác không cần cài ứng dụng.
 - **Mã VietQR Napas 24/7**: Chuẩn mã thanh toán chuyển khoản ngân hàng nhanh quốc gia, tích hợp sẵn số tài khoản hiệp hội và cú pháp đối soát tự động.
 - **Khán phòng Seating Map**: Sơ đồ chỗ ngồi đại biểu trực quan dạng bàn tiệc tròn (10 người/bàn) hoặc dãy ghế rạp chiếu phim có phân khu bàn VIP cho lãnh đạo và nhà tài trợ.
 
@@ -489,6 +491,23 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 #### 3.6.3.7. Xem chi tiết & Quay số may mắn (Lucky Draw)
 - Tích hợp màn hình Quay số may mắn trên màn hình chiếu LED hội trường: Hệ thống chỉ quay ngẫu nhiên các mã đại biểu ĐÃ THỰC TẾ CHECK-IN vào cửa.
 
+#### 3.6.3.8. Seating Studio - Sơ Đồ Xếp Chỗ Trực Quan & Di Chuyển Chỗ Ngồi (Seat Reassignment)
+- **Truy cập trực quan**: Nút "Sơ Đồ Xếp Chỗ" màu tím/navy trực tiếp trên Header trang Đăng Ký Sự Kiện (`/event-registrations`).
+- **Mô hình Khán phòng**: Mô phỏng trực quan dạng rạp chiếu phim (Cinema Seating Map) hoặc Bàn tròn VIP với màn chiếu Stage trung tâm.
+- **Trạng thái ghế ngồi**:
+  - Ghế trống: Màu xám/slate bo góc, click để gán ngay cho đại biểu đang chọn.
+  - Ghế đã có người: Hiển thị tên đại biểu, mã vé, doanh nghiệp và hạng vé.
+  - Ghế đang chọn / Đang di chuyển: Viền vàng hổ phách (Amber Gold) nhấp nháy nổi bật.
+- **Tính năng Di chuyển & Đổi Ghế (Seat Swapping / Reassigning)**:
+  - *Phương thức 1 - Kéo & Thả (HTML5 Drag & Drop)*: Kéo đại biểu từ một ghế đã ngồi và thả vào ghế trống bất kỳ hoặc ghế khác trên sơ đồ.
+  - *Phương thức 2 - Chế độ Click-to-Move*: Bấm nút "Di chuyển đại biểu sang ghế khác" trên thanh Inspector hoặc bấm nút "Chuyển" trên bảng danh sách đại biểu đã xếp chỗ. Thanh Banner màu hổ phách (Amber Notification Banner) xuất hiện phía trên sơ đồ: *"Đang di chuyển: [Tên Đại Biểu] (Ghế hiện tại: [Số ghế]). Hãy nhấp vào một ghế trống hoặc ghế khác để chuyển chỗ"*. Người dùng click vào ghế đích -> hệ thống tự động gọi API cập nhật vị trí ghế ngay tức thì.
+
+#### 3.6.3.9. Quy Tắc Xóa Bỏ Hoàn Toàn Đại Biểu Hủy Vé Khỏi Hệ Thống CRM
+- Khi đại biểu hủy đăng ký sự kiện từ Mobile App hoặc qua hệ thống:
+  - Backend tự động thu hồi và giải phóng ghế (`seat_assignment = NULL`), loại trừ triệt để `status != 'cancelled'` khỏi mọi truy vấn danh sách đăng ký.
+  - Giao diện CRM lọc bỏ hoàn toàn các bản ghi có trạng thái `cancelled` khỏi bảng đại biểu, loại bỏ tùy chọn 'cancelled' khỏi dropdown trạng thái và chỉ đếm các đại biểu đang tham gia hợp lệ trong các thẻ thống kê KPI ("Tổng Số Người Đăng Ký", "Đã Thanh Toán Phí", "Đã Xếp Chỗ Ngồi").
+  - Đảm bảo thông tin đại biểu đã hủy không làm rối mắt ban tổ chức và không chiếm giữ vị trí chỗ ngồi trong khán phòng.
+
 ### 3.6.4. Luồng nghiệp vụ
 - **3.6.4.1. Tìm kiếm sự kiện**: Lọc sự kiện theo thời gian và trạng thái.
 - **3.6.4.2. Lưu nháp kế hoạch sự kiện**: Lưu dự thảo kế hoạch tổ chức sự kiện để lấy ý kiến Ban Chấp Hành.
@@ -742,35 +761,40 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 
 ---
 
-## 3.10. Phân hệ Quản trị Tin Tức, Văn Bản Pháp Quy & Nghị Quyết Hiệp Hội (/news, /documents)
+## 3.10. Phân hệ Quản trị Tin Tức, Văn Bản Pháp Quy, Thư Viện Văn Kiện & Mẫu Thư Điện Tử (/news, /documents)
 
 ### 3.10.1. Thông tin chung
-- **Mục tiêu**: Cung cấp kênh truyền thông chính thống và kho lưu trữ văn kiện số toàn diện của hiệp hội: Điều lệ câu lạc bộ, Quy chế hoạt động, Các quyết định bổ nhiệm nhân sự, Nghị quyết đại hội và Tin tức hoạt động đối ngoại của HanoiBA.
-- **Thẩm quyền**: Ban Truyền thông và Ban Thư Ký phụ trách biên tập và xuất bản văn kiện dưới sự phê chuẩn của Tổng thư ký hoặc Chủ tịch.
+- **Mục tiêu**: Cung cấp kênh truyền thông chính thống và kho lưu trữ văn kiện số toàn diện của hiệp hội: Điều lệ câu lạc bộ, Quy chế hoạt động, Các quyết định bổ nhiệm nhân sự, Nghị quyết đại hội, Thư viện biểu mẫu phân theo từng Ban chuyên môn và Hệ thống quản trị mẫu thông báo điện tử gửi hội viên.
+- **Thẩm quyền**: Ban Truyền thông và Ban Thư Ký phụ trách biên tập và xuất bản văn kiện dưới sự phê chuẩn của Tổng thư ký hoặc Chủ tịch; Ban Tài chính quản lý mẫu email thông báo hội phí và VietQR tự động.
 
 ### 3.10.2. Màn hình
-- **3.10.2.1. Tìm kiếm văn bản / tin tức**: Lọc theo phân loại văn bản (Nghị quyết, Quyết định, Quy chế, Bản tin), ngày ban hành và số hiệu văn bản.
-- **3.10.2.2. Danh sách văn kiện**: Bảng danh sách hiển thị số hiệu, trích yếu văn bản, cơ quan ban hành, ngày có hiệu lực, người ký và tệp văn bản đính kèm.
-- **3.10.2.3. Đăng tải văn bản / bài viết mới**: Biểu mẫu soạn thảo bài viết và tải lên văn kiện pháp quy.
-- **3.10.2.4. Chỉnh sửa văn bản**: Cập nhật văn bản sửa đổi, bổ sung.
+- **3.10.2.1. Tìm kiếm & Phân loại văn bản**: Lọc theo 8 Ban chuyên môn (Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến, Ban Tài Chính, Ban Thiện Nguyện, Ban Thư Ký, Biểu mẫu chung); lọc theo định dạng tệp (Tất cả, PDF, DOCX, XLSX, PPTX); sắp xếp theo thời gian (Mới nhất, Cũ nhất); tìm kiếm tức thì theo từ khóa trích yếu và tác giả.
+- **3.10.2.2. Danh sách văn kiện số**: Bảng danh mục hiển thị số hiệu, trích yếu văn bản, phân loại ban chuyên môn, định dạng tệp, ngày ban hành, người ký và nút tải về/đọc trực tiếp.
+- **3.10.2.3. Đăng tải văn bản / bài viết mới**: Biểu mẫu soạn thảo bài viết và tải lên văn kiện pháp quy đính kèm.
+- **3.10.2.4. Chỉnh sửa văn bản**: Cập nhật văn bản sửa đổi, bổ sung hoặc thay thế tệp đính kèm mới.
 - **3.10.2.5. Chỉ định người ký duyệt**: Hộp thoại chọn lãnh đạo ký phê duyệt văn bản (Chủ tịch hoặc Tổng thư ký).
 - **3.10.2.6. Lịch sử phiên bản văn bản**: Quản lý lịch sử các bản sửa đổi của Quy chế hiệp hội qua các thời kỳ.
-- **3.10.2.7. Hủy bỏ / Hết hiệu lực**: Gắn cờ văn bản hết hiệu lực thi hành.
-- **3.10.2.8. Xem chi tiết văn bản & Đọc tệp PDF trực tuyến**: Màn hình xem bài viết và trình đọc tệp văn kiện PDF trực tiếp.
+- **3.10.2.7. Hủy bỏ / Hết hiệu lực**: Gắn cờ văn bản hết hiệu lực thi hành kèm số quyết định bãi bỏ.
+- **3.10.2.8. Xem chi tiết văn bản & Đọc tệp PDF trực tuyến**: Màn hình xem bài viết và trình đọc tệp văn kiện PDF/Office trực tiếp.
+- **3.10.2.9. Quản trị Mẫu Thư Điện Tử & Thông Báo Tự Động (MailTemplateManager)**: Trình quản lý mẫu thông báo niên liễm, giấy mời họp, thông báo kết nạp với giao diện chọn Chip Biến Số trực quan kèm ví dụ trực tiếp thay cho việc gõ mã kỹ thuật; giao diện xem trước phong cách thẻ Doanh Nhân Executive Card nền sáng trang nhã.
 
 ### 3.10.3. Mô tả chi tiết màn hình
 #### 3.10.3.1. Tìm kiếm & Bộ lọc
-- Tìm theo số hiệu văn bản (ví dụ: `01/2026/NQ-CEO1983`) hoặc từ khóa trích yếu.
+- **Lọc theo Ban chuyên môn**: Chọn 1 trong 8 nhóm chuyên trách: Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến Thương Mại, Ban Tài Chính, Ban Thiện Nguyện, Ban Thư Ký, Biểu mẫu chung.
+- **Lọc theo Định dạng tệp**: Lọc nhanh qua các pill bấm chọn: Tất cả (All), PDF (`.pdf`), Word (`.docx`), Excel (`.xlsx`), PowerPoint (`.pptx`).
+- **Sắp xếp thứ tự**: Sắp xếp 2 chiều: Mới nhất trước (Newest), Cũ nhất trước (Oldest).
+- **Tìm kiếm tức thì (Live Search)**: Tìm theo số hiệu văn bản (ví dụ: `01/2026/NQ-CEO1983`), từ khóa trích yếu hoặc tên người ban hành.
 
 #### 3.10.3.2. Biểu mẫu Ban hành Văn bản / Đăng tin bài
 | Tên trường | Nhãn hiển thị | Kiểu dữ liệu | Bắt buộc | Giá trị mặc định | Dải giá trị cho phép | Quy tắc kiểm tra (Validation) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `docTitle` | Trích yếu nội dung | Văn bản ngắn | Có | Rỗng | 10 - 300 ký tự | Tự động cắt khoảng trắng |
-| `docType` | Phân loại văn bản | Chọn một | Có | Nghị quyết | Nghị quyết, Quyết định, Quy chế, Thông báo, Tin tức | Xem quy tắc giao diện động |
+| `docType` | Phân loại văn bản | Chọn một | Có | Nghị quyết | Nghị quyết, Quyết định, Quy chế, Thông báo, Tin tức, Biểu mẫu | Xem quy tắc giao diện động |
+| `committee`| Ban chuyên môn | Chọn một | Có | Ban Điều Hành | 8 Ban chuyên môn chính thức | Bắt buộc chọn đúng ban quản lý |
 | `docNumber` | Số hiệu văn bản | Văn bản ngắn | Có | Rỗng | Tối đa 50 ký tự | Định dạng chuẩn văn thư lưu trữ |
 | `signerName` | Người ký phê chuẩn | Chọn một | Có | Chủ tịch Hiệp hội | Chủ tịch, Tổng thư ký | Bắt buộc chọn đúng thẩm quyền |
 | `effectiveDate`| Ngày có hiệu lực | Ngày tháng | Có | Ngày hôm nay | Định dạng dd/mm/yyyy | Chuẩn ngày Việt Nam |
-| `docFile` | Tệp văn bản gốc (PDF/Word)| Tải lên tệp | Có | Rỗng | Tệp PDF hoặc Word (tối đa 30MB) | Bắt buộc có tệp văn bản chính thức |
+| `docFile` | Tệp văn bản gốc (PDF/Word/Excel)| Tải lên tệp | Có | Rỗng | PDF, DOCX, XLSX, PPTX (tối đa 30MB) | Bắt buộc có tệp văn bản chính thức |
 
 - **Hành vi tương tác giao diện động theo giá trị chọn (Select-State UI Dependencies)**:
   - *Khi chọn "Phân loại văn bản" = "Nghị quyết" hoặc "Quyết định"*:
@@ -780,7 +804,7 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
     - Biểu mẫu chuyển sang giao diện **Trình soạn thảo văn bản giàu tính năng (Rich-Text Editor)** cho phép chèn ảnh và định dạng đoạn văn bản đẹp mắt.
 
 #### 3.10.3.3. Bảng thư viện văn kiện số
-- Danh mục trực quan hiển thị biểu tượng PDF/Word, số hiệu, ngày ban hành và nút xem trực tiếp.
+- Danh mục trực quan hiển thị biểu tượng phân loại màu sắc cho từng định dạng (PDF đỏ, DOCX xanh dương, XLSX xanh lá, PPTX cam), số hiệu, ban phụ trách, ngày ban hành và nút xem/tải về.
 
 #### 3.10.3.4. Lịch sử văn bản
 - Bảng tra cứu các văn bản bị thay thế hoặc văn bản sửa đổi bổ sung.
@@ -794,13 +818,25 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 #### 3.10.3.7. Xem chi tiết & Tải tệp văn bản
 - Đọc văn kiện trực tiếp trên màn hình, hỗ trợ in ấn và tải về máy tính.
 
+#### 3.10.3.8. Quản trị Mẫu Thư Điện Tử Thông Báo Tự Động (MailTemplateManager)
+- **Hệ thống Chip Biến Số Trực Quan (Friendly Variable Chips)**:
+  - Thay thế việc gõ các mã kỹ thuật `{ten_hoi_vien}` hay `{so_tien}` bằng danh sách các Chip bấm chèn thông minh có chú thích rõ ràng:
+    - `[Họ và tên hội viên]`: Ví dụ: *Nguyễn Văn A*
+    - `[Tên doanh nghiệp]`: Ví dụ: *Công ty Cổ phần Alpha*
+    - `[Số tiền hội phí]`: Ví dụ: *10.000.000 VNĐ*
+    - `[Hạn thanh toán]`: Ví dụ: *31/12/2026*
+    - `[Mã VietQR tự động]`: Chèn khối mã thanh toán Napas 24/7 đối soát tự động
+- **Thiết kế Thẻ Doanh Nhân Executive Card**:
+  - Giao diện mẫu thư được thiết kế theo phong cách thẻ sang trọng nền trắng thanh lịch (`bg-white` / `bg-card`), viền thẻ mảnh, huy hiệu nhận diện cam hổ phách cao cấp; loại bỏ hoàn toàn khối nền xanh navy tối màu chói mắt, đảm bảo độ tương phản cao và hiển thị tối ưu trên cả giao diện Sáng và Tối (Light/Dark mode).
+  - Trình xem trước tức thời (Live Preview) mô phỏng chính xác nội dung thư gửi đến email hội viên.
+
 ### 3.10.4. Luồng nghiệp vụ
-- **3.10.4.1. Tìm kiếm văn bản**: Tra cứu quy chế hoặc nghị quyết đại hội.
+- **3.10.4.1. Tìm kiếm & Lọc văn bản**: Tra cứu quy chế, biểu mẫu hoặc nghị quyết đại hội theo ban hoặc định dạng tệp.
 - **3.10.4.2. Lưu nháp văn bản**: Ban Thư Ký soạn thảo dự thảo văn kiện lưu nháp.
 - **3.10.4.3. Ký duyệt & Xuất bản chính thức**: Chủ tịch ký ban hành -> Tự động phát thông báo tới ứng dụng di động của toàn thể hội viên.
 - **3.10.4.4. Hết hiệu lực thi hành**: Cập nhật văn bản thay thế.
-- **3.10.4.5. Xem chi tiết**: Hội viên tra cứu và tải tài liệu.
-- **3.10.4.6. Xuất kho lưu trữ**: Đồng bộ văn kiện vào kho lưu trữ vĩnh viễn.
+- **3.10.4.5. Xem chi tiết & Tải tài liệu**: Hội viên tra cứu và tải tài liệu định dạng Office hoặc PDF.
+- **3.10.4.6. Quản trị mẫu email thông báo**: Ban Tài chính hoặc Ban Thư ký chọn mẫu, chèn biến số thông minh, xem trước và lưu cấu hình.
 
 ### 3.10.5. Đặc tả tương tác giao tiếp dữ liệu / API
 - **3.10.5.1. Tra cứu danh sách văn bản**: Lấy danh sách văn bản theo loại và kỳ ban hành.
@@ -842,11 +878,11 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 | `discountRate` | Mức ưu đãi / Giảm giá (%)| Số phần trăm | Có | 15% | 5% đến 100% | Cam kết chiết khấu độc quyền |
 | `serviceCategory`| Phân nhóm dịch vụ | Chọn một | Có | Sân Golf & Thể thao | Golf, Khách sạn, Hàng không, Y tế | Xem quy tắc giao diện động |
 | `expiryDate` | Thời hạn áp dụng | Ngày tháng | Có | +1 năm | Sau ngày hiện tại | Chuẩn dd/mm/yyyy |
-| `howToClaim` | Cách thức nhận đặc quyền | Chọn một | Có | Xuất trình Thẻ thông minh| Chạm thẻ thông minh, Quét mã QR, Đặt qua hotline| Xem quy tắc giao diện động |
+| `howToClaim` | Cách thức nhận đặc quyền | Chọn một | Có | Xuất trình Thẻ điện tử hội viên| Xuất trình thẻ điện tử, Quét mã QR, Đặt qua hotline| Xem quy tắc giao diện động |
 
 - **Hành vi tương tác giao diện động theo giá trị chọn (Select-State UI Dependencies)**:
-  - *Khi chọn "Cách thức nhận đặc quyền" = "Xuất trình Thẻ thông minh doanh nhân"*:
-    - Hệ thống tự động ghi nhận chính sách: Hội viên chỉ cần xuất trình tấm Thẻ thông minh doanh nhân CEO 1983 mạ vàng tại quầy lễ tân của đối tác để được áp dụng giảm giá trực tiếp.
+  - *Khi chọn "Cách thức nhận đặc quyền" = "Xuất trình Thẻ điện tử hội viên"*:
+    - Hệ thống tự động ghi nhận chính sách: Hội viên chỉ cần xuất trình Thẻ điện tử hội viên CEO 1983 3D mạ vàng hoặc mã QR trên ứng dụng tại quầy lễ tân của đối tác để được áp dụng giảm giá trực tiếp.
   - *Khi chọn "Phân nhóm dịch vụ" = "Sân Golf & Thể thao"*:
     - Form **hiển thị thêm trường**: *"Danh sách sân Golf liên kết"* và *"Khung giờ Tee-off ưu tiên cho hội viên CEO 1983"*.
 
@@ -954,6 +990,152 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 - **3.12.5.6. Kích hoạt sao lưu tức thời**: Khởi tạo bản sao lưu dữ liệu khẩn cấp.
 - **3.12.5.7. Thu hồi phiên đăng nhập**: Thu hồi các mã truy cập đang hoạt động.
 - **3.12.5.8. Lấy danh mục tham số hệ thống**: Trả về các định nghĩa cấu hình mở rộng.
+
+---
+
+## 3.13. Phân hệ Mạng Lưới Doanh Nhân & Trao Đổi Nghiệp Vụ Nội Bộ CRM (/network)
+
+### 3.13.1. Thông tin chung
+- **Mục tiêu**: Xây dựng không gian kết nối và trao đổi thông tin công việc, nghiệp vụ trực tiếp 1-on-1 giữa các cán bộ quản trị, thành viên Ban Điều Hành và toàn thể các doanh nhân hội viên trong CLB Doanh Nhân CEO 1983.
+- **Nguyên tắc nghiệp vụ quan trọng**:
+  - Tách bạch hoàn toàn kênh trao đổi công việc nội bộ CRM (lưu trữ độc lập tại không gian làm việc Web CRM) với luồng hội thoại kết nối bạn bè trên Ứng dụng Di động (`vba_conversations`).
+  - Hỗ trợ khởi tạo hội thoại và gửi tin nhắn trao đổi công việc ngay lập tức qua nút bấm chính "Nhắn tin trao đổi" mà **KHÔNG bắt buộc phải gửi yêu cầu kết nối hay chờ đối tác phê duyệt trước**. Điều này đảm bảo tính thông suốt và khẩn trương trong công tác chỉ đạo và điều hành công việc của hiệp hội.
+
+### 3.13.2. Màn hình
+- **3.13.2.1. Tìm kiếm & Lọc mạng lưới**: Bộ lọc nhanh theo 8 Ban chuyên môn (Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến Thương Mại, Ban Tài Chính, Ban Thiện Nguyện, Ban Thư Ký, Ban Cố Vấn); tìm kiếm thời gian thực theo họ tên, doanh nghiệp, ngành nghề và chức vụ.
+- **3.13.2.2. Danh sách danh bạ cán bộ & hội viên**: Hiển thị avatar, họ tên, mã hội viên, doanh nghiệp, ngành nghề, chức danh lãnh đạo, huy hiệu Ban chuyên môn và trạng thái kết nối.
+- **3.13.2.3. Hộp thoại khởi tạo cuộc trò chuyện công việc (NewChatDialog)**: Cho phép chọn nhanh bất kỳ thành viên nào theo Ban chuyên môn để mở luồng trao đổi công việc 1-on-1.
+- **3.13.2.4. Khung hội thoại công việc 1-on-1 (ChatPanel)**: Giao diện chat thời gian thực hiển thị banner thông báo nghiệp vụ CRM, lịch sử trao đổi, ô nhập nội dung với phím tắt gửi Enter, huy hiệu Ban chuyên môn và thông báo phản hồi Sonner Toast khi gửi tin.
+- **3.13.2.5. Xem chi tiết hồ sơ hội viên**: Mở modal thông tin doanh nhân 360°, thông tin liên hệ và gian hàng doanh nghiệp.
+
+### 3.13.3. Mô tả chi tiết màn hình
+#### 3.13.3.1. Tìm kiếm & Bộ lọc mạng lưới
+- **Bộ lọc chip Ban chuyên môn**: Chọn lọc nhanh giữa các ban: Tất cả, Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến, Ban Tài Chính, Ban Thiện Nguyện, Ban Thư Ký, Ban Cố Vấn.
+- **Ô tìm kiếm tức thì**: Lọc danh bạ theo tên doanh nhân, tên công ty hoặc ngành nghề kinh doanh.
+
+#### 3.13.3.2. Khung thao tác kết nối & Nhắn tin (ConnectActions)
+- **Nút bấm chính [Nhắn tin trao đổi]**: Luôn sẵn sàng cho mọi tài khoản; nhấp chuột sẽ mở ngay luồng chat 1-on-1 với thành viên tương ứng trên CRM mà không cần điều kiện kết bạn.
+- **Nút bấm phụ [Kết nối] / [Đang chờ duyệt] / [Đã kết nối]**: Quản lý trạng thái quan hệ đối tác mạng lưới danh bạ, có hỗ trợ hủy kết nối hoặc gửi lại lời mời.
+
+#### 3.13.3.3. Khung hội thoại nghiệp vụ CRM (ChatPanel)
+- Header hội thoại: Tên đối tác, chức vụ, tên doanh nghiệp, huy hiệu Ban chuyên môn và trạng thái kết nối đối tác.
+- Banner nghiệp vụ: *"Kênh trao đổi nghiệp vụ nội bộ CRM CEO 1983 - Tin nhắn được lưu trữ trong không gian làm việc quản trị"*.
+- Lịch sử tin nhắn: Phân biệt rõ tin nhắn gửi đi (Accent Gold) và tin nhắn nhận về (Muted Card), kèm mốc thời gian chi tiết.
+- Phản hồi hành động: Hiển thị thông báo Toast xác nhận mỗi khi gửi thành công tin nhắn nghiệp vụ.
+
+### 3.13.4. Luồng nghiệp vụ
+- **3.13.4.1. Tìm kiếm nhân sự theo Ban**: Cán bộ quản trị lọc danh sách hội viên theo ban chuyên môn cần trao đổi.
+- **3.13.4.2. Khởi tạo hội thoại công việc tức thì**: Nhấp "Nhắn tin trao đổi" hoặc mở "Hội thoại mới" -> Mở ngay khung chat với đối tác.
+- **3.13.4.3. Gửi tin nhắn trao đổi nghiệp vụ**: Nhập nội dung, nhấn Enter hoặc bấm Gửi -> Ghi nhận tin nhắn vào cơ sở dữ liệu thời gian thực và phát tín hiệu thông báo.
+- **3.13.4.4. Quản lý trạng thái kết nối mạng lưới**: Gửi lời mời kết nối, chấp thuận hoặc hủy liên kết danh bạ đối tác.
+
+### 3.13.5. Đặc tả tương tác giao tiếp dữ liệu / API
+- **3.13.5.1. Lấy danh sách thành viên mạng lưới**: Trả về danh sách cán bộ, hội viên kèm thông tin ban chuyên môn và trạng thái kết nối.
+- **3.13.5.2. Lấy danh sách bạn chat (listChatPeers)**: Trả về danh sách các hội viên đã có lịch sử trao đổi công việc.
+- **3.13.5.3. Lấy lịch sử tin nhắn 1-on-1 (getThreadMessages)**: Trả về toàn bộ tin nhắn nghiệp vụ giữa hai tài khoản.
+- **3.13.5.4. Gửi tin nhắn nghiệp vụ mới (sendMessage)**: Lưu tin nhắn vào kho dữ liệu CRM và cập nhật tức thì trên giao diện.
+- **3.13.5.5. Cập nhật trạng thái kết nối mạng lưới**: Gửi/chấp thuận yêu cầu kết nối đối tác doanh nhân.
+
+---
+
+## 3.14. Phân hệ Quản Lý Gói Tài Trợ & Nhà Tài Trợ (/sponsor-packages, /sponsors)
+
+### 3.14.1. Thông tin chung
+- **Mục tiêu**: Quản lý độc lập các hạng gói tài trợ (Kim cương, Vàng, Bạc, Đồng, Đồng hành) và hồ sơ các đơn vị tài trợ cho hiệp hội và các kỳ đại hội.
+- **Nguyên tắc phân lập & Trải nghiệm chuẩn hóa**:
+  - **Gói tài trợ độc lập**: Chỉ định nghĩa tên gói, định mức tài trợ, số lượng phát hành và danh mục quyền lợi; tuyệt đối không tự động gán doanh nghiệp vào gói tài trợ khi tạo.
+  - **Tự động bóc tách dữ liệu**: Form tiếp nhận nhà tài trợ (`SponsorModal`) cho phép chọn gói tài trợ sẵn có và tự động điền hạng gói, loại tài trợ (Tiền mặt / Hiện vật), giá trị và mô tả quyền lợi.
+  - **Chuẩn hóa tiền tệ**: Toàn bộ các trường giá trị tiền tệ sử dụng `VndCurrencyInput` phân tách dấu chấm hàng trăm nghìn, triệu, tỷ và nhãn đọc số tiếng Việt rõ ràng.
+  - **Loại bỏ cơ cấu giải thưởng & Onboard**: Đã gỡ bỏ hoàn toàn mục "Cơ cấu giải thưởng" khỏi gói tài trợ và bỏ nút wizard onboard nhà tài trợ.
+
+### 3.14.2. Màn hình
+- **3.14.2.1. Dashboard Gói tài trợ**: 4 thẻ KPI đo lường thời gian thực: Tổng số gói tài trợ, Hạn mức tài trợ tối đa, Số gói đã bán/đã phát hành, Tỷ lệ lấp đầy gói.
+- **3.14.2.2. Modal Tạo / Sửa Gói tài trợ**: Khung modal chiều cao an toàn `max-h-[88vh]`, cấu trúc 1 thanh cuộn duy nhất mượt mà, triệt tiêu hoàn toàn lỗi cuộn lồng/vỡ chiều cao; trường nhập giá trị định dạng VND chuẩn.
+- **3.14.2.3. Dashboard Nhà tài trợ**: Bảng danh sách nhà tài trợ chuẩn mực: khống chế độ rộng cột doanh nghiệp (`min-w-[240px] max-w-[320px] line-clamp-2`), các cột giá trị và thông tin cấu hình `whitespace-nowrap` giúp bảng gọn gàng, triệt tiêu lỗi dãn dòng quá to.
+- **3.14.2.4. Modal Tạo / Sửa Nhà tài trợ**: Dropdown chọn gói tài trợ có sẵn tự động bóc tách thông tin; loại bỏ hoàn toàn trường chọn sự kiện (`events`).
+
+---
+
+## 3.15. Phân hệ Nâng cấp & Hoàn thiện Nghiệp vụ CRM (Sprint 2026-10)
+
+### 3.15.1. UC-CRM-EVT-01: Quét Mã QR Sự Kiện Đón Tiếp & Đăng Ký Đại Biểu Khách Ngoài
+- **Mục tiêu**: Cho phép khách mời, đối tác bên ngoài hiệp hội khi quét mã QR đón tiếp tại cổng sự kiện hoặc qua ấn phẩm quảng bá (bằng camera điện thoại, ứng dụng Zalo) có thể mở ngay biểu mẫu đăng ký đại biểu công khai, tự động kiểm tra số lượng chỗ và nhận email xác nhận vé hoặc hướng dẫn nộp phí / thư cảm ơn chuẩn mực.
+- **Tác nhân (Actor)**: Khách mời đối tác bên ngoài, Đại biểu chưa phải là hội viên CEO 1983, Cán bộ Lễ tân / Ban Truyền thông.
+- **Tiền điều kiện**: Sự kiện đã được kích hoạt và có xuất trình mã QR Đón tiếp (`EventGuestQrPresenterModal` tại `/events/:id`).
+- **Luồng sự kiện chính (Main Flow)**:
+  1. Khách quét mã QR đón tiếp trên màn hình/ấn phẩm bằng Zalo hoặc Camera điện thoại.
+  2. Ứng dụng mở đường link đăng ký công khai: `/events/:eventId/register`.
+  3. Giao diện hiển thị biểu mẫu "Bản Đăng Ký Đại Biểu & B2B Matchmaking":
+     - Họ và tên đại biểu (Bắt buộc).
+     - Địa chỉ Email chính thức (Bắt buộc - dùng nhận vé và thông báo).
+     - Số điện thoại liên hệ / Zalo (Bắt buộc).
+     - Tên doanh nghiệp & Chức vụ đại biểu (Tùy chọn).
+     - Lựa chọn Hạng vé tham dự (Lấy danh sách các loại vé đang phát hành của sự kiện).
+  4. Khách bấm nút "Xác nhận Đăng ký Tham dự".
+  5. Hệ thống gọi API `POST /events/:id/guest-register`.
+  6. Máy chủ kiểm tra số lượng đại biểu đã đăng ký so với giới hạn sức chứa (`capacity`):
+     - **Trường hợp Còn chỗ (`registered_count < capacity`)**:
+       - *Nếu là Vé Miễn Phí (0đ)*: Hệ thống ghi nhận đăng ký ở trạng thái Xác nhận (`confirmed`), sinh mã vé điện tử định dạng `REG-EV-xxxx`, sinh số may mắn Lucky Draw (`#xxxx`), xếp chỗ ngồi/bàn tiệc ngẫu nhiên. Lập tức kích hoạt tiến trình gửi **Email Vé Điện Tử** kèm mã QR Check-in và vé cuống trang trọng về hòm thư đại biểu.
+       - *Nếu là Vé Thu Phí (> 0đ)*: Hệ thống ghi nhận đăng ký ở trạng thái Chờ thanh toán (`pending_payment`). Lập tức kích hoạt tiến trình gửi **Email Thông Báo Thu Phí & Hướng Dẫn Chuyển Khoản** kèm mã VietQR Napas chuẩn, thông tin tài khoản ngân hàng hiệp hội, số tiền và cú pháp nộp phí y hệt luồng hội viên.
+     - **Trường hợp Hết chỗ (`registered_count >= capacity` và `capacity > 0`)**:
+       - Hệ thống từ chối cấp vé mới, ghi nhận trạng thái từ chối do quá tải.
+       - Hệ thống tự động gửi **Email Cảm Ơn Đã Quan Tâm** ("Sự kiện đã đạt số lượng tối đa đại biểu đăng ký... Ban Tổ chức xin chân thành cảm ơn và hẹn gặp Quý Đại biểu tại các sự kiện tiếp theo").
+       - Màn hình phản hồi thông báo trang trọng đến khách mời về việc sự kiện đã đủ số lượng tiếp nhận.
+- **Đặc tả API**:
+  - `GET /events/:id/public-info`: Lấy thông tin công khai sự kiện, danh mục loại vé (`event_tickets`), kiểm tra trạng thái sức chứa.
+  - `POST /events/:id/guest-register`:
+    - Payload: `{ fullName: string, email: string, phone: string, company?: string, title?: string, ticketTypeId?: string }`
+    - Response: `{ success: boolean, status: 'confirmed' | 'pending_payment' | 'sold_out', ticketCode?: string, qrCode?: string, luckyNumber?: string, message: string }`
+- **CSDL & Bảng liên kết (Database Schema & Joins)**:
+  - Bảng `public.events`: Truy vấn `id`, `title`, `start_time`, `location`, `capacity`, `registered_count`.
+  - Bảng `public.event_tickets`: `JOIN event_tickets et ON et.event_id = events.id` để lấy danh sách vé, giá vé (`price`) và số lượng phát hành.
+  - Bảng `public.event_registrations`: `INSERT` dữ liệu đăng ký đại biểu gồm `event_id`, `guest_name`, `guest_email`, `guest_phone`, `ticket_code`, `status`, `lucky_draw_number`, `seat_table`, `is_guest = true`.
+
+### 3.15.2. UC-CRM-MEM-02: Đồng Bộ Trạng Thái Xóa Hội Viên Cục Bộ & Loại Bỏ Popup Reload Trang Khi Xóa Tài Khoản
+- **Mục tiêu**: Nâng cao trải nghiệm quản trị, triệt tiêu hiện tượng xóa hội viên báo thành công nhưng bảng danh sách vẫn giữ nguyên dòng dữ liệu; loại bỏ hộp thoại xác nhận bắt buộc tải lại trang (`window.location.reload()`) khi xóa tài khoản người dùng.
+- **Tác nhân (Actor)**: Cán bộ Quản trị hệ thống, Ban Thư ký.
+- **Luồng sự kiện chính**:
+  1. **Xóa Hội viên (`/members`)**:
+     - Người quản trị nhấp nút Xóa trên dòng hội viên và xác nhận trên modal cảnh báo.
+     - Hệ thống gọi API `DELETE /members/:id`.
+     - Ngay khi nhận mã trạng thái 200 từ máy chủ, React Hook cập nhật trực tiếp mảng dữ liệu trong state hoặc làm mới cache (`queryClient.invalidateQueries` / `setMembers(prev => prev.filter(m => m.id !== id))`), dòng hội viên lập tức biến mất khỏi giao diện một cách mượt mà không cần người dùng phải bấm F5 tải lại trang.
+  2. **Xóa Tài khoản (`/accounts`)**:
+     - Người quản trị bấm xóa tài khoản cán bộ/hội viên.
+     - Xác nhận xóa trên modal duy nhất.
+     - Sau khi API `DELETE /accounts/:id` thực thi thành công, hệ thống hiển thị Toast thông báo và tự động gỡ bỏ tài khoản khỏi danh sách giao diện bằng cách cập nhật local state; tuyệt đối không mở thêm popup thứ hai yêu cầu người dùng xác nhận reload trang.
+- **Đặc tả API**:
+  - `DELETE /members/:id`: Xóa hội viên và các liên kết doanh nghiệp/thẻ trực thuộc an toàn.
+  - `DELETE /accounts/:id`: Xóa tài khoản đăng nhập `vione_users`.
+- **CSDL & Bảng liên kết**:
+  - `members`, `organizations`, `member_cards`, `vione_users`.
+
+### 3.15.3. UC-CRM-TKT-03: Khắc Phục Nhập Giá Vé Sự Kiện & Hiển Thị Thông Tin Đơn Vị Tài Trợ Trong Chi Tiết Sự Kiện
+- **Mục tiêu**: Cho phép cán bộ tổ chức sự kiện nhập trực tiếp giá tiền của loại vé mà không bị kẹt phím; đồng thời hiển thị đầy đủ danh sách các nhà tài trợ đã đồng hành cùng sự kiện tại màn hình xem chi tiết sự kiện.
+- **Tác nhân (Actor)**: Ban Truyền thông & Sự kiện, Ban Tài chính.
+- **Luồng sự kiện chính**:
+  1. **Nhập giá loại vé**:
+     - Trong modal tạo/sửa loại vé sự kiện (`TicketTypeModal`), trường `price` được liên kết với bộ lọc số nguyên dương chuẩn `VndCurrencyInput`, cho phép nhập liệu tự do, hiển thị phân tách hàng nghìn tự động và chuyển đổi chuẩn xác sang số nguyên khi lưu trữ.
+  2. **Xem chi tiết sự kiện & Nhà tài trợ**:
+     - Khi mở chi tiết sự kiện (`/events/:id`), hệ thống hiển thị phân khu "Đơn Vị Tài Trợ & Đồng Hành Sự Kiện".
+     - Hiển thị danh sách các doanh nghiệp tài trợ kèm logo, tên doanh nghiệp, gói tài trợ (Kim cương, Vàng, Bạc...) và giá trị đóng góp.
+- **Đặc tả API**:
+  - `GET /events/:id`: Mở rộng trả về mảng `sponsors` và chi tiết các gói tài trợ liên quan.
+  - `POST /events/:id/tickets` & `PUT /events/:id/tickets/:ticketId`: Lưu giá vé dưới dạng số nguyên.
+- **CSDL & Bảng liên kết**:
+  - `public.events` JOIN `public.sponsors` ON `sponsors.event_id = events.id` LEFT JOIN `public.sponsor_packages` ON `sponsor_packages.id = sponsors.package_id`.
+
+### 3.15.4. UC-CRM-SEC-04: Loại Bỏ Hoàn Toàn Trợ Lý AI Khỏi Giao Diện Web CRM Hiệp Hội
+- **Mục tiêu**: Đảm bảo phân hệ Web CRM Hiệp hội CEO 1983 thuần túy là không gian quản trị công việc, kế toán và nhân sự tập trung, triệt tiêu việc hiển thị bong bóng chat hoặc nút Voice AI trôi nổi gây vướng víu tầm nhìn của cán bộ quản trị.
+- **Tác nhân**: Toàn bộ cán bộ truy cập Cổng Quản trị CRM (`/members`, `/events`, `/finance`, `/tasks`, `/accounts`,...).
+- **Đặc tả logic**:
+  - Tại tầng layout gốc (`__root.tsx`, `AppShell.tsx`), cấu hình bộ lọc đường dẫn nghiêm ngặt: Trợ lý giọng nói Voice AI và Chatbot chỉ được phép khởi tạo khi người dùng truy cập ứng dụng di động thành viên (`/association` hoặc `/m`).
+  - Nếu `pathname` thuộc CRM quản trị, các component AI bị chặn render 100% khỏi cây DOM.
+
+### 3.15.5. UC-CRM-NAV-05: Gỡ Bỏ Hoàn Toàn Tuyến Đường Dư Thừa `/admin/demo-leads`
+- **Mục tiêu**: Làm sạch hệ thống định tuyến, loại bỏ đường dẫn và menu thử nghiệm `admin/demo-leads` không thuộc phạm vi nghiệp vụ hiệp hội.
+- **Đặc tả**:
+  - Gỡ bỏ định nghĩa route `admin.demo-leads.tsx` khỏi danh mục tuyến đường.
+  - Gỡ bỏ mục menu liên kết trong `Sidebar.tsx`. Mọi yêu cầu truy cập trực tiếp vào `/admin/demo-leads` sẽ tự động chuyển hướng về trang chủ `/` hoặc bảng điều khiển `/dashboard`.
 
 ---
 

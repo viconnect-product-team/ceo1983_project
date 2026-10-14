@@ -387,15 +387,15 @@ function buildHtmlFromVisualContent(c: VisualBlockContent): string {
     .join("\n    ");
 
   return `<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-  <div style="background: linear-gradient(135deg, #002B66 0%, #001B40 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
-    <div style="display: inline-block; padding: 4px 14px; background: rgba(212, 160, 23, 0.25); border: 1px solid rgba(212, 160, 23, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #f6d365; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">
+  <div style="background: #ffffff; border-bottom: 2px solid #e2e8f0; padding: 28px 24px; text-align: center;">
+    <div style="display: inline-block; padding: 4px 14px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 9999px; font-size: 11px; font-weight: 700; color: #b45309; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
       ${c.headerBadge}
     </div>
-    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: 0.2px;">${c.headerTitle}</h1>
-    <p style="margin: 8px 0 0; font-size: 13px; color: #cbd5e1;">${c.headerSubtitle}</p>
+    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">${c.headerTitle}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #64748b;">${c.headerSubtitle}</p>
   </div>
   <div style="padding: 28px 24px; color: #1e293b;">
-    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; font-weight: 600;">
+    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; font-weight: 600; color: #0f172a;">
       ${c.greeting}
     </p>
     ${formattedIntro}
@@ -589,14 +589,13 @@ export function MailTemplateManager() {
     }
   };
 
-  const handleInsertVariableIntoVisual = (variableKey: string) => {
+  const handleInsertVariableIntoVisual = (variableKey: string, variableLabel?: string) => {
     const token = `{{${variableKey}}}`;
-    // Insert into introMessage or greeting
     const updatedIntro = visualContent.introMessage
       ? `${visualContent.introMessage} ${token}`
       : token;
     handleUpdateVisualField("introMessage", updatedIntro);
-    toast.success(`Đã chèn biến ${token} vào nội dung thư!`);
+    toast.success(`Đã chèn trường thông tin "[${variableLabel || variableKey}]" vào nội dung thư!`);
   };
 
   // Delete Template
@@ -680,7 +679,7 @@ export function MailTemplateManager() {
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] hover:bg-blue-900 text-white px-4 py-2 text-xs font-bold shadow-sm transition cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-xs font-bold shadow-sm transition cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           <span>Tạo Mẫu Template Mới</span>
@@ -694,7 +693,7 @@ export function MailTemplateManager() {
           {/* Category Tabs */}
           <div className="rounded-2xl border border-border bg-card p-3 shadow-xs space-y-2">
             <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1">
-              Phân Loại Luồng Email & Thông Báo
+              Phân Loại Luồng Email &amp; Thông Báo
             </div>
             <div className="grid grid-cols-2 gap-1.5 text-xs font-medium">
               {[
@@ -712,7 +711,7 @@ export function MailTemplateManager() {
                     onClick={() => setActiveCategory(c.id)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-left transition cursor-pointer ${
                       isAct
-                        ? "bg-[#003B95] text-white font-bold shadow-xs"
+                        ? "bg-amber-500 text-white font-bold shadow-xs"
                         : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     }`}
                   >
@@ -746,27 +745,48 @@ export function MailTemplateManager() {
                   onClick={() => setSelectedTemplateId(t.id)}
                   className={`p-3 rounded-xl border transition-all cursor-pointer ${
                     isSelected
-                      ? "border-[#003B95] bg-[#003B95]/5 shadow-sm ring-1 ring-[#003B95]/30"
+                      ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 shadow-sm ring-2 ring-[#003B95]/30"
                       : "border-border/80 bg-card hover:border-border hover:bg-secondary/40"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="font-mono text-[10px] font-bold text-[#003B95] dark:text-blue-400">
+                    <span
+                      className={`font-mono text-[10px] font-bold ${
+                        isSelected
+                          ? "text-[#003B95] dark:text-blue-400"
+                          : "text-muted-foreground"
+                      }`}
+                    >
                       {t.code}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
                       {t.updatedAt}
                     </span>
                   </div>
-                  <h4 className="font-bold text-xs text-foreground line-clamp-1">{t.name}</h4>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
+                  <h4
+                    className={`font-bold text-xs line-clamp-1 ${
+                      isSelected
+                        ? "text-[#003B95] dark:text-blue-200"
+                        : "text-slate-800 dark:text-slate-100"
+                    }`}
+                  >
+                    {t.name}
+                  </h4>
+                  <p
+                    className={`text-[11px] line-clamp-2 mt-0.5 leading-snug ${
+                      isSelected
+                        ? "text-slate-700 dark:text-slate-300"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
                     {t.description}
                   </p>
 
                   <div className="flex items-center justify-between pt-2 mt-2 border-t border-border/50 text-[10px]">
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Code className="w-3 h-3" />
-                      <span>{t.variables.length} biến động</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                        {t.variables.length} trường dữ liệu
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -900,24 +920,29 @@ export function MailTemplateManager() {
             </div>
 
             {/* Variables Quick Copy Palette */}
-            <div>
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                Các biến động được hỗ trợ trong mẫu này (Click để copy):
-              </span>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-border/80">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  Danh sách biến chèn dữ liệu tự động (Click để sao chép):
+                </span>
+                <span className="text-[10px] text-muted-foreground">Nhấp vào biến để sao chép mã chèn</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {activeTemplate.variables.map((v) => (
                   <button
                     key={v.key}
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(`{{${v.key}}}`);
-                      toast.success(`Đã copy biến {{${v.key}}}`);
+                      toast.success(`Đã sao chép: {{${v.key}}}`);
                     }}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-mono font-medium border border-border transition cursor-pointer"
-                    title={`Nhấn để copy {{${v.key}}} - Ví dụ: ${v.example}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:border-[#003B95] hover:text-[#003B95] text-xs font-medium border border-border/80 shadow-xs transition cursor-pointer group"
+                    title={`Sao chép {{${v.key}}} (Ví dụ: ${v.example})`}
                   >
-                    <span>{`{{${v.key}}}`}</span>
-                    <span className="text-[10px] text-muted-foreground font-sans font-normal">({v.label})</span>
+                    <span className="text-slate-800 dark:text-slate-200 group-hover:text-[#003B95] dark:group-hover:text-blue-300 font-semibold">{v.label}</span>
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/40 group-hover:text-[#003B95]">
+                      {v.key}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -1084,22 +1109,23 @@ export function MailTemplateManager() {
                 </div>
 
                 {/* Variable Pills Toolbar */}
-                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-2.5 mb-3">
-                  <div className="flex items-center gap-1 text-[11px] font-bold text-[#003B95] dark:text-blue-400 mb-1.5">
-                    <Tag className="w-3.5 h-3.5" />
-                    <span>Click vào nút bên dưới để chèn nhanh thông tin biến động vào thư:</span>
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 mb-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 mb-2">
+                    <Tag className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Chọn thông tin muốn chèn tự động vào thư (Hệ thống sẽ tự điền dữ liệu của từng hội viên):</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {editingTemplate.variables.map((v) => (
                       <button
                         key={v.key}
                         type="button"
-                        onClick={() => handleInsertVariableIntoVisual(v.key)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background hover:bg-primary/10 hover:border-primary text-[11px] font-medium border border-border shadow-xs transition cursor-pointer"
-                        title={`Bấm để chèn {{${v.key}}} (${v.label})`}
+                        onClick={() => handleInsertVariableIntoVisual(v.key, v.label)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card hover:bg-amber-500/10 hover:border-amber-500 text-xs font-semibold border border-border shadow-xs transition cursor-pointer active:scale-95"
+                        title={`Bấm để chèn thông tin: ${v.label} (Ví dụ: ${v.example})`}
                       >
-                        <span className="font-bold text-[#003B95] dark:text-blue-400">+ {v.label}</span>
-                        <span className="font-mono text-[10px] text-muted-foreground">({`{{${v.key}}}`})</span>
+                        <span className="text-amber-500 font-bold">+</span>
+                        <span className="text-foreground">[{v.label}]</span>
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">VD: {v.example}</span>
                       </button>
                     ))}
                   </div>
@@ -1340,7 +1366,7 @@ export function MailTemplateManager() {
                 <div className="flex items-center gap-2">
                   <button
                     type="submit"
-                    className="rounded-xl bg-[#003B95] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-900 cursor-pointer"
+                    className="rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-600 cursor-pointer"
                   >
                     Lưu Template
                   </button>

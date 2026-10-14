@@ -60,9 +60,15 @@ export function formatDisplayDateTime(
 
 export function formatCurrencyInput(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === "") return "";
-  const str = String(val).trim();
-  if (str === "0") return "0";
-  const digits = str.replace(/\D/g, "");
+  let digits = "";
+  if (typeof val === "number") {
+    if (isNaN(val)) return "";
+    digits = String(Math.round(val));
+  } else {
+    const str = String(val).trim();
+    if (str === "0") return "0";
+    digits = str.replace(/\D/g, "");
+  }
   if (!digits) return "";
   const cleanDigits = digits.replace(/^0+(?=\d)/, "");
   return cleanDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -70,6 +76,7 @@ export function formatCurrencyInput(val: string | number | null | undefined): st
 
 export function parseCurrencyInput(val: string | number | null | undefined): number {
   if (val === null || val === undefined || val === "") return 0;
+  if (typeof val === "number") return isNaN(val) ? 0 : Math.round(val);
   const digits = String(val).replace(/\D/g, "");
   return digits ? Number(digits) : 0;
 }

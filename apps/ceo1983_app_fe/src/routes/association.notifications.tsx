@@ -142,7 +142,24 @@ function formatNotifBody(n: any): string {
   return b;
 }
 
+function isMeetingNotification(n: any): boolean {
+  const k = String(n.notificationKind || n.type || (n.safeDisplayData as any)?.notificationKind || '').toLowerCase();
+  const t = String(n.title || '').toLowerCase();
+  const b = String(n.body || '').toLowerCase();
+  return (
+    k.includes('meeting') ||
+    t.includes('hẹn gặp') ||
+    b.includes('hẹn gặp') ||
+    t.includes('cuộc hẹn') ||
+    b.includes('cuộc hẹn') ||
+    t.includes('đàm phán 1-1') ||
+    b.includes('đàm phán 1-1') ||
+    n.refType === 'meeting'
+  );
+}
+
 function isConnectionRequestReceived(n: any): boolean {
+  if (isMeetingNotification(n)) return false;
   const k = String(n.notificationKind || n.type || (n.safeDisplayData as any)?.notificationKind || '').toLowerCase();
   const t = String(n.title || '').toLowerCase();
   const b = String(n.body || '').toLowerCase();
@@ -155,23 +172,9 @@ function isConnectionRequestReceived(n: any): boolean {
     (k === 'connection' && !k.includes('accepted') && !k.includes('declined')) ||
     t.includes('connection_request_received') ||
     t.includes('yêu cầu kết nối') ||
-    t.includes('lời mời kết nối') ||
+    (t.includes('lời mời kết nối') && !t.includes('hẹn gặp')) ||
     t.includes('muốn kết nối') ||
     (n.refType === 'connection')
-  );
-}
-
-function isMeetingNotification(n: any): boolean {
-  const k = String(n.notificationKind || n.type || '').toLowerCase();
-  const t = String(n.title || '').toLowerCase();
-  const b = String(n.body || '').toLowerCase();
-  return (
-    k.includes('meeting') ||
-    t.includes('hẹn gặp') ||
-    b.includes('hẹn gặp') ||
-    t.includes('cuộc hẹn') ||
-    b.includes('cuộc hẹn') ||
-    n.refType === 'meeting'
   );
 }
 
@@ -284,6 +287,88 @@ function LeadActions({
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function SwipeableNotificationItem({
+  children,
+  onDelete,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onDelete: () => void;
+  disabled?: boolean;
+}) {
+  const [offsetX, setOffsetX] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isSwiping = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (disabled) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (disabled || touchStartX.current === null || touchStartY.current === null) return;
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      isSwiping.current = true;
+      if (deltaX < 0) {
+        setOffsetX(Math.max(-80, deltaX));
+      } else {
+        setOffsetX(0);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (disabled || touchStartX.current === null) return;
+    if (offsetX < -40) {
+      setOffsetX(-72);
+    } else {
+      setOffsetX(0);
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-xl sm:rounded-2xl">
+      {/* Background Delete Action revealed on swipe-left */}
+      <div className="absolute inset-y-0 right-0 w-[72px] bg-rose-600 flex flex-col items-center justify-center text-white cursor-pointer z-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOffsetX(0);
+            onDelete();
+          }}
+          className="w-full h-full flex flex-col items-center justify-center gap-1 text-[11px] font-bold text-white hover:bg-rose-700 active:scale-95 transition cursor-pointer"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span>Xóa</span>
+        </button>
+      </div>
+
+      {/* Foreground Swipeable Card */}
+      <div
+        style={{
+          transform: `translateX(${offsetX}px)`,
+          transition: isSwiping.current ? "none" : "transform 0.2s ease-out",
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative z-10 bg-transparent"
+      >
+        {children}
       </div>
     </div>
   );
@@ -653,7 +738,30 @@ function NotificationsScreen() {
 
   const isFeeNotification = (n: any): boolean => {
     if (!n) return false;
-    const text = `${n.title || ""} ${n.body || ""} ${n.notificationKind || ""}`.toLowerCase();
+    const kind = String(n.notificationKind || n.type || "").toLowerCase();
+    const cat = String(n.category || n.refType || "").toLowerCase();
+    const text = `${n.title || ""} ${n.body || ""} ${kind}`.toLowerCase();
+
+    // STRICT EXCLUSION: chat messages, direct messages, connection requests, meetings, events
+    if (
+      kind === "chat" ||
+      kind === "message" ||
+      kind === "dm" ||
+      kind === "chat_message" ||
+      cat === "chat" ||
+      cat === "message" ||
+      n.targetChannel === "messages" ||
+      text.includes("tin nhắn mới") ||
+      text.includes("tin nhắn từ") ||
+      text.includes("đã gửi tin nhắn") ||
+      text.includes("nhóm trò chuyện") ||
+      isMeetingNotification(n) ||
+      isConnectionRequestReceived(n) ||
+      isLuckyDrawNotification(n) ||
+      isEventNotification(n)
+    ) {
+      return false;
+    }
 
     // Explicitly exclude 0đ, free, or complimentary event passes
     if (
@@ -684,7 +792,7 @@ function NotificationsScreen() {
       return true;
     }
 
-    return /hội phí|phí thường niên|quản lý hội phí|hóa đơn|chuyển khoản|quét mã qr|vietqr|invoice/i.test(text);
+    return /hội phí|phí thường niên|quản lý hội phí|hóa đơn hội viên|đóng phí/i.test(text);
   };
 
   const handlePayNotification = (n: any) => {
@@ -1070,286 +1178,276 @@ function NotificationsScreen() {
           };
 
           return (
-            <div
+            <SwipeableNotificationItem
               key={n.id}
-              role="listitem"
-              onClick={() => {
-                setSelectedNotif(n);
-                if (n.unread && n.personal) onMarkOneRead(n);
-              }}
-              className={`relative flex gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden cursor-pointer ${
-                n.unread
-                  ? "bg-white dark:bg-[#0F172A] border-2 border-amber-500/40 dark:border-amber-500/60 shadow-[0_4px_16px_rgba(245,158,11,0.12)]"
-                  : "bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
-              }`}
+              onDelete={() => setConfirmDelete(n)}
+              disabled={rowBusy === n.id}
             >
-              {/* Vertical Indicator on Unread - Amber Gold */}
-              {n.unread && (
-                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-amber-500" />
-              )}
+              <div
+                role="listitem"
+                onClick={() => {
+                  setSelectedNotif(n);
+                  if (n.unread && n.personal) onMarkOneRead(n);
+                }}
+                className={`relative flex gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden cursor-pointer ${
+                  n.unread
+                    ? "bg-white dark:bg-[#0F172A] border-2 border-amber-500/40 dark:border-amber-500/60 shadow-[0_4px_16px_rgba(245,158,11,0.12)]"
+                    : "bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                }`}
+              >
+                {/* Vertical Indicator on Unread - Amber Gold */}
+                {n.unread && (
+                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-amber-500" />
+                )}
 
-              <span className={`grid h-8.5 w-8.5 shrink-0 place-items-center rounded-xl border shadow-xs ${theme.iconBg}`}>
-                <Icon className="h-4 w-4 stroke-[2.2]" />
-              </span>
+                <span className={`grid h-8.5 w-8.5 shrink-0 place-items-center rounded-xl border shadow-xs ${theme.iconBg}`}>
+                  <Icon className="h-4 w-4 stroke-[2.2]" />
+                </span>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider border shadow-2xs ${theme.badge}`}>
-                      {theme.label}
-                    </span>
-                    {n.priority && n.priority !== "low" && (
-                      <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 shadow-2xs"
-                        aria-label={`${t("m.notifications.status.priority")}: ${t(PRIORITY_KEY[n.priority as NotificationPriority])}`}
-                      >
-                        {t(PRIORITY_KEY[n.priority as NotificationPriority])}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider border shadow-2xs ${theme.badge}`}>
+                        {theme.label}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {n.unread && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white border border-red-700 shadow-2xs">
-                        <span className="relative flex h-1.5 w-1.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                      {n.priority && n.priority !== "low" && (
+                        <span
+                          className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 shadow-2xs"
+                          aria-label={`${t("m.notifications.status.priority")}: ${t(PRIORITY_KEY[n.priority as NotificationPriority])}`}
+                        >
+                          {t(PRIORITY_KEY[n.priority as NotificationPriority])}
                         </span>
-                        Mới
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {n.unread && (
+                        <span
+                          className="inline-block h-2.5 w-2.5 rounded-full bg-blue-600 dark:bg-blue-500 shadow-xs shrink-0"
+                          title="Chưa đọc"
+                          aria-label="Chưa đọc"
+                        />
+                      )}
+                      <span className="text-[10.5px] font-medium text-[var(--vba-text-dim)]">
+                        {fmt.rel(n.time)}
                       </span>
-                    )}
-                    <span className="text-[10.5px] font-medium text-[var(--vba-text-dim)]">
-                      {fmt.rel(n.time)}
-                    </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-[13px] font-bold text-[var(--vba-text)]">
-                    {formatNotifTitle(n)}
-                  </span>
-                  {isLead && (
-                    <button
-                      type="button"
-                      disabled={openingLeadId === n.id}
-                      onClick={async () => {
-                        setOpeningLeadId(n.id);
-                        let marked = false;
-                        for (let attempt = 0; attempt < 3 && !marked; attempt++) {
-                          try {
-                            await markRead({ data: { id: n.id } });
-                            marked = true;
-                          } catch {
-                            if (attempt < 2) {
-                              await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-[13px] font-bold text-[var(--vba-text)] line-clamp-1">
+                      {formatNotifTitle(n)}
+                    </span>
+                    {isLead && (
+                      <button
+                        type="button"
+                        disabled={openingLeadId === n.id}
+                        onClick={async () => {
+                          setOpeningLeadId(n.id);
+                          let marked = false;
+                          for (let attempt = 0; attempt < 3 && !marked; attempt++) {
+                            try {
+                              await markRead({ data: { id: n.id } });
+                              marked = true;
+                            } catch {
+                              if (attempt < 2) {
+                                await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+                              }
                             }
                           }
-                        }
-                        try {
-                          await navigate({
-                            to: "/association/business-cards",
-                            search: { tab: "leads", leadId: n.refId as string },
-                          });
-                        } catch (e) {
-                          toast.error(
-                            e instanceof Error ? e.message : t("m.notifications.lead.openError"),
-                          );
-                        } finally {
-                          setOpeningLeadId(null);
-                          if (!marked) reload();
-                        }
-                      }}
-                      aria-label={t("m.notifications.lead.openDetail")}
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-amber-600 dark:text-amber-400 transition hover:bg-amber-50 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
-                    >
-                      {openingLeadId === n.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  )}
-                </div>
+                          try {
+                            await navigate({
+                              to: "/association/business-cards",
+                              search: { tab: "leads", leadId: n.refId as string },
+                            });
+                          } catch (e) {
+                            toast.error(
+                              e instanceof Error ? e.message : t("m.notifications.lead.openError"),
+                            );
+                          } finally {
+                            setOpeningLeadId(null);
+                            if (!marked) reload();
+                          }
+                        }}
+                        aria-label={t("m.notifications.lead.openDetail")}
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-amber-600 dark:text-amber-400 transition hover:bg-amber-50 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+                      >
+                        {openingLeadId === n.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    )}
+                  </div>
 
-                {/* Đoạn preview ngắn (1 dòng rút gọn) */}
-                <p className="mt-1 text-[11.5px] leading-snug text-[var(--vba-text-muted)] line-clamp-1 truncate">
-                  {formatNotifBody(n)}
-                </p>
+                  {/* Đoạn preview ngắn (nhấn vào để xem đầy đủ trong modal) */}
+                  <p className="mt-1 text-[11.5px] leading-snug text-[var(--vba-text-muted)] line-clamp-2">
+                    {formatNotifBody(n)}
+                  </p>
 
-                {/* Thanh Action rút gọn */}
-                <div className="mt-2.5 flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-                  {n.dismissed ? (
-                    <button
-                      type="button"
-                      disabled={rowBusy === n.id}
-                      onClick={() => onUndoDismiss(n)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border-2 border-amber-500 dark:border-amber-400 bg-amber-50 dark:bg-amber-950/60 px-3 py-1.5 text-[11.5px] font-bold text-amber-800 dark:text-amber-200 transition hover:bg-amber-100 disabled:opacity-50 shadow-xs cursor-pointer active:scale-95"
-                    >
-                      {rowBusy === n.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                      )}
-                      {t("m.notifications.undo.action")}
-                    </button>
-                  ) : (
-                    <>
-                      {isConnectionRequestReceived(n) ? (
-                        <div className="flex items-center gap-1.5">
-                          {(connectionStates[n.id] === "accepted" || (n.safeDisplayData as any)?.connectionStatus === "accepted") ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
-                              <Check className="h-3 w-3 stroke-[2.5]" />
-                              <span>Đã đồng ý kết nối</span>
-                            </span>
-                          ) : (connectionStates[n.id] === "declined" || (n.safeDisplayData as any)?.connectionStatus === "declined") ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[11px] font-bold">
-                              <X className="h-3 w-3" />
-                              <span>Đã từ chối kết nối</span>
-                            </span>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                disabled={actionBusy === n.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAcceptFriend(n);
-                                }}
-                                className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all disabled:opacity-50"
-                                style={{ color: "#ffffff" }}
-                              >
-                                <UserCheck className="h-3.5 w-3.5 text-white" />
-                                <span>{actionBusy === n.id ? "Đang xử lý..." : "Đồng ý"}</span>
-                              </button>
-                              <button
-                                type="button"
-                                disabled={actionBusy === n.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeclineFriend(n);
-                                }}
-                                className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all disabled:opacity-50"
-                              >
-                                <UserX className="h-3.5 w-3.5 text-slate-500" />
-                                <span>Từ chối</span>
-                              </button>
-                            </>
-                          )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedNotif(n);
-                              if (n.unread && n.personal) onMarkOneRead(n);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-slate-500" />
-                            <span>Chi tiết</span>
-                          </button>
-                        </div>
-                      ) : isMeetingNotification(n) ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (n.unread && n.personal) onMarkOneRead(n);
-                              void navigate({ to: "/association/members", search: { tab: "meetings" } });
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                            style={{ color: "#ffffff" }}
-                          >
-                            <Calendar className="h-3.5 w-3.5 text-white" />
-                            <span>Lịch hẹn kết nối</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedNotif(n);
-                              if (n.unread && n.personal) onMarkOneRead(n);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-slate-500" />
-                            <span>Chi tiết</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          {/* Nút Action 1: Xem trong Tin nhắn (Chỉ hiển thị khi đã được bấm Đưa vào tin nhắn ở CRM) */}
-                          {canViewInMessages(n) && (
+                  {/* Thanh Action rút gọn */}
+                  <div className="mt-2.5 flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                    {n.dismissed ? (
+                      <button
+                        type="button"
+                        disabled={rowBusy === n.id}
+                        onClick={() => onUndoDismiss(n)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border-2 border-amber-500 dark:border-amber-400 bg-amber-50 dark:bg-amber-950/60 px-3 py-1.5 text-[11.5px] font-bold text-amber-800 dark:text-amber-200 transition hover:bg-amber-100 disabled:opacity-50 shadow-xs cursor-pointer active:scale-95"
+                      >
+                        {rowBusy === n.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                        )}
+                        {t("m.notifications.undo.action")}
+                      </button>
+                    ) : (
+                      <>
+                        {isConnectionRequestReceived(n) ? (
+                          <div className="flex items-center gap-1.5">
+                            {(connectionStates[n.id] === "accepted" || (n.safeDisplayData as any)?.connectionStatus === "accepted") ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
+                                <Check className="h-3 w-3 stroke-[2.5]" />
+                                <span>Đã đồng ý kết nối</span>
+                              </span>
+                            ) : (connectionStates[n.id] === "declined" || (n.safeDisplayData as any)?.connectionStatus === "declined") ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[11px] font-bold">
+                                <X className="h-3 w-3" />
+                                <span>Đã từ chối kết nối</span>
+                              </span>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={actionBusy === n.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAcceptFriend(n);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all disabled:opacity-50"
+                                  style={{ color: "#ffffff" }}
+                                >
+                                  <UserCheck className="h-3.5 w-3.5 text-white" />
+                                  <span>{actionBusy === n.id ? "Đang xử lý..." : "Đồng ý"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={actionBusy === n.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeclineFriend(n);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all disabled:opacity-50"
+                                >
+                                  <UserX className="h-3.5 w-3.5 text-slate-500" />
+                                  <span>Từ chối</span>
+                                </button>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedNotif(n);
+                                if (n.unread && n.personal) onMarkOneRead(n);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-slate-500" />
+                              <span>Chi tiết</span>
+                            </button>
+                          </div>
+                        ) : isMeetingNotification(n) ? (
+                          <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (n.unread && n.personal) onMarkOneRead(n);
-                                const targetChannel = getChannelOrPeerForNotif(n);
-                                void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
+                                void navigate({ to: "/association/members", search: { tab: "meetings" } });
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 px-3 py-1.5 text-[11px] font-bold text-amber-300 shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                              style={{ color: "#ffffff" }}
                             >
-                              <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
-                              <span>Xem tin nhắn</span>
+                              <Calendar className="h-3.5 w-3.5 text-white" />
+                              <span>Lịch hẹn kết nối</span>
                             </button>
-                          )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedNotif(n);
+                                if (n.unread && n.personal) onMarkOneRead(n);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-slate-500" />
+                              <span>Chi tiết</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            {/* Nút Action 1: Xem trong Tin nhắn (Chỉ hiển thị khi đã được bấm Đưa vào tin nhắn ở CRM) */}
+                            {canViewInMessages(n) && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (n.unread && n.personal) onMarkOneRead(n);
+                                  const targetChannel = getChannelOrPeerForNotif(n);
+                                  void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 px-3 py-1.5 text-[11px] font-bold text-amber-300 shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                              >
+                                <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
+                                <span>Xem tin nhắn</span>
+                              </button>
+                            )}
 
-                          {/* Nút Action 2: Xem chi tiết (mở modal hiển thị toàn bộ nội dung & thẻ tương tác) */}
+                            {/* Nút Action 2: Xem chi tiết (mở modal hiển thị toàn bộ nội dung & thẻ tương tác) */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedNotif(n);
+                                if (n.unread && n.personal) onMarkOneRead(n);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-slate-500" />
+                              <span>Chi tiết</span>
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
+                            disabled={rowBusy === n.id}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedNotif(n);
-                              if (n.unread && n.personal) onMarkOneRead(n);
+                              deleteTriggerRef.current = e.currentTarget;
+                              setConfirmDelete(n);
                             }}
-                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                            className="inline-flex items-center gap-1 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 px-2.5 py-1.5 text-[10.5px] font-bold text-rose-600 dark:text-rose-400 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                           >
-                            <Eye className="h-3.5 w-3.5 text-slate-500" />
-                            <span>Chi tiết</span>
+                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                            <span>Xóa</span>
                           </button>
                         </div>
-                      )}
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          disabled={rowBusy === n.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            dismissTriggerRef.current = e.currentTarget;
-                            setConfirmDismiss(n);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[10.5px] font-bold text-slate-600 dark:text-slate-300 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                        >
-                          <EyeOff className="h-3.5 w-3.5 text-slate-500" />
-                          <span>Ẩn</span>
-                        </button>
-                        <button
-                          type="button"
-                          disabled={rowBusy === n.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteTriggerRef.current = e.currentTarget;
-                            setConfirmDelete(n);
-                          }}
-                          className="inline-flex items-center gap-1 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 px-2 py-1.5 text-[10.5px] font-bold text-rose-600 dark:text-rose-400 disabled:opacity-50 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                          <span>Xóa</span>
-                        </button>
-                      </div>
-                    </>
+                      </>
+                    )}
+                  </div>
+                  {isLead && !n.dismissed && (
+                    <LeadActions
+                      leadId={n.refId as string}
+                      current={n.leadStatus ?? null}
+                      onDone={reload}
+                    />
                   )}
                 </div>
-                {isLead && !n.dismissed && (
-                  <LeadActions
-                    leadId={n.refId as string}
-                    current={n.leadStatus ?? null}
-                    onDone={reload}
-                  />
-                )}
               </div>
-            </div>
+            </SwipeableNotificationItem>
           );
         })}
       </div>

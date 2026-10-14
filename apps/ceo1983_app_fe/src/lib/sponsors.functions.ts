@@ -117,6 +117,15 @@ export const deleteSponsorFn = createServerFn({ method: "POST" })
     });
   });
 
+export const sendSponsorThankYouEmailFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().min(1).max(128) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message: string }> => {
+    return fetchNestApiFromServer<{ ok: boolean; message: string }>(`/sponsors/${data.id}/send-thank-you-email`, context.token, {
+      method: "POST",
+    });
+  });
+
 // ---------------- Sponsor packages CRUD ----------------
 
 const packageInput = z.object({

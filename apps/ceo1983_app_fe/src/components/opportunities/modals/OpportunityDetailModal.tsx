@@ -383,7 +383,23 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                 onClick={() => {
                   const targetCode =
                     selectedOpp.posterCode || selectedOpp.posterId || "admin";
-                  const targetName = selectedOpp.posterName || selectedOpp.company;
+                  const targetName = selectedOpp.posterName || selectedOpp.company || "Tác giả cơ hội";
+                  const inquiry = {
+                    itemType: "opportunity",
+                    id: selectedOpp.id,
+                    title: selectedOpp.title,
+                    price: selectedOpp.value || "Giá thỏa thuận",
+                    image: selectedOpp.image || ((selectedOpp as any).photos && (selectedOpp as any).photos[0]) || "",
+                    company: selectedOpp.company || "",
+                    category: (selectedOpp as any).category || (selectedOpp as any).tag || "Cơ hội kinh doanh",
+                    sellerName: selectedOpp.contactName || selectedOpp.posterName,
+                    targetCode,
+                    targetName,
+                    autoSend: true,
+                  };
+                  try {
+                    localStorage.setItem("vba_pending_chat_inquiry", JSON.stringify(inquiry));
+                  } catch {}
                   onClose();
                   navigate({
                     to: "/association/messages" as any,

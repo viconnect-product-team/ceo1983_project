@@ -1371,7 +1371,7 @@ export class MembersService {
 
     // 4. Xóa hồ sơ hội viên trong bảng members
     await this.prisma.$executeRaw`
-      DELETE FROM public.members WHERE id = ${id}
+      DELETE FROM public.members WHERE id = ${id} OR id::text = ${id} OR code = ${current.code || id}
     `;
 
     // 5. Ghi nhật ký hoạt động
@@ -2022,15 +2022,15 @@ export class MembersService {
     }
 
     const me = memRows[0];
-    const invRows = await this.prisma.$queryRaw<any[]>`
+    const invRows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT id, invoice_no, amount, status, due_date, paid_at, year
       FROM public.invoices
       WHERE member_id = ${me.id}
       ORDER BY year DESC
       LIMIT 50
-    `.catch(() => []);
+    `.catch(() => [] as any[]);
 
-    const pending = invRows.filter((i) => i.status !== 'paid' && i.status !== 'cancelled');
+    const pending = invRows.filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled');
     const outstanding = pending.reduce((s, i) => s + Number(i.amount ?? 0), 0);
     const lastAmount = Number(invRows[0]?.amount ?? 0);
     const renewalFee = lastAmount > 0 ? lastAmount : 2_000_000;
@@ -2472,10 +2472,26 @@ export class MembersService {
       )
     `.catch(() => {});
 
+    // Bắn thư cảm ơn về email ngay khi điền form đăng ký xong (Yêu cầu 8)
+    void this.mailService.sendRegistrationReceivedEmail({
+      to: email.trim().toLowerCase(),
+      fullName,
+      phone,
+      companyName,
+      position: position || 'Đại diện Doanh nghiệp',
+      boardWish: boardWish || 'Ban Thiện Nguyện & An Sinh Xã Hội',
+      industry: industry || 'Kinh doanh & Quản lý',
+      needs,
+      offers,
+      memberId: id,
+    }).catch((err: any) => {
+      this.logger.warn(`Lỗi gửi thư cảm ơn đăng ký hội viên: ${err?.message}`);
+    });
+
     return {
       ok: true,
       memberId: id,
-      message: 'Đăng ký hội viên thành công! Hồ sơ đã được gửi đến Ban Thành Viên để thẩm định.',
+      message: 'Đăng ký hội viên thành công! Thư cảm ơn đã được gửi tới email của Anh/Chị.',
     };
   }
 

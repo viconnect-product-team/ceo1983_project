@@ -60,7 +60,10 @@ export const Route = createFileRoute("/association")({
       Boolean(
         localStorage.getItem("vibe_token") ||
         localStorage.getItem("token") ||
-        localStorage.getItem("access_token"),
+        localStorage.getItem("access_token") ||
+        document.cookie.includes("sb-access-token=") ||
+        document.cookie.includes("vibe_token=") ||
+        document.cookie.includes("access_token="),
       );
     if (!hasLocal) {
       const searchStr =

@@ -94,6 +94,12 @@ export class SponsorsController {
     return this.sponsorsService.deleteSponsor(id);
   }
 
+  @Post(':id/send-thank-you-email')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  async sendThankYouEmail(@Param('id') id: string) {
+    return this.sponsorsService.sendSponsorThankYouEmailById(id);
+  }
+
   @Post('onboard')
   async onboardSponsor(@Body() body: OnboardSponsorDto) {
     return this.sponsorsService.onboardSponsor(body);

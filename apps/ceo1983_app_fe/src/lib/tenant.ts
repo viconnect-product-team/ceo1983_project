@@ -2,13 +2,19 @@
  * Platform app hostnames that serve the main app (login/dashboard/PWA),
  * NOT a tenant landing page. Add custom domains used for the platform here.
  */
-export const PLATFORM_APP_HOSTS = ["qlhh.demo.ubos.vn"];
+export const PLATFORM_APP_HOSTS = [
+  "qlhh.demo.ubos.vn",
+  "ceo1983.viconnect.vn",
+  "crm.ceo1983.viconnect.vn",
+  "viconnect.vn",
+];
 
 /** Returns true for the platform's own app/preview hosts (not a tenant landing). */
 export function hostIsAppDomain(hostname: string): boolean {
   const h = hostname.split(":")[0].toLowerCase();
   if (!h || h === "localhost" || /^[\d.]+$/.test(h)) return true;
   if (h.endsWith(".lovable.app") || h === "lovable.app") return true;
+  if (h.endsWith(".viconnect.vn") || h === "viconnect.vn") return true;
   if (PLATFORM_APP_HOSTS.includes(h)) return true;
   return false;
 }

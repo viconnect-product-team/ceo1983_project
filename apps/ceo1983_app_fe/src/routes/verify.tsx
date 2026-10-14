@@ -86,7 +86,7 @@ function VerifyScreen() {
           </p>
           <Link
             to="/association"
-            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-amber-400/40 bg-[#003B95] hover:bg-[#002B70] px-5 py-3 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 transition"
+            className="mt-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 px-5 py-3 text-[13px] font-black text-slate-950 shadow-lg shadow-amber-500/20 transition active:scale-[0.99]"
           >
             <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội CEO 1983
           </Link>
@@ -166,7 +166,7 @@ function VerifyScreen() {
 
       <Link
         to="/association"
-        className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-amber-400/40 bg-[#003B95] hover:bg-[#002B70] py-3.5 text-[14px] font-bold text-white shadow-xl shadow-[#003B95]/25 transition active:scale-[0.99]"
+        className="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 py-3.5 text-[14px] font-black text-slate-950 shadow-xl shadow-amber-500/25 transition active:scale-[0.99]"
       >
         <ArrowLeft className="h-4 w-4" /> Về trang chủ Hiệp hội CEO 1983
       </Link>

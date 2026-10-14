@@ -9,6 +9,7 @@ export type EventThemeType =
   | "christmas"
   | "tet"
   | "entrepreneur-day"
+  | "ceo1983-birthday"
   | "custom"
   | "none";
 
@@ -235,6 +236,36 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
     },
   },
   {
+    id: "ceo1983-birthday",
+    name: "Sinh Nhật CLB CEO 1983",
+    tagline: "Hội ngộ đồng niên 1983 • Tỏa sáng bản lĩnh • Vững bước tương lai",
+    badge: "🎂 Sinh Nhật 1983",
+    colorScheme: "Royal Gold & Celebration Amber & Champagne",
+    bannerGradient: "linear-gradient(135deg, #78350f 0%, #b45309 45%, #d97706 75%, #f59e0b 100%)",
+    primaryColor: "#B45309",
+    accentColor: "#F59E0B",
+    iconEmoji: "🎂",
+    layoutGrid: "4",
+    borderRadius: "rounded-3xl",
+    iconStyle: "royal-badge",
+    effectType: "sparkles",
+    actionIcons: {
+      card: "🎂",
+      members: "🎉",
+      checkin: "✨",
+      perks: "🎁",
+      voting: "👑",
+      history: "📜",
+      library: "📁",
+      fees: "💎",
+      directory: "🎉",
+      events: "🎂",
+      opportunities: "🥂",
+      marketplace: "🛍️",
+      connect: "🤝",
+    },
+  },
+  {
     id: "custom",
     name: "Chủ Đề Tùy Chỉnh Doanh Nghiệp",
     tagline: "Thiết kế riêng theo phong cách & nhận diện CLB",
@@ -266,41 +297,94 @@ export const FESTIVAL_THEMES: FestivalThemeOption[] = [
   },
 ];
 
-export function isEventThemeEnabled(): boolean {
-  if (typeof window === "undefined") return true;
-  const explicitDisabled = localStorage.getItem(EVENT_THEME_STORAGE_KEY) === "true";
-  return !explicitDisabled;
+export const DEFAULT_BASE_THEME: FestivalThemeOption = {
+  id: "none",
+  name: "Giao diện gốc",
+  tagline: "Giao diện chuẩn CEO 1983 khi chưa áp dụng chủ đề",
+  badge: "✨ Chuẩn",
+  colorScheme: "CEO 1983 Classic Navy & Amber Gold",
+  bannerGradient: "none",
+  primaryColor: "#003B95",
+  accentColor: "#F59E0B",
+  iconEmoji: "✨",
+  layoutGrid: "4",
+  borderRadius: "rounded-2xl",
+  iconStyle: "luxury-vector",
+  effectType: "none",
+  actionIcons: {},
+};
+
+export function getCurrentUserKey(): string {
+  if (typeof window === "undefined") return "guest";
+  try {
+    const email = localStorage.getItem("vba_user_email");
+    if (email) return email.toLowerCase().trim();
+    const raw = localStorage.getItem("vibe_user");
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u?.id) return String(u.id);
+      if (u?.email) return String(u.email).toLowerCase().trim();
+    }
+  } catch {}
+  return "guest";
 }
 
-export function setEventThemeEnabled(enabled: boolean) {
+export function isEventThemeEnabled(userIdentifier?: string): boolean {
+  if (typeof window === "undefined") return false;
+  const crmTheme = getCrmAppliedTheme();
+  // Nếu CRM không áp dụng chủ đề (hoặc Bỏ áp dụng), tắt chủ đề cho toàn bộ người dùng
+  if (crmTheme === "none") return false;
+
+  const userKey = userIdentifier || getCurrentUserKey();
+  const perUserPref = localStorage.getItem(`vba_user_theme_pref_${userKey}`);
+  if (perUserPref === "disabled") return false;
+  if (perUserPref === "enabled") return true;
+
+  if (localStorage.getItem(EVENT_THEME_STORAGE_KEY) === "true") return false;
+  if (localStorage.getItem("vba_user_explicit_theme_preference") === "disabled") return false;
+  if (localStorage.getItem(EVENT_THEME_ENABLED_KEY) === "false") return false;
+
+  return localStorage.getItem(EVENT_THEME_ENABLED_KEY) === "true";
+}
+
+export function setEventThemeEnabled(enabled: boolean, userIdentifier?: string) {
   if (typeof window === "undefined") return;
+  const userKey = userIdentifier || getCurrentUserKey();
+  localStorage.setItem(`vba_user_theme_pref_${userKey}`, enabled ? "enabled" : "disabled");
+
   if (enabled) {
     localStorage.setItem(EVENT_THEME_ENABLED_KEY, "true");
     localStorage.removeItem(EVENT_THEME_STORAGE_KEY);
+    localStorage.setItem("vba_user_explicit_theme_preference", "enabled");
+    const active = getCrmAppliedTheme();
+    applyThemeAttributes(active === "none" ? "classic" : active);
   } else {
     localStorage.setItem(EVENT_THEME_STORAGE_KEY, "true");
-    localStorage.removeItem(EVENT_THEME_ENABLED_KEY);
+    localStorage.setItem(EVENT_THEME_ENABLED_KEY, "false");
+    localStorage.setItem("vba_user_explicit_theme_preference", "disabled");
+    applyThemeAttributes("none");
   }
-  applyThemeAttributes(enabled ? getActiveEventThemeType() : "classic");
   window.dispatchEvent(new CustomEvent("vba-event-theme-changed", { detail: { enabled } }));
 }
 
 function normalizeTheme(t?: string | null): EventThemeType {
-  if (!t) return "classic";
+  if (!t || t === "none" || t === "off" || t === "disabled") return "none";
   if (t === "noel") return "christmas";
   if (t === "default") return "classic";
+  if (t === "birthday" || t === "sinh-nhat" || t === "ceo1983-birthday") return "ceo1983-birthday";
   if (
+    t === "classic" ||
     t === "mid-autumn" ||
     t === "national-day" ||
     t === "christmas" ||
     t === "tet" ||
     t === "entrepreneur-day" ||
-    t === "custom" ||
-    t === "none"
+    t === "ceo1983-birthday" ||
+    t === "custom"
   ) {
     return t as EventThemeType;
   }
-  return "classic";
+  return "none";
 }
 
 export function getCustomThemeConfig(): Partial<FestivalThemeOption> | null {
@@ -332,8 +416,14 @@ export function saveCustomThemeConfig(config: Partial<FestivalThemeOption>) {
 }
 
 export function getEffectiveThemeOption(): FestivalThemeOption {
+  if (!isEventThemeEnabled()) {
+    return DEFAULT_BASE_THEME;
+  }
   const activeId = getActiveEventThemeType();
-  const found = FESTIVAL_THEMES.find((t) => t.id === activeId) || FESTIVAL_THEMES[0];
+  if (activeId === "none") {
+    return DEFAULT_BASE_THEME;
+  }
+  const found = FESTIVAL_THEMES.find((t) => t.id === activeId) || DEFAULT_BASE_THEME;
   if (activeId === "custom") {
     const customConf = getCustomThemeConfig();
     if (customConf) {
@@ -351,7 +441,7 @@ export function getEffectiveThemeOption(): FestivalThemeOption {
 }
 
 export function getCrmAppliedTheme(): EventThemeType {
-  if (typeof window === "undefined") return "classic";
+  if (typeof window === "undefined") return "none";
   try {
     const raw =
       localStorage.getItem("ceo1983_active_theme") ||
@@ -359,31 +449,63 @@ export function getCrmAppliedTheme(): EventThemeType {
       localStorage.getItem("vba_app_theme");
     return normalizeTheme(raw);
   } catch {
-    return "classic";
+    return "none";
   }
 }
 
 export function getActiveEventThemeType(): EventThemeType {
-  if (typeof window === "undefined") return "classic";
+  if (typeof window === "undefined") return "none";
+  if (!isEventThemeEnabled()) return "none";
   const crmTheme = getCrmAppliedTheme();
-  return isEventThemeEnabled() ? crmTheme : "classic";
+  return crmTheme === "none" ? "none" : crmTheme;
 }
 
 export async function syncThemeFromBackend() {
   if (typeof window === "undefined") return;
+
   try {
     const res = await fetchNestApi<{ themeId: EventThemeType; enabled: boolean; customConfig?: any }>(
       "/public/active-theme"
     );
+
+    // CRM bỏ áp dụng chủ đề (trở về giao diện gốc)
+    if (res?.enabled === false || res?.themeId === "none" || !res?.themeId) {
+      localStorage.setItem("ceo1983_active_theme", "none");
+      localStorage.setItem("vba_crm_applied_theme", "none");
+      localStorage.setItem("vba_app_theme", "none");
+      localStorage.setItem(EVENT_THEME_TYPE_KEY, "none");
+      applyThemeAttributes("none");
+      window.dispatchEvent(new CustomEvent("vba-event-theme-changed", { detail: { enabled: false } }));
+      return;
+    }
+
+    // CRM có chủ đề đang được áp dụng
     if (res?.themeId) {
       const normalized = normalizeTheme(res.themeId);
       if (res.customConfig) {
         saveCustomThemeConfig(res.customConfig);
       }
-      setActiveEventThemeType(normalized);
-      if (res.enabled !== undefined) {
-        setEventThemeEnabled(res.enabled);
+      localStorage.setItem("ceo1983_active_theme", normalized);
+      localStorage.setItem("vba_crm_applied_theme", normalized);
+      localStorage.setItem("vba_app_theme", normalized);
+      localStorage.setItem(EVENT_THEME_TYPE_KEY, normalized);
+
+      const userKey = getCurrentUserKey();
+      const perUserPref = localStorage.getItem(`vba_user_theme_pref_${userKey}`);
+      const isExplicitlyDisabled =
+        perUserPref === "disabled" ||
+        localStorage.getItem("vba_user_explicit_theme_preference") === "disabled" ||
+        localStorage.getItem(EVENT_THEME_STORAGE_KEY) === "true";
+
+      if (isExplicitlyDisabled) {
+        applyThemeAttributes("none");
+      } else {
+        localStorage.setItem(EVENT_THEME_ENABLED_KEY, "true");
+        applyThemeAttributes(normalized);
       }
+      window.dispatchEvent(
+        new CustomEvent("vba-event-theme-changed", { detail: { enabled: !isExplicitlyDisabled } })
+      );
     }
   } catch {
     // fallback
@@ -392,26 +514,40 @@ export async function syncThemeFromBackend() {
 
 export function setActiveEventThemeType(type: EventThemeType) {
   if (typeof window === "undefined") return;
+  const isExplicitlyDisabled =
+    localStorage.getItem("vba_user_explicit_theme_preference") === "disabled" ||
+    localStorage.getItem(EVENT_THEME_STORAGE_KEY) === "true";
+
   const crmId = type === "christmas" ? "noel" : type === "classic" ? "default" : type;
   try {
     localStorage.setItem(EVENT_THEME_TYPE_KEY, type);
     localStorage.setItem("ceo1983_active_theme", crmId);
     localStorage.setItem("vba_crm_applied_theme", crmId);
     localStorage.setItem("vba_app_theme", crmId);
-    localStorage.setItem(EVENT_THEME_ENABLED_KEY, "true");
-    localStorage.removeItem(EVENT_THEME_STORAGE_KEY);
+
+    if (type === "none") {
+      localStorage.setItem(EVENT_THEME_STORAGE_KEY, "true");
+      localStorage.setItem(EVENT_THEME_ENABLED_KEY, "false");
+    } else if (!isExplicitlyDisabled) {
+      localStorage.setItem(EVENT_THEME_ENABLED_KEY, "true");
+      localStorage.removeItem(EVENT_THEME_STORAGE_KEY);
+    }
   } catch {}
-  applyThemeAttributes(type);
-  window.dispatchEvent(new CustomEvent("vba-event-theme-changed", { detail: { type } }));
+
+  const effective = !isExplicitlyDisabled && type !== "none" ? type : "none";
+  applyThemeAttributes(effective);
+  window.dispatchEvent(
+    new CustomEvent("vba-event-theme-changed", { detail: { type, enabled: effective !== "none" } })
+  );
   window.dispatchEvent(new CustomEvent("ceo1983-theme-changed", { detail: crmId }));
-  window.dispatchEvent(new Event("storage"));
 }
 
 export function applyThemeAttributes(theme: EventThemeType) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.setAttribute("data-festival-theme", theme);
-  const found = getEffectiveThemeOption();
+  const isEnabled = isEventThemeEnabled() && theme !== "none";
+  root.setAttribute("data-festival-theme", isEnabled ? theme : "none");
+  const found = isEnabled ? getEffectiveThemeOption() : DEFAULT_BASE_THEME;
   root.style.setProperty("--festival-primary", found.primaryColor);
   root.style.setProperty("--festival-accent", found.accentColor);
   root.style.setProperty("--festival-gradient", found.bannerGradient);
@@ -426,24 +562,25 @@ export function SeasonalEventHeader() {
   const [themeType, setThemeType] = useState<EventThemeType>(getActiveEventThemeType());
 
   useEffect(() => {
-    applyThemeAttributes(themeType);
+    applyThemeAttributes(isEventThemeEnabled() ? getActiveEventThemeType() : "none");
     void syncThemeFromBackend();
 
     const handleThemeChange = () => {
-      setEnabled(isEventThemeEnabled());
-      const current = getActiveEventThemeType();
+      const isEn = isEventThemeEnabled();
+      setEnabled(isEn);
+      const current = isEn ? getActiveEventThemeType() : "none";
       setThemeType(current);
       applyThemeAttributes(current);
     };
     window.addEventListener("vba-event-theme-changed", handleThemeChange);
     window.addEventListener("ceo1983-theme-changed", handleThemeChange);
-    window.addEventListener("storage", handleThemeChange);
+    window.addEventListener("vba_auth_changed", handleThemeChange);
     return () => {
       window.removeEventListener("vba-event-theme-changed", handleThemeChange);
       window.removeEventListener("ceo1983-theme-changed", handleThemeChange);
-      window.removeEventListener("storage", handleThemeChange);
+      window.removeEventListener("vba_auth_changed", handleThemeChange);
     };
-  }, [themeType]);
+  }, []);
 
   const crmTheme = getCrmAppliedTheme();
   if (!crmTheme || !enabled || themeType === "none" || themeType === "classic") return null;
@@ -594,6 +731,29 @@ export function SeasonalEventHeader() {
           {eff === "fireworks" && <span className="text-sm animate-bounce">🎆</span>}
           {eff === "sparkles" && <Sparkles className="h-4 w-4" style={{ color: effective.accentColor }} />}
           <span className="text-sm">{effective.iconEmoji || "✨"}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // 7. CHỦ ĐỀ SINH NHẬT CLB CEO 1983
+  if (themeType === "ceo1983-birthday") {
+    return (
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 overflow-hidden select-none"
+        aria-hidden="true"
+      >
+        <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-amber-500/25 blur-2xl animate-pulse" />
+        <div className="absolute left-3 top-2 flex items-center gap-1.5 animate-bounce" style={{ animationDuration: "2.8s" }}>
+          <span className="text-base">🎂</span>
+          <span className="text-[10px] font-black uppercase text-amber-300 tracking-wider drop-shadow-md">
+            Mừng Sinh Nhật CEO 1983
+          </span>
+        </div>
+        <div className="absolute right-3 top-2 flex items-center gap-1.5 opacity-90">
+          <span className="text-base animate-pulse">🎉</span>
+          <span className="text-base">🥂</span>
+          <span className="text-sm">✨</span>
         </div>
       </div>
     );

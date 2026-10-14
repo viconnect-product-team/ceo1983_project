@@ -51,8 +51,32 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   updatingProduct,
 }) => {
   const localImageInputRef = useRef<HTMLInputElement>(null);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   if (!isOpen || !editingProduct || typeof document === "undefined") return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: Record<string, string> = {};
+    if (!editName.trim()) {
+      newErrors.name = isEn ? "Please enter product name" : "Vui lòng nhập tên sản phẩm / giải pháp";
+    }
+    const cleanPrice = Number(editPrice.replace(/\D/g, ""));
+    if (!editPrice.trim() || isNaN(cleanPrice) || cleanPrice <= 0) {
+      newErrors.price = isEn ? "Please enter a valid member price (> 0)" : "Vui lòng nhập giá ưu đãi hội viên (> 0 đ)";
+    }
+    if (!editDesc.trim()) {
+      newErrors.desc = isEn ? "Please enter description / specs" : "Vui lòng nhập mô tả / thông số / ưu đãi";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error(isEn ? "Please complete all required fields (*)" : "Vui lòng điền đầy đủ các thông tin bắt buộc (*)");
+      return;
+    }
+    setErrors({});
+    onSubmit(e);
+  };
 
   return createPortal(
     <div
@@ -77,7 +101,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 [scrollbar-width:thin]">
             {/* Image upload / preview */}
             <div>
@@ -137,16 +161,25 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {isEn ? "Product Name *" : "Tên sản phẩm / giải pháp *"}
+                {isEn ? "Product Name" : "Tên sản phẩm / giải pháp"} <span className="text-rose-500 font-bold">*</span>
               </label>
               <input
                 type="text"
-                required
                 value={editName}
-                onChange={(e) => setEditName(e.target.value)}
+                onChange={(e) => {
+                  setEditName(e.target.value);
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                }}
                 placeholder="VD: Dịch vụ tư vấn giải pháp AI..."
-                className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                className={`w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none transition ${
+                  errors.name ? "ring-2 ring-rose-500" : "ring-0 focus:ring-1 focus:ring-[#003B95]"
+                }`}
               />
+              {errors.name && (
+                <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                  {errors.name}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -196,30 +229,49 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {isEn ? "Member Price *" : "Giá ưu đãi hội viên *"}
+                  {isEn ? "Member Price" : "Giá ưu đãi hội viên"} <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <StandardCurrencyInput
-                  required
                   value={editPrice}
-                  onChange={(formatted) => setEditPrice(formatted)}
+                  onChange={(formatted) => {
+                    setEditPrice(formatted);
+                    if (errors.price) setErrors((prev) => ({ ...prev, price: "" }));
+                  }}
                   placeholder="VD: 35.000.000"
                   unit="đ"
-                  className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                  className={`w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-xs text-slate-900 dark:text-white outline-none transition ${
+                    errors.price ? "ring-2 ring-rose-500" : "ring-0 focus:ring-1 focus:ring-[#003B95]"
+                  }`}
                 />
+                {errors.price && (
+                  <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                    {errors.price}
+                  </p>
+                )}
               </div>
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {isEn ? "Description / Specs" : "Mô tả / Thông số / Ưu đãi"}
+                {isEn ? "Description / Specs" : "Mô tả / Thông số / Ưu đãi"} <span className="text-rose-500 font-bold">*</span>
               </label>
               <textarea
                 rows={2}
                 value={editDesc}
-                onChange={(e) => setEditDesc(e.target.value)}
+                onChange={(e) => {
+                  setEditDesc(e.target.value);
+                  if (errors.desc) setErrors((prev) => ({ ...prev, desc: "" }));
+                }}
                 placeholder="Giới thiệu điểm nổi bật, chính sách bảo hành, hỗ trợ hội viên..."
-                className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] p-3 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 resize-none"
+                className={`w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] p-3 text-xs text-slate-900 dark:text-white outline-none resize-none transition ${
+                  errors.desc ? "ring-2 ring-rose-500" : "ring-0 focus:ring-1 focus:ring-[#003B95]"
+                }`}
               />
+              {errors.desc && (
+                <p className="mt-1 text-xs font-semibold text-rose-500 animate-in fade-in duration-150">
+                  {errors.desc}
+                </p>
+              )}
             </div>
           </div>
 
@@ -234,7 +286,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
             <button
               type="submit"
               disabled={updatingProduct}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 py-2.5 text-xs font-bold text-white shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-[#003B95] border border-[#003B95] py-2.5 text-xs font-bold shadow-xs active:scale-98 transition cursor-pointer disabled:opacity-60"
             >
               <span>{updatingProduct ? (isEn ? "Saving..." : "Đang lưu...") : (isEn ? "Save Changes" : "Lưu Thay Đổi")}</span>
             </button>

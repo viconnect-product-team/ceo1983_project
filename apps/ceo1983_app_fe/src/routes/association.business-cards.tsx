@@ -242,6 +242,7 @@ function BusinessCardsScreen() {
   const [tab, setTab] = useState<"cards" | "leads" | "stats">(search.tab ?? "cards");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "unpublished">("all");
+  const [kindFilter, setKindFilter] = useState<"all" | "primary" | "secondary">("all");
 
   useEffect(() => {
     if (search.tab) setTab(search.tab);
@@ -267,25 +268,53 @@ function BusinessCardsScreen() {
         } catch {}
       }
 
-      if (serverCards && serverCards.length > 0) {
-        setCards(serverCards);
-      } else {
-        const mem = memberRef.current;
-        const u = userRef.current;
-        const officialCard: BusinessCardSummary = {
-          id: "card-official-m1983",
-          slug: mem?.code?.toLowerCase() || "m1983-card",
-          cardKind: "primary",
-          status: "published",
-          publicMode: "public",
-          displayName: localProfile.name || mem?.name || u?.name || "Hội viên CLB CEO 1983",
-          professionalTitle: localProfile.title || mem?.title || "Hội viên chính thức CLB CEO 1983",
-          companyName: localProfile.company || (mem as any)?.companyName || mem?.industry || "CLB Doanh Nhân CEO 1983",
-          avatarUrl: (typeof window !== "undefined" ? (localStorage.getItem("vba_card_avatar_card-official-m1983") || localStorage.getItem("vba_member_avatar_photo")) : null) || mem?.avatar || "",
-          updatedAt: new Date().toISOString(),
-        };
-        setCards([officialCard]);
-      }
+      const mem = memberRef.current;
+      const u = userRef.current;
+
+      const primaryCard = serverCards?.find((c) => c.cardKind === "primary");
+      const secondaryCard = serverCards?.find((c) => c.cardKind === "secondary");
+
+      const officialPrimary: BusinessCardSummary = primaryCard || {
+        id: "card-official-primary",
+        slug: mem?.code?.toLowerCase() || "m1983-card",
+        cardKind: "primary",
+        status: "published",
+        publicMode: "public",
+        displayName: localProfile.name || mem?.name || u?.name || "Hội viên CLB CEO 1983",
+        professionalTitle: localProfile.title || mem?.title || "Hội viên chính thức CLB CEO 1983",
+        companyName: "CLB Doanh Nhân CEO 1983",
+        avatarUrl:
+          (typeof window !== "undefined"
+            ? localStorage.getItem("vba_card_avatar_card-official-primary") ||
+              localStorage.getItem("vba_member_avatar_photo")
+            : null) ||
+          mem?.avatar ||
+          "",
+        updatedAt: new Date().toISOString(),
+      };
+
+      const officialSecondary: BusinessCardSummary = secondaryCard || {
+        id: "card-official-secondary",
+        slug: `${(mem?.code || "member").toLowerCase()}-business`,
+        cardKind: "secondary",
+        status: "published",
+        publicMode: "public",
+        displayName: localProfile.name || mem?.name || u?.name || "Hội viên CLB CEO 1983",
+        professionalTitle: localProfile.title || "Giám đốc / Chủ Doanh Nghiệp",
+        companyName: localProfile.company || (mem as any)?.companyName || mem?.industry || "Doanh nghiệp cá nhân",
+        avatarUrl:
+          (typeof window !== "undefined"
+            ? localStorage.getItem("vba_card_avatar_card-official-secondary")
+            : null) ||
+          mem?.avatar ||
+          "",
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Merge other server cards if any beyond primary & secondary
+      const others = serverCards ? serverCards.filter((c) => c.id !== primaryCard?.id && c.id !== secondaryCard?.id) : [];
+
+      setCards([officialPrimary, officialSecondary, ...others]);
     } catch (e) {
       toast.error(tRef.current(cardPermissionErrorKey(e)));
     } finally {
@@ -303,7 +332,21 @@ function BusinessCardsScreen() {
       const card = await getFn({ data: { id } });
       setEditing(fromCard(card));
     } catch (e) {
-      toast.error(t(cardPermissionErrorKey(e)));
+      const c = cards.find((x) => x.id === id);
+      if (c) {
+        setEditing({
+          ...emptyDraft(member, user, c.cardKind),
+          id: c.id.startsWith("card-official-") ? null : c.id,
+          slug: c.slug,
+          cardKind: c.cardKind,
+          displayName: c.displayName || "",
+          professionalTitle: c.professionalTitle || "",
+          companyName: c.companyName || "",
+          avatarUrl: c.avatarUrl || "",
+        });
+      } else {
+        toast.error(t(cardPermissionErrorKey(e)));
+      }
     }
   };
 
@@ -438,6 +481,8 @@ function BusinessCardsScreen() {
             (() => {
               const q = query.trim().toLowerCase();
               const filtered = cards.filter((c) => {
+                const matchesKind = kindFilter === "all" || c.cardKind === kindFilter;
+                if (!matchesKind) return false;
                 const matchesStatus =
                   statusFilter === "all" ||
                   (statusFilter === "published"
@@ -454,8 +499,51 @@ function BusinessCardsScreen() {
                 { key: "published", label: t("bc.filter.published") },
                 { key: "unpublished", label: t("bc.filter.unpublished") },
               ] as const;
+
+              const primaryCount = cards.filter((c) => c.cardKind === "primary").length;
+              const secondaryCount = cards.filter((c) => c.cardKind === "secondary").length;
+
               return (
                 <div className="space-y-3">
+                  {/* Segmented Dual Card Selector */}
+                  <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-white/[0.06] rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={() => setKindFilter("all")}
+                      className={`py-2 px-2 text-center rounded-xl text-xs font-bold transition ${
+                        kindFilter === "all"
+                          ? "bg-white dark:bg-slate-800 text-[#003B95] dark:text-blue-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      Tất cả ({cards.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setKindFilter("primary")}
+                      className={`py-2 px-2 text-center rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
+                        kindFilter === "primary"
+                          ? "bg-white dark:bg-slate-800 text-[#003B95] dark:text-blue-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>⭐ DT Chính</span>
+                      <span className="text-[10px] opacity-75">({primaryCount})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setKindFilter("secondary")}
+                      className={`py-2 px-2 text-center rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
+                        kindFilter === "secondary"
+                          ? "bg-white dark:bg-slate-800 text-[#003B95] dark:text-blue-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>💼 DT Phụ</span>
+                      <span className="text-[10px] opacity-75">({secondaryCount})</span>
+                    </button>
+                  </div>
+
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
@@ -1690,7 +1778,7 @@ function CardRow({
 
         {/* Primary Action Row - High Contrast Buttons */}
         <div className="mt-3.5 flex flex-wrap items-center gap-2">
-          {published && (
+          {published ? (
             <a
               href={`/b/${card.slug}`}
               target="_blank"
@@ -1700,6 +1788,16 @@ function CardRow({
               <ExternalLink className="h-3.5 w-3.5" />
               Xem công khai
             </a>
+          ) : (
+            <a
+              href={`/b/${card.slug}?preview=true`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white active:scale-95 px-3.5 py-2 text-[12.5px] font-bold shadow-sm transition-all cursor-pointer"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Xem trước web
+            </a>
           )}
           <button
             onClick={() => setPreviewOpen(true)}
@@ -1708,7 +1806,7 @@ function CardRow({
             <QrCode className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
             {t("bc.preview")}
           </button>
-          {published && (
+          {published && card.cardKind === "primary" && (
             <>
               <button
                 onClick={() => setShareOpen(true)}

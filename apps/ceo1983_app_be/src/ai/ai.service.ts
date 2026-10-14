@@ -124,6 +124,303 @@ export class AiService {
     });
   }
 
+  // ==========================================
+  // AI QUOTA & USER LIMIT SYSTEM (50 QUESTIONS PER ACCOUNT)
+  // ==========================================
+  private isTableChecked = false;
+
+  async ensureAiQuotaTable(): Promise<void> {
+    if (this.isTableChecked) return;
+    await this.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS public.ai_user_quotas (
+        user_id TEXT PRIMARY KEY,
+        user_name TEXT,
+        user_email TEXT,
+        used_count INT DEFAULT 0,
+        max_limit INT DEFAULT 50,
+        extra_granted INT DEFAULT 0,
+        is_blocked BOOLEAN DEFAULT false,
+        last_question TEXT,
+        last_requested_at TIMESTAMPTZ DEFAULT now(),
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      );
+    `).catch((e: Error) => console.error('[AiService] ensureAiQuotaTable failed:', e?.message));
+    this.isTableChecked = true;
+  }
+
+  /**
+   * Lấy thông tin hạn mức sử dụng AI của tài khoản (giới hạn 50 câu hỏi)
+   */
+  async getUserQuota(userId: string): Promise<{
+    userId: string;
+    userName: string;
+    userEmail: string;
+    usedCount: number;
+    maxLimit: number;
+    extraGranted: number;
+    totalLimit: number;
+    remaining: number;
+    isExceeded: boolean;
+    isBlocked: boolean;
+    lastRequestedAt: string;
+    lastQuestion: string;
+  }> {
+    await this.ensureAiQuotaTable();
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.ai_user_quotas WHERE user_id = $1 LIMIT 1`,
+      String(userId)
+    ).catch(() => [] as any[]);
+
+    if (rows && rows.length > 0) {
+      const r = rows[0];
+      const maxLimit = Number(r.max_limit || 50);
+      const extraGranted = Number(r.extra_granted || 0);
+      const usedCount = Number(r.used_count || 0);
+      const totalLimit = maxLimit + extraGranted;
+      const isBlocked = Boolean(r.is_blocked);
+      const isExceeded = usedCount >= totalLimit || isBlocked;
+      const remaining = Math.max(0, totalLimit - usedCount);
+
+      return {
+        userId: String(r.user_id),
+        userName: r.user_name || 'Hội viên',
+        userEmail: r.user_email || '',
+        usedCount,
+        maxLimit,
+        extraGranted,
+        totalLimit,
+        remaining,
+        isExceeded,
+        isBlocked,
+        lastRequestedAt: r.last_requested_at ? new Date(r.last_requested_at).toISOString() : new Date().toISOString(),
+        lastQuestion: r.last_question || '',
+      };
+    }
+
+    // Khởi tạo hạn mức ban đầu cho tài khoản mới (mặc định 50 câu)
+    let userName = 'Hội viên';
+    let userEmail = '';
+    try {
+      const u = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT name, email FROM public.vione_users WHERE id::text = $1 LIMIT 1`,
+        String(userId)
+      ).catch(() => [] as any[]);
+      if (u && u.length > 0) {
+        userName = u[0].name || userName;
+        userEmail = u[0].email || userEmail;
+      }
+    } catch {}
+
+    await this.prisma.$executeRawUnsafe(
+      `INSERT INTO public.ai_user_quotas (user_id, user_name, user_email, used_count, max_limit, extra_granted, is_blocked)
+       VALUES ($1, $2, $3, 0, 50, 0, false)
+       ON CONFLICT (user_id) DO NOTHING`,
+      String(userId), userName, userEmail
+    ).catch(() => {});
+
+    return {
+      userId: String(userId),
+      userName,
+      userEmail,
+      usedCount: 0,
+      maxLimit: 50,
+      extraGranted: 0,
+      totalLimit: 50,
+      remaining: 50,
+      isExceeded: false,
+      isBlocked: false,
+      lastRequestedAt: new Date().toISOString(),
+      lastQuestion: '',
+    };
+  }
+
+  /**
+   * Kiểm tra và ghi nhận tăng 1 câu hỏi khi tài khoản thực hiện request AI
+   */
+  async checkAndIncrementUserQuota(userId: string, question?: string): Promise<{
+    allowed: boolean;
+    quota: any;
+  }> {
+    const quota = await this.getUserQuota(userId);
+    if (quota.isExceeded) {
+      return { allowed: false, quota };
+    }
+
+    const newUsed = quota.usedCount + 1;
+    const remaining = Math.max(0, quota.totalLimit - newUsed);
+    const isExceeded = newUsed >= quota.totalLimit;
+
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.ai_user_quotas
+       SET used_count = used_count + 1,
+           last_question = $2,
+           last_requested_at = now(),
+           updated_at = now()
+       WHERE user_id = $1`,
+      String(userId),
+      (question || '').slice(0, 500)
+    ).catch((e: Error) => console.error('[AiService] increment quota failed:', e?.message));
+
+    return {
+      allowed: true,
+      quota: {
+        ...quota,
+        usedCount: newUsed,
+        remaining,
+        isExceeded,
+        lastQuestion: (question || '').slice(0, 500),
+        lastRequestedAt: new Date().toISOString(),
+      },
+    };
+  }
+
+  /**
+   * Quản trị viên theo dõi toàn bộ danh sách người dùng và tình trạng hạn mức 50 câu hỏi
+   */
+  async listUsersAiUsage(params?: { search?: string; status?: string }): Promise<{
+    users: any[];
+    stats: {
+      totalUsers: number;
+      totalQuestions: number;
+      exceededUsers: number;
+      warningUsers: number;
+      normalUsers: number;
+      limitPerAccount: number;
+    };
+  }> {
+    await this.ensureAiQuotaTable();
+
+    // Đồng bộ người dùng từ vione_users vào bảng quota nếu chưa có
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.ai_user_quotas (user_id, user_name, user_email, used_count, max_limit, extra_granted, is_blocked)
+      SELECT u.id::text, COALESCE(u.name, 'Hội viên'), COALESCE(u.email, ''), 0, 50, 0, false
+      FROM public.vione_users u
+      ON CONFLICT (user_id) DO NOTHING
+    `).catch(() => {});
+
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT q.user_id, q.user_name, q.user_email, q.used_count, q.max_limit, q.extra_granted,
+             q.is_blocked, q.last_question, q.last_requested_at, q.created_at,
+             m.company, m.position, m.code as member_code
+      FROM public.ai_user_quotas q
+      LEFT JOIN public.members m ON m.user_id::text = q.user_id OR m.id::text = q.user_id
+      ORDER BY q.used_count DESC, q.last_requested_at DESC
+    `).catch(() => [] as any[]);
+
+    let list = rows.map((r) => {
+      const usedCount = Number(r.used_count || 0);
+      const maxLimit = Number(r.max_limit || 50);
+      const extraGranted = Number(r.extra_granted || 0);
+      const totalLimit = maxLimit + extraGranted;
+      const remaining = Math.max(0, totalLimit - usedCount);
+      const isBlocked = Boolean(r.is_blocked);
+      const isExceeded = usedCount >= totalLimit || isBlocked;
+      let status: 'blocked' | 'exceeded' | 'warning' | 'normal' = 'normal';
+      if (isBlocked) status = 'blocked';
+      else if (isExceeded) status = 'exceeded';
+      else if (usedCount >= 40) status = 'warning';
+
+      return {
+        userId: String(r.user_id),
+        userName: r.user_name || 'Hội viên',
+        userEmail: r.user_email || '',
+        company: r.company || 'Doanh nghiệp Hội viên',
+        position: r.position || 'Thành viên',
+        memberCode: r.member_code || '',
+        usedCount,
+        maxLimit,
+        extraGranted,
+        totalLimit,
+        remaining,
+        percent: Math.min(100, Math.round((usedCount / totalLimit) * 100)),
+        status,
+        isBlocked,
+        lastQuestion: r.last_question || '',
+        lastRequestedAt: r.last_requested_at ? new Date(r.last_requested_at).toISOString() : null,
+      };
+    });
+
+    if (params?.search) {
+      const s = params.search.toLowerCase().trim();
+      list = list.filter((u) =>
+        u.userName.toLowerCase().includes(s) ||
+        u.userEmail.toLowerCase().includes(s) ||
+        u.company.toLowerCase().includes(s) ||
+        u.memberCode.toLowerCase().includes(s)
+      );
+    }
+
+    if (params?.status && params.status !== 'all') {
+      list = list.filter((u) => u.status === params.status);
+    }
+
+    const totalUsers = list.length;
+    const totalQuestions = list.reduce((acc, u) => acc + u.usedCount, 0);
+    const exceededUsers = list.filter((u) => u.status === 'exceeded' || u.status === 'blocked').length;
+    const warningUsers = list.filter((u) => u.status === 'warning').length;
+    const normalUsers = list.filter((u) => u.status === 'normal').length;
+
+    return {
+      users: list,
+      stats: {
+        totalUsers,
+        totalQuestions,
+        exceededUsers,
+        warningUsers,
+        normalUsers,
+        limitPerAccount: 50,
+      },
+    };
+  }
+
+  /**
+   * Quản trị viên cấp thêm câu hỏi hoặc đặt lại về 0
+   */
+  async resetOrAdjustUserQuota(userId: string, body: {
+    resetCount?: boolean;
+    addExtra?: number;
+    newLimit?: number;
+    unblock?: boolean;
+  }): Promise<{ ok: boolean; quota: any }> {
+    await this.ensureAiQuotaTable();
+    const updates: string[] = ['updated_at = now()'];
+    if (body.resetCount) {
+      updates.push(`used_count = 0`);
+    }
+    if (typeof body.addExtra === 'number' && body.addExtra > 0) {
+      updates.push(`extra_granted = extra_granted + ${Math.floor(body.addExtra)}`);
+    }
+    if (typeof body.newLimit === 'number' && body.newLimit > 0) {
+      updates.push(`max_limit = ${Math.floor(body.newLimit)}`);
+    }
+    if (body.unblock) {
+      updates.push(`is_blocked = false`);
+    }
+
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.ai_user_quotas SET ${updates.join(', ')} WHERE user_id = $1`,
+      String(userId)
+    );
+
+    const updated = await this.getUserQuota(userId);
+    return { ok: true, quota: updated };
+  }
+
+  /**
+   * Tạm khóa / Mở khóa quyền dùng AI của tài khoản
+   */
+  async toggleBlockUserAi(userId: string, blocked: boolean): Promise<{ ok: boolean; quota: any }> {
+    await this.ensureAiQuotaTable();
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.ai_user_quotas SET is_blocked = $2, updated_at = now() WHERE user_id = $1`,
+      String(userId),
+      blocked
+    );
+    const updated = await this.getUserQuota(userId);
+    return { ok: true, quota: updated };
+  }
+
   /**
    * Lấy toàn bộ ngữ cảnh động của hội viên tại phiên đăng nhập:
    * - Hồ sơ định danh (Tên, mã hội viên, doanh nghiệp, chức vụ, ban bệ)
@@ -652,6 +949,18 @@ export class AiService {
     provider: string;
     model: string;
   }> {
+    // 0. Giới hạn 50 câu hỏi cho mỗi tài khoản
+    const quotaCheck = await this.checkAndIncrementUserQuota(userId, prompt);
+    if (!quotaCheck.allowed) {
+      return {
+        answer: `⚠️ Tài khoản của Anh/Chị đã sử dụng hết giới hạn 50 câu hỏi AI (hoặc đã đạt ngưỡng hạn mức tối đa). Vui lòng liên hệ Quản Trị Viên Hệ Thống để được cấp thêm lượt hỏi đáp nhé!`,
+        speechText: `Tài khoản của bạn đã đạt giới hạn 50 câu hỏi AI. Vui lòng liên hệ ban quản trị để được hỗ trợ.`,
+        intent: 'chat',
+        provider: 'quota-guard',
+        model: 'limit-50-questions',
+      };
+    }
+
     const context = await this.getLiveMemberAssistantContext(userId);
     const rawPrompt = (prompt || '').trim();
     const q = rawPrompt.toLowerCase();

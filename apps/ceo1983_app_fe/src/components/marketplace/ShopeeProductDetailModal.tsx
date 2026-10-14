@@ -290,9 +290,12 @@ export function ShopeeProductDetailModal({
                 {onMessageSeller && (
                   <button
                     type="button"
-                    onClick={() => onMessageSeller(product)}
-                    className="h-11 px-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-                    title="Nhắn tin với doanh nghiệp"
+                    onClick={() => {
+                      onClose();
+                      onMessageSeller(product);
+                    }}
+                    className="h-11 px-3.5 rounded-2xl bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-900/50 text-[#EE4D2D] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-orange-200 dark:border-orange-800"
+                    title="Nhắn tin hỏi shop về sản phẩm này"
                   >
                     <MessageSquare className="size-4" />
                     <span>Chat Ngay</span>
@@ -337,7 +340,7 @@ export function ShopeeProductDetailModal({
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Đại diện: <strong className="text-slate-700 dark:text-slate-200">{product.sellerName || "Hội viên chính thức"}</strong>
+                    Đại diện: <strong className="text-slate-700 dark:text-slate-200">{product.sellerName || "Hội viên"}</strong>
                   </p>
                   <div className="flex items-center gap-2 text-[11px] text-slate-400">
                     <span className="size-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
@@ -351,8 +354,11 @@ export function ShopeeProductDetailModal({
                 {onMessageSeller && (
                   <button
                     type="button"
-                    onClick={() => onMessageSeller(product)}
-                    className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 flex items-center gap-1.5 transition cursor-pointer"
+                    onClick={() => {
+                      onClose();
+                      onMessageSeller(product);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-900/50 border border-orange-200 dark:border-orange-800 text-xs font-bold text-[#EE4D2D] flex items-center gap-1.5 transition cursor-pointer"
                   >
                     <MessageSquare className="size-3.5 text-[#EE4D2D]" />
                     <span>Chat Ngay</span>
@@ -362,9 +368,9 @@ export function ShopeeProductDetailModal({
                   <button
                     type="button"
                     onClick={() => onViewStore(companyName)}
-                    className="px-3.5 py-2 rounded-xl bg-[#003B95] text-white hover:bg-blue-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 border border-amber-400/50 text-slate-950 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs"
                   >
-                    <Store className="size-3.5" />
+                    <Store className="size-3.5 text-slate-950" />
                     <span>Xem Gian Hàng</span>
                   </button>
                 )}
@@ -671,6 +677,19 @@ export function ShopeeProductDetailModal({
             >
               Đóng
             </button>
+            {onMessageSeller && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onMessageSeller(product);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-900/50 text-[#EE4D2D] text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-orange-200 dark:border-orange-800 shadow-xs"
+              >
+                <MessageSquare className="size-3.5" />
+                <span>Chat Hỏi Shop</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {

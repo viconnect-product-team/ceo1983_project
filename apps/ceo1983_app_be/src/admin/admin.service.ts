@@ -1497,23 +1497,25 @@ export class AdminService implements OnModuleInit {
 
     if (rows.length > 0 && rows[0].value) {
       const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+      const isEnabled = val.enabled === true && val.themeId !== 'none';
       return {
-        themeId: val.themeId || 'classic',
-        enabled: val.enabled !== false,
+        themeId: isEnabled ? (val.themeId || 'classic') : 'none',
+        enabled: isEnabled,
         updatedAt: val.updatedAt || null,
       };
     }
 
     return {
-      themeId: 'classic',
-      enabled: true,
+      themeId: 'none',
+      enabled: false,
       updatedAt: null,
     };
   }
 
   async saveActiveTheme(payload: any, userId?: string) {
-    const themeId = payload?.themeId || 'classic';
-    const enabled = payload?.enabled !== false;
+    const isExplicitlyDisabled = payload?.enabled === false || payload?.themeId === 'none';
+    const themeId = isExplicitlyDisabled ? 'none' : (payload?.themeId || 'classic');
+    const enabled = !isExplicitlyDisabled;
     const jsonValue = JSON.stringify({
       themeId,
       enabled,

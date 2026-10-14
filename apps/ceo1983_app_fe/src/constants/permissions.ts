@@ -4,9 +4,9 @@
  */
 
 export const SRS_ROLES = {
+  QUAN_TRI: "quan_tri",
   CHU_TICH: "chu_tich",
   ADMIN: "admin",
-  QUAN_TRI: "quan_tri",
   BAN_DIEU_HANH: "ban_dieu_hanh",
   TONG_THU_KY: "tong_thu_ky",
   BAN_THU_KY: "ban_thu_ky",
@@ -30,6 +30,7 @@ export const SRS_ROLES = {
 } as const;
 
 export const STANDARD_ROLES = [
+  "Quản trị",
   "Chủ tịch",
   "Admin",
   "Ban Điều Hành",
@@ -69,7 +70,6 @@ export type SrsRole =
   | "truong_ban_tai_chinh"
   | "truong_ban_thien_nguyen"
   | "truong_ban_dieu_hanh"
-  | "truong_ban_quan_tri"
   | "member"
   | "ADM"
   | "BQT"
@@ -95,6 +95,7 @@ export const PERMISSIONS = {
   SPONSOR_CREATE: "sponsor:create",
   SPONSOR_EDIT: "sponsor:edit",
   SPONSOR_DELETE: "sponsor:delete",
+  SPONSOR_MANAGE: "sponsor:edit",
   SPONSOR_PACKAGE_MANAGE: "sponsor:package_manage",
   SPONSOR_ASSIGN_EVENT: "sponsor:assign_event",
 
@@ -145,7 +146,6 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
   admin: Object.values(PERMISSIONS),
   ban_dieu_hanh: Object.values(PERMISSIONS),
   truong_ban_dieu_hanh: Object.values(PERMISSIONS),
-  truong_ban_quan_tri: Object.values(PERMISSIONS),
   tong_thu_ky: [
     PERMISSIONS.MEETING_VIEW,
     PERMISSIONS.MEETING_MANAGE,

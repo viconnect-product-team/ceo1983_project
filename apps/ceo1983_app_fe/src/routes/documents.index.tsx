@@ -54,9 +54,20 @@ export const Route = createFileRoute("/documents/")({
 
 const TYPE_COLOR: Record<Document["type"], string> = {
   pdf: "oklch(0.62 0.18 25)",
+  doc: "oklch(0.55 0.16 240)",
   docx: "oklch(0.55 0.16 240)",
+  xls: "oklch(0.55 0.16 145)",
   xlsx: "oklch(0.55 0.16 145)",
+  ppt: "oklch(0.62 0.18 50)",
   pptx: "oklch(0.62 0.18 50)",
+  txt: "oklch(0.58 0.04 220)",
+  csv: "oklch(0.56 0.15 170)",
+  zip: "oklch(0.62 0.15 75)",
+  rar: "oklch(0.62 0.15 75)",
+  png: "oklch(0.60 0.18 310)",
+  jpg: "oklch(0.60 0.18 310)",
+  jpeg: "oklch(0.60 0.18 310)",
+  other: "oklch(0.50 0.02 240)",
 };
 
 const PIN_KEY = "vba.doc.pins";
@@ -142,8 +153,19 @@ function DocsPage() {
   const [group, setGroup] = useUrlState<"none" | "cat">("group", "none");
   const [docTab, setDocTab] = useUrlState<"docs" | "mail_templates">("tab", "docs");
 
+  const CRM_COMMITTEE_LIST = [
+    "Ban Điều Hành",
+    "Ban Thành Viên",
+    "Ban Truyền Thông",
+    "Ban Xúc Tiến",
+    "Ban Tài Chính",
+    "Ban Thiện Nguyện",
+    "Ban Thư Ký",
+    "Biểu mẫu chung",
+  ];
+
   const cats = useMemo(
-    () => ["all", ...new Set(DOCUMENTS.map((d) => d.category).filter(Boolean))],
+    () => ["all", ...new Set([...CRM_COMMITTEE_LIST, ...DOCUMENTS.map((d) => d.category).filter(Boolean)])],
     [DOCUMENTS],
   );
   const types = useMemo(() => ["all", ...new Set(DOCUMENTS.map((d) => d.type))], [DOCUMENTS]);
@@ -162,17 +184,42 @@ function DocsPage() {
 
   const fields: CrudField[] = [
     { name: "name", label: t("doc.col.name"), type: "text", required: true, placeholder: "Nhập tên tài liệu..." },
-    { name: "category", label: t("doc.col.cat"), type: "text", required: true, placeholder: "Nhập danh mục (ví dụ: Tài chính, Nhân sự...)" },
+    {
+      name: "category",
+      label: "Ban phụ trách / Danh mục",
+      type: "select",
+      required: true,
+      options: [
+        { value: "Ban Điều Hành", label: "Ban Điều Hành" },
+        { value: "Ban Thành Viên", label: "Ban Thành Viên" },
+        { value: "Ban Truyền Thông", label: "Ban Truyền Thông" },
+        { value: "Ban Xúc Tiến", label: "Ban Xúc Tiến" },
+        { value: "Ban Tài Chính", label: "Ban Tài Chính" },
+        { value: "Ban Thiện Nguyện", label: "Ban Thiện Nguyện" },
+        { value: "Ban Thư Ký", label: "Ban Thư Ký" },
+        { value: "Biểu mẫu chung", label: "Biểu mẫu chung" },
+      ],
+    },
     {
       name: "type",
       label: t("doc.col.type"),
       type: "select",
       placeholder: "Chọn định dạng tệp...",
       options: [
-        { value: "pdf", label: "PDF" },
-        { value: "docx", label: "DOCX" },
-        { value: "xlsx", label: "XLSX" },
-        { value: "pptx", label: "PPTX" },
+        { value: "pdf", label: "PDF (.pdf)" },
+        { value: "docx", label: "Word (.docx)" },
+        { value: "doc", label: "Word cũ (.doc)" },
+        { value: "xlsx", label: "Excel (.xlsx)" },
+        { value: "xls", label: "Excel cũ (.xls)" },
+        { value: "pptx", label: "PowerPoint (.pptx)" },
+        { value: "ppt", label: "PowerPoint cũ (.ppt)" },
+        { value: "txt", label: "Văn bản thô (.txt)" },
+        { value: "csv", label: "Dữ liệu CSV (.csv)" },
+        { value: "zip", label: "Tệp nén ZIP (.zip)" },
+        { value: "rar", label: "Tệp nén RAR (.rar)" },
+        { value: "png", label: "Hình ảnh PNG (.png)" },
+        { value: "jpg", label: "Hình ảnh JPG (.jpg, .jpeg)" },
+        { value: "other", label: "Định dạng khác" },
       ],
     },
     { name: "size", label: t("doc.col.size"), type: "text", placeholder: "Ví dụ: 2.4 MB" },
@@ -259,9 +306,23 @@ function DocsPage() {
       const path = resData.url;
 
       const ext = (f.name.split(".").pop() ?? "").toLowerCase();
-      const type = (
-        ["pdf", "docx", "xlsx", "pptx"].includes(ext) ? ext : "pdf"
-      ) as Document["type"];
+      const validTypes = [
+        "pdf",
+        "doc",
+        "docx",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+        "txt",
+        "csv",
+        "zip",
+        "rar",
+        "png",
+        "jpg",
+        "jpeg",
+      ];
+      const type = (validTypes.includes(ext) ? ext : "other") as Document["type"];
       const size =
         f.size >= 1048576
           ? `${(f.size / 1048576).toFixed(1)} MB`
@@ -504,7 +565,7 @@ function DocsPage() {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.png,.jpg,.jpeg"
                   className="hidden"
                   aria-hidden="true"
                   onChange={(e) => {

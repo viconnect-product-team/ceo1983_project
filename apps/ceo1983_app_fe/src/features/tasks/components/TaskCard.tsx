@@ -50,7 +50,7 @@ export function TaskCard({ task, onClick, zoomLevel = 'standard' }: TaskCardProp
         {/* Top Header: Code, Priority, Status dot */}
         <div className="flex items-center justify-between gap-1.5 mb-2 flex-wrap">
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-            <span className="font-mono text-[10.5px] font-bold text-[#003B95] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-900 truncate">
+            <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20 font-mono truncate">
               {task.code}
             </span>
             <span
@@ -74,8 +74,8 @@ export function TaskCard({ task, onClick, zoomLevel = 'standard' }: TaskCardProp
 
         {/* Department & Meeting Tag */}
         <div className="mb-2 flex items-center justify-between gap-1.5 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md truncate max-w-[190px]">
-            <Building className="w-3 h-3 text-slate-500 flex-shrink-0" />
+          <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20 truncate max-w-[190px]">
+            <Building className="w-3 h-3 text-[#003B95] dark:text-blue-300 flex-shrink-0" />
             <span className="truncate">{task.department}</span>
           </span>
 
@@ -113,34 +113,56 @@ export function TaskCard({ task, onClick, zoomLevel = 'standard' }: TaskCardProp
           </p>
         )}
 
-        {/* Subtask checklist progress bar */}
-        {totalSubtasks > 0 && (
-          <div className="mb-2.5 space-y-1">
-            <div className="flex items-center justify-between text-[10.5px] text-slate-500 font-medium">
-              <span className="inline-flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-slate-400" />
-                Mục con ({completedSubtasks}/{totalSubtasks})
-              </span>
-              <span className="font-bold">{Math.round((completedSubtasks / totalSubtasks) * 100)}%</span>
-            </div>
-            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  task.status === 'DONE' ? 'bg-emerald-500' : 'bg-[#003B95]'
-                }`}
-                style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
-              />
-            </div>
+        {/* Task progress bar */}
+        <div className="mb-2 space-y-1">
+          <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
+            <span className="flex items-center gap-1">
+              <span>Tiến độ</span>
+              {totalSubtasks > 0 && (
+                <span className="text-[10px] text-slate-400">({completedSubtasks}/{totalSubtasks} mục)</span>
+              )}
+            </span>
+            <span className="font-mono font-bold text-[#003B95] dark:text-blue-400">{task.progress}%</span>
           </div>
-        )}
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                task.status === 'DONE' ? 'bg-emerald-500' : task.progress > 0 ? 'bg-[#003B95]' : 'bg-slate-300 dark:bg-slate-700'
+              }`}
+              style={{ width: `${task.progress}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Card Footer: Assignee, Due date & counters */}
       <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 mt-1">
         <div className="flex items-center justify-between gap-2">
-          {/* Assignee */}
+          {/* Assignee / Multi-Assignees */}
           <div className="flex items-center gap-1.5 min-w-0">
-            {task.assignee.avatar ? (
+            {task.assignees && task.assignees.length > 1 ? (
+              <div className="flex items-center -space-x-1.5">
+                {task.assignees.slice(0, 3).map((a, i) =>
+                  a.avatar ? (
+                    <img
+                      key={i}
+                      src={a.avatar}
+                      alt={a.name}
+                      title={a.name}
+                      className="w-5 h-5 rounded-full object-cover border border-white dark:border-slate-900 flex-shrink-0"
+                    />
+                  ) : (
+                    <div
+                      key={i}
+                      title={a.name}
+                      className="w-5 h-5 text-[9px] rounded-full bg-[#003B95] text-white flex items-center justify-center font-bold border border-white dark:border-slate-900 flex-shrink-0"
+                    >
+                      {a.name.charAt(0)}
+                    </div>
+                  )
+                )}
+              </div>
+            ) : task.assignee.avatar ? (
               <img
                 src={task.assignee.avatar}
                 alt={task.assignee.name}
@@ -151,8 +173,10 @@ export function TaskCard({ task, onClick, zoomLevel = 'standard' }: TaskCardProp
                 {task.assignee.name.charAt(0)}
               </div>
             )}
-            <span className={`${isCompact ? 'text-[11px] max-w-[90px]' : 'text-[12px] max-w-[120px]'} font-medium text-slate-700 dark:text-slate-300 truncate`}>
-              {task.assignee.name}
+            <span className={`${isCompact ? 'text-[11px] max-w-[85px]' : 'text-[12px] max-w-[110px]'} font-medium text-slate-700 dark:text-slate-300 truncate`}>
+              {task.assignees && task.assignees.length > 1
+                ? `${task.assignees[0].name} +${task.assignees.length - 1}`
+                : task.assignee.name}
             </span>
           </div>
 

@@ -419,15 +419,28 @@ export function useRole(): RoleState {
     user?.role === "president" ||
     String(user?.executiveRole).toLowerCase().includes("chủ tịch");
   const isChuTich = isPresident;
-  const isPlatformAdmin = srsRole === "ADM" || isPresident;
+  const isPlatformAdmin =
+    srsRole === "ADM" ||
+    srsRole === "quan_tri" ||
+    (srsRole as string) === "platform_admin" ||
+    roles.includes("platform_admin") ||
+    isPresident;
   const isBanDieuHanh =
     srsRole === "ban_dieu_hanh" ||
     srsRole === "BQT" ||
+    srsRole === "admin" ||
     Boolean(user?.isExecutive) ||
-    isPresident;
+    Boolean(user?.isAdmin) ||
+    isPresident ||
+    isPlatformAdmin;
   const isBQT = isBanDieuHanh;
   const isAdmin =
-    (isPresident || isPlatformAdmin || srsRole === "admin" || srsRole === "quan_tri" || isBanDieuHanh || Boolean(user?.isAdmin)) &&
+    (isPresident ||
+      isPlatformAdmin ||
+      srsRole === "admin" ||
+      isBanDieuHanh ||
+      Boolean(user?.isAdmin) ||
+      roles.includes("admin")) &&
     (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin || isPresident);
   const isTongThuKy = srsRole === "tong_thu_ky" || Boolean(user?.isGeneralSecretary) || isPresident || isAdmin;
   const isBanThuKy = srsRole === "ban_thu_ky" || srsRole === "BTK" || isTongThuKy;
@@ -462,6 +475,9 @@ export function useRole(): RoleState {
       // 1. Kiểm tra trực tiếp phân quyền từng hội viên từ vba_member_permissions:
       // Nếu Admin đã bỏ chọn (false), lập tức thu hồi quyền và ẩn chức năng trên giao diện
       if (memberPermProfile) {
+        if (memberPermProfile.canView === false && (permission.includes(":view") || permission.endsWith("_VIEW") || permission.endsWith(":read"))) {
+          return false;
+        }
         if (memberPermProfile.canAdd === false && (permission.includes(":create") || permission.includes(":add") || permission.endsWith("_ADD"))) {
           return false;
         }

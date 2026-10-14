@@ -312,69 +312,16 @@ function VotingPage() {
         title={t("vote.title")}
         subtitle={t("vote.subtitle")}
         actions={
-          <div className="flex items-center gap-2">
-            {userId ? (
-              <>
-                <button
-                  onClick={() => navigate({ to: "/account-settings" })}
-                  className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
-                >
-                  Cài đặt
-                </button>
-                <button
-                  onClick={async () => {
-                    await logout();
-                    toast.success("Đã đăng xuất");
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary"
-                >
-                  Đăng xuất
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => navigate({ to: "/auth" })}
-                className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
-              >
-                Đăng nhập
-              </button>
-            )}
-            <button
-              onClick={copyLink}
-              className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-secondary"
-            >
-              <Link2 className="h-4 w-4" />
-              {copied ? "Đã sao chép!" : "Sao chép liên kết"}
-            </button>
-            <button
-              onClick={() => {
-                setShowLuckyDrawBanner(true);
-                setTimeout(() => {
-                  document.getElementById("lucky-draw-banner-section")?.scrollIntoView({ behavior: "smooth" });
-                }, 50);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:opacity-95 cursor-pointer"
-            >
-              <Gift className="h-4 w-4" />
-              Bốc Thăm Trúng Thưởng
-            </button>
-            <button
-              onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <Plus className="h-4 w-4" />
-              {t("vote.create")}
-            </button>
-          </div>
+          <button
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            <Plus className="h-4 w-4" />
+            {t("vote.create")}
+          </button>
         }
       />
-
-      {showLuckyDrawBanner && (
-        <div id="lucky-draw-banner-section" className="mb-6">
-          <LuckyDrawLandingBanner />
-        </div>
-      )}
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard

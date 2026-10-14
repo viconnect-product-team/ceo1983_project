@@ -30,7 +30,7 @@ export class MeetingsController {
   @Get()
   async getAllMeetings(@Request() req: any) {
     const userId = req.user.id || req.user.sub;
-    return this.meetingsService.listWorkspaceMeetings(userId, {});
+    return this.meetingsService.getAllUnifiedMeetings(userId);
   }
 
   @Post()

@@ -137,7 +137,15 @@ export function TaskDetailDrawer({
   const isTaskAssignee =
     Boolean(task.assignee?.id && task.assignee.id === currentUserId) ||
     Boolean(task.assignee?.email && currentUserEmail && task.assignee.email.toLowerCase() === currentUserEmail.toLowerCase()) ||
-    Boolean(task.assignee?.name && currentUserName && task.assignee.name.toLowerCase() === currentUserName.toLowerCase());
+    Boolean(task.assignee?.name && currentUserName && task.assignee.name.toLowerCase() === currentUserName.toLowerCase()) ||
+    Boolean(
+      task.assignees?.some(
+        (a) =>
+          (a.id && a.id === currentUserId) ||
+          (a.email && currentUserEmail && a.email.toLowerCase() === currentUserEmail.toLowerCase()) ||
+          (a.name && currentUserName && a.name.toLowerCase() === currentUserName.toLowerCase())
+      )
+    );
 
   const isTaskCollaborator = Boolean(
     task.collaborators?.some(
@@ -265,7 +273,6 @@ export function TaskDetailDrawer({
       const updated = await acceptTask(task.id, currentUserName);
       toast.success('Đã tiếp nhận công việc thành công!');
       onTaskUpdated?.(updated);
-      await onStatusChange(task.id, 'IN_PROGRESS');
     } catch (err: any) {
       toast.error(err?.message || 'Lỗi khi tiếp nhận công việc');
     } finally {
@@ -305,7 +312,6 @@ export function TaskDetailDrawer({
       toast.success('Đã nộp báo cáo nghiệm thu hoàn thành!');
       setReviewDialogOpen(false);
       onTaskUpdated?.(updated);
-      await onStatusChange(task.id, 'REVIEW');
     } catch (err: any) {
       toast.error(err?.message || 'Lỗi khi nộp nghiệm thu');
     } finally {
@@ -350,7 +356,6 @@ export function TaskDetailDrawer({
       toast.success(`Đã nghiệm thu và phê duyệt hoàn thành (${approveRating}★)!`);
       setApproveDialogOpen(false);
       onTaskUpdated?.(updated);
-      await onStatusChange(task.id, 'DONE');
     } catch (err: any) {
       toast.error(err?.message || 'Lỗi khi phê duyệt');
     } finally {
@@ -371,7 +376,6 @@ export function TaskDetailDrawer({
       setReworkDialogOpen(false);
       setReworkReason('');
       onTaskUpdated?.(updated);
-      await onStatusChange(task.id, 'IN_PROGRESS');
     } catch (err: any) {
       toast.error(err?.message || 'Lỗi khi gửi yêu cầu làm lại');
     } finally {
@@ -786,12 +790,12 @@ export function TaskDetailDrawer({
             <div className="space-y-6">
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-                    <Building className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+                    <Building className="w-3.5 h-3.5 text-[#003B95] dark:text-blue-300" />
                     {task.department}
                   </span>
                   {task.category && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2.5 py-1 rounded-md">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
                       {task.category}
                     </span>
                   )}
@@ -814,6 +818,24 @@ export function TaskDetailDrawer({
                     {task.progress}%
                   </span>
                 </div>
+                {(canExecute || canSupervise) && (
+                  <div className="flex items-center gap-1.5 mb-2.5">
+                    {[0, 25, 50, 75, 100].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => onProgressChange(task.id, val)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                          task.progress === val
+                            ? 'bg-[#003B95] text-white shadow-xs'
+                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                        }`}
+                      >
+                        {val}%
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {canExecute || canSupervise ? (
                   <input
                     type="range"
@@ -872,38 +894,60 @@ export function TaskDetailDrawer({
               {/* People & Dates Grid */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
-                  <div className="text-slate-400 font-medium mb-1">Người chịu trách nhiệm</div>
-                  <div className="flex items-center gap-2">
-                    {task.assignee.avatar ? (
-                      <img
-                        src={task.assignee.avatar}
-                        alt={task.assignee.name}
-                        className="w-6 h-6 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold">
-                        {task.assignee.name.charAt(0)}
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-bold text-slate-900 dark:text-slate-100">
-                        {task.assignee.name}
-                      </div>
-                      {task.assignee.role && (
-                        <div className="text-[10px] text-slate-400">{task.assignee.role}</div>
-                      )}
-                    </div>
+                  <div className="text-slate-400 font-medium mb-1">
+                    Người nhận việc {task.assignees && task.assignees.length > 1 ? `(${task.assignees.length})` : ''}
                   </div>
+                  {task.assignees && task.assignees.length > 1 ? (
+                    <div className="space-y-1.5 mt-1">
+                      {task.assignees.map((a, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          {a.avatar ? (
+                            <img src={a.avatar} alt={a.name} className="w-5 h-5 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[9px] font-bold">
+                              {a.name.charAt(0)}
+                            </div>
+                          )}
+                          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">{a.name}</span>
+                          {a.role && <span className="text-[10px] text-slate-400">({a.role})</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {task.assignee.avatar ? (
+                        <img
+                          src={task.assignee.avatar}
+                          alt={task.assignee.name}
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold">
+                          {task.assignee.name.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">
+                          {task.assignee.name}
+                        </div>
+                        {task.assignee.role && (
+                          <div className="text-[10px] text-slate-400">{task.assignee.role}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
-                  <div className="text-slate-400 font-medium mb-1">Người giao việc / Giám sát</div>
+                  <div className="text-slate-400 font-medium mb-1">Người giao việc &amp; Phê duyệt</div>
                   <div className="font-bold text-slate-900 dark:text-slate-100 mt-1">
-                    {task.supervisor?.name || 'Ban Điều Hành'}
+                    {task.creator?.name || task.supervisor?.name || 'Ban Điều Hành'}
                   </div>
-                  {task.supervisor?.role && (
-                    <div className="text-[10px] text-slate-400">{task.supervisor.role}</div>
-                  )}
+                  <div className="mt-1">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+                      {task.creator?.role || task.supervisor?.role || 'Ban Quản trị'}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
@@ -1003,25 +1047,6 @@ export function TaskDetailDrawer({
                 </div>
               )}
 
-              {/* Acceptance Criteria */}
-              {task.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Tiêu chí nghiệm thu công việc ({task.acceptanceCriteria.length})
-                  </h4>
-                  <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/30 p-3 dark:border-emerald-900/30 dark:bg-emerald-950/10">
-                    {task.acceptanceCriteria.map((crit, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-xs text-slate-800 dark:text-slate-200">
-                        <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                          ✓
-                        </span>
-                        <span>{crit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Subtasks Checklist */}
               <div>

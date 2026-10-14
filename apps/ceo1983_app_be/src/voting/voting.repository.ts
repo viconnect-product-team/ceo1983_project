@@ -218,25 +218,28 @@ export class VotingRepository {
     return [];
   }
 
-  async sendLuckyDrawNotification(targetUserId: string, title: string, body: string, eventId: string, safeDisplayData: string, memberCode?: string): Promise<void> {
+  async sendLuckyDrawNotification(targetUserId: string, title: string, body: string, eventId: string, safeDisplayData: string, memberCode?: string, prizeTitle?: string, eventName?: string): Promise<void> {
+    // 1. Business notifications
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.business_notifications (
         id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
         title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, 'events', $2, 'lucky_draw_won', 'lucky_draw_winner',
+        gen_random_uuid(), $1, 'events', $2, 'lucky_draw_won', 'perk_reward',
         $3, $4, $5::jsonb, 'high', 'delivered', $6, 'association_app', 'association_app', NOW(), NOW()
       )
     `, targetUserId, eventId || 'lucky-draw', title, body, safeDisplayData, `lucky-win-${Date.now()}`).catch(() => {});
 
+    // 2. Member in-app notifications pointing to perks
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.member_notifications (
         id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, false, false, 'lucky_draw', $4, NOW()
+        gen_random_uuid(), $1, $2, $3, false, false, 'perk', $4, NOW()
       )
     `, targetUserId, title, body, eventId || 'lucky-draw').catch(() => {});
 
+    // 3. Official broadcast notification
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.notifications (
         id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
@@ -244,7 +247,17 @@ export class VotingRepository {
         gen_random_uuid(), $1, $2, $3, 'members', 'official_events', 'sent', NOW(), 1,
         'c1983000-0000-4000-8000-000000001983'::uuid, 'association_app', 'association_app', NOW(), NOW()
       )
-    `, `NOTIF-WIN-${Date.now().toString().slice(-6)}`, title, body).catch(() => {});
+    `, `NOTIF-PERK-${Date.now().toString().slice(-6)}`, title, body).catch(() => {});
+
+    // 4. Create custom perk reward voucher in public.perks for the member
+    const perkTitle = prizeTitle ? `🎁 Phần thưởng: ${prizeTitle}` : title;
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.perks (
+        id, title, category, partner, summary, description, discount, icon, link, valid_until, sort_order, status, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, 'Trúng thưởng sự kiện', $2, $3, $4, '100% Miễn phí', 'gift', '/association/perks', NOW() + INTERVAL '30 days', 1, 'active', NOW(), NOW()
+      )
+    `, perkTitle, eventName || 'Ban Tổ Chức CEO 1983', `Phần thưởng sự kiện dành cho hội viên ${memberCode || ''}`, body).catch(() => {});
 
     if (memberCode) {
       await this.prisma.$executeRaw`

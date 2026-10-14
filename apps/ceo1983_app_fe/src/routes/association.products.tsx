@@ -135,10 +135,14 @@ function formatSmartProductPrice(rawPrice: string | number | undefined | null): 
   return `${num.toLocaleString("vi-VN")} đ`;
 }
 
+type ProductsSearch = {
+  action?: string;
+};
+
 export const Route = createFileRoute("/association/products")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): ProductsSearch => {
     return {
-      action: (search.action as string) || undefined,
+      action: typeof search.action === "string" ? search.action : undefined,
     };
   },
   component: ProductsScreen,
@@ -248,14 +252,29 @@ function ProductsScreen() {
       toast.error(isEn ? "Please log in to save products" : "Vui lòng đăng nhập để lưu sản phẩm quan tâm");
       return;
     }
+    const isAdding = !interestedIds.includes(id);
     setInterestedIds((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
       try {
         localStorage.setItem(userStorageKey, JSON.stringify(next));
       } catch {}
-      toast.success(next.includes(id) ? (isEn ? "Added to interested list" : "Đã thêm vào danh mục Đã quan tâm") : (isEn ? "Removed from interested list" : "Đã bỏ khỏi danh mục Đã quan tâm"));
       return next;
     });
+
+    if (isAdding) {
+      const targetProduct =
+        (allProducts && allProducts.find((p) => p.id === id)) ||
+        (selectedDetailProduct?.id === id ? selectedDetailProduct : null);
+
+      if (targetProduct) {
+        toast.success(isEn ? "Added to interested list & connecting to seller chat..." : "Đã quan tâm sản phẩm! Đang mở tin nhắn trao đổi với doanh nghiệp...");
+        handleMessageSeller(targetProduct);
+      } else {
+        toast.success(isEn ? "Added to interested list" : "Đã thêm vào danh mục Đã quan tâm");
+      }
+    } else {
+      toast.info(isEn ? "Removed from interested list" : "Đã bỏ khỏi danh mục Đã quan tâm");
+    }
   };
 
   // Marketplace Ads & Affiliate Registration Flow (CRM Sync)
@@ -418,28 +437,61 @@ function ProductsScreen() {
     return false;
   };
 
+  const normalizeCompanyName = (name: string): string => {
+    if (!name) return "";
+    let str = name.toLowerCase().trim();
+    str = str
+      .replace(/\b(công ty|cong ty|cty|cổ phần|co phan|tnhh|cp|holding|holdings|group|tập đoàn|tap doan|jsc|ltd|co\., ltd|co ltd)\b/gi, " ")
+      .replace(/[^a-zA-Z0-9\u00C0-\u1EF9]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return str;
+  };
+
+  const isGenericClubName = (name: string): boolean => {
+    if (!name) return true;
+    const lower = name.toLowerCase().trim();
+    const genericKeywords = [
+      "clb",
+      "ceo 1983",
+      "ceo1983",
+      "hanoiba",
+      "hanoi ba",
+      "hiệp hội",
+      "hội doanh nhân",
+      "ban chấp hành",
+      "vione",
+      "viconnect",
+    ];
+    const cleaned = normalizeCompanyName(name);
+    if (!cleaned || cleaned.length < 3) return true;
+    if (genericKeywords.some((kw) => lower === kw || lower.replace(/\s+/g, "") === kw.replace(/\s+/g, ""))) return true;
+    if (lower === "clb doanh nhân ceo 1983" || lower === "clb ceo 1983" || lower === "hiệp hội ceo 1983") return true;
+    return false;
+  };
+
   const isProductFromUserCompany = (p: MyProduct) => {
     if (!p) return false;
-    const userCompany = String((member as any)?.company || (member as any)?.companyName || member?.title || "").trim().toLowerCase();
-    const prodCompany = String(p.company || "").trim().toLowerCase();
-    if (!userCompany || !prodCompany) return false;
-    const generic = ["clb", "doanh nhân ceo 1983", "ceo 1983", "hanoiba", "hanoi ba", "hiệp hội"];
-    if (generic.some((g) => userCompany === g || prodCompany === g)) return false;
-    if (userCompany.length >= 4 && (userCompany === prodCompany || prodCompany.includes(userCompany) || userCompany.includes(prodCompany))) {
-      return true;
-    }
-    return false;
+    const userCompanyRaw = String(resolvedProfileCompany || (member as any)?.company || (member as any)?.companyName || "").trim();
+    const prodCompanyRaw = String(p.company || "").trim();
+    if (!userCompanyRaw || !prodCompanyRaw) return false;
+    if (isGenericClubName(userCompanyRaw) || isGenericClubName(prodCompanyRaw)) return false;
+
+    const normUser = normalizeCompanyName(userCompanyRaw);
+    const normProd = normalizeCompanyName(prodCompanyRaw);
+    if (!normUser || !normProd || normUser.length < 3 || normProd.length < 3) return false;
+
+    return normUser === normProd;
   };
 
   const checkCanManageProduct = (p: MyProduct) => {
     if (!p) return false;
     if (checkIsProductAuthor(p)) return true;
     if (isProductFromUserCompany(p)) return true;
-    if (isAdmin) return true;
     return false;
   };
 
-  const checkIsProductOwner = checkIsProductAuthor;
+  const checkIsProductOwner = checkCanManageProduct;
 
   const handleOpenQuoteModal = (p: MyProduct) => {
     if (checkIsProductOwner(p)) {
@@ -459,6 +511,35 @@ function ProductsScreen() {
   const handleOpenProductDetail = (p: MyProduct) => {
     trackRecentlyViewed(p);
     setSelectedDetailProduct(p);
+  };
+
+  const handleMessageSeller = (p: MyProduct) => {
+    const targetCode = (p as any).sellerCode || (p as any).sellerId || (p as any).userId || (p as any).code || "admin";
+    const targetName = p.company || p.sellerName || "Doanh nghiệp thành viên";
+    const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&auto=format&fit=crop&q=80";
+    const inquiry = {
+      itemType: "product",
+      id: p.id,
+      title: p.name || (p as any).title,
+      price: p.memberPrice || p.price,
+      originalPrice: p.originalPrice,
+      image: mediaImg,
+      company: p.company || "",
+      category: p.category || "Sản phẩm B2B",
+      sellerName: p.sellerName || p.company,
+      unit: (p as any).unit || "Gói",
+      targetCode,
+      targetName,
+      autoSend: true,
+    };
+    try {
+      localStorage.setItem("vba_pending_chat_inquiry", JSON.stringify(inquiry));
+    } catch {}
+    toast.success("Đang kết nối tin nhắn hỏi shop về sản phẩm này...");
+    navigate({
+      to: "/association/messages" as any,
+      search: { peerCode: targetCode, peerName: targetName } as any,
+    });
   };
 
   const handleOpenProductQuotes = async (p: MyProduct) => {
@@ -661,8 +742,25 @@ function ProductsScreen() {
     return allProducts.reduce((sum, p) => sum + (p.views || 1), 0);
   }, [allProducts]);
   const totalMarketplaceValue = useMemo(() => {
-    return allProducts.reduce((sum, p) => sum + (Number(p.memberPrice || p.price) || 0), 0);
+    return allProducts.reduce((sum, p) => {
+      const num =
+        p.priceNumber ??
+        (parseInt(String(p.memberPrice || p.price || "").replace(/\D/g, ""), 10) || 0);
+      return sum + num;
+    }, 0);
   }, [allProducts]);
+
+  const formattedMarketplaceValue = useMemo(() => {
+    if (totalMarketplaceValue >= 1_000_000_000) {
+      const billions = (totalMarketplaceValue / 1_000_000_000).toFixed(2).replace(/\.?0+$/, "");
+      return `${billions} Tỷ VNĐ`;
+    }
+    if (totalMarketplaceValue >= 1_000_000) {
+      const millions = (totalMarketplaceValue / 1_000_000).toFixed(1).replace(/\.?0+$/, "");
+      return `${millions} Triệu VNĐ`;
+    }
+    return `${totalMarketplaceValue.toLocaleString("vi-VN")} đ`;
+  }, [totalMarketplaceValue]);
 
   const featuredCompanyProduct = useMemo(() => {
     return allProducts.find((p) => p.company && p.company.trim().length > 0) || null;
@@ -679,15 +777,15 @@ function ProductsScreen() {
 
   const isCompanyOwner = useMemo(() => {
     if (!viewingCompany) return false;
-    const targetComp = viewingCompany.name.toLowerCase().trim();
-    const generic = ["clb", "doanh nhân ceo 1983", "ceo 1983", "hanoiba", "hanoi ba", "hiệp hội"];
-    if (generic.some((g) => targetComp.includes(g))) {
-      return false;
-    }
-    const memComp = String((member as any)?.company || (member as any)?.companyName || member?.title || "").toLowerCase().trim();
-    if (memComp && memComp.length >= 4 && (memComp === targetComp || targetComp.includes(memComp) || memComp.includes(targetComp))) return true;
+    const targetComp = viewingCompany.name.trim();
+    if (isGenericClubName(targetComp)) return false;
+    const userComp = String(resolvedProfileCompany || (member as any)?.company || (member as any)?.companyName || "").trim();
+    if (!userComp || isGenericClubName(userComp)) return false;
+    const normUser = normalizeCompanyName(userComp);
+    const normTarget = normalizeCompanyName(targetComp);
+    if (normUser && normTarget && normUser.length >= 3 && normUser === normTarget) return true;
     return companyProducts.some((p) => checkIsProductAuthor(p));
-  }, [viewingCompany, member, companyProducts]);
+  }, [viewingCompany, member, resolvedProfileCompany, companyProducts]);
 
   const companyCategories = useMemo(() => {
     const cats = Array.from(new Set(companyProducts.map((p) => p.category).filter(Boolean))) as string[];
@@ -788,19 +886,7 @@ function ProductsScreen() {
     return Array.from(map.values()).sort((a, b) => b.count - a.count || b.totalViews - a.totalViews);
   }, [allProducts]);
 
-  // Nhắn tin trực tiếp cho người bán / công ty khi hỏi về sản phẩm (Requirement 13)
-  const handleMessageSeller = (p: MyProduct) => {
-    const sellerCode = (p as any).sellerCode || (p as any).sellerId || "";
-    const sellerName = (p as any).contactName || (p as any).sellerName || p.company || "Hội viên CLB CEO 1983";
-    navigate({
-      to: "/association/messages",
-      search: {
-        peerCode: sellerCode,
-        peerName: sellerName,
-        topic: `Tư vấn sản phẩm: ${p.name}`,
-      } as any,
-    });
-  };
+
 
   // Quảng cáo sản phẩm công ty lung linh sang trọng (Requirement 4)
   const [sponsoredAdIdx, setSponsoredAdIdx] = useState(0);
@@ -1153,7 +1239,7 @@ function ProductsScreen() {
 
         {/* Action Button */}
         <div className="p-3 pt-0">
-          {isAuthor ? (
+          {canManage ? (
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -1186,35 +1272,14 @@ function ProductsScreen() {
               >
                 <MessageSquare className="h-4 w-4" />
               </button>
-              {checkIsProductOwner(p) ? (
-                <button
-                  type="button"
-                  onClick={() => handleOpenProductQuotes(p)}
-                  className="flex-1 h-8.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Users className="h-3.5 w-3.5 text-white shrink-0" />
-                  <span>Yêu cầu báo giá ({p.quoteRequestsCount || 0})</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleOpenQuoteModal(p)}
-                  className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>Nhận báo giá VIP</span>
-                  <ArrowRight className="h-3.5 w-3.5 text-white shrink-0" />
-                </button>
-              )}
-              {isAdmin && !checkIsProductOwner(p) && (
-                <button
-                  type="button"
-                  onClick={() => handleOpenProductQuotes(p)}
-                  className="h-8.5 px-2.5 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer flex items-center justify-center shrink-0"
-                  title="Xem yêu cầu báo giá (Quyền Admin)"
-                >
-                  <Users className="h-3.5 w-3.5" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => handleOpenQuoteModal(p)}
+                className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>Nhận báo giá VIP</span>
+                <ArrowRight className="h-3.5 w-3.5 text-white shrink-0" />
+              </button>
             </div>
           )}
         </div>
@@ -1717,9 +1782,9 @@ function ProductsScreen() {
                   <button
                     type="button"
                     onClick={() => setPostModalOpen(true)}
-                    className="mt-2 px-4 py-2 bg-[#003B95] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-blue-900 transition cursor-pointer shadow-xs active:scale-95"
+                    className="mt-2 px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/20 active:scale-95"
                   >
-                    <Plus className="size-4" />
+                    <Plus className="size-4 text-slate-950" />
                     <span>Đăng sản phẩm ngay</span>
                   </button>
                 </div>
@@ -1791,6 +1856,42 @@ function ProductsScreen() {
             <>
               {/* ── SCROLLABLE CONTENT (390px spec according to Figma) ── */}
               <div className="self-stretch px-4 pt-4 pb-6 flex flex-col justify-start items-start gap-5">
+
+            {/* 0. MARKETPLACE OVERVIEW STATS BANNER */}
+            <div className="w-full bg-gradient-to-r from-[#002B70] via-[#003B95] to-[#0A4DB0] rounded-2xl p-4 text-white shadow-md border border-amber-400/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-amber-400 text-slate-950 rounded-lg text-xs font-black shadow-xs">
+                    83
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-amber-300">
+                      Sàn Giao Thương B2B CEO 1983
+                    </h3>
+                    <p className="text-[10px] text-blue-100">Hệ sinh thái sản phẩm & dịch vụ doanh nghiệp hội viên</p>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-400/40">
+                  Nội Bộ CLB
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/15 text-center">
+                <div className="bg-white/10 rounded-xl p-2 backdrop-blur-xs">
+                  <div className="text-[10px] text-blue-200 font-medium">Tổng sản phẩm</div>
+                  <div className="text-sm sm:text-base font-black text-white mt-0.5">{totalProducts}</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-2 backdrop-blur-xs">
+                  <div className="text-[10px] text-amber-200 font-medium">Giá trị niêm yết</div>
+                  <div className="text-sm sm:text-base font-black text-amber-300 mt-0.5">{formattedMarketplaceValue}</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-2 backdrop-blur-xs">
+                  <div className="text-[10px] text-blue-200 font-medium">Đã kết nối</div>
+                  <div className="text-sm sm:text-base font-black text-emerald-300 mt-0.5">{totalInterested} đối tác</div>
+                </div>
+              </div>
+            </div>
             
             {/* 1. SEARCH ROW (Bên trái thanh tìm kiếm là icon dạng menu có sắp xếp giá, dưới tìm kiếm là danh mục gần đây đã chọn) */}
             <div className="self-stretch flex flex-col gap-2.5">

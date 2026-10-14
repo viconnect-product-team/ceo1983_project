@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 import { CalendarClock, Download, Loader2, RefreshCw, Search, X } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,9 @@ import {
 } from "@/lib/demo-admin.functions";
 
 export const Route = createFileRoute("/admin/demo-leads")({
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
   component: AdminDemoLeadsPage,
   head: () => ({
     meta: [

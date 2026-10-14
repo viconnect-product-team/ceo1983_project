@@ -75,7 +75,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function AssociationPermissionsScreen() {
-  const { isBQT, isPlatformAdmin, loading: roleLoading } = useRole();
+  const { isBQT, isPlatformAdmin, isAdmin, srsRole, loading: roleLoading } = useRole();
   const { user } = useAuth();
   const fetchMyMemberFn = useServerFn(getMyMember);
   const { data: member } = useServerData<MyMember | null>(() => fetchMyMemberFn(), null, "vba_my_member");
@@ -84,6 +84,14 @@ function AssociationPermissionsScreen() {
   const memberRole = String((member as any)?.role || "").toLowerCase();
 
   const isBQTOrAdmin = Boolean(
+    isAdmin ||
+    isPlatformAdmin ||
+    isBQT ||
+    srsRole === "admin" ||
+    srsRole === "quan_tri" ||
+    srsRole === "ADM" ||
+    srsRole === "BQT" ||
+    srsRole === "ban_dieu_hanh" ||
     userRole === "admin" ||
     userRole === "quan_tri" ||
     userRole === "quantri" ||
@@ -93,12 +101,12 @@ function AssociationPermissionsScreen() {
     memberRole === "quan_tri" ||
     memberRole === "quantri" ||
     memberRole === "association_admin" ||
-    isPlatformAdmin ||
-    isBQT ||
     (member as any)?.department === "Ban Quản Trị" ||
+    (member as any)?.department === "Ban Điều Hành" ||
     (member as any)?.department === "Ban Thường Trực CLB" ||
     String((member as any)?.executiveRole || "").toLowerCase().includes("chủ tịch") ||
-    String((member as any)?.department || "").toLowerCase().includes("quản trị")
+    String((member as any)?.department || "").toLowerCase().includes("quản trị") ||
+    String((member as any)?.department || "").toLowerCase().includes("điều hành")
   );
   const hasAccess = isBQTOrAdmin;
 
@@ -245,7 +253,7 @@ function AssociationPermissionsScreen() {
           </div>
           <Link
             to="/association"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold shadow-md hover:bg-[#002B70] transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition"
           >
             <span>Quay lại Trang Chủ</span>
           </Link>

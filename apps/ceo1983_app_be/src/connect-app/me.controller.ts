@@ -80,8 +80,9 @@ export class MeController {
   }
 
   @Get('notifications/member')
-  async listMyMemberNotifications(@Request() req) {
-    return this.connectAppService.listMyMemberNotifications(req.user.id);
+  async listMyMemberNotifications(@Request() req, @Query('personalOnly') personalOnly?: string) {
+    const isPersonalOnly = personalOnly === 'true' || personalOnly === '1';
+    return this.connectAppService.listMyMemberNotifications(req.user.id, isPersonalOnly);
   }
 
   @Post('notifications/member/read')

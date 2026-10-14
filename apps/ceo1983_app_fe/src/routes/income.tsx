@@ -350,7 +350,7 @@ function IncomePage() {
             </button>
             <button
               onClick={() => openCreate("event_walkin", "cash")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#003B95] px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#002B70] transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 px-3.5 py-2 text-sm font-black text-slate-950 shadow-sm shadow-amber-500/20 transition-colors"
             >
               <Banknote className="h-4 w-4" />
               Thu Tiền Mặt Đột Xuất
@@ -493,7 +493,7 @@ function IncomePage() {
             <button
               onClick={() => setCategoryFilter("event_walkin")}
               className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "event_walkin" ? "bg-[#003B95] text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                categoryFilter === "event_walkin" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Thu đột xuất

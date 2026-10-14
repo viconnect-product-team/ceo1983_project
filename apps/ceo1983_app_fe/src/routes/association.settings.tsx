@@ -25,14 +25,6 @@ import { useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { fetchNestApi } from "@/lib/api-client";
-import {
-  isEventThemeEnabled,
-  setEventThemeEnabled,
-  getActiveEventThemeType,
-  setActiveEventThemeType,
-  FESTIVAL_THEMES,
-  type EventThemeType,
-} from "@/components/member/SeasonalEventHeader";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -80,8 +72,6 @@ function AssociationSettingsScreen() {
 
   // Preferences states
   const [notifEnabled, setNotifEnabled] = useState(true);
-  const [eventThemeEnabled, setEventThemeEnabledState] = useState(isEventThemeEnabled());
-  const [activeThemeType, setActiveThemeTypeState] = useState<EventThemeType>(getActiveEventThemeType());
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,107 +290,7 @@ function AssociationSettingsScreen() {
           </div>
         </section>
 
-        {/* 3. Event Theme Feature: Tính năng sự kiện & Chủ đề lễ hội */}
-        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Sparkles className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
-              <div>
-                <div className="text-[13px] font-bold text-slate-900 dark:text-white">
-                  Chủ đề lễ hội & Sự kiện
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Bật / tắt hiệu ứng và chuyển giao diện theo ngày lễ (Trung thu, Quốc khánh, Noel, Tết)
-                </div>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={eventThemeEnabled}
-                onChange={(e) => {
-                  const val = e.target.checked;
-                  setEventThemeEnabledState(val);
-                  setEventThemeEnabled(val);
-                  toast.success(val ? "Đã bật tính năng chủ đề sự kiện" : "Đã tắt tính năng sự kiện");
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#003B95]"></div>
-            </label>
-          </div>
 
-          {eventThemeEnabled && (
-            <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-2">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Chọn chủ đề áp dụng
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                {FESTIVAL_THEMES.map((item) => {
-                  const isSelected = activeThemeType === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveThemeTypeState(item.id);
-                        setActiveEventThemeType(item.id);
-                        toast.success(`Đã áp dụng chủ đề: ${item.name}`);
-                      }}
-                      className={`relative w-full text-left p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                        isSelected
-                          ? "border-[#003B95] dark:border-amber-400 bg-blue-50/60 dark:bg-amber-950/30 shadow-xs"
-                          : "border-slate-200 dark:border-white/10 hover:border-slate-300 bg-white dark:bg-slate-900/40"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="h-9 w-9 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-xs"
-                          style={{
-                            background: item.bannerGradient,
-                            color: "#ffffff",
-                          }}
-                        >
-                          {item.iconEmoji}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[12.5px] font-bold text-slate-900 dark:text-white truncate">
-                              {item.name}
-                            </span>
-                            <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                              {item.badge}
-                            </span>
-                          </div>
-                          <div className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                            {item.tagline}
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400">
-                            <span>Phím tắt:</span>
-                            <span>{item.actionIcons.directory}</span>
-                            <span>{item.actionIcons.events}</span>
-                            <span>{item.actionIcons.opportunities}</span>
-                            <span>{item.actionIcons.marketplace}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex items-center">
-                        {isSelected ? (
-                          <div className="h-5 w-5 rounded-full bg-[#003B95] dark:bg-amber-400 text-white dark:text-slate-950 flex items-center justify-center text-xs font-bold">
-                            ✓
-                          </div>
-                        ) : (
-                          <div className="h-5 w-5 rounded-full border border-slate-300 dark:border-slate-700" />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
 
         {/* 4. Notification Settings */}
         <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">

@@ -31,15 +31,21 @@ export function AppThemeSelectorModal({ open, onClose }: AppThemeSelectorModalPr
   const handleToggle = (checked: boolean) => {
     setEnabled(checked);
     setEventThemeEnabled(checked);
+    if (!checked) {
+      setCurrentTheme("none");
+      setActiveEventThemeType("none");
+    }
     toast.success(
       checked
         ? "Đã bật hiệu ứng chủ đề lễ hội trên App Hiệp hội!"
-        : "Đã tắt hiệu ứng chủ đề (áp dụng giao diện tối giản chuẩn)."
+        : "Đã tắt hiệu ứng chủ đề (áp dụng giao diện gốc mặc định khi chưa add chủ đề)."
     );
   };
 
   const handleSelectTheme = (tId: EventThemeType) => {
     setCurrentTheme(tId);
+    setEnabled(true);
+    setEventThemeEnabled(true);
     setActiveEventThemeType(tId);
     toast.success(
       `Đã chuyển sang chủ đề "${FESTIVAL_THEMES.find((x) => x.id === tId)?.name || tId}"!`
@@ -80,7 +86,7 @@ export function AppThemeSelectorModal({ open, onClose }: AppThemeSelectorModalPr
               Bật / Tắt Chủ Đề Trên App
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {enabled ? "Đang hiển thị không gian lễ hội" : "Đang dùng giao diện tối giản"}
+              {enabled ? "Đang hiển thị không gian lễ hội" : "Đang dùng giao diện gốc (chưa áp dụng chủ đề)"}
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -96,8 +102,8 @@ export function AppThemeSelectorModal({ open, onClose }: AppThemeSelectorModalPr
 
         {/* Theme List */}
         <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
-          {FESTIVAL_THEMES.map((theme) => {
-            const isSelected = currentTheme === theme.id;
+          {FESTIVAL_THEMES.filter((t) => t.id !== "custom" && t.id !== "none").map((theme) => {
+            const isSelected = enabled && currentTheme === theme.id;
             return (
               <button
                 key={theme.id}

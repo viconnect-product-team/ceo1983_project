@@ -123,10 +123,10 @@ function CtaAnalyticsPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              to="/admin/demo-leads"
+              to="/"
               className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-secondary"
             >
-              {tx({ vi: "Danh sách lead", en: "Lead list" })}
+              {tx({ vi: "Bảng điều khiển", en: "Dashboard" })}
             </Link>
             <button
               type="button"

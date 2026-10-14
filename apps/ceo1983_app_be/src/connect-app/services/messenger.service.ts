@@ -429,6 +429,22 @@ export class ConnectMessengerService {
       VALUES (${msgId}::uuid, ${mine}, ${targetPeerCode}, ${text}, ${nowIso}::timestamptz)
     `;
 
+    // Đồng bộ thông báo tin nhắn mới vào public.member_notifications để Mobile App nhận push ngay cả khi tắt màn hình/chạy ngầm
+    if (targetUserId || (targetPeerCode && targetPeerCode !== 'admin' && targetPeerCode !== 'system')) {
+      const senderMem = await this.prisma.$queryRaw<any[]>`
+        SELECT name, company_name FROM public.members WHERE LOWER(code) = ${mine} OR user_id::text = ${userId} LIMIT 1
+      `.catch((): any[] => []);
+      const senderName = senderMem[0]?.name || myCode;
+      const notifTarget = targetUserId || targetPeerCode;
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.member_notifications (
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES (
+          gen_random_uuid(), $1::text, $2, $3, false, false, 'chat', $4::text, NOW()
+        )
+      `, String(notifTarget), `Tin nhắn mới từ ${senderName}`, text.length > 80 ? text.slice(0, 80) + '...' : text, mine).catch(() => {});
+    }
+
     if (this.gateway && this.gateway.server) {
       this.gateway.server.emit('member:message_received', {
         id: msgId,

@@ -534,17 +534,18 @@ export class ConnectOpportunityService {
       const opps = await this.prisma.$queryRaw<any[]>`
         SELECT o.id, o.poster_id, o.title, o.description, o.type, o.budget_min, o.budget_max, o.region, o.industry, o.deadline, o.status, o.views, o.emoji, o.created_at, o.updated_at,
                o.claimed_by_id, o.claimed_by_name, o.claimed_at, o.claimed_phone, o.claimed_company, o.association_id,
-               COALESCE(o.contact_name, m.contact, m.name, u.name, 'Ban Quản Trị') as contact_name,
-               COALESCE(o.contact_phone, m.phone, '') as contact_phone,
-               COALESCE(o.contact_title, m.executive_role, 'Đại diện hợp tác') as contact_title,
-               COALESCE(o.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
+               COALESCE(up.display_name, m.contact, m.name, u.name, o.contact_name, 'Ban Quản Trị') as contact_name,
+               COALESCE(m.phone, o.contact_phone, '') as contact_phone,
+               COALESCE(m.executive_role, o.contact_title, 'Đại diện hợp tác') as contact_title,
+               COALESCE(m.name, bi.company_name, o.company, 'CLB Doanh Nhân CEO 1983') as company,
                o.image,
-               COALESCE(m.contact, u.name, m.name, o.contact_name, 'Hội viên CLB') as poster_name,
-               COALESCE(m.cover_url, u.avatar_url, '') as poster_avatar,
+               COALESCE(up.display_name, m.contact, m.name, u.name, o.contact_name, 'Hội viên CLB') as poster_name,
+               COALESCE(up.avatar_url, m.cover_url, u.avatar_url, '') as poster_avatar,
                COALESCE(m.phone, o.contact_phone, '') as poster_phone,
-               COALESCE(o.company, m.name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as poster_company
+               COALESCE(m.name, bi.company_name, o.company, 'CLB Doanh Nhân CEO 1983') as poster_company
         FROM public.opportunities o
         LEFT JOIN public.members m ON (o.poster_id = m.user_id::text OR o.poster_id = m.id OR o.poster_id = m.code)
+        LEFT JOIN public.user_profiles up ON (o.poster_id = up.user_id::text)
         LEFT JOIN public.vione_users u ON (o.poster_id = u.id::text)
         LEFT JOIN public.business_identities bi ON (o.poster_id = bi.owner_user_id::text)
         ORDER BY o.created_at DESC
@@ -724,13 +725,13 @@ export class ConnectOpportunityService {
       LIMIT 1
     `.catch(() => []);
     const vu = await this.prisma.$queryRaw<any[]>`
-      SELECT name, email, phone FROM public.vione_users
+      SELECT name, email FROM public.vione_users
       WHERE id = ${userId}::uuid OR id::text = ${userId}
       LIMIT 1
     `.catch(() => []);
 
     const contactName = (data.contactName || mem[0]?.name || vu[0]?.name || 'Ban Quản Trị').trim();
-    const contactPhone = (data.contactPhone || mem[0]?.phone || vu[0]?.phone || '').trim();
+    const contactPhone = (data.contactPhone || mem[0]?.phone || '').trim();
     const contactTitle = (data.contactTitle || 'Đại diện hợp tác').trim();
     const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
     const oppImage = data.image || data.thumbnail || null;
@@ -834,7 +835,7 @@ export class ConnectOpportunityService {
       const opportunities = await this.prisma.$queryRaw<any[]>`
         SELECT o.*, a.name as association_name,
                m.code as poster_code,
-               COALESCE(up.display_name, vu.name, m.contact, m.name, o.claimed_by_name, 'Hội viên CLB CEO 1983') as poster_name,
+               COALESCE(up.display_name, vu.name, m.contact, m.name, o.contact_name, o.claimed_by_name, 'Hội viên CLB CEO 1983') as poster_name,
                COALESCE(m.name, bi.company_name, o.claimed_company, a.name, 'CLB Doanh Nhân CEO 1983') as poster_company
         FROM public.opportunities o
         LEFT JOIN public.associations a ON o.association_id = a.id
@@ -915,8 +916,8 @@ export class ConnectOpportunityService {
           thumbnail: o.image || o.cover_image || null,
           posterId: o.poster_id || o.poster_code || 'admin',
           posterCode: o.poster_code || o.poster_id || 'admin',
-          posterName: o.contact_name || o.poster_name || o.poster_company || 'Hội viên CLB',
-          contactName: o.contact_name || o.poster_name || 'Đại diện hợp tác',
+          posterName: o.poster_name || o.contact_name || o.poster_company || 'Hội viên CLB',
+          contactName: o.poster_name || o.contact_name || 'Đại diện hợp tác',
           contactPhone: o.contact_phone || null,
           contactTitle: o.contact_title || 'Đại diện hợp tác',
           value: formattedVal,

@@ -1,9 +1,11 @@
 services:
   ssl-reverse-proxy:
     image: nginx:alpine
-    container_name: vione-ssl-proxy
+    container_name: ceo1983-ssl-proxy
     restart: always
     ports:
+      - "80:80"
+      - "443:443"
       - "5443:5443"
       - "5444:5444"
       - "5445:5445"
@@ -12,9 +14,9 @@ services:
       - ./server.crt:/etc/nginx/ssl/server.crt:ro
       - ./server.key:/etc/nginx/ssl/server.key:ro
     networks:
-      - vione-network
+      - ceo1983-network
 
 networks:
-  vione-network:
+  ceo1983-network:
     external: true
-    name: vione-network
+    name: ceo1983-network

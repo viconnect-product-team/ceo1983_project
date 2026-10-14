@@ -256,6 +256,9 @@ export function CrudModal({
   cancelLabel,
   onSubmit,
   onClose,
+  onDelete,
+  deleteLabel = "Xóa bài viết",
+  isDeleting,
 }: {
   open: boolean;
   title: string;
@@ -266,6 +269,9 @@ export function CrudModal({
   cancelLabel: string;
   onSubmit: (values: CrudValues) => void;
   onClose: () => void;
+  onDelete?: () => void;
+  deleteLabel?: string;
+  isDeleting?: boolean;
 }) {
   const [values, setValues] = useState<CrudValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -521,24 +527,39 @@ export function CrudModal({
             );
           })}
         </div>
-        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
-          >
-            {cancelLabel}
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={submitting}
-            className="rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] disabled:opacity-50 cursor-pointer"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            {submitLabel}
-          </button>
+        <div className="flex items-center justify-between border-t border-border px-5 py-4 shrink-0">
+          <div>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={isDeleting || submitting}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-sm font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50 cursor-pointer transition"
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleting ? "Đang xóa..." : deleteLabel}
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting || isDeleting}
+              className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
+            >
+              {cancelLabel}
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={submitting || isDeleting}
+              className="rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] disabled:opacity-50 cursor-pointer"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              {submitLabel}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -106,6 +106,17 @@ export class BusinessCardController {
   }
 
   @UseGuards(AuthGuard)
+  @Get('preview/:slug')
+  getPreviewBySlug(@Param('slug') slug: string) {
+    return this.businessCardService.getPreviewBySlug(slug);
+  }
+
+  @Get('public-slugs')
+  listPublicProfileSlugs() {
+    return this.businessCardService.listPublicProfileSlugs();
+  }
+
+  @UseGuards(AuthGuard)
   @Get(':id')
   getMyCard(@Request() req: any, @Param('id') id: string) {
     const userId = req.user.id || req.user.sub;
@@ -128,17 +139,6 @@ export class BusinessCardController {
   ) {
     const userId = req.user.id || req.user.sub;
     return this.businessCardService.setStatus(userId, id, status);
-  }
-
-  @UseGuards(AuthGuard)
-  @Get('preview/:slug')
-  getPreviewBySlug(@Param('slug') slug: string) {
-    return this.businessCardService.getPreviewBySlug(slug);
-  }
-
-  @Get('public-slugs')
-  listPublicProfileSlugs() {
-    return this.businessCardService.listPublicProfileSlugs();
   }
 
   @UseGuards(AuthGuard)

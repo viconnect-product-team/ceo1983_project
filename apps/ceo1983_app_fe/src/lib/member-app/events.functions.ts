@@ -19,7 +19,21 @@ export type MyEvent = {
   banner?: string | null;
   ticketPrice?: number;
   fee?: number;
+  capacity?: number;
+  maxAttendees?: number;
+  registeredCount?: number;
+  isFull?: boolean;
+  qrScanners?: string[];
+  qrStaff?: string[];
 };
+
+export function isEventFull(e: any): boolean {
+  if (!e) return false;
+  if (e.isFull === true) return true;
+  const cap = Number(e.capacity ?? e.maxAttendees ?? e.maxSeats ?? 0);
+  const reg = Number(e.registeredCount ?? e.registered ?? e.attendeesCount ?? e.registrations ?? e.confirmed ?? 0);
+  return cap > 0 && reg >= cap;
+}
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 

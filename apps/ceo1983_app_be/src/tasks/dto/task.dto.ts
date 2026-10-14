@@ -82,6 +82,13 @@ export interface TaskItem {
     role?: string;
     email?: string;
   };
+  assignees?: Array<{
+    id?: string;
+    name: string;
+    avatar?: string;
+    role?: string;
+    email?: string;
+  }>;
   supervisor: {
     id?: string;
     name: string;
@@ -144,6 +151,7 @@ export class CreateTaskDto {
   status?: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'OVERDUE';
   progress?: number;
   assignee?: any;
+  assignees?: any[];
   supervisor?: any;
   collaborators?: any[];
   deliverables?: string;
@@ -170,6 +178,7 @@ export class UpdateTaskDto {
   status?: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'OVERDUE';
   progress?: number;
   assignee?: any;
+  assignees?: any[];
   supervisor?: any;
   collaborators?: any[];
   deliverables?: string;

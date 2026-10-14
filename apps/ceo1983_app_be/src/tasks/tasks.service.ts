@@ -323,7 +323,7 @@ export class TasksService {
    * - Tổng thư ký: Chỉ được giao việc cho thành viên thuộc Ban Thư Ký
    * - Trưởng ban: Chỉ được giao việc cho các thành viên thuộc chính ban của mình
    */
-  async getAssignableMembers(currentUser?: any): Promise<{
+  async getAssignableMembers(currentUser?: any, requestedDept?: string): Promise<{
     allowedDepartments: string[];
     members: any[];
     canAssignAll: boolean;
@@ -352,15 +352,28 @@ export class TasksService {
     else if (role === 'truong_ban_thien_nguyen' || currentDept.includes('Thiện nguyện')) leaderDepartment = 'Ban Thiện nguyện';
     else if (isDepartmentLeader && currentDept) leaderDepartment = currentDept;
 
-    if (isPresident || isAdmin) {
-      // 1. Chủ tịch & Admin: Toàn quyền giao việc cho bất kỳ ai thuộc bất kỳ ban nào
+    // Nếu người dùng chọn một Ban cụ thể trên form tạo việc, ưu tiên lấy danh sách hội viên thuộc Ban đó
+    if (requestedDept && requestedDept !== 'ALL') {
+      const deptKeyword = requestedDept.replace(/^Ban\s+/i, '').trim();
+      const filteredDeptMembers = await this.tasksRepo.getMembersForAssignment(deptKeyword);
+      return {
+        allowedDepartments: isPresident || isAdmin || isExecutive ? [...TASK_DEPARTMENTS] : [leaderDepartment || currentDept || requestedDept],
+        members: filteredDeptMembers,
+        canAssignAll: isPresident || isAdmin || isExecutive,
+        currentRole: isPresident ? 'chu_tich' : (isAdmin ? 'admin' : role),
+        currentDepartment: requestedDept,
+      };
+    }
+
+    if (isPresident || isAdmin || isExecutive) {
+      // 1. Chủ tịch, Admin & Ban Điều Hành / BQT: Toàn quyền giao việc cho bất kỳ ai thuộc bất kỳ ban nào
       const allMembers = await this.tasksRepo.getMembersForAssignment();
       return {
         allowedDepartments: [...TASK_DEPARTMENTS],
         members: allMembers,
         canAssignAll: true,
-        currentRole: isPresident ? 'chu_tich' : 'admin',
-        currentDepartment: currentDept || 'Hội đồng Lãnh đạo',
+        currentRole: isPresident ? 'chu_tich' : (isAdmin ? 'admin' : 'ban_dieu_hanh'),
+        currentDepartment: currentDept || 'Ban Điều Hành',
       };
     }
 
@@ -434,7 +447,10 @@ export class TasksService {
           // Tổng thư ký: Xem công việc Ban Thư Ký + việc liên quan trực tiếp đến mình
           list = list.filter((t) => {
             const isSecDept = (t.department || '').toLowerCase().includes('thư ký');
-            const isAssigned = (t.assignee?.id && t.assignee.id === userId) || (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail);
+            const isAssigned =
+              (t.assignee?.id && t.assignee.id === userId) ||
+              (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail) ||
+              (t.assignees?.some((a: any) => (a.id && a.id === userId) || (a.email && a.email.toLowerCase() === userEmail) || (userName && a.name && a.name.toLowerCase() === userName)));
             const isSupervised = (t.supervisor?.id && t.supervisor.id === userId) || (t.supervisor?.name && t.supervisor.name.toLowerCase() === userName);
             const isCollab = t.collaborators?.some((c) => (c.id && c.id === userId) || (c.name && c.name.toLowerCase() === userName));
             return isSecDept || isAssigned || isSupervised || isCollab;
@@ -444,7 +460,10 @@ export class TasksService {
           const deptKeyword = userDept.replace(/^Ban\s+/i, '').toLowerCase().trim();
           list = list.filter((t) => {
             const isOwnDept = deptKeyword && (t.department || '').toLowerCase().includes(deptKeyword);
-            const isAssigned = (t.assignee?.id && t.assignee.id === userId) || (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail);
+            const isAssigned =
+              (t.assignee?.id && t.assignee.id === userId) ||
+              (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail) ||
+              (t.assignees?.some((a: any) => (a.id && a.id === userId) || (a.email && a.email.toLowerCase() === userEmail) || (userName && a.name && a.name.toLowerCase() === userName)));
             const isSupervised = (t.supervisor?.id && t.supervisor.id === userId) || (t.supervisor?.name && t.supervisor.name.toLowerCase() === userName);
             const isCollab = t.collaborators?.some((c) => (c.id && c.id === userId) || (c.name && c.name.toLowerCase() === userName));
             return isOwnDept || isAssigned || isSupervised || isCollab;
@@ -452,7 +471,11 @@ export class TasksService {
         } else {
           // Hội viên: Chỉ xem các công việc mà mình được phân công, phối hợp hoặc tạo
           list = list.filter((t) => {
-            const isAssigned = (t.assignee?.id && t.assignee.id === userId) || (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail) || (userName && t.assignee?.name && t.assignee.name.toLowerCase() === userName);
+            const isAssigned =
+              (t.assignee?.id && t.assignee.id === userId) ||
+              (t.assignee?.email && t.assignee.email.toLowerCase() === userEmail) ||
+              (userName && t.assignee?.name && t.assignee.name.toLowerCase() === userName) ||
+              (t.assignees?.some((a: any) => (a.id && a.id === userId) || (a.email && a.email.toLowerCase() === userEmail) || (userName && a.name && a.name.toLowerCase() === userName)));
             const isCollab = t.collaborators?.some((c) => (c.id && c.id === userId) || (userName && c.name && c.name.toLowerCase() === userName));
             const isSupervised = (t.supervisor?.id && t.supervisor.id === userId);
             const isCreator = t.history?.some((h) => h.actor?.toLowerCase() === userName && h.action.includes('Tạo'));
@@ -477,7 +500,8 @@ export class TasksService {
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.code.toLowerCase().includes(q) ||
-          t.assignee.name.toLowerCase().includes(q) ||
+          (t.assignee?.name && t.assignee.name.toLowerCase().includes(q)) ||
+          t.assignees?.some((a: any) => a.name && a.name.toLowerCase().includes(q)) ||
           t.description.toLowerCase().includes(q),
       );
     }
@@ -495,19 +519,22 @@ export class TasksService {
       const role = (currentUser.role || currentUser.srsRole || 'member').toLowerCase();
       const isPresident = Boolean(currentUser.isPresident || role === 'chu_tich' || role === 'president');
       const isAdmin = Boolean(currentUser.isAdmin || role === 'admin' || role === 'quan_tri' || currentUser.roles?.includes('admin'));
+      const isExecutive = Boolean(currentUser.isExecutive || role === 'ban_dieu_hanh' || role === 'bqt');
       const isGeneralSecretary = Boolean(currentUser.isGeneralSecretary || role === 'tong_thu_ky');
       const isDepartmentLeader = Boolean(currentUser.isDepartmentLeader || role.startsWith('truong_ban_'));
 
-      if (!isPresident && !isAdmin) {
+      if (!isPresident && !isAdmin && !isExecutive) {
         if (isGeneralSecretary) {
           if (data.department && !data.department.toLowerCase().includes('thư ký')) {
             throw new ForbiddenException('Tổng thư ký chỉ có quyền giao việc cho các thành viên thuộc Ban Thư ký.');
           }
         } else if (isDepartmentLeader) {
-          const userDept = (currentUser.department || '').replace(/ban quản trị/gi, 'Ban Điều Hành').trim();
-          const deptKeyword = userDept.replace(/^Ban\s+/i, '').toLowerCase().trim();
-          if (deptKeyword && data.department && !data.department.toLowerCase().includes(deptKeyword)) {
-            throw new ForbiddenException(`Trưởng ban chỉ có quyền giao việc cho các thành viên thuộc ${userDept || 'chính ban của mình'}.`);
+          const userDept = (currentUser.department || '').toLowerCase().trim();
+          const targetDept = (data.department || '').toLowerCase().trim();
+          const normUserDept = userDept.replace(/quản trị/g, 'điều hành').replace(/^ban\s+/i, '').trim();
+          const normTargetDept = targetDept.replace(/quản trị/g, 'điều hành').replace(/^ban\s+/i, '').trim();
+          if (normUserDept && normTargetDept && !normTargetDept.includes(normUserDept) && !normUserDept.includes(normTargetDept)) {
+            throw new ForbiddenException(`Trưởng ban chỉ có quyền giao việc cho các thành viên thuộc ${currentUser.department || 'chính ban của mình'}.`);
           }
         }
       }
@@ -516,6 +543,9 @@ export class TasksService {
     const nextNum = this.tasks.length + 1;
     const code = `CV-1983-${String(nextNum).padStart(2, '0')}`;
     const id = `task-1983-${Date.now()}`;
+
+    const effectiveCreatorName = (data as any)?.creator?.name || data.supervisor?.name || creatorName;
+    const effectiveCreatorRole = (data as any)?.creator?.role || data.supervisor?.role || currentUser?.title || currentUser?.role || 'Ban Quản trị';
 
     const newTask: TaskItem = {
       id,
@@ -526,13 +556,16 @@ export class TasksService {
       budget: data.budget || undefined,
       acceptanceCriteria: data.acceptanceCriteria || [],
       customFields: data.customFields || [],
-      assignee: data.assignee || {
-        name: creatorName,
+      assignee: data.assignee || (data.assignees && data.assignees[0]) || {
+        name: effectiveCreatorName,
         role: 'Phụ trách',
       },
+      assignees: (data.assignees && data.assignees.length > 0)
+        ? data.assignees
+        : (data.assignee ? [data.assignee] : []),
       supervisor: data.supervisor || {
-        name: 'Ban Điều Hành',
-        role: 'Giám sát',
+        name: effectiveCreatorName,
+        role: effectiveCreatorRole,
       },
       collaborators: data.collaborators || [],
       status: (data.status as any) || 'TODO',
@@ -550,7 +583,7 @@ export class TasksService {
         {
           id: `h-${Date.now()}`,
           action: 'Tạo công việc mới',
-          actor: creatorName,
+          actor: `${effectiveCreatorName} (${effectiveCreatorRole})`,
           timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
         },
       ],
@@ -562,7 +595,7 @@ export class TasksService {
     this.saveToFile();
 
     // Tự động bắn thông báo tức thì đến tài khoản người được giao việc
-    this.dispatchTaskAssignmentNotification(newTask, creatorName).catch((err) => {
+    this.dispatchTaskAssignmentNotification(newTask, effectiveCreatorName).catch((err) => {
       this.logger.warn(`Task notification warning: ${err?.message}`);
     });
 
@@ -582,17 +615,20 @@ export class TasksService {
       const role = (currentUser.role || currentUser.srsRole || 'member').toLowerCase();
       const isPresident = Boolean(currentUser.isPresident || role === 'chu_tich' || role === 'president');
       const isAdmin = Boolean(currentUser.isAdmin || role === 'admin' || role === 'quan_tri' || currentUser.roles?.includes('admin'));
+      const isExecutive = Boolean(currentUser.isExecutive || role === 'ban_dieu_hanh' || role === 'bqt');
       const isGeneralSecretary = Boolean(currentUser.isGeneralSecretary || role === 'tong_thu_ky');
       const isDepartmentLeader = Boolean(currentUser.isDepartmentLeader || role.startsWith('truong_ban_'));
 
-      if (!isPresident && !isAdmin) {
+      if (!isPresident && !isAdmin && !isExecutive) {
         if (isGeneralSecretary && !data.department.toLowerCase().includes('thư ký')) {
           throw new ForbiddenException('Tổng thư ký chỉ có quyền điều chuyển công việc trong Ban Thư ký.');
         } else if (isDepartmentLeader) {
-          const userDept = (currentUser.department || '').replace(/ban quản trị/gi, 'Ban Điều Hành').trim();
-          const deptKeyword = userDept.replace(/^Ban\s+/i, '').toLowerCase().trim();
-          if (deptKeyword && !data.department.toLowerCase().includes(deptKeyword)) {
-            throw new ForbiddenException(`Trưởng ban chỉ có quyền điều chuyển công việc trong ${userDept || 'chính ban của mình'}.`);
+          const userDept = (currentUser.department || '').toLowerCase().trim();
+          const targetDept = (data.department || '').toLowerCase().trim();
+          const normUserDept = userDept.replace(/quản trị/g, 'điều hành').replace(/^ban\s+/i, '').trim();
+          const normTargetDept = targetDept.replace(/quản trị/g, 'điều hành').replace(/^ban\s+/i, '').trim();
+          if (normUserDept && normTargetDept && !normTargetDept.includes(normUserDept) && !normUserDept.includes(normTargetDept)) {
+            throw new ForbiddenException(`Trưởng ban chỉ có quyền điều chuyển công việc trong ${currentUser.department || 'chính ban của mình'}.`);
           }
         }
       }
@@ -615,6 +651,8 @@ export class TasksService {
       ...data,
       id: current.id,
       code: current.code,
+      assignee: data.assignee || (data.assignees && data.assignees[0]) || current.assignee,
+      assignees: data.assignees !== undefined ? data.assignees : current.assignees,
       updatedAt: new Date().toISOString(),
       history: [
         {
@@ -645,67 +683,77 @@ export class TasksService {
    */
   async dispatchTaskAssignmentNotification(task: TaskItem, creatorName: string) {
     try {
-      if (!task.assignee) return;
-      const { name, email, id: assigneeId } = task.assignee;
+      const allAssignees = (task.assignees && task.assignees.length > 0)
+        ? task.assignees
+        : (task.assignee ? [task.assignee] : []);
 
-      let targetUserId: string | null = null;
-      let targetMemberId: string | null = null;
+      if (allAssignees.length === 0) return;
 
-      // 1. Tìm theo Email
-      if (email && email.trim()) {
-        const u = await this.tasksRepo.findUserAndMemberByEmail(email.trim());
-        if (u.length && u[0].user_id) {
-          targetUserId = u[0].user_id;
-          targetMemberId = u[0].member_id;
+      for (const assignee of allAssignees) {
+        const { name, email, id: assigneeId } = assignee;
+        if (!name && !email && !assigneeId) continue;
+
+        let targetUserId: string | null = null;
+        let targetMemberId: string | null = null;
+
+        // 1. Tìm theo Email
+        if (email && email.trim()) {
+          const u = await this.tasksRepo.findUserAndMemberByEmail(email.trim());
+          if (u.length && u[0].user_id) {
+            targetUserId = u[0].user_id;
+            targetMemberId = u[0].member_id;
+          }
         }
-      }
 
-      // 2. Tìm theo assigneeId (nếu là UUID)
-      if (!targetUserId && assigneeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assigneeId)) {
-        const u = await this.tasksRepo.findUserAndMemberById(assigneeId);
-        if (u.length && u[0].user_id) {
-          targetUserId = u[0].user_id;
-          targetMemberId = u[0].member_id;
+        // 2. Tìm theo assigneeId (nếu là UUID)
+        if (!targetUserId && assigneeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assigneeId)) {
+          const u = await this.tasksRepo.findUserAndMemberById(assigneeId);
+          if (u.length && u[0].user_id) {
+            targetUserId = u[0].user_id;
+            targetMemberId = u[0].member_id;
+          }
         }
-      }
 
-      // 3. Tìm theo Tên hội viên
-      if (!targetUserId && name && name.trim()) {
-        const u = await this.tasksRepo.findUserAndMemberByName(name.trim());
-        if (u.length && u[0].user_id) {
-          targetUserId = u[0].user_id;
-          targetMemberId = u[0].member_id;
+        // 3. Tìm theo Tên hội viên
+        if (!targetUserId && name && name.trim()) {
+          const u = await this.tasksRepo.findUserAndMemberByName(name.trim());
+          if (u.length && u[0].user_id) {
+            targetUserId = u[0].user_id;
+            targetMemberId = u[0].member_id;
+          }
         }
+
+        if (!targetUserId) {
+          this.logger.warn(`Không tìm thấy user_id PostgreSQL cho người nhận việc: ${name} (${email})`);
+          continue;
+        }
+
+        const creatorDisplayName = task.supervisor?.name || (task as any)?.creator?.name || creatorName;
+        const creatorDisplayRole = task.supervisor?.role || (task as any)?.creator?.role || 'Người giao việc';
+        const notifId = crypto.randomUUID();
+        const notifTitle = `Bạn được giao công việc mới: ${task.title}`;
+        const notifBody = `${creatorDisplayName} (${creatorDisplayRole}) đã giao cho bạn công việc: "${task.title}". Ban phụ trách: ${task.department}. Hạn hoàn thành: ${task.dueDate}.`;
+        const dedupeKey = `task-assign-${task.id}-${targetUserId}-${Date.now()}`;
+        const safeData = JSON.stringify({
+          title: notifTitle,
+          body: notifBody,
+          taskId: task.id,
+          taskCode: task.code,
+          taskTitle: task.title,
+          department: task.department,
+          dueDate: task.dueDate,
+          priority: task.priority,
+          targetRoute: '/tasks',
+        });
+
+        // 1. Ghi vào public.business_notifications
+        await this.tasksRepo.insertBusinessNotification(notifId, targetUserId, task.id, notifTitle, notifBody, safeData, dedupeKey);
+
+        // 2. Ghi vào public.member_notifications
+        await this.tasksRepo.insertMemberNotification(targetMemberId || targetUserId, notifTitle, notifBody, task.id);
+
+        this.logger.log(`Đã gửi thông báo giao việc ${task.code} thành công đến user ${targetUserId}`);
       }
-
-      if (!targetUserId) {
-        this.logger.warn(`Không tìm thấy user_id PostgreSQL cho người nhận việc: ${name} (${email})`);
-        return;
-      }
-
-      const notifId = crypto.randomUUID();
-      const notifTitle = `Bạn được giao công việc mới: ${task.title}`;
-      const notifBody = `Phòng ban: ${task.department}. Hạn hoàn thành: ${task.dueDate}. Người giao: ${creatorName}.`;
-      const dedupeKey = `task-assign-${task.id}-${targetUserId}-${Date.now()}`;
-      const safeData = JSON.stringify({
-        title: notifTitle,
-        body: notifBody,
-        taskId: task.id,
-        taskCode: task.code,
-        taskTitle: task.title,
-        department: task.department,
-        dueDate: task.dueDate,
-        priority: task.priority,
-        targetRoute: '/tasks',
-      });
-
-      // 1. Ghi vào public.business_notifications
-      await this.tasksRepo.insertBusinessNotification(notifId, targetUserId, task.id, notifTitle, notifBody, safeData, dedupeKey);
-
-      // 2. Ghi vào public.member_notifications
-      await this.tasksRepo.insertMemberNotification(targetMemberId || targetUserId, notifTitle, notifBody, task.id);
-
-      this.logger.log(`Đã gửi thông báo giao việc ${task.code} thành công đến user ${targetUserId}`);
     } catch (e: any) {
       this.logger.error(`Lỗi trong dispatchTaskAssignmentNotification: ${e?.message}`);
     }

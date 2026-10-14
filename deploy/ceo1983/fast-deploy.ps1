@@ -66,7 +66,7 @@ try {
                 $env:VITE_APP_SCOPE = "association_app"
                 $env:VITE_APP_NAME = "CLB Doanh Nhan CEO 1983"
                 if ($EnableHttps) {
-                    $env:VITE_PUBLIC_APP_URL = "https://14.225.217.232:5444"
+                    $env:VITE_PUBLIC_APP_URL = "https://ceo1983.viconnect.vn"
                 } else {
                     $env:VITE_PUBLIC_APP_URL = "http://14.225.217.232:5002"
                 }
@@ -198,7 +198,7 @@ try {
         $remoteLoadCmd += "docker load -i ceo1983-frontend.tar.gz; rm -f ceo1983-frontend.tar.gz; "
     }
 
-    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.association 2>/dev/null || true; touch .env.association; sed -i 's/\r//g' .env.association docker-compose.yml; docker network create vione-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
+    $REMOTE_CMD = "cd $REMOTE_PATH; cp -f .env.production .env.association 2>/dev/null || true; touch .env.association; sed -i 's/\r//g' .env.association docker-compose.yml; docker network create ceo1983-network 2>/dev/null || true; $remoteLoadCmd docker compose -f docker-compose.yml stop 2>/dev/null || true; docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true; docker compose -f docker-compose.yml up -d --force-recreate"
 
     Invoke-CheckedCommand -Description "Thuc thi cau truc container doc lap Hiep Hoi" -MaxRetries 3 -Action {
         ssh @SSH_OPTS "${SERVER_USER}@${SERVER_IP}" $REMOTE_CMD

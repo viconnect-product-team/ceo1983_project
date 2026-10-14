@@ -40,7 +40,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
-import { listMyEvents, registerForEvent, cancelEventRegistration, getMyMember, type MyEvent, type MyMember } from "@/lib/member-app.functions";
+import { listMyEvents, registerForEvent, cancelEventRegistration, getMyMember, isEventFull, type MyEvent, type MyMember } from "@/lib/member-app.functions";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { formatDisplayDate } from "@/lib/date-format";
 import { useT, useLang } from "@/lib/i18n";
@@ -350,6 +350,7 @@ function EventPosterCard({
   const fallbackImg = defaultEventImages[index % defaultEventImages.length];
   const displayImg = evImg || fallbackImg;
   const agenda = getEventAgenda(event, index);
+  const isFull = isEventFull(event);
 
   const eventDateStr = event.date
     ? new Date(event.date).toLocaleDateString("vi-VN", {
@@ -419,6 +420,11 @@ function EventPosterCard({
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 text-white text-[10px] font-bold px-2.5 py-0.5 backdrop-blur-md shadow-md border border-blue-400/30">
               <Check className="h-3 w-3 stroke-[3]" />
               Đã đăng ký
+            </span>
+          ) : isFull ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-rose-600/90 text-white text-[10px] font-bold px-2.5 py-0.5 backdrop-blur-md shadow-md border border-rose-400/30">
+              <Users className="h-3 w-3" />
+              Đã đủ số lượng
             </span>
           ) : isFree ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/90 text-white text-[10px] font-bold px-2.5 py-0.5 backdrop-blur-md shadow-md border border-emerald-400/30">
@@ -506,7 +512,7 @@ function EventPosterCard({
               id={index === 0 ? "tour-events-register-btn" : undefined}
               className="inline-flex items-center gap-1 text-[11.5px] font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform"
             >
-              <span>{isPast ? "Xem kỷ yếu" : registered ? "Xem vé" : "Đăng ký vé"}</span>
+              <span>{isPast ? "Xem kỷ yếu" : registered ? "Xem vé" : isFull ? "Xem chi tiết" : "Đăng ký vé"}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </div>
@@ -709,7 +715,43 @@ function EventsScreen() {
   const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null, "vba_my_member");
 
   const [busy, setBusy] = useState<string | null>(null);
-  const [localRegistered, setLocalRegistered] = useState<Record<string, boolean>>({});
+  const [localRegistered, setLocalRegistered] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const records = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+      if (Array.isArray(records)) {
+        const map: Record<string, boolean> = {};
+        records.forEach((r: any) => {
+          if (r.eventId) map[r.eventId] = true;
+          if (r.id) map[r.id] = true;
+        });
+        return map;
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const handleEventsChanged = () => {
+      try {
+        const records = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        if (Array.isArray(records)) {
+          const map: Record<string, boolean> = {};
+          records.forEach((r: any) => {
+            if (r.eventId) map[r.eventId] = true;
+            if (r.id) map[r.id] = true;
+          });
+          setLocalRegistered(map);
+        } else {
+          setLocalRegistered({});
+        }
+      } catch {}
+    };
+    window.addEventListener("vba.events.changed", handleEventsChanged);
+    return () => window.removeEventListener("vba.events.changed", handleEventsChanged);
+  }, []);
 
   // Category & bookmark state
   const [eventCategory, setEventCategory] = useState<"all" | "free" | "paid" | "registered" | "bookmarked" | "history">("all");
@@ -850,6 +892,10 @@ function EventsScreen() {
   // Open registration modal with auto prefilled user profile
   function handleOpenRegister(e: MyEvent, evt?: React.MouseEvent) {
     if (evt) evt.stopPropagation();
+    if (isEventFull(e)) {
+      toast.error("Sự kiện này đã đủ số lượng đại biểu đăng ký (Hết chỗ). Vui lòng liên hệ Ban Tổ Chức.");
+      return;
+    }
     setRegisteringEvent(e);
     setFormName(member?.name || user?.name || user?.user_metadata?.full_name || "");
     setFormEmail(member?.email || user?.email || "");
@@ -1218,31 +1264,28 @@ function EventsScreen() {
         />
       </div>
 
-      {/* Vé Sự Kiện Của Tôi - Slide Carousel hiển thị trực tiếp tối đa 3 mã QR + nút Xem Tất Cả */}
-      <RegisteredEventsQrSlider
-        isEn={isEn}
-        registeredEvents={registeredEvents}
-        events={events}
-        member={member}
-        user={user}
-        isEventFree={isEventFree}
-        formatDisplayDate={formatDisplayDate}
-        makeTicketQrUrl={makeTicketQrUrl}
-        onSelectTicketPass={(ticketPassData) => setTicketPassModal(ticketPassData)}
-        onViewAll={() => {
-          if (registeredEvents.length > 0) {
+      {/* Vé Sự Kiện Của Tôi - Chỉ hiển thị khi hội viên THỰC TẾ đã đăng ký ít nhất 1 sự kiện (KHÔNG mock fake) */}
+      {registeredEvents.length > 0 && (
+        <RegisteredEventsQrSlider
+          isEn={isEn}
+          registeredEvents={registeredEvents}
+          events={events}
+          member={member}
+          user={user}
+          isEventFree={isEventFree}
+          formatDisplayDate={formatDisplayDate}
+          makeTicketQrUrl={makeTicketQrUrl}
+          onSelectTicketPass={(ticketPassData) => setTicketPassModal(ticketPassData)}
+          onViewAll={() => {
             setAllTicketsModalOpen(true);
-          } else {
+          }}
+          onExploreEvents={() => {
             setEventCategory("all");
-            toast.info(isEn ? "You have not registered for any events yet." : "Bạn chưa đăng ký sự kiện nào. Hãy chọn sự kiện bên dưới để đăng ký nhé!");
-          }
-        }}
-        onExploreEvents={() => {
-          setEventCategory("all");
-          const el = document.getElementById("tour-events-tabs");
-          if (el) el.scrollIntoView({ behavior: "smooth" });
-        }}
-      />
+            const el = document.getElementById("tour-events-tabs");
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
 
       {/* 3. Section: List các sự kiện với menu phân chia & phân trang riêng biệt */}
       <div className="px-4 pt-3 space-y-3">

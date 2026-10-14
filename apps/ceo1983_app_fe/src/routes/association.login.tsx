@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth, clearUserSessionData } from "@/context/AuthContext";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -105,28 +105,39 @@ function AssociationLoginPage() {
     }
   }, [reset]);
 
-  useEffect(() => {
-    if (reason === "expired") {
-      setAuthError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-    }
-  }, [reason]);
+  const justLoggedInRef = useRef(false);
 
-  // Nếu đã có phiên đăng nhập hợp lệ, tự động chuyển ngay vào App không hiển thị nút Vào App
   useEffect(() => {
-    if (reason === "expired") {
+    if (reason === "expired" && !justLoggedInRef.current) {
+      setAuthError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
       logout?.();
-      return;
     }
-    if (user) {
+  }, [reason, logout]);
+
+  // Nếu đã có phiên đăng nhập hợp lệ và token tồn tại, tự động chuyển ngay vào App
+  useEffect(() => {
+    if (justLoggedInRef.current) return;
+    if (reason === "expired") return;
+
+    const hasToken =
+      typeof window !== "undefined" &&
+      Boolean(
+        localStorage.getItem("vibe_token") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("access_token"),
+      );
+    if (user && hasToken) {
       const target = safeRedirect(redirectTo) || "/association";
-      navigate({ to: target as any, replace: true });
+      if (target !== "/association/login" && !target.startsWith("/association/login")) {
+        navigate({ to: target as any, replace: true });
+      }
     }
-  }, [user, reason, redirectTo, navigate, logout]);
+  }, [user, reason, redirectTo, navigate]);
 
   const handleSubmit = async () => {
     const cleanId = identifier.trim();
     if (!cleanId || !password) {
-      setAuthError("Vui lòng nhập email / mã hội viên và mật khẩu");
+      setAuthError("Vui lòng nhập email hoặc số điện thoại và mật khẩu");
       return;
     }
 
@@ -144,6 +155,7 @@ function AssociationLoginPage() {
       });
 
       if (res?.access_token && res?.user) {
+        justLoggedInRef.current = true;
         // Dọn dẹp sạch toàn bộ cache và storage của phiên trước đó
         clearUserSessionData();
         setAuthData(res);
