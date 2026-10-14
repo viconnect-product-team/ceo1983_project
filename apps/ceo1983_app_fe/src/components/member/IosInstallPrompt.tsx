@@ -176,7 +176,7 @@ export function IosInstallPrompt() {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#003B95] to-amber-500 p-0.5 shadow-md shrink-0">
                   <img
-                    src="/apple-touch-icon.png"
+                    src="/apple-touch-icon.png?v=ceo1983_v4w"
                     alt="CEO 1983"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
@@ -339,7 +339,7 @@ export function IosInstallPrompt() {
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#003B95] to-amber-500 p-0.5 shadow-lg shrink-0">
                   <img
-                    src="/apple-touch-icon.png"
+                    src="/apple-touch-icon.png?v=ceo1983_v4w"
                     alt="CEO 1983 App"
                     className="h-full w-full rounded-[10px] object-cover"
                   />

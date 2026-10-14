@@ -3262,3 +3262,44 @@ Người dùng phản ánh một loạt tồn đọng trong trải nghiệm th�
 
 
 
+
+## 247. Sửa Kỹ 4 Lỗi CRM: Popup Tạo Sự Kiện, Nút Đăng Nhập, Nhắn Tin Toàn Bộ Tài Khoản Các Ban, Icon Thao Tác
+
+- **1. Popup "Tạo sự kiện" (components/dashboard/EventWizard.tsx)**:
+  - Nguyên nhân: overlay `fixed nằm trong cây AppShell (bị transform/z-index cha chi phối) → nền trang không bị phủ tối, sidebar/thẻ sự kiện vẫn hiện rõ; đồng thời if (!open) return null đặt TRƯỚC các hook (vi phạm Rules of Hooks).
+  - Sửa: EventWizard chỉ là wrapper → createPortal(<EventWizardDialog/>, document.body) khi open=true; overlay z-[60] (trên Topbar z-50) + inline `backgroundColor: rgba(2,6,23,0.72) + `backdropFilter: blur(8px); khóa cuộn `body khi mở; mỗi lần mở là phiên mới (state reset).
+  - events.index.tsx: wizardOpen mặc định `false, CHỈ mở khi bấm nút "+ Tạo sự kiện".
+  - Tooltip trong EventQrStaffSelector / EventSponsorPackageSelector nâng z-50 → z-[80] để không bị overlay che.
+- **2. Nút Đăng nhập CRM (`routes/auth.tsx)**:
+  - Nguyên nhân: rule global trong styles.css [class*="bg-[#003B95]"] { background:#fff !important; color:#003B95 !important } ép nút submit thành nền trắng.
+  - Sửa: nút dùng class riêng ceo-login-submit (id crm-login-submit), KHÔNG dùng `bg-[#003B95]; styles.css thêm `button.ceo-login-submit nền Navy #003B95 (hover #002B70), chữ + icon trắng !important. Text: "Đăng nhập".
+- **3. Tin nhắn & Trao đổi (`routes/network.tsx)**:
+  - Nguyên nhân: chỉ lấy /members/directory (chỉ hội viên `active của association) → chỉ 2 người.
+  - Sửa: loader gộp /members/directory + toàn bộ /members + toàn bộ tài khoản thuộc các Ban (`vba_managed_accounts_v2/DEFAULT_ACCOUNTS) qua mergeMembersWithAccounts() (khử trùng theo mã/email, ưu tiên id DB) → hiển thị và nhắn tin tự do với MỌI tài khoản.
+  - Bỏ `bottomLabel Pill lặp tên Ban (lỗi hiện 2 lần chức danh Ban); badge Ban đổi sang `bg-blue-50 text-blue-800 (tránh rule global ép trắng).
+  - File mới src/lib/committee-accounts.ts: UserAccountItem, DEFAULT_ACCOUNTS, MANAGED_ACCOUNTS_STORAGE_KEY, `readManagedAccounts(), `accountToMember(), mergeMembersWithAccounts() — dùng chung cho /accounts và /network.
+- **4. Icon cột THAO TÁC (`routes/accounts.tsx)**:
+  - Nguyên nhân: public/icons/ceo1983_icon_2/{eye,pencil,trash-2,mail,phone,building-2}.svg dung lượng **0 byte** → trình duyệt hiện ảnh vỡ.
+  - Sửa: thay toàn bộ <img src=...svg> trong bảng bằng icon Lucide inline (Eye, Pencil, Trash2, Mail, Phone, Building2, Users), nút thao tác dạng ô vuông 32px có viền/nền màu (xem: xám-xanh, sửa: xanh, xóa: đỏ hồng) + `aria-label. Đồng thời khôi phục 6 file SVG rỗng bằng SVG hợp lệ.
+- **5. Kiểm tra**: 
+px tsc --noEmit (apps/ceo1983_app_fe) exit code 0. Không git commit/git push.
+
+## 248. Re-audit Toàn Bộ Yêu Cầu Cũ + iOS PWA: Icon Nền Trắng, Safe-Area, AI Dữ Liệu Tài Khoản Thật
+
+- **1. Icon app iOS nền đen → nền trắng**:
+  - Nguyên nhân: `apple-touch-icon*.png` cũ có nền Navy `#001D4A`; iOS còn render vùng trong suốt thành đen. Icon bị cache bởi `?v=ceo1983_v3` + SW `ceo1983-pwa-v3`.
+  - Sửa: script `apps/ceo1983_app_fe/scripts/generate-white-app-icons.ps1` cắt logo "8" từ `public/ceo1983-official-logo.png` đặt lên nền TRẮNG đục (24bpp, không alpha) → sinh lại `apple-touch-icon.png`, `apple-touch-icon-precomposed.png`, `apple-touch-icon-{120,152,167,180}x…png`, `app-icon-192/512.png`, `app-icon.png` (logo 62%) + mới `app-icon-maskable-192/512.png` (logo 48%, vùng an toàn).
+  - Bump cache: `ceo1983_v3` → `ceo1983_v4w` (`__root.tsx`, `association.tsx`, `association.login.tsx`, `IosInstallPrompt.tsx`), manifest version `2026-10-14.1` (`__root.tsx`, `lib/pwa-manifest.ts`), `public/sw.js` CACHE_NAME `ceo1983-pwa-v4` + precache icon mới.
+  - `public/manifest.webmanifest` & `manifest-bc.webmanifest`: `id:/association`, `background_color #FFFFFF`, icon `any` + `maskable` tách riêng file maskable.
+  - Người dùng iOS phải XÓA app cũ khỏi màn hình chính rồi "Thêm vào MH chính" lại (iOS cache icon lúc cài).
+- **2. iOS PWA polish**: class `.ceo-safe-sticky` (padding-top = safe-area-inset-top + 12px) cho header sticky chưa né tai thỏ: `association.opportunities.tsx`, `association.products.tsx` (2 header), OfflineBanner `MemberShell.tsx`. `@media (display-mode: standalone)`: nền html trắng (dark: #0b1220), body min-height 100dvh. Các rule iOS cũ (font 16px chống zoom, tap-highlight, overscroll) giữ nguyên.
+- **3. (M4) Bỏ hỏi quyền thông báo khi mở app**: `MemberShell.tsx` bỏ auto `requestNotificationPermission()` + `<NotificationPermissionBanner/>`; chỉ bật trong Cá nhân (`association.profile.tsx`).
+- **4. (M5) Bớt vàng**: OfflineBanner vàng → `bg-slate-800 text-white`. Mục "Lịch sử hoạt động & giao dịch" xác nhận đã gỡ.
+- **5. (M6) Ô nhập giá VND**: `StandardCurrencyInput.tsx` thêm `formatExternalValue()` — giá trị DB dạng "15000000.00" không còn bị nhân 100; `ProductAdRegistrationModal.tsx` ô ngân sách quảng cáo dùng StandardCurrencyInput.
+- **6. (C3) Đổi logo ở Cài đặt → cập nhật header sidebar ngay**: `AssociationLogoUploader.tsx` thêm `syncSidebarBrandingLogo()` ghi `vba_active_assoc_logo`/`crm_system_logo` + dispatch `crm-branding-changed`/`association-changed` sau khi lưu/xóa logo.
+- **7. (M3) AI trả lời động theo tài khoản** (`apps/ceo1983_app_be/src/ai/ai.service.ts`):
+  - `getLiveMemberAssistantContext` bổ sung: `connections` (bạn bè accepted/pending từ `user_connections`), `interestedOpportunities` (`opportunity_interests`), `myOpportunities`, `myProducts`, `myMeetings` (`business_meetings` + participants). Mọi query có `.catch`.
+  - `answerPersonalAccountQuestion()` trả lời chính xác số liệu thật (bạn bè, cơ hội quan tâm, cuộc hẹn, sự kiện của tôi, hóa đơn chưa thanh toán, sản phẩm, thông báo); câu hỏi cá nhân KHÔNG bị auto-navigate.
+  - Chuỗi LLM: Gemini (`gemini-2.5-flash` → `gemini-2.0-flash`, key env `GEMINI_API_KEY`/app_settings `gemini_api_key`) → OpenRouter free models (`callOpenRouterJson`, key env `OPENROUTER_API_KEY`/app_settings `openrouter_api_key`, danh sách override bằng env `OPENROUTER_FREE_MODELS`, timeout 12s/model) → câu trả lời dữ liệu tài khoản deterministic → smart engine rule-based.
+- **8. Đã audit lại, đạt**: M1 quyền sửa/xóa tin (canManageNews), M2 quét QR theo qrStaff, C1 hồ sơ CRM `/crm/profile` tách app, C2 tin nhắn đính kèm/ghim, C5 popup sự kiện portal + blur, C6 gói tài trợ từ API thật; 4 lỗi mục 247.
+- **9. Kiểm tra**: `npx tsc --noEmit` FE + BE exit 0. Không git commit/push.

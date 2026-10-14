@@ -46,6 +46,25 @@ function checkImageDimensions(file: File): Promise<boolean> {
   });
 }
 
+/** Đồng bộ logo đã lưu DB lên header Sidebar ngay (Sidebar ưu tiên override localStorage). */
+function syncSidebarBrandingLogo(logoUrl: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (logoUrl) {
+      localStorage.setItem("vba_active_assoc_logo", logoUrl);
+      localStorage.setItem("crm_system_logo", logoUrl);
+    } else {
+      localStorage.removeItem("vba_active_assoc_logo");
+      localStorage.removeItem("crm_system_logo");
+    }
+  } catch {
+    /* ignore */
+  }
+  const detail = logoUrl ? { logoUrl } : {};
+  window.dispatchEvent(new CustomEvent("crm-branding-changed", { detail }));
+  window.dispatchEvent(new CustomEvent("association-changed", { detail }));
+}
+
 export function AssociationLogoUploader() {
   const t = useT();
   const { lang } = useLang();
@@ -168,6 +187,7 @@ export function AssociationLogoUploader() {
       }
 
       setLogoUrl(uploadedUrl);
+      syncSidebarBrandingLogo(uploadedUrl);
       setPreviewUrl(null);
       await reload();
       await loadHistory();
@@ -201,6 +221,7 @@ export function AssociationLogoUploader() {
         });
       }
       setLogoUrl(null);
+      syncSidebarBrandingLogo(null);
       await reload();
       await loadHistory();
       toast.success(t("set.org.logoSaved"));

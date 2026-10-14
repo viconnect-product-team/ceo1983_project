@@ -78,6 +78,36 @@ import {
   type ConnectionStatus,
 } from "@/lib/networking-data";
 import { getNetworkStateFn } from "@/lib/networking.functions";
+import { fetchNestApi } from "@/lib/api-client";
+import { mergeMembersWithAccounts, readManagedAccounts } from "@/lib/committee-accounts";
+
+/** Map bản ghi /members (DB) → Member cho danh bạ chat. */
+function mapApiMemberRow(r: Record<string, any>): Member | null {
+  const id = String(r?.id ?? r?.userId ?? r?.user_id ?? r?.code ?? "").trim();
+  if (!id) return null;
+  const status = String(r?.status ?? r?.membershipStatus ?? "active").toLowerCase();
+  if (["rejected", "deleted", "locked", "banned"].includes(status)) return null;
+  return {
+    id,
+    code: String(r?.code ?? id),
+    name: String(r?.name ?? r?.personName ?? "Hội viên CEO 1983"),
+    contact: String(r?.contact ?? r?.companyName ?? r?.company ?? ""),
+    email: String(r?.email ?? ""),
+    phone: String(r?.phone ?? ""),
+    type: r?.type === "individual" ? "individual" : "company",
+    level: String(r?.level ?? "memberLevel.medium"),
+    industry: String(r?.industry ?? ""),
+    region: String(r?.region ?? ""),
+    status: "active",
+    joinedAt: String(r?.joinedAt ?? r?.joined_at ?? r?.createdAt ?? r?.created_at ?? ""),
+    feeYear: new Date().getFullYear(),
+    feePaid: true,
+    address: String(r?.address ?? ""),
+    about: String(r?.about ?? ""),
+    executiveRole: String(r?.executiveRole ?? r?.executive_role ?? r?.role ?? ""),
+    department: String(r?.department ?? r?.board ?? r?.boardWish ?? ""),
+  };
+}
 
 export const CRM_COMMITTEES = [
   "Tất cả các ban",
@@ -161,7 +191,24 @@ export const Route = createFileRoute("/network")({
       const products = productsRes.status === "fulfilled" && Array.isArray(productsRes.value) ? productsRes.value : [];
       const network = networkRes.status === "fulfilled" && networkRes.value ? networkRes.value : { currentMemberId: null, statuses: {}, timestamps: {}, messages: [] };
       const members = membersRes.status === "fulfilled" && Array.isArray(membersRes.value) ? membersRes.value : [];
-      hydrateMembers(members ?? []);
+
+      // Hiển thị TOÀN BỘ tài khoản thuộc các Ban: gộp danh bạ + toàn bộ /members + tài khoản quản trị (/accounts)
+      let allDbMembers: Member[] = [];
+      if (typeof window !== "undefined") {
+        try {
+          const raw = await fetchNestApi<any[]>("/members");
+          if (Array.isArray(raw)) {
+            allDbMembers = raw.map(mapApiMemberRow).filter((m): m is Member => !!m);
+          }
+        } catch {
+          /* ignore — vẫn còn danh bạ + tài khoản Ban */
+        }
+      }
+      const merged = mergeMembersWithAccounts(
+        [...(members as Member[]), ...allDbMembers],
+        readManagedAccounts(),
+      );
+      hydrateMembers(merged.length > 0 ? merged : (members ?? []));
       return { products, network };
     } catch (e) {
       console.warn("Error in network loader:", e);
@@ -313,7 +360,7 @@ function MemberCard({
             <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{member.code}</span>
           </div>
           <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1 rounded-md bg-[#003B95]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+            <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 font-bold px-2 py-0.5 text-[11px] border border-blue-200 dark:border-blue-800">
               <Shield className="h-3 w-3" />
               {committee}
             </span>
@@ -1410,7 +1457,6 @@ function NetworkPage() {
                   <MemberCard
                     key={m.id}
                     member={m}
-                    bottomLabel={<Pill color="primary">{getMemberCommittee(m)}</Pill>}
                     rightSlot={
                       <button
                         onClick={() => openChat(m.id)}

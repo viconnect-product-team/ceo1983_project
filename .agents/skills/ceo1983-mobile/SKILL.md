@@ -69,3 +69,9 @@ Tệp APK thành phẩm:
    - Loại bỏ section "Lịch sử hoạt động & giao dịch" trên trang chủ để giao diện thoáng gọn, chuyên nghiệp.
    - Điều chỉnh bảng màu ưu tiên Deep Cobalt Navy, giảm độ chói của các mảng màu vàng kim.
 
+## iOS PWA Icon & Safe-Area (cập nhật 2026-10-14)
+- Icon PWA phải nền trắng đục (không alpha). Sinh lại: `powershell -File apps/ceo1983_app_fe/scripts/generate-white-app-icons.ps1`.
+- Đổi icon/manifest ⇒ bump `?v=ceo1983_vX` (`__root.tsx`, `association.tsx`, `association.login.tsx`, `IosInstallPrompt.tsx`), `MEMBER_MANIFEST_VERSION`/`BC_MANIFEST_VERSION` (`src/lib/pwa-manifest.ts` + href trong `__root.tsx`), `CACHE_NAME` trong `public/sw.js`.
+- Manifest: `background_color #FFFFFF`, `id /association`, maskable dùng `app-icon-maskable-{192,512}.png`.
+- Header sticky phải né safe-area: dùng `MemberHeader` hoặc class `.ceo-safe-sticky` (styles.css).
+- Không tự xin quyền Notification khi mở app — chỉ ở màn Cá nhân.

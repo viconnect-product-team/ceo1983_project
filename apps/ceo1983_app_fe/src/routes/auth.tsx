@@ -339,20 +339,22 @@ function CrmAdminAuthPage() {
               </Link>
             </div>
 
-            {/* Primary Action Button: STRICTLY CEO 1983 Blue `#003B95` - NO YELLOW */}
+            {/* Primary Action Button: CEO 1983 Navy solid. Dùng class riêng `ceo-login-submit`
+                để KHÔNG bị rule global `[class*="bg-[#003B95]"]` (styles.css) ép thành nền trắng. */}
             <button
               type="submit"
               disabled={loading}
-              className="mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-[#003B95] hover:bg-[#002B70] active:scale-[0.99] text-white text-sm font-bold transition-all duration-200 shadow-md shadow-blue-900/20 disabled:opacity-50 cursor-pointer"
+              id="crm-login-submit"
+              className="ceo-login-submit mt-3 flex h-12 w-full items-center justify-center rounded-xl active:scale-[0.99] text-sm font-bold transition-all duration-200 shadow-md shadow-blue-900/20 disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Đang đăng nhập...</span>
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <span>Đăng nhập vào Hệ thống</span>
+                  <span>Đăng nhập</span>
                   <ArrowRight className="h-4 w-4" />
                 </span>
               )}

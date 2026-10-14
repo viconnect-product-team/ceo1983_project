@@ -1364,3 +1364,17 @@
 
 
 
+
+# [BẮT BUỘC 74] Không Dùng Icon SVG Tĩnh Chưa Kiểm Tra, Modal Phải Portal, Nút Chính Không Dùng bg-[#003B95]
+- Icon thao tác/bảng: ưu tiên Lucide inline. Nếu dùng <img src="/icons/...svg"> phải đảm bảo file > 0 byte (thư mục ceo1983_icon_2 từng có file 0 byte).
+- Modal/Popup toàn màn hình: render qua createPortal(..., document.body), overlay z-[60] trở lên + inline `backgroundColor rgba(...) + `backdropFilter blur; KHÔNG đặt if (!open) return null trước hook — tách wrapper/inner.
+- styles.css có rule global ép [class*="bg-[#003B95]"] thành nền trắng chữ xanh. Nút cần nền Navy đặc chữ trắng (VD nút Đăng nhập) phải dùng class riêng (ceo-login-submit) hoặc inline style, không dùng class `bg-[#003B95].
+- Danh bạ Tin nhắn & Trao đổi (/network) phải hiển thị TOÀN BỘ tài khoản thuộc các Ban (dùng mergeMembersWithAccounts trong src/lib/committee-accounts.ts), cho phép nhắn tin 1-1 với mọi tài khoản; mỗi thẻ chỉ hiện tên Ban MỘT lần.
+
+# [BẮT BUỘC 75] Icon PWA Nền Trắng Đục, Bump Cache Khi Đổi Icon, Không Tự Hỏi Quyền Thông Báo, AI Dùng Dữ Liệu Thật
+- Icon app (apple-touch-icon*, app-icon*, maskable) PHẢI nền TRẮNG đục, không alpha (iOS biến trong suốt thành đen). Sinh lại bằng `apps/ceo1983_app_fe/scripts/generate-white-app-icons.ps1`.
+- Mỗi lần đổi icon/manifest: bump `?v=ceo1983_vX` ở `__root.tsx`, `association.tsx`, `association.login.tsx`, `IosInstallPrompt.tsx`; bump `MEMBER_MANIFEST_VERSION`/`BC_MANIFEST_VERSION` + href manifest trong `__root.tsx`; bump `CACHE_NAME` trong `public/sw.js`.
+- Manifest: `background_color #FFFFFF`, icon `maskable` dùng file `app-icon-maskable-*.png` riêng (logo ≤ 50%).
+- Header sticky trên mobile (status bar black-translucent) phải né safe-area: dùng `MemberHeader` hoặc class `.ceo-safe-sticky`.
+- KHÔNG tự gọi `requestNotificationPermission()` khi mở app; chỉ bật từ màn Cá nhân.
+- Trợ lý AI: câu hỏi về tài khoản phải trả lời bằng dữ liệu DB thật (`getLiveMemberAssistantContext`); chuỗi fallback Gemini → OpenRouter free → deterministic → rule engine. Không bịa số liệu.

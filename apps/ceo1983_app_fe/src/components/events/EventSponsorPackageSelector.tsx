@@ -303,7 +303,7 @@ export function EventSponsorPackageSelector({
                           {safeSelected.length} nhà tài trợ (Rê chuột xem tất cả)
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="z-50 max-w-sm rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-2xl">
+                      <TooltipContent side="top" className="z-[80] max-w-sm rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-2xl">
                         <div className="text-[11px] font-bold text-foreground mb-1 pb-1 border-b border-border">
                           Danh sách {safeSelected.length} nhà tài trợ đã chọn:
                         </div>

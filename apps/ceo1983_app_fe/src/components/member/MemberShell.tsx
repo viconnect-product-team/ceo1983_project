@@ -11,11 +11,7 @@ const emblem83 = "/ceo1983-emblem-8.png";
 
 import { PullToRefresh } from "@/components/member/PullToRefresh";
 import { IncomingConnectionModal } from "@/components/member/IncomingConnectionModal";
-import { NotificationPermissionBanner } from "@/components/business-connect/mobile/inbox/NotificationPermissionBanner";
-import {
-  requestNotificationPermission,
-  sendExternalNotification,
-} from "@/lib/notification-permissions";
+import { sendExternalNotification } from "@/lib/notification-permissions";
 import { useAuth } from "@/context/AuthContext";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
@@ -33,10 +29,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // 0. Tự động yêu cầu cấp quyền thông báo khi mở app CEO1983
-    if (typeof window !== "undefined") {
-      void requestNotificationPermission();
-    }
+    // KHÔNG tự động xin quyền thông báo khi mở app. Người dùng bật tại màn Cá nhân (association.profile).
 
     const handleNativeHardwareBack = () => {
       // A. Nếu có Dialog / Modal / Sheet đang mở: Bấm Back sẽ đóng modal trước
@@ -287,7 +280,6 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)]`}
       >
         <OfflineBanner />
-        <NotificationPermissionBanner />
         {/* Tắt hoàn toàn cử chỉ vuốt ngang chuyển tab để tránh xung đột với carousel/card và ngăn thoát app */}
         <PullToRefresh
           enableSwipeNav={false}
@@ -321,7 +313,7 @@ function OfflineBanner() {
 
   if (!offline) return null;
   return (
-    <div className="sticky top-0 z-40 flex items-center justify-center gap-2 bg-[var(--vba-gold)] px-4 py-1.5 text-[11px] font-semibold text-[#071322]">
+    <div className="ceo-safe-sticky sticky top-0 z-40 flex items-center justify-center gap-2 bg-slate-800 px-4 py-1.5 text-[11px] font-semibold text-white">
       <WifiOff className="h-3.5 w-3.5" />
       {t("m.shell.offline")}
     </div>

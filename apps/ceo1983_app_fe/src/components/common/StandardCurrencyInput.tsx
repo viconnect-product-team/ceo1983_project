@@ -16,6 +16,15 @@ export interface StandardCurrencyInputProps {
   ariaLabel?: string;
 }
 
+/** Giá trị từ DB/API có thể là chuỗi thập phân ("15000000.00") → làm tròn trước khi format,
+ *  tránh bị gộp phần thập phân thành giá ×100. Nhóm nghìn VN ("1.000") có đúng 3 số nên không ảnh hưởng. */
+function formatExternalValue(value: string | number | null | undefined): string {
+  if (typeof value === "string" && /^\s*\d+\.\d{1,2}\s*$/.test(value)) {
+    return formatCurrencyInput(Math.round(Number(value)));
+  }
+  return formatCurrencyInput(value);
+}
+
 /**
  * StandardCurrencyInput
  * Prevents caret jumping, handles dots seamlessly, preserves cursor position,
@@ -35,7 +44,7 @@ export function StandardCurrencyInput({
   autoFocus = false,
   ariaLabel,
 }: StandardCurrencyInputProps) {
-  const [displayText, setDisplayText] = useState(() => formatCurrencyInput(value));
+  const [displayText, setDisplayText] = useState(() => formatExternalValue(value));
   const inputRef = useRef<HTMLInputElement>(null);
   const isFocusedRef = useRef(false);
   const nextCursorRef = useRef<number | null>(null);
@@ -44,7 +53,7 @@ export function StandardCurrencyInput({
   // Synchronize when value changes externally and input is not actively focused
   useEffect(() => {
     if (isFocusedRef.current) return;
-    const formatted = formatCurrencyInput(value);
+    const formatted = formatExternalValue(value);
     if (formatted !== displayText) {
       setDisplayText(formatted);
     }

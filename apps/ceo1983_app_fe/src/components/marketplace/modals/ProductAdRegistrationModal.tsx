@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { Megaphone, QrCode, X } from "lucide-react";
+import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 
 export interface ProductAdRegistrationModalProps {
   isOpen: boolean;
@@ -186,12 +187,12 @@ export const ProductAdRegistrationModal: React.FC<ProductAdRegistrationModalProp
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Ngân sách dự kiến
               </label>
-              <input
-                type="text"
+              <StandardCurrencyInput
                 value={adBudget}
-                onChange={(e) => setAdBudget(e.target.value)}
-                placeholder="VD: 10,000,000 đ"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                onChange={(formatted) => setAdBudget(formatted)}
+                placeholder="VD: 10.000.000"
+                unit="đ"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95]"
               />
             </div>
             <div>

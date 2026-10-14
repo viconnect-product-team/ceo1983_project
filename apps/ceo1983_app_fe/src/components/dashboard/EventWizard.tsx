@@ -1,4 +1,5 @@
-import { useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus, Sparkles, MapPin, Users, Award } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -54,9 +55,31 @@ export function EventWizard({
   onClose: () => void;
   onCreated: (event: EventItem) => void;
 }) {
-  if (!open) return null;
+  // Chỉ render khi người dùng bấm "Tạo sự kiện" (open=true). Mỗi lần mở là 1 phiên mới (state reset).
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
+    <EventWizardDialog onClose={onClose} onCreated={onCreated} />,
+    document.body,
+  );
+}
 
+function EventWizardDialog({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (event: EventItem) => void;
+}) {
   const t = useT();
+
+  // Khóa cuộn trang nền khi popup đang mở
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
   const defaultTpl = EVENT_TYPE_TEMPLATES.forum;
 
   const [step, setStep] = useState<0 | 1 | 2>(0);
@@ -223,7 +246,12 @@ export function EventWizard({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/65 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200"
+      style={{
+        backgroundColor: "rgba(2, 6, 23, 0.72)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+      }}
       role="dialog"
       aria-modal="true"
       aria-label={t("ewz.title")}

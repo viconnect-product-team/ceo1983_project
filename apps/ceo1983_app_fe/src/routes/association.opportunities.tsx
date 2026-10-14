@@ -720,7 +720,7 @@ function OpportunitiesScreen() {
   return (
     <div className="w-full min-h-screen bg-stone-50 flex flex-col justify-start items-start font-sans pb-24">
       {/* ── TOP HEADER (CEO Cơ Hội + HN Badge) ── */}
-      <div className="sticky top-0 z-30 self-stretch px-5 py-4 bg-white border-b border-slate-200 inline-flex justify-between items-center shadow-xs">
+      <div className="ceo-safe-sticky sticky top-0 z-30 self-stretch px-5 py-4 bg-white border-b border-slate-200 inline-flex justify-between items-center shadow-xs">
         <div className="flex justify-start items-center gap-2.5">
           <button
             type="button"

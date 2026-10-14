@@ -228,7 +228,7 @@ export function EventQrStaffSelector({
                   <TooltipContent
                     side="top"
                     align="start"
-                    className="z-50 max-w-sm rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-2xl"
+                    className="z-[80] max-w-sm rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-2xl"
                   >
                     <div className="text-[11px] font-bold text-foreground mb-1.5 pb-1 border-b border-border flex items-center gap-1.5">
                       <ShieldCheck className="h-3.5 w-3.5 text-purple-500" />
@@ -384,7 +384,7 @@ export function EventQrStaffSelector({
                         Đã chọn: <strong className="text-foreground">{safeSelected.length}</strong> nhân sự (Rê chuột xem tất cả)
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="z-50 max-w-xs rounded-xl border border-border bg-popover p-2.5 text-popover-foreground shadow-2xl">
+                    <TooltipContent side="top" className="z-[80] max-w-xs rounded-xl border border-border bg-popover p-2.5 text-popover-foreground shadow-2xl">
                       <div className="text-[11px] font-bold text-foreground mb-1 pb-1 border-b border-border">
                         Nhân sự Ban Truyền Thông quét mã:
                       </div>

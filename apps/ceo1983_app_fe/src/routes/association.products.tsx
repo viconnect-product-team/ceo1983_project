@@ -1293,7 +1293,7 @@ function ProductsScreen() {
       <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 pb-20">
 
         {/* Sticky Nav with Back Button */}
-        <div className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-3 shadow-xs">
+        <div className="ceo-safe-sticky sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-3 shadow-xs">
           <button
             type="button"
             onClick={() => {
@@ -1659,7 +1659,7 @@ function ProductsScreen() {
       ) : (
         <>
           {/* ── TOP HEADER (Chợ Marketplace) ── */}
-          <div className="sticky top-0 z-30 self-stretch px-5 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-xs">
+          <div className="ceo-safe-sticky sticky top-0 z-30 self-stretch px-5 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-xs">
             <div className="flex justify-start items-center gap-2.5">
               <button 
                 type="button" 

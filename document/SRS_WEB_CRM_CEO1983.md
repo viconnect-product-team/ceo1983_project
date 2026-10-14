@@ -1245,3 +1245,12 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 2. **Đồng bộ với Bảng `public.sponsor_packages` và `public.sponsors`**:
    - Truy vấn và hiển thị 100% dữ liệu thực tế từ cơ sở dữ liệu hệ thống (Bạch Kim, Vàng, Bạc, Đồng...).
 
+
+---
+
+### Cập nhật 14/10/2026 — Tin nhắn & Trao đổi, Đăng nhập, Tạo sự kiện, Quản lý Tài khoản
+
+- **Tin nhắn & Trao đổi (/network)**: Danh bạ hiển thị TOÀN BỘ tài khoản thuộc 7 Ban (gộp /members/directory + /members + tài khoản tại Quản lý Tài khoản — nguồn chung src/lib/committee-accounts.ts). Mọi tài khoản đều có nút "Nhắn tin trao đổi" (1-1, không cần kết nối trước). Mỗi thẻ hiện tên Ban đúng một lần.
+- **Đăng nhập CRM (/auth)**: Nút "Đăng nhập" nền Navy #003B95, chữ trắng (class ceo-login-submit).
+- **Tạo sự kiện (/events)**: Popup 3 bước chỉ mở khi bấm "+ Tạo sự kiện"; render qua portal với nền tối mờ (blur) phủ toàn màn hình, khóa cuộn trang nền.
+- **Quản lý Tài khoản (/accounts)**: Cột THAO TÁC dùng icon Xem / Sửa / Xóa (Lucide) rõ ràng, có tooltip & aria-label.

@@ -549,6 +549,92 @@ export class AiService {
       capacity: Number(e.capacity || 200),
     }));
 
+    // 6. Kết nối (bạn bè) — user_connections accepted / pending
+    const toDateStr = (d: any) =>
+      d ? (d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10)) : null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId || ''));
+    const userIdRefs = [String(userId)];
+    if (memberId) userIdRefs.push(String(memberId));
+    if (memberCode) userIdRefs.push(String(memberCode));
+
+    const [connRows, interestRows, myOppRows, myProductRows, meetingRows] = await Promise.all([
+      isUuid
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT
+              COUNT(*) FILTER (WHERE status = 'accepted' AND blocked_by_user_id IS NULL)::int AS accepted,
+              COUNT(*) FILTER (WHERE status = 'pending' AND recipient_user_id = ${userId}::uuid)::int AS pending_incoming,
+              COUNT(*) FILTER (WHERE status = 'pending' AND requester_user_id = ${userId}::uuid)::int AS pending_outgoing
+            FROM public.user_connections
+            WHERE requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid
+          `.catch(() => [] as any[])
+        : Promise.resolve([] as any[]),
+      this.prisma.$queryRaw<any[]>`
+        SELECT o.id, o.title, o.status, o.deadline
+        FROM public.opportunity_interests i
+        JOIN public.opportunities o ON o.id::text = i.opportunity_id::text
+        WHERE i.member_id::text = ANY(${userIdRefs}::text[])
+        ORDER BY o.created_at DESC NULLS LAST
+        LIMIT 10
+      `.catch(() => [] as any[]),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, title, status, deadline
+        FROM public.opportunities
+        WHERE poster_id::text = ANY(${userIdRefs}::text[])
+        ORDER BY created_at DESC NULLS LAST
+        LIMIT 10
+      `.catch(() => [] as any[]),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, COALESCE(name, title) AS name, price, status
+        FROM public.products
+        WHERE seller_id::text = ANY(${userIdRefs}::text[])
+        ORDER BY created_at DESC NULLS LAST
+        LIMIT 10
+      `.catch(() => [] as any[]),
+      isUuid
+        ? this.prisma.$queryRaw<any[]>`
+            SELECT m.id, m.title, m.status::text AS status, m.scheduled_start_at
+            FROM public.business_meetings m
+            JOIN public.business_meeting_participants p ON p.meeting_id = m.id
+            WHERE p.user_id = ${userId}::uuid
+              AND m.status::text NOT IN ('cancelled', 'canceled')
+            ORDER BY m.scheduled_start_at DESC NULLS LAST
+            LIMIT 10
+          `.catch(() => [] as any[])
+        : Promise.resolve([] as any[]),
+    ]);
+
+    const connections = {
+      friendsCount: Number(connRows[0]?.accepted || 0),
+      pendingIncoming: Number(connRows[0]?.pending_incoming || 0),
+      pendingOutgoing: Number(connRows[0]?.pending_outgoing || 0),
+    };
+    const interestedOpportunities = interestRows.map((o) => ({
+      id: o.id,
+      title: o.title,
+      status: o.status,
+      deadline: toDateStr(o.deadline),
+    }));
+    const myOpportunities = myOppRows.map((o) => ({
+      id: o.id,
+      title: o.title,
+      status: o.status,
+      deadline: toDateStr(o.deadline),
+    }));
+    const myProducts = myProductRows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      price: Number(p.price || 0),
+      status: p.status,
+    }));
+    const nowMs = Date.now();
+    const myMeetings = meetingRows.map((m) => ({
+      id: m.id,
+      title: m.title,
+      status: m.status,
+      startAt: m.scheduled_start_at ? new Date(m.scheduled_start_at).toISOString() : null,
+      upcoming: m.scheduled_start_at ? new Date(m.scheduled_start_at).getTime() >= nowMs : false,
+    }));
+
     return {
       user: {
         id: userId,
@@ -572,7 +658,220 @@ export class AiService {
       },
       myEvents: myRegisteredEvents,
       topEvents,
+      connections,
+      interestedOpportunities,
+      myOpportunities,
+      myProducts,
+      myMeetings,
     };
+  }
+
+  /**
+   * Trả lời chính xác (deterministic) các câu hỏi về dữ liệu tài khoản cá nhân
+   * dựa trên context thời gian thực. Trả về null nếu câu hỏi không phải loại này.
+   */
+  private answerPersonalAccountQuestion(
+    q: string,
+    context: Awaited<ReturnType<AiService['getLiveMemberAssistantContext']>>,
+  ): {
+    answer: string;
+    speechText: string;
+    intent: 'query_data';
+    route?: string;
+    featureName?: string;
+    suggestTour: boolean;
+    dynamicData: any;
+    provider: string;
+    model: string;
+  } | null {
+    const norm = q
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd');
+    const mine = /\b(toi|minh|cua toi|cua minh|tai khoan|cua anh|cua chi)\b/.test(norm);
+    const personal = mine || /(bao nhieu|\bmay\b|danh sach|liet ke)/.test(norm);
+    if (!personal) return null;
+
+    const base = { intent: 'query_data' as const, suggestTour: false, provider: 'ceo1983-smart-engine' };
+    const fmtVnd = (n: number) => new Intl.NumberFormat('vi-VN').format(n || 0);
+
+    if (/(ban be|ket ban|ket noi|moi quan he|ban cua)/.test(norm)) {
+      const c = context.connections;
+      return {
+        ...base,
+        answer: `🤝 **Kết nối của ${context.user.name}:**\n\n- Bạn bè đã kết nối: **${c.friendsCount}** người\n- Lời mời đang chờ Anh/Chị duyệt: **${c.pendingIncoming}**\n- Lời mời Anh/Chị đã gửi: **${c.pendingOutgoing}**`,
+        speechText: `Anh chị hiện có ${c.friendsCount} bạn bè đã kết nối, ${c.pendingIncoming} lời mời đang chờ duyệt.`,
+        route: '/association/messages',
+        featureName: 'Kết nối',
+        dynamicData: { connections: c },
+        model: 'personal-connections',
+      };
+    }
+
+    if (mine && /(co hoi|quan tam|giao thuong)/.test(norm)) {
+      const list = context.interestedOpportunities;
+      const posted = context.myOpportunities;
+      const lines = list.length
+        ? list.map((o, i) => `${i + 1}. **${o.title}**${o.deadline ? ` — hạn ${o.deadline}` : ''}`).join('\n')
+        : '_Anh/Chị chưa quan tâm cơ hội nào._';
+      return {
+        ...base,
+        answer: `💼 **Cơ hội kinh doanh Anh/Chị đang quan tâm (${list.length}):**\n\n${lines}\n\n📌 Cơ hội Anh/Chị đã đăng: **${posted.length}**${posted.length ? `\n${posted.map((o, i) => `${i + 1}. ${o.title} (${o.status || 'open'})`).join('\n')}` : ''}`,
+        speechText: `Anh chị đang quan tâm ${list.length} cơ hội và đã đăng ${posted.length} cơ hội kinh doanh.`,
+        route: '/association/opportunities',
+        featureName: 'Cơ hội kinh doanh',
+        dynamicData: { interestedOpportunities: list, myOpportunities: posted },
+        model: 'personal-opportunities',
+      };
+    }
+
+    if (/(cuoc hop|lich hop|lich hen|gap go|meeting|hen gap)/.test(norm)) {
+      const upcoming = context.myMeetings.filter((m) => m.upcoming);
+      const lines = context.myMeetings.length
+        ? context.myMeetings
+            .map((m, i) => `${i + 1}. **${m.title || 'Cuộc hẹn'}** — ${m.startAt ? new Date(m.startAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : 'chưa chốt giờ'} (${m.status})`)
+            .join('\n')
+        : '_Chưa có cuộc hẹn nào._';
+      return {
+        ...base,
+        answer: `📅 **Lịch hẹn / cuộc họp của Anh/Chị** (sắp tới: **${upcoming.length}**):\n\n${lines}`,
+        speechText: `Anh chị có ${upcoming.length} cuộc hẹn sắp tới.`,
+        route: '/association/messages',
+        featureName: 'Lịch hẹn',
+        dynamicData: { meetings: context.myMeetings },
+        model: 'personal-meetings',
+      };
+    }
+
+    if (mine && /(su kien|hoi nghi|\bve\b|dang ky)/.test(norm)) {
+      const ev = context.myEvents;
+      const lines = ev.length
+        ? ev.map((e, i) => `${i + 1}. **${e.name}** — ${e.date} ${e.time} tại ${e.location} (${e.ticketCount} vé)`).join('\n')
+        : '_Anh/Chị chưa đăng ký sự kiện nào._';
+      return {
+        ...base,
+        answer: `🎫 **Sự kiện Anh/Chị đã đăng ký (${ev.length}):**\n\n${lines}`,
+        speechText: `Anh chị đã đăng ký ${ev.length} sự kiện.`,
+        route: '/association/events',
+        featureName: 'Sự kiện',
+        dynamicData: { myEvents: ev },
+        model: 'personal-events',
+      };
+    }
+
+    if (/(hoa don|hoi phi|cong no|chua thanh toan|chua dong|no phi|nien lien)/.test(norm)) {
+      const d = context.dues;
+      const lines = d.unpaidInvoices.length
+        ? d.unpaidInvoices.map((i: any, idx: number) => `${idx + 1}. ${i.invoiceNo || 'Hóa đơn'} — kỳ ${i.year ?? ''}: **${fmtVnd(i.amount)} đ**${i.dueDate ? ` (hạn ${i.dueDate})` : ''}`).join('\n')
+        : '_Không có hóa đơn nào chưa thanh toán._';
+      return {
+        ...base,
+        answer: `💳 **Hóa đơn / hội phí của Anh/Chị:** ${d.feePaid ? '✅ Đã thanh toán đầy đủ' : `⚠️ Còn nợ **${fmtVnd(d.totalOutstanding)} đ**`}\n\n${lines}`,
+        speechText: d.feePaid ? 'Anh chị đã thanh toán đầy đủ hội phí.' : `Anh chị còn ${d.unpaidInvoices.length} hóa đơn chưa thanh toán.`,
+        route: '/association/profile',
+        featureName: 'Hội phí',
+        dynamicData: { dues: d },
+        model: 'personal-invoices',
+      };
+    }
+
+    if (mine && /(san pham|gian hang|dang ban)/.test(norm)) {
+      const p = context.myProducts;
+      const lines = p.length
+        ? p.map((x, i) => `${i + 1}. **${x.name}** — ${fmtVnd(x.price)} đ (${x.status || 'active'})`).join('\n')
+        : '_Anh/Chị chưa đăng sản phẩm nào._';
+      return {
+        ...base,
+        answer: `🛍️ **Sản phẩm Anh/Chị đang đăng bán (${p.length}):**\n\n${lines}`,
+        speechText: `Anh chị đang có ${p.length} sản phẩm trên sàn.`,
+        route: '/association/products',
+        featureName: 'Sàn sản phẩm',
+        dynamicData: { myProducts: p },
+        model: 'personal-products',
+      };
+    }
+
+    if (/(thong bao)/.test(norm)) {
+      const n = context.notifications;
+      return {
+        ...base,
+        answer: `🔔 Anh/Chị có **${n.unreadCount}** thông báo chưa đọc.${n.unreadList.length ? `\n\n${n.unreadList.slice(0, 5).map((x: any, i: number) => `${i + 1}. ${x.title}`).join('\n')}` : ''}`,
+        speechText: `Anh chị có ${n.unreadCount} thông báo chưa đọc.`,
+        route: '/association/notifications',
+        featureName: 'Thông báo',
+        dynamicData: { notifications: n },
+        model: 'personal-notifications',
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Gọi OpenRouter với chuỗi model miễn phí (fallback lần lượt) khi Gemini không khả dụng.
+   * Key lấy từ env OPENROUTER_API_KEY hoặc app_settings 'openrouter_api_key'.
+   */
+  private async callOpenRouterJson(sysPrompt: string, userPrompt: string): Promise<{ parsed: any; model: string } | null> {
+    let key = process.env.OPENROUTER_API_KEY || null;
+    if (!key) {
+      const rows = await this.prisma.$queryRaw<{ value: unknown }[]>`
+        SELECT value FROM public.app_settings WHERE key IN ('openrouter_api_key', 'openrouter_key') LIMIT 1
+      `.catch(() => [] as { value: unknown }[]);
+      const val = rows[0]?.value as { key?: string; apiKey?: string } | string | null;
+      if (typeof val === 'string') key = val;
+      else if (val && typeof val === 'object') key = val.key || val.apiKey || null;
+    }
+    if (!key) return null;
+
+    const models = (process.env.OPENROUTER_FREE_MODELS ||
+      'google/gemini-2.0-flash-exp:free,deepseek/deepseek-chat-v3-0324:free,meta-llama/llama-3.3-70b-instruct:free,qwen/qwen-2.5-72b-instruct:free,mistralai/mistral-small-3.1-24b-instruct:free')
+      .split(',')
+      .map((m) => m.trim())
+      .filter(Boolean);
+
+    for (const model of models) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12000);
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${key}`,
+            'HTTP-Referer': process.env.APP_PUBLIC_URL || 'https://ceo1983.vn',
+            'X-Title': 'CEO1983 Assistant',
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.2,
+            messages: [
+              { role: 'system', content: sysPrompt },
+              { role: 'user', content: `CÂU HỎI CỦA HỘI VIÊN: "${userPrompt}"\n\nChỉ trả về đúng 1 object JSON theo định dạng yêu cầu.` },
+            ],
+          }),
+        }).finally(() => clearTimeout(timer));
+        if (!res.ok) {
+          console.warn(`[AiService] OpenRouter ${model} HTTP ${res.status}`);
+          continue;
+        }
+        const data: any = await res.json();
+        const text: string = data?.choices?.[0]?.message?.content || '';
+        if (!text) continue;
+        const match = text.match(/\{[\s\S]*\}/);
+        try {
+          const parsed = JSON.parse(match ? match[0] : text);
+          if (parsed && (parsed.answer || parsed.speechText)) return { parsed, model };
+        } catch {
+          // Model trả lời dạng text thường -> dùng làm answer
+          return { parsed: { answer: text, speechText: text.slice(0, 240), intent: 'chat' }, model };
+        }
+      } catch (err: any) {
+        console.warn(`[AiService] OpenRouter ${model} error:`, err?.message);
+      }
+    }
+    return null;
   }
 
   /**
@@ -1003,7 +1302,8 @@ export class AiService {
     }
 
     // 0.5. Lệnh điều khiển giọng nói & tự động thao tác (Autonomous Voice & Action Execution)
-    const voiceNav = this.classifyVoiceNavigation(rawPrompt);
+    const personalAnswer = this.answerPersonalAccountQuestion(rawPrompt, context);
+    const voiceNav = personalAnswer ? null : this.classifyVoiceNavigation(rawPrompt);
     if (voiceNav) {
       if (voiceNav.actionType === 'theme') {
         return {
@@ -1093,9 +1393,8 @@ export class AiService {
       else if (val && typeof val === 'object') geminiKey = val.key || val.apiKey || null;
     }
 
-    // Nếu có GEMINI_API_KEY -> Gọi trực tiếp Google Gemini 2.0 Flash
-    if (geminiKey) {
-      try {
+    // Prompt hệ thống dùng chung cho Gemini trực tiếp và OpenRouter fallback
+    {
         const sysPrompt = `Bạn là Trợ lý Ảo Doanh Nhân kiêm Chỉ dẫn Điều hành thông minh của CLB Doanh Nhân CEO 1983 (HanoiBA).
 Phong cách: Tinh tế, sắc sảo, đĩnh đạc, thấu cảm và cực kỳ thông minh của một Giám đốc Trợ lý Điều hành Cấp cao (Senior Executive Assistant). Luôn xưng "Em" và gọi người dùng là "Quý Anh/Chị" hoặc theo tên riêng "${context.user.name}".
 
@@ -1127,6 +1426,14 @@ DỮ LIỆU ĐỘNG THỜI GIAN THỰC CỦA HỘI VIÊN ĐANG ĐĂNG NHẬP:
 - Thông báo chưa đọc: ${context.notifications.unreadCount} thông báo
 - Sự kiện đã đăng ký (${context.myEvents.length} sự kiện): ${JSON.stringify(context.myEvents)}
 - Sự kiện nhiều người đăng ký nhất trong Hiệp hội: ${JSON.stringify(context.topEvents)}
+- Kết nối bạn bè: ${context.connections.friendsCount} người đã kết nối, ${context.connections.pendingIncoming} lời mời chờ duyệt, ${context.connections.pendingOutgoing} lời mời đã gửi
+- Cơ hội kinh doanh đang quan tâm (${context.interestedOpportunities.length}): ${JSON.stringify(context.interestedOpportunities)}
+- Cơ hội kinh doanh đã đăng (${context.myOpportunities.length}): ${JSON.stringify(context.myOpportunities)}
+- Sản phẩm đang đăng bán (${context.myProducts.length}): ${JSON.stringify(context.myProducts)}
+- Lịch hẹn / cuộc họp B2B (${context.myMeetings.length}, sắp tới ${context.myMeetings.filter((m) => m.upcoming).length}): ${JSON.stringify(context.myMeetings)}
+- Hóa đơn chưa thanh toán: ${JSON.stringify(context.dues.unpaidInvoices)}
+- Thông báo chưa đọc gần nhất: ${JSON.stringify(context.notifications.unreadList.slice(0, 5).map((n: any) => n.title))}
+KHI NGƯỜI DÙNG HỎI VỀ TÀI KHOẢN CỦA HỌ (sự kiện của tôi, bạn bè, cơ hội quan tâm, cuộc hẹn, hóa đơn...): BẮT BUỘC trả lời bằng SỐ LIỆU THẬT ở trên, intent = "query_data", không bịa dữ liệu.
 
 DỮ LIỆU ĐỘNG THỜI GIAN THỰC ĐƯỢC TRÍCH XUẤT TỪ HỆ THỐNG (RAG GROUND TRUTH):
 - Ban chuyên trách: ${JSON.stringify(searchData?.matchedCommittees || [])}
@@ -1167,43 +1474,65 @@ QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
   "suggestTour": boolean
 }`;
 
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `${sysPrompt}\n\nCÂU HỎI CỦA HỘI VIÊN: "${prompt}"` }] }],
-              generationConfig: {
-                temperature: 0.2,
-                responseMimeType: 'application/json',
-              },
-            }),
-          },
-        );
+        const toResult = (parsed: any, provider: string, model: string) => ({
+          answer: String(parsed.answer || ''),
+          speechText: String(parsed.speechText || parsed.answer || ''),
+          intent: (parsed.intent || (parsed.route ? 'navigate' : 'chat')) as
+            'chat' | 'query_data' | 'start_tour' | 'feature_guide' | 'navigate' | 'action',
+          tourId: parsed.tourId || undefined,
+          route: parsed.route || undefined,
+          featureName: parsed.featureName || undefined,
+          suggestTour: Boolean(parsed.suggestTour || parsed.route),
+          dynamicData: context,
+          provider,
+          model,
+        });
 
-        if (geminiRes.ok) {
-          const rawData = await geminiRes.json();
-          const jsonText = rawData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (jsonText) {
-            const parsed = JSON.parse(jsonText);
-            return {
-              answer: parsed.answer || '',
-              speechText: parsed.speechText || parsed.answer || '',
-              intent: parsed.intent || (parsed.route ? 'navigate' : 'chat'),
-              tourId: parsed.tourId || undefined,
-              route: parsed.route || undefined,
-              featureName: parsed.featureName || undefined,
-              suggestTour: Boolean(parsed.suggestTour || parsed.route),
-              dynamicData: context,
-              provider: 'gemini-free',
-              model: 'gemini-2.0-flash',
-            };
+        // 1a. Google Gemini trực tiếp (nếu có key)
+        if (geminiKey) {
+          for (const gModel of ['gemini-2.5-flash', 'gemini-2.0-flash']) {
+            try {
+              const geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${geminiKey}`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: `${sysPrompt}\n\nCÂU HỎI CỦA HỘI VIÊN: "${prompt}"` }] }],
+                    generationConfig: {
+                      temperature: 0.2,
+                      responseMimeType: 'application/json',
+                    },
+                  }),
+                },
+              );
+
+              if (geminiRes.ok) {
+                const rawData = await geminiRes.json();
+                const jsonText = rawData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (jsonText) {
+                  const parsed = JSON.parse(jsonText);
+                  if (parsed?.answer) return toResult(parsed, 'gemini-free', gModel);
+                }
+              } else {
+                console.warn(`[AiService] Gemini ${gModel} HTTP ${geminiRes.status}`);
+              }
+            } catch (err: any) {
+              console.warn(`[AiService] Gemini ${gModel} error:`, err?.message);
+            }
           }
         }
-      } catch (err: any) {
-        console.warn('[AiService] Gemini API call error, falling back to Smart Hybrid Engine:', err?.message);
-      }
+
+        // 1b. OpenRouter — chuỗi model miễn phí tốt nhất (fallback lần lượt)
+        const orResult = await this.callOpenRouterJson(sysPrompt, prompt).catch(() => null);
+        if (orResult?.parsed) {
+          return toResult(orResult.parsed, 'openrouter-free', orResult.model);
+        }
+    }
+
+    // 1c. Không có LLM khả dụng -> trả lời chính xác dữ liệu tài khoản từ DB
+    if (personalAnswer) {
+      return personalAnswer;
     }
 
     // 2. SMART HYBRID NLP ENGINE (Fallback thông minh 100% không phụ thuộc ngoài)

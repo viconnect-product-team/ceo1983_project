@@ -44,101 +44,15 @@ export const Route = createFileRoute("/accounts")({
   component: AccountsPage,
 });
 
-export interface UserAccountItem {
-  id: string;
-  name: string;
-  code: string;
-  email: string;
-  phone?: string;
-  companyName?: string;
-  department: string;
-  role: string;
-  avatar?: string;
-  status: "active" | "inactive" | "locked";
-  createdAt?: string;
-}
+import {
+  DEFAULT_ACCOUNTS,
+  MANAGED_ACCOUNTS_STORAGE_KEY,
+  type UserAccountItem,
+} from "@/lib/committee-accounts";
 
-const STORAGE_KEY = "vba_managed_accounts_v2";
+export type { UserAccountItem };
 
-const DEFAULT_ACCOUNTS: UserAccountItem[] = [
-  {
-    id: "acc_admin_01",
-    name: "Ban Quản Trị Hệ Thống",
-    code: "ADMIN-001",
-    email: "admin@ceo1983.vn",
-    phone: "0988 198 300",
-    companyName: "Tập Đoàn Công Nghệ VIONE",
-    department: "Ban Điều Hành",
-    role: "quan_tri",
-    status: "active",
-  },
-  {
-    id: "acc_pres_01",
-    name: "Lê Văn Tuấn",
-    code: "CEO-1983-001",
-    email: "tuan.le@ceo1983.vn",
-    phone: "0912 345 678",
-    companyName: "Công Ty CP Tập Đoàn Đầu Tư Hà Nội",
-    department: "Ban Điều Hành",
-    role: "chu_tich",
-    status: "active",
-  },
-  {
-    id: "acc_adm_02",
-    name: "Nguyễn Hải Yến",
-    code: "CEO-1983-002",
-    email: "yen.nh@ceo1983.vn",
-    phone: "0904 888 999",
-    companyName: "Hải Yến Media & Communications",
-    department: "Ban Truyền Thông",
-    role: "truong_ban_truyen_thong",
-    status: "active",
-  },
-  {
-    id: "acc_adm_03",
-    name: "Trần Minh Quân",
-    code: "CEO-1983-003",
-    email: "quan.tm@ceo1983.vn",
-    phone: "0977 123 456",
-    companyName: "Minh Quân Logistics",
-    department: "Ban Xúc tiến",
-    role: "truong_ban_xuc_tien",
-    status: "active",
-  },
-  {
-    id: "acc_adm_04",
-    name: "Hoàng Bích Thủy",
-    code: "CEO-1983-004",
-    email: "thuy.hb@ceo1983.vn",
-    phone: "0936 678 999",
-    companyName: "Bích Thủy Finance & Tax",
-    department: "Ban Tài chính",
-    role: "truong_ban_tai_chinh",
-    status: "active",
-  },
-  {
-    id: "acc_adm_05",
-    name: "Đặng Văn Nam",
-    code: "CEO-1983-005",
-    email: "nam.dv@ceo1983.vn",
-    phone: "0983 555 777",
-    companyName: "Nam An Phú Thiện Nguyện",
-    department: "Ban Thiện nguyện",
-    role: "truong_ban_thien_nguyen",
-    status: "active",
-  },
-  {
-    id: "acc_mem_01",
-    name: "Vũ Minh Khang",
-    code: "CEO-1983-006",
-    email: "khang.vm@ceo1983.vn",
-    phone: "0945 111 222",
-    companyName: "Khang Tech Solutions",
-    department: "Ban Thành viên",
-    role: "member",
-    status: "active",
-  },
-];
+const STORAGE_KEY = MANAGED_ACCOUNTS_STORAGE_KEY;
 
 function AccountsPage() {
   const { isPlatformAdmin, isBQT, isAdmin } = useRole();
@@ -655,7 +569,7 @@ function AccountsPage() {
                 <th className="w-12 px-3 text-center border-r border-slate-200">STT</th>
                 <th className="w-64 px-6 border-r border-slate-200">
                   <div className="flex items-center gap-2">
-                    <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" />
+                    <Users className="h-4 w-4 text-blue-800" strokeWidth={2.2} />
                     <span>THÔNG TIN TÀI KHOẢN</span>
                   </div>
                 </th>
@@ -693,12 +607,12 @@ function AccountsPage() {
                   {/* LIÊN HỆ */}
                   <td className="w-48 px-4 border-r border-slate-200">
                     <div className="flex items-center gap-1.5 text-slate-500 text-xs truncate">
-                      <img src="/icons/ceo1983_icon_2/mail.svg" className="h-3 w-3 shrink-0" alt="mail" />
+                      <Mail className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={2} />
                       <span className="truncate">{acc.email}</span>
                     </div>
                     {acc.phone && (
                       <div className="flex items-center gap-1.5 text-slate-500 text-xs mt-1">
-                        <img src="/icons/ceo1983_icon_2/phone.svg" className="h-3 w-3 shrink-0" alt="phone" />
+                        <Phone className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={2} />
                         <span>{acc.phone}</span>
                       </div>
                     )}
@@ -713,7 +627,7 @@ function AccountsPage() {
                   {/* PHÂN LOẠI BAN */}
                   <td className="w-40 px-4 border-r border-slate-200">
                     <div className="px-2.5 py-1 bg-sky-100 dark:bg-sky-950/60 rounded-xl inline-flex items-center gap-1.5">
-                      <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-3 w-3 shrink-0" alt="dept" />
+                      <Building2 className="h-3.5 w-3.5 shrink-0 text-sky-700 dark:text-sky-300" strokeWidth={2} />
                       <span className="text-slate-900 dark:text-sky-200 text-xs font-semibold leading-4">{acc.department}</span>
                     </div>
                   </td>
@@ -727,27 +641,33 @@ function AccountsPage() {
 
                   {/* THAO TÁC */}
                   <td className="w-32 px-4 text-center">
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center justify-center gap-1.5">
                       <button
+                        type="button"
                         onClick={() => handleOpenView(acc)}
                         title="Xem chi tiết"
-                        className="p-1 text-slate-500 hover:text-blue-800 transition cursor-pointer"
+                        aria-label="Xem chi tiết"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
                       >
-                        <img src="/icons/ceo1983_icon_2/eye.svg" className="h-4 w-4" alt="view" />
+                        <Eye className="h-4 w-4" strokeWidth={2.2} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleOpenEdit(acc)}
                         title="Chỉnh sửa"
-                        className="p-1 text-blue-800 hover:text-blue-900 transition cursor-pointer"
+                        aria-label="Chỉnh sửa"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
                       >
-                        <img src="/icons/ceo1983_icon_2/pencil.svg" className="h-4 w-4" alt="edit" />
+                        <Pencil className="h-4 w-4" strokeWidth={2.2} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => setDeleteConfirmAccount(acc)}
                         title="Xóa tài khoản"
-                        className="p-1 text-rose-600 hover:text-rose-700 transition cursor-pointer"
+                        aria-label="Xóa tài khoản"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 transition cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
                       >
-                        <img src="/icons/ceo1983_icon_2/trash-2.svg" className="h-4 w-4" alt="delete" />
+                        <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                       </button>
                     </div>
                   </td>

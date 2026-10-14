@@ -515,6 +515,26 @@ html.hc .vba-gold-grad {
   stroke: #003B95 !important;
 }
 
+/* Nút Đăng nhập CRM: luôn nền Navy đặc + chữ trắng đậm (không bị rule trên ghi đè) */
+button.ceo-login-submit {
+  background-color: #003B95 !important;
+  color: #ffffff !important;
+  border: 1px solid #003B95 !important;
+}
+button.ceo-login-submit:hover:not(:disabled) {
+  background-color: #002B70 !important;
+  border-color: #002B70 !important;
+}
+button.ceo-login-submit *,
+button.ceo-login-submit span,
+button.ceo-login-submit svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+
 /* Ensure other brand buttons and pills strictly have pure white text */
 .btn-navy,
 .bg-navy-brand,
@@ -2606,4 +2626,19 @@ table td {
 td[title] {
   cursor: default;
 }
-
+
+/* [248] iOS PWA polish: sticky headers under black-translucent status bar must clear the notch/Dynamic Island */
+.ceo-safe-sticky {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+}
+@media all and (display-mode: standalone) {
+  html {
+    background-color: #ffffff;
+  }
+  html.dark {
+    background-color: #0b1220;
+  }
+  body {
+    min-height: 100dvh;
+  }
+}

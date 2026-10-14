@@ -167,28 +167,28 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "manifest", href: "/manifest.webmanifest?v=2026-09-29.2" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=ceo1983_v3" },
+      { rel: "manifest", href: "/manifest.webmanifest?v=2026-10-14.1" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=ceo1983_v4w" },
       {
         rel: "apple-touch-icon",
         sizes: "180x180",
-        href: "/apple-touch-icon-180x180.png?v=ceo1983_v3",
+        href: "/apple-touch-icon-180x180.png?v=ceo1983_v4w",
       },
       {
         rel: "apple-touch-icon",
         sizes: "152x152",
-        href: "/apple-touch-icon-152x152.png?v=ceo1983_v3",
+        href: "/apple-touch-icon-152x152.png?v=ceo1983_v4w",
       },
       {
         rel: "apple-touch-icon",
         sizes: "167x167",
-        href: "/apple-touch-icon-167x167.png?v=ceo1983_v3",
+        href: "/apple-touch-icon-167x167.png?v=ceo1983_v4w",
       },
-      { rel: "apple-touch-icon-precomposed", href: "/apple-touch-icon.png?v=ceo1983_v3" },
-      { rel: "icon", type: "image/png", sizes: "64x64", href: "/ceo1983-favicon.png?v=ceo1983_v3" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/app-icon-192.png?v=ceo1983_v3" },
-      { rel: "icon", type: "image/png", sizes: "512x512", href: "/app-icon.png?v=ceo1983_v3" },
-      { rel: "shortcut icon", href: "/ceo1983-favicon.png?v=ceo1983_v3" },
+      { rel: "apple-touch-icon-precomposed", href: "/apple-touch-icon.png?v=ceo1983_v4w" },
+      { rel: "icon", type: "image/png", sizes: "64x64", href: "/ceo1983-favicon.png?v=ceo1983_v4w" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/app-icon-192.png?v=ceo1983_v4w" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/app-icon.png?v=ceo1983_v4w" },
+      { rel: "shortcut icon", href: "/ceo1983-favicon.png?v=ceo1983_v4w" },
       // Web fonts for Business Card industry templates.
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -435,8 +435,8 @@ function RootComponent() {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const targetFavicon = "/ceo1983-favicon.png?v=ceo1983_v3";
-    const targetApple = "/apple-touch-icon.png?v=ceo1983_v3";
+    const targetFavicon = "/ceo1983-favicon.png?v=ceo1983_v4w";
+    const targetApple = "/apple-touch-icon.png?v=ceo1983_v4w";
 
     const iconLinks = document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']");
     if (iconLinks.length > 0) {

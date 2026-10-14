@@ -775,3 +775,19 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 
 
 ---
+
+## Bổ sung 2026-10-14: Cài PWA trên iOS, Thông báo, Trợ lý AI theo tài khoản
+
+### A. Luồng cài app trên iPhone/iPad (PWA)
+1. Mở Safari → truy cập `/association` → popup hướng dẫn (`IosInstallPrompt`) → Chia sẻ → "Thêm vào MH chính".
+2. Icon app: logo CEO1983 trên **nền trắng** (`apple-touch-icon.png` 180×180, không trong suốt). Tên: "CEO 1983".
+3. Mở từ màn hình chính: chạy standalone, status bar trong suốt (`black-translucent`), mọi header né tai thỏ/Dynamic Island (`safe-area-inset-top`), thanh tab dưới né home indicator (`safe-area-inset-bottom`), ô nhập 16px để iOS không tự zoom.
+4. Nếu đã cài bản cũ (icon nền đen): xóa app khỏi màn hình chính → cài lại (iOS lưu icon lúc cài).
+
+### B. Thông báo đẩy
+- App KHÔNG tự hỏi quyền thông báo khi khởi động. Người dùng bật/tắt tại **Cá nhân → Thông báo**.
+
+### C. Trợ lý AI trả lời theo dữ liệu tài khoản
+- Hỏi được: "tôi có bao nhiêu bạn bè", "cơ hội tôi đang quan tâm", "lịch hẹn của tôi", "sự kiện tôi đã đăng ký", "hóa đơn chưa thanh toán", "sản phẩm của tôi", "thông báo chưa đọc".
+- Dữ liệu lấy realtime: `user_connections`, `opportunity_interests`, `opportunities`, `products`, `business_meetings(+participants)`, `event_registrations`, `invoices`, `member_notifications`.
+- Mô hình: Gemini (2.5-flash → 2.0-flash) → OpenRouter model miễn phí (env `OPENROUTER_API_KEY` hoặc app_settings `openrouter_api_key`; `OPENROUTER_FREE_MODELS` để đổi danh sách) → trả lời số liệu chính xác từ DB nếu không có LLM.

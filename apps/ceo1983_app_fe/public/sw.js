@@ -1,10 +1,13 @@
-const CACHE_NAME = "ceo1983-pwa-v3";
+const CACHE_NAME = "ceo1983-pwa-v4";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/apple-touch-icon.png",
   "/apple-touch-icon-180x180.png",
   "/favicon.png",
   "/app-icon-192.png",
+  "/app-icon-512.png",
+  "/app-icon-maskable-192.png",
+  "/app-icon-maskable-512.png",
   "/app-icon.png",
   "/ceo1983-official-logo.png"
 ];
