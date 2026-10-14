@@ -208,4 +208,24 @@ export class MeetingsController {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.deleteMeeting(userId, id);
   }
+
+  @Patch(':id')
+  async updateMeeting(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.updateMeeting(userId, id, data);
+  }
+
+  @Patch('connection-appointments/:id')
+  async updateConnectionAppointment(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
+    const userId = req.user.id || req.user.sub;
+    return this.meetingsService.updateMeeting(userId, id, data);
+  }
 }

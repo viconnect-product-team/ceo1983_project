@@ -20,6 +20,9 @@ import {
   XCircle,
   AlertTriangle,
   X,
+  Handshake,
+  Maximize2,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -298,10 +301,9 @@ function EventDetailPage() {
     }
   };
 
-  const overview = t("edetail.overview.fallback", {
-    type: t(TYPE_KEY[event.type]),
-    location: event.location || "—",
-  });
+  const overview =
+    (event as any).description?.trim() ||
+    `${event.name} do Ban Tổ Chức CLB Doanh Nhân CEO 1983 tổ chức tại ${event.location || "Hà Nội"}.`;
 
   return (
     <AppShell>
@@ -439,16 +441,16 @@ function EventDetailPage() {
               <Share2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />{" "}
               {t("edetail.share")}
             </button>
+            <button
+              type="button"
+              onClick={() => setGuestQrOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
+            >
+              <QrCode className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              Mã QR Đăng Ký Khách Mời (Quét Zalo)
+            </button>
             {canManage && (
               <>
-                <button
-                  type="button"
-                  onClick={() => setGuestQrOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-500/20 transition cursor-pointer"
-                >
-                  <QrCode className="h-4 w-4 text-amber-600" aria-hidden="true" />
-                  QR Đón Tiếp & Thanh Toán (BTT)
-                </button>
                 <button
                   type="button"
                   onClick={() => setGatekeeperOpen(true)}
@@ -537,18 +539,54 @@ function EventDetailPage() {
           label={t("edetail.summary.type")}
           value={t(TYPE_KEY[event.type])}
         />
+        {Array.isArray(event.sponsors) && event.sponsors.length > 0 && (
+          <SummaryCard
+            icon={<Handshake className="h-4 w-4 text-amber-500" aria-hidden="true" />}
+            label="Nhà tài trợ sự kiện"
+            value={event.sponsors.map((s: any) => s.sponsorName || s.name).filter(Boolean).join(", ")}
+          />
+        )}
       </div>
 
       {/* Main content */}
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr] min-w-0 w-full overflow-hidden">
-        {/* Left: overview + attendees */}
+        {/* Left: overview + sponsors + attendees */}
         <div className="space-y-5 min-w-0 w-full overflow-hidden">
           <section className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
             <h2 className="mb-3 text-base font-semibold text-foreground">
               {t("edetail.overview.title")}
             </h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">{overview}</p>
+            <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{overview}</p>
           </section>
+
+          {/* Trường hiển thị Đơn vị / Nhà tài trợ nếu sự kiện có nhà tài trợ */}
+          {Array.isArray(event.sponsors) && event.sponsors.length > 0 && (
+            <section className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 p-5 shadow-[var(--shadow-card)] space-y-3">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
+                <Handshake className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span>Đơn Vị Đồng Hành &amp; Nhà Tài Trợ Sự Kiện ({event.sponsors.length}):</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {event.sponsors.map((s: any, idx: number) => {
+                  const sName = s.sponsorName || s.name || "Doanh nghiệp đồng hành";
+                  return (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-amber-300/60 dark:border-amber-500/40 text-xs font-bold text-foreground shadow-2xs"
+                    >
+                      <span className="text-amber-600">🤝</span>
+                      <span>{sName}</span>
+                      {s.tier && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold uppercase">
+                          {s.tier}
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           <TicketsSection tickets={tickets} event={event} canManage={canManage} />
 
@@ -561,8 +599,53 @@ function EventDetailPage() {
           <EventFeed event={event} registrations={registrations} canManage={canManage} />
         </div>
 
-        {/* Right: registration + check-in panels */}
+        {/* Right: guest QR registration + registration + check-in panels */}
         <aside className="space-y-5 min-w-0 w-full overflow-hidden">
+          {/* Mã QR cho người ngoài không phải hội viên quét đăng ký sự kiện */}
+          <section className="rounded-2xl border-2 border-dashed border-amber-500/50 bg-gradient-to-b from-amber-500/5 to-transparent p-5 shadow-[var(--shadow-card)] text-center space-y-3">
+            <div className="flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
+              <QrCode className="h-4 w-4 text-amber-500" />
+              <span>Mã QR Đăng Ký (Dành Cho Khách Mời)</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Khách mời chưa phải là hội viên có thể quét mã QR bằng Zalo hoặc Camera điện thoại để đăng ký vé tham dự sự kiện.
+            </p>
+            <div className="mx-auto w-44 h-44 p-2 bg-white rounded-2xl border border-amber-300 shadow-sm flex items-center justify-center">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/events/${event.id}/register?source=guest_qr`
+                    : `https://crm.ceo1983.viconnect.vn/events/${event.id}/register?source=guest_qr`
+                )}`}
+                alt="Mã QR Đăng Ký Khách Mời"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setGuestQrOpen(true)}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition cursor-pointer"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+                <span>Trình Chiếu QR</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `${window.location.origin}/events/${event.id}/register?source=guest_qr`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Đã sao chép link đăng ký khách mời!");
+                }}
+                className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-border bg-card hover:bg-muted text-foreground font-semibold text-xs transition cursor-pointer"
+                title="Sao chép link"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                <span>Copy Link</span>
+              </button>
+            </div>
+          </section>
+
           <EventRegistrationPanel
             event={event}
             registrations={registrations}

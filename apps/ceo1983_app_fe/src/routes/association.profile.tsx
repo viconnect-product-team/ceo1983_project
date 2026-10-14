@@ -103,7 +103,7 @@ export default function ProfileScreen() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { user, logout: authLogout } = useAuth();
-  const { isAdmin: isPlatformOrTenantAdmin, isPlatformAdmin, isBQT, srsRole } = useRole();
+  const { isSuperAdmin } = useRole();
   const fetchMember = useServerFn(getMyMember);
   const updateProfileFn = useServerFn(updateMyProfile);
   const fetchDirectory = useServerFn(listMembers);
@@ -112,35 +112,8 @@ export default function ProfileScreen() {
   const { data: realMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
   const { data: conversations = [] } = useServerData<MyConversation[]>(() => fetchConversations(), [], "vba_conversations");
 
-  const userRole = String((user as any)?.role || "").toLowerCase();
-  const memberRole = String((member as any)?.role || "").toLowerCase();
-
-  const isBQTOrAdmin: boolean = Boolean(
-    isPlatformOrTenantAdmin ||
-    isPlatformAdmin ||
-    isBQT ||
-    srsRole === "admin" ||
-    srsRole === "quan_tri" ||
-    srsRole === "ADM" ||
-    srsRole === "BQT" ||
-    srsRole === "ban_dieu_hanh" ||
-    userRole === "admin" ||
-    userRole === "quan_tri" ||
-    userRole === "quantri" ||
-    userRole === "superadmin" ||
-    userRole === "platform_admin" ||
-    memberRole === "admin" ||
-    memberRole === "quan_tri" ||
-    memberRole === "quantri" ||
-    memberRole === "association_admin" ||
-    (member as any)?.department === "Ban Quản Trị" ||
-    (member as any)?.department === "Ban Điều Hành" ||
-    (member as any)?.department === "Ban Thường Trực CLB" ||
-    String((member as any)?.executiveRole || "").toLowerCase().includes("chủ tịch") ||
-    String((member as any)?.department || "").toLowerCase().includes("quản trị") ||
-    String((member as any)?.department || "").toLowerCase().includes("điều hành")
-  );
-  const hasAdminPrivilege = isBQTOrAdmin;
+  // Phân quyền: CHỈ Quản trị / Admin / Chủ tịch (đồng bộ CRM Hiệp hội)
+  const hasAdminPrivilege = isSuperAdmin;
 
   const [copied, setCopied] = useState(false);
   const [profileExpanded, setProfileExpanded] = useState(false);
@@ -675,7 +648,7 @@ export default function ProfileScreen() {
     setCreatePostOpen(false);
   };
 
-  const isAdmin = isBQTOrAdmin;
+  const isAdmin = Boolean(hasAdminPrivilege || isSuperAdmin || user?.role === "platform_admin" || user?.role === "admin");
 
   const menu = [
     {
@@ -1488,17 +1461,33 @@ export default function ProfileScreen() {
             </div>
           </button>
 
-          {/* Nút 2: Cài lên màn hình chính */}
+          {/* Nút 2: Cài lên màn hình chính (1 Chạm Tự Động) */}
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("open-install-prompt"))}
-            className="self-stretch px-5 py-2.5 rounded-[48px] border border-[#2D2E8B] dark:border-blue-400 bg-transparent hover:bg-[#2D2E8B]/5 dark:hover:bg-blue-400/10 text-[#2D2E8B] dark:text-blue-300 inline-flex justify-center items-center gap-2.5 font-medium font-['SF_Pro',system-ui,sans-serif] text-base transition active:scale-95 cursor-pointer"
+            onClick={async () => {
+              const p = (window as any).__pwaInstallPrompt;
+              if (p) {
+                try {
+                  p.prompt();
+                  const choice = await p.userChoice;
+                  if (choice?.outcome === "accepted") {
+                    toast.success("Ứng dụng đang được tự động cài lên màn hình điện thoại!");
+                  }
+                  (window as any).__pwaInstallPrompt = null;
+                  return;
+                } catch (err) {
+                  console.error(err);
+                }
+              }
+              window.dispatchEvent(new CustomEvent("open-install-prompt"));
+            }}
+            className="self-stretch px-5 py-2.5 rounded-[48px] border border-[#2D2E8B] dark:border-blue-400 bg-transparent hover:bg-[#2D2E8B]/5 dark:hover:bg-blue-400/10 text-[#2D2E8B] dark:text-blue-300 inline-flex justify-center items-center gap-2.5 font-bold font-['SF_Pro',system-ui,sans-serif] text-base transition active:scale-95 cursor-pointer"
           >
             <div className="size-6 relative overflow-hidden flex items-center justify-center">
               <img src="/icons/profile/phone-01.svg" alt="Install" className="size-5 object-contain" />
             </div>
-            <div className="justify-start text-base font-normal font-['SF_Pro',system-ui,sans-serif] leading-5">
-              {isEn ? "Install to Home Screen" : "Cài lên màn hình chính"}
+            <div className="justify-start text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5">
+              {isEn ? "Install to Home Screen (1 Tap)" : "Cài lên màn hình điện thoại (1 Chạm)"}
             </div>
           </button>
 

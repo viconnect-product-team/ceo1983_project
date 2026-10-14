@@ -21,6 +21,8 @@ export type RoleState = {
   isChuTich: boolean;
   isPlatformAdmin: boolean;
   isAdmin: boolean;
+  /** CHỈ Quản trị / Admin / Chủ tịch (vai trò hệ thống CRM) — dùng cho Phân quyền & quản lý Tin tức. */
+  isSuperAdmin: boolean;
   isBanDieuHanh: boolean;
   isModerator: boolean;
   isBQT: boolean;
@@ -122,8 +124,8 @@ export function useRole(): RoleState {
       primaryRole === "president" ||
       rList.includes("chu_tich") ||
       rList.includes("president") ||
-      execRole.includes("chủ tịch") ||
-      execRole.includes("president") ||
+      (execRole.includes("chủ tịch") && !execRole.includes("phó")) ||
+      (execRole.includes("president") && !execRole.includes("vice")) ||
       userEmail.includes("chutich")
     ) {
       return "chu_tich";
@@ -417,7 +419,8 @@ export function useRole(): RoleState {
     Boolean(user?.isPresident) ||
     user?.role === "chu_tich" ||
     user?.role === "president" ||
-    String(user?.executiveRole).toLowerCase().includes("chủ tịch");
+    (String(user?.executiveRole).toLowerCase().includes("chủ tịch") &&
+      !String(user?.executiveRole).toLowerCase().includes("phó"));
   const isChuTich = isPresident;
   const isPlatformAdmin =
     srsRole === "ADM" ||
@@ -443,6 +446,23 @@ export function useRole(): RoleState {
       roles.includes("admin")) &&
     (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin || isPresident);
   const isTongThuKy = srsRole === "tong_thu_ky" || Boolean(user?.isGeneralSecretary) || isPresident || isAdmin;
+  const permBoardRole = String((memberPermProfile as any)?.boardRole || "").toLowerCase();
+  const isSuperAdmin =
+    srsRole === "chu_tich" ||
+    srsRole === "admin" ||
+    (srsRole as string) === "quan_tri" ||
+    (srsRole as string) === "ADM" ||
+    (srsRole as string) === "platform_admin" ||
+    Boolean(user?.isPresident) ||
+    Boolean(user?.isAdmin) ||
+    roles.includes("admin") ||
+    roles.includes("platform_admin") ||
+    roles.includes("quan_tri") ||
+    roles.includes("chu_tich") ||
+    permBoardRole === "quan_tri" ||
+    permBoardRole === "admin" ||
+    permBoardRole === "chu_tich" ||
+    (memberPermProfile as any)?.isAdmin === true;
   const isBanThuKy = srsRole === "ban_thu_ky" || srsRole === "BTK" || isTongThuKy;
   const isBTK = isBanThuKy;
   const isBTT = srsRole === "BTT" || srsRole === "truong_ban_truyen_thong" || isBQT;
@@ -616,6 +636,7 @@ export function useRole(): RoleState {
     isChuTich,
     isPlatformAdmin,
     isAdmin,
+    isSuperAdmin,
     isBanDieuHanh,
     isModerator,
     isBQT,

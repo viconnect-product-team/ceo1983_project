@@ -1,18 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Building2,
   Globe,
-  Image,
   Layout,
   Lock,
   Mail,
   MessageSquareText,
-  RefreshCw,
   Save,
   Shield,
-  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -47,22 +44,11 @@ function SettingsPage() {
     }
     return "CLB Doanh Nhân CEO 1983";
   });
-  const [orgLogo, setOrgLogo] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return (
-        localStorage.getItem("vba_active_assoc_logo") ||
-        localStorage.getItem("crm_system_logo") ||
-        "/icons/ceo1983_icon_1/image 6.png"
-      );
-    }
-    return "/icons/ceo1983_icon_1/image 6.png";
-  });
   const [email, setEmail] = useState("contact@ceo1983.vn");
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(false);
   const [twoFA, setTwoFA] = useState(true);
   const [saving, setSaving] = useState(false);
-  const logoFileRef = useRef<HTMLInputElement>(null);
 
   const loadSettings = useServerFn(getSettingsFn);
   const persistSettings = useServerFn(saveSettingsFn);
@@ -86,53 +72,6 @@ function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const url = event.target?.result as string;
-      setOrgLogo(url);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("vba_active_assoc_logo", url);
-        localStorage.setItem("crm_system_logo", url);
-        window.dispatchEvent(
-          new CustomEvent("crm-branding-changed", {
-            detail: { logoUrl: url, name: orgName },
-          }),
-        );
-        window.dispatchEvent(
-          new CustomEvent("association-changed", {
-            detail: { logoUrl: url, name: orgName },
-          }),
-        );
-      }
-      toast.success("Đã cập nhật logo header sidebar thành công!");
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
-
-  const handleResetDefaultLogo = () => {
-    const def = "/icons/ceo1983_icon_1/image 6.png";
-    setOrgLogo(def);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("vba_active_assoc_logo", def);
-      localStorage.setItem("crm_system_logo", def);
-      window.dispatchEvent(
-        new CustomEvent("crm-branding-changed", {
-          detail: { logoUrl: def, name: orgName },
-        }),
-      );
-      window.dispatchEvent(
-        new CustomEvent("association-changed", {
-          detail: { logoUrl: def, name: orgName },
-        }),
-      );
-    }
-    toast.success("Đã đặt lại logo mặc định CEO 1983");
-  };
-
   const save = async () => {
     setSaving(true);
     try {
@@ -142,16 +81,14 @@ function SettingsPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("vba_active_assoc_name", orgName);
         localStorage.setItem("crm_system_name", orgName);
-        localStorage.setItem("vba_active_assoc_logo", orgLogo);
-        localStorage.setItem("crm_system_logo", orgLogo);
         window.dispatchEvent(
           new CustomEvent("crm-branding-changed", {
-            detail: { name: orgName, logoUrl: orgLogo },
+            detail: { name: orgName },
           }),
         );
         window.dispatchEvent(
           new CustomEvent("association-changed", {
-            detail: { name: orgName, logoUrl: orgLogo },
+            detail: { name: orgName },
           }),
         );
       }
@@ -199,63 +136,6 @@ function SettingsPage() {
                   {t("set.org.title")}
                 </h3>
                 <p className="text-xs text-muted-foreground">{t("set.org.desc")}</p>
-              </div>
-
-              {/* Header Sidebar Branding Section */}
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-4">
-                <div>
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Image className="h-4 w-4 text-primary" />
-                    Logo & Tên Tổ Chức Trên Header Sidebar
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Tùy chỉnh logo và tên hiển thị trực tiếp ở phần đầu thanh menu điều hướng bên trái CRM
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="relative group cursor-pointer" onClick={() => logoFileRef.current?.click()}>
-                    <img
-                      src={orgLogo}
-                      alt="Logo Sidebar"
-                      className="h-16 w-16 rounded-xl object-contain bg-card p-1 border-2 border-primary/30 shadow-sm"
-                    />
-                    <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                      <Upload className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <input
-                      ref={logoFileRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoFileChange}
-                      className="hidden"
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => logoFileRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition cursor-pointer"
-                      >
-                        <Upload className="h-3.5 w-3.5" />
-                        <span>Tải ảnh logo sidebar mới</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleResetDefaultLogo}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary transition cursor-pointer"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        <span>Đặt về logo CEO 1983</span>
-                      </button>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">
-                      Hỗ trợ PNG, SVG, JPG, WebP. Thay đổi có hiệu lực ngay lập tức trên thanh Sidebar.
-                    </span>
-                  </div>
-                </div>
               </div>
 
               <AssociationLogoUploader />

@@ -29,6 +29,7 @@ import { listNews, getMyMember, type NewsItem, type MyMember } from "@/lib/membe
 import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
 import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { useRole } from "@/hooks/use-role";
 import {
   getReadNewsIds,
   markNewsAsRead,
@@ -94,41 +95,10 @@ export default function NewsScreen() {
     return () => window.removeEventListener("ceo1983_news_read_updated", handleNewsRead);
   }, []);
 
-  // Strict RBAC: Chỉ tài khoản Quản trị, Admin, Chủ tịch hoặc Trưởng ban mới có quyền Đăng, Sửa, Xóa tin tức
-  const canManageNews = useMemo(() => {
-    const role = (user?.role || (member as any)?.role || "").toLowerCase().trim();
-    const department = ((user as any)?.department || (member as any)?.department || (member as any)?.boardName || "").toLowerCase().trim();
-    const title = ((user as any)?.title || (member as any)?.title || (user as any)?.position || "").toLowerCase().trim();
-    const srsRole = (typeof window !== "undefined" ? localStorage.getItem("vba_user_role") || "" : "").toLowerCase().trim();
-
-    const isSuperOrAdmin =
-      role === "quan_tri" ||
-      role === "admin" ||
-      role === "chu_tich" ||
-      role === "platform_admin" ||
-      srsRole === "quan_tri" ||
-      srsRole === "admin" ||
-      srsRole === "chu_tich" ||
-      Boolean((user as any)?.isAdmin) ||
-      Boolean((user as any)?.isPresident) ||
-      role.includes("quản trị") ||
-      role.includes("chủ tịch") ||
-      role.includes("admin");
-
-    const isLeader =
-      role.startsWith("truong_ban") ||
-      role.includes("trưởng ban") ||
-      srsRole.startsWith("truong_ban") ||
-      srsRole.includes("trưởng ban") ||
-      title.includes("trưởng ban") ||
-      title.includes("chủ tịch") ||
-      title.includes("tổng thư ký") ||
-      department.includes("trưởng ban") ||
-      role === "tong_thu_ky" ||
-      role === "ban_dieu_hanh";
-
-    return Boolean(isSuperOrAdmin || isLeader);
-  }, [user, member]);
+  // Strict RBAC (đồng bộ CRM Hiệp hội): CHỈ Quản trị / Admin / Chủ tịch được Đăng, Sửa, Xóa tin tức.
+  // Không dựa vào chức danh công ty ("Chủ tịch HĐQT"), localStorage hay phòng ban.
+  const { isSuperAdmin, loading: roleLoading } = useRole();
+  const canManageNews = !roleLoading && isSuperAdmin;
 
   // Form states for creating / editing / sharing an article
   const [editingNews, setEditingNews] = useState<(NewsItem & { url?: string }) | null>(null);

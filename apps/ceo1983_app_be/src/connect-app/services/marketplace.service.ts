@@ -125,11 +125,13 @@ export class ConnectMarketplaceService {
       console.warn('createProduct primary insert failed, using fallback:', err?.message);
       await this.prisma.$executeRaw`
         INSERT INTO public.products (
-          id, title, description, category, price,
+          id, title, name, description, category, price,
+          image_urls,
           seller_id, status, views, emoji,
           association_id, created_at, updated_at
         ) VALUES (
-          ${prodId}, ${name}, ${description}, ${category}, ${price},
+          ${prodId}, ${name}, ${name}, ${description}, ${category}, ${price},
+          ${imageUrls}::text[],
           ${sellerId}, ${status}, 0, '🛍️',
           ${assocId}::uuid, now(), now()
         )

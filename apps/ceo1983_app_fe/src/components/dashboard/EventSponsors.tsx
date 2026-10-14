@@ -1,69 +1,7 @@
 import { useMemo } from "react";
-import { Award, Building2, CheckCircle2, Handshake, Mail, Phone } from "lucide-react";
+import { Handshake, Phone } from "lucide-react";
 import { useFmt, useT } from "@/lib/i18n";
-import { useServerData } from "@/hooks/use-server-data";
-import { listSponsorsFn, type Sponsor } from "@/lib/sponsors.functions";
-
-const FALLBACK_EVENT_SPONSORS: Sponsor[] = [
-  {
-    id: "SP-001",
-    name: "Tập đoàn Công nghệ SunTech Global",
-    tier: "platinum",
-    sponsorType: "regular",
-    packageType: "cash",
-    contact: "Nguyễn Văn Hùng (Chủ tịch HĐQT)",
-    email: "hung.nv@suntech-global.vn",
-    phone: "0908 123 456",
-    amount: 200000000,
-    events: 8,
-    since: "2023-01-15",
-    status: "active",
-  },
-  {
-    id: "SP-002",
-    name: "Công ty Cổ phần Trầm Hương & Yến Sào Hoàng Gia",
-    tier: "gold",
-    sponsorType: "regular",
-    packageType: "in_kind",
-    inKindDescription: "200 bộ quà tặng Yến Sào & Trầm Hương Thượng Hạng dành tặng tất cả CEO",
-    contact: "Trần Mai Phương (Tổng Giám Đốc)",
-    email: "phuong.tm@hoanggiagroup.vn",
-    phone: "0912 345 678",
-    amount: 100000000,
-    events: 5,
-    since: "2023-06-20",
-    status: "active",
-  },
-  {
-    id: "SP-003",
-    name: "Ngân hàng TMCP Tiên Phong (TPBank) - Khối SME",
-    tier: "silver",
-    sponsorType: "regular",
-    packageType: "cash",
-    contact: "Lê Minh Tuấn (GĐ Khối KHDN)",
-    email: "tuanlm@tpb.com.vn",
-    phone: "0983 999 888",
-    amount: 50000000,
-    events: 3,
-    since: "2024-02-10",
-    status: "active",
-  },
-  {
-    id: "SP-004",
-    name: "Artisan Coffee & Roastery",
-    tier: "bronze",
-    sponsorType: "new",
-    packageType: "in_kind",
-    inKindDescription: "Toàn bộ quầy cà phê pha máy Espresso cao cấp & bánh teabreak",
-    contact: "Phạm Thu Hà (Nhà Sáng Lập)",
-    email: "ha.pham@artisancoffee.vn",
-    phone: "0934 567 890",
-    amount: 20000000,
-    events: 2,
-    since: "2024-05-18",
-    status: "active",
-  },
-];
+import type { Sponsor } from "@/lib/sponsors.functions";
 
 const TIER_META: Record<
   Sponsor["tier"],
@@ -105,7 +43,6 @@ const TIER_META: Record<
 export function EventSponsors({ sponsors: propSponsors }: { sponsors?: any[] }) {
   const t = useT();
   const fmt = useFmt();
-  const { data: rawSponsors } = useServerData<Sponsor[]>(() => listSponsorsFn(), []);
 
   const allSponsors = useMemo(() => {
     let parsedList = propSponsors;
@@ -133,9 +70,12 @@ export function EventSponsors({ sponsors: propSponsors }: { sponsors?: any[] }) 
         status: s.status || "active",
       })) as Sponsor[];
     }
-    if (Array.isArray(rawSponsors) && rawSponsors.length > 0) return rawSponsors;
-    return FALLBACK_EVENT_SPONSORS;
-  }, [propSponsors, rawSponsors]);
+    return [] as Sponsor[];
+  }, [propSponsors]);
+
+  if (allSponsors.length === 0) {
+    return null;
+  }
 
   const tiers: Sponsor["tier"][] = ["platinum", "gold", "silver", "bronze"];
 

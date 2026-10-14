@@ -1378,3 +1378,50 @@
 - Header sticky trên mobile (status bar black-translucent) phải né safe-area: dùng `MemberHeader` hoặc class `.ceo-safe-sticky`.
 - KHÔNG tự gọi `requestNotificationPermission()` khi mở app; chỉ bật từ màn Cá nhân.
 - Trợ lý AI: câu hỏi về tài khoản phải trả lời bằng dữ liệu DB thật (`getLiveMemberAssistantContext`); chuỗi fallback Gemini → OpenRouter free → deterministic → rule engine. Không bịa số liệu.
+
+# [BẮT BUỘC 76] Quy Chuẩn QR Sự Kiện, Soát Vé, Tin Nhắn Nhóm & Cuộc Gặp 1-on-1 Đồng Bộ
+- QR Sự Kiện & Soát Vé:
+  + Mã QR sự kiện trên Standee/màn hình PHẢI là đường dẫn URL HTTPS công khai `${origin}/events/${event.id}/register` để khi quét bằng Zalo hoặc Camera điện thoại sẽ tự động mở trang web đăng ký tham gia sự kiện.
+  + Máy quét soát vé sự kiện (`association.checkin.tsx`): CHỈ quét mã trên Thẻ vé điện tử của đại biểu. Bắt buộc từ chối và báo lỗi nếu quét nhầm mã QR sự kiện / form đăng ký (`event_checkin:`, `/events/`).
+  + Máy quét kết nối hội viên (`AssociationMemberQrModal.tsx`): Hỗ trợ quét cả mã kết nối và mã sự kiện; khi quét mã sự kiện thì tự động chuyển hướng sang trang đăng ký `/events/:id/register`, TUYỆT ĐỐI KHÔNG tự động đăng ký ngầm.
+- Tin Nhắn Nhóm Phân Hệ Network (/network):
+  + Hỗ trợ tạo nhóm trò chuyện đa thành viên có bộ lọc theo 8 ban chuyên môn (`NewGroupChatDialog`).
+  + Hỗ trợ bộ lọc xem tin nhắn ("Tất cả", "Nhóm", "Cá nhân"), đính kèm tệp tin đa định dạng, hiển thị avatar + tên người gửi + ban chuyên môn trên từng tin nhắn nhóm.
+- Đăng Sản Phẩm Marketplace:
+  + Mọi câu lệnh SQL Raw INSERT fallback cho marketplace sản phẩm bắt buộc phải có `image_urls` (dạng PostgreSQL text array `{...}`) và `name` (từ `title`) để tránh vi phạm ràng buộc NOT NULL.
+  + Type trong frontend cho `pdfUrl`, `websiteUrl`, `facebookUrl` phải dùng `undefined` (không dùng `null`).
+- Cuộc Gặp 1-on-1 (Business Connect & Mobile):
+  + Quản lý cuộc gặp 1-on-1 trên Web CRM phải có cả Modal Xem chi tiết (`ViewMeetingModal`) và Modal Chỉnh sửa (`EditMeetingModal`), kết nối API `PATCH /meetings/:id` và cập nhật realtime.
+  + CSDL lưu `target_members` có thể là object hoặc array; API `getConnectionAppointments` bắt buộc phải parse cả hai cấu trúc để đồng bộ cuộc gặp sang app mobile.
+  + Trên Mobile App (`association.members.tsx`), lịch hẹn chính thức ("Đã chốt") CHỈ xuất hiện khi đối tác đã đồng ý (`status === 'confirmed' || status === 'accepted'`), phân tách rõ ràng với các lời mời đang "Chờ duyệt".
+
+# [BẮT BUỘC 77] Quy Chuẩn Chữ Đen Nút Nền Trắng, Badge/Tag Chữ Đen, QR Khách Zalo & Cài Đặt Mobile 1 Chạm
+- Chữ Đen Trên Nút Nền Trắng & Tương Phản Nút Bấm:
+  + Mọi nút bấm có nền trắng hoặc nhạt bắt buộc chữ phải là màu đen (`#000000` / `text-slate-950` / `text-black`). Tuyệt đối không để xảy ra tình trạng nền trắng chữ trắng làm biến mất nội dung nút.
+  + Các nút hành động chính (Lưu, Xác nhận, Quét mã) ưu tiên nền vàng hổ phách `bg-amber-400 hover:bg-amber-500` với chữ đen đậm `text-slate-950 font-bold` tạo độ tương phản cao, rõ nét.
+- Toàn Bộ Badge & Tag Span Bắt Buộc Chữ Đen:
+  + Tất cả các thẻ span dạng badge (như gói tài trợ Kim Cương/Vàng/Bạc/Đồng, chức danh, mã hội viên, loại vé...) với nền nhạt (`bg-*/10`, `bg-*/15`, `px-1.5 py-0.2 text-[10px]`) bắt buộc chữ phải là màu đen sắc nét (`color: #000000 !important; font-weight: 700`), không bị các rule CSS toàn cục vô tình ép thành chữ trắng.
+- Thiết Kế Mã QR Cho Khách Mời Quét Qua ZALO:
+  + Trên Standee / Popup Quản lý soát vé sự kiện, bắt buộc phân tách rõ ràng giữa:
+    1) **Mã QR Zalo Dành Cho Khách Mời / Đại Biểu Ngoài**: Chứa link HTTPS `${origin}/events/${event.id}/register?source=zalo_guest` để khách quét bằng Zalo/Camera điện thoại mở thẳng form đăng ký nhận chỗ ngồi mà không bắt đăng nhập.
+    2) **Mã QR Soát Vé Cho Hội Viên**: Chứa payload nội bộ `event_checkin:${event.id}` để hội viên dùng App CEO 1983 quét check-in tự động.
+- Cài Đặt Mobile PWA 1 Chạm Tự Động:
+  + Bắt sự kiện `beforeinstallprompt` và lưu toàn cục vào `(window as any).__pwaInstallPrompt`.
+  + Nút "Cài lên màn hình điện thoại" (trên Profile hoặc Banner) khi người dùng chạm vào phải gọi trực tiếp `prompt()` để bật ngay hộp thoại cài đặt của hệ điều hành (Android / Chrome / Edge) trong đúng 1 chạm.
+  + Với iOS Safari: Rút gọn tối đa hướng dẫn còn 1 thao tác duy nhất: "Chạm nút Chia sẻ ⬆️ ở thanh dưới cùng Safari ➜ Chọn 'Thêm vào MH chính' ➕".
+
+# [BẮT BUỘC 78] Logo Sidebar 0-Error, Modal Lucky Draw Nền Sáng Tải Ảnh Trực Tiếp, Mã QR Khách Mời Ngoài & Dữ Liệu Sự Kiện CRM Động
+- Logo Sidebar & Tải Tệp Không Lỗi 500:
+  + Trang Cài đặt (`settings.tsx`): Tuyệt đối không để trùng lặp card cấu hình logo; chỉ dùng một khối duy nhất cho logo hiệp hội.
+  + Lưu và tải logo (`upload.service.ts` & `upload.controller.ts`): Bắt buộc lưu tệp ra ổ đĩa cục bộ trước khi đẩy MinIO, bọc timeout guard 800ms khi stream và trả về SVG fallback 200 OK để ảnh logo không bao giờ bị lỗi 500 hay vỡ icon.
+- Modal Cấu Hình Giải Thưởng Vòng Quay May Mắn (Lucky Draw Prize Configuration Modal):
+  + Bắt buộc dùng giao diện nền sáng doanh nhân sang trọng (`bg-white`, `border-slate-200`, `text-slate-900`, nhãn `text-slate-700`). Tuyệt đối không dùng theme nền đen tối màu.
+  + Thay thế toàn bộ ô nhập URL ảnh dạng text bằng ô tải ảnh trực tiếp từ máy (`<input type="file" accept="image/*">`), hiển thị khung preview ảnh kèm nút xóa ảnh ("Gỡ ảnh").
+  + Loại bỏ hoàn toàn dropdown icon ClickUp (mặc định icon `Gift`), tuyệt đối không hiển thị các từ ngữ mang tính kỹ thuật hay CSDL ("Database", "query", v.v.). Form chỉ giữ các trường thiết thực: Hạng giải, Tên giải, Giá trị (VNĐ), Số lượng, Tên nhà tài trợ, Ảnh giải thưởng trực tiếp, Mô tả.
+- Mã QR Sự Kiện Cho Khách Mời Ngoài Quét Zalo & Dữ Liệu Sự Kiện CRM Động 100%:
+  + Loại bỏ hoàn toàn các từ điển template mẫu hardcode (`EVENT_AGENDA`, `FALLBACK_EVENT_SPONSORS`). Tuyệt đối không để dữ liệu fake (ev-1, ev-2, ev-3, cto.vn/familybusiness, SunTech, Hoàng Gia...) hiển thị đè lên dữ liệu thật.
+  + Mọi thông tin chi tiết sự kiện bắt buộc lấy động theo CSDL CRM (`description`, `sponsors`). Nếu không có nhà tài trợ thì trả về null/không hiển thị, không bịa nhà tài trợ giả.
+  + Chi tiết sự kiện (Web CRM `events.$eventId.tsx` và Mobile App `EventDetailModal.tsx`) bắt buộc có khối:
+    1) **Mã QR Đăng Ký Cho Khách Mời Ngoài**: Dẫn link `${origin}/events/${event.id}/register?source=guest_qr` để khách ngoài quét bằng Zalo / Camera điện thoại đăng ký nhận chỗ ngay mà không cần tài khoản hội viên.
+    2) **Trường Tên Nhà Tài Trợ Nổi Bật**: Hiển thị trang trọng danh sách các nhà tài trợ cùng huy hiệu (badge) rõ nét khi sự kiện có nhà tài trợ.
+

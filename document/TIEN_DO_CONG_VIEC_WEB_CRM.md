@@ -80,13 +80,17 @@
 | 80 | **17. Tách Biệt Thông Báo CRM vs Mobile App** | Cô lập thông báo quản trị CRM (app_scope = 'crm') khỏi Mobile App của hội viên | <span style="color:green;font-weight:bold">Hoàn thành</span> | 14/10/2026 | Dev Team ViConnect | 14/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Ngăn chặn thông báo hệ thống nội bộ CRM rò rỉ ra màn hình ứng dụng hội viên. |
 | 81 | **18. Gửi Thư Cảm Ơn Đăng Ký Hội Viên Tự Động** | Tự động gửi email cảm ơn đại biểu/ứng viên tức thì ngay khi nộp đơn gia nhập qua public form | <span style="color:green;font-weight:bold">Hoàn thành</span> | 14/10/2026 | Dev Team ViConnect | 14/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Kích hoạt sendRegistrationReceivedEmail tự động kèm số hotline và thông tin tiếp nhận. |
 | 82 | **15. Chặn Tài Khoản Chưa Duyệt Khỏi Phân Quyền (/accounts)** | Ẩn hoàn toàn hội viên đang chờ duyệt (pending) khỏi danh sách tài khoản và ma trận phân quyền | <span style="color:green;font-weight:bold">Hoàn thành</span> | 14/10/2026 | Dev Team ViConnect | 14/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Đảm bảo tính bảo mật và kiểm soát truy cập nghiêm ngặt của tổ chức. |
-| **TỔNG** | **18 Chức năng chính** | **73 Chức năng con** | **100% Hoàn thành** | **01/09/2026** | **Dev Team ViConnect** | **14/10/2026** | **QA / Ban Điều Hành CLB CEO 1983** | **Sẵn sàng bàn giao vận hành** |
+| 83 | **10. Khắc Phục Lỗi 500 Tải Logo & Tối Ưu Cài Đặt (/settings)** | Gỡ bỏ card logo trùng lặp ở Cài đặt; lưu local disk đồng thời và fallback SVG 200 OK chống lỗi 500 | <span style="color:green;font-weight:bold">Hoàn thành</span> | 14/10/2026 | Dev Team ViConnect | 14/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Logo hiển thị ổn định, không bao giờ bị vỡ ảnh hay trả về HTTP 500. |
+| 84 | **11. Tái Thiết Kế Modal Lucky Draw Nền Sáng Doanh Nhân** | Đổi modal sang theme nền sáng, hỗ trợ tải ảnh giải thưởng trực tiếp từ máy, bỏ icon ClickUp và thuật ngữ DB | <span style="color:green;font-weight:bold">Hoàn thành</span> | 14/10/2026 | Dev Team ViConnect | 14/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Giao diện thanh lịch, có khung xem trước ảnh và nút gỡ ảnh, thao tác mượt mà. |
+| 85 | **4. Mã QR Cho Khách Mời Ngoài & Dữ Liệu Sự Kiện CRM Động** | Cung cấp mã QR quét Zalo cho khách ngoài đăng ký dự sự kiện, xóa bỏ template text mẫu hardcode và hiện trường Nhà tài trợ | <span style="color:green;font-weight:bold">Hoàn thành</span> | 14/10/2026 | Dev Team ViConnect | 14/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Dữ liệu sự kiện nạp động 100% từ CRM; khối đăng ký khách mời quét mở form tức thì. |
+| **TỔNG** | **18 Chức năng chính** | **76 Chức năng con** | **100% Hoàn thành** | **01/09/2026** | **Dev Team ViConnect** | **14/10/2026** | **QA / Ban Điều Hành CLB CEO 1983** | **Sẵn sàng bàn giao vận hành** |
 
 ### TỔNG KẾT TIẾN ĐỘ THỰC HIỆN:
 - **Tổng số chức năng chính:** 18 nhóm phân hệ nghiệp vụ.
-- **Tổng số chức năng con:** 73 tính năng chi tiết đã lập trình hoàn thiện.
+- **Tổng số chức năng con:** 76 tính năng chi tiết đã lập trình hoàn thiện.
 - **Tỷ lệ hoàn thành:** **100%** (Tất cả tính năng đã qua kiểm thử UAT và xác nhận hoạt động ổn định).
 - **Tách biệt độc lập:** Bảng tiến độ này chỉ chứa các phân hệ của riêng **Hệ Thống Cổng Quản Trị Web CRM CEO 1983**, không bị trộn lẫn.
+
 
 
 

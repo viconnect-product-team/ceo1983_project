@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Calendar,
   MapPin,
@@ -21,6 +21,9 @@ import {
   Dices,
   PartyPopper,
   Sparkles,
+  Upload,
+  Loader2,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -465,9 +468,11 @@ function LuckyDrawSetupModal({
   const [newTargetType, setNewTargetType] = useState<PrizeTargetType>("CUSTOM");
   const [newTargetId, setNewTargetId] = useState<string>("");
   const [newImageUrl, setNewImageUrl] = useState<string>("");
-  const [newIconName, setNewIconName] = useState<string>("Crown");
+  const [newIconName] = useState<string>("Gift");
   const [newQuantity, setNewQuantity] = useState<number>(1);
   const [savingPrize, setSavingPrize] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const prizeFileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch real products & packages from database
   useEffect(() => {
@@ -491,7 +496,45 @@ function LuckyDrawSetupModal({
     };
   }, []);
 
-  // When a product is selected, auto-bind database fields
+  const handlePrizeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const token = localStorage.getItem("auth_token") || localStorage.getItem("token") || "";
+      const res = await fetch("/api/upload/file?folder=events", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNewImageUrl(data.url);
+        toast.success("Tải ảnh giải thưởng thành công!");
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setNewImageUrl(ev.target?.result as string);
+          toast.success("Đã chọn ảnh giải thưởng!");
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setNewImageUrl(ev.target?.result as string);
+        toast.success("Đã chọn ảnh giải thưởng!");
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
+  // When a product is selected, auto-bind fields
   const handleSelectProduct = (prodId: string) => {
     setNewTargetId(prodId);
     const prod = products.find((p) => p.id === prodId);
@@ -514,7 +557,7 @@ function LuckyDrawSetupModal({
     }
   };
 
-  // When a sponsor package is selected, auto-bind database fields
+  // When a sponsor package is selected, auto-bind fields
   const handleSelectPackage = (pkgId: string) => {
     setNewTargetId(pkgId);
     const pkg = sponsorPackages.find((p) => p.id === pkgId);
@@ -533,27 +576,26 @@ function LuckyDrawSetupModal({
   const handleAddPrize = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) {
-      toast.error("Vui lòng nhập tên phần thưởng hoặc chọn sản phẩm từ danh sách");
+      toast.error("Vui lòng nhập tên phần thưởng");
       return;
     }
 
     setSavingPrize(true);
     try {
-      // Direct RESTful API call to persist into PostgreSQL public.event_prizes
       const createdPrize = await fetchNestApi<any>("/sponsors/prizes", {
         method: "POST",
         body: JSON.stringify({
           eventId: formData.id,
           rankName: newRankName.trim() || "Giải Thưởng",
           title: newTitle.trim(),
-          value: newValue.trim() || (newAmount > 0 ? `${newAmount.toLocaleString("vi-VN")} VNĐ` : "Giá trị liên hệ"),
+          value: newValue.trim() || (newAmount > 0 ? `${newAmount.toLocaleString("vi-VN")} VNĐ` : "Liên hệ"),
           amount: newAmount,
           quantity: newQuantity,
           targetType: newTargetType,
           targetId: newTargetId || null,
-          sponsorName: newSponsor.trim() || "Nhà tài trợ CEO 1983",
-          description: newDesc.trim() || "Ưu đãi đặc sắc trao tặng trực tiếp tại sự kiện",
-          iconName: newIconName,
+          sponsorName: newSponsor.trim() || "",
+          description: newDesc.trim() || "",
+          iconName: "Gift",
           imageUrl: newImageUrl || null,
         }),
       });
@@ -566,7 +608,7 @@ function LuckyDrawSetupModal({
         amount: createdPrize?.amount || newAmount,
         sponsor: createdPrize?.sponsorName || newSponsor.trim(),
         description: createdPrize?.description || newDesc.trim(),
-        iconName: newIconName,
+        iconName: "Gift",
         quantity: newQuantity,
         targetType: newTargetType,
         targetId: newTargetId || null,
@@ -586,7 +628,7 @@ function LuckyDrawSetupModal({
       setNewDesc("");
       setNewTargetId("");
       setNewImageUrl("");
-      toast.success("Đã thêm giải thưởng vào Database thành công!");
+      toast.success("Đã thêm giải thưởng thành công!");
     } catch (err: any) {
       toast.error("Không thể lưu giải thưởng: " + (err?.message || "Lỗi kết nối"));
     } finally {
@@ -601,7 +643,7 @@ function LuckyDrawSetupModal({
         ...prev,
         prizes: prev.prizes.filter((p) => p.id !== prizeId),
       }));
-      toast.success("Đã xóa giải thưởng khỏi Database!");
+      toast.success("Đã xóa giải thưởng!");
     } catch {
       toast.error("Lỗi khi xóa giải thưởng");
     }
@@ -609,55 +651,63 @@ function LuckyDrawSetupModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl border border-amber-500/40 bg-[#0F172A] text-white shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 bg-white text-slate-800 shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 p-5 bg-slate-900/90">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50/80">
           <div className="flex items-center gap-3">
-            <ClickUpBadgeIcon name="SlidersHorizontal" variant="yellow" size={20} />
+            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600">
+              <SlidersHorizontal className="w-5 h-5" />
+            </div>
             <div>
-              <h2 className="text-base font-bold text-white">Quản Lý &amp; Cấu Hình Giải Thưởng (Database Dynamic)</h2>
-              <p className="text-xs text-slate-400">Kết nối trực tiếp kho sản phẩm B2B, gói tài trợ và đại biểu tham dự</p>
+              <h2 className="text-base font-bold text-slate-900">Quản Lý &amp; Cấu Hình Giải Thưởng</h2>
+              <p className="text-xs text-slate-500">Thiết lập các hạng mục phần thưởng và quà tặng cho sự kiện</p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer">
+          <button
+            onClick={onClose}
+            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition cursor-pointer"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 px-5 gap-2 text-xs font-bold">
+        <div className="flex border-b border-slate-200 bg-white px-6 gap-2 text-xs font-bold">
           <button
             onClick={() => setActiveTab("prizes")}
             className={`py-3 px-4 border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === "prizes" ? "border-amber-500 text-amber-400" : "border-transparent text-slate-400 hover:text-white"
+              activeTab === "prizes"
+                ? "border-amber-500 text-amber-600 bg-amber-50/40"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <ClickUpIcon name="Trophy" variant={activeTab === "prizes" ? "yellow" : "mono"} size={14} />
-            <span>1. Cơ Cấu Giải Thưởng ({formData.prizes?.length || 0})</span>
+            <span>Cơ Cấu Giải Thưởng ({formData.prizes?.length || 0})</span>
           </button>
           <button
             onClick={() => setActiveTab("info")}
             className={`py-3 px-4 border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === "info" ? "border-amber-500 text-amber-400" : "border-transparent text-slate-400 hover:text-white"
+              activeTab === "info"
+                ? "border-amber-500 text-amber-600 bg-amber-50/40"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <ClickUpIcon name="Calendar" variant={activeTab === "info" ? "yellow" : "mono"} size={14} />
-            <span>2. Thông Tin Sự Kiện &amp; Poster</span>
+            <span>Thông Tin Sự Kiện &amp; Poster</span>
           </button>
           <button
             onClick={() => setActiveTab("candidates")}
             className={`py-3 px-4 border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === "candidates" ? "border-amber-500 text-amber-400" : "border-transparent text-slate-400 hover:text-white"
+              activeTab === "candidates"
+                ? "border-amber-500 text-amber-600 bg-amber-50/40"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <ClickUpIcon name="Ticket" variant={activeTab === "candidates" ? "yellow" : "mono"} size={14} />
-            <span>3. Đại Biểu Bốc Thăm ({formData.candidates?.length || 0})</span>
+            <span>Đại Biểu Bốc Thăm ({formData.candidates?.length || 0})</span>
           </button>
         </div>
 
@@ -665,22 +715,22 @@ function LuckyDrawSetupModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {activeTab === "prizes" && (
             <div className="space-y-6 text-xs">
-              {/* Form thêm giải thưởng kết nối Database Sản phẩm */}
-              <form onSubmit={handleAddPrize} className="p-5 rounded-2xl border border-amber-500/40 bg-slate-900/90 space-y-4 shadow-lg">
+              {/* Form thêm giải thưởng */}
+              <form onSubmit={handleAddPrize} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-4 shadow-xs">
                 <div className="flex items-center justify-between">
-                  <div className="font-bold text-amber-400 flex items-center gap-2 text-sm">
-                    <ClickUpIcon name="Plus" variant="yellow" size={16} />
-                    <span>Thêm Hạng Mục Giải Thưởng Mới (Lưu Trực Tiếp Vào Database)</span>
+                  <div className="font-bold text-slate-900 flex items-center gap-2 text-sm">
+                    <Plus className="w-4 h-4 text-amber-600" />
+                    <span>Thêm Hạng Mục Giải Thưởng Mới</span>
                   </div>
                   {loadingResources && (
-                    <span className="text-[11px] text-amber-300 animate-pulse">Đang tải danh sách sản phẩm...</span>
+                    <span className="text-[11px] text-amber-600 animate-pulse">Đang tải sản phẩm B2B...</span>
                   )}
                 </div>
 
                 {/* Target Type Selector */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Loại Giải Thưởng (Target Type):</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Loại Phần Thưởng:</label>
                     <select
                       value={newTargetType}
                       onChange={(e) => {
@@ -688,76 +738,59 @@ function LuckyDrawSetupModal({
                         setNewTargetType(val);
                         setNewTargetId("");
                       }}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white font-medium outline-none focus:border-amber-500 cursor-pointer"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 font-medium outline-none focus:border-amber-500 cursor-pointer shadow-xs"
                     >
-                      <option value="CUSTOM">🎁 Tự tạo phần thưởng riêng theo sự kiện (Độc lập, không phụ thuộc marketplace)</option>
-                      <option value="VOUCHER">🏷️ Voucher / Ưu đãi đặc quyền sự kiện</option>
-                      <option value="CASH">💰 Hiện Kim / Tiền Mặt Trao Thưởng</option>
-                      <option value="PRODUCT">📦 Sản Phẩm B2B (Tùy chọn)</option>
-                      <option value="SPONSOR_PACKAGE">🤝 Gói Tài Trợ Doanh Nghiệp (Tùy chọn)</option>
+                      <option value="CUSTOM">🎁 Tự tạo phần thưởng riêng theo sự kiện</option>
+                      <option value="VOUCHER">🏷️ Voucher / Ưu đãi sự kiện</option>
+                      <option value="CASH">💰 Hiện kim / Tiền mặt</option>
+                      <option value="PRODUCT">📦 Chọn từ kho sản phẩm B2B</option>
+                      <option value="SPONSOR_PACKAGE">🤝 Chọn từ gói tài trợ sự kiện</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Hạng Giải Thưởng:</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Hạng Giải Thưởng:</label>
                     <input
                       type="text"
                       value={newRankName}
                       onChange={(e) => setNewRankName(e.target.value)}
                       placeholder="VD: Giải Đặc Biệt, Giải Nhất, Giải Nhì..."
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-amber-500"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-amber-500 shadow-xs"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Biểu Tượng ClickUp (Icon):</label>
-                    <select
-                      value={newIconName}
-                      onChange={(e) => setNewIconName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-amber-500 cursor-pointer"
-                    >
-                      {CLICKUP_POPULAR_ICONS.map((ic) => (
-                        <option key={ic.name} value={ic.name}>
-                          {ic.label}
-                        </option>
-                      ))}
-                    </select>
                   </div>
                 </div>
 
-                {/* Dynamic Product/Package Dropdown Selector */}
+                {/* Optional Product Dropdown */}
                 {newTargetType === "PRODUCT" && (
-                  <div className="p-3.5 rounded-xl border border-teal-500/30 bg-teal-950/20 space-y-1.5">
-                    <label className="block font-bold text-teal-300">
-                      Chọn Sản Phẩm Từ Kho B2B Của Hiệp Hội (Database Call API):
+                  <div className="p-3 rounded-xl border border-teal-200 bg-teal-50/50 space-y-1">
+                    <label className="block font-semibold text-teal-900">
+                      Chọn Sản Phẩm Từ Kho B2B:
                     </label>
                     <select
                       value={newTargetId}
                       onChange={(e) => handleSelectProduct(e.target.value)}
-                      className="w-full rounded-xl border border-teal-500/40 bg-slate-950 px-3 py-2 text-white outline-none focus:border-teal-400 cursor-pointer font-medium"
+                      className="w-full rounded-xl border border-teal-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-teal-500 cursor-pointer font-medium shadow-xs"
                     >
-                      <option value="">-- Chọn sản phẩm có sẵn trong Database để tự động điền thông tin --</option>
+                      <option value="">-- Chọn sản phẩm có sẵn để tự động điền --</option>
                       {products.map((prod) => (
                         <option key={prod.id} value={prod.id}>
                           {prod.name || prod.title} — {prod.company || "Hội viên"} ({prod.price ? `${Number(prod.price).toLocaleString("vi-VN")} VNĐ` : "Liên hệ"})
                         </option>
                       ))}
                     </select>
-                    <p className="text-[11px] text-teal-400/80">
-                      Khi chọn sản phẩm, hệ thống tự động điền Tên, Giá quy đổi, Tên công ty tài trợ và Hình ảnh sản phẩm.
-                    </p>
                   </div>
                 )}
 
+                {/* Optional Sponsor Package Dropdown */}
                 {newTargetType === "SPONSOR_PACKAGE" && (
-                  <div className="p-3.5 rounded-xl border border-purple-500/30 bg-purple-950/20 space-y-1.5">
-                    <label className="block font-bold text-purple-300">
-                      Chọn Gói Tài Trợ Doanh Nghiệp (Database):
+                  <div className="p-3 rounded-xl border border-purple-200 bg-purple-50/50 space-y-1">
+                    <label className="block font-semibold text-purple-900">
+                      Chọn Gói Tài Trợ Doanh Nghiệp:
                     </label>
                     <select
                       value={newTargetId}
                       onChange={(e) => handleSelectPackage(e.target.value)}
-                      className="w-full rounded-xl border border-purple-500/40 bg-slate-950 px-3 py-2 text-white outline-none focus:border-purple-400 cursor-pointer font-medium"
+                      className="w-full rounded-xl border border-purple-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-purple-500 cursor-pointer font-medium shadow-xs"
                     >
                       <option value="">-- Chọn gói tài trợ có sẵn --</option>
                       {sponsorPackages.map((pkg) => (
@@ -772,129 +805,180 @@ function LuckyDrawSetupModal({
                 {/* Form fields for Prize Info */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block font-semibold text-slate-300 mb-1">Tên Phần Thưởng / Quà Tặng:</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Tên Phần Thưởng / Quà Tặng:</label>
                     <input
                       type="text"
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
-                      placeholder="VD: Gói giải pháp chuyển đổi số hoá / Xe điện VinFast VF3"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-amber-500 font-semibold"
+                      placeholder="VD: Xe điện VinFast VF3 / Bộ giải pháp phần mềm"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-amber-500 font-semibold shadow-xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Trị Giá Quy Đổi (VNĐ):</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Trị Giá Quy Đổi (VNĐ):</label>
                     <input
                       type="text"
                       value={newValue}
                       onChange={(e) => setNewValue(e.target.value)}
                       placeholder="VD: 50.000.000 VNĐ"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-amber-400 font-bold outline-none focus:border-amber-500"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-amber-600 font-bold outline-none focus:border-amber-500 shadow-xs"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Đơn Vị Tài Trợ:</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Đơn Vị Tài Trợ:</label>
                     <input
                       type="text"
                       value={newSponsor}
                       onChange={(e) => setNewSponsor(e.target.value)}
-                      placeholder="VD: Công ty CP Công nghệ ABC"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-amber-500"
+                      placeholder="VD: Công ty CP ABC"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-amber-500 shadow-xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Số Lượng Giải:</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Số Lượng Giải:</label>
                     <input
                       type="number"
                       min={1}
                       value={newQuantity}
                       onChange={(e) => setNewQuantity(Number(e.target.value) || 1)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-amber-500"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-amber-500 shadow-xs"
                     />
                   </div>
 
+                  {/* Direct File Upload Component */}
                   <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Hình Ảnh Quà Tặng (URL):</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Hình Ảnh Quà Tặng:</label>
                     <input
-                      type="text"
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-amber-500"
+                      ref={prizeFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePrizeFileChange}
+                      className="hidden"
                     />
+                    <div className="flex items-center gap-2">
+                      {newImageUrl ? (
+                        <div className="relative shrink-0">
+                          <img
+                            src={newImageUrl}
+                            alt="Ảnh giải thưởng"
+                            className="w-10 h-10 rounded-xl object-cover border border-amber-300 bg-white shadow-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setNewImageUrl("")}
+                            className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5 hover:bg-rose-600 transition shadow cursor-pointer"
+                            title="Xóa ảnh"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl border border-dashed border-slate-300 flex items-center justify-center bg-slate-100 text-slate-400 shrink-0">
+                          <ImageIcon className="w-5 h-5" />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        disabled={uploadingImage}
+                        onClick={() => prizeFileInputRef.current?.click()}
+                        className="flex-1 py-2 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 text-xs"
+                      >
+                        {uploadingImage ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                            <span>Đang tải...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{newImageUrl ? "Đổi ảnh" : "Tải ảnh lên"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Mô Tả Chi Tiết Quyền Lợi &amp; Quà Tặng:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Mô Tả Quyền Lợi &amp; Quà Tặng:</label>
                   <input
                     type="text"
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     placeholder="Mô tả đặc quyền, thời hạn sử dụng hoặc điều kiện trao giải..."
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white outline-none focus:border-amber-500"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
 
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-end pt-1">
                   <button
                     type="submit"
                     disabled={savingPrize}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold transition cursor-pointer flex items-center gap-2 shadow-md disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold transition cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>{savingPrize ? "Đang Lưu Vào Database..." : "Thêm Giải Thưởng Vào Database"}</span>
+                    <span>{savingPrize ? "Đang lưu..." : "Thêm Giải Thưởng"}</span>
                   </button>
                 </div>
               </form>
 
-              {/* Danh sách giải thưởng hiện tại từ Database */}
+              {/* Danh sách giải thưởng hiện tại */}
               <div className="space-y-3">
-                <div className="font-bold text-slate-300 text-sm flex items-center justify-between">
-                  <span>Danh Sách Giải Thưởng Đã Thiết Lập ({formData.prizes?.length || 0}):</span>
-                  <span className="text-[11px] text-emerald-400 font-normal">Được tải trực tiếp từ Database public.event_prizes</span>
+                <div className="font-bold text-slate-800 text-sm flex items-center justify-between">
+                  <span>Danh Sách Giải Thưởng Đã Thiết Lập ({formData.prizes?.length || 0})</span>
                 </div>
 
                 <div className="space-y-2">
-                  {formData.prizes?.map((p, idx) => (
-                    <div
-                      key={p.id || idx}
-                      className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-800 bg-slate-900/80 hover:border-slate-700 transition"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {p.imageUrl ? (
-                          <img src={p.imageUrl} alt={p.title} className="w-12 h-12 rounded-xl object-cover border border-slate-700 shrink-0 bg-slate-950" />
-                        ) : (
-                          <ClickUpBadgeIcon name={p.iconName || "Gift"} variant="yellow" size={16} containerClassName="p-2 rounded-xl" />
-                        )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-black text-amber-400 text-xs">{p.rankName}:</span>
-                            <span className="font-bold text-white text-xs truncate">{p.title}</span>
-                            <span className="text-emerald-400 font-mono text-[11px] font-bold">({p.value})</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-medium">
-                              SL: {p.quantity || 1}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                            {p.description || "Quà tặng sự kiện"} · <span className="text-slate-300">Tài trợ: {p.sponsor || "CEO 1983"}</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleRemovePrize(p.id)}
-                        className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition cursor-pointer shrink-0"
-                        title="Xóa giải thưởng này khỏi database"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  {formData.prizes?.length === 0 ? (
+                    <div className="p-6 text-center rounded-2xl border border-dashed border-slate-200 text-slate-400">
+                      Chưa có giải thưởng nào được tạo. Hãy điền thông tin ở trên để thêm giải thưởng.
                     </div>
-                  ))}
+                  ) : (
+                    formData.prizes?.map((p, idx) => (
+                      <div
+                        key={p.id || idx}
+                        className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition shadow-xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {p.imageUrl ? (
+                            <img src={p.imageUrl} alt={p.title} className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-50" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0 font-bold">
+                              🎁
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-amber-700 text-xs bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                                {p.rankName}
+                              </span>
+                              <span className="font-bold text-slate-900 text-xs truncate">{p.title}</span>
+                              <span className="text-emerald-700 font-mono text-[11px] font-bold">({p.value})</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
+                                SL: {p.quantity || 1}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {p.description || "Quà tặng sự kiện"} {p.sponsor && <span>· Tài trợ: <strong className="text-slate-700">{p.sponsor}</strong></span>}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleRemovePrize(p.id)}
+                          className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer shrink-0"
+                          title="Xóa giải thưởng"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -903,75 +987,75 @@ function LuckyDrawSetupModal({
           {activeTab === "info" && (
             <div className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Tên Sự Kiện / Tiêu Đề Banner:</label>
+                <label className="block font-semibold text-slate-700 mb-1">Tên Sự Kiện / Tiêu Đề Banner:</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-amber-500"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-amber-500 shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Khẩu Hiệu / Mô Tả Sự Kiện:</label>
+                <label className="block font-semibold text-slate-700 mb-1">Khẩu Hiệu / Mô Tả Sự Kiện:</label>
                 <textarea
                   rows={2}
                   value={formData.subtitle}
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-amber-500"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-amber-500 shadow-xs"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Ngày Tổ Chức:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Ngày Tổ Chức:</label>
                   <input
                     type="text"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-amber-500"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Thời Gian:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Thời Gian:</label>
                   <input
                     type="text"
                     value={formData.time}
                     onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-amber-500"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Địa Điểm Tổ Chức:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Địa Điểm Tổ Chức:</label>
                   <input
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-amber-500"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Tổng Giá Trị Giải Thưởng:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Tổng Giá Trị Giải Thưởng:</label>
                   <input
                     type="text"
                     value={formData.totalPrizeValue}
                     onChange={(e) => setFormData({ ...formData, totalPrizeValue: e.target.value })}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-amber-400 font-bold outline-none focus:border-amber-500"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-amber-600 font-bold outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Ảnh Nền / Poster Sự Kiện (URL):</label>
+                <label className="block font-semibold text-slate-700 mb-1">Ảnh Nền / Poster Sự Kiện (URL):</label>
                 <input
                   type="text"
                   value={formData.coverUrl || ""}
                   onChange={(e) => setFormData({ ...formData, coverUrl: e.target.value })}
                   placeholder="https://..."
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-amber-500"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-amber-500 shadow-xs"
                 />
               </div>
             </div>
@@ -979,35 +1063,39 @@ function LuckyDrawSetupModal({
 
           {activeTab === "candidates" && (
             <div className="space-y-4 text-xs">
-              <div className="flex items-center justify-between text-slate-300 font-bold">
+              <div className="flex items-center justify-between text-slate-800 font-bold">
                 <span>Danh Sách Mã Bốc Thăm &amp; Đại Biểu Đã Check-in ({formData.candidates?.length || 0}):</span>
               </div>
 
-              <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900 divide-y divide-slate-800">
-                {formData.candidates?.map((cand, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/40 px-2 py-0.5 rounded-md">
-                        {cand.code}
-                      </span>
-                      <span className="font-bold text-white">{cand.name}</span>
-                      <span className="text-slate-400">· {cand.company}</span>
+              <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
+                {formData.candidates?.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400">Chưa có đại biểu nào check-in</div>
+                ) : (
+                  formData.candidates?.map((cand, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                          {cand.code}
+                        </span>
+                        <span className="font-bold text-slate-900">{cand.name}</span>
+                        <span className="text-slate-500">· {cand.company}</span>
+                      </div>
+                      {cand.seat && (
+                        <span className="text-[11px] text-slate-500">{cand.seat}</span>
+                      )}
                     </div>
-                    {cand.seat && (
-                      <span className="text-[11px] text-slate-400">{cand.seat}</span>
-                    )}
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800 p-4 bg-slate-900">
+        <div className="flex items-center justify-between border-t border-slate-200 p-4 bg-slate-50">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 text-xs font-semibold cursor-pointer transition"
           >
             Đóng
           </button>
@@ -1016,7 +1104,7 @@ function LuckyDrawSetupModal({
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md cursor-pointer transition"
           >
             <Save className="w-4 h-4" />
-            <span>Đồng Bộ Cấu Hình Vào Database</span>
+            <span>Lưu Cấu Hình</span>
           </button>
         </div>
       </div>

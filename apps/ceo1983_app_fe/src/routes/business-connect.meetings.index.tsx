@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useT } from "@/lib/i18n";
 import { WorkspaceSummaryCards } from "@/components/business-connect/meeting/workspace/WorkspaceSummaryCards";
 import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
+import { ViewMeetingModal } from "@/components/meetings/ViewMeetingModal";
+import { EditMeetingModal } from "@/components/meetings/EditMeetingModal";
 import {
   Calendar,
   Clock,
@@ -21,6 +23,8 @@ import {
   List,
   Handshake,
   ExternalLink,
+  Eye,
+  Edit,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -61,6 +65,8 @@ export interface ConnectionMeetingItem {
 function MeetingsWorkspacePage() {
   const t = useT();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [viewTarget, setViewTarget] = useState<ConnectionMeetingItem | null>(null);
+  const [editTarget, setEditTarget] = useState<ConnectionMeetingItem | null>(null);
   const [localMeetings, setLocalMeetings] = useState<ConnectionMeetingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"grid" | "table">("grid");
@@ -410,15 +416,34 @@ function MeetingsWorkspacePage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteMeeting(item.id, item.title)}
-                    className="rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2.5 py-1.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-100 transition flex items-center gap-1 cursor-pointer"
-                    title="Xóa cuộc gặp này"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Xóa</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setViewTarget(item)}
+                      className="rounded-lg border border-border bg-secondary/70 hover:bg-secondary px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition flex items-center gap-1 cursor-pointer"
+                      title="Xem chi tiết cuộc gặp"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Xem</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditTarget(item)}
+                      className="rounded-lg border border-border bg-secondary/70 hover:bg-secondary px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition flex items-center gap-1 cursor-pointer"
+                      title="Chỉnh sửa cuộc gặp"
+                    >
+                      <Edit className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Sửa</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteMeeting(item.id, item.title)}
+                      className="rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/40 px-2 py-1.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-100 transition flex items-center gap-1 cursor-pointer"
+                      title="Xóa cuộc gặp này"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
 
                   <div className="flex items-center gap-1.5">
                     {item.venueType === "online" && item.onlineUrl && (
@@ -526,6 +551,20 @@ function MeetingsWorkspacePage() {
                     </td>
                     <td className="px-4 py-3 text-right text-xs border-b border-border whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setViewTarget(item)}
+                          className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 rounded-md transition cursor-pointer"
+                          title="Xem chi tiết cuộc gặp"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setEditTarget(item)}
+                          className="p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition cursor-pointer"
+                          title="Chỉnh sửa cuộc gặp"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
                         {item.venueType === "online" && item.onlineUrl && (
                           <a
                             href={item.onlineUrl.startsWith("http") ? item.onlineUrl : `https://${item.onlineUrl}`}
@@ -543,7 +582,7 @@ function MeetingsWorkspacePage() {
                         )}
                         <button
                           onClick={() => handleDeleteMeeting(item.id, item.title)}
-                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition"
+                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition cursor-pointer"
                           title="Xóa cuộc gặp"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -573,6 +612,25 @@ function MeetingsWorkspacePage() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onSuccess={() => loadMeetings()}
+      />
+
+      {/* Modal Xem Chi Tiết Cuộc Gặp 1-on-1 */}
+      <ViewMeetingModal
+        isOpen={Boolean(viewTarget)}
+        onClose={() => setViewTarget(null)}
+        onEdit={(meeting) => {
+          setViewTarget(null);
+          setEditTarget(meeting);
+        }}
+        meeting={viewTarget}
+      />
+
+      {/* Modal Chỉnh Sửa Cuộc Gặp 1-on-1 */}
+      <EditMeetingModal
+        isOpen={Boolean(editTarget)}
+        onClose={() => setEditTarget(null)}
+        onSuccess={() => loadMeetings()}
+        meeting={editTarget}
       />
     </div>
   );

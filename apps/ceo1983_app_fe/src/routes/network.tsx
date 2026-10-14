@@ -73,6 +73,10 @@ import {
   sendRequest,
   subscribe,
   togglePinMessage,
+  listGroupChats,
+  getGroupChat,
+  createGroupChat,
+  type GroupChat,
   type ChatAttachment,
   type ChatMessage,
   type ConnectionStatus,
@@ -627,9 +631,12 @@ function ChatPanel({
     }
   }, [initialDraft]);
 
-  const peer = peerId ? MEMBERS.find((m) => m.id === peerId) : undefined;
+  const isGroup = Boolean(peerId?.startsWith("group-"));
+  const group = isGroup && peerId ? getGroupChat(peerId) : undefined;
+  const peer = !isGroup && peerId ? MEMBERS.find((m) => m.id === peerId) : undefined;
   const thread = peerId ? getThread(peerId) : [];
   const pinnedMessages = thread.filter((m) => m.pinned);
+  const [showMembersList, setShowMembersList] = useState(false);
 
   // Mark incoming messages as read whenever the open thread changes.
   useEffect(() => {
@@ -679,7 +686,7 @@ function ChatPanel({
     setAttachments((prev) => prev.filter((a) => (a.id || a.name) !== idOrName));
   };
 
-  if (!peer) {
+  if (!peer && !group) {
     return (
       <Card className="flex h-[560px] items-center justify-center p-6 text-sm text-muted-foreground">
         {t("net.empty.thread")}
@@ -689,7 +696,9 @@ function ChatPanel({
 
   const submit = () => {
     if (!text.trim() && attachments.length === 0) return;
-    sendMessage(peer.id, text, attachments.length > 0 ? attachments : undefined);
+    const targetId = isGroup && group ? group.id : peer?.id;
+    if (!targetId) return;
+    sendMessage(targetId, text, attachments.length > 0 ? attachments : undefined);
     setText("");
     setAttachments([]);
     toast.success("Đã gửi tin nhắn trao đổi");
@@ -698,26 +707,92 @@ function ChatPanel({
   return (
     <Card className="flex h-[580px] flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border p-4 bg-card">
-        <Avatar member={peer} size={42} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-bold text-foreground">{peer.name}</span>
-            <span className="rounded-md bg-[#003B95]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-1.5 py-0.5 text-[10px]">
-              {getMemberCommittee(peer)}
-            </span>
+      {isGroup && group ? (
+        <div className="flex flex-col border-b border-border bg-card">
+          <div className="flex items-center gap-3 p-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-black shadow-xs">
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-sm font-bold text-foreground">{group.name}</span>
+                <span className="rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 font-extrabold px-1.5 py-0.5 text-[10px] border border-amber-500/30">
+                  Nhóm ({group.memberIds.length} thành viên)
+                </span>
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {group.description || "Nhóm trao đổi công việc nội bộ CEO 1983"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMembersList(!showMembersList)}
+              className="rounded-lg border border-border bg-secondary/60 px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-secondary transition shrink-0 flex items-center gap-1 cursor-pointer"
+            >
+              <Users className="h-3.5 w-3.5 text-primary" />
+              <span>{showMembersList ? "Đóng DS" : `Thành viên (${group.memberIds.length})`}</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground lg:hidden"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <div className="text-[11px] text-muted-foreground truncate">
-            {getCleanMemberSubtitle(peer)}
-          </div>
+
+          {/* Members list expandable drawer */}
+          {showMembersList && (
+            <div className="border-t border-border bg-secondary/40 p-3 max-h-40 overflow-y-auto space-y-1.5">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Thành viên nhóm ({group.memberIds.length}):</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {group.memberIds.map((mid) => {
+                  const m = MEMBERS.find((x) => x.id === mid);
+                  if (!m) return null;
+                  return (
+                    <div
+                      key={mid}
+                      className="flex items-center gap-2 rounded-lg border border-border bg-card p-1.5 shadow-xs"
+                    >
+                      <Avatar member={m} size={28} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-semibold text-foreground">
+                          {m.name} {mid === CURRENT_USER_ID ? "(Bạn)" : ""}
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {getMemberCommittee(m)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
-        <button
-          onClick={onClose}
-          className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground lg:hidden"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+      ) : peer ? (
+        <div className="flex items-center gap-3 border-b border-border p-4 bg-card">
+          <Avatar member={peer} size={42} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-bold text-foreground">{peer.name}</span>
+              <span className="rounded-md bg-[#003B95]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-1.5 py-0.5 text-[10px]">
+                {getMemberCommittee(peer)}
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              {getCleanMemberSubtitle(peer)}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground lg:hidden"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
 
       {/* Pinned Messages Banner */}
       {pinnedMessages.length > 0 && (
@@ -794,12 +869,25 @@ function ChatPanel({
         )}
         {thread.map((m) => {
           const mine = m.fromId === CURRENT_USER_ID;
+          const sender = isGroup && !mine ? MEMBERS.find((x) => x.id === m.fromId) : null;
           return (
             <div
               key={m.id}
               id={`msg-${m.id}`}
-              className={`group flex items-start gap-1.5 ${mine ? "justify-end" : "justify-start"}`}
+              className={`group flex items-start gap-2 ${mine ? "justify-end" : "justify-start"}`}
             >
+              {isGroup && !mine && (
+                <div className="shrink-0 pt-0.5">
+                  {sender ? (
+                    <Avatar member={sender} size={28} />
+                  ) : (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-[11px] font-bold">
+                      {m.fromId.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {mine && (
                 <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100 pt-1">
                   <button
@@ -829,6 +917,17 @@ function ChatPanel({
                 } ${m.pinned ? "ring-2 ring-amber-400/80" : ""}`}
                 style={mine ? { background: "var(--gradient-primary)" } : undefined}
               >
+                {/* Group message sender identification */}
+                {isGroup && !mine && (
+                  <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground border-b border-border/40 pb-0.5">
+                    <span className="font-bold text-foreground">{sender?.name || "Hội viên"}</span>
+                    {sender && (
+                      <span className="rounded bg-primary/10 px-1 py-0.2 text-[9px] font-medium text-primary">
+                        {getMemberCommittee(sender)}
+                      </span>
+                    )}
+                  </div>
+                )}
                 {/* Pinned pill */}
                 {m.pinned && (
                   <div className="mb-1 flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-300">
@@ -1133,6 +1232,230 @@ function NewChatDialog({
   );
 }
 
+function NewGroupChatDialog({
+  open,
+  onOpenChange,
+  onCreateGroup,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreateGroup: (group: GroupChat) => void;
+}) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [q, setQ] = useState("");
+  const [comm, setComm] = useState<string>("Tất cả các ban");
+
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return MEMBERS.filter((m) => {
+      if (m.id === CURRENT_USER_ID) return false;
+      const matchesComm = comm === "Tất cả các ban" || getMemberCommittee(m) === comm;
+      if (!matchesComm) return false;
+      if (!query) return true;
+      return (
+        m.name.toLowerCase().includes(query) ||
+        (m.contact ?? "").toLowerCase().includes(query) ||
+        m.code.toLowerCase().includes(query)
+      );
+    });
+  }, [q, comm]);
+
+  const toggleMember = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const handleCreate = () => {
+    if (!name.trim()) {
+      toast.error("Vui lòng nhập tên nhóm trao đổi");
+      return;
+    }
+    if (selectedIds.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 thành viên tham gia nhóm");
+      return;
+    }
+    const newGroup = createGroupChat(name, selectedIds, description);
+    toast.success(`Đã tạo nhóm "${newGroup.name}" thành công!`);
+    onCreateGroup(newGroup);
+    onOpenChange(false);
+    setName("");
+    setDescription("");
+    setSelectedIds([]);
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="max-w-xl max-h-[90vh] flex flex-col p-4">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-amber-500" />
+            <span>Tạo Nhóm Nhắn Tin Trao Đổi Mới</span>
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Tạo nhóm thảo luận công việc giữa nhiều thành viên thuộc Ban Điều Hành và các Ban Chuyên Môn CEO 1983.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="my-2 space-y-3">
+          {/* Group Info Inputs */}
+          <div className="space-y-2">
+            <div>
+              <label className="text-xs font-bold text-foreground">
+                Tên nhóm trao đổi <span className="text-destructive">*</span>
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ví dụ: Nhóm Dự án Xúc tiến Thương mại & B2B..."
+                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring font-medium"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-foreground">
+                Mô tả / Mục tiêu công tác (tùy chọn)
+              </label>
+              <input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Mục đích thảo luận, phân công nhiệm vụ..."
+                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          {/* Selected members pills summary */}
+          {selectedIds.length > 0 && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-200">
+                <span>Đã chọn ({selectedIds.length} thành viên):</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds([])}
+                  className="text-[11px] text-destructive hover:underline cursor-pointer"
+                >
+                  Bỏ chọn tất cả
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                {selectedIds.map((id) => {
+                  const m = MEMBERS.find((x) => x.id === id);
+                  if (!m) return null;
+                  return (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1 rounded-full bg-card border border-border px-2 py-0.5 text-[11px] font-semibold text-foreground shadow-xs"
+                    >
+                      <span>{m.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleMember(id)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Member Search & Committee filter */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Tìm nhân sự theo tên, mã..."
+                className="flex-1 bg-transparent text-xs outline-none"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-1">
+              {CRM_COMMITTEES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setComm(c)}
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition ${
+                    comm === c
+                      ? "bg-primary text-primary-foreground font-semibold"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Member Checkbox list */}
+        <div className="flex-1 overflow-y-auto max-h-[240px] space-y-1.5 divide-y divide-border/40">
+          {filtered.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              Không tìm thấy nhân sự hoặc hội viên nào
+            </div>
+          ) : (
+            filtered.map((m) => {
+              const isChecked = selectedIds.includes(m.id);
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => toggleMember(m.id)}
+                  className={`flex cursor-pointer items-center justify-between p-2 rounded-lg transition ${
+                    isChecked ? "bg-amber-500/15 border border-amber-500/30" : "hover:bg-secondary/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {}}
+                      className="h-4 w-4 rounded border-border text-primary cursor-pointer"
+                    />
+                    <Avatar member={m} size={32} />
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold text-foreground">{m.name}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        {getMemberCommittee(m)} · {m.code}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                      isChecked ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-muted-foreground"
+                    }`}
+                  >
+                    {isChecked ? "Đã chọn" : "Chọn"}
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <AlertDialogFooter className="mt-3 flex items-center justify-between sm:justify-between w-full">
+          <AlertDialogCancel onClick={() => onOpenChange(false)}>Hủy</AlertDialogCancel>
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={!name.trim() || selectedIds.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-amber-500/20 cursor-pointer"
+          >
+            <Users className="h-4 w-4" />
+            <span>Tạo Nhóm Trao Đổi ({selectedIds.length})</span>
+          </button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function NetworkPage() {
   useNetworkTick();
   const t = useT();
@@ -1171,6 +1494,8 @@ function NetworkPage() {
   const [query, setQuery] = useState("");
   const [selectedCommittee, setSelectedCommittee] = useState<string>("Tất cả các ban");
   const [showNewChat, setShowNewChat] = useState(false);
+  const [showNewGroupChat, setShowNewGroupChat] = useState(false);
+  const [chatSubFilter, setChatSubFilter] = useState<"all" | "group" | "direct">("all");
   const [activePeer, setActivePeer] = useState<string | null>(null);
   const [activeProduct, setActiveProduct] = useState<string | undefined>(undefined);
   const [draft, setDraft] = useState<string | undefined>(undefined);
@@ -1206,7 +1531,7 @@ function NetworkPage() {
     !q ||
     m.name.toLowerCase().includes(q) ||
     (m.contact ?? "").toLowerCase().includes(q) ||
-    m.code.toLowerCase().includes(q) ||
+    m.code.toLowerCase().includes(query) ||
     t(m.industry).toLowerCase().includes(q) ||
     t(m.region).toLowerCase().includes(q);
 
@@ -1264,7 +1589,7 @@ function NetworkPage() {
     for (const m of chatPeers) {
       map.set(m.id, { member: m, last: lastMessageWith(m.id) });
     }
-    if (activePeer && !map.has(activePeer)) {
+    if (activePeer && !map.has(activePeer) && !activePeer.startsWith("group-")) {
       const mem = MEMBERS.find((m) => m.id === activePeer);
       if (mem) map.set(mem.id, { member: mem, last: lastMessageWith(mem.id) });
     }
@@ -1272,6 +1597,17 @@ function NetworkPage() {
       (b.last?.at ?? "").localeCompare(a.last?.at ?? ""),
     );
   }, [chatPeers, activePeer]);
+
+  const groupList = listGroupChats();
+  const groupItems = useMemo(() => {
+    return groupList
+      .map((g) => ({
+        group: g,
+        last: lastMessageWith(g.id),
+        unread: activePeer === g.id ? 0 : unreadCountWith(g.id),
+      }))
+      .sort((a, b) => (b.last?.at ?? b.group.createdAt).localeCompare(a.last?.at ?? a.group.createdAt));
+  }, [groupList, activePeer]);
 
   const openChat = (id: string) => {
     setTab("messages");
@@ -1291,7 +1627,7 @@ function NetworkPage() {
       label: "Nhân sự & Các Ban",
       count: MEMBERS.length,
     },
-    { key: "messages", label: "Hộp thư trao đổi", count: messageList.length },
+    { key: "messages", label: "Hộp thư trao đổi", count: messageList.length + groupList.length },
   ];
 
   return (
@@ -1326,7 +1662,7 @@ function NetworkPage() {
         />
         <StatCard
           label="Cuộc trao đổi"
-          value={fmt.num(messageList.length)}
+          value={fmt.num(messageList.length + groupList.length)}
           tone="info"
           icon={<MessageSquare className="h-4 w-4" />}
         />
@@ -1500,68 +1836,172 @@ function NetworkPage() {
       {tab === "messages" && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
           <Card className="flex h-[580px] flex-col overflow-hidden">
-            <div className="flex items-center justify-between border-b border-border p-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {t("net.tab.messages")} ({messageList.length})
+            <div className="flex flex-col border-b border-border bg-card p-3 gap-2">
+              <div className="flex items-center justify-between gap-1">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {t("net.tab.messages")} ({messageList.length + groupList.length})
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setShowNewGroupChat(true)}
+                    className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 border border-amber-500/30 px-2 py-1 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition cursor-pointer"
+                    title="Tạo nhóm trao đổi công việc"
+                  >
+                    <Users className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                    <span>Tạo nhóm</span>
+                  </button>
+                  <button
+                    onClick={() => setShowNewChat(true)}
+                    className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Hội thoại mới</span>
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => setShowNewChat(true)}
-                className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition"
-              >
-                <Plus className="h-3 w-3" />
-                <span>Hội thoại mới</span>
-              </button>
+
+              {/* Sub-filter chips: Tất cả / Nhóm / Cá nhân */}
+              <div className="flex items-center gap-1 bg-secondary/50 p-0.5 rounded-lg text-[11px] font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setChatSubFilter("all")}
+                  className={`flex-1 py-1 rounded-md text-center transition cursor-pointer ${
+                    chatSubFilter === "all"
+                      ? "bg-card text-foreground font-bold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Tất cả ({messageList.length + groupList.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatSubFilter("group")}
+                  className={`flex-1 py-1 rounded-md text-center transition flex items-center justify-center gap-1 cursor-pointer ${
+                    chatSubFilter === "group"
+                      ? "bg-card text-amber-600 dark:text-amber-400 font-bold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Users className="h-3 w-3" />
+                  <span>Nhóm ({groupList.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatSubFilter("direct")}
+                  className={`flex-1 py-1 rounded-md text-center transition cursor-pointer ${
+                    chatSubFilter === "direct"
+                      ? "bg-card text-foreground font-bold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Cá nhân ({messageList.length})
+                </button>
+              </div>
             </div>
+
             <div className="flex-1 overflow-y-auto">
-              {messageList.length === 0 && (
+              {messageList.length === 0 && groupList.length === 0 && (
                 <div className="p-6 text-center text-sm text-muted-foreground">
-                  Chưa có hội thoại nào. Nhấn "Hội thoại mới" hoặc chọn nhân sự trong các Ban để trao đổi công việc.
+                  Chưa có hội thoại nào. Nhấn "Hội thoại mới" hoặc "Tạo nhóm" để trao đổi công việc.
                 </div>
               )}
-              {messageList.map(({ member, last }) => {
-                const active = activePeer === member.id;
-                const unread = active ? 0 : unreadCountWith(member.id);
-                return (
-                  <button
-                    key={member.id}
-                    onClick={() => selectPeer(member.id)}
-                    className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition ${
-                      active ? "bg-secondary" : "hover:bg-secondary/60"
-                    }`}
-                  >
-                    <Avatar member={member} size={40} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="truncate text-sm font-semibold text-foreground">
-                          {member.name}
-                        </div>
-                        {last && (
-                          <div className="shrink-0 text-[10px] text-muted-foreground">
-                            {new Date(last.at).toLocaleDateString(fmt.locale)}
+
+              {/* Groups Section */}
+              {(chatSubFilter === "all" || chatSubFilter === "group") &&
+                groupItems.map(({ group, last, unread }) => {
+                  const active = activePeer === group.id;
+                  return (
+                    <button
+                      key={group.id}
+                      onClick={() => selectPeer(group.id)}
+                      className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition ${
+                        active ? "bg-amber-500/15 border-l-4 border-l-amber-500" : "hover:bg-secondary/60"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-black shadow-xs">
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="truncate text-sm font-bold text-foreground">
+                            {group.name}
                           </div>
-                        )}
-                      </div>
-                      <div className="text-[10px] font-medium text-primary/80 truncate">
-                        {getMemberCommittee(member)}
-                      </div>
-                      <div className="flex items-center justify-between gap-2 mt-0.5">
-                        <div
-                          className={`truncate text-xs ${unread > 0 ? "font-semibold text-foreground" : "text-muted-foreground"}`}
-                        >
-                          {last
-                            ? (last.fromId === CURRENT_USER_ID ? "→ " : "") + last.text
-                            : "Bắt đầu trao đổi công việc..."}
+                          {last && (
+                            <div className="shrink-0 text-[10px] text-muted-foreground">
+                              {new Date(last.at).toLocaleDateString(fmt.locale)}
+                            </div>
+                          )}
                         </div>
-                        {unread > 0 && (
-                          <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                            {unread}
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 font-extrabold px-1.5 py-0.2 text-[9px] border border-amber-500/30">
+                            Nhóm · {group.memberIds.length} TV
                           </span>
-                        )}
+                        </div>
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <div
+                            className={`truncate text-xs ${unread > 0 ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                          >
+                            {last
+                              ? (last.fromId === CURRENT_USER_ID ? "→ " : "") + last.text
+                              : "Bắt đầu trao đổi nhóm..."}
+                          </div>
+                          {unread > 0 && (
+                            <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-slate-950">
+                              {unread}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
+
+              {/* Direct Peer Conversations */}
+              {(chatSubFilter === "all" || chatSubFilter === "direct") &&
+                messageList.map(({ member, last }) => {
+                  const active = activePeer === member.id;
+                  const unread = active ? 0 : unreadCountWith(member.id);
+                  return (
+                    <button
+                      key={member.id}
+                      onClick={() => selectPeer(member.id)}
+                      className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition ${
+                        active ? "bg-secondary" : "hover:bg-secondary/60"
+                      }`}
+                    >
+                      <Avatar member={member} size={40} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="truncate text-sm font-semibold text-foreground">
+                            {member.name}
+                          </div>
+                          {last && (
+                            <div className="shrink-0 text-[10px] text-muted-foreground">
+                              {new Date(last.at).toLocaleDateString(fmt.locale)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-[10px] font-medium text-primary/80 truncate">
+                          {getMemberCommittee(member)}
+                        </div>
+                        <div className="flex items-center justify-between gap-2 mt-0.5">
+                          <div
+                            className={`truncate text-xs ${unread > 0 ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                          >
+                            {last
+                              ? (last.fromId === CURRENT_USER_ID ? "→ " : "") + last.text
+                              : "Bắt đầu trao đổi công việc..."}
+                          </div>
+                          {unread > 0 && (
+                            <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                              {unread}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
             </div>
           </Card>
           <ChatPanel
@@ -1586,6 +2026,16 @@ function NetworkPage() {
         open={showNewChat}
         onOpenChange={setShowNewChat}
         onSelectMember={openChat}
+      />
+
+      {/* New group chat modal */}
+      <NewGroupChatDialog
+        open={showNewGroupChat}
+        onOpenChange={setShowNewGroupChat}
+        onCreateGroup={(g) => {
+          setTab("messages");
+          setActivePeer(g.id);
+        }}
       />
     </AppShell>
   );

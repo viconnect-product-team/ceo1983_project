@@ -249,23 +249,23 @@ export class UploadService {
     let saved = false;
     let url: string | null = null;
 
+    // 1. Luôn ghi tệp ra ổ đĩa cục bộ ngay lập tức để phục vụ tức thì (0ms latency, không lỗi 500 do timeout MinIO)
+    try {
+      url = await this.saveToLocalDisk('association-logos', baseFilename, file.buffer);
+      saved = true;
+    } catch (diskErr: any) {
+      console.warn('Local disk write notice in saveAssociationLogo:', diskErr?.message);
+    }
+
+    // 2. Đồng thời tải lên MinIO để dự phòng
     try {
       const minioUrl = await this.minioService.uploadFile(safeFilename, file.buffer, file.mimetype);
-      if (minioUrl) {
+      if (minioUrl && !url) {
         url = minioUrl;
         saved = true;
       }
     } catch (minioErr: any) {
-      console.warn('MinIO upload unreachable/failed for association logo, fallback to disk storage:', minioErr?.message);
-    }
-
-    if (!saved) {
-      try {
-        url = await this.saveToLocalDisk('association-logos', baseFilename, file.buffer);
-        saved = true;
-      } catch (diskErr: any) {
-        console.warn('Local disk write notice in saveAssociationLogo:', diskErr?.message);
-      }
+      console.warn('MinIO upload notice for association logo:', minioErr?.message);
     }
 
     if (!saved || !url) {

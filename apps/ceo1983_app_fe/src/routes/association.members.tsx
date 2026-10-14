@@ -233,6 +233,15 @@ function MembersScreen() {
     }
   });
   const [loadingMeetings, setLoadingMeetings] = useState(false);
+  const [meetingSubTab, setMeetingSubTab] = useState<"confirmed" | "pending" | "all">("confirmed");
+
+  const pendingInvitesCount = useMemo(() => {
+    return meetingsList.filter((m) => m.status === "pending" || m.status === "draft").length;
+  }, [meetingsList]);
+
+  const confirmedMeetingsCount = useMemo(() => {
+    return meetingsList.filter((m) => m.status === "confirmed" || m.status === "accepted").length;
+  }, [meetingsList]);
 
   const fetchMeetings = async () => {
     try {
@@ -608,9 +617,16 @@ function MembersScreen() {
   }, [discoverMembers, q]);
 
   const filteredMeetings = useMemo(() => {
+    let list = meetingsList;
+    if (meetingSubTab === "confirmed") {
+      list = list.filter((m) => m.status === "confirmed" || m.status === "accepted");
+    } else if (meetingSubTab === "pending") {
+      list = list.filter((m) => m.status === "pending" || m.status === "draft");
+    }
+
     const normTerm = normalizeSearchText(q);
-    if (!normTerm) return meetingsList;
-    return meetingsList.filter((m) => {
+    if (!normTerm) return list;
+    return list.filter((m) => {
       const searchable = normalizeSearchText(
         [
           m.title,
@@ -628,7 +644,7 @@ function MembersScreen() {
       );
       return searchable.includes(normTerm);
     });
-  }, [meetingsList, q]);
+  }, [meetingsList, meetingSubTab, q]);
 
   type SentRequestItem = {
     id: string;
@@ -1082,7 +1098,12 @@ function MembersScreen() {
           }`}
         >
           <Handshake className={`h-3.5 w-3.5 ${tab === "meetings" ? "text-slate-950" : "text-amber-500"}`} />
-          <span>Lịch hẹn ({meetingsList.length})</span>
+          <span>Lịch hẹn ({confirmedMeetingsCount})</span>
+          {pendingInvitesCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white leading-none">
+              {pendingInvitesCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -1532,6 +1553,61 @@ function MembersScreen() {
         {/* ── TAB 4: LỊCH HẸN GẶP GỠ 1-ON-1 ── */}
         {tab === "meetings" && !loading && (
           <div className="space-y-3">
+            {/* Phân loại lịch hẹn: Đã chốt (chỉ hiện khi đối tác đồng ý) vs Chờ duyệt vs Tất cả */}
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/5">
+              <button
+                type="button"
+                onClick={() => setMeetingSubTab("confirmed")}
+                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                  meetingSubTab === "confirmed"
+                    ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                <span>Đã chốt ({confirmedMeetingsCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingSubTab("pending")}
+                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                  meetingSubTab === "pending"
+                    ? "bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                <Clock className="h-3 w-3" />
+                <span>Chờ duyệt ({pendingInvitesCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingSubTab("all")}
+                className={`py-1.5 px-3 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                  meetingSubTab === "all"
+                    ? "bg-white dark:bg-slate-800 text-foreground shadow-xs"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                Tất cả ({meetingsList.length})
+              </button>
+            </div>
+
+            {/* Banner thông báo nếu có lời mời đang chờ phản hồi */}
+            {meetingSubTab === "confirmed" && pendingInvitesCount > 0 && (
+              <div
+                onClick={() => setMeetingSubTab("pending")}
+                className="flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs cursor-pointer hover:bg-amber-500/15 transition"
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-600 shrink-0 animate-pulse" />
+                  <span>
+                    Bạn có <strong>{pendingInvitesCount}</strong> lời mời gặp gỡ cần duyệt.
+                  </span>
+                </div>
+                <span className="font-bold underline text-[11px]">Xem ngay &rarr;</span>
+              </div>
+            )}
+
             {loadingMeetings ? (
               <div className="py-12 text-center text-[13px] text-slate-400">
                 Đang tải lịch hẹn...
@@ -1540,8 +1616,21 @@ function MembersScreen() {
               <div className="py-12 text-center text-slate-400 space-y-2">
                 <Handshake className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
                 <p className="text-[13px] font-medium text-slate-500">
-                  Bạn chưa có lịch hẹn gặp 1-on-1 nào.
+                  {meetingSubTab === "confirmed"
+                    ? "Chưa có lịch hẹn chính thức nào. Lịch hẹn chỉ xuất hiện khi đối tác đồng ý."
+                    : meetingSubTab === "pending"
+                      ? "Không có lời mời gặp gỡ nào đang chờ duyệt."
+                      : "Bạn chưa có lịch hẹn gặp 1-on-1 nào."}
                 </p>
+                {meetingSubTab === "confirmed" && pendingInvitesCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setMeetingSubTab("pending")}
+                    className="mt-2 text-xs font-bold text-amber-600 dark:text-amber-400 underline cursor-pointer"
+                  >
+                    Xem {pendingInvitesCount} lời mời đang chờ duyệt &rarr;
+                  </button>
+                )}
               </div>
             ) : (
               filteredMeetings.map((meet) => {

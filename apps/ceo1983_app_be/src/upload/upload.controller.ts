@@ -244,6 +244,7 @@ export class UploadController {
       const tmpCeoUploads = path.join(os.tmpdir(), 'ceo1983_uploads');
       const candidates = [
         path.join(tmpCeoUploads, filePathStr),
+        path.join(tmpCeoUploads, 'association-logos', filenameOnly),
         path.join(tmpCeoUploads, 'avatars', filenameOnly),
         path.join(tmpCeoUploads, 'logos', filenameOnly),
         path.join(tmpCeoUploads, 'documents', filenameOnly),
@@ -251,6 +252,7 @@ export class UploadController {
         path.join(tmpCeoUploads, 'products', filenameOnly),
         path.join(tmpCeoUploads, 'events', filenameOnly),
         path.join('/app', 'uploads', filePathStr),
+        path.join('/app', 'uploads', 'association-logos', filenameOnly),
         path.join('/app', 'uploads', 'avatars', filenameOnly),
         path.join('/app', 'uploads', 'logos', filenameOnly),
         path.join('/app', 'uploads', 'documents', filenameOnly),
@@ -258,10 +260,12 @@ export class UploadController {
         path.join('/app', 'uploads', 'products', filenameOnly),
         path.join('/app', 'uploads', 'events', filenameOnly),
         path.join(process.cwd(), 'uploads', filePathStr),
+        path.join(process.cwd(), 'uploads', 'association-logos', filenameOnly),
         path.join(process.cwd(), 'uploads', 'avatars', filenameOnly),
         path.join(process.cwd(), 'uploads', 'logos', filenameOnly),
         path.join(process.cwd(), 'uploads', 'documents', filenameOnly),
         path.join('/tmp', 'uploads', filePathStr),
+        path.join('/tmp', 'uploads', 'association-logos', filenameOnly),
         path.join('/tmp', 'uploads', 'avatars', filenameOnly),
         path.join('/tmp', 'uploads', 'logos', filenameOnly),
         path.join('/tmp', 'uploads', 'documents', filenameOnly),
@@ -277,10 +281,11 @@ export class UploadController {
         } catch {}
       }
 
-      // 2. Thử tìm trên MinIO theo các đường dẫn tiềm năng
+      // 2. Thử tìm trên MinIO với timeout nhanh (800ms) để không làm đơ kết nối
       const minioKeys = [
         filePathStr,
         filenameOnly,
+        `association-logos/${filenameOnly}`,
         `avatars/${filenameOnly}`,
         `logos/${filenameOnly}`,
         `documents/${filenameOnly}`,
@@ -288,35 +293,23 @@ export class UploadController {
         `products/${filenameOnly}`,
         `events/${filenameOnly}`,
       ];
-      if (!filePathStr.startsWith('avatars/')) {
-        minioKeys.push(`avatars/${filePathStr}`);
-      }
-      if (!filePathStr.startsWith('logos/')) {
-        minioKeys.push(`logos/${filePathStr}`);
-      }
-      if (!filePathStr.startsWith('documents/')) {
-        minioKeys.push(`documents/${filePathStr}`);
-      }
-      if (!filePathStr.startsWith('opportunities/')) {
-        minioKeys.push(`opportunities/${filePathStr}`);
-      }
-      if (!filePathStr.startsWith('products/')) {
-        minioKeys.push(`products/${filePathStr}`);
-      }
-      if (!filePathStr.startsWith('events/')) {
-        minioKeys.push(`events/${filePathStr}`);
-      }
 
       for (const key of minioKeys) {
         try {
-          const stream = await this.uploadService.getFileStream(key);
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('MinIO stream timeout')), 800),
+          );
+          const stream: any = await Promise.race([
+            this.uploadService.getFileStream(key),
+            timeoutPromise,
+          ]);
           if (stream) {
             return pipeSafe(stream);
           }
         } catch {}
       }
 
-      // Fallback an toàn: Nếu là tệp hình ảnh, thay vì trả 404 làm vỡ giao diện web và báo lỗi đỏ console,
+      // Fallback an toàn: Nếu là tệp hình ảnh, thay vì trả 404/500 làm vỡ giao diện web và báo lỗi đỏ console,
       // trả về SVG dự phòng chuẩn thương hiệu CEO 1983 với mã 200 OK
       if (contentType.startsWith('image/')) {
         const isAvatar = filePathStr.includes('avatar');

@@ -37,7 +37,7 @@ const TIER_META: Record<
     name: "Kim Cương (Platinum)",
     icon: "💎",
     bg: "bg-sky-500/10",
-    text: "text-sky-700 dark:text-sky-300",
+    text: "text-black font-bold",
     border: "border-sky-500/30",
     badgeBg: "bg-sky-500/15",
     cardBorder: "border-sky-500/40",
@@ -47,7 +47,7 @@ const TIER_META: Record<
     name: "Vàng (Gold)",
     icon: "🥇",
     bg: "bg-amber-500/10",
-    text: "text-amber-700 dark:text-amber-400",
+    text: "text-black font-bold",
     border: "border-amber-500/30",
     badgeBg: "bg-amber-500/15",
     cardBorder: "border-amber-500/40",
@@ -57,7 +57,7 @@ const TIER_META: Record<
     name: "Bạc (Silver)",
     icon: "🥈",
     bg: "bg-zinc-500/10",
-    text: "text-zinc-700 dark:text-zinc-300",
+    text: "text-black font-bold",
     border: "border-zinc-500/30",
     badgeBg: "bg-zinc-500/15",
     cardBorder: "border-zinc-500/40",
@@ -67,7 +67,7 @@ const TIER_META: Record<
     name: "Đồng (Bronze)",
     icon: "🥉",
     bg: "bg-orange-500/10",
-    text: "text-orange-700 dark:text-orange-400",
+    text: "text-black font-bold",
     border: "border-orange-500/30",
     badgeBg: "bg-orange-500/15",
     cardBorder: "border-orange-500/40",
@@ -79,7 +79,7 @@ const DEFAULT_TIER = {
   name: "Đồng hành",
   icon: "⭐",
   bg: "bg-primary/10",
-  text: "text-primary",
+  text: "text-black font-bold",
   border: "border-primary/30",
   badgeBg: "bg-primary/15",
   cardBorder: "border-primary/40",
@@ -644,7 +644,7 @@ export function EventSponsorPackageSelector({
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground truncate">{s.name}</span>
                         <span
-                          className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold border ${meta.bg} ${meta.text} ${meta.border}`}
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold border ${meta.bg} !text-black text-black ${meta.border}`} style={{ color: "#000000" }}
                         >
                           {meta.icon} {meta.name}
                         </span>

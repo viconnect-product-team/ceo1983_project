@@ -202,150 +202,80 @@ export function Ceo1983ChatAssistant() {
 
     async function loadContext() {
       try {
-        // 1. Member profile
-        const memberRes = await fetchNestApi<any>("/members/me").catch(() => null);
-        let customProf: any = null;
-        try {
-          const raw = localStorage.getItem("vba_custom_profile");
-          if (raw) customProf = JSON.parse(raw);
-        } catch {}
+        // Ngữ cảnh THẬT của tài khoản từ backend (không dùng dữ liệu mẫu)
+        const [ctxRes, quotaRes] = await Promise.all([
+          fetchNestApi<any>("/ai/live-context").catch(() => null),
+          fetchNestApi<any>("/ai/quota").catch(() => null),
+        ]);
+        const ctx: any = ctxRes?.data && ctxRes?.data?.user ? ctxRes.data : ctxRes;
+        const fmtVnd = (n: number) => `${new Intl.NumberFormat("vi-VN").format(Number(n) || 0)} đ`;
 
-        const profileData = memberRes || {
-          name: customProf?.full_name || customProf?.name || user?.name || "Trần Tuấn Anh",
-          company: customProf?.company_name || customProf?.company || (user as any)?.company || "Tập Đoàn Công Nghệ VIONE",
-          code: customProf?.code || (user as any)?.member_code || "CEO-1983-001",
-          role: customProf?.role || (user as any)?.role || "Quản trị / Ban Điều Hành",
-          title: customProf?.title || "Chủ tịch HĐQT",
-          phone: customProf?.phone || (user as any)?.phone || "0988 198 300",
-          email: customProf?.email || user?.email || "admin@ceo1983.vn",
-        };
+        const profileData = ctx?.user
+          ? {
+              name: ctx.user.name,
+              company: ctx.user.company,
+              code: ctx.user.code,
+              role: ctx.roleLabel || "Hội viên",
+              title: ctx.user.title,
+              email: ctx.user.email,
+            }
+          : {
+              name: user?.name || "Anh/Chị",
+              company: (user as any)?.company || "",
+              code: (user as any)?.member_code || "",
+              role: (user as any)?.role || "Hội viên",
+              title: "",
+              email: user?.email || "",
+            };
 
-        // 2. Events & my registered events
-        const eventsRes = await fetchNestApi<any[]>("/events/my-events").catch(() => []);
-        let rawEvents = Array.isArray(eventsRes) && eventsRes.length > 0 ? eventsRes : [];
-        if (rawEvents.length === 0) {
-          try {
-            const evLocal = localStorage.getItem("vba_events_db");
-            if (evLocal) rawEvents = JSON.parse(evLocal);
-          } catch {}
-        }
-        if (rawEvents.length === 0) {
-          rawEvents = [
-            {
-              id: "ev-01",
-              title: "Diễn đàn Doanh nhân Tiên Phong 2026: Bứt phá tăng trưởng & Đổi mới số",
-              date: "25/09/2026",
-              time: "08:30 - 17:30",
-              place: "Khách sạn JW Marriott Hanoi - Grand Ballroom",
+        const registered = Array.isArray(ctx?.myEvents)
+          ? ctx.myEvents.map((e: any) => ({
+              id: e.eventId,
+              title: e.name,
+              date: e.date,
+              time: e.time,
+              place: e.location,
               registered: true,
-              type: "Diễn đàn Thượng đỉnh",
-            },
-            {
-              id: "ev-02",
-              title: "Dạ tiệc Kết nối B2B Luxury & Gala Kỷ Niệm 10 Năm CLB CEO 1983",
-              date: "15/10/2026",
-              time: "18:00 - 21:30",
-              place: "Khách sạn Daewoo Hanoi - Grand Hall",
-              registered: true,
-              type: "Gala & Networking",
-            },
-            {
-              id: "ev-03",
-              title: "Hội thảo Thực chiến: Tối ưu Chi phí Thuế & Pháp lý M&A Doanh nghiệp",
-              date: "12/11/2026",
-              time: "14:00 - 17:00",
-              place: "Trụ sở CLB CEO 1983 - Tầng 8 Tòa nhà HanoiBA",
-              registered: false,
-              type: "Workshop Chuyên đề",
-            },
-          ];
-        }
-
-        const registered = rawEvents.filter((e) => e.registered || e.isRegistered);
-
-        // 3. Opportunities & Interested opportunities
-        const oppsRes = await fetchNestApi<any[]>("/opportunities/my-opportunities").catch(() => []);
-        let rawOpps = Array.isArray(oppsRes) && oppsRes.length > 0 ? oppsRes : [];
-        if (rawOpps.length === 0) {
-          rawOpps = [
-            {
-              id: "opp-01",
-              title: "Tìm kiếm nhà cung cấp vật liệu xây dựng & nội thất cao cấp",
-              company: "Tập Đoàn Đầu Tư & Xây Dựng Thăng Long",
-              tag: "Chào mua",
-              value: "5 - 10 Tỷ VNĐ",
-              isInterested: true,
-              saved: true,
-            },
-            {
-              id: "opp-02",
-              title: "Cung cấp giải pháp số hóa quản trị ERP & Hóa đơn điện tử chiết khấu 30%",
-              company: "Tập Đoàn Công Nghệ VIONE",
-              tag: "Chào bán",
-              value: "50 - 200 Triệu VNĐ",
-              isInterested: true,
-              saved: true,
-            },
-            {
-              id: "opp-03",
-              title: "Hợp tác mở rộng chuỗi phân phối F&B tại thị trường miền Bắc",
-              company: "Minh Quân F&B Logistics",
-              tag: "Tìm đối tác",
-              value: "2 - 5 Tỷ VNĐ",
-              isInterested: false,
-              saved: false,
-            },
-          ];
-        }
-
-        const interestedOpps = rawOpps.filter((o) => o.isInterested || o.saved || o.status === "interested");
-
-        // 4. Directory & Connected Members
-        let connectedList: any[] = [];
-        try {
-          const connRes = await fetchNestApi<any[]>("/members/directory?connectedOnly=true").catch(() => []);
-          if (Array.isArray(connRes) && connRes.length > 0) {
-            connectedList = connRes;
-          } else {
-            connectedList = [
-              { name: "Lê Văn Tuấn", company: "Tập Đoàn Đầu Tư Thăng Long", title: "Chủ tịch", role: "Chủ tịch CLB" },
-              { name: "Nguyễn Hải Yến", company: "Hải Yến Media & Event", title: "Tổng Giám Đốc", role: "Trưởng Ban Truyền Thông" },
-              { name: "Trần Minh Quân", company: "Minh Quân Logistics", title: "Chủ tịch HĐQT", role: "Trưởng Ban Xúc Tiến" },
-              { name: "Hoàng Bích Thủy", company: "Bích Thủy Finance & Tax", title: "Giám Đốc", role: "Trưởng Ban Tài Chính" },
-            ];
-          }
-        } catch {}
-
-        // 5. B2B Meetings
-        const b2bMeetingsList = [
-          {
-            id: "m-01",
-            partnerName: "Trần Minh Quân",
-            partnerCompany: "Minh Quân Logistics",
-            topic: "Cafe kết nối: Bàn về hợp tác logistics vận chuyển hàng hóa chuỗi đại lý",
-            time: "09:30 - Thứ Sáu tuần này",
-            location: "The Lounge - Khách sạn Melia Hanoi",
-            status: "Đã xác nhận",
-          },
-        ];
-
-        // 6. Invoices & Membership Dues
-        const invoicesList = [
-          {
-            id: "INV-2026-001",
-            title: "Hội phí niên liễm CLB CEO 1983 năm 2026",
-            amount: "15,000,000 VNĐ",
-            dueDate: "31/12/2026",
-            status: "Đang mở / Chưa hoàn tất",
-            bank: "MB Bank - Ngân hàng TMCP Quân Đội",
-            accountNumber: "1983888899",
-            accountName: "CLB DOANH NHAN CEO 1983",
-            note: `${profileData.code || "CEO-1983-001"} - Nien liem 2026`,
-          },
-        ];
-
-        // 7. User AI Quota
-        const quotaRes = await fetchNestApi<any>("/ai/quota").catch(() => null);
+            }))
+          : [];
+        const upcoming = Array.isArray(ctx?.topEvents)
+          ? ctx.topEvents.map((e: any) => ({
+              id: e.id,
+              title: e.name,
+              date: e.date,
+              place: e.location,
+              registered: registered.some((r: any) => r.id === e.id),
+            }))
+          : [];
+        const mapOpp = (o: any) => ({
+          id: o.id,
+          title: o.title,
+          company: "",
+          tag: o.status || "Cơ hội B2B",
+          value: o.deadline ? `Hạn ${o.deadline}` : "Thỏa thuận",
+        });
+        const meetings = Array.isArray(ctx?.myMeetings)
+          ? ctx.myMeetings.map((m: any) => ({
+              id: m.id,
+              topic: m.title || "Cuộc hẹn B2B",
+              partnerName: "",
+              partnerCompany: "",
+              time: m.startAt ? new Date(m.startAt).toLocaleString("vi-VN") : "Chưa chốt giờ",
+              location: "",
+              status: m.status,
+              upcoming: !!m.upcoming,
+            }))
+          : [];
+        const invoices = Array.isArray(ctx?.dues?.unpaidInvoices)
+          ? ctx.dues.unpaidInvoices.map((i: any) => ({
+              id: i.invoiceNo,
+              title: `Hội phí${i.year ? ` năm ${i.year}` : ""}${i.invoiceNo ? ` (${i.invoiceNo})` : ""}`,
+              amount: fmtVnd(i.amount),
+              dueDate: i.dueDate || "",
+              status: i.status,
+              note: `${profileData.code || ""} HP${i.year || ""}`.trim(),
+            }))
+          : [];
 
         if (active) {
           if (quotaRes?.data) {
@@ -353,15 +283,17 @@ export function Ceo1983ChatAssistant() {
           }
           setLiveContext({
             memberProfile: profileData,
-            upcomingEvents: rawEvents,
+            upcomingEvents: upcoming,
             registeredEvents: registered,
-            opportunities: rawOpps,
-            interestedOpportunities: interestedOpps,
-            connectedCount: connectedList.length || 18,
-            connectedMembers: connectedList,
-            totalMembersCount: 120,
-            b2bMeetings: b2bMeetingsList,
-            invoices: invoicesList,
+            opportunities: Array.isArray(ctx?.myOpportunities) ? ctx.myOpportunities.map(mapOpp) : [],
+            interestedOpportunities: Array.isArray(ctx?.interestedOpportunities)
+              ? ctx.interestedOpportunities.map(mapOpp)
+              : [],
+            connectedCount: Number(ctx?.connections?.friendsCount || 0),
+            connectedMembers: [],
+            totalMembersCount: 0,
+            b2bMeetings: meetings,
+            invoices,
           });
         }
       } catch (err) {
@@ -424,6 +356,31 @@ export function Ceo1983ChatAssistant() {
     const q = promptText.toLowerCase().trim();
     const p = liveContext.memberProfile;
     const name = p?.name || user?.name || "Anh/Chị";
+    const norm = q
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[?!.,]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // 0. Câu hỏi về chính trợ lý ("bạn làm được gì", "bạn là ai") / chào hỏi
+    if (
+      /\b(ban|em|tro ly|ai|bot)\b.*\b(lam (duoc )?gi|giup (duoc )?gi|ho tro (duoc )?gi|co the lam gi|biet lam gi|chuc nang gi|tinh nang gi)\b/.test(norm) ||
+      /\b(ban|em) (la ai|la gi)\b/.test(norm) ||
+      /^(xin chao|chao|chao ban|chao em|hello|hi|alo)( ban| em)?$/.test(norm)
+    ) {
+      const unpaid = liveContext.invoices.length;
+      return {
+        text:
+          `Dạ em là **Trợ lý AI CLB Doanh Nhân CEO 1983**, nắm dữ liệu tài khoản của Anh/Chị **${name}**. Em có thể:\n\n` +
+          `1. 📊 Tra cứu tài khoản: sự kiện đã đăng ký, hội phí/hóa đơn, bạn bè kết nối, lịch hẹn B2B, cơ hội quan tâm, sản phẩm.\n` +
+          `2. 🔎 Tìm hội viên, sản phẩm, cơ hội, sự kiện, văn bản, thông tin các Ban.\n` +
+          `3. 🧭 Hướng dẫn & mở nhanh mọi tính năng trong app.\n\n` +
+          `**Tình hình hiện tại:** ${liveContext.registeredEvents.length} sự kiện đã đăng ký • ${liveContext.connectedCount} bạn bè • ${liveContext.b2bMeetings.filter((m: any) => m.upcoming).length} lịch hẹn sắp tới • ${unpaid} hóa đơn chưa thanh toán.\n\nAnh/Chị cần em hỗ trợ gì ạ?`,
+        suggestions: ["Sự kiện tôi đã đăng ký?", "Tôi có bao nhiêu bạn bè?", "Tôi có hóa đơn nào chưa thanh toán?"],
+      };
+    }
 
     // 1. Events registered / interested
     if (
@@ -450,7 +407,7 @@ export function Ceo1983ChatAssistant() {
           };
         } else {
           return {
-            text: `Dạ hiện tại hệ thống ghi nhận Anh/Chị **chưa bấm đăng ký** sự kiện nào sắp tới.\n\nCLB CEO 1983 hiện có **${liveContext.upcomingEvents.length} sự kiện lớn** đang mở đăng ký vé:\n- 🌟 **Diễn đàn Doanh nhân Tiên Phong 2026** (25/09/2026 tại JW Marriott Hanoi)\n- 🥂 **Dạ tiệc Kết nối B2B & Gala Kỷ Niệm 10 Năm** (15/10/2026 tại Daewoo Hanoi)\n\nAnh/Chị bấm vào nút bên dưới để chọn sự kiện và nhận vé ngay nhé ạ!`,
+            text: `Dạ hiện tại hệ thống ghi nhận Anh/Chị **chưa đăng ký** sự kiện nào.${liveContext.upcomingEvents.length ? `\n\nSự kiện nổi bật của CLB:\n${liveContext.upcomingEvents.slice(0, 3).map((e: any) => `- **${e.title}** (${e.date || "sắp diễn ra"}${e.place ? ` tại ${e.place}` : ""})`).join("\n")}` : ""}\n\nAnh/Chị bấm nút bên dưới để xem và đăng ký nhé ạ!`,
             actionLink: { label: "Xem & Đăng Ký Sự Kiện", route: "/association/events" },
           };
         }
@@ -504,19 +461,13 @@ export function Ceo1983ChatAssistant() {
     if (
       q.includes("bạn bè") ||
       q.includes("kết nối") ||
-      q.includes("bạn") ||
+      q.includes("kết bạn") ||
       q.includes("danh bạ") ||
       q.includes("đồng nghiệp")
     ) {
-      const connCount = liveContext.connectedCount || 18;
-      const total = liveContext.totalMembersCount || 120;
-      const sampleNames = (liveContext.connectedMembers || [])
-        .slice(0, 4)
-        .map((m) => `• **${m.name}** (${m.company} - *${m.role || m.title}*)`)
-        .join("\n");
-
+      const connCount = liveContext.connectedCount;
       return {
-        text: `Dạ báo cáo Anh/Chị **${name}**:\n\n👥 Hiện tại Anh/Chị đang có **${connCount} bạn bè & đối tác đã kết nối** trong danh bạ CLB Doanh Nhân CEO 1983 (trên tổng số **${total}+ hội viên chính thức**).\n\nMột số kết nối tiêu biểu gần đây của Anh/Chị:\n${sampleNames}\n\nAnh/Chị có thể mở **Danh bạ Hội viên** để gửi danh thiếp số điện tử và mở rộng thêm mạng lưới kết nối nhé!`,
+        text: `Dạ báo cáo Anh/Chị **${name}**: hiện Anh/Chị có **${connCount} bạn bè / đối tác đã kết nối** trong CLB Doanh Nhân CEO 1983.${connCount === 0 ? "\n\nAnh/Chị có thể mở Danh bạ Hội viên để gửi lời mời kết nối nhé!" : ""}`,
         actionLink: { label: "Xem Danh Bạ Hội Viên", route: "/association/members" },
         suggestions: ["Tôi có cuộc gặp kết nối nào không?", "Tôi có hóa đơn nào phải thanh toán?", "Cơ cấu các Ban chuyên môn"],
       };
@@ -536,12 +487,12 @@ export function Ceo1983ChatAssistant() {
         const listStr = meetings
           .map(
             (m, idx) =>
-              `${idx + 1}. 🤝 **${m.topic}**\n   - 👤 Đối tác: **${m.partnerName}** (${m.partnerCompany})\n   - ⏰ Thời gian: **${m.time}**\n   - 📍 Địa điểm: **${m.location}**\n   - 🟢 Trạng thái: **${m.status}**`
+              `${idx + 1}. 🤝 **${m.topic}**\n   - ⏰ Thời gian: **${m.time}**\n   - 🟢 Trạng thái: **${m.status || "đã lên lịch"}**${m.upcoming ? " (sắp tới)" : ""}`
           )
           .join("\n\n");
 
         return {
-          text: `Dạ báo cáo Anh/Chị **${name}**, lịch trình kết nối ghi nhận Anh/Chị có **${meetings.length} cuộc gặp B2B** sắp tới:\n\n${listStr}\n\nAnh/Chị nhớ chuẩn bị danh thiếp số CEO 1983 để chia sẻ thông tin doanh nghiệp trong buổi gặp nhé!`,
+          text: `Dạ báo cáo Anh/Chị **${name}**, Anh/Chị có **${meetings.length} cuộc hẹn B2B** (sắp tới: ${meetings.filter((m: any) => m.upcoming).length}):\n\n${listStr}`,
           actionLink: { label: "Mở Danh Thiếp & Lịch Hẹn", route: "/association/business-cards" },
           suggestions: ["Sự kiện tôi đã đăng ký", "Tôi có bao nhiêu bạn bè?", "Hóa đơn phải thanh toán?"],
         };
@@ -564,16 +515,26 @@ export function Ceo1983ChatAssistant() {
       q.includes("fee") ||
       q.includes("đóng tiền")
     ) {
-      const inv = liveContext.invoices[0];
+      const invs = liveContext.invoices;
+      if (invs.length === 0) {
+        return {
+          text: `Dạ thưa Anh/Chị **${name}**, tài khoản hiện **không có hóa đơn / hội phí nào chưa thanh toán** ✅.`,
+          actionLink: { label: "Xem Hội Phí", route: "/association/profile" },
+          suggestions: ["Sự kiện tôi đã đăng ký", "Tôi có bao nhiêu bạn bè?"],
+        };
+      }
+      const listStr = invs
+        .map((i: any, idx: number) => `${idx + 1}. 💳 **${i.title}** — **${i.amount}**${i.dueDate ? ` (hạn ${i.dueDate})` : ""}`)
+        .join("\n");
       return {
-        text: `Dạ thưa Anh/Chị **${name}**, thông tin hội phí và công nợ tài khoản của Anh/Chị tại CLB CEO 1983 như sau:\n\n💳 **${inv?.title || "Hội phí niên liễm CLB CEO 1983 năm 2026"}**\n- 💰 Số tiền: **${inv?.amount || "15,000,000 VNĐ"}**\n- ⏳ Hạn hoàn thành: **${inv?.dueDate || "31/12/2026"}**\n- 📊 Trạng thái: **Đang mở tiếp nhận / Tích hợp VietQR tự động**\n\n🏦 **Thông tin tài khoản thụ hưởng của Hiệp Hội**:\n- Ngân hàng: **${inv?.bank || "MB Bank - Ngân hàng TMCP Quân Đội"}**\n- Số tài khoản: **${inv?.accountNumber || "1983888899"}**\n- Chủ tài khoản: **${inv?.accountName || "CLB DOANH NHAN CEO 1983"}**\n- Cú pháp chuyển khoản: **${inv?.note || `${p?.code} - Nien liem 2026`}**\n\nAnh/Chị có thể bấm vào nút bên dưới để xem biên lai và thanh toán quét mã VietQR tự động hạch toán ạ!`,
+        text: `Dạ thưa Anh/Chị **${name}**, tài khoản có **${invs.length} hóa đơn chưa thanh toán**:\n\n${listStr}\n\nAnh/Chị bấm nút bên dưới để thanh toán qua VietQR ạ!`,
         actionLink: { label: "Xem & Thanh Toán Hội Phí", route: "/association/renew/pay" },
         suggestions: ["Sự kiện tôi đã đăng ký", "Tôi có bao nhiêu bạn bè?", "Cơ hội tôi quan tâm"],
       };
     }
 
     // 6. Committee structure & Roles
-    if (q.includes("ban") || q.includes("cơ cấu") || q.includes("chuyên môn") || q.includes("tổ chức")) {
+    if (/(^|\s)ban(\s|$)/.test(norm.replace(/ban be/g, "")) && /(co cau|chuyen mon|to chuc|cac ban|ban nao)/.test(norm)) {
       return {
         text: `Dạ cơ cấu tổ chức CLB Doanh Nhân CEO 1983 trực thuộc HanoiBA gồm **6 Ban chuyên môn cốt lõi**:\n\n1. 🏛️ **Ban Điều Hành**: Lãnh đạo chung, định hướng chiến lược và đại diện CLB.\n2. 👥 **Ban Thành Viên**: Phát triển mạng lưới, thẩm định hồ sơ kết nạp và chăm sóc hội viên.\n3. 💼 **Ban Xúc Tiến Thương Mại**: Điều phối giao thương B2B, tổ chức phiên kết nối cung cầu.\n4. 📢 **Ban Truyền Thông**: Quảng bá hình ảnh, phụ trách Caravan, Gala và bản tin số.\n5. 💰 **Ban Tài Chính**: Quản trị ngân sách, quỹ CLB và thu hội phí niên liễm.\n6. ❤️ **Ban Thiện Nguyện**: Tổ chức các chương trình an sinh xã hội, vì cộng đồng vùng cao.\n\nMọi hoạt động và phê duyệt đều được phân quyền chặt chẽ trên hệ thống số hóa của CLB ạ!`,
         actionLink: { label: "Xem Phân Quyền & Ban Chuyên Môn", route: "/association/permissions" },
@@ -685,11 +646,12 @@ HÓA ĐƠN & HỘI PHÍ NIÊN LIỄM CỦA ANH/CHỊ:
 ${invoicesText}
 
 HƯỚNG DẪN TRẢ LỜI:
+- "bạn"/"em" trong câu hỏi là gọi TRỢ LÝ, KHÔNG phải "bạn bè". "Bạn làm được gì" = giới thiệu năng lực trợ lý. Chỉ trả lời đúng điều được hỏi, không liệt kê dữ liệu không liên quan, không bịa số liệu.
 - Khi người dùng hỏi "tôi đăng ký sự kiện nào không": Trả lời đúng các sự kiện đã đăng ký kèm thời gian, địa điểm, nhắc mã vé QR.
 - Khi người dùng hỏi "tôi có quan tâm cơ hội nào không": Trả lời đúng các cơ hội đã quan tâm/lưu.
 - Khi người dùng hỏi "tôi có bao nhiêu bạn bè": Trả lời đúng số lượng bạn bè (${liveContext.connectedCount} người).
 - Khi người dùng hỏi "tôi có cuộc gặp kết nối nào không": Báo đúng cuộc hẹn Cafe B2B đã lên lịch.
-- Khi người dùng hỏi "tôi có hóa đơn nào phải thanh toán": Báo chi tiết khoản hội phí niên liễm 15,000,000 VNĐ năm 2026 và hướng dẫn nộp.
+- Khi người dùng hỏi "tôi có hóa đơn nào phải thanh toán": Báo đúng các hóa đơn chưa thanh toán ở trên (nếu không có thì nói không có).
 - Trả lời bằng định dạng markdown có icon doanh nhân, bullet point rõ ràng.`;
   };
 
@@ -726,31 +688,41 @@ HƯỚNG DẪN TRẢ LỜI:
     setInput("");
     setIsLoading(true);
 
-    // Ghi nhận câu hỏi vào hệ thống Quota
-    fetchNestApi<any>("/ai/quota/record", {
-      method: "POST",
-      body: JSON.stringify({ question: promptText }),
-    })
-      .then((r) => {
-        if (r?.data) setQuota(r.data);
-      })
-      .catch(() => {
-        setQuota((prev) => ({
-          ...prev,
-          usedCount: prev.usedCount + 1,
-          remaining: Math.max(0, prev.totalLimit - (prev.usedCount + 1)),
-          isExceeded: prev.usedCount + 1 >= prev.totalLimit,
-        }));
-      });
-
     try {
       const dynamicEvaluation = evaluateDynamicAccountQuery(promptText);
       let responseText = "";
       let actionLink = dynamicEvaluation.actionLink;
       let suggestions = dynamicEvaluation.suggestions;
+      const history = newMessages.slice(-7, -1).map((m) => ({ role: m.role, content: m.content }));
 
-      // 1. Try OpenRouter with Free Models Hierarchy if key exists
-      if (OPENROUTER_API_KEY) {
+      // 1. Backend AI (nắm TOÀN BỘ dữ liệu thật của tài khoản + phân quyền; tự đếm quota)
+      try {
+        const nestRes: any = await fetchNestApi("/ai/ask", {
+          method: "POST",
+          body: JSON.stringify({ prompt: promptText, clientContext: { history } }),
+        });
+        const d = nestRes?.data ?? nestRes;
+        const nestReply: string = d?.answer || d?.reply || d?.text || "";
+        if (nestReply && nestReply.trim().length > 0) {
+          responseText = nestReply.trim();
+          if (d?.route) {
+            actionLink = { label: d?.featureName ? `Mở ${d.featureName}` : "Mở tính năng", route: d.route };
+          } else {
+            actionLink = undefined;
+          }
+          if (d?.provider !== "ceo1983-smart-engine") suggestions = undefined;
+        }
+        fetchNestApi<any>("/ai/quota")
+          .then((r) => {
+            if (r?.data) setQuota(r.data);
+          })
+          .catch(() => {});
+      } catch {
+        /* backend không phản hồi -> thử OpenRouter phía client */
+      }
+
+      // 2. OpenRouter phía client (chỉ khi backend lỗi) — dùng ngữ cảnh thật đã tải
+      if (!responseText && OPENROUTER_API_KEY) {
         const systemPrompt = buildSystemPrompt();
         const apiMessages = [
           { role: "system", content: systemPrompt },
@@ -783,6 +755,7 @@ HƯỚNG DẪN TRẢ LỜI:
               const reply = data?.choices?.[0]?.message?.content;
               if (reply && reply.trim().length > 15) {
                 responseText = reply.trim();
+                actionLink = undefined;
                 break;
               }
             }
@@ -792,35 +765,11 @@ HƯỚNG DẪN TRẢ LỜI:
         }
       }
 
-      // 2. If OpenRouter was unavailable or gave empty reply, try backend NestJS AI endpoint
-      if (!responseText) {
-        try {
-          const nestRes: any = await fetchNestApi("/ai/ask", {
-            method: "POST",
-            body: JSON.stringify({
-              prompt: promptText,
-              clientContext: {
-                memberProfile: liveContext.memberProfile,
-                upcomingEventsCount: liveContext.upcomingEvents.length,
-                registeredEvents: liveContext.registeredEvents,
-                opportunitiesCount: liveContext.opportunities.length,
-                interestedOpportunities: liveContext.interestedOpportunities,
-                connectedCount: liveContext.connectedCount,
-                b2bMeetings: liveContext.b2bMeetings,
-                invoices: liveContext.invoices,
-              },
-            }),
-          });
-          const nestReply = nestRes?.data?.reply || nestRes?.data?.text || nestRes?.reply;
-          if (nestReply && nestReply.trim().length > 15) {
-            responseText = nestReply.trim();
-          }
-        } catch {}
-      }
-
-      // 3. Fallback to Ground-truth Dynamic Evaluator (Always accurate, instantaneous, robust)
+      // 3. Fallback: bộ đánh giá dữ liệu thật tại client
       if (!responseText) {
         responseText = dynamicEvaluation.text;
+        actionLink = dynamicEvaluation.actionLink;
+        suggestions = dynamicEvaluation.suggestions;
       }
 
       // Stream response with typewriter effect

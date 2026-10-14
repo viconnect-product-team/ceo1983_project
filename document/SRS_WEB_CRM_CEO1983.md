@@ -1254,3 +1254,29 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 - **Đăng nhập CRM (/auth)**: Nút "Đăng nhập" nền Navy #003B95, chữ trắng (class ceo-login-submit).
 - **Tạo sự kiện (/events)**: Popup 3 bước chỉ mở khi bấm "+ Tạo sự kiện"; render qua portal với nền tối mờ (blur) phủ toàn màn hình, khóa cuộn trang nền.
 - **Quản lý Tài khoản (/accounts)**: Cột THAO TÁC dùng icon Xem / Sửa / Xóa (Lucide) rõ ràng, có tooltip & aria-label.
+
+---
+
+### Cập nhật 15/10/2026 — QR Sự Kiện, Nhắn Tin Nhóm, Marketplace & Cuộc Gặp 1-on-1
+
+1. **Quét Mã QR Sự Kiện Mở Thẳng Link Đăng Ký HTTPS**:
+   - Mã QR hiển thị trên Standee / Popup cổng soát vé (`EventCheckinGatekeeperModal.tsx`) dùng URL HTTPS công khai `${origin}/events/${event.id}/register` (fallback `https://crm.ceo1983.viconnect.vn/events/${event.id}/register`). Khi quét bằng Zalo hoặc Camera điện thoại, trình duyệt mở thẳng trang đăng ký tham gia sự kiện.
+2. **Tách Biệt Nghiêm Ngặt 2 Máy Quét QR**:
+   - **Máy quét Soát vé Sự kiện (`association.checkin.tsx`)**: Chỉ quét mã trên Thẻ vé điện tử của đại biểu. Bắt buộc từ chối và báo lỗi nếu quét nhầm mã QR sự kiện / form đăng ký.
+   - **Máy quét Kết nối Hội viên (`AssociationMemberQrModal.tsx`)**: Quét được cả QR kết nối và QR sự kiện. Khi quét QR sự kiện, hệ thống chuyển hướng sang form đăng ký `/events/:id/register`, không tự động đăng ký ngầm.
+3. **Nhắn Tin Nhóm Phân Hệ Network (/network)**:
+   - Thêm nút "Tạo nhóm" và modal `NewGroupChatDialog` hỗ trợ đặt tên nhóm, mô tả, lọc hội viên theo 8 ban chuyên môn, tích chọn nhiều hội viên.
+   - Thêm bộ lọc xem tin nhắn ("Tất cả", "Nhóm", "Cá nhân"), hỗ trợ đính kèm tệp tin đa định dạng, hiển thị avatar + tên người gửi + ban chuyên môn trên từng tin nhắn nhóm.
+4. **Sửa Lỗi Đăng Bán Sản Phẩm Marketplace**:
+   - Backend `marketplace.service.ts`: Bổ sung `image_urls` (dạng text array) và `name` (từ `title`) vào câu lệnh SQL raw fallback, triệt tiêu lỗi 500 vi phạm ràng buộc NOT NULL.
+   - Frontend `marketplace.functions.ts`: Chuẩn hóa kiểu dữ liệu tùy chọn thành `undefined`, loại bỏ thuộc tính `updatedAt` không tồn tại trong type `Product`.
+5. **Khắc Phục Lỗi Màn Hình Trắng Fog Khi Bật Popup Tạo Sự Kiện**:
+   - Trong `EventWizard.tsx`, thay thế lớp CSS nền bị xung đột bằng overlay tối bán trong suốt chuẩn `fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs`.
+6. **Xem Chi Tiết & Chỉnh Sửa Cuộc Gặp 1-on-1 (/business-connect/meetings)**:
+   - Web CRM: Tích hợp `ViewMeetingModal` (xem chi tiết thông tin, người chủ trì, đối tác, địa điểm/link online, ghi chú, trạng thái) và `EditMeetingModal` (sửa toàn bộ thông tin cuộc gặp, gọi API `PATCH /meetings/:id` và đồng bộ realtime).
+   - Bổ sung nút "Xem" (icon con mắt) và "Sửa" (icon cây bút) trên cả giao diện Thẻ (Card/Grid) và giao diện Bảng (Table).
+   - Backend: Hỗ trợ phân tích cú pháp `target_members` dạng object trong `getConnectionAppointments`, đảm bảo cuộc gặp tạo từ CRM đồng bộ đầy đủ sang ứng dụng di động.
+7. **Tối Ưu Logo Sidebar, Modal Lucky Draw Nền Sáng Doanh Nhân & Mã QR Khách Mời Ngoài**:
+   - **Logo Sidebar & Tải Tệp Không Lỗi 500**: Loại bỏ card logo trùng lặp tại `/settings`; cơ chế ghi đồng thời ổ đĩa cục bộ trước khi đẩy MinIO kèm timeout guard 800ms và SVG fallback 200 OK triệt tiêu hoàn toàn lỗi 500 khi tải logo hiệp hội.
+   - **Modal Cấu Hình Giải Thưởng Vòng Quay May Mắn (Lucky Draw)**: Thiết kế lại toàn diện sang giao diện nền sáng doanh nhân cao cấp (`bg-white`), thay thế ô nhập text URL bằng ô tải file ảnh trực tiếp từ máy (có preview và nút gỡ ảnh), tự động gán icon quà tặng chuẩn, xóa bỏ mọi thuật ngữ mang tính cơ sở dữ liệu.
+   - **Mã QR Sự Kiện Cho Khách Mời Ngoài & Dữ Liệu Sự Kiện CRM Động**: Xóa bỏ toàn bộ từ điển template mẫu hardcode (`EVENT_AGENDA`, `FALLBACK_EVENT_SPONSORS`), lấy dữ liệu sự kiện động 100% từ CRM. Bổ sung khối mã QR Zalo cho khách ngoài đăng ký dự sự kiện không cần tài khoản hội viên và hiển thị nổi bật khối huy hiệu Nhà tài trợ khi sự kiện có nhà tài trợ.

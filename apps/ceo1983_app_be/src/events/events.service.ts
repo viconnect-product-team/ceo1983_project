@@ -742,6 +742,7 @@ export class EventsService {
         qrScanners: parseJsonArraySafe(e.qr_scanners),
         qrStaff: parseJsonArraySafe(e.qr_scanners),
         sponsors: parseJsonArraySafe(e.sponsors),
+        description: e.description ?? '',
         communityName: e.association_name ?? null,
         associationName: e.association_name ?? null,
         associationId: e.association_id ?? null,

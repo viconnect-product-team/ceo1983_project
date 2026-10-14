@@ -75,40 +75,15 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function AssociationPermissionsScreen() {
-  const { isBQT, isPlatformAdmin, isAdmin, srsRole, loading: roleLoading } = useRole();
+  const { isSuperAdmin, loading: roleLoading } = useRole();
   const { user } = useAuth();
   const fetchMyMemberFn = useServerFn(getMyMember);
   const { data: member } = useServerData<MyMember | null>(() => fetchMyMemberFn(), null, "vba_my_member");
 
-  const userRole = String((user as any)?.role || "").toLowerCase();
-  const memberRole = String((member as any)?.role || "").toLowerCase();
-
-  const isBQTOrAdmin = Boolean(
-    isAdmin ||
-    isPlatformAdmin ||
-    isBQT ||
-    srsRole === "admin" ||
-    srsRole === "quan_tri" ||
-    srsRole === "ADM" ||
-    srsRole === "BQT" ||
-    srsRole === "ban_dieu_hanh" ||
-    userRole === "admin" ||
-    userRole === "quan_tri" ||
-    userRole === "quantri" ||
-    userRole === "superadmin" ||
-    userRole === "platform_admin" ||
-    memberRole === "admin" ||
-    memberRole === "quan_tri" ||
-    memberRole === "quantri" ||
-    memberRole === "association_admin" ||
-    (member as any)?.department === "Ban Quản Trị" ||
-    (member as any)?.department === "Ban Điều Hành" ||
-    (member as any)?.department === "Ban Thường Trực CLB" ||
-    String((member as any)?.executiveRole || "").toLowerCase().includes("chủ tịch") ||
-    String((member as any)?.department || "").toLowerCase().includes("quản trị") ||
-    String((member as any)?.department || "").toLowerCase().includes("điều hành")
-  );
-  const hasAccess = isBQTOrAdmin;
+  // CHỈ Quản trị / Admin / Chủ tịch (đồng bộ CRM Hiệp hội). Ban Điều Hành, Trưởng ban, hội viên thường: KHÔNG được phân quyền.
+  void user;
+  void member;
+  const hasAccess = isSuperAdmin;
 
   const fetchMembersFn = useServerFn(listMembers);
   const { data: directory = [] } = useServerData<DirectoryMember[]>(() => fetchMembersFn(), [], "vba_directory_members");

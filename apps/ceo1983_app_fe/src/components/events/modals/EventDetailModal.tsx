@@ -12,7 +12,10 @@ import {
   QrCode,
   AlertTriangle,
   Lock,
+  Handshake,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
 import { isEventFull } from "@/lib/member-app.functions";
@@ -58,6 +61,34 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     (rawSelImg ? resolveMediaUrl(rawSelImg) || rawSelImg : null) ||
     defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];
   const selectedAgenda = getEventAgenda(selectedEvent, selectedIndex >= 0 ? selectedIndex : 0);
+
+  const sponsorList: Array<{ name: string; tier?: string }> = React.useMemo(() => {
+    let list = selectedEvent?.sponsors;
+    if (typeof list === "string") {
+      try {
+        list = JSON.parse(list);
+      } catch {
+        list = [];
+      }
+    }
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((s: any) => ({
+        name: s.sponsorName || s.name || "",
+        tier: s.tier || "bronze",
+      }))
+      .filter((s) => Boolean(s.name));
+  }, [selectedEvent?.sponsors]);
+
+  const eventDesc =
+    (selectedEvent.description && selectedEvent.description.trim()) ||
+    selectedAgenda?.desc ||
+    `Sự kiện "${selectedEvent.title}" do ${selectedEvent.communityName || "CLB Doanh Nhân CEO 1983"} tổ chức tại ${selectedEvent.place || "Hà Nội"}.`;
+
+  const guestRegUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/events/${selectedEvent.id}/register?source=guest_qr`
+      : `https://crm.ceo1983.viconnect.vn/events/${selectedEvent.id}/register?source=guest_qr`;
 
   return (
     <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && onClose()}>
@@ -111,32 +142,58 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center border-b border-slate-100 dark:border-white/5">
             <div className="px-1">
               <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Thời gian</span>
-              <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{selectedEvent.time}</span>
+              <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100">{selectedEvent.time || "—"}</span>
             </div>
             <div className="px-1">
               <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Địa điểm</span>
               <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-1">
-                {selectedEvent.place}
+                {selectedEvent.place || "—"}
               </span>
             </div>
             <div className="px-1">
               <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Đối tượng</span>
               <span className="text-[10.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">
-                {selectedAgenda.audience}
+                {selectedAgenda.audience || "Hội viên & Khách mời"}
               </span>
             </div>
           </div>
 
           <div className="p-4 sm:p-5 space-y-4 text-[13px]">
-            {/* Headline & Body Context Paragraphs */}
+            {/* Headline & Body Context Paragraphs (CRM-driven) */}
             <div className="space-y-2">
               <h4 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
-                {selectedAgenda.headline}
+                {selectedEvent.title}
               </h4>
               <div className="text-slate-600 dark:text-slate-300 text-[12.5px] leading-relaxed whitespace-pre-line space-y-2">
-                {selectedAgenda.desc}
+                {eventDesc}
               </div>
             </div>
+
+            {/* ĐẶC BIỆT: Trường Tên Nhà Tài Trợ (Hiển thị khi sự kiện có nhà tài trợ) */}
+            {sponsorList.length > 0 && (
+              <div className="space-y-2 text-[12.5px] bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 dark:bg-amber-950/30 p-3.5 rounded-2xl border border-amber-500/30">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
+                  <Handshake className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Đơn Vị Đồng Hành &amp; Nhà Tài Trợ ({sponsorList.length}):</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {sponsorList.map((sp, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-amber-300/70 dark:border-amber-500/50 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-2xs"
+                    >
+                      <span className="text-amber-500">🤝</span>
+                      <span>{sp.name}</span>
+                      {sp.tier && (
+                        <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold uppercase">
+                          {sp.tier}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Dashed Separator */}
             <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
@@ -156,7 +213,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
               <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
                 <MapPin className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
-                <span className="font-semibold">{selectedEvent.place}</span>
+                <span className="font-semibold">{selectedEvent.place || "Địa điểm thông báo sau"}</span>
               </div>
 
               <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
@@ -177,78 +234,125 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                <Users className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
-                <span>
-                  Ưu đãi:{" "}
-                  <span className="font-semibold text-amber-700 dark:text-amber-300">
-                    {selectedAgenda.offer}
+              {selectedAgenda.offer && (
+                <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
+                  <Users className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                  <span>
+                    Ưu đãi:{" "}
+                    <span className="font-semibold text-amber-700 dark:text-amber-300">
+                      {selectedAgenda.offer}
+                    </span>
                   </span>
-                </span>
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Zalo Link Notice Box */}
-            <div className="rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 p-3.5 border border-blue-200/60 dark:border-blue-900/60 text-[12px] space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
-                <Info className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
-                <span>Kênh kết nối & Thảo luận</span>
+            {/* MÃ QR SỰ KIỆN CHO NGƯỜI NGOÀI KHÔNG PHẢI HỘI VIÊN QUÉT ĐĂNG KÝ */}
+            <div className="rounded-2xl border-2 border-dashed border-amber-500/50 bg-gradient-to-b from-amber-50/50 to-transparent dark:bg-amber-950/20 p-4 text-center space-y-2.5">
+              <div className="flex items-center justify-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
+                <QrCode className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span>Mã QR Đăng Ký Dành Cho Khách Mời (Người Ngoài)</span>
               </div>
-              <p className="text-slate-600 dark:text-slate-300">
-                Hội viên tham dự vui lòng gia nhập nhóm Zalo để nhận tài liệu diễn giả và cập nhật thông báo:
+              <p className="text-[11.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Người ngoài không phải hội viên quét mã QR bằng Zalo hoặc Camera điện thoại để mở form đăng ký tham gia sự kiện.
               </p>
-              <div className="pt-1">
+              <div className="mx-auto w-40 h-40 p-2 bg-white rounded-2xl border border-amber-300/80 shadow-sm flex items-center justify-center">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(guestRegUrl)}`}
+                  alt="Mã QR Đăng Ký Khách Mời"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(guestRegUrl);
+                    toast.success("Đã sao chép link đăng ký dành cho khách mời!");
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-white hover:bg-amber-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-900 dark:text-amber-200 text-xs font-bold transition shadow-2xs cursor-pointer"
+                >
+                  <Copy className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Sao chép link</span>
+                </button>
                 <a
-                  href={selectedAgenda.zaloLink}
+                  href={guestRegUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[#003B95] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  {selectedAgenda.zaloLink}
-                  <ExternalLink className="h-3 w-3 inline" />
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Mở trang đăng ký</span>
                 </a>
               </div>
             </div>
 
-            {/* Dashed Separator */}
-            <div className="border-t border-dashed border-slate-300 dark:border-white/10 my-2" />
-
-            {/* Lịch trình chi tiết */}
-            <div>
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Chương trình chi tiết</h4>
-              <div className="space-y-2 border-l-2 border-[#003B95]/40 pl-3">
-                {selectedAgenda.schedule.map((item: any, i: number) => (
-                  <div key={i} className="text-xs">
-                    <span className="font-bold text-[#003B95] dark:text-amber-400">{item.time}</span>
-                    <p className="text-slate-700 dark:text-slate-300">{item.activity}</p>
-                  </div>
-                ))}
+            {/* Zalo Link Notice Box (chỉ hiện khi có link Zalo thực) */}
+            {selectedAgenda.zaloLink && (
+              <div className="rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 p-3.5 border border-blue-200/60 dark:border-blue-900/60 text-[12px] space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-300">
+                  <Info className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0" />
+                  <span>Kênh kết nối &amp; Thảo luận</span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Hội viên tham dự vui lòng gia nhập nhóm Zalo để nhận tài liệu diễn giả và cập nhật thông báo:
+                </p>
+                <div className="pt-1">
+                  <a
+                    href={selectedAgenda.zaloLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#003B95] dark:text-amber-400 font-bold underline inline-flex items-center gap-1 hover:text-blue-700"
+                  >
+                    {selectedAgenda.zaloLink}
+                    <ExternalLink className="h-3 w-3 inline" />
+                  </a>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Diễn giả / Khách mời */}
-            <div>
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5">Diễn giả & Khách mời</h4>
-              <ul className="list-disc list-inside text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                {selectedAgenda.speakers.map((sp: string, idx: number) => (
-                  <li key={idx}>{sp}</li>
-                ))}
-              </ul>
-            </div>
+            {/* Lịch trình chi tiết (chỉ hiển thị nếu có schedule thực tế) */}
+            {selectedAgenda.schedule && selectedAgenda.schedule.length > 0 && (
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-2">Chương trình chi tiết</h4>
+                <div className="space-y-2 border-l-2 border-[#003B95]/40 pl-3">
+                  {selectedAgenda.schedule.map((item: any, i: number) => (
+                    <div key={i} className="text-xs">
+                      <span className="font-bold text-[#003B95] dark:text-amber-400">{item.time}</span>
+                      <p className="text-slate-700 dark:text-slate-300">{item.activity}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Diễn giả / Khách mời (chỉ hiển thị nếu có danh sách diễn giả) */}
+            {selectedAgenda.speakers && selectedAgenda.speakers.length > 0 && (
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5">Diễn giả &amp; Khách mời</h4>
+                <ul className="list-disc list-inside text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                  {selectedAgenda.speakers.map((sp: string, idx: number) => (
+                    <li key={idx}>{sp}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Sticky Action Buttons Footer */}
         <div className="shrink-0 p-3 sm:p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-2 z-20">
-          <a
-            href={selectedAgenda.zaloLink}
-            target="_blank"
-            rel="noreferrer"
-            className="w-full sm:w-auto py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center shrink-0"
-          >
-            <MessageSquare className="h-4 w-4 text-amber-500" />
-            <span>Nhóm Zalo</span>
-          </a>
+          {selectedAgenda.zaloLink ? (
+            <a
+              href={selectedAgenda.zaloLink}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full sm:w-auto py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center shrink-0"
+            >
+              <MessageSquare className="h-4 w-4 text-amber-500" />
+              <span>Nhóm Zalo</span>
+            </a>
+          ) : null}
 
           {isRegistered(selectedEvent) ? (
             <div className="flex w-full flex-1 gap-2">

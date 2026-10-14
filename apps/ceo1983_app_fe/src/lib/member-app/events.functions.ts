@@ -25,6 +25,8 @@ export type MyEvent = {
   isFull?: boolean;
   qrScanners?: string[];
   qrStaff?: string[];
+  description?: string;
+  sponsors?: any[];
 };
 
 export function isEventFull(e: any): boolean {

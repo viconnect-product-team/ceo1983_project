@@ -635,7 +635,24 @@ export class AiService {
       upcoming: m.scheduled_start_at ? new Date(m.scheduled_start_at).getTime() >= nowMs : false,
     }));
 
+    const roleInfo = isUuid
+      ? await this.getUserRoles(userId).catch(() => ({ globalRoles: [] as string[], associationId: null, membershipRoles: [] as string[] }))
+      : { globalRoles: [] as string[], associationId: null, membershipRoles: [] as string[] };
+    const allRoles = [...roleInfo.globalRoles, ...roleInfo.membershipRoles].map((r) => String(r || '').toLowerCase());
+    const positionText = `${member?.position || ''} ${member?.title || ''}`.toLowerCase();
+    const isAdminLike =
+      allRoles.some((r) => ['super_admin', 'admin', 'owner', 'quan_tri', 'chairman', 'president'].includes(r)) ||
+      /(chủ tịch|quản trị|admin)/.test(positionText);
+    const roleLabel = isAdminLike
+      ? 'Quản trị / Admin / Chủ tịch'
+      : member?.department
+        ? `Hội viên — ${member.department}`
+        : 'Hội viên';
+
     return {
+      roleLabel,
+      isAdminLike,
+      roles: allRoles,
       user: {
         id: userId,
         name: member?.name || member?.full_name || user?.name || 'Hội viên CEO 1983',
@@ -696,7 +713,7 @@ export class AiService {
     const base = { intent: 'query_data' as const, suggestTour: false, provider: 'ceo1983-smart-engine' };
     const fmtVnd = (n: number) => new Intl.NumberFormat('vi-VN').format(n || 0);
 
-    if (/(ban be|ket ban|ket noi|moi quan he|ban cua)/.test(norm)) {
+    if (/(ban be|ket ban|ket noi|moi quan he|nguoi quen|doi tac da ket noi)/.test(norm)) {
       const c = context.connections;
       return {
         ...base,
@@ -802,6 +819,94 @@ export class AiService {
         featureName: 'Thông báo',
         dynamicData: { notifications: n },
         model: 'personal-notifications',
+      };
+    }
+
+    if (mine && /(tai khoan|thong tin|ho so|tong quan|tinh hinh|toi la ai|vai tro|quyen)/.test(norm)) {
+      return {
+        ...base,
+        answer: this.buildAccountOverview(context),
+        speechText: `Em đã tổng hợp toàn bộ thông tin tài khoản của ${context.user.name}.`,
+        route: '/association/profile',
+        featureName: 'Cá nhân',
+        dynamicData: { overview: true },
+        model: 'personal-overview',
+      };
+    }
+
+    return null;
+  }
+
+  /** Tổng quan toàn bộ tài khoản (dùng cho câu hỏi tổng quát và câu hỏi năng lực). */
+  private buildAccountOverview(context: Awaited<ReturnType<AiService['getLiveMemberAssistantContext']>>): string {
+    const fmtVnd = (n: number) => new Intl.NumberFormat('vi-VN').format(n || 0);
+    const u = context.user;
+    const upcomingMeetings = context.myMeetings.filter((m) => m.upcoming).length;
+    return [
+      `👤 **${u.name}** — ${u.title} tại **${u.company}**`,
+      `- Mã hội viên: \`${u.code}\` | Vai trò: **${context.roleLabel}**`,
+      `- Hội phí: ${context.dues.feePaid ? '✅ đã thanh toán đầy đủ' : `⚠️ còn nợ **${fmtVnd(context.dues.totalOutstanding)} đ** (${context.dues.unpaidInvoices.length} hóa đơn)`}`,
+      `- Sự kiện đã đăng ký: **${context.myEvents.length}**`,
+      `- Bạn bè đã kết nối: **${context.connections.friendsCount}** (chờ duyệt ${context.connections.pendingIncoming})`,
+      `- Lịch hẹn B2B sắp tới: **${upcomingMeetings}**`,
+      `- Cơ hội đang quan tâm: **${context.interestedOpportunities.length}** | đã đăng: **${context.myOpportunities.length}**`,
+      `- Sản phẩm đang bán: **${context.myProducts.length}**`,
+      `- Thông báo chưa đọc: **${context.notifications.unreadCount}**`,
+    ].join('\n');
+  }
+
+  /**
+   * Nhận diện câu hỏi "meta" (hỏi về chính trợ lý: bạn làm được gì, bạn là ai, xin chào, cảm ơn).
+   * Các câu này KHÔNG được tra cứu DB theo từ khóa (tránh hiểu "bạn" = bạn bè).
+   */
+  private answerMetaQuestion(
+    q: string,
+    context: Awaited<ReturnType<AiService['getLiveMemberAssistantContext']>>,
+  ): { answer: string; speechText: string; intent: 'chat'; suggestTour: boolean; provider: string; model: string } | null {
+    const norm = q
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/[?!.,]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const name = context.user.name;
+    const base = { intent: 'chat' as const, suggestTour: false, provider: 'ceo1983-smart-engine' };
+
+    const isCapability =
+      /\b(ban|em|tro ly|ai|bot)\b.*\b(lam (duoc )?gi|giup (duoc )?(gi|toi gi|minh gi)|ho tro (duoc )?gi|co the lam gi|biet lam gi|lam duoc nhung gi|co chuc nang gi|tinh nang gi)\b/.test(norm) ||
+      /^(lam duoc gi|giup duoc gi|co the giup gi|huong dan su dung|tro giup|help)$/.test(norm) ||
+      /\b(ban|em) (la ai|la gi)\b/.test(norm);
+    if (isCapability) {
+      return {
+        ...base,
+        answer: `Dạ em là **Trợ lý AI của CLB Doanh Nhân CEO 1983**, nắm toàn bộ dữ liệu tài khoản của Anh/Chị **${name}** và các tính năng của app. Em có thể:\n\n` +
+          `1. 📊 **Tra cứu tài khoản của Anh/Chị**: sự kiện đã đăng ký & vé, hội phí/hóa đơn chưa thanh toán, số bạn bè & lời mời kết nối, lịch hẹn B2B, cơ hội đang quan tâm/đã đăng, sản phẩm đang bán, thông báo chưa đọc.\n` +
+          `2. 🔎 **Tìm kiếm trong CLB**: hội viên/doanh nghiệp, sản phẩm trên sàn, cơ hội giao thương, sự kiện, văn bản – điều lệ, thông tin các Ban.\n` +
+          `3. 🧭 **Hướng dẫn & mở nhanh tính năng**: đăng ký sự kiện, danh thiếp số, quét QR check-in, đăng sản phẩm/cơ hội, nhắn tin, thanh toán hội phí VietQR.\n` +
+          `4. 💬 **Tư vấn, soạn nội dung** kinh doanh – networking.\n\n` +
+          `**Tình hình tài khoản hiện tại:**\n${this.buildAccountOverview(context)}\n\nAnh/Chị muốn em hỗ trợ việc gì trước ạ?`,
+        speechText: `Dạ em là trợ lý AI CEO 1983. Em tra cứu được sự kiện, hội phí, bạn bè, lịch hẹn, cơ hội, sản phẩm của anh chị và hướng dẫn mọi tính năng trong app.`,
+        model: 'meta-capability',
+      };
+    }
+
+    if (/^(xin chao|chao|chao ban|chao em|hello|hi|alo|hey)( ban| em| tro ly)?$/.test(norm)) {
+      return {
+        ...base,
+        answer: `Dạ em chào Anh/Chị **${name}**! 👋 Em có thể tra cứu sự kiện, hội phí, bạn bè, lịch hẹn, cơ hội, sản phẩm của Anh/Chị hoặc hướng dẫn mọi tính năng trong app. Anh/Chị cần gì ạ?`,
+        speechText: `Dạ em chào anh chị ${name}. Anh chị cần em hỗ trợ gì ạ?`,
+        model: 'meta-greeting',
+      };
+    }
+
+    if (/^(cam on|thank|thanks|ok cam on|cam on ban|cam on em)\b/.test(norm)) {
+      return {
+        ...base,
+        answer: `Dạ không có gì ạ! Anh/Chị cần thêm thông tin gì cứ hỏi em nhé. 😊`,
+        speechText: `Dạ không có gì ạ!`,
+        model: 'meta-thanks',
       };
     }
 
@@ -1063,7 +1168,13 @@ export class AiService {
     const q = (rawPrompt || '').toLowerCase().trim();
     if (!q) return null;
 
+    // Khớp nguyên cụm từ (không khớp chuỗi con: 'ai' trong 'tài', 'nam' trong 'năm'...)
+    const hasPhrase = (kw: string) =>
+      new RegExp(`(^|[^\\p{L}])${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}])`, 'u').test(q);
+    const COMMITTEE_NAME_KW = new Set(['cường', 'tuấn', 'trang', 'huy', 'toản', 'lan', 'nam', 'họp', 'hồ sơ']);
     const stopWords = new Set([
+      'bạn', 'mình', 'trợ', 'lý', 'bao', 'nhiêu', 'mấy', 'nào', 'gì', 'chưa', 'đã', 'sẽ', 'đang',
+      'chào', 'xin', 'cảm', 'ơn', 'nhé', 'nhỉ', 'ạ', 'vậy', 'thế', 'rồi', 'muốn', 'cần', 'biết', 'hiện', 'tại',
       'hãy', 'tìm', 'cho', 'tôi', 'xem', 'ai', 'là', 'gì', 'ở', 'đâu',
       'như', 'thế', 'nào', 'làm', 'sao', 'các', 'những', 'của', 'trong',
       'về', 'giúp', 'em', 'anh', 'chị', 'ơi', 'với', 'được', 'không',
@@ -1139,7 +1250,7 @@ export class AiService {
     ];
 
     const matchedCommittees = COMMITTEES_INFO.filter((c) =>
-      c.keywords.some((kw) => q.includes(kw)) || q.includes(c.name.toLowerCase()) || q.includes(c.leadership.toLowerCase())
+      c.keywords.some((kw) => !COMMITTEE_NAME_KW.has(kw) && hasPhrase(kw)) || q.includes(c.name.toLowerCase()) || q.includes(c.leadership.toLowerCase().split(' (')[0])
     );
 
     const isFeeQuery =
@@ -1263,6 +1374,20 @@ export class AiService {
     const context = await this.getLiveMemberAssistantContext(userId);
     const rawPrompt = (prompt || '').trim();
     const q = rawPrompt.toLowerCase();
+
+    // 0.a Câu hỏi về chính trợ lý / chào hỏi -> trả lời đúng ngữ cảnh, không tra cứu từ khóa
+    const metaAnswer = this.answerMetaQuestion(rawPrompt, context);
+    if (metaAnswer) {
+      return { ...metaAnswer, dynamicData: { roleLabel: context.roleLabel } };
+    }
+
+    // Lịch sử hội thoại gần nhất (client gửi lên) để LLM hiểu câu hỏi nối tiếp
+    const historyText = Array.isArray(clientContext?.history)
+      ? (clientContext.history as any[])
+          .slice(-6)
+          .map((m) => `${m?.role === 'assistant' ? 'Trợ lý' : 'Hội viên'}: ${String(m?.content || '').slice(0, 400)}`)
+          .join('\n')
+      : '';
 
     // 0. Xử lý phản hồi khẳng định ("Có", "Đồng ý", "OK", "Hướng dẫn đi", "Bắt đầu")
     // khi người dùng đồng ý hướng dẫn thao tác trực tiếp:
@@ -1444,6 +1569,15 @@ DỮ LIỆU ĐỘNG THỜI GIAN THỰC ĐƯỢC TRÍCH XUẤT TỪ HỆ THỐNG 
 - Sự kiện & Hội nghị: ${JSON.stringify(searchData?.events || [])}
 - Văn bản / Điều lệ: ${JSON.stringify(searchData?.documents || [])}
 
+LỊCH SỬ HỘI THOẠI GẦN NHẤT (để hiểu câu hỏi nối tiếp):
+${historyText || '(chưa có)'}
+
+QUY TẮC HIỂU ĐÚNG Ý ĐỊNH (QUAN TRỌNG NHẤT):
+- "bạn"/"em" trong câu hỏi thường là GỌI TRỢ LÝ, KHÔNG phải "bạn bè". Ví dụ "bạn làm được gì" = hỏi năng lực trợ lý.
+- Chỉ trả lời đúng điều được hỏi; KHÔNG liệt kê dữ liệu RAG không liên quan. Dữ liệu RAG chỉ là tham khảo, có thể không khớp câu hỏi.
+- Câu hỏi về tài khoản: dùng DỮ LIỆU THẬT của hội viên ở trên; nếu số liệu = 0 thì nói rõ là chưa có, không bịa.
+- Quyền: vai trò hiện tại là "${context.roleLabel}". Chỉ Quản trị / Admin / Chủ tịch mới được phân quyền, sửa/xóa tin tức; người khác hỏi thì giải thích lịch sự.
+
 QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
 1. ĐỐI VỚI CÂU HỎI HƯỚNG DẪN THAO TÁC / CÁCH LÀM / Ở ĐÂU / LÀM SAO / XEM / TẠO / SỬA / ĐĂNG KÝ:
    - TỰ ĐỘNG CHUYỂN MÀN HÌNH SANG ĐÚNG TÍNH NĂNG NGAY LẬP TỨC!
@@ -1577,7 +1711,7 @@ QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
 
     // 2.3. Tra cứu Hội viên & Lãnh đạo (Members & Business Directory)
     if (searchData && searchData.members.length > 0 && (
-      q.includes('ai') || q.includes('tìm') || q.includes('thành viên') || q.includes('hội viên') ||
+      /(^|\s)(ai|tìm)(\s|$|\?)/.test(q) || q.includes('thành viên') || q.includes('hội viên') ||
       q.includes('công ty') || q.includes('doanh nghiệp') || q.includes('giám đốc') || q.includes('chủ tịch') ||
       q.includes('trưởng ban') || q.includes('phó ban') || q.includes('ceo')
     )) {

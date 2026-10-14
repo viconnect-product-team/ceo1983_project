@@ -65,3 +65,6 @@
 - **Đăng nhập CRM (/auth)**: Nút "Đăng nhập" nền Navy #003B95, chữ trắng (class ceo-login-submit).
 - **Tạo sự kiện (/events)**: Popup 3 bước chỉ mở khi bấm "+ Tạo sự kiện"; render qua portal với nền tối mờ (blur) phủ toàn màn hình, khóa cuộn trang nền.
 - **Quản lý Tài khoản (/accounts)**: Cột THAO TÁC dùng icon Xem / Sửa / Xóa (Lucide) rõ ràng, có tooltip & aria-label.
+- **Cấu hình Giải thưởng Vòng quay May mắn (Lucky Draw)**: Giao diện nền sáng trang nhã, hỗ trợ bấm nút "Tải ảnh từ máy" trực tiếp đưa ảnh phần quà lên hệ thống (có preview ảnh và nút gỡ ảnh), tự động gán icon quà tặng chuẩn, xóa bỏ mọi thuật ngữ cơ sở dữ liệu.
+- **Chi tiết Sự kiện & Mã QR Khách mời (/events/:id & Modal)**: Nạp động 100% dữ liệu từ CRM (mô tả, danh sách nhà tài trợ). Cung cấp mã QR Zalo riêng biệt cho khách mời ngoài không phải hội viên quét camera/Zalo mở ngay form đăng ký nhận chỗ; hiển thị nổi bật khối huy hiệu "Đơn Vị Đồng Hành & Nhà Tài Trợ".
+- **Cài đặt Hệ thống (/settings)**: Tinh giản giao diện, gỡ bỏ khối logo trùng lặp, lưu đồng thời bộ nhớ cục bộ chống lỗi tải ảnh 500.

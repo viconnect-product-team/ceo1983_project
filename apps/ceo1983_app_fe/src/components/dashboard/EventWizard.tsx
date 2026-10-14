@@ -246,12 +246,7 @@ function EventWizardDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200"
-      style={{
-        backgroundColor: "rgba(2, 6, 23, 0.72)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-      }}
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       aria-label={t("ewz.title")}

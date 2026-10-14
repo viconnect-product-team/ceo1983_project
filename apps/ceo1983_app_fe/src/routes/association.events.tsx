@@ -88,90 +88,45 @@ export interface EventAgendaInfo {
   regLink: string;
 }
 
-const EVENT_AGENDA: Record<string, EventAgendaInfo> = {
-  "ev-1": {
-    category: "ĐẠI HỘI TOÀN THỂ",
-    subtitle: "KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI · PHÁT TRIỂN BỀN VỮNG",
-    headline: "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp Tiêu biểu 2026",
-    desc: "Đại hội toàn thể các thành viên CLB Doanh Nhân 1983 nhằm đánh giá chặng đường phát triển, vinh danh doanh nghiệp tiêu biểu và công bố chiến lược chuyển đổi số trong kỷ nguyên mới.\n\nSự kiện quy tụ đại diện các cơ quan quản lý, hiệp hội doanh nghiệp và hàng trăm doanh nhân tiêu biểu trong cả nước cùng tham dự.",
-    schedule: [
-      { time: "07:00 - 08:00", activity: "Đón tiếp đại biểu, Check-in QR & Trưng bày giao thương B2B" },
-      { time: "08:00 - 09:30", activity: "Khai mạc Đại Hội & Báo cáo kết quả hoạt động nhiệm kỳ" },
-      { time: "09:30 - 10:45", activity: "Tọa đàm: Chiến lược doanh nghiệp vươn mình ra biển lớn" },
-      { time: "10:45 - 11:30", activity: "Ký kết giao thương & Trao chứng nhận hội viên danh dự" },
-      { time: "11:30 - 13:00", activity: "Tiệc trưa kết nối Networking & Giao lưu mở rộng" },
-    ],
-    speakers: ["Chủ tịch CLB Doanh Nhân CEO 1983", "Chuyên gia Kinh tế trưởng Viện Quản lý", "Lãnh đạo Hiệp hội Doanh nghiệp TP. Hà Nội"],
-    audience: "Chủ tịch, CEO & Hội viên CLB Doanh Nhân CEO 1983",
-    zaloLink: "https://zalo.me/g/avricx427",
-    offer: "Miễn phí vé tham dự cho 100 hội viên chính thức đăng ký đầu tiên",
-    regLink: "https://ceo1983.vn/dai-hoi-2026",
-  },
-  "ev-2": {
-    category: "GALA DINNER",
-    subtitle: "GẮN KẾT THỊNH VƯỢNG · ĐỈNH CAO KẾT NỐI DOANH NHÂN 1983",
-    headline: "Đêm tiệc kết nối thượng đỉnh: Xúc tiến đầu tư & Hợp tác chiến lược 2026",
-    desc: "Đêm tiệc kết nối thượng đỉnh quy tụ hơn 300 CEO, nhà sáng lập và nhà đầu tư trong hệ sinh thái CEO 1983. Cơ hội xúc tiến đầu tư, hợp tác liên minh chiến lược năm 2026.\n\nChương trình dạ tiệc thượng lưu kết hợp vinh danh những cá nhân, tập thể có đóng góp nổi bật.",
-    schedule: [
-      { time: "18:00 - 18:45", activity: "Thảm đỏ, Tiệc cocktail & Kết nối tự do" },
-      { time: "18:45 - 19:30", activity: "Khai mạc Gala Dinner & Vinh danh nhà tài trợ kim cương" },
-      { time: "19:30 - 21:00", activity: "Tiệc tối sang trọng & Chương trình nghệ thuật đặc sắc" },
-      { time: "21:00 - 21:30", activity: "Bốc thăm may mắn & Trao giải thưởng kết nối vàng" },
-    ],
-    speakers: ["Ban Thường Trực CLB CEO 1983", "Khách mời Diễn giả Quốc tế", "Các Shark & Quỹ đầu tư mạo hiểm"],
-    audience: "Nhà sáng lập, CEO & Quỹ đầu tư đồng hành",
-    zaloLink: "https://zalo.me/g/avricx427",
-    offer: "Tặng kèm gói truyền thông thương hiệu doanh nghiệp tại sự kiện",
-    regLink: "https://ceo1983.vn/gala-dinner",
-  },
-  "ev-3": {
-    category: "WORKSHOP CHUYÊN ĐỀ",
-    subtitle: "KẾ THỪA GIÁ TRỊ · QUẢN TRỊ ĐA THẾ HỆ · VẬN HÀNH TINH GỌN",
-    headline: "Chuyển giao thế hệ: Thách thức lớn nhất của doanh nghiệp gia đình",
-    desc: "Doanh nghiệp gia đình có thể mất hàng chục năm để xây dựng, nhưng chỉ mất vài năm để gặp khủng hoảng trong quá trình chuyển giao thế hệ.\n\nLàm sao để thế hệ kế thừa tiếp quản hiệu quả? Làm sao để dung hòa khác biệt tư duy giữa founder và thế hệ tiếp theo?\n\nWorkshop 'Tiếp Nối Cơ Nghiệp Gia Đình Đa Thế Hệ' dành cho founder, thế hệ kế thừa và đội ngũ điều hành doanh nghiệp gia đình, tập trung vào các vấn đề thực tiễn về chuyển giao thế hệ, quản trị đa thế hệ và phát triển bền vững.",
-    schedule: [
-      { time: "08:00 - 08:30", activity: "Đón tiếp đại biểu & Tea break giao lưu" },
-      { time: "08:30 - 10:00", activity: "Tọa đàm: Tháo gỡ nút thắt trong chuyển giao thế hệ" },
-      { time: "10:00 - 11:30", activity: "Hỏi đáp mở & Tư vấn trực tiếp từ ban cố vấn CEO 1983" },
-    ],
-    speakers: ["Ban Cố vấn CLB Doanh Nhân CEO 1983", "Chuyên gia Tư vấn Quản trị Doanh nghiệp Gia đình"],
-    audience: "Doanh nhân, thế hệ kế thừa và người quan tâm doanh nghiệp gia đình",
-    zaloLink: "https://zalo.me/g/avricx427",
-    offer: "Ưu đãi 199K cho 60 khách đăng ký đầu tiên có tham gia group zalo",
-    regLink: "https://www.cto.vn/familybusiness",
-  },
-};
-
 function getEventAgenda(e: MyEvent, index: number): EventAgendaInfo {
-  if (EVENT_AGENDA[e.id]) {
-    return EVENT_AGENDA[e.id];
+  const titleUpper = (e.title || "").toUpperCase();
+  let category = "SỰ KIỆN CLB CEO 1983";
+  if (titleUpper.includes("GALA") || titleUpper.includes("ĐẠI HỘI") || titleUpper.includes("KỶ NIỆM")) {
+    category = "ĐẠI HỘI & GALA";
+  } else if (
+    titleUpper.includes("WORKSHOP") ||
+    titleUpper.includes("ĐÀO TẠO") ||
+    titleUpper.includes("CHUYÊN ĐỀ") ||
+    titleUpper.includes("KHÓA HỌC")
+  ) {
+    category = "WORKSHOP CHUYÊN ĐỀ";
+  } else if (
+    titleUpper.includes("B2B") ||
+    titleUpper.includes("GIAO THƯƠNG") ||
+    titleUpper.includes("TỌA ĐÀM") ||
+    titleUpper.includes("KẾT NỐI") ||
+    titleUpper.includes("DIỄN ĐÀN")
+  ) {
+    category = "GIAO THƯƠNG B2B";
   }
-  const categories = ["WORKSHOP", "HỘI THẢO", "TỌA ĐÀM B2B", "DIỄN ĐÀN"];
-  const subtitles = [
-    "KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI · PHÁT TRIỂN BỀN VỮNG",
-    "KẾT NỐI THỊNH VƯỢNG · ĐỈNH CAO DOANH NHÂN HỘI TỤ",
-    "ĐỔI MỚI SÁNG TẠO · NÂNG TẦM THƯƠNG HIỆU DOANH NGHIỆP",
-  ];
+
+  const desc =
+    e.description?.trim() ||
+    `Sự kiện "${e.title}" do ${e.communityName || "CLB Doanh Nhân CEO 1983"} tổ chức${e.place ? ` tại ${e.place}` : ""}${e.time ? ` vào lúc ${e.time}` : ""}${e.date ? ` ngày ${formatDisplayDate(e.date)}` : ""}. Cơ hội kết nối giao thương và hợp tác phát triển doanh nghiệp.`;
+
+  const isFree = Number(e.ticketPrice || e.fee || 0) === 0;
+
   return {
-    category: categories[index % categories.length],
-    subtitle: subtitles[index % subtitles.length],
+    category,
+    subtitle: "KẾ THỪA GIÁ TRỊ · KIẾN TẠO TƯƠNG LAI · PHÁT TRIỂN BỀN VỮNG",
     headline: e.title,
-    desc: `Sự kiện "${e.title}" do ${e.communityName || "CLB Doanh Nhân CEO 1983"} tổ chức tại ${e.place}. Diễn ra vào lúc ${e.time} ngày ${e.day} tháng ${e.month}, 2026 với sự tham gia của đông đảo hội viên và khách mời danh dự.\n\nCơ hội giao lưu kết nối hợp tác trực tiếp giữa các nhà lãnh đạo và doanh nhân tiêu biểu.`,
-    schedule: [
-      { time: "07:30 - 08:30", activity: "Đón tiếp đại biểu & Check-in QR điện tử" },
-      { time: "08:30 - 10:30", activity: `Khai mạc: ${e.title}` },
-      { time: "10:30 - 11:30", activity: "Tọa đàm giao thương B2B & Ký kết hợp tác" },
-      { time: "11:30 - 13:00", activity: "Tiệc trưa kết nối Networking mở rộng" },
-    ],
-    speakers: [
-      "Ban Thường Trực CLB Doanh Nhân CEO 1983",
-      "Các chuyên gia đầu ngành trong lĩnh vực kinh tế & công nghệ",
-      "Đại diện lãnh đạo doanh nghiệp tiêu biểu",
-    ],
-    audience: "Doanh nhân, thế hệ kế thừa và hội viên CLB CEO 1983",
-    zaloLink: "https://zalo.me/g/avricx427",
-    offer: "Ưu đãi 199K cho 60 khách đăng ký đầu tiên có tham gia group zalo",
-    regLink: "https://www.cto.vn/familybusiness",
+    desc,
+    schedule: [], // Không hardcode lịch trình giả lập
+    speakers: [], // Không hardcode diễn giả giả lập
+    audience: "Chủ tịch, CEO & Hội viên CLB Doanh Nhân CEO 1983",
+    zaloLink: "",
+    offer: isFree ? "Vé tham dự miễn phí dành cho Hội viên chính thức" : "Ưu đãi vé tham dự dành cho Hội viên chính thức",
+    regLink: typeof window !== "undefined" ? `${window.location.origin}/events/${e.id}/register` : `/events/${e.id}/register`,
   };
 }
 

@@ -165,7 +165,7 @@ export class MeetingsService {
     }
 
     // 4b. Đồng bộ trực tiếp vào CRM public.meetings để hiển thị tức thì trên cả 2 màn hình CRM (/meetings và /business-connect/meetings)
-    const connCode = `MT-CONN-${Date.now().toString().slice(-6)}`;
+    const connCode = `MT-CONN-${genMeetingId.slice(0, 8).toUpperCase()}`;
     const endH = String((h || 9) + 1).padStart(2, '0');
     const endM = String(m || 0).padStart(2, '0');
     const timeRange = `${time} - ${endH}:${endM}`;
@@ -970,6 +970,91 @@ export class MeetingsService {
     return { ok: true, id, deleted: true };
   }
 
+  async updateMeeting(userId: string, id: string, data: any) {
+    if (!id) throw new BadRequestException('ID is required');
+
+    const title = data.title ? String(data.title).trim() : undefined;
+    const date = data.date ? String(data.date).trim() : undefined;
+    const time = data.time ? String(data.time).trim() : undefined;
+    const venueType = data.venueType || (data.onlineUrl ? 'online' : 'offline');
+    const venue = data.venue ? String(data.venue).trim() : undefined;
+    const onlineUrl = data.onlineUrl ? String(data.onlineUrl).trim() : undefined;
+    const notes = data.notes !== undefined ? String(data.notes).trim() : undefined;
+    const status = data.status ? String(data.status).trim() : undefined;
+
+    // 1. Update public.meetings
+    const existingCrm = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT id, code, title, date, time, location, status, target_members, zoom_url FROM public.meetings
+      WHERE id::text = $1 OR code = $1 LIMIT 1
+    `, id).catch(() => []);
+
+    if (existingCrm.length > 0) {
+      const prev = existingCrm[0];
+      const prevTm = typeof prev.target_members === 'object' && prev.target_members !== null ? prev.target_members : {};
+      const newTm = {
+        ...prevTm,
+        ...(data.hostName && { hostName: data.hostName }),
+        ...(data.partnerName && { partnerName: data.partnerName }),
+        ...(data.partnerPhone && { partnerPhone: data.partnerPhone }),
+        ...(data.partnerCompany && { partnerCompany: data.partnerCompany }),
+        ...(venue && { venue }),
+        ...(venueType && { venueType }),
+        ...(onlineUrl !== undefined && { onlineUrl }),
+        ...(notes !== undefined && { notes }),
+      };
+
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE public.meetings
+        SET
+          title = COALESCE($1, title),
+          date = COALESCE($2::date, date),
+          time = COALESCE($3, time),
+          location = COALESCE($4, location),
+          status = COALESCE($5, status),
+          target_members = $6::jsonb,
+          zoom_url = COALESCE($7, zoom_url),
+          updated_at = NOW()
+        WHERE id::text = $8 OR code = $8
+      `,
+        title || null,
+        date || null,
+        time || null,
+        venue || null,
+        status || null,
+        JSON.stringify(newTm),
+        onlineUrl !== undefined ? onlineUrl : (venueType === 'online' ? venue : null),
+        id
+      ).catch((err) => console.warn('update public.meetings error:', err?.message));
+    }
+
+    // 2. Update public.business_meetings
+    const isMeetingUuid = isUuid(id);
+    if (isMeetingUuid) {
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE public.business_meetings
+        SET
+          title = COALESCE($1, title),
+          status = COALESCE($2::public.business_meeting_status, status),
+          updated_at = NOW()
+        WHERE id = $3::uuid
+      `,
+        title || null,
+        status === 'confirmed' || status === 'upcoming' ? 'confirmed' : status === 'cancelled' ? 'cancelled' : null,
+        id
+      ).catch(() => {});
+    }
+
+    if (this.gateway) {
+      this.gateway.emitToAll('vba.meeting.changed', { id, title, status });
+    }
+
+    return {
+      ok: true,
+      id,
+      updated: true,
+    };
+  }
+
   /**
    * Phục vụ hiển thị trên tab CRM "Cuộc Hẹn Giao Thương 1-on-1" và mobile
    */
@@ -1199,58 +1284,93 @@ export class MeetingsService {
         const cmCode = cm.code || String(cm.id);
         if (seenIds.has(cmCode) || seenIds.has(String(cm.id))) continue;
 
+        const tm = cm.target_members;
         let hostName = 'Hội viên kết nối';
         let hostCompany = 'Hiệp hội CEO 1983';
+        let hostPhone = '';
         let partnerName = 'Đối tác';
         let partnerCompany = 'Doanh nghiệp CEO 1983';
+        let partnerPhone = '';
+        let venue = cm.location || cm.zoom_url || 'Văn phòng Hiệp hội CEO 1983';
+        let venueType = cm.zoom_url ? 'online' : 'offline';
+        let onlineUrl = cm.zoom_url || undefined;
+        let notes = cm.notes || 'Hẹn gặp kết nối giao thương B2B';
 
-        if (Array.isArray(cm.target_members) && cm.target_members.length >= 2) {
-          hostName = cm.target_members[0]?.name || hostName;
-          hostCompany = cm.target_members[0]?.company || hostCompany;
-          partnerName = cm.target_members[1]?.name || partnerName;
-          partnerCompany = cm.target_members[1]?.company || partnerCompany;
+        if (Array.isArray(tm) && tm.length >= 2) {
+          hostName = tm[0]?.name || hostName;
+          hostCompany = tm[0]?.company || hostCompany;
+          hostPhone = tm[0]?.phone || hostPhone;
+          partnerName = tm[1]?.name || partnerName;
+          partnerCompany = tm[1]?.company || partnerCompany;
+          partnerPhone = tm[1]?.phone || partnerPhone;
+        } else if (tm && typeof tm === 'object' && !Array.isArray(tm)) {
+          hostName = tm.hostName || hostName;
+          hostCompany = tm.hostCompany || hostCompany;
+          hostPhone = tm.hostPhone || hostPhone;
+          partnerName = tm.partnerName || partnerName;
+          partnerCompany = tm.partnerCompany || partnerCompany;
+          partnerPhone = tm.partnerPhone || partnerPhone;
+          if (tm.venue) venue = tm.venue;
+          if (tm.venueType) venueType = tm.venueType;
+          if (tm.onlineUrl) onlineUrl = tm.onlineUrl;
+          if (tm.notes) notes = tm.notes;
         }
 
         const isUserHost = myIdentifiers.some(id => 
-          hostName.toLowerCase().includes(id) || 
-          hostCompany.toLowerCase().includes(id) ||
-          (Array.isArray(cm.target_members) && cm.target_members[0]?.code?.toLowerCase() === id) ||
-          (Array.isArray(cm.target_members) && cm.target_members[0]?.phone === id) ||
-          (Array.isArray(cm.target_members) && cm.target_members[0]?.userId?.toLowerCase() === id)
+          (hostName && hostName.toLowerCase().includes(id)) || 
+          (hostCompany && hostCompany.toLowerCase().includes(id)) ||
+          (hostPhone && hostPhone.includes(id)) ||
+          (Array.isArray(tm) && tm[0]?.code?.toLowerCase() === id) ||
+          (Array.isArray(tm) && tm[0]?.phone === id) ||
+          (Array.isArray(tm) && tm[0]?.userId?.toLowerCase() === id) ||
+          (tm && typeof tm === 'object' && !Array.isArray(tm) && (
+            (tm.hostPhone && tm.hostPhone.includes(id)) ||
+            (tm.hostCode && tm.hostCode.toLowerCase() === id) ||
+            (tm.hostUserId && tm.hostUserId.toLowerCase() === id)
+          ))
         );
 
         const isUserInvitee = !isUserHost && myIdentifiers.some(id => 
-          partnerName.toLowerCase().includes(id) || 
-          partnerCompany.toLowerCase().includes(id) ||
-          (Array.isArray(cm.target_members) && cm.target_members[1]?.code?.toLowerCase() === id) ||
-          (Array.isArray(cm.target_members) && cm.target_members[1]?.phone === id) ||
-          (Array.isArray(cm.target_members) && cm.target_members[1]?.userId?.toLowerCase() === id)
+          (partnerName && partnerName.toLowerCase().includes(id)) || 
+          (partnerCompany && partnerCompany.toLowerCase().includes(id)) ||
+          (partnerPhone && partnerPhone.includes(id)) ||
+          (Array.isArray(tm) && tm[1]?.code?.toLowerCase() === id) ||
+          (Array.isArray(tm) && tm[1]?.phone === id) ||
+          (Array.isArray(tm) && tm[1]?.userId?.toLowerCase() === id) ||
+          (tm && typeof tm === 'object' && !Array.isArray(tm) && (
+            (tm.partnerPhone && tm.partnerPhone.includes(id)) ||
+            (tm.partnerCode && tm.partnerCode.toLowerCase() === id) ||
+            (tm.partnerUserId && tm.partnerUserId.toLowerCase() === id)
+          ))
         );
 
         if (!isAdminUser && !isUserHost && !isUserInvitee) {
           continue;
         }
 
+        seenIds.add(cmCode);
+        seenIds.add(String(cm.id));
+
         meetingItems.push({
           id: cmCode,
           title: cm.title || 'Hẹn gặp kết nối 1-1',
           hostName,
           hostCompany,
-          hostPhone: '',
+          hostPhone,
           hostCode: '',
           hostAvatar: '',
           partnerName,
           partnerCompany,
-          partnerPhone: '',
+          partnerPhone,
           partnerCode: '',
           partnerAvatar: '',
           date: cm.date ? new Date(cm.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
           time: cm.time || '09:30 - 10:30',
-          venueType: cm.zoom_url ? 'online' : 'offline',
-          venue: cm.location || cm.zoom_url || 'Văn phòng Hiệp hội CEO 1983',
-          onlineUrl: cm.zoom_url || undefined,
-          notes: cm.notes || 'Hẹn gặp kết nối giao thương B2B',
-          status: cm.status === 'upcoming' ? 'confirmed' : (cm.status || 'scheduled'),
+          venueType,
+          venue,
+          onlineUrl,
+          notes,
+          status: cm.status === 'upcoming' || cm.status === 'confirmed' ? 'confirmed' : (cm.status || 'scheduled'),
           source: 'crm_meeting',
           createdAt: cm.created_at || new Date().toISOString(),
           isUserHost: Boolean(isUserHost),

@@ -501,18 +501,27 @@ html.hc .vba-gold-grad {
   box-shadow: 0 4px 14px -2px rgba(245, 158, 11, 0.40);
 }
 
-/* System-wide brand color update: Replace ALL bg-[#003B95] with white background and blue text */
+/* System-wide brand color update: Replace ALL bg-[#003B95] with white background and black text */
 [class*="bg-[#003B95]"],
 [class*="hover:bg-[#003B95]"]:hover {
   background-color: #ffffff !important;
-  color: #003B95 !important;
+  color: #000000 !important;
   border: 1px solid #003B95 !important;
 }
 
 [class*="bg-[#003B95]"] *,
 [class*="hover:bg-[#003B95]"]:hover * {
-  color: #003B95 !important;
-  stroke: #003B95 !important;
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+/* Any button with white background or bg-white: always pure black text for readability */
+button[class*="bg-white"],
+button.bg-white,
+button[class*="bg-white"] *,
+button.bg-white * {
+  color: #000000 !important;
+  stroke: #000000 !important;
 }
 
 /* Nút Đăng nhập CRM: luôn nền Navy đặc + chữ trắng đậm (không bị rule trên ghi đè) */
@@ -535,10 +544,9 @@ button.ceo-login-submit svg {
 }
 
 
-/* Ensure other brand buttons and pills strictly have pure white text */
+/* Ensure other brand buttons and pills strictly have pure white text (only solid elements, NEVER hover classes or faint opacity badges) */
 .btn-navy,
 .bg-navy-brand,
-[class*="bg-[#002B70]"],
 .btn-amber,
 .bg-amber-brand,
 [class*="bg-[#EA580C]"],
@@ -547,17 +555,12 @@ button.ceo-login-submit svg {
 button.bg-sky-500,
 button.bg-sky-600,
 a.bg-sky-500,
-a.bg-sky-600,
-span.bg-sky-500,
-span.bg-sky-600,
-[class*="bg-sky-500"],
-[class*="bg-sky-600"] {
+a.bg-sky-600 {
   color: #FFFFFF !important;
 }
 
 .btn-navy *,
 .bg-navy-brand *,
-[class*="bg-[#002B70]"] *,
 .btn-amber *,
 .bg-amber-brand *,
 [class*="bg-[#EA580C]"] *,
@@ -566,12 +569,31 @@ span.bg-sky-600,
 button.bg-sky-500 *,
 button.bg-sky-600 *,
 a.bg-sky-500 *,
-a.bg-sky-600 *,
-span.bg-sky-500 *,
-span.bg-sky-600 *,
-[class*="bg-sky-500"] *,
-[class*="bg-sky-600"] * {
+a.bg-sky-600 * {
   color: #FFFFFF !important;
+}
+
+/* All badge and tag spans (matching Image 3): text must be sharp black */
+span[class*="px-1.5"][class*="text-[10px]"],
+span[class*="px-1.5"][class*="text-[9px]"],
+span[class*="px-1.5"][class*="text-[9.5px]"],
+span[class*="py-0.2"],
+span.inline-flex[class*="px-1.5"],
+span[class*="bg-sky-500/"],
+span[class*="bg-amber-500/"],
+span[class*="bg-zinc-500/"],
+span[class*="bg-orange-500/"] {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+span[class*="px-1.5"][class*="text-[10px]"] *,
+span[class*="px-1.5"][class*="text-[9px]"] *,
+span[class*="px-1.5"][class*="text-[9.5px]"] *,
+span[class*="py-0.2"] *,
+span.inline-flex[class*="px-1.5"] * {
+  color: #000000 !important;
+  stroke: #000000 !important;
 }
 
 /* High-contrast: flatten gradients to solid, remove glows for clarity */

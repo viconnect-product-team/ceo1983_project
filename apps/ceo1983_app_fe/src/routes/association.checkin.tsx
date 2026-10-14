@@ -406,55 +406,18 @@ function CheckinScreen() {
         } catch {}
       }
 
-      // CASE 0: Event Standee QR Code scanned by attendee (event_checkin:EVENT_ID or event_checkin:EVENT_ID:NAME)
-      if (resolved.startsWith("event_checkin:") || resolved.startsWith("EVENT_CHECKIN:")) {
-        const parts = resolved.split(":");
-        const eventId = parts[1] || "current-event";
-        const matchedEvent = currentEvents.find((e: any) => e.id === eventId);
-        const eventTitle = parts[2]
-          ? decodeURIComponent(parts[2])
-          : (matchedEvent?.name || matchedEvent?.title || "Đại hội Hội viên CLB CEO 1983 & Tuyên dương Doanh nghiệp 2026");
-        const memberCode = member?.code || (user as any)?.code || "M1983-001";
-        const myName = member?.name || (user as any)?.name || (user as any)?.fullName || "Đại biểu Hội viên CEO 1983";
-        const myPhone = member?.phone || (user as any)?.phone || "—";
-        const myCompany = (member as any)?.companyName || (user as any)?.company || "Doanh nghiệp Thành viên CEO 1983";
-        const ticketCode = `SELF-${eventId}-${memberCode}`;
-        const mySeat = (member as any)?.seatAssignment || "Bàn VIP 02 - Ghế 05 (Khu vực Đại biểu Danh dự)";
-        const myLucky = `#${Math.floor(1000 + Math.random() * 8999)}`;
-
-        const checkinRecord = {
-          checkedInAt: new Date().toLocaleString("vi-VN"),
-          scannedBy: "Tự quét mã QR Standee sự kiện",
-          seatAssignment: mySeat,
-          luckyNumber: myLucky,
-          eventId,
-          eventTitle,
-        };
-        checkedInMap[ticketCode] = checkinRecord;
-        localStorage.setItem("vba_checkedin_tickets", JSON.stringify(checkedInMap));
-
-        toast.success("Check-in sự kiện thành công!", {
-          description: `Vị trí: ${mySeat} • Mã bốc thăm: ${myLucky}`,
-          duration: 6000,
+      // Chức năng soát vé sự kiện chỉ quét mã QR vé sự kiện của người có vé
+      // Nếu quét nhầm mã QR sự kiện / form đăng ký thì từ chối và yêu cầu xuất trình Thẻ vé
+      if (
+        resolved.startsWith("event_checkin:") ||
+        resolved.startsWith("EVENT_CHECKIN:") ||
+        resolved.includes("/events/")
+      ) {
+        toast.error("Đây là mã QR sự kiện/đăng ký, không phải vé đại biểu!", {
+          description: "Chức năng soát vé chỉ quét mã QR trên Thẻ vé điện tử của người đã có vé. Vui lòng yêu cầu đại biểu xuất trình vé!",
+          duration: 5000,
         });
-
-        setScannedTicket({
-          ticketCode,
-          attendeeName: myName,
-          attendeePhone: myPhone,
-          attendeeCompany: myCompany,
-          attendeePosition: member?.title || "Hội viên chính thức",
-          eventTitle,
-          eventDate: matchedEvent?.date ? new Date(matchedEvent.date).toLocaleDateString("vi-VN") : new Date().toLocaleDateString("vi-VN"),
-          eventLocation: matchedEvent?.location || "Trung tâm Hội nghị Quốc gia, Hà Nội",
-          ticketType: "Vé Tham Dự Hội Viên",
-          seatAssignment: mySeat,
-          luckyNumber: myLucky,
-          ticketCount: 1,
-          isCheckedIn: true,
-          checkedInAt: checkinRecord.checkedInAt,
-          scannedBy: checkinRecord.scannedBy,
-        });
+        setError("Mã QR sự kiện không thể dùng để soát vé. Vui lòng quét mã trên Thẻ vé điện tử của đại biểu!");
         return;
       }
 
@@ -1420,7 +1383,7 @@ function CheckinScreen() {
               type="button"
               onClick={toggleScan}
               disabled={submitting}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-bold text-white bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 active:scale-[0.99] transition-all shadow-md shadow-[#003B95]/25 cursor-pointer disabled:opacity-60"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-black text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 border border-amber-500 active:scale-[0.99] transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-60"
             >
               <ScanLine className="h-4 w-4 text-white" />
               <span className="text-white">

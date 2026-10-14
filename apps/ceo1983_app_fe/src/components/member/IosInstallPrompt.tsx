@@ -8,7 +8,8 @@ import {
   Copy,
   Check,
   ArrowDown,
-  Share2,
+  Download,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -56,10 +57,11 @@ export function IosInstallPrompt() {
       } catch {}
     }
 
-    // Android Chrome beforeinstallprompt event
+    // Android Chrome beforeinstallprompt event: capture for 1-TAP installation
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      (window as any).__pwaInstallPrompt = e;
       const dismissedLocally = localStorage.getItem("ceo1983_ios_prompt_dismissed");
       const dismissedSession = sessionStorage.getItem("ceo1983_ios_prompt_dismissed");
       if (hasInstallParam || (!dismissedLocally && !dismissedSession)) {
@@ -72,8 +74,6 @@ export function IosInstallPrompt() {
     if (!standalone && (isIos || isAndroid)) {
       const dismissedLocally = localStorage.getItem("ceo1983_ios_prompt_dismissed");
       const dismissedThisSession = sessionStorage.getItem("ceo1983_ios_prompt_dismissed");
-      // Hiện lúc đầu thôi: Chỉ hiện khi có link share cài đặt (?install=ios)
-      // HOẶC lần đầu tiên người dùng vào web app chưa từng bấm tắt đi ([Để sau] hoặc [X])
       if (hasInstallParam || (!dismissedLocally && !dismissedThisSession)) {
         const timer = setTimeout(() => {
           setShowPrompt(true);
@@ -89,7 +89,25 @@ export function IosInstallPrompt() {
     const handleOpenShare = () => {
       setShowShareModal(true);
     };
-    const handleTriggerPrompt = () => {
+
+    // 1-TAP ACTION TRIGGER
+    const handleTriggerPrompt = async () => {
+      const promptToUse = deferredPrompt || (window as any).__pwaInstallPrompt;
+      if (promptToUse) {
+        try {
+          promptToUse.prompt();
+          const choiceResult = await promptToUse.userChoice;
+          if (choiceResult?.outcome === "accepted") {
+            toast.success("Ứng dụng đang được tự động cài đặt lên màn hình chính!");
+            setShowPrompt(false);
+          }
+          setDeferredPrompt(null);
+          (window as any).__pwaInstallPrompt = null;
+          return;
+        } catch (err) {
+          console.error("1-tap install error:", err);
+        }
+      }
       setShowPrompt(true);
     };
 
@@ -103,7 +121,7 @@ export function IosInstallPrompt() {
       window.removeEventListener("open-share-app-modal", handleOpenShare);
       window.removeEventListener("open-install-prompt", handleTriggerPrompt);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleDismissPrompt = () => {
     setShowPrompt(false);
@@ -112,6 +130,28 @@ export function IosInstallPrompt() {
       localStorage.setItem("ceo1983_ios_prompt_dismissed", "true");
       sessionStorage.setItem("ceo1983_ios_prompt_dismissed", "true");
     } catch {}
+  };
+
+  const handleOneTapInstall = async () => {
+    const promptToUse = deferredPrompt || (window as any).__pwaInstallPrompt;
+    if (promptToUse) {
+      try {
+        promptToUse.prompt();
+        const choice = await promptToUse.userChoice;
+        if (choice?.outcome === "accepted") {
+          toast.success("Đang tự động cài ứng dụng CEO 1983 lên màn hình điện thoại!");
+          handleDismissPrompt();
+        }
+        setDeferredPrompt(null);
+        (window as any).__pwaInstallPrompt = null;
+      } catch (err) {
+        console.error(err);
+      }
+    } else if (isAndroidDevice) {
+      toast.info("Vui lòng chạm nút Menu (⋮) góc trên bên phải trình duyệt và chọn 'Cài đặt ứng dụng'!");
+    } else {
+      toast.info("Vui lòng làm theo hướng dẫn 1 thao tác bên dưới để thêm ra màn hình chính!");
+    }
   };
 
   const getSmartInstallUrl = () => {
@@ -167,32 +207,25 @@ export function IosInstallPrompt() {
 
   return (
     <>
-      {/* ── 1. BẢNG THAO TÁC CÀI ĐẶT APP LÊN MÀN HÌNH CHÍNH IOS (TỰ ĐỘNG HIỆN KHI BẤM LINK APP) ── */}
+      {/* ── 1. BẢNG THAO TÁC CÀI ĐẶT APP LÊN MÀN HÌNH CHÍNH (TỐI ƯU 1 CHẠM) ── */}
       {showPrompt && !showShareModal && (
         <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-md animate-fade-in select-none">
           <div className="relative w-full max-w-md rounded-3xl border border-amber-500/40 bg-gradient-to-b from-[#00183F] via-slate-950 to-black text-white shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90vh] max-h-[90dvh] overflow-hidden">
             {/* Fixed Header */}
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 shrink-0 bg-[#00183F]/90">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#003B95] to-amber-500 p-0.5 shadow-md shrink-0">
-                  <img
-                    src="/apple-touch-icon.png?v=ceo1983_v4w"
-                    alt="CEO 1983"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
-                    }}
-                    className="h-full w-full rounded-[10px] object-cover"
-                  />
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-0.5 shadow-md shrink-0 flex items-center justify-center">
+                  <Smartphone className="h-6 w-6 text-slate-950" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
                     <span>Cài Đặt App CEO 1983</span>
                     <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 border border-amber-400/30">
-                      {isIosDevice ? "iOS" : "Di Động"}
+                      {isIosDevice ? "iOS Safari" : "1 Chạm Tự Động"}
                     </span>
                   </h3>
                   <p className="text-[11px] text-amber-300/80 font-medium">
-                    Thao tác thêm vào màn hình chính
+                    Thêm trực tiếp lên màn hình chính điện thoại
                   </p>
                 </div>
               </div>
@@ -208,6 +241,26 @@ export function IosInstallPrompt() {
 
             {/* Scrollable Body */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 text-xs text-slate-200 overscroll-contain">
+              {/* NÚT 1 CHẠM TỰ ĐỘNG CÀI ĐẶT (NẾU TRÌNH DUYỆT HỖ TRỢ / ANDROID / CHROMIUM) */}
+              {(deferredPrompt || !isIosDevice) && !isInAppBrowser && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-center space-y-2.5">
+                  <div className="text-xs font-bold text-amber-300">
+                    Hỗ trợ cài đặt tự động 1 chạm:
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOneTapInstall}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition cursor-pointer hover:brightness-105"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Cài Đặt Lên Điện Thoại Ngay (1 Chạm)</span>
+                  </button>
+                  <p className="text-[11px] text-slate-400">
+                    Không cần tải từ App Store hay CH Play, tự động xuất hiện trên màn hình điện thoại như ứng dụng native.
+                  </p>
+                </div>
+              )}
+
               {/* In-app Browser Notice if opened from Zalo / Facebook */}
               {isInAppBrowser ? (
                 <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3.5 space-y-3">
@@ -218,7 +271,7 @@ export function IosInstallPrompt() {
                         Đang mở trong Zalo / Messenger
                       </strong>
                       <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                        Hệ điều hành iOS chỉ hỗ trợ thêm app ra màn hình chính qua Safari:
+                        Để cài đặt 1 chạm lên màn hình chính, vui lòng mở bằng trình duyệt:
                       </p>
                     </div>
                   </div>
@@ -229,7 +282,7 @@ export function IosInstallPrompt() {
                         1
                       </span>
                       <span>
-                        Nhấn biểu tượng <strong>( ••• )</strong> ở góc trên bên phải màn hình
+                        Chạm biểu tượng <strong>( ••• )</strong> ở góc trên bên phải
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -237,7 +290,7 @@ export function IosInstallPrompt() {
                         2
                       </span>
                       <span>
-                        Chọn <strong>"Mở bằng Safari"</strong> hoặc <strong>"Mở bằng trình duyệt"</strong>
+                        Chọn <strong>"Mở bằng trình duyệt"</strong> (Safari / Chrome)
                       </span>
                     </div>
                   </div>
@@ -245,66 +298,40 @@ export function IosInstallPrompt() {
                   <button
                     type="button"
                     onClick={handleCopyLink}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2.5 font-bold text-xs shadow-md transition active:scale-95 cursor-pointer touch-press"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2.5 font-black text-xs shadow-md transition active:scale-95 cursor-pointer touch-press"
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    <span>{copied ? "Đã sao chép link thành công!" : "Sao chép link để dán vào Safari"}</span>
+                    <span>{copied ? "Đã sao chép link thành công!" : "Sao chép link để mở bằng trình duyệt"}</span>
                   </button>
                 </div>
-              ) : (
+              ) : isIosDevice ? (
+                /* HƯỚNG DẪN 1 THAO TÁC CHO IOS SAFARI */
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11.5px] text-amber-200">
-                    <p className="leading-relaxed">
-                      Thực hiện nhanh <strong>3 bước trên Safari</strong> để cài icon ứng dụng ra màn hình chính:
+                  <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-2.5">
+                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                      <PlusSquare className="h-4 w-4 text-amber-400" />
+                      <span>Thao tác 1 bước trên Safari:</span>
+                    </div>
+                    <p className="text-[11.5px] text-slate-200 leading-relaxed">
+                      Chạm biểu tượng <strong>Chia sẻ (Share)</strong>{" "}
+                      <span className="inline-flex items-center gap-1 rounded bg-blue-500/20 px-1.5 py-0.2 text-blue-300 font-bold border border-blue-500/30">
+                        <Share className="h-3 w-3 text-blue-400 inline" /> Chia sẻ
+                      </span>{" "}
+                      ở thanh dưới cùng của Safari, sau đó cuộn chọn:
                     </p>
-                  </div>
-
-                  {/* 3 Quick Steps */}
-                  <div className="space-y-2.5 text-[11.5px]">
-                    <div className="flex items-center gap-2.5 rounded-xl bg-white/5 p-3 border border-white/10">
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-500/20 text-amber-400 font-black text-xs shrink-0">
-                        1
-                      </span>
-                      <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-                        <span>Chạm nút</span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-2 py-0.5 text-blue-300 font-bold border border-blue-500/30">
-                          <Share className="h-3.5 w-3.5 text-blue-400" />
-                          Chia sẻ (Share)
-                        </span>
-                        <span>ở thanh dưới cùng của Safari</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 rounded-xl bg-white/5 p-3 border border-white/10">
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-500/20 text-amber-400 font-black text-xs shrink-0">
-                        2
-                      </span>
-                      <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-                        <span>Cuộn xuống và chọn</span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 text-amber-300 font-bold border border-amber-500/30">
-                          <PlusSquare className="h-3.5 w-3.5 text-amber-400" />
-                          Thêm vào MH chính
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 rounded-xl bg-white/5 p-3 border border-white/10">
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-500/20 text-amber-400 font-black text-xs shrink-0">
-                        3
-                      </span>
-                      <div className="flex-1">
-                        <span>Nhấn nút <strong>Thêm (Add)</strong> ở góc trên bên phải màn hình để hoàn tất.</span>
-                      </div>
+                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30 text-center font-bold text-amber-300 text-xs flex items-center justify-center gap-2">
+                      <PlusSquare className="h-4 w-4 text-amber-400" />
+                      <span>"Thêm vào MH chính" (Add to Home Screen)</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-center gap-2 pt-1 text-center text-[11px] font-bold text-amber-300">
                     <ArrowDown className="h-3.5 w-3.5 animate-bounce text-amber-400" />
-                    <span>Nút Chia sẻ nằm ở thanh công cụ dưới cùng Safari</span>
+                    <span>Nút Chia sẻ nằm ở thanh công cụ dưới đáy Safari</span>
                     <ArrowDown className="h-3.5 w-3.5 animate-bounce text-amber-400" />
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* Fixed Footer */}
@@ -316,19 +343,27 @@ export function IosInstallPrompt() {
               >
                 Để sau
               </button>
-              <button
-                type="button"
-                onClick={handleDismissPrompt}
-                className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 px-5 py-2 text-xs font-bold text-slate-950 shadow-md transition active:scale-95 cursor-pointer touch-press"
-              >
-                Đã hiểu
-              </button>
+              {deferredPrompt ? (
+                <button
+                  type="button"
+                  onClick={handleOneTapInstall}
+                  className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 px-5 py-2 text-xs font-black text-slate-950 shadow-md transition active:scale-95 cursor-pointer touch-press"
+                >
+                  Cài Đặt Ngay (1 Chạm)
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleDismissPrompt}
+                  className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 px-5 py-2 text-xs font-bold text-slate-950 shadow-md transition active:scale-95 cursor-pointer touch-press"
+                >
+                  Đã hiểu
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
-
-
 
       {/* ── 2. MODAL CHIA SẺ & GỬI LINK CÀI ĐẶT APP ── */}
       {showShareModal && (
@@ -337,12 +372,8 @@ export function IosInstallPrompt() {
             {/* Fixed Header */}
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 shrink-0 bg-[#00183F]/90">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#003B95] to-amber-500 p-0.5 shadow-lg shrink-0">
-                  <img
-                    src="/apple-touch-icon.png?v=ceo1983_v4w"
-                    alt="CEO 1983 App"
-                    className="h-full w-full rounded-[10px] object-cover"
-                  />
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 p-0.5 shadow-lg shrink-0 flex items-center justify-center">
+                  <Smartphone className="h-6 w-6 text-slate-950" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
@@ -367,7 +398,7 @@ export function IosInstallPrompt() {
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 text-xs text-slate-200 overscroll-contain">
               <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
                 <p className="leading-relaxed">
-                  Khi bạn gửi liên kết này qua <strong>Zalo, Messenger, SMS</strong> cho người khác, khi họ bấm vào trên iPhone hoặc Android, ứng dụng sẽ <strong>tự động hiện thông báo hỏi có muốn thêm lên màn hình chính không</strong>.
+                  Khi bạn gửi liên kết này qua <strong>Zalo, Messenger, SMS</strong> cho người khác, khi họ bấm vào trên iPhone hoặc Android, ứng dụng sẽ <strong>hỗ trợ cài đặt nhanh lên màn hình chính</strong>.
                 </p>
               </div>
 
@@ -381,32 +412,34 @@ export function IosInstallPrompt() {
                 />
                 <button
                   type="button"
-                  onClick={handleNativeShare}
-                  className="flex items-center gap-1 rounded-lg bg-amber-500 text-slate-950 px-3 py-1.5 text-xs font-bold shrink-0 hover:bg-amber-400 transition active:scale-95 cursor-pointer touch-press"
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-1 rounded-lg bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-400 hover:bg-amber-500/30 border border-amber-500/30 transition shrink-0 cursor-pointer touch-press"
                 >
-                  {copiedShare ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  <span>{copiedShare ? "Đã chép" : "Chép link"}</span>
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span>{copied ? "Đã chép" : "Chép"}</span>
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 px-4 py-2.5 font-bold text-xs shadow-md transition active:scale-95 cursor-pointer touch-press"
+                >
+                  <span>Gửi Qua Zalo / Messenger Ngay</span>
                 </button>
               </div>
             </div>
 
             {/* Fixed Footer */}
-            <div className="grid grid-cols-2 gap-2 px-5 py-3 border-t border-white/10 bg-black/40 shrink-0">
+            <div className="flex items-center justify-end px-5 py-3 border-t border-white/10 bg-black/40 shrink-0">
               <button
                 type="button"
-                onClick={handleNativeShare}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/10 py-2.5 text-xs font-bold text-white hover:bg-white/15 transition active:scale-95 cursor-pointer touch-press"
+                onClick={() => setShowShareModal(false)}
+                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 transition active:scale-95 cursor-pointer touch-press"
               >
-                <Copy className="h-4 w-4 text-amber-300" />
-                <span>Sao chép link</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleNativeShare}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/25 transition active:scale-95 cursor-pointer touch-press"
-              >
-                <Share2 className="h-4 w-4" />
-                <span>Gửi Zalo / Tin nhắn</span>
+                Đóng
               </button>
             </div>
           </div>

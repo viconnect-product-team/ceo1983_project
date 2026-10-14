@@ -21,12 +21,133 @@ export type ChatMessage = {
   pinned?: boolean;
 };
 
+export type GroupChat = {
+  id: string;
+  name: string;
+  memberIds: string[];
+  createdBy: string;
+  createdAt: string;
+  description?: string;
+  avatar?: string;
+};
+
 // The current logged-in member id, resolved server-side and hydrated below.
 export let CURRENT_USER_ID = "";
 
 let _statuses = new Map<string, ConnectionStatus>();
 let _timestamps = new Map<string, string>();
 let _messages: ChatMessage[] = [];
+let _groupChats: GroupChat[] = [];
+
+export function loadGroupChats(): GroupChat[] {
+  if (typeof window === "undefined") return _groupChats;
+  try {
+    const raw = localStorage.getItem("ceo_group_chats");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        _groupChats = parsed;
+        return _groupChats;
+      }
+    }
+  } catch {}
+
+  if (_groupChats.length === 0 && MEMBERS.length > 0) {
+    _groupChats = [
+      {
+        id: "group-bxt-btt-1983",
+        name: "Nhóm Ban Xúc Tiến & Ban Truyền Thông",
+        memberIds: MEMBERS.slice(0, 6).map((m) => m.id),
+        createdBy: CURRENT_USER_ID || "system",
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        description: "Phối hợp công tác xúc tiến giao thương, kết nối B2B và truyền thông sự kiện",
+      },
+      {
+        id: "group-bdh-truongban-1983",
+        name: "Ban Điều Hành & Các Trưởng Ban",
+        memberIds: MEMBERS.slice(0, 8).map((m) => m.id),
+        createdBy: CURRENT_USER_ID || "system",
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        description: "Điều phối và triển khai các chương trình trọng điểm của Hiệp hội CEO 1983",
+      },
+    ];
+    try {
+      localStorage.setItem("ceo_group_chats", JSON.stringify(_groupChats));
+    } catch {}
+  }
+  return _groupChats;
+}
+
+export function saveGroupChats() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("ceo_group_chats", JSON.stringify(_groupChats));
+  } catch {}
+}
+
+export function listGroupChats(): GroupChat[] {
+  if (_groupChats.length === 0) loadGroupChats();
+  return [..._groupChats];
+}
+
+export function getGroupChat(groupId: string): GroupChat | undefined {
+  if (_groupChats.length === 0) loadGroupChats();
+  return _groupChats.find((g) => g.id === groupId);
+}
+
+export function createGroupChat(name: string, memberIds: string[], description?: string): GroupChat {
+  if (_groupChats.length === 0) loadGroupChats();
+  const allMembers = Array.from(new Set([CURRENT_USER_ID, ...memberIds])).filter(Boolean);
+  const newGroup: GroupChat = {
+    id: `group-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    name: name.trim(),
+    memberIds: allMembers,
+    createdBy: CURRENT_USER_ID,
+    createdAt: new Date().toISOString(),
+    description: description?.trim() || undefined,
+  };
+  _groupChats.unshift(newGroup);
+  saveGroupChats();
+
+  // Create initial group system message
+  const initMsg: ChatMessage = {
+    id: `m-grp-init-${Date.now()}`,
+    fromId: CURRENT_USER_ID,
+    toId: newGroup.id,
+    text: `🎉 Đã tạo nhóm trao đổi "${newGroup.name}" gồm ${newGroup.memberIds.length} thành viên. Hãy bắt đầu thảo luận công việc cùng nhau!`,
+    at: new Date().toISOString(),
+  };
+  _messages.push(initMsg);
+  saveLocalGroupMessages();
+
+  emit();
+  return newGroup;
+}
+
+function loadLocalGroupMessages() {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem("ceo_group_messages");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        for (const m of parsed) {
+          if (!_messages.some((x) => x.id === m.id)) {
+            _messages.push(m);
+          }
+        }
+      }
+    }
+  } catch {}
+}
+
+function saveLocalGroupMessages() {
+  if (typeof window === "undefined") return;
+  try {
+    const groupMsgs = _messages.filter((m) => m.toId?.startsWith("group-"));
+    localStorage.setItem("ceo_group_messages", JSON.stringify(groupMsgs));
+  } catch {}
+}
 
 export type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -62,6 +183,8 @@ export function hydrateNetwork(
   _statuses = new Map(Object.entries(statuses));
   _timestamps = new Map(Object.entries(timestamps));
   _messages = [...messages];
+  loadGroupChats();
+  loadLocalGroupMessages();
 
   // If no connected peers in DB yet, provide default connected peers & initial welcome messages
   const hasConnected = Array.from(_statuses.values()).some((s) => s === "connected");
@@ -214,6 +337,11 @@ export function listChatPeers(): Member[] {
 }
 
 export function getThread(memberId: string): ChatMessage[] {
+  if (memberId.startsWith("group-")) {
+    return _messages
+      .filter((m) => m.toId === memberId)
+      .sort((a, b) => a.at.localeCompare(b.at));
+  }
   return _messages
     .filter(
       (m) =>
@@ -228,15 +356,24 @@ export function getThread(memberId: string): ChatMessage[] {
 export function sendMessage(toId: string, text: string, attachments?: ChatAttachment[]) {
   const trimmed = text.trim();
   if (!trimmed && (!attachments || attachments.length === 0)) return;
-  _messages.push({
+  const isGroup = toId.startsWith("group-");
+  const newMsg: ChatMessage = {
     id: `m${_messages.length + 1}-${Date.now()}`,
     fromId: CURRENT_USER_ID,
     toId,
     text: trimmed,
     attachments: attachments && attachments.length > 0 ? attachments : undefined,
     at: new Date().toISOString(),
-  });
-  // ensure connection exists when messaging
+  };
+  _messages.push(newMsg);
+
+  if (isGroup) {
+    saveLocalGroupMessages();
+    emit();
+    return;
+  }
+
+  // ensure connection exists when messaging individual
   if (_statuses.get(toId) !== "connected") _statuses.set(toId, "connected");
   emit();
   import("./networking.functions")
@@ -266,16 +403,36 @@ export function lastMessageWith(memberId: string): ChatMessage | undefined {
   return t[t.length - 1];
 }
 
-// Number of unread messages received from a given peer.
+// Number of unread messages received from a given peer or group.
 export function unreadCountWith(memberId: string): number {
+  if (memberId.startsWith("group-")) {
+    return _messages.filter(
+      (m) => m.toId === memberId && m.fromId !== CURRENT_USER_ID && !m.readAt,
+    ).length;
+  }
   return _messages.filter((m) => m.fromId === memberId && m.toId === CURRENT_USER_ID && !m.readAt)
     .length;
 }
 
-// Mark all messages from a peer as read (optimistic + persisted).
+// Mark all messages from a peer or group as read (optimistic + persisted).
 export function markThreadRead(memberId: string) {
   const now = new Date().toISOString();
   let changed = false;
+  if (memberId.startsWith("group-")) {
+    _messages = _messages.map((m) => {
+      if (m.toId === memberId && m.fromId !== CURRENT_USER_ID && !m.readAt) {
+        changed = true;
+        return { ...m, readAt: now };
+      }
+      return m;
+    });
+    if (changed) {
+      saveLocalGroupMessages();
+      emit();
+    }
+    return;
+  }
+
   _messages = _messages.map((m) => {
     if (m.fromId === memberId && m.toId === CURRENT_USER_ID && !m.readAt) {
       changed = true;

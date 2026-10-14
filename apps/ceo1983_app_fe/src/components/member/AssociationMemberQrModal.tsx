@@ -177,6 +177,31 @@ export function AssociationMemberQrModal({
     if (!raw) return;
     setErrorMsg(null);
 
+    // Xử lý mã QR sự kiện: Quét mã QR sự kiện trong phần kết nối sẽ mở form đăng ký sự kiện (không tự động đăng ký)
+    let eventId: string | null = null;
+    if (raw.startsWith("event_checkin:") || raw.startsWith("EVENT_CHECKIN:")) {
+      eventId = raw.split(":")[1]?.trim() || null;
+    } else if (raw.includes("/events/")) {
+      const match = raw.match(/\/events\/([^/?#]+)/);
+      if (match && match[1]) {
+        eventId = match[1];
+      }
+    } else if (/^EVT-[A-Za-z0-9_-]+$/i.test(raw.trim())) {
+      eventId = raw.trim();
+    }
+
+    if (eventId) {
+      toast.info("Đã quét mã sự kiện! Đang mở form đăng ký tham gia sự kiện...", {
+        duration: 3500,
+      });
+      onClose();
+      void navigate({
+        to: "/events/$eventId/register",
+        params: { eventId },
+      });
+      return;
+    }
+
     let code: string | null = null;
     if (raw.includes("CEO1983-MEMBER:")) {
       code = raw.replace("CEO1983-MEMBER:", "").trim();

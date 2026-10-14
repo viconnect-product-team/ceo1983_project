@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   QrCode,
@@ -6,24 +6,22 @@ import {
   UserPlus,
   ShieldCheck,
   CheckCircle2,
-  Clock,
   Printer,
   Download,
   Search,
-  Sparkles,
-  Ticket,
-  MapPin,
-  Calendar,
-  Trash2,
   UserCheck,
   Check,
   Phone,
   Save,
   Loader2,
+  Copy,
+  ExternalLink,
+  Globe,
+  Sparkles,
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { toast } from "sonner";
-import type { EventItem, Registration } from "@/lib/events.functions";
+import type { EventItem } from "@/lib/events.functions";
 import { fetchNestApi } from "@/lib/api-client";
 
 interface EventCheckinGatekeeperModalProps {
@@ -40,6 +38,7 @@ export function EventCheckinGatekeeperModal({
   onUpdateEvent,
 }: EventCheckinGatekeeperModalProps) {
   const [activeTab, setActiveTab] = useState<"qr_standee" | "gatekeepers" | "attendees">("qr_standee");
+  const [qrTarget, setQrTarget] = useState<"zalo" | "member_app" | "both">("zalo");
 
   // Gatekeepers & Ban Truyền Thông members from real DB
   const [bttMembers, setBttMembers] = useState<any[]>([]);
@@ -134,7 +133,14 @@ export function EventCheckinGatekeeperModal({
 
   if (!open || !event) return null;
 
-  const qrPayload = `event_checkin:${event.id}`;
+  const origin = typeof window !== "undefined" && window.location.origin
+    ? window.location.origin
+    : "https://crm.ceo1983.viconnect.vn";
+  
+  // Zalo Guest Registration URL: non-members scan with Zalo / Phone Camera to register & check-in
+  const zaloGuestUrl = `${origin}/events/${event.id}/register?source=zalo_guest`;
+  // App internal event checkin payload for club members using CEO 1983 App scanner
+  const appCheckinPayload = `event_checkin:${event.id}`;
 
   const isMemberSelected = (m: any) => {
     return selectedScanners.some((s: any) => {
@@ -251,7 +257,7 @@ export function EventCheckinGatekeeperModal({
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-[#003B95] text-white flex items-center justify-center shadow-md">
+            <div className="h-11 w-11 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md">
               <QrCode className="h-6 w-6" />
             </div>
             <div>
@@ -277,14 +283,14 @@ export function EventCheckinGatekeeperModal({
           </button>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="mt-4 flex border-b border-border">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-border mt-2">
           <button
             type="button"
             onClick={() => setActiveTab("qr_standee")}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
               activeTab === "qr_standee"
-                ? "border-[#003B95] text-[#003B95] dark:text-blue-400"
+                ? "border-amber-500 text-amber-600 dark:text-amber-400"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -296,7 +302,7 @@ export function EventCheckinGatekeeperModal({
             onClick={() => setActiveTab("gatekeepers")}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
               activeTab === "gatekeepers"
-                ? "border-[#003B95] text-[#003B95] dark:text-blue-400"
+                ? "border-amber-500 text-amber-600 dark:text-amber-400"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -308,7 +314,7 @@ export function EventCheckinGatekeeperModal({
             onClick={() => setActiveTab("attendees")}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
               activeTab === "attendees"
-                ? "border-[#003B95] text-[#003B95] dark:text-blue-400"
+                ? "border-amber-500 text-amber-600 dark:text-amber-400"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -321,48 +327,178 @@ export function EventCheckinGatekeeperModal({
         <div className="mt-4 overflow-y-auto pr-1 flex-1 space-y-4">
           {/* TAB 1: QR STANDEE */}
           {activeTab === "qr_standee" && (
-            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-secondary/30 border border-border">
-              <div className="p-4 bg-white rounded-2xl shadow-md border border-slate-200">
-                <QrCanvas
-                  value={qrPayload}
-                  size={200}
-                />
-              </div>
-
-              <div className="mt-3 font-mono text-xs text-muted-foreground font-semibold">
-                PAYLOAD: {qrPayload}
-              </div>
-
-              <div className="mt-2 text-xs font-bold text-foreground">
-                Mã QR Standee Đặt Tại Cửa Hội Trường
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground max-w-md leading-relaxed">
-                Hội viên tham dự sự kiện mở App Hiệp hội lên, quét mã QR này để tự động điểm danh, xác nhận chỗ ngồi (Bàn/Ghế) và nhận mã số quay thưởng may mắn.
-              </p>
-
-              <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            <div className="space-y-4">
+              {/* Mode Switcher */}
+              <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-secondary/50 border border-border">
                 <button
                   type="button"
-                  onClick={() => {
-                    window.print();
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground hover:bg-secondary shadow-xs transition cursor-pointer"
+                  onClick={() => setQrTarget("zalo")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    qrTarget === "zalo"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
                 >
-                  <Printer className="h-4 w-4 text-primary" />
-                  <span>In Standee A4 / Roll-up</span>
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>Quét Qua ZALO (Khách Mời / Đại Biểu Ngoài)</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(qrPayload);
-                    toast.success("Đã sao chép mã QR sự kiện!");
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shadow-xs transition cursor-pointer"
+                  onClick={() => setQrTarget("member_app")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    qrTarget === "member_app"
+                      ? "bg-amber-500 text-slate-950 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
                 >
-                  <Download className="h-4 w-4" />
-                  <span>Tải / Sao chép Mã</span>
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>Quét Qua App (Hội Viên CLB)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQrTarget("both")}
+                  className={`hidden sm:flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    qrTarget === "both"
+                      ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <span>Xem Cả Hai</span>
                 </button>
               </div>
+
+              {/* VIEW 1: ZALO GUEST QR (RECOMMENDED FOR NON-MEMBERS) */}
+              {(qrTarget === "zalo" || qrTarget === "both") && (
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border-2 border-blue-400 dark:border-blue-800 shadow-xs relative">
+                  <div className="absolute top-3 right-3">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-600 text-white shadow-2xs">
+                      TƯƠNG THÍCH ZALO & CAMERA
+                    </span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-2xl shadow-md border border-slate-200 mt-2">
+                    <QrCanvas
+                      value={zaloGuestUrl}
+                      size={qrTarget === "both" ? 170 : 210}
+                    />
+                  </div>
+
+                  <div className="mt-3 text-sm font-bold text-blue-950 dark:text-blue-200 flex items-center gap-1.5">
+                    <span>Mã QR Soát Vé & Đăng Ký Cho Khách Mời (Quét Qua ZALO)</span>
+                  </div>
+                  <p className="mt-1 text-[11.5px] text-muted-foreground max-w-lg leading-relaxed">
+                    Khách mời, đối tác vãng lai chưa là hội viên chỉ cần dùng <strong>Zalo</strong> hoặc <strong>Camera điện thoại</strong> quét mã này để mở ngay biểu mẫu đăng ký, chọn loại vé và nhận vị trí bàn ghế tức thì không cần đăng nhập.
+                  </p>
+
+                  <div className="mt-2.5 w-full max-w-md p-2 rounded-xl bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-900 text-[11px] font-mono text-slate-800 dark:text-slate-200 flex items-center justify-between gap-2 overflow-hidden">
+                    <span className="truncate">{zaloGuestUrl}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(zaloGuestUrl);
+                        toast.success("Đã sao chép link Zalo đăng ký sự kiện!");
+                      }}
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-blue-600 transition shrink-0 cursor-pointer"
+                      title="Sao chép link"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(zaloGuestUrl);
+                        toast.success("Đã sao chép liên kết mở qua Zalo!");
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 shadow-sm transition cursor-pointer"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Sao Chép Link Zalo</span>
+                    </button>
+                    <a
+                      href={zaloGuestUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-900 bg-white border border-slate-300 hover:bg-slate-100 shadow-2xs transition cursor-pointer dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span>Mở Thử Trang Khách Mời</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-900 bg-white border border-slate-300 hover:bg-slate-100 shadow-2xs transition cursor-pointer dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      <span>In Standee A4 / Roll-up</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 2: MEMBER APP CHECKIN QR */}
+              {(qrTarget === "member_app" || qrTarget === "both") && (
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border-2 border-amber-400 dark:border-amber-700 shadow-xs relative">
+                  <div className="absolute top-3 right-3">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-slate-950 shadow-2xs">
+                      DÀNH CHO HỘI VIÊN CÓ APP
+                    </span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-2xl shadow-md border border-slate-200 mt-2">
+                    <QrCanvas
+                      value={appCheckinPayload}
+                      size={qrTarget === "both" ? 170 : 210}
+                    />
+                  </div>
+
+                  <div className="mt-3 text-sm font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                    <span>Mã QR Check-in Nhanh Cho Hội Viên (Quét Bằng App CEO 1983)</span>
+                  </div>
+                  <p className="mt-1 text-[11.5px] text-muted-foreground max-w-lg leading-relaxed">
+                    Hội viên CLB đã cài đặt App CEO 1983 chỉ cần mở tính năng <strong>Quét mã QR</strong> tại bàn đón tiếp để hệ thống tự động xác nhận điểm danh trong 1 giây.
+                  </p>
+
+                  <div className="mt-2.5 w-full max-w-md p-2 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-800 text-[11px] font-mono text-slate-800 dark:text-slate-200 flex items-center justify-between gap-2 overflow-hidden">
+                    <span className="truncate">{appCheckinPayload}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(appCheckinPayload);
+                        toast.success("Đã sao chép mã payload!");
+                      }}
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-amber-600 transition shrink-0 cursor-pointer"
+                      title="Sao chép payload"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(appCheckinPayload);
+                        toast.success("Đã sao chép mã check-in App!");
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 shadow-sm transition cursor-pointer"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Sao Chép Mã Check-in App</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-900 bg-white border border-slate-300 hover:bg-slate-100 shadow-2xs transition cursor-pointer dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      <span>In Standee A4 / Roll-up</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -370,9 +506,9 @@ export function EventCheckinGatekeeperModal({
           {activeTab === "gatekeepers" && (
             <div className="space-y-4">
               <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 leading-relaxed flex items-start gap-2.5">
-                <ShieldCheck className="h-4 w-4 text-[#003B95] dark:text-blue-400 shrink-0 mt-0.5" />
+                <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-bold mb-0.5">
+                  <div className="font-bold mb-0.5 text-black dark:text-white">
                     Phân quyền người quét mã QR sự kiện (Ban Truyền Thông):
                   </div>
                   <div>
@@ -390,7 +526,7 @@ export function EventCheckinGatekeeperModal({
                     placeholder="Tìm thành viên Ban Truyền Thông theo tên, mã, SĐT..."
                     value={memberSearch}
                     onChange={(e) => setMemberSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 rounded-xl border border-border bg-background text-xs text-foreground outline-none focus:ring-1 focus:ring-[#003B95]"
+                    className="w-full pl-8 pr-3 py-2 rounded-xl border border-border bg-background text-xs text-foreground outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -404,14 +540,14 @@ export function EventCheckinGatekeeperModal({
                       department: m.department || "Ban Truyền Thông & Sự Kiện",
                       executiveRole: m.executiveRole || m.role || "Thành viên",
                     })))}
-                    className="px-2.5 py-1.5 rounded-xl border border-border text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-xl border border-border text-[11px] font-bold text-black dark:text-white hover:bg-secondary transition cursor-pointer"
                   >
                     Chọn tất cả
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedScanners([])}
-                    className="px-2.5 py-1.5 rounded-xl border border-border text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-xl border border-border text-[11px] font-bold text-black dark:text-white hover:bg-secondary transition cursor-pointer"
                   >
                     Bỏ chọn
                   </button>
@@ -421,7 +557,7 @@ export function EventCheckinGatekeeperModal({
               {/* Multi-Select Members List */}
               {loadingMembers ? (
                 <div className="py-8 flex flex-col items-center justify-center text-muted-foreground text-xs gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-[#003B95]" />
+                  <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
                   <span>Đang tải danh sách thành viên Ban Truyền Thông...</span>
                 </div>
               ) : filteredBttMembers.length === 0 ? (
@@ -438,7 +574,7 @@ export function EventCheckinGatekeeperModal({
                         onClick={() => handleToggleScanner(m)}
                         className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${
                           selected
-                            ? "border-[#003B95] bg-blue-50/60 dark:bg-blue-950/30 text-foreground"
+                            ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/30 text-foreground shadow-2xs"
                             : "border-border bg-card hover:bg-secondary/40 text-foreground"
                         }`}
                       >
@@ -446,7 +582,7 @@ export function EventCheckinGatekeeperModal({
                           <div
                             className={`h-5 w-5 rounded-lg border flex items-center justify-center transition ${
                               selected
-                                ? "bg-[#003B95] border-[#003B95] text-white"
+                                ? "bg-amber-500 border-amber-500 text-slate-950"
                                 : "border-slate-300 dark:border-slate-600 bg-background"
                             }`}
                           >
@@ -454,12 +590,12 @@ export function EventCheckinGatekeeperModal({
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-xs">{m.name}</span>
-                              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-secondary text-muted-foreground font-semibold">
+                              <span className="font-bold text-xs text-foreground">{m.name}</span>
+                              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-secondary text-black font-bold">
                                 {m.code}
                               </span>
                               {(m.executiveRole || m.executive_role) && (
-                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 font-bold">
+                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100 text-black font-bold border border-blue-200">
                                   {m.executiveRole || m.executive_role}
                                 </span>
                               )}
@@ -479,7 +615,7 @@ export function EventCheckinGatekeeperModal({
 
                         <div>
                           {selected ? (
-                            <span className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 flex items-center gap-1">
+                            <span className="text-[11px] font-black text-amber-600 dark:text-amber-400 flex items-center gap-1">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                               <span>Được quét</span>
                             </span>
@@ -504,17 +640,17 @@ export function EventCheckinGatekeeperModal({
                   type="button"
                   onClick={handleSaveScanners}
                   disabled={savingScanners}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shadow-sm transition disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 shadow-sm transition disabled:opacity-50 cursor-pointer"
                 >
                   {savingScanners ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Đang lưu...</span>
+                      <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+                      <span className="text-slate-950">Đang lưu...</span>
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4" />
-                      <span>Lưu Phân Công Soát Vé</span>
+                      <Save className="h-4 w-4 text-slate-950" />
+                      <span className="text-slate-950">Lưu Phân Công Soát Vé</span>
                     </>
                   )}
                 </button>
@@ -533,16 +669,16 @@ export function EventCheckinGatekeeperModal({
                     placeholder="Tìm theo tên, mã hội viên, số điện thoại..."
                     value={attendeeSearch}
                     onChange={(e) => setAttendeeSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-border bg-background text-xs text-foreground outline-none"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-border bg-background text-xs text-foreground outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowAddAttendeeForm(!showAddAttendeeForm)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shrink-0 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 shrink-0 transition cursor-pointer"
                 >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  <span>{showAddAttendeeForm ? "Đóng Form" : "Thêm Người Tham Gia"}</span>
+                  <UserPlus className="h-3.5 w-3.5 text-slate-950" />
+                  <span className="text-slate-950">{showAddAttendeeForm ? "Đóng Form" : "Thêm Người Tham Gia"}</span>
                 </button>
               </div>
 
@@ -552,7 +688,7 @@ export function EventCheckinGatekeeperModal({
                   onSubmit={handleAddAttendee}
                   className="p-4 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 space-y-3"
                 >
-                  <div className="font-bold text-xs text-[#003B95] dark:text-blue-300">
+                  <div className="font-bold text-xs text-blue-900 dark:text-blue-300">
                     Thêm Nhanh Hội Viên Tham Gia Sự Kiện:
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -641,7 +777,7 @@ export function EventCheckinGatekeeperModal({
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] cursor-pointer"
+                      className="px-4 py-1.5 rounded-lg text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 cursor-pointer shadow-sm"
                     >
                       Lưu Người Tham Gia
                     </button>
@@ -659,10 +795,10 @@ export function EventCheckinGatekeeperModal({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-foreground">{a.memberName}</span>
-                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-secondary text-muted-foreground">
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-secondary text-black font-bold">
                           {a.memberCode}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-blue-100 text-black border border-blue-200">
                           {a.ticketType}
                         </span>
                       </div>
@@ -671,7 +807,7 @@ export function EventCheckinGatekeeperModal({
                         <span>•</span>
                         <span className="text-primary font-semibold">{a.table} - {a.seat}</span>
                         <span>•</span>
-                        <span className="font-mono text-[#003B95] dark:text-blue-400 font-bold">Mã: {a.luckyNumber}</span>
+                        <span className="font-mono text-black dark:text-amber-400 font-bold">Mã: {a.luckyNumber}</span>
                       </div>
                     </div>
 
@@ -710,7 +846,7 @@ export function EventCheckinGatekeeperModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shadow-sm transition cursor-pointer"
+            className="px-6 py-2 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 shadow-sm transition cursor-pointer"
           >
             Đóng
           </button>
@@ -719,5 +855,3 @@ export function EventCheckinGatekeeperModal({
     </div>
   );
 }
-
-

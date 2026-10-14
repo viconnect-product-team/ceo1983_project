@@ -791,3 +791,12 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - Hỏi được: "tôi có bao nhiêu bạn bè", "cơ hội tôi đang quan tâm", "lịch hẹn của tôi", "sự kiện tôi đã đăng ký", "hóa đơn chưa thanh toán", "sản phẩm của tôi", "thông báo chưa đọc".
 - Dữ liệu lấy realtime: `user_connections`, `opportunity_interests`, `opportunities`, `products`, `business_meetings(+participants)`, `event_registrations`, `invoices`, `member_notifications`.
 - Mô hình: Gemini (2.5-flash → 2.0-flash) → OpenRouter model miễn phí (env `OPENROUTER_API_KEY` hoặc app_settings `openrouter_api_key`; `OPENROUTER_FREE_MODELS` để đổi danh sách) → trả lời số liệu chính xác từ DB nếu không có LLM.
+
+### D. Tách biệt bộ quét QR & Quét mở link đăng ký sự kiện
+- **Quét kết nối hội viên (`AssociationMemberQrModal.tsx`)**: Hỗ trợ quét cả danh thiếp hội viên và mã QR sự kiện; khi quét mã sự kiện hệ thống tự động đóng modal và điều hướng đến `/events/:id/register` để người dùng điền thông tin, tuyệt đối không tự đăng ký ngầm.
+- **Quét soát vé đại biểu (`association.checkin.tsx`)**: Chỉ quét Thẻ vé điện tử của người tham dự. Khi quét nhầm mã QR sự kiện/đăng ký, hệ thống từ chối và báo lỗi yêu cầu xuất trình vé.
+
+### E. Lịch hẹn 1-on-1 di động — Chỉ xuất hiện khi đối tác đồng ý (`association.members.tsx`)
+- Tab "Lịch hẹn" phân chia 3 phân loại: **"Đã chốt"** (chỉ hiển thị cuộc gặp mà cả 2 bên đã xác nhận: `status === 'confirmed' || status === 'accepted'`), **"Chờ duyệt"** (các lời mời gửi đến hoặc gửi đi đang chờ phản hồi), và **"Tất cả"**.
+- Hiển thị banner cảnh báo nổi bật khi có lời mời đang chờ hội viên phản hồi kèm nút bấm "Đồng ý" / "Từ chối" tiện lợi.
+
