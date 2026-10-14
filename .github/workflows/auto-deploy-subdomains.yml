@@ -5,10 +5,6 @@ on:
     branches:
       - main
       - master
-    paths-ignore:
-      - '**.md'
-      - 'document/**'
-      - '.gitignore'
   workflow_dispatch:
     inputs:
       target:
@@ -38,6 +34,16 @@ jobs:
 
       - name: Cài đặt dependencies
         run: npm install --legacy-peer-deps
+
+      - name: Sinh Prisma Client (@vibe/db)
+        run: |
+          cd packages/db
+          npx prisma generate
+
+      - name: Sinh routes cho Frontend
+        run: |
+          cd apps/ceo1983_app_fe
+          node scripts/gen-routes.mjs
 
       - name: Kiểm tra lỗi TypeScript Frontend (Exit code 0)
         run: |
@@ -69,6 +75,11 @@ jobs:
       - name: Cài đặt dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Sinh Prisma Client (@vibe/db)
+        run: |
+          cd packages/db
+          npx prisma generate
+
       - name: Build Frontend với Heap Memory 8GB (Chống tràn RAM)
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
@@ -92,6 +103,14 @@ jobs:
           mkdir -p dist-images
           docker save ceo1983-frontend:latest crm-frontend:latest | gzip -1 > dist-images/frontend-images.tar.gz
           docker save ceo1983-backend:latest crm-backend:latest | gzip -1 > dist-images/backend-images.tar.gz
+
+      - name: Kiểm tra cấu hình SSH Secret trên GitHub
+        run: |
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ] && [ -z "${{ secrets.SSH_PASSWORD }}" ]; then
+            echo "::error::CHƯA CẤU HÌNH SSH SECRET TRÊN GITHUB!"
+            echo "::error::Vui lòng vào GitHub: Settings -> Secrets and variables -> Actions -> Tạo biến 'SSH_PASSWORD' (mật khẩu root của server 14.225.217.232) hoặc 'SSH_PRIVATE_KEY'!"
+            exit 1
+          fi
 
       - name: Đẩy images và cấu hình sang Server VPS qua SSH
         uses: appleboy/scp-action@v0.1.7
