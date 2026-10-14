@@ -470,122 +470,143 @@ function AccountsPage() {
     );
   };
 
+  const getRoleLabel = (roleKey: string) => {
+    const found = SYSTEM_ROLES.find((r) => r.key === roleKey);
+    if (found) return found.shortName;
+    const dynamicRole = allRoleOptions.find((r) => r.value === roleKey);
+    return dynamicRole?.label || roleKey || "Thành viên";
+  };
+
   return (
     <AppShell>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <PageHeader
-          title="Quản Lý Tài Khoản & Phân Quyền Vai Trò"
-          subtitle="Quản lý danh sách tài khoản người dùng, phân công ban chuyên môn và gán vai trò quyền hạn hệ thống CEO 1983"
-        />
-
-        {/* ── METRIC STATS ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tổng số tài khoản</span>
-              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                <Users className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">{accounts.length}</div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Tài khoản quản trị & hội viên</div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lãnh đạo & Quản trị</span>
-              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                <ShieldCheck className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">
-              {accounts.filter((a) => a.role === "quan_tri" || a.role === "admin" || a.role === "chu_tich").length}
-            </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Admin & Ban điều hành cấp cao</div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trưởng ban chuyên môn</span>
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Building2 className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">
-              {accounts.filter((a) => a.role.startsWith("truong_ban_")).length}
-            </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Được phân quyền quản lý theo ban</div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Đang hoạt động</span>
-              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">
-              {accounts.filter((a) => a.status === "active").length}
-            </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Đã kích hoạt và sẵn sàng đăng nhập</div>
+        {/* Header với Icon Logo */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/icons/ceo1983_icon_2/image 6.png"
+            alt="CEO 1983"
+            className="w-16 h-16 object-contain shrink-0"
+          />
+          <div className="flex-1">
+            <h1 className="text-slate-900 dark:text-white text-2xl font-bold font-['Inter'] leading-8">
+              Quản Lý Tài Khoản &amp; Phân Quyền Vai Trò
+            </h1>
+            <p className="text-slate-500 text-sm font-normal font-['Inter'] leading-5 mt-0.5">
+              Quản lý danh sách tài khoản người dùng, phân công ban chuyên môn và gán vai trò quyền hạn hệ thống CEO 1983
+            </p>
           </div>
         </div>
 
-        {/* ── TOOLBAR: TÌM KIẾM CẠNH THÊM MỚI (Requirement 3) ── */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border shadow-xs">
-          <div className="flex flex-1 items-center gap-2 max-w-lg">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* ── 4 METRIC CARDS (Figma Exact Gradients) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" />
+              <div className="text-blue-600 text-xs font-semibold font-['Inter']">TỔNG SỐ TÀI KHOẢN</div>
+            </div>
+            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">{accounts.length}</div>
+            <div className="text-slate-500 text-xs font-normal font-['Inter']">Tài khoản quản trị &amp; hội viên</div>
+          </div>
+
+          <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" />
+              <div className="text-indigo-500 text-xs font-semibold font-['Inter']">LÃNH ĐẠO &amp; QUẢN TRỊ</div>
+            </div>
+            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">
+              {accounts.filter((a) => a.role === "quan_tri" || a.role === "admin" || a.role === "chu_tich").length}
+            </div>
+            <div className="text-slate-500 text-xs font-normal font-['Inter']">Admin &amp; Ban điều hành cấp cao</div>
+          </div>
+
+          <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" />
+              <div className="text-orange-500 text-xs font-semibold font-['Inter']">TRƯỞNG BAN CHUYÊN MÔN</div>
+            </div>
+            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">
+              {accounts.filter((a) => a.role.startsWith("truong_ban_")).length}
+            </div>
+            <div className="text-slate-500 text-xs font-normal font-['Inter']">Được phân quyền quản lý theo ban</div>
+          </div>
+
+          <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" />
+              <div className="text-emerald-500 text-xs font-semibold font-['Inter']">ĐANG HOẠT ĐỘNG</div>
+            </div>
+            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">
+              {accounts.filter((a) => a.status === "active").length}
+            </div>
+            <div className="text-slate-500 text-xs font-normal font-['Inter']">Đã kích hoạt và sẵn sàng đăng nhập</div>
+          </div>
+        </div>
+
+        {/* ── TOOLBAR: TÌM KIẾM CẠNH THÊM MỚI (Figma Style) ── */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-[0px_2px_2px_0px_rgba(22,39,75,0.05)]">
+          <div className="flex flex-1 items-center gap-2 max-w-xl">
+            <div className="flex-1 h-9 px-3 bg-white dark:bg-card rounded-3xl outline outline-1 outline-slate-200 flex items-center gap-2.5 overflow-hidden">
+              <img src="/icons/ceo1983_icon_2/search.svg" className="h-4 w-4 shrink-0" alt="search" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm tài khoản theo tên, email, SĐT, mã hội viên..."
-                className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95]"
+                className="flex-1 bg-transparent text-xs text-slate-900 dark:text-white placeholder:text-slate-500 outline-none"
               />
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
+                <button onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-slate-600">
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Nút THÊM MỚI CẠNH TÌM KIẾM (Đúng yêu cầu số 3) */}
             <button
               type="button"
               onClick={handleOpenAdd}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer shrink-0"
+              className="h-9 px-4 bg-blue-800 rounded-3xl shadow-sm flex items-center gap-2 text-white text-xs font-bold transition hover:bg-blue-900 shrink-0 cursor-pointer"
             >
-              <Plus className="h-4 w-4 text-slate-950" />
+              <img src="/icons/ceo1983_icon_2/plus.svg" className="h-3.5 w-3.5" alt="plus" />
               <span>Thêm Tài Khoản</span>
             </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={selectedDeptFilter}
-              onChange={(e) => setSelectedDeptFilter(e.target.value)}
-              className="rounded-xl border border-border bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:border-[#003B95]"
-            >
-              <option value="all">Tất cả ban</option>
-              {departmentList.map((dept) => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedDeptFilter}
+                onChange={(e) => setSelectedDeptFilter(e.target.value)}
+                className="h-9 px-3 pr-8 bg-white dark:bg-card rounded-[100px] outline outline-1 outline-slate-200 text-slate-900 dark:text-white text-xs font-normal appearance-none cursor-pointer"
+              >
+                <option value="all">Tất cả ban</option>
+                {departmentList.map((dept) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+              <img
+                src="/icons/ceo1983_icon_2/chevron-down.svg"
+                className="h-3 w-3 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                alt="chevron"
+              />
+            </div>
 
-            <select
-              value={selectedRoleFilter}
-              onChange={(e) => setSelectedRoleFilter(e.target.value)}
-              className="rounded-xl border border-border bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:border-[#003B95]"
-            >
-              <option value="all">Tất cả vai trò</option>
-              {allRoleOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedRoleFilter}
+                onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                className="h-9 px-3 pr-8 bg-white dark:bg-card rounded-[100px] outline outline-1 outline-slate-200 text-slate-900 dark:text-white text-xs font-normal appearance-none cursor-pointer"
+              >
+                <option value="all">Tất cả vai trò</option>
+                {allRoleOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <img
+                src="/icons/ceo1983_icon_2/chevron-down.svg"
+                className="h-3 w-3 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                alt="chevron"
+              />
+            </div>
           </div>
         </div>
 
@@ -593,7 +614,7 @@ function AccountsPage() {
         {isDirty && (
           <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-2 duration-200 shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-sm font-black text-sm">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-900 flex items-center justify-center shrink-0 shadow-sm font-black text-sm">
                 !
               </div>
               <div>
@@ -626,183 +647,112 @@ function AccountsPage() {
           </div>
         )}
 
-        {/* ── BẢNG LƯỚI DASHBOARD (Có STT, Cố định cột đầu trái và cột thao tác phải) ── */}
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">
+        {/* ── BẢNG TÀI KHOẢN (Figma Exact Table Design) ── */}
+        <div className="self-stretch bg-white dark:bg-card rounded-[20px] outline outline-1 outline-slate-200 overflow-hidden shadow-xs">
           <table className="w-full text-left border-collapse min-w-[1050px]">
             <thead>
-              <tr className="border-b border-border bg-muted/60 text-xs font-bold text-foreground uppercase tracking-wider">
-                {/* CỘT STT */}
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs py-3.5 px-3 w-[60px] text-center border-r border-border/60 shadow-xs">
-                  STT
-                </th>
-
-                {/* CỘT CỐ ĐỊNH 1 (SÁT LỀ TRÁI) */}
-                <th className="sticky left-[60px] z-20 bg-muted/95 backdrop-blur-xs py-3.5 px-4 w-[240px] min-w-[240px] border-r border-border/60 shadow-xs">
+              <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 text-xs font-bold text-slate-900 dark:text-slate-100">
+                <th className="w-12 px-3 text-center border-r border-slate-200">STT</th>
+                <th className="w-64 px-6 border-r border-slate-200">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-[#003B95]" />
-                    <span>Thông Tin Tài Khoản</span>
+                    <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" />
+                    <span>THÔNG TIN TÀI KHOẢN</span>
                   </div>
                 </th>
-
-                <th className="py-3.5 px-4 min-w-[160px]">Liên Hệ</th>
-                <th className="py-3.5 px-4 min-w-[200px]">Doanh Nghiệp</th>
-                <th className="py-3.5 px-4 min-w-[160px]">Ban Chuyên Môn</th>
-                <th className="py-3.5 px-4 min-w-[200px]">Vai Trò Hệ Thống (Role)</th>
-                <th className="py-3.5 px-4 w-[120px] text-center">Trạng Thái</th>
-
-                {/* CỘT CỐ ĐỊNH 2 (SÁT LỀ PHẢI - THAO TÁC XEM SỬA XÓA) */}
-                <th className="sticky right-0 z-20 bg-muted/95 backdrop-blur-xs py-3.5 px-4 text-center w-[130px] min-w-[130px] border-l border-border/60 shadow-xs">
-                  Thao Tác
-                </th>
+                <th className="w-48 px-4 border-r border-slate-200">LIÊN HỆ</th>
+                <th className="w-52 px-4 border-r border-slate-200">DOANH NGHIỆP</th>
+                <th className="w-40 px-4 border-r border-slate-200">PHÂN LOẠI BAN</th>
+                <th className="w-24 px-4 border-r border-slate-200">VAI TRÒ</th>
+                <th className="w-32 px-4 text-center">THAO TÁC</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-border/60 text-xs">
+            <tbody className="divide-y divide-slate-200 text-xs">
               {paginatedAccounts.map((acc, index) => (
-                <tr key={acc.id} className="hover:bg-primary/5 transition-colors group">
-                  {/* CỘT STT */}
-                  <td className="sticky left-0 z-10 bg-card group-hover:bg-background py-3 px-3 text-center font-bold text-xs text-muted-foreground border-r border-border/40 shadow-xs">
+                <tr key={acc.id} className="h-16 hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
+                  {/* STT */}
+                  <td className="w-12 px-3 text-center text-slate-500 text-xs font-semibold border-r border-slate-200">
                     {(currentPage - 1) * pageSize + index + 1}
                   </td>
 
-                  {/* CỘT CỐ ĐỊNH 1 (SÁT LỀ TRÁI) */}
-                  <td className="sticky left-[60px] z-10 bg-card group-hover:bg-background py-3 px-4 border-r border-border/40 shadow-xs">
+                  {/* THÔNG TIN TÀI KHOẢN */}
+                  <td className="w-64 px-6 border-r border-slate-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#003B95] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                      <div className="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center font-semibold text-xs shrink-0">
                         {acc.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-foreground text-xs line-clamp-1">{acc.name}</div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="font-mono text-[10px] font-bold text-[#003B95] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1 rounded">
-                            {acc.code}
-                          </span>
+                        <div className="text-slate-900 dark:text-white text-xs font-bold truncate">{acc.name}</div>
+                        <div className="mt-0.5 inline-flex px-1 bg-indigo-50 dark:bg-indigo-950/60 rounded-[3px]">
+                          <span className="text-blue-800 dark:text-blue-300 text-[10px] font-bold font-mono leading-3">{acc.code}</span>
                         </div>
                       </div>
                     </div>
                   </td>
 
-                  {/* Các cột ở giữa cuộn ngang */}
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
-                      <Mail className="h-3 w-3 shrink-0" />
+                  {/* LIÊN HỆ */}
+                  <td className="w-48 px-4 border-r border-slate-200">
+                    <div className="flex items-center gap-1.5 text-slate-500 text-xs truncate">
+                      <img src="/icons/ceo1983_icon_2/mail.svg" className="h-3 w-3 shrink-0" alt="mail" />
                       <span className="truncate">{acc.email}</span>
                     </div>
                     {acc.phone && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] mt-0.5">
-                        <Phone className="h-3 w-3 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-slate-500 text-xs mt-1">
+                        <img src="/icons/ceo1983_icon_2/phone.svg" className="h-3 w-3 shrink-0" alt="phone" />
                         <span>{acc.phone}</span>
                       </div>
                     )}
                   </td>
 
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-foreground text-xs line-clamp-1">
-                      {acc.companyName || "—"}
-                    </div>
-                    <div className="text-[10.5px] text-muted-foreground">Pháp nhân hội viên</div>
+                  {/* DOANH NGHIỆP */}
+                  <td className="w-52 px-4 border-r border-slate-200">
+                    <div className="text-slate-900 dark:text-white text-xs font-semibold truncate">{acc.companyName || "—"}</div>
+                    <div className="text-slate-500 text-[10px]">Pháp nhân hội viên</div>
                   </td>
 
-                  <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground bg-secondary px-2.5 py-1 rounded-lg">
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      {acc.department}
-                    </span>
-                  </td>
-
-                  {/* Cột Role (Cascading Dropdown theo ban, không reload trang) */}
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={acc.role}
-                        disabled={!canManage || (acc.role === "quan_tri" && acc.code === "ADMIN-001")}
-                        onChange={(e) => handleInlineRoleChange(acc.id, e.target.value)}
-                        className="rounded-lg border border-border/80 bg-background px-2.5 py-1 text-xs font-bold text-foreground outline-none focus:border-[#003B95] cursor-pointer hover:bg-muted/50 transition disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
-                      >
-                        {(() => {
-                          const deptRoles = getRolesForDepartment(acc.department, customDepts);
-                          const hasCurrent = deptRoles.some((r) => r.value === acc.role);
-                          return (
-                            <>
-                              {!hasCurrent && (
-                                <option value={acc.role}>
-                                  {allRoleOptions.find((r) => r.value === acc.role)?.label || acc.role}
-                                </option>
-                              )}
-                              {deptRoles.map((r) => (
-                                <option key={r.value} value={r.value}>
-                                  {r.label}
-                                </option>
-                              ))}
-                            </>
-                          );
-                        })()}
-                      </select>
+                  {/* PHÂN LOẠI BAN */}
+                  <td className="w-40 px-4 border-r border-slate-200">
+                    <div className="px-2.5 py-1 bg-sky-100 dark:bg-sky-950/60 rounded-xl inline-flex items-center gap-1.5">
+                      <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-3 w-3 shrink-0" alt="dept" />
+                      <span className="text-slate-900 dark:text-sky-200 text-xs font-semibold leading-4">{acc.department}</span>
                     </div>
                   </td>
 
-                  <td className="py-3 px-4 text-center">
-                    {acc.status === "active" ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        <CheckCircle2 className="h-3 w-3" /> Hoạt động
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-                        <XCircle className="h-3 w-3" /> Tạm khóa
-                      </span>
-                    )}
+                  {/* VAI TRÒ */}
+                  <td className="w-24 px-4 border-r border-slate-200">
+                    <div className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-[5px] outline outline-1 outline-slate-200 inline-block">
+                      <span className="text-slate-900 dark:text-slate-100 text-xs font-semibold">{getRoleLabel(acc.role)}</span>
+                    </div>
                   </td>
 
-                  {/* CỘT CỐ ĐỊNH 2 (SÁT LỀ PHẢI - THAO TÁC XEM SỬA XÓA) */}
-                  <td className="sticky right-0 z-10 bg-card group-hover:bg-background py-3 px-4 text-center border-l border-border/40 shadow-xs">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {/* Xem */}
+                  {/* THAO TÁC */}
+                  <td className="w-32 px-4 text-center">
+                    <div className="flex items-center justify-center gap-3">
                       <button
-                        type="button"
                         onClick={() => handleOpenView(acc)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
-                        title="Xem chi tiết tài khoản"
+                        title="Xem chi tiết"
+                        className="p-1 text-slate-500 hover:text-blue-800 transition cursor-pointer"
                       >
-                        <Eye className="h-4 w-4" />
+                        <img src="/icons/ceo1983_icon_2/eye.svg" className="h-4 w-4" alt="view" />
                       </button>
-
-                      {/* Sửa / Gán Role */}
                       <button
-                        type="button"
                         onClick={() => handleOpenEdit(acc)}
-                        className="p-1.5 rounded-lg text-[#003B95] hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
-                        title="Chỉnh sửa & Gán vai trò (Role)"
+                        title="Chỉnh sửa"
+                        className="p-1 text-blue-800 hover:text-blue-900 transition cursor-pointer"
                       >
-                        <Pencil className="h-4 w-4" />
+                        <img src="/icons/ceo1983_icon_2/pencil.svg" className="h-4 w-4" alt="edit" />
                       </button>
-
-                      {/* Xóa */}
                       <button
-                        type="button"
                         onClick={() => setDeleteConfirmAccount(acc)}
-                        disabled={acc.role === "quan_tri" || acc.code === "ADMIN-001"}
-                        className={`p-1.5 rounded-lg transition cursor-pointer ${
-                          acc.role === "quan_tri" || acc.code === "ADMIN-001"
-                            ? "text-muted-foreground/30 cursor-not-allowed"
-                            : "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                        }`}
-                        title={acc.role === "quan_tri" ? "Quản trị viên không thể xóa" : "Xóa tài khoản"}
+                        title="Xóa tài khoản"
+                        className="p-1 text-rose-600 hover:text-rose-700 transition cursor-pointer"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <img src="/icons/ceo1983_icon_2/trash-2.svg" className="h-4 w-4" alt="delete" />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
-
-              {filteredAccounts.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
-                    <Users className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p className="font-semibold text-xs">Không tìm thấy tài khoản người dùng nào phù hợp.</p>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

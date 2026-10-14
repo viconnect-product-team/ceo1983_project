@@ -66,6 +66,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/hooks/use-role";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { resolveMediaUrl, uploadFileToNest, fetchNestApi, isDeadAvatarUrl } from "@/lib/api-client";
+import { requestNotificationPermission } from "@/lib/notification-permissions";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
 import eventImg from "@/assets/vba-event.jpg";
@@ -154,6 +155,32 @@ export default function ProfileScreen() {
   const [userGuideOpen, setUserGuideOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const pref = localStorage.getItem("vba_push_notifications_enabled");
+    if (pref === "false") return false;
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") return true;
+    return pref === "true";
+  });
+
+  const handleToggleNotification = async () => {
+    if (!isNotificationEnabled) {
+      const res = await requestNotificationPermission();
+      if (res === "granted" || (typeof Notification !== "undefined" && Notification.permission === "granted")) {
+        setIsNotificationEnabled(true);
+        localStorage.setItem("vba_push_notifications_enabled", "true");
+        toast.success(isEn ? "Push notifications enabled!" : "Đã bật thông báo đẩy thành công!");
+      } else {
+        setIsNotificationEnabled(true);
+        localStorage.setItem("vba_push_notifications_enabled", "true");
+        toast.success(isEn ? "Notification preference saved!" : "Đã lưu cài đặt thông báo!");
+      }
+    } else {
+      setIsNotificationEnabled(false);
+      localStorage.setItem("vba_push_notifications_enabled", "false");
+      toast.info(isEn ? "Push notifications disabled." : "Đã tắt thông báo đẩy.");
+    }
+  };
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -828,13 +855,13 @@ export default function ProfileScreen() {
                     className="size-12 rounded-full object-cover shadow-xs border border-slate-200 dark:border-slate-700"
                   />
                 ) : (
-                  <div className="size-12 bg-blue-950 rounded-full flex items-center justify-center text-white text-xl font-bold font-['SF_Pro',system-ui,sans-serif]">
+                  <div className="size-12 bg-blue-950 rounded-full flex items-center justify-center text-white text-xl font-bold font-sans">
                     {initials(profileName || member?.name || "Trần Tuấn Anh")}
                   </div>
                 )}
               </div>
               <div className="inline-flex flex-col justify-center items-start gap-1 min-w-0">
-                <div className="justify-start text-slate-900 dark:text-white text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                <div className="justify-start text-slate-900 dark:text-white text-base font-bold font-sans leading-5 line-clamp-1">
                   {profileName || member?.name || "Trần Tuấn Anh"}
                   {isAdmin ? " (Platform Admin)" : ""}
                 </div>
@@ -844,7 +871,7 @@ export default function ProfileScreen() {
                     alt="Verified"
                     className="size-3.5 shrink-0"
                   />
-                  <div className="justify-start text-emerald-600 dark:text-emerald-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4">
+                  <div className="justify-start text-emerald-600 dark:text-emerald-400 text-xs font-medium font-sans leading-4">
                     {isEn ? "Official CEO 1983 Member" : "Hội viên chính thức CEO 1983"}
                   </div>
                 </div>
@@ -862,30 +889,30 @@ export default function ProfileScreen() {
 
         {/* ── SECTION 1: DANH THIẾP & HỘI VIÊN ── */}
         <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
-          <div className="self-stretch flex flex-col justify-start items-start gap-3">
-            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+          <div className="self-stretch flex flex-col justify-start items-start gap-2">
+            <div className="self-stretch justify-start text-[#003B95] dark:text-blue-400 text-[13px] font-bold uppercase tracking-wider px-1">
               {isEn ? "Business Card & Members" : "Danh thiếp & hội viên"}
             </div>
             <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
               {/* Item 1: Quản lý danh thiếp số */}
               <Link
                 to="/association/business-cards"
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/fa7-regular_contact-card.svg"
                         alt="Card"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "Digital Business Card" : "Quản lý danh thiếp số"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Design & share electronic business card" : "Thiết kế & chia sẻ danh thiếp số cá nhân"}
                       </div>
                     </div>
@@ -903,22 +930,22 @@ export default function ProfileScreen() {
               {/* Item 2: Danh bạ hội viên CLB */}
               <Link
                 to="/association/members"
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/fluent-mdl2_contact-list.svg"
                         alt="Directory"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "Club Member Directory" : "Danh bạ hội viên CLB"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Search & connect with members" : "Tìm kiếm & kết nối hội viên CEO 1983"}
                       </div>
                     </div>
@@ -938,30 +965,30 @@ export default function ProfileScreen() {
 
         {/* ── SECTION 2: HOẠT ĐỘNG & KINH DOANH ── */}
         <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
-          <div className="self-stretch flex flex-col justify-start items-start gap-3">
-            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+          <div className="self-stretch flex flex-col justify-start items-start gap-2">
+            <div className="self-stretch justify-start text-[#003B95] dark:text-blue-400 text-[13px] font-bold uppercase tracking-wider px-1">
               {isEn ? "Activities & Business" : "Hoạt động & kinh doanh"}
             </div>
             <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
               {/* Item 1: Cơ hội giao thương B2B */}
               <Link
                 to="/association/opportunities"
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/streamline_shipment-remove.svg"
                         alt="B2B"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "B2B Trade Opportunities" : "Cơ hội giao thương B2B"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Commercial demand & investment" : "Nhu cầu mua, bán & hợp tác đầu tư"}
                       </div>
                     </div>
@@ -980,56 +1007,23 @@ export default function ProfileScreen() {
               <Link
                 to="/association/products"
                 search={{}}
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/akar-icons_book.svg"
                         alt="Showcase"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "Product Showcase" : "Gian hàng sản phẩm"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Showcase enterprise products & services" : "Showcase sản phẩm & dịch vụ doanh nghiệp"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
-                    <img
-                      src="/icons/profile/chevron-right.svg"
-                      alt="Arrow"
-                      className="w-4 h-4 object-contain opacity-70"
-                    />
-                  </div>
-                </div>
-              </Link>
-
-              {/* Item 3: Lịch sử hoạt động & giao dịch */}
-              <Link
-                to="/association/history"
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
-                      <img
-                        src="/icons/profile/akar-icons_history.svg"
-                        alt="History"
-                        className="size-7 object-contain"
-                      />
-                    </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
-                        {isEn ? "History & Transactions" : "Lịch sử hoạt động & giao dịch"}
-                      </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
-                        {isEn ? "Trading log & event participation" : "Nhật ký giao dịch, giao thương & tham gia sự kiện"}
                       </div>
                     </div>
                   </div>
@@ -1048,30 +1042,69 @@ export default function ProfileScreen() {
 
         {/* ── SECTION 3: CÀI ĐẶT ỨNG DỤNG ── */}
         <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
-          <div className="self-stretch flex flex-col justify-start items-start gap-3">
-            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+          <div className="self-stretch flex flex-col justify-start items-start gap-2">
+            <div className="self-stretch justify-start text-[#003B95] dark:text-blue-400 text-[13px] font-bold uppercase tracking-wider px-1">
               {isEn ? "App Settings" : "Cài đặt ứng dụng"}
             </div>
             <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
-              {/* Item 1: Thông báo & lời mời */}
-              <Link
-                to="/association/notifications"
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
+              {/* Item 1: Bật / Tắt Thông báo đẩy */}
+              <div className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex-1 flex justify-start items-center gap-3 min-w-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/bell-01.svg"
                         alt="Bell"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
-                        {isEn ? "Notifications & Invites" : "Thông báo & lời mời"}
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
+                        {isEn ? "Push Notifications" : "Thông báo đẩy"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
+                        {isNotificationEnabled ? (isEn ? "Enabled - instant club updates" : "Đang bật - nhận tin tức & lời mời") : (isEn ? "Disabled - tap switch to enable" : "Đang tắt - bấm để bật nhận thông báo")}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isNotificationEnabled}
+                    data-state={isNotificationEnabled ? "On" : "Off"}
+                    onClick={handleToggleNotification}
+                    className={`w-14 h-7 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                      isNotificationEnabled ? "bg-[#34C759]" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                        isNotificationEnabled ? "translate-x-7" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Item 2: Hộp thư thông báo & lời mời */}
+              <Link
+                to="/association/notifications"
+                className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="self-stretch inline-flex justify-between items-center">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
+                      <img
+                        src="/icons/profile/bell-01.svg"
+                        alt="Notifications"
+                        className="size-6 object-contain"
+                      />
+                    </div>
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
+                        {isEn ? "Notifications & Invites" : "Hộp thư thông báo & lời mời"}
+                      </div>
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Messages & connection approvals" : "Cập nhật tin nhắn & phê duyệt kết nối"}
                       </div>
                     </div>
@@ -1086,26 +1119,26 @@ export default function ProfileScreen() {
                 </div>
               </Link>
 
-              {/* Item 2: Hướng dẫn sử dụng ứng dụng */}
+              {/* Item 3: Hướng dẫn sử dụng ứng dụng */}
               <button
                 type="button"
                 onClick={() => setUserGuideOpen(true)}
-                className="w-full self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/streamline-sharp_customer-support-1-solid.svg"
                         alt="Support"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "User Guide Handbook" : "Hướng dẫn sử dụng ứng dụng"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "10 core features, card scan" : "Chỉ dẫn chi tiết 10 chức năng cốt lõi, quét card"}
                       </div>
                     </div>
@@ -1120,7 +1153,7 @@ export default function ProfileScreen() {
                 </div>
               </button>
 
-              {/* Item 3: Ngôn ngữ ứng dụng */}
+              {/* Item 4: Ngôn ngữ ứng dụng */}
               <button
                 type="button"
                 onClick={() => {
@@ -1128,22 +1161,22 @@ export default function ProfileScreen() {
                   setLang(nextLang);
                   toast.success(nextLang === "en" ? "Switched to English" : "Đã chuyển sang Tiếng Việt");
                 }}
-                className="w-full self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/heroicons_language-20-solid.svg"
                         alt="Language"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "App Language" : "Ngôn ngữ ứng dụng"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {lang === "vi" ? "Tiếng Việt (8 ngôn ngữ tổng cộng)" : "English (8 languages total)"}
                       </div>
                     </div>
@@ -1158,29 +1191,29 @@ export default function ProfileScreen() {
                 </div>
               </button>
 
-              {/* Item 4: Chủ đề sự kiện từ CRM */}
+              {/* Item 5: Chủ đề sự kiện từ CRM */}
               {(() => {
                 const crmHasTheme = crmThemeId && crmThemeId !== "none";
                 const isEnabled = eventThemeEnabled && crmHasTheme;
                 const currentThemeOption = isEnabled ? getEffectiveThemeOption() : DEFAULT_BASE_THEME;
                 return (
-                  <div className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
+                  <div className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
                     <div className="self-stretch inline-flex justify-between items-center">
-                      <div className="flex justify-start items-center gap-3 min-w-0">
-                        <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                      <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                        <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                           <span className="text-2xl leading-none select-none">
                             {isEnabled ? (currentThemeOption.iconEmoji || "✨") : "✨"}
                           </span>
                         </div>
-                        <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                          <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                        <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                          <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                             {crmHasTheme
                               ? (isEnabled
                                   ? (currentThemeOption.name || (isEn ? "Event Theme Active" : "Chủ đề sự kiện"))
                                   : (isEn ? "Standard Interface (Theme Off)" : "Giao diện gốc (Đã tắt chủ đề)"))
                               : (isEn ? "Standard Interface (No Theme)" : "Giao diện gốc mặc định")}
                           </div>
-                          <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                          <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                             {crmHasTheme
                               ? (isEnabled
                                   ? (currentThemeOption.tagline || (isEn ? "Applied from CRM" : "Đang áp dụng chủ đề từ CRM"))
@@ -1235,22 +1268,22 @@ export default function ProfileScreen() {
                 );
               })()}
 
-              {/* Item 5: Giao diện tối màu */}
-              <div className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
+              {/* Item 6: Giao diện tối màu */}
+              <div className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
                 <div className="self-stretch inline-flex justify-between items-center">
                   <div className="flex-1 flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/moon-02.svg"
                         alt="Dark"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "Dark Mode" : "Giao diện tối màu"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {theme === "dark" ? (isEn ? "Night executive style" : "Ban đêm sang trọng, dịu mắt") : (isEn ? "Daylight executive style" : "Tươi sáng, tinh tế")}
                       </div>
                     </div>
@@ -1278,22 +1311,22 @@ export default function ProfileScreen() {
                 </div>
               </div>
 
-              {/* Item 6: Trợ lý điều khiển giọng nói AI */}
-              <div className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5">
+              {/* Item 7: Trợ lý điều khiển giọng nói AI */}
+              <div className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5">
                 <div className="self-stretch inline-flex justify-between items-center">
                   <div className="flex-1 flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/ri_robot-2-line.svg"
                         alt="Voice AI"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "AI Voice Assistant" : "Trợ lý điều khiển giọng nói AI"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {voiceAiEnabled ? (isEn ? "Voice bot floating on screen" : "Hiển thị trợ lý AI điều hướng giọng nói") : (isEn ? "Voice bot is hidden" : "Đang ẩn robot trợ lý giọng nói")}
                       </div>
                     </div>
@@ -1331,30 +1364,30 @@ export default function ProfileScreen() {
 
         {/* ── SECTION 4: CÀI ĐẶT TÀI KHOẢN ── */}
         <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
-          <div className="self-stretch flex flex-col justify-start items-start gap-3">
-            <div className="self-stretch justify-start text-[#2D2E8B] dark:text-blue-400 text-base font-bold font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1 px-1">
+          <div className="self-stretch flex flex-col justify-start items-start gap-2">
+            <div className="self-stretch justify-start text-[#003B95] dark:text-blue-400 text-[13px] font-bold uppercase tracking-wider px-1">
               {isEn ? "Account Settings" : "Cài đặt tài khoản"}
             </div>
             <div className="self-stretch rounded-2xl flex flex-col justify-start items-start overflow-hidden bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800 shadow-sm">
               {/* Item 1: Bảo mật tài khoản */}
               <Link
                 to="/association/settings"
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/lock-unlocked-01.svg"
                         alt="Security"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "Account Security" : "Bảo mật tài khoản"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Password, sessions & security" : "Đổi mật khẩu, phiên đăng nhập & bảo mật"}
                       </div>
                     </div>
@@ -1373,22 +1406,22 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => setContactSupportOpen(true)}
-                className="w-full self-stretch p-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/phone-01.svg"
                         alt="Phone"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "Contact Secretariat" : "Liên hệ ban thư ký"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Hotline, call center, zalo OA & inquiry" : "Hotline, tổng đài, zalo QA & gửi yêu cầu hỗ trợ"}
                       </div>
                     </div>
@@ -1406,22 +1439,22 @@ export default function ProfileScreen() {
               {/* Item 3: Phân quyền hội viên & BQT */}
               <Link
                 to="/association/permissions"
-                className="self-stretch p-2.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] flex flex-col justify-start items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="self-stretch inline-flex justify-between items-center">
-                  <div className="flex justify-start items-center gap-3 min-w-0">
-                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-lg flex justify-center items-center shrink-0">
+                  <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
                       <img
                         src="/icons/profile/shield-tick.svg"
                         alt="Permissions"
-                        className="size-7 object-contain"
+                        className="size-6 object-contain"
                       />
                     </div>
-                    <div className="w-60 inline-flex flex-col justify-start items-start gap-1 min-w-0">
-                      <div className="self-stretch justify-start text-zinc-900 dark:text-white text-base font-medium font-['SF_Pro',system-ui,sans-serif] leading-5 line-clamp-1">
+                    <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
+                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
                         {isEn ? "Permissions Management" : "Phân quyền hội viên & BQT"}
                       </div>
-                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal font-['SF_Pro',system-ui,sans-serif] leading-4 line-clamp-1">
+                      <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
                         {isEn ? "Executive, secretariat & committee rights" : "Cấp quyền ban chấp hành, ban thư ký & phân ban"}
                       </div>
                     </div>

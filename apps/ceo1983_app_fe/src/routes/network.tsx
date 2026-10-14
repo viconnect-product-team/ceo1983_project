@@ -5,10 +5,19 @@ import {
   Building2,
   Check,
   Clock,
+  Download,
   ExternalLink,
+  File,
+  FileArchive,
+  FileSpreadsheet,
+  FileText,
+  Image as ImageIcon,
   Loader2,
   MessageSquare,
   Package,
+  Paperclip,
+  Pin,
+  PinOff,
   Plus,
   Search,
   Send,
@@ -63,6 +72,8 @@ import {
   sendMessage,
   sendRequest,
   subscribe,
+  togglePinMessage,
+  type ChatAttachment,
   type ChatMessage,
   type ConnectionStatus,
 } from "@/lib/networking-data";
@@ -163,7 +174,7 @@ export const Route = createFileRoute("/network")({
   component: NetworkPage,
 });
 
-type Tab = "connections" | "requests" | "discover" | "messages";
+type Tab = "discover" | "messages";
 
 function useNetworkTick() {
   const [, setN] = useState(0);
@@ -261,6 +272,25 @@ function StatusChip({ member }: { member: Member }) {
   );
 }
 
+export function getCleanMemberSubtitle(member: Member): string {
+  const name = (member?.name || "").trim().toLowerCase();
+  const rawContact = (member?.contact || "").trim();
+  const company = ((member as any)?.company || (member as any)?.companyName || "").trim();
+  const industry = (member?.industry || "").trim();
+
+  // If rawContact has value and is not duplicating name
+  if (rawContact && rawContact.toLowerCase() !== name && !rawContact.toLowerCase().startsWith(name + " -")) {
+    return rawContact;
+  }
+  if (company && company.toLowerCase() !== name) {
+    return company;
+  }
+  if (industry) {
+    return industry.startsWith("ind.") ? industry.replace("ind.", "") : industry;
+  }
+  return "Hội viên Doanh nhân";
+}
+
 function MemberCard({
   member,
   rightSlot,
@@ -272,11 +302,6 @@ function MemberCard({
 }) {
   const t = useT();
   const committee = getMemberCommittee(member);
-  const industryLabel = member.industry
-    ? (typeof member.industry === "string" && member.industry.startsWith("ind.")
-        ? t(member.industry as never)
-        : member.industry)
-    : "Hội viên";
 
   return (
     <Card className="p-4 border border-border shadow-xs hover:shadow-md transition">
@@ -293,7 +318,7 @@ function MemberCard({
               {committee}
             </span>
             <span className="text-[11px] text-muted-foreground truncate">
-              {member.contact ? member.contact : industryLabel}
+              {getCleanMemberSubtitle(member)}
             </span>
           </div>
           {bottomLabel && <div className="mt-2">{bottomLabel}</div>}
@@ -512,6 +537,20 @@ function ConnectActions({
   );
 }
 
+function formatFileSize(bytes: number): string {
+  if (!bytes) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function AttachmentIcon({ type }: { type: string }) {
+  if (type === "image") return <ImageIcon className="h-4 w-4 text-blue-500 shrink-0" />;
+  if (type === "pdf") return <FileText className="h-4 w-4 text-rose-500 shrink-0" />;
+  if (type === "doc") return <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0" />;
+  return <File className="h-4 w-4 text-slate-500 shrink-0" />;
+}
+
 function ChatPanel({
   peerId,
   product,
@@ -528,7 +567,10 @@ function ChatPanel({
   const t = useT();
   const fmt = useFmt();
   const [text, setText] = useState("");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const lastDraftRef = useRef<string | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Apply prefilled draft when peer/product context arrives
   useEffect(() => {
@@ -540,6 +582,7 @@ function ChatPanel({
 
   const peer = peerId ? MEMBERS.find((m) => m.id === peerId) : undefined;
   const thread = peerId ? getThread(peerId) : [];
+  const pinnedMessages = thread.filter((m) => m.pinned);
 
   // Mark incoming messages as read whenever the open thread changes.
   useEffect(() => {
@@ -551,6 +594,44 @@ function ChatPanel({
     .reverse()
     .find((m) => m.fromId === CURRENT_USER_ID && m.readAt)?.id;
 
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const url = event.target?.result as string;
+        let type: "image" | "pdf" | "doc" | "other" = "other";
+        const nameLower = file.name.toLowerCase();
+        if (file.type.startsWith("image/")) type = "image";
+        else if (file.type === "application/pdf" || nameLower.endsWith(".pdf")) type = "pdf";
+        else if (
+          nameLower.endsWith(".doc") ||
+          nameLower.endsWith(".docx") ||
+          nameLower.endsWith(".xls") ||
+          nameLower.endsWith(".xlsx") ||
+          nameLower.endsWith(".ppt") ||
+          nameLower.endsWith(".pptx")
+        ) {
+          type = "doc";
+        }
+
+        const newAtt: ChatAttachment = {
+          id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name: file.name,
+          size: file.size,
+          type,
+          url,
+        };
+        setAttachments((prev) => [...prev, newAtt]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeAttachment = (idOrName: string) => {
+    setAttachments((prev) => prev.filter((a) => (a.id || a.name) !== idOrName));
+  };
+
   if (!peer) {
     return (
       <Card className="flex h-[560px] items-center justify-center p-6 text-sm text-muted-foreground">
@@ -560,19 +641,28 @@ function ChatPanel({
   }
 
   const submit = () => {
-    if (!text.trim()) return;
-    sendMessage(peer.id, text);
+    if (!text.trim() && attachments.length === 0) return;
+    sendMessage(peer.id, text, attachments.length > 0 ? attachments : undefined);
     setText("");
-    toast.success("Đã gửi tin nhắn trao đổi công việc");
+    setAttachments([]);
+    toast.success("Đã gửi tin nhắn trao đổi");
   };
 
   return (
-    <Card className="flex h-[560px] flex-col">
-      <div className="flex items-center gap-3 border-b border-border p-4">
-        <Avatar member={peer} size={40} />
+    <Card className="flex h-[580px] flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b border-border p-4 bg-card">
+        <Avatar member={peer} size={42} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-foreground">{peer.name}</div>
-          <MemberMeta member={peer} />
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-bold text-foreground">{peer.name}</span>
+            <span className="rounded-md bg-[#003B95]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-1.5 py-0.5 text-[10px]">
+              {getMemberCommittee(peer)}
+            </span>
+          </div>
+          <div className="text-[11px] text-muted-foreground truncate">
+            {getCleanMemberSubtitle(peer)}
+          </div>
         </div>
         <button
           onClick={onClose}
@@ -581,10 +671,39 @@ function ChatPanel({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex items-center gap-2 border-b border-primary/15 bg-primary/5 px-4 py-2 text-[11px] text-muted-foreground">
+
+      {/* Pinned Messages Banner */}
+      {pinnedMessages.length > 0 && (
+        <div className="flex items-center justify-between gap-2 bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-xs">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Pin className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 rotate-45 fill-amber-500" />
+            <span className="font-bold text-amber-900 dark:text-amber-200 shrink-0">
+              Đã ghim ({pinnedMessages.length}):
+            </span>
+            <span className="truncate text-amber-800 dark:text-amber-300">
+              {pinnedMessages[pinnedMessages.length - 1].text ||
+                `[${pinnedMessages[pinnedMessages.length - 1].attachments?.length ?? 1} tệp đính kèm]`}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              const lastPinned = pinnedMessages[pinnedMessages.length - 1];
+              const el = document.getElementById(`msg-${lastPinned.id}`);
+              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline shrink-0"
+          >
+            Xem tin nhắn
+          </button>
+        </div>
+      )}
+
+      {/* Chat info badge */}
+      <div className="flex items-center gap-2 border-b border-primary/15 bg-primary/5 px-4 py-1.5 text-[11px] text-muted-foreground">
         <Shield className="h-3.5 w-3.5 shrink-0 text-primary" />
-        <span>Kênh trao đổi công việc nội bộ CRM (Độc lập với tin nhắn hội viên trên Mobile App).</span>
+        <span>Kênh nhắn tin trực tiếp nội bộ CEO 1983 (Không giới hạn kết nối, hỗ trợ gửi và tải file tài liệu, hình ảnh, ghim tin nhắn).</span>
       </div>
+
       {product && (
         <div className="flex items-center gap-3 border-b border-border bg-secondary/40 px-4 py-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-lg">
@@ -618,6 +737,8 @@ function ChatPanel({
           )}
         </div>
       )}
+
+      {/* Message Thread List */}
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {thread.length === 0 && (
           <div className="py-12 text-center text-sm text-muted-foreground">
@@ -629,28 +750,106 @@ function ChatPanel({
           return (
             <div
               key={m.id}
-              className={`group flex items-center gap-1.5 ${mine ? "justify-end" : "justify-start"}`}
+              id={`msg-${m.id}`}
+              className={`group flex items-start gap-1.5 ${mine ? "justify-end" : "justify-start"}`}
             >
               {mine && (
-                <button
-                  onClick={() => {
-                    if (window.confirm(t("net.msg.delete") + "?")) deleteMessage(m.id);
-                  }}
-                  title={t("net.msg.delete")}
-                  className="rounded-md p-1 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100 pt-1">
+                  <button
+                    onClick={() => togglePinMessage(m.id)}
+                    title={m.pinned ? "Bỏ ghim" : "Ghim tin nhắn"}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <Pin className={`h-3.5 w-3.5 ${m.pinned ? "fill-amber-500 text-amber-500 rotate-45" : ""}`} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(t("net.msg.delete") + "?")) deleteMessage(m.id);
+                    }}
+                    title={t("net.msg.delete")}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               )}
+
               <div
-                className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
+                className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
                   mine
                     ? "rounded-br-sm text-primary-foreground"
                     : "rounded-bl-sm bg-secondary text-foreground"
-                }`}
+                } ${m.pinned ? "ring-2 ring-amber-400/80" : ""}`}
                 style={mine ? { background: "var(--gradient-primary)" } : undefined}
               >
-                <div>{m.text}</div>
+                {/* Pinned pill */}
+                {m.pinned && (
+                  <div className="mb-1 flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-300">
+                    <Pin className="h-3 w-3 fill-current rotate-45" />
+                    <span>Tin nhắn đã ghim</span>
+                  </div>
+                )}
+
+                {/* Text */}
+                {m.text && <div className="whitespace-pre-wrap break-words">{m.text}</div>}
+
+                {/* Attachments */}
+                {m.attachments && m.attachments.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    {m.attachments.map((att) => (
+                      <div key={att.id}>
+                        {att.type === "image" ? (
+                          <div className="space-y-1">
+                            <img
+                              src={att.url}
+                              alt={att.name}
+                              className="max-h-60 max-w-full rounded-lg object-contain bg-black/10 cursor-pointer hover:opacity-95"
+                              onClick={() => window.open(att.url, "_blank")}
+                            />
+                            <div className="flex items-center justify-between text-[11px] opacity-80 px-1">
+                              <span className="truncate max-w-[180px]">{att.name}</span>
+                              <a
+                                href={att.url}
+                                download={att.name}
+                                className="inline-flex items-center gap-1 font-semibold underline hover:opacity-100 ml-2"
+                              >
+                                <Download className="h-3 w-3" />
+                                <span>Tải ({formatFileSize(att.size)})</span>
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className={`flex items-center justify-between gap-2 rounded-lg border p-2 text-xs ${
+                              mine
+                                ? "bg-white/10 border-white/20 text-primary-foreground"
+                                : "bg-card border-border text-foreground"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <AttachmentIcon type={att.type} />
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate font-medium">{att.name}</div>
+                                <div className="text-[10px] opacity-75">{formatFileSize(att.size)}</div>
+                              </div>
+                            </div>
+                            <a
+                              href={att.url}
+                              download={att.name}
+                              className="inline-flex items-center gap-1 rounded-md bg-primary/20 px-2 py-1 font-semibold text-xs transition hover:bg-primary/30"
+                              title="Tải tệp"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Tải về</span>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Time & Read Status */}
                 <div
                   className={`mt-1 flex items-center gap-1 text-[10px] ${
                     mine ? "justify-end text-primary-foreground/70" : "text-muted-foreground"
@@ -668,11 +867,88 @@ function ChatPanel({
                   )}
                 </div>
               </div>
+
+              {!mine && (
+                <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100 pt-1">
+                  <button
+                    onClick={() => togglePinMessage(m.id)}
+                    title={m.pinned ? "Bỏ ghim" : "Ghim tin nhắn"}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <Pin className={`h-3.5 w-3.5 ${m.pinned ? "fill-amber-500 text-amber-500 rotate-45" : ""}`} />
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
-      <div className="flex items-center gap-2 border-t border-border p-3">
+
+      {/* Attachments preview staging area */}
+      {attachments.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-t border-border bg-secondary/30 p-2 max-h-24 overflow-y-auto">
+          {attachments.map((att) => (
+            <div
+              key={att.id}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1 text-xs shadow-xs"
+            >
+              <AttachmentIcon type={att.type} />
+              <span className="truncate max-w-[120px] font-medium">{att.name}</span>
+              <span className="text-[10px] text-muted-foreground">({formatFileSize(att.size)})</span>
+              <button
+                type="button"
+                onClick={() => removeAttachment(att.id || att.name)}
+                className="text-muted-foreground hover:text-destructive ml-1"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Hidden file inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={(e) => {
+          handleFileSelect(e.target.files);
+          e.target.value = "";
+        }}
+        className="hidden"
+      />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => {
+          handleFileSelect(e.target.files);
+          e.target.value = "";
+        }}
+        className="hidden"
+      />
+
+      {/* Input bar */}
+      <div className="flex items-center gap-2 border-t border-border p-3 bg-card">
+        <button
+          type="button"
+          onClick={() => imageInputRef.current?.click()}
+          title="Gửi hình ảnh"
+          className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+        >
+          <ImageIcon className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          title="Đính kèm tài liệu, file"
+          className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+        >
+          <Paperclip className="h-4 w-4" />
+        </button>
+
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -682,7 +958,7 @@ function ChatPanel({
               submit();
             }
           }}
-          placeholder={t("net.compose.placeholder")}
+          placeholder="Nhập nội dung trao đổi công việc, gửi file, tài liệu..."
           className="flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
         />
         <button
@@ -691,7 +967,7 @@ function ChatPanel({
           style={{ background: "var(--gradient-primary)" }}
         >
           <Send className="h-4 w-4" />
-          {t("net.compose.send")}
+          <span>Gửi</span>
         </button>
       </div>
     </Card>
@@ -968,9 +1244,7 @@ function NetworkPage() {
       label: "Nhân sự & Các Ban",
       count: MEMBERS.length,
     },
-    { key: "connections", label: t("net.tab.connections"), count: connections.length },
-    { key: "requests", label: t("net.tab.requests"), count: incoming.length + outgoing.length },
-    { key: "messages", label: t("net.tab.messages"), count: messageList.length },
+    { key: "messages", label: "Hộp thư trao đổi", count: messageList.length },
   ];
 
   return (
@@ -987,33 +1261,33 @@ function NetworkPage() {
 
       <PageHeader
         title={t("net.title")}
-        subtitle="Hệ thống kết nối và trao đổi công việc 1-on-1 nội bộ giữa Ban Điều Hành và các Ban Chuyên Môn CEO 1983"
+        subtitle="Hệ thống trao đổi công việc 1-on-1 nội bộ giữa Ban Điều Hành và các Ban Chuyên Môn CEO 1983"
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
-          label="Nhân sự các Ban"
+          label="Tổng nhân sự & Hội viên"
           value={fmt.num(MEMBERS.filter((m) => m.id !== CURRENT_USER_ID).length)}
           tone="primary"
           icon={<Users className="h-4 w-4" />}
         />
         <StatCard
-          label={t("net.kpi.connections")}
-          value={fmt.num(connections.length)}
+          label="Ban Chuyên Môn"
+          value="7 ban"
           tone="success"
-          icon={<UserCheck className="h-4 w-4" />}
+          icon={<Shield className="h-4 w-4" />}
         />
         <StatCard
-          label={t("net.kpi.incoming")}
-          value={fmt.num(incoming.length)}
-          tone="warning"
-          icon={<UserPlus className="h-4 w-4" />}
-        />
-        <StatCard
-          label={t("net.kpi.threads")}
+          label="Cuộc trao đổi"
           value={fmt.num(messageList.length)}
           tone="info"
           icon={<MessageSquare className="h-4 w-4" />}
+        />
+        <StatCard
+          label="Trao đổi trực tiếp"
+          value="Không rào cản"
+          tone="warning"
+          icon={<Send className="h-4 w-4" />}
         />
       </div>
 
@@ -1136,14 +1410,17 @@ function NetworkPage() {
                   <MemberCard
                     key={m.id}
                     member={m}
-                    bottomLabel={
-                      getStatus(m.id) === "none" ? (
-                        <Pill color="primary">{getMemberCommittee(m)}</Pill>
-                      ) : (
-                        <StatusChip member={m} />
-                      )
+                    bottomLabel={<Pill color="primary">{getMemberCommittee(m)}</Pill>}
+                    rightSlot={
+                      <button
+                        onClick={() => openChat(m.id)}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95"
+                        style={{ background: "#003B95" }}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        <span>Nhắn tin trao đổi</span>
+                      </button>
                     }
-                    rightSlot={<ConnectActions member={m} onMessage={openChat} />}
                   />
                 ))}
               </div>
@@ -1172,87 +1449,6 @@ function NetworkPage() {
             </>
           )}
         </>
-      )}
-
-      {tab === "connections" && (
-        <>
-          {filteredConnections.length === 0 ? (
-            <Card className="p-10 text-center text-sm text-muted-foreground">
-              {selectedCommittee !== "Tất cả các ban"
-                ? `Chưa có kết nối nào trong ${selectedCommittee}. Hãy sang tab "Nhân sự & Các Ban" để nhắn tin trao đổi ngay.`
-                : t("net.empty.connections")}
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {filteredConnections.map((m) => (
-                <MemberCard
-                  key={m.id}
-                  member={m}
-                  bottomLabel={
-                    <>
-                      <StatusChip member={m} />
-                      <StatusTime member={m} />
-                    </>
-                  }
-                  rightSlot={<ConnectActions member={m} onMessage={openChat} />}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {tab === "requests" && (
-        <div className="space-y-6">
-          <div>
-            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t("net.tab.requests")} · {filteredIncoming.length}
-            </div>
-            {filteredIncoming.length === 0 ? (
-              <Card className="p-6 text-sm text-muted-foreground">{t("net.empty.incoming")}</Card>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {filteredIncoming.map((m) => (
-                  <MemberCard
-                    key={m.id}
-                    member={m}
-                    bottomLabel={
-                      <>
-                        <Pill color="warning">{t("net.incoming.label")}</Pill>
-                        <StatusTime member={m} />
-                      </>
-                    }
-                    rightSlot={<ConnectActions member={m} onMessage={openChat} />}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              {t("net.kpi.outgoing")} · {filteredOutgoing.length}
-            </div>
-            {filteredOutgoing.length === 0 ? (
-              <Card className="p-6 text-sm text-muted-foreground">{t("net.empty.outgoing")}</Card>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {filteredOutgoing.map((m) => (
-                  <MemberCard
-                    key={m.id}
-                    member={m}
-                    bottomLabel={
-                      <>
-                        <Pill color="info">{t("net.outgoing.label")}</Pill>
-                        <StatusTime member={m} />
-                      </>
-                    }
-                    rightSlot={<ConnectActions member={m} onMessage={openChat} />}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
       )}
 
       {tab === "messages" && (

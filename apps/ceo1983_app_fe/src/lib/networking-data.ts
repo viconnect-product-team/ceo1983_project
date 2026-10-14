@@ -2,6 +2,14 @@ import { MEMBERS, type Member } from "./members-data";
 
 export type ConnectionStatus = "connected" | "pending_outgoing" | "pending_incoming" | "none";
 
+export type ChatAttachment = {
+  id?: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+};
+
 export type ChatMessage = {
   id: string;
   fromId: string;
@@ -9,6 +17,8 @@ export type ChatMessage = {
   text: string;
   at: string; // ISO
   readAt?: string | null;
+  attachments?: ChatAttachment[];
+  pinned?: boolean;
 };
 
 // The current logged-in member id, resolved server-side and hydrated below.
@@ -215,22 +225,40 @@ export function getThread(memberId: string): ChatMessage[] {
     .sort((a, b) => a.at.localeCompare(b.at));
 }
 
-export function sendMessage(toId: string, text: string) {
+export function sendMessage(toId: string, text: string, attachments?: ChatAttachment[]) {
   const trimmed = text.trim();
-  if (!trimmed) return;
+  if (!trimmed && (!attachments || attachments.length === 0)) return;
   _messages.push({
     id: `m${_messages.length + 1}-${Date.now()}`,
     fromId: CURRENT_USER_ID,
     toId,
     text: trimmed,
+    attachments: attachments && attachments.length > 0 ? attachments : undefined,
     at: new Date().toISOString(),
   });
   // ensure connection exists when messaging
   if (_statuses.get(toId) !== "connected") _statuses.set(toId, "connected");
   emit();
   import("./networking.functions")
-    .then((m) => m.sendMessageFn({ data: { toId, text: trimmed } }))
+    .then((m) =>
+      m.sendMessageFn({
+        data: {
+          toId,
+          text: trimmed || (attachments?.[0]?.name ? `[Tệp: ${attachments[0].name}]` : "[Đính kèm]"),
+        },
+      })
+    )
     .catch(() => {});
+}
+
+export function togglePinMessage(messageId: string) {
+  _messages = _messages.map((m) => {
+    if (m.id === messageId) {
+      return { ...m, pinned: !m.pinned };
+    }
+    return m;
+  });
+  emit();
 }
 
 export function lastMessageWith(memberId: string): ChatMessage | undefined {

@@ -173,9 +173,29 @@ function CheckinScreen() {
   });
 
   // Events where current user is specifically assigned as QR scanner in qr_scanners
+  // Riêng Quản trị, Chủ tịch, Admin luôn có toàn quyền quét mã check-in ở tất cả các sự kiện
   const assignedEvents = useMemo(() => {
     if (!serverEventsData || serverEventsData.length === 0) return [];
     if (mediaOverride) return serverEventsData;
+
+    const role = (user?.role || member?.role || "").toLowerCase().trim();
+    const srsRole = (typeof window !== "undefined" ? localStorage.getItem("vba_user_role") || "" : "").toLowerCase().trim();
+    const isSuperOrAdmin =
+      role === "quan_tri" ||
+      role === "admin" ||
+      role === "chu_tich" ||
+      role === "platform_admin" ||
+      srsRole === "quan_tri" ||
+      srsRole === "admin" ||
+      srsRole === "chu_tich" ||
+      Boolean((user as any)?.isAdmin) ||
+      Boolean((user as any)?.isPresident) ||
+      role.includes("quản trị") ||
+      role.includes("chủ tịch") ||
+      role.includes("admin");
+
+    if (isSuperOrAdmin) return serverEventsData;
+
     const myIds = [
       user?.id,
       member?.id,

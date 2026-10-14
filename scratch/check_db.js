@@ -2,19 +2,19 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  const members = await prisma.members.findMany();
-  console.log('Total members in DB:', members.length);
-  for (const m of members) {
-    console.log(`- ${m.id} | ${m.code} | ${m.name} | ${m.email} | ${m.phone} | ${m.level} | ${m.industry}`);
-  }
+  try {
+    const packages = await prisma.$queryRawUnsafe('SELECT id, tier, CAST(price AS TEXT) as price, package_type, available, sold, benefits FROM public.sponsor_packages');
+    console.log('COUNT sponsor_packages:', packages.length);
+    console.log('PACKAGES:', JSON.stringify(packages, null, 2));
 
-  const users = await prisma.vione_users.findMany();
-  console.log('\nTotal vione_users in DB:', users.length);
-  for (const u of users) {
-    console.log(`- ${u.id} | ${u.email} | ${u.username}`);
+    const sponsors = await prisma.$queryRawUnsafe('SELECT id, name, tier, CAST(amount AS TEXT) as amount FROM public.sponsors');
+    console.log('COUNT sponsors:', sponsors.length);
+    console.log('SPONSORS:', JSON.stringify(sponsors, null, 2));
+  } catch (err) {
+    console.error('Database error:', err.message);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-main()
-  .catch(err => console.error(err))
-  .finally(() => prisma.$disconnect());
+main();

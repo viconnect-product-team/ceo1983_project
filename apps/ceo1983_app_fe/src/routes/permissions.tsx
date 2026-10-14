@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
-import { Card, PageHeader } from "@/components/dashboard/PageKit";
+import { Card } from "@/components/dashboard/PageKit";
 import { useRole } from "@/hooks/use-role";
 import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
 import { DepartmentManagementSection } from "@/components/dashboard/DepartmentManagementSection";
@@ -191,12 +191,7 @@ function PermissionsPage() {
 
   return (
     <AppShell>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <PageHeader
-          title="Ma Trận Phân Quyền & Ban Chuyên Môn"
-          subtitle="Quản lý ban chuyên môn và cấu hình quyền hạn vai trò hệ thống CEO 1983"
-        />
-
+      <div className="w-full min-h-screen bg-[#f8fafc] dark:bg-slate-950">
         {/* Ma Trận Phân Quyền Vai Trò Hệ Thống */}
         <RbacPermissionMatrix
           onDirtyChange={setMatrixDirty}

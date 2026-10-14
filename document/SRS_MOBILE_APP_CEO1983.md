@@ -733,3 +733,45 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 | **AC-M08** | Không lỗi mã nguồn | Kiểm tra type check `tsc --noEmit` đạt Exit code 0 (0 errors). |
 
 ---
+
+# PHẦN 6: BỔ SUNG YÊU CẦU ĐIỀU CHỈNH ĐẶC THÙ (CẬP NHẬT THÁNG 10/2026)
+
+### 6.1. Phân quyền Thao tác Di động theo 6 Ban Chuyên môn & Vai trò Hệ thống
+1. **Phân quyền Tin tức Câu Lạc Bộ**:
+   - Chỉ tài khoản thuộc các vai trò: **Quản trị (`quan_tri`)**, **Admin (`admin`)**, **Chủ tịch (`chu_tich`)**, hoặc **Trưởng ban chuyên môn (`truong_ban_*`)** mới có quyền Thêm mới, Chỉnh sửa, và Xóa tin tức câu lạc bộ.
+   - Hội viên thường (`member`) chỉ có quyền xem tin tức, bình luận, tương tác; tuyệt đối ẩn và chặn mọi nút thao tác chỉnh sửa/xóa tin tức.
+2. **Phân quyền Quét mã Check-in Sự kiện**:
+   - Thao tác quét mã QR check-in đại biểu tại sự kiện tuân thủ nghiêm ngặt danh sách nhân sự được tích chọn trong phân quyền của CRM Hiệp hội (`qrScanners` / `qrStaff` được gán khi tạo sự kiện).
+   - **Ngoại lệ đặc quyền**: Ba vai trò tối cao gồm **Quản trị (`quan_tri`)**, **Chủ tịch (`chu_tich`)**, và **Admin (`admin`)** luôn luôn có toàn quyền quét mã check-in tại tất cả mọi sự kiện mà không cần được phân công trước.
+
+### 6.2. Trợ Lý AI Động (Dynamic Context AI Assistant)
+1. **Nạp Dữ liệu Ngữ cảnh Hội viên Trực tiếp (Live Context Ingestion)**:
+   - Trợ lý AI tự động truy vấn dữ liệu tài khoản thời gian thực của người dùng đang đăng nhập:
+     + Danh sách sự kiện đã đăng ký (`registeredEvents`).
+     + Danh sách cơ hội giao thương B2B đang quan tâm (`interestedOpportunities`).
+     + Tổng số lượng bạn bè / hội viên kết nối (`connectedMembersCount`).
+     + Các cuộc gặp gỡ B2B kết nối 1-on-1 sắp tới hoặc đang chờ xử lý (`b2bMeetings`).
+     + Danh sách hóa đơn / niên liễm hội phí cần thanh toán (`pendingInvoices`).
+2. **Khả năng Phản hồi Trực tiếp Tức thì**:
+   - Khi hội viên hỏi bất kỳ câu hỏi nào liên quan đến tài khoản (ví dụ: *"Tôi đăng ký sự kiện nào không?"*, *"Tôi có quan tâm cơ hội nào không?"*, *"Tôi có bao nhiêu bạn bè?"*, *"Tôi có cuộc gặp kết nối nào không?"*, *"Tôi có hóa đơn nào phải thanh toán?"*), AI phản hồi chính xác, chi tiết với dữ liệu thực tế ngay lập tức.
+3. **Cơ chế Dự phòng Đa mô hình (Multi-Model Resilient Fallback)**:
+   - Trong trường hợp dịch vụ OpenRouter hoặc OpenAI gặp sự cố / hết hạn ngạch, hệ thống tự động kích hoạt mô hình miễn phí chất lượng cao hàng đầu hiện nay (`google/gemini-2.0-flash-exp:free`, `meta-llama/llama-3.3-70b-instruct:free`) kết hợp bộ xử lý cục bộ thông minh bảo đảm dịch vụ hoạt động liên tục 24/7.
+
+### 6.3. Quản lý Quyền Thông báo Đẩy Chủ động
+1. **Loại bỏ Hộp thoại Yêu cầu Thông báo Tự động Khi Khởi động**:
+   - Không tự ý kích hoạt `requestNotificationPermission()` khi người dùng vừa mở ứng dụng.
+2. **Chuyển về Trung tâm Cài đặt Cá nhân**:
+   - Tích hợp công tắc Bật/Tắt thông báo đẩy bên trong màn hình Hồ sơ cá nhân (`association.profile.tsx`).
+   - Đồng bộ chuẩn hóa lề (padding) và phông chữ (typography) trên màn hình cá nhân để đạt độ đồng đều, cao cấp.
+
+### 6.4. Tối Ưu Hóa Giao Diện & Tiết Giảm Sắc Vàng (Gold Hue Refinement)
+1. **Giảm độ bão hòa màu vàng**: Tiết chế các mảng màu vàng/amber rực rỡ, ưu tiên nền trắng tinh tế, thẻ xanh Deep Cobalt Navy `#003B95` và viền xám bạc thanh lịch.
+2. **Loại bỏ Section "Lịch sử hoạt động & giao dịch"**: Xóa hoàn toàn khối giao diện này ở màn hình trang chủ (`association.index.tsx`) để tối ưu hóa không gian hiển thị và giảm tải thị giác.
+3. **Khắc phục Lỗi Padding Tin tức CLB**: Bổ sung phần đệm mép phải (`pr-4` / `after:w-4`) trên thanh cuộn ngang tin tức để thẻ tin cuối cùng không bị dính sát mép màn hình.
+
+### 6.5. Khắc phục Triệt để Ô Nhập Tiền tệ VNĐ (StandardCurrencyInput & VndCurrencyInput)
+- Loại bỏ cản trở của cờ soạn thảo bàn phím (`isComposingRef`) đối với các ô nhập liệu số và tiền tệ (`inputMode="numeric"`).
+- Đảm bảo hỗ trợ 100% bàn phím số trên Android WebView, iOS và các bộ gõ tiếng Việt (Telex, VNI, EVKey, Unikey).
+
+
+---

@@ -54,6 +54,8 @@ export function EventWizard({
   onClose: () => void;
   onCreated: (event: EventItem) => void;
 }) {
+  if (!open) return null;
+
   const t = useT();
   const defaultTpl = EVENT_TYPE_TEMPLATES.forum;
 
@@ -221,7 +223,7 @@ export function EventWizard({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/65 backdrop-blur-md p-4 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-label={t("ewz.title")}

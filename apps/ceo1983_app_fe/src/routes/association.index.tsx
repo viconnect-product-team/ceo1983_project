@@ -246,12 +246,6 @@ const CEO1983_TOUR_STEPS: TourStep[] = [
     description: "Theo dõi số lượng cơ hội kinh doanh đang mở và sản phẩm chào bán. Nơi 200+ doanh nhân kết nối cung - cầu và xúc tiến thương mại.",
     icon: "💼",
   },
-  {
-    targetId: "tour-recent-history",
-    title: "Lịch Sử Hoạt Động & Giao Dịch",
-    description: "Theo dõi toàn bộ lịch sử điểm danh sự kiện, kết nối doanh nhân và giao dịch đóng phí trực tiếp ngay tại trang chủ.",
-    icon: "📜",
-  },
 ];
 
 function Home() {
@@ -379,7 +373,6 @@ function Home() {
   const fetchNotifs = useServerFn(listMyNotifications);
   const fetchDirectory = useServerFn(listMembers);
   const fetchNews = useServerFn(listNews);
-  const fetchHistory = useServerFn(getMyHistory);
 
   const { data: member } = useServerData<MyMember | null>(
     () => fetchMember(),
@@ -419,16 +412,29 @@ function Home() {
   );
   const { data: directoryMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
   const { data: newsItems = [] } = useServerData<NewsItem[]>(() => fetchNews(), [], "vba_news");
-  const { data: myHistory } = useServerData<MyHistory>(
-    () => fetchHistory(),
-    { activities: [], payments: [], events: [] },
-    user?.id ? `vba_history_${user.id}` : "vba_history",
-    [user?.id]
-  );
 
   // Check quyền quét mã sự kiện trên mobile CEO 1983:
-  // Chỉ tài khoản được BQT phân công cụ thể trong danh sách qrScanners của sự kiện mới hiện nút soát vé
+  // Riêng quản trị, chủ tịch, admin luôn có full quyền quét mã check-in mọi sự kiện.
+  // Các tài khoản khác chỉ được quét khi được BQT tích chọn phân công trong danh sách qrScanners của sự kiện trên CRM hiệp hội
   const canScanEventQr = useMemo(() => {
+    const role = (user?.role || (member as any)?.role || "").toLowerCase().trim();
+    const srsRole = (typeof window !== "undefined" ? localStorage.getItem("vba_user_role") || "" : "").toLowerCase().trim();
+    const isSuperOrAdmin =
+      role === "quan_tri" ||
+      role === "admin" ||
+      role === "chu_tich" ||
+      role === "platform_admin" ||
+      srsRole === "quan_tri" ||
+      srsRole === "admin" ||
+      srsRole === "chu_tich" ||
+      Boolean((user as any)?.isAdmin) ||
+      Boolean((user as any)?.isPresident) ||
+      role.includes("quản trị") ||
+      role.includes("chủ tịch") ||
+      role.includes("admin");
+
+    if (isSuperOrAdmin) return true;
+
     if (!serverEvents || !Array.isArray(serverEvents) || serverEvents.length === 0) {
       return false;
     }
@@ -917,87 +923,6 @@ function Home() {
     (user as any)?.user_metadata?.phone ||
     (customProfile as any)?.phone?.trim() ||
     "";
-  // Tổng hợp dữ liệu lịch sử hoạt động, thanh toán, sự kiện hiển thị trên trang chủ
-  const recentActivitiesList = useMemo(() => {
-    const list: Array<{
-      id: string;
-      type: "event" | "payment" | "connection" | "activity";
-      title: string;
-      detail?: string | null;
-      date: string;
-    }> = [];
-
-    if (myHistory?.activities && myHistory.activities.length > 0) {
-      for (const act of myHistory.activities) {
-        list.push({
-          id: act.id,
-          type: "activity",
-          title: act.title,
-          detail: act.detail,
-          date: act.date,
-        });
-      }
-    }
-    if (myHistory?.events && myHistory.events.length > 0) {
-      for (const ev of myHistory.events) {
-        list.push({
-          id: `ev-${ev.id}`,
-          type: "event",
-          title: `Tham gia: ${ev.name}`,
-          detail: ev.checkedIn ? "Đã check-in điểm danh tại sự kiện" : "Đã đăng ký vé đại biểu sự kiện",
-          date: ev.date,
-        });
-      }
-    }
-    if (myHistory?.payments && myHistory.payments.length > 0) {
-      for (const pay of myHistory.payments) {
-        list.push({
-          id: `pay-${pay.id}`,
-          type: "payment",
-          title: pay.description || "Giao dịch hội viên",
-          detail: `Hóa đơn: ${pay.invoice || "N/A"} · ${pay.amount ? pay.amount.toLocaleString("vi-VN") + " đ" : ""}`,
-          date: pay.date,
-        });
-      }
-    }
-
-    if (typeof window !== "undefined") {
-      try {
-        const storedEvents = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
-        if (Array.isArray(storedEvents)) {
-          for (const ev of storedEvents) {
-            if (!list.some((item) => item.id === `ev-${ev.id || ev.eventId}`)) {
-              list.push({
-                id: `ev-${ev.id || ev.eventId}`,
-                type: "event",
-                title: `Tham gia: ${ev.name || ev.title || "Sự kiện CEO 1983"}`,
-                detail: ev.checkedIn ? "Đã check-in điểm danh tại sự kiện" : `Đã đăng ký vé · Số may mắn ${ev.luckyNumber || "#1983"}`,
-                date: ev.date || new Date().toISOString(),
-              });
-            }
-          }
-        }
-
-        const storedConn = JSON.parse(localStorage.getItem("vba_sent_connection_requests") || "[]");
-        if (Array.isArray(storedConn)) {
-          for (const conn of storedConn) {
-            if (!list.some((item) => item.id === `conn-${conn.id}`)) {
-              list.push({
-                id: `conn-${conn.id}`,
-                type: "connection",
-                title: `Kết nối với ${conn.targetName || "Hội viên"}`,
-                detail: conn.opportunityTitle || conn.purpose || "Yêu cầu kết nối giao thương",
-                date: conn.createdAt || new Date().toISOString(),
-              });
-            }
-          }
-        }
-      } catch {}
-    }
-
-    return list;
-  }, [myHistory]);
-
   const rawCompany = customProfile?.company?.trim() || (effectiveMember as any)?.companyName || (effectiveMember as any)?.company || (effectiveMember as any)?.businessName;
   const isOldSeedCompany = rawCompany && ((rawCompany.includes("Phạm Văn Vũ") && !displayName.includes("Phạm Văn Vũ")));
   const displayCompany = (!rawCompany || isOldSeedCompany) ? "CLB Doanh Nhân CEO 1983" : rawCompany;
@@ -1704,123 +1629,12 @@ function Home() {
         )}
       </div>
 
-      {/* ── LỊCH SỬ HOẠT ĐỘNG & GIAO DỊCH CLB (ĐƯA LỊCH SỬ RA TRANG CHỦ) ── */}
-      <div id="tour-recent-history" className="mx-4 mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
-              <History className="h-3.5 w-3.5 text-amber-400" />
-            </span>
-            <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
-              {isEn ? "Activity & Transactions" : "Lịch sử hoạt động & Giao dịch"}
-            </h2>
-          </div>
-          <Link
-            to="/association/history"
-            className="flex items-center text-[11px] font-bold text-amber-600 dark:text-amber-400 transition hover:underline"
-          >
-            <span>{isEn ? "View details" : "Xem chi tiết"}</span>
-            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-          </Link>
-        </div>
-
-        {/* 3 Shortcut Category Badges */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <Link
-            to="/association/history"
-            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group border border-amber-500/25 hover:border-amber-400 transition active:scale-95 shadow-xs"
-          >
-            <div className="h-8 w-8 rounded-lg bg-amber-500/10 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5 group-hover:scale-110 transition-transform border border-amber-500/20">
-              <Handshake className="h-4 w-4" />
-            </div>
-            <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Kết nối B2B</span>
-            <span className="text-[9.5px] text-slate-400 font-medium">Giới thiệu</span>
-          </Link>
-
-          <Link
-            to="/association/history"
-            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group border border-amber-500/25 hover:border-amber-400 transition active:scale-95 shadow-xs"
-          >
-            <div className="h-8 w-8 rounded-lg bg-amber-500/10 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-1.5 group-hover:scale-110 transition-transform border border-amber-500/20">
-              <Calendar className="h-4 w-4" />
-            </div>
-            <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Vé sự kiện</span>
-            <span className="text-[9.5px] text-slate-400 font-medium">Điểm danh</span>
-          </Link>
-
-          <Link
-            to="/association/history"
-            className="vba-card flex flex-col items-center justify-center p-2.5 rounded-xl text-center group border border-amber-500/25 hover:border-amber-400 transition active:scale-95 shadow-xs"
-          >
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform border border-emerald-500/20">
-              <CreditCard className="h-4 w-4" />
-            </div>
-            <span className="text-[11px] font-bold text-[var(--vba-text)] line-clamp-1">Hội phí & Quỹ</span>
-            <span className="text-[9.5px] text-slate-400 font-medium">Hóa đơn</span>
-          </Link>
-        </div>
-
-        {/* Recent Items Preview List */}
-        {recentActivitiesList.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/25">
-            <History className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
-            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-              {isEn ? "No recent activities recorded yet" : "Chưa có hoạt động nào được ghi nhận"}
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">
-              {isEn
-                ? "Your registered events, B2B connections, and transactions will appear here as you take action."
-                : "Các sự kiện đã đăng ký, kết nối B2B và giao dịch sẽ tự động hiển thị tại đây khi bạn thực hiện."}
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-2xl vba-card p-3 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 border border-amber-500/25">
-            {recentActivitiesList.slice(0, 3).map((act, idx) => (
-              <Link
-                key={act.id || idx}
-                to="/association/history"
-                className="flex items-center gap-3 py-2.5 first:pt-0.5 last:pb-0.5 group hover:opacity-90 transition"
-              >
-                <div
-                  className={`h-8 w-8 rounded-xl shrink-0 flex items-center justify-center shadow-xs ${
-                    act.type === "event"
-                      ? "bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-500/30"
-                      : act.type === "payment"
-                      ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-500/30"
-                      : "bg-blue-100/80 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-500/30"
-                  }`}
-                >
-                  {act.type === "event" ? (
-                    <Calendar className="h-4 w-4" />
-                  ) : act.type === "payment" ? (
-                    <CreditCard className="h-4 w-4" />
-                  ) : (
-                    <Handshake className="h-4 w-4" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="line-clamp-1 text-[12px] font-bold text-[var(--vba-text)] group-hover:text-amber-500 transition-colors">
-                    {act.title}
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
-                    <span className="line-clamp-1">{act.detail || "Hoạt động ghi nhận trên hệ sinh thái CEO 1983"}</span>
-                    <span className="shrink-0">•</span>
-                    <span className="shrink-0">{formatNewsDate(act.date)}</span>
-                  </div>
-                </div>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* ── 6. TIN TỨC CÂU LẠC BỘ (TỐI ĐA 5 TIN TỨC CÓ ẢNH & 1, 2 DÒNG THÔNG TIN) ── */}
       <div className="mx-4 mt-6">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-xl bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
-              <Newspaper className="h-4 w-4 text-amber-400" />
+            <span className="grid h-7 w-7 place-items-center rounded-xl bg-gradient-to-tr from-[#002B70] to-[#003B95] text-white border border-blue-400/30 shadow-xs">
+              <Newspaper className="h-4 w-4 text-white" />
             </span>
             <div>
               <h2 className="text-[13px] sm:text-[14px] font-extrabold uppercase tracking-wider text-[var(--vba-text)] flex items-center gap-2">
@@ -1833,7 +1647,7 @@ function Home() {
           </div>
           <Link
             to="/association/news"
-            className="flex items-center text-[11px] font-bold text-amber-600 dark:text-amber-400 transition hover:underline"
+            className="flex items-center text-[11px] font-bold text-[#003B95] dark:text-blue-400 transition hover:underline"
           >
             <span>{isEn ? "View all" : "Xem tất cả"}</span>
             <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
@@ -1841,15 +1655,15 @@ function Home() {
         </div>
 
         {combinedNews.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
-            <Newspaper className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
+          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-white/10">
+            <Newspaper className="mx-auto h-7 w-7 text-slate-400 mb-1.5" />
             <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
               {isEn ? "No newly published club news" : "Chưa có bản tin mới trong tuần"}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 -mx-4 px-4 scrollbar-none snap-x snap-mandatory">
+            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 -mx-4 px-4 pr-6 scrollbar-none snap-x snap-mandatory after:content-[''] after:w-4 after:shrink-0">
               {combinedNews.slice(0, 5).map((item, idx) => {
                 const rawImg = (item as any).image || (item as any).imageUrl || (item as any).coverUrl || (item as any).thumbnail;
                 const newsImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : DEFAULT_NEWS_THUMBNAILS[idx % DEFAULT_NEWS_THUMBNAILS.length];
@@ -1907,6 +1721,7 @@ function Home() {
                   </Link>
                 );
               })}
+              <div className="w-2 shrink-0 pointer-events-none select-none" aria-hidden="true" />
             </div>
           </div>
         )}

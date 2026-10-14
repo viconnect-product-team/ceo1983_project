@@ -102,6 +102,14 @@
 #   - Mặc định tài khoản mới tham gia: Vai trò luôn là "Thành viên", ban chuyên môn luôn là "Hội viên CEO 1983".
 #   - Nhận diện vai trò chuẩn xác ngay khi đăng nhập: Backend cung cấp cờ boolean `isPresident`, `isAdmin`, `isExecutive`, `isGeneralSecretary`, `isDepartmentLeader` và `department` trong JWT payload và response đăng nhập; Frontend lưu trữ đồng bộ vào `localStorage` và `AuthContext` ngay tức thì.
 #   - Phân quyền gán ban & đổi vai trò: Chỉ tài khoản có vai trò Chủ tịch, Quản trị hoặc Admin mới có quyền chỉ định hội viên vào ban khác hoặc đổi vai trò (chặn cả frontend UI lẫn backend API, trả 403 Forbidden nếu không có quyền).
+#   - Tách biệt hoàn toàn Hồ sơ CRM (Profile Decoupling): Dữ liệu hồ sơ Admin CRM (avatar, họ tên, email, sđt) lưu độc lập (`crm_admin_profile`, `crm_admin_avatar`), tuyệt đối KHÔNG ghi đè vào hồ sơ thẻ hội viên hay avatar App Mobile CEO 1983.
+#   - Phân quyền Mobile App:
+#     + Tin tức CLB: Chỉ các vai trò `Quản trị`, `Admin`, `Chủ tịch`, `Trưởng ban` mới có quyền Đăng, Sửa, Xóa tin bài. Thành viên thông thường chỉ có quyền xem.
+#     + Quét mã Check-in Sự kiện: Phụ thuộc vào danh sách nhân sự được phân quyền quét mã từ CRM (`qrScanners` / `qrStaff`). Riêng `Quản trị`, `Chủ tịch`, `Admin` luôn có toàn quyền quét mã mọi sự kiện.
+#   - Chuẩn hóa Ô nhập Tiền tệ VNĐ: Tuyệt đối không để `isComposingRef` chặn sự kiện gõ số trên `inputMode="numeric"`. Đảm bảo người dùng nhập số tiền mượt mà trên bàn phím số di động và các bộ gõ tiếng Việt.
+#   - Phân hệ Trao đổi B2B (/network): Bỏ chức năng yêu cầu kết nối; cho phép tất cả hội viên nhắn tin trực tiếp với nhau; hỗ trợ gửi/tải tệp đa định dạng; hỗ trợ ghim tin nhắn; loại bỏ double chức danh.
+#   - Thương hiệu Sidebar: Cho phép thay đổi Tên câu lạc bộ và Logo header sidebar trong Cài đặt hệ thống (/settings), cập nhật thời gian thực qua sự kiện `crm_system_branding_updated`.
+#   - Gói tài trợ sự kiện: 100% dữ liệu thực từ bảng CSDL `public.sponsor_packages` và `public.sponsors`, tuyệt đối cấm mock/hardcode fallback.
 #   - Quy chuẩn Luồng Giao Việc & Phân Quyền Dữ Liệu Công Việc (Task Delegation & Data Authorization):
 #     + Đa dạng định dạng file đính kèm: Hỗ trợ tải lên và đính kèm tài liệu Word (.doc, .docx), Excel (.xls, .xlsx), PDF (.pdf) và hình ảnh (JPG, PNG, WebP) thông qua API lưu trữ tập trung.
 #     + Thẩm quyền giao việc phân cấp nghiêm ngặt:

@@ -106,7 +106,6 @@ export function VndCurrencyInput({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isComposingRef.current) return;
     const input = e.target;
     const rawValue = input.value;
     const cursor = input.selectionStart ?? rawValue.length;
@@ -153,13 +152,6 @@ export function VndCurrencyInput({
             isFocusedRef.current = false;
             const formatted = value > 0 ? formatVndNumber(value) : value === 0 ? "0" : "";
             setDisplayVal(formatted);
-          }}
-          onCompositionStart={() => {
-            isComposingRef.current = true;
-          }}
-          onCompositionEnd={(e) => {
-            isComposingRef.current = false;
-            handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
           }}
           onKeyDown={handleKeyDown}
           onChange={handleChange}

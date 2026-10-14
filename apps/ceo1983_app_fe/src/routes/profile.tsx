@@ -83,24 +83,48 @@ function ProfilePage() {
       return;
     }
 
-    fetchNestApi("/profile")
+    // Decoupled CRM Profile: prioritize crm_admin_profile and crm_admin_avatar
+    let savedCrmProf: any = null;
+    try {
+      const raw = localStorage.getItem("crm_admin_profile");
+      if (raw) savedCrmProf = JSON.parse(raw);
+    } catch {}
+
+    const savedCrmAvatar = typeof window !== "undefined" ? localStorage.getItem("crm_admin_avatar") : null;
+
+    if (savedCrmProf) {
+      setForm({
+        full_name: savedCrmProf.full_name || savedCrmProf.display_name || savedCrmProf.name || "",
+        phone: savedCrmProf.phone || "",
+        title: savedCrmProf.title || savedCrmProf.professional_title || "",
+        location: savedCrmProf.location || savedCrmProf.region || "",
+        bio: savedCrmProf.bio || "",
+        avatar_url: savedCrmAvatar || savedCrmProf.avatar_url || "",
+      });
+      setLoading(false);
+    }
+
+    fetchNestApi("/crm/profile")
+      .catch(() => fetchNestApi("/profile"))
       .catch(() => fetchNestApi("/me/profile"))
-      .catch(() => fetchNestApi("/users/me"))
       .then((prof) => {
         if (!active) return;
         const p = prof || {};
-        setForm({
-          full_name: p.display_name || p.name || decodedUser.name || "",
-          phone: p.phone || "",
-          title: p.professional_title || p.profile?.professional_title || "",
-          location: p.region || p.profile?.region || "",
-          bio: p.bio || p.profile?.bio || "",
-          avatar_url: p.avatar_url || "",
-        });
+        // If we already had savedCrmProf, keep local priority
+        if (!savedCrmProf) {
+          setForm({
+            full_name: p.display_name || p.name || decodedUser.name || "Ban Quản Trị Hệ Thống",
+            phone: p.phone || "0988 198 300",
+            title: p.professional_title || p.profile?.professional_title || "Quản trị viên CRM",
+            location: p.region || p.profile?.region || "Hà Nội",
+            bio: p.bio || p.profile?.bio || "Quản trị viên hệ thống & ban chuyên môn CEO 1983",
+            avatar_url: savedCrmAvatar || p.avatar_url || "",
+          });
+        }
         setLoading(false);
       })
       .catch((e) => {
-        console.error("Error loading profile:", e);
+        console.error("Error loading CRM profile:", e);
         if (active) setLoading(false);
       });
 
@@ -141,39 +165,36 @@ function ProfilePage() {
     setSaving(true);
     try {
       const payload = {
+        full_name: form.full_name.trim(),
         display_name: form.full_name.trim(),
         name: form.full_name.trim(),
         phone: form.phone.trim(),
+        title: form.title.trim(),
         professional_title: form.title.trim() || null,
+        location: form.location.trim(),
         region: form.location.trim() || null,
         bio: form.bio.trim() || null,
         avatar_url: form.avatar_url.trim() || null,
       };
 
-      // Try updating /profile, fallback to /me/profile
-      await fetchNestApi("/profile", {
+      // Decoupled Storage: Save strictly to crm_admin_profile & crm_admin_avatar
+      localStorage.setItem("crm_admin_profile", JSON.stringify(payload));
+      if (payload.avatar_url) {
+        localStorage.setItem("crm_admin_avatar", payload.avatar_url);
+      } else {
+        localStorage.removeItem("crm_admin_avatar");
+      }
+
+      // Notify CRM components
+      window.dispatchEvent(new CustomEvent("crm_admin_profile_updated", { detail: payload }));
+
+      // Synchronize to backend CRM profile endpoint if available
+      await fetchNestApi("/crm/profile", {
         method: "PUT",
         body: JSON.stringify(payload),
-      }).catch(() =>
-        fetchNestApi("/me/profile", {
-          method: "PUT",
-          body: JSON.stringify(payload),
-        })
-      );
-
-      // Also synchronize account in /users/me
-      await fetchNestApi("/users/me", {
-        method: "PUT",
-        body: JSON.stringify({
-          name: payload.name,
-          avatar_url: payload.avatar_url,
-          professional_title: payload.professional_title,
-          region: payload.region,
-          bio: payload.bio,
-        }),
       }).catch(() => null);
 
-      toast.success(t("profile.saved"));
+      toast.success(t("profile.saved") || "Đã lưu hồ sơ quản trị CRM độc lập thành công!");
     } catch (error: any) {
       toast.error(error.message || "Không thể lưu thông tin hồ sơ");
     } finally {

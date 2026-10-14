@@ -115,3 +115,25 @@ Không làm rối màn hình bằng các nút chữ cồng kềnh. Sử dụng b
   - `vba_member_cover_updated`: Cập nhật ảnh bìa.
   - `vba.connection.changed`: Thay đổi trạng thái kết nối bạn bè/đối tác.
   - `crm:permissions-updated`: Đồng bộ phân quyền tức thời giữa 3 phân hệ.
+  - `crm_system_branding_updated`: Cập nhật biểu trưng và tên hiệp hội trên Header Sidebar.
+
+---
+
+## 6. Quy Chuẩn Phân Quyền, AI & Vận Hành Mới (Cập Nhật 10/2026)
+
+1. **Tách Biệt Hồ Sơ Quản Trị CRM & App Mobile**:
+   - Sử dụng khóa `crm_admin_profile` và `crm_admin_avatar` cho tài khoản quản trị CRM, tuyệt đối không can thiệp hay ghi đè vào `vba_custom_profile` hay avatar hội viên mobile.
+2. **Phân Quyền Thao Tác Chi Tiết**:
+   - **Tin tức CLB**: Chỉ `quan_tri`, `admin`, `chu_tich`, `truong_ban_*` mới có quyền tạo/sửa/xóa tin bài. Thành viên thông thường chỉ có quyền xem.
+   - **Soát Vé / Quét Mã Check-in**: Căn cứ danh sách nhân sự soát vé trong `qrScanners` / `qrStaff` từ CRM. Riêng `quan_tri`, `chu_tich`, `admin` luôn có toàn quyền soát vé ở mọi sự kiện.
+3. **Trợ Lý AI Động (Dynamic Context Assistant)**:
+   - Tự động nạp dữ liệu tài khoản đang đăng nhập (sự kiện đã đăng ký, cơ hội quan tâm, bạn bè, cuộc hẹn B2B, hóa đơn cần thanh toán).
+   - Tự động chuyển đổi sang mô hình miễn phí thông minh (`google/gemini-2.0-flash-exp:free`, `meta-llama/llama-3.3-70b-instruct:free`) hoặc trả lời cục bộ nếu OpenRouter lỗi.
+4. **Phân Hệ Trao Đổi B2B (/network)**:
+   - Bỏ rào cản kết nối: Nhắn tin trực tiếp giữa các hội viên không cần chờ duyệt.
+   - Hỗ trợ gửi/tải tệp tin đa định dạng, ghim tin nhắn, và loại bỏ lỗi trùng lặp chức danh.
+5. **Cấu Hình Thương Hiệu Sidebar Header**:
+   - Hỗ trợ thay đổi Tên hiệp hội và Logo tại màn hình `/settings`, phát sự kiện `crm_system_branding_updated` đồng bộ ngay lập tức.
+6. **Không Mock Dữ Liệu Gói Tài Trợ**:
+   - Tải 100% dữ liệu thực từ bảng `public.sponsor_packages` và `public.sponsors`.
+

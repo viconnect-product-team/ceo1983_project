@@ -116,9 +116,6 @@ function useRenewalReminder() {
 
 function useAssociationRealtimeNotifications() {
   useEffect(() => {
-    // Proactively request notification permission on mount
-    void requestNotificationPermission();
-
     let socket: any = null;
     try {
       socket = getConnectAppSocket();

@@ -766,6 +766,61 @@ export function RbacPermissionMatrix({
   const [newActionApi, setNewActionApi] = useState("");
   const [newActionRoles, setNewActionRoles] = useState<Record<string, boolean>>({ bqt: true, quan_tri: true });
 
+  // Form chỉnh sửa thao tác
+  const [editActionModalOpen, setEditActionModalOpen] = useState(false);
+  const [editTargetCatId, setEditTargetCatId] = useState("");
+  const [editTargetFeatId, setEditTargetFeatId] = useState("");
+  const [editingActionId, setEditingActionId] = useState("");
+  const [editActionName, setEditActionName] = useState("");
+  const [editActionCode, setEditActionCode] = useState("");
+  const [editActionDesc, setEditActionDesc] = useState("");
+  const [editActionApi, setEditActionApi] = useState("");
+
+  const handleStartEditAction = (catId: string, featId: string, action: TreeAction) => {
+    setEditTargetCatId(catId);
+    setEditTargetFeatId(featId);
+    setEditingActionId(action.id);
+    setEditActionName(action.name);
+    setEditActionCode(action.code);
+    setEditActionDesc(action.description || "");
+    setEditActionApi(action.apiEndpoint || "");
+    setEditActionModalOpen(true);
+  };
+
+  const handleSaveEditedAction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editActionName.trim()) {
+      toast.error("Vui lòng nhập tên thao tác");
+      return;
+    }
+    setCategories((prev) =>
+      prev.map((c) => {
+        if (c.id !== editTargetCatId) return c;
+        return {
+          ...c,
+          features: c.features.map((f) => {
+            if (f.id !== editTargetFeatId) return f;
+            return {
+              ...f,
+              actions: f.actions.map((a) => {
+                if (a.id !== editingActionId) return a;
+                return {
+                  ...a,
+                  name: editActionName.trim(),
+                  code: editActionCode.trim() || a.code,
+                  description: editActionDesc.trim(),
+                  apiEndpoint: editActionApi.trim(),
+                };
+              }),
+            };
+          }),
+        };
+      })
+    );
+    setEditActionModalOpen(false);
+    toast.success("Đã cập nhật thông tin thao tác!");
+  };
+
   const toggleExpand = (id: string) => {
     setExpandedNodes((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -1224,7 +1279,93 @@ export function RbacPermissionMatrix({
     };
   }, []);
 
-  const activeColumns = dynamicRoles;
+  // Sắp xếp thứ tự vai trò chuẩn Figma: QUẢN TRỊ, CHỦ TỊCH, ADMIN, TỔNG THƯ KÝ, TRƯỞNG BAN ĐIỀU HÀNH, TRƯỞNG BAN TRUYỀN THÔNG...
+  const orderedRoles = useMemo(() => {
+    const primaryKeys = [
+      "quan_tri",
+      "chu_tich",
+      "admin",
+      "tong_thu_ky",
+      "truong_ban_dieu_hanh",
+      "truong_ban_truyen_thong",
+    ];
+    const result: SystemRole[] = [];
+    primaryKeys.forEach((key) => {
+      const match = dynamicRoles.find((r) => r.key === key);
+      if (match) result.push(match);
+    });
+    dynamicRoles.forEach((r) => {
+      if (!primaryKeys.includes(r.key)) {
+        result.push(r);
+      }
+    });
+    return result;
+  }, [dynamicRoles]);
+
+  const getRoleHeaderDisplay = (role: SystemRole) => {
+    if (role.key === "truong_ban_dieu_hanh") {
+      return (
+        <span className="text-center">
+          TRƯỞNG BAN
+          <br />
+          ĐIỀU HÀNH
+        </span>
+      );
+    }
+    if (role.key === "truong_ban_truyen_thong") {
+      return (
+        <span className="text-center">
+          TRƯỞNG BAN
+          <br />
+          TRUYỀN THÔNG
+        </span>
+      );
+    }
+    if (role.key === "truong_ban_thanh_vien") {
+      return (
+        <span className="text-center">
+          TRƯỞNG BAN
+          <br />
+          THÀNH VIÊN
+        </span>
+      );
+    }
+    if (role.key === "truong_ban_xuc_tien") {
+      return (
+        <span className="text-center">
+          TRƯỞNG BAN
+          <br />
+          XÚC TIẾN
+        </span>
+      );
+    }
+    if (role.key === "truong_ban_tai_chinh") {
+      return (
+        <span className="text-center">
+          TRƯỞNG BAN
+          <br />
+          TÀI CHÍNH
+        </span>
+      );
+    }
+    if (role.key === "truong_ban_thien_nguyen") {
+      return (
+        <span className="text-center">
+          TRƯỞNG BAN
+          <br />
+          THIỆN NGUYỆN
+        </span>
+      );
+    }
+    return <span className="text-center">{role.shortName.toUpperCase()}</span>;
+  };
+
+  const getRoleColWidth = (roleKey: string) => {
+    if (roleKey === "quan_tri" || roleKey === "chu_tich" || roleKey === "admin") {
+      return "w-32 min-w-[128px]";
+    }
+    return "w-28 min-w-[112px]";
+  };
 
   // Flat danh sách tất cả các chức năng theo đúng thứ tự Sidebar CRM (bỏ hàng nhóm)
   const flatFeatures = useMemo(() => {
@@ -1238,84 +1379,78 @@ export function RbacPermissionMatrix({
   }, [filteredCategories]);
 
   return (
-    <div className="space-y-4">
-      {/* ── THANH ĐIỀU KHIỂN CHÍNH (DYNAMIC ACTIONS & TOOLBAR) ── */}
-      <div className="bg-card border border-border rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Ô tìm kiếm thao tác */}
-          <div className="relative min-w-[260px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo tên chức năng, thao tác con, mã quyền..."
-              className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#003B95]"
-            />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+    <div className="self-stretch min-h-[739px] pl-4 sm:pl-10 lg:pl-14 pr-4 sm:pr-8 lg:pr-12 pt-8 sm:pt-10 flex flex-col justify-start items-start gap-4">
+      {/* ── TIÊU ĐỀ TRANG VÀ ICON LOGO (FIGMA SNIPPET 1) ── */}
+      <div className="self-stretch h-16 inline-flex justify-start items-center gap-1.5 overflow-hidden">
+        <img className="size-16 object-contain" src="/icons/ceo1983_icon_1/image 6.png" alt="logo" />
+        <div className="flex-1 inline-flex flex-col justify-start items-start gap-1.5">
+          <div className="justify-start text-slate-900 dark:text-white text-2xl font-bold font-['Inter'] leading-8">
+            Ma Trận Phân Quyền &amp; Ban Chuyên Môn
           </div>
-
-          {/* Huy hiệu Ma Trận Phân Quyền */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-300 shadow-xs">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Ma Trận Phân Quyền</span>
+          <div className="justify-start text-slate-500 text-sm font-normal font-['Inter'] leading-5">
+            Quản lý ban chuyên môn và cấu hình quyền hạn vai trò hệ thống CEO 1983
           </div>
+        </div>
+      </div>
 
-          {/* Mở rộng / Thu gọn */}
-          <button
-            onClick={expandAll}
-            className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-border bg-background hover:bg-secondary text-foreground transition"
-          >
-            Mở rộng
-          </button>
-          <button
-            onClick={collapseAll}
-            className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-border bg-background hover:bg-secondary text-foreground transition"
-          >
-            Thu gọn
-          </button>
+      {/* ── THANH TÌM KIẾM VÀ CÁC NÚT THAO TÁC (FIGMA SNIPPET 1) ── */}
+      <div className="self-stretch rounded-[20px] shadow-[0px_2px_2px_0px_rgba(24,43,76,0.03)] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 bg-white dark:bg-slate-900 inline-flex flex-wrap justify-between items-center overflow-hidden p-1.5 gap-2">
+        <div className="w-[460px] max-w-full h-8 px-3 bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex justify-start items-center gap-2 overflow-hidden">
+          <div className="size-4 relative overflow-hidden flex items-center justify-center">
+            <img src="/icons/ceo1983_icon_1/search.svg" className="size-3.5" alt="search" />
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Tìm theo tên chức năng, thao tác con"
+            className="flex-1 text-slate-700 dark:text-slate-200 text-xs font-normal font-['Inter'] bg-transparent border-none outline-none placeholder:text-slate-500"
+          />
+          {searchTerm && (
+            <button onClick={() => setSearchTerm("")} className="text-slate-400 hover:text-slate-600">
+              <X className="size-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Cụm nút Thao tác Dynamic: Thêm chức năng, Thêm quyền, Lưu toàn bộ */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex justify-start items-center gap-2">
           <button
+            type="button"
             onClick={() => setAddFeatureOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600 bg-blue-50 dark:bg-blue-950/60 px-3.5 py-1.5 text-xs font-bold text-[#003B95] dark:text-blue-300 hover:bg-blue-100 transition shadow-xs cursor-pointer"
+            className="w-40 h-8 px-3 bg-blue-800 hover:bg-blue-900 rounded-[20px] flex justify-center items-center gap-1.5 overflow-hidden cursor-pointer transition shadow-xs"
           >
-            <FolderPlus className="h-4 w-4" />
-            <span>+ Thêm Chức Năng</span>
+            <img src="/icons/ceo1983_icon_1/folder-plus.svg" className="size-3.5 invert brightness-0" alt="add" />
+            <span className="justify-start text-white text-xs font-semibold font-['Inter']">Thêm Chức Năng</span>
           </button>
 
           <button
+            type="button"
             onClick={() => {
               if (allFeaturesList.length > 0 && !targetFeatId) {
                 setTargetFeatId(allFeaturesList[0].id);
               }
               setAddActionOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600 bg-amber-50 dark:bg-amber-950/60 px-3.5 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition shadow-xs cursor-pointer"
+            className="w-36 h-8 px-3 bg-blue-800 hover:bg-blue-900 rounded-[20px] flex justify-center items-center gap-1.5 overflow-hidden cursor-pointer transition shadow-xs"
           >
-            <KeyRound className="h-4 w-4" />
-            <span>+ Thêm Quyền</span>
+            <img src="/icons/ceo1983_icon_1/key-round.svg" className="size-3.5 invert brightness-0" alt="key" />
+            <span className="justify-start text-white text-xs font-semibold font-['Inter']">Thêm Quyền</span>
           </button>
 
           <button
+            type="button"
             onClick={handleResetDefault}
             title="Khôi phục mặc định ban đầu"
-            className="p-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
+            className="size-8 bg-white dark:bg-slate-800 rounded-3xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex justify-center items-center overflow-hidden hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
           >
-            <RotateCcw className="h-4 w-4" />
+            <img src="/icons/ceo1983_icon_1/rotate-ccw.svg" className="size-4" alt="reset" />
           </button>
         </div>
       </div>
 
       {/* ── CẢNH BÁO CHƯA LƯU QUYỀN TRÊN MA TRẬN ── */}
       {isDirty && (
-        <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="self-stretch rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm font-bold text-sm">
               !
@@ -1333,7 +1468,7 @@ export function RbacPermissionMatrix({
             <button
               type="button"
               onClick={handleDiscard}
-              className="px-3 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-foreground font-semibold text-xs transition cursor-pointer"
+              className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white font-semibold text-xs hover:bg-slate-100 cursor-pointer"
             >
               Hoàn tác
             </button>
@@ -1341,196 +1476,178 @@ export function RbacPermissionMatrix({
               type="button"
               onClick={handleSaveAll}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs transition shadow-xs shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs transition shadow-xs cursor-pointer disabled:opacity-50"
             >
-              <Save className="h-3.5 w-3.5 text-slate-950" />
+              <Save className="h-3.5 w-3.5 text-white" />
               <span>{saving ? "Đang lưu..." : "Lưu Thay Đổi"}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* ── BẢNG MA TRẬN DẠNG CÂY (TREE MATRIX TABLE) ── */}
-      {/* ── BẢNG MA TRẬN DẠNG CÂY (TREE MATRIX TABLE) ── */}
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">
-        <table className="w-full text-left border-collapse min-w-[1100px]">
-          {/* Header Bảng: Cố định 2 cột bên trái & Cột Thao tác bên phải */}
-          <thead>
-            <tr className="border-b border-border bg-muted/60 text-xs font-bold text-foreground uppercase tracking-wider">
-              {/* Cột 1 Cố định bên trái: Tên Nhóm / Chức Năng */}
-              <th className="sticky left-0 z-30 bg-muted/95 backdrop-blur-xs py-3 px-4 w-[220px] min-w-[220px] border-r border-border/60 shadow-xs">
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-[#003B95]" />
-                  <span>Chức Năng</span>
-                </div>
-              </th>
+      {/* ── BẢNG MA TRẬN PHÂN QUYỀN (FIGMA SNIPPET 1) ── */}
+      <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-x-auto shadow-xs">
+        {/* Hàng Header Bảng */}
+        <div className="w-full min-w-max h-24 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 inline-flex justify-start items-start">
+          <div className="w-60 min-w-[240px] self-stretch pl-4 border-l border-r border-slate-200 dark:border-slate-800 flex justify-start items-center">
+            <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">QUYỀN THAO TÁC</div>
+          </div>
 
-              {/* Cột 2 Cố định bên trái: Quyền / Thao tác con */}
-              <th className="sticky left-[220px] z-30 bg-muted/95 backdrop-blur-xs py-3 px-4 w-[240px] min-w-[240px] border-r border-border/60 shadow-xs">
-                <span>Quyền Thao Tác</span>
-              </th>
-
-              {/* Các Cột Ban Chuyên Môn (6 Ban) HOẶC Vai Trò Hệ Thống (5 Roles) - Cuộn ngang */}
-              {activeColumns.map((col) => {
-                let totalActions = 0;
-                let activeCount = 0;
-                categories.forEach((cat) => {
-                  cat.features.forEach((feat) => {
-                    feat.actions.forEach((act) => {
-                      totalActions++;
-                      if (act.roles[col.key]) activeCount++;
-                    });
-                  });
+          {orderedRoles.map((col) => {
+            let totalActions = 0;
+            let activeCount = 0;
+            categories.forEach((cat) => {
+              cat.features.forEach((feat) => {
+                feat.actions.forEach((act) => {
+                  totalActions++;
+                  if (act.roles[col.key]) activeCount++;
                 });
-                const isAllChecked = totalActions > 0 && activeCount === totalActions;
-                const isIndeterminate = activeCount > 0 && activeCount < totalActions;
+              });
+            });
+            const isAllChecked = totalActions > 0 && activeCount === totalActions;
+            const colWidth = getRoleColWidth(col.key);
 
-                return (
-                  <th key={col.key} className="py-2.5 px-2 text-center min-w-[125px] align-top">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border ${col.color}`}>
-                        {col.shortName}
-                      </span>
+            return (
+              <div
+                key={col.key}
+                className={`${colWidth} h-24 pt-2.5 pb-3 inline-flex flex-col justify-center items-center gap-4 overflow-hidden border-r border-slate-200 dark:border-slate-800`}
+              >
+                <div className="h-7 flex flex-col justify-center items-center gap-2.5">
+                  <div className="px-2.5 py-0.5 rounded-2xl inline-flex justify-center items-center">
+                    <div className="text-center text-blue-800 dark:text-blue-400 text-xs font-bold font-['Inter'] leading-tight">
+                      {getRoleHeaderDisplay(col)}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleColumnAll(col.key, col.shortName)}
+                  className="px-2 rounded-[3px] inline-flex justify-start items-center gap-1 cursor-pointer hover:opacity-80 transition"
+                >
+                  <img src="/icons/ceo1983_icon_1/square-check.svg" className="size-2.5" alt="check" />
+                  <div
+                    className={`${
+                      isAllChecked ? "text-blue-800 dark:text-blue-400" : "text-slate-800 dark:text-slate-300"
+                    } text-[10px] font-semibold font-['Inter']`}
+                  >
+                    {isAllChecked ? "Bỏ chọn hết" : "Chọn tất cả"}
+                  </div>
+                </button>
+              </div>
+            );
+          })}
+
+          <div className="flex-1 min-w-[120px] self-stretch flex justify-center items-center">
+            <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">THAO TÁC</div>
+          </div>
+        </div>
+
+        {/* Các Chức Năng và Thao Tác Con */}
+        {flatFeatures.map(({ feat, catId, catName }) => {
+          const isFeatExpanded = expandedNodes[feat.id] ?? true;
+
+          return (
+            <React.Fragment key={feat.id}>
+              {/* Tiêu đề Chức năng (Nhóm nghiệp vụ) */}
+              <div className="w-full min-w-max h-11 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 inline-flex justify-start items-center">
+                <div className="w-full self-stretch pl-4 flex justify-start items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(feat.id)}
+                    className="flex items-center gap-2 cursor-pointer hover:text-blue-800 transition"
+                  >
+                    <img
+                      src="/icons/ceo1983_icon_1/chevron-down.svg"
+                      className={`size-2.5 transition-transform ${isFeatExpanded ? "" : "-rotate-90"}`}
+                      alt="toggle"
+                    />
+                    <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">
+                      {feat.name}
+                    </div>
+                  </button>
+                  <div className="justify-start text-slate-500 text-[10px] font-medium font-['Inter']">
+                    ({feat.actions.length} thao tác)
+                  </div>
+                </div>
+              </div>
+
+              {/* Danh sách các Thao tác con */}
+              {isFeatExpanded &&
+                feat.actions.map((action) => (
+                  <div
+                    key={action.id}
+                    className="w-full min-w-max h-10 border-b border-zinc-200 dark:border-slate-800 inline-flex justify-start items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                  >
+                    <div className="w-60 min-w-[240px] self-stretch px-4 border-r border-gray-200 dark:border-slate-800 flex justify-start items-center">
+                      <div
+                        className="flex-1 justify-start text-slate-900 dark:text-slate-200 text-xs font-semibold font-['Inter'] leading-4 truncate"
+                        title={action.name}
+                      >
+                        {action.name}
+                      </div>
+                    </div>
+
+                    {orderedRoles.map((col) => {
+                      const isChecked = !!action.roles[col.key];
+                      const colWidth = getRoleColWidth(col.key);
+
+                      return (
+                        <div
+                          key={col.key}
+                          className={`${colWidth} self-stretch bg-slate-50/30 dark:bg-slate-900/30 flex justify-center items-center border-r border-slate-100 dark:border-slate-800/50`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePermission(catId, feat.id, action.id, col.key)}
+                            className="cursor-pointer"
+                            title={`${isChecked ? "Bỏ quyền" : "Cấp quyền"} cho ${col.name}`}
+                          >
+                            {isChecked ? (
+                              <div className="size-5 bg-blue-800 rounded-sm outline outline-1 outline-offset-[-1px] outline-blue-800 flex justify-center items-center overflow-hidden">
+                                <img src="/icons/ceo1983_icon_1/check.svg" className="size-3 invert brightness-0" alt="check" />
+                              </div>
+                            ) : (
+                              <div className="size-5 bg-white/0 rounded-sm border border-slate-200 dark:border-slate-700" />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    <div className="flex-1 min-w-[120px] self-stretch flex justify-center items-center gap-5">
                       <button
                         type="button"
-                        onClick={() => handleToggleColumnAll(col.key, col.shortName)}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer ${
-                          isAllChecked
-                            ? "bg-[#003B95] text-white border-[#003B95]"
-                            : isIndeterminate
-                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
-                            : "bg-muted/70 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
-                        }`}
-                        title={`Chọn / bỏ chọn tất cả quyền cho cột ${col.name}`}
+                        onClick={() => {
+                          setSelectedDetail({ action, featureName: feat.name, categoryName: catName });
+                          setDetailModalOpen(true);
+                        }}
+                        className="size-3.5 relative overflow-hidden cursor-pointer hover:opacity-75 transition"
+                        title="Xem chi tiết"
                       >
-                        <CheckSquare className="h-3 w-3" />
-                        <span>{isAllChecked ? "Bỏ chọn hết" : "Chọn tất cả"}</span>
+                        <img src="/icons/ceo1983_icon_1/eye.svg" className="size-3.5" alt="view" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditAction(catId, feat.id, action)}
+                        className="size-3.5 relative overflow-hidden cursor-pointer hover:opacity-75 transition"
+                        title="Chỉnh sửa thao tác"
+                      >
+                        <img src="/icons/ceo1983_icon_1/pencil.svg" className="size-3.5" alt="pencil" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAction(catId, feat.id, action.id, action.name)}
+                        className="size-3.5 relative overflow-hidden cursor-pointer hover:opacity-75 transition"
+                        title="Xóa thao tác"
+                      >
+                        <img src="/icons/ceo1983_icon_1/trash-2.svg" className="size-3.5" alt="trash" />
                       </button>
                     </div>
-                  </th>
-                );
-              })}
-
-              {/* Cột Cố định bên phải: Thao Tác */}
-              <th className="sticky right-0 z-30 bg-muted/95 backdrop-blur-xs py-3 px-3 text-center w-[100px] min-w-[100px] border-l border-border/60 shadow-xs">
-                Thao Tác
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-border/60 text-xs">
-            {flatFeatures.map(({ feat, catId, catName }) => {
-              const isFeatExpanded = expandedNodes[feat.id] ?? true;
-
-              return (
-                <React.Fragment key={feat.id}>
-                  {/* DÒNG TIÊU ĐỀ CHỨC NĂNG (THEO CHUẨN MENU SIDEBAR CRM, ĐÃ BỎ NHÓM) */}
-                  <tr className="bg-secondary/25 hover:bg-secondary/45 font-semibold border-b border-border/40">
-                    {/* Cột 1 cố định: Tên chức năng con */}
-                    <td className="sticky left-0 z-15 bg-secondary/95 backdrop-blur-xs py-2.5 px-4 border-r border-border/40 shadow-xs">
-                      <button
-                        onClick={() => toggleExpand(feat.id)}
-                        className="flex items-center gap-2 text-xs text-foreground hover:text-amber-500 font-bold transition cursor-pointer"
-                      >
-                        {isFeatExpanded ? (
-                          <ChevronDown className="h-3.5 w-3.5 text-amber-500" />
-                        ) : (
-                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
-                        <span>{feat.name}</span>
-                      </button>
-                    </td>
-
-                    {/* Cột 2 cố định: Số quyền */}
-                    <td className="sticky left-[220px] z-15 bg-secondary/95 backdrop-blur-xs py-2.5 px-4 text-muted-foreground border-r border-border/40 shadow-xs">
-                      <span className="text-[10px] text-muted-foreground">
-                        ({feat.actions.length} thao tác)
-                      </span>
-                    </td>
-
-                    {/* Cột các roles: Trống ở dòng tiêu đề chức năng */}
-                    {activeColumns.map((col) => (
-                      <td key={col.key} className="py-2.5 px-2 text-center text-muted-foreground/30 text-[10px]">
-                        —
-                      </td>
-                    ))}
-
-                    {/* Cột thao tác của Chức Năng cố định phải: Nút Lưu quyền & Xóa chức năng */}
-                    <td className="sticky right-0 z-15 bg-secondary/95 backdrop-blur-xs py-2.5 px-3 text-center border-l border-border/40 shadow-xs">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleSaveFeaturePermissions(feat.name)}
-                          title="Lưu quyền cho chức năng này"
-                          className="p-1 rounded-lg hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 transition cursor-pointer"
-                        >
-                          <Save className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteFeature(catId, feat.id, feat.name)}
-                          title="Xóa chức năng"
-                          className="p-1 rounded-lg hover:bg-destructive/10 text-destructive transition cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* LEVEL 2: CÁC THAO TÁC CON CHI TIẾT (ACTIONS) */}
-                  {isFeatExpanded &&
-                    feat.actions.map((action) => (
-                      <tr key={action.id} className="hover:bg-primary/5 transition-colors border-b border-border/30">
-                        {/* Cột 1 cố định: Tên chức năng cha */}
-                        <td className="sticky left-0 z-10 bg-card py-2 px-4 text-xs font-medium text-muted-foreground border-r border-border/40 shadow-xs truncate">
-                          {feat.name}
-                        </td>
-
-                        {/* Cột 2 cố định: Tên thao tác */}
-                        <td className="sticky left-[220px] z-10 bg-card py-2 px-4 text-xs font-semibold text-foreground border-r border-border/40 shadow-xs">
-                          {action.name}
-                        </td>
-
-                        {/* CÁC Ô TÍCH CHECKBOX CHO VAI TRÒ HỆ THỐNG */}
-                        {activeColumns.map((col) => {
-                          const isChecked = !!action.roles[col.key];
-
-                          return (
-                            <td key={col.key} className="py-2 px-2 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleTogglePermission(catId, feat.id, action.id, col.key)}
-                                className={`inline-flex items-center justify-center h-5 w-5 rounded border transition cursor-pointer ${
-                                  isChecked
-                                    ? "bg-amber-500 border-amber-500 text-slate-950 shadow-xs"
-                                    : "border-border bg-background hover:border-amber-500/50 text-transparent"
-                                }`}
-                                title={`${isChecked ? "Bỏ quyền" : "Cấp quyền"} cho ${col.name}`}
-                              >
-                                <Check className="h-3 w-3 stroke-[3]" />
-                              </button>
-                            </td>
-                          );
-                        })}
-
-                        {/* CỘT THAO TÁC CỐ ĐỊNH PHẢI: ĐÃ BỎ NÚT XEM CHI TIẾT THEO YÊU CẦU */}
-                        <td className="sticky right-0 z-10 bg-card py-2 px-3 text-center border-l border-border/40 shadow-xs">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleDeleteAction(catId, feat.id, action.id, action.name)}
-                              title="Xóa thao tác này"
-                              className="p-1 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition cursor-pointer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                ))}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* ── MODAL 1: XEM CHI TIẾT QUYỀN / THAO TÁC CON ── */}
@@ -1861,6 +1978,86 @@ export function RbacPermissionMatrix({
                   className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition shadow-xs"
                 >
                   Thêm Quyền
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 4: CHỈNH SỬA THAO TÁC ── */}
+      {editActionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-blue-600" />
+                <h3 className="text-base font-bold text-foreground">Chỉnh Sửa Quyền / Thao Tác</h3>
+              </div>
+              <button onClick={() => setEditActionModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedAction} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Tên Thao Tác *:</label>
+                <input
+                  type="text"
+                  required
+                  value={editActionName}
+                  onChange={(e) => setEditActionName(e.target.value)}
+                  placeholder="Ví dụ: Chỉnh sửa trạng thái"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground focus:ring-2 focus:ring-[#003B95]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Mã Quyền (Code):</label>
+                <input
+                  type="text"
+                  value={editActionCode}
+                  onChange={(e) => setEditActionCode(e.target.value)}
+                  placeholder="Ví dụ: EDIT_STATUS"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground uppercase font-mono focus:ring-2 focus:ring-[#003B95]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-foreground mb-1">API Endpoint Mapped:</label>
+                <input
+                  type="text"
+                  value={editActionApi}
+                  onChange={(e) => setEditActionApi(e.target.value)}
+                  placeholder="Ví dụ: PUT /api/status/:id"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground font-mono focus:ring-2 focus:ring-[#003B95]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Mô Tả Nghiệp Vụ:</label>
+                <textarea
+                  rows={2}
+                  value={editActionDesc}
+                  onChange={(e) => setEditActionDesc(e.target.value)}
+                  placeholder="Mô tả quyền hạn và giới hạn thao tác..."
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs text-foreground focus:ring-2 focus:ring-[#003B95]"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-border flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditActionModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-secondary text-foreground text-xs font-semibold hover:bg-secondary/80 transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue-800 text-white text-xs font-bold hover:bg-blue-900 transition shadow-xs"
+                >
+                  Cập Nhật Thao Tác
                 </button>
               </div>
             </form>

@@ -1199,3 +1199,49 @@ Hệ thống CRM và Ứng dụng Di động chia sẻ chung một cơ sở dữ
 | **AC-08** | Chất lượng mã nguồn không lỗi | Kiểm tra type check `tsc --noEmit` đạt Exit code 0 (0 errors) trên toàn bộ hệ thống. |
 
 ---
+
+# PHẦN 6: BỔ SUNG YÊU CẦU ĐIỀU CHỈNH HỆ THỐNG CRM (CẬP NHẬT THÁNG 10/2026)
+
+### 6.1. Tách Biệt Hoàn Toàn Hồ Sơ Quản Trị CRM và App Mobile CEO 1983
+1. **Phân lập Dữ liệu Hồ sơ (Profile Decoupling)**:
+   - Hồ sơ người dùng tại Cổng Quản trị CRM (Avatar, Họ tên, Chức danh quản trị, Số điện thoại, Email) được lưu trữ hoàn toàn tách biệt độc lập (`crm_admin_profile`, `crm_admin_avatar`).
+   - Việc chỉnh sửa thông tin hoặc thay đổi avatar trên Web CRM tuyệt đối không làm thay đổi hay ghi đè lên thẻ hội viên, danh thiếp số công khai (`vba_custom_profile`), hoặc avatar trên App Mobile CEO 1983.
+
+### 6.2. Nâng Cấp Phân Hệ Trao Đổi & Nhắn Tin B2B (/network)
+1. **Loại bỏ Hoàn toàn Rào cản Kết nối**:
+   - Bỏ quy trình gửi lời mời kết nối và chờ phê duyệt. Toàn bộ hội viên và ban điều hành đều có thể bấm vào nhắn tin trực tiếp với nhau ngay lập tức.
+2. **Gửi & Tải Tệp Tin Đa Định Dạng**:
+   - Cho phép tải lên và gửi tệp tin đính kèm không giới hạn: hình ảnh (JPG, PNG, WebP), tài liệu văn phòng (PDF, DOCX, XLSX, PPTX) và tệp nén (ZIP, RAR).
+   - Hiển thị trực quan icon tệp, dung lượng và nút tải về máy tính mượt mà.
+3. **Tính Năng Ghim Tin Nhắn (Pin Message)**:
+   - Cho phép ghim các thông báo, số tài khoản, địa chỉ cuộc họp quan trọng lên đầu khung chat để các thành viên dễ dàng tra cứu.
+4. **Loại bỏ Lỗi Nhân Đôi Chức Danh (Double Title)**:
+   - Loại bỏ triệt để hiện tượng hiển thị trùng lặp chức danh (ví dụ: *"Chủ tịch - Chủ tịch"*, *"Trưởng ban - Trưởng ban"*).
+
+### 6.3. Tùy Biến Tên & Logo Header Sidebar Tại Cài Đặt (/settings)
+1. **Cấu hình Thương hiệu Sidebar**:
+   - Trong trang Cài đặt Hệ thống (`/settings`), bổ sung tính năng cho phép Quản trị viên thay đổi Tên câu lạc bộ/hiệp hội và tải lên Logo hiển thị tại phần đầu của Sidebar điều hướng.
+   - Khi lưu thay đổi, hệ thống phát tín hiệu cập nhật thời gian thực (`crm_system_branding_updated`) để thanh Sidebar cập nhật logo và tiêu đề mới ngay lập tức mà không cần tải lại trang.
+
+### 6.4. Chuẩn Hóa Giao Diện Phân Quyền & Quản Lý Tài Khoản Theo Bộ Nhận Diện CEO 1983
+1. **Ma Trận Phân Quyền & Ban Chuyên Môn (`/permissions`)**:
+   - Tái cấu trúc giao diện theo thiết kế mới: Thanh tiêu đề với Logo nhận diện CEO 1983 (`image 6.png`), thanh tìm kiếm chức năng bo cong 20px, các nút "Thêm Chức Năng", "Thêm Quyền" màu xanh Deep Cobalt Navy `#003B95`.
+   - Bảng phân quyền hiển thị rõ ràng 6 cột vai trò/ban: Quản trị, Chủ tịch, Admin, Tổng thư ký, Trưởng ban Điều hành, Trưởng ban Truyền thông kèm nút "Bỏ chọn hết" / "Chọn tất cả" và các thao tác Xem/Sửa/Xóa.
+   - Tích hợp bộ icon chuẩn SVG từ `CEO1983_icon_1`.
+2. **Quản Lý Tài Khoản & Phân Quyền Vai Trò (`/accounts`)**:
+   - Tái cấu trúc theo thiết kế mới: Bảng 4 thẻ thống kê trực quan (Tổng số tài khoản, Lãnh đạo & Quản trị, Trưởng ban chuyên môn, Đang hoạt động).
+   - Bảng danh sách hội viên với các cột: STT, Thông tin tài khoản (Avatar, Tên, Mã định danh), Liên hệ (Email, SĐT), Doanh nghiệp, Phân loại ban, Vai trò và Thao tác.
+   - Tích hợp bộ icon chuẩn SVG từ `CEO1983_icon_2`.
+
+### 6.5. Chuẩn Hóa Popup Tạo Sự Kiện 3 Bước (EventWizard)
+1. **Khắc phục lỗi tự động bật Popup khi vào trang Sự kiện**:
+   - Thêm điều kiện kiểm tra trạng thái mở `if (!open) return null;` tại đầu component `EventWizard.tsx`, đảm bảo popup chỉ hiển thị khi người dùng chủ động bấm vào nút tạo sự kiện.
+2. **Hiệu ứng Mờ Kính Che Phủ Nền (Backdrop Blur)**:
+   - Sử dụng lớp phủ toàn màn hình `fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md` tạo hiệu ứng mờ nền hệ thống chuyên nghiệp, tập trung trải nghiệm vào các bước tạo sự kiện.
+
+### 6.6. Kết Nối Gói Tài Trợ Với CSDL Thực
+1. **Loại bỏ Mock Data**:
+   - Xóa bỏ hoàn toàn các mảng dữ liệu mẫu hardcode (`FALLBACK_PACKAGES`, `FALLBACK_SPONSORS`).
+2. **Đồng bộ với Bảng `public.sponsor_packages` và `public.sponsors`**:
+   - Truy vấn và hiển thị 100% dữ liệu thực tế từ cơ sở dữ liệu hệ thống (Bạch Kim, Vàng, Bạc, Đồng...).
+

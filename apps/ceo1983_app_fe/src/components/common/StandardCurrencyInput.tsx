@@ -103,7 +103,6 @@ export function StandardCurrencyInput({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isComposingRef.current) return;
     const input = e.target;
     const rawValue = input.value;
     const cursor = input.selectionStart ?? rawValue.length;
@@ -162,13 +161,6 @@ export function StandardCurrencyInput({
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        onCompositionStart={() => {
-          isComposingRef.current = true;
-        }}
-        onCompositionEnd={(e) => {
-          isComposingRef.current = false;
-          handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
-        }}
         placeholder={placeholder}
         disabled={disabled}
         required={required}

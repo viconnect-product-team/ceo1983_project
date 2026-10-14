@@ -86,126 +86,6 @@ const DEFAULT_TIER = {
   gradient: "from-primary/10 to-transparent",
 };
 
-const FALLBACK_PACKAGES: SponsorPackage[] = [
-  {
-    id: "PKG-PLATINUM-CASH",
-    tier: "platinum",
-    price: 200000000,
-    packageType: "cash",
-    available: 2,
-    sold: 1,
-    benefits: [
-      "Logo độc quyền tại vị trí trung tâm sân khấu",
-      "1 bàn tiệc VIP 10 khách danh dự",
-      "Bài phát biểu 10 phút tại lễ khai mạc",
-      "Phát video phóng sự doanh nghiệp trên màn hình LED",
-    ],
-  },
-  {
-    id: "PKG-GOLD-INKIND",
-    tier: "gold",
-    price: 100000000,
-    packageType: "in_kind",
-    inKindDescription: "Tài trợ 200 bộ quà tặng cao cấp cho toàn bộ CEO & C-Level tham dự",
-    available: 5,
-    sold: 2,
-    benefits: [
-      "Đặt gian hàng trải nghiệm sản phẩm tại sảnh chính",
-      "Logo trên backdrop & ấn phẩm truyền thông",
-      "5 vé VIP tham dự toàn bộ chương trình",
-      "Giới thiệu sản phẩm trong tài liệu sự kiện",
-    ],
-  },
-  {
-    id: "PKG-SILVER-CASH",
-    tier: "silver",
-    price: 50000000,
-    packageType: "cash",
-    available: 10,
-    sold: 3,
-    benefits: [
-      "Logo trên website và thư mời đại biểu",
-      "3 vé VIP hàng ghế đầu",
-      "Trưng bày ấn phẩm brochure tại quầy check-in",
-    ],
-  },
-  {
-    id: "PKG-BRONZE-INKIND",
-    tier: "bronze",
-    price: 20000000,
-    packageType: "in_kind",
-    inKindDescription: "Tài trợ toàn bộ teabreak, tiệc trà & cà phê cao cấp giờ giải lao",
-    available: 15,
-    sold: 4,
-    benefits: [
-      "Bảng tên nhà tài trợ tại khu vực Tea-break",
-      "2 vé tham dự sự kiện",
-      "Logo trong clip tổng kết sự kiện",
-    ],
-  },
-];
-
-const FALLBACK_SPONSORS: Sponsor[] = [
-  {
-    id: "SP-001",
-    name: "Tập đoàn Công nghệ SunTech Global",
-    tier: "platinum",
-    sponsorType: "regular",
-    packageType: "cash",
-    contact: "Nguyễn Văn Hùng (Chủ tịch HĐQT)",
-    email: "hung.nv@suntech-global.vn",
-    phone: "0908 123 456",
-    amount: 200000000,
-    events: 8,
-    since: "2023-01-15",
-    status: "active",
-  },
-  {
-    id: "SP-002",
-    name: "Công ty Cổ phần Trầm Hương & Yến Sào Hoàng Gia",
-    tier: "gold",
-    sponsorType: "regular",
-    packageType: "in_kind",
-    inKindDescription: "200 bộ quà tặng Yến Sào & Trầm Hương Thượng Hạng dành tặng tất cả CEO",
-    contact: "Trần Mai Phương (Tổng Giám Đốc)",
-    email: "phuong.tm@hoanggiagroup.vn",
-    phone: "0912 345 678",
-    amount: 100000000,
-    events: 5,
-    since: "2023-06-20",
-    status: "active",
-  },
-  {
-    id: "SP-003",
-    name: "Ngân hàng TMCP Tiên Phong (TPBank) - Khối SME",
-    tier: "silver",
-    sponsorType: "regular",
-    packageType: "cash",
-    contact: "Lê Minh Tuấn (GĐ Khối KHDN)",
-    email: "tuanlm@tpb.com.vn",
-    phone: "0983 999 888",
-    amount: 50000000,
-    events: 3,
-    since: "2024-02-10",
-    status: "active",
-  },
-  {
-    id: "SP-004",
-    name: "Chuỗi Cà Phê Đặc Sản Artisan Roastery",
-    tier: "bronze",
-    sponsorType: "new",
-    packageType: "in_kind",
-    inKindDescription: "Toàn bộ quầy Barista pha cà phê tươi hảo hạng & bánh ngọt Teabreak cho 300 khách",
-    contact: "Phạm Thu Hà (Nhà Sáng Lập)",
-    email: "ha.pham@artisancoffee.vn",
-    phone: "0934 567 890",
-    amount: 20000000,
-    events: 2,
-    since: "2024-05-18",
-    status: "active",
-  },
-];
-
 export function EventSponsorPackageSelector({
   value = [],
   onChange,
@@ -230,16 +110,16 @@ export function EventSponsorPackageSelector({
           fetchNestApi<SponsorPackage[]>("/sponsors/packages").catch(() => []),
         ]);
         if (active) {
-          const validSponsors = Array.isArray(sponsorsRes) && sponsorsRes.length > 0 ? sponsorsRes : FALLBACK_SPONSORS;
-          const validPackages = Array.isArray(packagesRes) && packagesRes.length > 0 ? packagesRes : FALLBACK_PACKAGES;
+          const validSponsors = Array.isArray(sponsorsRes) ? sponsorsRes : [];
+          const validPackages = Array.isArray(packagesRes) ? packagesRes : [];
           setSponsorsList(validSponsors);
           setPackagesList(validPackages);
         }
       } catch (err) {
         console.error("[EventSponsorPackageSelector] Load error:", err);
         if (active) {
-          setSponsorsList(FALLBACK_SPONSORS);
-          setPackagesList(FALLBACK_PACKAGES);
+          setSponsorsList([]);
+          setPackagesList([]);
         }
       } finally {
         if (active) setLoading(false);

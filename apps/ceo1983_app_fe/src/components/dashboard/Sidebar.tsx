@@ -406,7 +406,18 @@ export function Sidebar({
 
   const [overrideBrandName, setOverrideBrandName] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("vba_active_assoc_name");
+      return localStorage.getItem("vba_active_assoc_name") || localStorage.getItem("crm_system_name");
+    }
+    return null;
+  });
+
+  const [overrideBrandLogo, setOverrideBrandLogo] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return (
+        localStorage.getItem("vba_active_assoc_logo") ||
+        localStorage.getItem("crm_system_logo") ||
+        null
+      );
     }
     return null;
   });
@@ -417,15 +428,29 @@ export function Sidebar({
       if (e?.detail?.name) {
         setOverrideBrandName(e.detail.name);
       } else if (typeof window !== "undefined") {
-        setOverrideBrandName(localStorage.getItem("vba_active_assoc_name"));
+        setOverrideBrandName(localStorage.getItem("vba_active_assoc_name") || localStorage.getItem("crm_system_name"));
+      }
+      if (e?.detail?.logoUrl) {
+        setOverrideBrandLogo(e.detail.logoUrl);
+      } else if (typeof window !== "undefined") {
+        setOverrideBrandLogo(localStorage.getItem("vba_active_assoc_logo") || localStorage.getItem("crm_system_logo"));
       }
     };
     window.addEventListener("association-changed", onChange);
-    return () => window.removeEventListener("association-changed", onChange);
+    window.addEventListener("crm-branding-changed", onChange);
+    return () => {
+      window.removeEventListener("association-changed", onChange);
+      window.removeEventListener("crm-branding-changed", onChange);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const brandName = overrideBrandName || activeAssoc?.name || t("brand.name");
+  const brandLogo =
+    overrideBrandLogo ||
+    (activeAssoc?.logoUrl
+      ? resolveMediaUrl(activeAssoc.logoUrl) || activeAssoc.logoUrl
+      : "/icons/ceo1983_icon_1/image 6.png");
 
   // Collapse only applies to the desktop sidebar; the mobile drawer is always full.
   const [collapsed, setCollapsed] = useState(false);
@@ -567,18 +592,18 @@ export function Sidebar({
           isCollapsed ? "justify-center px-2" : "px-5"
         }`}
       >
-        {activeAssoc?.logoUrl ? (
+        {brandLogo ? (
           <img
-            src={resolveMediaUrl(activeAssoc.logoUrl) || activeAssoc.logoUrl}
+            src={brandLogo}
             alt={brandName}
-            className="h-10 w-10 shrink-0 rounded-xl object-cover"
+            className="h-10 w-10 shrink-0 rounded-xl object-contain bg-white/10 p-0.5 border border-sidebar-border/40 shadow-xs"
           />
         ) : (
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold text-primary-foreground"
             style={{ background: "var(--gradient-card)" }}
           >
-            VBA
+            CEO
           </div>
         )}
         {!isCollapsed && (

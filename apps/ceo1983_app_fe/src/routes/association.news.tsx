@@ -94,6 +94,42 @@ export default function NewsScreen() {
     return () => window.removeEventListener("ceo1983_news_read_updated", handleNewsRead);
   }, []);
 
+  // Strict RBAC: Chỉ tài khoản Quản trị, Admin, Chủ tịch hoặc Trưởng ban mới có quyền Đăng, Sửa, Xóa tin tức
+  const canManageNews = useMemo(() => {
+    const role = (user?.role || (member as any)?.role || "").toLowerCase().trim();
+    const department = ((user as any)?.department || (member as any)?.department || (member as any)?.boardName || "").toLowerCase().trim();
+    const title = ((user as any)?.title || (member as any)?.title || (user as any)?.position || "").toLowerCase().trim();
+    const srsRole = (typeof window !== "undefined" ? localStorage.getItem("vba_user_role") || "" : "").toLowerCase().trim();
+
+    const isSuperOrAdmin =
+      role === "quan_tri" ||
+      role === "admin" ||
+      role === "chu_tich" ||
+      role === "platform_admin" ||
+      srsRole === "quan_tri" ||
+      srsRole === "admin" ||
+      srsRole === "chu_tich" ||
+      Boolean((user as any)?.isAdmin) ||
+      Boolean((user as any)?.isPresident) ||
+      role.includes("quản trị") ||
+      role.includes("chủ tịch") ||
+      role.includes("admin");
+
+    const isLeader =
+      role.startsWith("truong_ban") ||
+      role.includes("trưởng ban") ||
+      srsRole.startsWith("truong_ban") ||
+      srsRole.includes("trưởng ban") ||
+      title.includes("trưởng ban") ||
+      title.includes("chủ tịch") ||
+      title.includes("tổng thư ký") ||
+      department.includes("trưởng ban") ||
+      role === "tong_thu_ky" ||
+      role === "ban_dieu_hanh";
+
+    return Boolean(isSuperOrAdmin || isLeader);
+  }, [user, member]);
+
   // Form states for creating / editing / sharing an article
   const [editingNews, setEditingNews] = useState<(NewsItem & { url?: string }) | null>(null);
   const [postTitle, setPostTitle] = useState("");
@@ -235,6 +271,10 @@ export default function NewsScreen() {
 
   const handleStartEdit = (item: NewsItem & { url?: string }, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (!canManageNews) {
+      toast.error("Chỉ tài khoản Quản trị, Chủ tịch, Admin hoặc Trưởng ban mới có quyền chỉnh sửa bài viết!");
+      return;
+    }
     setEditingNews(item);
     setPostTitle(item.title);
     const standardCats = ["Tin doanh nghiệp", "Báo chí & Truyền thông", "Hoạt động CLB", "Giao thương B2B"];
@@ -254,6 +294,10 @@ export default function NewsScreen() {
 
   const handleDeleteNews = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (!canManageNews) {
+      toast.error("Chỉ tài khoản Quản trị, Chủ tịch, Admin hoặc Trưởng ban mới có quyền xóa bài viết!");
+      return;
+    }
     if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
 
     // Call backend API if applicable
@@ -282,6 +326,10 @@ export default function NewsScreen() {
 
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageNews) {
+      toast.error("Chỉ tài khoản Quản trị, Chủ tịch, Admin hoặc Trưởng ban mới có quyền đăng hoặc sửa bài viết!");
+      return;
+    }
     const newErrors: Record<string, string> = {};
     if (!postTitle.trim()) {
       newErrors.title = "Vui lòng nhập tiêu đề bài viết";
@@ -424,35 +472,37 @@ export default function NewsScreen() {
           )}
         </div>
 
-        {/* Quick Share Callout Banner */}
-        <div
-          onClick={() => setPostModalOpen(true)}
-          className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-50/70 via-blue-50/30 to-white dark:from-[#001D4A]/50 dark:to-[#002B70]/30 text-slate-900 dark:text-white shadow-xs hover:border-amber-400/60 transition cursor-pointer"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-8.5 w-8.5 rounded-xl bg-amber-400/20 text-[#003B95] dark:text-amber-400 grid place-items-center shrink-0 border border-amber-400/40">
-              <Share2 className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                Chia sẻ tin tức hoặc bài viết doanh nghiệp
-              </p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                Đăng bài báo, liên kết hoặc thông tin hoạt động B2B
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              resetForm();
-              setPostModalOpen(true);
-            }}
-            className="rounded-xl bg-white hover:bg-slate-50 text-[#003B95] border border-[#003B95] text-[11px] font-bold px-3 py-1.5 shrink-0 shadow-xs transition active:scale-95 cursor-pointer"
+        {/* Quick Share Callout Banner (Chỉ tài khoản Quản trị, Admin, Chủ tịch, Trưởng ban mới được đăng tin) */}
+        {canManageNews && (
+          <div
+            onClick={() => setPostModalOpen(true)}
+            className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-50/70 via-blue-50/30 to-white dark:from-[#001D4A]/50 dark:to-[#002B70]/30 text-slate-900 dark:text-white shadow-xs hover:border-amber-400/60 transition cursor-pointer"
           >
-            Đăng ngay
-          </button>
-        </div>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8.5 w-8.5 rounded-xl bg-amber-400/20 text-[#003B95] dark:text-amber-400 grid place-items-center shrink-0 border border-amber-400/40">
+                <Share2 className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  Chia sẻ tin tức hoặc bài viết doanh nghiệp
+                </p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                  Đăng bài báo, liên kết hoặc thông tin hoạt động B2B
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setPostModalOpen(true);
+              }}
+              className="rounded-xl bg-white hover:bg-slate-50 text-[#003B95] border border-[#003B95] text-[11px] font-bold px-3 py-1.5 shrink-0 shadow-xs transition active:scale-95 cursor-pointer"
+            >
+              Đăng ngay
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── 4 CATEGORY TABS: TẤT CẢ, MỚI NHẤT, ĐÃ XEM, CHƯA XEM ── */}
@@ -693,25 +743,27 @@ export default function NewsScreen() {
                       <span>{n.views || 1}</span>
                     </span>
 
-                    {/* Nút Sửa & Xóa bài viết */}
-                    <div className="flex items-center gap-0.5 ml-1">
-                      <button
-                        type="button"
-                        onClick={(e) => handleStartEdit(n, e)}
-                        className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 transition cursor-pointer"
-                        title="Chỉnh sửa bài viết"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteNews(n.id, e)}
-                        className="p-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition cursor-pointer"
-                        title="Xóa bài viết"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
+                    {/* Nút Sửa & Xóa bài viết (Chỉ tài khoản Quản trị, Admin, Chủ tịch, Trưởng ban) */}
+                    {canManageNews && (
+                      <div className="flex items-center gap-0.5 ml-1">
+                        <button
+                          type="button"
+                          onClick={(e) => handleStartEdit(n, e)}
+                          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 transition cursor-pointer"
+                          title="Chỉnh sửa bài viết"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteNews(n.id, e)}
+                          className="p-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition cursor-pointer"
+                          title="Xóa bài viết"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
 
                     {isRead ? (
                       <span className="inline-flex items-center gap-0.5 text-[9.5px] font-medium text-slate-400 dark:text-slate-500">
@@ -1019,28 +1071,30 @@ export default function NewsScreen() {
               </div>
 
               <div className="mt-5 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const item = selectedNews;
-                      setSelectedNews(null);
-                      handleStartEdit(item);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#003B95] dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900 text-xs font-bold hover:bg-blue-100 transition cursor-pointer"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    <span>Sửa bài</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteNews(selectedNews.id)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900 text-xs font-bold hover:bg-rose-100 transition cursor-pointer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Xóa bài</span>
-                  </button>
-                </div>
+                {canManageNews && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const item = selectedNews;
+                        setSelectedNews(null);
+                        handleStartEdit(item);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#003B95] dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900 text-xs font-bold hover:bg-blue-100 transition cursor-pointer"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Sửa bài</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNews(selectedNews.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900 text-xs font-bold hover:bg-rose-100 transition cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Xóa bài</span>
+                    </button>
+                  </div>
+                )}
 
                 <button
                   type="button"
