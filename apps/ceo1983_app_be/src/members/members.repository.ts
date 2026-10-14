@@ -80,13 +80,13 @@ export class MembersRepository {
                  COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
           FROM public.members m
           INNER JOIN public.user_connections uc ON (
-            (uc.requester_user_id = ${userId}::uuid AND (uc.recipient_user_id = m.user_id OR uc.recipient_user_id = m.id::uuid)) OR
-            (uc.recipient_user_id = ${userId}::uuid AND (uc.requester_user_id = m.user_id OR uc.requester_user_id = m.id::uuid))
-          ) AND uc.status = 'accepted'::public.global_connection_status
+            (uc.requester_user_id::text = ${userId}::text AND (uc.recipient_user_id = m.user_id OR uc.recipient_user_id::text = m.id::text)) OR
+            (uc.recipient_user_id::text = ${userId}::text AND (uc.requester_user_id = m.user_id OR uc.requester_user_id::text = m.id::text))
+          ) AND uc.status::text = 'accepted'
           LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
           LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
           LEFT JOIN public.vione_users vu ON vu.id = m.user_id
-          WHERE m.association_id = ${assocId}::uuid AND m.status = 'active'
+          WHERE m.association_id::text = ${assocId}::text AND m.status = 'active'
           ORDER BY m.name ASC
         `.catch((err) => {
           console.error('findDirectoryMembers connected assoc query error:', err);
@@ -101,9 +101,9 @@ export class MembersRepository {
                  COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
           FROM public.members m
           INNER JOIN public.user_connections uc ON (
-            (uc.requester_user_id = ${userId}::uuid AND (uc.recipient_user_id = m.user_id OR uc.recipient_user_id = m.id::uuid)) OR
-            (uc.recipient_user_id = ${userId}::uuid AND (uc.requester_user_id = m.user_id OR uc.requester_user_id = m.id::uuid))
-          ) AND uc.status = 'accepted'::public.global_connection_status
+            (uc.requester_user_id::text = ${userId}::text AND (uc.recipient_user_id = m.user_id OR uc.recipient_user_id::text = m.id::text)) OR
+            (uc.recipient_user_id::text = ${userId}::text AND (uc.requester_user_id = m.user_id OR uc.requester_user_id::text = m.id::text))
+          ) AND uc.status::text = 'accepted'
           LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
           LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
           LEFT JOIN public.vione_users vu ON vu.id = m.user_id
@@ -127,7 +127,7 @@ export class MembersRepository {
         LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
         LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
         LEFT JOIN public.vione_users vu ON vu.id = m.user_id
-        WHERE m.association_id = ${assocId}::uuid AND m.status = 'active'
+        WHERE m.association_id::text = ${assocId}::text AND m.status = 'active'
         ORDER BY m.name ASC
       `.catch((err) => {
         console.error('findDirectoryMembers assoc query error:', err);

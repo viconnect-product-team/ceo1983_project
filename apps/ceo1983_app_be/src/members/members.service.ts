@@ -1094,7 +1094,7 @@ export class MembersService {
             if (linkedUser) {
               memberUserId = linkedUser.id;
               await this.prisma.$executeRaw`
-                UPDATE public.members SET user_id = ${memberUserId}::uuid WHERE id = ${id}::uuid
+                UPDATE public.members SET user_id = ${memberUserId}::uuid WHERE id = ${id}
               `.catch(() => null);
             }
           } catch (createErr) {

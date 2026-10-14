@@ -164,8 +164,11 @@
 #     + Các dữ liệu liên quan đến hành động của người dùng (như đã đăng ký vé, đã kết nối, đã giao dịch/đóng phí, đã đăng bài/sản phẩm) CHỈ ĐƯỢC HIỂN THỊ khi người dùng thực tế đã thực hiện hành động đó.
 #     + Khi người dùng chưa có dữ liệu (số lượng = 0), BẮT BUỘC hiển thị trạng thái rỗng (Empty State) trang nhã, lịch sự kèm nút điều hướng đến trang hành động (VD: 'Bạn chưa có vé sự kiện nào - Khám phá sự kiện & Đăng ký vé').
 #
-# [BẮT BUỘC 5] Giao tiếp Cơ sở dữ liệu:
-#   - Khi dùng `$queryRaw`, luôn dùng tagged template strings của Prisma: `this.prisma.$queryRaw\`SELECT ... WHERE id = \${id}::uuid\``.
+# [BẮT BUỘC 5] Giao tiếp Cơ sở dữ liệu & An Toàn SQL:
+#   - Khi dùng `$queryRaw`, luôn dùng tagged template strings của Prisma.
+#   - Tuyệt đối KHÔNG ép kiểu `::uuid` cho các trường có thể chứa chuỗi mã ký tự (như `public.members.id` chứa mã chữ như `"MBMUQ8JEXU"`). Khi so sánh giữa UUID và ID hội viên/người dùng, luôn cast an toàn sang `::text` (`uc.recipient_user_id::text = m.id::text` hoặc `m.association_id::text = ${assocId}::text`) để tránh lỗi Postgres `22P02: invalid input syntax for type uuid`.
+#   - Khi chạy DDL khởi tạo bảng (`ensureTables`): TUYỆT ĐỐI KHÔNG gộp nhiều câu lệnh `CREATE TABLE` trong 1 chuỗi `$executeRawUnsafe` duy nhất vì prepared statements của PostgreSQL sẽ chặn lỗi `cannot insert multiple commands into a prepared statement`. Bắt buộc phải tách từng lệnh `executeRawUnsafe` riêng biệt kèm try/catch an toàn.
+#   - Nút QR Trung Tâm Thanh Điều Hướng Hội Viên (`MemberTabBar`): Nút QR giữa màn hình tuyệt đối KHÔNG có chữ/nhãn "Thẻ 83" bên dưới. Bấm vào là hiển thị ngay Modal Mã QR của tôi & Quét QR (`AssociationMemberQrModal`); khi bấm dấu "X" đóng modal thì lập tức hiển thị giao diện Thẻ hội viên (`/association/card`) như mặc định.
 #   - Tuyệt đối KHÔNG nối chuỗi SQL thủ công (tránh triệt để SQL Injection).
 #
 # [BẮT BUỘC 6] UI/UX & Theme Chuẩn CEO 1983:

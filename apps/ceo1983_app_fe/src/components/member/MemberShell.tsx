@@ -547,10 +547,65 @@ function MemberTabBar() {
   const tabLabels: Record<string, { vi: string; en: string }> = {
     "/association": { vi: "Trang chủ", en: "Home" },
     "/association/events": { vi: "Sự kiện", en: "Events" },
-    "/association/card": { vi: "Thẻ 83", en: "Card 83" },
+    "/association/card": { vi: "Thẻ hội viên", en: "Member Card" },
     "/association/messages": { vi: "Tin nhắn", en: "Messages" },
     "/association/profile": { vi: "Cá nhân", en: "Profile" },
   };
+
+  const memberCode = useMemo(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("vba_my_member") : null;
+      if (raw) {
+        const m = JSON.parse(raw);
+        if (m?.code) return m.code;
+      }
+    } catch {}
+    return user?.member_code || user?.id || "";
+  }, [user]);
+
+  const memberName = useMemo(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("vba_my_member") : null;
+      if (raw) {
+        const m = JSON.parse(raw);
+        if (m?.name) return m.name;
+      }
+    } catch {}
+    return user?.full_name || user?.name || "Hội viên CLB CEO 1983";
+  }, [user]);
+
+  const memberCompany = useMemo(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("vba_my_member") : null;
+      if (raw) {
+        const m = JSON.parse(raw);
+        if (m?.company || m?.company_name) return m.company || m.company_name;
+      }
+    } catch {}
+    return user?.company || "CLB Doanh Nhân CEO 1983";
+  }, [user]);
+
+  const memberTitle = useMemo(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("vba_my_member") : null;
+      if (raw) {
+        const m = JSON.parse(raw);
+        if (m?.executive_role || m?.title) return m.executive_role || m.title;
+      }
+    } catch {}
+    return user?.title || "Hội viên chính thức";
+  }, [user]);
+
+  const memberAvatar = useMemo(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("vba_my_member") : null;
+      if (raw) {
+        const m = JSON.parse(raw);
+        if (m?.avatar || m?.avatar_url) return m.avatar || m.avatar_url;
+      }
+    } catch {}
+    return user?.avatar_url || user?.avatar || null;
+  }, [user]);
 
   // Track new events count & unread messages count for animated badges
   const [newEventCount, setNewEventCount] = useState<number>(() => {
@@ -726,9 +781,10 @@ function MemberTabBar() {
                   onClick={() => {
                     handleTabClick();
                     navigate({ to: "/association/card" as any });
+                    setQrModalOpen(true);
                   }}
-                  aria-label="Thẻ 83 & Quét mã QR kết nối"
-                  className="-mt-7 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none"
+                  aria-label="Mã QR & Quét mã QR"
+                  className="-mt-6 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none pb-0.5"
                 >
                   {/* Navy Halo Aura */}
                   <span className="absolute inset-0 -top-1 rounded-full bg-[#003B95]/20 blur-md animate-pulse pointer-events-none" />
@@ -752,9 +808,6 @@ function MemberTabBar() {
                         🌕
                       </span>
                     )}
-                  </span>
-                  <span className="text-[10px] font-semibold text-[#003B95] dark:text-blue-400 mt-1">
-                    Thẻ 83
                   </span>
                 </button>
               </div>
@@ -856,13 +909,16 @@ function MemberTabBar() {
     </nav>
     <AssociationMemberQrModal
       open={qrModalOpen}
-      onClose={() => setQrModalOpen(false)}
+      onClose={() => {
+        setQrModalOpen(false);
+        navigate({ to: "/association/card" as any });
+      }}
       defaultTab="my_qr"
-      memberCode={user?.member_code || user?.id || ""}
-      memberName={user?.full_name || user?.name || "Hội viên CLB CEO 1983"}
-      memberTitle={user?.title || "Hội viên chính thức"}
-      memberCompany={user?.company || "CLB Doanh Nhân CEO 1983"}
-      memberAvatar={user?.avatar_url || user?.avatar || null}
+      memberCode={memberCode}
+      memberName={memberName}
+      memberTitle={memberTitle}
+      memberCompany={memberCompany}
+      memberAvatar={memberAvatar}
     />
     </>
   );

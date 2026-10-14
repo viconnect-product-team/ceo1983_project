@@ -652,12 +652,11 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
        - Khung vị trí bàn tiệc (Hệ thống xếp tự động): `Bàn VIP xx - Ghế xx`.
        - Số may mắn (Quay thưởng Lucky Draw): `#xxxx` (nổi bật trên nền vàng hổ phách).
        - Khung lưu ý chỗ ngồi và xuất trình mã QR cho Ban Lễ tân tại hội trường.
-  2. **Phân quyền Nút Quét QR Check-in ở Thanh Footer (`MemberShell.tsx`)**:
-     - *Quy tắc kiểm soát bảo mật*: Nút quét mã QR tròn ở chính giữa Footer là công cụ nghiệp vụ nội bộ, TUYỆT ĐỐI KHÔNG HIỂN THỊ cho toàn bộ người dùng thông thường.
-     - *Điều kiện hiển thị*: Nút chỉ được phép xuất hiện khi và chỉ khi:
-       a. Đang có sự kiện diễn ra hoặc sắp diễn ra trong ngày thuộc hiệp hội.
-       b. Tài khoản đang đăng nhập được Admin/Ban tổ chức tick chọn quyền xử lý quét mã QR tại CRM sự kiện (ID tài khoản hoặc ID hội viên nằm trong danh sách `qr_staff_ids` / `qr_scanners` của sự kiện).
-       c. Kể cả tài khoản thuộc Ban Truyền thông nhưng KHÔNG được tick chọn trong sự kiện cụ thể này thì nút quét QR ở footer cũng HOÀN TOÀN BỊ ẨN.
+  2. **Chuẩn Hóa Nút QR Trung Tâm Thanh Footer (`MemberShell.tsx`)**:
+     - *Giao diện Nút QR*: Nút tròn nổi chính giữa thanh điều hướng thiết kế hiệu ứng Gradient Navy `#003B95` kết hợp viền mạ vàng và hào quang phát sáng. TUYỆT ĐỐI KHÔNG để nhãn text "Thẻ 83" bên dưới nút để đảm bảo thẩm mỹ tối giản, sang trọng.
+     - *Hành vi khi bấm*: Bấm vào nút QR trung tâm lập tức mở Modal Mã QR định danh & Quét mã QR (`AssociationMemberQrModal`) với 2 tab: "Mã QR của tôi" (hiển thị mã QR hội viên kèm chia sẻ danh thiếp) và "Quét QR" (kích hoạt camera quét đối tác hoặc tải ảnh QR từ máy). Đồng thời điều hướng nền về `/association/card`.
+     - *Hành vi khi đóng modal*: Khi người dùng bấm nút "X" trên góc modal, modal đóng lại và màn hình hiển thị trực tiếp giao diện Thẻ hội viên 3D & Danh thiếp số điện tử (`/association/card`) chuẩn mặc định.
+     - *Phân quyền Quét QR Check-in Sự Kiện*: Khi tài khoản được phân quyền soát vé sự kiện (nằm trong `qr_staff_ids`), hệ thống tự động kích hoạt tính năng chuyển sang chế độ quét vé đón tiếp đại biểu.
 - **Đặc tả API**:
   - `GET /events/:id/my-ticket`: Lấy vé sự kiện của người dùng đăng nhập kèm mã vé, QR, bàn tiệc, số quay thưởng.
   - `GET /events/checkin-permission`: Trả về quyền hạn soát vé của tài khoản (`{ canScan: boolean, activeEventId?: string }`) dựa trên danh sách `qr_staff_ids` của sự kiện đang mở.

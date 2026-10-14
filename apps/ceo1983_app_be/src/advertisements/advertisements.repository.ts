@@ -6,60 +6,87 @@ export class AdvertisementsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async ensureTables(): Promise<void> {
-    await this.prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS public.advertisements (
-        id VARCHAR(64) PRIMARY KEY,
-        request_id VARCHAR(64),
-        title VARCHAR(255) NOT NULL,
-        company_name VARCHAR(255) NOT NULL,
-        badge_text VARCHAR(100) DEFAULT 'ĐỐI TÁC CHIẾN LƯỢC',
-        banner_url TEXT NOT NULL,
-        target_url TEXT,
-        animation VARCHAR(50) DEFAULT 'gradient-wave',
-        start_date VARCHAR(50),
-        end_date VARCHAR(50),
-        status VARCHAR(20) DEFAULT 'active',
-        impressions BIGINT DEFAULT 0,
-        clicks BIGINT DEFAULT 0,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      );
-      CREATE TABLE IF NOT EXISTS public.ad_requests (
-        id VARCHAR(64) PRIMARY KEY,
-        company_name VARCHAR(255) NOT NULL,
-        contact_person VARCHAR(255) NOT NULL,
-        phone VARCHAR(50) NOT NULL,
-        email VARCHAR(100),
-        goal TEXT,
-        duration_months INT DEFAULT 3,
-        budget_est VARCHAR(100) DEFAULT '15.000.000 đ',
-        product_link TEXT,
-        notes TEXT,
-        status VARCHAR(20) DEFAULT 'pending',
-        payment_amount BIGINT DEFAULT 15000000,
-        payment_code VARCHAR(100),
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `);
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.advertisements (
+          id VARCHAR(64) PRIMARY KEY,
+          request_id VARCHAR(64),
+          title VARCHAR(255) NOT NULL,
+          company_name VARCHAR(255) NOT NULL,
+          badge_text VARCHAR(100) DEFAULT 'ĐỐI TÁC CHIẾN LƯỢC',
+          banner_url TEXT NOT NULL,
+          target_url TEXT,
+          animation VARCHAR(50) DEFAULT 'gradient-wave',
+          start_date VARCHAR(50),
+          end_date VARCHAR(50),
+          status VARCHAR(20) DEFAULT 'active',
+          impressions BIGINT DEFAULT 0,
+          clicks BIGINT DEFAULT 0,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+    } catch (e: any) {
+      console.warn('ensure advertisements table warning:', e?.message);
+    }
+
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.ad_requests (
+          id VARCHAR(64) PRIMARY KEY,
+          company_name VARCHAR(255) NOT NULL,
+          contact_person VARCHAR(255) NOT NULL,
+          phone VARCHAR(50) NOT NULL,
+          email VARCHAR(100),
+          goal TEXT,
+          duration_months INT DEFAULT 3,
+          budget_est VARCHAR(100) DEFAULT '15.000.000 đ',
+          product_link TEXT,
+          notes TEXT,
+          status VARCHAR(20) DEFAULT 'pending',
+          payment_amount BIGINT DEFAULT 15000000,
+          payment_code VARCHAR(100),
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+    } catch (e: any) {
+      console.warn('ensure ad_requests table warning:', e?.message);
+    }
   }
 
   async findAll(activeOnly: boolean = false): Promise<any[]> {
-    return this.prisma.$queryRaw<any[]>`
-      SELECT 
-        id, request_id, title, company_name, badge_text, banner_url, 
-        target_url, animation, start_date, end_date, status, 
-        impressions, clicks, created_at
-      FROM public.advertisements
-      WHERE (${!activeOnly} OR status = 'active')
-      ORDER BY created_at DESC
-    `;
+    try {
+      return await this.prisma.$queryRaw<any[]>`
+        SELECT 
+          id, request_id, title, company_name, badge_text, banner_url, 
+          target_url, animation, start_date, end_date, status, 
+          impressions, clicks, created_at
+        FROM public.advertisements
+        WHERE (${!activeOnly} OR status = 'active')
+        ORDER BY created_at DESC
+      `;
+    } catch (err: any) {
+      if (err?.code === 'P2010' || err?.meta?.code === '42P01' || err?.message?.includes('does not exist')) {
+        await this.ensureTables().catch(() => {});
+        return [];
+      }
+      throw err;
+    }
   }
 
   async findById(id: string): Promise<any | null> {
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.advertisements WHERE id = ${id} LIMIT 1
-    `;
-    return rows[0] || null;
+    try {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.advertisements WHERE id = ${id} LIMIT 1
+      `;
+      return rows[0] || null;
+    } catch (err: any) {
+      if (err?.code === 'P2010' || err?.meta?.code === '42P01' || err?.message?.includes('does not exist')) {
+        await this.ensureTables().catch(() => {});
+        return null;
+      }
+      throw err;
+    }
   }
 
   async insertAdvertisement(data: {
@@ -137,9 +164,17 @@ export class AdvertisementsRepository {
   }
 
   async findAllRequests(): Promise<any[]> {
-    return this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.ad_requests ORDER BY created_at DESC
-    `;
+    try {
+      return await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.ad_requests ORDER BY created_at DESC
+      `;
+    } catch (err: any) {
+      if (err?.code === 'P2010' || err?.meta?.code === '42P01' || err?.message?.includes('does not exist')) {
+        await this.ensureTables().catch(() => {});
+        return [];
+      }
+      throw err;
+    }
   }
 
   async insertAdRequest(data: {

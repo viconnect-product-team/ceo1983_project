@@ -54,7 +54,7 @@ export class AdvertisementsService implements OnModuleInit {
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       }));
     } catch (err: any) {
-      this.logger.error(`Error in findAll: ${err?.message}`, err?.stack);
+      this.logger.warn(`Could not load advertisements: ${err?.message}`);
       return [];
     }
   }
