@@ -4,6 +4,7 @@ import { Pencil, Trash2, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
+import { STANDARD_MARKETPLACE_CATEGORIES } from "@/lib/marketplace-categories";
 
 export interface ProductEditModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ export interface ProductEditModalProps {
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   isEn?: boolean;
+  availableCategories?: string[];
   editPhoto: string;
   setEditPhoto: (val: string) => void;
   editName: string;
@@ -34,6 +36,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   onClose,
   onSubmit,
   isEn,
+  availableCategories,
   editPhoto,
   setEditPhoto,
   editName,
@@ -52,6 +55,26 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
 }) => {
   const localImageInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [isCustomCategory, setIsCustomCategory] = React.useState(false);
+  const [customCategoryText, setCustomCategoryText] = React.useState("");
+
+  const categoryOptions = React.useMemo(() => {
+    const base = availableCategories && availableCategories.length > 0
+      ? availableCategories
+      : STANDARD_MARKETPLACE_CATEGORIES.map((c) => c.label);
+    const set = new Set(base);
+    if (editCategory && !set.has(editCategory)) {
+      set.add(editCategory);
+    }
+    return Array.from(set);
+  }, [availableCategories, editCategory]);
+
+  React.useEffect(() => {
+    if (editCategory && !STANDARD_MARKETPLACE_CATEGORIES.some(c => c.label === editCategory)) {
+      // It's a custom category
+      setCustomCategoryText(editCategory);
+    }
+  }, [editCategory]);
 
   if (!isOpen || !editingProduct || typeof document === "undefined") return null;
 
@@ -200,17 +223,48 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                   {isEn ? "Category" : "Ngành hàng"}
                 </label>
                 <select
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                  className="w-full rounded-xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0"
+                  value={isCustomCategory ? "__custom__" : editCategory}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "__custom__") {
+                      setIsCustomCategory(true);
+                      if (!customCategoryText) setEditCategory("");
+                    } else {
+                      setIsCustomCategory(false);
+                      setEditCategory(val);
+                    }
+                  }}
+                  className="w-full rounded-xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 cursor-pointer"
                 >
-                  <option value="Công nghệ & Phần mềm">Công nghệ & Phần mềm</option>
-                  <option value="Bất động sản & Xây dựng">Bất động sản & Xây dựng</option>
-                  <option value="Sản xuất & Công nghiệp">Sản xuất & Công nghiệp</option>
-                  <option value="Tài chính & Đầu tư">Tài chính & Đầu tư</option>
-                  <option value="Dịch vụ & Du lịch">Dịch vụ & Du lịch</option>
-                  <option value="Hàng tiêu dùng & Bán lẻ">Hàng tiêu dùng & Bán lẻ</option>
+                  {categoryOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                  <option value="__custom__" className="text-[#003B95] font-bold">
+                    + Thêm phân loại mới... (Tự điền)
+                  </option>
                 </select>
+
+                {isCustomCategory && (
+                  <div className="mt-2 space-y-1 animate-in fade-in">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={customCategoryText}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomCategoryText(val);
+                        setEditCategory(val);
+                      }}
+                      placeholder="Nhập tên phân loại mới (VD: Dịch vụ pháp lý, Nông sản...)"
+                      className="w-full rounded-xl border-0 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-2 ring-[#003B95] dark:ring-blue-500"
+                    />
+                    <p className="text-[10px] text-[#003B95] dark:text-blue-400 font-medium">
+                      Phân loại mới sẽ tự động hiển thị trên thanh danh mục Marketplace!
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

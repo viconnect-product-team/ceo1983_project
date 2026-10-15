@@ -1438,4 +1438,20 @@
   + Kiểu dữ liệu `MyProduct` bắt buộc có trường `status?: string;` đồng bộ với backend.
   + Mọi sản phẩm có `status === 'sold'` bắt buộc hiển thị huy hiệu "ĐÃ BÁN" với nền xám/tối tương phản cao (`bg-slate-800 text-white` hoặc `bg-rose-600 text-white`), làm mờ nhẹ ảnh và vô hiệu hóa nút mua để bảo đảm trải nghiệm thương mại điện tử trực quan.
 
+# [BẮT BUỘC 80] Đồng Bộ Danh Mục Động Marketplace, Tone Màu Deep Cobalt Navy Chi Tiết Sản Phẩm, Đánh Giá Real CSDL & Bảo Mật Phân Quyền Bằng `permissions: string[]`
+- Đồng Bộ Danh Mục Động Marketplace Giữa Mobile App & Web CRM:
+  + Tự động trích xuất các phân loại ngành hàng mới từ sản phẩm thực tế qua `getDynamicMarketplaceCategories(products)` (`marketplace-categories.ts`). Khi người dùng thêm sản phẩm có phân loại dịch vụ/sản phẩm mới, phân loại đó phải lập tức xuất hiện trên thanh danh mục lọc ở cả Mobile App và CRM.
+  + Các modal đăng và chỉnh sửa sản phẩm (`ProductPostModal.tsx`, `ProductEditModal.tsx`, `ProductModal` tại `marketplace.index.tsx`) bắt buộc cung cấp tùy chọn "+ Thêm phân loại mới... (Tự điền)" kèm ô nhập văn bản tự do.
+- Đại Tu Giao Diện Chi Tiết Sản Phẩm & Loại Bỏ Màu Cam Shopee (#EE4D2D):
+  + Triệt tiêu toàn bộ màu cam Shopee chói gắt (`#EE4D2D`, `bg-orange-50`) ở modal chi tiết sản phẩm (`ShopeeProductDetailModal.tsx`).
+  + Thay thế bằng tone màu lãnh đạo cao cấp Deep Cobalt Navy (`#003B95`) kết hợp Slate và White: nút nhận báo giá, nút gửi đánh giá, các thẻ tag, khung điểm trung bình và các nút lọc sao. Chỉ giữ màu vàng hổ phách tinh tế (`fill-amber-400`) duy nhất cho các icon ngôi sao đánh giá.
+- Dữ Liệu Đánh Giá Sản Phẩm Phải Real Lưu Vào CSDL PostgreSQL:
+  + Bảng `public.reviews` trong PostgreSQL lưu trữ đầy đủ `product_id`, `company_name`, `reviewer_name`, `reviewer_role`, `reviewer_avatar`, `rating`, `comment`, `images`.
+  + Phân hệ chi tiết sản phẩm bắt buộc gọi API NestJS `GET /reviews?productId=...` để tải đánh giá thật và `POST /reviews` để lưu đánh giá vào CSDL. Cấm sử dụng dữ liệu đánh giá giả lập (mock seed) hay lưu cục bộ `localStorage`.
+- Bảo Mật Nghiêm Ngặt & Quản Lý Phiên Bằng `permissions: string[]`:
+  + TUYỆT ĐỐI KHÔNG đẩy các trường dữ liệu nhạy cảm hay các cờ phân quyền (`vba_is_admin`, `vba_is_president`, `vba_user_role`, `vba_current_role`, `vba_user_department`, `vba_user_email`, `vba_is_event_qr_scanner`) lên `localStorage`.
+  + Tự động dọn sạch (sanitization) các khóa nhạy cảm này ngay khi ứng dụng mount để xóa bỏ hoàn toàn dữ liệu thừa trước đây.
+  + Quản trị phiên và kiểm tra quyền hạn bắt buộc dựa trên mảng `permissions: string[]` (được cấp từ token JWT và session backend NestJS), phối hợp cùng helper `hasPermission(user, permission)` để đảm bảo an toàn tuyệt đối.
+
+
 

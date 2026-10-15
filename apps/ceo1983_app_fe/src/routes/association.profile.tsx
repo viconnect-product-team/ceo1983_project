@@ -743,7 +743,7 @@ export default function ProfileScreen() {
   const rawCover = coverPhoto || (member?.coverUrl || (member as any)?.cover_url) || (typeof window !== "undefined" ? localStorage.getItem("vba_member_cover_photo") : null) || null;
   const displayCover = rawCover && !isDeadCover(rawCover) ? (resolveMediaUrl(rawCover) || rawCover) : null;
 
-  const displayPhone = profilePhone || member?.phone || (user as any)?.phone || (user as any)?.user_metadata?.phone || (typeof window !== "undefined" ? localStorage.getItem("vba_member_phone") : null) || "0983 198 383";
+  const displayPhone = profilePhone || member?.phone || (user as any)?.phone || (user as any)?.user_metadata?.phone || "0983 198 383";
 
   type FriendItem = {
     code: string;

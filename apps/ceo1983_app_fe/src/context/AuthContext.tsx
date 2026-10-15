@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { clearServerDataCache } from '@/hooks/use-server-data';
 
 export function clearUserSessionData() {
@@ -72,6 +72,7 @@ export interface AppUser {
   boardName?: string;
   title?: string;
   phone?: string;
+  permissions?: string[];
   /** Alias cho các nơi dùng user.user_metadata.full_name */
   user_metadata?: { full_name?: string; avatar_url?: string; [key: string]: any };
   [key: string]: any;
@@ -93,6 +94,7 @@ type AuthContextType = {
   session: AppSession | null;
   logout: () => void;
   setAuthData: (session: any) => void;
+  hasPermission: (permission: string) => boolean;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -135,6 +137,14 @@ function tokenToUser(decoded: Record<string, any>): AppUser {
   const isGeneralSecretary = Boolean(decoded.isGeneralSecretary || role === 'tong_thu_ky');
   const isDepartmentLeader = Boolean(decoded.isDepartmentLeader || role.startsWith('truong_ban_'));
 
+  const permissions: string[] = Array.isArray(decoded.permissions)
+    ? decoded.permissions
+    : Array.isArray(decoded.user_metadata?.permissions)
+    ? decoded.user_metadata.permissions
+    : isAdmin
+    ? ['admin:full_access', 'marketplace:manage', 'event:manage', 'news:manage', 'member:manage', 'event:scan_qr']
+    : ['marketplace:view', 'marketplace:post', 'event:view', 'news:view', 'member:view'];
+
   return {
     id: decoded.sub || decoded.id || '',
     email,
@@ -144,6 +154,7 @@ function tokenToUser(decoded: Record<string, any>): AppUser {
     role,
     roles,
     department,
+    permissions,
     boardName: decoded.boardName || '',
     title: decoded.title || '',
     phone: decoded.phone || '',
@@ -162,6 +173,7 @@ function tokenToUser(decoded: Record<string, any>): AppUser {
       avatar_url: decoded.avatar_url || '',
       role,
       department,
+      permissions,
       ...(decoded.user_metadata || {}),
     },
   };
@@ -233,13 +245,27 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
   const isGeneralSecretary = Boolean(apiUser?.isGeneralSecretary || decoded.isGeneralSecretary || role === 'tong_thu_ky');
   const isDepartmentLeader = Boolean(apiUser?.isDepartmentLeader || decoded.isDepartmentLeader || role.startsWith('truong_ban_'));
 
+  const permissions: string[] = Array.isArray(apiUser?.permissions)
+    ? apiUser.permissions
+    : Array.isArray(decoded.permissions)
+    ? decoded.permissions
+    : isAdmin
+    ? ['admin:full_access', 'marketplace:manage', 'event:manage', 'news:manage', 'member:manage', 'event:scan_qr']
+    : ['marketplace:view', 'marketplace:post', 'event:view', 'news:view', 'member:view'];
+
+  // TUYỆT ĐỐI KHÔNG lưu các cờ bảo mật (isAdmin, role, department) thành các key riêng lẻ ở localStorage
+  // Dọn dẹp triệt để các key thừa nếu từng tồn tại để đảm bảo tuân thủ nghiêm ngặt về an toàn thông tin
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('vba_current_role', role);
-      localStorage.setItem('vba_user_role', role);
-      if (department) localStorage.setItem('vba_user_department', department);
-      if (isAdmin) localStorage.setItem('vba_is_admin', 'true');
-      if (isPresident) localStorage.setItem('vba_is_president', 'true');
+      localStorage.removeItem('vba_current_role');
+      localStorage.removeItem('vba_user_role');
+      localStorage.removeItem('vba_user_department');
+      localStorage.removeItem('vba_is_admin');
+      localStorage.removeItem('vba_is_president');
+      localStorage.removeItem('vba_user_email');
+      localStorage.removeItem('vba_member_phone');
+      localStorage.removeItem('vba_is_event_qr_scanner');
+      localStorage.removeItem('vba_is_media_department_member');
     } catch {}
   }
 
@@ -251,6 +277,7 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
     avatar_url: apiUser?.avatar_url || decoded.avatar_url || '',
     role,
     roles,
+    permissions,
     executiveRole,
     executive_role: executiveRole,
     department,
@@ -270,6 +297,7 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
       avatar_url: apiUser?.avatar_url || decoded.avatar_url || '',
       role,
       department,
+      permissions,
       ...(apiUser?.user_metadata || decoded.user_metadata || {}),
     },
   };
@@ -328,8 +356,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('vibe_refresh_token', sess.refresh_token);
     try {
       localStorage.setItem('vibe_user', JSON.stringify(sess.user));
-      if (sess.user?.email) localStorage.setItem('vba_user_email', sess.user.email);
-      if (sess.user?.role) localStorage.setItem('vba_current_role', sess.user.role);
     } catch {}
     setSession(sess);
     setUser(sess.user);
@@ -349,6 +375,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    // Dọn dẹp an toàn: Xóa bỏ các key nhạy cảm bị lưu trữ trái phép trước đây
+    if (typeof window !== 'undefined') {
+      const insecureKeys = [
+        'vba_is_admin',
+        'vba_is_president',
+        'vba_user_role',
+        'vba_current_role',
+        'vba_user_department',
+        'vba_user_email',
+        'vba_member_phone',
+        'vba_is_event_qr_scanner',
+        'vba_is_media_department_member',
+        'vba_admin_role_override',
+        'vba_crm_role_override',
+      ];
+      insecureKeys.forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch {}
+      });
+    }
+
     // Khởi động: đọc token từ localStorage
     const accessToken = localStorage.getItem('vibe_token');
     const refreshToken = localStorage.getItem('vibe_refresh_token');
@@ -403,8 +451,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     applySession(sess);
   };
 
+  const hasPermission = useCallback(
+    (permission: string): boolean => {
+      if (!user) return false;
+      if (user.isAdmin || user.permissions?.includes('admin:full_access')) return true;
+      return Boolean(user.permissions?.includes(permission));
+    },
+    [user],
+  );
+
   return (
-    <AuthContext.Provider value={{ user, status, session, logout, setAuthData }}>
+    <AuthContext.Provider value={{ user, status, session, logout, setAuthData, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

@@ -9,19 +9,23 @@ export { CreateReviewDto, UpdateReviewDto };
 export class ReviewsService {
   constructor(private readonly reviewsRepo: ReviewsRepository) {}
 
-  async listReviews(sellerId: string) {
-    if (!sellerId) return { reviews: [], stats: { count: 0, avg: 0 } };
-
-    const rows = await this.reviewsRepo.listReviewsBySellerId(sellerId);
+  async listReviews(filter: { sellerId?: string; productId?: string; companyName?: string } | string) {
+    const filterObj = typeof filter === 'string' ? { sellerId: filter } : (filter || {});
+    const rows = await this.reviewsRepo.listReviews(filterObj);
 
     const reviews = rows.map((r) => ({
       id: r.id,
       sellerId: r.seller_id,
+      productId: r.product_id,
+      companyName: r.company_name,
       reviewerId: r.reviewer_id,
       reviewerName: r.reviewer_name || 'Hội viên',
+      reviewerRole: r.reviewer_role || 'Hội viên CLB CEO 1983',
+      reviewerAvatar: r.reviewer_avatar || '',
       rating: Number(r.rating || 5),
       comment: r.comment || '',
       reviewType: r.review_type || 'service',
+      images: Array.isArray(r.images) ? r.images : [],
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
     }));
 
@@ -31,32 +35,42 @@ export class ReviewsService {
   }
 
   async addReview(userId: string, data: CreateReviewDto) {
-    if (!data.sellerId || !data.comment) {
-      throw new BadRequestException('sellerId and comment are required');
+    if (!data.comment?.trim()) {
+      throw new BadRequestException('Vui lòng nhập nội dung đánh giá');
     }
     const id = crypto.randomUUID();
     const reviewerId = data.reviewerId || userId;
 
-    const reviewerName = (await this.reviewsRepo.findReviewerName(reviewerId, userId)) || 'Hội viên CEO 1983';
+    const reviewerName = data.reviewerName || (await this.reviewsRepo.findReviewerName(reviewerId, userId)) || 'Hội viên CEO 1983';
 
-    const r = await this.reviewsRepo.insertReview(
+    const r = await this.reviewsRepo.insertReview({
       id,
-      data.sellerId,
+      sellerId: data.sellerId || '',
+      productId: data.productId,
+      companyName: data.companyName,
       reviewerId,
       reviewerName,
-      data.rating || 5,
-      data.comment,
-      data.reviewType || 'service',
-    );
+      reviewerRole: data.reviewerRole,
+      reviewerAvatar: data.reviewerAvatar,
+      rating: data.rating || 5,
+      comment: data.comment.trim(),
+      reviewType: data.reviewType || 'product',
+      images: data.images || [],
+    });
 
     return {
       id: r.id,
       sellerId: r.seller_id,
+      productId: r.product_id,
+      companyName: r.company_name,
       reviewerId: r.reviewer_id,
       reviewerName: r.reviewer_name,
+      reviewerRole: r.reviewer_role,
+      reviewerAvatar: r.reviewer_avatar,
       rating: Number(r.rating),
       comment: r.comment,
       reviewType: r.review_type,
+      images: r.images || [],
       createdAt: new Date(r.created_at).toISOString(),
     };
   }

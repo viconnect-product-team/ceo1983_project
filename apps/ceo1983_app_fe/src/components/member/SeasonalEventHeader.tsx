@@ -317,8 +317,6 @@ export const DEFAULT_BASE_THEME: FestivalThemeOption = {
 export function getCurrentUserKey(): string {
   if (typeof window === "undefined") return "guest";
   try {
-    const email = localStorage.getItem("vba_user_email");
-    if (email) return email.toLowerCase().trim();
     const raw = localStorage.getItem("vibe_user");
     if (raw) {
       const u = JSON.parse(raw);

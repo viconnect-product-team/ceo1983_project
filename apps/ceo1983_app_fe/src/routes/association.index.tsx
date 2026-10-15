@@ -418,17 +418,15 @@ function Home() {
   // Các tài khoản khác chỉ được quét khi được BQT tích chọn phân công trong danh sách qrScanners của sự kiện trên CRM hiệp hội
   const canScanEventQr = useMemo(() => {
     const role = (user?.role || (member as any)?.role || "").toLowerCase().trim();
-    const srsRole = (typeof window !== "undefined" ? localStorage.getItem("vba_user_role") || "" : "").toLowerCase().trim();
     const isSuperOrAdmin =
+      Boolean((user as any)?.isAdmin) ||
+      Boolean((user as any)?.isPresident) ||
+      user?.permissions?.includes("admin:full_access") ||
+      user?.permissions?.includes("event:scan_qr") ||
       role === "quan_tri" ||
       role === "admin" ||
       role === "chu_tich" ||
       role === "platform_admin" ||
-      srsRole === "quan_tri" ||
-      srsRole === "admin" ||
-      srsRole === "chu_tich" ||
-      Boolean((user as any)?.isAdmin) ||
-      Boolean((user as any)?.isPresident) ||
       role.includes("quản trị") ||
       role.includes("chủ tịch") ||
       role.includes("admin");

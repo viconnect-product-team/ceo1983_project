@@ -70,6 +70,166 @@ async function saveBase64AvatarDirectly(base64Data: string, userId: string): Pro
   }
 }
 
+export function resolveUserPermissions(
+  role: string,
+  roles: string[] = [],
+  department: string = '',
+  isPresident: boolean = false,
+  isAdmin: boolean = false,
+): string[] {
+  const normRole = (role || '').toLowerCase().trim();
+  const rList = roles.map((r) => r.toLowerCase().trim());
+  const dept = (department || '').toLowerCase().trim();
+
+  // 1. Quản trị hệ thống, Admin, Chủ tịch -> Toàn quyền
+  if (
+    isAdmin ||
+    isPresident ||
+    normRole === 'admin' ||
+    normRole === 'quan_tri' ||
+    normRole === 'chu_tich' ||
+    normRole === 'president' ||
+    normRole === 'platform_admin' ||
+    rList.includes('admin') ||
+    rList.includes('quan_tri') ||
+    rList.includes('chu_tich')
+  ) {
+    return [
+      '*',
+      'dashboard:view',
+      'members:view',
+      'members:manage',
+      'members:approve',
+      'members:delete',
+      'events:view',
+      'events:manage',
+      'events:checkin',
+      'events:export',
+      'marketplace:view',
+      'marketplace:manage',
+      'marketplace:approve',
+      'marketplace:delete',
+      'opportunities:view',
+      'opportunities:manage',
+      'finance:view',
+      'finance:manage',
+      'news:view',
+      'news:manage',
+      'documents:view',
+      'documents:manage',
+      'voting:view',
+      'voting:manage',
+      'settings:view',
+      'settings:manage',
+      'permissions:view',
+      'permissions:manage',
+      'system:manage',
+      'EVT_VIEW',
+      'EVT_ADD',
+      'EVT_EDIT',
+      'EVT_DELETE',
+      'CHK_SCAN',
+      'MEM_VIEW',
+      'MEM_ADD',
+      'MEM_EDIT',
+      'MEM_DELETE',
+      'MEM_APPROVE',
+      'MKT_VIEW',
+      'MKT_ADD',
+      'MKT_EDIT',
+      'MKT_DELETE',
+      'OPP_VIEW',
+      'OPP_ADD',
+      'OPP_EDIT',
+      'OPP_DELETE',
+      'FEE_VIEW',
+      'FEE_ADD',
+      'FEE_EDIT',
+      'FEE_DELETE',
+      'NWS_VIEW',
+      'NWS_ADD',
+      'NWS_EDIT',
+      'NWS_DELETE',
+      'DOC_VIEW',
+      'DOC_ADD',
+      'DOC_EDIT',
+      'DOC_DELETE',
+      'VOTE_VIEW',
+      'VOTE_ADD',
+      'VOTE_MANAGE',
+      'CHA_VIEW',
+      'CHA_ADD',
+      'CHA_MANAGE',
+    ];
+  }
+
+  // 2. Base member permissions for all authenticated accounts
+  const perms = new Set<string>([
+    'dashboard:view',
+    'members:view',
+    'events:view',
+    'events:register',
+    'marketplace:view',
+    'marketplace:create_own',
+    'opportunities:view',
+    'opportunities:create_own',
+    'news:view',
+    'voting:view',
+    'voting:participate',
+    'documents:view',
+    'meetings:view',
+    'meetings:create',
+    'profile:view',
+    'profile:manage_own',
+    'EVT_VIEW',
+    'MKT_VIEW',
+    'MKT_ADD',
+    'OPP_VIEW',
+    'OPP_ADD',
+    'MEM_VIEW',
+    'NET_CONNECT',
+  ]);
+
+  // 3. Tổng thư ký / Ban Thư ký
+  if (normRole === 'tong_thu_ky' || normRole === 'ban_thu_ky' || dept.includes('thư ký')) {
+    ['events:manage', 'events:checkin', 'news:manage', 'documents:manage', 'voting:manage',
+     'EVT_ADD', 'EVT_EDIT', 'CHK_SCAN', 'NWS_ADD', 'NWS_EDIT', 'DOC_ADD', 'DOC_EDIT', 'VOTE_ADD'].forEach((p) => perms.add(p));
+  }
+
+  // 4. Ban Truyền Thông (BTT)
+  if (normRole.includes('truyen_thong') || dept.includes('truyền thông')) {
+    ['events:checkin', 'news:manage', 'media:manage', 'CHK_SCAN', 'NWS_ADD', 'NWS_EDIT', 'EVT_ADD'].forEach((p) => perms.add(p));
+  }
+
+  // 5. Ban Thành viên (BTV)
+  if (normRole.includes('thanh_vien') || dept.includes('thành viên')) {
+    ['members:manage', 'members:approve', 'MEM_ADD', 'MEM_EDIT', 'MEM_APPROVE'].forEach((p) => perms.add(p));
+  }
+
+  // 6. Ban Xúc tiến thương mại (BXT)
+  if (normRole.includes('xuc_tien') || dept.includes('xúc tiến')) {
+    ['marketplace:manage', 'opportunities:manage', 'MKT_EDIT', 'MKT_DELETE', 'OPP_EDIT', 'OPP_DELETE'].forEach((p) => perms.add(p));
+  }
+
+  // 7. Ban Tài chính (BTC)
+  if (normRole.includes('tai_chinh') || dept.includes('tài chính')) {
+    ['finance:view', 'finance:manage', 'FEE_VIEW', 'FEE_ADD', 'FEE_EDIT'].forEach((p) => perms.add(p));
+  }
+
+  // 8. Ban Thiện nguyện (BTN)
+  if (normRole.includes('thien_nguyen') || dept.includes('thiện nguyện')) {
+    ['charity:manage', 'CHA_VIEW', 'CHA_ADD', 'CHA_MANAGE'].forEach((p) => perms.add(p));
+  }
+
+  // 9. Ban Điều Hành (BDH)
+  if (normRole === 'ban_dieu_hanh' || dept.includes('điều hành')) {
+    ['events:manage', 'events:checkin', 'members:manage', 'marketplace:manage', 'opportunities:manage', 'news:manage', 'documents:manage', 'finance:view',
+     'CHK_SCAN', 'MEM_EDIT', 'EVT_ADD', 'EVT_EDIT', 'MKT_EDIT', 'OPP_EDIT', 'NWS_ADD'].forEach((p) => perms.add(p));
+  }
+
+  return Array.from(perms);
+}
+
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -456,6 +616,13 @@ export class UsersService {
         isExecutive: primaryRole === 'ban_dieu_hanh' || roleList.includes('ban_dieu_hanh') || roleList.includes('bqt'),
         isGeneralSecretary: primaryRole === 'tong_thu_ky' || roleList.includes('tong_thu_ky'),
         isDepartmentLeader: primaryRole.startsWith('truong_ban_'),
+        permissions: resolveUserPermissions(
+          primaryRole,
+          roleList,
+          normalizedDept,
+          primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
+          primaryRole === 'admin' || primaryRole === 'chu_tich' || roleList.includes('admin') || roleList.includes('platform_admin'),
+        ),
       };
     } catch (err: any) {
       if (err instanceof NotFoundException) {
@@ -482,6 +649,7 @@ export class UsersService {
         profile: null,
         roles: ['platform_admin', 'admin'],
         role: 'platform_admin',
+        permissions: ['*'],
       };
     }
   }

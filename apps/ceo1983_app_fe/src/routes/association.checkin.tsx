@@ -172,10 +172,7 @@ function CheckinScreen() {
   }, [reloadRegistrations]);
 
   // Media Department override (for testing only)
-  const [mediaOverride, setMediaOverride] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("vba_is_media_department_member") === "true";
-  });
+  const [mediaOverride, setMediaOverride] = useState<boolean>(false);
 
   // Events where current user is specifically assigned as QR scanner in qr_scanners
   // Riêng Quản trị, Chủ tịch, Admin luôn có toàn quyền quét mã check-in ở tất cả các sự kiện
@@ -184,17 +181,15 @@ function CheckinScreen() {
     if (mediaOverride) return serverEventsData;
 
     const role = (user?.role || member?.role || "").toLowerCase().trim();
-    const srsRole = (typeof window !== "undefined" ? localStorage.getItem("vba_user_role") || "" : "").toLowerCase().trim();
     const isSuperOrAdmin =
+      Boolean((user as any)?.isAdmin) ||
+      Boolean((user as any)?.isPresident) ||
+      user?.permissions?.includes("admin:full_access") ||
+      user?.permissions?.includes("event:scan_qr") ||
       role === "quan_tri" ||
       role === "admin" ||
       role === "chu_tich" ||
       role === "platform_admin" ||
-      srsRole === "quan_tri" ||
-      srsRole === "admin" ||
-      srsRole === "chu_tich" ||
-      Boolean((user as any)?.isAdmin) ||
-      Boolean((user as any)?.isPresident) ||
       role.includes("quản trị") ||
       role.includes("chủ tịch") ||
       role.includes("admin");
@@ -262,17 +257,11 @@ function CheckinScreen() {
   const toggleMediaOverride = () => {
     const next = !mediaOverride;
     setMediaOverride(next);
-    try {
-      if (typeof window !== "undefined") {
-        if (next) {
-          localStorage.setItem("vba_is_media_department_member", "true");
-          toast.success("Đã kích hoạt vai trò Ban Truyền Thông để kiểm thử!");
-        } else {
-          localStorage.removeItem("vba_is_media_department_member");
-          toast.info("Đã tắt vai trò Ban Truyền Thông kiểm thử.");
-        }
-      }
-    } catch {}
+    if (next) {
+      toast.success("Đã kích hoạt vai trò Ban Truyền Thông để kiểm thử!");
+    } else {
+      toast.info("Đã tắt vai trò Ban Truyền Thông kiểm thử.");
+    }
   };
 
   const fetchState = useServerFn(getMyCheckinState);

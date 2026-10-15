@@ -73,6 +73,7 @@ import { useAuth } from "@/context/AuthContext";
 import { isVideoMedia } from "@/components/marketplace/MarketplaceAdsManager";
 import { MarketplaceAdSlider } from "@/components/marketplace/MarketplaceAdSlider";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
+import { getDynamicMarketplaceCategories } from "@/lib/marketplace-categories";
 
 function normalizeCategory(str: string): string {
   return str
@@ -736,6 +737,10 @@ function ProductsScreen() {
     return arr;
   }, [initialProducts, resolvedProfileCompany, user, member]);
 
+  const dynamicCategories = useMemo(() => {
+    return getDynamicMarketplaceCategories(allProducts);
+  }, [allProducts]);
+
   const totalProducts = allProducts.length;
   const totalInterested = interestedIds.length;
   const totalViews = useMemo(() => {
@@ -840,13 +845,12 @@ function ProductsScreen() {
     { id: "all", label: isEn ? "All" : "Tất cả", count: allProducts.length },
     { id: "my_products", label: isEn ? "My Products" : "Của tôi", count: myProductsCount },
     { id: "sold", label: isEn ? "Sold" : "Đã bán", count: allProducts.filter((p) => p.status === "sold").length },
-    { id: "Công nghệ & Phần mềm", label: isEn ? "Technology" : "Công nghệ & Phần mềm" },
-    { id: "Bất động sản & Xây dựng", label: isEn ? "Real Estate" : "Bất động sản & Xây dựng" },
-    { id: "Sản xuất & Công nghiệp", label: isEn ? "Manufacturing" : "Sản xuất & Công nghiệp" },
-    { id: "Tài chính & Đầu tư", label: isEn ? "Finance" : "Tài chính & Đầu tư" },
-    { id: "Dịch vụ & Du lịch", label: isEn ? "Services & Tourism" : "Dịch vụ & Du lịch" },
-    { id: "Hàng tiêu dùng & Bán lẻ", label: isEn ? "Consumer Goods" : "Hàng tiêu dùng & Bán lẻ" },
-  ], [isEn, allProducts, myProductsCount]);
+    ...dynamicCategories.map((cat) => ({
+      id: cat,
+      label: cat,
+      count: allProducts.filter((p) => matchCategory(p.category, cat)).length,
+    })),
+  ], [isEn, allProducts, myProductsCount, dynamicCategories]);
 
   // Section 1: Sản phẩm mới đăng
   const newestProducts = useMemo(() => {
@@ -2121,29 +2125,47 @@ function ProductsScreen() {
 
             {/* 2. INDUSTRY CHIPS */}
             <div className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-1">
-              {[
-                { id: "all", label: "Tất cả" },
-                { id: "sold", label: "Đã bán" },
-                { id: "tech", label: "Công nghệ & Số hóa" },
-                { id: "realestate", label: "Bất động sản & Xây dựng" },
-                { id: "manufacturing", label: "Sản xuất & Công nghiệp" },
-                { id: "services", label: "Dịch vụ doanh nghiệp" },
-                { id: "logistics", label: "Logistics & Vận tải" },
-              ].map((chip) => {
-                const isActive = selectedCategory === chip.id;
+              <button
+                type="button"
+                onClick={() => setSelectedCategory("all")}
+                className={`px-3.5 py-2 rounded-[100px] flex justify-start items-start cursor-pointer transition shrink-0 ${
+                  selectedCategory === "all"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "bg-white dark:bg-slate-800 outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                <span className={`text-xs font-['Inter'] ${selectedCategory === "all" ? "text-white font-bold" : "text-slate-500 font-semibold"}`}>
+                  Tất cả
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory("sold")}
+                className={`px-3.5 py-2 rounded-[100px] flex justify-start items-start cursor-pointer transition shrink-0 ${
+                  selectedCategory === "sold"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "bg-white dark:bg-slate-800 outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                <span className={`text-xs font-['Inter'] ${selectedCategory === "sold" ? "text-white font-bold" : "text-slate-500 font-semibold"}`}>
+                  Đã bán
+                </span>
+              </button>
+              {dynamicCategories.map((catName) => {
+                const isActive = selectedCategory === catName || matchCategory(catName, selectedCategory);
                 return (
                   <button
-                    key={chip.id}
+                    key={catName}
                     type="button"
-                    onClick={() => setSelectedCategory(chip.id)}
+                    onClick={() => setSelectedCategory(catName)}
                     className={`px-3.5 py-2 rounded-[100px] flex justify-start items-start cursor-pointer transition shrink-0 ${
                       isActive
-                        ? "bg-sky-950 text-white shadow-xs"
+                        ? "bg-[#003B95] text-white shadow-xs"
                         : "bg-white dark:bg-slate-800 outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 text-slate-500 hover:bg-slate-50"
                     }`}
                   >
                     <span className={`text-xs font-['Inter'] ${isActive ? "text-white font-bold" : "text-slate-500 font-semibold"}`}>
-                      {chip.label}
+                      {catName}
                     </span>
                   </button>
                 );
@@ -2498,6 +2520,7 @@ function ProductsScreen() {
       {/* ── MODALS EXTRACTED ── */}
       <ProductPostModal
         isOpen={mounted && postModalOpen}
+        availableCategories={dynamicCategories}
         onClose={() => setPostModalOpen(false)}
         onSubmit={handleCreateProduct}
         isEn={isEn}
@@ -2555,6 +2578,7 @@ function ProductsScreen() {
 
       <ProductEditModal
         isOpen={mounted && !!editingProduct}
+        availableCategories={dynamicCategories}
         editingProduct={editingProduct}
         onClose={() => setEditingProduct(null)}
         onSubmit={handleUpdateProduct}

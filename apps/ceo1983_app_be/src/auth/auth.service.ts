@@ -52,6 +52,8 @@ export class AuthService {
     const execRole = details?.executive_role || details?.executiveRole || 'Hội viên';
     const department = details?.department || 'Hội viên ceo1983';
 
+    const permissions = details?.permissions || [];
+
     const payload = {
       username: user.username,
       sub: user.id,
@@ -70,6 +72,7 @@ export class AuthService {
       isExecutive: Boolean(details?.isExecutive),
       isGeneralSecretary: Boolean(details?.isGeneralSecretary),
       isDepartmentLeader: Boolean(details?.isDepartmentLeader),
+      permissions,
     };
     const refreshPayload = { sub: user.id, type: 'refresh' };
     const mustChangePassword = await this.usersService.checkMustChangePassword(user.id);
@@ -97,6 +100,7 @@ export class AuthService {
         isExecutive: Boolean(details?.isExecutive),
         isGeneralSecretary: Boolean(details?.isGeneralSecretary),
         isDepartmentLeader: Boolean(details?.isDepartmentLeader),
+        permissions,
       },
     };
   }
@@ -116,6 +120,7 @@ export class AuthService {
       const roleList = details?.roles || [resolvedRole];
       const execRole = details?.executive_role || details?.executiveRole || 'Hội viên';
       const department = details?.department || 'Hội viên ceo1983';
+      const permissions = details?.permissions || [];
 
       const payload = {
         username: user.username,
@@ -135,6 +140,7 @@ export class AuthService {
         isExecutive: Boolean(details?.isExecutive),
         isGeneralSecretary: Boolean(details?.isGeneralSecretary),
         isDepartmentLeader: Boolean(details?.isDepartmentLeader),
+        permissions,
       };
       const newRefreshPayload = { sub: user.id, type: 'refresh' };
       return {
@@ -158,6 +164,7 @@ export class AuthService {
           isExecutive: Boolean(details?.isExecutive),
           isGeneralSecretary: Boolean(details?.isGeneralSecretary),
           isDepartmentLeader: Boolean(details?.isDepartmentLeader),
+          permissions,
         },
       };
     } catch (e) {

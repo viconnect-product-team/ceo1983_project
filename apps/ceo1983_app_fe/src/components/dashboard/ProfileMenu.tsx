@@ -32,48 +32,23 @@ export function ProfileMenu() {
   const [pwdOpen, setPwdOpen] = useState(false);
 
   useEffect(() => {
-    const syncCrmProfile = () => {
-      let savedCrmProf: any = null;
-      try {
-        const raw = localStorage.getItem("crm_admin_profile");
-        if (raw) savedCrmProf = JSON.parse(raw);
-      } catch {}
-      const savedCrmAvatar = localStorage.getItem("crm_admin_avatar");
-
-      if (savedCrmProf?.name || savedCrmProf?.full_name || savedCrmProf?.display_name) {
-        setFullName(savedCrmProf.name || savedCrmProf.full_name || savedCrmProf.display_name);
-      } else if (user) {
-        setFullName(user.name || user.user_metadata?.full_name || "");
-      }
-
-      if (savedCrmAvatar || savedCrmProf?.avatar_url) {
-        setAvatarUrl(savedCrmAvatar || savedCrmProf.avatar_url);
-      } else if (user) {
-        setAvatarUrl(user.avatar_url || user.user_metadata?.avatar_url || "");
-      }
-
-      if (user) {
-        setUserId(user.id);
-        setEmail(user.email || "");
-      }
-    };
-
-    syncCrmProfile();
+    if (user) {
+      setFullName(user.name || (user as any).user_metadata?.full_name || "");
+      setAvatarUrl(user.avatar_url || (user as any).user_metadata?.avatar_url || "");
+      setUserId(user.id);
+      setEmail(user.email || "");
+    }
 
     const handleCrmUpdate = (e: any) => {
       if (e?.detail) {
         if (e.detail.name || e.detail.full_name) setFullName(e.detail.name || e.detail.full_name);
         if (e.detail.avatar_url) setAvatarUrl(e.detail.avatar_url);
-      } else {
-        syncCrmProfile();
       }
     };
 
     window.addEventListener("crm_admin_profile_updated", handleCrmUpdate);
-    window.addEventListener("storage", syncCrmProfile);
     return () => {
       window.removeEventListener("crm_admin_profile_updated", handleCrmUpdate);
-      window.removeEventListener("storage", syncCrmProfile);
     };
   }, [user]);
 

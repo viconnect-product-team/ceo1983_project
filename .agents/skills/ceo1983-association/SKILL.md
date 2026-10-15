@@ -136,4 +136,15 @@ Không làm rối màn hình bằng các nút chữ cồng kềnh. Sử dụng b
    - Hỗ trợ thay đổi Tên hiệp hội và Logo tại màn hình `/settings`, phát sự kiện `crm_system_branding_updated` đồng bộ ngay lập tức.
 6. **Không Mock Dữ Liệu Gói Tài Trợ**:
    - Tải 100% dữ liệu thực từ bảng `public.sponsor_packages` và `public.sponsors`.
+7. **Đồng Bộ Danh Mục Động Marketplace (Mobile & CRM)**:
+   - Dùng `getDynamicMarketplaceCategories(products)` trích xuất phân loại mới từ sản phẩm thực tế, tự động hiển thị trên thanh danh mục lọc của cả App và CRM.
+   - Modal đăng/sửa sản phẩm hỗ trợ "+ Thêm phân loại mới..." cho phép người dùng tự điền tên phân loại.
+8. **Đại Tu Chi Tiết Sản Phẩm & Triệt Tiêu Màu Cam Shopee (#EE4D2D)**:
+   - Thay thế toàn bộ màu cam chói gắt bằng Deep Cobalt Navy `#003B95` sang trọng và Neutral Slate/White; chỉ giữ màu hổ phách vàng (`fill-amber-400`) cho icon sao đánh giá.
+9. **Đánh Giá Sản Phẩm Real Lưu CSDL PostgreSQL**:
+   - Kết nối API NestJS `GET /reviews?productId=...` và `POST /reviews` lưu trực tiếp vào bảng `public.reviews`. Cấm mock dữ liệu hay lưu local.
+10. **Bảo Mật Phân Quyền Bằng `permissions: string[]`**:
+   - Cấm lưu trữ các trường nhạy cảm hoặc cờ vai trò (`vba_is_admin`, `vba_user_role`, `vba_current_role`, `vba_user_department`, `vba_is_event_qr_scanner`, v.v.) vào `localStorage`.
+   - Kiểm soát quyền hạn hội viên và ban điều hành qua trường `permissions: string[]` được cấp từ token JWT và backend session.
+
 

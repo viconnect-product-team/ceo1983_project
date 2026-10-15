@@ -16,6 +16,7 @@ export type AppRole = "platform_admin" | "admin" | "moderator" | "member" | stri
 
 export type RoleState = {
   roles: AppRole[];
+  permissions: string[];
   srsRole: SrsRole;
   isPresident: boolean;
   isChuTich: boolean;
@@ -487,8 +488,19 @@ export function useRole(): RoleState {
 
   // Granular RBAC Matrix per SRS Part 2.2
   const grantedPermissions = useMemo(() => {
-    return new Set<Permission>(ROLE_PERMISSIONS[srsRole] || []);
-  }, [srsRole]);
+    const set = new Set<string>(ROLE_PERMISSIONS[srsRole] || []);
+    if (user?.permissions && Array.isArray(user.permissions)) {
+      user.permissions.forEach((p) => set.add(p));
+    }
+    return set;
+  }, [srsRole, user?.permissions]);
+
+  const permissions: string[] = useMemo(() => {
+    if (user?.permissions && Array.isArray(user.permissions) && user.permissions.length > 0) {
+      return user.permissions;
+    }
+    return Array.from(grantedPermissions);
+  }, [user?.permissions, grantedPermissions]);
 
   const can = useCallback(
     (permission: Permission | string): boolean => {
@@ -504,7 +516,9 @@ export function useRole(): RoleState {
         roleStr === "chu_tich" ||
         roleStr === "president" ||
         roleStr === "BQT" ||
-        roleStr === "ADM"
+        roleStr === "ADM" ||
+        user?.permissions?.includes("*") ||
+        user?.permissions?.includes("admin:full_access")
       ) {
         return true;
       }
@@ -597,9 +611,13 @@ export function useRole(): RoleState {
         return true;
       }
 
+      if (user?.permissions && Array.isArray(user.permissions) && user.permissions.includes(permission)) {
+        return true;
+      }
+
       return grantedPermissions.has(permission as Permission);
     },
-    [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion, memberPermProfile, user?.code],
+    [isPlatformAdmin, srsRole, grantedPermissions, matrixVersion, memberPermProfile, user?.code, user?.permissions],
   );
 
   const hasPermission = can;
@@ -650,6 +668,7 @@ export function useRole(): RoleState {
 
   return {
     roles,
+    permissions,
     srsRole,
     isPresident,
     isChuTich,

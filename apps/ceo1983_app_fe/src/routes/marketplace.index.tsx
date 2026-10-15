@@ -55,6 +55,11 @@ import {
   type ProductStatus,
 } from "@/lib/marketplace-data";
 import {
+  STANDARD_MARKETPLACE_CATEGORIES,
+  getDynamicMarketplaceCategories,
+  matchProductCategory,
+} from "@/lib/marketplace-categories";
+import {
   listProductsFn,
   createProductFn,
   updateProductFn,
@@ -519,10 +524,12 @@ const productSchema = z.object({
 
 function ProductModal({
   product,
+  availableCategories,
   onClose,
   onSaved,
 }: {
   product?: Product;
+  availableCategories?: string[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -560,9 +567,31 @@ function ProductModal({
     product?.sellerPhone ??
       ((user as any)?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : "")),
   );
-  const [category, setCategory] = useState<ProductCategoryKey>(
-    product?.category ?? "mk.cat.service",
+
+  const categoryOptions = useMemo(() => {
+    const base = availableCategories && availableCategories.length > 0
+      ? availableCategories
+      : STANDARD_MARKETPLACE_CATEGORIES.map((c) => c.label);
+    const set = new Set(base);
+    if (product?.category && !set.has(product.category)) {
+      set.add(product.category);
+    }
+    return Array.from(set);
+  }, [availableCategories, product?.category]);
+
+  const [category, setCategory] = useState<string>(
+    product?.category ?? "Dịch vụ & Tư vấn doanh nghiệp",
   );
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryText, setCustomCategoryText] = useState("");
+
+  useEffect(() => {
+    if (product?.category && !categoryOptions.includes(product.category)) {
+      setIsCustomCategory(true);
+      setCustomCategoryText(product.category);
+    }
+  }, [product?.category, categoryOptions]);
+
   const [emoji, setEmoji] = useState(product?.emoji ?? "🛍️");
   const initialImages = useMemo(() => {
     if (product?.imageUrls && product.imageUrls.length > 0) return product.imageUrls;
@@ -842,16 +871,48 @@ function ProductModal({
                 {t("mk.form.cat")}
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as ProductCategoryKey)}
-                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                value={isCustomCategory ? "__custom__" : category}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__custom__") {
+                    setIsCustomCategory(true);
+                    if (!customCategoryText) setCategory("");
+                  } else {
+                    setIsCustomCategory(false);
+                    setCategory(val);
+                  }
+                }}
+                className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring cursor-pointer"
               >
-                {CATEGORIES.map((c: any) => (
+                {categoryOptions.map((c: any) => (
                   <option key={c} value={c}>
-                    {t(c)}
+                    {c}
                   </option>
                 ))}
+                <option value="__custom__" className="text-primary font-bold">
+                  + Thêm phân loại mới... (Tự điền)
+                </option>
               </select>
+
+              {isCustomCategory && (
+                <div className="mt-2 space-y-1">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={customCategoryText}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomCategoryText(val);
+                      setCategory(val);
+                    }}
+                    placeholder="Nhập tên phân loại mới (VD: Dịch vụ pháp lý, Nông sản...)"
+                    className="w-full rounded-lg border border-primary bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <p className="text-[11px] text-primary font-medium">
+                    Phân loại mới sẽ tự động hiển thị trên thanh danh mục Marketplace sau khi lưu!
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1067,7 +1128,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
   const [adminSection, setAdminSection] = useState<"catalog" | "ads">("catalog");
   const [tab, setTab] = useState<"browse" | "mine" | "sold">("browse");
   const [query, setQuery] = useState("");
-  const [cat, setCat] = useState<ProductCategoryKey | "all">("all");
+  const [cat, setCat] = useState<string>("all");
   const [view, setView] = useState<"card" | "list">("card");
   const [sort, setSort] = useState<Sort>("newest");
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -1176,11 +1237,13 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
   const sold = all.filter((p) => p.status === "sold");
   const active = all.filter((p) => p.status === "active");
 
+  const dynamicCategories = useMemo(() => getDynamicMarketplaceCategories(all), [all]);
+
   const hasFilters = cat !== "all" || query.trim() !== "" || pinnedOnly || sort !== "newest";
 
   const visible = useMemo(() => {
     let list = tab === "mine" ? mine : tab === "sold" ? sold : all;
-    if (cat !== "all") list = list.filter((p) => p.category === cat);
+    if (cat !== "all") list = list.filter((p) => matchProductCategory(p.category, cat));
     if (pinnedOnly) list = list.filter((p) => pinned.has(p.id));
     const q = query.trim().toLowerCase();
     if (q) {
@@ -1559,20 +1622,23 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
           >
             {t("mk.filter.all")}
           </button>
-          {CATEGORIES.map((c: any) => (
-            <button
-              key={c}
-              onClick={() => setCat(c)}
-              aria-pressed={cat === c}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                cat === c
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border text-muted-foreground hover:bg-secondary"
-              }`}
-            >
-              {t(c)}
-            </button>
-          ))}
+          {dynamicCategories.map((c: string) => {
+            const isSelected = cat === c || matchProductCategory(c, cat);
+            return (
+              <button
+                key={c}
+                onClick={() => setCat(c)}
+                aria-pressed={isSelected}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                {c}
+              </button>
+            );
+          })}
           <button
             onClick={() => setPinnedOnly((v) => !v)}
             aria-pressed={pinnedOnly}
@@ -1777,9 +1843,20 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
         </>
       )}
 
-      {showModal && <ProductModal onClose={() => setShowModal(false)} onSaved={reload} />}
+      {showModal && (
+        <ProductModal
+          availableCategories={dynamicCategories}
+          onClose={() => setShowModal(false)}
+          onSaved={reload}
+        />
+      )}
       {editing && (
-        <ProductModal product={editing} onClose={() => setEditing(null)} onSaved={reload} />
+        <ProductModal
+          availableCategories={dynamicCategories}
+          product={editing}
+          onClose={() => setEditing(null)}
+          onSaved={reload}
+        />
       )}
       <ProductExcelModal
         open={showExcelModal}

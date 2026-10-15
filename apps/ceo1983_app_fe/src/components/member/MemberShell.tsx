@@ -461,8 +461,12 @@ function MemberTabBar() {
 
   // Check if current user is authorized as event QR scanner / check-in staff
   const [canScanQr, setCanScanQr] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("vba_is_event_qr_scanner") === "true";
+    return Boolean(
+      user?.isAdmin ||
+        user?.isPresident ||
+        user?.permissions?.includes('event:scan_qr') ||
+        user?.permissions?.includes('admin:full_access'),
+    );
   });
 
   useEffect(() => {
@@ -470,11 +474,20 @@ function MemberTabBar() {
       setCanScanQr(false);
       return;
     }
-    fetchNestApi<any[]>("/events")
+    if (
+      user.isAdmin ||
+      user.isPresident ||
+      user.permissions?.includes('event:scan_qr') ||
+      user.permissions?.includes('admin:full_access')
+    ) {
+      setCanScanQr(true);
+      return;
+    }
+
+    fetchNestApi<any[]>('/events')
       .then((events) => {
         if (!Array.isArray(events) || events.length === 0) {
           setCanScanQr(false);
-          localStorage.removeItem("vba_is_event_qr_scanner");
           return;
         }
         const userIdentifiers = [
@@ -486,16 +499,6 @@ function MemberTabBar() {
         ]
           .filter(Boolean)
           .map((s) => String(s).toLowerCase().trim());
-
-        try {
-          const rawMem = localStorage.getItem("vba_my_member");
-          if (rawMem) {
-            const m = JSON.parse(rawMem);
-            if (m.code) userIdentifiers.push(String(m.code).toLowerCase().trim());
-            if (m.phone) userIdentifiers.push(String(m.phone).toLowerCase().trim());
-            if (m.id) userIdentifiers.push(String(m.id).toLowerCase().trim());
-          }
-        } catch {}
 
         const isAuthorized = events.some((ev) => {
           let scanners = ev.qr_scanners || ev.qrScanners || ev.qrStaff || ev.qr_staff_ids || [];
@@ -523,7 +526,6 @@ function MemberTabBar() {
         });
 
         setCanScanQr(isAuthorized);
-        localStorage.setItem("vba_is_event_qr_scanner", isAuthorized ? "true" : "false");
       })
       .catch(() => {});
   }, [user]);

@@ -4,12 +4,14 @@ import { PackageCheck, Store, ImagePlus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
+import { STANDARD_MARKETPLACE_CATEGORIES } from "@/lib/marketplace-categories";
 
 export interface ProductPostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   isEn?: boolean;
+  availableCategories?: string[];
   formCompany: string;
   setFormCompany: (val: string) => void;
   formCompanySize: string;
@@ -39,6 +41,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
   onClose,
   onSubmit,
   isEn,
+  availableCategories,
   formCompany,
   setFormCompany,
   formCompanySize,
@@ -63,6 +66,22 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
   setFormDesc,
 }) => {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [isCustomCategory, setIsCustomCategory] = React.useState(false);
+  const [customCategoryText, setCustomCategoryText] = React.useState("");
+
+  const categoryOptions = React.useMemo(() => {
+    const base = availableCategories && availableCategories.length > 0
+      ? availableCategories
+      : STANDARD_MARKETPLACE_CATEGORIES.map((c) => c.label);
+    return Array.from(new Set(base));
+  }, [availableCategories]);
+
+  React.useEffect(() => {
+    if (formCategory && !categoryOptions.includes(formCategory)) {
+      setIsCustomCategory(true);
+      setCustomCategoryText(formCategory);
+    }
+  }, [formCategory, categoryOptions]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
@@ -74,6 +93,9 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
     }
     if (!formName.trim()) {
       newErrors.name = isEn ? "Please enter product name" : "Vui lòng nhập tên sản phẩm / dịch vụ";
+    }
+    if (!formCategory.trim()) {
+      newErrors.category = isEn ? "Please enter or select category" : "Vui lòng chọn hoặc nhập phân loại ngành hàng";
     }
     const cleanPrice = Number(formPrice.replace(/\D/g, ""));
     if (!formPrice.trim() || isNaN(cleanPrice) || cleanPrice <= 0) {
@@ -276,6 +298,65 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
                 {errors.name && (
                   <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
                     {errors.name}
+                  </p>
+                )}
+              </div>
+
+              {/* Category Selection */}
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  {isEn ? "Category / Industry Classification" : "Danh mục / Phân loại ngành hàng"} <span className="text-rose-500 font-bold">*</span>
+                </label>
+                <select
+                  value={isCustomCategory ? "__custom__" : formCategory}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "__custom__") {
+                      setIsCustomCategory(true);
+                      if (!customCategoryText) {
+                        setFormCategory("");
+                      }
+                    } else {
+                      setIsCustomCategory(false);
+                      setFormCategory(val);
+                      if (errors.category) setErrors((prev) => ({ ...prev, category: "" }));
+                    }
+                  }}
+                  className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95] cursor-pointer"
+                >
+                  {categoryOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                  <option value="__custom__" className="text-[#003B95] font-bold">
+                    + Thêm phân loại mới... (Tự điền)
+                  </option>
+                </select>
+
+                {isCustomCategory && (
+                  <div className="mt-2 space-y-1 animate-in fade-in">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={customCategoryText}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomCategoryText(val);
+                        setFormCategory(val);
+                        if (errors.category) setErrors((prev) => ({ ...prev, category: "" }));
+                      }}
+                      placeholder="Nhập tên phân loại mới (VD: Dịch vụ pháp lý, Nông sản chất lượng cao...)"
+                      className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-2 ring-[#003B95] dark:ring-blue-500"
+                    />
+                    <p className="text-[10.5px] text-[#003B95] dark:text-blue-400 font-medium">
+                      Phân loại mới sẽ tự động hiển thị trên thanh danh mục Marketplace sau khi đăng!
+                    </p>
+                  </div>
+                )}
+                {errors.category && (
+                  <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
+                    {errors.category}
                   </p>
                 )}
               </div>

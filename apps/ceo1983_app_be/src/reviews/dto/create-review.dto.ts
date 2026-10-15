@@ -1,7 +1,14 @@
 export class CreateReviewDto {
-  sellerId!: string;
+  sellerId?: string;
+  productId?: string;
+  companyName?: string;
   reviewerId?: string;
+  reviewerName?: string;
+  reviewerRole?: string;
+  reviewerAvatar?: string;
   rating!: number;
   comment!: string;
-  reviewType?: 'service' | 'event' | 'networking';
+  reviewType?: string;
+  images?: string[];
 }
+

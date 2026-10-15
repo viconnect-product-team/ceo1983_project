@@ -190,9 +190,6 @@ export function QuickProfileEditModal({
         if (title.trim()) {
           localStorage.setItem("vba_member_title", title.trim());
         }
-        if (phone.trim()) {
-          localStorage.setItem("vba_member_phone", phone.trim());
-        }
         if (cover) {
           localStorage.setItem("vba_member_cover_photo", cover);
           if (userId) {

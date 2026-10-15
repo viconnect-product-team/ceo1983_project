@@ -725,4 +725,24 @@ export function isActionAllowedByMatrix(
   return true;
 }
 
+/**
+ * Kiểm tra xem người dùng hiện tại có mã quyền cụ thể trong session không
+ * Dựa trên mảng permissions[] được cấp từ backend NestJS và JWT
+ */
+export function hasPermission(
+  user: { permissions?: string[]; isAdmin?: boolean; role?: string } | null | undefined,
+  permission: string
+): boolean {
+  if (!user) return false;
+  if (user.isAdmin || user.role === 'admin' || user.role === 'quan_tri' || user.role === 'chu_tich' || user.role === 'president') {
+    return true;
+  }
+  if (!Array.isArray(user.permissions)) return false;
+  if (user.permissions.includes('admin:full_access') || user.permissions.includes('*')) {
+    return true;
+  }
+  return user.permissions.includes(permission);
+}
+
+
 

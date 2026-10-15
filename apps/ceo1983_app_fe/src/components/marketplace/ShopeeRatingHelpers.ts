@@ -152,27 +152,43 @@ export function calculateRatingStats(
     filtered = reviews.filter((r) => r.companyName.toLowerCase().trim() === compLower);
   }
 
-  // Base synthetic baseline so every product has a healthy authentic Shopee look
-  const baselineCount = filtered.length > 0 ? filtered.length : 28;
-  const rawSum = filtered.reduce((s, r) => s + r.rating, 0);
-  const totalCount = filtered.length > 0 ? filtered.length : 28;
-  const totalScore = filtered.length > 0 ? rawSum : (24 * 5 + 4 * 4); // 136 / 140 = 4.86
+  if (filtered.length === 0) {
+    return {
+      average: 5.0,
+      percentage: 100,
+      totalReviews: 0,
+      totalScore: 0,
+      maxScore: 0,
+      starBreakdown: {
+        5: { count: 0, percentage: 0 },
+        4: { count: 0, percentage: 0 },
+        3: { count: 0, percentage: 0 },
+        2: { count: 0, percentage: 0 },
+        1: { count: 0, percentage: 0 },
+      },
+      withCommentsCount: 0,
+      withImagesCount: 0,
+    };
+  }
+
+  const rawSum = filtered.reduce((s, r) => s + (Number(r.rating) || 5), 0);
+  const totalCount = filtered.length;
   const maxScore = totalCount * 5;
 
-  const star5Count = filtered.length > 0 ? filtered.filter((r) => r.rating === 5).length : 24;
-  const star4Count = filtered.length > 0 ? filtered.filter((r) => r.rating === 4).length : 4;
-  const star3Count = filtered.length > 0 ? filtered.filter((r) => r.rating === 3).length : 0;
-  const star2Count = filtered.length > 0 ? filtered.filter((r) => r.rating === 2).length : 0;
-  const star1Count = filtered.length > 0 ? filtered.filter((r) => r.rating === 1).length : 0;
+  const star5Count = filtered.filter((r) => Number(r.rating) === 5).length;
+  const star4Count = filtered.filter((r) => Number(r.rating) === 4).length;
+  const star3Count = filtered.filter((r) => Number(r.rating) === 3).length;
+  const star2Count = filtered.filter((r) => Number(r.rating) === 2).length;
+  const star1Count = filtered.filter((r) => Number(r.rating) === 1).length;
 
-  const avg = Number((totalScore / totalCount).toFixed(1));
-  const pct = Number(((totalScore / maxScore) * 100).toFixed(1));
+  const avg = Number((rawSum / totalCount).toFixed(1));
+  const pct = Number(((rawSum / maxScore) * 100).toFixed(1));
 
   return {
     average: avg > 5 ? 5 : avg < 1 ? 1 : avg,
     percentage: pct,
     totalReviews: totalCount,
-    totalScore,
+    totalScore: rawSum,
     maxScore,
     starBreakdown: {
       5: { count: star5Count, percentage: Math.round((star5Count / totalCount) * 100) },
@@ -181,7 +197,7 @@ export function calculateRatingStats(
       2: { count: star2Count, percentage: Math.round((star2Count / totalCount) * 100) },
       1: { count: star1Count, percentage: Math.round((star1Count / totalCount) * 100) },
     },
-    withCommentsCount: filtered.length > 0 ? filtered.filter((r) => r.comment?.trim()).length : 22,
-    withImagesCount: filtered.length > 0 ? filtered.filter((r) => r.images && r.images.length > 0).length : 12,
+    withCommentsCount: filtered.filter((r) => r.comment?.trim()).length,
+    withImagesCount: filtered.filter((r) => r.images && r.images.length > 0).length,
   };
 }
