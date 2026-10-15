@@ -120,13 +120,11 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
           password: ${{ secrets.SSH_PASSWORD || '' }}
-          timeout: 120s
-          command_timeout: 120s
+          timeout: 300s
+          command_timeout: 300s
           script: |
             mkdir -p /root/deploy-cache/dist-images
             rm -rf /root/deploy-cache/dist-images/*.tar.gz
-            # Dọn bớt Docker system prune để giải phóng dung lượng đĩa
-            docker system prune -f --volumes 2>/dev/null || true
 
       - name: Đẩy images và cấu hình sang Server VPS qua SSH (Timeout 20 phút)
         uses: appleboy/scp-action@v0.1.7
