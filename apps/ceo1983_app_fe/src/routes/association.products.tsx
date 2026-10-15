@@ -516,7 +516,7 @@ function ProductsScreen() {
   const handleMessageSeller = (p: MyProduct) => {
     const targetCode = (p as any).sellerCode || (p as any).sellerId || (p as any).userId || (p as any).code || "admin";
     const targetName = p.company || p.sellerName || "Doanh nghiệp thành viên";
-    const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&auto=format&fit=crop&q=80";
+    const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "";
     const inquiry = {
       itemType: "product",
       id: p.id,
@@ -813,6 +813,9 @@ function ProductsScreen() {
       if (selectedCategory === "my_products") {
         return checkIsProductOwner(p);
       }
+      if (selectedCategory === "sold") {
+        return p.status === "sold" || (p as any).isSold === true;
+      }
       return matchCategory(p.category, selectedCategory);
     });
   }, [allProducts, q, selectedCategory, member]);
@@ -836,13 +839,14 @@ function ProductsScreen() {
   const categoriesList = useMemo(() => [
     { id: "all", label: isEn ? "All" : "Tất cả", count: allProducts.length },
     { id: "my_products", label: isEn ? "My Products" : "Của tôi", count: myProductsCount },
+    { id: "sold", label: isEn ? "Sold" : "Đã bán", count: allProducts.filter((p) => p.status === "sold").length },
     { id: "Công nghệ & Phần mềm", label: isEn ? "Technology" : "Công nghệ & Phần mềm" },
     { id: "Bất động sản & Xây dựng", label: isEn ? "Real Estate" : "Bất động sản & Xây dựng" },
     { id: "Sản xuất & Công nghiệp", label: isEn ? "Manufacturing" : "Sản xuất & Công nghiệp" },
     { id: "Tài chính & Đầu tư", label: isEn ? "Finance" : "Tài chính & Đầu tư" },
     { id: "Dịch vụ & Du lịch", label: isEn ? "Services & Tourism" : "Dịch vụ & Du lịch" },
     { id: "Hàng tiêu dùng & Bán lẻ", label: isEn ? "Consumer Goods" : "Hàng tiêu dùng & Bán lẻ" },
-  ], [isEn, allProducts.length, myProductsCount]);
+  ], [isEn, allProducts, myProductsCount]);
 
   // Section 1: Sản phẩm mới đăng
   const newestProducts = useMemo(() => {
@@ -948,6 +952,26 @@ function ProductsScreen() {
       reload();
     } catch {
       toast.error("Không thể xóa sản phẩm. Vui lòng thử lại!");
+    }
+  };
+
+  const handleToggleSold = async (id: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const targetProd = allProducts.find((x) => x.id === id);
+    if (targetProd && !checkCanManageProduct(targetProd)) {
+      toast.error("Bạn không thuộc công ty này nên không có quyền thay đổi trạng thái sản phẩm!");
+      return;
+    }
+    const isSoldNow = targetProd?.status !== "sold";
+    try {
+      await fetchNestApi(`/marketplace/products/${id}/toggle-sold`, { method: "PATCH" });
+      toast.success(isSoldNow ? "Đã đánh dấu sản phẩm là đã bán!" : "Đã mở bán lại sản phẩm thành công!");
+      reload();
+    } catch {
+      toast.error("Không thể cập nhật trạng thái sản phẩm. Vui lòng thử lại!");
     }
   };
 
@@ -1069,7 +1093,7 @@ function ProductsScreen() {
     const canManage = checkCanManageProduct(p);
     const isInterested = interestedIds.includes(p.id);
     const menuOpen = activeProductMenuId === p.id;
-    const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80";
+    const mediaImg = resolveMediaUrl(p.imageUrl) || p.imageUrl || "";
     const isStaggered = index % 2 === 1;
 
     return (
@@ -1083,13 +1107,31 @@ function ProductsScreen() {
             onClick={() => handleOpenProductDetail(p)}
             className={`relative ${isStaggered ? "aspect-[4/5]" : "aspect-square sm:aspect-[4/3]"} w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer`}
           >
-            <img
-              src={mediaImg}
-              alt={p.name}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              loading="lazy"
-            />
+            {mediaImg ? (
+              <img
+                src={mediaImg}
+                alt={p.name}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-3xl">
+                💼
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+            {/* Sold Status Overlay */}
+            {p.status === "sold" && (
+              <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                <span className="px-3 py-1 rounded-full bg-slate-900/90 border border-white/20 text-white text-xs font-black tracking-wider uppercase shadow-lg">
+                  ĐÃ BÁN
+                </span>
+              </div>
+            )}
 
             {/* Category Tag */}
             <span className="absolute left-2.5 top-2.5 rounded-full bg-slate-950/60 backdrop-blur-md px-2.5 py-0.5 text-[9.5px] font-semibold text-white tracking-wide border border-white/10 shadow-xs">
@@ -1127,9 +1169,20 @@ function ProductsScreen() {
                   </button>
                   {menuOpen && (
                     <div
-                      className="absolute left-0 bottom-8 w-32 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-30 animate-scale-in"
+                      className="absolute left-0 bottom-8 w-36 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-30 animate-scale-in"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          setActiveProductMenuId(null);
+                          handleToggleSold(p.id, e);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                        <span>{p.status === "sold" ? "Mở bán lại" : "Đã bán"}</span>
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1522,14 +1575,42 @@ function ProductsScreen() {
                     className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs hover:shadow-xl hover:border-amber-400/50 dark:hover:border-amber-400/50 transition-all duration-200 break-inside-avoid mb-3"
                   >
                     <div className={`relative ${isStaggered ? "aspect-[4/5]" : "aspect-square sm:aspect-4/3"} w-full bg-slate-100 dark:bg-slate-800 overflow-hidden`}>
-                      <img
-                        src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
-                        alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
-                        loading="lazy"
-                      />
+                      {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
+                        <img
+                          src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
+                          alt={p.name}
+                          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-3xl">
+                          💼
+                        </div>
+                      )}
+                      {p.status === "sold" && (
+                        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                          <span className="px-3 py-1 rounded-full bg-slate-900/90 border border-white/20 text-white text-xs font-black tracking-wider uppercase shadow-lg">
+                            ĐÃ BÁN
+                          </span>
+                        </div>
+                      )}
                       {canManage && (
                         <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSold(p.id, e);
+                            }}
+                            className={`h-7 px-2 rounded-lg ${p.status === "sold" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-black/60 hover:bg-emerald-600"} text-white flex items-center gap-1 text-[11px] font-semibold transition cursor-pointer backdrop-blur-xs`}
+                            title={p.status === "sold" ? "Mở bán lại" : "Đánh dấu đã bán"}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>{p.status === "sold" ? "Mở bán" : "Đã bán"}</span>
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1797,16 +1878,34 @@ function ProductsScreen() {
                         key={p.id}
                         className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-xs"
                       >
-                        <img
-                          src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"}
-                          alt={p.name}
-                          className="size-16 rounded-xl object-cover shrink-0 border border-slate-100 dark:border-slate-700"
-                        />
+                        {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
+                          <img
+                            src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
+                            alt={p.name}
+                            className="size-16 rounded-xl object-cover shrink-0 border border-slate-100 dark:border-slate-700"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="size-16 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xl shrink-0">
+                            💼
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded">
                               {p.category || "Dịch vụ"}
                             </span>
+                            {p.status === "sold" ? (
+                              <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+                                ĐÃ BÁN
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
+                                Đang bán
+                              </span>
+                            )}
                             {(p as any).isVip && (
                               <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded">
                                 VIP
@@ -1821,6 +1920,14 @@ function ProductsScreen() {
                           </div>
                         </div>
                         <div className="flex flex-col gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => handleToggleSold(p.id, e)}
+                            className={`px-2.5 py-1 ${p.status === "sold" ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200"} rounded-lg text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer`}
+                          >
+                            <CheckCircle2 className="size-3" />
+                            <span>{p.status === "sold" ? "Mở bán lại" : "Đã bán"}</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => startEditProduct(p)}
@@ -2016,6 +2123,7 @@ function ProductsScreen() {
             <div className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-1">
               {[
                 { id: "all", label: "Tất cả" },
+                { id: "sold", label: "Đã bán" },
                 { id: "tech", label: "Công nghệ & Số hóa" },
                 { id: "realestate", label: "Bất động sản & Xây dựng" },
                 { id: "manufacturing", label: "Sản xuất & Công nghiệp" },
@@ -2080,9 +2188,31 @@ function ProductsScreen() {
                         key={p.id}
                         id={pIdx === 0 ? "tour-market-detail-quote" : undefined}
                         onClick={() => handleOpenProductDetail(p)}
-                        className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
+                        className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer relative"
                       >
-                        <img className="self-stretch h-24 object-cover" src={p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"} alt={p.name} />
+                        <div className="relative self-stretch h-24 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
+                            <img
+                              className="self-stretch h-24 w-full object-cover"
+                              src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
+                              alt={p.name}
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="h-24 w-full flex items-center justify-center text-2xl">
+                              💼
+                            </div>
+                          )}
+                          {p.status === "sold" && (
+                            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                              <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                                ĐÃ BÁN
+                              </span>
+                            </div>
+                          )}
+                        </div>
                         <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
                           <div className="self-stretch inline-flex justify-between items-center">
                             <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
@@ -2136,9 +2266,31 @@ function ProductsScreen() {
                       <div
                         key={p.id || p._id}
                         onClick={() => handleOpenProductDetail(p)}
-                        className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer"
+                        className="w-44 bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-xs hover:shadow-md transition cursor-pointer relative"
                       >
-                        <img className="self-stretch h-24 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"} alt={p.name} />
+                        <div className="relative self-stretch h-24 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
+                            <img
+                              className="self-stretch h-24 w-full object-cover"
+                              src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
+                              alt={p.name}
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="h-24 w-full flex items-center justify-center text-2xl">
+                              💼
+                            </div>
+                          )}
+                          {p.status === "sold" && (
+                            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                              <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                                ĐÃ BÁN
+                              </span>
+                            </div>
+                          )}
+                        </div>
                         <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
                           <div className="self-stretch inline-flex justify-between items-center">
                             <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
@@ -2256,9 +2408,31 @@ function ProductsScreen() {
                   <div
                     key={p.id}
                     onClick={() => handleOpenProductDetail(p)}
-                    className="w-full bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer"
+                    className="w-full bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer relative"
                   >
-                    <img className="self-stretch h-24 object-cover" src={resolveMediaUrl(p.imageUrl) || p.imageUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80"} alt={p.name} />
+                    <div className="relative self-stretch h-24 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
+                        <img
+                          className="self-stretch h-24 w-full object-cover"
+                          src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
+                          alt={p.name}
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="h-24 w-full flex items-center justify-center text-2xl">
+                          💼
+                        </div>
+                      )}
+                      {p.status === "sold" && (
+                        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                          <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                            ĐÃ BÁN
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
                       <div className="self-stretch inline-flex justify-between items-center">
                         <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">

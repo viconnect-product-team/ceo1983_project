@@ -155,6 +155,8 @@ export class MinioService implements OnModuleInit {
       for (let i = 0; i < this.clients.length; i++) {
         const entry = this.clients[i];
         try {
+          // Kiểm tra sự tồn tại của tệp qua statObject trước để tránh stream lỗi phát sinh giữa chừng làm sập kết nối HTTP
+          await entry.client.statObject(bucket, filename);
           const getPromise = entry.client.getObject(bucket, filename);
           const timeoutPromise = new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error(`MinIO getObject timeout on ${entry.name}`)), 3000),

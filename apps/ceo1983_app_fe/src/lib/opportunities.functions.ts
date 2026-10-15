@@ -156,6 +156,22 @@ export const getOpportunityFn = createServerFn({ method: "GET" })
     },
   );
 
+const safeImageSchema = z.preprocess((val) => {
+  if (!val) return undefined;
+  if (typeof val === "string") return val;
+  if (typeof val === "object") {
+    if ("url" in (val as any) && typeof (val as any).url === "string") {
+      return (val as any).url;
+    }
+    if (Array.isArray(val) && val.length > 0) {
+      const first = val[0];
+      if (typeof first === "string") return first;
+      if (typeof first === "object" && first?.url) return first.url;
+    }
+  }
+  return String(val);
+}, z.string().optional());
+
 export const createOpportunityFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) =>
@@ -174,8 +190,8 @@ export const createOpportunityFn = createServerFn({ method: "POST" })
         contactPhone: z.string().optional(),
         contactTitle: z.string().optional(),
         company: z.string().optional(),
-        image: z.string().optional(),
-        imageUrl: z.string().optional(),
+        image: safeImageSchema,
+        imageUrl: safeImageSchema,
       })
       .parse(d),
   )
@@ -244,8 +260,8 @@ export const updateOpportunityFn = createServerFn({ method: "POST" })
         contactPhone: z.string().optional(),
         contactTitle: z.string().optional(),
         company: z.string().optional(),
-        image: z.string().optional(),
-        imageUrl: z.string().optional(),
+        image: safeImageSchema,
+        imageUrl: safeImageSchema,
       })
       .parse(d),
   )
@@ -300,12 +316,10 @@ export const deleteOpportunityFn = createServerFn({ method: "POST" })
       });
       return { ok: true };
     } catch {
-      const memberId = await resolveMemberId(token);
       const { error } = await getDb(context)
         .from("opportunities")
         .delete()
-        .eq("id", data.id)
-        .eq("poster_id", memberId);
+        .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { ok: true };
     }

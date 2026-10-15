@@ -225,15 +225,20 @@ export class UploadController {
     const contentType = getContentType(filePathStr);
 
     const pipeSafe = (readable: any) => {
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400');
       readable.on('error', () => {
         if (!res.headersSent) {
+          if (contentType.startsWith('image/')) {
+            const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="100%" height="100%" fill="#0A1A3A"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#F59E0B" font-family="sans-serif" font-size="16" font-weight="bold">CEO 1983</text></svg>`;
+            res.setHeader('Content-Type', 'image/svg+xml');
+            return res.status(200).send(fallbackSvg);
+          }
           res.status(404).send('File not found');
         } else {
           res.end();
         }
       });
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
       return readable.pipe(res);
     };
 

@@ -543,20 +543,22 @@ function DepartmentsPage() {
                         <button
                           type="button"
                           onClick={() => handleOpenView(dept)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition cursor-pointer"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
                           title="Xem chi tiết và danh sách thành viên ban"
+                          aria-label="Xem chi tiết và danh sách thành viên ban"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4" strokeWidth={2.2} />
                         </button>
 
                         {/* Sửa */}
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(dept)}
-                          className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
                           title="Chỉnh sửa ban"
+                          aria-label="Chỉnh sửa ban"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" strokeWidth={2.2} />
                         </button>
 
                         {/* Xóa */}
@@ -564,14 +566,15 @@ function DepartmentsPage() {
                           type="button"
                           onClick={() => setDeleteConfirmDept(dept)}
                           disabled={dept.isCore}
-                          className={`p-1.5 rounded-lg transition cursor-pointer ${
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${
                             dept.isCore
-                              ? "text-muted-foreground/30 cursor-not-allowed"
-                              : "text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                              ? "border-slate-200/50 bg-slate-50 text-slate-300 cursor-not-allowed dark:bg-slate-800/40 dark:border-slate-800 dark:text-slate-600"
+                              : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
                           }`}
                           title={dept.isCore ? "Ban nòng cốt không thể xóa" : "Xóa ban"}
+                          aria-label="Xóa ban"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                         </button>
                       </div>
                     </td>

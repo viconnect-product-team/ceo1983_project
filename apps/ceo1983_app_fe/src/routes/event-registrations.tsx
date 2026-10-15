@@ -786,6 +786,7 @@ function RegPage() {
             {/* Interactive Seating Studio Map */}
             <div className="mb-4">
               <CinemaSeatingMap
+                eventId={selectedReg?.eventId || (eventId !== "all" ? eventId : "default")}
                 currentSeat={seatInput}
                 occupiedSeats={occupiedSeatsMap}
                 onSelectSeat={(seatLabel) => setSeatInput(seatLabel)}

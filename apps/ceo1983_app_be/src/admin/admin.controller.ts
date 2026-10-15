@@ -27,11 +27,11 @@ import {
 export { UpdateDemoLeadDto, CreateInvoiceDto, AddInvoiceReminderDto };
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('demo-leads')
+  @UseGuards(JwtAuthGuard)
   async listDemoLeads(
     @Query('status') status?: string,
     @Query('search') search?: string,
@@ -42,6 +42,7 @@ export class AdminController {
   }
 
   @Patch('demo-leads/:id')
+  @UseGuards(JwtAuthGuard)
   async updateDemoLead(
     @Param('id') id: string,
     @Body() data: UpdateDemoLeadDto,
@@ -52,11 +53,13 @@ export class AdminController {
   // ── INVOICES / FEES ────────────────────────────────────────────────────────
 
   @Get('invoices')
+  @UseGuards(JwtAuthGuard)
   async listInvoices() {
     return this.adminService.listInvoices();
   }
 
   @Get('invoices/:id')
+  @UseGuards(JwtAuthGuard)
   async getInvoiceById(@Param('id') id: string) {
     return this.adminService.getInvoiceById(id);
   }
@@ -194,6 +197,7 @@ export class AdminController {
   }
 
   @Put('permission-matrix')
+  @UseGuards(JwtAuthGuard)
   async savePermissionMatrix(@Request() req: any, @Body() body: any) {
     return this.adminService.savePermissionMatrix(body, req.user?.id);
   }
@@ -206,6 +210,7 @@ export class AdminController {
   }
 
   @Put('active-theme')
+  @UseGuards(JwtAuthGuard)
   async saveActiveTheme(@Request() req: any, @Body() body: any) {
     return this.adminService.saveActiveTheme(body, req.user?.id);
   }
@@ -218,6 +223,7 @@ export class AdminController {
   }
 
   @Put('sidebar-labels')
+  @UseGuards(JwtAuthGuard)
   async saveSidebarLabels(@Request() req: any, @Body() body: any) {
     return this.adminService.saveSidebarLabels(body, req.user?.id);
   }
@@ -230,6 +236,7 @@ export class AdminController {
   }
 
   @Put('member-permissions')
+  @UseGuards(JwtAuthGuard)
   async saveMemberPermissions(@Request() req: any, @Body() body: any) {
     return this.adminService.saveMemberPermissions(body, req.user?.id);
   }
@@ -242,6 +249,7 @@ export class AdminController {
   }
 
   @Put('lucky-draw-config')
+  @UseGuards(JwtAuthGuard)
   async saveLuckyDrawConfig(@Request() req: any, @Body() body: any) {
     return this.adminService.saveLuckyDrawConfig(body, req.user?.id);
   }

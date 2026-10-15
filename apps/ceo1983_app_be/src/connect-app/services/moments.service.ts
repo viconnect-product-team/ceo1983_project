@@ -841,7 +841,11 @@ export class ConnectMomentsService {
         storagePath: s.storage_path,
         sortOrder: s.sort_order,
         url: s.storage_path
-          ? (s.storage_path.startsWith('http') ? s.storage_path : `/uploads/${s.storage_path.replace(/^\/+/, '')}`)
+          ? (s.storage_path.startsWith('http') || s.storage_path.startsWith('data:') || s.storage_path.startsWith('blob:')
+              ? s.storage_path
+              : s.storage_path.startsWith('/')
+                ? s.storage_path
+                : `/uploads/${s.storage_path.replace(/^\/+/, '')}`)
           : null,
       })),
     };

@@ -492,6 +492,23 @@ export function useRole(): RoleState {
 
   const can = useCallback(
     (permission: Permission | string): boolean => {
+      // 0. Toàn quyền tối cao cho Quản trị viên (quan_tri / admin / platform_admin) và Chủ tịch (chu_tich / president)
+      const roleStr = String(srsRole || "");
+      if (
+        isPlatformAdmin ||
+        isAdmin ||
+        isPresident ||
+        isChuTich ||
+        roleStr === "quan_tri" ||
+        roleStr === "admin" ||
+        roleStr === "chu_tich" ||
+        roleStr === "president" ||
+        roleStr === "BQT" ||
+        roleStr === "ADM"
+      ) {
+        return true;
+      }
+
       // 1. Kiểm tra trực tiếp phân quyền từng hội viên từ vba_member_permissions:
       // Nếu Admin đã bỏ chọn (false), lập tức thu hồi quyền và ẩn chức năng trên giao diện
       if (memberPermProfile) {
@@ -609,25 +626,27 @@ export function useRole(): RoleState {
     [isPlatformAdmin, srsRole],
   );
 
-  // Granular shortcut flags: Tuân thủ chặt chẽ can() và memberPermProfile để người dùng bỏ tích là ẩn ngay
+  const isSuperUser = isPlatformAdmin || isAdmin || isPresident || isChuTich || isSuperAdmin;
+
+  // Granular shortcut flags: Tuân thủ chặt chẽ can() và memberPermProfile; Quản trị & Chủ tịch luôn có toàn quyền
   const canManageMembers =
-    can(PERMISSIONS.MEMBER_EDIT) && (!memberPermProfile || memberPermProfile.canManageMembers !== false);
+    isSuperUser || (can(PERMISSIONS.MEMBER_EDIT) && (!memberPermProfile || memberPermProfile.canManageMembers !== false));
   const canApproveMembers =
-    can(PERMISSIONS.MEMBER_APPROVE) && (!memberPermProfile || memberPermProfile.canManageMembers !== false);
+    isSuperUser || (can(PERMISSIONS.MEMBER_APPROVE) && (!memberPermProfile || memberPermProfile.canManageMembers !== false));
   const canRenewMembers =
-    can(PERMISSIONS.MEMBER_RENEW) && (!memberPermProfile || memberPermProfile.canManageMembers !== false);
-  const canManageFinance = can(PERMISSIONS.FINANCE_MANAGE);
+    isSuperUser || (can(PERMISSIONS.MEMBER_RENEW) && (!memberPermProfile || memberPermProfile.canManageMembers !== false));
+  const canManageFinance = isSuperUser || can(PERMISSIONS.FINANCE_MANAGE);
   const canManageMedia =
-    can(PERMISSIONS.MEDIA_MANAGE) && (!memberPermProfile || memberPermProfile.canManageNews !== false);
+    isSuperUser || (can(PERMISSIONS.MEDIA_MANAGE) && (!memberPermProfile || memberPermProfile.canManageNews !== false));
   const canManageEvents =
-    can(PERMISSIONS.EVENT_CREATE) && (!memberPermProfile || memberPermProfile.canManageEvents !== false);
+    isSuperUser || (can(PERMISSIONS.EVENT_CREATE) && (!memberPermProfile || memberPermProfile.canManageEvents !== false));
   const canScanQR =
-    can(PERMISSIONS.EVENT_CHECKIN_MANAGE) && (!memberPermProfile || memberPermProfile.canManageEvents !== false);
+    isSuperUser || (can(PERMISSIONS.EVENT_CHECKIN_MANAGE) && (!memberPermProfile || memberPermProfile.canManageEvents !== false));
   const canManageOpportunities =
-    can(PERMISSIONS.OPPORTUNITY_MANAGE) && (!memberPermProfile || memberPermProfile.canManageMarketplace !== false);
-  const canManageCharity = can(PERMISSIONS.CHARITY_MANAGE);
-  const canManageMeetings = can(PERMISSIONS.MEETING_MANAGE);
-  const canManageSystem = can(PERMISSIONS.SYSTEM_MANAGE) && isAdmin;
+    isSuperUser || (can(PERMISSIONS.OPPORTUNITY_MANAGE) && (!memberPermProfile || memberPermProfile.canManageMarketplace !== false));
+  const canManageCharity = isSuperUser || can(PERMISSIONS.CHARITY_MANAGE);
+  const canManageMeetings = isSuperUser || can(PERMISSIONS.MEETING_MANAGE);
+  const canManageSystem = isSuperUser || (can(PERMISSIONS.SYSTEM_MANAGE) && isAdmin);
 
   return {
     roles,

@@ -34,8 +34,24 @@ export type Meeting = {
 
 type Row = Record<string, unknown>;
 
+function parseTargetMembers(target: unknown): any[] {
+  if (!target) return [];
+  if (Array.isArray(target)) return target;
+  if (typeof target === "string") {
+    try {
+      const parsed = JSON.parse(target);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === "object") return [parsed];
+    } catch {
+      return [target];
+    }
+  }
+  if (typeof target === "object") return [target];
+  return [];
+}
+
 function mapMeeting(m: Row): Meeting {
-  const rawTarget = (m.target_members as any[]) ?? [];
+  const rawTarget = parseTargetMembers(m.target_members);
   const metaObj = rawTarget.find((item: any) => item && typeof item === "object" && item._creatorMeta)?._creatorMeta;
   const zoomUrl = (m.zoom_url as string) ?? "";
 
@@ -367,7 +383,7 @@ export const cancelMeetingFn = createServerFn({ method: "POST" })
       const dateStr = meetingRow?.date || "";
       const timeStr = meetingRow?.time || "";
       const locationStr = meetingRow?.location || "";
-      const targetMembers = (meetingRow?.target_members as any[]) || [];
+      const targetMembers = parseTargetMembers(meetingRow?.target_members);
 
       const notifTitle = `[HỦY CUỘC HỌP] ${title}`;
       const notifBody = `Cuộc họp "${title}" dự kiến diễn ra vào ${timeStr ? timeStr + ' ' : ''}${dateStr} tại ${locationStr || 'Trụ sở CLB'} ĐÃ BỊ HỦY.\n- Lý do: "${data.reason}".\nBan Thư Ký CLB CEO 1983 trân trọng thông báo đến Quý Anh/Chị.`;

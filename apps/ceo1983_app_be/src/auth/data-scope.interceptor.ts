@@ -41,8 +41,16 @@ export class DataScopeInterceptor implements NestInterceptor {
     const isSuperAdmin =
       normRoles.includes('platform_admin') ||
       normRoles.includes('superadmin') ||
-      normRoles.includes('adm');
-    const isBQT = isSuperAdmin || normRoles.includes('admin') || normRoles.includes('bqt');
+      normRoles.includes('adm') ||
+      normRoles.includes('admin') ||
+      normRoles.includes('quan_tri') ||
+      normRoles.includes('chu_tich') ||
+      normRoles.includes('president');
+    const isBQT =
+      isSuperAdmin ||
+      normRoles.includes('bqt') ||
+      normRoles.includes('ban_dieu_hanh') ||
+      normRoles.includes('pho_chu_tich');
     const isBTC = isBQT || normRoles.includes('btc') || normRoles.includes('truong_ban_tai_chinh');
     const isBTT = isBQT || normRoles.includes('btt') || normRoles.includes('truong_ban_truyen_thong');
 

@@ -69,6 +69,7 @@ import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput
 import { resolveMediaUrl } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { z } from "zod";
 import {
   AlertDialog,
@@ -197,30 +198,21 @@ function ProductCard({
         style={{ background: "var(--gradient-card)" }}
       >
         {(() => {
-          const catFallbacks: Record<string, string> = {
-            "mk.cat.service": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.tech": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.fnb": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.retail": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.finance": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.realestate": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-          };
           const raw = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl || (product as any).image;
-          const fallback = catFallbacks[product.category] || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80";
-          const resolved = resolveMediaUrl(raw) || fallback;
-          return (
-            <img
-              src={resolved}
-              alt={product.title}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                if (target.src !== fallback) {
-                  target.src = fallback;
-                }
-              }}
-            />
-          );
+          const resolved = resolveMediaUrl(raw);
+          if (resolved) {
+            return (
+              <img
+                src={resolved}
+                alt={product.title}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            );
+          }
+          return null;
         })()}
         <span aria-hidden="true" className="relative z-10 drop-shadow-md">{product.emoji}</span>
         {selectable && (
@@ -403,30 +395,21 @@ function ProductRow({
         aria-hidden="true"
       >
         {(() => {
-          const catFallbacks: Record<string, string> = {
-            "mk.cat.service": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.tech": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.fnb": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.retail": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.finance": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
-            "mk.cat.realestate": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-          };
           const raw = (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : null) || (product as any).imageUrl || (product as any).image;
-          const fallback = catFallbacks[product.category] || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80";
-          const resolved = resolveMediaUrl(raw) || fallback;
-          return (
-            <img
-              src={resolved}
-              alt={product.title}
-              className="absolute inset-0 h-full w-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                if (target.src !== fallback) {
-                  target.src = fallback;
-                }
-              }}
-            />
-          );
+          const resolved = resolveMediaUrl(raw);
+          if (resolved) {
+            return (
+              <img
+                src={resolved}
+                alt={product.title}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            );
+          }
+          return null;
         })()}
         <span aria-hidden="true" className="relative z-10">{product.emoji}</span>
       </Link>
@@ -1075,12 +1058,14 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
   const t = useT();
   const fmt = useFmt();
   const navigate = useNavigate();
+  const { can, isAdmin, isSuperAdmin, isPresident, isChuTich, isPlatformAdmin } = useRole();
+  const isMasterAdmin = isPlatformAdmin || isAdmin || isPresident || isChuTich || isSuperAdmin;
   const deleteFn = useServerFn(deleteProductFn);
   const bulkDeleteFn = useServerFn(deleteProductsFn);
   const toggleFn = useServerFn(toggleSoldFn);
 
   const [adminSection, setAdminSection] = useState<"catalog" | "ads">("catalog");
-  const [tab, setTab] = useState<"browse" | "mine">("browse");
+  const [tab, setTab] = useState<"browse" | "mine" | "sold">("browse");
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<ProductCategoryKey | "all">("all");
   const [view, setView] = useState<"card" | "list">("card");
@@ -1188,12 +1173,13 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
 
   const isMyProduct = (p: Product) => isUserProductOwner(p, user);
   const mine = all.filter(isMyProduct);
+  const sold = all.filter((p) => p.status === "sold");
   const active = all.filter((p) => p.status === "active");
 
   const hasFilters = cat !== "all" || query.trim() !== "" || pinnedOnly || sort !== "newest";
 
   const visible = useMemo(() => {
-    let list = tab === "mine" ? mine : all;
+    let list = tab === "mine" ? mine : tab === "sold" ? sold : all;
     if (cat !== "all") list = list.filter((p) => p.category === cat);
     if (pinnedOnly) list = list.filter((p) => pinned.has(p.id));
     const q = query.trim().toLowerCase();
@@ -1208,7 +1194,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
       );
     }
     return sortProducts(list, sort);
-  }, [tab, cat, query, all, mine, sort, pinnedOnly, pinned]);
+  }, [tab, cat, query, all, mine, sold, sort, pinnedOnly, pinned]);
 
   const accessors = useMemo(
     () => ({
@@ -1231,7 +1217,7 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
   const totalValue = active.reduce((s, p) => s + p.price, 0);
 
   const bindCardActions = (p: Product) => {
-    const isMine = isMyProduct(p);
+    const isMine = isMyProduct(p) || isMasterAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE);
     return {
       isMine,
       onContact: () => navigate({ to: "/marketplace/$productId", params: { productId: p.id } }),
@@ -1244,8 +1230,10 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
       onEdit: () => setEditing(p),
       onDelete: () => setDeleting(p),
       onToggleSold: async () => {
+        const isSoldNow = p.status !== "sold";
         await toggleFn({ data: { id: p.id, sellerId: user?.id || CURRENT_USER_ID || p.sellerId } });
         reload();
+        toast.success(isSoldNow ? "Đã đánh dấu sản phẩm là đã bán!" : "Đã mở bán lại sản phẩm thành công!");
       },
     };
   };
@@ -1347,20 +1335,25 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2 border-b border-border">
-        {(["browse", "mine"] as const).map((k) => (
+        {(["browse", "mine", "sold"] as const).map((k) => (
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
+            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition cursor-pointer ${
               tab === k
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t(k === "browse" ? "mk.tab.browse" : "mk.tab.mine")}
+            {k === "browse" ? t("mk.tab.browse") : k === "mine" ? t("mk.tab.mine") : "Đã bán"}
             {k === "mine" && mine.length > 0 && (
               <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-foreground">
                 {mine.length}
+              </span>
+            )}
+            {k === "sold" && sold.length > 0 && (
+              <span className="ml-2 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 px-2 py-0.5 text-[10px] font-bold">
+                {sold.length}
               </span>
             )}
           </button>

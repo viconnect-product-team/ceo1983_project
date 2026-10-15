@@ -641,11 +641,12 @@ export class ConnectNetworkService {
     const signed: Record<string, string> = {};
     for (const m of mediaRows) {
       if (m.storage_path) {
-        signed[m.storage_path] = m.storage_path.startsWith('http')
-          ? m.storage_path
-          : m.storage_path.startsWith('/')
+        signed[m.storage_path] =
+          m.storage_path.startsWith('http') || m.storage_path.startsWith('data:') || m.storage_path.startsWith('blob:')
             ? m.storage_path
-            : `/uploads/${m.storage_path}`;
+            : m.storage_path.startsWith('/')
+              ? m.storage_path
+              : `/uploads/${m.storage_path}`;
       }
     }
 

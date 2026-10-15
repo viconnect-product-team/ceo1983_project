@@ -9,6 +9,7 @@ import {
   Plus,
   Trash2,
   Eye,
+  Pencil,
   ChevronDown,
   ChevronRight,
   FolderPlus,
@@ -1614,33 +1615,36 @@ export function RbacPermissionMatrix({
                       );
                     })}
 
-                    <div className="flex-1 min-w-[120px] self-stretch flex justify-center items-center gap-5">
+                    <div className="flex-1 min-w-[120px] self-stretch flex justify-center items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedDetail({ action, featureName: feat.name, categoryName: catName });
                           setDetailModalOpen(true);
                         }}
-                        className="size-3.5 relative overflow-hidden cursor-pointer hover:opacity-75 transition"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
                         title="Xem chi tiết"
+                        aria-label="Xem chi tiết"
                       >
-                        <img src="/icons/ceo1983_icon_1/eye.svg" className="size-3.5" alt="view" />
+                        <Eye className="h-3.5 w-3.5" strokeWidth={2.2} />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleStartEditAction(catId, feat.id, action)}
-                        className="size-3.5 relative overflow-hidden cursor-pointer hover:opacity-75 transition"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
                         title="Chỉnh sửa thao tác"
+                        aria-label="Chỉnh sửa thao tác"
                       >
-                        <img src="/icons/ceo1983_icon_1/pencil.svg" className="size-3.5" alt="pencil" />
+                        <Pencil className="h-3.5 w-3.5" strokeWidth={2.2} />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeleteAction(catId, feat.id, action.id, action.name)}
-                        className="size-3.5 relative overflow-hidden cursor-pointer hover:opacity-75 transition"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 transition cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
                         title="Xóa thao tác"
+                        aria-label="Xóa thao tác"
                       >
-                        <img src="/icons/ceo1983_icon_1/trash-2.svg" className="size-3.5" alt="trash" />
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={2.2} />
                       </button>
                     </div>
                   </div>

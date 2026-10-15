@@ -757,13 +757,14 @@ function InterestModal({ opp, onClose }: { opp: Opportunity; onClose: () => void
   );
 }
 
-type Tab = "browse" | "mine" | "interests";
+type Tab = "browse" | "mine" | "closed" | "interests";
 
 function OpportunitiesPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
-  const { can, isAdmin } = useRole();
+  const { can, isAdmin, isSuperAdmin, isPresident, isChuTich, isPlatformAdmin } = useRole();
+  const isMasterAdmin = isPlatformAdmin || isAdmin || isPresident || isChuTich || isSuperAdmin;
   const {
     opportunities: all,
     interests,
@@ -779,6 +780,7 @@ function OpportunitiesPage() {
   const [view, setView] = useUrlState<"table" | "grid">("view", "table");
   const [q, setQ] = useUrlState<string>("q", "");
   const [typeFilter, setTypeFilter] = useState<OpportunityTypeKey | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
   const [showCreate, setShowCreate] = useState(false);
   const [interestOpp, setInterestOpp] = useState<Opportunity | null>(null);
 
@@ -787,7 +789,14 @@ function OpportunitiesPage() {
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     let base = all;
-    if (tab === "mine") base = base.filter((o) => o.posterId === CURRENT_USER_ID);
+    if (tab === "mine") {
+      base = base.filter((o) => o.posterId === CURRENT_USER_ID);
+    } else if (tab === "closed") {
+      base = base.filter((o) => o.status === "closed");
+    }
+    if (statusFilter !== "all") {
+      base = base.filter((o) => o.status === statusFilter);
+    }
     if (typeFilter !== "all") base = base.filter((o) => o.type === typeFilter);
     if (ql) {
       base = base.filter(
@@ -799,7 +808,7 @@ function OpportunitiesPage() {
       );
     }
     return base;
-  }, [all, q, tab, typeFilter]);
+  }, [all, q, tab, typeFilter, statusFilter]);
 
   const tc = useTableControls<Opportunity>(
     filtered,
@@ -814,6 +823,7 @@ function OpportunitiesPage() {
   );
 
   const myOpps = useMemo(() => all.filter((o) => o.posterId === CURRENT_USER_ID), [all]);
+  const closedOpps = useMemo(() => all.filter((o) => o.status === "closed"), [all]);
   const myInterests = useMemo(
     () =>
       myOpps
@@ -860,10 +870,10 @@ function OpportunitiesPage() {
           icon={<Sparkles className="h-4 w-4" />}
         />
         <StatCard
-          label={t("opp.kpi.mine")}
-          value={myOpps.length}
+          label="Đã đóng"
+          value={closedOpps.length}
           tone="info"
-          icon={<Users className="h-4 w-4" />}
+          icon={<CheckCircle2 className="h-4 w-4" />}
         />
         <StatCard
           label={t("opp.kpi.interests")}
@@ -875,19 +885,46 @@ function OpportunitiesPage() {
 
       {/* Tabs */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {(["browse", "mine", "interests"] as Tab[]).map((tk) => (
-          <button
-            key={tk}
-            onClick={() => setTab(tk)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              tab === tk
-                ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
-                : "border border-border bg-card hover:bg-secondary"
-            }`}
-          >
-            {t(`opp.tab.${tk}` as TKey)}
-          </button>
-        ))}
+        <button
+          onClick={() => setTab("browse")}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+            tab === "browse"
+              ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
+              : "border border-border bg-card hover:bg-secondary"
+          }`}
+        >
+          {t("opp.tab.browse")}
+        </button>
+        <button
+          onClick={() => setTab("mine")}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+            tab === "mine"
+              ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
+              : "border border-border bg-card hover:bg-secondary"
+          }`}
+        >
+          {t("opp.tab.mine")} ({myOpps.length})
+        </button>
+        <button
+          onClick={() => setTab("closed")}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+            tab === "closed"
+              ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
+              : "border border-border bg-card hover:bg-secondary"
+          }`}
+        >
+          Đã đóng ({closedOpps.length})
+        </button>
+        <button
+          onClick={() => setTab("interests")}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+            tab === "interests"
+              ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
+              : "border border-border bg-card hover:bg-secondary"
+          }`}
+        >
+          {t("opp.tab.interests")}
+        </button>
       </div>
 
       {tab !== "interests" && (
@@ -902,6 +939,15 @@ function OpportunitiesPage() {
                 className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
               />
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "open" | "closed")}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="open">Đang mở</option>
+              <option value="closed">Đã đóng</option>
+            </select>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as OpportunityTypeKey | "all")}
@@ -1027,7 +1073,7 @@ function OpportunitiesPage() {
                 {tc.pageRows.map((opp, idx) => {
                   const poster = getPoster(opp.posterId);
                   const isOwner = opp.posterId === CURRENT_USER_ID;
-                  const canManage = isOwner || can(PERMISSIONS.OPPORTUNITY_MANAGE);
+                  const canManage = isOwner || isMasterAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE);
                   const budget =
                     opp.budgetMin && opp.budgetMax
                       ? `${fmt.money(opp.budgetMin)} – ${fmt.money(opp.budgetMax)}`
@@ -1215,8 +1261,14 @@ function OpportunitiesPage() {
                             <>
                               <button
                                 onClick={async () => {
+                                  const isClosing = opp.status === "open";
                                   await toggleOpp({ data: { id: opp.id } });
                                   await router.invalidate();
+                                  toast.success(
+                                    isClosing
+                                      ? "Đã đóng cơ hội giao thương thành công!"
+                                      : "Đã mở lại cơ hội giao thương thành công!",
+                                  );
                                 }}
                                 className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-medium hover:bg-secondary cursor-pointer"
                                 title={opp.status === "open" ? t("opp.action.close") : t("opp.action.reopen")}
@@ -1228,6 +1280,7 @@ function OpportunitiesPage() {
                                   if (confirm(t("opp.confirmDelete"))) {
                                     await deleteOpp({ data: { id: opp.id } });
                                     await router.invalidate();
+                                    toast.success("Đã xóa cơ hội giao thương thành công!");
                                   }
                                 }}
                                 className="rounded-lg border border-destructive/30 p-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 cursor-pointer"
@@ -1277,17 +1330,24 @@ function OpportunitiesPage() {
                 key={opp.id}
                 opp={opp}
                 interestCount={countFor(opp.id)}
-                canManage={opp.posterId === CURRENT_USER_ID || can(PERMISSIONS.OPPORTUNITY_MANAGE)}
+                canManage={opp.posterId === CURRENT_USER_ID || isMasterAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE)}
                 onInterest={() => setInterestOpp(opp)}
                 onDelete={async () => {
                   if (confirm(t("opp.confirmDelete"))) {
                     await deleteOpp({ data: { id: opp.id } });
                     await router.invalidate();
+                    toast.success("Đã xóa cơ hội giao thương thành công!");
                   }
                 }}
                 onToggle={async () => {
+                  const isClosing = opp.status === "open";
                   await toggleOpp({ data: { id: opp.id } });
                   await router.invalidate();
+                  toast.success(
+                    isClosing
+                      ? "Đã đóng cơ hội giao thương thành công!"
+                      : "Đã mở lại cơ hội giao thương thành công!",
+                  );
                 }}
               />
             ))}

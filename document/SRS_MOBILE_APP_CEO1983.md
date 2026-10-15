@@ -800,3 +800,16 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - Tab "Lịch hẹn" phân chia 3 phân loại: **"Đã chốt"** (chỉ hiển thị cuộc gặp mà cả 2 bên đã xác nhận: `status === 'confirmed' || status === 'accepted'`), **"Chờ duyệt"** (các lời mời gửi đến hoặc gửi đi đang chờ phản hồi), và **"Tất cả"**.
 - Hiển thị banner cảnh báo nổi bật khi có lời mời đang chờ hội viên phản hồi kèm nút bấm "Đồng ý" / "Từ chối" tiện lợi.
 
+### F. Tách biệt 2 Tab Check-in Di Động & Event QR Hub (`association.checkin.tsx`)
+1. **Cấu trúc 2 Tab Chính (`mainTab: "scan" | "event_qr"`)**:
+   - **Tab "Quét Vé & Check-in"**: Dành riêng cho Ban Truyền Thông & BTC (`isMediaDepartment`).
+     - Có thẩm quyền: Camera quét vé QR đại biểu, bộ chọn sự kiện, tìm kiếm đại biểu thủ công, trạng thái kết nối mạng & camera, danh sách lịch sử check-in, modal chi tiết vé đại biểu.
+     - Chưa có thẩm quyền: Thẻ Permission Gate lịch sự thông báo "Chỉ Dành Cho Ban Truyền Thông & BTC", nút "Xem Thẻ Vé & QR Sự Kiện Của Tôi" (chuyển sang Tab 2), và nút "Kích hoạt chế độ kiểm thử (Tester Override)" cho Quản trị viên.
+   - **Tab "Mã QR Sự Kiện" (Event QR Hub)**: Dành cho tất cả hội viên và khách mời tham dự.
+     - **Sub-card 1 ("1. Thẻ Vé & QR Điểm Danh Hội Viên")**: Thẻ vé điện tử chính thức của hội viên, mã QR định danh cá nhân, trạng thái check-in thời gian thực, thông tin đại biểu (họ tên, công ty, chức vụ), vị trí bàn ghế và số may mắn quay thưởng. Cung cấp nút "Tải Thẻ Vé QR" (`handleDownloadQr`) và liên kết xem lịch trình.
+     - **Sub-card 2 ("2. Mã QR Đăng Ký Khách Mời (Zalo / Web)")**: Mã QR công khai dẫn đến đường dẫn đăng ký `${origin}/events/${event.id}/register?source=zalo_guest` kèm huy hiệu "ZALO / WEB", ô hiển thị link kèm nút "Sao chép" (`handleCopyLink`), nút "Tải Mã QR" và nút "Mở Thử Link".
+2. **Huy hiệu Marketplace "Đã Bán" (`association.products.tsx`)**:
+   - Cập nhật model `MyProduct` bổ sung `status?: string`.
+   - Hiển thị badge "ĐÃ BÁN" nổi bật trên ảnh sản phẩm với nền tối chữ trắng sắc nét (`bg-slate-800 text-white`), làm mờ nhẹ ảnh (`opacity-75`) và vô hiệu hóa nút mua nếu sản phẩm đã bán.
+
+

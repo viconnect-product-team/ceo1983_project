@@ -1771,7 +1771,12 @@ export class ConnectAppService implements OnModuleInit {
 
   async getMediaSignedUrl(userId: string, path: string) {
     if (!path) return { signedUrl: null };
-    const signedUrl = path.startsWith('http') ? path : `/uploads/${path.replace(/^\/+/, '')}`;
+    const signedUrl =
+      path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')
+        ? path
+        : path.startsWith('/')
+          ? path
+          : `/uploads/${path.replace(/^\/+/, '')}`;
     return { signedUrl };
   }
 

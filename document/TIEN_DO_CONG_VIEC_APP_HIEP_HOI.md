@@ -69,10 +69,11 @@
 | 60 | **13. Trợ Lý Ảo AI Điều Hành Hiệp Hội Bằng Giọng Nói (Voice AI Executive Assistant)** | Tự động tra cứu cơ sở dữ liệu hiệp hội và điều hướng màn hình rảnh tay | <span style="color:green;font-weight:bold">Hoàn thành</span> | 26/09/2026 | Dev Team ViConnect | 30/09/2026 | QA / Ban Điều Hành CLB CEO 1983 | Chuyển trang tức thì theo lệnh giọng nói mà không cần thao tác gõ bàn phím. |
 | 61 | **14. Tối Ưu Hóa & Bảo Mật Ứng Dụng Di Động CEO 1983 (Mobile Optimization & Security)** | Phân quyền sản phẩm Marketplace; Tách quan tâm cơ hội vs Đàm phán 1-1; Khóa chia sẻ danh thiếp phụ; Gỡ bỏ hội phí khỏi lịch sử; Triệt tiêu tin tức mock; Dọn dẹp JSON preview tin nhắn; Căn đối màn đăng nhập mobile | <span style="color:green;font-weight:bold">Hoàn thành</span> | 13/10/2026 | Dev Team ViConnect | 13/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Hoàn thành xuất sắc 8 hạng mục cải tiến di động, 0 lỗi type check, giao diện tinh tế chuẩn doanh nhân. |
 | 62 | **15. Chuẩn Hóa Danh Sách 10 Tài Khoản Kiểm Thử Từng Ban (Test Accounts Matrix)** | Khởi tạo, đồng bộ CSDL và phân quyền chuẩn xác 10 tài khoản cho toàn bộ các Ban (Chủ tịch, Admin, Điều hành, Thư ký, Thành viên, Truyền thông, Xúc tiến, Tài chính, Thiện nguyện, Hội viên); Mật khẩu 123456 đồng nhất | <span style="color:green;font-weight:bold">Hoàn thành</span> | 13/10/2026 | Dev Team ViConnect | 13/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Xác thực 100% tài khoản trên PostgreSQL, phân quyền chuẩn hóa không xung đột, sẵn sàng kiểm thử. |
-| **TỔNG** | **15 Chức năng chính** | **62 Chức năng con** | **100% Hoàn thành** | **01/09/2026** | **Dev Team ViConnect** | **13/10/2026** | **QA / Ban Điều Hành CLB CEO 1983** | **Sẵn sàng bàn giao vận hành** |
+| 63 | **16. Điểm Danh 2 Tab & Event QR Hub Di Động (Checkin Tabs & Event QR Hub)** | Tách biệt 2 Tab: Quét vé & Check-in (Ban Truyền Thông/BTC có Permission Gate) & Mã QR Sự Kiện (Thẻ vé đại biểu + QR đăng ký Zalo khách ngoài); Huy hiệu Marketplace Đã bán | <span style="color:green;font-weight:bold">Hoàn thành</span> | 14/10/2026 | Dev Team ViConnect | 15/10/2026 | QA / Ban Điều Hành CLB CEO 1983 | Hoàn thành 100%, 0 lỗi typecheck, UI phân tách rõ ràng chuyên nghiệp. |
+| **TỔNG** | **16 Chức năng chính** | **63 Chức năng con** | **100% Hoàn thành** | **01/09/2026** | **Dev Team ViConnect** | **15/10/2026** | **QA / Ban Điều Hành CLB CEO 1983** | **Sẵn sàng bàn giao vận hành** |
 
 ### TỔNG KẾT TIẾN ĐỘ THỰC HIỆN:
-- **Tổng số chức năng chính:** 15 nhóm phân hệ nghiệp vụ.
-- **Tổng số chức năng con:** 62 tính năng chi tiết đã lập trình hoàn thiện.
+- **Tổng số chức năng chính:** 16 nhóm phân hệ nghiệp vụ.
+- **Tổng số chức năng con:** 63 tính năng chi tiết đã lập trình hoàn thiện.
 - **Tỷ lệ hoàn thành:** **100%** (Tất cả tính năng đã qua kiểm thử UAT và xác nhận hoạt động ổn định).
 - **Tách biệt độc lập:** Bảng tiến độ này chỉ chứa các phân hệ của riêng **Ứng Dụng Di Động & PWA Hiệp Hội CLB Doanh Nhân CEO 1983**, không bị trộn lẫn.

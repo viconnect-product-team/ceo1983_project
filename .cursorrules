@@ -1425,3 +1425,17 @@
     1) **Mã QR Đăng Ký Cho Khách Mời Ngoài**: Dẫn link `${origin}/events/${event.id}/register?source=guest_qr` để khách ngoài quét bằng Zalo / Camera điện thoại đăng ký nhận chỗ ngay mà không cần tài khoản hội viên.
     2) **Trường Tên Nhà Tài Trợ Nổi Bật**: Hiển thị trang trọng danh sách các nhà tài trợ cùng huy hiệu (badge) rõ nét khi sự kiện có nhà tài trợ.
 
+# [BẮT BUỘC 79] Tách Biệt 2 Tab Điểm Danh Check-in & Event QR Hub Mobile, Quyền Soát Vé Ban Truyền Thông & Huy Hiệu Đã Bán Marketplace
+- Phân Hệ Check-in Di Động (`association.checkin.tsx`):
+  + Bắt buộc phân chia giao diện thành 2 Tab chính trên cùng (`mainTab: "scan" | "event_qr"`):
+    1) **Tab "Quét Vé & Check-in"**: Dành riêng cho cán bộ có thẩm quyền (`isMediaDepartment` - Ban Truyền Thông, Quản trị viên, Chủ tịch, hoặc cán bộ được phân công soát vé trong cấu hình sự kiện).
+       * Khi có quyền: Hiển thị đầy đủ camera quét mã vé, bộ chọn sự kiện, tìm kiếm thủ công, lịch sử soát vé và modal chi tiết vé.
+       * Khi chưa có quyền: Hiển thị Thẻ Permission Gate lịch sự ("Chỉ Dành Cho Ban Truyền Thông & BTC"), giải thích rõ lý do, cung cấp nút chuyển nhanh sang Tab "Mã QR Sự Kiện" và nút kích hoạt chế độ kiểm thử (Tester Override) cho Quản trị viên. Tuyệt đối không để màn hình trắng hay chặn cụt.
+    2) **Tab "Mã QR Sự Kiện" (Event QR Hub)**: Dành cho tất cả hội viên và khách mời tham dự sự kiện, bao gồm:
+       * **Sub-card 1 ("1. Thẻ Vé & QR Điểm Danh Hội Viên")**: Thẻ vé điện tử chính thức của hội viên, mã QR định danh, trạng thái check-in thời gian thực, thông tin đại biểu, vị trí bàn ghế và số may mắn quay thưởng. Cung cấp nút "Tải Thẻ Vé QR" và liên kết xem lịch trình.
+       * **Sub-card 2 ("2. Mã QR Đăng Ký Khách Mời (Zalo / Web)")**: Mã QR công khai dẫn đến đường dẫn đăng ký `${origin}/events/${event.id}/register?source=zalo_guest` kèm huy hiệu "ZALO / WEB", ô hiển thị link kèm nút "Sao chép" (Copy), nút "Tải Mã QR" và nút "Mở Thử Link".
+- Marketplace & Trạng Thái Sản Phẩm:
+  + Kiểu dữ liệu `MyProduct` bắt buộc có trường `status?: string;` đồng bộ với backend.
+  + Mọi sản phẩm có `status === 'sold'` bắt buộc hiển thị huy hiệu "ĐÃ BÁN" với nền xám/tối tương phản cao (`bg-slate-800 text-white` hoặc `bg-rose-600 text-white`), làm mờ nhẹ ảnh và vô hiệu hóa nút mua để bảo đảm trải nghiệm thương mại điện tử trực quan.
+
+

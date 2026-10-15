@@ -235,18 +235,9 @@ export class ConnectMarketplaceService {
 
     return rows.map((r) => {
       const imgList = Array.isArray(r.image_urls) ? r.image_urls : (typeof r.image_urls === 'string' ? JSON.parse(r.image_urls) : []);
-      const rawFirstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || r.image_url || null;
-      const catFallbacks: Record<string, string> = {
-        'mk.cat.service': 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
-        'mk.cat.tech': 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-        'mk.cat.fnb': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-        'mk.cat.retail': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
-        'mk.cat.finance': 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80',
-        'mk.cat.realestate': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
-      };
       const cat = r.category ?? 'mk.cat.other';
-      const firstImg = rawFirstImg || catFallbacks[cat] || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80';
-      const finalImgList = imgList && imgList.length > 0 ? imgList : [firstImg];
+      const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || r.image_url || r.image || '';
+      const finalImgList = imgList && imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []);
 
       return {
         id: r.id,

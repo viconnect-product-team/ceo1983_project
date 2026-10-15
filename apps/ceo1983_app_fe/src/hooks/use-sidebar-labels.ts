@@ -78,7 +78,7 @@ export function useSidebarLabels() {
   const loadFromBackend = useCallback(async () => {
     try {
       const res: any = await fetchNestApi("/admin/sidebar-labels");
-      if (res && res.ok && res.labels && typeof res.labels === "object") {
+      if (res && res.labels && typeof res.labels === "object") {
         const merged = { ...DEFAULT_SIDEBAR_LABELS, ...res.labels };
         setLabels(merged);
         if (typeof window !== "undefined") {

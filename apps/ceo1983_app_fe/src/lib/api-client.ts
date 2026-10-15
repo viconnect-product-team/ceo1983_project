@@ -105,6 +105,9 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
   if (trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
     return trimmed;
   }
+  if (trimmed.startsWith("uploads/data:") || trimmed.startsWith("/uploads/data:")) {
+    return trimmed.replace(/^\/?uploads\//, "");
+  }
 
   // Tự động chuyển đổi sang Origin hiện tại để tránh lỗi Mixed Content hoặc vỡ ảnh khi mang cổng nội bộ khác
   if (typeof window !== "undefined") {
@@ -570,15 +573,8 @@ export async function uploadFileToNest(
   const text = await response.text();
   const data = JSON.parse(text);
   const transformed = transformUrls(data);
-  const finalUrl: string = transformed?.url || data.url || "";
-
-  // Return a string object that satisfies both string consumers and { url, filePath, fileUrl } consumers
-  const ret = Object.assign(new String(finalUrl), {
-    url: finalUrl,
-    filePath: finalUrl,
-    fileUrl: finalUrl,
-  });
-  return ret as any;
+  const finalUrl: string = String(transformed?.url || data.url || "");
+  return finalUrl as any;
 }
 
 export const uploadFile = uploadFileToNest;

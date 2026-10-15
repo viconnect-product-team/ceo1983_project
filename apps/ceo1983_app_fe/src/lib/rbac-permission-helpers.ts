@@ -568,6 +568,22 @@ export function isActionAllowedByMatrix(
   if (typeof window === "undefined") return true;
 
   try {
+    // 0. Toàn quyền cho Quản trị viên (quan_tri / admin) và Chủ tịch (chu_tich / president)
+    const normRole = (roleKey || "").toLowerCase().trim();
+    if (
+      normRole === "quan_tri" ||
+      normRole === "chu_tich" ||
+      normRole === "admin" ||
+      normRole === "adm" ||
+      normRole === "president" ||
+      normRole === "platform_admin" ||
+      normRole === "superadmin" ||
+      normRole.includes("quản trị") ||
+      normRole.includes("chủ tịch")
+    ) {
+      return true;
+    }
+
     // 1. Kiểm tra ghi đè trực tiếp của tài khoản hội viên nếu có
     if (memberCode) {
       const rawUserPerms = localStorage.getItem("vba_member_permissions");
@@ -618,27 +634,27 @@ export function isActionAllowedByMatrix(
     if (!Array.isArray(categories)) return true;
 
     // Chuẩn hóa roleKey sang key trong ma trận (vai trò hệ thống)
-    const normRole = (roleKey || "member").toLowerCase().trim();
+    const targetNormRole = (roleKey || "member").toLowerCase().trim();
     let targetRole: SystemRoleKey = "member";
-    if (normRole === "quan_tri" || normRole === "adm" || normRole === "platform_admin" || normRole === "superadmin" || normRole.includes("quản trị")) {
+    if (targetNormRole === "quan_tri" || targetNormRole === "adm" || targetNormRole === "platform_admin" || targetNormRole === "superadmin" || targetNormRole.includes("quản trị")) {
       targetRole = "quan_tri";
-    } else if (normRole.includes("chủ tịch") || normRole === "chu_tich" || normRole === "president") {
+    } else if (targetNormRole.includes("chủ tịch") || targetNormRole === "chu_tich" || targetNormRole === "president") {
       targetRole = "chu_tich";
-    } else if (normRole === "admin" || normRole === "bqt") {
+    } else if (targetNormRole === "admin" || targetNormRole === "bqt") {
       targetRole = "admin";
-    } else if (normRole === "tong_thu_ky" || (normRole.includes("thư ký") && normRole.includes("tổng"))) {
+    } else if (targetNormRole === "tong_thu_ky" || (targetNormRole.includes("thư ký") && targetNormRole.includes("tổng"))) {
       targetRole = "tong_thu_ky";
-    } else if (normRole === "ban_thu_ky" || normRole === "thu_ky" || normRole === "btk" || normRole.includes("thư ký")) {
+    } else if (targetNormRole === "ban_thu_ky" || targetNormRole === "thu_ky" || targetNormRole === "btk" || targetNormRole.includes("thư ký")) {
       targetRole = "tong_thu_ky";
-    } else if (normRole === "truong_ban_truyen_thong" || normRole === "btt" || (normRole.includes("truyền thông") && (normRole.includes("trưởng") || normRole.includes("truong")))) {
+    } else if (targetNormRole === "truong_ban_truyen_thong" || targetNormRole === "btt" || (targetNormRole.includes("truyền thông") && (targetNormRole.includes("trưởng") || targetNormRole.includes("truong")))) {
       targetRole = "truong_ban_truyen_thong";
-    } else if (normRole === "truong_ban_thanh_vien" || normRole === "btv" || (normRole.includes("thành viên") && (normRole.includes("trưởng") || normRole.includes("truong")))) {
+    } else if (targetNormRole === "truong_ban_thanh_vien" || targetNormRole === "btv" || (targetNormRole.includes("thành viên") && (targetNormRole.includes("trưởng") || targetNormRole.includes("truong")))) {
       targetRole = "truong_ban_thanh_vien";
-    } else if (normRole === "truong_ban_xuc_tien" || normRole === "bxt" || ((normRole.includes("xúc tiến") || normRole.includes("thương mại")) && (normRole.includes("trưởng") || normRole.includes("truong")))) {
+    } else if (targetNormRole === "truong_ban_xuc_tien" || targetNormRole === "bxt" || ((targetNormRole.includes("xúc tiến") || targetNormRole.includes("thương mại")) && (targetNormRole.includes("trưởng") || targetNormRole.includes("truong")))) {
       targetRole = "truong_ban_xuc_tien";
-    } else if (normRole === "truong_ban_tai_chinh" || normRole === "btc" || (normRole.includes("tài chính") && (normRole.includes("trưởng") || normRole.includes("truong")))) {
+    } else if (targetNormRole === "truong_ban_tai_chinh" || targetNormRole === "btc" || (targetNormRole.includes("tài chính") && (targetNormRole.includes("trưởng") || targetNormRole.includes("truong")))) {
       targetRole = "truong_ban_tai_chinh";
-    } else if (normRole === "truong_ban_thien_nguyen" || normRole === "btn" || (normRole.includes("thiện nguyện") && (normRole.includes("trưởng") || normRole.includes("truong")))) {
+    } else if (targetNormRole === "truong_ban_thien_nguyen" || targetNormRole === "btn" || (targetNormRole.includes("thiện nguyện") && (targetNormRole.includes("trưởng") || targetNormRole.includes("truong")))) {
       targetRole = "truong_ban_thien_nguyen";
     }
 

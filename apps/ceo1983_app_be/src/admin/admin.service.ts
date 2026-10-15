@@ -1541,17 +1541,21 @@ export class AdminService implements OnModuleInit {
   }
 
   async getSidebarLabels() {
-    const rows = await this.prisma.$queryRaw<{ value: any }[]>`
-      SELECT value FROM public.app_settings WHERE key = 'crm_sidebar_labels' LIMIT 1
-    `.catch(() => []);
+    try {
+      const rows = await this.prisma.$queryRaw<{ value: any }[]>`
+        SELECT value FROM public.app_settings WHERE key = 'crm_sidebar_labels' LIMIT 1
+      `.catch(() => []);
 
-    if (rows.length && rows[0]?.value) {
-      const val = rows[0].value;
-      const labels = typeof val === 'string' ? JSON.parse(val) : (val.labels || val);
-      return { labels: labels || {} };
+      if (rows.length && rows[0]?.value) {
+        const val = rows[0].value;
+        const labels = typeof val === 'string' ? JSON.parse(val) : (val.labels || val);
+        return { ok: true, labels: labels || {} };
+      }
+
+      return { ok: true, labels: {} };
+    } catch {
+      return { ok: true, labels: {} };
     }
-
-    return { labels: {} };
   }
 
   async saveSidebarLabels(payload: any, userId?: string) {

@@ -24,6 +24,7 @@ export type MyProduct = {
   sellerPhone?: string;
   sellerCompany?: string;
   quoteRequestsCount?: number;
+  status?: string;
 };
 
 // ---------- Products ----------
