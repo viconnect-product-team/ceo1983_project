@@ -112,7 +112,23 @@ jobs:
             exit 1
           fi
 
-      - name: Đẩy images và cấu hình sang Server VPS qua SSH
+      - name: Chuẩn bị thư mục và dọn dẹp cache cũ trên VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
+          password: ${{ secrets.SSH_PASSWORD || '' }}
+          timeout: 120s
+          command_timeout: 120s
+          script: |
+            mkdir -p /root/deploy-cache/dist-images
+            rm -rf /root/deploy-cache/dist-images/*.tar.gz
+            # Dọn bớt Docker system prune để giải phóng dung lượng đĩa
+            docker system prune -f --volumes 2>/dev/null || true
+
+      - name: Đẩy images và cấu hình sang Server VPS qua SSH (Timeout 20 phút)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.SERVER_IP }}
@@ -120,6 +136,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
           password: ${{ secrets.SSH_PASSWORD || '' }}
+          timeout: 1200s
+          command_timeout: 1200s
           source: "dist-images/*.tar.gz,deploy/**"
           target: "/root/deploy-cache/"
           strip_components: 0
@@ -132,6 +150,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
           password: ${{ secrets.SSH_PASSWORD || '' }}
+          timeout: 1200s
+          command_timeout: 1200s
           script: |
             set -e
             echo ">>> [1/5] Nạp Docker Images vào Docker Daemon trên VPS..."
