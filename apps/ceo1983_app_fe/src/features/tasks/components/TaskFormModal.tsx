@@ -319,8 +319,6 @@ export function TaskFormModal({
     }
   }, [initialData, defaultStatus, open, defaultDepartment, creatorName, allowedDepartments]);
 
-  if (!open) return null;
-
   // Filter members list by currently selected department (Requirement 1)
   const deptMembers = useMemo(() => {
     return memberList.filter((m) => {
@@ -341,6 +339,8 @@ export function TaskFormModal({
       );
     });
   }, [memberList, department, canAssignAll, memberSearchQuery]);
+
+  if (!open) return null;
 
   const toggleAssignee = (m: any) => {
     const isAlreadySelected = assignees.some(

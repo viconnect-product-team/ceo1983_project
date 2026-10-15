@@ -101,7 +101,10 @@ export function AssociationLogoUploader() {
 
   if (!assoc) return null;
 
-  const currentLogo = previewUrl ?? logoUrl ?? assoc.logoUrl;
+  const currentLogo =
+    previewUrl ??
+    logoUrl ??
+    (assoc.logoUrl && !assoc.logoUrl.includes("image 6.png") ? assoc.logoUrl : "/app-icon.png");
   const canEdit = assoc.isAdmin;
 
   const actionLabel = (a: string) =>

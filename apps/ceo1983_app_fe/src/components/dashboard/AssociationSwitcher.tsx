@@ -23,17 +23,19 @@ function roleBadgeKey(role: string, isPlatformAdmin: boolean): TKey {
 
 function AssocAvatar({ assoc, size = "md" }: { assoc: MyAssociation; size?: "sm" | "md" }) {
   const dim = size === "sm" ? "h-7 w-7 text-[10px]" : "h-8 w-8 text-[11px]";
-  const initials = assoc.name.trim().slice(0, 2).toUpperCase();
-  if (assoc.logoUrl) {
-    return <img src={resolveMediaUrl(assoc.logoUrl) || assoc.logoUrl} alt="" className={`${dim} shrink-0 rounded-lg object-cover`} />;
-  }
+  const rawLogo =
+    assoc.logoUrl && !assoc.logoUrl.includes("image 6.png")
+      ? resolveMediaUrl(assoc.logoUrl) || assoc.logoUrl
+      : "/app-icon.png";
   return (
-    <div
-      className={`${dim} grid shrink-0 place-items-center rounded-lg font-bold text-primary-foreground`}
-      style={{ background: "var(--gradient-card)" }}
-    >
-      {initials}
-    </div>
+    <img
+      src={rawLogo}
+      alt={assoc.name || ""}
+      className={`${dim} shrink-0 rounded-lg object-contain bg-white/10 p-0.5 border border-border/40`}
+      onError={(e) => {
+        (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
+      }}
+    />
   );
 }
 

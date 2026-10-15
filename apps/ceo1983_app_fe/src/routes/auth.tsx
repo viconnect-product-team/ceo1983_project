@@ -165,7 +165,7 @@ function CrmAdminAuthPage() {
         <div className="relative z-10 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-md p-1.5 overflow-hidden">
             <img
-              src="/ceo1983-favicon.png"
+              src="/app-icon.png"
               alt="CEO 1983"
               className="h-full w-full object-contain"
             />
@@ -230,7 +230,7 @@ function CrmAdminAuthPage() {
               alt="CLB Doanh nhân CEO 1983"
               className="h-16 w-auto object-contain mb-3 drop-shadow-sm"
               onError={(e) => {
-                (e.currentTarget as HTMLElement).style.display = "none";
+                (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
               }}
             />
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">

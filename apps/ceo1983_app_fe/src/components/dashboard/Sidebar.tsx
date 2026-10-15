@@ -446,11 +446,16 @@ export function Sidebar({
   }, []);
 
   const brandName = overrideBrandName || activeAssoc?.name || t("brand.name");
+  const rawAssocLogo = activeAssoc?.logoUrl
+    ? resolveMediaUrl(activeAssoc.logoUrl) || activeAssoc.logoUrl
+    : null;
   const brandLogo =
-    overrideBrandLogo ||
-    (activeAssoc?.logoUrl
-      ? resolveMediaUrl(activeAssoc.logoUrl) || activeAssoc.logoUrl
-      : "/icons/ceo1983_icon_1/image 6.png");
+    (overrideBrandLogo && !overrideBrandLogo.includes("image 6.png")
+      ? overrideBrandLogo
+      : null) ||
+    (rawAssocLogo && !rawAssocLogo.includes("image 6.png")
+      ? rawAssocLogo
+      : "/app-icon.png");
 
   // Collapse only applies to the desktop sidebar; the mobile drawer is always full.
   const [collapsed, setCollapsed] = useState(false);
@@ -592,20 +597,14 @@ export function Sidebar({
           isCollapsed ? "justify-center px-2" : "px-5"
         }`}
       >
-        {brandLogo ? (
-          <img
-            src={brandLogo}
-            alt={brandName}
-            className="h-10 w-10 shrink-0 rounded-xl object-contain bg-white/10 p-0.5 border border-sidebar-border/40 shadow-xs"
-          />
-        ) : (
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold text-primary-foreground"
-            style={{ background: "var(--gradient-card)" }}
-          >
-            CEO
-          </div>
-        )}
+        <img
+          src={brandLogo || "/app-icon.png"}
+          alt={brandName}
+          className="h-10 w-10 shrink-0 rounded-xl object-contain bg-white/10 p-0.5 border border-sidebar-border/40 shadow-xs"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
+          }}
+        />
         {!isCollapsed && (
           <div className="min-w-0 flex-1 leading-tight">
             <div className="truncate text-[13px] font-semibold text-sidebar-foreground">

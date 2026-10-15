@@ -1502,3 +1502,29 @@
     * Hook `useEffect` tự động so khớp `allProducts` còn tồn tại thực tế trên hệ thống với danh sách lịch sử xem; bất kỳ sản phẩm nào có `status === "deleted"` hoặc không còn ID trên hệ thống đều tự động bị xóa sổ khỏi bộ nhớ.
     * Khối carousel "SẢN PHẨM MỚI XEM" lọc trực tiếp `activeRecentProducts`, bảo đảm sản phẩm đã xóa biến mất vĩnh viễn không bao giờ xuất hiện lại.
 
+# [BẮT BUỘC 85] Quy Chuẩn Biên Soạn Tài Liệu Hướng Dẫn Sử Dụng & Kiểm Định Hình Ảnh Minh Họa Hệ Sinh Thái CEO 1983
+- Chuẩn Mực Tài Liệu Nghiệp Vụ & Kỹ Thuật (`document/`):
+  + Phản ánh 100% đúng luồng mã nguồn thực tế đang chạy trên 2 subdomain: Mobile App (`https://ceo1983.viconnect.vn`) và Web CRM (`https://crm.ceo1983.viconnect.vn`).
+  + Không được dùng ảnh cũ, ảnh placeholder hoặc ảnh không khớp mã nguồn hiện tại. Toàn bộ hình ảnh minh họa phải được chụp thực tế từ trình duyệt với độ phân giải cao và lưu tại `document/images/guide_mobile/` và `document/images/guide_crm/`.
+  + Tuyệt đối kiểm định 100% không có ảnh bị 404 (mất file) hoặc dung lượng 0 byte.
+  + Cấu trúc bài học trong tài liệu phải bao gồm đầy đủ 4 phần:
+    1. Mục đích tính năng: Lý do ra đời, đối tượng phục vụ, giá trị nghiệp vụ mang lại cho Hiệp hội/Doanh nhân.
+    2. Các bước thực hiện: Luồng thao tác trực quan từng bước (Step-by-step).
+    3. Bảng đặc tả trường nhập liệu chi tiết: Tên trường, Bắt buộc (*), Kiểu dữ liệu, Hướng dẫn nhập gì và Mục đích trường để làm gì.
+    4. Ảnh chụp màn hình thực tế: Chụp đúng thời điểm đang thao tác hoặc sau khi render đầy đủ giao diện, nội dung text trên ảnh phải trùng khớp với mô tả trong văn bản.
+  + Luôn duy trì đồng bộ 3 tệp tài liệu chính:
+    * `HDSD_MOBILE_APP_CEO1983.md`: Cẩm nang hướng dẫn sử dụng Ứng dụng Di động Hội viên (14 bài).
+    * `HDSD_WEB_CRM_CEO1983.md`: Cẩm nang hướng dẫn Cổng Quản trị Hiệp hội Web CRM (19 bài).
+    * `HDSD_TONG_THE_HE_THONG_CEO1983.md`: Cẩm nang Master tổng thể hệ thống (Kiến trúc, Mermaid luồng E2E, Ma trận phân quyền RBAC và xử lý sự cố).
+
+# [BẮT BUỘC 86] Quy Chuẩn Logo Mặc Định CRM & Tuyệt Đối Tuân Thủ React Rules of Hooks Trong Modal Nghiệp Vụ
+- Logo Mặc Định Của CRM (`Sidebar.tsx`, `auth.tsx`, `AssociationSwitcher.tsx`, `AssociationLogoUploader.tsx`):
+  + Biểu tượng chính thức mặc định của CRM là `/app-icon.png` (hình số 8 cách điệu CEO 1983 phối màu Cobalt Navy & Amber Gold).
+  + Tuyệt đối không dùng các icon mock hoặc Figma snippet cũ như `/icons/ceo1983_icon_1/image 6.png` làm fallback.
+  + Mọi thẻ img logo CRM đều có `onError` tự động fallback về `/app-icon.png`.
+- Quy Tắc React Rules of Hooks Tuyệt Đối Trong Mọi Modal/Drawer Nghiệp Vụ (`TaskFormModal.tsx`, v.v.):
+  + Tuyệt đối KHÔNG khai báo bất kỳ React Hook nào (`useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`) phía sau câu lệnh return sớm (như `if (!open) return null;`).
+  + 100% Hooks phải được khai báo trên cùng của component function để tránh lỗi `React Error #310: Rendered more hooks than during the previous render`, gây crash ứng dụng và kích hoạt màn hình ErrorBoundary "Something went wrong".
+
+
+
