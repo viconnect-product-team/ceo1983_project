@@ -1490,7 +1490,7 @@ export function RbacPermissionMatrix({
       <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-x-auto shadow-xs">
         {/* Hàng Header Bảng */}
         <div className="w-full min-w-max h-24 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 inline-flex justify-start items-start">
-          <div className="w-60 min-w-[240px] self-stretch pl-4 border-l border-r border-slate-200 dark:border-slate-800 flex justify-start items-center">
+          <div className="sticky left-0 z-30 w-60 min-w-[240px] self-stretch pl-4 border-l border-r border-slate-200 dark:border-slate-800 flex justify-start items-center bg-slate-100 dark:bg-slate-800 shadow-[2px_0_5px_rgba(0,0,0,0.08)]">
             <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">QUYỀN THAO TÁC</div>
           </div>
 
@@ -1538,7 +1538,7 @@ export function RbacPermissionMatrix({
             );
           })}
 
-          <div className="flex-1 min-w-[120px] self-stretch flex justify-center items-center">
+          <div className="sticky right-0 z-30 min-w-[130px] self-stretch flex justify-center items-center bg-slate-100 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-800 shadow-[-2px_0_5px_rgba(0,0,0,0.08)]">
             <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">THAO TÁC</div>
           </div>
         </div>
@@ -1551,7 +1551,7 @@ export function RbacPermissionMatrix({
             <React.Fragment key={feat.id}>
               {/* Tiêu đề Chức năng (Nhóm nghiệp vụ) */}
               <div className="w-full min-w-max h-11 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 inline-flex justify-start items-center">
-                <div className="w-full self-stretch pl-4 flex justify-start items-center gap-2.5">
+                <div className="sticky left-0 z-10 w-fit self-stretch pl-4 flex justify-start items-center gap-2.5 bg-slate-50/95 dark:bg-slate-800/95 pr-6">
                   <button
                     type="button"
                     onClick={() => toggleExpand(feat.id)}
@@ -1579,7 +1579,7 @@ export function RbacPermissionMatrix({
                     key={action.id}
                     className="w-full min-w-max h-10 border-b border-zinc-200 dark:border-slate-800 inline-flex justify-start items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
                   >
-                    <div className="w-60 min-w-[240px] self-stretch px-4 border-r border-gray-200 dark:border-slate-800 flex justify-start items-center">
+                    <div className="sticky left-0 z-20 w-60 min-w-[240px] self-stretch px-4 border-r border-gray-200 dark:border-slate-800 flex justify-start items-center bg-white dark:bg-slate-900 shadow-[2px_0_5px_rgba(0,0,0,0.06)]">
                       <div
                         className="flex-1 justify-start text-slate-900 dark:text-slate-200 text-xs font-semibold font-['Inter'] leading-4 truncate"
                         title={action.name}
@@ -1615,7 +1615,7 @@ export function RbacPermissionMatrix({
                       );
                     })}
 
-                    <div className="flex-1 min-w-[120px] self-stretch flex justify-center items-center gap-1.5">
+                    <div className="sticky right-0 z-20 min-w-[130px] self-stretch flex justify-center items-center gap-1.5 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-[-2px_0_5px_rgba(0,0,0,0.06)] px-2">
                       <button
                         type="button"
                         onClick={() => {

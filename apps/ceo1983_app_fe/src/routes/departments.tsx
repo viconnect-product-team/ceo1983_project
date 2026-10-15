@@ -35,6 +35,7 @@ import {
 import { useRole } from "@/hooks/use-role";
 import { DEFAULT_MEMBERS } from "@/lib/members-data";
 import { fetchNestApi } from "@/lib/api-client";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 
 export const Route = createFileRoute("/departments")({
   component: DepartmentsPage,
@@ -346,6 +347,19 @@ function DepartmentsPage() {
     });
   }, [departments, searchQuery, filterColor]);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, filterColor]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredDepartments.length / pageSize));
+  const paginatedDepartments = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredDepartments.slice(start, start + pageSize);
+  }, [filteredDepartments, page, pageSize]);
+
   const totalMembers = useMemo(
     () => departments.reduce((acc, d) => acc + (d.memberCount || 0), 0),
     [departments]
@@ -492,7 +506,7 @@ function DepartmentsPage() {
             </thead>
 
             <tbody className="divide-y divide-border/60 text-xs">
-              {filteredDepartments.map((dept, index) => {
+              {paginatedDepartments.map((dept, index) => {
                 const IconComponent = getDeptIcon(dept.name, dept.code);
                 const colorConfig = COLOR_MAP[dept.color || "blue"] || COLOR_MAP.blue;
                 const deptMembers = deptMembersMap[dept.id] || [];
@@ -501,7 +515,7 @@ function DepartmentsPage() {
                   <tr key={dept.id} className="hover:bg-primary/5 transition-colors group">
                     {/* CỘT STT */}
                     <td className="sticky left-0 z-10 bg-card group-hover:bg-background py-3 px-3 text-center border-r border-border/40 font-bold text-xs text-muted-foreground shadow-xs">
-                      {index + 1}
+                      {(page - 1) * pageSize + index + 1}
                     </td>
 
                     {/* CỘT CỐ ĐỊNH 1 (SÁT LỀ TRÁI) */}
@@ -592,6 +606,22 @@ function DepartmentsPage() {
               )}
             </tbody>
           </table>
+
+          {/* ── THANH CHUYỂN TRANG (PAGINATION CHUẨN CRM ẢNH 1) ── */}
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            total={filteredDepartments.length}
+            from={filteredDepartments.length === 0 ? 0 : (page - 1) * pageSize + 1}
+            to={Math.min(page * pageSize, filteredDepartments.length)}
+            onPage={(p) => setPage(p)}
+            onPageSize={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
         </div>
       </div>
 

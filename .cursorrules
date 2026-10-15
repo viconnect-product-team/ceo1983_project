@@ -1453,5 +1453,52 @@
   + Tự động dọn sạch (sanitization) các khóa nhạy cảm này ngay khi ứng dụng mount để xóa bỏ hoàn toàn dữ liệu thừa trước đây.
   + Quản trị phiên và kiểm tra quyền hạn bắt buộc dựa trên mảng `permissions: string[]` (được cấp từ token JWT và session backend NestJS), phối hợp cùng helper `hasPermission(user, permission)` để đảm bảo an toàn tuyệt đối.
 
+# [BẮT BUỘC 81] Quy Chuẩn Phân Trang Mobile (MobilePagination), Đấu Nối Sắp Xếp Thực Tế & Tối Ưu UX Cảm Ứng Di Động
+- MobilePagination Chuẩn Màn Hình Cảm Ứng:
+  + Tuyệt đối không dùng component phân trang dạng bảng máy tính (DataTablePagination) trên giao diện ứng dụng di động hiệp hội (`/association/*`). Bắt buộc sử dụng component chuyên biệt `MobilePagination` (`components/common/MobilePagination.tsx`) được tối ưu cho viewport hẹp (360px - 430px).
+  + Giao diện phân trang chuẩn nhận diện thương hiệu CEO 1983: Nút Trước/Sau nền trắng viền Slate bo tròn (`rounded-xl`), nút trang đang chọn nổi bật nền Navy (`bg-[#003B95] text-white`) hoặc Amber Gold, thuật toán thông minh tự động rút gọn dấu ba chấm (`1 ... 4 5 6 ... 10`), nhãn trạng thái hiển thị rõ dải số lượng `Hiển thị X - Y trên tổng Z sản phẩm`.
+  + Hỗ trợ các nút chọn số lượng hiển thị linh hoạt (`pageSize`: 6, 8, 12, 24...) và hỗ trợ chế độ `compact` cho các modal/popup (như phân trang đánh giá sản phẩm `ShopeeProductDetailModal.tsx`).
+  + Tự động cuộn mượt mà (smooth scroll `scrollIntoView({ behavior: 'smooth', block: 'start' })`) lên đầu khu vực danh sách khi người dùng bấm chuyển trang.
+- Đấu Nối Sắp Xếp Thực Tế (Real Sorting):
+  + Mọi bộ chọn tiêu chí sắp xếp (`sortMode`: Mới nhất `newest`, Xem nhiều nhất `most_viewed`, Giá tăng dần `price_asc`, Giá giảm dần `price_desc`, Đánh giá cao nhất `rating_desc`) bắt buộc phải xử lý thuật toán sắp xếp mảng thực tế trước khi cắt lát phân trang (`paginatedList`), tuyệt đối không để giao diện dropdown mang tính trang trí.
 
+# [BẮT BUỘC 82] Chuẩn Hóa Phân Trang Toàn Bộ Dashboard CRM (Ảnh 1), Xóa Nền Trắng Đăng Ký Sự Kiện & Form Đăng Ký Hội Viên
+- Chuẩn Hóa Phân Trang Toàn Diện Dashboard CRM:
+  + Mọi màn hình quản trị CRM có danh sách/bảng/lưới dữ liệu bắt buộc sử dụng duy nhất component `<Pagination ... />` từ `@/components/dashboard/DataTablePagination` theo đúng chuẩn Ảnh 1:
+    * Bên trái: `Hiển thị X-Y trên Z kết quả` (qua hook `useT()`).
+    * Bên phải: Select `[ 10 v ] dòng/trang`, nút `< Trước`, text `Trang X trên Y`, nút `Sau >`.
+  + Tuyệt đối không tự viết thanh phân trang rời rạc hay nút số trang tùy tiện.
+  + Truyền đủ các props: `page`, `pageCount`, `pageSize`, `total`, `from`, `to`, `onPage`, `onPageSize`, `pageSizeOptions`.
+- Xóa Bỏ Hoàn Toàn Nền Trắng Giao Diện Đăng Ký Sự Kiện (`events.$eventId.register.tsx` & `EventRegistrationModal.tsx`):
+  + Tuyệt đối không dùng nền trắng sáng hoặc nền xám công cộng (`bg-[#F0F4F9]`, `bg-white`) trong giao diện đăng ký sự kiện.
+  + Toàn bộ giao diện (Màn hình Đăng ký, Màn hình Sold Out, Màn hình Kết quả E-Ticket / VietQR) bắt buộc phủ tone màu nhận diện Deep Cobalt Navy (`#001026` via `#001D4A` to `#0A192F`) kết hợp dải thẻ kính mờ cao cấp `bg-[#0A1E3D]/90`, viền xanh đen `border-blue-800/60`, focus viền vàng hoàng gia `focus:border-amber-400`, thẻ Lucky Draw mạ vàng `border-2 border-amber-400/60` và input nền đen ánh kim `#001229`.
+- Form Đăng Ký Hội Viên (`Ceo1983MemberRegistrationForm.tsx` & `StandardDateInput.tsx`):
+  + Trường Chức danh *: Bắt buộc có tùy chọn "Khác" (`<option value="Khác">Khác (Tự nhập chức danh...)</option>`). Khi người dùng chọn "Khác", hiển thị ô nhập tự do `customPosition`, validate bắt buộc không được để trống và submit giá trị chức danh tự nhập.
+  + Trường Ngày sinh: Đặt mặc định ban đầu là `00/00/1983`. Component `StandardDateInput.tsx` bắt buộc nhận dạng và hợp lệ hóa chuỗi ngày sinh tượng trưng `00/00/1983` (d=0, m=0, y=1983) mà không báo lỗi đỏ invalid date.
+
+# [BẮT BUỘC 83] Popup Tạo Sự Kiện Nền Tối Hoàng Gia, Ban Truyền Thông Phụ Trách Sự Kiện, Header Form Đăng Ký Tối Giản & Cố Định 2 Cột Ma Trận Phân Quyền
+- Popup Tạo Mới Sự Kiện CRM (`EventWizard.tsx`):
+  + Bắt buộc xóa bỏ hoàn toàn nền trắng (`bg-card`), thay bằng tone màu hoàng gia Deep Cobalt Navy (`#001026` qua `#001D4A` đến `#0A192F`), viền vàng hổ phách `border-amber-500/30`.
+  + Header `#001433/85`, input `#001433` viền vàng focus, card loại sự kiện và vé nền tối tương phản cao, footer `#001433/90` kèm nút to bản vàng gold hoàng gia.
+- Form & Modal Đăng Ký Sự Kiện (`events.$eventId.register.tsx` & `EventRegistrationModal.tsx`):
+  + Giữ nguyên nền sáng tự nhiên (`bg-[#F0F4F9]`, card trắng), không dùng nền tối.
+  + Chuẩn hóa thẩm quyền Ban: Mọi sự kiện và đăng ký sự kiện thuộc **Ban Truyền Thông** (thay thế toàn bộ "Ban Thư Ký" thành "Ban Truyền Thông").
+- Form Đăng Ký Hội Viên CEO 1983 (`Ceo1983MemberRegistrationForm.tsx`):
+  + Header tối giản tuyệt đối: Chỉ hiển thị duy nhất Logo CEO 1983 cùng dòng chữ tiêu đề `Cổng Tiếp Nhận Hồ Sơ Gia Nhập`.
+  + Xóa bỏ hoàn toàn: "✦ Hiệp Hội Doanh Nghiệp CEO 1983 ✦", "Đơn Đăng Ký Hội Viên CEO 1983", "Ban Thành Viên & Kết Nối" và nút liên kết website `ceo1983.com` ngang hàng với logo.
+- Dashboard Ma Trận Phân Quyền & Ban Chuyên Môn (`RbacPermissionMatrix.tsx` & `Sidebar.tsx`):
+# [BẮT BUỘC 84] Sơ Đồ Xếp Ghế Chia Khu Hình Học Cụ Thể (Vuông / Chữ Nhật), Kéo Thả Hoán Đổi Ghế, Chuẩn Hóa Nhóm Ngành Marketplace & Loại Bỏ Vĩnh Viễn Sản Phẩm Đã Xóa Khỏi Lịch Sử Xem
+- Sơ Đồ Xếp Chỗ Sự Kiện & Chia Khu Hình Học Cụ Thể (`CinemaSeatingMap.tsx` & `event-registrations.tsx`):
+  + Chế độ "Chia Khu (Vuông / Chữ Nhật)": Phân khu theo dạng **Hình Chữ Nhật** (`shape: "rect"`) và **Hình Vuông** (`shape: "square"`) cụ thể, hiển thị khung bao hình học rõ rệt, ma trận hàng x cột (`rowsCount` x `colsCount`), tùy biến thêm/bớt hàng cột và modal thêm khu vực mới (`ShowAddZoneModal`).
+  + Bàn Tiệc Gala Chuẩn Hình Học: Bàn chữ nhật (`shape: "rect"`) hiển thị đúng khung chữ nhật dài kèm ghế 2 bên; bàn vuông (`shape: "square"`) hiển thị khung vuông; bàn tròn (`shape: "round"`) hiển thị hình tròn (loại bỏ hoàn toàn lỗi bàn chữ nhật bị bo tròn thành hình tròn).
+  + Di Chuyển & Hoán Đổi Vị Trí Ghế Toàn Diện:
+    * Kéo thả trực tiếp: Toàn bộ ghế đều hỗ trợ kéo thả (`draggable={true}`, `onDragStart`, `onDragOver`, `onDrop`) để hoán đổi hoặc di chuyển đại biểu giữa 2 ghế linh hoạt cho cả ghế trống lẫn ghế đã có người.
+    * Click di chuyển có chỉ dẫn trực quan: Nút "Di chuyển / Hoán đổi vị trí ghế này" trong Inspector kích hoạt Banner hướng dẫn nổi bật màu hổ phách trên đầu sơ đồ, ghế nguồn nhấp nháy phát sáng, nhấp vào ghế đích là hoàn tất di chuyển.
+    * Hoán đổi chỗ ngồi 2 chiều: Khi cả hai ghế đều có người ngồi, tự động hoán đổi chỗ ngồi giữa 2 đại biểu (`destReg ⇆ targetReg`) đồng bộ cả backend NestJS (`PATCH /event-registrations/:id`) và state giao diện.
+- Marketplace Nhóm Ngành Chuẩn & Triệt Tiêu Sản Phẩm Đã Xóa Khỏi Lịch Sử Xem (`marketplace-categories.ts` & `association.products.tsx`):
+  + Chuẩn hóa nhóm ngành theo ảnh 1: Truyền thông & Sự kiện (`media_event`), Dịch vụ & Đào tạo (`services_training`), Tài chính & Ngân hàng (`finance_banking`), Xây dựng & Bất động sản (`construction_realestate`), Du lịch & Khách sạn (`tourism_hospitality`), Công nghệ & Chuyển đổi số (`tech`), Sản xuất & Công nghiệp (`manufacturing`), Thương mại & Bán lẻ (`retail_commerce`), Y tế & Chăm sóc sức khỏe (`healthcare`), Logistics & Vận tải (`logistics`), Nông nghiệp & Thực phẩm (`agriculture_food`).
+  + Triệt tiêu sản phẩm đã xóa khỏi Lịch sử xem (App CEO 1983):
+    * Khi người dùng hoặc quản trị viên xóa sản phẩm (`handleDeleteProduct`), hàm `removeDeletedProductFromHistory(id)` lập tức loại bỏ vĩnh viễn sản phẩm đó khỏi `recentlyViewed` và `localStorage` (`ceo1983_recent_products`).
+    * Hook `useEffect` tự động so khớp `allProducts` còn tồn tại thực tế trên hệ thống với danh sách lịch sử xem; bất kỳ sản phẩm nào có `status === "deleted"` hoặc không còn ID trên hệ thống đều tự động bị xóa sổ khỏi bộ nhớ.
+    * Khối carousel "SẢN PHẨM MỚI XEM" lọc trực tiếp `activeRecentProducts`, bảo đảm sản phẩm đã xóa biến mất vĩnh viễn không bao giờ xuất hiện lại.
 

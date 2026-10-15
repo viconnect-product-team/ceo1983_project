@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Eye, Newspaper, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -10,6 +10,7 @@ import { type NewsArticle } from "@/lib/extra-data";
 import { createNewsFn, deleteNewsFn, listNewsFn, updateNewsFn } from "@/lib/news.functions";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 
 export const Route = createFileRoute("/news")({
   ssr: false,
@@ -44,6 +45,14 @@ function NewsPage() {
   const [editing, setEditing] = useState<NewsArticle | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+  const pageCount = Math.max(1, Math.ceil(NEWS.length / pageSize));
+  const paginatedNews = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return NEWS.slice(start, start + pageSize);
+  }, [NEWS, page, pageSize]);
 
   const fields: CrudField[] = [
     { name: "title", label: t("news.col.title"), type: "text", required: true, placeholder: "Nhập tiêu đề bài viết tin tức..." },
@@ -154,7 +163,7 @@ function NewsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {NEWS.map((n: any) => (
+        {paginatedNews.map((n: any) => (
           <Card key={n.id} className="group overflow-hidden transition hover:shadow-[var(--shadow-glow)]">
             {n.image ? (
               <div className="relative h-44 w-full overflow-hidden bg-muted">
@@ -218,6 +227,24 @@ function NewsPage() {
             </div>
           </Card>
         ))}
+      </div>
+
+      {/* ── THANH CHUYỂN TRANG (PAGINATION CHUẨN CRM ẢNH 1) ── */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={NEWS.length}
+          from={NEWS.length === 0 ? 0 : (page - 1) * pageSize + 1}
+          to={Math.min(page * pageSize, NEWS.length)}
+          onPage={(p) => setPage(p)}
+          onPageSize={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          pageSizeOptions={[6, 9, 15, 30]}
+        />
       </div>
 
       <CrudModal

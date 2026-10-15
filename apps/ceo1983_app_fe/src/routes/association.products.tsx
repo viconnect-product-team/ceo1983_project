@@ -73,7 +73,8 @@ import { useAuth } from "@/context/AuthContext";
 import { isVideoMedia } from "@/components/marketplace/MarketplaceAdsManager";
 import { MarketplaceAdSlider } from "@/components/marketplace/MarketplaceAdSlider";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
-import { getDynamicMarketplaceCategories } from "@/lib/marketplace-categories";
+import { MobilePagination } from "@/components/common/MobilePagination";
+import { getDynamicMarketplaceCategories, matchProductCategory } from "@/lib/marketplace-categories";
 
 function normalizeCategory(str: string): string {
   return str
@@ -87,17 +88,23 @@ function normalizeCategory(str: string): string {
 
 function matchCategory(productCat: string, filterCat: string): boolean {
   if (!productCat || !filterCat) return false;
+  if (matchProductCategory(productCat, filterCat)) return true;
   const pNorm = normalizeCategory(productCat);
   const fNorm = normalizeCategory(filterCat);
   if (pNorm.includes(fNorm) || fNorm.includes(pNorm)) return true;
 
   const CATEGORY_MAP: Record<string, string[]> = {
-    tech: ["congnghe", "phanmem", "it", "tech", "technology", "software"],
-    realestate: ["batdongsan", "xaydung", "realestate", "property", "construction"],
-    manufacturing: ["sanxuat", "congnghiep", "manufacturing", "industry", "production"],
-    finance: ["taichinh", "dautu", "finance", "investment", "banking"],
-    services: ["dichvu", "dulich", "service", "services", "tourism", "hospitality"],
-    retail: ["hangtieudung", "banle", "retail", "consumer", "fmcg", "commerce", "trade"],
+    media_event: ["truyenthong", "sukien", "media", "event", "pr", "quangcao", "marketing", "tochucsukien", "quayphim"],
+    services_training: ["dichvu", "daotao", "giaoduc", "education", "training", "tuvan", "huanluyen", "consulting", "service", "phaply"],
+    finance_banking: ["taichinh", "nganhang", "finance", "banking", "dautu", "investment", "baohiem", "chungkhoan", "ketoan", "tindung"],
+    construction_realestate: ["xaydung", "batdongsan", "construction", "realestate", "property", "kientruc", "noithat", "thicong", "vatlieuxaydung"],
+    tourism_hospitality: ["dulich", "khachsan", "tourism", "travel", "hospitality", "resort", "tour", "vemaybay", "nghiduong"],
+    tech: ["congnghe", "chuyendoiso", "phanmem", "it", "tech", "technology", "software", "sohoa", "ai"],
+    manufacturing: ["sanxuat", "congnghiep", "manufacturing", "industry", "production", "chebien", "giacong", "cokhi"],
+    retail_commerce: ["thuongmai", "banle", "retail", "consumer", "fmcg", "commerce", "trade", "hangtieudung", "thoitrang"],
+    healthcare: ["yte", "suckhoe", "health", "healthcare", "duocpham", "thammy", "spa", "phongkham"],
+    logistics: ["logistics", "vantai", "khovan", "giaonhan", "supplychain", "xuatnhapkhau"],
+    agriculture_food: ["nongnghiep", "thucpham", "f&b", "amthuc", "douong", "nongsan", "food"],
   };
 
   for (const group of Object.values(CATEGORY_MAP)) {
@@ -199,7 +206,14 @@ function ProductsScreen() {
         }
       } catch {}
     }
-    return ["Công nghệ & Phần mềm", "Bất động sản & Xây dựng", "Dịch vụ & Du lịch", "Tài chính & Đầu tư"];
+    return [
+      "Truyền thông & Sự kiện",
+      "Dịch vụ & Đào tạo",
+      "Tài chính & Ngân hàng",
+      "Xây dựng & Bất động sản",
+      "Du lịch & Khách sạn",
+      "Công nghệ & Chuyển đổi số",
+    ];
   });
 
   const handleSelectCategory = (cat: string) => {
@@ -411,6 +425,19 @@ function ProductsScreen() {
     setRecentlyViewed((prev) => {
       const filtered = prev.filter((x) => (x.id || x._id) !== (p.id || p._id));
       const updated = [p, ...filtered].slice(0, 10);
+      try {
+        localStorage.setItem("ceo1983_recent_products", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  // Tự động loại bỏ sản phẩm đã xóa khỏi danh sách lịch sử xem
+  const removeDeletedProductFromHistory = (id: string) => {
+    if (!id) return;
+    const targetId = String(id).trim();
+    setRecentlyViewed((prev) => {
+      const updated = prev.filter((x) => String(x.id || x._id || "").trim() !== targetId);
       try {
         localStorage.setItem("ceo1983_recent_products", JSON.stringify(updated));
       } catch {}
@@ -737,6 +764,25 @@ function ProductsScreen() {
     return arr;
   }, [initialProducts, resolvedProfileCompany, user, member]);
 
+  // Tự động kiểm tra và thanh lọc: Sản phẩm nào đã xóa trên hệ thống thì loại bỏ ngay khỏi lịch sử xem
+  useEffect(() => {
+    if (!allProducts || allProducts.length === 0) return;
+    const activeIds = new Set(allProducts.map((p) => String(p.id || (p as any)._id).trim()));
+    setRecentlyViewed((prev) => {
+      const valid = prev.filter((p) => {
+        const id = String(p.id || p._id || "").trim();
+        return activeIds.has(id) && p.status !== "deleted";
+      });
+      if (valid.length !== prev.length) {
+        try {
+          localStorage.setItem("ceo1983_recent_products", JSON.stringify(valid));
+        } catch {}
+        return valid;
+      }
+      return prev;
+    });
+  }, [allProducts]);
+
   const dynamicCategories = useMemo(() => {
     return getDynamicMarketplaceCategories(allProducts);
   }, [allProducts]);
@@ -829,18 +875,6 @@ function ProductsScreen() {
     return allProducts.filter((p) => checkIsProductOwner(p)).length;
   }, [allProducts, member]);
 
-  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
-  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const [sortMode, setSortMode] = useState<"newest" | "most_viewed" | "price_asc" | "price_desc">("newest");
-  const [pageNew, setPageNew] = useState(1);
-  const [pagePopular, setPagePopular] = useState(1);
-  const [pageCompanies, setPageCompanies] = useState(1);
-  const [pageFilter, setPageFilter] = useState(1);
-  const [isVideoMuted, setIsVideoMuted] = useState(true);
-  const PAGE_SIZE = 4;
-  const FILTER_PAGE_SIZE = 6;
-  const COMPANY_PAGE_SIZE = 3;
-
   const categoriesList = useMemo(() => [
     { id: "all", label: isEn ? "All" : "Tất cả", count: allProducts.length },
     { id: "my_products", label: isEn ? "My Products" : "Của tôi", count: myProductsCount },
@@ -852,23 +886,97 @@ function ProductsScreen() {
     })),
   ], [isEn, allProducts, myProductsCount, dynamicCategories]);
 
-  // Section 1: Sản phẩm mới đăng
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<"newest" | "most_viewed" | "price_asc" | "price_desc" | "rating_desc">("newest");
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+
+  // Refs for smooth scrolling on pagination change
+  const filteredProductsRef = useRef<HTMLDivElement>(null);
+  const allProductsSectionRef = useRef<HTMLDivElement>(null);
+  const myStoreSectionRef = useRef<HTMLDivElement>(null);
+
+  // Sorted list based on active sortMode
+  const sortedList = useMemo(() => {
+    const arr = [...list];
+    if (sortMode === "newest") {
+      return arr.sort((a, b) => {
+        const tA = a.time ? new Date(a.time).getTime() : 0;
+        const tB = b.time ? new Date(b.time).getTime() : 0;
+        return tB - tA;
+      });
+    }
+    if (sortMode === "most_viewed") {
+      return arr.sort((a, b) => (b.views || 0) - (a.views || 0));
+    }
+    if (sortMode === "price_asc") {
+      return arr.sort((a, b) => (a.priceNumber || 0) - (b.priceNumber || 0));
+    }
+    if (sortMode === "price_desc") {
+      return arr.sort((a, b) => (b.priceNumber || 0) - (a.priceNumber || 0));
+    }
+    if (sortMode === "rating_desc") {
+      return arr.sort((a, b) => ((b as any).rating || 5) - ((a as any).rating || 5));
+    }
+    return arr;
+  }, [list, sortMode]);
+
+  // Pagination for Filtered / Searched Products
+  const [pageFilter, setPageFilter] = useState(1);
+  const [filterPageSize, setFilterPageSize] = useState(8);
+  const totalFilterPages = Math.max(1, Math.ceil(sortedList.length / filterPageSize));
+
+  useEffect(() => {
+    setPageFilter(1);
+  }, [q, selectedCategory, sortMode]);
+
+  const paginatedList = useMemo(() => {
+    const start = (pageFilter - 1) * filterPageSize;
+    return sortedList.slice(start, start + filterPageSize);
+  }, [sortedList, pageFilter, filterPageSize]);
+
+  // Pagination for "Gian hàng của tôi" (My Store)
+  const [myStorePage, setMyStorePage] = useState(1);
+  const [myStorePageSize, setMyStorePageSize] = useState(6);
+  const mineProducts = useMemo(() => allProducts.filter((p) => checkIsProductOwner(p)), [allProducts, member, user]);
+  const totalMyStorePages = Math.max(1, Math.ceil(mineProducts.length / myStorePageSize));
+
+  useEffect(() => {
+    if (myStorePage > totalMyStorePages && totalMyStorePages > 0) {
+      setMyStorePage(totalMyStorePages);
+    }
+  }, [totalMyStorePages, myStorePage]);
+
+  const paginatedMine = useMemo(() => {
+    const start = (myStorePage - 1) * myStorePageSize;
+    return mineProducts.slice(start, start + myStorePageSize);
+  }, [mineProducts, myStorePage, myStorePageSize]);
+
+  // Section 1: Sản phẩm mới đăng & Pagination for View All
+  const [pageNew, setPageNew] = useState(1);
+  const [allNewPageSize, setAllNewPageSize] = useState(8);
   const newestProducts = useMemo(() => {
-    return [...list].sort((a, b) => {
+    return [...allProducts].sort((a, b) => {
       const tA = a.time ? new Date(a.time).getTime() : 0;
       const tB = b.time ? new Date(b.time).getTime() : 0;
       return tB - tA;
     });
-  }, [list]);
+  }, [allProducts]);
+  const totalNewPages = Math.max(1, Math.ceil(newestProducts.length / allNewPageSize));
+  const paginatedNewest = useMemo(() => {
+    const start = (pageNew - 1) * allNewPageSize;
+    return newestProducts.slice(start, start + allNewPageSize);
+  }, [newestProducts, pageNew, allNewPageSize]);
 
   // Section 2: Sản phẩm được xem nhiều nhất
+  const [pagePopular, setPagePopular] = useState(1);
   const popularProducts = useMemo(() => {
-    return [...list].sort((a, b) => {
+    return [...allProducts].sort((a, b) => {
       const vA = a.views || 0;
       const vB = b.views || 0;
       return vB - vA;
     });
-  }, [list]);
+  }, [allProducts]);
 
   // Section 3: Doanh nghiệp / Công ty nổi bật nhất (1 hội viên đại diện cho 1 công ty)
   const featuredCompanies = useMemo(() => {
@@ -952,6 +1060,7 @@ function ProductsScreen() {
         fetchNestApi(`/marketplace/products/${id}`, { method: "DELETE" })
       );
       toast.success("Đã xóa sản phẩm thành công!");
+      removeDeletedProductFromHistory(id);
       if (editingProduct?.id === id) setEditingProduct(null);
       reload();
     } catch {
@@ -1853,7 +1962,7 @@ function ProductsScreen() {
               </div>
 
               {/* List of user's products */}
-              {allProducts.filter((p) => checkIsProductOwner(p)).length === 0 ? (
+              {mineProducts.length === 0 ? (
                 <div className="w-full py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-center gap-3">
                   <div className="size-14 rounded-2xl bg-blue-50 dark:bg-slate-800 grid place-items-center">
                     <Package className="size-7 text-[#003B95] dark:text-blue-400" />
@@ -1874,10 +1983,8 @@ function ProductsScreen() {
                   </button>
                 </div>
               ) : (
-                <div className="w-full space-y-3">
-                  {allProducts
-                    .filter((p) => checkIsProductOwner(p))
-                    .map((p) => (
+                <div ref={myStoreSectionRef} className="w-full space-y-3">
+                  {paginatedMine.map((p) => (
                       <div
                         key={p.id}
                         className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-xs"
@@ -1960,6 +2067,25 @@ function ProductsScreen() {
                         </div>
                       </div>
                     ))}
+
+                  {totalMyStorePages > 1 && (
+                    <MobilePagination
+                      currentPage={myStorePage}
+                      totalPages={totalMyStorePages}
+                      totalItems={mineProducts.length}
+                      pageSize={myStorePageSize}
+                      onPageChange={(page) => {
+                        setMyStorePage(page);
+                        myStoreSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      onPageSizeChange={(sz) => {
+                        setMyStorePageSize(sz);
+                        setMyStorePage(1);
+                      }}
+                      pageSizeOptions={[4, 6, 10, 20]}
+                      itemLabel="sản phẩm của bạn"
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -2193,7 +2319,87 @@ function ProductsScreen() {
                   </button>
                 </div>
 
-                {/* Horizontal carousel */}
+                {showAllProducts ? (
+                  <div ref={allProductsSectionRef} className="self-stretch px-4 flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      {paginatedNewest.map((p) => (
+                        <div
+                          key={p.id}
+                          onClick={() => handleOpenProductDetail(p)}
+                          className="w-full bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer relative"
+                        >
+                          <div className="relative self-stretch h-24 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
+                              <img
+                                className="self-stretch h-24 w-full object-cover"
+                                src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
+                                alt={p.name}
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <div className="h-24 w-full flex items-center justify-center text-2xl">
+                                💼
+                              </div>
+                            )}
+                            {p.status === "sold" && (
+                              <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                                <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                                  ĐÃ BÁN
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
+                            <div className="self-stretch inline-flex justify-between items-center">
+                              <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
+                                {p.category || "Doanh nghiệp"}
+                              </div>
+                              <div className="px-1 py-0.5 bg-amber-100 rounded-[3px] flex justify-start items-start shrink-0">
+                                <div className="justify-start text-amber-600 text-[9px] font-bold font-['Inter']">VIP</div>
+                              </div>
+                            </div>
+                            <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
+                              {p.name}
+                            </div>
+                            <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
+                              {p.company || "Hội viên CEO 1983"}
+                            </div>
+                            <div className="self-stretch inline-flex justify-between items-center pt-0.5">
+                              <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
+                                {formatSmartProductPrice(p.memberPrice || p.price)}
+                              </div>
+                              <span className="text-[10px] font-bold text-[#003B95] dark:text-blue-400">
+                                Báo giá →
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {totalNewPages > 1 && (
+                      <MobilePagination
+                        currentPage={pageNew}
+                        totalPages={totalNewPages}
+                        totalItems={newestProducts.length}
+                        pageSize={allNewPageSize}
+                        onPageChange={(page) => {
+                          setPageNew(page);
+                          allProductsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        onPageSizeChange={(sz) => {
+                          setAllNewPageSize(sz);
+                          setPageNew(1);
+                        }}
+                        pageSizeOptions={[6, 8, 12, 24]}
+                        itemLabel="sản phẩm mới"
+                      />
+                    )}
+                  </div>
+                ) : (
+                /* Horizontal carousel */
                 <div id="tour-market-grid" className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
                   {/* Dynamic Products from Database */}
                   {allProducts.length === 0 ? (
@@ -2263,27 +2469,38 @@ function ProductsScreen() {
                     );
                   })}
                 </div>
+                )}
               </div>
             </div>
 
             
             {/* 5. SẢN PHẨM MỚI XEM (RECENTLY VIEWED PRODUCTS CAROUSEL) */}
-            {recentlyViewed.length > 0 && (
-              <div className="self-stretch flex flex-col justify-start items-start gap-3">
-                <div className="self-stretch px-4 inline-flex justify-between items-center">
-                  <div className="justify-start text-sky-950 dark:text-white text-base font-bold font-['Inter'] uppercase tracking-tight flex items-center gap-2">
-                    <Eye className="size-4 text-[#003B95] dark:text-blue-400" />
-                    <span>SẢN PHẨM MỚI XEM</span>
-                  </div>
-                  <span className="text-xs text-slate-500 font-medium font-mono">
-                    {recentlyViewed.length} sản phẩm
-                  </span>
-                </div>
+            {(() => {
+              const activeRecentProducts = recentlyViewed.filter((p) =>
+                allProducts.some(
+                  (ap) =>
+                    String(ap.id || (ap as any)._id).trim() === String(p.id || p._id).trim() &&
+                    p.status !== "deleted"
+                )
+              );
+              if (activeRecentProducts.length === 0) return null;
 
-                {/* Horizontal scroll carousel */}
-                <div className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
-                  {recentlyViewed.map((p) => {
-                    const isLiked = interestedIds.includes(p.id);
+              return (
+                <div className="self-stretch flex flex-col justify-start items-start gap-3">
+                  <div className="self-stretch px-4 inline-flex justify-between items-center">
+                    <div className="justify-start text-sky-950 dark:text-white text-base font-bold font-['Inter'] uppercase tracking-tight flex items-center gap-2">
+                      <Eye className="size-4 text-[#003B95] dark:text-blue-400" />
+                      <span>SẢN PHẨM MỚI XEM</span>
+                    </div>
+                    <span className="text-xs text-slate-500 font-medium font-mono">
+                      {activeRecentProducts.length} sản phẩm
+                    </span>
+                  </div>
+
+                  {/* Horizontal scroll carousel */}
+                  <div className="self-stretch pl-4 inline-flex justify-start items-start gap-3 overflow-x-auto no-scrollbar pb-2">
+                    {activeRecentProducts.map((p) => {
+                      const isLiked = interestedIds.includes(p.id);
                     return (
                       <div
                         key={p.id || p._id}
@@ -2344,7 +2561,8 @@ function ProductsScreen() {
                   })}
                 </div>
               </div>
-            )}
+            );
+          })()}
 
             {/* 6. DOANH NGHIỆP NỔI BẬT */}
             {featuredCompanyProduct && (
@@ -2395,7 +2613,7 @@ function ProductsScreen() {
       
       {/* TRƯỜNG HỢP CÓ TÌM KIẾM HOẶC LỌC DANH MỤC RIÊNG */}
       {(q || selectedCategory !== "all") && (
-        <div className="mt-2 mb-4 px-4 space-y-3">
+        <div ref={filteredProductsRef} className="mt-2 mb-4 px-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -2404,7 +2622,14 @@ function ProductsScreen() {
                   {q ? `Kết quả tìm kiếm cho "${q}"` : `Danh mục: ${categoriesList.find((c) => c.id === selectedCategory)?.label || selectedCategory}`}
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-500">Tìm thấy {list.length} sản phẩm phù hợp</p>
+              <p className="text-[11px] text-slate-500">
+                Tìm thấy {sortedList.length} sản phẩm phù hợp
+                {sortMode !== "newest" && (
+                  <span className="ml-1 text-blue-600 dark:text-blue-400 font-semibold">
+                    (Đã sắp xếp)
+                  </span>
+                )}
+              </p>
             </div>
             <button
               type="button"
@@ -2418,68 +2643,90 @@ function ProductsScreen() {
             </button>
           </div>
 
-          {list.length === 0 ? (
+          {sortedList.length === 0 ? (
             <div className="py-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
               <p className="text-xs text-slate-400">Không tìm thấy sản phẩm nào phù hợp</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {list.map((p) => {
-                const isLiked = interestedIds.includes(p.id);
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => handleOpenProductDetail(p)}
-                    className="w-full bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer relative"
-                  >
-                    <div className="relative self-stretch h-24 bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                      {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
-                        <img
-                          className="self-stretch h-24 w-full object-cover"
-                          src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
-                          alt={p.name}
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="h-24 w-full flex items-center justify-center text-2xl">
-                          💼
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                {paginatedList.map((p) => {
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => handleOpenProductDetail(p)}
+                      className="w-full bg-white dark:bg-slate-800 rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex flex-col justify-start items-start overflow-hidden shadow-xs hover:shadow-md transition cursor-pointer relative"
+                    >
+                      <div className="relative self-stretch h-24 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        {resolveMediaUrl(p.imageUrl) || p.imageUrl ? (
+                          <img
+                            className="self-stretch h-24 w-full object-cover"
+                            src={resolveMediaUrl(p.imageUrl) || p.imageUrl}
+                            alt={p.name}
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="h-24 w-full flex items-center justify-center text-2xl">
+                            💼
+                          </div>
+                        )}
+                        {p.status === "sold" && (
+                          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                              ĐÃ BÁN
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
+                        <div className="self-stretch inline-flex justify-between items-center">
+                          <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
+                            {p.category || "Hội viên"}
+                          </div>
                         </div>
-                      )}
-                      {p.status === "sold" && (
-                        <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
-                          <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-white/20 text-white text-[10px] font-black tracking-wider uppercase shadow-md">
-                            ĐÃ BÁN
+                        <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
+                          {p.name}
+                        </div>
+                        <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
+                          {p.company || "CEO 1983"}
+                        </div>
+                        <div className="self-stretch inline-flex justify-between items-center pt-0.5">
+                          <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
+                            {formatSmartProductPrice(p.memberPrice || p.price)}
+                          </div>
+                          <span className="text-[10px] font-bold text-[#003B95] dark:text-blue-400">
+                            Báo giá →
                           </span>
                         </div>
-                      )}
-                    </div>
-                    <div className="self-stretch p-3 flex flex-col justify-start items-start gap-2">
-                      <div className="self-stretch inline-flex justify-between items-center">
-                        <div className="justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate max-w-[100px]">
-                          {p.category || "Hội viên"}
-                        </div>
-                      </div>
-                      <div className="self-stretch justify-start text-slate-900 dark:text-white text-xs font-semibold font-['Inter'] line-clamp-2 h-8 leading-4">
-                        {p.name}
-                      </div>
-                      <div className="self-stretch justify-start text-slate-500 text-xs font-normal font-['Inter'] truncate">
-                        {p.company || "CEO 1983"}
-                      </div>
-                      <div className="self-stretch inline-flex justify-between items-center pt-0.5">
-                        <div className="justify-start text-blue-900 dark:text-blue-400 text-xs font-bold font-['Inter']">
-                          {formatSmartProductPrice(p.memberPrice || p.price)}
-                        </div>
-                        <span className="text-[10px] font-bold text-[#003B95] dark:text-blue-400">
-                          Báo giá →
-                        </span>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+
+              {totalFilterPages > 1 && (
+                <div className="pt-2">
+                  <MobilePagination
+                    currentPage={pageFilter}
+                    totalPages={totalFilterPages}
+                    totalItems={sortedList.length}
+                    pageSize={filterPageSize}
+                    onPageChange={(page) => {
+                      setPageFilter(page);
+                      filteredProductsRef.current?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    onPageSizeChange={(sz) => {
+                      setFilterPageSize(sz);
+                      setPageFilter(1);
+                    }}
+                    pageSizeOptions={[6, 8, 12, 24]}
+                    itemLabel="sản phẩm"
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

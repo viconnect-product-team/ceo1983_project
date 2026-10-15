@@ -39,6 +39,7 @@ import {
   getRolesForDepartment,
   DepartmentItem,
 } from "@/lib/rbac-permission-helpers";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 
 export const Route = createFileRoute("/accounts")({
   component: AccountsPage,
@@ -121,7 +122,7 @@ function AccountsPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Dirty state tracking (Unsaved changes)
   const isDirty = useMemo(() => {
@@ -677,50 +678,22 @@ function AccountsPage() {
           </table>
         </div>
 
-        {/* ── THANH CHUYỂN TRANG (PAGINATION) ── */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-card border border-border rounded-2xl shadow-xs">
-          <div className="text-xs text-muted-foreground">
-            Hiển thị <span className="font-bold text-foreground">{filteredAccounts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}</span> - <span className="font-bold text-foreground">{Math.min(currentPage * pageSize, filteredAccounts.length)}</span> trên tổng số <span className="font-bold text-foreground">{filteredAccounts.length}</span> tài khoản
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-border bg-background text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span>Trước</span>
-            </button>
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  onClick={() => setCurrentPage(page)}
-                  className={`h-8 w-8 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    currentPage === page
-                      ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-xs shadow-amber-500/20"
-                      : "border border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-border bg-background text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-            >
-              <span>Sau</span>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+        {/* ── THANH CHUYỂN TRANG (PAGINATION CHUẨN CRM ẢNH 1) ── */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+          <Pagination
+            page={currentPage}
+            pageCount={totalPages}
+            pageSize={pageSize}
+            total={filteredAccounts.length}
+            from={filteredAccounts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+            to={Math.min(currentPage * pageSize, filteredAccounts.length)}
+            onPage={(p) => setCurrentPage(p)}
+            onPageSize={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
         </div>
       </div>
 

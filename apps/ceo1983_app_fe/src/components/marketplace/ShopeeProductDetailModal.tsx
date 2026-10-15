@@ -24,6 +24,7 @@ import { formatDisplayDate } from "@/lib/date-format";
 import { fetchNestApi } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { MobilePagination } from "@/components/common/MobilePagination";
 
 interface ShopeeProductDetailModalProps {
   isOpen: boolean;
@@ -138,6 +139,20 @@ export function ShopeeProductDetailModal({
       return Number(r.rating) === activeFilterStar;
     });
   }, [reviews, activeFilterStar]);
+
+  // Reviews Pagination
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewPageSize, setReviewPageSize] = useState(4);
+  const totalReviewPages = Math.max(1, Math.ceil(displayedReviews.length / reviewPageSize));
+
+  useEffect(() => {
+    setReviewPage(1);
+  }, [activeFilterStar]);
+
+  const paginatedReviews = useMemo(() => {
+    const start = (reviewPage - 1) * reviewPageSize;
+    return displayedReviews.slice(start, start + reviewPageSize);
+  }, [displayedReviews, reviewPage, reviewPageSize]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -661,77 +676,93 @@ export function ShopeeProductDetailModal({
                   </button>
                 </div>
               ) : (
-                displayedReviews.map((rev) => (
-                  <div key={rev.id} className="pt-4 first:pt-0 space-y-2.5">
-                    {/* User info + Stars */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={rev.userAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"}
-                          alt={rev.userName}
-                          className="size-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
-                        />
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-900 dark:text-white">
-                              {rev.userName}
-                            </span>
-                            <span className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950/40">
-                              Hội viên
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-slate-400">
-                            {rev.userRole || "Doanh nghiệp CEO 1983"}
+                <>
+                  {paginatedReviews.map((rev) => (
+                    <div key={rev.id} className="pt-4 first:pt-0 space-y-2.5">
+                      {/* User info + Stars */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={rev.userAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"}
+                            alt={rev.userName}
+                            className="size-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                {rev.userName}
+                              </span>
+                              <span className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950/40">
+                                Hội viên
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {rev.userRole || "Doanh nghiệp CEO 1983"}
+                            </div>
                           </div>
                         </div>
+
+                        <span className="text-[11px] text-slate-400 shrink-0">{rev.createdAt}</span>
                       </div>
 
-                      <span className="text-[11px] text-slate-400 shrink-0">{rev.createdAt}</span>
-                    </div>
-
-                    {/* Stars */}
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          className={`size-3.5 ${
-                            s <= rev.rating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"
-                          }`}
-                        />
-                      ))}
-                      {rev.productVariant && (
-                        <span className="text-[11px] text-slate-400 ml-2">
-                          Phân loại: <span className="text-slate-600 dark:text-slate-300">{rev.productVariant}</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Comment Body */}
-                    <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
-                      {rev.comment}
-                    </p>
-
-                    {/* Review Images if any */}
-                    {rev.images && rev.images.length > 0 && (
-                      <div className="flex gap-2 pt-1">
-                        {rev.images.map((img, i) => (
-                          <img
-                            key={i}
-                            src={img}
-                            alt=""
-                            className="size-16 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                      {/* Stars */}
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`size-3.5 ${
+                              s <= rev.rating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"
+                            }`}
                           />
                         ))}
+                        {rev.productVariant && (
+                          <span className="text-[11px] text-slate-400 ml-2">
+                            Phân loại: <span className="text-slate-600 dark:text-slate-300">{rev.productVariant}</span>
+                          </span>
+                        )}
                       </div>
-                    )}
 
-                    {/* Like button */}
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 pt-1">
-                      <ThumbsUp className="size-3" />
-                      <span>Hữu ích ({rev.likesCount || 0})</span>
+                      {/* Comment Body */}
+                      <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
+                        {rev.comment}
+                      </p>
+
+                      {/* Review Images if any */}
+                      {rev.images && rev.images.length > 0 && (
+                        <div className="flex gap-2 pt-1">
+                          {rev.images.map((img, i) => (
+                            <img
+                              key={i}
+                              src={img}
+                              alt=""
+                              className="size-16 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Like button */}
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400 pt-1">
+                        <ThumbsUp className="size-3" />
+                        <span>Hữu ích ({rev.likesCount || 0})</span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+
+                  {totalReviewPages > 1 && (
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <MobilePagination
+                        currentPage={reviewPage}
+                        totalPages={totalReviewPages}
+                        totalItems={displayedReviews.length}
+                        pageSize={reviewPageSize}
+                        onPageChange={setReviewPage}
+                        itemLabel="nhận xét"
+                        compact={true}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

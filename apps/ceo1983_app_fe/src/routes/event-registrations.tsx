@@ -225,14 +225,18 @@ function RegPage() {
   const handleMoveSeat = async (fromSeat: string, toSeat: string, occupant: any) => {
     const targetReg = REGISTRATIONS.find(
       (r) =>
-        r.id === occupant.registrationId ||
-        r.seatAssignment === fromSeat ||
-        r.memberName === occupant.attendeeName,
+        (occupant?.registrationId && r.id === occupant.registrationId) ||
+        (fromSeat && r.seatAssignment === fromSeat) ||
+        (occupant?.attendeeName && r.memberName === occupant.attendeeName),
     );
     if (!targetReg) {
       toast.error("Không tìm thấy thông tin đại biểu cần chuyển ghế");
       return;
     }
+
+    const destReg = REGISTRATIONS.find(
+      (r) => r.id !== targetReg.id && r.seatAssignment === toSeat && r.status !== "cancelled"
+    );
 
     try {
       await updateSeating({
@@ -242,15 +246,40 @@ function RegPage() {
         },
       });
 
-      setRegistrationsList((prev) =>
-        prev.map((r) => (r.id === targetReg.id ? { ...r, seatAssignment: toSeat } : r)),
-      );
-      if (selectedReg && selectedReg.id === targetReg.id) {
-        setSelectedReg((prev) => (prev ? { ...prev, seatAssignment: toSeat } : null));
-        setSeatInput(toSeat);
+      if (destReg) {
+        await updateSeating({
+          data: {
+            registrationId: destReg.id,
+            seatAssignment: fromSeat,
+          },
+        });
       }
 
-      toast.success(`Đã chuyển đại biểu ${targetReg.memberName} sang ${toSeat}`);
+      setRegistrationsList((prev) =>
+        prev.map((r) => {
+          if (r.id === targetReg.id) return { ...r, seatAssignment: toSeat };
+          if (destReg && r.id === destReg.id) return { ...r, seatAssignment: fromSeat };
+          return r;
+        }),
+      );
+
+      if (selectedReg) {
+        if (selectedReg.id === targetReg.id) {
+          setSelectedReg((prev) => (prev ? { ...prev, seatAssignment: toSeat } : null));
+          setSeatInput(toSeat);
+        } else if (destReg && selectedReg.id === destReg.id) {
+          setSelectedReg((prev) => (prev ? { ...prev, seatAssignment: fromSeat } : null));
+          setSeatInput(fromSeat);
+        }
+      }
+
+      if (destReg) {
+        toast.success(
+          `Đã hoán đổi chỗ ngồi: ${targetReg.memberName} (${toSeat}) ⇆ ${destReg.memberName} (${fromSeat})`
+        );
+      } else {
+        toast.success(`Đã chuyển đại biểu ${targetReg.memberName} sang ${toSeat}`);
+      }
       await router.invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Lỗi khi chuyển chỗ ngồi");

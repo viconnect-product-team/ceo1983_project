@@ -337,7 +337,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
               className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 text-white font-bold shadow-md shadow-[#003B95]/25 transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
             >
               {submittingReg ? (
-                <span>Đang xử lý...</span>
+                 <span>Đang xử lý...</span>
               ) : isFull ? (
                 <>
                   <Lock className="h-3.5 w-3.5" />

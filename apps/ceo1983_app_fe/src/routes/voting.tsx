@@ -21,6 +21,7 @@ import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit
 import { fetchNestApi } from "@/lib/api-client";
 import { LuckyDrawLandingBanner } from "@/components/dashboard/LuckyDrawLandingBanner";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   listVotesFn,
   createVoteFn,
@@ -574,42 +575,18 @@ function VotingPage() {
         })}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          Hiển thị
-          <select
-            value={PAGE_SIZE}
-            onChange={(e) => setSize(Number(e.target.value))}
-            className="rounded-lg border border-border bg-background px-2 py-1 text-sm text-foreground"
-          >
-            {PAGE_SIZES.map((s) => (
-              <option key={s} value={s}>
-                {s}/trang
-              </option>
-            ))}
-          </select>
-        </label>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground disabled:opacity-40"
-            >
-              Trước
-            </button>
-            <span className="text-sm text-muted-foreground">
-              Trang {currentPage}/{totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground disabled:opacity-40"
-            >
-              Sau
-            </button>
-          </div>
-        )}
+      <div className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <Pagination
+          page={currentPage}
+          pageCount={totalPages}
+          pageSize={PAGE_SIZE}
+          total={filtered.length}
+          from={filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}
+          to={Math.min(currentPage * PAGE_SIZE, filtered.length)}
+          pageSizeOptions={PAGE_SIZES}
+          onPage={(p) => navigate({ search: (prev: VotingSearch) => ({ ...prev, page: p }) })}
+          onPageSize={(s) => setSize(s)}
+        />
       </div>
 
       {open && <VoteModal onClose={() => setOpen(false)} />}

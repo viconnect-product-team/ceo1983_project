@@ -254,7 +254,7 @@ function GuestEventRegistrationPage() {
                   <span className="font-mono text-blue-700 underline">{result.email}</span>
                 </p>
                 <p className="text-slate-600">
-                  Thông tin kết nối doanh nghiệp của Quý Anh/Chị đã được Ban Thư ký lưu trữ ưu tiên cho các chương trình giao thương và sự kiện tiếp theo của CLB.
+                  Thông tin kết nối doanh nghiệp của Quý Anh/Chị đã được Ban Truyền Thông lưu trữ ưu tiên cho các chương trình giao thương và sự kiện tiếp theo của CLB.
                 </p>
               </div>
             </div>
@@ -265,7 +265,7 @@ function GuestEventRegistrationPage() {
                 Hỗ Trợ Đại Biểu & Doanh Nhân:
               </div>
               <p>
-                Hotline Ban Thư Ký CLB CEO 1983:{" "}
+                Hotline Ban Truyền Thông CLB CEO 1983:{" "}
                 <a href="tel:0983198383" className="font-bold text-[#003B95] hover:underline">
                   0983 1983 83
                 </a>{" "}
@@ -547,7 +547,7 @@ function GuestEventRegistrationPage() {
                   CLB Doanh Nhân CEO 1983 · HanoiBA
                 </div>
                 <div className="text-xs text-slate-500 font-semibold">
-                  Ban Tổ Chức Sự Kiện & Ban Thư Ký
+                  Ban Tổ Chức Sự Kiện & Ban Truyền Thông
                 </div>
               </div>
             </div>
@@ -666,7 +666,7 @@ function GuestEventRegistrationPage() {
               3. Số điện thoại liên hệ (Ưu tiên số dùng Zalo) <span className="text-rose-500">*</span>
             </label>
             <p className="text-xs text-slate-500">
-              Dùng để Ban Thư ký gửi tin nhắn nhắc lịch và hỗ trợ check-in tại bàn lễ tân.
+              Dùng để Ban Truyền Thông gửi tin nhắn nhắc lịch và hỗ trợ check-in tại bàn lễ tân.
             </p>
             <div className="relative pt-1">
               <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
@@ -805,7 +805,7 @@ function GuestEventRegistrationPage() {
             CLB DOANH NHÂN CEO 1983 · HANOIBA
           </p>
           <p>
-            Hotline Ban Thư Ký: 0983 1983 83 · Website:{" "}
+            Hotline Ban Truyền Thông: 0983 1983 83 · Website:{" "}
             <a
               href="https://ceo1983.com"
               target="_blank"

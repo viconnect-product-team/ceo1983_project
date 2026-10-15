@@ -684,6 +684,39 @@ Mọi dữ liệu cá nhân, trạng thái hội phí, nhiệm vụ được gia
 - **CSDL & Bảng liên kết**:
   - Bảng `public.member_notifications`: `id`, `member_id`, `type`, `title`, `content`, `is_read`, `created_at`.
 
+### 3.10.4. UC-MOB-MKT-04: Phân Trang Mobile (MobilePagination), Đấu Nối Sắp Xếp Thực Tế & Phân Trang Đánh Giá Sản Phẩm PostgreSQL
+- **Mục tiêu**: Tối ưu hóa hiệu năng tải trang và trải nghiệm duyệt sản phẩm trên thiết bị di động bằng giải pháp phân trang thông minh chuyên biệt; đấu nối bộ lọc sắp xếp thực tế theo 5 tiêu chí; phân trang đánh giá sản phẩm thật từ CSDL trong modal chi tiết sản phẩm.
+- **Màn hình**:
+  - Sàn giao thương Marketplace di động: `/association/products`.
+  - Modal Chi tiết sản phẩm phong cách Shopee Navy: `ShopeeProductDetailModal.tsx`.
+- **Tác nhân**: Doanh nhân hội viên, Ban Xúc tiến Thương mại, khách hàng B2B.
+- **Luồng sự kiện chính**:
+  1. **Component Phân Trang Mobile Chuyên Biệt (`MobilePagination.tsx`)**:
+     - Thiết kế chuyên sâu cho thiết bị di động (chiều rộng 360px - 430px) với các nút cảm ứng bo tròn mềm mại (`rounded-xl`), nút trang active phủ màu Deep Cobalt Navy (`#003B95`) hoặc Warm Amber Gold (`#F59E0B`).
+     - Thuật toán thông minh tự động rút gọn dấu ba chấm khi số trang lớn (smart ellipsis `1 ... 4 5 6 ... 10`).
+     - Hiển thị dải số lượng rõ ràng: `Hiển thị X - Y trên tổng Z sản phẩm`.
+     - Cho phép tùy chọn kích thước trang linh hoạt (`pageSize`: 6, 8, 12, 24...) và hỗ trợ chế độ thu gọn (`compact`) cho modal/popup.
+     - Tự động cuộn mượt mà (`scrollIntoView({ behavior: 'smooth', block: 'start' })`) về đầu vùng danh sách khi người dùng bấm chuyển trang, loại bỏ cảm giác lạc vị trí.
+  2. **Đấu Nối Sắp Xếp Sản Phẩm Thực Tế (Real Sorting)**:
+     - Đấu nối logic sắp xếp thực tế qua 5 tiêu chí trước khi phân trang:
+       - Mới nhất (`newest`): Sắp xếp theo ngày tạo giảm dần.
+       - Xem nhiều nhất (`most_viewed`): Sắp xếp theo lượt xem hoặc số lượt quan tâm.
+       - Giá thấp đến cao (`price_asc`): Sắp xếp theo đơn giá tăng dần.
+       - Giá cao đến thấp (`price_desc`): Sắp xếp theo đơn giá giảm dần.
+       - Đánh giá cao nhất (`rating_desc`): Sắp xếp theo điểm sao đánh giá thực tế từ cao xuống thấp.
+  3. **Phân Trang 3 Khu Vực Trọng Điểm Tại Marketplace Mobile**:
+     - *Danh sách sản phẩm lọc & tìm kiếm*: Mặc định 8 sản phẩm/trang, hỗ trợ chuyển trang mượt mà kèm ref cuộn `filteredProductsRef`.
+     - *Gian hàng của tôi (`my_store`)*: Mặc định 6 sản phẩm/trang, hỗ trợ quản lý sản phẩm cá nhân kèm ref cuộn `myStoreSectionRef`.
+     - *Xem tất cả sản phẩm mới (`showAllProducts`)*: Mở rộng thành dạng lưới 2 cột kèm bộ phân trang 8 sản phẩm/trang thay vì carousel cuộn ngang đơn thuần.
+  4. **Phân Trang Đánh Giá Sản Phẩm Thực Tế Tại Modal Shopee**:
+     - Tích hợp `MobilePagination` chế độ `compact` (4 nhận xét/trang) cho danh sách đánh giá lấy từ API NestJS `GET /reviews?productId=...`.
+     - Giữ chiều cao modal luôn gọn gàng, vừa vặn với màn hình điện thoại, ngăn chặn việc phải cuộn trang vô tận khi sản phẩm có hàng chục lượt đánh giá.
+- **Đặc tả API**:
+  - `GET /b2b-products/public`: Lấy danh sách sản phẩm sàn giao thương.
+  - `GET /reviews?productId=:id`: Lấy danh sách đánh giá thực tế từ bảng `public.reviews`.
+- **CSDL & Bảng liên kết**:
+  - Bảng `public.b2b_products`, `public.reviews`, `public.organizations`.
+
 ---
 
 # PHẦN 4: ĐẶC TẢ YÊU CẦU PHI CHỨC NĂNG ỨNG DỤNG DI ĐỘNG (NON-FUNCTIONAL REQUIREMENTS - NFR)

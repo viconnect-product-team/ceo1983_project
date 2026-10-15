@@ -39,6 +39,9 @@ export function parseFlexibleDate(val?: string | null): { iso: string; display: 
     const y = parseInt(isoMatch[1], 10);
     const m = parseInt(isoMatch[2], 10);
     const d = parseInt(isoMatch[3], 10);
+    if (m === 0 && d === 0 && y >= 1900 && y <= 2100) {
+      return { iso: `${y}-00-00`, display: `00/00/${y}`, isValid: true };
+    }
     if (isValidDate(y, m, d)) {
       const iso = `${y.toString().padStart(4, "0")}-${m.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
       const display = `${d.toString().padStart(2, "0")}/${m.toString().padStart(2, "0")}/${y.toString().padStart(4, "0")}`;
@@ -52,6 +55,9 @@ export function parseFlexibleDate(val?: string | null): { iso: string; display: 
     const d = parseInt(dmyMatch[1], 10);
     const m = parseInt(dmyMatch[2], 10);
     const y = parseInt(dmyMatch[3], 10);
+    if (d === 0 && m === 0 && y >= 1900 && y <= 2100) {
+      return { iso: `${y}-00-00`, display: `00/00/${y}`, isValid: true };
+    }
     if (isValidDate(y, m, d)) {
       const iso = `${y.toString().padStart(4, "0")}-${m.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
       const display = `${d.toString().padStart(2, "0")}/${m.toString().padStart(2, "0")}/${y.toString().padStart(4, "0")}`;

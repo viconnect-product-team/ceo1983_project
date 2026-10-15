@@ -27,7 +27,8 @@ export function Ceo1983MemberRegistrationForm() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [position, setPosition] = useState("Tổng Giám Đốc / CEO");
-  const [birthDate, setBirthDate] = useState("1983-08-19");
+  const [customPosition, setCustomPosition] = useState("");
+  const [birthDate, setBirthDate] = useState("00/00/1983");
   const [companyName, setCompanyName] = useState("");
   const [industry, setIndustry] = useState("ind.trade");
   const [customIndustry, setCustomIndustry] = useState("");
@@ -66,16 +67,22 @@ export function Ceo1983MemberRegistrationForm() {
       return;
     }
 
+    if (position === "Khác" && !customPosition.trim()) {
+      toast.error("Vui lòng nhập chức danh cụ thể của Quý Doanh nhân (*)");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const finalIndustry = industry === "ind.other" && customIndustry ? customIndustry : industry;
+      const finalPosition = position === "Khác" ? customPosition.trim() : position;
       await fetchNestApi("/members/public-register", {
         method: "POST",
         body: JSON.stringify({
           fullName: fullName.trim(),
           phone: phone.trim(),
           email: email.trim().toLowerCase(),
-          position,
+          position: finalPosition,
           birthYear: birthDate,
           companyName: companyName.trim(),
           industry: finalIndustry,
@@ -221,38 +228,18 @@ export function Ceo1983MemberRegistrationForm() {
           <div className="h-3.5 bg-[#003B95]" />
 
           <div className="p-6 sm:p-8">
-            {/* Clean Brand Header: Logo + Title */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 mb-5 pb-5 border-b border-slate-100">
-              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 text-center sm:text-left">
-                <img
-                  src="/ceo1983-logo.png"
-                  alt="CEO 1983"
-                  className="h-16 sm:h-20 w-auto object-contain drop-shadow-xs"
-                />
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-[#003B95] text-[11px] font-bold uppercase tracking-wider mb-1">
-                    <span>✦ Hiệp Hội Doanh Nghiệp CEO 1983 ✦</span>
-                  </div>
-                  <h1 className="text-xl sm:text-2xl font-black text-[#003B95] tracking-tight">
-                    Đơn Đăng Ký Hội Viên CEO 1983
-                  </h1>
-                  <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
-                    Cổng Tiếp Nhận Hồ Sơ Gia Nhập — Ban Thành Viên & Kết Nối
-                  </p>
-                </div>
+            {/* Clean Brand Header: Logo + Cổng Tiếp Nhận Hồ Sơ Gia Nhập */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 text-center sm:text-left mb-5 pb-5 border-b border-slate-100">
+              <img
+                src="/ceo1983-logo.png"
+                alt="CEO 1983"
+                className="h-16 sm:h-20 w-auto object-contain drop-shadow-xs"
+              />
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-[#003B95] tracking-tight">
+                  Cổng Tiếp Nhận Hồ Sơ Gia Nhập
+                </h1>
               </div>
-
-              {/* Official Website Link Badge */}
-              <a
-                href="https://ceo1983.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#003B95] text-xs font-bold border border-blue-200 transition-colors shrink-0 shadow-2xs"
-              >
-                <Globe className="w-3.5 h-3.5 text-amber-500" />
-                <span>ceo1983.com</span>
-                <ExternalLink className="w-3 h-3 opacity-70" />
-              </a>
             </div>
 
             <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-4">
@@ -358,7 +345,19 @@ export function Ceo1983MemberRegistrationForm() {
                   <option value="Giám Đốc Điều Hành">Giám Đốc Điều Hành</option>
                   <option value="Giám Đốc Chức Năng">Giám Đốc Chức Năng</option>
                   <option value="Chủ hộ kinh doanh">Chủ hộ kinh doanh / Cá nhân</option>
+                  <option value="Khác">Khác (Tự nhập chức danh...)</option>
                 </select>
+
+                {position === "Khác" && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nhập chức danh của bạn (VD: Trưởng đại diện, Viện trưởng...)"
+                    value={customPosition}
+                    onChange={(e) => setCustomPosition(e.target.value)}
+                    className="mt-2 w-full px-4 py-2.5 rounded-xl border border-blue-300 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-white"
+                  />
+                )}
               </div>
 
               {/* Ngày tháng năm sinh - Sửa label và điền ngày tháng năm sinh */}

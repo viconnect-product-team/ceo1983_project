@@ -726,20 +726,20 @@ export function Sidebar({
             onNavigate={onNavigate}
           />
         )}
-        {filteredPermissions.length > 0 && (
+        {filteredAdmin.length > 0 && (
           <Group
-            label="nav.group.permissions"
-            items={filteredPermissions}
+            label="nav.group.admin"
+            items={filteredAdmin}
             pathname={pathname}
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
           />
         )}
-        {filteredAdmin.length > 0 && (
+        {filteredPermissions.length > 0 && (
           <Group
-            label="nav.group.admin"
-            items={filteredAdmin}
+            label="nav.group.permissions"
+            items={filteredPermissions}
             pathname={pathname}
             searchStr={searchStr}
             collapsed={isCollapsed}

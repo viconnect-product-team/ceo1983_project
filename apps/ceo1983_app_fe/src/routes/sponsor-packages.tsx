@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Check,
   Handshake,
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader, StatCard } from "@/components/dashboard/PageKit";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { useServerData } from "@/hooks/use-server-data";
 import { SponsorPackageModal, type PackageDraft } from "@/components/dashboard/SponsorPackageModal";
 import {
@@ -149,6 +150,19 @@ function PackagesPage() {
     });
   }, [packages, selectedTier, selectedType, searchQuery, t]);
 
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedTier, selectedType, searchQuery]);
+
+  const paginatedPackages = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredPackages.slice(start, start + pageSize);
+  }, [filteredPackages, page, pageSize]);
+
   return (
     <AppShell>
       <PageHeader
@@ -270,7 +284,7 @@ function PackagesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {filteredPackages.map((p) => {
+          {paginatedPackages.map((p) => {
             const remain = Math.max(0, p.available - p.sold);
             const soldPct =
               p.available > 0 ? Math.min(100, Math.round((p.sold / p.available) * 100)) : 0;
@@ -397,6 +411,25 @@ function PackagesPage() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {filteredPackages.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <Pagination
+            page={page}
+            pageCount={Math.max(1, Math.ceil(filteredPackages.length / pageSize))}
+            pageSize={pageSize}
+            total={filteredPackages.length}
+            from={(page - 1) * pageSize + 1}
+            to={Math.min(page * pageSize, filteredPackages.length)}
+            pageSizeOptions={[8, 16, 24, 48]}
+            onPage={setPage}
+            onPageSize={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+          />
         </div>
       )}
 
