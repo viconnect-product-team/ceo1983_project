@@ -960,9 +960,15 @@ export function TaskFormModal({
                   step="100000"
                   placeholder="VD: 50000000"
                   value={estimatedBudget}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) => setEstimatedBudget(e.target.value)}
                   className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 font-mono focus:border-[#003B95] outline-none"
                 />
+                {Number(estimatedBudget) > 0 && (
+                  <p className="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    ~ {Number(estimatedBudget).toLocaleString("vi-VN")} VNĐ
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -974,9 +980,15 @@ export function TaskFormModal({
                   step="100000"
                   placeholder="VD: 45000000"
                   value={actualBudget}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) => setActualBudget(e.target.value)}
                   className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 font-mono focus:border-[#003B95] outline-none"
                 />
+                {Number(actualBudget) > 0 && (
+                  <p className="mt-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                    ~ {Number(actualBudget).toLocaleString("vi-VN")} VNĐ
+                  </p>
+                )}
               </div>
             </div>
           </div>

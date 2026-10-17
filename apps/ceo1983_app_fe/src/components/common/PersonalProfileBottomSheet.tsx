@@ -302,60 +302,40 @@ export function PersonalProfileBottomSheet({
             </div>
           </div>
 
-          {/* Avatar + Quick Action Row */}
-          <div className="flex items-end justify-between -mt-9 mb-2.5 px-1">
+          {/* Avatar & Verification Badge Row */}
+          <div className="flex items-end justify-between -mt-9 mb-3 px-1">
             <div className="relative shrink-0">
               {resolvedAvatar ? (
                 <img
                   src={resolvedAvatar}
                   alt={profile.displayName}
-                  className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl border-3 border-white dark:border-[#0A1224] object-cover shadow-lg bg-white dark:bg-slate-800"
+                  className="h-18 w-18 rounded-2xl border-3 border-white dark:border-[#0A1224] object-cover shadow-lg bg-white dark:bg-slate-800"
                 />
               ) : (
-                <div className="h-16 w-16 sm:h-18 sm:w-18 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-tr from-[#003B95] to-[#002B70] text-amber-300 font-black text-xl grid place-items-center shadow-lg">
+                <div className="h-18 w-18 rounded-2xl border-2 border-amber-400/50 bg-gradient-to-tr from-[#003B95] to-[#002B70] text-amber-300 font-black text-xl grid place-items-center shadow-lg">
                   {initials}
                 </div>
               )}
               <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0A1224]" />
             </div>
 
-            {/* Cụm nút hành động nhanh bên phải avatar */}
-            <div className="flex items-center gap-1.5 mb-0.5">
-              {onOpenQr && (
-                <button
-                  type="button"
-                  onClick={onOpenQr}
-                  className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[#003B95] dark:text-blue-400 hover:bg-slate-100 transition active:scale-95 shadow-xs cursor-pointer"
-                  title="Mở mã QR danh thiếp"
-                >
-                  <QrCode className="h-4.5 w-4.5" />
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={handleShare}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition active:scale-95 shadow-xs cursor-pointer"
-                title="Chia sẻ hồ sơ"
-              >
-                {copiedLink ? <Check className="h-4.5 w-4.5 text-emerald-500" /> : <Share2 className="h-4.5 w-4.5" />}
-              </button>
-
-              {onEdit && (
-                <button
-                  type="button"
-                  onClick={onEdit}
-                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-[11px] font-bold shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer"
-                >
-                  <Pencil className="h-3 w-3" />
-                  <span>Sửa</span>
-                </button>
-              )}
-            </div>
+            {/* Logo hoặc Huy hiệu cấp cao bên phải Avatar */}
+            {profile.companyLogo ? (
+              <img
+                src={resolveMediaUrl(profile.companyLogo) || undefined}
+                alt="Company Logo"
+                className="h-10 max-w-[110px] object-contain rounded-lg border border-slate-200/80 dark:border-slate-800 bg-white/90 p-1 shadow-xs"
+              />
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+                <BadgeCheck className="h-3.5 w-3.5" />
+                <span>CLB CEO 1983</span>
+              </div>
+            )}
           </div>
 
-          {/* Tên & Chức danh */}
-          <div className="space-y-1 mb-4">
+          {/* Tên & Chức danh Doanh Nhân */}
+          <div className="space-y-1 mb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900 dark:text-white leading-tight">
                 {profile.displayName || "Doanh nhân"}
@@ -364,8 +344,8 @@ export function PersonalProfileBottomSheet({
             </div>
 
             {profile.jobTitle && (
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                <Briefcase className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+              <div className="flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-blue-400">
+                <Briefcase className="h-3.5 w-3.5 shrink-0" />
                 <span>{profile.jobTitle}</span>
               </div>
             )}
@@ -375,6 +355,43 @@ export function PersonalProfileBottomSheet({
                 <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <span className="truncate">{profile.companyName}</span>
               </div>
+            )}
+          </div>
+
+          {/* Cụm 3 nút hành động chuẩn Executive: Mã QR - Chia sẻ - Chỉnh sửa (Không chen lấn, hàng lối tinh tế) */}
+          <div className="grid grid-cols-3 gap-2 mb-4 w-full">
+            {onOpenQr && (
+              <button
+                type="button"
+                onClick={onOpenQr}
+                className="flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#003B95] dark:text-blue-400 text-xs font-bold shadow-xs hover:bg-slate-50 dark:hover:bg-slate-750 transition active:scale-95 cursor-pointer"
+                title="Mở mã QR danh thiếp"
+              >
+                <QrCode className="h-4 w-4 shrink-0" />
+                <span>Mã QR</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className="flex items-center justify-center gap-1.5 h-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-xs hover:bg-slate-50 dark:hover:bg-slate-750 transition active:scale-95 cursor-pointer"
+              title="Chia sẻ hồ sơ"
+            >
+              {copiedLink ? <Check className="h-4 w-4 text-emerald-500 shrink-0" /> : <Share2 className="h-4 w-4 text-slate-500 shrink-0" />}
+              <span>{copiedLink ? "Đã chép" : "Chia sẻ"}</span>
+            </button>
+
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="flex items-center justify-center gap-1.5 h-10 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] text-white text-xs font-bold shadow-sm hover:brightness-105 transition active:scale-95 cursor-pointer"
+                title="Chỉnh sửa hồ sơ"
+              >
+                <Pencil className="h-3.5 w-3.5 shrink-0" />
+                <span>Chỉnh sửa</span>
+              </button>
             )}
           </div>
 

@@ -106,7 +106,11 @@
 #   - Phân quyền Mobile App:
 #     + Tin tức CLB: Chỉ các vai trò `Quản trị`, `Admin`, `Chủ tịch`, `Trưởng ban` mới có quyền Đăng, Sửa, Xóa tin bài. Thành viên thông thường chỉ có quyền xem.
 #     + Quét mã Check-in Sự kiện: Phụ thuộc vào danh sách nhân sự được phân quyền quét mã từ CRM (`qrScanners` / `qrStaff`). Riêng `Quản trị`, `Chủ tịch`, `Admin` luôn có toàn quyền quét mã mọi sự kiện.
-#   - Chuẩn hóa Ô nhập Tiền tệ VNĐ: Tuyệt đối không để `isComposingRef` chặn sự kiện gõ số trên `inputMode="numeric"`. Đảm bảo người dùng nhập số tiền mượt mà trên bàn phím số di động và các bộ gõ tiếng Việt.
+#   - Chuẩn hóa Ô nhập Tiền tệ & Giá cả Toàn diện (Strict Currency & Price Input Standard):
+#     + Tuyệt đối không để `isComposingRef` chặn sự kiện gõ số trên `inputMode="numeric"`. Đảm bảo người dùng nhập số tiền mượt mà trên bàn phím số di động và các bộ gõ tiếng Việt.
+#     + Cơ Chế Auto-Select Khi Focus: Tất cả các component nhập tiền tệ (`StandardCurrencyInput`, `VndCurrencyInput`, `FormattedCurrencyInput`) và các ô nhập số/giá/ngân sách bắt buộc tích hợp `setTimeout(() => inputRef.current?.select(), 20)` khi `onFocus` để người dùng nhấp chuột hoặc chạm vào là bôi đen toàn bộ giá trị cũ, gõ phím mới là ghi đè ngay tức thì mà không cần phải xóa thủ công từng ký tự.
+#     + Loại Bỏ Số 0 Cản Trở Ở Đầu: Tuyệt đối không để số `0` mặc định che khuất placeholder; khi gõ số sau `0`, tự động bóc tách số `0` ở đầu (`clean = digits.replace(/^0+(?=\d)/, "")`) để không bị thành chuỗi số sai lệch (ví dụ gõ 5 vào 0 không bị thành 50 hay 05).
+#     + Bảo Toàn Vị Trí Con Trỏ (Caret Preservation): Khi định dạng dấu chấm ngăn cách hàng nghìn (`.`), tính toán chính xác số lượng chữ số đứng trước con trỏ để đặt lại vị trí con trỏ sau khi render, ngăn chặn hiện tượng nhảy con trỏ về cuối ô nhập.
 #   - Quy Chuẩn Thẻ Hội Viên Trang Chủ & Thẻ Trung Tâm (Member Card Standards):
 #     + Thẻ Hội Viên Trang Chủ (Hero Member Card): Ngoài ảnh bìa, avatar, tên hội viên, chức danh, số điện thoại và icon chỉnh sửa thì TUYỆT ĐỐI KHÔNG xuất hiện bất kỳ thông tin nào khác (không hiện logo, không hiện tên công ty, không hiện badge dư thừa).
 #     + Thẻ Hội Viên Ở Giữa (Central Card): Bỏ hiện tên công ty cùng logo doanh nghiệp; chỉ hiện Họ tên và Số điện thoại; Phần mã QR làm kích thước to hơn (`size={200}`) hiển thị nổi bật và quét nhanh chóng.

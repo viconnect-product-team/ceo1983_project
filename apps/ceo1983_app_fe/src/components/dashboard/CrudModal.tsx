@@ -302,7 +302,7 @@ export function CrudModal({
         } else {
           base[f.name] =
             initial?.[f.name] ??
-            (f.type === "number" ? 0 : f.type === "select" ? (f.placeholder ? "" : (f.options[0]?.value ?? "")) : "");
+            (f.type === "number" ? "" : f.type === "select" ? (f.placeholder ? "" : (f.options[0]?.value ?? "")) : "");
         }
       }
       setValues(base);
@@ -380,6 +380,8 @@ export function CrudModal({
     }
     onSubmit(out);
   };
+
+  if (!open) return null;
 
   return (
     <div
@@ -519,6 +521,11 @@ export function CrudModal({
                     type={f.type}
                     value={String(values[f.name] ?? "")}
                     placeholder={f.placeholder || `Nhập ${typeof f.label === "string" ? f.label.toLowerCase() : ""}...`}
+                    onFocus={(e) => {
+                      if (f.type === "number") {
+                        e.currentTarget.select();
+                      }
+                    }}
                     onChange={(e) => set(f.name, e.target.value)}
                     className={stateInputCls}
                   />

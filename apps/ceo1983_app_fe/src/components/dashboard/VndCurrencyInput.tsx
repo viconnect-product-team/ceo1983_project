@@ -3,11 +3,14 @@ import React from "react";
 export function formatVndNumber(val: number | string): string {
   const digits = String(val ?? "").replace(/\D/g, "");
   if (!digits) return "";
-  const num = parseInt(digits, 10);
+  const clean = digits.replace(/^0+(?=\d)/, "");
+  if (!clean) return "0";
+  const num = parseInt(clean, 10);
   return num.toLocaleString("vi-VN");
 }
 
-export function parseVndNumber(formatted: string): number {
+export function parseVndNumber(formatted: string | number): number {
+  if (typeof formatted === "number") return isNaN(formatted) ? 0 : formatted;
   const digits = String(formatted ?? "").replace(/\D/g, "");
   return digits ? parseInt(digits, 10) : 0;
 }
@@ -110,9 +113,16 @@ export function VndCurrencyInput({
     const rawValue = input.value;
     const cursor = input.selectionStart ?? rawValue.length;
 
+    if (!rawValue) {
+      nextCursorRef.current = 0;
+      setDisplayVal("");
+      onChange(0);
+      return;
+    }
+
     const digitsBeforeCursor = rawValue.slice(0, cursor).replace(/\D/g, "").length;
     const num = parseVndNumber(rawValue);
-    const formatted = rawValue ? formatVndNumber(rawValue) : "";
+    const formatted = rawValue === "0" ? "0" : formatVndNumber(rawValue);
 
     let newCursor = 0;
     if (digitsBeforeCursor === 0) {
@@ -147,6 +157,11 @@ export function VndCurrencyInput({
           value={displayVal}
           onFocus={() => {
             isFocusedRef.current = true;
+            setTimeout(() => {
+              if (inputRef.current) {
+                inputRef.current.select();
+              }
+            }, 20);
           }}
           onBlur={() => {
             isFocusedRef.current = false;

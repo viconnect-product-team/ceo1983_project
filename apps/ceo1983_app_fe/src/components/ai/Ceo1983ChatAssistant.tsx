@@ -153,6 +153,69 @@ export function Ceo1983ChatAssistant() {
     };
   }, []);
 
+  // Floating button position, dragging & quick close
+  const [btnPos, setBtnPos] = useState<{ x?: number; y?: number }>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = localStorage.getItem("ceo1983_ai_btn_pos");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+  const [isDismissed, setIsDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return sessionStorage.getItem("ceo1983_ai_dismissed") === "true";
+    } catch {}
+    return false;
+  });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef<{ x: number; y: number; posX: number; posY: number }>({
+    x: 0,
+    y: 0,
+    posX: 0,
+    posY: 0,
+  });
+  const hasDraggedRef = useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    isDraggingRef.current = true;
+    hasDraggedRef.current = false;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      posX: btnPos.x ?? rect.left,
+      posY: btnPos.y ?? rect.top,
+    };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      hasDraggedRef.current = true;
+    }
+    const maxX = window.innerWidth - 68;
+    const maxY = window.innerHeight - 84;
+    const newX = Math.max(8, Math.min(maxX, dragStartRef.current.posX + dx));
+    const newY = Math.max(8, Math.min(maxY, dragStartRef.current.posY + dy));
+    setBtnPos({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    if (hasDraggedRef.current && btnPos.x !== undefined && btnPos.y !== undefined) {
+      localStorage.setItem("ceo1983_ai_btn_pos", JSON.stringify(btnPos));
+    }
+  };
+
   // Quota: Limit 50 questions per account
   const [quota, setQuota] = useState<UserAiQuota>({
     userId: "",
@@ -538,7 +601,7 @@ export function Ceo1983ChatAssistant() {
       return {
         text: `Dạ cơ cấu tổ chức CLB Doanh Nhân CEO 1983 trực thuộc HanoiBA gồm **6 Ban chuyên môn cốt lõi**:\n\n1. 🏛️ **Ban Điều Hành**: Lãnh đạo chung, định hướng chiến lược và đại diện CLB.\n2. 👥 **Ban Thành Viên**: Phát triển mạng lưới, thẩm định hồ sơ kết nạp và chăm sóc hội viên.\n3. 💼 **Ban Xúc Tiến Thương Mại**: Điều phối giao thương B2B, tổ chức phiên kết nối cung cầu.\n4. 📢 **Ban Truyền Thông**: Quảng bá hình ảnh, phụ trách Caravan, Gala và bản tin số.\n5. 💰 **Ban Tài Chính**: Quản trị ngân sách, quỹ CLB và thu hội phí niên liễm.\n6. ❤️ **Ban Thiện Nguyện**: Tổ chức các chương trình an sinh xã hội, vì cộng đồng vùng cao.\n\nMọi hoạt động và phê duyệt đều được phân quyền chặt chẽ trên hệ thống số hóa của CLB ạ!`,
         actionLink: { label: "Xem Phân Quyền & Ban Chuyên Môn", route: "/association/permissions" },
-        suggestions: ["Sự kiện tôi đã đăng ký", "Tôi có bao nhiêu bạn bè?", "Hóa đơn phải thanh toán?"],
+        suggestions: ["Ban chấp hành gồm ai?", "Ban truyền thông làm gì?", "Hội phí bao nhiêu?"],
       };
     }
 
@@ -547,6 +610,118 @@ export function Ceo1983ChatAssistant() {
       return {
         text: `Dạ thông tin tài khoản hội viên của Anh/Chị trên hệ thống:\n\n👤 **Họ và tên**: **${name}**\n🔖 **Mã hội viên**: \`${p?.code || "CEO-1983-001"}\`\n🏢 **Doanh nghiệp**: **${p?.company}**\n💼 **Chức vụ**: **${p?.title}**\n🛡️ **Vai trò hệ thống**: **${p?.role || "Quản trị viên / Hội viên chính thức"}**\n📱 **Điện thoại**: **${p?.phone}** | ✉️ **Email**: **${p?.email}**\n\nAnh/Chị có thể quản lý và chia sẻ mã QR danh thiếp số bất cứ lúc nào!`,
         actionLink: { label: "Mở Danh Thiếp Cá Nhân", route: "/association/card" },
+      };
+    }
+
+    // 8. Board of Directors / Leadership
+    if (
+      norm.includes("chu tich") ||
+      norm.includes("pho chu tich") ||
+      norm.includes("tong thu ky") ||
+      norm.includes("ban chap hanh") ||
+      norm.includes("lanh dao") ||
+      norm.includes("bch")
+    ) {
+      return {
+        text: `Dạ Ban Chấp Hành CLB Doanh Nhân CEO 1983 nhiệm kỳ hiện tại gồm các lãnh đạo tâm huyết:\n\n` +
+          `👑 **Chủ tịch**: **Chị Lê Thị Dung** (Tổng Giám Đốc DGroup)\n` +
+          `⭐ **Các Phó Chủ tịch**:\n` +
+          `  - **Anh Hoàng Thanh Tuấn** (Phó Chủ tịch Thường trực)\n` +
+          `  - **Anh Nguyễn Thanh Tuấn** (Phó Chủ tịch)\n` +
+          `  - **Anh Nguyễn Trung Kiên** (Phó Chủ tịch)\n` +
+          `  - **Anh Đỗ Minh Thành** (Phó Chủ tịch)\n` +
+          `  - **Anh Nguyễn Thế Duẩn** (Phó Chủ tịch)\n` +
+          `📜 **Tổng thư ký**: **Anh Nguyễn Đình Toản** (Trưởng ban Thư ký)\n\n` +
+          `Ban Chấp Hành luôn sát cánh cùng hơn 200 doanh nhân tuổi Quý Hợi 1983 phát triển bền vững và gắn kết!`,
+        actionLink: { label: "Xem Phân Quyền & Ban Chuyên Môn", route: "/association/permissions" },
+        suggestions: ["Ban truyền thông làm gì?", "Hội phí bao nhiêu?", "Lịch sự kiện sắp tới"],
+      };
+    }
+
+    // 9. 4 Specialized Departments Details
+    if (
+      norm.includes("ban truyen thong") ||
+      norm.includes("ban thanh vien") ||
+      norm.includes("ban xuc tien") ||
+      norm.includes("ban thu ky")
+    ) {
+      if (norm.includes("truyen thong")) {
+        return {
+          text: `📢 **Ban Truyền Thông CLB CEO 1983**:\n\n` +
+            `- Phụ trách truyền thông thương hiệu, sự kiện, bản tin số và thông báo đẩy tới hội viên.\n` +
+            `- Quản trị và cập nhật **Kho ảnh sự kiện Google Drive** chất lượng cao sau mỗi chương trình Caravan, Gala, Forum.\n` +
+            `- Điều phối nội dung tin tức và ấn phẩm truyền thông toàn diện.`,
+          actionLink: { label: "Xem Tin Tức & Sự Kiện", route: "/association/events" },
+        };
+      }
+      if (norm.includes("thanh vien")) {
+        return {
+          text: `👥 **Ban Thành Viên CLB CEO 1983**:\n\n` +
+            `- Tiếp nhận và thẩm định hồ sơ kết nạp doanh nhân mới.\n` +
+            `- Quản trị danh bạ hội viên, chăm sóc ngày sinh nhật và lễ kỷ niệm.\n` +
+            `- Theo dõi gia hạn hội viên và cung cấp **Template Hồ sơ Doanh Nghiệp 3D** cao cấp cho các thành viên.`,
+          actionLink: { label: "Xem Danh Bạ Thành Viên", route: "/association/members" },
+        };
+      }
+      if (norm.includes("xuc tien")) {
+        return {
+          text: `💼 **Ban Xúc Tiến Thương Mại CLB CEO 1983**:\n\n` +
+            `- Điều phối các cơ hội giao thương B2B, phiên chợ Marketplace nội bộ.\n` +
+            `- Kết nối các cặp doanh nghiệp đối tác, hỗ trợ báo giá VIP và xúc tiến hợp đồng liên kết.\n` +
+            `- Thúc đẩy tiêu dùng chéo và gia tăng doanh số trong cộng đồng 1983.`,
+          actionLink: { label: "Khám Phá Sàn B2B", route: "/association/opportunities" },
+        };
+      }
+      if (norm.includes("thu ky")) {
+        return {
+          text: `🏛️ **Ban Thư Ký & Ban Điều Hành CLB CEO 1983**:\n\n` +
+            `- Lên lịch và tổ chức các cuộc họp Ban Chấp Hành (cả hình thức Offline tại trụ sở và Online).\n` +
+            `- Soạn thảo, ban hành và lưu trữ các văn bản, nghị quyết, điều lệ Hiệp hội.\n` +
+            `- Quản trị phân quyền tài liệu Hiệp Hội và bảo mật thông tin nội bộ.`,
+          actionLink: { label: "Xem Lịch Họp & Văn Bản", route: "/association/library" },
+        };
+      }
+    }
+
+    // 10. Dues policy & Bank details
+    if (
+      norm.includes("hoi phi bao nhieu") ||
+      norm.includes("dong tien") ||
+      norm.includes("so tai khoan") ||
+      norm.includes("ngan hang") ||
+      norm.includes("chuyen khoan") ||
+      norm.includes("quy dinh hoi phi")
+    ) {
+      return {
+        text: `💳 **Quy Chế Hội Phí Thường Niên CLB Doanh Nhân CEO 1983**:\n\n` +
+          `- **Mức hội phí**: **10.000.000 VNĐ / năm**.\n` +
+          `- **Ngân hàng thụ hưởng**: **Ngân hàng Quân Đội (MB Bank)**.\n` +
+          `- **Chủ tài khoản**: **Hiệp Hội Doanh Nhân CEO 1983 (HanoiBA)**.\n` +
+          `- **Cú pháp chuyển khoản**: \`${p?.code || "MÃ_HỘI_VIÊN"} ${name} HP2026\`\n\n` +
+          `💡 Anh/Chị có thể quét mã VietQR tự động điền sẵn số tiền và nội dung bằng cách nhấn nút bên dưới ạ!`,
+        actionLink: { label: "Thanh Toán VietQR Tự Động", route: "/association/renew/pay" },
+        suggestions: ["Hóa đơn của tôi", "Tôi có bao nhiêu bạn bè?"],
+      };
+    }
+
+    // 11. Documents and policy
+    if (norm.includes("tai lieu") || norm.includes("van ban") || norm.includes("nghi quyet") || norm.includes("dieu le")) {
+      return {
+        text: `📚 **Phân Hệ Quản Lý Tài Liệu CLB CEO 1983**:\n\n` +
+          `1. 🏛️ **Tài liệu Hiệp Hội**: Gồm điều lệ, quy chế hoạt động, nghị quyết BCH, báo cáo tài chính. Phân quyền bảo mật cao: Chỉ Quản trị viên, Chủ tịch và Trưởng các ban mới có quyền thêm/sửa/xóa; hội viên thường có quyền xem và tải về.\n` +
+          `2. 🏢 **Tài liệu Doanh Nghiệp**: Doanh nghiệp hội viên tự do đăng tải hồ sơ năng lực, brochure, catalogue sản phẩm để giới thiệu tới các thành viên khác.`,
+        actionLink: { label: "Mở Thư Viện Tài Liệu", route: "/association/library" },
+      };
+    }
+
+    // 12. Profile 3D and Card visit
+    if (norm.includes("danh thiep") || norm.includes("profile") || norm.includes("quet ma") || norm.includes("the hoi vien") || norm.includes("ho so")) {
+      return {
+        text: `🪪 **Thẻ Doanh Nhân & Profile 3D CEO 1983**:\n\n` +
+          `- Mỗi hội viên được cấp 1 thẻ danh thiếp số điện tử tích hợp công nghệ chạm NFC và mã QR độc bản.\n` +
+          `- Khi đối tác quét mã QR, hệ thống sẽ hiển thị thông tin danh thiếp và **Template Profile Doanh Nghiệp 3D** với hình ảnh chìm cao cấp, dấu mộc chứng nhận CEO 1983.\n` +
+          `- Nếu danh thiếp chưa thuộc hội viên CLB, hệ thống sẽ hỗ trợ kết nối và mời tải ứng dụng ViOne Connect.`,
+        actionLink: { label: "Xem Danh Thiếp & Profile", route: "/association/card" },
       };
     }
 
@@ -850,38 +1025,83 @@ HƯỚNG DẪN TRẢ LỜI:
 
   return (
     <>
-      {/* ── 1. FLOATING ASSISTANT BUTTON (LUXURY GOLD & NAVY) ── */}
-      {!isOpen && (
+      {/* ── 1. FLOATING ASSISTANT BUTTON (DRAGGABLE & QUICK CLOSE) ── */}
+      {!isOpen && !isDismissed && (
         <aside
           aria-label="Khung nổi trợ lý thông minh"
-          className="fixed bottom-20 right-3.5 z-40 flex flex-col items-end pointer-events-auto"
+          className="fixed bottom-20 right-3.5 z-40 flex flex-col items-end pointer-events-auto touch-none"
+          style={
+            btnPos.x !== undefined && btnPos.y !== undefined
+              ? { left: `${btnPos.x}px`, top: `${btnPos.y}px`, bottom: "auto", right: "auto", position: "fixed" }
+              : undefined
+          }
         >
-          <button
-            type="button"
-            onClick={() => setIsOpen(true)}
-            className="group relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#001D4A] via-[#003B95] to-[#0A266E] border-2 border-amber-400 shadow-[0_8px_25px_rgba(245,158,11,0.45)] hover:shadow-[0_10px_30px_rgba(245,158,11,0.65)] hover:scale-108 active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden p-1.5"
-            title="Trợ lý AI CEO 1983"
-            aria-label="Mở Trợ lý AI CEO 1983"
-          >
-            {/* Glowing Amber Pulse */}
-            <span className="absolute inset-0 rounded-2xl bg-amber-400/20 animate-ping pointer-events-none" />
-
-            {/* Character Image */}
-            <img
-              src={AI_CHARACTER_IMAGE}
-              alt="AI Assistant"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
+          <div className="relative group">
+            {/* Quick close button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDismissed(true);
+                sessionStorage.setItem("ceo1983_ai_dismissed", "true");
+                toast.info("Đã thu gọn trợ lý AI. Chạm vào mép màn hình để mở lại.");
               }}
-              className="h-full w-full object-contain filter drop-shadow-md group-hover:scale-110 transition-transform duration-300"
-            />
+              aria-label="Thu gọn trợ lý AI"
+              title="Thu gọn trợ lý AI"
+              className="absolute -top-1.5 -left-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900/90 text-white hover:bg-rose-600 hover:text-white border border-amber-400/80 shadow-md cursor-pointer transition active:scale-90"
+            >
+              <X className="h-3 w-3 stroke-[2.5]" />
+            </button>
 
-            {/* Online Sparkle Badge */}
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-slate-950 font-black text-[9px] ring-2 ring-white dark:ring-slate-900 shadow-sm animate-pulse">
-              <Sparkles className="h-2.5 w-2.5" />
-            </span>
-          </button>
+            <button
+              type="button"
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onClick={() => {
+                if (hasDraggedRef.current) return;
+                setIsOpen(true);
+              }}
+              className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#001D4A] via-[#003B95] to-[#0A266E] border-2 border-amber-400 shadow-[0_8px_25px_rgba(245,158,11,0.45)] hover:shadow-[0_10px_30px_rgba(245,158,11,0.65)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden p-1.5"
+              title="Kéo để di chuyển • Chạm để mở Trợ lý AI CEO 1983"
+              aria-label="Mở Trợ lý AI CEO 1983"
+            >
+              {/* Glowing Amber Pulse */}
+              <span className="absolute inset-0 rounded-2xl bg-amber-400/20 animate-ping pointer-events-none" />
+
+              {/* Character Image */}
+              <img
+                src={AI_CHARACTER_IMAGE}
+                alt="AI Assistant"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
+                }}
+                className="h-full w-full object-contain filter drop-shadow-md group-hover:scale-110 transition-transform duration-300 pointer-events-none select-none"
+              />
+
+              {/* Online Sparkle Badge */}
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-slate-950 font-black text-[9px] ring-2 ring-white dark:ring-slate-900 shadow-sm animate-pulse pointer-events-none">
+                <Sparkles className="h-2.5 w-2.5" />
+              </span>
+            </button>
+          </div>
         </aside>
+      )}
+
+      {/* ── 1.1 MINI DOCK BUTTON (WHEN DISMISSED) ── */}
+      {!isOpen && isDismissed && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsDismissed(false);
+            sessionStorage.removeItem("ceo1983_ai_dismissed");
+          }}
+          className="fixed bottom-24 right-0 z-40 flex items-center gap-1.5 rounded-l-2xl bg-gradient-to-l from-amber-500 to-[#003B95] px-2.5 py-1.5 text-xs font-bold text-white shadow-lg border-y border-l border-amber-400 cursor-pointer active:scale-95 transition animate-in slide-in-from-right duration-200"
+          title="Mở lại Trợ lý AI CEO 1983"
+        >
+          <Bot className="h-4 w-4 text-amber-200" />
+          <span>AI</span>
+        </button>
       )}
 
       {/* ── 2. CHAT DRAWER / POPUP MODAL (MOBILE SLIDE-UP) ── */}

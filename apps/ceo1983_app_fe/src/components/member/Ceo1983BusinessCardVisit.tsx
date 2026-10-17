@@ -39,7 +39,6 @@ export function Ceo1983BusinessCardVisit({
   phone = "036xxxxxxx",
   email = "username@gmail.com",
   company = "CÂU LẠC BỘ CEO1983",
-  companyLogoUrl,
   website = "https://ceo1983club.com",
   clubEmail = "info@ceo1983club.com",
   qrValue,
@@ -47,62 +46,12 @@ export function Ceo1983BusinessCardVisit({
   cardCode,
   className = "",
   showActions = true,
-  onCompanyLogoUpdated,
 }: Ceo1983BusinessCardVisitProps) {
   const [copied, setCopied] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [captureModalOpen, setCaptureModalOpen] = useState(false);
   const [customBgImage, setCustomBgImage] = useState<string | null>(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [localCompanyLogo, setLocalCompanyLogo] = useState<string | null>(() => {
-    if (companyLogoUrl && !isBlackBackgroundLogo(companyLogoUrl)) {
-      return companyLogoUrl;
-    }
-    if (typeof window !== "undefined") {
-      try {
-        const direct = localStorage.getItem("vba_member_company_logo");
-        if (direct && !isBlackBackgroundLogo(direct)) return direct;
-        const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
-        if (cp?.companyLogo && !isBlackBackgroundLogo(cp.companyLogo)) return cp.companyLogo;
-        const mem = JSON.parse(localStorage.getItem("vba_my_member") || "null");
-        if ((mem?.companyLogoUrl || mem?.companyLogo) && !isBlackBackgroundLogo(mem?.companyLogoUrl || mem?.companyLogo)) {
-          return mem.companyLogoUrl || mem.companyLogo;
-        }
-      } catch {}
-    }
-    return companyLogoUrl || null;
-  });
 
-  useEffect(() => {
-    if (companyLogoUrl && !isBlackBackgroundLogo(companyLogoUrl)) {
-      setLocalCompanyLogo(companyLogoUrl);
-    }
-  }, [companyLogoUrl]);
-
-  useEffect(() => {
-    const handleLogoUpdate = (e?: any) => {
-      const url = e?.detail || localStorage.getItem("vba_member_company_logo");
-      if (url && !isBlackBackgroundLogo(url)) setLocalCompanyLogo(url);
-    };
-    const handleProfileUpdate = (e?: any) => {
-      const logo = e?.detail?.companyLogo || e?.detail?.companyLogoUrl;
-      if (logo && !isBlackBackgroundLogo(logo)) setLocalCompanyLogo(logo);
-    };
-    window.addEventListener("vba_member_company_logo_updated", handleLogoUpdate);
-    window.addEventListener("profile-updated", handleProfileUpdate);
-    window.addEventListener("vba_profile_updated", handleProfileUpdate);
-    return () => {
-      window.removeEventListener("vba_member_company_logo_updated", handleLogoUpdate);
-      window.removeEventListener("profile-updated", handleProfileUpdate);
-      window.removeEventListener("vba_profile_updated", handleProfileUpdate);
-    };
-  }, []);
-
-  const companyLogoInputRef = useRef<HTMLInputElement>(null);
-
-  const validLocalLogo = isBlackBackgroundLogo(localCompanyLogo) ? null : localCompanyLogo;
-  const validCompanyLogoUrl = isBlackBackgroundLogo(companyLogoUrl) ? null : companyLogoUrl;
-  const displayCompanyLogo = validLocalLogo || validCompanyLogoUrl || "/ceo1983-official-logo.png";
   const effectiveQr = qrValue || (cardCode ? `https://ceo1983club.com/card/${cardCode}` : `https://ceo1983club.com`);
 
   const handleCopyLink = async () => {
@@ -132,92 +81,8 @@ export function Ceo1983BusinessCardVisit({
     }
   };
 
-  const handleUploadCompanyLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingLogo(true);
-    try {
-      // 1. Client-side compression to avoid QuotaExceededError and ensure instant reactivity
-      const { dataUrl, blob } = await compressImage(file, 400, 400, 0.85);
-
-      // Instant local state update
-      setLocalCompanyLogo(dataUrl);
-
-      // Save to all relevant localStorage keys
-      try {
-        localStorage.setItem("vba_member_company_logo", dataUrl);
-
-        const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
-        cp.companyLogo = dataUrl;
-        localStorage.setItem("vba_custom_profile", JSON.stringify(cp));
-
-        const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
-        mem.companyLogo = dataUrl;
-        mem.companyLogoUrl = dataUrl;
-        localStorage.setItem("vba_my_member", JSON.stringify(mem));
-      } catch (storageErr) {
-        console.warn("Storage quota warning:", storageErr);
-      }
-
-      // Dispatch global events for instant sync across all open routes and components
-      window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: dataUrl }));
-      window.dispatchEvent(new CustomEvent("profile-updated", { detail: { companyLogo: dataUrl } }));
-      window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: { companyLogo: dataUrl } }));
-
-      if (onCompanyLogoUpdated) {
-        onCompanyLogoUpdated(dataUrl);
-      }
-
-      // Background upload to server (non-blocking) and replace with clean MinIO URL
-      uploadFileToNest(blob, file.name || "company-logo.png")
-        .then(async (uploadedUrl) => {
-          if (uploadedUrl) {
-            setLocalCompanyLogo(uploadedUrl);
-            try {
-              localStorage.setItem("vba_member_company_logo", uploadedUrl);
-              const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
-              cp.companyLogo = uploadedUrl;
-              localStorage.setItem("vba_custom_profile", JSON.stringify(cp));
-              const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
-              mem.companyLogo = uploadedUrl;
-              mem.companyLogoUrl = uploadedUrl;
-              localStorage.setItem("vba_my_member", JSON.stringify(mem));
-            } catch {}
-            window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: uploadedUrl }));
-            window.dispatchEvent(new CustomEvent("profile-updated", { detail: { companyLogo: uploadedUrl } }));
-            window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: { companyLogo: uploadedUrl } }));
-            if (onCompanyLogoUpdated) {
-              onCompanyLogoUpdated(uploadedUrl);
-            }
-            await fetchNestApi("/members/me", {
-              method: "PATCH",
-              body: JSON.stringify({ companyLogoUrl: uploadedUrl }),
-            }).catch(() => null);
-          }
-        })
-        .catch(() => {});
-
-      toast.success("Đã cập nhật logo công ty thành công!");
-    } catch {
-      toast.error("Không thể tải lên logo công ty");
-    } finally {
-      setUploadingLogo(false);
-      if (e.target) e.target.value = "";
-    }
-  };
-
   return (
     <div className={`w-full max-w-lg mx-auto ${className}`}>
-      {/* Hidden file input for logo */}
-      <input
-        type="file"
-        ref={companyLogoInputRef}
-        accept="image/*"
-        className="hidden"
-        onChange={handleUploadCompanyLogo}
-      />
-
       {/* 2D Flat Luxury Executive Card Container - No Flip, Clean & Direct */}
       <div className="relative w-full aspect-[16/10] sm:aspect-[1.7/1] rounded-2xl shadow-[0_8px_30px_-5px_rgba(245,158,11,0.22)] border-2 border-amber-400/60 bg-gradient-to-br from-white via-amber-50/15 to-white overflow-hidden select-none">
         {/* ==================================================================== */}
@@ -388,14 +253,7 @@ export function Ceo1983BusinessCardVisit({
         </div>
       )}
 
-      {/* Hidden input for company logo upload */}
-      <input
-        ref={companyLogoInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleUploadCompanyLogo}
-      />
+
 
       {/* Modal Mã QR của tôi & Quét QR (Căn giữa màn hình) */}
       <AssociationMemberQrModal

@@ -49,6 +49,8 @@ import {
   Eye,
   EyeOff,
   Download,
+  Upload,
+  FileUp,
 } from "lucide-react";
 import heroImg from "@/assets/vba-hero.jpg";
 import { useServerFn } from "@tanstack/react-start";
@@ -687,6 +689,62 @@ function CardScreen() {
     }
   };
 
+  const profileFileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
+
+  const handleUploadCompanyProfile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Dung lượng tệp hồ sơ không được vượt quá 25MB");
+      return;
+    }
+
+    setUploadingProfile(true);
+    const toastId = toast.loading(`Đang tải lên hồ sơ "${file.name}"...`);
+
+    try {
+      const uploadedUrl = await uploadFileToNest(file, file.name);
+      if (!uploadedUrl) {
+        throw new Error("Không nhận được phản hồi tải tệp từ máy chủ");
+      }
+
+      // Update customProfile in state and localStorage
+      const updatedProfile = {
+        ...(customProfile || {}),
+        companyProfileUrl: uploadedUrl,
+        companyProfileName: file.name,
+      };
+      setCustomProfile(updatedProfile);
+
+      try {
+        localStorage.setItem("vba_custom_profile", JSON.stringify(updatedProfile));
+        const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
+        mem.companyProfileUrl = uploadedUrl;
+        mem.brochureUrl = uploadedUrl;
+        localStorage.setItem("vba_my_member", JSON.stringify(mem));
+      } catch {}
+
+      // Dispatch event to sync with other components
+      window.dispatchEvent(new CustomEvent("profile-updated", { detail: updatedProfile }));
+      window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: updatedProfile }));
+
+      // Call server API to persist
+      await fetchNestApi("/members/me", {
+        method: "PATCH",
+        body: JSON.stringify({ companyProfileUrl: uploadedUrl }),
+      }).catch(() => null);
+
+      toast.success("Đã tải lên Profile doanh nghiệp thành công!", { id: toastId });
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể tải lên Profile doanh nghiệp", { id: toastId });
+    } finally {
+      setUploadingProfile(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
   const handleDownloadCompanyProfile = () => {
     const customUrl =
       customProfile?.companyProfileUrl ||
@@ -721,7 +779,6 @@ function CardScreen() {
             qrValue={`${origin}/card/${currentMemberCode}`}
             avatarUrl={d.photo}
             showActions={false}
-            onCompanyLogoUpdated={(url) => setCompanyLogo(url)}
           />
         </div>
 
@@ -789,15 +846,35 @@ function CardScreen() {
             </button>
           </div>
 
-          {/* Nút Tải Profile Doanh Nghiệp (Req 5) */}
-          <button
-            type="button"
-            onClick={handleDownloadCompanyProfile}
-            className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-98 transition cursor-pointer border border-amber-300"
-          >
-            <Download className="h-4 w-4 text-slate-950" />
-            <span>Tải Profile Doanh Nghiệp</span>
-          </button>
+          {/* Hidden input for uploading company profile file */}
+          <input
+            ref={profileFileInputRef}
+            type="file"
+            accept=".pdf,image/*,.doc,.docx"
+            className="hidden"
+            onChange={handleUploadCompanyProfile}
+          />
+
+          {/* Hàng nút Quản lý Profile Doanh Nghiệp (Tải lên profile khác & Xem Profile 3D) */}
+          <div className="grid grid-cols-2 gap-2.5 w-full">
+            <button
+              type="button"
+              onClick={() => profileFileInputRef.current?.click()}
+              disabled={uploadingProfile}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-98 transition cursor-pointer border border-amber-300 disabled:opacity-60"
+            >
+              <FileUp className="h-4 w-4 text-slate-950" />
+              <span>{uploadingProfile ? "Đang tải lên..." : "Tải lên Profile khác"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCompanyProfileModalOpen(true)}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-400/60 bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs shadow-md shadow-amber-500/10 active:scale-98 transition cursor-pointer"
+            >
+              <Eye className="h-4 w-4 text-amber-400" />
+              <span>Xem Profile 3D</span>
+            </button>
+          </div>
         </div>
 
         {/* ── HỒ SƠ HỘI VIÊN & DOANH NGHIỆP (PROFILE) ── */}
@@ -971,7 +1048,9 @@ function CardScreen() {
             email: customProfile?.email || effectiveMember?.email || undefined,
             address: customProfile?.address || effectiveMember?.address || undefined,
             website: customProfile?.website || effectiveMember?.website || undefined,
+            avatarUrl: d.photo || effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || null,
             logoUrl: companyLogo,
+            coverUrl: (effectiveMember as any)?.coverUrl || (effectiveMember as any)?.coverPhoto || null,
             featuredProducts: customProfile?.featuredProducts || (effectiveMember as any)?.featuredProducts,
             companyProfileUrl: customProfile?.companyProfileUrl || (effectiveMember as any)?.companyProfileUrl || (effectiveMember as any)?.brochureUrl,
           }}
@@ -1102,9 +1181,7 @@ function EditCardModal({
   const t = useT();
   const save = useServerFn(saveCardSettings);
   const fileRef = useRef<HTMLInputElement>(null);
-  const logoFileRef = useRef<HTMLInputElement>(null);
   const avatarBlobRef = useRef<Blob | null>(null);
-  const logoBlobRef = useRef<Blob | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [name, setName] = useState(() => {
@@ -1256,29 +1333,6 @@ function EditCardModal({
     }
   }
 
-  async function pickLogo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      const { dataUrl, blob } = await compressImage(file, 400, 400, 0.85);
-      setCompanyLogo(dataUrl);
-      logoBlobRef.current = blob;
-
-      uploadFileToNest(blob, file.name || "company-logo.png")
-        .then((uploadedUrl) => {
-          if (uploadedUrl) {
-            setCompanyLogo(uploadedUrl);
-            logoBlobRef.current = null;
-          }
-        })
-        .catch(() => {});
-      toast.success("Đã chọn logo công ty");
-    } catch {
-      toast.error("Không thể xử lý logo công ty");
-    }
-  }
-
   async function submit() {
     const result = cardProfileSchema.safeParse({ name, phone });
     if (!result.success) {
@@ -1294,7 +1348,7 @@ function EditCardModal({
 
     setBusy(true);
     try {
-      // 1. Upload pending avatar & logo to MinIO to get permanent URLs
+      // 1. Upload pending avatar to MinIO to get permanent URLs
       let finalPhoto = photo;
       if (avatarBlobRef.current || (photo && photo.startsWith("data:"))) {
         try {
@@ -1306,16 +1360,7 @@ function EditCardModal({
         }
       }
 
-      let finalLogo = companyLogo;
-      if (logoBlobRef.current || (companyLogo && companyLogo.startsWith("data:"))) {
-        try {
-          const blobToUpload = logoBlobRef.current || (await (await fetch(companyLogo!)).blob());
-          finalLogo = await uploadFileToNest(blobToUpload, "company-logo.png");
-          logoBlobRef.current = null;
-        } catch (uploadErr) {
-          console.warn("Logo upload notice:", uploadErr);
-        }
-      }
+      const finalLogo = companyLogo;
 
       // 2. Save directly to Server DB as the Single Source of Truth
       await save({
@@ -1446,51 +1491,6 @@ function EditCardModal({
             accept="image/*"
             className="hidden"
             onChange={pickPhoto}
-          />
-        </div>
-
-        {/* Company Logo */}
-        <div className="mb-4 flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-          <div className="h-14 w-20 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1 overflow-hidden shrink-0 shadow-xs">
-            {companyLogo ? (
-              <img src={resolveMediaUrl(companyLogo) || companyLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
-            ) : (
-              <div className="flex flex-col items-center text-[10px] text-slate-400 font-bold">
-                <Building2 className="h-4 w-4" />
-                <span>Chưa có logo</span>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => logoFileRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:border-amber-500 cursor-pointer"
-            >
-              <ImagePlus className="h-4 w-4 text-amber-500" /> Chọn logo công ty
-            </button>
-            {companyLogo && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCompanyLogo(null);
-                  try {
-                    localStorage.removeItem("vba_member_company_logo");
-                  } catch {}
-                  window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: null }));
-                }}
-                className="flex items-center gap-1.5 rounded-lg border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-[12px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer"
-              >
-                <Trash2 className="h-4 w-4" /> Xóa logo
-              </button>
-            )}
-          </div>
-          <input
-            ref={logoFileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={pickLogo}
           />
         </div>
 

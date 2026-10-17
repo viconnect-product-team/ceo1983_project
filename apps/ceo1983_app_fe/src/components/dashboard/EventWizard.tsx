@@ -249,10 +249,6 @@ function EventWizardDialog({
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("ewz.title")}
-      aria-busy={submitting}
       onClick={close}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
@@ -265,6 +261,10 @@ function EventWizardDialog({
         {announcement}
       </p>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("ewz.title")}
+        aria-busy={submitting}
         className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-border bg-card text-foreground shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -595,6 +595,7 @@ function InfoStep({
             className={`${inputCls} ${errors.capacity ? "border-destructive ring-1 ring-destructive/30" : ""}`}
             placeholder="Ví dụ: 100 chỗ ngồi"
             value={info.capacity}
+            onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => {
               setInfo({ ...info, capacity: e.target.value });
               if (errors.capacity) setErrors((prev) => ({ ...prev, capacity: "" }));
@@ -854,6 +855,7 @@ function TicketStep({
                         ? (parseInt(String(tk.quantity).replace(/\D/g, ""), 10) || "").toLocaleString("vi-VN")
                         : ""
                     }
+                    onFocus={(e) => e.currentTarget.select()}
                     onChange={(e) => {
                       const clean = e.target.value.replace(/\D/g, "");
                       update(i, { quantity: clean });

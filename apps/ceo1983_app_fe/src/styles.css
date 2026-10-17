@@ -86,7 +86,7 @@
 }
 
 .bg-crm-system {
-  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(248, 250, 252, 0.28)), url('/Background.png');
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.02), rgba(248, 250, 252, 0.05)), url('/Background.png');
   background-repeat: no-repeat;
   background-position: top center;
   background-size: cover;
@@ -94,7 +94,7 @@
 }
 
 .dark .bg-crm-system {
-  background-image: linear-gradient(to bottom, rgba(11, 17, 32, 0.3), rgba(11, 17, 32, 0.55)), url('/Background.png');
+  background-image: linear-gradient(to bottom, rgba(11, 17, 32, 0.15), rgba(11, 17, 32, 0.35)), url('/Background.png');
 }
 
 :root {
@@ -1601,8 +1601,8 @@ html.hc .bc-card-soft {
   color: #FFFFFF !important;
 }
 
-/* All mobile popups, bottom sheets, drawers, dialogs, and dropdown menus */
-html.dark [role="dialog"],
+/* All mobile popups, bottom sheets, drawers, dialogs, and dropdown menus (excluding full-screen backdrops) */
+html.dark [role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html.dark [role="menu"],
 html.dark [role="listbox"],
 html.dark [data-vaul-drawer],
@@ -1611,10 +1611,10 @@ html.dark [data-radix-popper-content-wrapper] > [role="menu"],
 html.dark [data-radix-popper-content-wrapper] > div,
 html.dark .radix-dialog-content,
 html.dark .radix-dropdown-content,
-html.dark body > [data-radix-portal] [role="dialog"],
+html.dark body > [data-radix-portal] [role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html.dark body > [data-radix-portal] [role="menu"],
 html.dark body > [data-radix-portal] [role="listbox"],
-html.dark body > div[role="dialog"],
+html.dark body > div[role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html.dark body > div[role="menu"] {
   background: linear-gradient(165deg, rgba(19, 27, 41, 0.80) 0%, rgba(14, 21, 34, 0.88) 50%, rgba(11, 15, 23, 0.90) 100%) !important;
   backdrop-filter: blur(24px) !important;
@@ -1622,7 +1622,7 @@ html.dark body > div[role="menu"] {
   border-color: rgba(216, 178, 130, 0.35) !important;
 }
 
-html.hc [role="dialog"],
+html.hc [role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html.hc [role="menu"],
 html.hc [role="listbox"],
 html.hc [data-vaul-drawer],
@@ -1631,10 +1631,10 @@ html.hc [data-radix-popper-content-wrapper] > [role="menu"],
 html.hc [data-radix-popper-content-wrapper] > div,
 html.hc .radix-dialog-content,
 html.hc .radix-dropdown-content,
-html.hc body > [data-radix-portal] [role="dialog"],
+html.hc body > [data-radix-portal] [role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html.hc body > [data-radix-portal] [role="menu"],
 html.hc body > [data-radix-portal] [role="listbox"],
-html.hc body > div[role="dialog"],
+html.hc body > div[role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html.hc body > div[role="menu"] {
   background: rgb(0, 0, 0) !important;
   color: #FFFFFF !important;
@@ -1642,7 +1642,7 @@ html.hc body > div[role="menu"] {
   box-shadow: none !important;
 }
 
-html:not(.dark) [role="dialog"],
+html:not(.dark) [role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html:not(.dark) [role="menu"],
 html:not(.dark) [role="listbox"],
 html:not(.dark) [data-vaul-drawer],
@@ -1651,10 +1651,10 @@ html:not(.dark) [data-radix-popper-content-wrapper] > [role="menu"],
 html:not(.dark) [data-radix-popper-content-wrapper] > div,
 html:not(.dark) .radix-dialog-content,
 html:not(.dark) .radix-dropdown-content,
-html:not(.dark) body > [data-radix-portal] [role="dialog"],
+html:not(.dark) body > [data-radix-portal] [role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html:not(.dark) body > [data-radix-portal] [role="menu"],
 html:not(.dark) body > [data-radix-portal] [role="listbox"],
-html:not(.dark) body > div[role="dialog"],
+html:not(.dark) body > div[role="dialog"]:not([class*="fixed inset-0"]):not([class*="bg-black"]),
 html:not(.dark) body > div[role="menu"] {
   background: #FFFFFF !important;
   color: #0F172A !important;
@@ -2733,5 +2733,97 @@ td[title] {
 .dark .vba-app select,
 .dark .vba-app textarea {
   border-color: rgba(71, 85, 105, 0.7);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CORPORATE PRINT & PDF EXPORT STYLES (A4 CLEAN REPORTING)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 15mm 15mm 15mm;
+  }
+
+  /* Reset all background colors and text for ink-saving crisp contrast */
+  html, body, #root, .bg-crm-system {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide interactive / non-printable UI elements */
+  nav,
+  aside,
+  header:not(.print-header),
+  button:not(.print-keep),
+  .no-print,
+  [data-no-print],
+  [data-radix-popper-content-wrapper],
+  [role="region"],
+  [aria-live="polite"],
+  div:has(> button[aria-label*="Trợ lý AI"]),
+  div:has(> button[aria-label*="AI"]),
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl,
+  .shadow-md {
+    box-shadow: none !important;
+  }
+
+  nav,
+  aside,
+  button:not(.print-keep),
+  .no-print,
+  [data-no-print],
+  [role="region"],
+  div[style*="z-index: 9999"],
+  div[style*="z-index: 999"] {
+    display: none !important;
+  }
+
+  /* Optimize cards, tables and typography for paper */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 10px !important;
+    color: #0f172a !important;
+  }
+
+  th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Ensure card borders print neatly without dark backgrounds */
+  .rounded-2xl, .rounded-3xl, .rounded-xl {
+    border-radius: 4px !important;
+    border-color: #e2e8f0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Force links to look clean without URL printing unless explicitly desired */
+  a {
+    color: #0f172a !important;
+    text-decoration: none !important;
+  }
 }
 

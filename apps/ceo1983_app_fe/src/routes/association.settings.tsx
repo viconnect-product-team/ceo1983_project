@@ -38,6 +38,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { requestNotificationPermission, sendCallNotification } from "@/lib/notification-permissions";
 
 export const Route = createFileRoute("/association/settings")({
   ssr: false,
@@ -459,28 +460,61 @@ function AssociationSettingsScreen() {
 
 
         {/* 4. Notification Settings */}
-        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
+        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Bell className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
               <div>
                 <div className="text-[13px] font-bold text-slate-900 dark:text-white">
-                  Thông báo nợ phí & Cuộc họp
+                  Thông báo nợ phí, Tin nhắn & Cuộc gọi
                 </div>
                 <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Nhận tin nhắn kèm mã VietQR và lịch họp trực tiếp
+                  Nhận chuông và tin nhắn thông báo ngay cả khi thoát/ẩn ứng dụng
                 </div>
               </div>
             </div>
             <input
               type="checkbox"
               checked={notifEnabled}
-              onChange={(e) => {
-                setNotifEnabled(e.target.checked);
-                toast.success(e.target.checked ? "Đã bật thông báo" : "Đã tắt thông báo");
+              onChange={async (e) => {
+                const checked = e.target.checked;
+                setNotifEnabled(checked);
+                if (checked) {
+                  await requestNotificationPermission();
+                }
+                toast.success(checked ? "Đã bật thông báo nền & cuộc gọi" : "Đã tắt thông báo");
               }}
               className="h-5 w-5 accent-[#003B95] rounded cursor-pointer"
             />
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Kiểm tra chuông gọi đến & rung ngoài màn hình khóa:
+            </span>
+            <button
+              type="button"
+              onClick={async () => {
+                const granted = await requestNotificationPermission();
+                if (granted !== "granted") {
+                  toast.error("Vui lòng cấp quyền thông báo trên trình duyệt / thiết bị!");
+                  return;
+                }
+                toast.info("Đang kích hoạt chuông gọi sau 2.5s. Hãy nhấn phím HOME hoặc ẩn ứng dụng ngay để trải nghiệm thông báo ngoài màn hình!", {
+                  duration: 5000,
+                });
+                setTimeout(() => {
+                  sendCallNotification(
+                    "CEO Nguyễn Văn A",
+                    "https://vba-storage.s3.ap-southeast-1.amazonaws.com/avatars/default.png",
+                    "call-test-room-1983"
+                  );
+                }, 2500);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold hover:bg-blue-100 transition cursor-pointer shrink-0"
+            >
+              Test chuông gọi nền
+            </button>
           </div>
         </section>
 

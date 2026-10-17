@@ -218,6 +218,7 @@ export function SponsorPackageModal({
                   min={0}
                   className={inputCls}
                   value={draft.available}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) =>
                     setDraft({ ...draft, available: Math.max(0, parseInt(e.target.value, 10) || 0) })
                   }
@@ -233,6 +234,7 @@ export function SponsorPackageModal({
                   min={0}
                   className={inputCls}
                   value={draft.sold}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) =>
                     setDraft({ ...draft, sold: Math.max(0, parseInt(e.target.value, 10) || 0) })
                   }

@@ -85,48 +85,66 @@ export function exportToExcel<T>({
   const dateStr = formatDisplayDate(now);
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
+  const headerRow = ["STT", ...columns.map((c) => c.header)];
+  const colCount = Math.max(headerRow.length, 6);
+  const midCol = Math.floor(colCount / 2);
+
   // Build rows array for Sheet
   const sheetRows: any[][] = [];
+  const merges: XLSX.Range[] = [];
 
-  // Row 1: Header Organization & National Motto
-  sheetRows.push([
-    "HIỆP HỘI DOANH NHÂN CEO 1983 (HANOIBA)",
-    "",
-    "",
-    "",
-    "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM",
-  ]);
+  // Helper to make row with specific length
+  const makeRow = (firstVal: string = "") => {
+    const r = new Array(colCount).fill("");
+    r[0] = firstVal;
+    return r;
+  };
 
-  // Row 2: Sub-Organization & Independence - Freedom - Happiness
-  sheetRows.push([
-    "BAN CHẤP HÀNH - VĂN PHÒNG HIỆP HỘI",
-    "",
-    "",
-    "",
-    "Độc lập - Tự do - Hạnh phúc",
-  ]);
+  // Row 0: Header Organization (Left) & National Motto (Right)
+  const row0 = new Array(colCount).fill("");
+  row0[0] = "HIỆP HỘI DOANH NHÂN CEO 1983 (HANOIBA)";
+  row0[midCol] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
+  sheetRows.push(row0);
+  merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: midCol - 1 } });
+  merges.push({ s: { r: 0, c: midCol }, e: { r: 0, c: colCount - 1 } });
 
-  // Row 3: Blank separator
-  sheetRows.push([]);
+  // Row 1: Sub-Organization (Left) & Independence - Freedom - Happiness (Right)
+  const row1 = new Array(colCount).fill("");
+  row1[0] = "BAN CHẤP HÀNH - VĂN PHÒNG HIỆP HỘI";
+  row1[midCol] = "Độc lập - Tự do - Hạnh phúc";
+  sheetRows.push(row1);
+  merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: midCol - 1 } });
+  merges.push({ s: { r: 1, c: midCol }, e: { r: 1, c: colCount - 1 } });
 
-  // Row 4: Main Document Title in UPPERCASE
-  sheetRows.push(["", "", title.toUpperCase()]);
+  // Row 2: Blank separator
+  sheetRows.push(new Array(colCount).fill(""));
 
-  // Row 5: Subtitle or extra reporting context
+  // Row 3: Main Document Title (Merged across entire table)
+  const titleRowIdx = sheetRows.length;
+  const titleRow = makeRow(title.toUpperCase());
+  sheetRows.push(titleRow);
+  merges.push({ s: { r: titleRowIdx, c: 0 }, e: { r: titleRowIdx, c: colCount - 1 } });
+
+  // Subtitle (if present)
   if (subtitle) {
-    sheetRows.push(["", "", subtitle]);
+    const subRowIdx = sheetRows.length;
+    const subRow = makeRow(subtitle);
+    sheetRows.push(subRow);
+    merges.push({ s: { r: subRowIdx, c: 0 }, e: { r: subRowIdx, c: colCount - 1 } });
   }
 
-  // Row 6: Export metadata
-  sheetRows.push([
-    `Ngày xuất báo cáo: ${dateStr} lúc ${timeStr} | Đơn vị: CLB Doanh Nhân CEO 1983 | Tổng số bản ghi: ${data.length}`,
-  ]);
+  // Export metadata
+  const metaRowIdx = sheetRows.length;
+  const metaRow = makeRow(
+    `Ngày xuất báo cáo: ${dateStr} lúc ${timeStr} | Đơn vị: CLB Doanh Nhân CEO 1983 | Tổng số bản ghi: ${data.length}`
+  );
+  sheetRows.push(metaRow);
+  merges.push({ s: { r: metaRowIdx, c: 0 }, e: { r: metaRowIdx, c: colCount - 1 } });
 
-  // Row 7: Blank separator
-  sheetRows.push([]);
+  // Blank separator before table
+  sheetRows.push(new Array(colCount).fill(""));
 
-  // Row 8: Table Column Headers (STT + Column headers)
-  const headerRow = ["STT", ...columns.map((c) => c.header)];
+  // Table Column Headers (STT + Column headers)
   sheetRows.push(headerRow);
 
   // Table Data Rows
@@ -138,44 +156,62 @@ export function exportToExcel<T>({
         return val === null || val === undefined ? "" : val;
       }),
     ];
+    // Pad to colCount if needed
+    while (dataRow.length < colCount) dataRow.push("");
     sheetRows.push(dataRow);
   });
 
   // Summary Rows (if any)
   if (summaryRows && summaryRows.length > 0) {
-    sheetRows.push([]);
+    sheetRows.push(new Array(colCount).fill(""));
     summaryRows.forEach((sr) => {
-      sheetRows.push(sr);
+      const padded = [...sr];
+      while (padded.length < colCount) padded.push("");
+      sheetRows.push(padded);
     });
   }
 
   // Corporate Footer & Signatures Block
-  sheetRows.push([]);
-  sheetRows.push([]);
-  const colCount = Math.max(headerRow.length, 6);
+  sheetRows.push(new Array(colCount).fill(""));
+  sheetRows.push(new Array(colCount).fill(""));
+
+  const dateRowIdx = sheetRows.length;
   const dateLocationRow = new Array(colCount).fill("");
-  dateLocationRow[colCount - 2] = `Hà Nội, ngày ${now.getDate()} tháng ${now.getMonth() + 1} năm ${now.getFullYear()}`;
+  const rightColStart = Math.max(colCount - 3, midCol);
+  dateLocationRow[rightColStart] = `Hà Nội, ngày ${now.getDate()} tháng ${now.getMonth() + 1} năm ${now.getFullYear()}`;
   sheetRows.push(dateLocationRow);
+  merges.push({ s: { r: dateRowIdx, c: rightColStart }, e: { r: dateRowIdx, c: colCount - 1 } });
 
+  const signTitleIdx = sheetRows.length;
   const signTitleRow = new Array(colCount).fill("");
-  signTitleRow[1] = signerTitles[0];
-  signTitleRow[Math.floor(colCount / 2)] = signerTitles[1];
-  signTitleRow[colCount - 2] = signerTitles[2];
+  signTitleRow[0] = signerTitles[0];
+  signTitleRow[midCol - 1] = signerTitles[1];
+  signTitleRow[rightColStart] = signerTitles[2];
   sheetRows.push(signTitleRow);
+  merges.push({ s: { r: signTitleIdx, c: 0 }, e: { r: signTitleIdx, c: Math.max(1, midCol - 2) } });
+  merges.push({ s: { r: signTitleIdx, c: midCol - 1 }, e: { r: signTitleIdx, c: rightColStart - 1 } });
+  merges.push({ s: { r: signTitleIdx, c: rightColStart }, e: { r: signTitleIdx, c: colCount - 1 } });
 
+  const signHintIdx = sheetRows.length;
   const signHintRow = new Array(colCount).fill("");
-  signHintRow[1] = "(Ký, ghi rõ họ tên)";
-  signHintRow[Math.floor(colCount / 2)] = "(Ký, ghi rõ họ tên)";
-  signHintRow[colCount - 2] = "(Ký, đóng dấu, ghi rõ họ tên)";
+  signHintRow[0] = "(Ký, ghi rõ họ tên)";
+  signHintRow[midCol - 1] = "(Ký, ghi rõ họ tên)";
+  signHintRow[rightColStart] = "(Ký, đóng dấu, ghi rõ họ tên)";
   sheetRows.push(signHintRow);
+  merges.push({ s: { r: signHintIdx, c: 0 }, e: { r: signHintIdx, c: Math.max(1, midCol - 2) } });
+  merges.push({ s: { r: signHintIdx, c: midCol - 1 }, e: { r: signHintIdx, c: rightColStart - 1 } });
+  merges.push({ s: { r: signHintIdx, c: rightColStart }, e: { r: signHintIdx, c: colCount - 1 } });
 
   // Empty spaces for physical signature
-  sheetRows.push([]);
-  sheetRows.push([]);
-  sheetRows.push([]);
+  sheetRows.push(new Array(colCount).fill(""));
+  sheetRows.push(new Array(colCount).fill(""));
+  sheetRows.push(new Array(colCount).fill(""));
 
   // Create worksheet
   const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+
+  // Apply Merges
+  ws["!merges"] = merges;
 
   // Calculate auto column widths
   const colWidths = [{ wch: 8 }]; // STT column width
@@ -196,6 +232,11 @@ export function exportToExcel<T>({
     }
     colWidths.push({ wch: maxLen });
   });
+
+  // Pad colWidths to colCount if needed
+  while (colWidths.length < colCount) {
+    colWidths.push({ wch: 15 });
+  }
 
   ws["!cols"] = colWidths;
 

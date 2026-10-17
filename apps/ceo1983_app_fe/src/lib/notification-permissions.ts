@@ -210,3 +210,17 @@ export function dismissNativeNotification(tag: string): void {
   }
 }
 
+/**
+ * Trigger an incoming call alert with ring vibration & quick answer/decline actions
+ */
+export async function sendCallNotification(callerName: string, callerAvatar?: string, roomId?: string): Promise<void> {
+  await sendExternalNotification(`📞 Cuộc gọi đến từ ${callerName}`, {
+    body: "Đang gọi cho bạn qua CEO 1983. Chạm để trả lời ngay.",
+    icon: callerAvatar || "/app-icon.png",
+    type: "call",
+    tag: `call-${roomId || Date.now()}`,
+    url: "/association/messages",
+    vibrate: [500, 250, 500, 250, 500, 250, 500],
+  });
+}
+

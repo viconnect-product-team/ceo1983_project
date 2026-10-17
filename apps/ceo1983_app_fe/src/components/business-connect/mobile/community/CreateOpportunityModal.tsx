@@ -154,6 +154,7 @@ export function CreateOpportunityModal({
               <input
                 type="text"
                 value={budget}
+                onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => setBudget(e.target.value)}
                 placeholder="VD: 500 Triệu - 2 Tỷ VNĐ"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8B282]/30 bg-black/50 text-white placeholder:text-slate-500 text-xs focus:outline-none focus:border-[#D8B282]"

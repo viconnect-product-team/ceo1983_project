@@ -509,8 +509,11 @@ export function EventSponsorPackageSelector({
                         </span>
                         <input
                           type="number"
-                          value={item.amount || 0}
-                          onChange={(e) => handleUpdateAmount(item.sponsorId, Number(e.target.value) || 0)}
+                          min={0}
+                          placeholder="0"
+                          value={item.amount || ""}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) => handleUpdateAmount(item.sponsorId, e.target.value === "" ? 0 : Number(e.target.value) || 0)}
                           className="h-6 w-full rounded bg-transparent text-xs font-bold text-primary focus:outline-none"
                         />
                         <span className="text-[11px] font-bold text-primary shrink-0">₫</span>

@@ -28,6 +28,7 @@ export interface CompanyProfileData {
   tagline?: string;
   leaderName?: string;
   leaderTitle?: string;
+  avatarUrl?: string | null;
   memberCode?: string;
   industry?: string;
   industryDetail?: string;
@@ -203,8 +204,33 @@ export function CompanyProfile3DTemplate({
       {/* ── 3D WATERMARKED LUXURY ENTERPRISE PROFILE CANVAS ── */}
       <div
         ref={profileRef}
-        className="relative overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-gradient-to-br from-[#020b1c] via-[#051a3d] to-[#010917] p-5 sm:p-7 text-white shadow-[0_20px_50px_rgba(0,35,90,0.45)] transition-all duration-300"
+        className="relative overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-gradient-to-br from-[#020b1c] via-[#051a3d] to-[#010917] text-white shadow-[0_25px_60px_rgba(0,35,90,0.5)] transition-all duration-300"
       >
+        {/* Luxury Hero Banner Cover */}
+        <div className="relative h-32 sm:h-40 w-full overflow-hidden border-b border-amber-400/30">
+          <img
+            src={data.coverUrl || "/bg-crm.png"}
+            alt="Cover background"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/Background.png";
+            }}
+            className="w-full h-full object-cover opacity-80 filter brightness-90"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#020b1c] via-black/40 to-transparent" />
+          
+          {/* Top Header Badge Floating on Cover */}
+          <div className="absolute top-3.5 left-4 right-4 flex items-center justify-between z-10">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 shadow-lg border border-amber-300">
+              <Sparkles className="size-3" />
+              OFFICIAL BUSINESS PROFILE
+            </span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/80 border border-emerald-400/40 text-[10.5px] font-bold text-emerald-400 backdrop-blur-md shadow-md">
+              <ShieldCheck className="size-3.5" />
+              <span>ĐÃ BẢO CHỨNG B2B</span>
+            </div>
+          </div>
+        </div>
+
         {/* ── WATERMARK CHÌM BACKGROUND (Ảnh chìm CLB CEO 1983) ── */}
         <div className="pointer-events-none absolute inset-0 select-none overflow-hidden opacity-8 dark:opacity-12">
           {/* Huge stylized watermark circle */}
@@ -220,62 +246,72 @@ export function CompanyProfile3DTemplate({
           <div className="absolute -left-16 -top-16 size-80 rounded-full bg-radial from-blue-500/20 via-amber-500/10 to-transparent blur-3xl" />
         </div>
 
-        {/* Top Header Badge */}
-        <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md">
-              <Sparkles className="size-3" />
-              OFFICIAL BUSINESS PROFILE
-            </span>
-            <span className="text-[11px] font-mono font-bold text-amber-300">
-              {memberCode}
-            </span>
-          </div>
+        {/* Main Content Area */}
+        <div className="p-5 sm:p-7 relative z-10 -mt-14 sm:-mt-16">
+          {/* Company Identity Hero: Avatar & Logo Duo */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left pb-4">
+            {/* Visual Container: Avatar + Logo */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Leader Avatar */}
+              <div className="relative size-20 sm:size-24 rounded-2xl p-1 bg-gradient-to-br from-amber-400 via-amber-200 to-yellow-500 shadow-2xl shrink-0">
+                <div className="size-full rounded-[14px] overflow-hidden bg-slate-900 border border-amber-300/50 flex items-center justify-center">
+                  {data.avatarUrl ? (
+                    <img
+                      src={data.avatarUrl}
+                      alt={leaderName}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg sm:text-xl font-black text-amber-300">
+                      {leaderName.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 size-6 rounded-full bg-amber-500 border-2 border-slate-900 flex items-center justify-center text-slate-950 font-black text-[10px] shadow-md" title="Lãnh đạo Doanh nghiệp">
+                  👑
+                </div>
+              </div>
 
-          <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-            <ShieldCheck className="size-4" />
-            <span>ĐÃ BẢO CHỨNG B2B</span>
-          </div>
-        </div>
+              {/* Company Logo */}
+              <div className="relative size-16 sm:size-20 rounded-2xl p-0.5 bg-gradient-to-br from-blue-400 to-[#003B95] shadow-xl shrink-0">
+                <div className="size-full rounded-[14px] overflow-hidden bg-white dark:bg-slate-950 flex items-center justify-center p-1 border border-white/20">
+                  {data.logoUrl ? (
+                    <img
+                      src={data.logoUrl}
+                      alt={companyName}
+                      className="size-full object-contain"
+                    />
+                  ) : (
+                    <Building2 className="size-8 text-[#003B95] dark:text-amber-400" />
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center text-white shadow-md">
+                  <CheckCircle2 className="size-3" />
+                </div>
+              </div>
+            </div>
 
-        {/* Company Identity Hero (3D Glass Effect) */}
-        <div className="relative z-10 pt-5 pb-4 flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
-          {/* Logo with 3D glowing frame */}
-          <div className="relative size-20 sm:size-24 rounded-2xl p-1 bg-gradient-to-br from-amber-400 via-amber-200 to-yellow-500 shadow-xl shrink-0">
-            <div className="size-full rounded-[14px] overflow-hidden bg-slate-950 flex items-center justify-center p-1.5">
-              {data.logoUrl ? (
-                <img
-                  src={data.logoUrl}
-                  alt={companyName}
-                  className="size-full object-contain"
-                />
-              ) : (
-                <Building2 className="size-10 text-amber-400" />
-              )}
-            </div>
-            <div className="absolute -bottom-1 -right-1 size-6 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center text-white shadow-md">
-              <CheckCircle2 className="size-3.5" />
-            </div>
-          </div>
-
-          {/* Company Name & Tagline */}
-          <div className="flex-1 space-y-1.5 min-w-0">
-            <h3 className="text-lg sm:text-xl font-black text-white tracking-wide uppercase leading-tight drop-shadow-md">
-              {companyName}
-            </h3>
-            <p className="text-xs text-amber-300/90 font-medium italic">
-              "{tagline}"
-            </p>
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1 text-xs">
-              <span className="px-2.5 py-0.5 rounded-lg bg-white/10 border border-white/15 text-slate-200 font-semibold">
-                Đại diện: <strong className="text-white">{leaderName}</strong> ({leaderTitle})
-              </span>
-              <span className="px-2.5 py-0.5 rounded-lg bg-blue-500/20 border border-blue-400/30 text-blue-300 font-semibold">
-                {industry}
-              </span>
+            {/* Company Name & Tagline */}
+            <div className="flex-1 space-y-1.5 min-w-0 pt-2">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <span className="text-xs font-mono font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/30">
+                  {memberCode}
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold">
+                  {industry}
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase leading-tight drop-shadow-md">
+                {companyName}
+              </h3>
+              <p className="text-xs text-amber-300/90 font-medium italic">
+                "{tagline}"
+              </p>
+              <div className="pt-0.5 text-xs text-slate-200">
+                Lãnh đạo đại diện: <strong className="text-white font-bold">{leaderName}</strong> ({leaderTitle})
+              </div>
             </div>
           </div>
-        </div>
 
         {/* 4 Pillars Matrix (Quy mô - Thâm niên - Năng lực - Thị trường) */}
         <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-4">
@@ -419,5 +455,6 @@ export function CompanyProfile3DTemplate({
         </div>
       </div>
     </div>
+  </div>
   );
 }

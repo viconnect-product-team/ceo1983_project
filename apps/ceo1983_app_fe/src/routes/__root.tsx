@@ -117,6 +117,10 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
+      // Security Meta Tags
+      { httpEquiv: "X-Content-Type-Options", content: "nosniff" },
+      { httpEquiv: "X-XSS-Protection", content: "1; mode=block" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
       // PWA: lock scale to prevent pinch/double-tap zoom in the installed app.
       {
         name: "viewport",

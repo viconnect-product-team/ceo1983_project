@@ -845,6 +845,7 @@ function DepartmentsPage() {
                     type="number"
                     min={0}
                     value={formMemberCount}
+                    onFocus={(e) => e.currentTarget.select()}
                     onChange={(e) => setFormMemberCount(Number(e.target.value))}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95]"
                   />

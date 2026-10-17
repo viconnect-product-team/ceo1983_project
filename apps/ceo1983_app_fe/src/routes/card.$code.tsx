@@ -505,7 +505,9 @@ function PublicCardView() {
               email: member.email || undefined,
               address: member.address || undefined,
               website: member.website || undefined,
+              avatarUrl: resolvedPhoto || null,
               logoUrl: (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null,
+              coverUrl: (member as any)?.coverUrl || (member as any)?.coverPhoto || null,
               featuredProducts: (member as any)?.featuredProducts || undefined,
               companyProfileUrl: (member as any)?.companyProfileUrl || (member as any)?.brochureUrl || null,
             }}
@@ -537,7 +539,9 @@ function PublicCardView() {
             email: member.email || undefined,
             address: member.address || undefined,
             website: member.website || undefined,
+            avatarUrl: resolvedPhoto || null,
             logoUrl: (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null,
+            coverUrl: (member as any)?.coverUrl || (member as any)?.coverPhoto || null,
             featuredProducts: (member as any)?.featuredProducts || undefined,
             companyProfileUrl: (member as any)?.companyProfileUrl || (member as any)?.brochureUrl || null,
           }}

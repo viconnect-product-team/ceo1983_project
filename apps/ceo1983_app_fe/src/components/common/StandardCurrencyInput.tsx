@@ -145,8 +145,13 @@ export function StandardCurrencyInput({
     onChange(formatted, numeric);
   };
 
-  const handleFocus = () => {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     isFocusedRef.current = true;
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.select();
+      }
+    }, 20);
   };
 
   const handleBlur = () => {

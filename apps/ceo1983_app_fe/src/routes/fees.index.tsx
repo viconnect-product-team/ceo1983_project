@@ -1232,6 +1232,7 @@ function CreateInvoiceModal({
                 type="number"
                 value={year}
                 placeholder="2026"
+                onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => setYear(Number(e.target.value))}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               />
