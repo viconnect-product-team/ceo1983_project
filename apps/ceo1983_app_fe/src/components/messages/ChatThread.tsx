@@ -8,6 +8,7 @@ import { useServerData } from "@/hooks/use-server-data";
 import {
   listMessages,
   sendMessage,
+  editMemberMessage,
   retractMemberMessage,
   requestMemberConnectionFn,
   respondMemberConnectionFn,
@@ -53,6 +54,7 @@ import {
   CornerUpLeft,
   Share2,
   Copy,
+  Edit2,
   RotateCcw,
   Trash2,
   UserPlus,
@@ -165,6 +167,10 @@ export function ChatThread({
   const [replyingTo, setReplyingTo] = useState<{
     id: string;
     senderName: string;
+    text: string;
+  } | null>(null);
+  const [editingMsg, setEditingMsg] = useState<{
+    id: string;
     text: string;
   } | null>(null);
   const [forwardingMsg, setForwardingMsg] = useState<ChatMessage | null>(null);
@@ -669,7 +675,7 @@ export function ChatThread({
     });
   }, [effectiveData?.messages, peer.peerCode]);
 
-  const mergedMessages = useMemo(() => {
+  const mergedMessages = useMemo((): ChatMessage[] => {
     const serverList = effectiveData?.messages || [];
     const serverSignatures = new Map<string, number>();
     for (const s of serverList) {
@@ -730,14 +736,19 @@ export function ChatThread({
           "[action:meeting|title:H%E1%BB%8Dp%20Ban%20Ch%E1%BA%A5p%20H%C3%A0nh%20CEO%201983%20Th%C3%A1ng%203|time:14:00%20-%2028/03/2026|location:Trung%20t%C3%A2m%20H%E1%BB%99i%20Ngh%E1%BB%8B%20Qu%E1%BB%91c%20Gia%20H%C3%A0%20N%E1%BB%99i|link:https://meet.ceo1983.vn/ceo1983-bch|desc:Phi%C3%AAn%20h%E1%BB%8Dp%20chi%E1%BA%BFn%20l%C6%B0%E1%BB%A3c%20tri%E1%BB%83n%20khai%20giao%20th%C6%B0%C6%A1ng%20to%C3%A0n%20di%E1%BB%87n]",
           "Văn bản chỉ đạo & kế hoạch hoạt động năm 2026 đã được Ban Thư Ký cập nhật. Kính mời Quý Hội viên theo dõi và đồng hành.",
         ],
+        channel_membership: [
+          "Chào mừng Quý Hội viên đến với Kênh Ban Thành Viên Hiệp Hội CEO 1983.",
+          "Ban Thành Viên thông báo: Công tác xét duyệt kết nạp hội viên mới và đồng bộ dữ liệu hồ sơ doanh nghiệp 3D đang được đẩy mạnh.",
+          "Kính chúc Quý Hội viên luôn gắn kết, mở rộng mạng lưới giao thương và cùng xây dựng cộng đồng CEO 1983 ngày càng vững mạnh.",
+        ],
         channel_media: [
           "Chào mừng Quý Hội viên đến với Kênh Ban Truyền Thông Hiệp Hội CEO 1983.",
           "Bản tin hoạt động CLB: Đẩy mạnh các chiến dịch truyền thông nhận diện thương hiệu cho các doanh nghiệp hội viên trên đa nền tảng.",
-          "Thông cáo báo chí: Chuỗi sự kiện Gala Doanh Nhân & Lễ tôn vinh Doanh nghiệp tiêu biểu 2026 chuẩn bị khởi động.",
+          "Thông cáo sự kiện: Ban Truyền Thông phụ trách cập nhật link kho ảnh Google Drive chất lượng cao sau mỗi sự kiện.",
         ],
         channel_promotion: [
-          "Chào mừng Quý Hội viên đến với Kênh Ban Xúc Tiến Giao Thương CLB CEO 1983.",
-          "Chương trình Matching B2B: Ban Xúc tiến mở cổng tiếp nhận nhu cầu liên kết chuỗi cung ứng giữa các doanh nghiệp hội viên.",
+          "Chào mừng Quý Hội viên đến với Kênh Ban Xúc Tiến Thương Mại CLB CEO 1983.",
+          "Chương trình Matching B2B & Sàn Marketplace: Ban Xúc tiến mở cổng tiếp nhận nhu cầu liên kết chuỗi cung ứng giữa các doanh nghiệp hội viên.",
           "Cơ hội kết nối tuần này: Nhu cầu tìm đối tác tổng thầu thi công nội thất, cung cấp nguyên vật liệu và giải pháp công nghệ số.",
         ],
         channel_deals: [
@@ -755,7 +766,7 @@ export function ChatThread({
         `Chào mừng Quý Hội viên đến với Kênh ${peer.name}.`,
         "Thông báo và tài liệu mới từ Ban chuyên môn sẽ được gửi trực tiếp tại đây.",
       ];
-      return seeds.map((s, idx) => ({
+      return seeds.map((s, idx): ChatMessage => ({
         id: `channel-seed-${peer.peerCode}-${idx}`,
         text: s,
         mine: false,
@@ -819,6 +830,21 @@ export function ChatThread({
   };
 
   const retractMsgServer = useServerFn(retractMemberMessage);
+  const editMsgServer = useServerFn(editMemberMessage);
+
+  const handleStartEditMessage = (msgId: string, currentText: string) => {
+    setEditingMsg({ id: msgId, text: currentText });
+    setText(currentText);
+    setReplyingTo(null);
+    setActiveMenuMsgId(null);
+    setActiveContextMenuMsgId(null);
+    chatInputRef.current?.focus();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMsg(null);
+    setText("");
+  };
 
   const handleRetractMessage = async (msgId: string) => {
     setRetractedMsgIds((prev) => {
@@ -1176,6 +1202,40 @@ export function ChatThread({
     const value = text.trim();
     if (!value || sending || isUploading) return;
     setSending(true);
+
+    if (editingMsg) {
+      const targetId = editingMsg.id;
+      const newText = value;
+      // Optimistic update in localMessages
+      setLocalMessages((prev) =>
+        prev.map((m) => (m.id === targetId ? { ...m, text: newText, isEdited: true, editedAt: new Date().toISOString() } : m))
+      );
+      if (directData?.messages) {
+        setDirectData((prev) =>
+          prev
+            ? {
+                ...prev,
+                messages: prev.messages.map((m) =>
+                  m.id === targetId ? { ...m, text: newText, isEdited: true, editedAt: new Date().toISOString() } : m
+                ),
+              }
+            : null
+        );
+      }
+      setText("");
+      setEditingMsg(null);
+      toast.success("Đã cập nhật tin nhắn");
+      try {
+        await editMsgServer({ data: { messageId: targetId, text: newText } });
+        fetchDirectMessages();
+        reload();
+      } catch (err: any) {
+        console.warn("Edit message server notice:", err);
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
 
     let finalPayload = value;
     if (replyingTo) {
@@ -2141,6 +2201,9 @@ export function ChatThread({
                                   }`}
                                 >
                                   <span>{formatMessageTime(m.createdAt || m.time)}</span>
+                                  {(m as any).isEdited ? (
+                                    <span className="italic opacity-75">(Đã chỉnh sửa)</span>
+                                  ) : null}
                                 </div>
                               </div>
                             )}
@@ -2247,6 +2310,21 @@ export function ChatThread({
                                       <Copy className="h-3.5 w-3.5 text-slate-500" />
                                       <span>Sao chép</span>
                                     </button>
+
+                                    {m.mine && !isRetracted && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const rawTxt =
+                                            "text" in content ? (content as any).text : m.text;
+                                          handleStartEditMessage(m.id, rawTxt);
+                                        }}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11.5px] font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer transition"
+                                      >
+                                        <Edit2 className="h-3.5 w-3.5" />
+                                        <span>Chỉnh sửa</span>
+                                      </button>
+                                    )}
 
                                     {m.mine && (
                                       <button
@@ -2394,6 +2472,21 @@ export function ChatThread({
                                     <Copy className="h-3.5 w-3.5" />
                                     <span>Sao chép</span>
                                   </button>
+                                  {m.mine && !isRetracted && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const rawTxt =
+                                          "text" in content ? (content as any).text : m.text;
+                                        handleStartEditMessage(m.id, rawTxt);
+                                      }}
+                                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer font-medium"
+                                    >
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                      <span>Chỉnh sửa</span>
+                                    </button>
+                                  )}
+
                                   {m.mine && (
                                     <button
                                       type="button"
@@ -2459,6 +2552,31 @@ export function ChatThread({
           <span className="truncate">{uploadProgress || "Đang tải tệp lên..."}</span>
         </div>
       ) : null}
+
+      {/* Editing Banner */}
+      {editingMsg && (
+        <div className="flex items-center justify-between border-t border-amber-200 dark:border-amber-900/50 bg-amber-50/95 dark:bg-amber-950/80 px-3.5 py-2 backdrop-blur-md animate-in fade-in slide-in-from-bottom-1">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Edit2 className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="min-w-0 flex-1 text-xs">
+              <span className="font-bold text-amber-900 dark:text-amber-200">
+                Đang chỉnh sửa tin nhắn:
+              </span>{" "}
+              <span className="truncate text-amber-800 dark:text-amber-300 italic block mt-0.5">
+                {editingMsg.text}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            className="grid h-6 w-6 place-items-center rounded-full text-amber-600 hover:text-amber-900 dark:hover:text-white cursor-pointer ml-2 shrink-0"
+            title="Hủy chỉnh sửa"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Replying Preview Banner (Chuẩn Messenger) */}
       {replyingTo && (
@@ -2620,7 +2738,7 @@ export function ChatThread({
           ref={chatInputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={replyingTo ? `Trả lời ${replyingTo.senderName}...` : "Nhập tin nhắn..."}
+          placeholder={editingMsg ? "Chỉnh sửa nội dung tin nhắn..." : replyingTo ? `Trả lời ${replyingTo.senderName}...` : "Nhập tin nhắn..."}
           className="flex-1 rounded-2xl border-0 border-none bg-slate-100 dark:bg-white/[0.06] px-3.5 py-2 text-[13px] text-slate-900 dark:text-white outline-none focus:outline-none focus:ring-0 ring-0 hover:border-0 hover:outline-none focus:border-0 placeholder:text-slate-400 shadow-none"
           style={{ border: "none", outline: "none", boxShadow: "none" }}
         />

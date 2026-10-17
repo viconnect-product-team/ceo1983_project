@@ -615,7 +615,7 @@ export function MomentManageSheet({
                     onClick={() => setActiveSubView("tag")}
                     className="text-xs font-semibold text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#F6E1C3] hover:underline ml-1 cursor-pointer"
                   >
-                    + Thêm
+                    Thêm
                   </button>
                 </div>
               )}
@@ -643,7 +643,7 @@ export function MomentManageSheet({
                         onClick={() => fileInputRef.current?.click()}
                         className="text-[var(--bc-mobile-accent-strong,#8C653B)] dark:text-[#D8B282] font-semibold hover:underline cursor-pointer"
                       >
-                        + Thêm ảnh
+                        Thêm ảnh
                       </button>
                     )}
                   </div>

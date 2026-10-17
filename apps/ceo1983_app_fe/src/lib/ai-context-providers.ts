@@ -188,7 +188,9 @@ export function memberProvider(
   }));
   res.suggestedActions = [
     { label: "Mở Danh bạ hội viên", route: "/members" },
-    { label: "Phân nhóm", route: "/segments" },
+    { label: "Xem hồ sơ & kết nối", route: "/association/members" },
+    { label: "Xem cơ hội giao thương", route: "/association/opportunities" },
+    { label: "Chủ đề mới", intent: "new-topic" },
   ];
   return res;
 }
@@ -301,8 +303,10 @@ export function marketplaceProvider(data: SafeListing[] | undefined): ProviderRe
     updatedAt: l.updatedAt,
   }));
   res.suggestedActions = [
-    { label: "Mở Marketplace", route: "/marketplace" },
+    { label: "Mở Sàn Giao Thương B2B", route: "/association/products" },
+    { label: "Xem cơ hội hợp tác", route: "/association/opportunities" },
     { label: "Không gian của tôi", route: "/marketplace/workspace" },
+    { label: "Chủ đề mới", intent: "new-topic" },
   ];
   return res;
 }

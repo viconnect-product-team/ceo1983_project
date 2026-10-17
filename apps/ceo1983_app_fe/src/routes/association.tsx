@@ -79,6 +79,41 @@ export const Route = createFileRoute("/association")({
         },
       });
     }
+
+    // Bắt buộc hội viên mới (mustChangePassword) chuyển hướng ngay tới chức năng đổi mật khẩu
+    if (typeof window !== "undefined") {
+      let mustChange = false;
+      try {
+        const flag = localStorage.getItem("vba_must_change_password");
+        if (flag === "true") {
+          mustChange = true;
+        } else {
+          const rawUser = localStorage.getItem("auth_user");
+          if (rawUser) {
+            const u = JSON.parse(rawUser);
+            if (u?.mustChangePassword || u?.onboarding_status === "new" || u?.profile?.onboarding_status === "new") {
+              mustChange = true;
+            }
+          }
+        }
+      } catch {}
+
+      if (mustChange) {
+        const isSettingsChangePass =
+          location.pathname === "/association/settings" &&
+          ((location as any).search?.action === "change_password" || (location as any).searchStr?.includes("action=change_password"));
+
+        if (!isSettingsChangePass) {
+          throw redirect({
+            to: "/association/settings",
+            search: {
+              action: "change_password",
+              required: "true",
+            },
+          });
+        }
+      }
+    }
   },
   component: MemberRoot,
 });

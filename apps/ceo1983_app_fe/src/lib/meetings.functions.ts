@@ -227,19 +227,22 @@ export const createMeetingFn = createServerFn({ method: "POST" })
       }
     }
 
+    const genId = crypto.randomUUID();
     const dbPayload = {
+      id: genId,
       code,
       title: data.title,
       type: data.type,
       date: data.date,
       time: data.time,
-      location: data.location,
-      attendees: data.attendees,
+      location: data.location || (data.zoomUrl ? "Họp trực tuyến" : "Văn phòng Hiệp hội CEO 1983"),
+      attendees: data.attendees || 2,
       status: data.status,
       department: data.department,
       target_members: enrichedTargetMembers,
       zoom_url: data.zoomUrl,
       cancel_reason: data.cancelReason,
+      association_id: "c1983000-0000-4000-8000-000000001983",
     };
     const { data: row, error } = await getDb(context)
       .from("meetings")
@@ -247,11 +250,148 @@ export const createMeetingFn = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
+
     await logActivity(getDb(context), {
       action: data.isUrgent ? "Tạo cuộc họp khẩn cấp đột xuất" : "Tạo cuộc họp ban",
       target: code,
       category: "meeting",
     });
+
+    // 1. Gửi thông báo đến Member App CEO 1983 (public.member_notifications & public.business_notifications)
+    const notifTitle = data.isUrgent
+      ? `[🔥 CUỘC HỌP KHẨN CẤP] ${data.title}`
+      : `[LỊCH HỌP BCH / BAN] ${data.title}`;
+    const venueInfo = data.zoomUrl
+      ? `Trực tuyến: ${data.zoomUrl}`
+      : `Trực tiếp tại: ${data.location || "Văn phòng Hiệp hội CEO 1983, Hà Nội"}`;
+    const notifBody = `Cuộc họp ${data.department || "Ban Điều Hành"} do ${data.creatorName || "Ban Thư Ký"} (${data.creatorRole || "Điều phối"}) triệu tập vào lúc ${data.time} ngày ${data.date}. Hình thức: ${venueInfo}.${data.isUrgent ? " Đề nghị đại biểu có mặt đầy đủ để xử lý việc khẩn cấp." : " Kính mời Quý đại biểu tham dự đúng giờ."}`;
+
+    try {
+      await getDb(context).from("member_notifications").insert({
+        id: crypto.randomUUID(),
+        recipient_id: "all",
+        title: notifTitle,
+        body: notifBody,
+        read: false,
+        dismissed: false,
+        ref_type: "meeting",
+        ref_id: genId,
+      });
+      await getDb(context).from("business_notifications").insert({
+        id: crypto.randomUUID(),
+        recipient_user_id: "00000000-0000-0000-0000-000000000000",
+        source_domain: "meeting",
+        source_record_id: genId,
+        dedupe_key: `meet_${genId}`,
+        event_kind: "meeting_scheduled",
+        notification_kind: "meeting_invite",
+        title_key: notifTitle,
+        body_key: notifBody,
+        safe_display_data: { meetingId: genId, title: data.title, time: data.time, date: data.date, venue: venueInfo },
+        priority: data.isUrgent ? "urgent" : "normal",
+        status: "delivered",
+        app_scope: "all",
+        target_app: "all",
+      });
+    } catch (e) {
+      console.warn("Could not insert meeting notifications:", e);
+    }
+
+    // 2. Gửi tin nhắn chính thức vào kênh chuyên trách trong CEO 1983 App (public.messages)
+    try {
+      let targetChannel = "channel_secretariat";
+      const deptLower = (data.department || "").toLowerCase();
+      if (deptLower.includes("truyền thông") || deptLower.includes("media")) {
+        targetChannel = "channel_media";
+      } else if (deptLower.includes("thành viên") || deptLower.includes("hội viên")) {
+        targetChannel = "channel_membership";
+      } else if (deptLower.includes("xúc tiến") || deptLower.includes("thương mại")) {
+        targetChannel = "channel_promotion";
+      }
+
+      const msgText = `🏛️ [THÔNG BÁO LỊCH HỌP - ${data.department || "BCH HIỆP HỘI"}]\n${data.title}\n- Thời gian: ${data.time} ngày ${data.date}\n- Hình thức: ${venueInfo}\n- Người triệu tập: ${data.creatorName || "Ban Thư Ký"} (${data.creatorRole || "Điều phối"})\n${data.isUrgent ? "⚠️ CUỘC HỌP ĐỘT XUẤT QUAN TRỌNG. Kính đề nghị Quý Đại biểu sắp xếp tham gia đầy đủ!" : "Kính mời Quý Đại biểu có mặt đúng giờ để cuộc họp diễn ra hiệu quả."}`;
+
+      await getDb(context).from("messages").insert([
+        {
+          id: crypto.randomUUID(),
+          from_id: "system",
+          to_id: targetChannel,
+          text: msgText,
+        },
+        {
+          id: crypto.randomUUID(),
+          from_id: "system",
+          to_id: "group_ceo1983_broadcast",
+          text: msgText,
+        },
+      ]);
+    } catch (msgErr) {
+      console.warn("Could not post meeting message:", msgErr);
+    }
+
+    // 3. Đẩy email thông báo lời mời họp tới các thành viên tham gia
+    try {
+      const emailList: string[] = [];
+      if (data.creatorEmail && data.creatorEmail.includes("@")) {
+        emailList.push(data.creatorEmail);
+      }
+      if (Array.isArray(data.targetMembers)) {
+        for (const tm of data.targetMembers) {
+          const em = typeof tm === "string" ? tm : tm?.email;
+          if (em && em.includes("@") && !emailList.includes(em)) {
+            emailList.push(em);
+          }
+        }
+      }
+
+      if (emailList.length > 0) {
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <div style="text-align: center; border-bottom: 2px solid #003B95; padding-bottom: 16px; margin-bottom: 20px;">
+              <h2 style="color: #003B95; margin: 0;">HIỆP HỘI DOANH NHÂN CEO 1983</h2>
+              <p style="color: #d97706; font-weight: bold; margin: 4px 0 0;">THƯ MỜI THAM DỰ CUỘC HỌP CHÍNH THỨC</p>
+            </div>
+            <h3 style="color: #1e293b; margin-top: 0;">${data.title}</h3>
+            <div style="background: #f8fafc; border-left: 4px solid #003B95; padding: 12px 16px; margin-bottom: 16px; border-radius: 4px;">
+              <p style="margin: 4px 0;"><strong>Thời gian:</strong> ${data.time} ngày ${data.date}</p>
+              <p style="margin: 4px 0;"><strong>Hình thức:</strong> ${venueInfo}</p>
+              <p style="margin: 4px 0;"><strong>Phòng ban / Đơn vị:</strong> ${data.department || "Ban Điều Hành"}</p>
+              <p style="margin: 4px 0;"><strong>Người chủ trì:</strong> ${data.creatorName} (${data.creatorRole})</p>
+              ${data.isUrgent ? `<p style="margin: 4px 0; color: #dc2626;"><strong>Lưu ý:</strong> Cuộc họp đột xuất khẩn cấp: "${data.urgentReason || 'Yêu cầu có mặt đầy đủ'}"</p>` : ''}
+            </div>
+            ${data.zoomUrl ? `
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${data.zoomUrl}" style="background: #003B95; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; display: inline-block;">
+                  👉 Bấm vào phòng họp trực tuyến
+                </a>
+              </div>
+            ` : ''}
+            <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin-top: 20px;">
+              Kính đề nghị Quý Đại biểu chuẩn bị tài liệu và tham dự đúng giờ để đảm bảo tiến độ điều hành chung của Hiệp hội.
+            </p>
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 24px; text-align: center; font-size: 12px; color: #94a3b8;">
+              Văn phòng Ban Thư Ký Hiệp hội Doanh nhân CEO 1983<br/>
+              Tòa nhà V-Tower, 649 Kim Mã, Ba Đình, Hà Nội • Hotline: 0983 000 198
+            </div>
+          </div>
+        `;
+
+        for (const toEmail of emailList.slice(0, 10)) {
+          void fetchNestApiFromServer("/mail/send-direct", context.token, {
+            method: "POST",
+            body: JSON.stringify({
+              to: toEmail,
+              subject: `[THƯ MỜI HỌP CEO 1983] ${data.title}`,
+              html: emailHtml,
+              text: notifBody,
+            }),
+          }).catch((err) => console.warn(`Mail dispatch to ${toEmail} error:`, err?.message));
+        }
+      }
+    } catch (mailErr) {
+      console.warn("Mail dispatch error:", mailErr);
+    }
+
     return mapMeeting(row);
   });
 

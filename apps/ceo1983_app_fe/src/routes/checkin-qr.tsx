@@ -47,8 +47,8 @@ function EventQrCard({ event }: { event: CheckinQrEvent }) {
   const [qrMode, setQrMode] = useState<"register" | "checkin">("register");
 
   const registerUrl = typeof window !== "undefined" 
-    ? `${window.location.origin}/events/${event.id}/register` 
-    : `/events/${event.id}/register`;
+    ? `${window.location.origin}/guest-event-register/${event.id}` 
+    : `/guest-event-register/${event.id}`;
 
   const copyId = async () => {
     try {

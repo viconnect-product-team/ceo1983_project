@@ -9,6 +9,7 @@ import {
   Video,
   ExternalLink,
 } from 'lucide-react';
+import { Pagination } from '@/components/dashboard/DataTablePagination';
 import type { TaskItem, TaskStatus } from '../types';
 import { TASK_PRIORITY_CONFIG, TASK_STATUS_CONFIG, MEETING_PLATFORMS } from '../types';
 
@@ -27,16 +28,29 @@ export function TaskTableView({
   onDeleteTask,
   onQuickStatusChange,
 }: TaskTableViewProps) {
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [tasks]);
+
+  const pageCount = Math.max(1, Math.ceil(tasks.length / pageSize));
+  const pagedTasks = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return tasks.slice(start, start + pageSize);
+  }, [tasks, page, pageSize]);
+
   if (tasks.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-slate-500 text-sm">Không tìm thấy công việc nào phù hợp với bộ lọc.</p>
+      <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-xs">
+        <p className="text-muted-foreground text-sm">Không tìm thấy công việc nào phù hợp với bộ lọc.</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-[13px] border-collapse min-w-[950px]">
           <thead>
@@ -57,7 +71,7 @@ export function TaskTableView({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-            {tasks.map((task) => {
+            {pagedTasks.map((task) => {
               const priorityInfo = TASK_PRIORITY_CONFIG[task.priority] || TASK_PRIORITY_CONFIG.MEDIUM;
               const statusInfo = TASK_STATUS_CONFIG[task.status] || TASK_STATUS_CONFIG.TODO;
               const isOverdue =
@@ -273,6 +287,22 @@ export function TaskTableView({
           </tbody>
         </table>
       </div>
+      {tasks.length > 0 && (
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          total={tasks.length}
+          from={(page - 1) * pageSize + 1}
+          to={Math.min(page * pageSize, tasks.length)}
+          onPage={setPage}
+          onPageSize={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+          pageSizeOptions={[10, 20, 50]}
+        />
+      )}
     </div>
   );
 }

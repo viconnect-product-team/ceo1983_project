@@ -890,7 +890,7 @@ function ProductModal({
                   </option>
                 ))}
                 <option value="__custom__" className="text-primary font-bold">
-                  + Thêm phân loại mới... (Tự điền)
+                  Thêm phân loại mới... (Tự điền)
                 </option>
               </select>
 
@@ -1669,12 +1669,12 @@ function MarketplaceContent({ all, reload }: { all: Product[]; reload: () => voi
               />
             )
           ) : view === "list" ? (
-            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-              <div className="overflow-x-auto relative">
+            <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+              <div className="overflow-x-auto relative w-full">
                 <table className="w-full text-sm border-separate border-spacing-0">
                   <thead>
-                    <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800">
                         STT
                       </th>
                       <th className="sticky left-[56px] z-20 min-w-[100px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">

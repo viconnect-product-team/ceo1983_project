@@ -562,6 +562,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     pathname === "/install" ||
     pathname.startsWith("/landing") ||
     pathname.includes("/register") ||
+    pathname.startsWith("/guest-event-register") ||
     (pathname.startsWith("/events/") && pathname.includes("/register")) ||
     pathname === "/demo" ||
     pathname.startsWith("/h/") ||

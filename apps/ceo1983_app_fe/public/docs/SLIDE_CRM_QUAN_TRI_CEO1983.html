@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Trình Chiếu Hệ Thống Web CRM CEO 1983 | CLB Doanh Nhân CEO 1983</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0A192F;
+      color: #0F172A;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+    }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .slide-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .slide-card {
+      width: 100%;
+      max-width: 1400px;
+      aspect-ratio: 16 / 9;
+      max-height: 88vh;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: #FFFFFF;
+      transition: all 0.3s ease;
+    }
+    .gold-gradient {
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    }
+    .navy-gradient {
+      background: linear-gradient(135deg, #0A192F 0%, #003B95 60%, #0A4DB0 100%);
+    }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div id="slideCard" class="slide-card">
+      <!-- Nội dung slide sẽ render tự động qua JS -->
+    </div>
+  </div>
+
+  <!-- THANH ĐIỀU KHIỂN DƯỚI ĐÁY -->
+  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-700/60 shadow-xl flex items-center gap-6 z-50 text-white text-xs">
+    <button onclick="prevSlide()" class="hover:text-amber-400 font-bold transition flex items-center gap-1 cursor-pointer">
+      ◀ Trước
+    </button>
+    <span class="font-mono text-amber-400 font-bold tracking-wider" id="slideIndicator">1 / 10</span>
+    <button onclick="nextSlide()" class="hover:text-amber-400 font-bold transition flex items-center gap-1 cursor-pointer">
+      Sau ▶
+    </button>
+    <div class="w-px h-4 bg-slate-700"></div>
+    <span class="text-slate-400 hidden sm:inline">Phím: [←] [→] hoặc [Space]</span>
+    <button onclick="toggleFullscreen()" class="text-slate-300 hover:text-white transition">
+      ⛶ Toàn màn hình
+    </button>
+  </div>
+
+  <script>
+    const slides = [{"type":"cover","tag":"CỔNG QUẢN TRỊ & ĐIỀU HÀNH HIỆP HỘI","title":"HỆ THỐNG WEB CRM CEO 1983","subtitle":"Chuẩn hóa quy trình vận hành · Minh bạch tài chính · Tối ưu hiệu suất lãnh đạo","footer":"CLB Doanh Nhân CEO 1983 · Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)"},{"type":"comparison","title":"Thách Thức Quản Trị & Giải Pháp Số Hóa","subtitle":"Chuyển đổi từ mô hình quản lý phân tán sang nền tảng tập trung duy nhất","col1_title":"Quản Trị Thủ Công Trước Đây","col1_items":["Dữ liệu hội viên lưu file rời rạc, khó đối soát","Thất thoát và chậm trễ thu hội phí thường niên","Sắp xếp chỗ ngồi Gala nhầm lẫn, mất thời gian","Phân quyền lỏng lẻo, rủi ro bảo mật thông tin"],"col2_title":"Hệ Thống CRM CEO 1983","col2_items":["Hồ sơ doanh nghiệp 360° chính danh, chuẩn hóa","Tự động sinh mã VietQR Napas 247, gạch nợ tức thì","Sơ đồ xếp chỗ Cinema Map & Soát vé QR 0.1s","Ma trận phân quyền Sticky 2 cột cho 10 vai trò"]},{"type":"kpi","title":"Hiệu Quả Vận Hành Đo Lường Bằng Số Liệu","subtitle":"Các chỉ số ấn tượng khẳng định năng lực quản trị vượt bậc của hệ sinh thái","kpis":[{"num":"500+","label":"Doanh Nghiệp Hội Viên","desc":"Thẩm định pháp lý chính danh 100%"},{"num":"100%","label":"Đối Soát Tự Động","desc":"Gạch nợ hội phí tức thời qua VietQR"},{"num":"0.1s","label":"Tốc Độ Soát Vé QR","desc":"Check-in sự kiện không chạm qua camera"},{"num":"0","label":"Sai Sót Xếp Chỗ","desc":"Khán phòng trực quan Cinema Seating Map"}]},{"type":"feature","title":"Quản Trị Hội Viên & Hồ Sơ Doanh Nghiệp 360°","subtitle":"Nền tảng lưu trữ và thẩm định năng lực thành viên tin cậy bậc nhất","bullets":[{"strong":"Hồ sơ pháp lý đầy đủ:","text":"Mã số thuế, giấy phép ĐKKD, ban chuyên môn và nhiệm kỳ."},{"strong":"Xác thực chính ngạch:","text":"Quy trình xét duyệt hội viên 3 cấp (Thư ký -> Trưởng ban -> Ban Điều Hành)."},{"strong":"Phân loại ngành nghề:","text":"Gắn thẻ lĩnh vực B2B giúp gợi ý giao thương trúng đích."},{"strong":"Lịch sử hoạt động:","text":"Theo dõi điểm chuyên cần, sự kiện tham gia và đóng góp phong trào."}]},{"type":"feature","title":"Sơ Đồ Xếp Chỗ Rạp Phim (Cinema Seating Studio)","subtitle":"Đột phá tổ chức sự kiện: Phân khu bàn ghế thông minh không nhầm lẫn","bullets":[{"strong":"Mô phỏng sân khấu thực tế:","text":"Giao diện Screen trung tâm và lưới hàng ghế A, B, C, D trực quan."},{"strong":"Phân khu màu sắc chuyên nghiệp:","text":"Khu VIP Lãnh đạo (Vàng), Ban Chấp Hành (Xanh), Hội viên (Ngọc)."},{"strong":"Gán chỗ 1 chạm:","text":"Click chọn đại biểu để xếp ghế; tự động khóa ghế chống trùng lặp."},{"strong":"Đón tiếp chuẩn xác:","text":"Lễ tân quét vé thấy ngay số ghế để dẫn khách về đúng vị trí."}]},{"type":"feature","title":"Cổng Soát Vé QR Gatekeeper & Standee Zalo","subtitle":"Đón tiếp đại biểu thần tốc, linh hoạt cho cả hội viên và khách mời ngoài","bullets":[{"strong":"Soát vé QR 0.1 giây:","text":"Nhận diện tức thì qua camera máy tính bảng/điện thoại lễ tân."},{"strong":"Standee Zalo sảnh chờ:","text":"Mã QR công khai cho khách ngoài quét Zalo mở ngay form đăng ký."},{"strong":"Mã may mắn Lucky Draw:","text":"Tự động cấp số bốc thăm trúng thưởng (#8388) dập nổi trên vé."},{"strong":"Gửi Email tự động:","text":"Xác nhận vé điện tử E-Ticket tức thì qua hộp thư của đại biểu."}]},{"type":"feature","title":"Quản Trị Tài Chính & Đối Soát Hội Phí VietQR","subtitle":"Minh bạch từng đồng thu chi, gạch nợ tự động không cần kế toán kiểm đếm","bullets":[{"strong":"Mã VietQR động Napas 247:","text":"Nhúng sẵn số tiền và cú pháp hóa đơn, quét là chuyển tiền chuẩn 100%."},{"strong":"Gạch nợ tức thời:","text":"Hệ thống tự động kích hoạt trạng thái hội viên ngay khi tiền về tài khoản."},{"strong":"Sổ quỹ thu chi minh bạch:","text":"Theo dõi quỹ hoạt động, tài trợ sự kiện và giải ngân chi tiết."},{"strong":"Xuất báo cáo tài chính:","text":"Trích xuất báo cáo kế toán chuẩn mực phục vụ đại hội thường niên."}]},{"type":"feature","title":"Ma Trận Phân Quyền Sticky 2 Cột (Advanced RBAC)","subtitle":"Kiểm soát an toàn thông tin tuyệt đối với 10 vai trò trên 11 module chức năng","bullets":[{"strong":"10 Vai trò hành chính:","text":"Chủ tịch, Phó Chủ tịch, Tổng thư ký, Trưởng ban, Kế toán, Hội viên..."},{"strong":"Giao diện Sticky chống trôi:","text":"Cố định cột Vai trò và Nhóm quyền khi cuộn ngang dọc tiện lợi."},{"strong":"Cập nhật phân quyền tức thì:","text":"Áp dụng quyền mới ngay lập tức mà không cần đăng nhập lại."},{"strong":"Nhật ký kiểm toán (Audit Log):","text":"Ghi vết 100% thao tác sửa đổi dữ liệu bảo vệ hệ thống."}]},{"type":"flow","title":"Điều Hành Công Việc Kanban & Biểu Quyết Số","subtitle":"Giao việc minh bạch theo ban chuyên môn và bỏ phiếu đại hội bảo mật","steps":[{"num":"01","title":"Giao Việc Phân Ban","desc":"Chủ tịch/Trưởng ban tạo task, gán người phụ trách và hạn chót."},{"num":"02","title":"Báo Cáo Tiến Độ","desc":"Kéo thả thẻ Kanban, cập nhật % hoàn thành và đính kèm hồ sơ."},{"num":"03","title":"Tạo Phiên Biểu Quyết","desc":"Ban Thư Ký thiết lập câu hỏi bầu cử và danh sách cử tri hợp lệ."},{"num":"04","title":"Bỏ Phiếu & Xuất Kết Quả","desc":"Bỏ phiếu điện tử mã hóa, công bố tỷ lệ % chuẩn xác theo thời gian thực."}]},{"type":"closing","tag":"CAM KẾT VẬN HÀNH","title":"VẬN HÀNH BỀN VỮNG · DẪN ĐẦU KỶ NGUYÊN SỐ","subtitle":"Sẵn sàng phục vụ toàn diện công tác điều hành của Ban Lãnh Đạo CLB CEO 1983","bullets":["Hạ tầng Cloud ổn định 99.9% uptime, sao lưu dữ liệu tự động hàng ngày","Đội ngũ kỹ sư ViConnect đồng hành hỗ trợ kỹ thuật và đào tạo 24/7","Bảo mật tuyệt đối thông tin danh bạ và bí mật kinh doanh doanh nghiệp"]}];
+    let currentIndex = 0;
+
+    function renderSlide(index) {
+      const s = slides[index];
+      const card = document.getElementById('slideCard');
+      document.getElementById('slideIndicator').innerText = (index + 1) + ' / ' + slides.length;
+
+      let html = '';
+
+      if (s.type === 'cover') {
+        html = `
+          <div class="w-full h-full navy-gradient text-white flex flex-col justify-between p-12 sm:p-16 relative overflow-hidden">
+            <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="flex items-center justify-between z-10 border-b border-white/10 pb-6">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center text-lg shadow-md">
+                  83
+                </div>
+                <span class="font-extrabold tracking-wider text-sm uppercase text-amber-300">CLB DOANH NHÂN CEO 1983</span>
+              </div>
+              <span class="text-xs bg-white/10 px-3.5 py-1.5 rounded-full border border-white/15 text-blue-100 font-semibold">${s.tag}</span>
+            </div>
+
+            <div class="z-10 my-auto py-8">
+              <div class="inline-block px-3.5 py-1 bg-amber-400/20 border border-amber-400/40 text-amber-300 rounded-full text-xs font-black uppercase tracking-widest mb-4">
+                ✦ BẢN TRÌNH CHIẾU DOANH NGHIỆP CHUẨN MỰC ✦
+              </div>
+              <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-md">
+                ${s.title}
+              </h1>
+              <p class="text-base sm:text-xl text-blue-100 mt-4 max-w-3xl font-medium leading-relaxed">
+                ${s.subtitle}
+              </p>
+            </div>
+
+            <div class="z-10 border-t border-white/10 pt-4 flex flex-col sm:flex-row justify-between text-xs text-blue-200">
+              <span>${s.footer}</span>
+              <span class="text-amber-300 font-bold mt-1 sm:mt-0">ViConnect Technology Ecosystem · 2026</span>
+            </div>
+          </div>
+        `;
+      } else if (s.type === 'comparison') {
+        html = `
+          <div class="w-full h-full bg-[#F8FAFC] flex flex-col justify-between p-10 sm:p-14">
+            <div>
+              <span class="text-xs font-black text-amber-600 uppercase tracking-widest block mb-1">SO SÁNH MÔ HÌNH VẬN HÀNH</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-[#003B95]">${s.title}</h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">${s.subtitle}</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto pt-4">
+              <!-- Cột 1 -->
+              <div class="bg-rose-50/70 border border-rose-200 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center gap-2 text-rose-800 font-extrabold text-base mb-4 border-b border-rose-200 pb-3">
+                    <span class="w-6 h-6 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center text-xs">✕</span>
+                    ${s.col1_title}
+                  </div>
+                  <ul class="space-y-3 text-xs sm:text-sm text-rose-950 font-medium">
+                    ${s.col1_items.map(it => `<li class="flex items-start gap-2.5"><span class="text-rose-500 font-bold mt-0.5">•</span><span>${it}</span></li>`).join('')}
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Cột 2 -->
+              <div class="bg-emerald-50/70 border-2 border-emerald-400/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center gap-2 text-emerald-900 font-extrabold text-base mb-4 border-b border-emerald-200 pb-3">
+                    <span class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">✓</span>
+                    ${s.col2_title}
+                  </div>
+                  <ul class="space-y-3 text-xs sm:text-sm text-emerald-950 font-semibold">
+                    ${s.col2_items.map(it => `<li class="flex items-start gap-2.5"><span class="text-emerald-600 font-bold mt-0.5">✓</span><span>${it}</span></li>`).join('')}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-3 flex justify-between text-[11px] text-slate-400">
+              <span>Hệ Thống CEO 1983 · ViConnect</span>
+              <span>Trang ${index + 1} / ${slides.length}</span>
+            </div>
+          </div>
+        `;
+      } else if (s.type === 'kpi') {
+        html = `
+          <div class="w-full h-full bg-[#F8FAFC] flex flex-col justify-between p-10 sm:p-14">
+            <div>
+              <span class="text-xs font-black text-amber-600 uppercase tracking-widest block mb-1">CHỈ SỐ NĂNG LỰC HỆ THỐNG</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-[#003B95]">${s.title}</h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">${s.subtitle}</p>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 my-auto pt-4">
+              ${s.kpis.map(k => `
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-amber-400 transition">
+                  <div class="text-3xl sm:text-4xl font-black text-amber-600 font-mono tracking-tight mb-2">
+                    ${k.num}
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-slate-900 text-sm mb-1">${k.label}</div>
+                    <div class="text-xs text-slate-500 leading-relaxed">${k.desc}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="border-t border-slate-200 pt-3 flex justify-between text-[11px] text-slate-400">
+              <span>Hệ Thống CEO 1983 · ViConnect</span>
+              <span>Trang ${index + 1} / ${slides.length}</span>
+            </div>
+          </div>
+        `;
+      } else if (s.type === 'feature') {
+        html = `
+          <div class="w-full h-full bg-[#F8FAFC] flex flex-col justify-between p-10 sm:p-14">
+            <div>
+              <span class="text-xs font-black text-amber-600 uppercase tracking-widest block mb-1">TÍNH NĂNG ĐỘT PHÁ</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-[#003B95]">${s.title}</h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">${s.subtitle}</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 my-auto pt-3">
+              ${s.bullets.map((b, idx) => `
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex items-start gap-4">
+                  <div class="w-8 h-8 rounded-xl bg-[#003B95]/10 text-[#003B95] font-black text-sm flex items-center justify-center shrink-0 mt-0.5">
+                    0${idx + 1}
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-slate-900 text-sm sm:text-base mb-1">${b.strong}</div>
+                    <div class="text-xs sm:text-sm text-slate-600 leading-relaxed">${b.text}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="border-t border-slate-200 pt-3 flex justify-between text-[11px] text-slate-400">
+              <span>Hệ Thống CEO 1983 · ViConnect</span>
+              <span>Trang ${index + 1} / ${slides.length}</span>
+            </div>
+          </div>
+        `;
+      } else if (s.type === 'flow') {
+        html = `
+          <div class="w-full h-full bg-[#F8FAFC] flex flex-col justify-between p-10 sm:p-14">
+            <div>
+              <span class="text-xs font-black text-amber-600 uppercase tracking-widest block mb-1">QUY TRÌNH THỰC THI</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-[#003B95]">${s.title}</h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">${s.subtitle}</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-auto pt-4">
+              ${s.steps.map(step => `
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative flex flex-col justify-between">
+                  <div class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center font-mono mb-3 shadow-xs">
+                    ${step.num}
+                  </div>
+                  <div>
+                    <div class="font-extrabold text-slate-900 text-sm mb-1.5">${step.title}</div>
+                    <div class="text-xs text-slate-600 leading-relaxed">${step.desc}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="border-t border-slate-200 pt-3 flex justify-between text-[11px] text-slate-400">
+              <span>Hệ Thống CEO 1983 · ViConnect</span>
+              <span>Trang ${index + 1} / ${slides.length}</span>
+            </div>
+          </div>
+        `;
+      } else if (s.type === 'closing') {
+        html = `
+          <div class="w-full h-full navy-gradient text-white flex flex-col justify-between p-12 sm:p-16 relative overflow-hidden">
+            <div class="z-10 flex items-center justify-between border-b border-white/10 pb-6">
+              <span class="text-xs bg-amber-400 text-slate-950 px-3.5 py-1 rounded-full font-black uppercase tracking-wider">${s.tag}</span>
+              <span class="text-xs text-blue-200 font-mono">CEO 1983 CLOUD</span>
+            </div>
+
+            <div class="z-10 my-auto py-6">
+              <h2 class="text-3xl sm:text-5xl font-black text-white leading-tight mb-3">
+                ${s.title}
+              </h2>
+              <p class="text-base sm:text-xl text-blue-100 mb-8 max-w-2xl font-medium">
+                ${s.subtitle}
+              </p>
+
+              <div class="space-y-3.5 max-w-2xl">
+                ${s.bullets.map(b => `
+                  <div class="flex items-center gap-3 bg-white/10 border border-white/15 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold text-blue-50">
+                    <span class="text-amber-400 font-bold">✓</span>
+                    <span>${b}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="z-10 border-t border-white/10 pt-4 flex justify-between text-xs text-blue-300">
+              <span>Hệ Sinh Thái Doanh Nhân CLB CEO 1983</span>
+              <span class="text-amber-300 font-bold">Trân trọng cảm ơn!</span>
+            </div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = html;
+    }
+
+    function prevSlide() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderSlide(currentIndex);
+      }
+    }
+
+    function nextSlide() {
+      if (currentIndex < slides.length - 1) {
+        currentIndex++;
+        renderSlide(currentIndex);
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+      }
+    });
+
+    renderSlide(0);
+  </script>
+</body>
+</html>

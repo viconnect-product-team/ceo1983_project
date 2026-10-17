@@ -166,7 +166,7 @@ function NotifyPage() {
 
       const channelList =
         targetChannel === "all_channels"
-          ? ["channel_media", "channel_promotion", "channel_secretariat", "channel_deals", "channel_events"]
+          ? ["channel_media", "channel_membership", "channel_promotion", "channel_secretariat", "channel_deals", "channel_events"]
           : [targetChannel];
 
       for (const ch of channelList) {
@@ -302,9 +302,10 @@ function NotifyPage() {
       type: "select",
       options: [
         { value: "none", label: "Chỉ hiện chuông thông báo (Không đẩy vào tin nhắn)" },
-        { value: "channel_media", label: "📢 Kênh Truyền Thông Hiệp Hội" },
-        { value: "channel_promotion", label: "🤝 Kênh Xúc Tiến Giao Thương" },
-        { value: "channel_secretariat", label: "🏛️ Kênh Ban Thư Ký & Ban Điều Hành" },
+        { value: "channel_media", label: "📢 Ban Truyền Thông (Sự kiện, Tin tức, Hình ảnh)" },
+        { value: "channel_membership", label: "👥 Ban Thành Viên (Hội viên, Hồ sơ, Gia hạn)" },
+        { value: "channel_promotion", label: "🤝 Ban Xúc Tiến Thương Mại (Marketplace & B2B)" },
+        { value: "channel_secretariat", label: "🏛️ Ban Thư Ký & Ban Điều Hành (Lịch họp, Hành chính)" },
         { value: "channel_deals", label: "🎯 Kênh Cơ Hội & Deal B2B" },
         { value: "channel_events", label: "🌟 Kênh Sự Kiện & Hội Nghị" },
         { value: "all_channels", label: "⚡ Đẩy vào Tất cả các kênh chính thức" },
@@ -338,7 +339,7 @@ function NotifyPage() {
       if (targetChannel && targetChannel !== "none") {
         const channelList =
           targetChannel === "all_channels"
-            ? ["channel_media", "channel_promotion", "channel_secretariat", "channel_deals", "channel_events"]
+            ? ["channel_media", "channel_membership", "channel_promotion", "channel_secretariat", "channel_deals", "channel_events"]
             : [targetChannel];
 
         for (const ch of channelList) {

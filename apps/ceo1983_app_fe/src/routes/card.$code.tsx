@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
+import { CompanyProfile3DTemplate } from "@/components/member/CompanyProfile3DTemplate";
+import { CompanyProfileTemplateModal } from "@/components/member/CompanyProfileTemplateModal";
 import { getPublicCard, type PublicCard } from "@/lib/card.functions";
 import { toast } from "sonner";
 
@@ -151,6 +153,7 @@ function PublicCardView() {
   const [lang, setLang] = useState<Lang>("vi");
   const [isFlipped, setIsFlipped] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const t = (k: keyof typeof T) => T[k][lang];
 
   if (!member || (!member.found && !member.name)) {
@@ -265,6 +268,16 @@ function PublicCardView() {
       } catch {
         toast.error("Không thể sao chép liên kết");
       }
+    }
+  };
+
+  const handleDownloadCompanyProfile = () => {
+    const customUrl = (member as any)?.companyProfileUrl || (member as any)?.brochureUrl;
+    if (customUrl) {
+      window.open(customUrl, "_blank");
+      toast.success("Đang mở tệp Profile chính thức của doanh nghiệp!");
+    } else {
+      setTemplateModalOpen(true);
     }
   };
 
@@ -414,6 +427,27 @@ function PublicCardView() {
           </a>
         </div>
 
+        {/* ── NÚT TẢI & CHIA SẺ HỒ SƠ DOANH NGHIỆP (Req 5) ── */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadCompanyProfile}
+            className="flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] hover:from-[#002766] hover:to-[#173082] py-3 px-3 text-white font-bold text-xs shadow-md transition active:scale-98 cursor-pointer border border-blue-400/30"
+          >
+            <Download className="h-4 w-4 text-amber-400" />
+            <span>Tải Profile Doanh Nghiệp</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShare}
+            className="flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 py-3 px-3 text-slate-950 font-black text-xs shadow-md transition active:scale-98 cursor-pointer border border-amber-300"
+          >
+            <Share2 className="h-4 w-4" />
+            <span>{copied ? "Đã sao chép link!" : "Chia sẻ hồ sơ VIP"}</span>
+          </button>
+        </div>
+
         {/* Authenticated Confirmation Banner */}
         <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 shadow-xs">
           <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600" />
@@ -458,6 +492,28 @@ function PublicCardView() {
           </dl>
         </div>
 
+        {/* ── PROFILE DOANH NGHIỆP 3D XUẤT HIỆN NGAY DƯỚI THÔNG TIN HỘI VIÊN KHI QUÉT MÃ QR (Req 5) ── */}
+        <div className="mt-4">
+          <CompanyProfile3DTemplate
+            data={{
+              companyName: secondaryCompany,
+              leaderName: primaryName,
+              leaderTitle: primaryTitle,
+              memberCode: code,
+              industry: resolvedIndustry,
+              phone: member.phone || undefined,
+              email: member.email || undefined,
+              address: member.address || undefined,
+              website: member.website || undefined,
+              logoUrl: (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null,
+              featuredProducts: (member as any)?.featuredProducts || undefined,
+              companyProfileUrl: (member as any)?.companyProfileUrl || (member as any)?.brochureUrl || null,
+            }}
+            showDownloadButton={true}
+            onDownloadCustomProfile={handleDownloadCompanyProfile}
+          />
+        </div>
+
         {/* Back to Home action button */}
         <Link
           to="/association"
@@ -466,6 +522,27 @@ function PublicCardView() {
           <ArrowLeft className="h-4 w-4" />
           <span>{t("back")}</span>
         </Link>
+
+        {/* Modal Tải Template Profile Doanh Nghiệp 3D nếu chưa có file riêng */}
+        <CompanyProfileTemplateModal
+          open={templateModalOpen}
+          onClose={() => setTemplateModalOpen(false)}
+          data={{
+            companyName: secondaryCompany,
+            leaderName: primaryName,
+            leaderTitle: primaryTitle,
+            memberCode: code,
+            industry: resolvedIndustry,
+            phone: member.phone || undefined,
+            email: member.email || undefined,
+            address: member.address || undefined,
+            website: member.website || undefined,
+            logoUrl: (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null,
+            featuredProducts: (member as any)?.featuredProducts || undefined,
+            companyProfileUrl: (member as any)?.companyProfileUrl || (member as any)?.brochureUrl || null,
+          }}
+          onDownloadCustomProfile={handleDownloadCompanyProfile}
+        />
       </div>
     </div>
   );

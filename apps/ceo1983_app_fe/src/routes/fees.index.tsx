@@ -31,7 +31,7 @@ import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useT, type TKey } from "@/lib/i18n";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
@@ -124,15 +124,21 @@ function KpiCard({
     destructive: "bg-destructive/10 text-destructive",
   };
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}>
-          <Icon className="h-5 w-5" />
+    <div className="flex h-32 flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:border-primary/40 hover:shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}>
+          <Icon className="h-4 w-4" />
         </div>
-        {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
       </div>
-      <div className="mt-4 text-2xl font-bold tracking-tight text-foreground">{value}</div>
-      <div className="mt-0.5 text-[12px] text-muted-foreground">{label}</div>
+      <div>
+        <div className="truncate text-2xl font-bold tracking-tight text-foreground">{value}</div>
+        {hint ? (
+          <div className="mt-1 truncate text-[11px] text-muted-foreground">{hint}</div>
+        ) : (
+          <div className="mt-1 text-[11px] text-transparent select-none">.</div>
+        )}
+      </div>
     </div>
   );
 }
@@ -323,17 +329,30 @@ function FeesPage() {
   };
 
   const handleExport = () => {
-    downloadCsv(`fees-${year}`, records, [
-      { header: "InvoiceNo", value: (r) => r.invoiceNo },
-      { header: "Code", value: (r) => r.member.code },
-      { header: "Name", value: (r) => r.member.name },
-      { header: "Year", value: (r) => r.year },
-      { header: "Amount", value: (r) => r.amount },
-      { header: "Status", value: (r) => r.status },
-      { header: "DueDate", value: (r) => r.dueDate },
-      { header: "PaidAt", value: (r) => r.paidAt ?? "" },
-      { header: "Method", value: (r) => r.method ?? "" },
-    ]);
+    const totalAmount = records.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    exportToExcel<FeeRecord>({
+      title: `BÁO CÁO THEO DÕI THU HỘI PHÍ THƯỜNG NIÊN NĂM ${year}`,
+      subtitle: "Hiệp Hội Doanh Nhân CEO 1983 - HanoiBA",
+      filename: `so-thu-hoi-phi-${year}`,
+      sheetName: `Hoi_Phi_${year}`,
+      data: records,
+      columns: [
+        { header: "Mã hóa đơn", key: "invoiceNo", width: 16, value: (r) => r.invoiceNo },
+        { header: "Mã hội viên", key: "code", width: 16, value: (r) => r.member.code },
+        { header: "Họ và tên hội viên", key: "name", width: 28, value: (r) => r.member.name },
+        { header: "Niên khóa", key: "year", width: 14, value: (r) => r.year },
+        { header: "Số tiền (VNĐ)", key: "amount", width: 20, value: (r) => formatExcelCurrency(r.amount) },
+        { header: "Trạng thái", key: "status", width: 18, value: (r) => (r.status === "paid" ? "Đã nộp" : r.status === "overdue" ? "Quá hạn" : "Chưa nộp") },
+        { header: "Hạn nộp", key: "dueDate", width: 16, value: (r) => formatDisplayDate(r.dueDate) },
+        { header: "Ngày nộp", key: "paidAt", width: 16, value: (r) => formatDisplayDate(r.paidAt) },
+        { header: "Phương thức", key: "method", width: 18, value: (r) => r.method ?? "Chuyển khoản" },
+      ],
+      summaryRows: [
+        ["TỔNG CỘNG HỘI PHÍ:", "", "", "", formatExcelCurrency(totalAmount) + " đ"],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "THỦ QUỸ / KẾ TOÁN", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+    });
+    toast.success("Đã xuất báo cáo hội phí chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
   };
 
   // Collection queue — overdue first (highest priority), then due-soon, then remaining unpaid.
@@ -357,17 +376,30 @@ function FeesPage() {
 
   const exportRows = (rows: FeeRecord[], name: string) => {
     if (rows.length === 0) return;
-    downloadCsv(name, rows, [
-      { header: "InvoiceNo", value: (r) => r.invoiceNo },
-      { header: "Code", value: (r) => r.member.code },
-      { header: "Name", value: (r) => r.member.name },
-      { header: "Year", value: (r) => r.year },
-      { header: "Amount", value: (r) => r.amount },
-      { header: "Status", value: (r) => r.status },
-      { header: "DueDate", value: (r) => r.dueDate },
-      { header: "Reminders", value: (r) => r.member.reminderCount ?? 0 },
-      { header: "LastReminder", value: (r) => r.member.lastReminder ?? "" },
-    ]);
+    const totalAmount = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    exportToExcel<FeeRecord>({
+      title: `DANH SÁCH HỘI PHÍ CHỌN LỌC - NĂM ${year}`,
+      subtitle: "Hiệp Hội Doanh Nhân CEO 1983 - HanoiBA",
+      filename: name,
+      sheetName: "Hoi_Phi_Chon_Loc",
+      data: rows,
+      columns: [
+        { header: "Mã hóa đơn", key: "invoiceNo", width: 16, value: (r) => r.invoiceNo },
+        { header: "Mã hội viên", key: "code", width: 16, value: (r) => r.member.code },
+        { header: "Họ và tên hội viên", key: "name", width: 28, value: (r) => r.member.name },
+        { header: "Niên khóa", key: "year", width: 14, value: (r) => r.year },
+        { header: "Số tiền (VNĐ)", key: "amount", width: 20, value: (r) => formatExcelCurrency(r.amount) },
+        { header: "Trạng thái", key: "status", width: 18, value: (r) => (r.status === "paid" ? "Đã nộp" : r.status === "overdue" ? "Quá hạn" : "Chưa nộp") },
+        { header: "Hạn nộp", key: "dueDate", width: 16, value: (r) => formatDisplayDate(r.dueDate) },
+        { header: "Số lần nhắc", key: "reminders", width: 14, value: (r) => r.member.reminderCount ?? 0 },
+        { header: "Lần nhắc gần nhất", key: "lastReminder", width: 18, value: (r) => formatDisplayDate(r.member.lastReminder) },
+      ],
+      summaryRows: [
+        ["TỔNG CỘNG TIỀN PHÍ:", "", "", "", formatExcelCurrency(totalAmount) + " đ"],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "THỦ QUỸ / KẾ TOÁN", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+    });
+    toast.success("Đã xuất danh sách hội phí ra file Excel (.xlsx)!");
   };
 
   return (
@@ -713,12 +745,12 @@ function FeesPage() {
           </div>
         </>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-          <div className="relative overflow-x-auto">
+        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+          <div className="relative overflow-x-auto w-full">
             <table className="w-full min-w-[1050px] whitespace-nowrap border-separate border-spacing-0 text-sm">
-              <thead className="bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
+                  <th className="sticky left-0 z-20 w-14 bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800">STT</th>
                   <SortHeader
                     label={t("fees.col.invoice")}
                     columnKey="invoice"

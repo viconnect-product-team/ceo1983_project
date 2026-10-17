@@ -32,6 +32,10 @@ import {
   HelpCircle,
   MessageSquare,
   User,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadFile } from "@/lib/api-client";
@@ -69,9 +73,51 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
     defaultScreenId || APP_SCREEN_TOURS[0].id
   );
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  const [mobileView, setMobileView] = useState<"screens" | "steps">("steps");
   const [searchQuery, setSearchQuery] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string>(DEFAULT_PDF_URL);
   const [uploading, setUploading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleToggleSpeech = (textToRead: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      toast.error("Trình duyệt không hỗ trợ phát giọng nói văn bản!");
+      return;
+    }
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = textToRead.replace(/[^\p{L}\p{N}\s,.-]/gu, " ");
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "vi-VN";
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const viVoice = voices.find((v) => v.lang.startsWith("vi"));
+    if (viVoice) {
+      utterance.voice = viVoice;
+    }
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+    toast.success("Đang phát thuyết minh hướng dẫn bằng giọng nói!");
+  };
 
   useEffect(() => {
     if (defaultScreenId) {
@@ -79,6 +125,14 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
       setActiveStepIndex(0);
     }
   }, [defaultScreenId]);
+
+  // Cancel speech on screen or step change
+  useEffect(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }, [selectedScreenId, activeStepIndex]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -243,8 +297,22 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
         {/* TAB 1: 10-SCREEN INTERACTIVE VISUALIZER */}
         {activeTab === "screens" && (
           <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden bg-slate-50/70 dark:bg-[#070e1e]/60">
+            {/* Mobile Header Bar: Switch between screen list and step walkthrough */}
+            <div className="md:hidden flex items-center justify-between p-2.5 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-white/10 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileView(mobileView === "screens" ? "steps" : "screens")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 text-xs font-bold text-[#003B95] dark:text-sky-300 border border-slate-200 dark:border-slate-700 shadow-xs cursor-pointer active:scale-95 touch-manipulation"
+              >
+                {mobileView === "steps" ? "← Xem 10 màn hình" : "Xem các bước thao tác →"}
+              </button>
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-[170px]">
+                {currentScreen.title} (B.{activeStepIndex + 1}/{currentScreen.steps.length})
+              </span>
+            </div>
+
             {/* Left Column: Screen Selector List */}
-            <div className="w-full md:w-72 lg:w-80 shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 flex flex-col bg-white dark:bg-[#0a152d]/90 overflow-hidden">
+            <div className={`w-full md:w-72 lg:w-80 shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/10 flex flex-col bg-white dark:bg-[#0a152d]/90 overflow-hidden ${mobileView === "steps" ? "hidden md:flex" : "flex"}`}>
               {/* Search Screens */}
               <div className="p-3 border-b border-slate-100 dark:border-white/10">
                 <div className="relative">
@@ -271,8 +339,9 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                       onClick={() => {
                         setSelectedScreenId(screen.id);
                         setActiveStepIndex(0);
+                        setMobileView("steps");
                       }}
-                      className={`w-full text-left p-2.5 rounded-2xl transition cursor-pointer flex items-center justify-between gap-2.5 border ${
+                      className={`w-full text-left p-2.5 rounded-2xl transition cursor-pointer flex items-center justify-between gap-2.5 border touch-manipulation active:scale-[0.99] ${
                         isSelected
                           ? "bg-[#003B95]/10 dark:bg-[#003B95]/25 border-[#003B95]/60 shadow-sm"
                           : "border-transparent hover:bg-slate-100 dark:hover:bg-white/[0.04]"
@@ -334,7 +403,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             </div>
 
             {/* Right Column: Screen Details & Interactive Stepper (Banking Walkthrough) */}
-            <div className="flex-1 flex flex-col overflow-y-auto p-4 sm:p-6 space-y-4 [scrollbar-width:thin]">
+            <div className={`flex-1 flex flex-col overflow-y-auto p-4 sm:p-6 space-y-4 [scrollbar-width:thin] ${mobileView === "screens" ? "hidden md:flex" : "flex"}`}>
               {/* Screen Banner Card */}
               <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c1836] p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -385,10 +454,14 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                     const isStepActive = idx === activeStepIndex;
                     return (
                       <button
-                        key={step.targetId}
+                        key={step.targetId || idx}
                         type="button"
                         onClick={() => setActiveStepIndex(idx)}
-                        className={`p-2.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1 shadow-xs ${
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          setActiveStepIndex(idx);
+                        }}
+                        className={`p-2.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1 shadow-xs touch-manipulation select-none active:scale-95 ${
                           isStepActive
                             ? "bg-[#003B95]/10 dark:bg-[#003B95]/20 border-[#003B95] text-slate-900 dark:text-white"
                             : "bg-white dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300"
@@ -425,8 +498,37 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                     <span className="text-lg">{activeStep.icon}</span>
                   </div>
 
-                  <div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-extrabold flex items-center gap-1.5">
-                    <span>{activeStep.actionGesture}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleToggleSpeech(
+                          `Bước ${activeStepIndex + 1}: ${activeStep.title}. ${activeStep.description}. Thao tác: ${activeStep.instruction}. Phản hồi: ${activeStep.systemResponse}`
+                        )
+                      }
+                      className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs ${
+                        isSpeaking
+                          ? "bg-rose-500 text-white animate-pulse"
+                          : "bg-amber-400/20 hover:bg-amber-400/30 text-amber-700 dark:text-amber-300 border border-amber-400/40"
+                      }`}
+                      title={isSpeaking ? "Dừng đọc" : "Đọc to hướng dẫn này"}
+                    >
+                      {isSpeaking ? (
+                        <>
+                          <Pause className="h-3.5 w-3.5" />
+                          <span>Dừng đọc</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-3.5 w-3.5" />
+                          <span>Đọc giọng nói</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-extrabold flex items-center gap-1.5">
+                      <span>{activeStep.actionGesture}</span>
+                    </div>
                   </div>
                 </div>
 

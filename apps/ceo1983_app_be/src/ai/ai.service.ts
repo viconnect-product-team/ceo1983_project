@@ -2335,7 +2335,7 @@ QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
         route: '/events',
         steps: [
           'Truy cập màn hình **Quản trị Sự kiện** (/events).',
-          'Bấm nút **"+ Tạo sự kiện mới"** màu xanh ở góc trên bên phải.',
+          'Bấm nút **"Tạo sự kiện"** màu xanh ở góc trên bên phải.',
           'Điền Tên sự kiện, Thời gian khai mạc, Địa điểm tổ chức, Sức chứa đại biểu và Trang phục (Dresscode).',
           'Cấu hình gói tài trợ và bấm **"Lưu sự kiện"**. Hệ thống mở bán vé ngay lập tức.',
         ],
@@ -2367,7 +2367,7 @@ QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
         route: '/fees',
         steps: [
           'Truy cập màn hình **Quản lý Hội phí** (/fees).',
-          'Bấm **"+ Tạo đợt thu mới"**, nhập mức niên liễm năm và phát hành cho toàn thể hội viên.',
+          'Bấm **"Tạo đợt thu mới"**, nhập mức niên liễm năm và phát hành cho toàn thể hội viên.',
           'Theo dõi tỷ lệ thanh toán thời gian thực qua biểu đồ trực quan.',
           'Bấm **"Báo cáo thu chi"** để xuất tệp Excel gửi Ban Chấp Hành.',
         ],
@@ -2383,7 +2383,7 @@ QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
         route: '/tasks',
         steps: [
           'Truy cập màn hình **Quản lý Công việc** (/tasks).',
-          'Bấm **"+ Giao việc mới"**, nhập tiêu đề nhiệm vụ, chọn Ban chịu trách nhiệm và hạn chót hoàn thành.',
+          'Bấm **"Giao việc mới"**, nhập tiêu đề nhiệm vụ, chọn Ban chịu trách nhiệm và hạn chót hoàn thành.',
           'Theo dõi tiến độ trên bảng Kanban trực quan: Cần làm - Đang làm - Đã hoàn thành.',
           'Kéo thả thẻ nhiệm vụ khi hoàn thành từng khâu chuẩn bị.',
         ],
@@ -2415,7 +2415,7 @@ QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
         route: '/sponsors',
         steps: [
           'Truy cập màn hình **Nhà tài trợ** (/sponsors).',
-          'Bấm **"+ Thêm nhà tài trợ"**, nhập tên doanh nghiệp, người đại diện và gói tài trợ (Kim Cương, Vàng, Bạc).',
+          'Bấm **"Thêm nhà tài trợ"**, nhập tên doanh nghiệp, người đại diện và gói tài trợ (Kim Cương, Vàng, Bạc).',
           'Tải lên logo PNG trong suốt để tự động hiển thị trên banner sự kiện và backdrop.',
           'Bấm **"Báo cáo nghiệm thu"** để xuất file chứng nhận quyền lợi gửi đối tác.',
         ],

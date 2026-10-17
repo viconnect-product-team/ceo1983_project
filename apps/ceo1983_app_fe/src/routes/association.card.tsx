@@ -48,6 +48,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Download,
 } from "lucide-react";
 import heroImg from "@/assets/vba-hero.jpg";
 import { useServerFn } from "@tanstack/react-start";
@@ -60,6 +61,7 @@ import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQ
 import { AssociationQrScanModal } from "@/components/member/AssociationQrScanModal";
 import { AssociationCardCaptureModal } from "@/components/member/AssociationCardCaptureModal";
 import { PrivacySettingsModal } from "@/components/member/PrivacySettingsModal";
+import { CompanyProfileTemplateModal } from "@/components/member/CompanyProfileTemplateModal";
 import { useAuth } from "@/context/AuthContext";
 import { useServerData } from "@/hooks/use-server-data";
 import {
@@ -437,6 +439,7 @@ function CardScreen() {
 
   const [scanModalOpen, setScanModalOpen] = useState(false);
   const [cardCaptureOpen, setCardCaptureOpen] = useState(false);
+  const [companyProfileModalOpen, setCompanyProfileModalOpen] = useState(false);
   const [contractData, setContractData] = useState(() => {
     if (typeof window === "undefined") {
       return {
@@ -684,6 +687,20 @@ function CardScreen() {
     }
   };
 
+  const handleDownloadCompanyProfile = () => {
+    const customUrl =
+      customProfile?.companyProfileUrl ||
+      (effectiveMember as any)?.companyProfileUrl ||
+      (effectiveMember as any)?.brochureUrl ||
+      (effectiveMember as any)?.companyProfile;
+    if (customUrl) {
+      window.open(customUrl, "_blank");
+      toast.success("Đang mở tải Profile doanh nghiệp chính thức!");
+    } else {
+      setCompanyProfileModalOpen(true);
+    }
+  };
+
   return (
     <div className="vba-animate min-h-full pb-20">
       <MemberHeader title={t("m.card.headerTitle")} back />
@@ -771,6 +788,16 @@ function CardScreen() {
               <span>{copiedLink ? "Đã chép" : "Sao chép"}</span>
             </button>
           </div>
+
+          {/* Nút Tải Profile Doanh Nghiệp (Req 5) */}
+          <button
+            type="button"
+            onClick={handleDownloadCompanyProfile}
+            className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-98 transition cursor-pointer border border-amber-300"
+          >
+            <Download className="h-4 w-4 text-slate-950" />
+            <span>Tải Profile Doanh Nghiệp</span>
+          </button>
         </div>
 
         {/* ── HỒ SƠ HỘI VIÊN & DOANH NGHIỆP (PROFILE) ── */}
@@ -926,6 +953,29 @@ function CardScreen() {
         <AssociationCardCaptureModal
           open={cardCaptureOpen}
           onClose={() => setCardCaptureOpen(false)}
+        />
+
+        {/* Modal Tải Template Profile Doanh Nghiệp 3D nếu chưa có file riêng (Req 5) */}
+        <CompanyProfileTemplateModal
+          open={companyProfileModalOpen}
+          onClose={() => setCompanyProfileModalOpen(false)}
+          data={{
+            companyName: d.company || (effectiveMember as any)?.company || (effectiveMember as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+            leaderName: d.name || effectiveMember?.name || "Hội viên CEO 1983",
+            leaderTitle: customProfile?.title || effectiveMember?.title || "Chủ tịch / Tổng Giám đốc",
+            memberCode: currentMemberCode,
+            industry: customProfile?.industry || effectiveMember?.industry || "Thương mại & Dịch vụ Đa ngành",
+            industryDetail: customProfile?.industryDetail || (effectiveMember as any)?.industryDetail,
+            companySize: customProfile?.companySize || (effectiveMember as any)?.companySize,
+            phone: customProfile?.phone || effectiveMember?.phone || undefined,
+            email: customProfile?.email || effectiveMember?.email || undefined,
+            address: customProfile?.address || effectiveMember?.address || undefined,
+            website: customProfile?.website || effectiveMember?.website || undefined,
+            logoUrl: companyLogo,
+            featuredProducts: customProfile?.featuredProducts || (effectiveMember as any)?.featuredProducts,
+            companyProfileUrl: customProfile?.companyProfileUrl || (effectiveMember as any)?.companyProfileUrl || (effectiveMember as any)?.brochureUrl,
+          }}
+          onDownloadCustomProfile={handleDownloadCompanyProfile}
         />
       </div>
 

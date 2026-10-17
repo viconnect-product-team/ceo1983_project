@@ -690,32 +690,64 @@ function MeetingsPage() {
       </div>
 
       <>
-          {/* KPI Cards */}
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <StatCard
-              label={t("meet.kpi.total")}
-              value={MEETINGS.length}
-              icon={<Users2 className="h-4 w-4" />}
-            />
-            <StatCard
-              label="Chờ Quản Trị Duyệt"
-              value={MEETINGS.filter((m) => m.status === "pending_approval").length}
-              tone={MEETINGS.filter((m) => m.status === "pending_approval").length > 0 ? "warning" : "info"}
-              icon={<Clock className="h-4 w-4 text-amber-600" />}
-            />
-            <StatCard
-              label={t("meet.kpi.upcoming")}
-              value={MEETINGS.filter((m) => m.status === "upcoming").length}
-              tone="info"
-              icon={<Calendar className="h-4 w-4" />}
-            />
-            <StatCard
-              label="Đã Hoàn Tất / Đã Hủy"
-              value={MEETINGS.filter((m) => m.status === "completed" || m.status === "cancelled").length}
-              tone="success"
-              icon={<CheckCircle2 className="h-4 w-4" />}
-            />
+      {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Tổng số cuộc họp (Sky gradient - Blue) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="meetings" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG SỐ CUỘC HỌP</div>
           </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {MEETINGS.length}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Cuộc họp ban điều hành &amp; chuyên ban
+          </div>
+        </div>
+
+        {/* Card 2: Chờ Quản Trị Duyệt (Violet gradient - Indigo) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="pending" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">CHỜ QUẢN TRỊ DUYỆT</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {MEETINGS.filter((m) => m.status === "pending_approval").length}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Cần Ban Quản Trị phê duyệt
+          </div>
+        </div>
+
+        {/* Card 3: Sắp diễn ra (Orange gradient - Orange) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="upcoming" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">SẮP DIỄN RA</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {MEETINGS.filter((m) => m.status === "upcoming").length}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Lịch họp đã được xếp &amp; chuẩn bị
+          </div>
+        </div>
+
+        {/* Card 4: Đã hoàn tất (Green gradient - Emerald) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="completed" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ HOÀN TẤT</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {MEETINGS.filter((m) => m.status === "completed").length}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Đã tổ chức họp thành công
+          </div>
+        </div>
+      </div>
 
           {/* Meetings Grid */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1221,149 +1253,211 @@ function MeetingsPage() {
                 </div>
               </div>
 
-              {/* Đăng Ký Phòng Họp & Nền Tảng Cuộc Họp (Dropdown gộp chung) */}
+              {/* Phân định rõ ràng hình thức cuộc họp: Trực tuyến (Online) vs Trực tiếp (Offline) */}
               <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3.5 shadow-xs">
                 <div>
-                  <label className="font-bold text-foreground block mb-1.5 text-xs flex items-center justify-between">
+                  <label className="font-bold text-foreground block mb-2 text-xs flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <Video className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
-                      Đăng Ký Phòng Họp & Nền Tảng Cuộc Họp *
+                      Hình thức & Địa điểm cuộc họp *
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-semibold">Gộp đặt phòng & nền tảng trực tuyến</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold">Tách biệt Trực tuyến vs Trực tiếp</span>
                   </label>
-                  <select
-                    value={formPlatform}
-                    onChange={(e) => {
-                      const val = e.target.value as MeetingPlatform;
-                      setFormPlatform(val);
-                      if (val === "ZOOM") {
+
+                  {/* 2-Pill Mode Switch */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => {
                         setFormMeetingMode("online");
-                        setFormLocation("Trực tuyến qua Zoom Meeting");
-                        setFormZoomUrl("https://zoom.us/j/88819839999");
-                      } else if (val === "GOOGLE_MEET") {
-                        setFormMeetingMode("online");
-                        setFormLocation("Trực tuyến qua Google Meet");
-                        setFormZoomUrl("https://meet.google.com/ceo-1983-vip");
-                      } else if (val === "UNIWORK") {
-                        setFormMeetingMode("online");
-                        setFormLocation("Phòng họp số UniWork Online");
-                        setFormZoomUrl("https://uni-hrm.ubos.vn/meet/ceo1983");
-                      } else if (val === "OFFLINE_UNIWORK") {
+                        if (formPlatform === "OFFLINE_UNIWORK" || formPlatform === "OFFLINE_CUSTOM") {
+                          setFormPlatform("ZOOM");
+                          setFormLocation("Trực tuyến qua Zoom Meeting");
+                          setFormZoomUrl("https://zoom.us/j/88819839999");
+                        }
+                      }}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                        formMeetingMode === "online"
+                          ? "border-blue-600 bg-blue-600/15 text-blue-800 dark:text-blue-300 ring-2 ring-blue-500/40 font-extrabold"
+                          : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <Video className="h-4 w-4 text-blue-600" />
+                      <span>📹 Trực Tuyến (Online)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         setFormMeetingMode("offline");
-                        setFormLocation("Phòng Họp Sapphire - Tầng 2 UniWork Hub, Hà Nội (TV 85 inch, Polycom 4K AI Tracking)");
+                        setFormPlatform("OFFLINE_UNIWORK");
+                        setFormLocation("Phòng Họp Sapphire - Tầng 2 UniWork Hub, 649 Kim Mã, Hà Nội");
                         setFormZoomUrl("");
                         setFormGpsUrl("https://www.google.com/maps/search/?api=1&query=T%C3%B2a+nh%C3%A0+V-Tower+Kim+M%C3%A3+H%C3%A0+N%E1%BB%99i");
-                      } else if (val === "OFFLINE_CUSTOM") {
-                        setFormMeetingMode("offline");
-                        setFormLocation("Văn phòng Hiệp hội CEO 1983, Hà Nội");
-                        setFormZoomUrl("");
-                        setFormGpsUrl("https://www.google.com/maps/search/?api=1&query=V%C4%83n+ph%C3%B2ng+Hi%E1%BB%87p+h%E1%BB%99i+CEO+1983");
-                      }
-                    }}
-                    className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-bold text-foreground cursor-pointer focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="ZOOM">📹 Zoom Meeting (Trực tuyến - Bảo mật cao)</option>
-                    <option value="GOOGLE_MEET">📹 Google Meet (Trực tuyến - Họp nhanh qua trình duyệt)</option>
-                    <option value="UNIWORK">🏢 UniWork Meet (Hệ sinh thái UniWork - Tích hợp CRM)</option>
-                    <option value="OFFLINE_UNIWORK">🏛️ Đăng ký Phòng Họp Sapphire - Trụ sở UniWork Hub (25 chỗ, TV 85&quot; Polycom 4K)</option>
-                    <option value="OFFLINE_CUSTOM">📍 Địa điểm Offline khác (Nhập địa chỉ & định vị Google Maps)</option>
-                  </select>
-                </div>
+                      }}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                        formMeetingMode === "offline"
+                          ? "border-emerald-600 bg-emerald-600/15 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/40 font-extrabold"
+                          : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <MapPin className="h-4 w-4 text-emerald-600" />
+                      <span>🏢 Trực Tiếp (Offline)</span>
+                    </button>
+                  </div>
 
-                {/* Chi tiết theo nền tảng / phòng họp đã chọn */}
-                {(formPlatform === "ZOOM" || formPlatform === "GOOGLE_MEET" || formPlatform === "UNIWORK") ? (
-                  <div className="space-y-2.5 pt-1 border-t border-border/60">
-                    <div>
-                      <label className="text-[11px] font-semibold text-foreground flex items-center justify-between mb-1">
-                        <span>Đường dẫn phòng họp {formPlatform === "ZOOM" ? "Zoom" : formPlatform === "GOOGLE_MEET" ? "Google Meet" : "UniWork"} *</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">Tự động phát link tới đại biểu</span>
-                      </label>
-                      <input
-                        type="url"
-                        required
-                        value={formZoomUrl}
-                        onChange={(e) => setFormZoomUrl(e.target.value)}
-                        placeholder="https://..."
-                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono text-blue-600 focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                        Mã cuộc họp / Passcode / Mô tả bổ sung
-                      </label>
-                      <input
-                        type="text"
-                        value={formLocation}
-                        onChange={(e) => setFormLocation(e.target.value)}
-                        placeholder={
-                          formPlatform === "ZOOM"
-                            ? "Zoom ID: 888 1983 9999 • Mật khẩu: 1983"
-                            : formPlatform === "GOOGLE_MEET"
-                            ? "Google Meet ID: ceo-1983-vip"
-                            : "UniWork ID: UNI-1983 • PIN: 8888"
-                        }
-                        className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-                  </div>
-                ) : formPlatform === "OFFLINE_UNIWORK" ? (
-                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2 text-xs border-t border-border/60">
-                    <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="h-4 w-4 text-emerald-600" />
-                        Phòng Họp Sapphire - Trụ Sở UniWork Hub (Sẵn sàng)
-                      </span>
-                      <span className="rounded-full bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-extrabold uppercase">
-                        25 Chỗ Ngồi
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-foreground/80">
-                      Địa chỉ: <strong>Tầng 2, Tòa nhà V-Tower, Số 649 Kim Mã, Ba Đình, Hà Nội</strong>
-                    </p>
-                    <div className="pt-1 border-t border-emerald-500/20 text-[11px] text-muted-foreground">
-                      Trang thiết bị chuẩn bị sẵn: <strong>TV tương tác 85 inch, Hệ thống Polycom 4K AI Tracking, Micro đa hướng, Wifi 6 tốc độ cao.</strong>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2.5 pt-1 border-t border-border/60">
-                    <div>
-                      <label className="text-[11px] font-semibold text-foreground block mb-1">
-                        Địa chỉ cụ thể phòng họp Offline *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formLocation}
-                        onChange={(e) => {
-                          setFormLocation(e.target.value);
-                          setFormGpsUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.target.value)}`);
-                        }}
-                        placeholder="Ví dụ: Tòa nhà CEO Tower, Phạm Hùng, Cầu Giấy, Hà Nội"
-                        className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between mb-1">
-                        <span>Định vị Google Maps dẫn đường</span>
-                        <a
-                          href={formGpsUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[10px] text-primary font-bold hover:underline"
+                  {formMeetingMode === "online" ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-foreground block mb-1">
+                          Nền tảng họp trực tuyến *
+                        </label>
+                        <select
+                          value={formPlatform}
+                          onChange={(e) => {
+                            const val = e.target.value as MeetingPlatform;
+                            setFormPlatform(val);
+                            if (val === "ZOOM") {
+                              setFormLocation("Trực tuyến qua Zoom Meeting");
+                              setFormZoomUrl("https://zoom.us/j/88819839999");
+                            } else if (val === "GOOGLE_MEET") {
+                              setFormLocation("Trực tuyến qua Google Meet");
+                              setFormZoomUrl("https://meet.google.com/ceo-1983-vip");
+                            } else if (val === "UNIWORK") {
+                              setFormLocation("Phòng họp số UniWork Online");
+                              setFormZoomUrl("https://uni-hrm.ubos.vn/meet/ceo1983");
+                            }
+                          }}
+                          className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-bold text-foreground cursor-pointer focus:ring-1 focus:ring-primary"
                         >
-                          Mở thử vị trí ↗
-                        </a>
-                      </label>
-                      <input
-                        type="url"
-                        value={formGpsUrl}
-                        onChange={(e) => setFormGpsUrl(e.target.value)}
-                        placeholder="https://maps.google.com/..."
-                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono text-blue-600 focus:ring-1 focus:ring-primary"
-                      />
+                          <option value="ZOOM">📹 Zoom Meeting (Trực tuyến - Bảo mật cao, tính năng phong phú)</option>
+                          <option value="GOOGLE_MEET">📹 Google Meet (Trực tuyến - Họp nhanh qua trình duyệt)</option>
+                          <option value="UNIWORK">🏢 UniWork Meet (Hệ sinh thái UniWork - Tích hợp CRM)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2.5 pt-1 border-t border-border/60">
+                        <div>
+                          <label className="text-[11px] font-semibold text-foreground flex items-center justify-between mb-1">
+                            <span>Đường dẫn phòng họp trực tuyến *</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">Tự động phát link tới đại biểu</span>
+                          </label>
+                          <input
+                            type="url"
+                            required
+                            value={formZoomUrl}
+                            onChange={(e) => setFormZoomUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono text-blue-600 focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                            Mã cuộc họp / Passcode / Mô tả bổ sung
+                          </label>
+                          <input
+                            type="text"
+                            value={formLocation}
+                            onChange={(e) => setFormLocation(e.target.value)}
+                            placeholder={
+                              formPlatform === "ZOOM"
+                                ? "Zoom ID: 888 1983 9999 • Mật khẩu: 1983"
+                                : formPlatform === "GOOGLE_MEET"
+                                ? "Google Meet ID: ceo-1983-vip"
+                                : "UniWork ID: UNI-1983 • PIN: 8888"
+                            }
+                            className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-foreground block mb-1">
+                          Lựa chọn địa điểm Offline *
+                        </label>
+                        <select
+                          value={formPlatform}
+                          onChange={(e) => {
+                            const val = e.target.value as MeetingPlatform;
+                            setFormPlatform(val);
+                            if (val === "OFFLINE_UNIWORK") {
+                              setFormLocation("Phòng Họp Sapphire - Tầng 2 UniWork Hub, 649 Kim Mã, Hà Nội");
+                              setFormGpsUrl("https://www.google.com/maps/search/?api=1&query=T%C3%B2a+nh%C3%A0+V-Tower+Kim+M%C3%A3+H%C3%A0+N%E1%BB%99i");
+                            } else {
+                              setFormLocation("Văn phòng Hiệp hội CEO 1983, Hà Nội");
+                              setFormGpsUrl("https://www.google.com/maps/search/?api=1&query=V%C4%83n+ph%C3%B2ng+Hi%E1%BB%87p+h%E1%BB%99i+CEO+1983");
+                            }
+                          }}
+                          className="w-full rounded-xl border border-border bg-background p-2.5 text-xs font-bold text-foreground cursor-pointer focus:ring-1 focus:ring-primary"
+                        >
+                          <option value="OFFLINE_UNIWORK">🏛️ Đăng ký Phòng Họp Sapphire - Trụ sở UniWork Hub (25 chỗ, TV 85&quot; Polycom 4K)</option>
+                          <option value="OFFLINE_CUSTOM">📍 Địa điểm Offline khác (Nhập địa chỉ & định vị Google Maps)</option>
+                        </select>
+                      </div>
+
+                      {formPlatform === "OFFLINE_UNIWORK" ? (
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2 text-xs border-t border-border/60">
+                          <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                            <span className="flex items-center gap-1.5">
+                              <MapPin className="h-4 w-4 text-emerald-600" />
+                              Phòng Họp Sapphire - Trụ Sở UniWork Hub (Sẵn sàng)
+                            </span>
+                            <span className="rounded-full bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-extrabold uppercase">
+                              25 Chỗ Ngồi
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-foreground/80">
+                            Địa chỉ: <strong>Tầng 2, Tòa nhà V-Tower, Số 649 Kim Mã, Ba Đình, Hà Nội</strong>
+                          </p>
+                          <div className="pt-1 border-t border-emerald-500/20 text-[11px] text-muted-foreground">
+                            Trang thiết bị chuẩn bị sẵn: <strong>TV tương tác 85 inch, Hệ thống Polycom 4K AI Tracking, Micro đa hướng, Wifi 6 tốc độ cao.</strong>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5 pt-1 border-t border-border/60">
+                          <div>
+                            <label className="text-[11px] font-semibold text-foreground block mb-1">
+                              Địa chỉ cụ thể phòng họp Offline *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formLocation}
+                              onChange={(e) => {
+                                setFormLocation(e.target.value);
+                                setFormGpsUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.target.value)}`);
+                              }}
+                              placeholder="Ví dụ: Tòa nhà CEO Tower, Phạm Hùng, Cầu Giấy, Hà Nội"
+                              className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between mb-1">
+                              <span>Định vị Google Maps dẫn đường</span>
+                              <a
+                                href={formGpsUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] text-primary font-bold hover:underline"
+                              >
+                                Mở thử vị trí ↗
+                              </a>
+                            </label>
+                            <input
+                              type="url"
+                              value={formGpsUrl}
+                              onChange={(e) => setFormGpsUrl(e.target.value)}
+                              placeholder="https://maps.google.com/..."
+                              className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono text-blue-600 focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">

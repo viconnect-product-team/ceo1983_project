@@ -96,6 +96,91 @@ self.addEventListener("fetch", (event) => {
 });
 
 // 4. Background Push Notification & Incoming Calls
+let currentUserId = null;
+let currentToken = null;
+let lastActiveCallId = null;
+const seenNotificationIds = new Set();
+
+self.addEventListener("message", (event) => {
+  if (!event.data) return;
+  if (event.data.type === "REGISTER_USER") {
+    currentUserId = event.data.userId || null;
+    currentToken = event.data.token || null;
+  } else if (event.data.type === "SHOW_NOTIFICATION") {
+    const { title, options } = event.data;
+    if (title) {
+      self.registration.showNotification(title, options || {});
+    }
+  }
+});
+
+// Periodic background check for incoming calls and urgent notifications (runs even when tab is backgrounded)
+setInterval(async () => {
+  if (!currentUserId) return;
+  try {
+    const headers = {
+      Accept: "application/json",
+      ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
+    };
+
+    // 1. Kiểm tra cuộc gọi đến đang đổ chuông
+    const callRes = await fetch("/api/me/active-call", { headers }).catch(() => null);
+    if (callRes && callRes.ok) {
+      const callData = await callRes.json().catch(() => null);
+      if (callData?.ok && callData?.call && callData.call.status === "ringing") {
+        const call = callData.call;
+        const callId = call.callId;
+        if (callId && callId !== lastActiveCallId) {
+          lastActiveCallId = callId;
+          const callerName = call.callerName || "Hội viên CEO 1983";
+          const callType = call.callType === "video" ? "Video" : "Thoại";
+          self.registration.showNotification(`📞 Cuộc gọi ${callType} đến từ ${callerName}`, {
+            body: `${callerName} đang gọi cho bạn... Bấm để trả lời ngay!`,
+            icon: call.callerAvatar || "/app-icon.png",
+            badge: "/favicon.png",
+            tag: `call-${callId}`,
+            data: `/association/messages?callId=${callId}`,
+            vibrate: [500, 250, 500, 250, 500, 250, 500],
+            requireInteraction: true,
+            renotify: true,
+            silent: false,
+            actions: [
+              { action: "accept", title: "📞 Trả lời" },
+              { action: "decline", title: "✕ Từ chối" },
+            ],
+          });
+        }
+      } else if (lastActiveCallId) {
+        lastActiveCallId = null;
+      }
+    }
+
+    // 2. Kiểm tra thông báo mới
+    const notifRes = await fetch("/api/me/notifications?limit=2&unreadOnly=true", { headers }).catch(() => null);
+    if (notifRes && notifRes.ok) {
+      const notifData = await notifRes.json().catch(() => null);
+      const list = Array.isArray(notifData) ? notifData : notifData?.data || [];
+      for (const item of list) {
+        const notifId = item.id || `${item.title}-${item.created_at || Date.now()}`;
+        if (!seenNotificationIds.has(notifId) && !item.is_read) {
+          seenNotificationIds.add(notifId);
+          self.registration.showNotification(item.title || "CEO 1983", {
+            body: item.body || item.message || "Bạn có thông báo mới từ Hiệp hội CEO 1983",
+            icon: item.icon || "/app-icon.png",
+            badge: "/favicon.png",
+            tag: `notif-${notifId}`,
+            data: item.action_url || item.url || "/association",
+            vibrate: [200, 100, 200],
+            renotify: true,
+          });
+        }
+      }
+    }
+  } catch {
+    /* Silent catch for background checks */
+  }
+}, 4500);
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
   try {
@@ -110,10 +195,11 @@ self.addEventListener("push", (event) => {
       data: data.url || (isCall ? "/association/messages" : "/association"),
       vibrate: isCall ? [500, 250, 500, 250, 500] : [200, 100, 200],
       requireInteraction: isCall,
+      renotify: true,
       actions: isCall
         ? [
-            { action: "accept", title: "Trả lời" },
-            { action: "decline", title: "Từ chối" },
+            { action: "accept", title: "📞 Trả lời" },
+            { action: "decline", title: "✕ Từ chối" },
           ]
         : [],
     };
@@ -132,11 +218,19 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const urlToOpen = event.notification.data || "/association";
+
+  if (event.action === "decline") {
+    // Người dùng từ chối cuộc gọi
+    return;
+  }
+
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
         if ("focus" in client) {
-          client.navigate(urlToOpen);
+          if (client.url && "navigate" in client) {
+            client.navigate(urlToOpen);
+          }
           return client.focus();
         }
       }
@@ -146,3 +240,4 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
+

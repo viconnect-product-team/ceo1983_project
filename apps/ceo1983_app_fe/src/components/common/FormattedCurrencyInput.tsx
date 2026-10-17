@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { cn } from "@/lib/utils";
 
 export type CurrencyType = "VND" | "USD";
 
 export interface FormattedCurrencyInputProps {
   id?: string;
-  value: string | number;
+  value: string | number | null | undefined;
   onChange: (formattedVal: string, numericVal: number, currency: CurrencyType) => void;
   currency?: CurrencyType;
   allowCurrencySwitch?: boolean;
@@ -20,7 +21,7 @@ export interface FormattedCurrencyInputProps {
 /**
  * Format string as Vietnamese Dong: 1000000 -> 1.000.000
  */
-export function formatVnd(val: string | number): string {
+export function formatVnd(val: string | number | null | undefined): string {
   if (val === undefined || val === null || val === "") return "";
   const digits = String(val).replace(/\D/g, "");
   if (!digits) return "";
@@ -31,10 +32,9 @@ export function formatVnd(val: string | number): string {
 /**
  * Format string as US Dollars: 1000000 -> 1,000,000 or 1250.50 -> 1,250.50
  */
-export function formatUsd(val: string | number): string {
+export function formatUsd(val: string | number | null | undefined): string {
   if (val === undefined || val === null || val === "") return "";
   const str = String(val).trim();
-  // Strip everything except digits and decimal dot
   const clean = str.replace(/[^0-9.]/g, "");
   if (!clean) return "";
   const parts = clean.split(".");
@@ -47,7 +47,7 @@ export function formatUsd(val: string | number): string {
   return formattedInt;
 }
 
-export function parseNumericValue(val: string | number, curr: CurrencyType): number {
+export function parseNumericValue(val: string | number | null | undefined, curr: CurrencyType): number {
   if (val === undefined || val === null || val === "") return 0;
   if (typeof val === "number") return Number.isFinite(val) ? val : 0;
   if (curr === "USD") {
@@ -65,7 +65,6 @@ export function parsePriceToNumber(priceVal: string | number | null | undefined,
   if (typeof priceVal === "number") return Number.isFinite(priceVal) ? priceVal : 0;
   const str = String(priceVal).trim();
   if (curr === "VND") {
-    // In VND, all dots and commas are thousand separators, NEVER decimal points
     const digits = str.replace(/\D/g, "");
     return digits ? parseInt(digits, 10) : 0;
   }
@@ -110,14 +109,14 @@ export function FormattedCurrencyInput({
     }
   }, [value, curr]);
 
-  const isComposingRef = useRef(false);
-
-  // Restore cursor position on layout paint to avoid caret jump only when separators change
+  // Restore cursor position on layout paint to avoid caret jump
   useLayoutEffect(() => {
-    if (nextCursorPosRef.current !== null && inputRef.current) {
+    if (nextCursorPosRef.current !== null && inputRef.current && isFocusedRef.current) {
       const pos = Math.min(nextCursorPosRef.current, inputRef.current.value.length);
-      if (inputRef.current.selectionStart !== pos || inputRef.current.selectionEnd !== pos) {
+      try {
         inputRef.current.setSelectionRange(pos, pos);
+      } catch {
+        // ignore if not supported
       }
       nextCursorPosRef.current = null;
     }
@@ -126,15 +125,17 @@ export function FormattedCurrencyInput({
   const handleCurrencyToggle = (newCurr: CurrencyType) => {
     setCurr(newCurr);
     onCurrencyChange?.(newCurr);
-    const num = parsePriceToNumber(displayValue);
+    const num = parsePriceToNumber(displayValue, curr);
     const newFormatted = newCurr === "USD" ? formatUsd(num) : formatVnd(num);
     setDisplayValue(newFormatted);
     onChange(newFormatted, num, newCurr);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled || !inputRef.current) return;
+
     // When deleting right behind a thousand dot (e.g. "1.|000"), delete the digit before the dot
-    if (e.key === "Backspace" && inputRef.current) {
+    if (e.key === "Backspace") {
       const selStart = inputRef.current.selectionStart;
       const selEnd = inputRef.current.selectionEnd;
       if (selStart !== null && selStart === selEnd && selStart > 1) {
@@ -144,22 +145,14 @@ export function FormattedCurrencyInput({
           const before = displayValue.slice(0, selStart - 2);
           const after = displayValue.slice(selStart);
           const newRaw = before + after;
-          const fakeEvent = {
-            target: {
-              value: newRaw,
-              selectionStart: selStart - 1,
-            },
-          } as unknown as React.ChangeEvent<HTMLInputElement>;
-          handleChange(fakeEvent);
+          formatAndNotify(newRaw, selStart - 1);
         }
       }
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isComposingRef.current) return;
-    const raw = e.target.value;
-    const cursor = e.target.selectionStart ?? raw.length;
+  const formatAndNotify = (raw: string, cursorPosition?: number) => {
+    const cursor = cursorPosition ?? (inputRef.current?.selectionStart ?? raw.length);
 
     if (curr === "VND") {
       const digitsBeforeCursor = raw.slice(0, cursor).replace(/\D/g, "").length;
@@ -167,7 +160,7 @@ export function FormattedCurrencyInput({
 
       if (!digitsOnly) {
         setDisplayValue("");
-        nextCursorPosRef.current = null;
+        nextCursorPosRef.current = 0;
         onChange("", 0, "VND");
         return;
       }
@@ -197,13 +190,13 @@ export function FormattedCurrencyInput({
       const numVal = parseInt(cleanDigits, 10) || 0;
       onChange(formatted, numVal, "VND");
     } else {
-      // USD Mode: allows integer commas and optional dot decimal
+      // USD Mode
       const validCharsToRight = raw.slice(cursor).replace(/[^0-9.]/g, "").length;
       const clean = raw.replace(/[^0-9.]/g, "");
 
       if (!clean) {
         setDisplayValue("");
-        nextCursorPosRef.current = null;
+        nextCursorPosRef.current = 0;
         onChange("", 0, "USD");
         return;
       }
@@ -219,36 +212,36 @@ export function FormattedCurrencyInput({
         formatted = `${formatted}.`;
       }
 
-      if (raw === formatted && !formatted.includes(",")) {
-        nextCursorPosRef.current = null;
-      } else {
-        let newCursor = formatted.length;
-        if (validCharsToRight > 0) {
-          let count = 0;
-          for (let i = formatted.length - 1; i >= 0; i--) {
-            if (/[0-9.]/.test(formatted[i])) {
-              count++;
-              if (count === validCharsToRight) {
-                newCursor = i;
-                break;
-              }
+      let newCursor = formatted.length;
+      if (validCharsToRight > 0) {
+        let count = 0;
+        for (let i = formatted.length - 1; i >= 0; i--) {
+          if (/[0-9.]/.test(formatted[i])) {
+            count++;
+            if (count === validCharsToRight) {
+              newCursor = i;
+              break;
             }
           }
         }
-        nextCursorPosRef.current = newCursor;
       }
 
+      nextCursorPosRef.current = newCursor;
       setDisplayValue(formatted);
       const numVal = parseFloat(formatted.replace(/,/g, "")) || 0;
       onChange(formatted, numVal, "USD");
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    formatAndNotify(e.target.value, e.target.selectionStart ?? undefined);
+  };
+
   return (
     <div className="relative flex items-center w-full">
       {/* Currency Symbol / Toggle */}
       {allowCurrencySwitch ? (
-        <div className="absolute left-2.5 z-10 flex items-center">
+        <div className="absolute left-2.5 z-10 flex items-center pointer-events-auto">
           <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
             <button
               type="button"
@@ -257,7 +250,7 @@ export function FormattedCurrencyInput({
               onClick={() => handleCurrencyToggle("VND")}
               className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${
                 curr === "VND"
-                  ? "bg-[#003B95] text-white shadow-xs"
+                  ? "bg-[#003B95] text-white shadow-xs font-bold"
                   : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
@@ -270,7 +263,7 @@ export function FormattedCurrencyInput({
               onClick={() => handleCurrencyToggle("USD")}
               className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${
                 curr === "USD"
-                  ? "bg-[#003B95] text-white shadow-xs"
+                  ? "bg-[#003B95] text-white shadow-xs font-bold"
                   : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
@@ -279,7 +272,7 @@ export function FormattedCurrencyInput({
           </div>
         </div>
       ) : (
-        <span className="absolute left-3 z-10 text-xs font-bold text-slate-500 select-none">
+        <span className="absolute left-3 z-10 text-xs font-bold text-slate-500 select-none pointer-events-none">
           {curr === "VND" ? "₫" : "$"}
         </span>
       )}
@@ -294,20 +287,14 @@ export function FormattedCurrencyInput({
         disabled={disabled}
         placeholder={placeholder || (curr === "VND" ? "0 đ" : "$0.00")}
         value={displayValue}
-        onCompositionStart={() => {
-          isComposingRef.current = true;
-        }}
-        onCompositionEnd={(e) => {
-          isComposingRef.current = false;
-          handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
-        }}
         onFocus={() => {
           isFocusedRef.current = true;
-          if (displayValue === "0" || displayValue === "0 đ" || displayValue === "$0") {
-            setDisplayValue("");
-            nextCursorPosRef.current = null;
-            onChange("", 0, curr);
-          }
+          // Defer select slightly so mouseup doesn't cancel selection
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.select();
+            }
+          }, 20);
         }}
         onBlur={() => {
           isFocusedRef.current = false;
@@ -318,9 +305,14 @@ export function FormattedCurrencyInput({
         }}
         onKeyDown={handleKeyDown}
         onChange={handleChange}
-        className={`${className} ${
-          allowCurrencySwitch ? "pl-20" : "pl-8"
-        } pr-12 font-medium tracking-wide`}
+        style={{
+          paddingLeft: allowCurrencySwitch ? "5.25rem" : "2.25rem",
+          paddingRight: "3.5rem",
+        }}
+        className={cn(
+          "w-full rounded-xl border border-input bg-background py-2 text-xs font-medium tracking-wide focus:outline-none focus:ring-2 focus:ring-primary",
+          className
+        )}
       />
 
       {/* Suffix badge */}

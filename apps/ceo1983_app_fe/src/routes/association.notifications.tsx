@@ -181,21 +181,66 @@ function isConnectionRequestReceived(n: any): boolean {
 function getChannelOrPeerForNotif(n: any): string {
   const kind = String(n.notificationKind || n.type || '').toLowerCase();
   const text = `${n.title || ''} ${n.body || ''}`.toLowerCase();
-  if (kind.includes('event') || text.includes('sự kiện') || text.includes('hội nghị') || text.includes('cuộc họp')) {
-    return 'channel_events';
-  }
-  if (kind.includes('opportunity') || kind.includes('deal') || text.includes('b2b') || text.includes('giao thương')) {
-    return 'channel_deals';
-  }
-  if (text.includes('xúc tiến') || text.includes('thương mại')) {
-    return 'channel_promotion';
-  }
-  if (kind.includes('fee') || text.includes('hội phí') || text.includes('ban thư ký') || text.includes('điều lệ')) {
-    return 'channel_secretariat';
-  }
-  if (text.includes('truyền thông') || text.includes('báo chí') || text.includes('tin tức')) {
+
+  // 1. Ban Truyền Thông: Sự kiện, vé, check-in, kho ảnh, hình ảnh, báo chí, bản tin
+  if (
+    kind.includes('event') ||
+    text.includes('sự kiện') ||
+    text.includes('vé') ||
+    text.includes('check-in') ||
+    text.includes('kho ảnh') ||
+    text.includes('photo_gallery') ||
+    text.includes('truyền thông') ||
+    text.includes('báo chí') ||
+    text.includes('tin tức')
+  ) {
     return 'channel_media';
   }
+
+  // 2. Ban Thành Viên: Kết nạp, hồ sơ doanh nghiệp, gia hạn hội viên, sinh nhật, danh thiếp
+  if (
+    kind.includes('member') ||
+    text.includes('hội viên') ||
+    text.includes('kết nạp') ||
+    text.includes('hồ sơ') ||
+    text.includes('gia hạn') ||
+    text.includes('sinh nhật') ||
+    text.includes('thành viên')
+  ) {
+    return 'channel_membership';
+  }
+
+  // 3. Ban Xúc Tiến Thương Mại: Cơ hội giao thương, deal, B2B, sản phẩm, marketplace, gian hàng, cung cầu
+  if (
+    kind.includes('opportunity') ||
+    kind.includes('deal') ||
+    text.includes('b2b') ||
+    text.includes('giao thương') ||
+    text.includes('xúc tiến') ||
+    text.includes('thương mại') ||
+    text.includes('marketplace') ||
+    text.includes('sản phẩm') ||
+    text.includes('đơn hàng') ||
+    text.includes('gian hàng')
+  ) {
+    return 'channel_promotion';
+  }
+
+  // 4. Ban Thư Ký & Ban Điều Hành: Cuộc họp BCH, nghị quyết, văn bản, hội phí, điều lệ
+  if (
+    kind.includes('meeting') ||
+    kind.includes('fee') ||
+    text.includes('cuộc họp') ||
+    text.includes('họp bch') ||
+    text.includes('hội phí') ||
+    text.includes('ban thư ký') ||
+    text.includes('ban điều hành') ||
+    text.includes('nghị quyết') ||
+    text.includes('điều lệ')
+  ) {
+    return 'channel_secretariat';
+  }
+
   if (n.fromId && n.fromId !== 'admin') {
     return n.fromId;
   }

@@ -26,7 +26,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchNestApi } from "@/lib/api-client";
 import { listTransactionsFn, type Transaction } from "@/lib/finance.functions";
 import { useFmt, useT } from "@/lib/i18n";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
 import { toast } from "sonner";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
@@ -249,18 +249,35 @@ function FinanceReport() {
   const cashOut = expense.filter((tx) => tx.method === "cash").reduce((s, tx) => s + tx.amount, 0);
 
   const handleExportCsv = () => {
-    downloadCsv("bao-cao-tai-chinh-chi-tiet", transactions, [
-      { header: "Mã chứng từ", value: (tx) => tx.id },
-      { header: "Ngày ghi sổ", value: (tx) => tx.date },
-      { header: "Loại giao dịch", value: (tx) => (tx.type === "income" ? "Thu" : "Chi") },
-      { header: "Danh mục", value: (tx) => tx.category },
-      { header: "Nội dung hạch toán", value: (tx) => tx.description },
-      { header: "Số tiền (VNĐ)", value: (tx) => tx.amount },
-      { header: "Phương thức", value: (tx) => (tx.method === "cash" ? "Tiền mặt" : "Chuyển khoản") },
-      { header: "Đối tác / Người nộp - nhận", value: (tx) => tx.recipient || "" },
-      { header: "Trạng thái kiểm toán", value: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt") },
-    ]);
-    toast.success("Đã xuất sổ nhật ký hạch toán tài chính ra file CSV!");
+    const totalIn = income.reduce((s, tx) => s + tx.amount, 0);
+    const totalOut = expense.reduce((s, tx) => s + tx.amount, 0);
+    const net = totalIn - totalOut;
+
+    exportToExcel<Transaction>({
+      title: "BÁO CÁO TỔNG HỢP KIỂM TOÁN TÀI CHÍNH & SỔ QUỸ THU CHI",
+      subtitle: `Kỳ báo cáo: ${period === "all" ? "Toàn bộ các kỳ hạch toán" : period === "month" ? "Tháng 03/2026" : period === "quarter" ? "Quý 1/2026" : "Năm tài chính 2026"} | Đơn vị: CLB Doanh Nhân CEO 1983`,
+      filename: "bao-cao-tai-chinh-kiem-toan-ceo1983",
+      sheetName: "Nhat_Ky_Thu_Chi",
+      data: transactions,
+      columns: [
+        { header: "Mã chứng từ", key: "id", width: 16, value: (tx) => tx.id },
+        { header: "Ngày ghi sổ", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
+        { header: "Loại giao dịch", key: "type", width: 16, value: (tx) => (tx.type === "income" ? "Khoản Thu" : "Khoản Chi") },
+        { header: "Danh mục", key: "category", width: 22, value: (tx) => tx.category },
+        { header: "Nội dung hạch toán", key: "description", width: 38, value: (tx) => tx.description },
+        { header: "Số tiền (VNĐ)", key: "amount", width: 20, value: (tx) => formatExcelCurrency(tx.amount) },
+        { header: "Phương thức", key: "method", width: 18, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "bank" ? "Chuyển khoản" : "Thẻ ngân hàng") },
+        { header: "Đối tác / Người nộp - nhận", key: "recipient", width: 30, value: (tx) => tx.recipient || "—" },
+        { header: "Trạng thái kiểm toán", key: "status", width: 18, value: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt") },
+      ],
+      summaryRows: [
+        ["TỔNG CỘNG NGUỒN THU:", "", "", "", "", formatExcelCurrency(totalIn) + " đ"],
+        ["TỔNG CỘNG KHOẢN CHI:", "", "", "", "", formatExcelCurrency(totalOut) + " đ"],
+        ["TỒN QUỸ RÒNG / THẶNG DƯ:", "", "", "", "", formatExcelCurrency(net) + " đ"],
+      ],
+      signerTitles: ["NGƯỜI LẬP BÁO CÁO", "TRƯỞNG BAN TÀI CHÍNH", "CHỦ TỊCH CLB CEO 1983"],
+    });
+    toast.success("Đã xuất báo cáo tài chính chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
   };
 
   const handleExportPdf = () => {
@@ -281,7 +298,7 @@ function FinanceReport() {
               className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-sm hover:bg-muted cursor-pointer transition-all"
             >
               <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-              <span>Xuất Excel / CSV</span>
+              <span>Xuất Báo Cáo Excel</span>
             </button>
             <button
               type="button"
@@ -357,82 +374,90 @@ function FinanceReport() {
       {/* 4 Core Financial KPI Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total In */}
-        <div className="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 shadow-[var(--shadow-card)] transition-all hover:border-emerald-500/60 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
               Tổng Thu Thực Nhận
             </span>
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-600">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600">
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
-            +{fmt.money(totalIn)}
-          </div>
-          <div className="mt-2 text-[11px] text-muted-foreground flex items-center justify-between pt-2 border-t border-emerald-500/20">
-            <span>Chuyển khoản: {fmt.money(bankIn)}</span>
-            <span>Tiền mặt: {fmt.money(cashIn)}</span>
+          <div>
+            <div className="truncate text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+              +{fmt.money(totalIn)}
+            </div>
+            <div className="mt-1 flex items-center justify-between truncate text-[11px] text-muted-foreground">
+              <span className="truncate">CK: {fmt.money(bankIn)}</span>
+              <span className="truncate">TM: {fmt.money(cashIn)}</span>
+            </div>
           </div>
         </div>
 
         {/* Total Out */}
-        <div className="p-4 rounded-2xl border border-rose-500/20 bg-rose-500/5 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 shadow-[var(--shadow-card)] transition-all hover:border-rose-500/60 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">
               Tổng Chi Thực Tế
             </span>
-            <div className="p-2 rounded-xl bg-rose-500/20 text-rose-600">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-500/20 text-rose-600">
               <TrendingDown className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono tracking-tight">
-            -{fmt.money(totalOut)}
-          </div>
-          <div className="mt-2 text-[11px] text-muted-foreground flex items-center justify-between pt-2 border-t border-rose-500/20">
-            <span>Chuyển khoản: {fmt.money(bankOut)}</span>
-            <span>Tiền mặt: {fmt.money(cashOut)}</span>
+          <div>
+            <div className="truncate text-2xl font-black text-rose-600 dark:text-rose-400 font-mono tracking-tight">
+              -{fmt.money(totalOut)}
+            </div>
+            <div className="mt-1 flex items-center justify-between truncate text-[11px] text-muted-foreground">
+              <span className="truncate">CK: {fmt.money(bankOut)}</span>
+              <span className="truncate">TM: {fmt.money(cashOut)}</span>
+            </div>
           </div>
         </div>
 
         {/* Net Cash Balance */}
-        <div className="p-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-blue-500/30 bg-blue-500/5 p-4 shadow-[var(--shadow-card)] transition-all hover:border-blue-500/60 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">
               Tồn Quỹ Ròng / Thặng Dư
             </span>
-            <div className="p-2 rounded-xl bg-blue-500/20 text-blue-600">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-600">
               <Wallet className="h-4 w-4" />
             </div>
           </div>
-          <div
-            className={`text-2xl font-black font-mono tracking-tight ${
-              netBalance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-            }`}
-          >
-            {netBalance >= 0 ? `+${fmt.money(netBalance)}` : `-${fmt.money(Math.abs(netBalance))}`}
-          </div>
-          <div className="mt-2 text-[11px] text-muted-foreground flex items-center justify-between pt-2 border-t border-blue-500/20">
-            <span>Khả dụng tức thì</span>
-            <span className="font-bold text-emerald-600">100% Sẵn sàng</span>
+          <div>
+            <div
+              className={`truncate text-2xl font-black font-mono tracking-tight ${
+                netBalance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+              }`}
+            >
+              {netBalance >= 0 ? `+${fmt.money(netBalance)}` : `-${fmt.money(Math.abs(netBalance))}`}
+            </div>
+            <div className="mt-1 flex items-center justify-between truncate text-[11px] text-muted-foreground">
+              <span>Khả dụng tức thì</span>
+              <span className="font-bold text-emerald-600">100% Sẵn sàng</span>
+            </div>
           </div>
         </div>
 
         {/* Operating Ratio */}
-        <div className="p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 shadow-[var(--shadow-card)] transition-all hover:border-amber-500/60 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">
               Tỷ Lệ Chi / Thu
             </span>
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-600">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600">
               <PieChart className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
-            {expenseRatio}%
-          </div>
-          <div className="mt-2 text-[11px] text-muted-foreground flex items-center justify-between pt-2 border-t border-amber-500/20">
-            <span>Ngưỡng an toàn quỹ: &lt;75%</span>
-            <span className="font-bold text-emerald-600">Đạt chuẩn</span>
+          <div>
+            <div className="truncate text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
+              {expenseRatio}%
+            </div>
+            <div className="mt-1 flex items-center justify-between truncate text-[11px] text-muted-foreground">
+              <span>Ngưỡng an toàn: &lt;75%</span>
+              <span className="font-bold text-emerald-600">Đạt chuẩn</span>
+            </div>
           </div>
         </div>
       </div>
@@ -794,7 +819,7 @@ function FinanceReport() {
                   className="shrink-0 px-4 py-2 rounded-xl border border-border bg-card text-foreground font-bold text-xs flex items-center gap-1.5 shadow-sm hover:bg-muted cursor-pointer"
                 >
                   <Download className="h-4 w-4 text-emerald-600" />
-                  <span>Tải Excel / CSV</span>
+                  <span>Tải Báo Cáo Excel (.xlsx)</span>
                 </button>
               </div>
             </div>

@@ -797,7 +797,7 @@ export default function ProfileScreen() {
 
   return (
     <div className="vba-animate min-h-full pb-28 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center">
-      <div className="w-full max-w-md flex flex-col justify-start items-stretch gap-4">
+      <div className="w-full max-w-full flex flex-col justify-start items-stretch gap-4">
         <MemberHeader
           title={isEn ? "Profile" : "Trang cá nhân"}
           back
@@ -1126,16 +1126,8 @@ export default function ProfileScreen() {
                 </div>
               </button>
 
-              {/* Item 4: Ngôn ngữ ứng dụng */}
-              <button
-                type="button"
-                onClick={() => {
-                  const nextLang = lang === "vi" ? "en" : "vi";
-                  setLang(nextLang);
-                  toast.success(nextLang === "en" ? "Switched to English" : "Đã chuyển sang Tiếng Việt");
-                }}
-                className="w-full self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
+              {/* Item 4: Chuyển đổi ngôn ngữ VN / EN (Toggle Switch) */}
+              <div className="w-full self-stretch p-3 sm:p-3.5 bg-white dark:bg-[#0F172A] border-b border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5">
                 <div className="self-stretch inline-flex justify-between items-center">
                   <div className="flex justify-start items-center gap-3 min-w-0 flex-1">
                     <div className="size-11 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex justify-center items-center shrink-0 border border-sky-100 dark:border-sky-900/50">
@@ -1147,22 +1139,50 @@ export default function ProfileScreen() {
                     </div>
                     <div className="flex-1 inline-flex flex-col justify-start items-start gap-0.5 min-w-0">
                       <div className="self-stretch justify-start text-slate-900 dark:text-white text-sm font-semibold leading-snug line-clamp-1">
-                        {isEn ? "App Language" : "Ngôn ngữ ứng dụng"}
+                        {isEn ? "Language" : "Ngôn ngữ"}
                       </div>
                       <div className="self-stretch justify-start text-slate-500 dark:text-slate-400 text-xs font-normal leading-tight line-clamp-1">
-                        {lang === "vi" ? "Tiếng Việt (8 ngôn ngữ tổng cộng)" : "English (8 languages total)"}
+                        {lang === "vi" ? "Tiếng Việt (VN)" : "English (EN)"}
                       </div>
                     </div>
                   </div>
-                  <div className="size-6 relative overflow-hidden flex items-center justify-center shrink-0">
-                    <img
-                      src="/icons/profile/chevron-right.svg"
-                      alt="Arrow"
-                      className="w-4 h-4 object-contain opacity-70"
-                    />
+                  {/* Segmented Toggle VN / EN */}
+                  <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (lang !== "vi") {
+                          setLang("vi");
+                          toast.success("Đã chuyển sang Tiếng Việt (VN)");
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer ${
+                        lang === "vi"
+                          ? "bg-[#003B95] text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      🇻🇳 VN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (lang !== "en") {
+                          setLang("en");
+                          toast.success("Switched to English (EN)");
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer ${
+                        lang === "en"
+                          ? "bg-[#003B95] text-white shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      🇬🇧 EN
+                    </button>
                   </div>
                 </div>
-              </button>
+              </div>
 
               {/* Item 5: Chủ đề sự kiện từ CRM */}
               {(() => {
@@ -1447,6 +1467,19 @@ export default function ProfileScreen() {
 
         {/* ── ACTION BUTTONS: CHIA SẺ, CÀI APP, ĐĂNG XUẤT ── */}
         <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5 mt-2">
+          {/* Nút: Đi tới Quản trị tài khoản hệ thống */}
+          <Link
+            to="/events"
+            className="self-stretch px-5 py-2.5 rounded-[48px] bg-gradient-to-r from-[#003B95] to-[#002159] hover:brightness-110 active:scale-95 text-white inline-flex justify-center items-center gap-2.5 font-bold font-['SF_Pro',system-ui,sans-serif] text-base shadow-md transition cursor-pointer"
+          >
+            <div className="size-6 relative overflow-hidden flex items-center justify-center">
+              <LayoutDashboard className="size-5 text-amber-300" />
+            </div>
+            <div className="justify-start text-base font-bold leading-5">
+              {isEn ? "Go to System Account Administration" : "Đi tới Quản trị tài khoản hệ thống"}
+            </div>
+          </Link>
+
           {/* Nút 1: Chia sẻ link cài App */}
           <button
             type="button"

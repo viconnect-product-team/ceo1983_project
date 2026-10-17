@@ -1,10 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Mail, MousePointerClick, Plus, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, Pill, StatCard, TableShell } from "@/components/dashboard/PageKit";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   listCampaignsFn,
   createCampaignFn,
@@ -64,6 +65,14 @@ function EmailPage() {
     }
   };
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageCount = Math.max(1, Math.ceil(CAMPAIGNS.length / pageSize));
+  const pagedCampaigns = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return CAMPAIGNS.slice(start, start + pageSize);
+  }, [CAMPAIGNS, page, pageSize]);
+
   return (
     <AppShell>
       <PageHeader
@@ -120,8 +129,26 @@ function EmailPage() {
           t("email.col.status"),
           t("email.col.actions"),
         ]}
+        footer={
+          CAMPAIGNS.length > 0 ? (
+            <Pagination
+              page={page}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              total={CAMPAIGNS.length}
+              from={CAMPAIGNS.length === 0 ? 0 : (page - 1) * pageSize + 1}
+              to={Math.min(page * pageSize, CAMPAIGNS.length)}
+              onPage={setPage}
+              onPageSize={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          ) : undefined
+        }
       >
-        {CAMPAIGNS.map((c: any) => (
+        {pagedCampaigns.map((c: any) => (
           <tr key={c.id} className="border-b border-border last:border-0 hover:bg-secondary/40">
             <td className="px-4 py-3">
               <div className="font-semibold text-foreground">{c.name}</div>

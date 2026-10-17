@@ -33,7 +33,7 @@ import {
 } from "@/lib/finance.functions";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
@@ -300,16 +300,28 @@ function IncomePage() {
   );
 
   const handleExport = () => {
-    downloadCsv("danh-sach-khoan-thu", tc.sorted, [
-      { header: "Mã phiếu thu", value: (tx) => tx.id },
-      { header: "Ngày thu", value: (tx) => tx.date },
-      { header: "Danh mục thu", value: (tx) => tx.category },
-      { header: "Nội dung thu", value: (tx) => tx.description },
-      { header: "Người nộp / Đơn vị", value: (tx) => tx.recipient || "" },
-      { header: "Số tiền", value: (tx) => tx.amount },
-      { header: "Hình thức", value: (tx) => (tx.method === "cash" ? "Tiền mặt" : "Chuyển khoản") },
-      { header: "Trạng thái", value: (tx) => (tx.status === "completed" ? "Đã xác nhận" : "Chờ xử lý") },
-    ]);
+    const totalAmount = tc.sorted.reduce((acc, tx) => acc + Number(tx.amount || 0), 0);
+    exportToExcel<Transaction>({
+      title: "BÁO CÁO NHẬT KÝ THU QUỸ & HỘI PHÍ HỘI VIÊN",
+      subtitle: "Hệ thống quản lý tài chính & thu chi Hiệp Hội Doanh Nhân CEO 1983",
+      filename: "nhat-ky-thu-quy-ceo1983",
+      sheetName: "Nhat_Ky_Thu",
+      columns: [
+        { header: "Mã phiếu thu", key: "id", width: 16, value: (tx) => tx.id },
+        { header: "Ngày thu", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
+        { header: "Danh mục thu", key: "category", width: 22, value: (tx) => getCategoryLabel(tx.category) },
+        { header: "Nội dung thu", key: "description", width: 38, value: (tx) => tx.description },
+        { header: "Người nộp / Đơn vị", key: "recipient", width: 28, value: (tx) => tx.recipient || "—" },
+        { header: "Số tiền (VNĐ)", key: "amount", width: 20, value: (tx) => formatExcelCurrency(tx.amount) },
+        { header: "Hình thức", key: "method", width: 16, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "card" ? "Thẻ tín dụng" : "Chuyển khoản") },
+        { header: "Trạng thái", key: "status", width: 16, value: (tx) => (tx.status === "completed" ? "Đã xác nhận" : "Chờ xử lý") },
+      ],
+      data: tc.sorted,
+      summaryRows: [
+        ["TỔNG CỘNG TIỀN THU QUỸ:", "", "", "", "", formatExcelCurrency(totalAmount) + " đ", "", ""],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "THỦ QUỸ / KẾ TOÁN", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+    });
   };
 
   const getCategoryLabel = (cat: string) => {
@@ -366,70 +378,62 @@ function IncomePage() {
         }
       />
 
-      {/* KPI Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Tổng thu */}
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-              Tổng Thu Quỹ
-            </span>
-            <ArrowUpCircle className="h-5 w-5 text-emerald-600" />
+      {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Tổng thu quỹ (Sky gradient - Blue) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG THU QUỸ</div>
           </div>
-          <div className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
             {fmt.money(totalIncome)}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Tổng hợp toàn bộ các nguồn thu
-          </p>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Toàn bộ các nguồn thu quỹ hội
+          </div>
         </div>
 
-        {/* Card 2: Thu Tiền Mặt */}
-        <div className="rounded-2xl border border-teal-500/20 bg-teal-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">
-              Thu Tiền Mặt
-            </span>
-            <Banknote className="h-5 w-5 text-teal-600" />
+        {/* Card 2: Thu Tiền Mặt (Violet gradient - Indigo) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">THU TIỀN MẶT</div>
           </div>
-          <div className="mt-2 text-2xl font-black text-teal-700 dark:text-teal-300">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
             {fmt.money(incomeCash)}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Bao gồm thu trực tiếp tại quầy / sự kiện
-          </p>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Thu trực tiếp tại quầy &amp; sự kiện
+          </div>
         </div>
 
-        {/* Card 3: Thu Chuyển Khoản */}
-        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-              Thu Chuyển Khoản
-            </span>
-            <Building className="h-5 w-5 text-blue-600" />
+        {/* Card 3: Thu Chuyển Khoản (Orange gradient - Orange) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">THU CHUYỂN KHOẢN</div>
           </div>
-          <div className="mt-2 text-2xl font-black text-blue-700 dark:text-blue-300">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
             {fmt.money(incomeBank)}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            VietQR / Chuyển khoản ngân hàng tự động
-          </p>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            VietQR &amp; chuyển khoản ngân hàng
+          </div>
         </div>
 
-        {/* Card 4: Thu Đột Xuất Sự Kiện */}
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-              Thu Đột Xuất Tại Sự Kiện
-            </span>
-            <UserCheck className="h-5 w-5 text-amber-600" />
+        {/* Card 4: Thu Đột Xuất Tại Sự Kiện (Green gradient - Emerald) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">THU ĐỘT XUẤT SỰ KIỆN</div>
           </div>
-          <div className="mt-2 text-2xl font-black text-amber-700 dark:text-amber-300">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
             {fmt.money(walkinIncome)}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Khách vãng lai & tham gia đột xuất
-          </p>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Khách vãng lai &amp; hội viên đột xuất
+          </div>
         </div>
       </div>
 
@@ -642,18 +646,17 @@ function IncomePage() {
           </tbody>
         </table>
         </div>
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+        />
       </Card>
-
-      <Pagination
-        page={tc.page}
-        pageCount={tc.pageCount}
-        pageSize={tc.pageSize}
-        total={tc.total}
-        from={tc.from}
-        to={tc.to}
-        onPage={tc.setPage}
-        onPageSize={tc.setPageSize}
-      />
 
       {/* Modal Lập / Sửa Phiếu Thu */}
       {modalOpen && (

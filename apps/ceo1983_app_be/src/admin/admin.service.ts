@@ -11,6 +11,11 @@ export const DEMO_LEAD_STATUSES = [
   'cancelled',
 ] as const;
 
+function isValidUuid(val: any): boolean {
+  if (!val || typeof val !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+}
+
 @Injectable()
 export class AdminService implements OnModuleInit {
   constructor(
@@ -544,24 +549,44 @@ export class AdminService implements OnModuleInit {
 
     // 1. Query broadcast notifications from public.notifications
     try {
+      const validAssocId = isValidUuid(associationId) ? associationId : null;
       let rows: any[] = [];
       if (filterScope) {
-        rows = await this.prisma.$queryRaw<any[]>`
-          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
-          FROM public.notifications
-          WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
-            AND (app_scope = ${filterScope} OR target_app = ${filterScope})
-          ORDER BY created_at DESC
-          LIMIT 60
-        `.catch(() => []);
+        if (validAssocId) {
+          rows = await this.prisma.$queryRaw<any[]>`
+            SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
+            FROM public.notifications
+            WHERE (association_id = ${validAssocId}::uuid OR association_id IS NULL)
+              AND (app_scope = ${filterScope} OR target_app = ${filterScope})
+            ORDER BY created_at DESC
+            LIMIT 60
+          `.catch(() => []);
+        } else {
+          rows = await this.prisma.$queryRaw<any[]>`
+            SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
+            FROM public.notifications
+            WHERE (app_scope = ${filterScope} OR target_app = ${filterScope})
+            ORDER BY created_at DESC
+            LIMIT 60
+          `.catch(() => []);
+        }
       } else {
-        rows = await this.prisma.$queryRaw<any[]>`
-          SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
-          FROM public.notifications
-          WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
-          ORDER BY created_at DESC
-          LIMIT 60
-        `.catch(() => []);
+        if (validAssocId) {
+          rows = await this.prisma.$queryRaw<any[]>`
+            SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
+            FROM public.notifications
+            WHERE (association_id = ${validAssocId}::uuid OR association_id IS NULL)
+            ORDER BY created_at DESC
+            LIMIT 60
+          `.catch(() => []);
+        } else {
+          rows = await this.prisma.$queryRaw<any[]>`
+            SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
+            FROM public.notifications
+            ORDER BY created_at DESC
+            LIMIT 60
+          `.catch(() => []);
+        }
       }
 
       for (const r of rows) {
@@ -603,34 +628,48 @@ export class AdminService implements OnModuleInit {
 
     // 2. Query personal business notifications for this user (only admins see association-wide approval events)
     try {
-      if (userId) {
+      const validUserId = isValidUuid(userId) ? userId : null;
+      if (validUserId || isAdmin) {
         let bzRows: any[] = [];
         if (isAdmin) {
           if (filterScope) {
-            bzRows = await this.prisma.$queryRaw<any[]>`
+            bzRows = validUserId ? await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
-              WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
+              WHERE (recipient_user_id = ${validUserId}::uuid OR source_domain = 'association')
+                AND (app_scope = ${filterScope} OR target_app = ${filterScope})
+              ORDER BY created_at DESC
+              LIMIT 40
+            `.catch(() => []) : await this.prisma.$queryRaw<any[]>`
+              SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+              FROM public.business_notifications
+              WHERE source_domain = 'association'
                 AND (app_scope = ${filterScope} OR target_app = ${filterScope})
               ORDER BY created_at DESC
               LIMIT 40
             `.catch(() => []);
           } else {
-            bzRows = await this.prisma.$queryRaw<any[]>`
+            bzRows = validUserId ? await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
-              WHERE (recipient_user_id = ${userId}::uuid OR source_domain = 'association')
+              WHERE (recipient_user_id = ${validUserId}::uuid OR source_domain = 'association')
+              ORDER BY created_at DESC
+              LIMIT 40
+            `.catch(() => []) : await this.prisma.$queryRaw<any[]>`
+              SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
+              FROM public.business_notifications
+              WHERE source_domain = 'association'
               ORDER BY created_at DESC
               LIMIT 40
             `.catch(() => []);
           }
-        } else {
+        } else if (validUserId) {
           // Regular user only sees notifications addressed explicitly to their user ID
           if (filterScope) {
             bzRows = await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
-              WHERE recipient_user_id = ${userId}::uuid
+              WHERE recipient_user_id = ${validUserId}::uuid
                 AND source_domain != 'association'
                 AND (app_scope = ${filterScope} OR target_app = ${filterScope})
               ORDER BY created_at DESC
@@ -640,7 +679,7 @@ export class AdminService implements OnModuleInit {
             bzRows = await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
-              WHERE recipient_user_id = ${userId}::uuid
+              WHERE recipient_user_id = ${validUserId}::uuid
                 AND source_domain != 'association'
               ORDER BY created_at DESC
               LIMIT 40
@@ -796,21 +835,21 @@ export class AdminService implements OnModuleInit {
 
     // Xác định kênh chuyên trách theo phân luồng tác vụ CRM
     let targetChannel = 'channel_media';
-    let channelLabel = 'Kênh Truyền Thông Hiệp Hội';
+    let channelLabel = 'Ban Truyền Thông & Sự Kiện';
     const deptLower = `${department || ''} ${audience || ''}`.toLowerCase();
 
-    if (deptLower.includes('thu_ky') || deptLower.includes('secretariat') || deptLower.includes('dieu_hanh') || deptLower.includes('bch')) {
+    if (deptLower.includes('thu_ky') || deptLower.includes('secretariat') || deptLower.includes('dieu_hanh') || deptLower.includes('bch') || deptLower.includes('cuoc_hop') || deptLower.includes('hop_bch')) {
       targetChannel = 'channel_secretariat';
-      channelLabel = 'Kênh Ban Thư Ký & Ban Điều Hành';
-    } else if (deptLower.includes('xuc_tien') || deptLower.includes('promotion')) {
+      channelLabel = 'Ban Thư Ký & Ban Điều Hành';
+    } else if (deptLower.includes('thanh_vien') || deptLower.includes('membership') || deptLower.includes('hoi_vien') || deptLower.includes('member') || deptLower.includes('gia_han') || deptLower.includes('ket_nap')) {
+      targetChannel = 'channel_membership';
+      channelLabel = 'Ban Thành Viên & Hội Viên';
+    } else if (deptLower.includes('xuc_tien') || deptLower.includes('promotion') || deptLower.includes('marketplace') || deptLower.includes('co_hoi') || deptLower.includes('deal') || deptLower.includes('b2b')) {
       targetChannel = 'channel_promotion';
-      channelLabel = 'Kênh Xúc Tiến Giao Thương';
-    } else if (deptLower.includes('deal') || deptLower.includes('b2b') || deptLower.includes('co_hoi')) {
-      targetChannel = 'channel_deals';
-      channelLabel = 'Kênh Cơ Hội & Deal B2B';
-    } else if (deptLower.includes('event') || deptLower.includes('su_kien') || deptLower.includes('hoi_nghi')) {
-      targetChannel = 'channel_events';
-      channelLabel = 'Kênh Sự Kiện & Hội Nghị';
+      channelLabel = 'Ban Xúc Tiến Thương Mại & Marketplace';
+    } else if (deptLower.includes('truyen_thong') || deptLower.includes('media') || deptLower.includes('event') || deptLower.includes('su_kien') || deptLower.includes('hoi_nghi') || deptLower.includes('kho_anh')) {
+      targetChannel = 'channel_media';
+      channelLabel = 'Ban Truyền Thông & Sự Kiện';
     }
 
     // 1. NẾU LÀ THÔNG BÁO CÁ NHÂN (TARGETED)
@@ -819,9 +858,13 @@ export class AdminService implements OnModuleInit {
       memberRecipientIds.add(targetUserId);
 
       // Tra cứu member code nếu có
-      const memRows = await this.prisma.$queryRaw<any[]>`
-        SELECT id, code, user_id FROM public.members WHERE user_id = ${targetUserId}::uuid OR id::text = ${targetUserId} LIMIT 1
-      `.catch(() => []);
+      const memRows = isValidUuid(targetUserId)
+        ? await this.prisma.$queryRaw<any[]>`
+            SELECT id, code, user_id FROM public.members WHERE user_id = ${targetUserId}::uuid OR id::text = ${targetUserId} LIMIT 1
+          `.catch(() => [])
+        : await this.prisma.$queryRaw<any[]>`
+            SELECT id, code, user_id FROM public.members WHERE id::text = ${targetUserId} OR code = ${targetUserId} LIMIT 1
+          `.catch(() => []);
       const memCode = memRows[0]?.code;
 
       const directMsgText = `🔔 [THÔNG BÁO HỆ THỐNG] ${title}\n\n${body}`;
@@ -886,10 +929,15 @@ export class AdminService implements OnModuleInit {
 
       // Thu thập danh sách hội viên nhận thông báo
       try {
-        const members = await this.prisma.$queryRaw<any[]>`
-          SELECT id, code, user_id FROM public.members
-          WHERE (${!associationId} OR association_id = ${associationId}::uuid OR association_id IS NULL)
-        `.catch(() => []);
+        const validAssocId = isValidUuid(associationId) ? associationId : null;
+        const members = validAssocId
+          ? await this.prisma.$queryRaw<any[]>`
+              SELECT id, code, user_id FROM public.members
+              WHERE association_id = ${validAssocId}::uuid OR association_id IS NULL
+            `.catch(() => [])
+          : await this.prisma.$queryRaw<any[]>`
+              SELECT id, code, user_id FROM public.members
+            `.catch(() => []);
         for (const m of members) {
           if (m.id) memberRecipientIds.add(String(m.id));
           if (m.code) memberRecipientIds.add(String(m.code));
@@ -1109,13 +1157,14 @@ export class AdminService implements OnModuleInit {
 
     // Post to public.messages
     const channelLabelMap: Record<string, string> = {
-      channel_media: 'Kênh Truyền Thông Hiệp Hội',
-      channel_promotion: 'Kênh Xúc Tiến Giao Thương',
-      channel_secretariat: 'Kênh Ban Thư Ký & Ban Điều Hành',
+      channel_media: 'Ban Truyền Thông & Sự Kiện',
+      channel_membership: 'Ban Thành Viên & Hội Viên',
+      channel_promotion: 'Ban Xúc Tiến Thương Mại & Marketplace',
+      channel_secretariat: 'Ban Thư Ký & Ban Điều Hành',
       channel_deals: 'Kênh Cơ Hội & Deal B2B',
       channel_events: 'Kênh Sự Kiện & Hội Nghị',
     };
-    const channelLabel = channelLabelMap[targetChannel] || 'Kênh Chính Thức CLB';
+    const channelLabel = channelLabelMap[targetChannel] || 'Ban Điều Hành Hiệp Hội CEO 1983';
     const broadcastMsgText = `📢 [${channelLabel.toUpperCase()}] ${title}\n\n${body}`;
 
     await this.prisma.$executeRawUnsafe(`

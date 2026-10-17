@@ -39,38 +39,77 @@ export function StatCard({
   value,
   hint,
   tone = "primary",
+  index,
+  theme,
   icon,
 }: {
   label: string;
   value: string | number;
   hint?: string;
   tone?: "primary" | "success" | "warning" | "danger" | "info";
+  index?: number;
+  theme?: "blue" | "purple" | "orange" | "green";
   icon?: ReactNode;
 }) {
-  const bg: Record<string, string> = {
-    primary: "var(--gradient-primary)",
-    success: "linear-gradient(135deg, oklch(0.65 0.15 155), oklch(0.78 0.14 155))",
-    warning: "linear-gradient(135deg, oklch(0.70 0.16 75), oklch(0.82 0.13 75))",
-    danger: "linear-gradient(135deg, oklch(0.62 0.20 25), oklch(0.74 0.17 25))",
-    info: "linear-gradient(135deg, oklch(0.65 0.15 220), oklch(0.78 0.13 220))",
-  };
+  const cardThemes = [
+    {
+      cardBg: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 border-sky-200/70 dark:border-sky-800/40",
+      labelColor: "text-blue-600 dark:text-sky-400",
+      iconBg: "bg-blue-600 text-white",
+    },
+    {
+      cardBg: "bg-gradient-to-b from-violet-100 to-white dark:from-indigo-950/40 dark:to-slate-900 border-violet-200/70 dark:border-indigo-800/40",
+      labelColor: "text-indigo-600 dark:text-indigo-400",
+      iconBg: "bg-indigo-600 text-white",
+    },
+    {
+      cardBg: "bg-gradient-to-b from-orange-100 to-white dark:from-amber-950/40 dark:to-slate-900 border-orange-200/70 dark:border-orange-800/40",
+      labelColor: "text-orange-600 dark:text-orange-400",
+      iconBg: "bg-orange-500 text-white",
+    },
+    {
+      cardBg: "bg-gradient-to-b from-green-100 to-white dark:from-emerald-950/40 dark:to-slate-900 border-emerald-200/70 dark:border-emerald-800/40",
+      labelColor: "text-emerald-600 dark:text-emerald-400",
+      iconBg: "bg-emerald-600 text-white",
+    },
+  ];
+
+  let resolvedTheme = cardThemes[0];
+  if (theme === "blue") resolvedTheme = cardThemes[0];
+  else if (theme === "purple") resolvedTheme = cardThemes[1];
+  else if (theme === "orange") resolvedTheme = cardThemes[2];
+  else if (theme === "green") resolvedTheme = cardThemes[3];
+  else if (typeof index === "number") resolvedTheme = cardThemes[index % 4];
+  else {
+    // Map tone to one of the 4 themes
+    if (tone === "warning" || tone === "danger") resolvedTheme = cardThemes[2]; // orange
+    else if (tone === "success") resolvedTheme = cardThemes[3]; // green
+    else if (tone === "info") resolvedTheme = cardThemes[1]; // purple
+    else resolvedTheme = cardThemes[0]; // blue
+  }
+
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className={`flex h-32 flex-col justify-between rounded-2xl border p-4 shadow-xs transition-all hover:scale-[1.01] hover:shadow-md ${resolvedTheme.cardBg}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`truncate text-xs font-bold uppercase tracking-wider ${resolvedTheme.labelColor}`}>
           {label}
         </span>
         {icon && (
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground"
-            style={{ background: bg[tone] }}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-xs ${resolvedTheme.iconBg}`}
           >
             {icon}
           </div>
         )}
       </div>
-      <div className="text-2xl font-bold text-foreground">{value}</div>
-      {hint && <div className="mt-1 text-[11px] text-muted-foreground">{hint}</div>}
+      <div>
+        <div className="truncate text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</div>
+        {hint ? (
+          <div className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">{hint}</div>
+        ) : (
+          <div className="mt-1 text-[11px] text-transparent select-none">.</div>
+        )}
+      </div>
     </div>
   );
 }

@@ -146,7 +146,16 @@ function RegPage() {
   const occupiedSeatsMap = useMemo(() => {
     const map: Record<
       string,
-      { registrationId?: string; attendeeName: string; attendeeCode?: string; company?: string; ticketType?: string; status?: string }
+      {
+        registrationId?: string;
+        attendeeName: string;
+        attendeeCode?: string;
+        company?: string;
+        ticketType?: string;
+        status?: string;
+        phone?: string;
+        title?: string;
+      }
     > = {};
     REGISTRATIONS.forEach((r) => {
       if (r.seatAssignment && r.status !== "cancelled" && r.id !== selectedReg?.id) {
@@ -157,6 +166,8 @@ function RegPage() {
           company: r.company || "",
           ticketType: r.ticketType || "VIP",
           status: r.status || "confirmed",
+          phone: r.phone || "",
+          title: r.title || (r as any).position || "Hội viên VIP",
         };
         map[r.seatAssignment] = info;
         const match = r.seatAssignment.match(/[A-Z]+-\d{2}|T\d+-\d{2}|SK-\d{2}/i);
@@ -506,7 +517,7 @@ function RegPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition cursor-pointer"
             >
               <QrCode className="h-4 w-4" />
-              + Quét QR / Thêm người tham gia
+              Quét QR / Thêm người tham gia
             </button>
             <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted">
               <Download className="h-4 w-4 text-muted-foreground" />
@@ -516,31 +527,63 @@ function RegPage() {
         }
       />
 
-      {/* KPI Cards */}
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Tổng Số Người Đăng Ký"
-          value={REGISTRATIONS.length}
-          icon={<Ticket className="h-4 w-4" />}
-        />
-        <StatCard
-          label="Đã Thanh Toán Phí"
-          value={paidCount}
-          tone="success"
-          icon={<CheckCircle2 className="h-4 w-4" />}
-        />
-        <StatCard
-          label="Chờ Thanh Toán (Hạn 3 Ngày)"
-          value={pendingCount}
-          tone="warning"
-          icon={<Clock className="h-4 w-4" />}
-        />
-        <StatCard
-          label="Đã Xếp Chỗ Ngồi"
-          value={seatedCount}
-          tone="info"
-          icon={<Crown className="h-4 w-4" />}
-        />
+      {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Tổng số người đăng ký (Sky gradient - Blue) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="registrations" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG SỐ ĐĂNG KÝ</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {REGISTRATIONS.length}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Hội viên &amp; khách mời tham dự
+          </div>
+        </div>
+
+        {/* Card 2: Đã xếp chỗ ngồi (Violet gradient - Indigo) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="seated" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">ĐÃ XẾP CHỖ NGỒI</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {seatedCount}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Đã gắn số bàn &amp; vị trí ghế
+          </div>
+        </div>
+
+        {/* Card 3: Chờ thanh toán (Orange gradient - Orange) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="pending" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHỜ THANH TOÁN</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {pendingCount}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Chờ xác nhận phí tham dự
+          </div>
+        </div>
+
+        {/* Card 4: Đã thanh toán phí (Green gradient - Emerald) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="paid" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ THANH TOÁN PHÍ</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {paidCount}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Vé hợp lệ và sẵn sàng check-in
+          </div>
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -639,7 +682,7 @@ function RegPage() {
                           className="ml-2 text-[11px] text-primary underline hover:opacity-80 cursor-pointer font-semibold"
                           title="Ban Truyền thông / BQT / Admin: Nhấn để xếp hoặc đổi chỗ ngồi"
                         >
-                          {r.seatAssignment ? "Đổi" : "+ Xếp"}
+                          {r.seatAssignment ? "Đổi" : "Xếp"}
                         </button>
                       ) : (
                         <span

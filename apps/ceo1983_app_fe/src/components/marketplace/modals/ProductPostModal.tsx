@@ -138,7 +138,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
             {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
             <div className="rounded-2xl border border-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10 p-3.5 space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-amber-400">
@@ -330,7 +330,7 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
                     </option>
                   ))}
                   <option value="__custom__" className="text-[#003B95] font-bold">
-                    + Thêm phân loại mới... (Tự điền)
+                    Thêm phân loại mới... (Tự điền)
                   </option>
                 </select>
 

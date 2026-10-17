@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -28,7 +29,7 @@ function parseJsonArraySafe(val: any): any[] {
 }
 
 @Injectable()
-export class EventsService {
+export class EventsService implements OnModuleInit {
   private readonly logger = new Logger(EventsService.name);
 
   constructor(
@@ -36,6 +37,12 @@ export class EventsService {
     private mailService: MailService,
     private readonly eventsRepo: EventsRepository,
   ) {}
+
+  async onModuleInit() {
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.events ADD COLUMN IF NOT EXISTS photo_gallery_url text DEFAULT '';
+    `).catch(() => {});
+  }
 
 
   private async checkIsPlatformAdmin(userId: string): Promise<boolean> {
@@ -189,6 +196,7 @@ export class EventsService {
       qrStaff: parseJsonArraySafe(r.qr_scanners),
       qrScanners: parseJsonArraySafe(r.qr_scanners),
       sponsors: parseJsonArraySafe(r.sponsors),
+      photoGalleryUrl: r.photo_gallery_url || r.photoGalleryUrl || '',
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       associationId: r.association_id,
@@ -452,9 +460,10 @@ export class EventsService {
 
     const timestamp = Date.now().toString(36).toUpperCase();
     const lastRow = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.events WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+      SELECT COALESCE(MAX(CASE WHEN id ~ '^[0-9]+$' THEN CAST(id AS BIGINT) ELSE 0 END), 0) AS max_id
+      FROM public.events
     `.catch(() => []);
-    const eventId = lastRow.length > 0 ? (BigInt(lastRow[0].id) + 1n).toString() : `EV-${timestamp}`;
+    const eventId = lastRow.length > 0 && lastRow[0]?.max_id ? (BigInt(lastRow[0].max_id) + 1n).toString() : `EV-${timestamp}`;
     const qrFields = Array.from(new Set(data.qrFields && data.qrFields.length > 0 ? data.qrFields : ['registration_code']));
 
     const maxTicketPrice = Array.isArray(data.tickets) && data.tickets.length > 0
@@ -469,6 +478,7 @@ export class EventsService {
     const sponsorsJson = JSON.stringify(Array.isArray(rawSponsors) ? rawSponsors : (rawSponsors ? [rawSponsors] : []));
     const desc = data.description ?? '';
     const evImg = data.image || data.banner || null;
+    const photoGallery = data.photoGalleryUrl || (data as any).photo_gallery_url || '';
 
     const rawDate = data.date ? String(data.date).trim() : '';
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : new Date().toISOString().slice(0, 10);
@@ -479,7 +489,7 @@ export class EventsService {
 
     await this.prisma.$executeRaw`
       INSERT INTO public.events (
-        id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, qr_scanners, sponsors, created_at, updated_at
+        id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, created_at, updated_at
       ) VALUES (
         ${eventId},
         ${data.name},
@@ -496,6 +506,7 @@ export class EventsService {
         ${ticketPrice},
         ${ticketPrice},
         ${desc},
+        ${photoGallery},
         ${scannersJson}::jsonb,
         ${sponsorsJson}::jsonb,
         now(),
@@ -591,6 +602,7 @@ export class EventsService {
     const rawSponsors = data.sponsors !== undefined ? data.sponsors : current.sponsors;
     const sponsorsJson = JSON.stringify(Array.isArray(rawSponsors) ? rawSponsors : (rawSponsors ? [rawSponsors] : []));
     const desc = data.description !== undefined ? data.description : (current.description ?? '');
+    const photoGallery = data.photoGalleryUrl !== undefined ? data.photoGalleryUrl : (current.photo_gallery_url ?? '');
 
     const rawDate = date ? String(date).trim() : '';
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : (current.date ? (current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10)) : new Date().toISOString().slice(0, 10));
@@ -613,6 +625,7 @@ export class EventsService {
         ticket_price = ${safeTicketPrice},
         fee = ${safeTicketPrice},
         description = ${desc},
+        photo_gallery_url = ${photoGallery},
         qr_scanners = ${scannersJson}::jsonb,
         sponsors = ${sponsorsJson}::jsonb,
         updated_at = now()
@@ -689,7 +702,8 @@ export class EventsService {
     let regIds = new Set<string>();
 
     const regs = await this.prisma.$queryRaw<any[]>`
-      SELECT event_id FROM public.event_registrations
+      SELECT id, event_id, lucky_number, ticket_type, status, payment_status, payment_amount
+      FROM public.event_registrations
       WHERE status != 'cancelled'
         AND (
           (${myCode}::text IS NOT NULL AND member_code = ${myCode})
@@ -698,6 +712,10 @@ export class EventsService {
           OR member_id = ${userId}
         )
     `.catch(() => []);
+    const regMap = new Map<string, any>();
+    for (const r of regs) {
+      regMap.set(String(r.event_id), r);
+    }
     regIds = new Set(regs.map((r) => String(r.event_id)));
 
     const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -716,6 +734,8 @@ export class EventsService {
       const capacityNum = Number(e.capacity ?? 0);
       const regCount = Number(e.registered ?? 0);
       const isFull = capacityNum > 0 && regCount >= capacityNum;
+      const myReg = regMap.get(String(e.id));
+      const ticketPriceNum = Number(e.ticket_price ?? e.fee ?? 0);
 
       return {
         id: e.id,
@@ -732,13 +752,19 @@ export class EventsService {
         place: e.location ?? '',
         image: e.image || e.banner || null,
         banner: e.banner || e.image || null,
-        ticketPrice: Number(e.ticket_price ?? e.fee ?? 0),
-        fee: Number(e.fee ?? e.ticket_price ?? 0),
+        ticketPrice: ticketPriceNum,
+        fee: ticketPriceNum,
         capacity: capacityNum,
         maxAttendees: capacityNum,
         registeredCount: regCount,
         isFull,
-        registered: regIds.has(String(e.id)),
+        registered: !!myReg,
+        regId: myReg ? String(myReg.id) : null,
+        ticketCode: myReg ? String(myReg.id) : null,
+        luckyNumber: myReg?.lucky_number ? `#${myReg.lucky_number}` : null,
+        ticketType: myReg?.ticket_type || (ticketPriceNum === 0 ? 'Vé Tiêu Chuẩn' : 'Vé VIP Doanh Nhân'),
+        photoGalleryUrl: e.photo_gallery_url || '',
+        driveUrl: e.photo_gallery_url || '',
         qrScanners: parseJsonArraySafe(e.qr_scanners),
         qrStaff: parseJsonArraySafe(e.qr_scanners),
         sponsors: parseJsonArraySafe(e.sponsors),
@@ -824,9 +850,11 @@ export class EventsService {
     const totalAmount = ticketPrice * ticketCount;
     const paymentStatus = isFree ? 'free' : 'pending';
     const lastReg = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.event_registrations WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
+      SELECT COALESCE(MAX(CASE WHEN id ~ '^[0-9]+$' THEN CAST(id AS BIGINT) ELSE 0 END), 40000) AS max_id
+      FROM public.event_registrations
     `.catch(() => []);
-    const regId = lastReg.length > 0 ? (BigInt(lastReg[0].id) + 1n).toString() : '40001';
+    const nextNumericId = lastReg.length > 0 && lastReg[0]?.max_id ? BigInt(lastReg[0].max_id) + 1n : 40001n;
+    const regId = nextNumericId.toString();
     const luckyNum = String(Math.floor(1000 + Math.random() * 9000));
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
@@ -860,21 +888,23 @@ export class EventsService {
       ? ''
       : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}&accountName=${encodeURIComponent('CLB CEO 1983')}`;
 
+    const driveInfo = event.photo_gallery_url ? `\n- Link kho ảnh sự kiện (Google Drive): ${event.photo_gallery_url}` : '';
+
     if (memberCode) {
       if (isFree) {
-        // Sự kiện Free: Gửi tin nhắn chào mừng & Thẻ Vé Điện Tử (VIP E-Ticket Pass có mã QR)
-        const confirmMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng gửi tới Anh/Chị Vé Điện Tử tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Mã vé: ${regId}\n- Số may mắn (Lucky Draw): #${luckyNum}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Thời gian: ${event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date)) : 'Sắp diễn ra'}\n- Địa điểm: ${event.location || 'Địa điểm tổ chức sự kiện'}\n- Trạng thái: ĐÃ XÁC NHẬN (Miễn phí 0 đ)\n\nVui lòng sử dụng Thẻ Vé Điện Tử và mã QR bên dưới để xuất trình tại bàn đón tiếp sự kiện.`;
+        // Sự kiện Free: Gửi tin nhắn chào mừng & Thẻ Vé Điện Tử (VIP E-Ticket Pass có mã QR) từ Ban Truyền Thông
+        const confirmMsg = `Kính gửi Anh/Chị ${memberName}, Ban Truyền Thông CLB Doanh Nhân CEO 1983 xin trân trọng gửi tới Anh/Chị Vé Điện Tử tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Mã vé: ${regId}\n- Số may mắn (Lucky Draw): #${luckyNum}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Thời gian: ${event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date)) : 'Sắp diễn ra'}\n- Địa điểm: ${event.location || 'Địa điểm tổ chức sự kiện'}${driveInfo}\n- Trạng thái: ĐÃ XÁC NHẬN (Miễn phí 0 đ)\n\nVui lòng sử dụng Thẻ Vé Điện Tử và mã QR bên dưới để xuất trình tại bàn đón tiếp sự kiện.`;
 
         const ticketActionMsg = `[action:ticket|eventId:${eventId}|eventTitle:${encodeURIComponent(event.title || event.name || 'Sự kiện')}|ticketCode:${regId}|lucky:${luckyNum}|time:${encodeURIComponent(event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date)) : 'Sắp diễn ra')}|location:${encodeURIComponent(event.location || 'Địa điểm tổ chức sự kiện')}|attendee:${encodeURIComponent(memberName)}|qr:${encodeURIComponent(qrCodeUrl)}|type:${encodeURIComponent(ticketType)}|count:${ticketCount}]`;
 
         await this.prisma.$executeRaw`
           INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${confirmMsg}, NOW() - interval '1 second')
+          VALUES (gen_random_uuid(), 'channel_media', ${String(memberCode).toLowerCase()}, ${confirmMsg}, NOW() - interval '1 second')
         `.catch(() => {});
 
         await this.prisma.$executeRaw`
           INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${ticketActionMsg}, NOW())
+          VALUES (gen_random_uuid(), 'channel_media', ${String(memberCode).toLowerCase()}, ${ticketActionMsg}, NOW())
         `.catch(() => {});
 
         // Gửi thông báo đẩy cá nhân (business_notifications)
@@ -907,21 +937,21 @@ export class EventsService {
           )
         `.catch(() => {});
       } else {
-        // Sự kiện có phí: Gửi tin nhắn thông báo tiếp nhận & thẻ thanh toán VietQR
+        // Sự kiện có phí: Gửi tin nhắn thông báo tiếp nhận & thẻ thanh toán VietQR từ Ban Truyền Thông
         const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN');
         const paymentDesc = encodeURIComponent(`Phí tham dự sự kiện "${event.title || event.name || 'Sự kiện'}" (${ticketCount} vé)`);
         const actionMsg = `[action:payment|amount:${totalAmount}|invoice:${invoiceNo}|qr:${vietQrUrl}|due:${dueDate}|desc:${paymentDesc}]`;
 
-        const greetingMsg = `Kính gửi Anh/Chị ${memberName}, Ban Thư Ký CLB Doanh Nhân CEO 1983 đã tiếp nhận thành công thông tin đăng ký tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Người đăng ký: ${memberName} (${position ? position + ' - ' : ''}${company || 'Hội viên'})\n- Số điện thoại: ${phone || 'Chưa cập nhật'}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Tổng chi phí: ${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ\n\nVui lòng quét mã VietQR hoặc chuyển khoản theo hóa đơn bên dưới để hoàn tất thủ tục tham dự.`;
+        const greetingMsg = `Kính gửi Anh/Chị ${memberName}, Ban Truyền Thông CLB Doanh Nhân CEO 1983 đã tiếp nhận thành công thông tin đăng ký tham dự sự kiện "${event.title || event.name || 'Sự kiện'}".\n\n- Người đăng ký: ${memberName} (${position ? position + ' - ' : ''}${company || 'Hội viên'})\n- Số điện thoại: ${phone || 'Chưa cập nhật'}\n- Số lượng vé: ${ticketCount} vé (${ticketType})\n- Tổng chi phí: ${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ${driveInfo}\n\nVui lòng quét mã VietQR hoặc chuyển khoản theo hóa đơn bên dưới để hoàn tất thủ tục tham dự.`;
 
         await this.prisma.$executeRaw`
           INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${greetingMsg}, NOW() - interval '1 second')
+          VALUES (gen_random_uuid(), 'channel_media', ${String(memberCode).toLowerCase()}, ${greetingMsg}, NOW() - interval '1 second')
         `.catch(() => {});
 
         await this.prisma.$executeRaw`
           INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-          VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${actionMsg}, NOW())
+          VALUES (gen_random_uuid(), 'channel_media', ${String(memberCode).toLowerCase()}, ${actionMsg}, NOW())
         `.catch(() => {});
       }
     }
@@ -1349,7 +1379,7 @@ export class EventsService {
           membership: 'memberLevel.large',
           ticketType: r.ticket_type ? String(r.ticket_type) : 'VIP Pass',
           checkedIn: Boolean(r.checked_in_at),
-          seatAssignment: r.seat_assignment || 'Khu vực tự do',
+          seatAssignment: r.seat_assignment || 'Chờ Ban Truyền Thông xếp chỗ',
           paymentStatus: r.payment_status || 'pending',
           luckyNumber: r.lucky_number ? `#${r.lucky_number}` : `#${Math.floor(1000 + Math.random() * 9000)}`,
         };
@@ -1442,7 +1472,7 @@ export class EventsService {
           const targetUserId = userRows[0]?.id;
           if (targetUserId) {
             const notifTitle = 'Check-in sự kiện thành công';
-            const notifBody = `Chào mừng ${cur.name} đã đến tham dự sự kiện! Vị trí chỗ ngồi của bạn: ${cur.seat_assignment || 'Khu vực Tiêu chuẩn'}.`;
+            const notifBody = `Chào mừng ${cur.name} đã đến tham dự sự kiện! Vị trí chỗ ngồi của bạn: ${cur.seat_assignment || 'Chờ Ban Truyền Thông xếp chỗ'}.`;
             const notifId = require('crypto').randomUUID();
             const dedupeKey = `checkin-${attendeeId}-${Date.now()}`;
             const safeData = JSON.stringify({
@@ -1492,7 +1522,7 @@ export class EventsService {
         membership: 'memberLevel.large',
         ticketType: cur.ticket_type ? String(cur.ticket_type) : 'VIP Pass',
         checkedIn: true,
-        seatAssignment: cur.seat_assignment || 'Khu vực tự do',
+        seatAssignment: cur.seat_assignment || 'Chờ Ban Truyền Thông xếp chỗ',
         paymentStatus: cur.payment_status || 'paid',
       };
       return { attendee, result, seatAssignment: attendee.seatAssignment };
@@ -1772,7 +1802,7 @@ export class EventsService {
     const attendeePosition = reg?.attendee_position || memberRow?.executive_role || memberRow?.position || scannedAttendeePosition || 'Hội viên chính thức';
     const attendeeAvatar = reg?.attendee_avatar || memberRow?.avatar || null;
     const finalMemberCode = memberRow?.code || reg?.member_code || scannedMemberCode || 'M1983-HV';
-    const seatAssignment = reg?.seat_assignment || scannedSeat || 'Bàn VIP 01 - Ghế 01';
+    const seatAssignment = reg?.seat_assignment || scannedSeat || 'Chờ Ban Truyền Thông xếp chỗ';
     const luckyNumber = reg?.lucky_number ? `#${reg.lucky_number}` : (scannedLucky || `#${finalMemberCode.slice(-4).toUpperCase()}`);
     const ticketCode = reg?.id || scannedTicketCode || `TKT-${resolvedEventId || '1983'}-${finalMemberCode}`;
     const ticketType = reg?.ticket_type || scannedTicketType || 'Vé Mời VIP (E-Ticket)';
@@ -2032,7 +2062,7 @@ export class EventsService {
    */
   async guestRegister(eventId: string, guestData: any) {
     const eventRows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+      SELECT * FROM public.events WHERE id = ${eventId} OR slug = ${eventId} LIMIT 1
     `.catch(() => []);
 
     if (eventRows.length === 0) {
@@ -2040,6 +2070,7 @@ export class EventsService {
     }
 
     const event = eventRows[0];
+    const resolvedEventId = event.id;
     const fullName = (guestData?.fullName || '').trim();
     const phone = (guestData?.phone || '').trim();
     const email = (guestData?.email || '').trim().toLowerCase();
@@ -2089,16 +2120,18 @@ export class EventsService {
     const regId = lastReg.length > 0 ? (BigInt(lastReg[0].id) + 1n).toString() : `4${Math.floor(1000 + Math.random() * 9000)}`;
     const luckyNum = String(Math.floor(1000 + Math.random() * 9000));
     const memberCode = `GUEST-${luckyNum}`;
-    const ticketType = isFree ? 'Vé Mời Miễn Phí' : 'Vé Tiêu Chuẩn';
+    const chosenTicketType = (guestData?.ticketType || '').trim();
+    const ticketType = chosenTicketType || (isFree ? 'Vé Mời Miễn Phí' : 'Vé Tiêu Chuẩn');
 
     const qrPayload = JSON.stringify({
       regId,
-      eventId,
+      eventId: resolvedEventId,
       fullName,
       phone,
       email,
       company,
       position,
+      ticketType,
       ticketCount,
       luckyNum,
       isFree,
@@ -2111,7 +2144,7 @@ export class EventsService {
         id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, lucky_number, qr_payload, created_at, updated_at
       ) VALUES (
         ${regId},
-        ${eventId},
+        ${resolvedEventId},
         ${memberCode},
         ${fullName},
         ${email},
@@ -2130,14 +2163,14 @@ export class EventsService {
 
     // Cập nhật số lượng người đăng ký
     await this.prisma.$executeRaw`
-      UPDATE public.events SET registered = registered + ${ticketCount}, updated_at = now() WHERE id = ${eventId}
+      UPDATE public.events SET registered = registered + ${ticketCount}, updated_at = now() WHERE id = ${resolvedEventId}
     `.catch(() => null);
 
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
     const invoiceNo = `EV${regId}`;
     const vietQrUrl = isFree
       ? ''
-      : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}&accountName=${encodeURIComponent('CLB CEO 1983')}`;
+      : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(`${invoiceNo} ${phone}`)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
 
     // Gửi email vé / thanh toán ngay lập tức cho người tham dự
     try {

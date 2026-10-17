@@ -11,6 +11,9 @@ export type Document = {
   uploadedAt: string;
   uploadedBy: string;
   type: "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "txt" | "csv" | "zip" | "rar" | "png" | "jpg" | "jpeg" | "other";
+  docScope?: "association" | "enterprise";
+  enterpriseName?: string;
+  enterpriseId?: string;
 };
 
 export const listDocumentsFn = createServerFn({ method: "GET" })
@@ -44,6 +47,9 @@ const docInput = z.object({
     "other",
   ]),
   filePath: z.string().max(500).default(""),
+  docScope: z.enum(["association", "enterprise"]).default("association").optional(),
+  enterpriseName: z.string().max(255).optional(),
+  enterpriseId: z.string().max(128).optional(),
 });
 
 export const createDocumentFn = createServerFn({ method: "POST" })

@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Download, Filter, PieChart, Search, Tags, TrendingUp, Users } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
+import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { useT, type TKey } from "@/lib/i18n";
-import { downloadCsv } from "@/lib/csv";
+import { toast } from "sonner";
+import { exportToExcel } from "@/lib/excel-export";
 import {
   type IndustryKey,
   type Member,
@@ -83,20 +85,26 @@ function KpiCard({
     info: "linear-gradient(135deg, oklch(0.65 0.15 220), oklch(0.78 0.13 220))",
   };
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="flex h-32 flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:border-primary/40 hover:shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {label}
         </span>
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-primary-foreground shadow-xs"
           style={{ background: bg[tone] }}
         >
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <div className="text-2xl font-bold text-foreground">{value}</div>
-      {hint && <div className="mt-1 text-[11px] text-muted-foreground">{hint}</div>}
+      <div>
+        <div className="truncate text-2xl font-bold tracking-tight text-foreground">{value}</div>
+        {hint ? (
+          <div className="mt-1 truncate text-[11px] text-muted-foreground">{hint}</div>
+        ) : (
+          <div className="mt-1 text-[11px] text-transparent select-none">.</div>
+        )}
+      </div>
     </div>
   );
 }
@@ -221,6 +229,9 @@ function SegmentsPage() {
   const [status, setStatus] = useState<MemberStatus | "all">("all");
   const [dim, setDim] = useState<Dim>("level");
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     return MEMBERS.filter((m) => {
@@ -235,17 +246,34 @@ function SegmentsPage() {
   }, [q, level, region, industry, status, MEMBERS]);
 
   const total = filtered.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const pagedMembers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   const handleExport = () => {
-    downloadCsv("segments", filtered, [
-      { header: "Code", value: (m) => m.code },
-      { header: "Name", value: (m) => m.name },
-      { header: "Email", value: (m) => m.email },
-      { header: "Level", value: (m) => m.level },
-      { header: "Industry", value: (m) => m.industry },
-      { header: "Region", value: (m) => m.region },
-      { header: "Status", value: (m) => m.status },
-    ]);
+    exportToExcel<Member>({
+      title: "BÁO CÁO PHÂN KHÚC & NHÓM HỘI VIÊN CLB CEO 1983",
+      subtitle: "Hiệp Hội Doanh Nhân CEO 1983 - HanoiBA",
+      filename: "phan-khuc-hoi-vien",
+      sheetName: "Phan_Khuc",
+      data: filtered,
+      columns: [
+        { header: "Mã hội viên", key: "code", width: 16, value: (m) => m.code },
+        { header: "Họ và tên hội viên", key: "name", width: 28, value: (m) => m.name },
+        { header: "Email", key: "email", width: 26, value: (m) => m.email },
+        { header: "Quy mô", key: "level", width: 18, value: (m) => m.level },
+        { header: "Ngành nghề", key: "industry", width: 22, value: (m) => m.industry },
+        { header: "Khu vực", key: "region", width: 18, value: (m) => m.region },
+        { header: "Trạng thái", key: "status", width: 16, value: (m) => (m.status === "active" ? "Hoạt động" : "Chờ duyệt") },
+      ],
+      summaryRows: [
+        ["TỔNG CỘNG HỘI VIÊN PHÂN KHÚC:", "", "", "", "", "", `${filtered.length} hội viên`],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "BAN PHÁT TRIỂN HỘI VIÊN", "CHỦ TỊCH CLB CEO 1983"],
+    });
+    toast.success("Đã xuất báo cáo phân khúc hội viên chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
   };
   const byLevel = useMemo(() => groupBy(filtered, (m) => m.level), [filtered]);
   const byRegion = useMemo(() => groupBy(filtered, (m) => m.region), [filtered]);
@@ -516,7 +544,7 @@ function SegmentsPage() {
                   </td>
                 </tr>
               )}
-              {filtered.map((m) => (
+              {pagedMembers.map((m) => (
                 <tr
                   key={m.id}
                   onClick={(e) => {
@@ -578,6 +606,22 @@ function SegmentsPage() {
             </tbody>
           </table>
         </div>
+        {total > 0 && (
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            total={total}
+            from={(page - 1) * pageSize + 1}
+            to={Math.min(page * pageSize, total)}
+            onPage={setPage}
+            onPageSize={(s) => {
+              setPageSize(s);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 20, 50]}
+          />
+        )}
       </div>
     </AppShell>
   );

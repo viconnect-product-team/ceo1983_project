@@ -105,6 +105,7 @@ import { Route as MCheckinRouteImport } from './routes/m.checkin'
 import { Route as MCardRouteImport } from './routes/m.card'
 import { Route as MBusinessCardsRouteImport } from './routes/m.business-cards'
 import { Route as HSlugRouteImport } from './routes/h.$slug'
+import { Route as GuestEventRegisterEventIdRouteImport } from './routes/guest-event-register.$eventId'
 import { Route as FeesInvoiceIdRouteImport } from './routes/fees.$invoiceId'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
 import { Route as DocumentsDocIdRouteImport } from './routes/documents.$docId'
@@ -147,6 +148,7 @@ import { Route as AssociationNotificationsRouteImport } from './routes/associati
 import { Route as AssociationNewsRouteImport } from './routes/association.news'
 import { Route as AssociationMessagesRouteImport } from './routes/association.messages'
 import { Route as AssociationMembersRouteImport } from './routes/association.members'
+import { Route as AssociationMarketplaceRouteImport } from './routes/association.marketplace'
 import { Route as AssociationLoginRouteImport } from './routes/association.login'
 import { Route as AssociationLibraryRouteImport } from './routes/association.library'
 import { Route as AssociationHistoryRouteImport } from './routes/association.history'
@@ -717,6 +719,12 @@ const HSlugRoute = HSlugRouteImport.update({
   path: '/h/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuestEventRegisterEventIdRoute =
+  GuestEventRegisterEventIdRouteImport.update({
+    id: '/guest-event-register/$eventId',
+    path: '/guest-event-register/$eventId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const FeesInvoiceIdRoute = FeesInvoiceIdRouteImport.update({
   id: '/$invoiceId',
   path: '/$invoiceId',
@@ -931,6 +939,11 @@ const AssociationMessagesRoute = AssociationMessagesRouteImport.update({
 const AssociationMembersRoute = AssociationMembersRouteImport.update({
   id: '/members',
   path: '/members',
+  getParentRoute: () => AssociationRoute,
+} as any)
+const AssociationMarketplaceRoute = AssociationMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
   getParentRoute: () => AssociationRoute,
 } as any)
 const AssociationLoginRoute = AssociationLoginRouteImport.update({
@@ -1484,6 +1497,7 @@ export interface FileRoutesByFullPath {
   '/association/history': typeof AssociationHistoryRoute
   '/association/library': typeof AssociationLibraryRoute
   '/association/login': typeof AssociationLoginRoute
+  '/association/marketplace': typeof AssociationMarketplaceRoute
   '/association/members': typeof AssociationMembersRoute
   '/association/messages': typeof AssociationMessagesRoute
   '/association/news': typeof AssociationNewsRoute
@@ -1526,6 +1540,7 @@ export interface FileRoutesByFullPath {
   '/documents/$docId': typeof DocumentsDocIdRoute
   '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
+  '/guest-event-register/$eventId': typeof GuestEventRegisterEventIdRoute
   '/h/$slug': typeof HSlugRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
@@ -1699,6 +1714,7 @@ export interface FileRoutesByTo {
   '/association/history': typeof AssociationHistoryRoute
   '/association/library': typeof AssociationLibraryRoute
   '/association/login': typeof AssociationLoginRoute
+  '/association/marketplace': typeof AssociationMarketplaceRoute
   '/association/members': typeof AssociationMembersRoute
   '/association/messages': typeof AssociationMessagesRoute
   '/association/news': typeof AssociationNewsRoute
@@ -1730,6 +1746,7 @@ export interface FileRoutesByTo {
   '/documents/$docId': typeof DocumentsDocIdRoute
   '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
+  '/guest-event-register/$eventId': typeof GuestEventRegisterEventIdRoute
   '/h/$slug': typeof HSlugRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
@@ -1910,6 +1927,7 @@ export interface FileRoutesById {
   '/association/history': typeof AssociationHistoryRoute
   '/association/library': typeof AssociationLibraryRoute
   '/association/login': typeof AssociationLoginRoute
+  '/association/marketplace': typeof AssociationMarketplaceRoute
   '/association/members': typeof AssociationMembersRoute
   '/association/messages': typeof AssociationMessagesRoute
   '/association/news': typeof AssociationNewsRoute
@@ -1952,6 +1970,7 @@ export interface FileRoutesById {
   '/documents/$docId': typeof DocumentsDocIdRoute
   '/events/$eventId': typeof EventsEventIdRouteWithChildren
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
+  '/guest-event-register/$eventId': typeof GuestEventRegisterEventIdRoute
   '/h/$slug': typeof HSlugRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
@@ -2140,6 +2159,7 @@ export interface FileRouteTypes {
     | '/association/history'
     | '/association/library'
     | '/association/login'
+    | '/association/marketplace'
     | '/association/members'
     | '/association/messages'
     | '/association/news'
@@ -2182,6 +2202,7 @@ export interface FileRouteTypes {
     | '/documents/$docId'
     | '/events/$eventId'
     | '/fees/$invoiceId'
+    | '/guest-event-register/$eventId'
     | '/h/$slug'
     | '/m/business-cards'
     | '/m/card'
@@ -2355,6 +2376,7 @@ export interface FileRouteTypes {
     | '/association/history'
     | '/association/library'
     | '/association/login'
+    | '/association/marketplace'
     | '/association/members'
     | '/association/messages'
     | '/association/news'
@@ -2386,6 +2408,7 @@ export interface FileRouteTypes {
     | '/documents/$docId'
     | '/events/$eventId'
     | '/fees/$invoiceId'
+    | '/guest-event-register/$eventId'
     | '/h/$slug'
     | '/m/business-cards'
     | '/m/card'
@@ -2565,6 +2588,7 @@ export interface FileRouteTypes {
     | '/association/history'
     | '/association/library'
     | '/association/login'
+    | '/association/marketplace'
     | '/association/members'
     | '/association/messages'
     | '/association/news'
@@ -2607,6 +2631,7 @@ export interface FileRouteTypes {
     | '/documents/$docId'
     | '/events/$eventId'
     | '/fees/$invoiceId'
+    | '/guest-event-register/$eventId'
     | '/h/$slug'
     | '/m/business-cards'
     | '/m/card'
@@ -2789,6 +2814,7 @@ export interface RootRouteChildren {
   CTokenRoute: typeof CTokenRoute
   CardCodeRoute: typeof CardCodeRoute
   CompanySlugRoute: typeof CompanySlugRoute
+  GuestEventRegisterEventIdRoute: typeof GuestEventRegisterEventIdRoute
   HSlugRoute: typeof HSlugRoute
   MembersMemberIdRoute: typeof MembersMemberIdRoute
   PlatformAdminsRoute: typeof PlatformAdminsRoute
@@ -3484,6 +3510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guest-event-register/$eventId': {
+      id: '/guest-event-register/$eventId'
+      path: '/guest-event-register/$eventId'
+      fullPath: '/guest-event-register/$eventId'
+      preLoaderRoute: typeof GuestEventRegisterEventIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fees/$invoiceId': {
       id: '/fees/$invoiceId'
       path: '/$invoiceId'
@@ -3776,6 +3809,13 @@ declare module '@tanstack/react-router' {
       path: '/members'
       fullPath: '/association/members'
       preLoaderRoute: typeof AssociationMembersRouteImport
+      parentRoute: typeof AssociationRoute
+    }
+    '/association/marketplace': {
+      id: '/association/marketplace'
+      path: '/marketplace'
+      fullPath: '/association/marketplace'
+      preLoaderRoute: typeof AssociationMarketplaceRouteImport
       parentRoute: typeof AssociationRoute
     }
     '/association/login': {
@@ -4452,6 +4492,7 @@ interface AssociationRouteChildren {
   AssociationHistoryRoute: typeof AssociationHistoryRoute
   AssociationLibraryRoute: typeof AssociationLibraryRoute
   AssociationLoginRoute: typeof AssociationLoginRoute
+  AssociationMarketplaceRoute: typeof AssociationMarketplaceRoute
   AssociationMembersRoute: typeof AssociationMembersRoute
   AssociationMessagesRoute: typeof AssociationMessagesRoute
   AssociationNewsRoute: typeof AssociationNewsRoute
@@ -4476,6 +4517,7 @@ const AssociationRouteChildren: AssociationRouteChildren = {
   AssociationHistoryRoute: AssociationHistoryRoute,
   AssociationLibraryRoute: AssociationLibraryRoute,
   AssociationLoginRoute: AssociationLoginRoute,
+  AssociationMarketplaceRoute: AssociationMarketplaceRoute,
   AssociationMembersRoute: AssociationMembersRoute,
   AssociationMessagesRoute: AssociationMessagesRoute,
   AssociationNewsRoute: AssociationNewsRoute,
@@ -5113,6 +5155,7 @@ const rootRouteChildren: RootRouteChildren = {
   CTokenRoute: CTokenRoute,
   CardCodeRoute: CardCodeRoute,
   CompanySlugRoute: CompanySlugRoute,
+  GuestEventRegisterEventIdRoute: GuestEventRegisterEventIdRoute,
   HSlugRoute: HSlugRoute,
   MembersMemberIdRoute: MembersMemberIdRoute,
   PlatformAdminsRoute: PlatformAdminsRoute,

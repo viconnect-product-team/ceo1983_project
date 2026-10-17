@@ -399,7 +399,7 @@ export function CrudModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-4 overflow-y-auto p-5 flex-1">
+        <div className="space-y-4 overflow-y-auto p-5 flex-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
           {fields.map((f) => {
             const hasErr = !!errors[f.name];
             const stateInputCls = `${inputCls} ${

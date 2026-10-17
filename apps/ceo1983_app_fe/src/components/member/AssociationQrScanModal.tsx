@@ -22,12 +22,17 @@ import {
   ShieldCheck,
   Nfc,
   ExternalLink,
+  Share2,
+  FileText,
+  Download,
+  Briefcase,
 } from "lucide-react";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
+import { CompanyProfile3DTemplate } from "@/components/member/CompanyProfile3DTemplate";
 
 export interface ScannedPartner {
   code: string;
@@ -545,6 +550,27 @@ export function AssociationQrScanModal({
                 <span>Thông tin hiển thị theo cấu hình Quyền riêng tư của đối tác</span>
               </div>
 
+              {/* ── HỒ SƠ DOANH NGHIỆP 3D XUẤT HIỆN NGAY DƯỚI THÔNG TIN HỘI VIÊN KHI QUÉT QR (Req 5) ── */}
+              <div className="pt-1 text-left">
+                <CompanyProfile3DTemplate
+                  data={{
+                    companyName: scannedPartner.company,
+                    leaderName: scannedPartner.name,
+                    leaderTitle: scannedPartner.title,
+                    memberCode: scannedPartner.code,
+                    industry: scannedPartner.industry || undefined,
+                    phone: scannedPartner.phone || undefined,
+                    email: scannedPartner.email || undefined,
+                    address: scannedPartner.address || undefined,
+                    website: scannedPartner.raw?.website || undefined,
+                    logoUrl: scannedPartner.raw?.companyLogoUrl || scannedPartner.raw?.companyLogo || null,
+                    featuredProducts: scannedPartner.raw?.featuredProducts || undefined,
+                    companyProfileUrl: scannedPartner.raw?.companyProfileUrl || scannedPartner.raw?.brochureUrl || null,
+                  }}
+                  showDownloadButton={true}
+                />
+              </div>
+
               {/* Interactive Connection Request Proposal Popup */}
               <div className="rounded-2xl border-2 border-[#003B95]/30 dark:border-amber-400/40 bg-gradient-to-b from-blue-50/80 to-amber-50/40 dark:from-[#001B54]/40 dark:to-amber-950/20 p-3.5 text-left space-y-2.5 shadow-sm">
                 <div className="flex items-center gap-2">
@@ -585,6 +611,40 @@ export function AssociationQrScanModal({
                     <span>{connecting ? "Đang gửi..." : `Kết Nối Ngay Với CEO ${scannedPartner.name}`}</span>
                   </button>
                 )}
+              </div>
+
+              {/* Share VIP Profile & View CV Template Actions (Req 5 & 10) */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const shareUrl = `${window.location.origin}/card/${scannedPartner.code}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: `Hồ sơ VIP: ${scannedPartner.name}`,
+                        text: `${scannedPartner.name} - ${scannedPartner.title} (${scannedPartner.company}) | CLB Doanh Nhân CEO 1983`,
+                        url: shareUrl,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(`${scannedPartner.name} - ${shareUrl}`);
+                      toast.success("Đã sao chép liên kết hồ sơ danh thiếp!");
+                    }
+                  }}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 py-2.5 text-xs font-black shadow-xs transition active:scale-95 cursor-pointer"
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span>Chia sẻ hồ sơ</span>
+                </button>
+
+                <a
+                  href={`/card/${scannedPartner.code}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-50 dark:bg-blue-950/40 py-2.5 text-xs font-bold text-[#003B95] dark:text-sky-300 hover:bg-blue-100 transition active:scale-95 cursor-pointer"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>Xem CV &amp; Profile</span>
+                </a>
               </div>
 
               <div className="flex gap-2 pt-1">

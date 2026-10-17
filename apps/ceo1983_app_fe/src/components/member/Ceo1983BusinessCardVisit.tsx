@@ -247,93 +247,60 @@ export function Ceo1983BusinessCardVisit({
           )}
 
 
-          {/* TOP ROW: Góc trái là Tên công ty / Huy hiệu; Góc phải là LOGO CÔNG TY & MÃ QR */}
-          <div className="relative z-10 flex items-start justify-between gap-3">
-            {/* Top-Left: Tên công ty to rõ ràng */}
-            <div className="min-w-0 flex-1 pr-2">
-              <span className="block text-sm sm:text-base font-black uppercase tracking-wider text-[#002B70] line-clamp-2">
-                {company}
-              </span>
-            </div>
+          {/* THÂN THẺ (MEMBER DETAILS & ENLARGED QR) - Bỏ tên cty và logo, chỉ hiện tên + sđt + QR to */}
+          <div className="relative z-10 my-auto flex items-center justify-between gap-4 px-1">
+            {/* Cột trái: Avatar + Tên + Số điện thoại */}
+            <div className="flex items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
+              {/* Avatar dập viền nổi trực tiếp trên mặt thẻ */}
+              <div className="relative shrink-0">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full overflow-hidden ring-3 ring-amber-400/80 bg-slate-100 shadow-md grid place-items-center">
+                  {avatarUrl ? (
+                    <img
+                      src={resolveMediaUrl(avatarUrl) || avatarUrl}
+                      alt={name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="grid h-full w-full place-items-center bg-gradient-to-tr from-[#002B70] to-[#003B95] text-base sm:text-lg font-black text-amber-300">
+                      {name
+                        .trim()
+                        .split(/\s+/)
+                        .slice(-2)
+                        .map((w) => w[0])
+                        .join("")
+                        .toUpperCase() || "CEO"}
+                    </span>
+                  )}
+                </div>
+                <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+              </div>
 
-            {/* Top-Right: LOGO CÔNG TY & MÃ QR CHÌM XUỐNG NỀN (KHÔNG BORDER & BACKGROUND) */}
-            <div className="shrink-0 flex flex-col items-center gap-2">
-              {/* Logo công ty hội viên chìm xuống nền */}
-              <div
-                onClick={() => companyLogoInputRef.current?.click()}
-                className="relative h-10 w-16 sm:h-12 sm:w-20 p-0 flex items-center justify-center cursor-pointer transition hover:opacity-80"
-                title="Bấm để tải lên / thay đổi Logo công ty"
-              >
-                {displayCompanyLogo ? (
-                  <img
-                    src={resolveMediaUrl(displayCompanyLogo) || displayCompanyLogo}
-                    alt={company}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/ceo1983-official-logo.png";
-                    }}
-                    className="max-h-full max-w-full object-contain mix-blend-screen opacity-90 transition hover:opacity-100 filter drop-shadow"
-                    style={{ mixBlendMode: "screen" }}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-[9px] font-bold text-amber-500/80 leading-none gap-0.5">
-                    <Building2 className="h-4 w-4 text-amber-500" />
-                    <span>Logo Cty</span>
+              {/* Thông tin tên & số điện thoại */}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-xl font-black tracking-wide text-[#002B70] uppercase leading-tight font-sans line-clamp-1">
+                  {name}
+                </h1>
+
+                {phone && (
+                  <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm text-[#1E293B]">
+                    <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <a href={`tel:${phone}`} className="font-bold text-[#003B95] hover:underline truncate">
+                      {phone}
+                    </a>
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Mã QR chìm xuống nền không border không background */}
+            {/* Cột phải: Mã QR Kích thước to nổi bật */}
+            <div className="shrink-0 flex flex-col items-center justify-center">
               <div
                 onClick={() => setQrModalOpen(true)}
-                className="relative p-0 cursor-pointer hover:scale-105 active:scale-95 transition"
+                className="relative p-1.5 rounded-xl bg-white/95 dark:bg-slate-900/90 shadow-md border border-amber-400/50 cursor-pointer hover:scale-105 active:scale-95 transition"
                 title="Bấm để phóng to mã QR giữa màn hình"
               >
-                <QrCanvas value={effectiveQr} size={48} />
+                <QrCanvas value={effectiveQr} size={84} />
               </div>
-            </div>
-          </div>
-
-          {/* THÂN THẺ (MEMBER DETAILS & AVATAR) - Avatar dập nổi trực tiếp trên thẻ */}
-          <div className="relative z-10 my-auto flex items-center gap-3 sm:gap-4 pl-0.5">
-            {/* Avatar dập viền nổi trực tiếp trên mặt thẻ */}
-            <div className="relative shrink-0">
-              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-3 ring-amber-400/80 bg-slate-100 shadow-md grid place-items-center">
-                {avatarUrl ? (
-                  <img
-                    src={resolveMediaUrl(avatarUrl) || avatarUrl}
-                    alt={name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="grid h-full w-full place-items-center bg-gradient-to-tr from-[#002B70] to-[#003B95] text-base sm:text-lg font-black text-amber-300">
-                    {name
-                      .trim()
-                      .split(/\s+/)
-                      .slice(-2)
-                      .map((w) => w[0])
-                      .join("")
-                      .toUpperCase() || "CEO"}
-                  </span>
-                )}
-              </div>
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-            </div>
-
-            {/* Thông tin tên & số điện thoại */}
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-black tracking-wide text-[#002B70] uppercase leading-tight font-sans line-clamp-1">
-                {name}
-              </h1>
-
-              {/* Thông tin liên hệ điện thoại */}
-              {phone && (
-                <div className="mt-2 flex items-center gap-2 text-xs sm:text-[13px] text-[#1E293B]">
-                  <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <a href={`tel:${phone}`} className="font-bold text-[#003B95] hover:underline truncate">
-                    {phone}
-                  </a>
-                </div>
-              )}
             </div>
           </div>
 

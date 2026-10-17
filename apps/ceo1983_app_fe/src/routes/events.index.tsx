@@ -42,7 +42,7 @@ import {
   type EventSavedFilter,
 } from "@/lib/event-prefs";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate } from "@/lib/excel-export";
 import { useServerFn } from "@tanstack/react-start";
 import { createNotificationFn } from "@/lib/notifications.functions";
 
@@ -162,6 +162,11 @@ function EventsPage() {
       ),
     },
     { name: "description", label: "Mô tả / Thông tin sự kiện", type: "textarea" },
+    {
+      name: "photoGalleryUrl",
+      label: "Link album ảnh sự kiện (Google Drive / Cloud storage)",
+      type: "text",
+    },
     {
       name: "sponsors",
       label: "Nhà tài trợ & Gói đồng hành",
@@ -380,15 +385,44 @@ function EventsPage() {
   };
 
   const handleExport = () => {
-    downloadCsv("events", filtered, [
-      { header: "Name", value: (e) => e.name },
-      { header: "Date", value: (e) => e.date },
-      { header: "Location", value: (e) => e.location },
-      { header: "Type", value: (e) => e.type },
-      { header: "Status", value: (e) => e.status },
-      { header: "Registered", value: (e) => e.registered },
-      { header: "Capacity", value: (e) => e.capacity },
-    ]);
+    exportToExcel<EventItem>({
+      title: "BÁO CÁO TỔNG HỢP SỰ KIỆN & HỘI NGHỊ HIỆP HỘI DOANH NHÂN CEO 1983",
+      subtitle: "Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)",
+      filename: "danh-sach-su-kien-ceo1983",
+      sheetName: "Danh_Sach_Su_Kien",
+      data: filtered,
+      columns: [
+        { header: "Mã sự kiện", key: "id", width: 16, value: (e) => e.id },
+        { header: "Tên sự kiện / Hội nghị", key: "name", width: 35, value: (e) => e.name },
+        { header: "Ngày tổ chức", key: "date", width: 16, value: (e) => formatDisplayDate(e.date) },
+        { header: "Địa điểm tổ chức", key: "location", width: 32, value: (e) => e.location },
+        { header: "Phân loại", key: "type", width: 18, value: (e) => e.type },
+        { header: "Trạng thái", key: "status", width: 18, value: (e) => (e.status === "upcoming" ? "Sắp diễn ra" : e.status === "ongoing" ? "Đang diễn ra" : "Đã kết thúc") },
+        { header: "Số đại biểu đăng ký", key: "registered", width: 22, value: (e) => e.registered },
+        { header: "Sức chứa tối đa", key: "capacity", width: 18, value: (e) => e.capacity },
+        {
+          header: "Tỷ lệ lấp đầy (%)",
+          key: "occupancy",
+          width: 18,
+          value: (e) => (e.capacity ? `${Math.round((e.registered / e.capacity) * 100)}%` : "100%"),
+        },
+      ],
+      summaryRows: [
+        [
+          "TỔNG SỐ ĐẠI BIỂU ĐĂNG KÝ:",
+          "",
+          "",
+          "",
+          "",
+          "",
+          filtered.reduce((acc, e) => acc + (Number(e.registered) || 0), 0),
+          filtered.reduce((acc, e) => acc + (Number(e.capacity) || 0), 0),
+          "",
+        ],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "TRƯỞNG BAN SỰ KIỆN", "CHỦ TỊCH CLB CEO 1983"],
+    });
+    toast.success("Đã xuất danh sách sự kiện chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
   };
 
   const buckets: { key: Bucket; label: TKey }[] = [
@@ -644,19 +678,20 @@ function EventsPage() {
           />
         )
       ) : view === "table" ? (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-          <div className="overflow-x-auto relative">
+        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+          <div className="overflow-x-auto relative w-full">
             <table className="w-full min-w-[1100px] whitespace-nowrap text-sm border-separate border-spacing-0">
               <thead>
-                <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800">
                     STT
                   </th>
                   <th className="sticky left-[56px] z-20 min-w-[100px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
                     Mã
                   </th>
                   <th className="px-4 py-3 border-b border-border">Tên sự kiện</th>
-                  <th className="px-4 py-3 border-b border-border">Thời gian & Địa điểm</th>
+                  <th className="px-4 py-3 border-b border-border">Thời gian</th>
+                  <th className="px-4 py-3 border-b border-border">Địa điểm</th>
                   <th className="px-4 py-3 border-b border-border">Phân loại</th>
                   <th className="px-4 py-3 border-b border-border">Đăng ký / Sức chứa</th>
                   <th className="px-4 py-3 border-b border-border">Trạng thái</th>
@@ -688,22 +723,19 @@ function EventsPage() {
                       <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                         <TruncatedText
                           text={e.name}
-                          maxWidth="max-w-[260px]"
+                          maxWidth="max-w-[280px]"
                           className="font-semibold text-foreground text-xs"
-                        />
-                        <TruncatedText
-                          text={e.description}
-                          maxWidth="max-w-[260px]"
-                          className="text-[11px] text-muted-foreground"
                         />
                       </td>
                       <td className="px-4 py-3 text-xs border-b border-border whitespace-nowrap">
-                        <div className="font-medium text-foreground">
-                          {d.toLocaleDateString("vi-VN")} {e.time ? `• ${e.time}` : ""}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <TruncatedText text={e.location || "Online"} maxWidth="max-w-[200px]" />
+                        <span className="font-semibold text-foreground text-xs">
+                          {d.toLocaleDateString("vi-VN")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs border-b border-border whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                          <TruncatedText text={e.location || "Online / Khách Sạn Daewoo"} maxWidth="max-w-[240px]" className="text-foreground font-medium text-xs" />
                         </div>
                       </td>
                       <td className="px-4 py-3 border-b border-border whitespace-nowrap">

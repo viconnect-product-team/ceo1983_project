@@ -19,10 +19,12 @@ import {
   CheckCircle2,
   Video,
   BarChart3,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppShell } from '@/components/dashboard/AppShell';
 import { PageHeader } from '@/components/dashboard/PageKit';
+import { exportToExcel, formatDisplayDate } from '@/lib/excel-export';
 import type { TaskItem, TaskPriority, TaskStatus } from '@/features/tasks';
 import {
   TASK_DEPARTMENTS,
@@ -239,6 +241,38 @@ function TasksPage() {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
+              onClick={() => {
+                exportToExcel<TaskItem>({
+                  title: "Báo Cáo Danh Sách Công Việc & Tiến Độ Hệ Thống",
+                  subtitle: "Hệ thống quản lý công việc và phân công nhiệm vụ CEO 1983",
+                  filename: "danh-sach-cong-viec",
+                  sheetName: "Công việc",
+                  columns: [
+                    { header: "Mã công việc", key: "id", width: 16, value: (t) => t.id },
+                    { header: "Tên công việc", key: "title", width: 35, value: (t) => t.title },
+                    { header: "Ban chuyên trách", key: "department", width: 24, value: (t) => t.department || "Chung" },
+                    { header: "Người phụ trách", key: "assignee", width: 22, value: (t) => t.assignee?.name || "Chưa gán" },
+                    { header: "Trạng thái", key: "status", width: 18, value: (t) => TASK_STATUS_CONFIG[t.status]?.label || t.status },
+                    { header: "Mức ưu tiên", key: "priority", width: 16, value: (t) => TASK_PRIORITY_CONFIG[t.priority]?.label || t.priority },
+                    { header: "Tiến độ (%)", key: "progress", width: 14, value: (t) => `${t.progress || 0}%` },
+                    { header: "Hạn hoàn thành", key: "dueDate", width: 16, value: (t) => formatDisplayDate(t.dueDate) },
+                    { header: "Ngày tạo", key: "createdAt", width: 16, value: (t) => formatDisplayDate(t.createdAt) },
+                  ],
+                  data: filteredTasks,
+                  summaryRows: [
+                    ["TỔNG SỐ CÔNG VIỆC", filteredTasks.length, "", "", "", "", "", "", ""],
+                  ],
+                });
+              }}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 shadow-xs transition"
+              title="Xuất danh sách công việc ra file Excel"
+            >
+              <Download className="w-4 h-4 text-emerald-600" />
+              Xuất Excel
+            </button>
+
+            <button
+              type="button"
               onClick={loadData}
               disabled={loading}
               className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition"
@@ -258,56 +292,62 @@ function TasksPage() {
           </div>
         </div>
 
-        {/* Top KPI Metric Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Tổng công việc
+        {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Tổng công việc (Sky gradient - Blue) */}
+          <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="tasks" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+              <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG CÔNG VIỆC</div>
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1 font-mono">
+            <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
               {stats.total}
             </div>
-            <div className="text-[11px] text-slate-500 mt-0.5">Toàn bộ các ban</div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              Toàn bộ các ban chuyên môn
+            </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/40 shadow-2xs dark:border-blue-900/40 dark:bg-blue-950/20">
-            <div className="text-[11px] font-bold text-[#003B95] dark:text-blue-300 uppercase tracking-wider flex items-center gap-1">
-              <PlayCircle className="w-3.5 h-3.5" /> Đang thực hiện
+          {/* Card 2: Đang thực hiện & Duyệt (Violet gradient - Indigo) */}
+          <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="progress" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+              <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">ĐANG THỰC HIỆN</div>
             </div>
-            <div className="text-2xl font-black text-[#003B95] dark:text-blue-400 mt-1 font-mono">
+            <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
               {stats.inProgress}
             </div>
-            <div className="text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-0.5">Đang chạy tiến độ</div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              Đang chạy tiến độ ({stats.review} chờ duyệt)
+            </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-amber-100 bg-amber-50/40 shadow-2xs dark:border-amber-900/40 dark:bg-amber-950/20">
-            <div className="text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5" /> Chờ nghiệm thu
+          {/* Card 3: Cần đôn đốc / Quá hạn (Orange gradient - Orange) */}
+          <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="overdue" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+              <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CẦN ĐÔN ĐỐC / QUÁ HẠN</div>
             </div>
-            <div className="text-2xl font-black text-[#B45309] dark:text-amber-400 mt-1 font-mono">
-              {stats.review}
-            </div>
-            <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-0.5">BQT đang duyệt</div>
-          </div>
-
-          <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/40 shadow-2xs dark:border-emerald-900/40 dark:bg-emerald-950/20">
-            <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn thành
-            </div>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
-              {stats.done}
-            </div>
-            <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">Đạt chuẩn kết quả</div>
-          </div>
-
-          <div className="p-4 rounded-xl border border-rose-100 bg-rose-50/40 shadow-2xs dark:border-rose-900/40 dark:bg-rose-950/20 col-span-2 sm:col-span-1">
-            <div className="text-[11px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Quá hạn xử lý
-            </div>
-            <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 font-mono">
+            <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
               {stats.overdue}
             </div>
-            <div className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">Cần đôn đốc ngay</div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              Cần xử lý &amp; bám sát tiến độ
+            </div>
+          </div>
+
+          {/* Card 4: Đã hoàn thành (Green gradient - Emerald) */}
+          <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+            <div className="h-8 flex items-center gap-2">
+              <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="done" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+              <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ HOÀN THÀNH</div>
+            </div>
+            <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              {stats.done}
+            </div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              Nghiệm thu đạt chuẩn yêu cầu
+            </div>
           </div>
         </div>
 

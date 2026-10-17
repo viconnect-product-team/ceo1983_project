@@ -17,8 +17,14 @@ import {
   ShieldCheck,
   Calendar,
   FileText,
+  Paperclip,
+  UploadCloud,
+  FileSpreadsheet,
+  Loader2,
+  Check,
+  X,
 } from "lucide-react";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import { toast } from "sonner";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 
@@ -34,8 +40,12 @@ export function Ceo1983MemberRegistrationForm() {
   const [customIndustry, setCustomIndustry] = useState("");
   const [address, setAddress] = useState("");
   const [website, setWebsite] = useState("");
-  const [staffSize, setStaffSize] = useState("10 - 50 nhân sự");
   const [notes, setNotes] = useState("");
+  const [taxCode, setTaxCode] = useState("");
+  const [businessField, setBusinessField] = useState("");
+  const [staffSize, setStaffSize] = useState("10 - 50 nhân sự");
+  const [attachments, setAttachments] = useState<Array<{ name: string; url: string; size?: number; type?: string }>>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -85,11 +95,14 @@ export function Ceo1983MemberRegistrationForm() {
           position: finalPosition,
           birthYear: birthDate,
           companyName: companyName.trim(),
+          taxCode: taxCode.trim(),
           industry: finalIndustry,
+          businessField: businessField.trim() || finalIndustry,
           address: address.trim(),
           website: website.trim(),
           staffSize,
           notes: notes.trim(),
+          attachments, // Documents stored for company data & AI parsing
         }),
       });
 
@@ -403,6 +416,33 @@ export function Ceo1983MemberRegistrationForm() {
                 />
               </div>
 
+              {/* Tax Code / Mã số thuế & Lĩnh vực kinh doanh chi tiết */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Mã số thuế doanh nghiệp
+                </label>
+                <input
+                  type="text"
+                  placeholder="0108xxxxxx"
+                  value={taxCode}
+                  onChange={(e) => setTaxCode(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Lĩnh vực / Sản phẩm dịch vụ chính
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Giải pháp AI, Bất động sản KCN,..."
+                  value={businessField}
+                  onChange={(e) => setBusinessField(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
+                />
+              </div>
+
               {/* Staff Size */}
               <div className="sm:col-span-2">
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -481,6 +521,112 @@ export function Ceo1983MemberRegistrationForm() {
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
                   />
                 </div>
+              </div>
+
+              {/* Document upload: PDF, Word, Excel, Images for AI ingestion & business profile extraction */}
+              <div className="sm:col-span-2 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-700/50 p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 grid place-items-center">
+                      <Sparkles className="size-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide block">
+                        Tài liệu / Hồ sơ doanh nghiệp đính kèm
+                      </span>
+                      <p className="text-[11px] text-slate-500">
+                        Hỗ trợ đa định dạng: PDF, Word (.docx), Excel (.xlsx), hình ảnh giấy phép kinh doanh, hồ sơ năng lực (Profile/CV). Dữ liệu sẽ được lưu trữ an toàn & AI tự động đọc API để cập nhật vào hồ sơ hội viên mới.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold cursor-pointer transition active:scale-95 shadow-xs">
+                    {uploadingFiles ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin text-amber-300" />
+                        <span>Đang tải lên & bóc tách...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="size-4 text-amber-300" />
+                        <span>Tải tệp tin lên</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                      disabled={uploadingFiles}
+                      className="hidden"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (files.length === 0) return;
+                        setUploadingFiles(true);
+                        try {
+                          for (const file of files) {
+                            const res = await uploadFileToNest(file, "registration-docs");
+                            const fileUrl = res?.url || res;
+                            if (fileUrl) {
+                              setAttachments((prev) => [
+                                ...prev,
+                                {
+                                  name: file.name,
+                                  url: fileUrl,
+                                  size: file.size,
+                                  type: file.type || file.name.split(".").pop(),
+                                },
+                              ]);
+                            }
+                          }
+                          toast.success("Đã tải tệp lên thành công và gửi nạp dữ liệu cho Trợ lý AI!");
+                        } catch {
+                          toast.error("Không thể tải tệp lên. Vui lòng thử lại!");
+                        } finally {
+                          setUploadingFiles(false);
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                  </label>
+
+                  <span className="text-[11px] text-slate-400">
+                    PDF, DOCX, XLSX, PNG, JPG (Tối đa 25MB/tệp)
+                  </span>
+                </div>
+
+                {attachments.length > 0 && (
+                  <div className="space-y-1.5 pt-2 border-t border-amber-200/50">
+                    <span className="text-[11px] font-bold text-slate-700 block">
+                      Tệp tin đã tải lên ({attachments.length}):
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {attachments.map((att, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 text-xs shadow-2xs"
+                        >
+                          <div className="flex items-center gap-2 truncate min-w-0">
+                            <FileSpreadsheet className="size-4 text-emerald-600 shrink-0" />
+                            <span className="truncate font-medium text-slate-800" title={att.name}>
+                              {att.name}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttachments((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                            className="text-slate-400 hover:text-rose-500 p-1"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Lời nhắn - không bắt buộc (not required) */}

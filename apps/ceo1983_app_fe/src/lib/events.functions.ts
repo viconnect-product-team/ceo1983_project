@@ -34,6 +34,7 @@ export type EventItem = {
   image?: string | null;
   banner?: string | null;
   ticketPrice?: number | null;
+  photoGalleryUrl?: string | null;
   sponsors?: EventSponsorItem[];
   qrScanners?: string[];
 };
@@ -67,6 +68,7 @@ export type Registration = {
   checkedInAt?: string | null;
   phone?: string;
   company?: string;
+  title?: string;
 };
 
 type Row = Record<string, unknown>;
@@ -109,13 +111,19 @@ function mapTicket(r: Row): TicketType {
 function mapReg(r: Row): Registration {
   return {
     id: r.id as string,
-    eventId: r.event_id as string,
-    memberCode: r.member_code as string,
-    memberName: (r.member_name as string) ?? "",
-    email: (r.email as string) ?? "",
-    registeredAt: r.registered_at as string,
-    status: r.status as Registration["status"],
-    ticketType: r.ticket_type as string as Registration["ticketType"],
+    eventId: (r.event_id as string) || (r.eventId as string) || "",
+    memberCode: (r.member_code as string) || (r.memberCode as string) || "",
+    memberName: (r.member_name as string) || (r.memberName as string) || "",
+    email: (r.email as string) || "",
+    registeredAt: (r.registered_at as string) || (r.registeredAt as string) || "",
+    status: (r.status as Registration["status"]) || "confirmed",
+    ticketType: ((r.ticket_type || r.ticketType) as string) as Registration["ticketType"],
+    seatAssignment: (r.seat_assignment as string) || (r.seatAssignment as string) || "",
+    paymentStatus: (r.payment_status as any) || (r.paymentStatus as any) || "pending",
+    paymentAmount: Number(r.payment_amount ?? r.paymentAmount ?? 0),
+    phone: (r.phone as string) || (r.member_phone as string) || "",
+    company: (r.company as string) || (r.member_company as string) || "",
+    title: (r.title as string) || (r.member_title as string) || (r.position as string) || "Hội viên",
   };
 }
 

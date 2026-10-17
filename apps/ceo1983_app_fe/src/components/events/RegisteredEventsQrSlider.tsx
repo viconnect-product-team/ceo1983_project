@@ -40,8 +40,8 @@ export const RegisteredEventsQrSlider: React.FC<RegisteredEventsQrSliderProps> =
 
   const getTicketDataForEvent = (regEvt: any, idx: number) => {
     const evIdx = events.findIndex((x) => x.id === regEvt.id);
-    const invoiceCode = `REG-${(regEvt.id || "EVT").slice(0, 8).toUpperCase()}`;
-    const lucky = `#${(1000 + (evIdx >= 0 ? evIdx : idx + 1) * 337) % 9000 + 1000}`;
+    const invoiceCode = String(regEvt.regId || regEvt.ticketCode || regEvt.id || `REG-${(regEvt.id || "EVT").slice(0, 8).toUpperCase()}`);
+    const lucky = regEvt.luckyNumber || `#${(1000 + (evIdx >= 0 ? evIdx : idx + 1) * 337) % 9000 + 1000}`;
     const attendeeName = member?.name || user?.name || "Hội viên CEO 1983";
     const attendeePhone = member?.phone || "";
     const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
@@ -49,21 +49,10 @@ export const RegisteredEventsQrSlider: React.FC<RegisteredEventsQrSliderProps> =
     const isFree = isEventFree(regEvt);
     const dateStr = regEvt.date ? formatDisplayDate(regEvt.date) : "Sắp diễn ra";
     const locationStr = regEvt.place || "Địa điểm tổ chức sự kiện";
+    const photoGalleryUrl = regEvt.photoGalleryUrl || (regEvt as any).driveUrl || "";
 
-    const qrUrl = makeTicketQrUrl({
-      ticketCode: invoiceCode,
-      attendeeName,
-      attendeePhone,
-      attendeeCompany,
-      attendeePosition,
-      eventTitle: regEvt.title,
-      eventDate: dateStr,
-      eventLocation: locationStr,
-      ticketType: isFree ? "Vé Tiêu Chuẩn" : (regEvt.ticketType || "Vé VIP Doanh Nhân"),
-      seatAssignment: `Bàn VIP ${(evIdx >= 0 ? evIdx + 1 : idx + 1).toString().padStart(2, "0")} - Ghế 02`,
-      luckyNumber: lucky,
-      ticketCount: 1,
-    });
+    // Mã QR vé check-in TRÙNG KHỚP 100% với mã QR từ Ban Truyền Thông (chính là canonical regId)
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoiceCode)}`;
 
     return {
       eventTitle: regEvt.title,
@@ -79,6 +68,7 @@ export const RegisteredEventsQrSlider: React.FC<RegisteredEventsQrSliderProps> =
       attendeePhone,
       attendeeCompany,
       attendeePosition,
+      photoGalleryUrl,
       qrUrl,
     };
   };

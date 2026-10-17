@@ -661,7 +661,7 @@ export function Create1on1MeetingModal({
                         }
                         className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer font-medium"
                       >
-                        + Tạo phòng Uniwork mới
+                        Tạo phòng Uniwork mới
                       </button>
                     )}
                   </div>

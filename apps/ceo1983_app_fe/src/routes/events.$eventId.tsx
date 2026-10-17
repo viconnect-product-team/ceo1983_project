@@ -23,6 +23,7 @@ import {
   Handshake,
   Maximize2,
   Copy,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -220,6 +221,11 @@ function EventDetailPage() {
     },
     { name: "description", label: "Mô tả / Thông tin sự kiện", type: "textarea" },
     {
+      name: "photoGalleryUrl",
+      label: "Link album ảnh sự kiện (Google Drive / Cloud storage)",
+      type: "text",
+    },
+    {
       name: "sponsors",
       label: "Nhà tài trợ & Gói đồng hành",
       type: "custom",
@@ -258,6 +264,7 @@ function EventDetailPage() {
         ...v,
         capacity: v.capacity ? Number(v.capacity) : 0,
         imageUrl: v.image || (v as any).imageUrl,
+        photoGalleryUrl: (v as any).photoGalleryUrl || (v as any).photo_gallery_url || '',
         qrStaff: v.qrStaff || [],
         qrScanners: v.qrStaff || [],
         description: v.description || (v as any).description,
@@ -449,6 +456,17 @@ function EventDetailPage() {
               <QrCode className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
               Mã QR Đăng Ký Khách Mời (Quét Zalo)
             </button>
+            {((event as any).photoGalleryUrl || (event as any).photo_gallery_url) && (
+              <a
+                href={(event as any).photoGalleryUrl || (event as any).photo_gallery_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition cursor-pointer"
+              >
+                <Camera className="h-4 w-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                Kho ảnh sự kiện (Google Drive)
+              </a>
+            )}
             {canManage && (
               <>
                 <button
@@ -614,8 +632,8 @@ function EventDetailPage() {
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
                   typeof window !== "undefined"
-                    ? `${window.location.origin}/events/${event.id}/register?source=guest_qr`
-                    : `https://crm.ceo1983.viconnect.vn/events/${event.id}/register?source=guest_qr`
+                    ? `${window.location.origin}/guest-event-register/${event.id}`
+                    : `https://crm.ceo1983.viconnect.vn/guest-event-register/${event.id}`
                 )}`}
                 alt="Mã QR Đăng Ký Khách Mời"
                 className="w-full h-full object-contain"
@@ -633,7 +651,7 @@ function EventDetailPage() {
               <button
                 type="button"
                 onClick={() => {
-                  const url = `${window.location.origin}/events/${event.id}/register?source=guest_qr`;
+                  const url = `${window.location.origin}/guest-event-register/${event.id}`;
                   navigator.clipboard.writeText(url);
                   toast.success("Đã sao chép link đăng ký khách mời!");
                 }}

@@ -11,6 +11,9 @@ import {
   Calendar,
   Briefcase,
   ExternalLink,
+  Clock,
+  MapPin,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
@@ -59,6 +62,20 @@ export function BusinessConnectBottomSheet({
   const [selectedOpportunityId, setSelectedOpportunityId] = useState(initialOpportunityId || "");
   const [myOpportunities, setMyOpportunities] = useState<MyOpportunity[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Hình thức cuộc gặp kết nối: Trực tiếp (Offline) vs Trực tuyến (Online)
+  const [meetingMode, setMeetingMode] = useState<"offline" | "online">("offline");
+  const [meetingDate, setMeetingDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  });
+  const [meetingTime, setMeetingTime] = useState("09:30");
+  const [offlineVenue, setOfflineVenue] = useState(
+    "Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội"
+  );
+  const [onlinePlatform, setOnlinePlatform] = useState<"google_meet" | "zoom" | "uniwork">("google_meet");
+  const [onlineUrl, setOnlineUrl] = useState("https://meet.google.com/ceo-1983-vip");
 
   // Prefill sender information from localStorage or session
   useEffect(() => {
@@ -223,9 +240,8 @@ export function BusinessConnectBottomSheet({
 
       // Đồng bộ cuộc gặp vào hệ thống CSDL CRM (Hiện đúng 2 tài khoản hẹn gặp nhau)
       try {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const meetingDate = tomorrow.toISOString().slice(0, 10);
+        const effectiveVenue = meetingMode === "offline" ? offlineVenue.trim() : onlineUrl.trim();
+        const effectiveLocation = meetingMode === "offline" ? offlineVenue.trim() : `Trực tuyến (${onlinePlatform === "zoom" ? "Zoom" : onlinePlatform === "uniwork" ? "UniWork" : "Google Meet"})`;
 
         await createMeeting({
           data: {
@@ -234,8 +250,8 @@ export function BusinessConnectBottomSheet({
               : `Kết nối 1-1: ${senderName.trim()} & ${target.name.trim()}`,
             type: "committee",
             date: meetingDate,
-            time: "09:30",
-            location: "Văn phòng Hiệp hội CEO 1983 / Trực tuyến",
+            time: meetingTime,
+            location: effectiveLocation,
             attendees: 2,
             status: "upcoming",
             department: "Hẹn gặp kết nối 1-1",
@@ -255,7 +271,7 @@ export function BusinessConnectBottomSheet({
                 role: "Đối tác được hẹn gặp",
               },
             ],
-            zoomUrl: "https://meet.jit.si/CEO1983_Connect_1on1",
+            zoomUrl: meetingMode === "online" ? onlineUrl.trim() : "",
           },
         });
 
@@ -274,9 +290,10 @@ export function BusinessConnectBottomSheet({
               senderPhone: senderPhone.trim(),
               purpose: purpose.trim(),
               date: meetingDate,
-              time: "09:30 - 10:30",
-              venueType: "online",
-              venue: "https://meet.jit.si/CEO1983_Connect_1on1",
+              time: meetingTime,
+              venueType: meetingMode,
+              venue: effectiveVenue,
+              onlineUrl: meetingMode === "online" ? onlineUrl.trim() : undefined,
               title: effectiveOppTitle
                 ? `Đàm phán 1-1 (${effectiveOppTitle.slice(0, 30)}): ${senderName.trim()} & ${target.name.trim()}`
                 : `Hẹn gặp kết nối: ${senderName.trim()} & ${target.name.trim()}`,
@@ -302,10 +319,10 @@ export function BusinessConnectBottomSheet({
             partnerPhone: (target as any).phone,
             partnerAvatar: target.avatar,
             date: meetingDate,
-            time: "09:30 - 10:30",
-            venueType: "online" as const,
-            venue: "Văn phòng Hiệp hội CEO 1983 / Trực tuyến",
-            onlineUrl: "https://meet.jit.si/CEO1983_Connect_1on1",
+            time: meetingTime,
+            venueType: meetingMode,
+            venue: effectiveVenue,
+            onlineUrl: meetingMode === "online" ? onlineUrl.trim() : undefined,
             notes: purpose.trim(),
             status: "pending",
             createdAt: new Date().toISOString(),
@@ -532,6 +549,150 @@ export function BusinessConnectBottomSheet({
               placeholder="VD: Trân trọng hẹn gặp Anh/Chị trao đổi về giải pháp cung ứng vật tư & cơ hội hợp tác chiến lược trong Quý 4..."
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-amber-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-hidden resize-none leading-relaxed"
             />
+          </div>
+
+          {/* Lựa chọn hình thức cuộc gặp: Trực tiếp (Offline) vs Trực tuyến (Online) */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+            <span className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Hình thức cuộc gặp kết nối 1-1 *
+            </span>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMeetingMode("offline")}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                  meetingMode === "offline"
+                    ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/30 font-extrabold"
+                    : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <MapPin className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span>🏢 Trực tiếp (Offline)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMeetingMode("online")}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                  meetingMode === "online"
+                    ? "border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/30 font-extrabold"
+                    : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <Video className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span>📹 Trực tuyến (Online)</span>
+              </button>
+            </div>
+
+            {/* Thời gian hẹn */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Ngày hẹn gặp *
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="date"
+                    required
+                    value={meetingDate}
+                    onChange={(e) => setMeetingDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:border-amber-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Giờ hẹn gặp *
+                </label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="time"
+                    required
+                    value={meetingTime}
+                    onChange={(e) => setMeetingTime(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:border-amber-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Offline Venue or Online Link */}
+            {meetingMode === "offline" ? (
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Địa điểm gặp gỡ trực tiếp *
+                </label>
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {[
+                    "Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội",
+                    "Trụ sở văn phòng của tôi",
+                    "Trụ sở văn phòng của đối tác",
+                  ].map((loc) => (
+                    <button
+                      key={loc}
+                      type="button"
+                      onClick={() => setOfflineVenue(loc)}
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+                    >
+                      {loc.slice(0, 32)}...
+                    </button>
+                  ))}
+                </div>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-amber-500" />
+                  <input
+                    type="text"
+                    required
+                    value={offlineVenue}
+                    onChange={(e) => setOfflineVenue(e.target.value)}
+                    placeholder="Nhập địa chỉ gặp mặt cụ thể"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:border-amber-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Nền tảng họp trực tuyến
+                  </label>
+                  <select
+                    value={onlinePlatform}
+                    onChange={(e) => {
+                      const p = e.target.value as "google_meet" | "zoom" | "uniwork";
+                      setOnlinePlatform(p);
+                      if (p === "google_meet") setOnlineUrl("https://meet.google.com/ceo-1983-vip");
+                      else if (p === "zoom") setOnlineUrl("https://zoom.us/j/88819839999");
+                      else if (p === "uniwork") setOnlineUrl("https://meet.uniwork.space/CEO1983_Connect");
+                    }}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-2 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-hidden"
+                  >
+                    <option value="google_meet">📹 Google Meet (Họp nhanh trên trình duyệt)</option>
+                    <option value="zoom">📹 Zoom Meeting</option>
+                    <option value="uniwork">🏢 UniWork Meet (Hệ sinh thái UniWork)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Đường dẫn liên kết phòng họp trực tuyến *
+                  </label>
+                  <div className="relative">
+                    <Video className="absolute left-3 top-2.5 h-4 w-4 text-blue-500" />
+                    <input
+                      type="url"
+                      required
+                      value={onlineUrl}
+                      onChange={(e) => setOnlineUrl(e.target.value)}
+                      placeholder="https://meet.google.com/..."
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-9 pr-3 py-2 text-xs font-mono text-blue-600 dark:text-blue-400 focus:border-blue-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Link to Opportunity (Requirement 11) */}

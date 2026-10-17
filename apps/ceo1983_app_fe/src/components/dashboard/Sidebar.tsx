@@ -451,7 +451,7 @@ export function Sidebar({
     : null;
   const brandLogo =
     (overrideBrandLogo && !overrideBrandLogo.includes("image 6.png")
-      ? overrideBrandLogo
+      ? resolveMediaUrl(overrideBrandLogo) || overrideBrandLogo
       : null) ||
     (rawAssocLogo && !rawAssocLogo.includes("image 6.png")
       ? rawAssocLogo

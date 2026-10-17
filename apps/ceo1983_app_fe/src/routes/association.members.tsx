@@ -1679,9 +1679,22 @@ function MembersScreen() {
                     className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs space-y-2.5"
                   >
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-2">
-                      <span className="text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 truncate">
-                        {meet.title}
-                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {meet.venueType === "online" || (meet.venue && meet.venue.toLowerCase().startsWith("http")) || meet.onlineUrl ? (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+                            <Video className="h-2.5 w-2.5" />
+                            <span>Trực tuyến</span>
+                          </span>
+                        ) : (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                            <MapPin className="h-2.5 w-2.5" />
+                            <span>Trực tiếp</span>
+                          </span>
+                        )}
+                        <span className="text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 truncate">
+                          {meet.title}
+                        </span>
+                      </div>
                       {renderStatusBadge()}
                     </div>
 
@@ -1695,10 +1708,36 @@ function MembersScreen() {
                           <Calendar className="h-3 w-3 shrink-0 text-amber-500" />
                           <span>{meet.date} • {meet.time}</span>
                         </p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
-                          <MapPin className="h-3 w-3 shrink-0 text-[#003B95] dark:text-amber-400" />
-                          <span>{meet.venue || "Văn phòng Hiệp hội CEO 1983"}</span>
-                        </p>
+                        {meet.venueType === "online" || (meet.venue && meet.venue.toLowerCase().startsWith("http")) || meet.onlineUrl ? (
+                          <div className="mt-1 flex items-center gap-2">
+                            <a
+                              href={meet.onlineUrl || meet.venue}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[11px] font-bold hover:underline border border-blue-200 dark:border-blue-900"
+                            >
+                              <Video className="h-3 w-3" />
+                              <span>Vào phòng họp trực tuyến</span>
+                              <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="mt-0.5">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1 truncate">
+                              <MapPin className="h-3 w-3 shrink-0 text-amber-500" />
+                              <span>{meet.venue || "Văn phòng Hiệp hội CEO 1983"}</span>
+                            </p>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meet.venue || "Tòa nhà V-Tower Kim Mã Hà Nội")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10.5px] text-amber-600 dark:text-amber-400 hover:underline mt-0.5"
+                            >
+                              <ExternalLink className="h-2.5 w-2.5" />
+                              <span>Xem định vị Google Maps</span>
+                            </a>
+                          </div>
+                        )}
                         {meet.notes && (
                           <p className="text-[11px] text-slate-400 italic mt-0.5 truncate">
                             Ghi chú: {meet.notes}

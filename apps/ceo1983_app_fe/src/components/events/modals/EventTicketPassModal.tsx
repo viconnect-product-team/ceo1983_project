@@ -1,6 +1,6 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export interface EventTicketPassModalProps {
   ticketPassModal: {
@@ -38,12 +38,12 @@ export const EventTicketPassModal: React.FC<EventTicketPassModalProps> = ({
             <Sparkles className="h-3 w-3" />
             VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC
           </div>
-          <h3 className="text-base font-black text-white line-clamp-2 leading-snug">
+          <DialogTitle className="text-base font-black text-white line-clamp-2 leading-snug">
             {ticketPassModal.eventTitle}
-          </h3>
-          <p className="text-[11px] text-white/80 mt-1">
+          </DialogTitle>
+          <DialogDescription className="text-[11px] text-white/80 mt-1">
             📍 {ticketPassModal.location}
-          </p>
+          </DialogDescription>
         </div>
 
         {/* Ticket Body with QR Code */}
@@ -98,14 +98,14 @@ export const EventTicketPassModal: React.FC<EventTicketPassModalProps> = ({
             <div className="flex justify-between items-center bg-indigo-500/10 dark:bg-indigo-500/20 rounded-lg p-2 border border-indigo-500/30">
               <div className="text-left">
                 <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase block">
-                  Vị trí chỗ ngồi (Hệ thống xếp tự động):
+                  Vị trí chỗ ngồi:
                 </span>
                 <span className="font-bold text-xs text-indigo-950 dark:text-indigo-100">
-                  {ticketPassModal.seatAssignment || "Bàn VIP 02 - Ghế 04"}
+                  {ticketPassModal.seatAssignment || "Chờ Ban Truyền Thông xếp chỗ"}
                 </span>
               </div>
               <span className="text-[9.5px] text-slate-500 dark:text-slate-400 text-right italic max-w-[120px] leading-tight">
-                Chỉ BTT, BQT và Admin mới có quyền đổi chỗ
+                Ban Truyền Thông trực tiếp xếp chỗ
               </span>
             </div>
             <div className="flex justify-between items-center bg-amber-500/10 rounded-lg p-1.5 border border-amber-500/30">

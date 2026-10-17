@@ -52,6 +52,7 @@ import { BirthdayCelebrationModal } from "@/components/member/BirthdayCelebratio
 import { toast } from "sonner";
 import { isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVisit";
 import { GuidedTourModal, type TourStep } from "@/components/common/GuidedTourModal";
+import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { PersonalProfileBottomSheet, type PersonalProfileData } from "@/components/common/PersonalProfileBottomSheet";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import heroImg from "@/assets/vba-hero.jpg";
@@ -269,6 +270,7 @@ function Home() {
     return quickActionDefs;
   }, []);
   const [tourOpen, setTourOpen] = useState(false);
+  const [userGuideOpen, setUserGuideOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1002,760 +1004,469 @@ function Home() {
   }, [products]);
 
   return (
-    <div className="vba-animate min-h-full">
-      {/* ── CỐ ĐỊNH HEADER LOGO VÀ NOTIFICATIONS (BỎ ICON CHỤP ẢNH, GIỮ LOGO CHUẨN CEO1983) ── */}
-      <header
-        className="sticky top-0 z-40 flex items-center justify-between border-b border-amber-500/25 bg-white/95 dark:bg-[#070D1A]/95 px-4 backdrop-blur-md shadow-[0_2px_12px_rgba(245,158,11,0.06)]"
-        style={{
-          paddingTop: "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
-          minHeight: "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + 52px)",
-        }}
-      >
-        {/* Logo CEO 1983 chuẩn ở header, không có chữ official app */}
-        <div className="flex items-center">
-          <img
-            src="/ceo1983-logo.png"
-            alt="CLB Doanh Nhân CEO 1983"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
-            }}
-            className="h-8 max-w-[150px] object-contain drop-shadow-xs"
-          />
-        </div>
-
-        {/* Thông báo */}
-        <div className="flex items-center gap-2">
-          <Link
-            to="/association/notifications"
-            aria-label={t("m.index.notifAria")}
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-50/80 dark:bg-[#14223E] text-amber-600 dark:text-amber-400 shadow-xs transition hover:scale-105 active:scale-95 hover:border-amber-500/70 touch-press"
-          >
-            <Bell className="h-4.5 w-4.5 stroke-[2.2]" />
-            {unreadNotifCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900 shadow-xs animate-pulse">
-                {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
-              </span>
-            )}
-          </Link>
-        </div>
-      </header>
-
+    <div className="w-full max-w-full min-h-screen relative bg-Backgrounds-Primary dark:bg-slate-950 flex flex-col justify-start items-start pb-28">
       {/* Hidden inputs cho phép click trực tiếp để upload */}
       <input type="file" ref={avatarFileInputRef} className="hidden" accept="image/*" onChange={handleDirectAvatarUpload} />
       <input type="file" ref={coverFileInputRef} className="hidden" accept="image/*" onChange={handleDirectCoverUpload} />
       <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
 
-      {/* Hero Banner with Theme Dynamic Atmosphere */}
-      <div
-        className="relative overflow-hidden transition-all duration-500"
-        style={{
-          background:
-            effectiveTheme.id !== "classic" && effectiveTheme.id !== "none"
-              ? effectiveTheme.bannerGradient
-              : "linear-gradient(to bottom, rgba(0, 59, 149, 0.2), rgba(245, 158, 11, 0.05), transparent)",
-        }}
-      >
-        <SeasonalEventHeader />
-
-        <div
-          className="absolute -top-10 -left-10 h-44 w-44 rounded-full blur-3xl pointer-events-none opacity-40"
-          style={{ backgroundColor: effectiveTheme.primaryColor }}
-        />
-        <div
-          className="absolute top-0 right-0 h-40 w-40 rounded-full blur-2xl pointer-events-none opacity-30"
-          style={{ backgroundColor: effectiveTheme.accentColor }}
-        />
-
-        <img
-          src={heroImg}
-          alt={t("m.index.heroAlt")}
-          className="absolute inset-0 h-full w-full object-cover opacity-15 dark:opacity-25 mix-blend-overlay"
-          width={1024}
-          height={768}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--vba-bg)]/80 to-[var(--vba-bg)]" />
-
-        <div className="relative z-10 px-4 pb-14 pt-3" />
-      </div>
-
-      {/* ── 1. THẺ HỘI VIÊN VIP EXECUTIVE (ĐÃ TINH GỌN CHUẨN YÊU CẦU CEO 1983) ── */}
-      <div
-        id="tour-member-card"
-        onClick={() => setProfileSheetOpen(true)}
-        className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border-2 border-amber-500/40 hover:border-amber-500/70 bg-white dark:bg-[#0E172A] shadow-[0_6px_25px_-5px_rgba(245,158,11,0.22)] transition hover:shadow-[0_8px_30px_-5px_rgba(245,158,11,0.32)] cursor-pointer active:scale-[0.99] group"
-        title="Bấm để xem hồ sơ hội viên chi tiết"
-      >
-        {/* Ảnh bìa to rộng mang sắc thái Royal Navy & Gold */}
-        <div 
-          className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] border-b border-amber-400/30"
-        >
-          {coverPhoto && !coverError ? (
-            <img
-              src={resolveMediaUrl(coverPhoto) || coverPhoto}
-              alt="Cover Banner"
-              onError={() => {
-                setCoverError(true);
-                try { localStorage.removeItem("vba_member_cover_photo"); } catch {}
-              }}
-              className="h-full w-full object-cover opacity-85"
-            />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A]">
-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
-
-          {/* Logo công ty hội viên chìm tinh tế xuống nền ảnh bìa */}
-          <div 
-            onClick={(e) => {
-              e.stopPropagation();
-              logoFileInputRef.current?.click();
-            }}
-            className="absolute top-2.5 right-3 z-10 cursor-pointer"
-            title="Logo công ty hội viên"
-          >
-            <div className="px-2 py-1 rounded-lg bg-black/25 backdrop-blur-md border border-white/20 shadow-xs transition hover:bg-black/35">
-              <img
-                src={resolveMediaUrl(displayCompanyLogo) || displayCompanyLogo}
-                alt="Company Logo"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/ceo1983-official-logo.png";
-                }}
-                className="h-6 w-auto max-w-[110px] object-contain filter drop-shadow-xs opacity-85 hover:opacity-100 transition-opacity"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Thân thẻ với Avatar dập viền vàng kim nổi bật đè lên ảnh bìa */}
-        <div className="px-4 pb-3 pt-0 relative">
-          <div className="flex items-end justify-between -mt-8 mb-2.5">
-            {/* Avatar tròn to dập viền vàng hoàng kim nổi bật có chấm xanh online (Click để đổi avatar) */}
-            <div 
-              onClick={(e) => {
-                e.stopPropagation();
-                avatarFileInputRef.current?.click();
-              }}
-              className="relative shrink-0 cursor-pointer"
-              title="Bấm vào ảnh đại diện để thay đổi"
-            >
-              {displayAvatar && !avatarError ? (
-                <img
-                  src={displayAvatar}
-                  alt={displayName}
-                  onError={() => setAvatarError(true)}
-                  className="h-16 w-16 shrink-0 rounded-full object-cover ring-3 ring-amber-400/80 shadow-md bg-slate-100 dark:bg-slate-800"
-                />
-              ) : (
-                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#001D4A] text-[18px] font-black text-amber-300 ring-3 ring-amber-400/80 shadow-md">
-                  {initials(displayName)}
-                </span>
-              )}
-              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0E172A]" />
-            </div>
-
-            {/* Huy hiệu thành viên VIP CEO 1983 Vàng Kim */}
-            <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[11px] font-black shadow-2xs">
-              <Crown className="h-3 w-3 text-amber-500" />
-              <span>HỘI VIÊN CHÍNH THỨC</span>
-            </div>
-          </div>
-
-          {/* Thông tin hội viên & doanh nghiệp — Bấm mở popup hồ sơ từ dưới lên */}
-          <div
-            onClick={() => setProfileSheetOpen(true)}
-            className="space-y-1 cursor-pointer transition hover:opacity-90 active:scale-[0.99] rounded-xl p-1 -m-1"
-            title="Bấm để xem hồ sơ cá nhân chi tiết (Ảnh, Profile, Facebook...)"
-          >
-            {/* Tên công ty của hội viên */}
-            <div className="text-xs sm:text-[13px] font-black uppercase tracking-wide text-[#003B95] dark:text-blue-300 truncate">
-              {displayCompany}
-            </div>
-
-            {/* Tên hội viên & Huy hiệu vàng xác thực */}
-            <div className="flex items-center gap-1.5">
-              <span className="truncate text-[17px] font-black text-slate-900 dark:text-white">
-                {displayName}
-              </span>
-              <BadgeCheck className="h-4.5 w-4.5 shrink-0 text-amber-500" />
-            </div>
-
-            {/* Chức danh / Profile hội viên */}
-            <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-600 dark:text-slate-400">
-              <Briefcase className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span className="truncate">{displayTitle}</span>
-            </div>
-
-            {/* Số điện thoại */}
-            <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-700 dark:text-slate-300">
-              <Phone className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span className="font-bold text-[#003B95] dark:text-blue-300">{displayPhone}</span>
-            </div>
-          </div>
-
-          {/* Footer của thẻ hội viên: Nút liên kết và icon chỉnh sửa nhanh sang trọng */}
-          <div className="mt-3 pt-2.5 border-t border-amber-500/20 flex items-center justify-between gap-2">
-            <span
-              onClick={() => setProfileSheetOpen(true)}
-              className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1 cursor-pointer hover:underline transition-colors"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span>Xem hồ sơ & liên kết cá nhân →</span>
-            </span>
-            <button
-              id="tour-quick-edit-btn"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setQuickEditOpen(true);
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-400/50 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 text-amber-700 dark:text-amber-300 shadow-2xs transition-all cursor-pointer active:scale-95"
-              title="Chỉnh sửa nhanh hồ sơ"
-              aria-label="Chỉnh sửa nhanh hồ sơ"
-            >
-              <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Action shortcuts / Quick Action Grid */}
-      <div
-        id="tour-quick-actions"
-        className={`relative mt-3.5 mx-4 ${
-          effectiveTheme.borderRadius === "rounded-3xl"
-            ? "rounded-3xl"
-            : effectiveTheme.borderRadius === "rounded-xl"
-            ? "rounded-xl"
-            : "rounded-2xl"
-        } vba-card p-4 shadow-md transition-all duration-300`}
-        style={{
-          borderColor: `${effectiveTheme.primaryColor}35`,
-        }}
-      >
-        <div className="flex items-center justify-between mb-3 px-0.5">
-          <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)] flex items-center gap-1.5">
-            <span
-              className="h-2 w-2 rounded-full animate-pulse"
-              style={{ backgroundColor: effectiveTheme.primaryColor }}
-            />
-            <span>{isEn ? "Quick Actions" : "Tính năng nhanh"}</span>
-            {effectiveTheme.id !== "classic" && effectiveTheme.id !== "none" && (
-              <span
-                className="text-[10px] px-2 py-0.5 rounded-full font-bold shadow-2xs"
-                style={{
-                  backgroundColor: `${effectiveTheme.accentColor}25`,
-                  color: effectiveTheme.accentColor,
-                }}
-              >
-                {effectiveTheme.iconEmoji} {effectiveTheme.name}
-              </span>
-            )}
-          </h2>
-        </div>
-        <div
-          className={`grid ${
-            effectiveTheme.layoutGrid === "3" ? "grid-cols-3" : "grid-cols-4"
-          } gap-y-4 gap-x-2 sm:gap-x-3`}
-        >
-          {visibleQuickActions.map((a: any) => {
-            const Icon = a.icon;
-            const label = isEn ? a.enLabel : a.customLabel || t(a.key);
-            const showBadge = a.badgeId ? !clearedBadges[a.badgeId] : false;
-            const themeEmoji = effectiveTheme.actionIcons?.[a.iconKey as keyof typeof effectiveTheme.actionIcons];
-            const useEmojiIcon =
-              (effectiveTheme.iconStyle === "3d-emoji" || (effectiveTheme.id !== "classic" && effectiveTheme.id !== "none")) &&
-              Boolean(themeEmoji);
-            const actionStyle = getActionIconStyle(a.iconKey);
-
-            return (
-              <Link
-                key={a.key}
-                to={a.to}
-                onClick={() => handleActionClick(a.badgeId)}
-                className="group relative flex flex-col items-center gap-1.5 transition cursor-pointer touch-press"
-              >
-                <span
-                  className={`relative flex h-13 w-13 items-center justify-center ${
-                    effectiveTheme.borderRadius === "rounded-3xl"
-                      ? "rounded-3xl"
-                      : effectiveTheme.borderRadius === "rounded-xl"
-                      ? "rounded-xl"
-                      : "rounded-2xl"
-                  } shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-108 group-active:scale-95 ${
-                    showBadge ? "ring-2 ring-red-500/40" : ""
-                  }`}
-                  style={{
-                    backgroundColor: actionStyle.backgroundColor,
-                    borderWidth: "1px",
-                    borderColor: actionStyle.borderColor,
-                    color: actionStyle.color,
-                    boxShadow: actionStyle.boxShadow,
-                  }}
-                >
-                  {useEmojiIcon ? (
-                    <span className="text-2xl drop-shadow-sm select-none transition-transform group-hover:scale-115">
-                      {themeEmoji}
-                    </span>
-                  ) : (
-                    <Icon className="h-5.5 w-5.5 stroke-[2.2]" style={{ color: actionStyle.color }} />
-                  )}
-
-                  {/* HIỆU ỨNG THÔNG BÁO HOẶC TUYẾT RƠI / HOA NỞ KHI CÓ BADGE */}
-                  {showBadge && (
-                    <div className="pointer-events-none absolute inset-0 -m-1 select-none overflow-visible">
-                      {effectiveTheme.effectType === "snow" && (
-                        <span className="absolute -top-1.5 -right-1 text-[9px] text-sky-300 animate-spin" aria-hidden="true">❄</span>
-                      )}
-                      {effectiveTheme.effectType === "flowers" && (
-                        <span className="absolute -top-1.5 -right-1 text-[9px] text-pink-300 animate-pulse" aria-hidden="true">🌸</span>
-                      )}
-                      {effectiveTheme.effectType === "lanterns" && (
-                        <span className="absolute -top-1.5 -right-1 text-[9px] text-amber-300 animate-bounce" aria-hidden="true">🏮</span>
-                      )}
-                      <span
-                        className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-black text-white shadow-xs animate-pulse ring-1 ring-white/70"
-                        style={{ backgroundColor: effectiveTheme.accentColor || "#DC2626" }}
-                      >
-                        {isEn ? a.badgeTextEn || a.badgeText : a.badgeText}
-                      </span>
-                    </div>
-                  )}
-                </span>
-                <span className="text-center text-[10.5px] font-bold leading-tight text-slate-800 dark:text-slate-100 transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400 line-clamp-2">
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Contact Drawer Modal */}
-      <AssociationContactSheet
-        open={contactOpen}
-        onClose={() => setContactOpen(false)}
-        onOpenChat={() => {
-          setContactOpen(false);
-          navigate({
-            to: "/association/messages" as any,
-            search: { peerCode: "admin", peerName: "Tin nhắn từ hệ thống" } as any,
-          });
-        }}
-      />
-
-      {/* ── 1. SỰ KIỆN SẮP TỚI: BANNER POSTER THEO CHUẨN CEO 1983 ── */}
-      <div className="mx-4 mt-5">
-        <div className="mb-3 flex items-center justify-between">
-          <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 text-xs border border-amber-500/40 shadow-xs">
-              <Calendar className="h-3.5 w-3.5 text-amber-400" />
-            </span>
-            <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-amber-500 transition-colors flex items-center gap-1">
-              <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
-              <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-            </h2>
-          </Link>
-          <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400 hover:underline p-1">
-            <span>{isEn ? "See all" : "Xem tất cả"}</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, tối đa 5 sự kiện */}
-        {displayEvents.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
-            <Calendar className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
-            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-              {isEn ? "No upcoming events scheduled" : "Chưa có sự kiện mới được lên lịch"}
-            </p>
-          </div>
-        ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain smooth-scroll-touch">
-            {displayEvents.slice(0, 5).map((ev, pIdx) => {
-              const realTitle = ev.title;
-              const rawImg = (ev as any).image;
-              const fallbackImg = defaultEventImages[pIdx % defaultEventImages.length];
-              const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : fallbackImg;
-              const isSingle = displayEvents.length === 1;
-
-              return (
-                <Link
-                  key={ev.id || pIdx}
-                  to="/association/events"
-                  className={`group flex flex-col transition active:scale-95 shrink-0 snap-start touch-press ${
-                    isSingle ? "w-full" : "w-[245px] max-w-[78%] min-w-[215px]"
-                  }`}
-                >
-                  {/* Poster Box with Amber Gold Border */}
-                  <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-amber-500/30 group-hover:border-amber-400/80 bg-slate-900 shadow-sm group-hover:shadow-[0_4px_20px_rgba(245,158,11,0.25)] transition-all">
-                    <img
-                      src={realImg}
-                      alt={realTitle}
-                      loading="lazy"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        if (target.src !== fallbackImg) {
-                          target.src = fallbackImg;
-                        }
-                      }}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    {/* Dark gradient overlay on photo */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 pointer-events-none" />
-
-                    {/* Chỉ để mỗi tên sự kiện với thời gian đếm ngược */}
-                    <div className="absolute inset-x-0 bottom-0 p-2.5 z-10 flex flex-col gap-1">
-                      <div className="flex items-center">
-                        <EventCountdownMiniBadge event={ev} index={pIdx} />
-                      </div>
-                      <h3 className="line-clamp-1 text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-300 transition-colors">
-                        {realTitle}
-                      </h3>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── 2. ƯU ĐÃI HỘI VIÊN & ĐỐI TÁC ── */}
-      <div className="relative mx-4 mt-5 flex items-center gap-3 overflow-hidden rounded-2xl vba-card p-4 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.18)] border border-amber-500/40">
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-start gap-1.5">
-            <Crown className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500" />
-            <div className="min-w-0 flex flex-wrap items-center gap-1.5">
-              <span className="text-[13px] sm:text-[14px] font-bold text-amber-800 dark:text-amber-300 leading-tight">
-                {isEn ? "Member & Partner Perks" : "Ưu đãi Hội viên & Đối tác"}
-              </span>
-              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-xs whitespace-nowrap leading-none">
-                <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping shrink-0" />
-                +Hot
-              </span>
-            </div>
-          </div>
-          <p className="text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
-            {isEn
-              ? "Discover price support policies, affiliated gifts and trade benefits exclusive to CEO 1983."
-              : "Khám phá các chính sách trợ giá, quà tặng liên kết và quyền lợi giao thương dành riêng cho Hội viên CLB Doanh Nhân CEO 1983."}
-          </p>
-          <Link
-            to="/association/perks"
-            className="mt-3 inline-block rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 px-3.5 py-1.5 text-[10.5px] font-bold text-amber-300 shadow-[0_2px_10px_rgba(245,158,11,0.2)] hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition active:scale-95 touch-press"
-          >
-            {isEn ? "View perks now" : "Xem ưu đãi ngay"}
-          </Link>
-        </div>
-
-        <div className="relative shrink-0">
-          <span className="absolute inset-0 rounded-full bg-amber-400/20 blur-md animate-pulse pointer-events-none" />
+      {/* ── TOP HEADER (Logo + Thông báo chuông đỏ) ── */}
+      <div className="self-stretch flex flex-col justify-start items-center">
+        <div className="self-stretch h-16 px-4 bg-white dark:bg-slate-900 border-b-2 border-Backgrounds-Secondary dark:border-slate-800 flex justify-between items-center overflow-hidden sticky top-0 z-30 shadow-xs">
           <img
-            src={giftImg}
-            alt="Quà tặng ưu đãi"
-            loading="lazy"
-            width={512}
-            height={512}
-            className="relative z-10 h-20 w-20 object-contain drop-shadow-md animate-bounce"
-            style={{ animationDuration: "2.4s" }}
-          />
-        </div>
-      </div>
-
-      {/* ── 3. CHIA SẺ CƠ HỘI & MARKETPLACE ── */}
-      <div id="tour-opportunities-stats" className="mx-4 mt-4 grid grid-cols-2 gap-3">
-        {/* Chia sẻ cơ hội - Deep Navy viền Vàng Kim */}
-        <Link
-          to="/association/opportunities"
-          className="group relative vba-card flex flex-col justify-between p-4 transition border border-amber-500/30 hover:border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.1)] hover:shadow-[0_4px_20px_rgba(245,158,11,0.22)] overflow-hidden touch-press rounded-2xl"
-        >
-          <span className="absolute -inset-px rounded-2xl border border-amber-400/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-xs overflow-hidden border border-amber-500/30">
-                <img
-                  src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Hand%20gestures/Handshake.png"
-                  alt="Chia sẻ cơ hội"
-                  className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
-                />
-              </div>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{totalOpportunitiesCount}+</span>
-                <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400">{isEn ? "deals" : "cơ hội"}</span>
-              </div>
-            </div>
-
-            <div className="text-[13px] font-bold text-[var(--vba-text)]">
-              {isEn ? "SHARE OPPORTUNITIES" : "CHIA SẺ CƠ HỘI"}
-            </div>
-            <p className="mt-0.5 line-clamp-1 text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
-              {isEn ? "Share business deals & connect" : "Chia sẻ cơ hội & Kết nối"}
-            </p>
-
-            {/* HIỂN THỊ TỔNG GIÁ TRỊ GIAO DỊCH / CƠ HỘI */}
-            <div className="mt-2.5 flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{isEn ? "Total deal:" : "Tổng giá trị:"}</span>
-              <span className="text-[11.5px] font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{totalOpportunitiesValue}</span>
-            </div>
-          </div>
-
-          <span
-            className="mt-3.5 inline-flex self-start rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-700 dark:text-amber-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95"
-          >
-            {isEn ? "Explore now" : "Khám phá ngay"}
-          </span>
-        </Link>
-
-        {/* Marketplace 5.0 - SÀN THƯƠNG MẠI */}
-        <Link
-          to="/association/products"
-          search={{ action: undefined }}
-          className="group relative vba-card flex flex-col justify-between p-4 transition border border-amber-500/30 hover:border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.1)] hover:shadow-[0_4px_20px_rgba(245,158,11,0.22)] overflow-hidden cursor-pointer touch-press rounded-2xl"
-        >
-          <span className="absolute -inset-px rounded-2xl border border-amber-400/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-xs overflow-hidden border border-amber-500/30">
-                <img
-                  src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Package.png"
-                  alt="Marketplace"
-                  className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
-                />
-              </div>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <span>{totalProductsCount}+</span>
-                <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400">{isEn ? "items" : "sản phẩm"}</span>
-              </div>
-            </div>
-
-            <div className="text-[13px] font-bold text-[var(--vba-text)]">
-              {isEn ? "MARKETPLACE" : "SÀN THƯƠNG MẠI"}
-            </div>
-            <p className="mt-0.5 line-clamp-1 text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
-              {isEn ? "Promote enterprise products" : "Gian hàng sản phẩm & dịch vụ"}
-            </p>
-
-            {/* HIỂN THỊ TỔNG GIÁ TRỊ SẢN PHẨM NIÊM YẾT */}
-            <div className="mt-2.5 flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{isEn ? "Total prod:" : "Tổng giá trị:"}</span>
-              <span className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 tracking-tight">{totalProductsValue}</span>
-            </div>
-          </div>
-
-          {/* Nút Khám phá sàn - Gradient Deep Navy viền Vàng Kim */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              navigate({
-                to: "/association/products" as any,
-                search: { action: "create" } as any,
-              });
+            className="h-9 w-auto object-contain"
+            src="/images/ceo1983/logo-ceo-1983.png"
+            alt="Logo CEO 1983"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/ceo1983-logo.png";
             }}
-            className="mt-3.5 inline-flex self-start rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition active:scale-95 cursor-pointer z-10 touch-press"
-          >
-            {isEn ? "Post now" : "Đăng ngay"}
-          </button>
-        </Link>
-      </div>
-
-      {/* ── 4. DOANH NGHIỆP MỚI GIA NHẬP (CHUẨN PHƯƠNG ÁN 1) ── */}
-      <div className="mx-4 mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
-              <Building2 className="h-3.5 w-3.5 text-amber-400" />
-            </span>
-            <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
-              {isEn ? "New Member Enterprises" : "Doanh nghiệp mới gia nhập"}
-            </h2>
-          </div>
+          />
           <Link
-            to="/association/members"
-            className="flex items-center text-[11px] font-bold text-amber-600 dark:text-amber-400 transition hover:underline"
+            to="/association/notifications"
+            className="size-9 relative bg-amber-50 dark:bg-amber-950/40 rounded-full outline outline-1 outline-offset-[-1px] outline-orange-300 dark:outline-amber-600 flex justify-center items-center hover:scale-105 active:scale-95 transition-transform"
           >
-            <span>{isEn ? "Directory" : "Xem danh bạ"}</span>
-            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+            <img src="/icons/ceo1983/bell.svg" alt="Bell" className="size-5 object-contain" />
+            {unreadNotifCount > 0 && (
+              <div className="size-4 -right-1 -top-1 absolute bg-rose-500 rounded-full flex justify-center items-center overflow-hidden shadow-xs">
+                <span className="text-white text-[9.5px] font-bold font-sans leading-3">{unreadNotifCount > 9 ? "9+" : unreadNotifCount}</span>
+              </div>
+            )}
           </Link>
         </div>
+        <div className="self-stretch h-3.5" />
 
-        {directoryMembers.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
-            <Users className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
-            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-              {isEn ? "No new enterprise members recorded this week" : "Chưa có doanh nghiệp mới tuần này"}
-            </p>
+        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD ── */}
+        <div
+          onClick={() => setProfileSheetOpen(true)}
+          className="w-[calc(100%-2rem)] mx-4 relative rounded-3xl bg-white dark:bg-[#0B132B] border border-amber-500/25 dark:border-amber-400/20 shadow-[0_10px_30px_-8px_rgba(0,34,79,0.15)] flex flex-col justify-start items-start overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group hover:shadow-[0_14px_35px_-8px_rgba(245,158,11,0.22)]"
+        >
+          {/* Cover Banner */}
+          <div className="relative self-stretch h-28 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1224]">
+            <img
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              src={coverPhoto ? (resolveMediaUrl(coverPhoto) || coverPhoto) : "/images/ceo1983/banner-ceo.png"}
+              alt="Banner"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/banner-ceo.png";
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2.5">
-            {directoryMembers.slice(0, 2).map((m) => (
-              <Link
-                key={m.code}
-                to="/association/members"
-                className="vba-card flex items-center gap-2.5 rounded-xl p-2.5 shadow-xs border border-amber-500/25 hover:border-amber-400 transition"
-              >
-                {m.avatar ? (
-                  <img
-                    src={resolveMediaUrl(m.avatar) || m.avatar}
-                    alt={m.name}
-                    className="h-9 w-9 shrink-0 rounded-lg object-cover ring-2 ring-amber-400/50"
-                  />
-                ) : (
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-[12px] font-black text-amber-300 ring-1 ring-amber-400/50 shadow-xs">
-                    {initials(m.name)}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[12px] font-bold text-[var(--vba-text)]">
-                    {m.name}
-                  </div>
-                  <div className="truncate text-[10.5px] text-slate-500 dark:text-slate-400">
-                    {m.personName || m.industry || (isEn ? "Member" : "Hội viên")}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* ── 6. TIN TỨC CÂU LẠC BỘ (TỐI ĐA 5 TIN TỨC CÓ ẢNH & 1, 2 DÒNG THÔNG TIN) ── */}
-      <div className="mx-4 mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-xl bg-gradient-to-tr from-[#002B70] to-[#003B95] text-white border border-blue-400/30 shadow-xs">
-              <Newspaper className="h-4 w-4 text-white" />
-            </span>
-            <div>
-              <h2 className="text-[13px] sm:text-[14px] font-extrabold uppercase tracking-wider text-[var(--vba-text)] flex items-center gap-2">
-                <span>{isEn ? "Club News & Updates" : "Tin tức câu lạc bộ"}</span>
-                <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[9.5px] font-bold text-[#003B95] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
-                  {Math.min(5, combinedNews.length)} tin mới
-                </span>
+          {/* Card Body: Only member name + edit icon, job title, phone number */}
+          <div className="self-stretch px-4 pt-11 pb-4 flex flex-col justify-start items-start gap-1 overflow-hidden relative">
+            <div className="flex items-center justify-between w-full overflow-hidden">
+              <h2 className="text-slate-900 dark:text-white text-base font-extrabold font-sans leading-tight truncate">
+                {displayName || "Trần Tuấn Anh"}
               </h2>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQuickEditOpen(true);
+                }}
+                className="p-1 rounded-full hover:bg-amber-500/15 text-slate-400 hover:text-amber-500 transition-colors"
+                title="Chỉnh sửa thông tin"
+              >
+                <Pencil className="size-4 text-amber-500" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-xs font-semibold leading-4">
+              <Briefcase className="size-3.5 shrink-0 text-[#003B95] dark:text-blue-400" />
+              <span className="truncate">{displayTitle || "Hội viên Doanh nhân"}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs font-bold leading-5">
+              <Phone className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-emerald-700 dark:text-emerald-400 font-sans tracking-wide">
+                {displayPhone || "0901000001"}
+              </span>
             </div>
           </div>
-          <Link
-            to="/association/news"
-            className="flex items-center text-[11px] font-bold text-[#003B95] dark:text-blue-400 transition hover:underline"
+
+          {/* Avatar overlapping cover */}
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              avatarFileInputRef.current?.click();
+            }}
+            className="size-18 left-4 top-18 absolute rounded-2xl bg-gradient-to-tr from-[#003B95] to-[#001D4A] ring-3 ring-white dark:ring-[#0B132B] shadow-xl inline-flex justify-center items-center overflow-hidden cursor-pointer hover:brightness-105 transition-transform active:scale-95"
+            title="Đổi ảnh đại diện"
           >
-            <span>{isEn ? "View all" : "Xem tất cả"}</span>
-            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-          </Link>
+            {displayAvatar && !avatarError ? (
+              <img src={displayAvatar} alt={displayName} onError={() => setAvatarError(true)} className="size-full object-cover" />
+            ) : (
+              <span className="text-amber-300 text-xl font-black font-sans leading-none">{initials(displayName)}</span>
+            )}
+          </div>
         </div>
 
-        {combinedNews.length === 0 ? (
-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-white/10">
-            <Newspaper className="mx-auto h-7 w-7 text-slate-400 mb-1.5" />
-            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
-              {isEn ? "No newly published club news" : "Chưa có bản tin mới trong tuần"}
-            </p>
+        {/* ── 8 CHỨC NĂNG CỐT LÕI (2 HÀNG 4 CỘT) ── */}
+        <div className="self-stretch px-3 py-4 flex flex-col justify-start items-start gap-3">
+          {/* Hàng 1 */}
+          <div className="self-stretch h-20 inline-flex justify-between items-start gap-1">
+            <Link to="/association/card" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/id-card.svg" alt="Danh thiếp số" className="size-7" />
+              </div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Danh thiếp số</div>
+            </Link>
+
+            <Link to="/association/members" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/users.svg" alt="Danh bạ CEO" className="size-7" />
+                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
+                  <span className="text-white text-[10px] font-bold font-sans leading-3">100+</span>
+                </div>
+              </div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Danh bạ CEO</div>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setUserGuideOpen(true)}
+              className="flex-1 inline-flex flex-col justify-start items-center gap-1 group cursor-pointer"
+            >
+              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/book-open.svg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/icons/ceo1983/id-card.svg"; }} alt="Hướng dẫn sử dụng" className="size-7" />
+                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-amber-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
+                  <span className="text-white text-[10px] font-bold font-sans leading-3">Audio</span>
+                </div>
+              </div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Hướng dẫn</div>
+            </button>
+
+            <Link to="/association/benefits" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/crown.svg" alt="Đặc quyền VIP" className="size-7" />
+              </div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Đặc quyền VIP</div>
+            </Link>
           </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 -mx-4 px-4 pr-6 scrollbar-none snap-x snap-mandatory after:content-[''] after:w-4 after:shrink-0">
-              {combinedNews.slice(0, 5).map((item, idx) => {
-                const rawImg = (item as any).image || (item as any).imageUrl || (item as any).coverUrl || (item as any).thumbnail;
-                const newsImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : DEFAULT_NEWS_THUMBNAILS[idx % DEFAULT_NEWS_THUMBNAILS.length];
-                const isRead = readNewsIds.includes(item.id);
+
+          {/* Hàng 2 */}
+          <div className="self-stretch inline-flex justify-between items-start gap-1">
+            <Link to="/association/voting" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/vote.svg" alt="Biểu quyết số" className="size-7" />
+                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
+                  <span className="text-white text-[10px] font-bold font-sans leading-3">Mới</span>
+                </div>
+              </div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Biểu quyết số</div>
+            </Link>
+
+            <Link to="/association/history" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/history.svg" alt="Lịch sử" className="size-7" />
+              </div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Lịch sử</div>
+            </Link>
+
+            <Link to={"/association/documents" as any} className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/folder-open.svg" alt="Kho tài liệu" className="size-7" />
+              </div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Kho tài liệu</div>
+            </Link>
+
+            <Link to="/association/renew" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
+                <img src="/icons/ceo1983/credit-card.svg" alt="Hội phí" className="size-7" />
+              </div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Hội phí</div>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── NỘI DUNG CHÍNH (SỰ KIỆN, ƯU ĐÃI, CƠ HỘI, SÀN TM, TIN TỨC) ── */}
+      <div className="self-stretch px-4 pt-3 flex flex-col justify-start items-start gap-4">
+        {/* ── 1. SỰ KIỆN SẮP TỚI: BANNER POSTER THEO CHUẨN CEO 1983 ── */}
+        <div className="w-full">
+          <div className="mb-3 flex items-center justify-between">
+            <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
+              <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 text-xs border border-amber-500/40 shadow-xs">
+                <Calendar className="h-3.5 w-3.5 text-amber-400" />
+              </span>
+              <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-amber-500 transition-colors flex items-center gap-1">
+                <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
+                <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </h2>
+            </Link>
+            <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400 hover:underline p-1">
+              <span>{isEn ? "See all" : "Xem tất cả"}</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, tối đa 5 sự kiện */}
+          {displayEvents.length === 0 ? (
+            <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
+              <Calendar className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
+              <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                {isEn ? "No upcoming events scheduled" : "Chưa có sự kiện mới được lên lịch"}
+              </p>
+            </div>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain smooth-scroll-touch">
+              {displayEvents.slice(0, 5).map((ev, pIdx) => {
+                const realTitle = ev.title;
+                const rawImg = (ev as any).image;
+                const fallbackImg = defaultEventImages[pIdx % defaultEventImages.length];
+                const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : fallbackImg;
+                const isSingle = displayEvents.length === 1;
 
                 return (
                   <Link
-                    key={item.id}
-                    to="/association/news"
-                    search={{ articleId: item.id }}
-                    onClick={() => markNewsAsRead(item.id)}
-                    className="w-[260px] sm:w-[280px] shrink-0 snap-start flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-white/10 hover:border-[#003B95]/50 hover:shadow-md transition-all active:scale-[0.99] cursor-pointer overflow-hidden group"
+                    key={ev.id || pIdx}
+                    to="/association/events"
+                    className={`group flex flex-col transition active:scale-95 shrink-0 snap-start touch-press ${
+                      isSingle ? "w-full" : "w-[245px] max-w-[78%] min-w-[215px]"
+                    }`}
                   >
-                    {/* Photo thumbnail */}
-                    <div className="relative h-32 w-full overflow-hidden bg-slate-900">
+                    {/* Poster Box with Amber Gold Border */}
+                    <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-amber-500/30 group-hover:border-amber-400/80 bg-slate-900 shadow-sm group-hover:shadow-[0_4px_20px_rgba(245,158,11,0.25)] transition-all">
                       <img
-                        src={newsImg}
-                        alt={item.title}
+                        src={realImg}
+                        alt={realTitle}
                         loading="lazy"
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (target.src !== fallbackImg) {
+                            target.src = fallbackImg;
+                          }
+                        }}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      {item.category && (
-                        <span className="absolute top-2 left-2 rounded-md bg-[#003B95]/90 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider border border-white/20">
-                          {item.category}
-                        </span>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        {isRead ? (
-                          <span className="inline-flex items-center gap-1 text-[9px] text-white/90 bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded-full">
-                            <Check className="h-2.5 w-2.5 text-emerald-400 stroke-[2.5]" />
-                            <span>Đã xem</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-white bg-[#003B95]/90 backdrop-blur-xs px-2 py-0.5 rounded-full border border-blue-400/40">
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-300 animate-pulse" />
-                            <span>Mới</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                      {/* Dark gradient overlay on photo */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 pointer-events-none" />
 
-                    {/* Body text & meta */}
-                    <div className="p-3 flex-1 flex flex-col justify-between">
-                      <h4 className="line-clamp-2 text-xs sm:text-[13px] font-bold text-slate-900 dark:text-white leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors">
-                        {item.title}
-                      </h4>
-
-                      <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-white/5 pt-2">
-                        <span className="truncate max-w-[130px] font-medium text-slate-600 dark:text-slate-400">
-                          {item.author || "Ban Truyền Thông"}
-                        </span>
-                        <span>{formatNewsDate(item.time)}</span>
+                      {/* Chỉ để mỗi tên sự kiện với thời gian đếm ngược */}
+                      <div className="absolute inset-x-0 bottom-0 p-2.5 z-10 flex flex-col gap-1">
+                        <div className="flex items-center">
+                          <EventCountdownMiniBadge event={ev} index={pIdx} />
+                        </div>
+                        <h3 className="line-clamp-1 text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-300 transition-colors">
+                          {realTitle}
+                        </h3>
                       </div>
                     </div>
                   </Link>
                 );
               })}
-              <div className="w-2 shrink-0 pointer-events-none select-none" aria-hidden="true" />
+            </div>
+          )}
+        </div>
+
+        {/* Ưu Đãi Riêng Hội Viên & Đối Tác Banner */}
+        <div className="self-stretch min-h-[160px] relative rounded-2xl overflow-hidden shadow-md bg-gradient-to-r from-sky-950 via-blue-900 to-indigo-950 border border-amber-500/30 p-4 flex items-center justify-between">
+          <img className="w-full h-full object-cover absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none" src="/images/ceo1983/image 10.png" alt="Ưu đãi" />
+          <div className="relative z-10 max-w-[65%] flex flex-col justify-start items-start gap-1">
+            <div className="text-amber-400 text-xl sm:text-2xl font-black font-sans leading-tight tracking-wide drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]">
+              Ưu Đãi Riêng
+            </div>
+            <div className="text-white text-sm font-semibold font-sans">Hội Viên &amp; Đối Tác</div>
+            <p className="text-white/85 text-xs font-normal font-sans leading-4 mt-0.5">
+              Khám phá các <span className="text-amber-300 font-semibold">Chính sách trợ giá, Quà tặng liên kết</span> dành riêng cho bạn
+            </p>
+            <Link
+              to="/association/benefits"
+              className="mt-2 px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold font-sans rounded-full inline-flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
+            >
+              <span>Xem ưu đãi ngay</span>
+              <img src="/icons/ceo1983/chevron-right.svg" alt="Arrow" className="size-3 invert" />
+            </Link>
+          </div>
+          {/* Hộp quà vàng 3D sang trọng */}
+          <div className="relative z-10 shrink-0 flex items-center justify-center pr-1">
+            <img
+              src="/images/ceo1983/image 12.png"
+              alt="Hộp quà ưu đãi"
+              className="w-24 sm:w-28 h-auto object-contain drop-shadow-[0_10px_25px_rgba(251,191,36,0.45)]"
+            />
+          </div>
+        </div>
+
+        {/* CƠ HỘI & KẾT NỐI + SÀN THƯƠNG MẠI */}
+        <div className="self-stretch inline-flex justify-start items-start gap-3">
+          {/* Card 1: Cơ hội */}
+          <Link
+            to="/association/opportunities"
+            className="flex-1 self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-[0px_4px_13px_0px_rgba(174,113,21,0.10)] outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-between items-start gap-2.5 overflow-hidden group hover:border-amber-400 transition"
+          >
+            <img className="w-full h-24 rounded-lg object-cover" src="/images/ceo1983/Rectangle 6-1.png" alt="Cơ hội & Kết nối" />
+            <div className="self-stretch flex flex-col justify-start items-start gap-1">
+              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">🤝 {opportunities.length || 6} cơ hội mới</span>
+              <div className="self-stretch inline-flex justify-between items-center">
+                <span className="text-slate-900 dark:text-white text-xs font-bold leading-5">CƠ HỘI &amp; KẾT NỐI</span>
+                <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3.5 opacity-60" />
+              </div>
+            </div>
+            <div className="self-stretch h-px bg-Backgrounds-Secondary dark:bg-slate-800" />
+            <div className="self-stretch inline-flex justify-between items-center text-xs">
+              <span className="text-slate-400">Tổng giá trị:</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalOpportunitiesValue || "4.2 Tỷ"}</span>
+            </div>
+          </Link>
+
+          {/* Card 2: Sàn thương mại */}
+          <Link
+            to="/association/products"
+            className="flex-1 self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-[0px_4px_13px_0px_rgba(174,113,21,0.10)] outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-between items-start gap-2.5 overflow-hidden group hover:border-amber-400 transition"
+          >
+            <img className="w-full h-24 rounded-lg object-cover" src="/images/ceo1983/image 13.png" alt="Sàn thương mại" />
+            <div className="self-stretch flex flex-col justify-start items-start gap-1">
+              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">📦 {products.length || 3} sản phẩm mới</span>
+              <div className="self-stretch inline-flex justify-between items-center">
+                <span className="text-slate-900 dark:text-white text-xs font-bold leading-5">SÀN THƯƠNG MẠI</span>
+                <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3.5 opacity-60" />
+              </div>
+            </div>
+            <div className="self-stretch h-px bg-Backgrounds-Secondary dark:bg-slate-800" />
+            <div className="self-stretch inline-flex justify-between items-center text-xs">
+              <span className="text-slate-400">Tổng giá trị:</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalProductsValue || "2.4 Tỷ"}</span>
+            </div>
+          </Link>
+        </div>
+
+        {/* DOANH NGHIỆP MỚI GIA NHẬP */}
+        <div className="self-stretch flex flex-col justify-start items-start gap-2">
+          <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
+            <div className="flex justify-start items-center gap-2">
+              <img src="/icons/ceo1983/briefcase-business.svg" alt="Building" className="size-5 shrink-0" />
+              <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">DOANH NGHIỆP MỚI GIA NHẬP</span>
+            </div>
+            <Link to="/association/members" className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 flex justify-center items-center hover:bg-slate-200 transition">
+              <img src="/icons/ceo1983/chevron-right.svg" alt="More" className="size-4" />
+            </Link>
+          </div>
+
+          <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-2.5 pb-1">
+            {(directoryMembers?.length > 0 ? directoryMembers.slice(0, 6) : [
+              { name: "Cao Văn Mạnh", company: "Cao Văn Mạnh", code: "VM" },
+              { name: "Dương Thị Huệ", company: "Dương Thị Huệ", code: "TH" },
+              { name: "Nguyễn Văn Hùng", company: "Hùng Vương JSC", code: "VH" },
+            ]).map((m, i) => (
+              <Link
+                key={(m as any).id || (m as any).code || i}
+                to="/association/members"
+                className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-amber-400 transition"
+              >
+                <div className="size-9 bg-sky-900 rounded-xl outline outline-1 outline-amber-400 flex justify-center items-center shrink-0">
+                  <span className="text-yellow-500 text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(m.name)}</span>
+                </div>
+                <div className="inline-flex flex-col justify-start items-start min-w-0">
+                  <span className="text-slate-800 dark:text-white text-xs font-bold truncate max-w-[120px]">{m.name}</span>
+                  <span className="text-slate-400 text-[11px] truncate max-w-[120px]">{m.company || m.name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* TIN TỨC CÂU LẠC BỘ */}
+        <div className="self-stretch flex flex-col justify-start items-start gap-3">
+          <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
+            <div className="flex justify-start items-center gap-2">
+              <img
+                src="/icons/ceo1983/newspaper-fold--Streamline-Ultimate.svg"
+                alt="News"
+                className="size-5 shrink-0"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/icons/ceo1983/calendar.svg";
+                }}
+              />
+              <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">TIN TỨC CÂU LẠC BỘ</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 rounded-full outline outline-1 outline-blue-200 dark:outline-blue-800 text-blue-800 dark:text-blue-300 text-[10px] font-bold">
+                +{combinedNews.length || 5} TIN MỚI
+              </span>
+              <Link to="/association/news" className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 flex justify-center items-center hover:bg-slate-200 transition">
+                <img src="/icons/ceo1983/chevron-right.svg" alt="More" className="size-4" />
+              </Link>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* ── TIỆN ÍCH ĐIỂM DANH SỰ KIỆN: QUÉT MÃ QR CHECK-IN (CHỈ HIỆN CHO BAN TRUYỀN THÔNG ĐƯỢC CHỌN) ── */}
-      {canScanEventQr && (
-        <div className="w-full px-4 mb-4">
-          <div className="rounded-2xl p-4 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] text-white shadow-sm flex items-center justify-between gap-3 border border-white/10">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-11 w-11 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
-                <QrCode className="h-6 w-6 text-white" />
-              </div>
-              <div className="min-w-0">
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400 text-[#001D4A] text-[9.5px] font-black uppercase tracking-wider mb-1">
-                  <ShieldCheck className="h-3 w-3" />
-                  Ban Soát Vé Sự Kiện
+          <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-3 pb-1">
+            {(combinedNews.length > 0 ? combinedNews.slice(0, 5) : [
+              {
+                id: "1",
+                title: "Hội nghị Xúc tiến Thương mại & Kết nối Đầu tư Quốc tế Quý 3/2026",
+                author: "Ban Thư Ký",
+                time: "2026-09-20",
+              },
+              {
+                id: "2",
+                title: "Chương trình Caravan Thiện nguyện & Giao thương Doanh nhân 2026",
+                author: "Ban Truyền Thông",
+                time: "2026-09-18",
+              },
+            ]).map((item, i) => (
+              <Link
+                key={item.id || i}
+                to={`/association/news/${item.id}` as any}
+                className="w-64 relative bg-white dark:bg-slate-900 rounded-2xl outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-amber-400 transition"
+              >
+                <div className="relative w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                  <img
+                    className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
+                    src={(item as any).image || (item as any).cover || "/images/ceo1983/Rectangle 6-1.png"}
+                    alt={item.title}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
+                    }}
+                  />
+                  <div className="px-2 py-0.5 right-2 top-2 absolute bg-sky-500 text-white rounded-full inline-flex items-center gap-1 text-[9px] font-bold">
+                    <span className="size-1 bg-white rounded-full" />
+                    <span>Mới</span>
+                  </div>
                 </div>
-                <h4 className="text-xs sm:text-sm font-bold text-white leading-tight">
-                  {isEn ? "Event QR Check-in" : "Quét mã QR Check-in sự kiện"}
-                </h4>
-                <p className="text-[11px] text-white/80 mt-0.5 line-clamp-1">
-                  {isEn ? "1-tap check-in & ticket confirmation" : "Điểm danh nhanh 1-chạm & xác nhận vé tại quầy lễ tân"}
-                </p>
+                <div className="self-stretch p-3 flex flex-col justify-start items-start gap-1">
+                  <span className="text-blue-800 dark:text-blue-400 text-[10px] font-bold uppercase">THÔNG BÁO BAN CHẤP HÀNH</span>
+                  <span className="text-slate-800 dark:text-white text-xs font-bold leading-4 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {item.title}
+                  </span>
+                  <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                  <div className="self-stretch inline-flex justify-between items-center text-[10px] text-slate-400">
+                    <span>{item.author || "Ban Thư Ký"}</span>
+                    <span>{formatNewsDate(item.time)}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Quét mã QR Check-in sự kiện */}
+        {canScanEventQr && (
+          <div className="self-stretch p-4 bg-gradient-to-r from-sky-950 via-blue-900 to-sky-950 rounded-[19px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-md border border-white/10 mt-1">
+            <div className="size-11 bg-cyan-800/80 rounded-2xl outline outline-1 outline-slate-500 flex justify-center items-center shrink-0">
+              <img src="/icons/ceo1983/qr-code.svg" alt="QR" className="size-6 invert" />
+            </div>
+            <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 overflow-hidden min-w-0">
+              <span className="text-white text-xs font-bold leading-4">
+                Quét mã QR Check-in<br />sự kiện
+              </span>
+              <div className="px-2 py-0.5 bg-yellow-500 rounded-3xl inline-flex justify-start items-center gap-1">
+                <img src="/icons/ceo1983/shield-check.svg" alt="Shield" className="size-3" />
+                <span className="text-sky-950 text-[9.5px] font-bold">BAN SOÁT VÉ SỰ KIỆN</span>
               </div>
             </div>
             <Link
               to="/association/checkin"
-              className="shrink-0 px-3.5 py-2 rounded-xl bg-white text-[#003B95] text-xs font-bold shadow-xs hover:bg-white/90 transition active:scale-95 flex items-center gap-1 cursor-pointer"
+              className="px-3.5 py-2 bg-white rounded-full inline-flex justify-center items-center gap-1 shrink-0 shadow-sm active:scale-95 transition"
             >
-              <span>Quét ngay</span>
-              <ChevronRight className="h-3.5 w-3.5" />
+              <span className="text-blue-800 text-xs font-bold">Quét ngay</span>
+              <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3" />
             </Link>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ── MODAL MÃ QR HỘI VIÊN & QUÉT QR (DUAL TAB) ── */}
       <AssociationMemberQrModal
@@ -1866,6 +1577,12 @@ function Home() {
       />
 
 
+
+      {/* ── HƯỚNG DẪN SỬ DỤNG TƯƠNG TÁC TỪNG BƯỚC & GIỌNG NÓI AUDIO (Req 12) ── */}
+      <UserGuideModal
+        open={userGuideOpen}
+        onClose={() => setUserGuideOpen(false)}
+      />
 
       {/* ── POPUP CHÚC MỪNG SINH NHẬT & TẶNG ƯU ĐÃI VIP (Req 4) ── */}
       <BirthdayCelebrationModal member={member} />

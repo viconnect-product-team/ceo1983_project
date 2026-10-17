@@ -125,7 +125,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
             {/* Image upload / preview */}
             <div>
               <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -242,7 +242,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                     </option>
                   ))}
                   <option value="__custom__" className="text-[#003B95] font-bold">
-                    + Thêm phân loại mới... (Tự điền)
+                    Thêm phân loại mới... (Tự điền)
                   </option>
                 </select>
 

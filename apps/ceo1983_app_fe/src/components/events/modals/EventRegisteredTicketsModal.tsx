@@ -1,6 +1,6 @@
 import React from "react";
 import { Ticket, X, Calendar, Check } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export interface EventRegisteredTicketsModalProps {
   open: boolean;
@@ -38,14 +38,14 @@ export const EventRegisteredTicketsModal: React.FC<EventRegisteredTicketsModalPr
               <Ticket className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <DialogTitle className="text-sm font-extrabold text-slate-900 dark:text-white">
                 Danh sách vé sự kiện của bạn
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              </DialogTitle>
+              <DialogDescription className="text-[11px] text-slate-500 dark:text-slate-400">
                 {registeredEvents.length > 0
                   ? `Hiện bạn đang có ${registeredEvents.length} vé tham gia sự kiện`
                   : "Chưa có vé sự kiện nào được đăng ký"}
-              </p>
+              </DialogDescription>
             </div>
           </div>
           <button
@@ -94,7 +94,7 @@ export const EventRegisteredTicketsModal: React.FC<EventRegisteredTicketsModalPr
               const attendeePhone = member?.phone || "";
               const attendeeCompany = (member as any)?.companyName || "CLB Doanh Nhân CEO 1983";
               const attendeePosition = member?.title || "Hội viên chính thức";
-              const seatAssignment = `Bàn VIP ${(evIdx >= 0 ? evIdx + 1 : idx + 1).toString().padStart(2, "0")} - Ghế 02`;
+              const seatAssignment = (e as any).seatAssignment || (e as any).seat || "Chờ Ban Truyền Thông xếp chỗ";
               const qrUrl = makeTicketQrUrl({
                 ticketCode: invoiceCode,
                 attendeeName,

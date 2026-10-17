@@ -17,7 +17,15 @@ import {
   Building2,
   Layers,
   Sparkles,
+  Building,
+  ShieldCheck,
+  Lock,
+  Upload,
+  Plus,
 } from "lucide-react";
+import { useRole } from "@/hooks/use-role";
+import { uploadChatAttachment } from "@/lib/upload-media";
+import { createDocumentFn } from "@/lib/documents.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -59,11 +67,20 @@ function LibraryScreen() {
   const [downloading, setDownloading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Scope Tab: "association" vs "enterprise"
+  const [scopeTab, setScopeTab] = useState<"association" | "enterprise">("association");
+  const { isAdmin, isPlatformAdmin, isPresident, isChuTich, isTruongBan, isBanDieuHanh } = useRole();
+  const canManageAssociation = Boolean(
+    isAdmin || isPlatformAdmin || isPresident || isChuTich || isTruongBan || isBanDieuHanh
+  );
+
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCommittee, setSelectedCommittee] = useState("all");
   const [selectedFormat, setSelectedFormat] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [isUploading, setIsUploading] = useState(false);
+  const createDocServer = useServerFn(createDocumentFn);
 
   useEffect(() => {
     setMounted(true);
@@ -90,7 +107,11 @@ function LibraryScreen() {
   // Filter and sort documents
   const filteredDocs = useMemo(() => {
     if (!docs) return [];
-    let list = [...docs];
+    // 0. Scope filter: "association" vs "enterprise"
+    let list = docs.filter((d) => {
+      const scope = d.docScope || (d.enterpriseName ? "enterprise" : "association");
+      return scope === scopeTab;
+    });
 
     // 1. Search Query filter
     if (searchQuery.trim()) {
@@ -100,7 +121,8 @@ function LibraryScreen() {
           d.name.toLowerCase().includes(q) ||
           d.category?.toLowerCase().includes(q) ||
           d.committee?.toLowerCase().includes(q) ||
-          d.description?.toLowerCase().includes(q)
+          d.description?.toLowerCase().includes(q) ||
+          (d.enterpriseName && d.enterpriseName.toLowerCase().includes(q))
       );
     }
 
@@ -130,11 +152,59 @@ function LibraryScreen() {
     });
 
     return list;
-  }, [docs, searchQuery, selectedCommittee, selectedFormat, sortOrder]);
+  }, [docs, searchQuery, selectedCommittee, selectedFormat, sortOrder, scopeTab]);
 
   return (
     <div className="vba-animate pb-24">
       <MemberHeader title={isEn ? "Resource Library" : t("m.library.title")} back />
+
+      {/* Top Segmented Scope Tabs: Tài liệu Hiệp Hội vs Doanh Nghiệp */}
+      <div className="px-4 mt-2">
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-inner">
+          <button
+            type="button"
+            onClick={() => setScopeTab("association")}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              scopeTab === "association"
+                ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span>Tài liệu Hiệp Hội</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setScopeTab("enterprise")}
+            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              scopeTab === "enterprise"
+                ? "bg-[#003B95] text-white shadow-md shadow-blue-500/20"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Building className="h-4 w-4" />
+            <span>Tài liệu Doanh Nghiệp</span>
+          </button>
+        </div>
+
+        {/* Permission Notice Banner */}
+        <div className="mt-2 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/40 text-[11px] text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span className="truncate">
+              {scopeTab === "association"
+                ? canManageAssociation
+                  ? "Quyền: Quản trị / Trưởng ban — xem, upload, sửa và xóa."
+                  : "Quyền: Thành viên thường — chỉ có quyền xem & tải về."
+                : "Tài liệu doanh nghiệp: Hội viên quản lý hồ sơ & catalogue của mình."}
+            </span>
+          </div>
+          <span className="font-bold shrink-0 text-[10px] uppercase px-1.5 py-0.5 rounded bg-amber-500/20">
+            {scopeTab === "association" ? (canManageAssociation ? "Quản lý" : "Chỉ xem") : "Công khai"}
+          </span>
+        </div>
+      </div>
 
       {/* Search Bar & Sort Row */}
       <div className="px-4 mt-3 space-y-2.5">

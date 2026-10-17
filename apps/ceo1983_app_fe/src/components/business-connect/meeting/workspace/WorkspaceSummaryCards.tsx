@@ -37,56 +37,61 @@ export function WorkspaceSummaryCards({ meetings = [] }: { meetings?: MeetingIte
   }, [meetings]);
 
   return (
-    <section aria-label="Thống kê cuộc gặp" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {/* 1. Tổng cuộc gặp */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-primary/40 transition">
-        <div className="flex items-center justify-between text-muted-foreground mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider">Tổng Cuộc Gặp</span>
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-blue-500/10 text-blue-600">
-            <Users2 className="h-4 w-4" />
-          </div>
+    <section aria-label="Thống kê cuộc gặp" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 1. Tổng cuộc gặp (Sky gradient - Blue) */}
+      <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+        <div className="h-8 flex items-center gap-2">
+          <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+          <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG SỐ CUỘC GẶP</div>
         </div>
-        <div className="text-2xl font-black tabular-nums text-foreground">{stats.total}</div>
-        <p className="text-[11px] text-muted-foreground mt-0.5">Tất cả lịch kết nối đã tạo</p>
+        <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          {stats.total}
+        </div>
+        <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          Tất cả lịch kết nối đã tạo
+        </div>
       </div>
 
-      {/* 2. Sắp diễn ra */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-amber-500/40 transition">
-        <div className="flex items-center justify-between text-muted-foreground mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Sắp Diễn Ra</span>
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/10 text-amber-600">
-            <Clock className="h-4 w-4" />
-          </div>
+      {/* 2. Sắp diễn ra (Violet gradient - Indigo) */}
+      <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+        <div className="h-8 flex items-center gap-2">
+          <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="clock" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+          <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">SẮP DIỄN RA</div>
         </div>
-        <div className="text-2xl font-black tabular-nums text-foreground">{stats.upcoming}</div>
-        <p className="text-[11px] text-muted-foreground mt-0.5">Chờ gặp gỡ trao đổi</p>
+        <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          {stats.upcoming}
+        </div>
+        <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          Chờ gặp gỡ giao thương
+        </div>
       </div>
 
-      {/* 3. Đã hoàn thành */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-emerald-500/40 transition">
-        <div className="flex items-center justify-between text-muted-foreground mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Đã Hoàn Thành</span>
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
-            <CheckCircle2 className="h-4 w-4" />
-          </div>
+      {/* 3. Phân bổ hình thức (Orange gradient - Orange) */}
+      <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+        <div className="h-8 flex items-center gap-2">
+          <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="venue" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+          <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">HÌNH THỨC GẶP</div>
         </div>
-        <div className="text-2xl font-black tabular-nums text-foreground">{stats.completed}</div>
-        <p className="text-[11px] text-muted-foreground mt-0.5">Đã gặp gỡ thành công</p>
+        <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          {stats.online} <span className="text-sm font-normal text-slate-500">Online</span> · {stats.offline} <span className="text-sm font-normal text-slate-500">Offline</span>
+        </div>
+        <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          Phân bổ trực tuyến &amp; trực tiếp
+        </div>
       </div>
 
-      {/* 4. Trực tuyến / Trực tiếp */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-purple-500/40 transition">
-        <div className="flex items-center justify-between text-muted-foreground mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Hình Thức</span>
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-purple-500/10 text-purple-600">
-            <Video className="h-4 w-4" />
-          </div>
+      {/* 4. Đã hoàn thành (Green gradient - Emerald) */}
+      <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+        <div className="h-8 flex items-center gap-2">
+          <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+          <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ HOÀN THÀNH</div>
         </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-black tabular-nums text-foreground">{stats.online}</span>
-          <span className="text-xs text-muted-foreground">Online · {stats.offline} Offline</span>
+        <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          {stats.completed}
         </div>
-        <p className="text-[11px] text-muted-foreground mt-0.5">Phân bổ theo hình thức</p>
+        <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          Đã gặp gỡ kết nối thành công
+        </div>
       </div>
     </section>
   );

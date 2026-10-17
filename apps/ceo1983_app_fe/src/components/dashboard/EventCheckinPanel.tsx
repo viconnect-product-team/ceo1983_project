@@ -11,7 +11,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { toast } from "sonner";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate } from "@/lib/excel-export";
 import type { EventItem, Registration } from "@/lib/events.functions";
 import { useFmt, useT } from "@/lib/i18n";
 
@@ -48,13 +48,27 @@ export function EventCheckinPanel({
       toast.error(t("ecin.exportEmpty"));
       return;
     }
-    downloadCsv(`attendees-${event.id}`, exportable, [
-      { header: t("ecin.csv.code"), value: (r) => r.id },
-      { header: t("ecin.csv.member"), value: (r) => r.memberName || r.memberCode },
-      { header: t("ecin.csv.ticket"), value: (r) => r.ticketType },
-      { header: t("ecin.csv.regDate"), value: (r) => r.registeredAt },
-      { header: t("ecin.csv.status"), value: (r) => r.status },
-    ]);
+    exportToExcel<Registration>({
+      title: `DANH SÁCH ĐẠI BIỂU ĐĂNG KÝ & ĐIỂM DANH SỰ KIỆN`,
+      subtitle: `${event.name} — Hiệp Hội Doanh Nhân CEO 1983 (HanoiBA)`,
+      filename: `danh-sach-dai-bieu-${event.id}`,
+      sheetName: "Danh_Sach_Dai_Bieu",
+      data: exportable,
+      columns: [
+        { header: "Mã đăng ký", key: "id", width: 16, value: (r) => r.id },
+        { header: "Mã hội viên / Đại biểu", key: "memberCode", width: 18, value: (r) => r.memberCode || "—" },
+        { header: "Họ và tên đại biểu", key: "memberName", width: 28, value: (r) => r.memberName || r.memberCode },
+        { header: "Chức vụ / Đơn vị", key: "company", width: 28, value: (r) => (r as any).title || (r as any).company || "—" },
+        { header: "Số điện thoại", key: "phone", width: 16, value: (r) => (r as any).phone || "—" },
+        { header: "Hạng vé", key: "ticketType", width: 18, value: (r) => r.ticketType },
+        { header: "Thời gian đăng ký", key: "registeredAt", width: 18, value: (r) => formatDisplayDate(r.registeredAt) },
+        { header: "Trạng thái", key: "status", width: 16, value: (r) => (r.status === "confirmed" ? "Đã xác nhận" : r.status === "waitlist" ? "Danh sách chờ" : "Đã hủy") },
+      ],
+      summaryRows: [
+        ["TỔNG CỘNG ĐẠI BIỂU:", "", "", "", "", "", "", `${exportable.length} đại biểu`],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "BAN TỔ CHỨC SỰ KIỆN", "TRƯỞNG BAN THƯ KÝ"],
+    });
     toast.success(t("ecin.exportDone", { n: exportable.length }));
   };
 

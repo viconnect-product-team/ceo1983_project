@@ -26,7 +26,7 @@ import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboa
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useT, type TKey } from "@/lib/i18n";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel } from "@/lib/excel-export";
 import { useTableControls, type TableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
@@ -355,21 +355,32 @@ function CompaniesPage() {
   const pendingCount = base.filter((m) => m.status === "pending").length;
 
   const handleExport = () => {
-    downloadCsv("companies", filtered, [
-      { header: "Code", value: (m) => m.code },
-      { header: "Name", value: (m) => m.name },
-      { header: "Email", value: (m) => m.email },
-      { header: "Phone", value: (m) => m.phone },
-      { header: "TaxCode", value: (m) => m.taxCode ?? "" },
-      { header: "Website", value: (m) => m.website ?? "" },
-      { header: "Industry", value: (m) => m.industry },
-      { header: "Region", value: (m) => m.region },
-      { header: "Level", value: (m) => m.level },
-      { header: "FeePaid", value: (m) => (m.feePaid ? "Đã thanh toán" : "Chưa thanh toán") },
-      { header: "FeeYear", value: (m) => m.feeYear ?? "" },
-      { header: "Employees", value: (m) => m.employees ?? "" },
-      { header: "Status", value: (m) => m.status },
-    ]);
+    exportToExcel<Member>({
+      title: "DANH BẠ DOANH NGHIỆP HỘI VIÊN HIỆP HỘI DOANH NHÂN CEO 1983",
+      subtitle: "Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)",
+      filename: "danh-ba-doanh-nghiep-ceo1983",
+      sheetName: "Doanh_Nghiep_Hoi_Vien",
+      data: filtered,
+      columns: [
+        { header: "Mã doanh nghiệp", key: "code", width: 16, value: (m) => m.code },
+        { header: "Tên doanh nghiệp", key: "name", width: 35, value: (m) => m.name },
+        { header: "Email đại diện", key: "email", width: 26, value: (m) => m.email },
+        { header: "Số điện thoại", key: "phone", width: 16, value: (m) => m.phone },
+        { header: "Mã số thuế", key: "taxCode", width: 18, value: (m) => m.taxCode ?? "—" },
+        { header: "Website", key: "website", width: 28, value: (m) => m.website ?? "—" },
+        { header: "Ngành nghề kinh doanh", key: "industry", width: 24, value: (m) => m.industry },
+        { header: "Khu vực hoạt động", key: "region", width: 18, value: (m) => m.region },
+        { header: "Quy mô hội viên", key: "level", width: 18, value: (m) => m.level },
+        { header: "Hội phí", key: "feePaid", width: 16, value: (m) => (m.feePaid ? "Đã nộp" : "Chưa nộp") },
+        { header: "Số lao động", key: "employees", width: 16, value: (m) => m.employees ?? "—" },
+        { header: "Trạng thái", key: "status", width: 16, value: (m) => (m.status === "active" ? "Hoạt động" : "Chờ duyệt") },
+      ],
+      summaryRows: [
+        ["TỔNG SỐ DOANH NGHIỆP:", "", "", "", "", "", "", "", "", "", `${filtered.length} doanh nghiệp`],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "BAN PHÁT TRIỂN DOANH NGHIỆP", "CHỦ TỊCH CLB CEO 1983"],
+    });
+    toast.success("Đã xuất danh bạ doanh nghiệp chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
   };
 
   function reset() {
@@ -458,17 +469,22 @@ function CompaniesPage() {
           {kpis.map((k) => (
             <div
               key={k.label}
-              className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+              className="flex h-32 flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:border-primary/40 hover:shadow-sm"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t(k.label)}
+                </span>
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${k.iconBg}`}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${k.iconBg}`}
                 >
-                  <k.Icon className={`h-5 w-5 ${k.iconColor}`} />
+                  <k.Icon className={`h-4 w-4 ${k.iconColor}`} />
                 </div>
-                <div className="min-w-0">
-                  <div className="text-[11px] font-medium text-muted-foreground">{t(k.label)}</div>
-                  <div className="text-xl font-bold text-foreground">{k.value}</div>
+              </div>
+              <div>
+                <div className="truncate text-2xl font-bold tracking-tight text-foreground">{k.value}</div>
+                <div className="mt-1 truncate text-[11px] text-muted-foreground">
+                  Dữ liệu doanh nghiệp hội viên
                 </div>
               </div>
             </div>

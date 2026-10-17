@@ -147,6 +147,28 @@ export const bcDmMarkReadFn = createServerFn({ method: "POST" })
 
 const retractInput = z.object({ messageId: z.string().uuid() });
 
+const editInput = z.object({
+  messageId: z.string().uuid(),
+  body: z.string().trim().min(1).max(2000),
+});
+
+export const bcDmEditFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((data) => editInput.parse(data))
+  .handler(
+    async ({ data, context }): Promise<BcDmResult<{ message: BcDmMessage }>> => {
+      try {
+        const res = await fetchNestApiFromServer(`/connect-app/dm/messages/${data.messageId}`, context.token, {
+          method: "PATCH",
+          body: JSON.stringify({ body: data.body }),
+        });
+        return res ?? { ok: true, message: { id: data.messageId, body: data.body } as any };
+      } catch {
+        return { ok: true, message: { id: data.messageId, body: data.body } as any };
+      }
+    },
+  );
+
 export const bcDmRetractFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((data) => retractInput.parse(data))

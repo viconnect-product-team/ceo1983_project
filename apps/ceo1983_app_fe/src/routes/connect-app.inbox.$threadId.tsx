@@ -11,6 +11,7 @@ import {
   Copy,
   CornerUpLeft,
   Download,
+  Edit2,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import { useLang, useT } from "@/lib/i18n";
 import {
+  useDmEdit,
   useDmMarkRead,
   useDmReact,
   useDmRetract,
@@ -284,12 +286,14 @@ function ThreadPage() {
   const actualThreadId = thread?.threadId || threadId;
 
   const send = useDmSend(actualThreadId);
+  const edit = useDmEdit(actualThreadId);
   const retract = useDmRetract(actualThreadId);
   const react = useDmReact(actualThreadId);
   const markRead = useDmMarkRead();
 
   const [draft, setDraft] = useState("");
   const [replyingTo, setReplyingTo] = useState<ReplyingState | null>(null);
+  const [editingMsg, setEditingMsg] = useState<{ id: string; body: string } | null>(null);
   const [activeMenuMsgId, setActiveMenuMsgId] = useState<string | null>(null);
   const [activeReactionPickerMsgId, setActiveReactionPickerMsgId] = useState<string | null>(null);
   const [copyToast, setCopyToast] = useState<string | null>(null);
@@ -379,6 +383,28 @@ function ThreadPage() {
     window.addEventListener("click", handleOutsideClick);
     return () => window.removeEventListener("click", handleOutsideClick);
   }, []);
+
+  const handleStartEdit = (m: BcDmMessage) => {
+    setEditingMsg({ id: m.id, body: m.body });
+    setDraft(m.body);
+    setReplyingTo(null);
+    setActiveMenuMsgId(null);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px";
+        textareaRef.current.focus();
+      }
+    }, 50);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMsg(null);
+    setDraft("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  };
 
   const handleCopyText = (text: string) => {
     if (!text) return;
@@ -489,8 +515,22 @@ function ThreadPage() {
 
   const submit = async () => {
     const body = sanitizeDmBody(draft);
-    if (!body || send.isPending) return;
+    if (!body || send.isPending || edit.isPending) return;
     setErrorCode(null);
+
+    if (editingMsg) {
+      const res = await edit.mutateAsync({ messageId: editingMsg.id, body });
+      if (res.ok) {
+        setDraft("");
+        setEditingMsg(null);
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+        }
+      } else {
+        setErrorCode(res.error);
+      }
+      return;
+    }
 
     const res = await send.mutateAsync({
       body,
@@ -507,6 +547,9 @@ function ThreadPage() {
     if (res.ok) {
       setDraft("");
       setReplyingTo(null);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
     } else {
       setErrorCode(res.error);
     }
@@ -809,6 +852,14 @@ function ThreadPage() {
                                       >
                                         <CornerUpLeft className="h-3.5 w-3.5" />
                                         <span>Trả lời</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartEdit(m)}
+                                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-amber-600 dark:text-[var(--bc-mobile-accent)] hover:bg-slate-100 dark:hover:bg-[var(--bc-mobile-surface-2)] cursor-pointer font-medium"
+                                      >
+                                        <Edit2 className="h-3.5 w-3.5" />
+                                        <span>Chỉnh sửa</span>
                                       </button>
                                       <button
                                         type="button"
@@ -1201,6 +1252,11 @@ function ThreadPage() {
                             }`}
                           >
                             <span>{timeFormatted}</span>
+                            {m.isEdited ? (
+                              <span className="italic opacity-80 text-[10px] text-amber-600 dark:text-amber-400 font-normal">
+                                (Đã chỉnh sửa)
+                              </span>
+                            ) : null}
                             {m.fromMe && !m.retractedAt ? (
                               m.readAt ? (
                                 <span className="flex items-center gap-0.5 text-[var(--bc-mobile-accent)] font-semibold">

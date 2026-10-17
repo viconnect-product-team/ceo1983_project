@@ -59,6 +59,17 @@
   --gradient-primary: linear-gradient(135deg, #0052CC 0%, #003B95 100%);
   --gradient-sidebar: linear-gradient(180deg, #FFFFFF 0%, #EFF6FF 100%);
   --gradient-card: linear-gradient(135deg, #1E40AF 0%, #003B95 100%);
+
+  --color-Backgrounds-Primary: #FFFFFF;
+  --color-Backgrounds-Secondary: #E2E8F0;
+  --color-Fills-Secondary: #F1F5F9;
+  --color-Grays-Black: #0F172A;
+  --color-Grays-White: #FFFFFF;
+  --color-Grays-Gray: #64748B;
+  --color-Accents-Red: #EF4444;
+  --color-Accents-Mint: #10B981;
+  --color-Primary: #003B95;
+  --color-Labels-Secondary: #64748B;
 }
 
 @keyframes subtle-bounce {
@@ -72,6 +83,18 @@
 
 .animate-subtle-bounce {
   animation: subtle-bounce 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.bg-crm-system {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(248, 250, 252, 0.28)), url('/Background.png');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.dark .bg-crm-system {
+  background-image: linear-gradient(to bottom, rgba(11, 17, 32, 0.3), rgba(11, 17, 32, 0.55)), url('/Background.png');
 }
 
 :root {
@@ -2590,6 +2613,25 @@ body:has(.vba-app),
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.modal-standard-body::-webkit-scrollbar,
+.popup-body::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
+[data-modal-body]::-webkit-scrollbar,
+[role="dialog"] [class*="overflow-y-auto"]::-webkit-scrollbar,
+[role="dialog"] .overflow-y-auto::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+[role="dialog"] [class*="overflow-y-auto"],
+[role="dialog"] .overflow-y-auto {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .modal-standard-footer,
@@ -2664,3 +2706,32 @@ td[title] {
     min-height: 100dvh;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CEO 1983 UI HARMONY & UNIFORM BORDER / TYPOGRAPHY (MOBILE TASK 7)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.vba-app {
+  letter-spacing: -0.011em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.vba-app h1,
+.vba-app h2,
+.vba-app h3,
+.vba-app h4 {
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.vba-app input,
+.vba-app select,
+.vba-app textarea {
+  border-color: rgba(203, 213, 225, 0.8);
+}
+
+.dark .vba-app input,
+.dark .vba-app select,
+.dark .vba-app textarea {
+  border-color: rgba(71, 85, 105, 0.7);
+}
+

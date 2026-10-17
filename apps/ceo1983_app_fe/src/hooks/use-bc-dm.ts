@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  bcDmEditFn,
   bcDmMarkReadFn,
   bcDmOpenThreadFn,
   bcDmReactFn,
@@ -168,6 +169,19 @@ export function useDmMarkRead() {
   return useMutation({
     mutationFn: (threadId: string) => fn({ data: { threadId } }),
     onSuccess: (_res, threadId) => {
+      void qc.invalidateQueries({ queryKey: bcDmKeys.thread(viewerKey, threadId) });
+      void qc.invalidateQueries({ queryKey: bcDmKeys.threads(viewerKey) });
+    },
+  });
+}
+
+export function useDmEdit(threadId: string) {
+  const viewerKey = useViewerKey();
+  const qc = useQueryClient();
+  const fn = useServerFn(bcDmEditFn);
+  return useMutation({
+    mutationFn: (input: { messageId: string; body: string }) => fn({ data: input }),
+    onSuccess: () => {
       void qc.invalidateQueries({ queryKey: bcDmKeys.thread(viewerKey, threadId) });
       void qc.invalidateQueries({ queryKey: bcDmKeys.threads(viewerKey) });
     },

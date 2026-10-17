@@ -378,22 +378,12 @@ export function PersonalProfileBottomSheet({
             )}
           </div>
 
-          {/* Giới thiệu bản thân (Bio) */}
-          {profile.bio && (
-            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-              <span className="font-semibold text-slate-900 dark:text-white block mb-1">
-                Giới thiệu & Triết lý kinh doanh:
-              </span>
-              {profile.bio}
-            </div>
-          )}
-
           {/* Hàng nút kết nối trực tiếp (Call / Zalo / Email) */}
           <div className="grid grid-cols-3 gap-2.5 mb-5">
             {profile.phone ? (
               <a
                 href={`tel:${profile.phone}`}
-                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs transition hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-95"
+                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs transition hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-95 shadow-xs"
               >
                 <div className="h-8 w-8 rounded-full bg-emerald-500 text-white grid place-items-center shadow-xs">
                   <Phone className="h-4 w-4" />
@@ -412,7 +402,7 @@ export function PersonalProfileBottomSheet({
                 href={zaloUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 font-bold text-xs transition hover:bg-blue-100 dark:hover:bg-blue-900/40 active:scale-95"
+                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 font-bold text-xs transition hover:bg-blue-100 dark:hover:bg-blue-900/40 active:scale-95 shadow-xs"
               >
                 <div className="h-8 w-8 rounded-full bg-[#0068FF] text-white grid place-items-center shadow-xs font-black text-xs">
                   Z
@@ -424,7 +414,7 @@ export function PersonalProfileBottomSheet({
             {profile.email ? (
               <a
                 href={`mailto:${profile.email}`}
-                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-bold text-xs transition hover:bg-amber-100 dark:hover:bg-amber-900/40 active:scale-95"
+                className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-bold text-xs transition hover:bg-amber-100 dark:hover:bg-amber-900/40 active:scale-95 shadow-xs"
               >
                 <div className="h-8 w-8 rounded-full bg-amber-500 text-white grid place-items-center shadow-xs">
                   <Mail className="h-4 w-4" />
@@ -486,7 +476,7 @@ export function PersonalProfileBottomSheet({
                     onClick={onEdit}
                     className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline"
                   >
-                    + Thêm
+                    Thêm
                   </button>
                 )}
               </div>

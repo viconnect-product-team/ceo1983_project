@@ -36,6 +36,7 @@ import { useRole } from "@/hooks/use-role";
 import { DEFAULT_MEMBERS } from "@/lib/members-data";
 import { fetchNestApi } from "@/lib/api-client";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { StandardMetricCard, StandardMetricGrid } from "@/components/dashboard/KpiCard";
 
 export const Route = createFileRoute("/departments")({
   component: DepartmentsPage,
@@ -373,52 +374,37 @@ function DepartmentsPage() {
           subtitle="Cơ cấu tổ chức các ban chuyên môn, ban điều hành và phân công nhiệm vụ CLB Doanh Nhân CEO 1983"
         />
 
-        {/* ── METRIC STATS ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tổng số ban</span>
-              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                <Building2 className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">{departments.length}</div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Toàn bộ ban chuyên môn & điều hành</div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ban nòng cốt</span>
-              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Shield className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">{departments.filter((d) => d.isCore).length}</div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Theo quy chế hiệp hội Hà Nội</div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Hội viên trực thuộc</span>
-              <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                <Users className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">{totalMembers}</div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Đã được phân công vào các ban</div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ban mở rộng</span>
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Plus className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-foreground">{departments.filter((d) => !d.isCore).length}</div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Ban sáng kiến & dự án mới</div>
-          </div>
-        </div>
+        {/* ── 4 METRIC CARDS (Format Chuẩn Ảnh 2 Figma) ── */}
+        <StandardMetricGrid>
+          <StandardMetricCard
+            title="Tổng Số Ban"
+            value={departments.length}
+            subtitle="Toàn bộ ban chuyên môn & điều hành"
+            icon={Building2}
+            index={0}
+          />
+          <StandardMetricCard
+            title="Ban Nòng Cốt"
+            value={departments.filter((d) => d.isCore).length}
+            subtitle="Theo quy chế hiệp hội Hà Nội"
+            icon={Shield}
+            index={1}
+          />
+          <StandardMetricCard
+            title="Ban Mở Rộng"
+            value={departments.filter((d) => !d.isCore).length}
+            subtitle="Ban sáng kiến & dự án mới"
+            icon={Plus}
+            index={2}
+          />
+          <StandardMetricCard
+            title="Hội Viên Trực Thuộc"
+            value={totalMembers}
+            subtitle="Đã được phân công vào các ban"
+            icon={Users}
+            index={3}
+          />
+        </StandardMetricGrid>
 
         {/* ── TOOLBAR: TÌM KIẾM CẠNH THÊM MỚI (Requirement 2) ── */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border shadow-xs">
@@ -476,13 +462,13 @@ function DepartmentsPage() {
           </div>
         </div>
 
-        {/* ── BẢNG LƯỚI DASHBOARD (Có STT, Bỏ Phân loại, Hiện số lượng thành viên thực) ── */}
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">
+        {/* ── BẢNG LƯỚI DASHBOARD (Format Chuẩn Ma Trận Phân Quyền) ── */}
+        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-x-auto shadow-xs">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="border-b border-border bg-muted/60 text-xs font-bold text-foreground uppercase tracking-wider">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                 {/* CỘT STT */}
-                <th className="sticky left-0 z-20 bg-muted/95 backdrop-blur-xs py-3.5 px-3 w-[60px] text-center border-r border-border/60 shadow-xs">
+                <th className="sticky left-0 z-20 bg-slate-100 dark:bg-slate-800 py-3.5 px-3 w-[60px] text-center border-r border-slate-200 dark:border-slate-800 shadow-xs">
                   STT
                 </th>
 

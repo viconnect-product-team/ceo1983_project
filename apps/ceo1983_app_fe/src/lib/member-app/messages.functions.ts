@@ -42,6 +42,8 @@ export type ChatMessage = {
   createdAt: string;
   seen: boolean;
   retracted?: boolean;
+  isEdited?: boolean;
+  editedAt?: string | null;
   reactions?: { emoji: string; count?: number }[];
   replyTo?: {
     id: string;
@@ -140,6 +142,23 @@ export const sendMessage = createServerFn({ method: "POST" })
       method: "POST",
       body: JSON.stringify(data),
     });
+  });
+
+export const editMemberMessage = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ messageId: z.string().min(1), text: z.string().trim().min(1).max(5000) }).parse(d),
+  )
+  .handler(async ({ data, context }: any): Promise<{ ok: boolean; message?: any }> => {
+    const token = context?.token;
+    return fetchNestApiFromServer<{ ok: boolean; message?: any }>(
+      `/dm/member/messages/${encodeURIComponent(data.messageId)}`,
+      token,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ text: data.text }),
+      },
+    );
   });
 
 export const retractMemberMessage = createServerFn({ method: "POST" })

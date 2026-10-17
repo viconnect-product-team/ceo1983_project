@@ -490,7 +490,7 @@ function CheckinScreen() {
             eventDate: matchedEvent?.date ? new Date(matchedEvent.date).toLocaleDateString("vi-VN") : "27/09/2026",
             eventLocation: matchedEvent?.location || "Trung tâm Hội nghị Quốc gia, Hà Nội",
             ticketType: regMatch.ticketType || "Vé VIP Hội Viên",
-            seatAssignment: regMatch.seatAssignment || seat || "Bàn VIP 02 - Ghế 04",
+            seatAssignment: regMatch.seatAssignment || seat || "Chờ Ban Truyền Thông xếp chỗ",
             luckyNumber: regMatch.luckyNumber || lucky || `#${mCode.slice(-4)}`,
             ticketCount: 1,
             isCheckedIn: isChecked,
@@ -519,7 +519,7 @@ function CheckinScreen() {
                 eventDate: matchedEvent?.date ? new Date(matchedEvent.date).toLocaleDateString("vi-VN") : "27/09/2026",
                 eventLocation: matchedEvent?.location || "Trung tâm Hội nghị Quốc gia, Hà Nội",
                 ticketType: "Vé Mời Danh Dự (VIP Member Pass)",
-                seatAssignment: seat || "Bàn VIP 01 - Ghế 01",
+                seatAssignment: seat || "Chờ Ban Truyền Thông xếp chỗ",
                 luckyNumber: lucky || `#${mCode.slice(-4).toUpperCase()}`,
                 ticketCount: 1,
                 isCheckedIn: isChecked,
@@ -570,7 +570,7 @@ function CheckinScreen() {
             eventDate: matchedEvent?.date ? new Date(matchedEvent.date).toLocaleDateString("vi-VN") : "27/09/2026",
             eventLocation: matchedEvent?.location || "Trung tâm Hội nghị Quốc gia, Hà Nội",
             ticketType: regMatch.ticketType || "VIP Standard Pass",
-            seatAssignment: regMatch.seatAssignment || "Bàn VIP 08 - Ghế 02",
+            seatAssignment: regMatch.seatAssignment || "Chờ Ban Truyền Thông xếp chỗ",
             luckyNumber: regMatch.luckyNumber || `#${1000 + (now % 8999)}`,
             ticketCount: 1,
             isCheckedIn: isChecked,
@@ -593,7 +593,7 @@ function CheckinScreen() {
             eventDate: parsedJson.eventDate || "27/09/2026",
             eventLocation: parsedJson.eventLocation || "Trung tâm Hội nghị Quốc gia, Hà Nội",
             ticketType: parsedJson.ticketType || "VIP Standard Pass",
-            seatAssignment: parsedJson.seatAssignment || "Bàn VIP 08 - Ghế 02",
+            seatAssignment: parsedJson.seatAssignment || "Chờ Ban Truyền Thông xếp chỗ",
             luckyNumber: parsedJson.luckyNumber || `#${1000 + (now % 8999)}`,
             ticketCount: parsedJson.ticketCount || 1,
             isCheckedIn: isChecked,
@@ -638,7 +638,7 @@ function CheckinScreen() {
           eventDate: matchedEvent?.date ? new Date(matchedEvent.date).toLocaleDateString("vi-VN") : "27/09/2026",
           eventLocation: matchedEvent?.location || "Trung tâm Hội nghị Quốc gia, Hà Nội",
           ticketType: foundReg.ticketType || "Vé Tham Dự Hội Viên",
-          seatAssignment: foundReg.seatAssignment || "Bàn VIP 02 - Ghế 04",
+          seatAssignment: foundReg.seatAssignment || "Chờ Ban Truyền Thông xếp chỗ",
           luckyNumber: foundReg.luckyNumber || `#${foundReg.id.slice(-4).toUpperCase()}`,
           ticketCount: 1,
           isCheckedIn: isChecked,
@@ -673,7 +673,7 @@ function CheckinScreen() {
               eventDate: matchedEvent?.date ? new Date(matchedEvent.date).toLocaleDateString("vi-VN") : "27/09/2026",
               eventLocation: matchedEvent?.location || "Trung tâm Hội nghị Quốc gia, Hà Nội",
               ticketType: "Vé Mời Danh Dự (VIP Member Pass)",
-              seatAssignment: "Bàn VIP 01 - Ban Chủ Tọa - Ghế 01",
+              seatAssignment: "Chờ Ban Truyền Thông xếp chỗ",
               luckyNumber: `#${memberCode.slice(-4).toUpperCase()}`,
               ticketCount: 1,
               isCheckedIn: isChecked,
@@ -712,7 +712,7 @@ function CheckinScreen() {
           eventDate: foundRecord.date || "27/09/2026",
           eventLocation: foundRecord.place || "Trung tâm Hội nghị Quốc gia, Hà Nội",
           ticketType: foundRecord.ticketType || "VIP Standard Pass",
-          seatAssignment: foundRecord.seatAssignment || "Bàn VIP 02 - Ghế 04",
+          seatAssignment: foundRecord.seatAssignment || "Chờ Ban Truyền Thông xếp chỗ",
           luckyNumber: foundRecord.luckyNumber || "#1983",
           ticketCount: foundRecord.ticketCount || 1,
           isCheckedIn: isChecked,
@@ -848,7 +848,7 @@ function CheckinScreen() {
   const attendeeCompany =
     (member as any)?.companyName || (user as any)?.company || (member as any)?.company || "CLB Doanh nhân CEO 1983";
   const attendeeSeat =
-    myRealRegistration?.seatAssignment || (member as any)?.seatAssignment || registeredEventPass?.seatAssignment || "Bàn VIP 02 - Ghế 04";
+    myRealRegistration?.seatAssignment || (member as any)?.seatAssignment || registeredEventPass?.seatAssignment || "Chờ Ban Truyền Thông xếp chỗ";
   const attendeeLuckyRaw =
     myRealRegistration?.luckyNumber || registeredEventPass?.luckyNumber || `#${(member?.code || "88").slice(-3)}`;
   const attendeeLucky = attendeeLuckyRaw.startsWith("#") ? attendeeLuckyRaw : `#${attendeeLuckyRaw}`;
@@ -870,7 +870,7 @@ function CheckinScreen() {
   const guestRegUrl = useMemo(() => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://crm.ceo1983.viconnect.vn";
     const eId = currentDisplayEvent?.id || activeEvent?.id || "EVT-1983";
-    return `${origin}/events/${eId}/register?source=zalo_guest`;
+    return `${origin}/guest-event-register/${eId}`;
   }, [currentDisplayEvent, activeEvent]);
 
   const guestQrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(guestRegUrl)}`;

@@ -180,19 +180,27 @@ export function FinanceExcelImportModal({
     if (isIncome) {
       fileName = "Bao_Cao_Mau_Thu_Quy_CEO1983.xlsx";
       sampleData = [
+        ["HIỆP HỘI DOANH NHÂN CEO 1983 (HANOIBA)", "", "", "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"],
+        ["BAN CHẤP HÀNH - VĂN PHÒNG HIỆP HỘI", "", "", "", "Độc lập - Tự do - Hạnh phúc"],
+        [],
+        ["", "", "BẢNG MẪU NHẬP DỮ LIỆU THU QUỸ HỘI VIÊN & ĐỐI TÁC"],
+        ["(Mẫu chuẩn hóa hệ thống quản trị tài chính Hiệp Hội Doanh Nhân CEO 1983)"],
+        [],
         [
+          "STT",
           "Mã phiếu thu",
           "Ngày thu",
           "Danh mục thu",
           "Nội dung thu",
           "Người nộp / Đơn vị",
-          "Số tiền",
+          "Số tiền (VNĐ)",
           "Hình thức",
           "Trạng thái",
         ],
         [
+          1,
           "PT-2026-001",
-          "2026-03-10",
+          "10/03/2026",
           "Phí hội viên",
           "Thu hội phí hội viên VIP thường niên 2026",
           "Công ty CP Tập đoàn Hòa Bình",
@@ -201,8 +209,9 @@ export function FinanceExcelImportModal({
           "Đã xác nhận",
         ],
         [
+          2,
           "PT-2026-002",
-          "2026-03-09",
+          "09/03/2026",
           "Vé sự kiện",
           "Thu vé tham dự Diễn đàn Kết nối Giao thương B2B",
           "Bà Trần Mai Anh",
@@ -211,8 +220,9 @@ export function FinanceExcelImportModal({
           "Đã xác nhận",
         ],
         [
+          3,
           "PT-2026-003",
-          "2026-03-08",
+          "08/03/2026",
           "Thu đột xuất (Tại sự kiện)",
           "Thu tiền mặt trực tiếp tại bàn đón tiếp sự kiện",
           "Ông Nguyễn Hoàng Long",
@@ -221,8 +231,9 @@ export function FinanceExcelImportModal({
           "Đã xác nhận",
         ],
         [
+          4,
           "PT-2026-004",
-          "2026-03-05",
+          "05/03/2026",
           "Tài trợ",
           "Thu gói Tài trợ Kim Cương Tech Expo 2026",
           "Ngân hàng Techcombank",
@@ -234,21 +245,29 @@ export function FinanceExcelImportModal({
     } else {
       fileName = "Bao_Cao_Mau_Chi_Va_Tam_Ung_CEO1983.xlsx";
       sampleData = [
+        ["HIỆP HỘI DOANH NHÂN CEO 1983 (HANOIBA)", "", "", "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"],
+        ["BAN CHẤP HÀNH - VĂN PHÒNG HIỆP HỘI", "", "", "", "Độc lập - Tự do - Hạnh phúc"],
+        [],
+        ["", "", "BẢNG MẪU NHẬP DỮ LIỆU CHI PHÍ & TẠM ỨNG HIỆP HỘI"],
+        ["(Mẫu chuẩn hóa hệ thống quản trị tài chính Hiệp Hội Doanh Nhân CEO 1983)"],
+        [],
         [
+          "STT",
           "Mã phiếu chi",
           "Ngày chi",
           "Danh mục chi",
           "Nội dung chi",
           "Người nhận / Đơn vị",
-          "Số tiền",
+          "Số tiền (VNĐ)",
           "Số tiền tạm ứng",
           "Hoàn ứng tiền thừa",
           "Hình thức",
           "Trạng thái",
         ],
         [
+          1,
           "PC-2026-001",
-          "2026-03-10",
+          "10/03/2026",
           "Sự kiện",
           "Chi thuê hội trường Gala Giao Thương Thường Niên 2026",
           "Trung tâm Hội nghị Quốc Gia",
@@ -259,8 +278,9 @@ export function FinanceExcelImportModal({
           "Đã duyệt",
         ],
         [
+          2,
           "PC-2026-002",
-          "2026-03-08",
+          "08/03/2026",
           "Tạm ứng",
           "Tạm ứng chi phí thiết kế và thi công backdrop sự kiện",
           "Ban Truyền thông",
@@ -271,8 +291,9 @@ export function FinanceExcelImportModal({
           "Đã duyệt",
         ],
         [
+          3,
           "PC-2026-003",
-          "2026-03-05",
+          "05/03/2026",
           "Tiếp khách & Đối ngoại",
           "Chi ăn trưa làm việc cùng đoàn đại biểu xúc tiến thương mại",
           "Nhà hàng Sen Tây Hồ",
@@ -340,11 +361,11 @@ export function FinanceExcelImportModal({
         throw new Error("File Excel không có đủ dữ liệu hàng.");
       }
 
-      // Detect header row (within first 5 rows)
+      // Detect header row (within first 15 rows to support corporate banner headers)
       let headerRowIdx = 0;
       let colMap: Record<string, number> = {};
 
-      for (let r = 0; r < Math.min(5, rawRows.length); r++) {
+      for (let r = 0; r < Math.min(15, rawRows.length); r++) {
         const row = rawRows[r] || [];
         const matches = row.filter((c: any) => {
           const s = String(c || "").toLowerCase().trim();
@@ -395,6 +416,20 @@ export function FinanceExcelImportModal({
         // Skip entirely empty row
         const isEmpty = row.every((c: any) => !String(c || "").trim());
         if (isEmpty) continue;
+
+        // Skip corporate summary / signatures / date footer rows
+        const firstCell = String(row[0] || "").toLowerCase().trim();
+        const secondCell = String(row[1] || "").toLowerCase().trim();
+        if (
+          firstCell.includes("tổng cộng") ||
+          firstCell.includes("hà nội, ngày") ||
+          firstCell.includes("người lập") ||
+          firstCell.includes("(ký") ||
+          secondCell.includes("tổng cộng") ||
+          secondCell.includes("(ký")
+        ) {
+          continue;
+        }
 
         const rawDate = row[colMap["date"]];
         const rawCategory = String(row[colMap["category"]] || "");

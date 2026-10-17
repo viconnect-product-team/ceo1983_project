@@ -202,6 +202,28 @@ export function ShopeeProductDetailModal({
     }
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: product.name || "Sản phẩm Doanh nghiệp CEO 1983",
+      text: `${product.name || ""} - ${companyName}`,
+      url: window.location.href,
+    };
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User cancelled
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Đã sao chép liên kết chia sẻ sản phẩm!");
+      } catch {
+        toast.info("Đã sao chép liên kết");
+      }
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
@@ -221,13 +243,23 @@ export function ShopeeProductDetailModal({
               {product.category || "Sản Phẩm & Dịch Vụ Hội Viên"}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition cursor-pointer"
-          >
-            <X className="size-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="size-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition cursor-pointer"
+              title="Chia sẻ sản phẩm"
+            >
+              <Share2 className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition cursor-pointer"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Modal Body */}
@@ -242,14 +274,7 @@ export function ShopeeProductDetailModal({
                   alt={product.name}
                   className="w-full h-full object-cover transition-all duration-300"
                 />
-                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-[#003B95] text-white text-[10px] font-black shadow-md">
-                    Hội Viên VIP
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-900 text-amber-400 border border-amber-400/30 text-[10px] font-black shadow-md">
-                    CEO 1983
-                  </span>
-                </div>
+                {/* Product Image */}
               </div>
 
               {/* Thumbnails */}
@@ -366,6 +391,15 @@ export function ShopeeProductDetailModal({
                   <Heart className={`size-5 ${isInterested ? "fill-rose-600" : ""}`} />
                 </button>
 
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="size-11 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 hover:text-[#003B95] dark:text-slate-300 flex items-center justify-center transition cursor-pointer shrink-0 shadow-xs"
+                  title="Chia sẻ sản phẩm"
+                >
+                  <Share2 className="size-5" />
+                </button>
+
                 {onMessageSeller && (
                   <button
                     type="button"
@@ -430,19 +464,6 @@ export function ShopeeProductDetailModal({
 
               {/* Right: Quick actions for Shop */}
               <div className="flex items-center gap-2 shrink-0">
-                {onMessageSeller && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onMessageSeller(product);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
-                  >
-                    <MessageSquare className="size-3.5 text-[#003B95]" />
-                    <span>Chat Ngay</span>
-                  </button>
-                )}
                 {onViewStore && (
                   <button
                     type="button"
@@ -778,24 +799,19 @@ export function ShopeeProductDetailModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={handleShare}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-xs"
+            >
+              <Share2 className="size-3.5" />
+              <span>Chia Sẻ</span>
+            </button>
+            <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Đóng
             </button>
-            {onMessageSeller && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onMessageSeller(product);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-xs"
-              >
-                <MessageSquare className="size-3.5 text-[#003B95]" />
-                <span>Chat Hỏi Shop</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={() => {

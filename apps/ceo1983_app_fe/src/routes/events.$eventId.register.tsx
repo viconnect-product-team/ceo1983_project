@@ -69,6 +69,7 @@ function GuestEventRegistrationPage() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [position, setPosition] = useState("");
+  const [ticketType, setTicketType] = useState("Standard");
   const [ticketCount, setTicketCount] = useState(1);
   const [note, setNote] = useState("");
 
@@ -122,6 +123,7 @@ function GuestEventRegistrationPage() {
           email: email.trim().toLowerCase(),
           company: company.trim(),
           position: position.trim(),
+          ticketType,
           ticketCount,
           note: note.trim(),
         }),
@@ -727,10 +729,46 @@ function GuestEventRegistrationPage() {
             </div>
           </div>
 
-          {/* CARD 5: SỐ LƯỢNG VÉ & PHÍ */}
+          {/* CARD 5: LOẠI VÉ */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
             <label className="block text-sm sm:text-base font-bold text-slate-800">
-              5. Số lượng vé tham dự
+              5. Loại vé tham dự
+            </label>
+            <p className="text-xs text-slate-500">
+              Chọn hạng vé phù hợp với tư cách tham dự chương trình.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {[
+                { id: "Standard", label: "Vé Tiêu Chuẩn", desc: "Tham dự toàn bộ chương trình" },
+                { id: "VIP", label: "Vé VIP Doanh Nhân", desc: "Bàn tiệc trang trọng, tài liệu VIP" },
+                { id: "Guest", label: "Khách Mời Danh Dự", desc: "Khách mời đặc biệt từ BTC" },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTicketType(t.id)}
+                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                    ticketType === t.id
+                      ? "border-[#003B95] bg-blue-50/60 ring-2 ring-[#003B95]/20 shadow-xs"
+                      : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-xs text-slate-900">{t.label}</span>
+                    {ticketType === t.id && (
+                      <CheckCircle2 className="w-4 h-4 text-[#003B95]" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 block leading-tight">{t.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* CARD 6: SỐ LƯỢNG VÉ & PHÍ */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
+            <label className="block text-sm sm:text-base font-bold text-slate-800">
+              6. Số lượng vé tham dự
             </label>
             <p className="text-xs text-slate-500">
               Lựa chọn số lượng vé dành cho cá nhân hoặc đoàn doanh nghiệp tham dự.
@@ -758,10 +796,10 @@ function GuestEventRegistrationPage() {
             </div>
           </div>
 
-          {/* CARD 6: NỘI DUNG KẾT NỐI B2B / GHI CHÚ */}
+          {/* CARD 7: NỘI DUNG KẾT NỐI B2B / GHI CHÚ */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-7 space-y-3">
             <label className="block text-sm sm:text-base font-bold text-slate-800">
-              6. Mong muốn kết nối B2B hoặc câu hỏi cho Diễn giả
+              7. Mong muốn kết nối B2B hoặc câu hỏi cho Diễn giả
             </label>
             <p className="text-xs text-slate-500">
               Quý khách có thể ghi ngành nghề mong muốn tìm đối tác hoặc câu hỏi gửi tới Ban Tổ Chức (không bắt buộc).

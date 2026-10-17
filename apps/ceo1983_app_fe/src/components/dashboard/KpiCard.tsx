@@ -94,3 +94,90 @@ export function MiniKpiCard({
     </div>
   );
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   CHUẨN HÓA 4 Ô METRIC CARDS ĐỒNG BỘ TOÀN HỆ THỐNG HIỆP HỘI (ẢNH 2 FIGMA)
+   Ô 1: Sky/Blue  |  Ô 2: Violet/Indigo  |  Ô 3: Orange/Amber  |  Ô 4: Green/Emerald
+   Kích thước: h-32 p-4 rounded-[20px] outline-[0.5px] outline-slate-200
+────────────────────────────────────────────────────────────────────────── */
+export type StandardMetricTone = "sky" | "violet" | "orange" | "green";
+
+const STANDARD_METRIC_THEMES: Record<
+  StandardMetricTone,
+  {
+    bgGradient: string;
+    textTitle: string;
+  }
+> = {
+  sky: {
+    bgGradient: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900",
+    textTitle: "text-blue-600 dark:text-blue-400",
+  },
+  violet: {
+    bgGradient: "bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900",
+    textTitle: "text-indigo-500 dark:text-indigo-400",
+  },
+  orange: {
+    bgGradient: "bg-gradient-to-b from-orange-100 to-white dark:from-amber-950/40 dark:to-slate-900",
+    textTitle: "text-orange-500 dark:text-amber-400",
+  },
+  green: {
+    bgGradient: "bg-gradient-to-b from-green-100 to-white dark:from-emerald-950/40 dark:to-slate-900",
+    textTitle: "text-emerald-500 dark:text-emerald-400",
+  },
+};
+
+export function StandardMetricCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  iconUrl,
+  tone = "sky",
+  index = 0,
+}: {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon?: LucideIcon;
+  iconUrl?: string;
+  tone?: StandardMetricTone;
+  index?: number;
+}) {
+  const tones: StandardMetricTone[] = ["sky", "violet", "orange", "green"];
+  const chosenTone = tones[index % 4] || tone;
+  const theme = STANDARD_METRIC_THEMES[chosenTone];
+
+  return (
+    <div
+      className={`h-32 p-4 ${theme.bgGradient} rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs transition hover:shadow-sm`}
+    >
+      <div className="h-8 flex items-center gap-2">
+        {iconUrl ? (
+          <img src={iconUrl} className="h-4 w-4 shrink-0" alt="icon" />
+        ) : Icon ? (
+          <Icon className={`h-4 w-4 shrink-0 ${theme.textTitle}`} />
+        ) : null}
+        <div className={`${theme.textTitle} text-xs font-semibold font-['Inter'] uppercase tracking-wider`}>
+          {title}
+        </div>
+      </div>
+      <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+        {value}
+      </div>
+      {subtitle && (
+        <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] truncate w-full">
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function StandardMetricGrid({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {children}
+    </div>
+  );
+}

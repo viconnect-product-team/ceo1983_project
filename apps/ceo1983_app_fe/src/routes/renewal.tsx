@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useT, type TKey } from "@/lib/i18n";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate } from "@/lib/excel-export";
 import {
   renewalKpis,
   type RenewalRecord,
@@ -312,20 +312,32 @@ function RenewalPage() {
   };
 
   const handleExport = () => {
-    downloadCsv("renewals", filtered, [
-      { header: "Code", value: (r) => r.member.code },
-      { header: "Name", value: (r) => r.member.name },
-      { header: "Email", value: (r) => r.member.email },
-      { header: "Level", value: (r) => r.member.level },
-      { header: "TermEnd", value: (r) => r.currentTermEnd },
-      { header: "DaysLeft", value: (r) => r.daysLeft },
-      { header: "Status", value: (r) => r.status },
-      { header: "Payment", value: (r) => r.paymentStatus },
-      { header: "Reminders", value: (r) => r.reminderCount },
-      { header: "LastReminder", value: (r) => r.lastReminder ?? "" },
-      { header: "RenewedAt", value: (r) => r.renewedAt ?? "" },
-      { header: "NewTermEnd", value: (r) => r.newTermEnd ?? "" },
-    ]);
+    exportToExcel<RenewalRecord>({
+      title: "BÁO CÁO THEO DÕI GIA HẠN TƯ CÁCH HỘI VIÊN THƯỜNG NIÊN",
+      subtitle: "Hiệp Hội Doanh Nhân CEO 1983 - HanoiBA",
+      filename: "theo-doi-gia-han-hoi-vien",
+      sheetName: "Theo_Doi_Gia_Han",
+      data: filtered,
+      columns: [
+        { header: "Mã hội viên", key: "code", width: 16, value: (r) => r.member.code },
+        { header: "Họ và tên hội viên", key: "name", width: 28, value: (r) => r.member.name },
+        { header: "Email liên hệ", key: "email", width: 26, value: (r) => r.member.email },
+        { header: "Hạng hội viên", key: "level", width: 18, value: (r) => r.member.level },
+        { header: "Hạn nhiệm kỳ hiện tại", key: "currentTermEnd", width: 20, value: (r) => formatDisplayDate(r.currentTermEnd) },
+        { header: "Số ngày còn lại", key: "daysLeft", width: 16, value: (r) => (r.daysLeft < 0 ? `Quá hạn ${Math.abs(r.daysLeft)} ngày` : `${r.daysLeft} ngày`) },
+        { header: "Trạng thái gia hạn", key: "status", width: 18, value: (r) => (r.status === "renewed" ? "Đã gia hạn" : r.status === "overdue" ? "Quá hạn" : r.status === "due" ? "Đến hạn" : "Sắp tới") },
+        { header: "Thanh toán", key: "payment", width: 16, value: (r) => (r.paymentStatus === "paid" ? "Đã nộp phí" : "Chưa nộp") },
+        { header: "Số lần nhắc", key: "reminders", width: 14, value: (r) => r.reminderCount },
+        { header: "Lần nhắc gần nhất", key: "lastReminder", width: 18, value: (r) => formatDisplayDate(r.lastReminder) },
+        { header: "Ngày gia hạn mới", key: "renewedAt", width: 18, value: (r) => formatDisplayDate(r.renewedAt) },
+        { header: "Hạn nhiệm kỳ mới", key: "newTermEnd", width: 18, value: (r) => formatDisplayDate(r.newTermEnd) },
+      ],
+      summaryRows: [
+        ["TỔNG SỐ HỒ SƠ THEO DÕI:", "", "", "", "", "", "", "", "", "", "", `${filtered.length} hội viên`],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "TRƯỞNG BAN HỘI VIÊN", "CHỦ TỊCH CLB CEO 1983"],
+    });
+    toast.success("Đã xuất báo cáo gia hạn hội viên chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
   };
 
   const counts: Record<RenewalStatus | "all", number> = {
@@ -446,12 +458,12 @@ function RenewalPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-        <div className="overflow-x-auto relative">
+      <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        <div className="overflow-x-auto relative w-full">
           <table className="w-full text-sm border-separate border-spacing-0">
             <thead>
-              <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800">
                   STT
                 </th>
                 <SortHeader

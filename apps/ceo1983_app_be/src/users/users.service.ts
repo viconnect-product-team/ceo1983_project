@@ -16,6 +16,7 @@ import {
   AdminCreateUserDto,
   AdminUpdateUserDto,
 } from './dto';
+import { MailService } from '../mail/mail.service';
 
 function cleanStoredMediaUrl(url?: string | null): string | null {
   if (!url) return null;
@@ -236,6 +237,7 @@ export class UsersService {
 
   constructor(
     private readonly usersRepo: UsersRepository,
+    private readonly mailService: MailService,
   ) {}
 
   async findByUsername(username: string): Promise<vione_users | null> {
@@ -772,7 +774,17 @@ export class UsersService {
     return this.getAccountDetails(userId);
   }
 
-  async changePassword(userId: string, currentPass: string, newPass: string) {
+  async changePassword(
+    userId: string,
+    currentPass: string,
+    newPass: string,
+    options?: {
+      email?: string;
+      phone?: string;
+      sendActivationEmail?: boolean;
+      fullName?: string;
+    },
+  ) {
     if (!newPass || newPass.length < 6) {
       throw new BadRequestException('Mật khẩu mới phải có ít nhất 6 ký tự');
     }
@@ -796,19 +808,114 @@ export class UsersService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPass, salt);
 
+    // Xử lý cập nhật Email nếu người dùng thay đổi Email
+    let finalEmail = user.email || '';
+    let emailUpdated = false;
+    const requestedEmail = options?.email?.trim().toLowerCase();
+
+    if (requestedEmail && requestedEmail.includes('@') && requestedEmail !== (user.email || '').toLowerCase()) {
+      // Kiểm tra trùng email với tài khoản khác
+      const existingWithEmail = await this.usersRepo.findByEmail(requestedEmail);
+      if (existingWithEmail && existingWithEmail.id !== userId) {
+        throw new BadRequestException(`Email "${requestedEmail}" đã được sử dụng bởi một tài khoản khác`);
+      }
+      finalEmail = requestedEmail;
+      emailUpdated = true;
+    }
+
+    // Xử lý cập nhật SĐT nếu người dùng cung cấp
+    let finalPhone = '';
+    const cleanPhone = options?.phone ? options.phone.trim().replace(/\D/g, '') : '';
+    if (cleanPhone.length >= 9) {
+      finalPhone = options?.phone?.trim() || cleanPhone;
+    }
+
+    // Cập nhật bảng vione_users
     await this.usersRepo.updateUser(userId, {
       password: hashedPassword,
+      ...(emailUpdated ? { email: finalEmail, username: finalEmail } : {}),
     });
 
-    // Sync to auth.users encrypted_password if applicable
+    // Cập nhật auth.users (Supabase / Postgres auth schema)
     await this.usersRepo.syncAuthUserPassword(userId, hashedPassword);
+    if (emailUpdated) {
+      await this.usersRepo.syncAuthUserEmail(userId, finalEmail);
+    }
+
+    // Cập nhật thông tin hội viên (public.members & public.user_profiles)
+    const profile = await this.usersRepo.getUserProfile(userId);
+    const memberRow = await this.usersRepo.getMemberInfo(userId, user.email);
+
+    if (emailUpdated || finalPhone) {
+      await this.usersRepo.syncMemberDetails(userId, {
+        email: emailUpdated ? finalEmail : undefined,
+      });
+
+      await this.usersRepo.upsertProfile(
+        userId,
+        {
+          user_id: userId,
+          phone: finalPhone || undefined,
+          display_name: options?.fullName || profile?.display_name || user.name || 'Hội viên',
+          updated_at: new Date(),
+        },
+        {
+          ...(finalPhone ? { phone: finalPhone } : {}),
+          ...(options?.fullName ? { display_name: options.fullName } : {}),
+          updated_at: new Date(),
+        },
+      );
+    }
 
     // Đánh dấu onboarding_status = 'completed' để hoàn tất quy trình đổi mật khẩu bắt buộc
     await this.usersRepo.completeOnboardingStatus(userId);
 
+    const displayName = options?.fullName || profile?.display_name || user.name || memberRow?.name || 'Hội viên CEO 1983';
+    const memberCode = memberRow?.code || profile?.member_code || 'HV-1983';
+    const companyName = profile?.company_name || 'CLB Doanh Nhân CEO 1983';
+    const resolvedPhone = finalPhone || profile?.phone || memberRow?.phone || '';
+
+    // Gửi email thông báo kích hoạt thành công (và thông tin tài khoản mới) nếu:
+    // 1. Người dùng đổi sang email mới, hoặc
+    // 2. Yêu cầu sendActivationEmail = true, hoặc
+    // 3. Tài khoản mới đổi mật khẩu lần đầu
+    let emailSent = false;
+    let emailRecipient = finalEmail;
+
+    if (finalEmail && (emailUpdated || options?.sendActivationEmail !== false)) {
+      try {
+        const mailRes = await this.mailService.sendAppAccountActivatedEmail({
+          to: finalEmail,
+          fullName: displayName,
+          username: finalEmail,
+          newPassword: newPass,
+          phone: resolvedPhone,
+          companyName,
+          memberCode,
+          isEmailUpdated: emailUpdated,
+        });
+        emailSent = mailRes.ok;
+      } catch (mailErr: any) {
+        this.logger.warn(`Failed to dispatch activation email to ${finalEmail}: ${mailErr.message}`);
+      }
+    }
+
     return {
       success: true,
-      message: 'Mật khẩu đã được thay đổi thành công',
+      message: emailUpdated
+        ? `Đổi mật khẩu và cập nhật email thành công! Thông tin tài khoản mới đã được gửi về hộp thư ${finalEmail}.`
+        : 'Mật khẩu đã được thay đổi thành công! Tài khoản của bạn đã được kích hoạt hoàn tất.',
+      updatedAccount: {
+        userId,
+        email: finalEmail,
+        phone: resolvedPhone,
+        fullName: displayName,
+        memberCode,
+        companyName,
+        emailUpdated,
+        emailSent,
+        emailRecipient,
+      },
     };
   }
 

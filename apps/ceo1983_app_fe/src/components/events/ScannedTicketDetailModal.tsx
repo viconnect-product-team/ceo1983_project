@@ -289,7 +289,7 @@ export function ScannedTicketDetailModal({
                 </span>
               </div>
               <span className="text-xs font-black text-amber-800 dark:text-amber-200">
-                {ticket.seatAssignment || "Bàn VIP 01 - Ban Chủ Tọa - Ghế 1"}
+                {ticket.seatAssignment || "Chờ Ban Truyền Thông xếp chỗ"}
               </span>
             </div>
 

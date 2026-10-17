@@ -12,12 +12,14 @@ export class UploadService {
     private readonly prisma: PrismaService,
   ) {}
 
-  private async saveToLocalDisk(subfolder: string, filename: string, buffer: Buffer): Promise<string> {
+  private async saveToLocalDisk(subfolder: string, filename: string, buffer: Buffer, mimetype?: string): Promise<string> {
     const os = require('os');
     const candidates = [
+      path.join(process.cwd(), 'uploads', subfolder),
+      path.join(process.cwd(), 'dist', 'uploads', subfolder),
+      path.join(os.tmpdir(), 'ceo1983_uploads', subfolder),
       path.join('/app', 'uploads', subfolder),
       path.join('/tmp', 'uploads', subfolder),
-      path.join(os.tmpdir(), 'ceo1983_uploads', subfolder),
     ];
     let saved = false;
     for (const uploadDir of candidates) {
@@ -30,11 +32,15 @@ export class UploadService {
         saved = true;
         break;
       } catch (err: any) {
-        console.warn(`Local disk write failed for ${uploadDir}:`, err?.message);
+        console.warn(`Local disk write notice for ${uploadDir}:`, err?.message);
       }
     }
-    if (!saved) {
-      throw new Error('All local disk candidate locations failed to write');
+    if (saved) {
+      return `/upload/file/${subfolder}/${filename}`;
+    }
+    // Fallback: If all disk paths fail, convert image buffer to Base64 Data URL so user never gets 500 error!
+    if (mimetype && buffer && buffer.length > 0) {
+      return `data:${mimetype};base64,${buffer.toString('base64')}`;
     }
     return `/upload/file/${subfolder}/${filename}`;
   }
@@ -88,8 +94,8 @@ export class UploadService {
     // 2. Chỉ ghi vào ổ đĩa cục bộ làm fallback nếu MinIO không khả dụng
     if (!saved) {
       try {
-        url = await this.saveToLocalDisk('avatars', baseFilename, file.buffer);
-        saved = true;
+        url = await this.saveToLocalDisk('avatars', baseFilename, file.buffer, file.mimetype);
+        saved = Boolean(url);
       } catch (diskErr: any) {
         console.warn('Local disk write notice in saveAvatar:', diskErr?.message);
       }
@@ -182,8 +188,8 @@ export class UploadService {
 
     if (!saved) {
       try {
-        url = await this.saveToLocalDisk('logos', baseFilename, file.buffer);
-        saved = true;
+        url = await this.saveToLocalDisk('logos', baseFilename, file.buffer, file.mimetype);
+        saved = Boolean(url);
       } catch (diskErr: any) {
         console.warn('Local disk write notice in saveCompanyLogo:', diskErr?.message);
       }
@@ -251,8 +257,8 @@ export class UploadService {
 
     // 1. Luôn ghi tệp ra ổ đĩa cục bộ ngay lập tức để phục vụ tức thì (0ms latency, không lỗi 500 do timeout MinIO)
     try {
-      url = await this.saveToLocalDisk('association-logos', baseFilename, file.buffer);
-      saved = true;
+      url = await this.saveToLocalDisk('association-logos', baseFilename, file.buffer, file.mimetype);
+      saved = Boolean(url);
     } catch (diskErr: any) {
       console.warn('Local disk write notice in saveAssociationLogo:', diskErr?.message);
     }
@@ -341,10 +347,10 @@ export class UploadService {
     // 2. Chỉ ghi vào ổ đĩa cục bộ làm fallback nếu MinIO không khả dụng
     if (!saved) {
       try {
-        url = await this.saveToLocalDisk(folder, baseFilename, file.buffer);
-        saved = true;
+        url = await this.saveToLocalDisk(folder, baseFilename, file.buffer, file.mimetype);
+        saved = Boolean(url);
       } catch (diskErr: any) {
-        console.warn('Local disk write notice in saveFile:', diskErr?.message);
+        console.warn(`Local disk write notice in saveFile:`, diskErr?.message);
       }
     }
 

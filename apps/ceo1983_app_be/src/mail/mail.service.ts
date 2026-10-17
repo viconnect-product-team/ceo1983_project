@@ -58,6 +58,17 @@ export interface SendAppWelcomeEmailOptions {
   portalUrl?: string;
   activateUrl?: string;
 }
+export interface SendAppAccountActivatedEmailOptions {
+  to: string;
+  fullName: string;
+  username: string;
+  newPassword?: string;
+  phone?: string;
+  companyName?: string;
+  memberCode?: string;
+  portalUrl?: string;
+  isEmailUpdated?: boolean;
+}
 
 export interface SendMemberApprovedEmailOptions {
   to: string;
@@ -399,7 +410,7 @@ export class MailService {
 
     const appEventsUrl = 'https://14.225.217.232:5444/association/events';
     const qrSrc = qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`;
-    const vietQrSrc = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB CEO 1983')}`;
+    const vietQrSrc = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
 
     const subject = isFree
       ? `[CLB CEO 1983] Vé Điện Tử & Mã QR Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
@@ -840,6 +851,150 @@ export class MailService {
       html,
       fromName: 'CLB Doanh Nhân CEO 1983',
       auditContext: `[APP_WELCOME_EMAIL] User: ${username} | Name: ${fullName}`,
+    });
+  }
+
+  /**
+   * Gửi email thông báo kích hoạt tài khoản thành công và cập nhật mật khẩu/email mới
+   */
+  async sendAppAccountActivatedEmail(options: SendAppAccountActivatedEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const { to, fullName, username, newPassword, phone, companyName, memberCode, portalUrl, isEmailUpdated } = options;
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`Cannot send app account activated email: invalid destination email "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const appLoginUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
+    const subject = isEmailUpdated
+      ? `[CLB CEO 1983] Cập Nhật Email & Kích Hoạt Tài Khoản Thành Công — Anh/Chị ${fullName}`
+      : `[CLB CEO 1983] Kích Hoạt Tài Khoản Thành Công — Anh/Chị ${fullName}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 55%, #0B192C 100%); padding: 36px 28px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(245, 158, 11, 0.25); border: 1px solid #F59E0B; color: #FCD34D; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff; line-height: 1.3; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin: 0; }
+    .content { padding: 32px 28px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 24px; }
+    
+    .account-card { background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #16a34a; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #16a34a; margin-bottom: 14px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; word-break: break-all; }
+    .cred-box { background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 8px; font-family: monospace; font-size: 14.5px; font-weight: 800; border: 1px dashed #86efac; }
+    
+    .steps-card { background: #eff6ff; border-radius: 14px; padding: 20px; margin-bottom: 26px; border: 1px solid #bfdbfe; }
+    .steps-title { font-size: 13px; font-weight: 800; color: #1e3a8a; margin-bottom: 10px; text-transform: uppercase; }
+    .step-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 13px; color: #1e293b; line-height: 1.5; }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: #003B95; color: #ffffff; border-radius: 50%; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+    .btn-wrap { text-align: center; margin: 30px 0 14px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d !important; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 34px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    
+    .note { font-size: 12px; color: #64748b; line-height: 1.5; background: #f8fafc; padding: 12px 16px; border-radius: 10px; margin-top: 20px; border: 1px solid #e2e8f0; }
+    .footer { background: #0b1329; padding: 24px; text-align: center; color: rgba(255, 255, 255, 0.55); font-size: 11.5px; line-height: 1.6; }
+    .footer-brand { color: #F59E0B; font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ KÍCH HOẠT TÀI KHOẢN THÀNH CÔNG ✦</div>
+      <h1 class="title">CLB DOANH NHÂN CEO 1983</h1>
+      <p class="subtitle">Hệ Sinh Thái Kết Nối & Giao Thương Doanh Nhân Toàn Diện</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
+      <div class="intro">
+        Ban Thư Ký CLB Doanh Nhân CEO 1983 xin thông báo: Quý Anh/Chị ${companyName ? `(Đại diện: <strong>${companyName}</strong>)` : ''} đã <strong>kích hoạt tài khoản và thiết lập mật khẩu cá nhân thành công</strong> trên ứng dụng Hiệp hội Doanh nhân CEO 1983.
+        <br><br>
+        Tài khoản của Anh/Chị hiện đã ở trạng thái chính thức với đầy đủ các quyền lợi thành viên và thẻ doanh nhân số.
+      </div>
+
+      <div class="account-card">
+        <div class="card-title">🔐 Thông Tin Tài Khoản Mới Đã Xác Nhận</div>
+        <div class="info-row">
+          <span class="info-label">Tên đăng nhập (Email):</span>
+          <span class="info-value cred-box">${cleanTo}</span>
+        </div>
+        ${phone ? `
+        <div class="info-row">
+          <span class="info-label">Số điện thoại liên kết:</span>
+          <span class="info-value cred-box" style="background: #f1f5f9; color: #0f172a; border-color: #cbd5e1;">${phone}</span>
+        </div>
+        ` : ''}
+        ${newPassword ? `
+        <div class="info-row">
+          <span class="info-label">Mật khẩu mới đã đặt:</span>
+          <span class="info-value cred-box">${newPassword}</span>
+        </div>
+        ` : ''}
+        ${memberCode ? `
+        <div class="info-row">
+          <span class="info-label">Mã hội viên:</span>
+          <span class="info-value" style="color: #003B95; font-weight: 800;">${memberCode}</span>
+        </div>
+        ` : ''}
+        <div class="info-row">
+          <span class="info-label">Trạng thái:</span>
+          <span class="info-value" style="color: #16a34a; font-weight: 800;">✓ Đã kích hoạt hoàn tất</span>
+        </div>
+      </div>
+
+      <div class="steps-card">
+        <div class="steps-title">💡 Hướng Dẫn Đăng Nhập Sau Kích Hoạt:</div>
+        <div class="step-item">
+          <span class="step-num">1</span>
+          <span>Anh/Chị có thể đăng nhập bằng <strong>Email (${cleanTo})</strong> ${phone ? `hoặc <strong>Số điện thoại (${phone})</strong>` : ''}.</span>
+        </div>
+        <div class="step-item">
+          <span class="step-num">2</span>
+          <span>Sử dụng <strong>Mật khẩu mới</strong> vừa thiết lập để truy cập.</span>
+        </div>
+        <div class="step-item">
+          <span class="step-num">3</span>
+          <span>Trải nghiệm ngay Danh thiếp điện tử VIP và khám phá các cơ hội giao thương B2B trong Hiệp hội.</span>
+        </div>
+      </div>
+
+      <div class="btn-wrap">
+        <a href="${appLoginUrl}" class="btn-primary" target="_blank">📲 Đăng Nhập Vào Ứng Dụng Ngay</a>
+      </div>
+
+      <div class="note">
+        <strong>* Lưu ý bảo mật:</strong> Vui lòng lưu trữ thông tin đăng nhập cẩn thận và không chia sẻ mật khẩu cho người khác. Nếu không phải bạn thực hiện thao tác này, vui lòng liên hệ ngay Ban Thư Ký CLB qua Hotline: <strong>0983 1983 83</strong> để được hỗ trợ.
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="https://14.225.217.232:5444" style="color: #93c5fd; text-decoration: none;">14.225.217.232:5444</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[APP_ACCOUNT_ACTIVATED_EMAIL] User: ${username} | Email: ${cleanTo} | Name: ${fullName}`,
     });
   }
 

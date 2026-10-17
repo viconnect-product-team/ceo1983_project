@@ -69,16 +69,40 @@ function relTime(iso: string, t: ReturnType<typeof useT>) {
 
 type Tone = "navy" | "gold" | "green" | "amber" | "rose" | "blue";
 
-const toneStyles: Record<Tone, { bg: string; fg: string }> = {
-  navy: { bg: "oklch(0.93 0.04 260)", fg: "oklch(0.42 0.14 262)" },
-  gold: { bg: "oklch(0.94 0.07 85)", fg: "oklch(0.55 0.13 75)" },
-  green: { bg: "oklch(0.93 0.07 155)", fg: "oklch(0.50 0.15 155)" },
-  amber: { bg: "oklch(0.94 0.09 75)", fg: "oklch(0.56 0.15 65)" },
-  rose: { bg: "oklch(0.93 0.06 15)", fg: "oklch(0.56 0.19 15)" },
-  blue: { bg: "oklch(0.93 0.05 240)", fg: "oklch(0.50 0.17 240)" },
+const gradientCardStyles: Record<Tone, { bg: string; textTitle: string; iconBg: string }> = {
+  navy: {
+    bg: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900",
+    textTitle: "text-blue-600 dark:text-blue-400",
+    iconBg: "bg-blue-600/10 text-blue-600",
+  },
+  blue: {
+    bg: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900",
+    textTitle: "text-blue-600 dark:text-blue-400",
+    iconBg: "bg-blue-600/10 text-blue-600",
+  },
+  gold: {
+    bg: "bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900",
+    textTitle: "text-indigo-500 dark:text-indigo-400",
+    iconBg: "bg-indigo-500/10 text-indigo-500",
+  },
+  green: {
+    bg: "bg-gradient-to-b from-green-100 to-white dark:from-emerald-950/40 dark:to-slate-900",
+    textTitle: "text-emerald-500 dark:text-emerald-400",
+    iconBg: "bg-emerald-500/10 text-emerald-500",
+  },
+  amber: {
+    bg: "bg-gradient-to-b from-orange-100 to-white dark:from-amber-950/40 dark:to-slate-900",
+    textTitle: "text-orange-500 dark:text-amber-400",
+    iconBg: "bg-orange-500/10 text-orange-500",
+  },
+  rose: {
+    bg: "bg-gradient-to-b from-rose-100 to-white dark:from-rose-950/40 dark:to-slate-900",
+    textTitle: "text-rose-500 dark:text-rose-400",
+    iconBg: "bg-rose-500/10 text-rose-500",
+  },
 };
 
-/* ----------------------------- KPI card ----------------------------- */
+/* ----------------------------- KPI card (Format Chuẩn Ảnh 2 Figma) ----------------------------- */
 
 function ExecKpi({
   label,
@@ -95,35 +119,35 @@ function ExecKpi({
   tone: Tone;
   to?: string;
 }) {
-  const s = toneStyles[tone];
+  const s = gradientCardStyles[tone] || gradientCardStyles.navy;
   const inner = (
-    <div className="vba-pop-in group h-full rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] transition-all duration-[var(--motion-base)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevated)]">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0">
-          <div className="text-[12.5px] font-medium text-muted-foreground">{label}</div>
-          <div className="mt-1.5 text-[28px] font-bold leading-none tracking-tight text-foreground">
-            {value}
+    <div className={`h-32 p-4 ${s.bg} rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2 overflow-hidden shadow-xs transition hover:shadow-sm`}>
+      <div className="h-7 w-full flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Icon className={`h-4 w-4 shrink-0 ${s.textTitle}`} />
+          <div className={`${s.textTitle} text-xs font-semibold font-['Inter'] uppercase tracking-wider truncate`}>
+            {label}
           </div>
         </div>
-        <div
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-transform duration-[var(--motion-base)] group-hover:scale-105"
-          style={{ backgroundColor: s.bg, color: s.fg }}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
+        {hint && (
+          <div className="text-[11px] text-muted-foreground shrink-0">
+            {hint}
+          </div>
+        )}
       </div>
-      {hint && (
-        <div className="mt-3 flex items-center gap-1 text-[11.5px] text-muted-foreground">
-          {hint}
-        </div>
-      )}
+      <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+        {value}
+      </div>
+      <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] truncate w-full">
+        Dữ liệu theo dõi thời gian thực
+      </div>
     </div>
   );
   if (to) {
     return (
       <Link
         to={to}
-        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-2xl"
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-[20px]"
       >
         {inner}
       </Link>
@@ -132,7 +156,7 @@ function ExecKpi({
   return inner;
 }
 
-/* ----------------------------- panel shell ----------------------------- */
+/* ----------------------------- panel shell (Format Chuẩn Ma Trận) ----------------------------- */
 
 function Panel({
   title,
@@ -149,7 +173,7 @@ function Panel({
 }) {
   return (
     <section
-      className={`vba-pop-in rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] ${className}`}
+      className={`vba-pop-in rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs ${className}`}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -968,6 +992,18 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   );
 }
 
+type QueueTone = "blue" | "indigo" | "emerald" | "amber" | "red" | "rose" | "gold";
+
+const toneStyles: Record<QueueTone, { bg: string; fg: string }> = {
+  blue: { bg: "rgba(37, 99, 235, 0.12)", fg: "#2563EB" },
+  indigo: { bg: "rgba(79, 70, 229, 0.12)", fg: "#4F46E5" },
+  emerald: { bg: "rgba(16, 185, 129, 0.12)", fg: "#10B981" },
+  amber: { bg: "rgba(245, 158, 11, 0.12)", fg: "#D97706" },
+  red: { bg: "rgba(239, 68, 68, 0.12)", fg: "#EF4444" },
+  rose: { bg: "rgba(244, 63, 94, 0.12)", fg: "#F43F5E" },
+  gold: { bg: "rgba(79, 70, 229, 0.12)", fg: "#4F46E5" },
+};
+
 function QueueRow({
   to,
   icon: Icon,
@@ -977,11 +1013,11 @@ function QueueRow({
 }: {
   to: string;
   icon: LucideIcon;
-  tone: Tone;
+  tone: QueueTone;
   label: string;
   count: number;
 }) {
-  const st = toneStyles[tone];
+  const st = toneStyles[tone] || toneStyles.blue;
   return (
     <li>
       <Link

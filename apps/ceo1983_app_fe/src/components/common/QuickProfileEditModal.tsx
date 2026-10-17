@@ -301,7 +301,7 @@ export function QuickProfileEditModal({
                 Cập Nhật Nhanh Trang Chủ
               </h3>
               <p className="text-[11px] text-blue-200 font-medium">
-                Tùy chỉnh ảnh bìa, logo công ty, đại diện & thông tin cá nhân
+                Tùy chỉnh ảnh bìa, ảnh đại diện & thông tin cá nhân
               </p>
             </div>
           </div>
@@ -337,20 +337,25 @@ export function QuickProfileEditModal({
               )}
               <div className="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition-colors" />
 
-              {/* Upload cover overlay button - 1 nút duy nhất trên banner */}
+              {/* Upload cover overlay button - icon duy nhất tinh tế */}
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
                 disabled={uploadingCover}
-                className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-slate-800 dark:text-slate-100 text-[10.5px] font-bold backdrop-blur-md border border-slate-200/80 dark:border-slate-700 flex items-center gap-1 shadow-xs transition cursor-pointer"
+                className="absolute top-2.5 right-2.5 z-10 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md border border-white/20 grid place-items-center shadow-md transition active:scale-95 cursor-pointer"
+                title="Đổi ảnh bìa"
+                aria-label="Đổi ảnh bìa"
               >
-                <Camera className="h-3 w-3 text-[#003B95] dark:text-blue-400" />
-                <span>{uploadingCover ? "Đang tải..." : "Đổi ảnh bìa"}</span>
+                {uploadingCover ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </button>
 
-              {/* Company Logo Overlay on Cover Banner (Top-Left or Bottom-Right) */}
-              <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md rounded-xl p-1.5 border border-slate-200/80 dark:border-slate-700 shadow-xs">
-                <div className="h-9 w-9 rounded-lg bg-white grid place-items-center overflow-hidden shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-800">
+              {/* Company Logo Overlay on Cover Banner - icon upload duy nhất */}
+              <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-2xl p-1 border border-white/15 shadow-md">
+                <div className="h-8 w-8 rounded-xl bg-white grid place-items-center overflow-hidden shrink-0 shadow-xs border border-white/20">
                   {companyLogo && !modalLogoError ? (
                     <img
                       src={resolveMediaUrl(companyLogo) || companyLogo}
@@ -359,15 +364,22 @@ export function QuickProfileEditModal({
                       className="h-full w-full object-contain p-0.5"
                     />
                   ) : (
-                    <Building2 className="h-5 w-5 text-slate-400" />
+                    <Building2 className="h-4 w-4 text-slate-400" />
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
-                  className="px-2.5 py-1 rounded-md bg-[#003B95] hover:bg-[#002b6e] text-white text-[10px] font-bold uppercase tracking-wider transition cursor-pointer shadow-xs"
+                  disabled={uploadingLogo}
+                  className="h-8 w-8 rounded-xl bg-white/20 hover:bg-white/30 text-white grid place-items-center transition active:scale-95 cursor-pointer shadow-xs"
+                  title="Đổi logo doanh nghiệp"
+                  aria-label="Đổi logo doanh nghiệp"
                 >
-                  {uploadingLogo ? "..." : "Logo công ty"}
+                  {uploadingLogo ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -494,21 +506,6 @@ export function QuickProfileEditModal({
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Tên Công Ty / Doanh Nghiệp
-              </label>
-              <div className="relative">
-                <Building2 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="Tên doanh nghiệp của bạn..."
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
-                />
-              </div>
-            </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">

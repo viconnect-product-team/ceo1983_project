@@ -26,15 +26,33 @@ export function getConnectAppSocket(): Socket {
       transports: ["websocket", "polling"],
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 5000,
-      timeout: 6000,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
     });
 
     // Gracefully handle connection errors to avoid flooding console with uncaught red errors
     globalSocket.on("connect_error", () => {
       // Backend is temporarily unreachable or offline — quiet fallback
     });
+
+    // Auto-reconnect immediately when mobile user returns to app, turns on screen, or reconnects WiFi/4G
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
+      const handleWakeup = () => {
+        if (globalSocket && !globalSocket.connected) {
+          globalSocket.connect();
+        }
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          handleWakeup();
+        }
+      });
+      window.addEventListener("focus", handleWakeup);
+      window.addEventListener("online", handleWakeup);
+      window.addEventListener("pageshow", handleWakeup);
+    }
   }
   return globalSocket;
 }

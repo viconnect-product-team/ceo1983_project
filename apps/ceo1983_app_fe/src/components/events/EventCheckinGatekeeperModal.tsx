@@ -138,7 +138,7 @@ export function EventCheckinGatekeeperModal({
     : "https://crm.ceo1983.viconnect.vn";
   
   // Zalo Guest Registration URL: non-members scan with Zalo / Phone Camera to register & check-in
-  const zaloGuestUrl = `${origin}/events/${event.id}/register?source=zalo_guest`;
+  const zaloGuestUrl = `${origin}/guest-event-register/${event.id}`;
   // App internal event checkin payload for club members using CEO 1983 App scanner
   const appCheckinPayload = `event_checkin:${event.id}`;
 

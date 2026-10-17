@@ -688,7 +688,7 @@ export function EventSponsorPackageSelector({
                       </span>
                     ) : (
                       <span className="text-[11px] font-semibold text-muted-foreground hover:text-primary">
-                        + Chọn
+                        Chọn
                       </span>
                     )}
                   </div>

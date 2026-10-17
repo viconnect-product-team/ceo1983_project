@@ -1251,19 +1251,43 @@ function ProductsScreen() {
               {p.category || "Dịch vụ"}
             </span>
 
-            {/* Wishlist Heart Action */}
-            <button
-              type="button"
-              onClick={(e) => toggleInterest(p.id, e)}
-              className={`absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-xs ${
-                isInterested
-                  ? "bg-rose-500 text-white shadow-rose-500/30"
-                  : "bg-white/80 dark:bg-slate-900/80 text-slate-500 hover:text-rose-500 hover:bg-white"
-              }`}
-              title={isInterested ? "Đã lưu quan tâm" : "Lưu quan tâm"}
-            >
-              <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white" : ""}`} />
-            </button>
+            {/* Top Right Actions: Share & Wishlist Heart */}
+            <div className="absolute right-2.5 top-2.5 flex items-center gap-1.5 z-10">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const shareUrl = typeof window !== "undefined" ? window.location.href : "https://ceo1983.viconnect.vn";
+                  if (navigator.share) {
+                    navigator.share({
+                      title: p.name,
+                      text: `Sản phẩm & Dịch vụ CEO 1983: ${p.name} - ${p.company || "CLB CEO 1983"}`,
+                      url: shareUrl,
+                    }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(`${p.name} - ${shareUrl}`);
+                    toast.success("Đã sao chép liên kết sản phẩm!");
+                  }
+                }}
+                className="grid h-7 w-7 place-items-center rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-600 dark:text-slate-300 hover:text-[#003B95] hover:bg-white transition-all active:scale-90 cursor-pointer shadow-xs"
+                title="Chia sẻ sản phẩm"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => toggleInterest(p.id, e)}
+                className={`grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-xs ${
+                  isInterested
+                    ? "bg-rose-500 text-white shadow-rose-500/30"
+                    : "bg-white/80 dark:bg-slate-900/80 text-slate-500 hover:text-rose-500 hover:bg-white"
+                }`}
+                title={isInterested ? "Đã lưu quan tâm" : "Lưu quan tâm"}
+              >
+                <Heart className={`h-3.5 w-3.5 ${isInterested ? "fill-white" : ""}`} />
+              </button>
+            </div>
 
             {/* Owner/Admin Action Menu */}
             {canManage && (

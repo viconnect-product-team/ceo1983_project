@@ -821,8 +821,8 @@ export const APP_SCREEN_TOURS: ScreenGuideItem[] = [
       {
         targetId: "tour-admin-event-create",
         title: "Tạo Mới Sự Kiện & Hội Nghị",
-        actionGesture: "👆 Chạm nút '+ Tạo sự kiện'",
-        touchPoint: "Nút '+ Tạo sự kiện mới' màu xanh nổi bật ở góc trên bên phải",
+        actionGesture: "👆 Chạm nút 'Tạo sự kiện'",
+        touchPoint: "Nút 'Tạo sự kiện' màu xanh nổi bật ở góc trên bên phải",
         instruction: "Bấm nút tạo sự kiện, điền Tên sự kiện, Ngày giờ tổ chức, Địa điểm, Sức chứa và Trang phục (Dresscode).",
         systemResponse: "Mở Wizard Tạo sự kiện đa bước chuẩn quốc tế.",
         roleNote: "Chỉ tài khoản Ban Quản Trị hoặc Ban Tổ Chức mới có thẩm quyền thực hiện.",
@@ -943,8 +943,8 @@ export const APP_SCREEN_TOURS: ScreenGuideItem[] = [
       {
         targetId: "tour-admin-fees-campaign",
         title: "Tạo Đợt Thu Hội Phí Thường Niên",
-        actionGesture: "👆 Chạm nút '+ Tạo đợt thu'",
-        touchPoint: "Nút '+ Tạo kỳ phí mới' ở góc phải màn hình",
+        actionGesture: "👆 Chạm nút 'Tạo đợt thu'",
+        touchPoint: "Nút 'Tạo kỳ phí mới' ở góc phải màn hình",
         instruction: "Nhập Năm niên liễm (VD: 2026), Mức phí chuẩn (VD: 5.000.000 VNĐ), Hạn nộp và bấm 'Phát hành'.",
         systemResponse: "Tự động tạo hóa đơn INV-2026 cho 200+ hội viên kèm thông báo đẩy.",
         roleNote: "Dành riêng cho Ban Tài Chính và Ban Thư Ký.",
@@ -1004,8 +1004,8 @@ export const APP_SCREEN_TOURS: ScreenGuideItem[] = [
       {
         targetId: "tour-admin-task-create",
         title: "Khởi Tạo & Giao Nhiệm Vụ Mới",
-        actionGesture: "👆 Chạm nút '+ Giao việc mới'",
-        touchPoint: "Nút '+ Thêm nhiệm vụ' ở đầu bảng công việc",
+        actionGesture: "👆 Chạm nút 'Giao việc mới'",
+        touchPoint: "Nút 'Thêm nhiệm vụ' ở đầu bảng công việc",
         instruction: "Nhập tiêu đề nhiệm vụ (VD: 'Chuẩn bị quà tặng Gala 2026'), chọn Ban phụ trách và người thực hiện.",
         systemResponse: "Mở Modal giao việc và thông báo ngay đến điện thoại người được giao.",
         icon: "➕",
@@ -1125,7 +1125,7 @@ export const APP_SCREEN_TOURS: ScreenGuideItem[] = [
       {
         targetId: "tour-admin-sponsor-create",
         title: "Tiếp Nhận Đơn Vị Đồng Hành Tài Trợ Mới",
-        actionGesture: "👆 Chạm nút '+ Thêm nhà tài trợ'",
+        actionGesture: "👆 Chạm nút 'Thêm nhà tài trợ'",
         touchPoint: "Nút thêm đối tác tài trợ ở thanh công cụ",
         instruction: "Nhập Tên doanh nghiệp tài trợ, Người đại diện, Gói tài trợ và Sự kiện đồng hành.",
         systemResponse: "Mở biểu mẫu đăng ký hồ sơ nhà tài trợ.",

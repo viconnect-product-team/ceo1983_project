@@ -1,6 +1,6 @@
 import React from "react";
 import { Check, Sparkles, MessageSquare, Ticket, ArrowRight } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export interface EventSuccessNoticeModalProps {
   registeredSuccessInfo: any | null;
@@ -26,15 +26,15 @@ export const EventSuccessNoticeModal: React.FC<EventSuccessNoticeModalProps> = (
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
           <Check className="h-6 w-6 stroke-[3]" />
         </div>
-        <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+        <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-slate-100">
           {isFreeOrZero
             ? "Nhận vé sự kiện miễn phí thành công!"
             : "Đăng ký sự kiện thành công!"}
-        </h3>
-        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          Ban Thư Ký CLB Doanh Nhân CEO 1983 đã tiếp nhận đăng ký tham gia sự kiện{" "}
+        </DialogTitle>
+        <DialogDescription className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          Ban Truyền Thông CLB Doanh Nhân CEO 1983 đã tiếp nhận đăng ký tham gia sự kiện{" "}
           <b>"{registeredSuccessInfo.eventTitle}"</b>.
-        </p>
+        </DialogDescription>
 
         <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 text-xs text-left space-y-1">
           <div className="flex justify-between">

@@ -128,9 +128,12 @@ export type LibraryDoc = {
   url?: string;
   description?: string;
   chapters?: string[];
+  docScope?: "association" | "enterprise";
+  enterpriseName?: string;
+  enterpriseId?: string;
 };
 
-const DEFAULT_CEO1983_DOCS: LibraryDoc[] = [
+export const DEFAULT_CEO1983_DOCS: LibraryDoc[] = [
   {
     id: "doc-1",
     name: "Điều lệ hoạt động CLB Doanh Nhân CEO 1983 (Ban hành 2026)",
@@ -253,6 +256,9 @@ export const listDocuments = createServerFn({ method: "GET" })
           description: d.description || d.summary,
           url: d.url || d.fileUrl || d.file_url || d.filePath || d.file_path || "",
           chapters: d.chapters,
+          docScope: d.docScope || (d.enterpriseName ? "enterprise" : "association"),
+          enterpriseName: d.enterpriseName || d.enterprise_name,
+          enterpriseId: d.enterpriseId || d.enterprise_id,
         }));
       }
     } catch {

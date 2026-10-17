@@ -201,7 +201,10 @@ function cleanOldAndRedundantFiles() {
       upper.startsWith('SRS_') ||
       upper.startsWith('HDSD_') ||
       upper.startsWith('TIEN_DO_CONG_VIEC_') ||
-      upper.startsWith('TEST_CASES_')
+      upper.startsWith('TEST_CASES_') ||
+      upper.startsWith('PROFILE_') ||
+      upper.startsWith('SLIDE_') ||
+      upper.startsWith('PHIEU_')
     );
   };
 

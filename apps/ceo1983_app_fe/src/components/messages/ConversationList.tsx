@@ -670,8 +670,18 @@ export function ConversationList({
       const officialChannels: MyConversation[] = [
         {
           peerCode: "channel_media",
-          name: "📢 Kênh Truyền Thông Hiệp Hội",
-          last: "Bản tin hoạt động CLB CEO 1983, thông cáo báo chí & sự kiện mới",
+          name: "📢 Ban Truyền Thông (Sự kiện & Tin tức)",
+          last: "Bản tin hoạt động, thông cáo báo chí, sự kiện & link kho ảnh Google Drive",
+          time: "3 ngày trước",
+          rawTime: new Date(Date.now() - 259200000).toISOString(),
+          unread: 0,
+          isSystem: true,
+          avatarUrl: null,
+        },
+        {
+          peerCode: "channel_membership",
+          name: "👥 Ban Thành Viên (Hội viên & Hồ sơ)",
+          last: "Xét duyệt kết nạp, gia hạn hội viên, xác thực hồ sơ & sinh nhật hội viên",
           time: "3 ngày trước",
           rawTime: new Date(Date.now() - 259200000).toISOString(),
           unread: 0,
@@ -680,8 +690,8 @@ export function ConversationList({
         },
         {
           peerCode: "channel_promotion",
-          name: "🤝 Kênh Xúc Tiến Giao Thương",
-          last: "Cơ hội giao thương B2B, liên kết chuỗi cung ứng doanh nghiệp",
+          name: "🤝 Ban Xúc Tiến Thương Mại (Marketplace & B2B)",
+          last: "Cơ hội giao thương B2B, đơn hàng, gian hàng Marketplace & hợp tác kinh doanh",
           time: "3 ngày trước",
           rawTime: new Date(Date.now() - 259200000).toISOString(),
           unread: 0,
@@ -690,8 +700,8 @@ export function ConversationList({
         },
         {
           peerCode: "channel_secretariat",
-          name: "🏛️ Kênh Ban Thư Ký & Ban Điều Hành",
-          last: "Văn bản chỉ đạo, nghị quyết, thông báo hội phí & điều lệ CLB",
+          name: "🏛️ Ban Thư Ký & Ban Điều Hành (Lịch họp & Hành chính)",
+          last: "Lịch họp BCH, nghị quyết, văn bản điều hành, thông báo hội phí & biểu quyết",
           time: "4 ngày trước",
           rawTime: new Date(Date.now() - 345600000).toISOString(),
           unread: 0,
@@ -1733,6 +1743,10 @@ export function ConversationList({
                     {c.peerCode === "channel_media" ? (
                       <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white shadow-xs">
                         <Megaphone className="h-6 w-6" />
+                      </div>
+                    ) : c.peerCode === "channel_membership" ? (
+                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-500 text-white shadow-xs">
+                        <Users className="h-6 w-6" />
                       </div>
                     ) : c.peerCode === "channel_promotion" ? (
                       <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-xs">

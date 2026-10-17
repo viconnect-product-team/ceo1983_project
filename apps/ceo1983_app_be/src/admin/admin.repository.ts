@@ -31,10 +31,19 @@ export class AdminRepository {
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'crm';
     `).catch(() => {});
     await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_channel text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS pushed_to_messages boolean DEFAULT false;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
       ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'association_app';
     `).catch(() => {});
     await this.prisma.$executeRawUnsafe(`
       ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'association_app';
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS pushed_to_messages boolean DEFAULT false;
     `).catch(() => {});
   }
 

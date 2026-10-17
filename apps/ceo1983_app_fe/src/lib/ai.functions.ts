@@ -247,12 +247,32 @@ export const askAssociationAiFn = createServerFn({ method: "POST" })
     }
 
     // buildServerContext không dùng Supabase — truyền null an toàn
+    const syntheticMemory = data.clientMemorySummary
+      ? {
+          conversationId: data.conversationId || "",
+          associationId: associationId ?? null,
+          lastCapability: null,
+          activeCapability: null,
+          selectedContextSources: data.selectedContextSources || [],
+          recentMessages: [],
+          recentEntities: [],
+          recentResults: [],
+          recentSources: [],
+          activeFilters: [],
+          suggestedActions: [],
+          lastUserIntent: null,
+          lastAssistantSummary: data.clientMemorySummary,
+          updatedAt: Date.now(),
+        }
+      : null;
+
     const bundle = await buildServerContext({
       supabase: null as any,
       message: data.message,
       capability,
       associationId: associationId ?? "",
       permissionLevel,
+      memory: syntheticMemory,
       maxContextItems: config.maxContextItems,
     });
 

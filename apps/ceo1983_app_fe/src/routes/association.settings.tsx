@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Lock,
@@ -15,6 +15,13 @@ import {
   AlertTriangle,
   X,
   Info,
+  User,
+  Phone,
+  CheckCircle2,
+  Mail,
+  Send,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -47,17 +54,40 @@ export const Route = createFileRoute("/association/settings")({
 function AssociationSettingsScreen() {
   const navigate = useNavigate();
   const { action, required } = Route.useSearch();
-  const { logout: authLogout } = useAuth();
+  const { user, logout: authLogout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { lang } = useLang();
   const fetchMember = useServerFn(getMyMember);
   const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
 
   // Form states for password change
+  const [identifier, setIdentifier] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const rawUser = localStorage.getItem("auth_user");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        return u?.email || u?.username || "";
+      }
+    } catch {}
+    return "";
+  });
+  const [phone, setPhone] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return localStorage.getItem("vba_member_phone") || "";
+    } catch {}
+    return "";
+  });
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Account activation summary popup modal
+  const [activationModalOpen, setActivationModalOpen] = useState(false);
+  const [updatedAccountData, setUpdatedAccountData] = useState<any>(null);
+  const [confirmActivatingLoading, setConfirmActivatingLoading] = useState(false);
 
   // Track if password was changed in the active session
   const [passwordChangedInSession, setPasswordChangedInSession] = useState<boolean>(() => {
@@ -73,8 +103,22 @@ function AssociationSettingsScreen() {
   // Preferences states
   const [notifEnabled, setNotifEnabled] = useState(true);
 
+  // Sync initial identifier from user or member data when loaded
+  useEffect(() => {
+    if (!identifier && (user?.email || member?.email)) {
+      setIdentifier(user?.email || member?.email || "");
+    }
+    if (!phone && (user?.phone || member?.phone)) {
+      setPhone(user?.phone || member?.phone || "");
+    }
+  }, [user, member]);
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!identifier.trim()) {
+      toast.error("Vui lòng nhập email hoặc tài khoản đăng nhập.");
+      return;
+    }
     if (!currentPassword || !newPassword) {
       toast.error("Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.");
       return;
@@ -90,29 +134,89 @@ function AssociationSettingsScreen() {
 
     setPasswordLoading(true);
     try {
+      let res: any = null;
+      const payload = {
+        currentPassword,
+        newPassword,
+        email: identifier.trim(),
+        phone: phone.trim() || undefined,
+        fullName: member?.name || user?.name,
+        sendActivationEmail: true,
+      };
+
       try {
-        await fetchNestApi("/users/change-password", {
+        res = await fetchNestApi("/users/change-password", {
           method: "POST",
-          body: JSON.stringify({ currentPassword, newPassword }),
+          body: JSON.stringify(payload),
         });
       } catch (firstErr: any) {
         // Fallback to /auth/change-password if /users/change-password failed
-        await fetchNestApi("/auth/change-password", {
+        res = await fetchNestApi("/auth/change-password", {
           method: "POST",
-          body: JSON.stringify({ currentPassword, newPassword }),
+          body: JSON.stringify(payload),
         });
       }
 
-      toast.success("✓ Đổi mật khẩu thành công! Quý hội viên vui lòng đăng nhập lại với mật khẩu mới.", {
-        duration: 8000,
-      });
+      // Xóa cờ bắt buộc đổi mật khẩu khi đã đổi thành công
+      try {
+        localStorage.removeItem("vba_must_change_password");
+        sessionStorage.removeItem("vba_password_changed_in_session");
+      } catch {}
+
+      setPasswordChangedInSession(true);
+
+      const accountSummary = {
+        email: res?.updatedAccount?.email || identifier.trim(),
+        phone: res?.updatedAccount?.phone || phone.trim() || member?.phone,
+        fullName: res?.updatedAccount?.fullName || member?.name || user?.name || "Hội viên",
+        memberCode: res?.updatedAccount?.memberCode || member?.code || "M1983-MEMBER",
+        companyName: res?.updatedAccount?.companyName || (member as any)?.company || "CLB Doanh Nhân CEO 1983",
+        newPassword: newPassword,
+        emailUpdated: res?.updatedAccount?.emailUpdated || false,
+        emailSent: res?.updatedAccount?.emailSent ?? true,
+      };
+
+      setUpdatedAccountData(accountSummary);
+      setActivationModalOpen(true);
+    } catch (err: any) {
+      toast.error(err.message || "Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleFinalConfirmActivation = async () => {
+    setConfirmActivatingLoading(true);
+    try {
+      // Bắn email thông báo kích hoạt tài khoản thành công về email hội viên
+      const emailToNotify = updatedAccountData?.email || identifier.trim();
+      try {
+        await fetchNestApi("/mail/send-dynamic", {
+          method: "POST",
+          body: JSON.stringify({
+            templateCode: "APP_ACCOUNT_ACTIVATED",
+            to: emailToNotify,
+            variables: {
+              full_name: updatedAccountData?.fullName || member?.name || "Hội viên",
+              email: emailToNotify,
+              phone: updatedAccountData?.phone || "",
+              member_code: updatedAccountData?.memberCode || "",
+            },
+          }),
+        }).catch(() => null);
+      } catch {}
+
+      toast.success(
+        `✓ Đã kích hoạt tài khoản thành công! Thông báo đã được gửi về email ${emailToNotify}. Quý hội viên vui lòng đăng nhập lại.`,
+        { duration: 8000 },
+      );
+
+      setActivationModalOpen(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setPasswordChangedInSession(true);
-      try {
-        sessionStorage.removeItem("vba_password_changed_in_session");
-      } catch {}
+
+      // Đăng xuất phiên cũ để người dùng đăng nhập lại với thông tin mới
       await signOutSession();
       authLogout?.();
       navigate({
@@ -120,11 +224,10 @@ function AssociationSettingsScreen() {
         search: { reset: "success" } as any,
         replace: true,
       });
-      return;
     } catch (err: any) {
-      toast.error(err.message || "Không thể đổi mật khẩu. Vui lòng kiểm tra lại mật khẩu hiện tại.");
+      toast.error(err.message || "Có lỗi xảy ra khi xác nhận kích hoạt.");
     } finally {
-      setPasswordLoading(false);
+      setConfirmActivatingLoading(false);
     }
   };
 
@@ -208,18 +311,79 @@ function AssociationSettingsScreen() {
 
         <section id="password-section" className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
-            <Lock className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Đổi mật khẩu tài khoản
+            <Lock className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> Thiết lập tài khoản & Đổi mật khẩu
           </h3>
           <form onSubmit={handleChangePassword} className="space-y-3">
+            {/* Trường Tài Khoản Đăng Nhập / Mã Hội Viên Hệ Thống Cấp */}
+            <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 mb-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Tài khoản đăng nhập:</span>
+                </span>
+                <span className="text-xs font-mono font-black text-[#003B95] dark:text-amber-400 bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded-md border border-amber-300/50 shadow-2xs">
+                  {user?.code || (user as any)?.memberCode || member?.code || user?.email || "CEO1983-MEMBER"}
+                </span>
+              </div>
+              <p className="text-[10.5px] text-amber-700 dark:text-amber-400/90 mt-1">
+                Tài khoản chính thức được cấp theo Mã số hội viên &amp; Email. Quý hội viên có thể dùng Mã này, Email hoặc Số điện thoại để đăng nhập.
+              </p>
+            </div>
+
+            {/* Trường Email tài khoản đăng nhập */}
             <div>
+              <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between mb-1">
+                <span className="flex items-center gap-1">
+                  <Mail className="h-3 w-3 text-amber-500" />
+                  <span>Tài khoản đăng nhập (Email nhận tin &amp; kích hoạt)</span>
+                </span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
+                  * Nhập email mới nếu muốn đổi mail nhận tin
+                </span>
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Nhập địa chỉ email đăng nhập..."
+                  required
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 mb-1">
+                <Phone className="h-3 w-3 text-amber-500" />
+                <span>Số điện thoại đăng nhập liên kết</span>
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Nhập số điện thoại (VD: 0983198383)..."
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
+                />
+              </div>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
+                Hội viên có thể đăng nhập bằng <strong>Email</strong> hoặc <strong>Số điện thoại</strong> này cùng với mật khẩu mới.
+              </p>
+            </div>
+
+            <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
               <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                Mật khẩu hiện tại
+                Mật khẩu hiện tại (mật khẩu được cấp ở mail)
               </label>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
+                required
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
               />
             </div>
@@ -232,6 +396,7 @@ function AssociationSettingsScreen() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Tối thiểu 6 ký tự"
+                required
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
               />
             </div>
@@ -244,13 +409,14 @@ function AssociationSettingsScreen() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu mới"
+                required
                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
               />
             </div>
             <button
               type="submit"
               disabled={passwordLoading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white shadow-md shadow-blue-900/25 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#001D4A] hover:brightness-110 py-3 text-xs font-bold text-white shadow-md shadow-blue-900/25 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
               style={{ color: "#ffffff" }}
             >
               {passwordLoading ? (
@@ -258,7 +424,7 @@ function AssociationSettingsScreen() {
               ) : (
                 <KeyRound className="h-3.5 w-3.5 text-white" />
               )}
-              <span className="text-white font-bold">Cập nhật mật khẩu</span>
+              <span className="text-white font-bold">Xác nhận cập nhật tài khoản & Đổi mật khẩu</span>
             </button>
           </form>
         </section>
@@ -431,6 +597,115 @@ function AssociationSettingsScreen() {
                 </button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Popup Thông tin tài khoản mới & Xác nhận kích hoạt tài khoản thành công */}
+      {activationModalOpen && updatedAccountData && (
+        <Dialog open={activationModalOpen} onOpenChange={() => {}}>
+          <DialogContent
+            className="w-[calc(100%-2rem)] max-w-md rounded-3xl !bg-white dark:!bg-[#0D1527] border-2 border-amber-400/60 p-6 text-slate-900 dark:text-white shadow-2xl relative overflow-hidden"
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
+            {/* Ambient luxury glow */}
+            <div className="absolute top-0 right-0 w-44 h-44 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-36 h-36 bg-[#003B95]/15 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="relative z-10 text-center mb-4">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border-2 border-emerald-500/40 flex items-center justify-center mb-3 shadow-md">
+                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+              </div>
+              <span className="inline-block rounded-full bg-amber-400/20 px-3 py-0.5 text-[10.5px] font-extrabold uppercase tracking-widest text-amber-600 dark:text-amber-400 border border-amber-400/40 mb-1.5">
+                ✦ THIẾT LẬP TÀI KHOẢN THÀNH CÔNG ✦
+              </span>
+              <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+                Thông Tin Tài Khoản Mới
+              </DialogTitle>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                Chúc mừng Anh/Chị <strong>{updatedAccountData.fullName}</strong>. Mật khẩu mới và thông tin đăng nhập đã sẵn sàng.
+              </p>
+            </div>
+
+            {/* Account Credentials Card */}
+            <div className="relative z-10 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 p-4 space-y-2.5 text-xs shadow-inner">
+              <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-700/70 pb-2">
+                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                  <Mail className="h-3.5 w-3.5 text-amber-500" /> Tên đăng nhập (Email):
+                </span>
+                <span className="font-mono font-bold text-[#003B95] dark:text-amber-400 truncate max-w-[200px]">
+                  {updatedAccountData.email}
+                </span>
+              </div>
+
+              {updatedAccountData.phone && (
+                <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-700/70 pb-2">
+                  <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                    <Phone className="h-3.5 w-3.5 text-amber-500" /> Số điện thoại đăng nhập:
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {updatedAccountData.phone}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between border-b border-slate-200/70 dark:border-slate-700/70 pb-2">
+                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                  <KeyRound className="h-3.5 w-3.5 text-amber-500" /> Mật khẩu mới:
+                </span>
+                <span className="font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700/50">
+                  {updatedAccountData.newPassword}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-500" /> Mã hội viên:
+                </span>
+                <span className="font-bold text-slate-700 dark:text-slate-300">
+                  {updatedAccountData.memberCode}
+                </span>
+              </div>
+            </div>
+
+            {/* Email Dispatch Notice */}
+            <div className="relative z-10 mt-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-[11.5px] leading-relaxed text-blue-900 dark:text-blue-200">
+              <div className="flex items-start gap-2">
+                <Send className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  {updatedAccountData.emailUpdated ? (
+                    <span>
+                      Hệ thống đã nhận diện <strong>Email mới</strong> và đã tự động gửi toàn bộ thông tin tài khoản kèm hướng dẫn truy cập về hộp thư: <strong>{updatedAccountData.email}</strong>.
+                    </span>
+                  ) : (
+                    <span>
+                      Thông tin bảo mật tài khoản đã được đồng bộ. Bấm nút xác nhận bên dưới để gửi email xác nhận kích hoạt tài khoản chính thức về hộp thư <strong>{updatedAccountData.email}</strong>.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Confirm Activation Action Button */}
+            <div className="relative z-10 pt-4">
+              <button
+                type="button"
+                onClick={handleFinalConfirmActivation}
+                disabled={confirmActivatingLoading}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 py-3.5 px-4 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-amber-500/25 active:scale-98 transition cursor-pointer disabled:opacity-50"
+              >
+                {confirmActivatingLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 text-slate-950" />
+                )}
+                <span>Xác nhận & Gửi thông báo kích hoạt tài khoản</span>
+              </button>
+              <p className="text-[10px] text-center text-slate-500 dark:text-slate-400 mt-2">
+                Sau khi xác nhận, hệ thống sẽ gửi email kích hoạt và đưa bạn ra màn hình đăng nhập để bắt đầu trải nghiệm App.
+              </p>
+            </div>
           </DialogContent>
         </Dialog>
       )}

@@ -260,7 +260,7 @@ export function EventQrStaffSelector({
           <span className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-primary" />
             {safeSelected.length === 0
-              ? "+ Chọn nhân sự Ban Truyền Thông quét mã QR..."
+              ? "Chọn nhân sự Ban Truyền Thông quét mã QR..."
               : `Đã chọn ${safeSelected.length} nhân sự Ban Truyền Thông (Bấm để chọn thêm / bớt)`}
           </span>
           <ChevronDown

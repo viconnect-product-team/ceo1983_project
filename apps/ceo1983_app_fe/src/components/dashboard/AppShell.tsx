@@ -10,7 +10,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <CommandPaletteProvider>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-crm-system transition-colors duration-300">
         {/* Desktop sidebar */}
         <Sidebar />
 

@@ -50,6 +50,8 @@ export type BcDmMessage = {
   createdAt: string;
   readAt: string | null;
   retractedAt: string | null;
+  editedAt?: string | null;
+  isEdited?: boolean;
 };
 
 export type BcDmErrorCode =

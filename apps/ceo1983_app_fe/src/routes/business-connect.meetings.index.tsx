@@ -25,9 +25,11 @@ import {
   ExternalLink,
   Eye,
   Edit,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
+import { exportToExcel, formatDisplayDate } from "@/lib/excel-export";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { useTableControls } from "@/hooks/use-table-controls";
 
@@ -237,6 +239,43 @@ function MeetingsWorkspacePage() {
               <span>Dạng Bảng</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              exportToExcel<ConnectionMeetingItem>({
+                title: "Báo Cáo Danh Sách Cuộc Gặp Kết Nối Giao Thương 1-on-1",
+                subtitle: "Hệ thống kết nối doanh nghiệp & hội viên CEO 1983",
+                filename: "danh-sach-cuoc-gap-1on1",
+                sheetName: "Cuộc gặp 1-on-1",
+                columns: [
+                  { header: "Mã cuộc gặp", key: "id", width: 16, value: (m) => m.id },
+                  { header: "Tiêu đề cuộc gặp", key: "title", width: 32, value: (m) => m.title },
+                  { header: "Người chủ trì", key: "hostName", width: 22, value: (m) => m.hostName },
+                  { header: "Công ty chủ trì", key: "hostCompany", width: 28, value: (m) => m.hostCompany || "—" },
+                  { header: "SĐT chủ trì", key: "hostPhone", width: 16, value: (m) => m.hostPhone || "—" },
+                  { header: "Hội viên kết nối", key: "partnerName", width: 22, value: (m) => m.partnerName },
+                  { header: "Công ty đối tác", key: "partnerCompany", width: 28, value: (m) => m.partnerCompany || "—" },
+                  { header: "SĐT đối tác", key: "partnerPhone", width: 16, value: (m) => m.partnerPhone || "—" },
+                  { header: "Ngày gặp", key: "date", width: 14, value: (m) => formatDisplayDate(m.date) },
+                  { header: "Thời gian", key: "time", width: 12, value: (m) => m.time || "—" },
+                  { header: "Hình thức", key: "venueType", width: 14, value: (m) => (m.venueType === "online" ? "Trực tuyến" : "Trực tiếp") },
+                  { header: "Địa điểm / Đường dẫn", key: "venue", width: 35, value: (m) => (m.venueType === "online" ? (m.onlineUrl || m.venue) : m.venue) },
+                  { header: "Trạng thái", key: "status", width: 18, value: (m) => (m.status === "completed" ? "Đã hoàn thành" : m.status === "cancelled" ? "Đã hủy" : "Đã lên lịch") },
+                  { header: "Ghi chú", key: "notes", width: 30, value: (m) => m.notes || "—" },
+                ],
+                data: filtered,
+                summaryRows: [
+                  ["TỔNG SỐ CUỘC GẶP", filtered.length, "", "", "", "", "", "", "", "", "", "", "", ""],
+                ],
+              });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted shadow-xs transition cursor-pointer"
+            title="Xuất danh sách cuộc gặp ra file Excel"
+          >
+            <Download className="h-3.5 w-3.5 text-emerald-600" />
+            <span>Xuất Excel</span>
+          </button>
 
           <button
             onClick={() => {

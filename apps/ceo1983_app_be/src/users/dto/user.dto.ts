@@ -16,6 +16,10 @@ export class UpdateAccountProfileDto {
 export class ChangePasswordDto {
   currentPassword?: string;
   newPassword!: string;
+  email?: string;
+  phone?: string;
+  sendActivationEmail?: boolean;
+  fullName?: string;
 }
 
 export class DeactivateAccountDto {

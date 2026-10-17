@@ -110,6 +110,21 @@ const DialogDescription = React.forwardRef<
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
+const VisuallyHidden = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement>
+>(({ className, ...props }, ref) => (
+  <span
+    ref={ref}
+    className={cn(
+      "absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0 sr-only",
+      className,
+    )}
+    {...props}
+  />
+));
+VisuallyHidden.displayName = "VisuallyHidden";
+
 export {
   Dialog,
   DialogPortal,
@@ -122,5 +137,6 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
+  VisuallyHidden,
 };
 

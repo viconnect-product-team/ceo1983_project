@@ -33,6 +33,7 @@ type Info = {
   type: EventType;
   status: EventStatus;
   imageUrl?: string;
+  photoGalleryUrl?: string;
   description?: string;
   qrStaff: string[];
   sponsors: EventSponsorItem[];
@@ -213,6 +214,7 @@ function EventWizardDialog({
           imageUrl: info.imageUrl,
           image: info.imageUrl,
           banner: info.imageUrl,
+          photoGalleryUrl: info.photoGalleryUrl || "",
           ticketPrice: computedTicketPrice,
           fee: computedTicketPrice,
           description: info.description || "",
@@ -263,21 +265,21 @@ function EventWizardDialog({
         {announcement}
       </p>
       <div
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-b from-[#001026] via-[#001D4A] to-[#0A192F] text-slate-100 shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-border bg-card text-foreground shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header + stepper */}
-        <div className="border-b border-blue-900/60 bg-[#001433]/85 p-5">
+        <div className="border-b border-border bg-slate-50 dark:bg-card/90 p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-amber-400" />
+            <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
               <span>{t("ewz.title")}</span>
             </h2>
             <button
               type="button"
               onClick={close}
               aria-label={t("ewz.cancel")}
-              className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40 cursor-pointer"
+              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -291,22 +293,22 @@ function EventWizardDialog({
                 <span
                   className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${
                     i < step
-                      ? "bg-amber-400 text-slate-950 font-bold"
+                      ? "bg-[#003B95] text-white font-bold"
                       : i === step
-                        ? "bg-amber-400/20 text-amber-300 ring-2 ring-amber-400 font-bold"
-                        : "bg-blue-950/60 text-slate-400 border border-blue-800/40"
+                        ? "bg-[#003B95]/15 text-[#003B95] ring-2 ring-[#003B95] font-bold dark:text-blue-400 dark:ring-blue-400"
+                        : "bg-muted text-muted-foreground border border-border"
                   }`}
                   aria-current={i === step ? "step" : undefined}
                 >
                   {i < step ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : i + 1}
                 </span>
                 <span
-                  className={`truncate text-xs font-medium ${i === step ? "text-amber-300 font-bold" : "text-slate-400"}`}
+                  className={`truncate text-xs font-medium ${i === step ? "text-[#003B95] dark:text-blue-400 font-bold" : "text-muted-foreground"}`}
                 >
                   {label}
                 </span>
                 {i < steps.length - 1 && (
-                  <span className="hidden h-px flex-1 bg-blue-900/60 sm:block" aria-hidden="true" />
+                  <span className="hidden h-px flex-1 bg-border sm:block" aria-hidden="true" />
                 )}
               </li>
             ))}
@@ -314,19 +316,19 @@ function EventWizardDialog({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 bg-[#000E24]/90 text-slate-200">
+        <div className="flex-1 overflow-y-auto p-5 bg-background text-foreground">
           {step === 0 && <InfoStep info={info} setInfo={setInfo} errors={errors} setErrors={setErrors} />}
           {step === 1 && <TicketStep tickets={tickets} setTickets={setTickets} errors={errors} setErrors={setErrors} />}
           {step === 2 && <QrStep qrFields={qrFields} toggleQr={toggleQr} sample={qrSample} />}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-2 border-t border-blue-900/60 bg-[#001433]/90 p-4">
+        <div className="flex items-center justify-between gap-2 border-t border-border bg-slate-50 dark:bg-card/90 p-4">
           <button
             type="button"
             onClick={step === 0 ? close : back}
             disabled={submitting}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-blue-800/80 bg-[#001838] px-4 py-2 text-sm font-medium text-slate-300 hover:bg-blue-950 hover:text-white disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 cursor-pointer"
           >
             {step === 0 ? (
               t("ewz.cancel")
@@ -340,7 +342,7 @@ function EventWizardDialog({
             <button
               type="button"
               onClick={next}
-              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-black bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40 cursor-pointer transition active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-bold bg-[#003B95] hover:bg-[#002d73] text-white shadow-md shadow-[#003B95]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer transition active:scale-95"
             >
               {t("ewz.next")} <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -349,9 +351,9 @@ function EventWizardDialog({
               type="button"
               onClick={submit}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-black bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40 cursor-pointer transition active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-bold bg-[#003B95] hover:bg-[#002d73] text-white shadow-md shadow-[#003B95]/20 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer transition active:scale-95"
             >
-              <Check className="h-4 w-4 text-slate-950" aria-hidden="true" />
+              <Check className="h-4 w-4 text-white" aria-hidden="true" />
               {submitting ? "Đang xử lý..." : t("ewz.create")}
             </button>
           )}
@@ -366,8 +368,8 @@ function originSafe() {
 }
 
 const inputCls =
-  "h-10 w-full rounded-xl border border-blue-900/80 bg-[#001433] px-3 text-sm text-white placeholder:text-slate-500 focus-visible:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30";
-const labelCls = "mb-1.5 block text-xs font-semibold text-slate-300";
+  "h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-[#003B95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003B95]/30 transition";
+const labelCls = "mb-1.5 block text-xs font-semibold text-foreground";
 
 function InfoStep({
   info,
@@ -420,15 +422,15 @@ function InfoStep({
                 onClick={() => handleSelectType(key)}
                 className={`flex flex-col items-start p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   isSelected
-                    ? "border-amber-400 bg-amber-400/15 ring-2 ring-amber-400/30 shadow-xs"
-                    : "border-blue-900/60 bg-[#001838] hover:bg-[#00224D] hover:border-amber-400/40 text-slate-200"
+                    ? "border-[#003B95] bg-blue-50 dark:bg-blue-950/30 ring-2 ring-[#003B95]/30 shadow-xs"
+                    : "border-border bg-card hover:bg-muted/50 hover:border-[#003B95]/40 text-foreground"
                 }`}
               >
                 <div className="flex items-center gap-1.5 w-full">
-                  <span className={`text-xs font-bold line-clamp-1 ${isSelected ? "text-amber-300" : "text-white"}`}>{tpl.label}</span>
-                  {isSelected && <Check className="h-3.5 w-3.5 text-amber-400 ml-auto shrink-0" />}
+                  <span className={`text-xs font-bold line-clamp-1 ${isSelected ? "text-[#003B95] dark:text-blue-400" : "text-foreground"}`}>{tpl.label}</span>
+                  {isSelected && <Check className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 ml-auto shrink-0" />}
                 </div>
-                <span className="mt-1 text-[10px] text-slate-400 line-clamp-1">
+                <span className="mt-1 text-[10px] text-muted-foreground line-clamp-1">
                   {tpl.badge}
                 </span>
               </button>
@@ -536,10 +538,10 @@ function InfoStep({
             </button>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-800/60 bg-[#001433]/60 p-3 hover:border-amber-400/60 hover:bg-[#001838] transition">
-            <ImagePlus className="h-6 w-6 text-amber-400/80 mb-1" />
-            <span className="text-xs font-semibold text-white">Tải ảnh sự kiện lên</span>
-            <span className="text-[10px] text-slate-400">PNG, JPG hoặc WEBP</span>
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-800/60 bg-blue-50 dark:bg-[#001433]/60 p-3 hover:border-blue-400 dark:hover:border-amber-400/60 hover:bg-blue-100 dark:hover:bg-[#001838] transition">
+            <ImagePlus className="h-6 w-6 text-blue-400 dark:text-amber-400/80 mb-1" />
+            <span className="text-xs font-semibold text-blue-700 dark:text-white">Tải ảnh sự kiện lên</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">PNG, JPG hoặc WEBP</span>
             <input
               type="file"
               accept="image/*"
@@ -672,11 +674,29 @@ function InfoStep({
         <textarea
           id="ewz-description"
           rows={3}
-          className="w-full rounded-xl border border-blue-900/80 bg-[#001433] p-3 text-sm text-white placeholder:text-slate-500 focus-visible:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
+          className="w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-[#003B95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003B95]/30 transition"
           value={info.description || ""}
           onChange={(e) => setInfo({ ...info, description: e.target.value })}
           placeholder="Nhập nội dung tóm tắt, lịch trình hoặc lưu ý tham gia..."
         />
+      </div>
+
+      {/* Link ảnh sự kiện (Google Drive / Cloud) dành cho Ban Truyền Thông nạp link ảnh sau sự kiện */}
+      <div>
+        <label className={labelCls} htmlFor="ewz-photo-gallery">
+          Link album ảnh sự kiện (Google Drive / Lưu trữ đám mây)
+        </label>
+        <input
+          id="ewz-photo-gallery"
+          type="url"
+          className={inputCls}
+          placeholder="https://drive.google.com/drive/folders/... hoặc liên kết album ảnh"
+          value={info.photoGalleryUrl || ""}
+          onChange={(e) => setInfo({ ...info, photoGalleryUrl: e.target.value })}
+        />
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Ban Truyền Thông dán link Google Drive hoặc OneDrive chứa ảnh sự kiện vào đây để hội viên xem và tải ảnh sau khi sự kiện kết thúc.
+        </p>
       </div>
 
       {/* MULTISELECT 1: Chọn người thực hiện quét mã QR (Ban Truyền Thông) */}
@@ -737,7 +757,7 @@ function TicketStep({
 
       <div className="space-y-3">
         {tickets.map((tk, i) => (
-          <div key={i} className="rounded-xl border border-blue-900/80 bg-[#001838] p-3">
+          <div key={i} className="rounded-xl border border-border bg-card p-3 shadow-xs">
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex-1">
                 <label htmlFor={`ewz-ticket-name-${i}`} className="sr-only">
@@ -865,7 +885,7 @@ function TicketStep({
       <button
         type="button"
         onClick={() => setTickets([...tickets, emptyTicket()])}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-blue-800/60 bg-[#001433] py-2.5 text-sm font-semibold text-amber-300 hover:bg-[#001c44] hover:border-amber-400 transition cursor-pointer"
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/30 py-2.5 text-sm font-semibold text-[#003B95] dark:text-blue-400 hover:bg-muted transition cursor-pointer"
       >
         <Plus className="h-4 w-4" aria-hidden="true" /> {t("ewz.tickets.add")}
       </button>
@@ -900,21 +920,21 @@ function QrStep({
               key={f}
               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
                 checked
-                  ? "border-amber-400 bg-amber-400/15 text-white"
-                  : "border-blue-900/60 bg-[#001838] hover:bg-[#00224D] text-slate-300"
+                  ? "border-[#003B95] bg-blue-50 dark:bg-blue-950/30 text-foreground shadow-xs"
+                  : "border-border bg-card hover:bg-muted/50 text-foreground"
               }`}
             >
               <input
                 type="checkbox"
-                className="mt-0.5 h-4 w-4 accent-amber-400"
+                className="mt-0.5 h-4 w-4 accent-[#003B95]"
                 checked={checked}
                 onChange={() => toggleQr(f)}
               />
               <span className="min-w-0">
-                <span className="block text-sm font-bold text-white">
+                <span className="block text-sm font-bold text-foreground">
                   {t(`ewz.qr.${f}` as never)}
                 </span>
-                <span className="block text-xs text-slate-400">
+                <span className="block text-xs text-muted-foreground">
                   {t(`ewz.qr.${f}.desc` as never)}
                 </span>
               </span>
@@ -923,17 +943,17 @@ function QrStep({
         })}
       </fieldset>
 
-      <div className="rounded-xl border border-blue-900/60 bg-[#001433] p-4">
-        <p className="mb-3 text-xs font-semibold text-amber-300">{t("ewz.qr.preview")}</p>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
+        <p className="mb-3 text-xs font-semibold text-[#003B95] dark:text-blue-400">{t("ewz.qr.preview")}</p>
         <div className="flex items-center gap-4">
-          <div className="p-2 rounded-xl bg-white shadow-md">
+          <div className="p-2 rounded-xl bg-white shadow-md border border-border">
             <QrCanvas value={sample} size={120} />
           </div>
           <div className="min-w-0">
-            <p className="mb-1 text-[11px] uppercase tracking-wide text-slate-400 font-semibold">
+            <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
               {t("ewz.qr.previewHint")}
             </p>
-            <code className="block break-all rounded-md bg-[#000E24] px-2 py-1.5 text-[11px] text-amber-300 border border-blue-900/60 font-mono">
+            <code className="block break-all rounded-md bg-muted px-2 py-1.5 text-[11px] text-foreground border border-border font-mono">
               {sample}
             </code>
           </div>

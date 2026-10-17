@@ -33,8 +33,8 @@ export function InviteMemberModal({
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://ceo1983.vn";
-  const inviteUrl = `${origin}/auth/mobile?ref=${encodeURIComponent(memberCode)}`;
+  // Redirect to official landing registration link with apply="true"
+  const inviteUrl = `https://ceo1983.viconnect.vn/landing?apply=%22true%22`;
 
   const templates = {
     formal: `Kính gửi Quý Doanh nhân, tôi là ${memberName} (Mã HV: ${memberCode}). Trân trọng kính mời Anh/Chị gia nhập CLB Doanh nhân CEO 1983 — Hệ sinh thái kết nối giao thương, nâng tầm giá trị và mở rộng cơ hội kinh doanh hàng đầu. Đăng ký tham gia trực tuyến tại: ${inviteUrl}`,

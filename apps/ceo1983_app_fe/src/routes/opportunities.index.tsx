@@ -1044,12 +1044,12 @@ function OpportunitiesPage() {
           {tab === "mine" ? t("opp.empty.mine") : t("opp.empty.browse")}
         </Card>
       ) : view === "table" ? (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-          <div className="relative overflow-x-auto">
+        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+          <div className="relative overflow-x-auto w-full">
             <table className="w-full min-w-[1250px] whitespace-nowrap border-separate border-spacing-0 text-sm">
-              <thead className="bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="sticky left-0 z-20 w-14 min-w-[56px] bg-secondary px-3 py-3 text-center text-xs font-bold border-b border-r border-border">
+                  <th className="sticky left-0 z-20 w-14 min-w-[56px] bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800">
                     STT
                   </th>
                   <th className="sticky left-[56px] z-20 min-w-[90px] bg-secondary px-3 py-3 border-b border-r border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">

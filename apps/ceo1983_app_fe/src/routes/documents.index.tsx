@@ -16,6 +16,9 @@ import {
   Upload,
   X,
   Mail,
+  Building,
+  ShieldCheck,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -137,8 +140,13 @@ function DocsPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
-  const { isAdmin, isModerator, isPlatformAdmin, can } = useRole();
-  const canWrite = can(PERMISSIONS.DOCUMENT_MANAGE);
+  const { isAdmin, isPlatformAdmin, isPresident, isChuTich, isTruongBan, isBanDieuHanh, can } = useRole();
+  // Quản trị, chủ tịch, admin, các trưởng ban có quyền xem, chỉnh sửa, upload, xóa tài liệu hiệp hội
+  const isLeaderOrAdmin = Boolean(
+    isAdmin || isPlatformAdmin || isPresident || isChuTich || isTruongBan || isBanDieuHanh
+  );
+  const canWriteAssociation = isLeaderOrAdmin || can(PERMISSIONS.DOCUMENT_MANAGE);
+  const canWrite = canWriteAssociation;
 
   const DOCUMENTS = Route.useLoaderData() as Document[];
   const { pins, isPinned, toggle } = usePinnedDocs();
@@ -152,6 +160,7 @@ function DocsPage() {
   const [pinnedOnly, setPinnedOnly] = useUrlState<"0" | "1">("pinned", "0");
   const [group, setGroup] = useUrlState<"none" | "cat">("group", "none");
   const [docTab, setDocTab] = useUrlState<"docs" | "mail_templates">("tab", "docs");
+  const [scopeTab, setScopeTab] = useUrlState<"all" | "association" | "enterprise">("scope", "all");
 
   const CRM_COMMITTEE_LIST = [
     "Ban Điều Hành",
@@ -185,6 +194,22 @@ function DocsPage() {
   const fields: CrudField[] = [
     { name: "name", label: t("doc.col.name"), type: "text", required: true, placeholder: "Nhập tên tài liệu..." },
     {
+      name: "docScope",
+      label: "Phân loại tài liệu",
+      type: "select",
+      required: true,
+      options: [
+        { value: "association", label: "🏛️ Tài liệu Hiệp Hội (Chỉ Quản trị / Trưởng ban quản lý)" },
+        { value: "enterprise", label: "🏢 Tài liệu Doanh Nghiệp (Hồ sơ, profile, catalogue DN)" },
+      ],
+    },
+    {
+      name: "enterpriseName",
+      label: "Tên Doanh nghiệp (nếu là tài liệu doanh nghiệp)",
+      type: "text",
+      placeholder: "Ví dụ: Công ty Cổ phần Viconnect...",
+    },
+    {
       name: "category",
       label: "Ban phụ trách / Danh mục",
       type: "select",
@@ -198,6 +223,8 @@ function DocsPage() {
         { value: "Ban Thiện Nguyện", label: "Ban Thiện Nguyện" },
         { value: "Ban Thư Ký", label: "Ban Thư Ký" },
         { value: "Biểu mẫu chung", label: "Biểu mẫu chung" },
+        { value: "Hồ sơ & Catalogue Doanh nghiệp", label: "Hồ sơ & Catalogue Doanh nghiệp" },
+        { value: "Báo cáo & Chứng nhận DN", label: "Báo cáo & Chứng nhận DN" },
       ],
     },
     {
@@ -227,8 +254,9 @@ function DocsPage() {
   ];
 
   const onSubmit = async (v: CrudValues) => {
-    if (!can(PERMISSIONS.DOCUMENT_MANAGE)) {
-      toast.error("Bạn không có quyền thêm hoặc chỉnh sửa tài liệu!");
+    const isAssocDoc = v.docScope === "association" || !v.docScope;
+    if (isAssocDoc && !canWriteAssociation) {
+      toast.error("Tài liệu của Hiệp Hội chỉ có Quản trị, Chủ tịch và các Trưởng ban mới có quyền thêm/chỉnh sửa!");
       return;
     }
     setSubmitting(true);
@@ -251,6 +279,11 @@ function DocsPage() {
   };
 
   const onDelete = async (d: Document) => {
+    const isAssoc = d.docScope === "association" || !d.docScope;
+    if (isAssoc && !canWriteAssociation) {
+      toast.error("Tài liệu Hiệp Hội chỉ có Quản trị, Chủ tịch và các Trưởng ban được xóa!");
+      return;
+    }
     if (!window.confirm(t("common.confirmDelete", { name: d.name }))) return;
     setDeletingId(d.id);
     try {
@@ -352,12 +385,22 @@ function DocsPage() {
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    const list = DOCUMENTS.filter((d) => (cat === "all" ? true : d.category === cat))
+    const list = DOCUMENTS.filter((d) => {
+      const scope = d.docScope || (d.enterpriseName ? "enterprise" : "association");
+      if (scopeTab === "association" && scope !== "association") return false;
+      if (scopeTab === "enterprise" && scope !== "enterprise") return false;
+      return true;
+    })
+      .filter((d) => (cat === "all" ? true : d.category === cat))
       .filter((d) => (typeF === "all" ? true : d.type === typeF))
       .filter((d) => (owner === "all" ? true : d.uploadedBy === owner))
       .filter((d) => (pinnedActive ? pins.has(d.id) : true))
       .filter(
-        (d) => !ql || d.name.toLowerCase().includes(ql) || d.category.toLowerCase().includes(ql),
+        (d) =>
+          !ql ||
+          d.name.toLowerCase().includes(ql) ||
+          d.category.toLowerCase().includes(ql) ||
+          (d.enterpriseName && d.enterpriseName.toLowerCase().includes(ql)),
       );
 
     const sorted = [...list].sort((a, b) => {
@@ -374,7 +417,7 @@ function DocsPage() {
       }
     });
     return sorted;
-  }, [q, cat, typeF, owner, sort, pinnedActive, pins, DOCUMENTS]);
+  }, [q, cat, typeF, owner, sort, pinnedActive, pins, DOCUMENTS, scopeTab]);
 
   // Pinned section only in the default (unfiltered, ungrouped) view.
   const pinnedDocs = useMemo(
@@ -473,9 +516,23 @@ function DocsPage() {
             >
               {d.name}
             </Link>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {[d.category, d.type?.toUpperCase(), d.size].filter(Boolean).join(" · ")}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold ${
+                (d.docScope || "association") === "association"
+                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                  : "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+              }`}>
+                {(d.docScope || "association") === "association" ? "🏛️ Hiệp hội" : "🏢 Doanh nghiệp"}
+              </span>
+              {d.enterpriseName ? (
+                <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[140px]">
+                  {d.enterpriseName}
+                </span>
+              ) : null}
+              <span className="text-muted-foreground">
+                {[d.category, d.type?.toUpperCase(), d.size].filter(Boolean).join(" · ")}
+              </span>
+            </div>
           </div>
           <PinButton d={d} />
         </div>
@@ -491,28 +548,33 @@ function DocsPage() {
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             {t("common.download")}
           </button>
-          {canWrite && (
-            <>
-              <button
-                onClick={() => {
-                  setEditing(d);
-                  setOpen(true);
-                }}
-                aria-label={t("doc.edit")}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-              <button
-                onClick={() => onDelete(d)}
-                disabled={deletingId === d.id}
-                aria-label={t("doc.delete")}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </>
-          )}
+          {(() => {
+            const isAssoc = d.docScope === "association" || !d.docScope;
+            const canManageThis = isAssoc ? canWriteAssociation : true;
+            if (!canManageThis) return null;
+            return (
+              <>
+                <button
+                  onClick={() => {
+                    setEditing(d);
+                    setOpen(true);
+                  }}
+                  aria-label={t("doc.edit")}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+                <button
+                  onClick={() => onDelete(d)}
+                  disabled={deletingId === d.id}
+                  aria-label={t("doc.delete")}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </>
+            );
+          })()}
         </div>
       </div>
     );
@@ -601,6 +663,69 @@ function DocsPage() {
           ) : undefined
         }
       />
+
+      {/* Phân Loại Danh Mục Tài Liệu: Hiệp Hội & Doanh Nghiệp */}
+      {docTab === "docs" && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card/60 p-2.5 backdrop-blur-md">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setScopeTab("all")}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                scopeTab === "all"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <FolderOpen className="h-3.5 w-3.5" />
+              <span>Tất cả tài liệu</span>
+              <span className="ml-1 rounded-full bg-black/10 dark:bg-white/10 px-1.5 py-0.2 text-[10px]">
+                {DOCUMENTS.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setScopeTab("association")}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                scopeTab === "association"
+                  ? "bg-amber-600 text-white shadow-sm"
+                  : "bg-transparent text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+              }`}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Tài liệu Hiệp Hội</span>
+              <span className="ml-1 rounded-full bg-black/10 dark:bg-white/10 px-1.5 py-0.2 text-[10px]">
+                {DOCUMENTS.filter((d) => (d.docScope || "association") === "association").length}
+              </span>
+              {!canWriteAssociation && (
+                <span className="ml-1 text-[10px] font-normal opacity-80">(Chỉ xem)</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setScopeTab("enterprise")}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                scopeTab === "enterprise"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-transparent text-blue-700 dark:text-blue-400 hover:bg-blue-500/10"
+              }`}
+            >
+              <Building className="h-3.5 w-3.5" />
+              <span>Tài liệu Doanh Nghiệp</span>
+              <span className="ml-1 rounded-full bg-black/10 dark:bg-white/10 px-1.5 py-0.2 text-[10px]">
+                {DOCUMENTS.filter((d) => d.docScope === "enterprise" || Boolean(d.enterpriseName)).length}
+              </span>
+            </button>
+          </div>
+
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5 pr-2">
+            <Lock className="h-3.5 w-3.5 text-amber-500" />
+            <span>Tài liệu Hiệp Hội: Quản trị, Chủ tịch &amp; Trưởng ban toàn quyền; Thành viên chỉ xem.</span>
+          </div>
+        </div>
+      )}
 
       {/* Tabs Switcher */}
       <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3">
@@ -924,12 +1049,12 @@ function DocsPage() {
                 </>
               )
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-                <div className="relative overflow-x-auto">
+              <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+                <div className="relative overflow-x-auto w-full">
                   <table className="w-full border-separate border-spacing-0 text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                        <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                        <th className="sticky left-0 z-20 w-14 bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800">STT</th>
                         <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">{t("doc.col.name")}</th>
                         <th className="px-4 py-3 border-b border-border">{t("doc.col.cat")}</th>
                         <th className="px-4 py-3 border-b border-border">{t("doc.col.type")}</th>
@@ -978,28 +1103,33 @@ function DocsPage() {
                                 <Download className="h-3.5 w-3.5" aria-hidden="true" />
                                 {t("common.download")}
                               </button>
-                              {canWrite && (
-                                <>
-                                  <button
-                                    onClick={() => {
-                                      setEditing(d);
-                                      setOpen(true);
-                                    }}
-                                    aria-label={t("doc.edit")}
-                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                                  </button>
-                                  <button
-                                    onClick={() => onDelete(d)}
-                                    disabled={deletingId === d.id}
-                                    aria-label={t("doc.delete")}
-                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                                  </button>
-                                </>
-                              )}
+                              {(() => {
+                                const isAssoc = d.docScope === "association" || !d.docScope;
+                                const canManageThis = isAssoc ? canWriteAssociation : true;
+                                if (!canManageThis) return null;
+                                return (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setEditing(d);
+                                        setOpen(true);
+                                      }}
+                                      aria-label={t("doc.edit")}
+                                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                                    </button>
+                                    <button
+                                      onClick={() => onDelete(d)}
+                                      disabled={deletingId === d.id}
+                                      aria-label={t("doc.delete")}
+                                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                    </button>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>

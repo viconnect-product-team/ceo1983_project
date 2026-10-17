@@ -33,7 +33,7 @@ import {
 } from "@/lib/finance.functions";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
@@ -372,26 +372,82 @@ function ExpensesPage() {
     { initialSortKey: "date", initialSortDir: "desc", initialPageSize: 20 },
   );
 
+  const getCategoryLabel = (cat: string) => {
+    switch (cat) {
+      case "operation":
+        return "Vận hành thường xuyên";
+      case "event":
+        return "Tổ chức sự kiện";
+      case "marketing":
+        return "Truyền thông & quảng bá";
+      case "advance":
+        return "Tạm ứng công tác / sự kiện";
+      case "hospitality":
+        return "Tiếp khách & đối ngoại";
+      default:
+        return cat || "Chi khác";
+    }
+  };
+
   const handleExport = () => {
-    downloadCsv("danh-sach-chi-phi", tc.sorted, [
-      { header: "Mã phiếu chi", value: (tx) => tx.id },
-      { header: "Ngày chi", value: (tx) => tx.date },
-      { header: "Danh mục", value: (tx) => tx.category },
-      { header: "Nội dung chi", value: (tx) => tx.description },
-      { header: "Người nhận / Đơn vị", value: (tx) => tx.recipient || "" },
-      { header: "Số tiền", value: (tx) => tx.amount },
-      { header: "Số tiền tạm ứng", value: (tx) => tx.advanceAmount || 0 },
-      { header: "Hoàn ứng tiền thừa", value: (tx) => tx.refundAmount || 0 },
-      {
-        header: "Chi thực tế",
-        value: (tx) =>
-          tx.advanceAmount
-            ? tx.advanceAmount - (tx.refundAmount || 0)
-            : tx.amount,
-      },
-      { header: "Hình thức", value: (tx) => (tx.method === "cash" ? "Tiền mặt" : "Chuyển khoản") },
-      { header: "Trạng thái", value: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt") },
-    ]);
+    const totalAmount = tc.sorted.reduce((acc, tx) => acc + Number(tx.amount || 0), 0);
+    const totalAdvance = tc.sorted.reduce((acc, tx) => acc + Number(tx.advanceAmount || 0), 0);
+    const totalRefund = tc.sorted.reduce((acc, tx) => acc + Number(tx.refundAmount || 0), 0);
+    const totalActual = tc.sorted.reduce(
+      (acc, tx) =>
+        acc +
+        (tx.advanceAmount
+          ? tx.advanceAmount - (tx.refundAmount || 0)
+          : tx.amount || 0),
+      0
+    );
+
+    exportToExcel<Transaction>({
+      title: "BÁO CÁO SỔ THEO DÕI CHI PHÍ & TẠM ỨNG HIỆP HỘI",
+      subtitle: "Hệ thống quản lý tài chính & thu chi Hiệp Hội Doanh Nhân CEO 1983",
+      filename: "so-theo-doi-chi-phi-ceo1983",
+      sheetName: "Nhat_Ky_Chi",
+      columns: [
+        { header: "Mã phiếu chi", key: "id", width: 16, value: (tx) => tx.id },
+        { header: "Ngày chi", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
+        { header: "Danh mục chi", key: "category", width: 24, value: (tx) => getCategoryLabel(tx.category) },
+        { header: "Nội dung chi", key: "description", width: 38, value: (tx) => tx.description },
+        { header: "Người nhận / Đơn vị", key: "recipient", width: 28, value: (tx) => tx.recipient || "—" },
+        { header: "Số tiền chi (VNĐ)", key: "amount", width: 20, value: (tx) => formatExcelCurrency(tx.amount) },
+        { header: "Số tiền tạm ứng", key: "advanceAmount", width: 20, value: (tx) => formatExcelCurrency(tx.advanceAmount || 0) },
+        { header: "Hoàn ứng tiền thừa", key: "refundAmount", width: 20, value: (tx) => formatExcelCurrency(tx.refundAmount || 0) },
+        {
+          header: "Chi thực tế (VNĐ)",
+          key: "actualAmount",
+          width: 20,
+          value: (tx) =>
+            formatExcelCurrency(
+              tx.advanceAmount
+                ? tx.advanceAmount - (tx.refundAmount || 0)
+                : tx.amount || 0
+            ),
+        },
+        { header: "Hình thức", key: "method", width: 16, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "card" ? "Thẻ tín dụng" : "Chuyển khoản") },
+        { header: "Trạng thái", key: "status", width: 16, value: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt") },
+      ],
+      data: tc.sorted,
+      summaryRows: [
+        [
+          "TỔNG CỘNG THỰC CHI:",
+          "",
+          "",
+          "",
+          "",
+          formatExcelCurrency(totalAmount) + " đ",
+          formatExcelCurrency(totalAdvance) + " đ",
+          formatExcelCurrency(totalRefund) + " đ",
+          formatExcelCurrency(totalActual) + " đ",
+          "",
+          "",
+        ],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "KẾ TOÁN TRƯỞNG / TRƯỞNG BAN", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+    });
   };
 
   return (
@@ -433,70 +489,61 @@ function ExpensesPage() {
         }
       />
 
-      {/* KPI Cards: Phân loại Tiền mặt, Chuyển khoản, Tạm ứng, Hoàn ứng, Tổng chi */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Tổng chi thực tế */}
-        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
-              Tổng Chi Thực Tế
-            </span>
-            <ArrowDownCircle className="h-5 w-5 text-rose-600" />
+      {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Tổng Chi Thực Tế (Sky gradient - Blue) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG CHI THỰC TẾ</div>
           </div>
-          <div className="mt-2 text-2xl font-black text-rose-700 dark:text-rose-300">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
             {fmt.money(totalActualExpense)}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            = Chi trực tiếp + Tạm ứng - Hoàn ứng
-          </p>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Chi trực tiếp + Tạm ứng - Hoàn ứng
+          </div>
         </div>
 
-        {/* Card 2: Chi Tiền Mặt */}
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-              Chi Tiền Mặt
-            </span>
-            <Banknote className="h-5 w-5 text-emerald-600" />
+        {/* Card 2: Chi Tiền Mặt (Violet gradient - Indigo) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">CHI TIỀN MẶT</div>
           </div>
-          <div className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
             {fmt.money(expenseCash)}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
             Thanh toán tiền mặt trực tiếp
-          </p>
+          </div>
         </div>
 
-        {/* Card 3: Chi Chuyển Khoản */}
-        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-              Chi Chuyển Khoản
-            </span>
-            <Building className="h-5 w-5 text-blue-600" />
+        {/* Card 3: Chi Chuyển Khoản (Orange gradient - Orange) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHI CHUYỂN KHOẢN</div>
           </div>
-          <div className="mt-2 text-2xl font-black text-blue-700 dark:text-blue-300">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
             {fmt.money(expenseBank)}
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Ủy nhiệm chi / Chuyển khoản ngân hàng
-          </p>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Ủy nhiệm chi &amp; chuyển khoản ngân hàng
+          </div>
         </div>
 
-        {/* Card 4: Quản lý Tạm Ứng & Hoàn Ứng */}
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-              Tạm Ứng & Hoàn Ứng
-            </span>
-            <RotateCcw className="h-5 w-5 text-amber-600" />
+        {/* Card 4: Tạm Ứng & Hoàn Ứng (Green gradient - Emerald) */}
+        <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">TẠM ỨNG &amp; HOÀN ỨNG</div>
           </div>
-          <div className="mt-2 text-lg font-black text-amber-700 dark:text-amber-300">
-            Tạm ứng: {fmt.money(totalAdvance)}
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {fmt.money(totalAdvance)}
           </div>
-          <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Đã hoàn ứng tiền thừa:</span>
-            <strong className="text-emerald-600 font-bold">+{fmt.money(totalRefunded)}</strong>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Đã hoàn ứng: <strong className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">+{fmt.money(totalRefunded)}</strong>
           </div>
         </div>
       </div>
@@ -750,18 +797,17 @@ function ExpensesPage() {
           </tbody>
         </table>
         </div>
+        <Pagination
+          page={tc.page}
+          pageCount={tc.pageCount}
+          pageSize={tc.pageSize}
+          total={tc.total}
+          from={tc.from}
+          to={tc.to}
+          onPage={tc.setPage}
+          onPageSize={tc.setPageSize}
+        />
       </Card>
-
-      <Pagination
-        page={tc.page}
-        pageCount={tc.pageCount}
-        pageSize={tc.pageSize}
-        total={tc.total}
-        from={tc.from}
-        to={tc.to}
-        onPage={tc.setPage}
-        onPageSize={tc.setPageSize}
-      />
 
       {/* Modal Lập / Sửa Phiếu Chi & Tạm Ứng */}
       {modalOpen && (
@@ -862,23 +908,25 @@ function ExpensesPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[11px] text-muted-foreground">Số tiền tạm ứng ban đầu</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formAdvanceAmount || formAmount}
-                        onChange={(e) => setFormAdvanceAmount(Number(e.target.value))}
-                        className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono"
-                      />
+                      <div className="mt-1">
+                        <FormattedCurrencyInput
+                          value={formAdvanceAmount !== undefined && formAdvanceAmount !== null ? formAdvanceAmount : formAmount}
+                          allowCurrencySwitch={false}
+                          onChange={(_f, num) => setFormAdvanceAmount(num)}
+                          className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="text-[11px] text-muted-foreground">Hoàn ứng tiền thừa (nếu có)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formRefundAmount}
-                        onChange={(e) => setFormRefundAmount(Number(e.target.value))}
-                        className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono text-emerald-600 font-bold"
-                      />
+                      <div className="mt-1">
+                        <FormattedCurrencyInput
+                          value={formRefundAmount}
+                          allowCurrencySwitch={false}
+                          onChange={(_f, num) => setFormRefundAmount(num)}
+                          className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono text-emerald-600 font-bold"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -952,13 +1000,10 @@ function ExpensesPage() {
               <label className="text-xs font-semibold text-foreground">
                 Số tiền thừa người nhận nộp lại (Hoàn ứng):
               </label>
-              <input
-                type="number"
-                min="0"
-                max={refundingTx.advanceAmount || refundingTx.amount}
-                step="1000"
+              <FormattedCurrencyInput
                 value={refundAmountInput}
-                onChange={(e) => setRefundAmountInput(Number(e.target.value))}
+                allowCurrencySwitch={false}
+                onChange={(_f, num) => setRefundAmountInput(num)}
                 className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <p className="text-[11px] text-muted-foreground">

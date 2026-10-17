@@ -26,6 +26,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
+    // Nếu là yêu cầu tệp hình ảnh hoặc tải tệp qua /upload/ bị lỗi, trả SVG fallback 200 OK thay vì ném 500
+    if (
+      request.url?.includes('/upload/') ||
+      request.url?.includes('upload/file') ||
+      /\.(png|jpe?g|webp|gif|svg|ico)(\?.*)?$/i.test(request.url || '')
+    ) {
+      if (!response.headersSent) {
+        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="100%" height="100%" fill="#0A1A3A"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#F59E0B" font-family="sans-serif" font-size="16" font-weight="bold">CEO 1983</text></svg>`;
+        response.setHeader('Content-Type', 'image/svg+xml');
+        response.setHeader('Cache-Control', 'public, max-age=3600');
+        return response.status(200).send(fallbackSvg);
+      }
+    }
+
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Hệ thống đang bận hoặc xảy ra lỗi không xác định. Vui lòng thử lại sau!';
     let errors: Record<string, string> | undefined = undefined;

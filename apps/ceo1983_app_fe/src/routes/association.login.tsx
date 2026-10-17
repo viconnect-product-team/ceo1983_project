@@ -162,6 +162,9 @@ function AssociationLoginPage() {
         applyRememberPreference(remember, cleanId);
 
         if (res.mustChangePassword || res.user?.mustChangePassword) {
+          try {
+            localStorage.setItem("vba_must_change_password", "true");
+          } catch {}
           toast.warning("Hội viên mới bắt buộc phải thay đổi mật khẩu khởi tạo trước khi sử dụng ứng dụng.", {
             duration: 6000,
           });
@@ -171,6 +174,10 @@ function AssociationLoginPage() {
             replace: true,
           });
           return;
+        } else {
+          try {
+            localStorage.removeItem("vba_must_change_password");
+          } catch {}
         }
 
         const memberWelcomeName = res.user?.name || res.user?.user_metadata?.full_name || cleanId;

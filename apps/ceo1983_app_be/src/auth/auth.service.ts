@@ -461,7 +461,17 @@ export class AuthService {
     return { ok: true, message: 'Đặt lại mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.' };
   }
 
-  async changePassword(userId: string, currentPass: string, newPass: string) {
-    return this.usersService.changePassword(userId, currentPass, newPass);
+  async changePassword(
+    userId: string,
+    currentPass: string,
+    newPass: string,
+    options?: {
+      email?: string;
+      phone?: string;
+      sendActivationEmail?: boolean;
+      fullName?: string;
+    },
+  ) {
+    return this.usersService.changePassword(userId, currentPass, newPass, options);
   }
 }

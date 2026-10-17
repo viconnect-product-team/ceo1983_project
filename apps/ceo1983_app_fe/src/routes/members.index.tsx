@@ -30,7 +30,7 @@ import { MemberAccountModal } from "@/components/dashboard/MemberAccountModal";
 import { EmptyState, NoSearchResult, ListSkeleton } from "@/components/dashboard/StateKit";
 import { useT, type TKey } from "@/lib/i18n";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
-import { downloadCsv } from "@/lib/csv";
+import { exportToExcel, formatDisplayDate } from "@/lib/excel-export";
 import { useUrlState } from "@/hooks/use-url-state";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { useTableControls } from "@/hooks/use-table-controls";
@@ -702,27 +702,55 @@ function MembersPage() {
     setFavOnly(false);
   };
 
-  const csvCols = [
-    { header: "Code", value: (m: Member) => m.code },
-    { header: "Name", value: (m: Member) => m.name },
-    { header: "Department", value: (m: Member) => getMemberDepartment(m) },
-    { header: "Contact", value: (m: Member) => m.contact },
-    { header: "Email", value: (m: Member) => m.email },
-    { header: "Phone", value: (m: Member) => m.phone },
-    { header: "Type", value: (m: Member) => m.type },
-    { header: "Level", value: (m: Member) => m.level },
-    { header: "Industry", value: (m: Member) => m.industry },
-    { header: "Region", value: (m: Member) => m.region },
-    { header: "Status", value: (m: Member) => m.status },
-    { header: "JoinedAt", value: (m: Member) => m.joinedAt },
-    { header: "FeeYear", value: (m: Member) => String(m.feeYear) },
-    { header: "FeePaid", value: (m: Member) => (m.feePaid ? "yes" : "no") },
+  const memberExcelColumns = [
+    { header: "Mã hội viên", key: "code", width: 16, value: (m: Member) => m.code },
+    { header: "Họ và tên", key: "name", width: 28, value: (m: Member) => m.name },
+    { header: "Ban chuyên môn", key: "department", width: 24, value: (m: Member) => getMemberDepartment(m) },
+    { header: "Doanh nghiệp / Liên hệ", key: "contact", width: 30, value: (m: Member) => m.contact },
+    { header: "Email", key: "email", width: 26, value: (m: Member) => m.email },
+    { header: "Số điện thoại", key: "phone", width: 16, value: (m: Member) => m.phone },
+    { header: "Phân loại", key: "type", width: 16, value: (m: Member) => m.type },
+    { header: "Hạng hội viên", key: "level", width: 18, value: (m: Member) => m.level },
+    { header: "Ngành nghề", key: "industry", width: 22, value: (m: Member) => m.industry },
+    { header: "Khu vực", key: "region", width: 16, value: (m: Member) => m.region },
+    { header: "Trạng thái", key: "status", width: 16, value: (m: Member) => (m.status === "active" ? "Đang hoạt động" : "Chờ duyệt") },
+    { header: "Ngày gia nhập", key: "joinedAt", width: 16, value: (m: Member) => formatDisplayDate(m.joinedAt) },
+    { header: "Niên khóa phí", key: "feeYear", width: 14, value: (m: Member) => String(m.feeYear) },
+    { header: "Đã đóng phí", key: "feePaid", width: 16, value: (m: Member) => (m.feePaid ? "Đã nộp" : "Chưa nộp") },
   ];
 
-  const handleExport = () => downloadCsv("members", tc.sorted, csvCols);
+  const handleExport = () => {
+    exportToExcel<Member>({
+      title: "DANH BẠ HỘI VIÊN CHÍNH THỨC CLB DOANH NHÂN CEO 1983",
+      subtitle: "Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)",
+      filename: "danh-ba-hoi-vien-ceo1983",
+      sheetName: "Danh_Ba_Hoi_Vien",
+      data: tc.sorted,
+      columns: memberExcelColumns,
+      summaryRows: [
+        ["TỔNG SỐ HỘI VIÊN:", "", "", "", "", "", "", "", "", "", "", `${tc.sorted.length} hội viên`],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "TRƯỞNG BAN HỘI VIÊN", "CHỦ TỊCH CLB CEO 1983"],
+    });
+    toast.success("Đã xuất danh bạ hội viên chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
+  };
+
   const handleExportSelected = () => {
     const rows = members.filter((m) => sel.has(m.id));
-    downloadCsv("members-selected", rows, csvCols);
+    if (rows.length === 0) return;
+    exportToExcel<Member>({
+      title: "DANH SÁCH HỘI VIÊN ĐƯỢC CHỌN - CEO 1983",
+      subtitle: "Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)",
+      filename: "hoi-vien-duoc-chon",
+      sheetName: "Hoi_Vien_Chon_Loc",
+      data: rows,
+      columns: memberExcelColumns,
+      summaryRows: [
+        ["TỔNG SỐ HỘI VIÊN ĐƯỢC CHỌN:", "", "", "", "", "", "", "", "", "", "", `${rows.length} hội viên`],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "TRƯỞNG BAN HỘI VIÊN", "CHỦ TỊCH CLB CEO 1983"],
+    });
+    toast.success("Đã xuất danh sách hội viên được chọn ra file Excel (.xlsx)!");
   };
 
   const toggleSel = (id: string) =>
@@ -830,6 +858,83 @@ function MembersPage() {
               {t("members.add")}
             </button>
           )}
+        </div>
+      </div>
+
+      {/* 4 Thẻ Dashboard KPI Metric Chuẩn Toàn Hệ Thống */}
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:border-primary/40 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Tổng Hội Viên
+            </span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <User className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="truncate text-2xl font-bold tracking-tight text-foreground">{members.length}</div>
+            <div className="mt-1 truncate text-[11px] text-muted-foreground">
+              {members.filter((m) => m.type === "company").length} doanh nghiệp · {members.filter((m) => m.type !== "company").length} cá nhân
+            </div>
+          </div>
+        </div>
+
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:border-emerald-500/40 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Đang Hoạt Động
+            </span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="truncate text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+              {members.filter((m) => m.status === "active").length}
+            </div>
+            <div className="mt-1 truncate text-[11px] text-muted-foreground">
+              Tài khoản &amp; thẻ định danh khả dụng
+            </div>
+          </div>
+        </div>
+
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:border-amber-500/40 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Chờ Phê Duyệt
+            </span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+              <Shield className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="truncate text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400">
+              {pendingCount}
+            </div>
+            <div className="mt-1 truncate text-[11px] text-muted-foreground">
+              Hồ sơ mới nộp chờ Ban Thành Viên duyệt
+            </div>
+          </div>
+        </div>
+
+        <div className="flex h-32 flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:border-blue-500/40 hover:shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Đã Thu Hội Phí
+            </span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
+              <Building2 className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="truncate text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-400">
+              {paidCount} / {members.length}
+            </div>
+            <div className="mt-1 truncate text-[11px] text-muted-foreground">
+              Còn {unpaidCount} hội viên chưa hoàn tất phí
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1110,12 +1215,12 @@ function MembersPage() {
           ))}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-          <div className="overflow-x-auto relative">
+        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+          <div className="overflow-x-auto relative w-full">
             <table className="w-full text-sm border-separate border-spacing-0">
               <thead>
-                <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <th className="sticky left-0 z-20 w-[72px] min-w-[72px] max-w-[72px] bg-secondary px-2 py-3 text-center border-r border-b border-border">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  <th className="sticky left-0 z-20 w-[72px] min-w-[72px] max-w-[72px] bg-slate-100 dark:bg-slate-800 px-2 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800">
                     <div className="inline-flex items-center gap-1.5 justify-center">
                       <input
                         type="checkbox"

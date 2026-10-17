@@ -166,7 +166,7 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
                 className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl font-bold text-[13px] bg-[var(--bc-mobile-accent-grad)] text-black shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4 text-black" />
-                <span>+ Đăng cơ hội</span>
+                <span>Đăng cơ hội</span>
               </button>
               <button
                 type="button"
@@ -174,7 +174,7 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
                 className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl font-bold text-[13px] bg-[var(--bc-mobile-accent-grad)] text-black shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer"
               >
                 <Newspaper className="w-4 h-4 text-black" />
-                <span>+ Đăng bài viết</span>
+                <span>Đăng bài viết</span>
               </button>
             </div>
 
@@ -366,7 +366,7 @@ function StreamlinedOpportunitiesSection({
           onClick={onOpenCreate}
           className="text-xs font-bold text-[#D8B282] hover:underline cursor-pointer"
         >
-          + Đăng cơ hội
+          Đăng cơ hội
         </button>
       </div>
 
@@ -489,7 +489,7 @@ function StreamlinedNewsSection({
           onClick={onOpenCreate}
           className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
         >
-          + Đăng bài viết
+          Đăng bài viết
         </button>
       </div>
 

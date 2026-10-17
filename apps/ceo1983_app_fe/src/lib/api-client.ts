@@ -194,10 +194,16 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
     return publicBase ? `${publicBase}/${trimmed}` : `/${trimmed}`;
   }
 
-  // 7. Nếu là file trong avatars/ hoặc documents/ hoặc products/ hoặc events/
+  // 7. Nếu là file trong avatars/ hoặc documents/ hoặc products/ hoặc events/ hoặc association-logos/
   if (
     trimmed.startsWith("avatars/") ||
     trimmed.startsWith("/avatars/") ||
+    trimmed.startsWith("association-logos/") ||
+    trimmed.startsWith("/association-logos/") ||
+    trimmed.startsWith("logos/") ||
+    trimmed.startsWith("/logos/") ||
+    trimmed.startsWith("opportunities/") ||
+    trimmed.startsWith("/opportunities/") ||
     trimmed.startsWith("documents/") ||
     trimmed.startsWith("/documents/") ||
     trimmed.startsWith("products/") ||

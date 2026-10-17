@@ -1,0 +1,1323 @@
+﻿diff --git a/apps/ceo1983_app_fe/src/routes/association.index.tsx b/apps/ceo1983_app_fe/src/routes/association.index.tsx
+index d911d59..7079077 100644
+--- a/apps/ceo1983_app_fe/src/routes/association.index.tsx
++++ b/apps/ceo1983_app_fe/src/routes/association.index.tsx
+@@ -52,6 +52,7 @@ import { BirthdayCelebrationModal } from "@/components/member/BirthdayCelebratio
+ import { toast } from "sonner";
+ import { isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVisit";
+ import { GuidedTourModal, type TourStep } from "@/components/common/GuidedTourModal";
++import { UserGuideModal } from "@/components/member/UserGuideModal";
+ import { PersonalProfileBottomSheet, type PersonalProfileData } from "@/components/common/PersonalProfileBottomSheet";
+ import { QrCanvas } from "@/components/member/QrCanvas";
+ import heroImg from "@/assets/vba-hero.jpg";
+@@ -269,6 +270,7 @@ function Home() {
+     return quickActionDefs;
+   }, []);
+   const [tourOpen, setTourOpen] = useState(false);
++  const [userGuideOpen, setUserGuideOpen] = useState(false);
+   const [contactOpen, setContactOpen] = useState(false);
+   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
+   const [copied, setCopied] = useState(false);
+@@ -606,6 +608,7 @@ function Home() {
+     return effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || user?.avatar_url || (user as any)?.user_metadata?.avatar_url || null;
+   });
+   const [avatarError, setAvatarError] = useState(false);
++  const [activeEventTab, setActiveEventTab] = useState<"upcoming" | "registered" | "free">("upcoming");
+ 
+   const [quickEditOpen, setQuickEditOpen] = useState(false);
+   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
+@@ -1002,760 +1005,626 @@ function Home() {
+   }, [products]);
+ 
+   return (
+-    <div className="vba-animate min-h-full">
+-      {/* â”€â”€ Cá» Äá»NH HEADER LOGO VĂ€ NOTIFICATIONS (Bá» ICON CHá»¤P áº¢NH, GIá»® LOGO CHUáº¨N CEO1983) â”€â”€ */}
+-      <header
+-        className="sticky top-0 z-40 flex items-center justify-between border-b border-amber-500/25 bg-white/95 dark:bg-[#070D1A]/95 px-4 backdrop-blur-md shadow-[0_2px_12px_rgba(245,158,11,0.06)]"
+-        style={{
+-          paddingTop: "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px))",
+-          minHeight: "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 12px) + 4px)) + 52px)",
+-        }}
+-      >
+-        {/* Logo CEO 1983 chuáº©n á»Ÿ header, khĂ´ng cĂ³ chá»¯ official app */}
+-        <div className="flex items-center">
++    <div className="w-full max-w-full min-h-screen relative bg-Backgrounds-Primary dark:bg-slate-950 flex flex-col justify-start items-start pb-28">
++      {/* Hidden inputs cho phĂ©p click trá»±c tiáº¿p Ä‘á»ƒ upload */}
++      <input type="file" ref={avatarFileInputRef} className="hidden" accept="image/*" onChange={handleDirectAvatarUpload} />
++      <input type="file" ref={coverFileInputRef} className="hidden" accept="image/*" onChange={handleDirectCoverUpload} />
++      <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
++
++      {/* â”€â”€ TOP HEADER (Logo + ThĂ´ng bĂ¡o chuĂ´ng Ä‘á») â”€â”€ */}
++      <div className="self-stretch flex flex-col justify-start items-center">
++        <div className="self-stretch h-16 px-4 bg-white dark:bg-slate-900 border-b-2 border-Backgrounds-Secondary dark:border-slate-800 flex justify-between items-center overflow-hidden sticky top-0 z-30 shadow-xs">
+           <img
+-            src="/ceo1983-logo.png"
+-            alt="CLB Doanh NhĂ¢n CEO 1983"
++            className="h-9 w-auto object-contain"
++            src="/images/ceo1983/logo-ceo-1983.png"
++            alt="Logo CEO 1983"
+             onError={(e) => {
+-              (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
++              (e.currentTarget as HTMLImageElement).src = "/ceo1983-logo.png";
+             }}
+-            className="h-8 max-w-[150px] object-contain drop-shadow-xs"
+           />
+-        </div>
+-
+-        {/* ThĂ´ng bĂ¡o */}
+-        <div className="flex items-center gap-2">
+           <Link
+             to="/association/notifications"
+-            aria-label={t("m.index.notifAria")}
+-            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-50/80 dark:bg-[#14223E] text-amber-600 dark:text-amber-400 shadow-xs transition hover:scale-105 active:scale-95 hover:border-amber-500/70 touch-press"
++            className="size-9 relative bg-amber-50 dark:bg-amber-950/40 rounded-full outline outline-1 outline-offset-[-1px] outline-orange-300 dark:outline-amber-600 flex justify-center items-center hover:scale-105 active:scale-95 transition-transform"
+           >
+-            <Bell className="h-4.5 w-4.5 stroke-[2.2]" />
++            <img src="/icons/ceo1983/bell.svg" alt="Bell" className="size-5 object-contain" />
+             {unreadNotifCount > 0 && (
+-              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900 shadow-xs animate-pulse">
+-                {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+-              </span>
++              <div className="size-4 -right-1 -top-1 absolute bg-rose-500 rounded-full flex justify-center items-center overflow-hidden shadow-xs">
++                <span className="text-white text-[9.5px] font-bold font-sans leading-3">{unreadNotifCount > 9 ? "9+" : unreadNotifCount}</span>
++              </div>
+             )}
+           </Link>
+         </div>
+-      </header>
+-
+-      {/* Hidden inputs cho phĂ©p click trá»±c tiáº¿p Ä‘á»ƒ upload */}
+-      <input type="file" ref={avatarFileInputRef} className="hidden" accept="image/*" onChange={handleDirectAvatarUpload} />
+-      <input type="file" ref={coverFileInputRef} className="hidden" accept="image/*" onChange={handleDirectCoverUpload} />
+-      <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
+-
+-      {/* Hero Banner with Theme Dynamic Atmosphere */}
+-      <div
+-        className="relative overflow-hidden transition-all duration-500"
+-        style={{
+-          background:
+-            effectiveTheme.id !== "classic" && effectiveTheme.id !== "none"
+-              ? effectiveTheme.bannerGradient
+-              : "linear-gradient(to bottom, rgba(0, 59, 149, 0.2), rgba(245, 158, 11, 0.05), transparent)",
+-        }}
+-      >
+-        <SeasonalEventHeader />
++        <div className="self-stretch h-3.5" />
+ 
++        {/* â”€â”€ THáºº Há»˜I VIĂN CHĂNH THá»¨C HERO CARD (LUXURY EXECUTIVE DESIGN) â”€â”€ */}
+         <div
+-          className="absolute -top-10 -left-10 h-44 w-44 rounded-full blur-3xl pointer-events-none opacity-40"
+-          style={{ backgroundColor: effectiveTheme.primaryColor }}
+-        />
+-        <div
+-          className="absolute top-0 right-0 h-40 w-40 rounded-full blur-2xl pointer-events-none opacity-30"
+-          style={{ backgroundColor: effectiveTheme.accentColor }}
+-        />
+-
+-        <img
+-          src={heroImg}
+-          alt={t("m.index.heroAlt")}
+-          className="absolute inset-0 h-full w-full object-cover opacity-15 dark:opacity-25 mix-blend-overlay"
+-          width={1024}
+-          height={768}
+-        />
+-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--vba-bg)]/80 to-[var(--vba-bg)]" />
+-
+-        <div className="relative z-10 px-4 pb-14 pt-3" />
+-      </div>
+-
+-      {/* â”€â”€ 1. THáºº Há»˜I VIĂN VIP EXECUTIVE (ÄĂƒ TINH Gá»ŒN CHUáº¨N YĂU Cáº¦U CEO 1983) â”€â”€ */}
+-      <div
+-        id="tour-member-card"
+-        onClick={() => setProfileSheetOpen(true)}
+-        className="relative z-10 -mt-14 mx-4 overflow-hidden rounded-2xl border-2 border-amber-500/40 hover:border-amber-500/70 bg-white dark:bg-[#0E172A] shadow-[0_6px_25px_-5px_rgba(245,158,11,0.22)] transition hover:shadow-[0_8px_30px_-5px_rgba(245,158,11,0.32)] cursor-pointer active:scale-[0.99] group"
+-        title="Báº¥m Ä‘á»ƒ xem há»“ sÆ¡ há»™i viĂªn chi tiáº¿t"
+-      >
+-        {/* áº¢nh bĂ¬a to rá»™ng mang sáº¯c thĂ¡i Royal Navy & Gold */}
+-        <div 
+-          className="relative h-24 sm:h-28 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] border-b border-amber-400/30"
++          onClick={() => setProfileSheetOpen(true)}
++          className="w-[calc(100%-2rem)] mx-4 relative rounded-3xl bg-white dark:bg-[#0B132B] border border-amber-500/25 dark:border-amber-400/20 shadow-[0_10px_30px_-8px_rgba(0,34,79,0.15)] flex flex-col justify-start items-start overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group hover:shadow-[0_14px_35px_-8px_rgba(245,158,11,0.22)]"
+         >
+-          {coverPhoto && !coverError ? (
++          {/* Cover Banner with elegant gradient overlay */}
++          <div className="relative self-stretch h-28 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1224]">
+             <img
+-              src={resolveMediaUrl(coverPhoto) || coverPhoto}
+-              alt="Cover Banner"
+-              onError={() => {
+-                setCoverError(true);
+-                try { localStorage.removeItem("vba_member_cover_photo"); } catch {}
++              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
++              src={coverPhoto ? (resolveMediaUrl(coverPhoto) || coverPhoto) : "/images/ceo1983/banner-ceo.png"}
++              alt="Banner"
++              onError={(e) => {
++                (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/banner-ceo.png";
+               }}
+-              className="h-full w-full object-cover opacity-85"
+             />
+-          ) : (
+-            <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A]">
+-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
+-            </div>
+-          )}
+-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
++            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
+ 
+-          {/* Logo cĂ´ng ty há»™i viĂªn chĂ¬m tinh táº¿ xuá»‘ng ná»n áº£nh bĂ¬a */}
+-          <div 
+-            onClick={(e) => {
+-              e.stopPropagation();
+-              logoFileInputRef.current?.click();
+-            }}
+-            className="absolute top-2.5 right-3 z-10 cursor-pointer"
+-            title="Logo cĂ´ng ty há»™i viĂªn"
+-          >
+-            <div className="px-2 py-1 rounded-lg bg-black/25 backdrop-blur-md border border-white/20 shadow-xs transition hover:bg-black/35">
+-              <img
+-                src={resolveMediaUrl(displayCompanyLogo) || displayCompanyLogo}
+-                alt="Company Logo"
+-                onError={(e) => {
+-                  (e.target as HTMLImageElement).src = "/ceo1983-official-logo.png";
+-                }}
+-                className="h-6 w-auto max-w-[110px] object-contain filter drop-shadow-xs opacity-85 hover:opacity-100 transition-opacity"
+-              />
++            {/* VIP Member Badge top-right */}
++            <div className="absolute top-2.5 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-amber-400/40 text-amber-300 text-[10.5px] font-bold shadow-xs">
++              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
++              <span>{member?.code || "CEO1983-VIP"}</span>
+             </div>
+           </div>
+-        </div>
+-
+-        {/* ThĂ¢n tháº» vá»›i Avatar dáº­p viá»n vĂ ng kim ná»•i báº­t Ä‘Ă¨ lĂªn áº£nh bĂ¬a */}
+-        <div className="px-4 pb-3 pt-0 relative">
+-          <div className="flex items-end justify-between -mt-8 mb-2.5">
+-            {/* Avatar trĂ²n to dáº­p viá»n vĂ ng hoĂ ng kim ná»•i báº­t cĂ³ cháº¥m xanh online (Click Ä‘á»ƒ Ä‘á»•i avatar) */}
+-            <div 
+-              onClick={(e) => {
+-                e.stopPropagation();
+-                avatarFileInputRef.current?.click();
+-              }}
+-              className="relative shrink-0 cursor-pointer"
+-              title="Báº¥m vĂ o áº£nh Ä‘áº¡i diá»‡n Ä‘á»ƒ thay Ä‘á»•i"
+-            >
+-              {displayAvatar && !avatarError ? (
+-                <img
+-                  src={displayAvatar}
+-                  alt={displayName}
+-                  onError={() => setAvatarError(true)}
+-                  className="h-16 w-16 shrink-0 rounded-full object-cover ring-3 ring-amber-400/80 shadow-md bg-slate-100 dark:bg-slate-800"
+-                />
+-              ) : (
+-                <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-tr from-[#003B95] to-[#001D4A] text-[18px] font-black text-amber-300 ring-3 ring-amber-400/80 shadow-md">
+-                  {initials(displayName)}
+-                </span>
+-              )}
+-              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0E172A]" />
+-            </div>
+ 
+-            {/* Huy hiá»‡u thĂ nh viĂªn VIP CEO 1983 VĂ ng Kim */}
+-            <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[11px] font-black shadow-2xs">
+-              <Crown className="h-3 w-3 text-amber-500" />
+-              <span>Há»˜I VIĂN CHĂNH THá»¨C</span>
++          {/* Card Body */}
++          <div className="self-stretch px-4 pt-11 pb-3.5 flex flex-col justify-start items-start gap-1 overflow-hidden relative">
++            <div className="flex items-center gap-2 overflow-hidden max-w-full">
++              <h2 className="text-slate-900 dark:text-white text-base font-extrabold font-sans leading-tight truncate">
++                {displayName || "Tráº§n Tuáº¥n Anh"}
++              </h2>
++              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[10px] font-bold shrink-0">
++                VIP
++              </span>
+             </div>
+-          </div>
+ 
+-          {/* ThĂ´ng tin há»™i viĂªn & doanh nghiá»‡p â€” Báº¥m má»Ÿ popup há»“ sÆ¡ tá»« dÆ°á»›i lĂªn */}
+-          <div
+-            onClick={() => setProfileSheetOpen(true)}
+-            className="space-y-1 cursor-pointer transition hover:opacity-90 active:scale-[0.99] rounded-xl p-1 -m-1"
+-            title="Báº¥m Ä‘á»ƒ xem há»“ sÆ¡ cĂ¡ nhĂ¢n chi tiáº¿t (áº¢nh, Profile, Facebook...)"
+-          >
+-            {/* TĂªn cĂ´ng ty cá»§a há»™i viĂªn */}
+-            <div className="text-xs sm:text-[13px] font-black uppercase tracking-wide text-[#003B95] dark:text-blue-300 truncate">
+-              {displayCompany}
++            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-xs font-semibold leading-4">
++              <Briefcase className="size-3.5 shrink-0 text-[#003B95] dark:text-blue-400" />
++              <span className="truncate">{displayTitle || "Há»™i viĂªn Doanh nhĂ¢n"}</span>
+             </div>
+ 
+-            {/* TĂªn há»™i viĂªn & Huy hiá»‡u vĂ ng xĂ¡c thá»±c */}
+-            <div className="flex items-center gap-1.5">
+-              <span className="truncate text-[17px] font-black text-slate-900 dark:text-white">
+-                {displayName}
++            <div className="flex items-center gap-1.5 text-xs font-bold leading-5">
++              <Phone className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
++              <span className="text-emerald-700 dark:text-emerald-400 font-sans tracking-wide">
++                {displayPhone || "0901000001"}
+               </span>
+-              <BadgeCheck className="h-4.5 w-4.5 shrink-0 text-amber-500" />
+             </div>
+ 
+-            {/* Chá»©c danh / Profile há»™i viĂªn */}
+-            <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-600 dark:text-slate-400">
+-              <Briefcase className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+-              <span className="truncate">{displayTitle}</span>
+-            </div>
++            <div className="w-full h-px bg-slate-100 dark:bg-slate-800/80 my-1.5" />
+ 
+-            {/* Sá»‘ Ä‘iá»‡n thoáº¡i */}
+-            <div className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-700 dark:text-slate-300">
+-              <Phone className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+-              <span className="font-bold text-[#003B95] dark:text-blue-300">{displayPhone}</span>
++            <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
++              <span className="text-[#003B95] dark:text-amber-400 text-xs font-bold font-sans group-hover:underline flex items-center gap-1">
++                Xem danh thiáº¿p &amp; há»“ sÆ¡ cĂ¡ nhĂ¢n
++              </span>
++              <div className="size-7 bg-amber-500/10 dark:bg-amber-400/10 rounded-lg border border-amber-500/20 text-[#003B95] dark:text-amber-300 flex justify-center items-center overflow-hidden shrink-0 group-hover:translate-x-0.5 transition-transform">
++                <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3.5" />
++              </div>
+             </div>
+           </div>
+ 
+-          {/* Footer cá»§a tháº» há»™i viĂªn: NĂºt liĂªn káº¿t vĂ  icon chá»‰nh sá»­a nhanh sang trá»ng */}
+-          <div className="mt-3 pt-2.5 border-t border-amber-500/20 flex items-center justify-between gap-2">
+-            <span
+-              onClick={() => setProfileSheetOpen(true)}
+-              className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1 cursor-pointer hover:underline transition-colors"
+-            >
+-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+-              <span>Xem há»“ sÆ¡ & liĂªn káº¿t cĂ¡ nhĂ¢n â†’</span>
+-            </span>
++          {/* Luxury Rounded Avatar overlapping cover */}
++          <div
++            onClick={(e) => {
++              e.stopPropagation();
++              avatarFileInputRef.current?.click();
++            }}
++            className="size-18 left-4 top-18 absolute rounded-2xl bg-gradient-to-tr from-[#003B95] to-[#001D4A] ring-3 ring-white dark:ring-[#0B132B] shadow-xl inline-flex justify-center items-center overflow-hidden cursor-pointer hover:brightness-105 transition-transform active:scale-95"
++            title="Äá»•i áº£nh Ä‘áº¡i diá»‡n"
++          >
++            {displayAvatar && !avatarError ? (
++              <img src={displayAvatar} alt={displayName} onError={() => setAvatarError(true)} className="size-full object-cover" />
++            ) : (
++              <span className="text-amber-300 text-xl font-black font-sans leading-none">{initials(displayName)}</span>
++            )}
++          </div>
++
++          {/* Online active indicator */}
++          <div className="size-3.5 left-19 top-33 absolute bg-emerald-500 rounded-full border-2 border-white dark:border-[#0B132B] shadow-xs ring-1 ring-emerald-400/50" />
++        </div>
++
++        {/* â”€â”€ 8 CHá»¨C NÄ‚NG Cá»T LĂ•I (2 HĂ€NG 4 Cá»˜T) â”€â”€ */}
++        <div className="self-stretch px-3 py-4 flex flex-col justify-start items-start gap-3">
++          {/* HĂ ng 1 */}
++          <div className="self-stretch h-20 inline-flex justify-between items-start gap-1">
++            <Link to="/association/card" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
++              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/id-card.svg" alt="Danh thiáº¿p sá»‘" className="size-7" />
++              </div>
++              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Danh thiáº¿p sá»‘</div>
++            </Link>
++
++            <Link to="/association/members" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
++              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/users.svg" alt="Danh báº¡ CEO" className="size-7" />
++                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
++                  <span className="text-white text-[10px] font-bold font-sans leading-3">100+</span>
++                </div>
++              </div>
++              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Danh báº¡ CEO</div>
++            </Link>
++
+             <button
+-              id="tour-quick-edit-btn"
+               type="button"
+-              onClick={(e) => {
+-                e.stopPropagation();
+-                setQuickEditOpen(true);
+-              }}
+-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-400/50 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 text-amber-700 dark:text-amber-300 shadow-2xs transition-all cursor-pointer active:scale-95"
+-              title="Chá»‰nh sá»­a nhanh há»“ sÆ¡"
+-              aria-label="Chá»‰nh sá»­a nhanh há»“ sÆ¡"
++              onClick={() => setUserGuideOpen(true)}
++              className="flex-1 inline-flex flex-col justify-start items-center gap-1 group cursor-pointer"
+             >
+-              <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
++              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/book-open.svg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/icons/ceo1983/id-card.svg"; }} alt="HÆ°á»›ng dáº«n sá»­ dá»¥ng" className="size-7" />
++                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-amber-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
++                  <span className="text-white text-[10px] font-bold font-sans leading-3">Audio</span>
++                </div>
++              </div>
++              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">HÆ°á»›ng dáº«n</div>
+             </button>
++
++            <Link to="/association/benefits" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
++              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/crown.svg" alt="Äáº·c quyá»n VIP" className="size-7" />
++              </div>
++              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Äáº·c quyá»n VIP</div>
++            </Link>
+           </div>
+-        </div>
+-      </div>
+ 
+-      {/* Action shortcuts / Quick Action Grid */}
+-      <div
+-        id="tour-quick-actions"
+-        className={`relative mt-3.5 mx-4 ${
+-          effectiveTheme.borderRadius === "rounded-3xl"
+-            ? "rounded-3xl"
+-            : effectiveTheme.borderRadius === "rounded-xl"
+-            ? "rounded-xl"
+-            : "rounded-2xl"
+-        } vba-card p-4 shadow-md transition-all duration-300`}
+-        style={{
+-          borderColor: `${effectiveTheme.primaryColor}35`,
+-        }}
+-      >
+-        <div className="flex items-center justify-between mb-3 px-0.5">
+-          <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)] flex items-center gap-1.5">
+-            <span
+-              className="h-2 w-2 rounded-full animate-pulse"
+-              style={{ backgroundColor: effectiveTheme.primaryColor }}
+-            />
+-            <span>{isEn ? "Quick Actions" : "TĂ­nh nÄƒng nhanh"}</span>
+-            {effectiveTheme.id !== "classic" && effectiveTheme.id !== "none" && (
+-              <span
+-                className="text-[10px] px-2 py-0.5 rounded-full font-bold shadow-2xs"
+-                style={{
+-                  backgroundColor: `${effectiveTheme.accentColor}25`,
+-                  color: effectiveTheme.accentColor,
+-                }}
+-              >
+-                {effectiveTheme.iconEmoji} {effectiveTheme.name}
+-              </span>
+-            )}
+-          </h2>
+-        </div>
+-        <div
+-          className={`grid ${
+-            effectiveTheme.layoutGrid === "3" ? "grid-cols-3" : "grid-cols-4"
+-          } gap-y-4 gap-x-2 sm:gap-x-3`}
+-        >
+-          {visibleQuickActions.map((a: any) => {
+-            const Icon = a.icon;
+-            const label = isEn ? a.enLabel : a.customLabel || t(a.key);
+-            const showBadge = a.badgeId ? !clearedBadges[a.badgeId] : false;
+-            const themeEmoji = effectiveTheme.actionIcons?.[a.iconKey as keyof typeof effectiveTheme.actionIcons];
+-            const useEmojiIcon =
+-              (effectiveTheme.iconStyle === "3d-emoji" || (effectiveTheme.id !== "classic" && effectiveTheme.id !== "none")) &&
+-              Boolean(themeEmoji);
+-            const actionStyle = getActionIconStyle(a.iconKey);
+-
+-            return (
+-              <Link
+-                key={a.key}
+-                to={a.to}
+-                onClick={() => handleActionClick(a.badgeId)}
+-                className="group relative flex flex-col items-center gap-1.5 transition cursor-pointer touch-press"
+-              >
+-                <span
+-                  className={`relative flex h-13 w-13 items-center justify-center ${
+-                    effectiveTheme.borderRadius === "rounded-3xl"
+-                      ? "rounded-3xl"
+-                      : effectiveTheme.borderRadius === "rounded-xl"
+-                      ? "rounded-xl"
+-                      : "rounded-2xl"
+-                  } shadow-xs backdrop-blur-md transition-all duration-200 group-hover:scale-108 group-active:scale-95 ${
+-                    showBadge ? "ring-2 ring-red-500/40" : ""
+-                  }`}
+-                  style={{
+-                    backgroundColor: actionStyle.backgroundColor,
+-                    borderWidth: "1px",
+-                    borderColor: actionStyle.borderColor,
+-                    color: actionStyle.color,
+-                    boxShadow: actionStyle.boxShadow,
+-                  }}
+-                >
+-                  {useEmojiIcon ? (
+-                    <span className="text-2xl drop-shadow-sm select-none transition-transform group-hover:scale-115">
+-                      {themeEmoji}
+-                    </span>
+-                  ) : (
+-                    <Icon className="h-5.5 w-5.5 stroke-[2.2]" style={{ color: actionStyle.color }} />
+-                  )}
+-
+-                  {/* HIá»†U á»¨NG THĂ”NG BĂO HOáº¶C TUYáº¾T RÆ I / HOA Ná» KHI CĂ“ BADGE */}
+-                  {showBadge && (
+-                    <div className="pointer-events-none absolute inset-0 -m-1 select-none overflow-visible">
+-                      {effectiveTheme.effectType === "snow" && (
+-                        <span className="absolute -top-1.5 -right-1 text-[9px] text-sky-300 animate-spin" aria-hidden="true">â„</span>
+-                      )}
+-                      {effectiveTheme.effectType === "flowers" && (
+-                        <span className="absolute -top-1.5 -right-1 text-[9px] text-pink-300 animate-pulse" aria-hidden="true">đŸŒ¸</span>
+-                      )}
+-                      {effectiveTheme.effectType === "lanterns" && (
+-                        <span className="absolute -top-1.5 -right-1 text-[9px] text-amber-300 animate-bounce" aria-hidden="true">đŸ®</span>
+-                      )}
+-                      <span
+-                        className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-black text-white shadow-xs animate-pulse ring-1 ring-white/70"
+-                        style={{ backgroundColor: effectiveTheme.accentColor || "#DC2626" }}
+-                      >
+-                        {isEn ? a.badgeTextEn || a.badgeText : a.badgeText}
+-                      </span>
+-                    </div>
+-                  )}
+-                </span>
+-                <span className="text-center text-[10.5px] font-bold leading-tight text-slate-800 dark:text-slate-100 transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400 line-clamp-2">
+-                  {label}
+-                </span>
+-              </Link>
+-            );
+-          })}
++          {/* HĂ ng 2 */}
++          <div className="self-stretch inline-flex justify-between items-start gap-1">
++            <Link to="/association/voting" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
++              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/vote.svg" alt="Biá»ƒu quyáº¿t sá»‘" className="size-7" />
++                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
++                  <span className="text-white text-[10px] font-bold font-sans leading-3">Má»›i</span>
++                </div>
++              </div>
++              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Biá»ƒu quyáº¿t sá»‘</div>
++            </Link>
++
++            <Link to="/association/history" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
++              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/history.svg" alt="Lá»‹ch sá»­" className="size-7" />
++              </div>
++              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Lá»‹ch sá»­</div>
++            </Link>
++
++            <Link to={"/association/documents" as any} className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
++              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/folder-open.svg" alt="Kho tĂ i liá»‡u" className="size-7" />
++              </div>
++              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Kho tĂ i liá»‡u</div>
++            </Link>
++
++            <Link to="/association/renew" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
++              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
++                <img src="/icons/ceo1983/credit-card.svg" alt="Há»™i phĂ­" className="size-7" />
++              </div>
++              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Há»™i phĂ­</div>
++            </Link>
++          </div>
+         </div>
+       </div>
+ 
+-      {/* Contact Drawer Modal */}
+-      <AssociationContactSheet
+-        open={contactOpen}
+-        onClose={() => setContactOpen(false)}
+-        onOpenChat={() => {
+-          setContactOpen(false);
+-          navigate({
+-            to: "/association/messages" as any,
+-            search: { peerCode: "admin", peerName: "Tin nháº¯n tá»« há»‡ thá»‘ng" } as any,
+-          });
+-        }}
+-      />
++      {/* â”€â”€ Ná»˜I DUNG CHĂNH (Sá»° KIá»†N, Æ¯U ÄĂƒI, CÆ  Há»˜I, SĂ€N TM, TIN Tá»¨C) â”€â”€ */}
++      <div className="self-stretch px-4 pt-3 flex flex-col justify-start items-start gap-4">
++        {/* DANH SĂCH CĂC Sá»° KIá»†N â€” LAYOUT CHUáº¨N DESIGN FIGMA CEO 1983 */}
++        <div className="self-stretch flex flex-col justify-start items-start gap-3">
++          {/* Header */}
++          <div className="self-stretch h-11 flex justify-between items-center">
++            <div className="flex justify-start items-center gap-2">
++              <div className="size-4 relative flex items-center justify-center">
++                <img src="/icons/ceo1983_icon_2/calendar-days.svg" alt="Calendar" className="size-3.5" />
++              </div>
++              <div className="text-slate-800 dark:text-white text-xs font-bold font-sans tracking-wide">
++                DANH SĂCH CĂC Sá»° KIá»†N
++              </div>
++            </div>
++            <div className="text-slate-500 dark:text-slate-400 text-xs font-sans">
++              {displayEvents.length || 2} sá»± kiá»‡n
++            </div>
++          </div>
+ 
+-      {/* â”€â”€ 1. Sá»° KIá»†N Sáº®P Tá»I: BANNER POSTER THEO CHUáº¨N CEO 1983 â”€â”€ */}
+-      <div className="mx-4 mt-5">
+-        <div className="mb-3 flex items-center justify-between">
+-          <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
+-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 text-xs border border-amber-500/40 shadow-xs">
+-              <Calendar className="h-3.5 w-3.5 text-amber-400" />
+-            </span>
+-            <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-amber-500 transition-colors flex items-center gap-1">
+-              <span>{isEn ? "Upcoming Events" : "Sá»± kiá»‡n sáº¯p tá»›i"}</span>
+-              <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
+-              <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+-            </h2>
+-          </Link>
+-          <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400 hover:underline p-1">
+-            <span>{isEn ? "See all" : "Xem táº¥t cáº£"}</span>
+-            <ChevronRight className="h-3.5 w-3.5" />
+-          </Link>
+-        </div>
++          {/* Filter Pills */}
++          <div className="self-stretch flex justify-start items-center gap-2 overflow-x-auto no-scrollbar pb-1">
++            <button
++              type="button"
++              onClick={() => setActiveEventTab("upcoming")}
++              className={`h-8 px-3.5 rounded-[31.61px] flex justify-start items-center gap-2 transition cursor-pointer ${
++                activeEventTab === "upcoming"
++                  ? "bg-sky-950 text-white shadow-xs"
++                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200"
++              }`}
++            >
++              <span className="text-xs font-normal font-sans leading-4">Sáº¯p diá»…n ra</span>
++              <div className={`size-4 rounded-3xl flex justify-center items-center ${activeEventTab === "upcoming" ? "bg-cyan-800" : "bg-slate-200 dark:bg-slate-700"}`}>
++                <span className={`text-[9.48px] font-bold font-sans leading-3 ${activeEventTab === "upcoming" ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
++                  {displayEvents.length || 2}
++                </span>
++              </div>
++            </button>
+ 
+-        {/* Poster Grid: Hiá»ƒn thá»‹ Ä‘Ăºng sá»‘ sá»± kiá»‡n thá»±c táº¿ tá»« database CRM, tá»‘i Ä‘a 5 sá»± kiá»‡n */}
+-        {displayEvents.length === 0 ? (
+-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
+-            <Calendar className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
+-            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+-              {isEn ? "No upcoming events scheduled" : "ChÆ°a cĂ³ sá»± kiá»‡n má»›i Ä‘Æ°á»£c lĂªn lá»‹ch"}
+-            </p>
++            <button
++              type="button"
++              onClick={() => setActiveEventTab("registered")}
++              className={`h-8 px-3.5 rounded-[31.61px] flex justify-start items-center gap-2 transition cursor-pointer ${
++                activeEventTab === "registered"
++                  ? "bg-sky-950 text-white shadow-xs"
++                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200"
++              }`}
++            >
++              <span className="text-xs font-normal font-sans leading-4">ÄĂ£ Ä‘Äƒng kĂ½</span>
++              <div className={`size-4 rounded-3xl flex justify-center items-center ${activeEventTab === "registered" ? "bg-cyan-800" : "bg-slate-200 dark:bg-slate-700"}`}>
++                <span className={`text-[9.48px] font-bold font-sans leading-3 ${activeEventTab === "registered" ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
++                  0
++                </span>
++              </div>
++            </button>
++
++            <button
++              type="button"
++              onClick={() => setActiveEventTab("free")}
++              className={`h-8 px-3.5 rounded-[31.61px] flex justify-start items-center gap-2 transition cursor-pointer ${
++                activeEventTab === "free"
++                  ? "bg-sky-950 text-white shadow-xs"
++                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200"
++              }`}
++            >
++              <span className="text-xs font-normal font-sans leading-4">Miá»…n phĂ­</span>
++              <div className={`size-4 rounded-3xl flex justify-center items-center ${activeEventTab === "free" ? "bg-cyan-800" : "bg-slate-200 dark:bg-slate-700"}`}>
++                <span className={`text-[9.48px] font-bold font-sans leading-3 ${activeEventTab === "free" ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
++                  {displayEvents.length || 2}
++                </span>
++              </div>
++            </button>
+           </div>
+-        ) : (
+-          <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain smooth-scroll-touch">
+-            {displayEvents.slice(0, 5).map((ev, pIdx) => {
+-              const realTitle = ev.title;
+-              const rawImg = (ev as any).image;
+-              const fallbackImg = defaultEventImages[pIdx % defaultEventImages.length];
+-              const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : fallbackImg;
+-              const isSingle = displayEvents.length === 1;
++
++          {/* Cards List */}
++          <div className="self-stretch flex flex-col gap-4">
++            {(displayEvents.length > 0 ? displayEvents : [
++              {
++                id: "event-sample-1",
++                title: "Dáº  TIá»†C GALA Káº¾T Ná»I DOANH NHĂ‚N CEO 1983: GIAO THÆ¯Æ NG & XĂC TIáº¾N B2B",
++                date: "20/10/2026",
++                time: "00:00",
++                location: "InterContinental Hanoi Landmark72, Pháº¡m HĂ¹ng, HĂ  Ná»™i",
++                category: "Äáº I Há»˜I & GALA",
++                bannerUrl: "/images/ceo1983/Rectangle 6.png",
++                day: "20",
++                month: "TH10",
++              },
++              {
++                id: "event-sample-2",
++                title: "Diá»…n Ä‘Ă n gáº·p máº·t CEO1983",
++                date: "20/10/2026",
++                time: "00:00",
++                location: "KhĂ¡ch sáº¡n JW Marriott Hanoi - Grand Ballroom, Má»… TrĂ¬...",
++                category: "Sá»° KIá»†N CLB CEO 1983",
++                bannerUrl: "/images/ceo1983/Rectangle 6.png",
++                day: "20",
++                month: "TH10",
++              },
++            ]).map((evt: any, idx: number) => {
++              // Parse date details
++              let dayText = evt.day || "20";
++              let monthText = evt.month || "TH10";
++              if (evt.date && evt.date.includes("/")) {
++                const parts = evt.date.split("/");
++                if (parts[0]) dayText = parts[0];
++                if (parts[1]) monthText = `TH${parts[1]}`;
++              }
+ 
+               return (
+-                <Link
+-                  key={ev.id || pIdx}
+-                  to="/association/events"
+-                  className={`group flex flex-col transition active:scale-95 shrink-0 snap-start touch-press ${
+-                    isSingle ? "w-full" : "w-[245px] max-w-[78%] min-w-[215px]"
+-                  }`}
++                <div
++                  key={evt.id || idx}
++                  className="self-stretch bg-white dark:bg-[#111927] rounded-3xl shadow-[0px_1.05px_2.11px_0px_rgba(23,32,57,0.03)] outline outline-1 outline-offset-[-1.05px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden"
+                 >
+-                  {/* Poster Box with Amber Gold Border */}
+-                  <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-amber-500/30 group-hover:border-amber-400/80 bg-slate-900 shadow-sm group-hover:shadow-[0_4px_20px_rgba(245,158,11,0.25)] transition-all">
++                  {/* Thumbnail Banner */}
++                  <div className="w-full h-40 relative overflow-hidden bg-slate-900">
+                     <img
+-                      src={realImg}
+-                      alt={realTitle}
+-                      loading="lazy"
++                      className="w-full h-full object-cover"
++                      src={resolveMediaUrl((evt as any).bannerUrl || evt.banner) || "/images/ceo1983/Rectangle 6.png"}
++                      alt={evt.title}
+                       onError={(e) => {
+-                        const target = e.currentTarget;
+-                        if (target.src !== fallbackImg) {
+-                          target.src = fallbackImg;
+-                        }
++                        (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6.png";
+                       }}
+-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                     />
+-                    {/* Dark gradient overlay on photo */}
+-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 pointer-events-none" />
+ 
+-                    {/* Chá»‰ Ä‘á»ƒ má»—i tĂªn sá»± kiá»‡n vá»›i thá»i gian Ä‘áº¿m ngÆ°á»£c */}
+-                    <div className="absolute inset-x-0 bottom-0 p-2.5 z-10 flex flex-col gap-1">
+-                      <div className="flex items-center">
+-                        <EventCountdownMiniBadge event={ev} index={pIdx} />
++                    {/* Gradient overlay for badges */}
++                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
++
++                    {/* Date badge top left */}
++                    <div className="w-12 h-10 left-[12.64px] top-[12.64px] absolute bg-slate-950/90 rounded-2xl outline outline-1 outline-offset-[-1.05px] outline-white/20 inline-flex flex-col justify-center items-center overflow-hidden shadow-md">
++                      <div className="text-yellow-400 text-[10px] font-bold font-sans leading-none">{monthText}</div>
++                      <div className="text-white text-base font-bold font-sans leading-none mt-0.5">{dayText}</div>
++                    </div>
++
++                    {/* Status badge top right */}
++                    <div className="px-2.5 py-1 right-[50px] top-[12.64px] absolute bg-sky-500 rounded-3xl inline-flex justify-start items-center gap-1.5 shadow-md">
++                      <div className="size-1.5 bg-white rounded-full" />
++                      <div className="text-white text-[9px] font-bold font-sans leading-none">Äang má»Ÿ - miá»…n phĂ­</div>
++                    </div>
++
++                    {/* Bookmark icon top right */}
++                    <button
++                      type="button"
++                      onClick={(e) => {
++                        e.stopPropagation();
++                        toast.success("ÄĂ£ lÆ°u sá»± kiá»‡n vĂ o danh sĂ¡ch quan tĂ¢m");
++                      }}
++                      className="size-8 right-[12.64px] top-[12.64px] absolute bg-stone-900/80 hover:bg-stone-800 rounded-full outline outline-1 outline-offset-[-1.05px] outline-white/20 inline-flex justify-center items-center overflow-hidden transition cursor-pointer shadow-md"
++                    >
++                      <img src="/icons/ceo1983_icon_2/bookmark.svg" alt="Bookmark" className="size-4" />
++                    </button>
++
++                    {/* Status pill bottom left */}
++                    <div className="h-5 px-2.5 left-[10.54px] bottom-[10.54px] absolute bg-emerald-600 rounded-[31.61px] inline-flex justify-start items-center gap-1.5 shadow-md">
++                      <div className="size-1.5 bg-emerald-200 rounded-full animate-pulse" />
++                      <div className="text-white text-[9.48px] font-bold font-sans leading-none">Äang má»Ÿ Â· Miá»…n phĂ­</div>
++                    </div>
++                  </div>
++
++                  {/* Body Content */}
++                  <div className="self-stretch px-3.5 pt-3.5 pb-2.5 flex flex-col justify-start items-start gap-2.5 overflow-hidden">
++                    {/* Category Tag + Time */}
++                    <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
++                      <div className="px-2.5 py-[3.16px] bg-yellow-50 dark:bg-amber-950/40 rounded-[105.36px] outline outline-[0.74px] outline-offset-[-0.74px] outline-orange-200 dark:outline-amber-800 flex justify-start items-start">
++                        <span className="text-slate-800 dark:text-amber-300 text-[9.48px] font-bold font-sans leading-3">
++                          {evt.category || "Sá»° KIá»†N CLB CEO 1983"}
++                        </span>
++                      </div>
++                      <div className="flex justify-start items-center gap-1 text-slate-500 dark:text-slate-400">
++                        <img src="/icons/ceo1983_icon_2/clock.svg" alt="Clock" className="size-3" />
++                        <span className="text-xs font-normal font-sans leading-4">{evt.time || "00:00"}</span>
++                      </div>
++                    </div>
++
++                    {/* Title */}
++                    <Link
++                      to={`/association/events/${evt.id}` as any}
++                      className="self-stretch text-slate-800 dark:text-white text-sm font-bold font-sans leading-5 hover:text-amber-600 transition-colors line-clamp-2"
++                    >
++                      {evt.title}
++                    </Link>
++
++                    {/* Date row */}
++                    <div className="inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
++                      <img src="/icons/ceo1983_icon_2/calendar-days.svg" alt="Calendar" className="size-3.5" />
++                      <span className="text-xs font-sans leading-4">{evt.date || "20/10/2026"}</span>
++                    </div>
++
++                    {/* Location row */}
++                    <div className="self-stretch inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
++                      <img src="/icons/ceo1983_icon_2/map-pin.svg" alt="Location" className="size-3.5 shrink-0" />
++                      <span className="flex-1 text-xs font-normal font-sans line-clamp-1">
++                        {evt.location || "InterContinental Hanoi Landmark72, Pháº¡m HĂ¹ng, HĂ  Ná»™i"}
++                      </span>
++                    </div>
++
++                    {/* Divider */}
++                    <div className="self-stretch h-px bg-gray-100 dark:bg-slate-800" />
++
++                    {/* Footer Actions */}
++                    <div className="self-stretch h-6 inline-flex justify-between items-center">
++                      <div className="flex justify-start items-center gap-2">
++                        <span className="text-slate-500 dark:text-slate-400 text-xs font-normal font-sans leading-4">
++                          Má»Ÿ cho toĂ n thá»ƒ Há»™i viĂªn
++                        </span>
++                        <div className="px-2 py-[3.16px] bg-amber-50 dark:bg-amber-950/40 rounded-[31.61px] outline outline-[0.74px] outline-offset-[-0.74px] outline-amber-200 dark:outline-amber-800 flex justify-start items-center gap-1">
++                          <img src="/icons/ceo1983_icon_2/calendar-days.svg" alt="Calendar" className="size-3" />
++                          <span className="text-amber-600 dark:text-amber-400 text-[9.48px] font-normal font-sans leading-3">Lá»‹ch</span>
++                        </div>
+                       </div>
+-                      <h3 className="line-clamp-1 text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-300 transition-colors">
+-                        {realTitle}
+-                      </h3>
++
++                      <Link
++                        to={`/association/events/${evt.id}` as any}
++                        className="flex justify-start items-center gap-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 font-bold text-xs font-sans group cursor-pointer"
++                      >
++                        <span>ÄÄƒng kĂ½ vĂ©</span>
++                        <img src="/icons/ceo1983_icon_2/arrow-right.svg" alt="Register" className="size-3 group-hover:translate-x-0.5 transition-transform" />
++                      </Link>
+                     </div>
+                   </div>
+-                </Link>
++                </div>
+               );
+             })}
+           </div>
+-        )}
+-      </div>
++        </div>
+ 
+-      {/* â”€â”€ 2. Æ¯U ÄĂƒI Há»˜I VIĂN & Äá»I TĂC â”€â”€ */}
+-      <div className="relative mx-4 mt-5 flex items-center gap-3 overflow-hidden rounded-2xl vba-card p-4 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.18)] border border-amber-500/40">
+-        <div className="min-w-0 flex-1">
+-          <div className="mb-1 flex items-start gap-1.5">
+-            <Crown className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-500" />
+-            <div className="min-w-0 flex flex-wrap items-center gap-1.5">
+-              <span className="text-[13px] sm:text-[14px] font-bold text-amber-800 dark:text-amber-300 leading-tight">
+-                {isEn ? "Member & Partner Perks" : "Æ¯u Ä‘Ă£i Há»™i viĂªn & Äá»‘i tĂ¡c"}
+-              </span>
+-              <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-xs whitespace-nowrap leading-none">
+-                <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping shrink-0" />
+-                +Hot
+-              </span>
++        {/* Æ¯u ÄĂ£i RiĂªng Há»™i ViĂªn & Äá»‘i TĂ¡c Banner */}
++        <div className="self-stretch min-h-[160px] relative rounded-2xl overflow-hidden shadow-md bg-gradient-to-r from-sky-950 via-blue-900 to-indigo-950 border border-amber-500/30 p-4 flex items-center justify-between">
++          <img className="w-full h-full object-cover absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none" src="/images/ceo1983/image 10.png" alt="Æ¯u Ä‘Ă£i" />
++          <div className="relative z-10 max-w-[65%] flex flex-col justify-start items-start gap-1">
++            <div className="text-amber-400 text-xl sm:text-2xl font-black font-sans leading-tight tracking-wide drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]">
++              Æ¯u ÄĂ£i RiĂªng
+             </div>
++            <div className="text-white text-sm font-semibold font-sans">Há»™i ViĂªn &amp; Äá»‘i TĂ¡c</div>
++            <p className="text-white/85 text-xs font-normal font-sans leading-4 mt-0.5">
++              KhĂ¡m phĂ¡ cĂ¡c <span className="text-amber-300 font-semibold">ChĂ­nh sĂ¡ch trá»£ giĂ¡, QuĂ  táº·ng liĂªn káº¿t</span> dĂ nh riĂªng cho báº¡n
++            </p>
++            <Link
++              to="/association/benefits"
++              className="mt-2 px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold font-sans rounded-full inline-flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
++            >
++              <span>Xem Æ°u Ä‘Ă£i ngay</span>
++              <img src="/icons/ceo1983/chevron-right.svg" alt="Arrow" className="size-3 invert" />
++            </Link>
++          </div>
++          {/* Há»™p quĂ  vĂ ng 3D sang trá»ng */}
++          <div className="relative z-10 shrink-0 flex items-center justify-center pr-1">
++            <img
++              src="/images/ceo1983/image 12.png"
++              alt="Há»™p quĂ  Æ°u Ä‘Ă£i"
++              className="w-24 sm:w-28 h-auto object-contain drop-shadow-[0_10px_25px_rgba(251,191,36,0.45)]"
++            />
+           </div>
+-          <p className="text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
+-            {isEn
+-              ? "Discover price support policies, affiliated gifts and trade benefits exclusive to CEO 1983."
+-              : "KhĂ¡m phĂ¡ cĂ¡c chĂ­nh sĂ¡ch trá»£ giĂ¡, quĂ  táº·ng liĂªn káº¿t vĂ  quyá»n lá»£i giao thÆ°Æ¡ng dĂ nh riĂªng cho Há»™i viĂªn CLB Doanh NhĂ¢n CEO 1983."}
+-          </p>
+-          <Link
+-            to="/association/perks"
+-            className="mt-3 inline-block rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 px-3.5 py-1.5 text-[10.5px] font-bold text-amber-300 shadow-[0_2px_10px_rgba(245,158,11,0.2)] hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition active:scale-95 touch-press"
+-          >
+-            {isEn ? "View perks now" : "Xem Æ°u Ä‘Ă£i ngay"}
+-          </Link>
+-        </div>
+-
+-        <div className="relative shrink-0">
+-          <span className="absolute inset-0 rounded-full bg-amber-400/20 blur-md animate-pulse pointer-events-none" />
+-          <img
+-            src={giftImg}
+-            alt="QuĂ  táº·ng Æ°u Ä‘Ă£i"
+-            loading="lazy"
+-            width={512}
+-            height={512}
+-            className="relative z-10 h-20 w-20 object-contain drop-shadow-md animate-bounce"
+-            style={{ animationDuration: "2.4s" }}
+-          />
+         </div>
+-      </div>
+ 
+-      {/* â”€â”€ 3. CHIA Sáºº CÆ  Há»˜I & MARKETPLACE â”€â”€ */}
+-      <div id="tour-opportunities-stats" className="mx-4 mt-4 grid grid-cols-2 gap-3">
+-        {/* Chia sáº» cÆ¡ há»™i - Deep Navy viá»n VĂ ng Kim */}
+-        <Link
+-          to="/association/opportunities"
+-          className="group relative vba-card flex flex-col justify-between p-4 transition border border-amber-500/30 hover:border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.1)] hover:shadow-[0_4px_20px_rgba(245,158,11,0.22)] overflow-hidden touch-press rounded-2xl"
+-        >
+-          <span className="absolute -inset-px rounded-2xl border border-amber-400/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
+-
+-          <div>
+-            <div className="mb-2 flex items-center justify-between">
+-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-xs overflow-hidden border border-amber-500/30">
+-                <img
+-                  src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Hand%20gestures/Handshake.png"
+-                  alt="Chia sáº» cÆ¡ há»™i"
+-                  className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
+-                />
+-              </div>
+-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
+-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+-                <span>{totalOpportunitiesCount}+</span>
+-                <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400">{isEn ? "deals" : "cÆ¡ há»™i"}</span>
++        {/* CÆ  Há»˜I & Káº¾T Ná»I + SĂ€N THÆ¯Æ NG Máº I */}
++        <div className="self-stretch inline-flex justify-start items-start gap-3">
++          {/* Card 1: CÆ¡ há»™i */}
++          <Link
++            to="/association/opportunities"
++            className="flex-1 self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-[0px_4px_13px_0px_rgba(174,113,21,0.10)] outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-between items-start gap-2.5 overflow-hidden group hover:border-amber-400 transition"
++          >
++            <img className="w-full h-24 rounded-lg object-cover" src="/images/ceo1983/Rectangle 6-1.png" alt="CÆ¡ há»™i & Káº¿t ná»‘i" />
++            <div className="self-stretch flex flex-col justify-start items-start gap-1">
++              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">đŸ¤ {opportunities.length || 6} cÆ¡ há»™i má»›i</span>
++              <div className="self-stretch inline-flex justify-between items-center">
++                <span className="text-slate-900 dark:text-white text-xs font-bold leading-5">CÆ  Há»˜I &amp; Káº¾T Ná»I</span>
++                <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3.5 opacity-60" />
+               </div>
+             </div>
+-
+-            <div className="text-[13px] font-bold text-[var(--vba-text)]">
+-              {isEn ? "SHARE OPPORTUNITIES" : "CHIA Sáºº CÆ  Há»˜I"}
+-            </div>
+-            <p className="mt-0.5 line-clamp-1 text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
+-              {isEn ? "Share business deals & connect" : "Chia sáº» cÆ¡ há»™i & Káº¿t ná»‘i"}
+-            </p>
+-
+-            {/* HIá»‚N THá» Tá»”NG GIĂ TRá» GIAO Dá»CH / CÆ  Há»˜I */}
+-            <div className="mt-2.5 flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25">
+-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{isEn ? "Total deal:" : "Tá»•ng giĂ¡ trá»‹:"}</span>
+-              <span className="text-[11.5px] font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{totalOpportunitiesValue}</span>
++            <div className="self-stretch h-px bg-Backgrounds-Secondary dark:bg-slate-800" />
++            <div className="self-stretch inline-flex justify-between items-center text-xs">
++              <span className="text-slate-400">Tá»•ng giĂ¡ trá»‹:</span>
++              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalOpportunitiesValue || "4.2 Tá»·"}</span>
+             </div>
+-          </div>
++          </Link>
+ 
+-          <span
+-            className="mt-3.5 inline-flex self-start rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-700 dark:text-amber-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs transition active:scale-95"
++          {/* Card 2: SĂ n thÆ°Æ¡ng máº¡i */}
++          <Link
++            to="/association/products"
++            className="flex-1 self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-[0px_4px_13px_0px_rgba(174,113,21,0.10)] outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-between items-start gap-2.5 overflow-hidden group hover:border-amber-400 transition"
+           >
+-            {isEn ? "Explore now" : "KhĂ¡m phĂ¡ ngay"}
+-          </span>
+-        </Link>
+-
+-        {/* Marketplace 5.0 - SĂ€N THÆ¯Æ NG Máº I */}
+-        <Link
+-          to="/association/products"
+-          search={{ action: undefined }}
+-          className="group relative vba-card flex flex-col justify-between p-4 transition border border-amber-500/30 hover:border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.1)] hover:shadow-[0_4px_20px_rgba(245,158,11,0.22)] overflow-hidden cursor-pointer touch-press rounded-2xl"
+-        >
+-          <span className="absolute -inset-px rounded-2xl border border-amber-400/40 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none animate-pulse" />
+-
+-          <div>
+-            <div className="mb-2 flex items-center justify-between">
+-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-xs overflow-hidden border border-amber-500/30">
+-                <img
+-                  src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Package.png"
+-                  alt="Marketplace"
+-                  className="h-7 w-7 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
+-                />
+-              </div>
+-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10.5px] font-extrabold shadow-2xs backdrop-blur-xs">
+-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+-                <span>{totalProductsCount}+</span>
+-                <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400">{isEn ? "items" : "sáº£n pháº©m"}</span>
++            <img className="w-full h-24 rounded-lg object-cover" src="/images/ceo1983/image 13.png" alt="SĂ n thÆ°Æ¡ng máº¡i" />
++            <div className="self-stretch flex flex-col justify-start items-start gap-1">
++              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">đŸ“¦ {products.length || 3} sáº£n pháº©m má»›i</span>
++              <div className="self-stretch inline-flex justify-between items-center">
++                <span className="text-slate-900 dark:text-white text-xs font-bold leading-5">SĂ€N THÆ¯Æ NG Máº I</span>
++                <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3.5 opacity-60" />
+               </div>
+             </div>
+-
+-            <div className="text-[13px] font-bold text-[var(--vba-text)]">
+-              {isEn ? "MARKETPLACE" : "SĂ€N THÆ¯Æ NG Máº I"}
++            <div className="self-stretch h-px bg-Backgrounds-Secondary dark:bg-slate-800" />
++            <div className="self-stretch inline-flex justify-between items-center text-xs">
++              <span className="text-slate-400">Tá»•ng giĂ¡ trá»‹:</span>
++              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalProductsValue || "2.4 Tá»·"}</span>
+             </div>
+-            <p className="mt-0.5 line-clamp-1 text-[11px] leading-relaxed text-[var(--vba-text-muted)]">
+-              {isEn ? "Promote enterprise products" : "Gian hĂ ng sáº£n pháº©m & dá»‹ch vá»¥"}
+-            </p>
++          </Link>
++        </div>
+ 
+-            {/* HIá»‚N THá» Tá»”NG GIĂ TRá» Sáº¢N PHáº¨M NIĂM Yáº¾T */}
+-            <div className="mt-2.5 flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25">
+-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{isEn ? "Total prod:" : "Tá»•ng giĂ¡ trá»‹:"}</span>
+-              <span className="text-[11.5px] font-black text-amber-600 dark:text-amber-400 tracking-tight">{totalProductsValue}</span>
++        {/* DOANH NGHIá»†P Má»I GIA NHáº¬P */}
++        <div className="self-stretch flex flex-col justify-start items-start gap-2">
++          <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
++            <div className="flex justify-start items-center gap-2">
++              <img src="/icons/ceo1983/briefcase-business.svg" alt="Building" className="size-5 shrink-0" />
++              <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">DOANH NGHIá»†P Má»I GIA NHáº¬P</span>
+             </div>
++            <Link to="/association/members" className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 flex justify-center items-center hover:bg-slate-200 transition">
++              <img src="/icons/ceo1983/chevron-right.svg" alt="More" className="size-4" />
++            </Link>
+           </div>
+ 
+-          {/* NĂºt KhĂ¡m phĂ¡ sĂ n - Gradient Deep Navy viá»n VĂ ng Kim */}
+-          <button
+-            type="button"
+-            onClick={(e) => {
+-              e.preventDefault();
+-              e.stopPropagation();
+-              navigate({
+-                to: "/association/products" as any,
+-                search: { action: "create" } as any,
+-              });
+-            }}
+-            className="mt-3.5 inline-flex self-start rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 px-3.5 py-1 text-[10.5px] font-bold shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition active:scale-95 cursor-pointer z-10 touch-press"
+-          >
+-            {isEn ? "Post now" : "ÄÄƒng ngay"}
+-          </button>
+-        </Link>
+-      </div>
+-
+-      {/* â”€â”€ 4. DOANH NGHIá»†P Má»I GIA NHáº¬P (CHUáº¨N PHÆ¯Æ NG ĂN 1) â”€â”€ */}
+-      <div className="mx-4 mt-6">
+-        <div className="mb-3 flex items-center justify-between">
+-          <div className="flex items-center gap-2">
+-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-400 border border-amber-500/40 shadow-xs">
+-              <Building2 className="h-3.5 w-3.5 text-amber-400" />
+-            </span>
+-            <h2 className="text-[13px] font-extrabold uppercase tracking-wider text-[var(--vba-text)]">
+-              {isEn ? "New Member Enterprises" : "Doanh nghiá»‡p má»›i gia nháº­p"}
+-            </h2>
++          <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-2.5 pb-1">
++            {(directoryMembers?.length > 0 ? directoryMembers.slice(0, 6) : [
++              { name: "Cao VÄƒn Máº¡nh", company: "Cao VÄƒn Máº¡nh", code: "VM" },
++              { name: "DÆ°Æ¡ng Thá»‹ Huá»‡", company: "DÆ°Æ¡ng Thá»‹ Huá»‡", code: "TH" },
++              { name: "Nguyá»…n VÄƒn HĂ¹ng", company: "HĂ¹ng VÆ°Æ¡ng JSC", code: "VH" },
++            ]).map((m, i) => (
++              <Link
++                key={(m as any).id || (m as any).code || i}
++                to="/association/members"
++                className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-amber-400 transition"
++              >
++                <div className="size-9 bg-sky-900 rounded-xl outline outline-1 outline-amber-400 flex justify-center items-center shrink-0">
++                  <span className="text-yellow-500 text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(m.name)}</span>
++                </div>
++                <div className="inline-flex flex-col justify-start items-start min-w-0">
++                  <span className="text-slate-800 dark:text-white text-xs font-bold truncate max-w-[120px]">{m.name}</span>
++                  <span className="text-slate-400 text-[11px] truncate max-w-[120px]">{m.company || m.name}</span>
++                </div>
++              </Link>
++            ))}
+           </div>
+-          <Link
+-            to="/association/members"
+-            className="flex items-center text-[11px] font-bold text-amber-600 dark:text-amber-400 transition hover:underline"
+-          >
+-            <span>{isEn ? "Directory" : "Xem danh báº¡"}</span>
+-            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+-          </Link>
+         </div>
+ 
+-        {directoryMembers.length === 0 ? (
+-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
+-            <Users className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
+-            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+-              {isEn ? "No new enterprise members recorded this week" : "ChÆ°a cĂ³ doanh nghiá»‡p má»›i tuáº§n nĂ y"}
+-            </p>
++        {/* TIN Tá»¨C CĂ‚U Láº C Bá»˜ */}
++        <div className="self-stretch flex flex-col justify-start items-start gap-3">
++          <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
++            <div className="flex justify-start items-center gap-2">
++              <img
++                src="/icons/ceo1983/newspaper-fold--Streamline-Ultimate.svg"
++                alt="News"
++                className="size-5 shrink-0"
++                onError={(e) => {
++                  (e.currentTarget as HTMLImageElement).src = "/icons/ceo1983/calendar.svg";
++                }}
++              />
++              <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">TIN Tá»¨C CĂ‚U Láº C Bá»˜</span>
++            </div>
++            <div className="flex items-center gap-2">
++              <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 rounded-full outline outline-1 outline-blue-200 dark:outline-blue-800 text-blue-800 dark:text-blue-300 text-[10px] font-bold">
++                +{combinedNews.length || 5} TIN Má»I
++              </span>
++              <Link to="/association/news" className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 flex justify-center items-center hover:bg-slate-200 transition">
++                <img src="/icons/ceo1983/chevron-right.svg" alt="More" className="size-4" />
++              </Link>
++            </div>
+           </div>
+-        ) : (
+-          <div className="grid grid-cols-2 gap-2.5">
+-            {directoryMembers.slice(0, 2).map((m) => (
++
++          <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-3 pb-1">
++            {(combinedNews.length > 0 ? combinedNews.slice(0, 5) : [
++              {
++                id: "1",
++                title: "Há»™i nghá»‹ XĂºc tiáº¿n ThÆ°Æ¡ng máº¡i & Káº¿t ná»‘i Äáº§u tÆ° Quá»‘c táº¿ QuĂ½ 3/2026",
++                author: "Ban ThÆ° KĂ½",
++                time: "2026-09-20",
++              },
++              {
++                id: "2",
++                title: "ChÆ°Æ¡ng trĂ¬nh Caravan Thiá»‡n nguyá»‡n & Giao thÆ°Æ¡ng Doanh nhĂ¢n 2026",
++                author: "Ban Truyá»n ThĂ´ng",
++                time: "2026-09-18",
++              },
++            ]).map((item, i) => (
+               <Link
+-                key={m.code}
+-                to="/association/members"
+-                className="vba-card flex items-center gap-2.5 rounded-xl p-2.5 shadow-xs border border-amber-500/25 hover:border-amber-400 transition"
++                key={item.id || i}
++                to={`/association/news/${item.id}` as any}
++                className="w-64 relative bg-white dark:bg-slate-900 rounded-2xl outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-amber-400 transition"
+               >
+-                {m.avatar ? (
++                <div className="relative w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                   <img
+-                    src={resolveMediaUrl(m.avatar) || m.avatar}
+-                    alt={m.name}
+-                    className="h-9 w-9 shrink-0 rounded-lg object-cover ring-2 ring-amber-400/50"
++                    className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
++                    src={(item as any).image || (item as any).cover || "/images/ceo1983/Rectangle 6-1.png"}
++                    alt={item.title}
++                    onError={(e) => {
++                      (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
++                    }}
+                   />
+-                ) : (
+-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-[12px] font-black text-amber-300 ring-1 ring-amber-400/50 shadow-xs">
+-                    {initials(m.name)}
+-                  </div>
+-                )}
+-                <div className="min-w-0 flex-1">
+-                  <div className="truncate text-[12px] font-bold text-[var(--vba-text)]">
+-                    {m.name}
++                  <div className="px-2 py-0.5 right-2 top-2 absolute bg-sky-500 text-white rounded-full inline-flex items-center gap-1 text-[9px] font-bold">
++                    <span className="size-1 bg-white rounded-full" />
++                    <span>Má»›i</span>
+                   </div>
+-                  <div className="truncate text-[10.5px] text-slate-500 dark:text-slate-400">
+-                    {m.personName || m.industry || (isEn ? "Member" : "Há»™i viĂªn")}
++                </div>
++                <div className="self-stretch p-3 flex flex-col justify-start items-start gap-1">
++                  <span className="text-blue-800 dark:text-blue-400 text-[10px] font-bold uppercase">THĂ”NG BĂO BAN CHáº¤P HĂ€NH</span>
++                  <span className="text-slate-800 dark:text-white text-xs font-bold leading-4 line-clamp-2 group-hover:text-blue-600 transition-colors">
++                    {item.title}
++                  </span>
++                  <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-1" />
++                  <div className="self-stretch inline-flex justify-between items-center text-[10px] text-slate-400">
++                    <span>{item.author || "Ban ThÆ° KĂ½"}</span>
++                    <span>{formatNewsDate(item.time)}</span>
+                   </div>
+                 </div>
+               </Link>
+             ))}
+           </div>
+-        )}
+-      </div>
+-
+-      {/* â”€â”€ 6. TIN Tá»¨C CĂ‚U Láº C Bá»˜ (Tá»I ÄA 5 TIN Tá»¨C CĂ“ áº¢NH & 1, 2 DĂ’NG THĂ”NG TIN) â”€â”€ */}
+-      <div className="mx-4 mt-6">
+-        <div className="mb-3 flex items-center justify-between">
+-          <div className="flex items-center gap-2">
+-            <span className="grid h-7 w-7 place-items-center rounded-xl bg-gradient-to-tr from-[#002B70] to-[#003B95] text-white border border-blue-400/30 shadow-xs">
+-              <Newspaper className="h-4 w-4 text-white" />
+-            </span>
+-            <div>
+-              <h2 className="text-[13px] sm:text-[14px] font-extrabold uppercase tracking-wider text-[var(--vba-text)] flex items-center gap-2">
+-                <span>{isEn ? "Club News & Updates" : "Tin tá»©c cĂ¢u láº¡c bá»™"}</span>
+-                <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[9.5px] font-bold text-[#003B95] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+-                  {Math.min(5, combinedNews.length)} tin má»›i
+-                </span>
+-              </h2>
+-            </div>
+-          </div>
+-          <Link
+-            to="/association/news"
+-            className="flex items-center text-[11px] font-bold text-[#003B95] dark:text-blue-400 transition hover:underline"
+-          >
+-            <span>{isEn ? "View all" : "Xem táº¥t cáº£"}</span>
+-            <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+-          </Link>
+         </div>
+ 
+-        {combinedNews.length === 0 ? (
+-          <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-200 dark:border-white/10">
+-            <Newspaper className="mx-auto h-7 w-7 text-slate-400 mb-1.5" />
+-            <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+-              {isEn ? "No newly published club news" : "ChÆ°a cĂ³ báº£n tin má»›i trong tuáº§n"}
+-            </p>
+-          </div>
+-        ) : (
+-          <div className="space-y-3">
+-            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 -mx-4 px-4 pr-6 scrollbar-none snap-x snap-mandatory after:content-[''] after:w-4 after:shrink-0">
+-              {combinedNews.slice(0, 5).map((item, idx) => {
+-                const rawImg = (item as any).image || (item as any).imageUrl || (item as any).coverUrl || (item as any).thumbnail;
+-                const newsImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : DEFAULT_NEWS_THUMBNAILS[idx % DEFAULT_NEWS_THUMBNAILS.length];
+-                const isRead = readNewsIds.includes(item.id);
+-
+-                return (
+-                  <Link
+-                    key={item.id}
+-                    to="/association/news"
+-                    search={{ articleId: item.id }}
+-                    onClick={() => markNewsAsRead(item.id)}
+-                    className="w-[260px] sm:w-[280px] shrink-0 snap-start flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-white/10 hover:border-[#003B95]/50 hover:shadow-md transition-all active:scale-[0.99] cursor-pointer overflow-hidden group"
+-                  >
+-                    {/* Photo thumbnail */}
+-                    <div className="relative h-32 w-full overflow-hidden bg-slate-900">
+-                      <img
+-                        src={newsImg}
+-                        alt={item.title}
+-                        loading="lazy"
+-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+-                      />
+-                      {item.category && (
+-                        <span className="absolute top-2 left-2 rounded-md bg-[#003B95]/90 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider border border-white/20">
+-                          {item.category}
+-                        </span>
+-                      )}
+-                      <div className="absolute top-2 right-2">
+-                        {isRead ? (
+-                          <span className="inline-flex items-center gap-1 text-[9px] text-white/90 bg-black/50 backdrop-blur-xs px-1.5 py-0.5 rounded-full">
+-                            <Check className="h-2.5 w-2.5 text-emerald-400 stroke-[2.5]" />
+-                            <span>ÄĂ£ xem</span>
+-                          </span>
+-                        ) : (
+-                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-white bg-[#003B95]/90 backdrop-blur-xs px-2 py-0.5 rounded-full border border-blue-400/40">
+-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-300 animate-pulse" />
+-                            <span>Má»›i</span>
+-                          </span>
+-                        )}
+-                      </div>
+-                    </div>
+-
+-                    {/* Body text & meta */}
+-                    <div className="p-3 flex-1 flex flex-col justify-between">
+-                      <h4 className="line-clamp-2 text-xs sm:text-[13px] font-bold text-slate-900 dark:text-white leading-snug group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors">
+-                        {item.title}
+-                      </h4>
+-
+-                      <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-white/5 pt-2">
+-                        <span className="truncate max-w-[130px] font-medium text-slate-600 dark:text-slate-400">
+-                          {item.author || "Ban Truyá»n ThĂ´ng"}
+-                        </span>
+-                        <span>{formatNewsDate(item.time)}</span>
+-                      </div>
+-                    </div>
+-                  </Link>
+-                );
+-              })}
+-              <div className="w-2 shrink-0 pointer-events-none select-none" aria-hidden="true" />
++        {/* QuĂ©t mĂ£ QR Check-in sá»± kiá»‡n */}
++        {canScanEventQr && (
++          <div className="self-stretch p-4 bg-gradient-to-r from-sky-950 via-blue-900 to-sky-950 rounded-[19px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-md border border-white/10 mt-1">
++            <div className="size-11 bg-cyan-800/80 rounded-2xl outline outline-1 outline-slate-500 flex justify-center items-center shrink-0">
++              <img src="/icons/ceo1983/qr-code.svg" alt="QR" className="size-6 invert" />
+             </div>
+-          </div>
+-        )}
+-      </div>
+-
+-      {/* â”€â”€ TIá»†N ĂCH ÄIá»‚M DANH Sá»° KIá»†N: QUĂ‰T MĂƒ QR CHECK-IN (CHá»ˆ HIá»†N CHO BAN TRUYá»€N THĂ”NG ÄÆ¯á»¢C CHá»ŒN) â”€â”€ */}
+-      {canScanEventQr && (
+-        <div className="w-full px-4 mb-4">
+-          <div className="rounded-2xl p-4 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1A3A] text-white shadow-sm flex items-center justify-between gap-3 border border-white/10">
+-            <div className="flex items-center gap-3 min-w-0">
+-              <div className="h-11 w-11 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
+-                <QrCode className="h-6 w-6 text-white" />
+-              </div>
+-              <div className="min-w-0">
+-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400 text-[#001D4A] text-[9.5px] font-black uppercase tracking-wider mb-1">
+-                  <ShieldCheck className="h-3 w-3" />
+-                  Ban SoĂ¡t VĂ© Sá»± Kiá»‡n
+-                </div>
+-                <h4 className="text-xs sm:text-sm font-bold text-white leading-tight">
+-                  {isEn ? "Event QR Check-in" : "QuĂ©t mĂ£ QR Check-in sá»± kiá»‡n"}
+-                </h4>
+-                <p className="text-[11px] text-white/80 mt-0.5 line-clamp-1">
+-                  {isEn ? "1-tap check-in & ticket confirmation" : "Äiá»ƒm danh nhanh 1-cháº¡m & xĂ¡c nháº­n vĂ© táº¡i quáº§y lá»… tĂ¢n"}
+-                </p>
++            <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 overflow-hidden min-w-0">
++              <span className="text-white text-xs font-bold leading-4">
++                QuĂ©t mĂ£ QR Check-in<br />sá»± kiá»‡n
++              </span>
++              <div className="px-2 py-0.5 bg-yellow-500 rounded-3xl inline-flex justify-start items-center gap-1">
++                <img src="/icons/ceo1983/shield-check.svg" alt="Shield" className="size-3" />
++                <span className="text-sky-950 text-[9.5px] font-bold">BAN SOĂT VĂ‰ Sá»° KIá»†N</span>
+               </div>
+             </div>
+             <Link
+               to="/association/checkin"
+-              className="shrink-0 px-3.5 py-2 rounded-xl bg-white text-[#003B95] text-xs font-bold shadow-xs hover:bg-white/90 transition active:scale-95 flex items-center gap-1 cursor-pointer"
++              className="px-3.5 py-2 bg-white rounded-full inline-flex justify-center items-center gap-1 shrink-0 shadow-sm active:scale-95 transition"
+             >
+-              <span>QuĂ©t ngay</span>
+-              <ChevronRight className="h-3.5 w-3.5" />
++              <span className="text-blue-800 text-xs font-bold">QuĂ©t ngay</span>
++              <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3" />
+             </Link>
+           </div>
+-        </div>
+-      )}
++        )}
++      </div>
+ 
+       {/* â”€â”€ MODAL MĂƒ QR Há»˜I VIĂN & QUĂ‰T QR (DUAL TAB) â”€â”€ */}
+       <AssociationMemberQrModal
+@@ -1867,6 +1736,12 @@ function Home() {
+ 
+ 
+ 
++      {/* â”€â”€ HÆ¯á»NG DáºªN Sá»¬ Dá»¤NG TÆ¯Æ NG TĂC Tá»ªNG BÆ¯á»C & GIá»ŒNG NĂ“I AUDIO (Req 12) â”€â”€ */}
++      <UserGuideModal
++        open={userGuideOpen}
++        onClose={() => setUserGuideOpen(false)}
++      />
++
+       {/* â”€â”€ POPUP CHĂC Má»ªNG SINH NHáº¬T & Táº¶NG Æ¯U ÄĂƒI VIP (Req 4) â”€â”€ */}
+       <BirthdayCelebrationModal member={member} />
+     </div>

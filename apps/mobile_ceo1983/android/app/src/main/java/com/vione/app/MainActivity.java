@@ -385,6 +385,17 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public void registerPushUser(String userId, String token, String serverUrl) {
+            MainActivity.this.runOnUiThread(() -> {
+                try {
+                    CeoNotificationSyncService.startSync(MainActivity.this, userId, token, serverUrl);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void cancelNotification(String tag) {
             MainActivity.this.runOnUiThread(() -> {
                 try {

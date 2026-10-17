@@ -15,6 +15,7 @@ export class CreateEventDto {
   qrScanners?: any;
   sponsors?: any;
   description?: string;
+  photoGalleryUrl?: string;
   tickets?: {
     name: string;
     price?: number;
@@ -38,6 +39,7 @@ export class UpdateEventDto {
   qrScanners?: any;
   sponsors?: any;
   description?: string;
+  photoGalleryUrl?: string;
 }
 
 export class RegisterEventDto {

@@ -103,23 +103,28 @@ export class AdminController {
   // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
 
   @Get('notifications')
+  @UseGuards(JwtAuthGuard)
   async listNotifications(
     @Request() req,
     @Query('associationId') associationId?: string,
     @Query('appScope') appScope?: string,
   ) {
-    return this.adminService.listNotifications(req.user.id, associationId, appScope);
+    const userId = req.user?.id || '';
+    return this.adminService.listNotifications(userId, associationId, appScope);
   }
 
   @Post('notifications')
+  @UseGuards(JwtAuthGuard)
   async createNotification(
     @Request() req,
     @Body() body: CreateAdminNotificationDto,
   ) {
-    return this.adminService.createNotification(req.user.id, body);
+    const userId = req.user?.id || '';
+    return this.adminService.createNotification(userId, body);
   }
 
   @Patch('notifications/:id')
+  @UseGuards(JwtAuthGuard)
   async updateNotification(
     @Param('id') id: string,
     @Body() body: UpdateAdminNotificationDto,
@@ -128,6 +133,7 @@ export class AdminController {
   }
 
   @Post('notifications/:id/send')
+  @UseGuards(JwtAuthGuard)
   async sendNotification(
     @Param('id') id: string,
   ) {
@@ -135,15 +141,18 @@ export class AdminController {
   }
 
   @Post('notifications/:id/push-messages')
+  @UseGuards(JwtAuthGuard)
   async pushNotificationToMessages(
     @Request() req,
     @Param('id') id: string,
     @Body('channel') channel?: string,
   ) {
-    return this.adminService.pushNotificationToMessages(req.user.id, id, channel);
+    const userId = req.user?.id || '';
+    return this.adminService.pushNotificationToMessages(userId, id, channel);
   }
 
   @Delete('notifications/:id')
+  @UseGuards(JwtAuthGuard)
   async deleteNotification(
     @Param('id') id: string,
   ) {

@@ -53,6 +53,12 @@ export class UsersController {
       req.user.id,
       body.currentPassword || '',
       body.newPassword,
+      {
+        email: body.email,
+        phone: body.phone,
+        sendActivationEmail: body.sendActivationEmail,
+        fullName: body.fullName,
+      },
     );
   }
 

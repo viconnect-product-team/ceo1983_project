@@ -224,24 +224,6 @@ export class UploadController {
     const filenameOnly = path.basename(filePathStr);
     const contentType = getContentType(filePathStr);
 
-    const pipeSafe = (readable: any) => {
-      readable.on('error', () => {
-        if (!res.headersSent) {
-          if (contentType.startsWith('image/')) {
-            const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="100%" height="100%" fill="#0A1A3A"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#F59E0B" font-family="sans-serif" font-size="16" font-weight="bold">CEO 1983</text></svg>`;
-            res.setHeader('Content-Type', 'image/svg+xml');
-            return res.status(200).send(fallbackSvg);
-          }
-          res.status(404).send('File not found');
-        } else {
-          res.end();
-        }
-      });
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      return readable.pipe(res);
-    };
-
     try {
       // 1. Thử tìm tệp trên ổ đĩa cục bộ (disk fallback)
       const fs = await import('fs');
@@ -281,12 +263,15 @@ export class UploadController {
       for (const cand of candidates) {
         try {
           if (fs.existsSync(cand) && fs.statSync(cand).isFile()) {
-            return pipeSafe(fs.createReadStream(cand));
+            const fileBuf = fs.readFileSync(cand);
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            return res.status(200).send(fileBuf);
           }
         } catch {}
       }
 
-      // 2. Thử tìm trên MinIO với timeout nhanh (800ms) để không làm đơ kết nối
+      // 2. Thử tìm trên MinIO với timeout an toàn và buffer dữ liệu trước khi gửi response
       const minioKeys = [
         filePathStr,
         filenameOnly,
@@ -309,13 +294,23 @@ export class UploadController {
             timeoutPromise,
           ]);
           if (stream) {
-            return pipeSafe(stream);
+            const buf = await new Promise<Buffer>((resolve, reject) => {
+              const chunks: Buffer[] = [];
+              stream.on('data', (c: any) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+              stream.once('end', () => resolve(Buffer.concat(chunks)));
+              stream.once('error', (e: any) => reject(e));
+              setTimeout(() => reject(new Error('Stream read timeout')), 1200);
+            });
+            if (buf && buf.length > 0) {
+              res.setHeader('Content-Type', contentType);
+              res.setHeader('Cache-Control', 'public, max-age=86400');
+              return res.status(200).send(buf);
+            }
           }
         } catch {}
       }
 
-      // Fallback an toàn: Nếu là tệp hình ảnh, thay vì trả 404/500 làm vỡ giao diện web và báo lỗi đỏ console,
-      // trả về SVG dự phòng chuẩn thương hiệu CEO 1983 với mã 200 OK
+      // 3. Fallback an toàn tuyệt đối: Nếu là tệp hình ảnh, không bao giờ trả 500 hoặc 404 làm vỡ web
       if (contentType.startsWith('image/')) {
         const isAvatar = filePathStr.includes('avatar');
         const fallbackSvg = isAvatar

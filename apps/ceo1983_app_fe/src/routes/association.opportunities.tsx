@@ -34,6 +34,7 @@ import {
   LayoutGrid,
   List,
   Package,
+  Share2,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -977,40 +978,64 @@ function OpportunitiesScreen() {
                           <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">
                             {formatSmartPrice(o.value)}
                           </div>
-                          {checkIsMine(o) ? (
-                            <div className="px-3 py-1.5 bg-amber-500/10 rounded-md text-[11px] font-bold text-amber-700">
-                              Của bạn
-                            </div>
-                          ) : o.interested || interestedIds.includes(o.id) ? (
-                            <div className="flex items-center gap-1.5">
-                              <div className="px-2 py-1 bg-emerald-100 rounded-md text-[10.5px] font-bold text-emerald-700 flex items-center gap-1">
-                                <Check className="size-3" /> Đã quan tâm
-                              </div>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleNegotiate(o);
-                                }}
-                                className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-md text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95 shadow-xs"
-                                title="Lên lịch hẹn 1-1 đàm phán cơ hội này"
-                              >
-                                <Handshake className="size-3" /> Đàm phán 1-1
-                              </button>
-                            </div>
-                          ) : (
+                          <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                interest(o.id, o);
+                                const shareUrl = typeof window !== "undefined" ? window.location.href : "https://ceo1983.viconnect.vn";
+                                if (navigator.share) {
+                                  navigator.share({
+                                    title: o.title,
+                                    text: `Cơ hội hợp tác kinh doanh CEO 1983: ${o.title} (${formatSmartPrice(o.value)})`,
+                                    url: shareUrl,
+                                  }).catch(() => {});
+                                } else {
+                                  navigator.clipboard.writeText(`${o.title} - ${shareUrl}`);
+                                  toast.success("Đã sao chép liên kết cơ hội hợp tác!");
+                                }
                               }}
-                              disabled={busy === o.id}
-                              className="px-4 py-1.5 bg-sky-950 hover:bg-sky-900 rounded-md flex justify-start items-start text-white text-xs font-bold font-['Inter'] cursor-pointer transition active:scale-95 disabled:opacity-50"
+                              className="size-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 grid place-items-center transition active:scale-95 cursor-pointer shadow-2xs"
+                              title="Chia sẻ cơ hội"
                             >
-                              {busy === o.id ? "..." : "Quan tâm"}
+                              <Share2 className="size-3.5" />
                             </button>
-                          )}
+
+                            {checkIsMine(o) ? (
+                              <div className="px-3 py-1.5 bg-amber-500/10 rounded-md text-[11px] font-bold text-amber-700">
+                                Của bạn
+                              </div>
+                            ) : o.interested || interestedIds.includes(o.id) ? (
+                              <div className="flex items-center gap-1.5">
+                                <div className="px-2 py-1 bg-emerald-100 rounded-md text-[10.5px] font-bold text-emerald-700 flex items-center gap-1">
+                                  <Check className="size-3" /> Đã quan tâm
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleNegotiate(o);
+                                  }}
+                                  className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-md text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95 shadow-xs"
+                                  title="Lên lịch hẹn 1-1 đàm phán cơ hội này"
+                                >
+                                  <Handshake className="size-3" /> Đàm phán 1-1
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  interest(o.id, o);
+                                }}
+                                disabled={busy === o.id}
+                                className="px-4 py-1.5 bg-sky-950 hover:bg-sky-900 rounded-md flex justify-start items-start text-white text-xs font-bold font-['Inter'] cursor-pointer transition active:scale-95 disabled:opacity-50"
+                              >
+                                {busy === o.id ? "..." : "Quan tâm"}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );

@@ -107,6 +107,31 @@
 #     + Tin tức CLB: Chỉ các vai trò `Quản trị`, `Admin`, `Chủ tịch`, `Trưởng ban` mới có quyền Đăng, Sửa, Xóa tin bài. Thành viên thông thường chỉ có quyền xem.
 #     + Quét mã Check-in Sự kiện: Phụ thuộc vào danh sách nhân sự được phân quyền quét mã từ CRM (`qrScanners` / `qrStaff`). Riêng `Quản trị`, `Chủ tịch`, `Admin` luôn có toàn quyền quét mã mọi sự kiện.
 #   - Chuẩn hóa Ô nhập Tiền tệ VNĐ: Tuyệt đối không để `isComposingRef` chặn sự kiện gõ số trên `inputMode="numeric"`. Đảm bảo người dùng nhập số tiền mượt mà trên bàn phím số di động và các bộ gõ tiếng Việt.
+#   - Quy Chuẩn Thẻ Hội Viên Trang Chủ & Thẻ Trung Tâm (Member Card Standards):
+#     + Thẻ Hội Viên Trang Chủ (Hero Member Card): Ngoài ảnh bìa, avatar, tên hội viên, chức danh, số điện thoại và icon chỉnh sửa thì TUYỆT ĐỐI KHÔNG xuất hiện bất kỳ thông tin nào khác (không hiện logo, không hiện tên công ty, không hiện badge dư thừa).
+#     + Thẻ Hội Viên Ở Giữa (Central Card): Bỏ hiện tên công ty cùng logo doanh nghiệp; chỉ hiện Họ tên và Số điện thoại; Phần mã QR làm kích thước to hơn (`size={200}`) hiển thị nổi bật và quét nhanh chóng.
+#     + Nút Tải Profile Doanh Nghiệp & Template Hồ Sơ 3D (`CompanyProfileTemplateModal`): Tích hợp nút "Tải Profile Doanh Nghiệp" tại thẻ hội viên. Nếu doanh nghiệp có profile riêng thì dùng file riêng, nếu chưa có thì tự động sinh template 3D chìm cao cấp có logo, dấu mộc CEO 1983. Khi quét mã QR hội viên, hiển thị hồ sơ doanh nghiệp trực tiếp ngay dưới thông tin hội viên.
+#   - Phân Quyền Kênh Tin Nhắn & Truyền Thông 4 Ban Chuyên Trách (Committee Channel Matrix):
+#     + Ban Truyền Thông (`channel_media`): Chuyên trách toàn bộ tin nhắn, thông báo về sự kiện, vé tham dự, mã QR check-in sự kiện (mã QR vé đăng ký phải khớp 100% với mã QR tin nhắn đẩy về), thông cáo báo chí, tin tức và link kho ảnh sự kiện Google Drive (`photo_gallery_url` trên cả CRM và Mobile App).
+#     + Ban Thành Viên (`channel_membership`): Chuyên trách duyệt hồ sơ kết nạp hội viên mới, gia hạn hội viên, xác thực hồ sơ doanh nghiệp, sinh nhật hội viên.
+#     + Ban Xúc Tiến Thương Mại (`channel_promotion`): Chuyên trách kết nối giao thương B2B, đơn hàng, gian hàng Marketplace, xúc tiến đầu tư và cơ hội kinh doanh.
+#     + Ban Thư Ký & Ban Điều Hành (`channel_secretariat`): Chuyên trách lịch họp BCH, nghị quyết, văn bản hành chính, thông báo hội phí và điều lệ.
+#   - Luồng Cuộc Gặp 1-on-1 & Họp BCH Offline / Online:
+#     + Cuộc gặp 1-on-1: Chia rõ ràng Offline (địa điểm, link Google Maps) và Online (nền tảng Google Meet, Zoom, UniWork, meeting URL); đồng bộ tức thì giữa CRM và Mobile App.
+#     + Cuộc họp BCH: Hỗ trợ tạo cuộc họp Online và Offline (Phòng Sapphire UniWork Hub hoặc địa chỉ thực tế); tự động bắn email thông báo họp chuẩn HTML + thông báo push + tin nhắn vào App CEO 1983.
+#   - Cổng Đăng Ký Sự Kiện Khách Mời Độc Lập (/guest-event-register/$eventId):
+#     + Khi quét mã QR từ Zalo hay ứng dụng khác, TUYỆT ĐỐI KHÔNG chuyển hướng vào web CRM hay bắt đăng nhập tài khoản.
+#     + Form khách mời độc lập gồm đủ 8 trường tương đương hội viên: Họ tên, Điện thoại, Email, Doanh nghiệp, Chức vụ, Ngành nghề, Hạng vé, Ghi chú.
+#     + Tự động phát sinh mã QR E-ticket, mã quay thưởng Lucky Draw (#8388) và tích hợp VietQR MB Bank `1983000000` (Chủ TK: `CLB DOANH NHAN CEO 1983`) đối với sự kiện có phí.
+#     + Tự động gửi email xác nhận thành công tức thì đính kèm E-Ticket và mã QR thanh toán.
+#   - Quy Định Xếp Chỗ Ngồi Sự Kiện (Strict Seat Allocation Rule):
+#     + TUYỆT ĐỐI KHÔNG TỰ ĐỘNG XẾP CHỖ NGỒI từ hệ thống backend tới app CEO 1983 mobile.
+#     + Mặc định toàn bộ chỗ ngồi của người tham gia sau khi đăng ký là "Chờ Ban Truyền Thông xếp chỗ".
+#     + Chỉ khi người thuộc Ban Truyền Thông chủ động sắp xếp vị trí ghế/bàn trên CRM thì chỗ ngồi mới được cập nhật lên vé di động.
+#   - Chuẩn Hóa Toàn Diện Kích Thước & Viền Kẻ Toàn Bộ Dashboard CRM:
+#     + Toàn bộ thẻ thống kê Metric/StatCard tại tất cả các chức năng CRM bắt buộc có kích thước đồng đều chiều cao `h-32` (128px), bố cục `flex flex-col justify-between`, bo góc mềm mại `rounded-2xl`, viền kẻ sắc nét `border border-border/80` (hoặc border theo tone màu với opacity `/30`), bóng nhẹ `shadow-[var(--shadow-card)]` và hiệu ứng `hover:border-primary/40 hover:shadow-sm`.
+#     + Bảng dữ liệu và thanh phân trang: Toàn bộ component `<Pagination />` bắt buộc nằm bên trong `<Card className="overflow-hidden">` để giữ nguyên viền bo tròn của khung thẻ, tuyệt đối không để trôi ra ngoài gây co sát mép giao diện.
+#     + Quy chuẩn Nhãn Nút (Button Labels Standard): Tuyệt đối KHÔNG viết cứng ký tự `+` hoặc `-` vào thẻ text/span của nút khi đã có icon Lucide (ví dụ: dùng `<Plus /> Thêm hàng` thay vì `<Plus /> + Thêm hàng`). Chỉ dùng ký tự `+`/`-` đối với nút stepper toán học (tăng/giảm số lượng), nút zoom bản đồ (`+`/`-`), hoặc dấu gạch nối ngữ pháp (`Thu - Chi`).
 #   - Phân hệ Trao đổi B2B (/network): Bỏ chức năng yêu cầu kết nối; cho phép tất cả hội viên nhắn tin trực tiếp với nhau; hỗ trợ gửi/tải tệp đa định dạng; hỗ trợ ghim tin nhắn; loại bỏ double chức danh.
 #   - Thương hiệu Sidebar: Cho phép thay đổi Tên câu lạc bộ và Logo header sidebar trong Cài đặt hệ thống (/settings), cập nhật thời gian thực qua sự kiện `crm_system_branding_updated`.
 #   - Gói tài trợ sự kiện: 100% dữ liệu thực từ bảng CSDL `public.sponsor_packages` và `public.sponsors`, tuyệt đối cấm mock/hardcode fallback.
@@ -150,6 +175,13 @@
 #     + Dark Mode: Toàn bộ biểu tượng trên trang chủ mobile ở Dark Mode bắt buộc sử dụng bảng màu dạ quang phát sáng rực rỡ (`#FBBF24`, `#38BDF8`, `#34D399`, `#A78BFA`, `#FB7185`) kèm viền neon tinh tế; tuyệt đối không để icon chìm vào nền tối.
 #     + Nút QR Trung Tâm Navigation (`MemberShell`): Bấm nút QR tròn ở giữa thanh điều hướng đáy lập tức mở popup `AssociationMemberQrModal` (hiển thị thẻ QR hội viên và tab máy ảnh quét QR siêu tốc 0.1s), không điều hướng sang trang `/association/card`.
 #     + Đồng Bộ Chủ Đề (Themes & Birthday): Hỗ trợ chủ đề Sinh nhật CEO 1983 (`ceo1983-birthday`) với bóng bay, pháo hoa, bánh kem sinh nhật; cấu hình theme từ CRM tự động cập nhật banner và không khí hội viên mobile app trong thời gian thực.
+#   - Chuẩn Bắt Buộc Đổi Mật Khẩu & Kích Hoạt Tài Khoản Cho Hội Viên Mới (Mandatory Password Change & Activation Flow):
+#     + Khi hội viên mới nhận tài khoản qua email đăng nhập vào App CEO 1983 (`/association/login`), nếu cờ `mustChangePassword` hoặc `onboarding_status === 'new'`, hệ thống BẮT BUỘC lưu cờ `vba_must_change_password` và chuyển hướng ngay tới `/association/settings?action=change_password&required=true`.
+#     + Bắt buộc bảo vệ toàn diện tại Router Guard (`association.tsx` - `beforeLoad`): Chặn hội viên truy cập mọi route khác của App Hiệp hội nếu chưa hoàn thành đổi mật khẩu.
+#     + Giao diện đổi mật khẩu bắt buộc (`association.settings.tsx`): Hỗ trợ đồng thời trường "Tên đăng nhập (Email)" và "Số điện thoại đăng nhập liên kết" tương đồng với màn đăng nhập lúc vào app, kèm mật khẩu hiện tại và mật khẩu mới.
+#     + Popup Thông tin tài khoản mới (`AccountActivationSummaryModal`): Sau khi gửi thông tin thành công, hiển thị modal popup xác nhận đầy đủ: Tên đăng nhập (Email), Số điện thoại, Mật khẩu mới vừa đặt, Mã hội viên, Trạng thái kích hoạt.
+#     + Tự động gửi email về mail mới: Nếu hội viên thay đổi địa chỉ email trong form, hệ thống lập tức cập nhật CSDL và tự động bắn thông tin tài khoản mới về email mới (`MailService.sendAppAccountActivatedEmail`).
+#     + Nút Xác nhận kích hoạt: Modal trang bị nút bấm to bản "Xác nhận & Gửi thông báo kích hoạt tài khoản", gửi email thông báo kích hoạt tài khoản thành công về hộp thư của hội viên, xóa cờ bắt buộc đổi mật khẩu và chuyển mượt mà về màn hình đăng nhập.
 #   - Chuẩn Thư Viện Văn Kiện & Pháp Quy (Mobile Library & CRM Documents):
 #     + Phân nhóm theo Ban Chuyên Môn: Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến, Ban Tài Chính, Ban Thiện Nguyện, Ban Thư Ký, Biểu mẫu chung.
 #     + Bộ lọc định dạng tài liệu: Tất cả, PDF, DOCX, XLSX, PPTX.
@@ -188,6 +220,15 @@
 #     + Tuyệt đối KHÔNG sử dụng nút màu đen đặc u ám ở Chế độ sáng (Light mode) hoặc để giao diện đơn điệu trắng/đen/xanh thiếu vắng màu vàng hoàng kim nhận diện thương hiệu.
 #     + Bóc tách lỗi Validate API tập trung tại `api-client.ts`: Tự động phân rã mảng lỗi HTTP 400/422 từ backend DTO validator thành tiếng Việt rõ nghĩa và phát sự kiện `vba:api_validation_error`.
 #     + Phân quyền thời gian thực CSDL (`RolesGuard`): Truy vấn trực tiếp database tại thời điểm request, lập tức từ chối 403 `PERMISSION_REVOKED` nếu vai trò bị thu hồi hoặc tài khoản bị khóa/đình chỉ (`suspended`/`inactive`/`banned`).
+#     + [QUY CHUẨN POPUP / MODAL MOBILE]: Tất cả popup (đăng ký sự kiện, đăng sản phẩm, đăng tin tức, chia sẻ cơ hội, v.v.) BẮT BUỘC có Header cố định trên cùng, Footer cố định dưới cùng, phần nội dung Body ở giữa cuộn linh hoạt (`overflow-y-auto`) nhưng TUYỆT ĐỐI KHÔNG được hiển thị thanh cuộn (scrollbar) ra giao diện (`scrollbar-width: none !important; -ms-overflow-style: none !important; &::-webkit-scrollbar { display: none !important; }`).
+#     + [QUY CHUẨN KHO ẢNH SỰ KIỆN]: Mỗi sự kiện phải hỗ trợ trường `photoGalleryUrl` (Google Drive, Cloud storage, Onedrive) do Ban Truyền Thông cập nhật sau sự kiện; cả hệ thống CRM và Mobile App đều hiển thị nút mở trực tiếp link kho ảnh cho hội viên truy cập xem ảnh.
+#     + [QUY CHUẨN THẺ HỘI VIÊN TRANG CHỦ & HƯỚNG DẪN SỬ DỤNG]: Thẻ hội viên trang chủ tối giản, bỏ logo phụ, bỏ huy hiệu "hội viên chính thức", bỏ công ty, chỉ hiển thị Tên hội viên, SĐT và Chức danh; Mục tiện ích nhanh thay "Sự kiện" bằng "Hướng dẫn sử dụng" có tích hợp thuyết minh giọng nói (SpeechSynthesis).
+#     + [QUY CHUẨN CHỈNH SỬA TIN NHẮN (CRM & MOBILE)]: Cả ứng dụng Mobile Chat (`ChatThread.tsx`) và CRM Inbox (`connect-app.inbox.$threadId.tsx`) hỗ trợ chỉnh sửa tin nhắn đã gửi thông qua endpoint `PATCH /dm/member/messages/:id` và `editMemberMessage`. Khi tin nhắn được chỉnh sửa, hiển thị badge `(Đã chỉnh sửa)` cạnh timestamp.
+#     + [QUY CHUẨN PHÂN BIỆT & PHÂN QUYỀN TÀI LIỆU HIỆP HỘI VS DOANH NGHIỆP]:
+#       * Toàn bộ tài liệu chia thành 2 nhóm: `association` (Tài liệu Hiệp Hội) và `enterprise` (Tài liệu Doanh Nghiệp).
+#       * Nghiêm ngặt: Tài liệu Hiệp Hội (`docScope: 'association'`) CHỈ có Quản trị (Admin, Platform Admin), Chủ tịch, Ban Điều Hành và Trưởng các ban mới có quyền Thêm, Chỉnh sửa, Upload hoặc Xóa. Thành viên thường CHỈ có quyền Xem và Tải về (Read-only).
+#       * Tài liệu Doanh Nghiệp (`docScope: 'enterprise'`): Doanh nghiệp hội viên chủ động quản lý hồ sơ năng lực, catalogue, báo cáo và chứng nhận của doanh nghiệp mình.
+#     + [QUY CHUẨN TRỢ LÝ AI ĐỘNG & NGỮ CẢNH HỘI THOẠI]: Con AI trợ lý CEO 1983 tuyệt đối KHÔNG trả lời tĩnh theo khuôn mẫu; tích hợp toàn diện dữ liệu Ban Chấp Hành, các ban chuyên môn, lịch sự kiện, hội phí, cơ hội marketplace, tài liệu và tái lập `syntheticMemory` để ghi nhớ ngữ cảnh multi-turn của người dùng.
 #
 # [BẮT BUỘC 7] Kiến trúc Thư mục Đóng gói theo Chức năng (Feature-First / Domain Co-location Architecture):
 #   - Khi phát triển chức năng mới hoặc sửa chức năng có sẵn: Bắt buộc gom toàn bộ mã nguồn của chức năng đó vào ĐÚNG thư mục mang tên chức năng (`features/<ten-chuc-nang>/` hoặc module tương ứng).
@@ -1526,5 +1567,99 @@
   + Tuyệt đối KHÔNG khai báo bất kỳ React Hook nào (`useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`) phía sau câu lệnh return sớm (như `if (!open) return null;`).
   + 100% Hooks phải được khai báo trên cùng của component function để tránh lỗi `React Error #310: Rendered more hooks than during the previous render`, gây crash ứng dụng và kích hoạt màn hình ErrorBoundary "Something went wrong".
 
+# [BẮT BUỘC 87] Quy Chuẩn Soạn Thảo Tài Liệu Đào Tạo / HDSD HTML + PDF Theo Playbook 18 & Chuẩn Hóa Ảnh Thực Tế
+- Cấu Trúc File & Thư Mục Đích (`docs/training/`):
+  + File tài liệu xuất bản chuẩn: `docs/training/HDSD_HE_THONG_CEO1983_CHUAN_HOA.html`.
+  + Thư mục lưu trữ ảnh thực tế: `docs/training/screenshots/` (và `docs/training/images/`).
+- Bố Cục Trang In A4 & Trình Bày (Playbook 18 & UNICOM Standard):
+  + Bìa tài liệu Cover Page: Khóa cứng `210mm x 297mm`, `page-break-after: always; break-after: page;`, `@page :first { margin: 0 }` để tràn viền hoàn hảo.
+  + Thân tài liệu: Dải flow dài liên tục, `@page { size: A4 portrait; margin: 16mm 12mm 18mm 12mm; }`, tuyệt đối không dùng `overflow:hidden` kèm `flex:1` gây ngắt trang trắng hoặc mất chữ khi in PDF.
+  + Mỗi chương phân hệ (`.trn-section`) phải có `page-break-before: always` khi in.
+  + Mục lục TOC (`#toc`): Khối 2 cột liên kết neo nội bộ 24 chương chi tiết.
+  + Phân định hiển thị ảnh screenshot:
+    * Phân hệ Di động (Mobile App): Phải đặt trong khung Mockup điện thoại dọc chuẩn tỷ lệ 390x844 (`.shot-mobile-grid > .shot-mobile-card > .phone-mockup`).
+    * Phân hệ CRM Web: Đặt trong khung hình ngang rộng sắc nét (`.shot-wrap > .shot > img`).
+- Quy Tắc Chụp Ảnh Thực Tế Nghiêm Ngặt (Zero-Defect Image Quality):
+  + Nghiêm cấm chụp ảnh lỗi, ảnh spinner loading, ảnh skeleton hay ảnh 404.
+  + Mọi thao tác chụp ảnh tự động (Playwright/Puppeteer) bắt buộc phải có cơ chế chờ `waitUntil: 'networkidle'` kết hợp tối thiểu `waitForTimeout(3500 - 4000)` để dữ liệu thực tế render hoàn chỉnh 100%.
+  + Kiểm định trước khi bàn giao: 100% đường dẫn ảnh trong file HTML phải tồn tại thực tế trên đĩa với dung lượng lớn (> 150KB - 1MB), không được phép sót bất kỳ ảnh 404 nào.
+- Nội Dung Chi Tiết Từng Tính Năng:
+  + Bắt buộc đầy đủ 5 thành tố: 1) Mục tiêu nghiệp vụ; 2) Đường dẫn truy cập; 3) Quy trình thao tác từng bước; 4) Bảng đặc tả chi tiết 100% trường dữ liệu (Tên trường, Bắt buộc, Kiểu dữ liệu, Hướng dẫn nhập, Mục đích); 5) Hộp lưu ý/cảnh báo và Hình ảnh minh chứng thực tế.
 
+# [BẮT BUỘC 88] Quy Chuẩn Đồng Bộ Bảng Dữ Liệu Ma Trận Phân Quyền, 4 Thẻ Metric KPI & Fallback Upload Không Lỗi 500
+- Chuẩn Hóa Bảng Dữ Liệu (Custom Table Matrix Standard):
+  + Container: `self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 shadow-xs flex flex-col overflow-hidden`.
+  + Table Header: `border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200`.
+  + Sticky Columns: Cột STT `sticky left-0 z-20 bg-slate-100 dark:bg-slate-800 text-center w-[56px] border-r border-b`, cột Mã/Tên `sticky left-[56px] z-20 border-r border-b shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]`, cột Thao tác `sticky right-0 z-20 border-l border-b shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]`.
+  + Áp dụng thống nhất cho toàn bộ các trang CRM (Events, Members, Fees, Documents, Marketplace, Opportunities, Renewal, Accounts, Departments).
+- Chuẩn Hóa 4 Thẻ Metric KPI (`StandardMetricCard`, `StandardMetricGrid`):
+  + Chiều cao cố định `h-32`, bo góc `rounded-[20px]`, outline `0.5px`.
+  + 4 Gradient Palette chuẩn: Sky (`from-sky-100`), Violet (`from-violet-100`), Orange (`from-orange-100`), Green (`from-green-100`).
+  + Tiêu đề in hoa, số liệu lớn `text-2xl font-bold font-['Inter']`, dòng chú thích phụ truncate.
+- Chuẩn Hóa Upload Tệp An Toàn Tuyệt Đối (Zero 500 Error Policy):
+  + Backend upload (`upload.service.ts`) bắt buộc kiểm tra tuần tự đa tầng lưu trữ: MinIO S3 -> Danh sách thư mục đĩa cục bộ (`process.cwd()/uploads`, `dist/uploads`, `os.tmpdir()/ceo1983_uploads`, `/app/uploads`, `/tmp/uploads`).
+  + Nếu tất cả ổ đĩa bị khóa ghi, tự động trả về Base64 Data URL (`data:${mimetype};base64,...`) kèm lưu DB để client hoạt động bình thường, tuyệt đối không ném InternalServerErrorException 500.
+  + Controller phục vụ tệp (`upload.controller.ts`) tự động trả về SVG placeholder hợp lệ với HTTP 200 cho hình ảnh nếu tệp không tìm thấy, tuyệt đối không trả 500 hoặc 404 làm vỡ giao diện.
+
+# [BẮT BUỘC 89] Quy Chuẩn 4 Khối Card Thống Kê Màu Gradient, Xuất Excel Chuyên Nghiệp (.xlsx), Nhập Tiền Tệ & Thẻ Sự Kiện Chuẩn Figma
+- 4 Khối Thẻ Thống Kê KPI Màu Gradient:
+  + Áp dụng thống nhất cho Quản lý tài khoản (`accounts.tsx`), Quản lý thu (`income.tsx`), Quản lý chi (`expenses.tsx`), Quản lý công việc (`tasks.tsx`), Quản lý cuộc gặp 1-on-1 (`WorkspaceSummaryCards.tsx`).
+  + Thiết kế: Chiều cao `h-32`, padding `p-4`, bo góc `rounded-[20px]`, outline `outline-[0.50px] outline-slate-200 dark:outline-slate-800`, đổ bóng nhẹ `shadow-xs`.
+  + 4 dải gradient: Ô 1 (Sky `from-sky-100 to-slate-50`), Ô 2 (Violet `from-violet-100 to-white`), Ô 3 (Orange `from-orange-100 to-white`), Ô 4 (Green `from-green-100 to-white`).
+- Tiêu Chuẩn Xuất File Excel Nghiệp Vụ (`excel-export.ts`):
+  + Xuất file định dạng `.xlsx` thật sử dụng engine thư viện `xlsx`.
+  + Phải có khối Header Tiêu đề cơ quan ("HIỆP HỘI DOANH NHÂN CEO 1983 - HANOIBA"), Tên báo cáo in hoa, Ngày giờ kết xuất, Tổng số bản ghi.
+  + Ngày tháng bắt buộc định dạng hiển thị chuẩn `DD/MM/YYYY` (hàm `formatDisplayDate`), tuyệt đối không để thô dạng raw ISO (`2026-03-10T...`).
+  + Có dòng Tổng cộng (Summary) và tự động căn độ rộng cột (`!cols`).
+- Ô Nhập Tiền Tệ Chuyên Dụng (`FormattedCurrencyInput.tsx`):
+  + Sử dụng `cn()` với `!pl-20` hoặc `!pl-8` và `!pr-12` bảo đảm con trỏ nhập không bị che khuất bởi nút chọn loại tiền (₫ / $).
+  + `onFocus` tự động bôi đen toàn bộ số (`e.currentTarget.select()`) giúp người dùng gõ đè số mới mượt mà, không bị kẹt số 0 hay phải xóa thủ công.
+- Chuẩn Hóa Giao Diện Sự Kiện App Mobile CEO 1983:
+  + Trang chủ (`association.index.tsx`): Khu vực "Sự kiện sắp diễn ra" giữ cấu trúc Banner Poster trượt ngang (Horizontal Slider), kèm `EventCountdownMiniBadge` đếm ngược và nút "Xem tất cả" chuyển hướng `/association/events`. Tuyệt đối không nhồi nhét danh sách sự kiện Figma dài vào trang chủ.
+  + Màn hình Sự kiện (`association.events.tsx`): Danh sách sự kiện áp dụng thiết kế card đứng chuẩn Figma (`rounded-2xl`, banner cao 160-192px có gradient overlay mờ, badge ngày tháng dập nổi `TH... / Ngày...`, badge trạng thái vé, nút Bookmark, Category tag, Giờ, Tiêu đề font-bold line-clamp-2, Hàng Ngày + Hàng Địa điểm, divider và Action footer).
+# [BẮT BUỘC 90] Quy Chuẩn Thông Báo & Cuộc Gọi Nền Mobile PWA, Xác Thực Đổi Mật Khẩu Lần Đầu, Sơ Đồ Xếp Ghế Kéo Thả Tự Do & 4 Thẻ KPI Gradient
+- Quy Chuẩn Thông Báo & Cuộc Gọi Đến Chạy Nền Mobile (PWA & Android Native):
+  + Trình duyệt di động (Chrome Android / PWA) chặn `new Notification(...)` và ném lỗi `TypeError: Illegal constructor`. BẮT BUỘC sử dụng `navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options))` để hiển thị thông báo hệ thống và cuộc gọi đến.
+  + Service Worker (`sw.js`) lắng nghe sự kiện `REGISTER_USER`, kích hoạt background polling định kỳ 4.5s kiểm tra `/api/me/active-call` và `/api/me/notifications?unreadOnly=true`.
+  + Thiết lập rung chuông `vibrate: [500, 250, 500, 250, 500, 250, 500]`, `requireInteraction: true`, gán các action tương tác `[Trả lời, Từ chối]`, và `notificationclick` tự động kích hoạt `clients.openWindow` hoặc focus vào tab `/association/messages`.
+  + Native Android wrapper (`MainActivity.java`): Bổ sung `@JavascriptInterface public void registerPushUser(String userId, String token, String serverUrl)` truyền động URL server cho `CeoNotificationSyncService` chạy nền độc lập ngay cả khi tắt app.
+- Xác Thực & Hiển Thị Tài Khoản Đăng Nhập Luồng Đổi Mật Khẩu Lần Đầu:
+  + Khi tài khoản được cấp phát qua email, đăng nhập lần đầu với cờ `res.mustChangePassword === true` hoặc `vba_must_change_password === "true"`, hệ thống bắt buộc chuyển hướng hội viên tới màn hình đổi mật khẩu (`/association/settings?action=change_password&required=true`).
+  + Màn hình đổi mật khẩu bắt buộc hiển thị rõ khối "Tài khoản đăng nhập" (Mã hội viên chính thức, Email hoặc Số điện thoại) để hội viên nắm rõ thông tin định danh dùng để đăng nhập sau này.
+- Chuẩn Hóa Sơ Đồ Chỗ Ngồi Sự Kiện Kéo Thả Tự Do (Dynamic Drag & Drop Seating Studio):
+  + Sơ đồ chỗ ngồi `CinemaSeatingMap.tsx` cung cấp tab ưu tiên "Tự Do (Dynamic Drag & Drop)" biến toàn bộ mặt bằng sàn thành không gian Floor Studio chuyên nghiệp:
+    * Cho phép di chuyển từng ghế đơn lẻ tự do như icon trên màn hình điện thoại tới bất kỳ tọa độ (x, y) trên canvas.
+    * Hỗ trợ tạo, đặt tên và quản lý Phân khu sàn tự do (Dynamic Zones) đa sắc màu, cho phép kéo di dời phân khu qua thanh tiêu đề và co giãn kích thước (resize) trực quan.
+    * Tích hợp công cụ Phóng to/Thu nhỏ (Zoom In/Out 50% - 200%) bằng cuộn chuột hoặc phím điều khiển, và kéo rê toàn bộ mặt bằng sàn (Canvas Pan) mượt mà.
+  + Thao tác kéo thả mượt mà trên cả desktop và mobile qua Pointer Events (`onPointerDown`, `setPointerCapture`, `onPointerMove`, `onPointerUp`) kèm tính năng Bật/Tắt Hít lưới (Snap to Grid 20px), Căn hàng lối tự động (Auto-Align) và lưu trạng thái vào `localStorage` theo từng sự kiện.
+  + Mỗi vị trí ghế đã xếp chỗ bắt buộc hiển thị đầy đủ thông tin đại biểu: Họ và tên (`tên`), Chức danh (`chức danh`), Mã số hội viên (`mã số`), Số điện thoại (`số điện thoại`) và Doanh nghiệp (`doanh nghiệp`).
+  + Bảng chi tiết danh sách đại biểu đã xếp chỗ cung cấp đầy đủ các cột: `[Chỗ ngồi]`, `[Họ và tên đại biểu]`, `[Chức danh]`, `[Mã số]`, `[Số điện thoại]`, `[Doanh nghiệp]`, `[Hạng vé]`, `[Thao tác]`.
+- Đồng Bộ Thứ Tự 4 Khối Thẻ Thống Kê KPI Màu Gradient:
+  + Mọi module CRM (Tài khoản, Cuộc họp, Đăng ký sự kiện, Sổ quỹ, Công việc) thống nhất chuẩn 4 thẻ hình chữ nhật với gradient và thứ tự:
+    1. Sky (`bg-gradient-to-b from-sky-100 to-slate-50`)
+    2. Tím (`bg-gradient-to-b from-violet-100 to-white`)
+    3. Cam (`bg-gradient-to-b from-orange-100 to-white`)
+    4. Xanh lá (`bg-gradient-to-b from-green-100 to-white`)
+
+# [BẮT BUỘC 91] Quy Chuẩn Kết Xuất & Nhập Khẩu Báo Cáo Excel (.xlsx) Chuẩn Doanh Nghiệp & Hiệp Hội
+- Cấu Trúc Khung Tiêu Đề Doanh Nghiệp Chuẩn Quốc Gia (Corporate Banner Header):
+  + Bắt buộc tích hợp banner Quốc hiệu & Tên cơ quan chủ quản tại các dòng đầu tiên của bảng tính:
+    * Dòng 1: Cột trái "HIỆP HỘI DOANH NHÂN CEO 1983 (HANOIBA)" | Cột phải "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"
+    * Dòng 2: Cột trái "BAN CHẤP HÀNH - VĂN PHÒNG HIỆP HỘI" | Cột phải "Độc lập - Tự do - Hạnh phúc"
+    * Dòng 4: Tiêu đề báo cáo in hoa, cỡ chữ lớn, căn giữa (Ví dụ: "BÁO CÁO THU CHI QUỸ VÀ TẠM ỨNG HIỆP HỘI")
+    * Dòng 5: Tiêu đề phụ, thời gian trích xuất hệ thống, tổng số bản ghi
+  + Bổ sung cột "STT" (Số thứ tự) tự động đánh số 1..N trước các cột dữ liệu.
+- Định Dạng Dữ Liệu Chuyên Nghiệp:
+  + Ngày tháng: Bắt buộc dùng `formatDisplayDate(val)` hiển thị định dạng chuẩn Việt Nam `DD/MM/YYYY` (hoặc `DD/MM/YYYY HH:mm`), tuyệt đối không để thô dạng raw ISO.
+  + Tiền tệ / Số học: Bắt buộc dùng `formatExcelCurrency(val)` phân cách hàng nghìn bằng dấu chấm (Ví dụ: `150.000.000 đ`), căn lề phải.
+  + Dòng Tổng cộng: Tự động cộng tổng số tiền, tổng số lượng bản ghi hoặc tỷ lệ %, kèm nhãn "TỔNG CỘNG".
+- Khung Ký Tên 3 Cấp Xác Nhận (Signature Blocks):
+  + Cuối mỗi báo cáo xuất ra bắt buộc có hàng ghi địa danh thời điểm (Ví dụ: "Hà Nội, ngày ... tháng ... năm ...") và 3 cột chữ ký:
+    1. "NGƯỜI LẬP BIỂU" ((Ký, họ tên))
+    2. "KẾ TOÁN TRƯỞNG / THỦ QUỸ / TRƯỞNG BAN" ((Ký, họ tên))
+    3. "CHỦ TỊCH / ĐẠI DIỆN BQT" ((Ký, đóng dấu, họ tên))
+- Tương Thích Ngược & Nhập Khẩu Thông Minh (Smart Excel Import):
+  + Quét tìm hàng tiêu đề bảng (header detection) lên tới 15 dòng đầu tiên (thay vì 5 dòng) để nhận diện chính xác dữ liệu ngay cả khi file có banner cơ quan hoặc dòng trống.
+  + Bỏ qua các dòng chú thích, tổng cộng hoặc khối chữ ký ở chân bảng tính để không tạo bản ghi rác.
+  + Áp dụng thống nhất cho toàn bộ hệ thống CRM: Thu chi quỹ (`income.tsx`, `expenses.tsx`), Hội phí (`fees.index.tsx`), Danh bạ hội viên (`members.index.tsx`), Sự kiện (`events.index.tsx`), Gia hạn (`renewal.tsx`), Doanh nghiệp (`companies.index.tsx`), Phân khúc (`segments.tsx`), Điểm danh sự kiện (`EventCheckinPanel.tsx`).
 

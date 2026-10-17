@@ -117,7 +117,7 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
         </div>
 
         <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
             {/* Image upload */}
             <div>
               <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">

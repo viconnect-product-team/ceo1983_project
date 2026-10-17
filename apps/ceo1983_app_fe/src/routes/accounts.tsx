@@ -39,7 +39,7 @@ import {
   getRolesForDepartment,
   DepartmentItem,
 } from "@/lib/rbac-permission-helpers";
-import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 
 export const Route = createFileRoute("/accounts")({
   component: AccountsPage,
@@ -357,16 +357,61 @@ function AccountsPage() {
     });
   }, [accounts, searchQuery, selectedDeptFilter, selectedRoleFilter]);
 
+  // Sắp xếp cột & phân trang đồng nhất
+  const [sortKey, setSortKey] = useState<string | null>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+    setCurrentPage(1);
+  };
+
   // Reset về trang 1 khi lọc hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedDeptFilter, selectedRoleFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / pageSize));
+  const sortedAccounts = useMemo(() => {
+    if (!sortKey) return filteredAccounts;
+    const copy = [...filteredAccounts];
+    copy.sort((a, b) => {
+      let av: string | number = "";
+      let bv: string | number = "";
+      if (sortKey === "name") {
+        av = a.name;
+        bv = b.name;
+      } else if (sortKey === "code") {
+        av = a.code;
+        bv = b.code;
+      } else if (sortKey === "email") {
+        av = a.email;
+        bv = b.email;
+      } else if (sortKey === "company") {
+        av = a.companyName || "";
+        bv = b.companyName || "";
+      } else if (sortKey === "dept") {
+        av = a.department || "";
+        bv = b.department || "";
+      } else if (sortKey === "role") {
+        av = a.role || "";
+        bv = b.role || "";
+      }
+      const cmp = String(av).localeCompare(String(bv), "vi", { numeric: true });
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return copy;
+  }, [filteredAccounts, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedAccounts.length / pageSize));
   const paginatedAccounts = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return filteredAccounts.slice(start, start + pageSize);
-  }, [filteredAccounts, currentPage, pageSize]);
+    return sortedAccounts.slice(start, start + pageSize);
+  }, [sortedAccounts, currentPage, pageSize]);
 
   const getRoleBadge = (roleKey: string) => {
     const found = SYSTEM_ROLES.find((r) => r.key === roleKey);
@@ -562,131 +607,171 @@ function AccountsPage() {
           </div>
         )}
 
-        {/* ── BẢNG TÀI KHOẢN (Figma Exact Table Design) ── */}
+        {/* ── BẢNG TÀI KHOẢN (Figma Exact Table Design & Resizable Columns) ── */}
         <div className="self-stretch bg-white dark:bg-card rounded-[20px] outline outline-1 outline-slate-200 overflow-hidden shadow-xs">
-          <table className="w-full text-left border-collapse min-w-[1050px]">
-            <thead>
-              <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 text-xs font-bold text-slate-900 dark:text-slate-100">
-                <th className="w-12 px-3 text-center border-r border-slate-200">STT</th>
-                <th className="w-64 px-6 border-r border-slate-200">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-blue-800" strokeWidth={2.2} />
-                    <span>THÔNG TIN TÀI KHOẢN</span>
-                  </div>
-                </th>
-                <th className="w-48 px-4 border-r border-slate-200">LIÊN HỆ</th>
-                <th className="w-52 px-4 border-r border-slate-200">DOANH NGHIỆP</th>
-                <th className="w-40 px-4 border-r border-slate-200">PHÂN LOẠI BAN</th>
-                <th className="w-24 px-4 border-r border-slate-200">VAI TRÒ</th>
-                <th className="w-32 px-4 text-center">THAO TÁC</th>
-              </tr>
-            </thead>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[1050px]">
+              <thead>
+                <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <th className="w-12 px-3 text-center border-r border-slate-200 select-none">STT</th>
+                  <SortHeader
+                    label="THÔNG TIN TÀI KHOẢN"
+                    columnKey="name"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    width={280}
+                    className="border-r border-slate-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-blue-800" strokeWidth={2.2} />
+                      <span>THÔNG TIN TÀI KHOẢN</span>
+                    </div>
+                  </SortHeader>
+                  <SortHeader
+                    label="LIÊN HỆ"
+                    columnKey="email"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    width={210}
+                    className="border-r border-slate-200"
+                  />
+                  <SortHeader
+                    label="DOANH NGHIỆP"
+                    columnKey="company"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    width={230}
+                    className="border-r border-slate-200"
+                  />
+                  <SortHeader
+                    label="PHÂN LOẠI BAN"
+                    columnKey="dept"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    width={180}
+                    className="border-r border-slate-200"
+                  />
+                  <SortHeader
+                    label="VAI TRÒ"
+                    columnKey="role"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    width={140}
+                    className="border-r border-slate-200"
+                  />
+                  <th className="w-32 px-4 text-center select-none">THAO TÁC</th>
+                </tr>
+              </thead>
 
-            <tbody className="divide-y divide-slate-200 text-xs">
-              {paginatedAccounts.map((acc, index) => (
-                <tr key={acc.id} className="h-16 hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
-                  {/* STT */}
-                  <td className="w-12 px-3 text-center text-slate-500 text-xs font-semibold border-r border-slate-200">
-                    {(currentPage - 1) * pageSize + index + 1}
-                  </td>
+              <tbody className="divide-y divide-slate-200 text-xs">
+                {paginatedAccounts.map((acc, index) => (
+                  <tr key={acc.id} className="h-16 hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
+                    {/* STT */}
+                    <td className="w-12 px-3 text-center text-slate-500 text-xs font-semibold border-r border-slate-200">
+                      {(currentPage - 1) * pageSize + index + 1}
+                    </td>
 
-                  {/* THÔNG TIN TÀI KHOẢN */}
-                  <td className="w-64 px-6 border-r border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center font-semibold text-xs shrink-0">
-                        {acc.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-slate-900 dark:text-white text-xs font-bold truncate">{acc.name}</div>
-                        <div className="mt-0.5 inline-flex px-1 bg-indigo-50 dark:bg-indigo-950/60 rounded-[3px]">
-                          <span className="text-blue-800 dark:text-blue-300 text-[10px] font-bold font-mono leading-3">{acc.code}</span>
+                    {/* THÔNG TIN TÀI KHOẢN */}
+                    <td className="px-6 border-r border-slate-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center font-semibold text-xs shrink-0">
+                          {acc.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-slate-900 dark:text-white text-xs font-bold truncate">{acc.name}</div>
+                          <div className="mt-0.5 inline-flex px-1 bg-indigo-50 dark:bg-indigo-950/60 rounded-[3px]">
+                            <span className="text-blue-800 dark:text-blue-300 text-[10px] font-bold font-mono leading-3">{acc.code}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* LIÊN HỆ */}
-                  <td className="w-48 px-4 border-r border-slate-200">
-                    <div className="flex items-center gap-1.5 text-slate-500 text-xs truncate">
-                      <Mail className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={2} />
-                      <span className="truncate">{acc.email}</span>
-                    </div>
-                    {acc.phone && (
-                      <div className="flex items-center gap-1.5 text-slate-500 text-xs mt-1">
-                        <Phone className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={2} />
-                        <span>{acc.phone}</span>
+                    {/* LIÊN HỆ */}
+                    <td className="px-4 border-r border-slate-200">
+                      <div className="flex items-center gap-1.5 text-slate-500 text-xs truncate">
+                        <Mail className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={2} />
+                        <span className="truncate">{acc.email}</span>
                       </div>
-                    )}
-                  </td>
+                      {acc.phone && (
+                        <div className="flex items-center gap-1.5 text-slate-500 text-xs mt-1">
+                          <Phone className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={2} />
+                          <span>{acc.phone}</span>
+                        </div>
+                      )}
+                    </td>
 
-                  {/* DOANH NGHIỆP */}
-                  <td className="w-52 px-4 border-r border-slate-200">
-                    <div className="text-slate-900 dark:text-white text-xs font-semibold truncate">{acc.companyName || "—"}</div>
-                    <div className="text-slate-500 text-[10px]">Pháp nhân hội viên</div>
-                  </td>
+                    {/* DOANH NGHIỆP */}
+                    <td className="px-4 border-r border-slate-200">
+                      <div className="text-slate-900 dark:text-white text-xs font-semibold truncate">{acc.companyName || "—"}</div>
+                      <div className="text-slate-500 text-[10px]">Pháp nhân hội viên</div>
+                    </td>
 
-                  {/* PHÂN LOẠI BAN */}
-                  <td className="w-40 px-4 border-r border-slate-200">
-                    <div className="px-2.5 py-1 bg-sky-100 dark:bg-sky-950/60 rounded-xl inline-flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5 shrink-0 text-sky-700 dark:text-sky-300" strokeWidth={2} />
-                      <span className="text-slate-900 dark:text-sky-200 text-xs font-semibold leading-4">{acc.department}</span>
-                    </div>
-                  </td>
+                    {/* PHÂN LOẠI BAN */}
+                    <td className="px-4 border-r border-slate-200">
+                      <div className="px-2.5 py-1 bg-sky-100 dark:bg-sky-950/60 rounded-xl inline-flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-sky-700 dark:text-sky-300" strokeWidth={2} />
+                        <span className="text-slate-900 dark:text-sky-200 text-xs font-semibold leading-4">{acc.department}</span>
+                      </div>
+                    </td>
 
-                  {/* VAI TRÒ */}
-                  <td className="w-24 px-4 border-r border-slate-200">
-                    <div className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-[5px] outline outline-1 outline-slate-200 inline-block">
-                      <span className="text-slate-900 dark:text-slate-100 text-xs font-semibold">{getRoleLabel(acc.role)}</span>
-                    </div>
-                  </td>
+                    {/* VAI TRÒ */}
+                    <td className="px-4 border-r border-slate-200">
+                      <div className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-[5px] outline outline-1 outline-slate-200 inline-block">
+                        <span className="text-slate-900 dark:text-slate-100 text-xs font-semibold">{getRoleLabel(acc.role)}</span>
+                      </div>
+                    </td>
 
-                  {/* THAO TÁC */}
-                  <td className="w-32 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenView(acc)}
-                        title="Xem chi tiết"
-                        aria-label="Xem chi tiết"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
-                      >
-                        <Eye className="h-4 w-4" strokeWidth={2.2} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(acc)}
-                        title="Chỉnh sửa"
-                        aria-label="Chỉnh sửa"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
-                      >
-                        <Pencil className="h-4 w-4" strokeWidth={2.2} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmAccount(acc)}
-                        title="Xóa tài khoản"
-                        aria-label="Xóa tài khoản"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 transition cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
-                      >
-                        <Trash2 className="h-4 w-4" strokeWidth={2.2} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {/* THAO TÁC */}
+                    <td className="px-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenView(acc)}
+                          title="Xem chi tiết"
+                          aria-label="Xem chi tiết"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
+                        >
+                          <Eye className="h-4 w-4" strokeWidth={2.2} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(acc)}
+                          title="Chỉnh sửa"
+                          aria-label="Chỉnh sửa"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
+                        >
+                          <Pencil className="h-4 w-4" strokeWidth={2.2} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmAccount(acc)}
+                          title="Xóa tài khoản"
+                          aria-label="Xóa tài khoản"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 transition cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
+                        >
+                          <Trash2 className="h-4 w-4" strokeWidth={2.2} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* ── THANH CHUYỂN TRANG (PAGINATION CHUẨN CRM ẢNH 1) ── */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+          {/* ── THANH CHUYỂN TRANG LIỀN KHỐI ĐỒNG NHẤT (DOCK FOOTER) ── */}
           <Pagination
             page={currentPage}
             pageCount={totalPages}
             pageSize={pageSize}
-            total={filteredAccounts.length}
-            from={filteredAccounts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
-            to={Math.min(currentPage * pageSize, filteredAccounts.length)}
+            total={sortedAccounts.length}
+            from={sortedAccounts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+            to={Math.min(currentPage * pageSize, sortedAccounts.length)}
             onPage={(p) => setCurrentPage(p)}
             onPageSize={(size) => {
               setPageSize(size);

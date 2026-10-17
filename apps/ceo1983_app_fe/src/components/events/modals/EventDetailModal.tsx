@@ -14,9 +14,12 @@ import {
   Lock,
   Handshake,
   Copy,
+  Camera,
+  Image as ImageIcon,
+  FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
 import { isEventFull } from "@/lib/member-app.functions";
 
@@ -87,8 +90,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
   const guestRegUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/events/${selectedEvent.id}/register?source=guest_qr`
-      : `https://crm.ceo1983.viconnect.vn/events/${selectedEvent.id}/register?source=guest_qr`;
+      ? `${window.location.origin}/guest-event-register/${selectedEvent.id}`
+      : `https://crm.ceo1983.viconnect.vn/guest-event-register/${selectedEvent.id}`;
 
   return (
     <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && onClose()}>
@@ -124,12 +127,12 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             </div>
 
             <div className="relative z-10 mt-3">
-              <h3 className="text-[18px] sm:text-[20px] font-black text-white line-clamp-2 leading-tight drop-shadow-md">
+              <DialogTitle className="text-[18px] sm:text-[20px] font-black text-white line-clamp-2 leading-tight drop-shadow-md">
                 {selectedEvent.title}
-              </h3>
-              <p className="text-[11px] text-amber-300/90 font-bold tracking-wide uppercase mt-0.5">
+              </DialogTitle>
+              <DialogDescription className="text-[11px] text-amber-300/90 font-bold tracking-wide uppercase mt-0.5">
                 {selectedAgenda.subtitle}
-              </p>
+              </DialogDescription>
             </div>
 
             {/* Countdown Timer on Modal Banner */}
@@ -243,6 +246,21 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                       {selectedAgenda.offer}
                     </span>
                   </span>
+                </div>
+              )}
+
+              {/* Link ảnh sự kiện (Google Drive / Cloud storage) dành cho hội viên và ban truyền thông */}
+              {(selectedEvent.photoGalleryUrl || (selectedEvent as any).photo_gallery_url || (selectedEvent as any).driveUrl || selectedAgenda.photoGalleryUrl) && (
+                <div className="pt-2 border-t border-amber-300/40">
+                  <a
+                    href={selectedEvent.photoGalleryUrl || (selectedEvent as any).photo_gallery_url || (selectedEvent as any).driveUrl || selectedAgenda.photoGalleryUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+                  >
+                    <Camera className="size-4 text-amber-300" />
+                    <span>Xem kho ảnh sự kiện (Google Drive) →</span>
+                  </a>
                 </div>
               )}
             </div>
