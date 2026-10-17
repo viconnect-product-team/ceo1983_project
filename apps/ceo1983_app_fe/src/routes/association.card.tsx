@@ -64,6 +64,12 @@ import { AssociationQrScanModal } from "@/components/member/AssociationQrScanMod
 import { AssociationCardCaptureModal } from "@/components/member/AssociationCardCaptureModal";
 import { PrivacySettingsModal } from "@/components/member/PrivacySettingsModal";
 import { CompanyProfileTemplateModal } from "@/components/member/CompanyProfileTemplateModal";
+import {
+  CompanyProfileTwoPages,
+  type CompanyProfile2PageData,
+  DEFAULT_COMPANY_PROFILE,
+} from "@/components/member/CompanyProfileTwoPages";
+import { CompanyProfileEditModal } from "@/components/member/CompanyProfileEditModal";
 import { useAuth } from "@/context/AuthContext";
 import { useServerData } from "@/hooks/use-server-data";
 import {
@@ -442,6 +448,15 @@ function CardScreen() {
   const [scanModalOpen, setScanModalOpen] = useState(false);
   const [cardCaptureOpen, setCardCaptureOpen] = useState(false);
   const [companyProfileModalOpen, setCompanyProfileModalOpen] = useState(false);
+  const [edit2PageModalOpen, setEdit2PageModalOpen] = useState(false);
+  const [companyProfile2Pages, setCompanyProfile2Pages] = useState<CompanyProfile2PageData>(() => {
+    if (typeof window === "undefined") return DEFAULT_COMPANY_PROFILE;
+    try {
+      const raw = localStorage.getItem("vba_company_profile_2pages");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return DEFAULT_COMPANY_PROFILE;
+  });
   const [contractData, setContractData] = useState(() => {
     if (typeof window === "undefined") {
       return {
@@ -524,6 +539,12 @@ function CardScreen() {
         }
       } catch {}
     };
+    const handle2PageProfileUpdate = (e?: any) => {
+      try {
+        const raw = localStorage.getItem("vba_company_profile_2pages");
+        if (raw) setCompanyProfile2Pages(JSON.parse(raw));
+      } catch {}
+    };
     window.addEventListener("profile-updated", handleProfileUpdate);
     window.addEventListener("vba_profile_updated", handleProfileUpdate);
     window.addEventListener("avatar-updated", handleProfileUpdate);
@@ -532,6 +553,7 @@ function CardScreen() {
     window.addEventListener("privacy-updated", handleSyncContractAndPrivacy);
     window.addEventListener("vba_member_cover_updated", handleCoverUpdate);
     window.addEventListener("vba_member_company_logo_updated", handleLogoUpdate);
+    window.addEventListener("vba_company_profile_2pages_updated", handle2PageProfileUpdate);
     window.addEventListener("storage", handleProfileUpdate);
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
@@ -542,6 +564,7 @@ function CardScreen() {
       window.removeEventListener("privacy-updated", handleSyncContractAndPrivacy);
       window.removeEventListener("vba_member_cover_updated", handleCoverUpdate);
       window.removeEventListener("vba_member_company_logo_updated", handleLogoUpdate);
+      window.removeEventListener("vba_company_profile_2pages_updated", handle2PageProfileUpdate);
       window.removeEventListener("storage", handleProfileUpdate);
     };
   }, []);
@@ -855,24 +878,19 @@ function CardScreen() {
             onChange={handleUploadCompanyProfile}
           />
 
-          {/* Hàng nút Quản lý Profile Doanh Nghiệp (Tải lên profile khác & Xem Profile 3D) */}
-          <div className="grid grid-cols-2 gap-2.5 w-full">
+          {/* Nút text ngắn Tải Profile per user request: "còn nút tải profile thì làm text ngắn xong bấm vào thôi" */}
+          <div className="flex items-center justify-between px-1.5 py-1 text-xs">
+            <span className="text-slate-500 dark:text-slate-400 font-medium">
+              Hồ sơ năng lực doanh nghiệp:
+            </span>
             <button
               type="button"
               onClick={() => profileFileInputRef.current?.click()}
               disabled={uploadingProfile}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 active:scale-98 transition cursor-pointer border border-amber-300 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#003B95] dark:text-amber-400 hover:underline cursor-pointer active:scale-95 transition"
             >
-              <FileUp className="h-4 w-4 text-slate-950" />
-              <span>{uploadingProfile ? "Đang tải lên..." : "Tải lên Profile khác"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCompanyProfileModalOpen(true)}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-400/60 bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs shadow-md shadow-amber-500/10 active:scale-98 transition cursor-pointer"
-            >
-              <Eye className="h-4 w-4 text-amber-400" />
-              <span>Xem Profile 3D</span>
+              <FileUp className="h-3.5 w-3.5" />
+              <span>{uploadingProfile ? "Đang tải lên..." : "Tải profile"}</span>
             </button>
           </div>
         </div>
@@ -1019,6 +1037,98 @@ function CardScreen() {
             </button>
           </div>
         </div>
+
+        {/* ── PROFILE DOANH NGHIỆP 2 TRANG HIỆN NGAY BÊN DƯỚI CÁC TRƯỜNG THEO YÊU CẦU ── */}
+        <div id="company-profile-2pages-section" className="mt-4">
+          <CompanyProfileTwoPages
+            data={{
+              ...companyProfile2Pages,
+              companyName:
+                companyProfile2Pages.companyName && companyProfile2Pages.companyName !== DEFAULT_COMPANY_PROFILE.companyName
+                  ? companyProfile2Pages.companyName
+                  : d.company || (effectiveMember as any)?.company || (effectiveMember as any)?.companyName || DEFAULT_COMPANY_PROFILE.companyName,
+              logoUrl: companyProfile2Pages.logoUrl || companyLogo,
+              leaderName:
+                companyProfile2Pages.leaderName && companyProfile2Pages.leaderName !== DEFAULT_COMPANY_PROFILE.leaderName
+                  ? companyProfile2Pages.leaderName
+                  : d.name || effectiveMember?.name || DEFAULT_COMPANY_PROFILE.leaderName,
+              leaderTitle:
+                companyProfile2Pages.leaderTitle && companyProfile2Pages.leaderTitle !== DEFAULT_COMPANY_PROFILE.leaderTitle
+                  ? companyProfile2Pages.leaderTitle
+                  : customProfile?.title || (effectiveMember as any)?.position || effectiveMember?.title || DEFAULT_COMPANY_PROFILE.leaderTitle,
+              memberCode: currentMemberCode,
+              hotline: companyProfile2Pages.hotline || customProfile?.phone || effectiveMember?.phone || DEFAULT_COMPANY_PROFILE.hotline,
+              email: companyProfile2Pages.email || customProfile?.email || effectiveMember?.email || DEFAULT_COMPANY_PROFILE.email,
+              officeAddress: companyProfile2Pages.officeAddress || customProfile?.address || effectiveMember?.address || DEFAULT_COMPANY_PROFILE.officeAddress,
+              website: companyProfile2Pages.website || customProfile?.website || effectiveMember?.website || DEFAULT_COMPANY_PROFILE.website,
+              taxCode: companyProfile2Pages.taxCode || customProfile?.taxCode || DEFAULT_COMPANY_PROFILE.taxCode,
+              companyProfileUrl:
+                customProfile?.companyProfileUrl ||
+                (effectiveMember as any)?.companyProfileUrl ||
+                (effectiveMember as any)?.brochureUrl ||
+                companyProfile2Pages.companyProfileUrl,
+              companyProfileName:
+                customProfile?.companyProfileName ||
+                companyProfile2Pages.companyProfileName,
+            }}
+            canEdit={true}
+            onEdit={() => setEdit2PageModalOpen(true)}
+            onUploadFile={() => profileFileInputRef.current?.click()}
+            onRemoveUploadedFile={() => {
+              const updated = {
+                ...customProfile,
+                companyProfileUrl: null,
+                companyProfileName: null,
+              };
+              setCustomProfile(updated);
+              try {
+                localStorage.setItem("vba_custom_profile", JSON.stringify(updated));
+                const p2 = { ...companyProfile2Pages, companyProfileUrl: null, companyProfileName: null };
+                localStorage.setItem("vba_company_profile_2pages", JSON.stringify(p2));
+                setCompanyProfile2Pages(p2);
+              } catch {}
+              toast.success("Đã chuyển về mẫu hồ sơ số hóa 2 trang!");
+            }}
+          />
+        </div>
+
+        {/* Modal chỉnh sửa Profile 2 trang */}
+        <CompanyProfileEditModal
+          open={edit2PageModalOpen}
+          onClose={() => setEdit2PageModalOpen(false)}
+          initialData={{
+            ...companyProfile2Pages,
+            companyName:
+              companyProfile2Pages.companyName && companyProfile2Pages.companyName !== DEFAULT_COMPANY_PROFILE.companyName
+                ? companyProfile2Pages.companyName
+                : d.company || (effectiveMember as any)?.company || (effectiveMember as any)?.companyName || DEFAULT_COMPANY_PROFILE.companyName,
+            logoUrl: companyProfile2Pages.logoUrl || companyLogo,
+            leaderName:
+              companyProfile2Pages.leaderName && companyProfile2Pages.leaderName !== DEFAULT_COMPANY_PROFILE.leaderName
+                ? companyProfile2Pages.leaderName
+                : d.name || effectiveMember?.name || DEFAULT_COMPANY_PROFILE.leaderName,
+            leaderTitle:
+              companyProfile2Pages.leaderTitle && companyProfile2Pages.leaderTitle !== DEFAULT_COMPANY_PROFILE.leaderTitle
+                ? companyProfile2Pages.leaderTitle
+                : customProfile?.title || (effectiveMember as any)?.position || effectiveMember?.title || DEFAULT_COMPANY_PROFILE.leaderTitle,
+            memberCode: currentMemberCode,
+            hotline: companyProfile2Pages.hotline || customProfile?.phone || effectiveMember?.phone || DEFAULT_COMPANY_PROFILE.hotline,
+            email: companyProfile2Pages.email || customProfile?.email || effectiveMember?.email || DEFAULT_COMPANY_PROFILE.email,
+            officeAddress: companyProfile2Pages.officeAddress || customProfile?.address || effectiveMember?.address || DEFAULT_COMPANY_PROFILE.officeAddress,
+            website: companyProfile2Pages.website || customProfile?.website || effectiveMember?.website || DEFAULT_COMPANY_PROFILE.website,
+            taxCode: companyProfile2Pages.taxCode || customProfile?.taxCode || DEFAULT_COMPANY_PROFILE.taxCode,
+            companyProfileUrl:
+              customProfile?.companyProfileUrl ||
+              (effectiveMember as any)?.companyProfileUrl ||
+              companyProfile2Pages.companyProfileUrl,
+            companyProfileName:
+              customProfile?.companyProfileName ||
+              companyProfile2Pages.companyProfileName,
+          }}
+          onSaved={(newData) => {
+            setCompanyProfile2Pages(newData);
+          }}
+        />
 
         {/* Association QR Scan Modal (Req 8) */}
         <AssociationQrScanModal

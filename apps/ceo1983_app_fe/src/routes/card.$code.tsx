@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
+import { CompanyProfileTwoPages } from "@/components/member/CompanyProfileTwoPages";
 import { CompanyProfile3DTemplate } from "@/components/member/CompanyProfile3DTemplate";
 import { CompanyProfileTemplateModal } from "@/components/member/CompanyProfileTemplateModal";
 import { getPublicCard, type PublicCard } from "@/lib/card.functions";
@@ -492,27 +493,22 @@ function PublicCardView() {
           </dl>
         </div>
 
-        {/* ── PROFILE DOANH NGHIỆP 3D XUẤT HIỆN NGAY DƯỚI THÔNG TIN HỘI VIÊN KHI QUÉT MÃ QR (Req 5) ── */}
+        {/* ── PROFILE DOANH NGHIỆP 2 TRANG XUẤT HIỆN NGAY DƯỚI THÔNG TIN HỘI VIÊN KHI QUÉT MÃ QR ── */}
         <div className="mt-4">
-          <CompanyProfile3DTemplate
+          <CompanyProfileTwoPages
             data={{
               companyName: secondaryCompany,
               leaderName: primaryName,
               leaderTitle: primaryTitle,
               memberCode: code,
-              industry: resolvedIndustry,
-              phone: member.phone || undefined,
+              officeAddress: member.address || undefined,
+              hotline: member.phone || undefined,
               email: member.email || undefined,
-              address: member.address || undefined,
               website: member.website || undefined,
               avatarUrl: resolvedPhoto || null,
               logoUrl: (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null,
-              coverUrl: (member as any)?.coverUrl || (member as any)?.coverPhoto || null,
-              featuredProducts: (member as any)?.featuredProducts || undefined,
               companyProfileUrl: (member as any)?.companyProfileUrl || (member as any)?.brochureUrl || null,
             }}
-            showDownloadButton={true}
-            onDownloadCustomProfile={handleDownloadCompanyProfile}
           />
         </div>
 

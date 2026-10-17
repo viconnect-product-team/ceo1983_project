@@ -329,11 +329,16 @@
 #   - Email đăng ký và thẩm định mẫu duy nhất: vupv090120@gmail.com (Doanh nhân Phạm Văn Vũ - CEO Công ty CP Công nghệ VIO CONNECT, MST: 0109831983, SĐT: 0901201983, Mã hội viên: CEO-83007).
 #   - 100% Use Cases và Test Cases bắt buộc phải gắn kèm ảnh chụp minh chứng thực tế trên hệ thống (lưu tại document/images/evidence/), không dùng ảnh placeholder hay ảnh lỗi.
 #   - BẮT BUỘC kiểm tra type check (tsc --noEmit) và AST syntax validation đạt exit code 0 (0 errors) trước khi bàn giao.
-
-
-
-
-
+#
+# [BẮT BUỘC 13.1] Chuẩn Hóa Hồ Sơ Năng Lực Doanh Nghiệp 2 Trang Số Hóa B2B & Cơ Chế Ghi Đè (Thẻ Hội Viên /association/card & /card/:code):
+#   - Hiển thị trực tiếp (Inline Display): Hồ sơ năng lực doanh nghiệp bắt buộc hiển thị trực tiếp ngay bên dưới khối "Hồ sơ Doanh nghiệp & Cá nhân", không ẩn trong modal hoặc bắt bấm nút xem 3D riêng.
+#   - Nút tải profile: Tối giản thành nút text ngắn "Tải profile" gọn gàng, kích hoạt trực tiếp trình chọn file tải lên (PDF/ảnh).
+#   - Cấu trúc 2 trang chuẩn mực:
+#     + TRANG 1 (ĐỊNH VỊ THƯƠNG HIỆU & NĂNG LỰC CỐT LÕI): Header (Logo lớn, Tên đầy đủ công ty, Slogan định vị), Giới thiệu ngắn About Us (3–5 câu về sứ mệnh), 3 Giá trị cốt lõi (từ khóa + mô tả), Danh mục dịch vụ/sản phẩm chủ lực (có huy hiệu dịch vụ mũi nhọn tự tin cạnh tranh nhất).
+#     + TRANG 2 (THẾ MẠNH CẠNH TRANH & THÔNG TIN LIÊN HỆ): Tại sao chọn chúng tôi (Năng lực nhân sự chuyên gia + Chính sách cam kết ưu việt), Quy trình làm việc 4 bước (Sơ đồ ngang tinh gọn tiết kiệm diện tích), Footer thông tin pháp lý & liên hệ (Mã số thuế, Hotline, Địa chỉ văn phòng, Email, Website).
+#   - Khả năng chỉnh sửa: Có icon Pencil chỉnh sửa trên thanh tiêu đề và từng trang, mở CompanyProfileEditModal (2 tab) để cập nhật và đồng bộ vào vba_company_profile_2pages, vba_custom_profile và NestJS API /members/me.
+#   - Cơ chế ghi đè (Override Mode): Khi hội viên đã tải lên file profile riêng (PDF/ảnh), hệ thống ghi đè và ưu tiên hiển thị file tải lên thay cho template mặc định của code, đồng thời cung cấp nút linh hoạt chuyển về mẫu 2 trang.
+#
 # [BẮT BUỘC 14] Quy Chuẩn Slide Thuyết Trình Đối Ngoại & Khung Mockup Mobile Titanium:
 #   - Slide thuyết trình (CRM & App) TUYỆT ĐỐI KHÔNG đưa màn hình đăng nhập tiện ích cơ bản. Bắt buộc tập trung 100% vào giá trị cốt lõi, đặc quyền hội viên, sàn giao thương B2B, sổ quỹ tài chính và công tác đại hội.
 #   - Bộ slide CRM gồm đúng 16 slides (CHỨC NĂNG QUẢN TRỊ 01 -> 16); Bộ slide App gồm đúng 20 slides (CHỨC NĂNG HỘI VIÊN 01 -> 20).
