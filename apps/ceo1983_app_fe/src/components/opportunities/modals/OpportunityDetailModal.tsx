@@ -74,11 +74,11 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[440px] my-auto flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in border border-slate-200 dark:border-white/10"
+        className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in border border-slate-200 dark:border-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Poster Header (Image 4) */}
@@ -150,7 +150,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-4 sm:p-5 space-y-3.5 text-[13px] overflow-y-auto max-h-[55vh] [scrollbar-width:thin]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3.5 text-[13px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Context Paragraphs */}
           <div className="space-y-2">
             <h4 className="text-[15px] font-extrabold text-slate-900 dark:text-white leading-snug">
@@ -339,7 +339,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
         </div>
 
         {/* Fixed Footer Buttons */}
-        <div className="flex gap-2.5 px-4 py-3 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
+        <div className="flex gap-2.5 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
           {checkIsMine(selectedOpp) ? (
             <>
               <button

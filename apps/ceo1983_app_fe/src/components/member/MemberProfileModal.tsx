@@ -177,11 +177,11 @@ export function MemberProfileModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] grid place-items-center w-full h-[100dvh] min-h-[100dvh] p-3.5 sm:p-4 my-auto overflow-y-auto bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3.5 sm:p-4 bg-black/75 backdrop-blur-xs overflow-hidden animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="my-auto relative flex flex-col w-full max-w-[400px] max-h-[90dvh] rounded-3xl bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-150"
+        className="relative flex flex-col w-full max-w-[400px] max-h-[90dvh] rounded-3xl bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Fixed Header */}
@@ -200,7 +200,7 @@ export function MemberProfileModal({
         </div>
 
         {/* Scrollable Center Content with Compact / Narrow Width */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 w-full max-w-[360px] mx-auto space-y-3.5 [scrollbar-width:thin]">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3 w-full max-w-[360px] mx-auto space-y-3.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Profile Avatar & Names */}
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
@@ -320,7 +320,7 @@ export function MemberProfileModal({
         </div>
 
         {/* Fixed Footer with Action Buttons */}
-        <div className="shrink-0 px-4 py-3 border-t border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.03]">
+        <div className="shrink-0 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.03]">
           {/* 2 Nút hành động: "Xem danh thiếp số" & "Kết nối ngay / Hủy kết nối" */}
           <div className="flex gap-2">
             <Link

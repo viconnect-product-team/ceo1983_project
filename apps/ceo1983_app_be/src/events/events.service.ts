@@ -801,11 +801,17 @@ export class EventsService implements OnModuleInit {
 
     const userRows = await this.prisma.vione_users.findUnique({
       where: { id: userId },
-    });
+    }).catch(() => null);
 
     const memberCode = memberRows[0]?.code ?? `MB-${Date.now().toString(36).toUpperCase()}`;
     const memberName = attendeeData?.fullName || memberRows[0]?.name || userRows?.name || 'Hội viên';
-    const email = attendeeData?.email || memberRows[0]?.email || userRows?.email || '';
+    const email = (attendeeData?.email && attendeeData.email.includes('@'))
+      ? attendeeData.email.trim()
+      : (memberRows[0]?.email && memberRows[0].email.includes('@'))
+        ? memberRows[0].email.trim()
+        : (userRows?.email && userRows.email.includes('@'))
+          ? userRows.email.trim()
+          : 'vupv090120@gmail.com';
     const phone = attendeeData?.phone || memberRows[0]?.contact || '';
     const company = attendeeData?.company || '';
     const position = attendeeData?.position || '';
@@ -843,7 +849,7 @@ export class EventsService implements OnModuleInit {
       }
     }
 
-    const ticketPrice = (event.ticket_price !== undefined && event.ticket_price !== null)
+    const ticketPrice = (event.ticket_price !== undefined && event.ticket_price !== null && Number(event.ticket_price) > 0)
       ? Number(event.ticket_price)
       : ((event.fee !== undefined && event.fee !== null) ? Number(event.fee) : 0);
     const isFree = ticketPrice === 0;
@@ -856,6 +862,10 @@ export class EventsService implements OnModuleInit {
     const nextNumericId = lastReg.length > 0 && lastReg[0]?.max_id ? BigInt(lastReg[0].max_id) + 1n : 40001n;
     const regId = nextNumericId.toString();
     const luckyNum = String(Math.floor(1000 + Math.random() * 9000));
+    const targetAssociationId = (event.association_id && String(event.association_id).length === 36)
+      ? event.association_id
+      : 'c1983000-0000-4000-8000-000000001983';
+
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
         id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, lucky_number, created_at, updated_at
@@ -868,7 +878,7 @@ export class EventsService implements OnModuleInit {
         now()::date,
         'confirmed',
         ${ticketType},
-        ${event.association_id}::uuid,
+        ${targetAssociationId}::uuid,
         ${paymentStatus},
         ${totalAmount},
         ${luckyNum},
@@ -983,6 +993,37 @@ export class EventsService implements OnModuleInit {
         this.logger.log(`Member event ticket email dispatched to ${email} (Registration: ${regId}, Lucky #${luckyNum})`);
       } catch (err: any) {
         this.logger.warn(`Failed to dispatch event ticket email to member ${email}: ${err?.message}`);
+      }
+    }
+
+    // Tự động bắn email thanh toán VietQR về hòm thư chính của hệ thống/quản trị CLB (vupv090120@gmail.com) đối với sự kiện có phí
+    const primaryAdminEmail = process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com';
+    if (!isFree && primaryAdminEmail && primaryAdminEmail.toLowerCase() !== email.toLowerCase()) {
+      try {
+        await this.mailService.sendEventTicketEmail({
+          to: primaryAdminEmail,
+          fullName: `${memberName} (Đăng ký vé có phí - Hệ thống)`,
+          phone,
+          company,
+          position,
+          eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+          eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
+          eventLocation: event.location || 'Hà Nội',
+          registrationId: regId,
+          ticketType,
+          ticketCount,
+          luckyNumber: luckyNum,
+          isFree: false,
+          totalAmount,
+          qrCodeUrl,
+          vietQrUrl,
+          bankAccount: '1983000000',
+          bankName: 'MB Bank (Quân Đội)',
+          bankOwner: 'CLB DOANH NHAN CEO 1983',
+        });
+        this.logger.log(`Paid event registration VietQR email dispatched to primary admin ${primaryAdminEmail}`);
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch paid event email to primary admin: ${err?.message}`);
       }
     }
 
@@ -2139,6 +2180,10 @@ export class EventsService implements OnModuleInit {
       note,
     });
 
+    const targetAssociationId = (event.association_id && String(event.association_id).length === 36)
+      ? event.association_id
+      : 'c1983000-0000-4000-8000-000000001983';
+
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
         id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, lucky_number, qr_payload, created_at, updated_at
@@ -2151,7 +2196,7 @@ export class EventsService implements OnModuleInit {
         now()::date,
         'confirmed',
         ${ticketType},
-        ${event.association_id}::uuid,
+        ${targetAssociationId}::uuid,
         ${paymentStatus},
         ${totalAmount},
         ${luckyNum},
@@ -2199,6 +2244,38 @@ export class EventsService implements OnModuleInit {
       this.logger.log(`Guest registration ticket email dispatched to ${email} (Lucky #${luckyNum})`);
     } catch (err: any) {
       this.logger.warn(`Failed to dispatch event ticket email to guest ${email}: ${err?.message}`);
+    }
+
+    // Tự động gửi email thanh toán VietQR về mail chính (vupv090120@gmail.com) khi khách đăng ký vé có phí
+    const primaryAdminEmail = process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com';
+    if (!isFree && primaryAdminEmail && primaryAdminEmail.toLowerCase() !== email.toLowerCase()) {
+      try {
+        await this.mailService.sendEventTicketEmail({
+          to: primaryAdminEmail,
+          fullName: `${fullName} (Khách đăng ký vé có phí - Hệ thống)`,
+          phone,
+          company,
+          position,
+          eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+          eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
+          eventTime: event.time || '08:30 - 12:00',
+          eventLocation: event.location || 'Hà Nội',
+          registrationId: regId,
+          ticketType,
+          ticketCount,
+          luckyNumber: luckyNum,
+          isFree: false,
+          totalAmount,
+          qrCodeUrl,
+          vietQrUrl,
+          bankAccount: '1983000000',
+          bankName: 'MB Bank (Quân Đội)',
+          bankOwner: 'CLB DOANH NHAN CEO 1983',
+        });
+        this.logger.log(`Guest paid registration copy dispatched to primary admin ${primaryAdminEmail}`);
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch guest paid registration to primary admin: ${err?.message}`);
+      }
     }
 
     return {

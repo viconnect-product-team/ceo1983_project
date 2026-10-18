@@ -1702,5 +1702,40 @@
   + Cung cấp nút thao tác nhanh "⭐ Đặt làm danh thiếp chính" khi đang xem trước Danh thiếp phụ.
   + Tích hợp nút xem trước trực tiếp ngay trong trình soạn thảo `CardEditor` giúp hội viên rà soát giao diện trước khi lưu.
 
+# [BẮT BUỘC 94] Quy Chuẩn Cố Định Header & Footer, Cuộn Giữa (Scroll-in-Middle) Cho Hộp Thoại Popup / Modal Mobile App CEO 1983
+- Cấu Trúc Khung Popup Mobile Chuẩn Hóa 5 Lớp (Standard 5-Layer Mobile Dialog Pattern):
+  + **1. Backdrop (Lớp phủ nền)**:
+    * BẮT BUỘC dùng: `fixed inset-0 z-[...] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden`
+    * TUYỆT ĐỐI KHÔNG thêm `overflow-y-auto` hoặc `my-auto` trên backdrop vì sẽ gây lỗi cuộn kép (double scroll) và đẩy cả hộp thoại trôi ra ngoài viewport của điện thoại.
+  + **2. Dialog Card (Khung hộp thoại)**:
+    * BẮT BUỘC dùng: `w-full max-w-[...] max-h-[90dvh] flex flex-col rounded-3xl overflow-hidden`
+    * Giới hạn chiều cao tối đa `max-h-[90dvh]` kết hợp với `flex flex-col` để làm neo kích thước cho các phần tử con bên trong.
+  + **3. Header Cố Định (Fixed Header)**:
+    * BẮT BUỘC dùng: `shrink-0 px-5 py-4 border-b flex items-center justify-between`
+    * Bắt buộc có `shrink-0` để không bao giờ bị co lại hoặc biến mất khi nội dung bên dưới quá dài.
+  + **4. Body Cuộn Giữa (Scrollable Middle Content)**:
+    * BẮT BUỘC dùng: `flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-3.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`
+    * BẮT BUỘC phải có CẢ HAI thuộc tính `flex-1` VÀ `min-h-0`. Nếu thiếu `min-h-0`, flexbox sẽ mở rộng kích thước tối thiểu theo nội dung con, phá vỡ chiều cao `max-h-[90dvh]` và đẩy footer ra khỏi màn hình.
+    * Bổ sung `overscroll-contain` để ngăn chặn hiệu ứng cuộn kéo lan ra toàn trang (scroll-chaining) trên thiết bị di động.
+  + **5. Footer Cố Định (Fixed Footer & Safe-Area)**:
+    * BẮT BUỘC dùng: `shrink-0 p-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] border-t flex items-center justify-end`
+    * Bắt buộc có `shrink-0` và padding dưới thích ứng với tai thỏ / thanh điều hướng cử chỉ iOS & Android (`env(safe-area-inset-bottom)`).
+- Phạm vi áp dụng bắt buộc trên 100% Modal/Popup di động: Đăng ký vé sự kiện, Vé đã đăng ký, Chi tiết sự kiện, Tạo/sửa tin tức, Đăng/sửa/xem sản phẩm, Đăng/sửa/xem cơ hội kinh doanh Cung - Cầu, Sửa nhanh hồ sơ cá nhân và Sửa hồ sơ doanh nghiệp.
+
+# [BẮT BUỘC 95] Quy Chuẩn Giao Diện Trang Cá Nhân (Profile) Sáng Sang Trọng (Executive Light Theme) Với Ảnh Bìa & Quick Actions
+- Phong Cách Thiết Kế Executive Light Theme Thay Thế Hoàn Toàn SaaS Theme Tối:
+  + Chuyển đổi toàn diện từ phong cách bảng điều khiển SaaS tối tăm sang giao diện Executive Light Theme thanh lịch, quý phái, bừng sáng nhưng đẳng cấp của lãnh đạo doanh nghiệp.
+  + Nền tảng sử dụng các gam màu sáng tinh tế: `bg-slate-50`, trắng sứ `#FFFFFF`, viền xám bạc siêu mảnh `border-slate-200/80` kết hợp các điểm nhấn Cobalt Navy (`#003B95`) và Warm Amber Gold (`#D97706`).
+- Cấu Trúc Khối Đầu Trang Cá Nhân Độc Bản (Executive Header Hero):
+  + **Ảnh Bìa Doanh Nhân (Cover Photo Background)**: Tỷ lệ hiển thị 16:9 với gradient Luxury Navy & Amber Gold, hoa văn dập nổi CEO 1983 trang trọng, tích hợp nút Camera tròn nhỏ nổi góc phải cho phép tải ảnh bìa trực tiếp lên MinIO.
+  + **Avatar Nổi Sang Trọng (Floating Overlapping Avatar)**: Kích thước lớn 96-112px, viền trắng dày 4px bo tròn nổi hẳn lên giao diện giao thoa giữa ảnh bìa và khối nội dung, vòng hào quang Amber Gold, tích hợp nút Camera tải ảnh chân dung 1 chạm và huy hiệu tích xanh xác minh danh tính.
+  + **Mã Hội Viên Độc Bản & Trạng Thái Hoạt Động**: Huy hiệu mạ vàng VIP (ví dụ: `CEO1983-VIP`) kèm đèn pulse xanh lá báo trạng thái "Đang Hoạt Động".
+  + **Thanh 4 Tác Vụ Nhanh (Executive Quick Action Toolbar)**: Bố trí ngay dưới thông tin chức danh gồm 4 nút tròn/pill thanh lịch: Danh Thiếp Số (`/association/card`), Chỉnh Sửa Hồ Sơ (mở `QuickProfileEditModal`), Chia Sẻ Profile, và Mã QR Hội Viên.
+- Hệ Thống 3 Phân Hệ Tab Chuyên Sâu:
+  + **Tab 1: Hồ Sơ & Giới Thiệu**: Thông tin liên hệ (Hotline, Email, Trụ sở doanh nghiệp, Website), tiểu sử tóm tắt (Bio), các kênh kết nối mạng xã hội trực tiếp (Zalo, Facebook).
+  + **Tab 2: Giao Thương B2B & Hoạt Động**: Thẻ danh thiếp số công khai, Cơ hội B2B Cung - Cầu, Gian hàng sản phẩm đã đăng, Danh bạ đối tác kết nối.
+  + **Tab 3: Tiện Ích & Cài Đặt**: Cổng Quản trị hệ thống, Thông báo đẩy PWA, Đổi ngôn ngữ (VN/EN), Chế độ hiển thị, Sổ tay hướng dẫn, Hỗ trợ Ban Thư Ký, Cài đặt ứng dụng PWA 1 chạm và Đăng xuất an toàn.
+
+
 
 

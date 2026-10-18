@@ -1885,10 +1885,10 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Đăng Ký Vé Mời Miễn Phí Dành Riêng Cho Hội Viên Chính Thức (Zero-Click Booking) |
 | **Tác Nhân (Actor)** | Hội viên chính thức đã hoàn tất hội phí (Doanh nhân Phạm Văn Vũ) |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên chưa đăng ký vé sự kiện; hội phí thường niên đã được xác nhận hoàn thành. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Tại trang chi tiết sự kiện, nút hành động hiển thị: "Nhận Vé Mời Miễn Phí (Đặc Quyền Hội Viên)".<br>2. Hội viên bấm vào nút nhận vé.<br>3. Hệ thống kiểm tra hợp lệ: Xác nhận đúng trạng thái hội viên chính thức, tự động gán vị trí ghế ngồi danh dự tại Bàn VIP.<br>4. Màn hình chúc mừng hiện lên, đồng thời Vé Mời Điện Tử (E-Ticket) xuất hiện ngay trong mục "Vé Của Tôi".<br>5. Quy trình hoàn tất trong 1 giây mà không phát sinh bất kỳ khoản phí nào. |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu hội viên còn nợ phí thường niên: Hệ thống hướng dẫn đóng phí nhanh qua VietQR để mở khóa vé miễn phí. |
-| **Hậu Điều Kiện (Post-conditions)** | Hội viên sở hữu vé mời tham dự sự kiện danh giá một cách tự hào và thuận tiện. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Thao tác nhận vé mời sự kiện miễn phí 1 chạm độc quyền dành cho Hội viên chính thức* |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Tại trang chi tiết sự kiện, nút hành động hiển thị: "Nhận Vé Mời Miễn Phí (Đặc Quyền Hội Viên)" đối với sự kiện miễn phí hoặc "Đăng Ký Vé Sự Kiện" đối với sự kiện có phí.<br>2. Đối với sự kiện miễn phí: Hội viên bấm nhận vé, hệ thống tự động gán vị trí ghế ngồi tại Bàn VIP và cấp Vé Mời E-Ticket ngay lập tức.<br>3. Đối với sự kiện có phí (ví dụ Vé Gala VIP 500.000 VNĐ - 1.500.000 VNĐ):<br>   - Hội viên chọn hạng vé và xác nhận đăng ký trong Modal Đăng ký Vé.<br>   - Hệ thống ghi nhận bản ghi với trạng thái `pending_payment`, cấp mã bốc thăm may mắn `lucky_number`, khởi tạo chuỗi thanh toán `qr_payload`.<br>   - Hệ thống tự động kích hoạt máy chủ thư tín (Google SMTP SSL) bắn email Hướng Dẫn Thanh Toán VietQR tức thời về hòm thư đại diện (`vupv090120@gmail.com`) kèm đầy đủ số tài khoản, ngân hàng, cú pháp chuyển khoản và mã vé.<br>4. Màn hình thông báo xuất hiện, hướng dẫn đại biểu quét mã VietQR Napas 24/7 để hoàn tất thanh toán. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu hội viên là khách mời chưa liên kết tài khoản: Hệ thống tự động định tuyến email thanh toán về hòm thư đại diện mặc định và gán mã hiệp hội chuẩn xác.<br>- Sau khi chuyển khoản thành công: Hệ thống tự động cập nhật trạng thái `confirmed` và phát hành E-Ticket chính thức. |
+| **Hậu Điều Kiện (Post-conditions)** | Hội viên sở hữu vé tham dự sự kiện danh giá hoặc nhận đầy đủ thông tin thanh toán VietQR qua email tiện lợi, minh bạch 100%. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Thao tác nhận vé mời sự kiện miễn phí 1 chạm độc quyền dành cho Hội viên chính thức & Đăng ký vé có phí* |
 
 ![Thao tác nhận vé mời sự kiện miễn phí 1 chạm độc quyền dành cho Hội viên chính thức](images/evidence/app_step_12_event_detail_modal.png)
 
@@ -2444,6 +2444,27 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 * **Camera Soát Vé Thông Minh:** Tự động điều chỉnh tiêu cự nhận diện mã QR trong 0.2 giây kể cả trong điều kiện ánh sáng yếu tại sảnh tiệc Gala.
 * **Công Nghệ NFC 1 Chạm:** Trao đổi thông tin danh thiếp điện tử không tiếp xúc tiêu chuẩn quốc tế ISO/IEC 14443.
 * **Máy Chủ Thư Tín Tự Động (SMTP Mailer):** Tự động phát hành email chào mừng, hóa đơn VietQR và vé điện tử E-Ticket tức thời.
+
+### 7.3. Tiêu chuẩn kiến trúc Popup/Modal Mobile App (Cố định Header & Footer, Cuộn Giữa Scroll-in-Middle)
+Toàn bộ các hộp thoại (Modal/Popup) trên phân hệ di động CEO 1983 tuân thủ nghiêm ngặt mô hình 5 lớp chuyên nghiệp:
+* **Lớp phủ nền (Backdrop):** `fixed inset-0 z-[...] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden`. Không đặt `overflow-y-auto` trên backdrop để chống trôi hộp thoại khỏi màn hình.
+* **Khung hộp thoại (Dialog Card):** `w-full max-w-[...] max-h-[90dvh] flex flex-col rounded-3xl overflow-hidden`. Giới hạn trần chiều cao 90vh thích ứng hoàn hảo màn hình điện thoại.
+* **Tiêu đề cố định (Fixed Header):** `shrink-0 px-5 py-4 border-b flex items-center justify-between`. Luôn neo chắc chắn ở đầu hộp thoại kèm nút đóng X tiện dụng.
+* **Phần thân cuộn giữa (Scrollable Body):** `flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-3.5`. Trang bị đồng thời `flex-1` và `min-h-0` để nội dung dài chỉ cuộn nội bộ trong lòng hộp thoại mà không làm tràn khung.
+* **Chân trang cố định (Fixed Footer & Safe-Area):** `shrink-0 p-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] border-t flex items-center justify-end`. Tự động đệm an toàn theo tai thỏ và thanh điều hướng cử chỉ của hệ điều hành iOS/Android.
+* **Phạm vi chuẩn hóa:** Áp dụng trên toàn bộ 14 Popup di động: Đăng ký vé sự kiện, Vé đã đăng ký, Chi tiết sự kiện, Tạo/sửa tin tức, Đăng/sửa/xem sản phẩm, Đăng/sửa/xem cơ hội kinh doanh Cung - Cầu, Sửa nhanh hồ sơ cá nhân và Sửa hồ sơ doanh nghiệp.
+
+### 7.4. Tiêu chuẩn giao diện Trang Cá Nhân (Profile) Executive Light Theme
+Trang Cá Nhân Hội Viên (`/association/profile`) được thiết kế đồng bộ theo phong cách Doanh Nhân Quý Tộc Sáng Sang Trọng:
+* **Tông màu chủ đạo:** Nền sáng ấm áp `bg-slate-50`, trắng sứ `#FFFFFF`, viền xám bạc tinh xảo `border-slate-200/80`, kết hợp sắc xanh Cobalt Navy (`#003B95`) và vàng hoàng kim Amber Gold (`#D97706`).
+* **Ảnh Bìa Doanh Nhân (Cover Photo Hero):** Khung ảnh nền 16:9 sắc nét, phủ gradient Luxury Navy & Amber Gold hoa văn dập nổi CEO 1983, tích hợp nút Camera tải ảnh trực tiếp lên MinIO.
+* **Avatar Nổi Giao Thoa:** Ảnh đại diện kích thước lớn 96-112px viền trắng dày 4px nổi bật đè lên ảnh bìa, vòng hào quang vàng ấm, huy hiệu tích xanh xác minh danh tính và nút thay đổi avatar 1 chạm.
+* **Huy hiệu Mã Hội Viên & Trạng Thái:** Chip VIP mạ vàng `CEO1983-VIP` cùng đèn pulse xanh lục báo trạng thái hoạt động thực tế.
+* **Thanh Tác Vụ Nhanh (Executive Quick Action Toolbar):** 4 nút tròn/pill thanh lịch: Danh Thiếp Số (`/association/card`), Chỉnh Sửa Hồ Sơ (mở `QuickProfileEditModal`), Chia Sẻ Profile và Mã QR Hội Viên.
+* **Hệ Thống 3 Phân Hệ Tab Chuyên Sâu:**
+  - *Tab 1 (Hồ Sơ & Giới Thiệu):* Hotline, Email, Địa chỉ trụ sở, Website, Tiểu sử tóm tắt (Bio), Kênh mạng xã hội kết nối trực tiếp (Zalo, Facebook).
+  - *Tab 2 (Giao Thương B2B & Hoạt Động):* Thẻ danh thiếp số công khai, Cơ hội B2B Cung - Cầu, Gian hàng sản phẩm đã đăng, Danh bạ đối tác kết nối.
+  - *Tab 3 (Tiện Ích & Cài Đặt):* Cổng Quản trị hệ thống, Thông báo đẩy PWA, Đổi ngôn ngữ (VN/EN), Chế độ tối/sáng, Sổ tay hướng dẫn, Hỗ trợ Ban Thư Ký, Cài đặt ứng dụng PWA 1 chạm và Đăng xuất an toàn.
 
 ---
 

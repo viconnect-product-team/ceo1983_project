@@ -235,7 +235,7 @@ export function PersonalProfileBottomSheet({
     <div
       role="dialog"
       aria-modal="true"
-      className={`fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm p-0 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm p-0 overflow-hidden transition-opacity duration-200 ${
         isClosing ? "opacity-0 pointer-events-none" : "opacity-100 animate-in fade-in"
       }`}
       onClick={onClose}
@@ -280,7 +280,7 @@ export function PersonalProfileBottomSheet({
         {/* Scrollable Container bên trong nửa màn hình */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 pb-6 pt-2"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-5 pb-6 pt-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {/* Ảnh bìa Cover tinh gọn cho màn hình nửa dưới */}
           <div className="relative h-20 sm:h-24 w-full rounded-2xl overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1224] shrink-0 shadow-xs">

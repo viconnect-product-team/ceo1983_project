@@ -31,8 +31,8 @@ export const EventRegisteredTicketsModal: React.FC<EventRegisteredTicketsModalPr
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-0 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+      <DialogContent className="max-w-lg max-h-[90vh] max-h-[90dvh] flex flex-col p-0 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden">
+        <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
               <Ticket className="h-5 w-5" />
@@ -57,7 +57,7 @@ export const EventRegisteredTicketsModal: React.FC<EventRegisteredTicketsModalPr
           </button>
         </div>
 
-        <div className="p-4 sm:p-5 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 overscroll-contain">
           {registeredEvents.length === 0 ? (
             <div className="py-12 text-center space-y-3">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
@@ -217,6 +217,20 @@ export const EventRegisteredTicketsModal: React.FC<EventRegisteredTicketsModalPr
               );
             })
           )}
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="shrink-0 p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center justify-between gap-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            Tổng cộng: <b>{registeredEvents.length}</b> vé sự kiện
+          </span>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold transition cursor-pointer shadow-sm"
+          >
+            Đóng
+          </button>
         </div>
       </DialogContent>
     </Dialog>

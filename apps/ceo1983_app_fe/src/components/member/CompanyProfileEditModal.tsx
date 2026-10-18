@@ -283,15 +283,15 @@ export function CompanyProfileEditModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-md animate-in fade-in duration-150 overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-md animate-in fade-in duration-150 overflow-hidden"
       onClick={onClose}
     >
       <div
-        className="relative my-auto w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border border-amber-400/40 bg-slate-900 text-white shadow-2xl animate-in zoom-in-95 duration-150 overflow-hidden"
+        className="relative w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-3xl border border-amber-400/40 bg-slate-900 text-white shadow-2xl animate-in zoom-in-95 duration-150 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#001D4D]">
+        <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#001D4D]">
           <div className="flex items-center gap-2.5">
             <span className="grid size-9 place-items-center rounded-xl bg-amber-400 text-slate-950 font-black shadow-sm">
               <Sparkles className="size-5" />
@@ -343,7 +343,7 @@ export function CompanyProfileEditModal({
         </div>
 
         {/* Scrollable Form Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6 text-xs text-slate-200">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-6 text-xs text-slate-200 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* =========================================================================
               TAB 1: TRANG 1
              ========================================================================= */}
@@ -833,7 +833,7 @@ export function CompanyProfileEditModal({
         </div>
 
         {/* Modal Footer Bar */}
-        <div className="flex items-center justify-between p-4 border-t border-white/10 bg-slate-950/80">
+        <div className="shrink-0 flex items-center justify-between p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/10 bg-slate-950/80">
           <div className="text-[11px] text-slate-400 hidden sm:block">
             Mọi thay đổi sẽ được cập nhật trực tiếp vào thẻ hội viên &amp; mã QR.
           </div>

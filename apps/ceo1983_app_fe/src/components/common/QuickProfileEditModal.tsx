@@ -335,14 +335,14 @@ export function QuickProfileEditModal({
   return createPortal(
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#0B132B] border border-slate-200 dark:border-amber-500/20 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#0B132B] border border-slate-200 dark:border-amber-500/20 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90dvh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-[#00224F] to-[#003B95] text-white">
+        <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-[#00224F] to-[#003B95] text-white">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-amber-500/20 text-amber-300 grid place-items-center border border-amber-400/30">
               <Sparkles className="h-4.5 w-4.5" />
@@ -365,8 +365,10 @@ export function QuickProfileEditModal({
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-4 [scrollbar-width:thin]">
+        {/* Form Container */}
+        <form onSubmit={handleSave} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Scrollable Form Body */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* 1. Cover Photo Upload - ĐÃ BỎ CHỨC NĂNG TẢI LOGO TRÊN BÌA THEO YÊU CẦU */}
           <div className="space-y-1.5">
             <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -619,13 +621,14 @@ export function QuickProfileEditModal({
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Footer Actions */}
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+          {/* Fixed Footer Actions */}
+          <div className="shrink-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Hủy
             </button>

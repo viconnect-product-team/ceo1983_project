@@ -98,6 +98,26 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
       <DialogContent
         className="max-w-md w-[95vw] h-[90vh] max-h-[90dvh] flex flex-col p-0 rounded-3xl border border-amber-400/40 bg-[var(--vba-surface,#fff)] select-text overflow-hidden shadow-2xl"
       >
+        {/* Fixed Header Bar */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-20">
+          <div className="flex items-center gap-2 min-w-0 pr-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 px-2.5 py-0.5 text-[10px] font-black text-amber-600 dark:text-amber-300 shadow-xs border border-amber-400/50 uppercase shrink-0">
+              <Sparkles className="h-3 w-3" />
+              {selectedAgenda.category}
+            </span>
+            <span className="text-xs font-bold text-slate-800 dark:text-white truncate">
+              {selectedEvent.title}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
         {/* Scrollable Event Content Body */}
         <div
           className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y"
@@ -112,18 +132,11 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#020714] via-[#081B4B]/80 to-transparent pointer-events-none" />
 
-            <div className="relative z-10 flex items-center justify-between">
+            <div className="relative z-10 flex items-center justify-start">
               <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 px-2.5 py-0.5 text-[10.5px] font-black text-amber-300 shadow-sm border border-amber-400/50 uppercase">
                 <Sparkles className="h-3 w-3" />
                 {selectedAgenda.category}
               </span>
-              <button
-                type="button"
-                onClick={onClose}
-                className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80 transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
 
             <div className="relative z-10 mt-3">

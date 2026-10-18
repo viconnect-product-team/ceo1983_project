@@ -95,8 +95,7 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-      style={{ minHeight: "100dvh" }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -117,8 +116,8 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
+        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-3.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
             {/* Image upload */}
             <div>
               <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
@@ -397,7 +396,7 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-2.5 px-5 py-3.5 border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex gap-2.5 px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] border-t border-slate-200 dark:border-white/10 shrink-0 bg-slate-50 dark:bg-slate-900/50">
             <button
               type="button"
               onClick={onClose}

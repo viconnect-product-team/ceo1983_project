@@ -92,9 +92,9 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
   return (
     <Dialog open={!!registeringEvent} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-md max-h-[92vh] max-h-[92dvh] flex flex-col p-0 rounded-3xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] overflow-hidden shadow-2xl"
+        className="max-w-md w-[95vw] sm:w-full h-[90vh] sm:h-auto max-h-[90vh] max-h-[90dvh] flex flex-col p-0 rounded-3xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xl"
       >
-        <DialogHeader className="shrink-0 p-4 border-b border-slate-100 dark:border-slate-800">
+        <DialogHeader className="shrink-0 p-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
           <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Ticket className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
             <span>Đăng ký tham dự sự kiện</span>
@@ -104,21 +104,20 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {isFull && (
-          <div className="mx-4 mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-400/50 flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300">
-            <Lock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">Sự kiện đã đủ số lượng đại biểu (Hết chỗ)</p>
-              <p className="text-[11px] opacity-90">Hệ thống đã tự động khóa cổng đăng ký cho sự kiện này. Vui lòng liên hệ Ban Tổ Chức.</p>
-            </div>
-          </div>
-        )}
-
         <form onSubmit={onSubmit} className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div
             className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 space-y-3.5 text-xs select-text"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
+            {isFull && (
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-400/50 flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300">
+                <Lock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Sự kiện đã đủ số lượng đại biểu (Hết chỗ)</p>
+                  <p className="text-[11px] opacity-90">Hệ thống đã tự động khóa cổng đăng ký cho sự kiện này. Vui lòng liên hệ Ban Tổ Chức.</p>
+                </div>
+              </div>
+            )}
           {/* Họ tên */}
           <div>
             <label className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1 mb-1">

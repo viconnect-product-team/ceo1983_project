@@ -116,14 +116,14 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] grid place-items-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md w-full h-[100dvh] overflow-hidden animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="my-auto w-full max-w-[440px] max-h-[85dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
+        className="w-full max-w-[460px] h-[90vh] sm:h-auto max-h-[90vh] max-h-[90dvh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
           <h3 className="text-[14.5px] font-black text-slate-900 dark:text-white flex items-center gap-2">
             <PackageCheck className="h-5 w-5 text-[#003B95] dark:text-amber-400" />
             {isEn ? "Post New Product / Service" : "Đăng Sản Phẩm / Dịch Vụ Mới"}
@@ -137,8 +137,8 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-4 [scrollbar-width:thin]" data-modal-body>
             {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
             <div className="rounded-2xl border border-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10 p-3.5 space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-amber-400">
