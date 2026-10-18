@@ -1040,10 +1040,10 @@ function MembersScreen() {
         <button
           type="button"
           onClick={() => setInviteModalOpen(true)}
-          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 px-3.5 py-2.5 text-[12px] font-black text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer whitespace-nowrap"
+          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 px-3.5 py-2.5 text-[12px] font-black text-white shadow-md shadow-blue-900/25 active:scale-95 transition cursor-pointer whitespace-nowrap"
           title="Mời hội viên tham gia danh bạ CEO"
         >
-          <UserPlus className="h-4 w-4 text-slate-950 shrink-0" />
+          <UserPlus className="h-4 w-4 text-white shrink-0" />
           <span className="hidden sm:inline">Thêm CEO</span>
         </button>
       </div>
@@ -1057,11 +1057,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("connected")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "connected"
-              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
+              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <UserCheck className={`h-3.5 w-3.5 ${tab === "connected" ? "text-slate-950" : "text-amber-500"}`} />
+          <UserCheck className={`h-3.5 w-3.5 ${tab === "connected" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
           <span>Danh bạ ({connectedMembers.length})</span>
         </button>
 
@@ -1069,11 +1069,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("discover")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "discover"
-              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
+              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <Compass className={`h-3.5 w-3.5 ${tab === "discover" ? "text-slate-950" : "text-amber-500"}`} />
+          <Compass className={`h-3.5 w-3.5 ${tab === "discover" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
           <span>Khám phá ({discoverMembers.length})</span>
         </button>
 
@@ -1081,11 +1081,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("sent")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "sent"
-              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
+              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <Clock className={`h-3.5 w-3.5 ${tab === "sent" ? "text-slate-950" : "text-amber-500"}`} />
+          <Clock className={`h-3.5 w-3.5 ${tab === "sent" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
           <span>Lời mời ({sentList.length})</span>
         </button>
 
@@ -1093,11 +1093,11 @@ function MembersScreen() {
           onClick={() => handleSelectTab("meetings")}
           className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "meetings"
-              ? "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-1 ring-amber-400"
+              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <Handshake className={`h-3.5 w-3.5 ${tab === "meetings" ? "text-slate-950" : "text-amber-500"}`} />
+          <Handshake className={`h-3.5 w-3.5 ${tab === "meetings" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
           <span>Lịch hẹn ({confirmedMeetingsCount})</span>
           {pendingInvitesCount > 0 && (
             <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white leading-none">
@@ -1137,17 +1137,17 @@ function MembersScreen() {
                   <button
                     type="button"
                     onClick={() => handleSelectTab("discover")}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-4 py-2.5 text-[12px] shadow-md shadow-amber-500/20 transition active:scale-95 cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white font-black px-4 py-2.5 text-[12px] shadow-md shadow-blue-900/25 transition active:scale-95 cursor-pointer"
                   >
-                    <Compass className="h-4 w-4 text-slate-950" />
+                    <Compass className="h-4 w-4 text-white" />
                     <span>Tìm CEO để kết nối ngay</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setInviteModalOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 text-[12px] font-bold transition active:scale-95 cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-800 text-[#003B95] dark:text-blue-300 px-4 py-2.5 text-[12px] font-bold transition active:scale-95 cursor-pointer hover:bg-blue-100/60"
                   >
-                    <QrCode className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                    <QrCode className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
                     <span>Mời & Quét mã</span>
                   </button>
                 </div>
@@ -1271,7 +1271,7 @@ function MembersScreen() {
                                 <button
                                   type="button"
                                   onClick={() => handleCallPhone(m.phone, personDisplayName)}
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700/80 hover:bg-emerald-600 hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="grid h-9 w-9 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
                                   title={`Gọi điện thoại: ${m.phone || "Chưa có số"}`}
                                 >
                                   <PhoneCall className="h-4 w-4 stroke-[2.2]" />
@@ -1291,7 +1291,7 @@ function MembersScreen() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedMember(m)}
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700/80 hover:bg-amber-500 hover:text-slate-950 transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="grid h-9 w-9 place-items-center rounded-full bg-sky-50 dark:bg-sky-950/50 text-[#003B95] dark:text-sky-300 border border-sky-300 dark:border-sky-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
                                   title="Xem danh thiếp số / Thẻ 83"
                                 >
                                   <CreditCard className="h-4 w-4 stroke-[2.2]" />
@@ -1311,7 +1311,7 @@ function MembersScreen() {
                                       userId: m.userId ?? undefined,
                                     })
                                   }
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700/80 hover:bg-purple-600 hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="grid h-9 w-9 place-items-center rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
                                   title="Hẹn gặp kết nối 1-on-1"
                                 >
                                   <Handshake className="h-4 w-4 stroke-[2.2]" />
@@ -1483,9 +1483,9 @@ function MembersScreen() {
                         <button
                           type="button"
                           onClick={() => handleConnect(m)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-3 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white px-3.5 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer"
                         >
-                          <UserPlus className="h-3.5 w-3.5 text-slate-950" />
+                          <UserPlus className="h-3.5 w-3.5 text-white" />
                           <span>Kết nối</span>
                         </button>
                       )}
@@ -1560,7 +1560,7 @@ function MembersScreen() {
                 onClick={() => setMeetingSubTab("confirmed")}
                 className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
                   meetingSubTab === "confirmed"
-                    ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                    ? "bg-[#003B95] text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
@@ -1572,7 +1572,7 @@ function MembersScreen() {
                 onClick={() => setMeetingSubTab("pending")}
                 className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
                   meetingSubTab === "pending"
-                    ? "bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-xs"
+                    ? "bg-[#003B95] text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
@@ -1584,7 +1584,7 @@ function MembersScreen() {
                 onClick={() => setMeetingSubTab("all")}
                 className={`py-1.5 px-3 rounded-xl text-[11px] font-bold transition cursor-pointer ${
                   meetingSubTab === "all"
-                    ? "bg-white dark:bg-slate-800 text-foreground shadow-xs"
+                    ? "bg-[#003B95] text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >

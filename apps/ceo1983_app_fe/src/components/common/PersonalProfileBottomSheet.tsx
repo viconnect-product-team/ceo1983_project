@@ -500,7 +500,7 @@ export function PersonalProfileBottomSheet({
             )}
 
             {/* LinkedIn */}
-            {profile.linkedinUrl && (
+            {profile.linkedinUrl ? (
               <a
                 href={profile.linkedinUrl.startsWith("http") ? profile.linkedinUrl : `https://${profile.linkedinUrl}`}
                 target="_blank"
@@ -524,10 +524,30 @@ export function PersonalProfileBottomSheet({
                 </div>
                 <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
               </a>
+            ) : (
+              <div className="flex items-center justify-between p-3.5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-slate-400 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 grid place-items-center">
+                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                  </div>
+                  <span>Chưa cập nhật LinkedIn</span>
+                </div>
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={onEdit}
+                    className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Thêm
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Website doanh nghiệp */}
-            {profile.website && (
+            {profile.website ? (
               <a
                 href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
                 target="_blank"
@@ -549,6 +569,24 @@ export function PersonalProfileBottomSheet({
                 </div>
                 <ExternalLink className="h-4 w-4 text-slate-400" />
               </a>
+            ) : (
+              <div className="flex items-center justify-between p-3.5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-slate-400 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-400 grid place-items-center">
+                    <Globe className="h-5 w-5" />
+                  </div>
+                  <span>Chưa cập nhật Website</span>
+                </div>
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={onEdit}
+                    className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    Thêm
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Địa chỉ trụ sở */}

@@ -1672,3 +1672,35 @@
   + Bỏ qua các dòng chú thích, tổng cộng hoặc khối chữ ký ở chân bảng tính để không tạo bản ghi rác.
   + Áp dụng thống nhất cho toàn bộ hệ thống CRM: Thu chi quỹ (`income.tsx`, `expenses.tsx`), Hội phí (`fees.index.tsx`), Danh bạ hội viên (`members.index.tsx`), Sự kiện (`events.index.tsx`), Gia hạn (`renewal.tsx`), Doanh nghiệp (`companies.index.tsx`), Phân khúc (`segments.tsx`), Điểm danh sự kiện (`EventCheckinPanel.tsx`).
 
+# [BẮT BUỘC 92] Quy Chuẩn Trải Nghiệm & Giao Diện Mobile App CEO 1983 (Thanh Footer SVG, Hồ Sơ 5.0, Chống Khóa Cuộn Webview & Mạng Xã Hội)
+- Khắc Phục Lỗi Khóa Cuộn Trình Duyệt Nhúng (In-App Webview Scroll Safety):
+  + Trình duyệt nhúng bên ngoài (Zalo, WeChat, Facebook, Safari/Chrome In-App Browser) tự động khóa cuộn trang (freeze vertical scroll) khi phần tử cha mang `overscroll-behavior-y: none !important;` kết hợp với `touch-action`.
+  + BẮT BUỘC thiết lập `overscroll-behavior-y: auto;` trên `.vba-app` trong `styles.css`.
+  + Trang quét mã QR thẻ hội viên công khai (`card.$code.tsx`) bắt buộc cung cấp `overflow-y-auto overflow-x-hidden min-h-screen touch-pan-y pb-32` để đảm bảo cuộn mượt mà không bị kẹt khi quét mã bằng camera điện thoại.
+- Hồ Sơ Doanh Nghiệp 5.0 (Modern 5.0 Executive Profile):
+  + Áp dụng triết lý Image-First, trực quan hóa năng lực bằng các thẻ chỉ số tăng trưởng, năng lực sản xuất, thị trường quốc tế và sơ đồ ngang 4 bước tinh gọn thay vì các khối văn bản dài dày đặc.
+  + Thay thế các nút hành động to cồng kềnh bằng các nút pill nhỏ gọn bo tròn sang trọng (`rounded-full`), có icon tinh tế và padding gọn gàng.
+- Thanh Điều Hướng Chân Trang Mobile (Footer Bottom Navigation Bar):
+  + Sử dụng bộ icon SVG vector custom chuẩn xác (`home-02.svg`, `calendar.svg`, `qr-code-02.svg`, `message-circle-02.svg`, `user-circle.svg`).
+  + Nút trung tâm chuyển hướng thẻ/quét QR là nút tròn nhô cao (Floating Action Pill/Circle) với nhãn "Check-in", nền gradient xanh thẳm (`from-sky-900 to-blue-700`), viền trắng và bóng đổ sâu.
+  + Đổi màu stroke/fill phản ứng linh hoạt theo active state (`#003B95` cho tab đang chọn và `#64748B` cho tab chưa chọn).
+- Mạng Xã Hội & Chỉnh Sửa Nhanh Thẻ Hội Viên:
+  + Nút chỉnh sửa nhanh đặt ở chân thẻ hội viên trang chủ (bên dưới tên và chức danh), giữ không gian tiêu đề thông thoáng và thuận tiện thao tác một tay bằng ngón cái.
+  + Hỗ trợ đầy đủ các trường mạng xã hội: LinkedIn, Facebook, Zalo, Website, TikTok, tự động đồng bộ vào local cache và profile hội viên.
+
+# [BẮT BUỘC 93] Quy Chuẩn Hệ Thống Danh Thiếp Số Đa Thẻ Chính/Phụ, Quét QR Hội Viên & Modal Xem Trước
+- Hệ Thống Danh Thiếp Số Đa Thẻ Chính / Phụ (Dual Primary & Secondary Business Card System):
+  + Mỗi hội viên sở hữu hệ thống danh thiếp gồm Danh thiếp chính (`card_kind = 'primary'`) và Danh thiếp phụ (`card_kind = 'secondary'`).
+  + Khi truy vấn danh thiếp của tôi (`listMyCards`), backend tự động khởi tạo đủ cả 2 thẻ với UUID thật trong bảng `member_business_cards` từ thông tin hội viên nếu tài khoản chưa có bản ghi.
+  + Thao tác chuyển đổi Danh thiếp chính (`setPrimary`): Backend tự động hạ cấp tất cả thẻ khác của hội viên sang 'secondary' và nâng cấp thẻ được chọn lên 'primary', hỗ trợ an toàn cả UUID và slug/virtual ID.
+- Quét Mã QR Hội Viên Từ Ứng Dụng Ngoài (`getPublicCardByCode` & `card.$code.tsx`):
+  + Khi quét mã QR hội viên từ ứng dụng ngoài (Camera điện thoại, Zalo, WeChat...), backend truy vấn danh thiếp với ưu tiên `ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END)` để luôn trả về thông tin của Danh thiếp chính hiện hành.
+  + Áp dụng nghiêm ngặt các cài đặt ẩn/hiện trường thông tin (`visibility_settings` jsonb) từ thẻ chính: `showPhone`, `showEmail`, `showAddress`, `showCompany`, `showSocial`, `showServices`, `showNeeds`. Các trường bị tắt sẽ được ẩn an toàn trên giao diện quét mã QR.
+- Modal Xem Trước Danh Thiếp Số Chuẩn Thẻ Hội Viên Kèm Profile (`CardPreviewModal.tsx`):
+  + Giao diện xem trước (`CardPreviewModal`) BẮT BUỘC hiển thị đúng chuẩn giao diện Thẻ hội viên CEO 1983 Executive (`Ceo1983BusinessCardVisit`), 4 nút tác vụ (Lưu danh bạ, Gọi điện, Zalo, Facebook), banner xác thực điện tử, bảng thông tin chi tiết và Profile Doanh Nghiệp 2 trang (`CompanyProfileTwoPages`) bên dưới.
+  + Phản ánh chính xác các trường thông tin và tùy chọn ẩn/hiện của chính danh thiếp đang được xem trước.
+  + Cung cấp nút thao tác nhanh "⭐ Đặt làm danh thiếp chính" khi đang xem trước Danh thiếp phụ.
+  + Tích hợp nút xem trước trực tiếp ngay trong trình soạn thảo `CardEditor` giúp hội viên rà soát giao diện trước khi lưu.
+
+
+

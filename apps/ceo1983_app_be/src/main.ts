@@ -49,12 +49,20 @@ function probeTcp(host: string, port: number, timeoutMs = 1200): Promise<boolean
 }
 
 async function resolveDatabaseConfig() {
+  // Nếu DATABASE_URL đã được chỉ định rõ ràng từ môi trường Docker và không phải IP cũ
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('113.20.107.184')) {
+    console.log('\x1b[32m%s\x1b[0m', '================================================================');
+    console.log('\x1b[32m%s\x1b[0m', `✅ [Database Config] Sử dụng DATABASE_URL từ môi trường: ${process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`);
+    console.log('\x1b[32m%s\x1b[0m', '================================================================');
+    return;
+  }
+
   const remoteUrl =
     process.env.REMOTE_DATABASE_URL ||
-    'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@113.20.107.184:6432/ceo1983_project?schema=public&pgbouncer=true';
+    'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@14.225.217.232:5436/vione_app?schema=public';
   const localUrl =
     process.env.LOCAL_DATABASE_URL ||
-    'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@127.0.0.1:6432/ceo1983_project?schema=public';
+    'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@ceo1983-postgres-prod:5432/vione_app?schema=public';
 
   const isRemoteReachable = await probeTcp('113.20.107.184', 6432, 1200);
 

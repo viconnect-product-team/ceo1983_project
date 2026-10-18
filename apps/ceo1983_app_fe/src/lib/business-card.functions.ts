@@ -33,7 +33,7 @@ import type {
 const nullableStr = (max: number) => z.string().trim().max(max).nullable().optional();
 
 const cardInput = z.object({
-  id: z.string().uuid().nullable().optional(),
+  id: z.string().nullable().optional(),
   // BC-2.1C: additive create scope. "association" (default) = existing member
   // builder flow. "global" = platform-user-owned card with no member/association
   // link. Client NEVER supplies owner_user_id — it is always auth.uid().
@@ -47,6 +47,10 @@ const cardInput = z.object({
       showSocial: z.boolean(),
       showServices: z.boolean(),
       showNeeds: z.boolean(),
+      showPhone: z.boolean().optional(),
+      showEmail: z.boolean().optional(),
+      showAddress: z.boolean().optional(),
+      showCompany: z.boolean().optional(),
     })
     .optional(),
   displayName: nullableStr(120),
@@ -129,7 +133,7 @@ import { toPublicBusinessCard } from "@/lib/business-card/public-card";
 
 export const getMyBusinessCardFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<BusinessCard> => {
     const raw = await fetchNestApiFromServer<any>(`/business-cards/${data.id}`, context.token);
     if (!raw) throw new Error(BC_ERR.NOT_FOUND);
@@ -232,7 +236,7 @@ export const setBusinessCardStatusFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        id: z.string().uuid(),
+        id: z.string().min(1),
         status: z.enum(["draft", "published", "hidden", "archived"]),
       })
       .parse(d),
@@ -252,7 +256,7 @@ export const setBusinessCardStatusFn = createServerFn({ method: "POST" })
 // Set Primary (demote current primary, promote target).
 export const setPrimaryBusinessCardFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     return await fetchNestApiFromServer<{ ok: boolean }>(
       `/business-cards/${data.id}/primary`,
@@ -266,7 +270,7 @@ export const setPrimaryBusinessCardFn = createServerFn({ method: "POST" })
 // Delete.
 export const deleteBusinessCardFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     await fetchNestApiFromServer(`/business-cards/${data.id}`, context.token, {
       method: "DELETE",

@@ -449,89 +449,91 @@ export function CompanyProfileTwoPages({
             </div>
           </div>
 
-          {/* 2. GIỚI THIỆU NGẮN (ABOUT US): 3-5 câu ngắn gọn về lý do thành lập và sứ mệnh */}
-          <div className="my-3 p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm space-y-1.5">
-            <div className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              <Compass className="size-3.5" />
-              <span>VỀ CHÚNG TÔI (ABOUT US)</span>
+          {/* 2. ĐẶC TRƯNG NĂNG LỰC 5.0: 4 CHỈ SỐ BẢO CHỨNG NHANH */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 my-3">
+            <div className="p-3 rounded-2xl bg-white/[0.06] border border-amber-400/25 flex flex-col items-center justify-center text-center backdrop-blur-md">
+              <span className="text-amber-400 font-black text-sm sm:text-base flex items-center gap-1">
+                <Zap className="size-4 text-amber-400" /> 24/7
+              </span>
+              <span className="text-[10.5px] font-bold text-white uppercase mt-0.5">Tốc độ & Linh hoạt</span>
             </div>
-            <p className="text-xs text-slate-200 leading-relaxed text-justify">
-              {aboutUs}
-            </p>
-          </div>
-
-          {/* 3. GIÁ TRỊ CỐT LÕI (3 TIÊU CHÍ): 3 từ khóa đại diện phong cách làm việc */}
-          <div className="my-4 space-y-2">
-            <div className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              <Award className="size-3.5" />
-              <span>3 GIÁ TRỊ CỐT LÕI (CORE VALUES)</span>
+            <div className="p-3 rounded-2xl bg-white/[0.06] border border-blue-400/25 flex flex-col items-center justify-center text-center backdrop-blur-md">
+              <span className="text-sky-400 font-black text-sm sm:text-base flex items-center gap-1">
+                <Award className="size-4 text-sky-400" /> Chuẩn 5★
+              </span>
+              <span className="text-[10.5px] font-bold text-white uppercase mt-0.5">Chất lượng cao</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {coreValues.map((val, idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 rounded-xl bg-gradient-to-b from-white/10 to-white/5 border border-amber-400/20 space-y-1 transition hover:border-amber-400/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="grid size-6 place-items-center rounded-lg bg-amber-400 text-slate-950 font-black text-xs">
-                      {idx + 1}
-                    </span>
-                    <h5 className="font-black text-xs text-white uppercase tracking-wider">
-                      {val.title}
-                    </h5>
-                  </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed pl-8">
-                    {val.desc}
-                  </p>
-                </div>
-              ))}
+            <div className="p-3 rounded-2xl bg-white/[0.06] border border-emerald-400/25 flex flex-col items-center justify-center text-center backdrop-blur-md">
+              <span className="text-emerald-400 font-black text-sm sm:text-base flex items-center gap-1">
+                <ShieldCheck className="size-4 text-emerald-400" /> 100%
+              </span>
+              <span className="text-[10.5px] font-bold text-white uppercase mt-0.5">Minh bạch cam kết</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-white/[0.06] border border-purple-400/25 flex flex-col items-center justify-center text-center backdrop-blur-md">
+              <span className="text-purple-300 font-black text-sm sm:text-base flex items-center gap-1">
+                <Users className="size-4 text-purple-400" /> CEO 1983
+              </span>
+              <span className="text-[10.5px] font-bold text-white uppercase mt-0.5">Bảo chứng CLB</span>
             </div>
           </div>
 
-          {/* 4. DỊCH VỤ / SẢN PHẨM CHỦ LỰC: Dạng danh mục kèm icon trực quan, nổi bật dịch vụ mũi nhọn */}
+          {/* 3. VỀ CHÚNG TÔI (TINH GỌN 5.0) */}
+          <div className="my-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm flex items-start gap-3">
+            <div className="size-9 rounded-xl bg-amber-400/20 text-amber-400 grid place-items-center shrink-0 border border-amber-400/30">
+              <Compass className="size-5" />
+            </div>
+            <div className="space-y-0.5 min-w-0">
+              <div className="text-[10.5px] font-black uppercase tracking-wider text-amber-400">
+                SỨ MỆNH & ĐỊNH VỊ THƯƠNG HIỆU
+              </div>
+              <p className="text-xs text-slate-200 leading-snug line-clamp-3">
+                {aboutUs}
+              </p>
+            </div>
+          </div>
+
+          {/* 4. SẢN PHẨM / GIẢI PHÁP MŨI NHỌN 5.0 (DẠNG THẺ HÌNH ẢNH TRỰC QUAN) */}
           <div className="my-4 space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                <Zap className="size-3.5" />
-                <span>DỊCH VỤ &amp; SẢN PHẨM CHỦ LỰC</span>
+                <Sparkles className="size-3.5" />
+                <span>GIẢI PHÁP &amp; SẢN PHẨM MŨI NHỌN 5.0</span>
               </div>
               <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-                Năng Lực Cạnh Tranh Cao
+                Xúc tiến B2B
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {keyServices.map((srv, idx) => (
                 <div
                   key={idx}
-                  className={`p-3.5 rounded-xl border transition ${
+                  className={`p-3 rounded-2xl border transition relative overflow-hidden ${
                     srv.isPrimary
-                      ? "bg-gradient-to-r from-amber-500/15 via-blue-500/15 to-transparent border-amber-400/60 ring-1 ring-amber-400/30"
+                      ? "bg-gradient-to-br from-[#0a2558] via-[#051a3d] to-[#020b1c] border-amber-400/70 shadow-md ring-1 ring-amber-400/30"
                       : "bg-white/[0.04] border-white/10 hover:border-white/20"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2.5">
-                      <span className={`grid size-6 place-items-center rounded-lg shrink-0 mt-0.5 ${
-                        srv.isPrimary ? "bg-amber-400 text-slate-950 font-black" : "bg-white/10 text-amber-400"
-                      }`}>
-                        {srv.isPrimary ? <Sparkles className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-                      </span>
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h5 className="text-xs font-bold text-white">
-                            {srv.title}
-                          </h5>
-                          {srv.isPrimary && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] uppercase tracking-wider">
-                              Mũi nhọn tự tin cạnh tranh nhất
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                          {srv.desc}
-                        </p>
+                  <div className="flex items-start gap-3">
+                    <span className={`grid size-9 place-items-center rounded-xl shrink-0 ${
+                      srv.isPrimary ? "bg-amber-400 text-slate-950 font-black shadow-sm" : "bg-white/10 text-amber-400"
+                    }`}>
+                      {srv.isPrimary ? <Sparkles className="size-4.5" /> : <CheckCircle2 className="size-4.5" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <h5 className="text-xs font-black text-white truncate">
+                          {srv.title}
+                        </h5>
+                        {srv.isPrimary && (
+                          <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[9px] uppercase tracking-wide shrink-0">
+                            Mũi nhọn
+                          </span>
+                        )}
                       </div>
+                      <p className="text-[11px] text-slate-300 mt-1 line-clamp-2 leading-relaxed">
+                        {srv.desc}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -541,18 +543,18 @@ export function CompanyProfileTwoPages({
         </div>
 
         {/* =========================================================================
-            • TRANG 2: THẾ MẠNH CẠNH TRANH & THÔNG TIN LIÊN HỆ
+            • TRANG 2: THẾ MẠNH CẠNH TRANH, QUY TRÌNH & THÔNG TIN KẾT NỐI 5.0
            ========================================================================= */}
         <div className="relative overflow-hidden rounded-3xl border-2 border-blue-400/50 bg-gradient-to-br from-[#020b1c] via-[#041635] to-[#010917] text-white p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,35,90,0.4)]">
           {/* Page Indicator Tag */}
-          <div className="flex items-center justify-between pb-4 border-b border-blue-400/20">
+          <div className="flex items-center justify-between pb-3.5 border-b border-blue-400/20">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-600 text-white shadow-md">
               <ShieldCheck className="size-3" />
-              TRANG 2: THẾ MẠNH CẠNH TRANH &amp; THÔNG TIN LIÊN HỆ
+              TRANG 2: NĂNG LỰC THỰC THI &amp; KẾT NỐI NHANH 5.0
             </span>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                <CheckCircle2 className="size-3" /> Đã Xác Minh B2B
+                <CheckCircle2 className="size-3" /> Xác Thực CLB
               </span>
               {canEdit && onEdit && (
                 <button
@@ -568,155 +570,132 @@ export function CompanyProfileTwoPages({
             </div>
           </div>
 
-          {/* 1. TẠI SAO CHỌN CHÚNG TÔI? (Năng lực nhân sự + Chính sách ưu việt) */}
-          <div className="py-4 space-y-3">
-            <div className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              <Award className="size-3.5" />
-              <span>TẠI SAO CHỌN CHÚNG TÔI? (THẾ MẠNH KHÁC BIỆT)</span>
+          {/* 1. THẾ MẠNH & CHÍNH SÁCH ĐỒNG HÀNH (THẺ 5.0) */}
+          <div className="py-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-blue-400/30 space-y-1.5">
+              <div className="flex items-center gap-2 text-blue-300 font-bold text-xs uppercase tracking-wide">
+                <span className="grid size-6 place-items-center rounded-lg bg-blue-500/20 text-blue-400">
+                  <Users className="size-3.5" />
+                </span>
+                <span>Năng lực chuyên gia</span>
+              </div>
+              <p className="text-[11.5px] text-slate-200 leading-snug line-clamp-3">
+                {personnelCompetence}
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Năng lực nhân sự */}
-              <div className="p-4 rounded-2xl bg-white/[0.04] border border-blue-400/30 space-y-2">
-                <div className="flex items-center gap-2 text-blue-300 font-bold text-xs uppercase tracking-wide">
-                  <span className="grid size-7 place-items-center rounded-xl bg-blue-500/20 text-blue-400">
-                    <Users className="size-4" />
-                  </span>
-                  <span>Năng Lực Nhân Sự Chuyên Gia</span>
-                </div>
-                <p className="text-xs text-slate-200 leading-relaxed text-justify">
-                  {personnelCompetence}
-                </p>
+            <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-amber-400/30 space-y-1.5">
+              <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wide">
+                <span className="grid size-6 place-items-center rounded-lg bg-amber-500/20 text-amber-400">
+                  <ShieldCheck className="size-3.5" />
+                </span>
+                <span>Chính sách ưu việt B2B</span>
               </div>
-
-              {/* Chính sách ưu việt */}
-              <div className="p-4 rounded-2xl bg-white/[0.04] border border-amber-400/30 space-y-2">
-                <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wide">
-                  <span className="grid size-7 place-items-center rounded-xl bg-amber-500/20 text-amber-400">
-                    <ShieldCheck className="size-4" />
-                  </span>
-                  <span>Chính Sách Cam Kết Ưu Việt</span>
-                </div>
-                <p className="text-xs text-slate-200 leading-relaxed text-justify">
-                  {preferentialPolicy}
-                </p>
-              </div>
+              <p className="text-[11.5px] text-slate-200 leading-snug line-clamp-3">
+                {preferentialPolicy}
+              </p>
             </div>
           </div>
 
-          {/* 2. QUY TRÌNH LÀM VIỆC (4 BƯỚC NHANH GỌN - SƠ ĐỒ NGANG TIẾT KIỆM DIỆN TÍCH) */}
-          <div className="my-4 p-4 rounded-2xl bg-gradient-to-r from-white/[0.06] to-white/[0.02] border border-white/10 space-y-3">
+          {/* 2. QUY TRÌNH 5.0 (4 BƯỚC TINH GỌN TRỰC QUAN) */}
+          <div className="my-3 p-3.5 rounded-2xl bg-gradient-to-r from-white/[0.06] to-white/[0.02] border border-white/10 space-y-2.5">
             <div className="flex items-center justify-between">
-              <div className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <div className="text-[10.5px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                 <TrendingUp className="size-3.5" />
-                <span>QUY TRÌNH LÀM VIỆC (4 BƯỚC NHANH GỌN)</span>
+                <span>QUY TRÌNH TRIỂN KHAI 5.0</span>
               </div>
-              <span className="text-[10px] text-slate-400">Chuẩn hóa tinh gọn</span>
+              <span className="text-[9.5px] text-slate-400 font-medium">4 Bước Chuẩn Hóa</span>
             </div>
 
             {/* Sơ đồ ngang 4 bước */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 relative">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 relative">
               {workflowSteps.map((step, idx) => (
                 <div
                   key={idx}
-                  className="relative p-3 rounded-xl bg-white/[0.05] border border-white/10 text-center flex flex-col items-center justify-center space-y-1 group hover:border-amber-400/40 transition"
+                  className="relative p-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-center flex flex-col items-center justify-center space-y-1 group hover:border-amber-400/40 transition"
                 >
-                  <div className="size-6 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-md">
-                    {idx + 1}
+                  <div className="size-5 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-xs">
+                    0{idx + 1}
                   </div>
-                  <div className="text-[11.5px] font-bold text-white leading-tight">
+                  <div className="text-[10.5px] font-bold text-white leading-tight">
                     {step}
                   </div>
-
-                  {/* Connecting Arrow for desktop (hidden on last) */}
-                  {idx < 3 && (
-                    <div className="hidden sm:block absolute -right-2 top-1/2 -translate-y-1/2 text-amber-400/80 z-10">
-                      <ArrowRight className="size-3.5" />
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* 3. THÔNG TIN PHÁP LÝ & LIÊN HỆ (FOOTER GÓC DƯỚI CÙNG DỄ TÌM KIẾM) */}
-          <div className="pt-4 border-t border-white/15 space-y-3">
-            <div className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+          {/* 3. TRUNG TÂM KẾT NỐI & LIÊN HỆ TRỰC TIẾP */}
+          <div className="pt-3 border-t border-white/15 space-y-2.5">
+            <div className="text-[10.5px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
               <Building2 className="size-3.5" />
-              <span>THÔNG TIN PHÁP LÝ &amp; LIÊN HỆ DOANH NGHIỆP</span>
+              <span>KẾT NỐI DOANH NGHIỆP TRỰC TIẾP</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-200">
-              {/* Mã số thuế */}
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/10">
-                <span className="size-7 rounded-lg bg-white/10 flex items-center justify-center text-amber-400 shrink-0">
-                  <FileText className="size-3.5" />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-[10px] text-slate-400">Mã số thuế:</div>
-                  <div className="font-mono font-bold text-white">{taxCode}</div>
-                </div>
-              </div>
-
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               {/* Hotline */}
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/10">
-                <span className="size-7 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400 shrink-0">
-                  <Phone className="size-3.5" />
-                </span>
+              <a
+                href={`tel:${hotline.replace(/[^0-9+]/g, "")}`}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 transition cursor-pointer"
+              >
+                <Phone className="size-4 shrink-0 text-emerald-400" />
                 <div className="min-w-0">
-                  <div className="text-[10px] text-slate-400">Hotline:</div>
-                  <a href={`tel:${hotline.replace(/[^0-9+]/g, "")}`} className="font-bold text-emerald-400 hover:underline">
-                    {hotline}
-                  </a>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase">Hotline</div>
+                  <div className="font-bold truncate text-[11px] text-white">{hotline}</div>
                 </div>
-              </div>
+              </a>
 
-              {/* Địa chỉ văn phòng */}
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/10">
-                <span className="size-7 rounded-lg bg-white/10 flex items-center justify-center text-rose-400 shrink-0">
-                  <MapPin className="size-3.5" />
-                </span>
+              {/* Website */}
+              <a
+                href={website.startsWith("http") ? website : `https://${website}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 hover:bg-blue-500/20 transition cursor-pointer"
+              >
+                <Globe className="size-4 shrink-0 text-sky-400" />
                 <div className="min-w-0">
-                  <div className="text-[10px] text-slate-400">Địa chỉ văn phòng:</div>
-                  <div className="truncate text-white font-medium">{officeAddress}</div>
+                  <div className="text-[9px] text-slate-400 font-bold uppercase">Website</div>
+                  <div className="font-bold truncate text-[11px] text-white">Mở Trang Web</div>
                 </div>
-              </div>
+              </a>
 
-              {/* Email & Website */}
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/10">
-                <span className="size-7 rounded-lg bg-white/10 flex items-center justify-center text-blue-400 shrink-0">
-                  <Globe className="size-3.5" />
-                </span>
-                <div className="min-w-0 truncate">
-                  <div className="text-[10px] text-slate-400">Email &amp; Website:</div>
-                  <div className="flex items-center gap-2 truncate">
-                    <a href={`mailto:${email}`} className="text-white hover:underline truncate">
-                      {email}
-                    </a>
-                    <span>•</span>
-                    <a
-                      href={website.startsWith("http") ? website : `https://${website}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-amber-300 font-bold hover:underline flex items-center gap-1"
-                    >
-                      <span>Web</span>
-                      <ExternalLink className="size-2.5" />
-                    </a>
-                  </div>
+              {/* Email */}
+              <a
+                href={`mailto:${email}`}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
+              >
+                <Mail className="size-4 shrink-0 text-amber-400" />
+                <div className="min-w-0">
+                  <div className="text-[9px] text-slate-400 font-bold uppercase">Email B2B</div>
+                  <div className="font-bold truncate text-[11px] text-white">{email.split("@")[0]}</div>
+                </div>
+              </a>
+
+              {/* MST */}
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300">
+                <FileText className="size-4 shrink-0 text-purple-400" />
+                <div className="min-w-0">
+                  <div className="text-[9px] text-slate-400 font-bold uppercase">Mã số thuế</div>
+                  <div className="font-mono font-bold truncate text-[11px] text-white">{taxCode}</div>
                 </div>
               </div>
+            </div>
+
+            {/* Địa chỉ */}
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-slate-300">
+              <MapPin className="size-3.5 text-rose-400 shrink-0" />
+              <span className="truncate">{officeAddress}</span>
             </div>
           </div>
 
           {/* Electronic Seal Verification */}
-          <div className="mt-5 pt-3 border-t border-dashed border-white/15 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-slate-400">
+          <div className="mt-4 pt-2.5 border-t border-dashed border-white/15 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[9.5px] text-slate-400">
             <div className="flex items-center gap-1.5">
-              <ShieldCheck className="size-4 text-amber-400" />
-              <span>Bảo chứng hồ sơ số bởi Hiệp Hội Doanh Nhân CEO 1983 (HanoiBA)</span>
+              <ShieldCheck className="size-3.5 text-amber-400 shrink-0" />
+              <span>Bảo chứng hồ sơ số bởi CLB Doanh Nhân CEO 1983 (HanoiBA)</span>
             </div>
             <div className="font-mono text-[9px] text-amber-300/80">
-              VERIFIED ID: #{memberCode}-2P-CEO1983
+              VERIFIED ID: #{memberCode}-5.0-CEO1983
             </div>
           </div>
         </div>

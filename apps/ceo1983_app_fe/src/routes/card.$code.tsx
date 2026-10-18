@@ -317,8 +317,8 @@ function PublicCardView() {
       : `https://ceo1983.vn/card/${code}`;
 
   return (
-    <div className="vba-app min-h-[100dvh] bg-slate-50 text-slate-800 antialiased">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[500px] flex-col px-4 pb-16">
+    <div className="vba-app min-h-screen min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-slate-50 text-slate-800 antialiased touch-pan-y" style={{ WebkitOverflowScrolling: "touch" }}>
+      <div className="mx-auto flex min-h-full w-full max-w-[500px] flex-col px-4 pb-32">
         {/* Header navigation & language */}
         <header className="flex items-center justify-between py-4">
           <Link
@@ -417,35 +417,42 @@ function PublicCardView() {
           )}
 
           {/* Facebook */}
-          <a
-            href="https://facebook.com"
-            target="_blank"
-            rel="noreferrer"
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition active:scale-95 text-blue-900 shadow-xs cursor-pointer"
-          >
-            <Facebook className="h-4 w-4 text-[#1877F2]" />
-            <span className="text-[10px] font-bold">Facebook</span>
-          </a>
+          {(member as any)?.facebookUrl ? (
+            <a
+              href={(member as any).facebookUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition active:scale-95 text-blue-900 shadow-xs cursor-pointer"
+            >
+              <Facebook className="h-4 w-4 text-[#1877F2]" />
+              <span className="text-[10px] font-bold">Facebook</span>
+            </a>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
+              <Facebook className="h-4 w-4 text-slate-300" />
+              <span className="text-[10px] font-bold">Facebook</span>
+            </div>
+          )}
         </div>
 
-        {/* ── NÚT TẢI & CHIA SẺ HỒ SƠ DOANH NGHIỆP (Req 5) ── */}
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        {/* ── NÚT TẢI PROFILE & CHIA SẺ HỒ SƠ VIP (DẠNG TỐI GIẢN NHẤT THEO YÊU CẦU) ── */}
+        <div className="mt-2.5 flex items-center justify-center gap-3">
           <button
             type="button"
             onClick={handleDownloadCompanyProfile}
-            className="flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] hover:from-[#002766] hover:to-[#173082] py-3 px-3 text-white font-bold text-xs shadow-md transition active:scale-98 cursor-pointer border border-blue-400/30"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-200 bg-white text-[#003B95] hover:bg-blue-50/80 text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer"
           >
-            <Download className="h-4 w-4 text-amber-400" />
-            <span>Tải Profile Doanh Nghiệp</span>
+            <Download className="h-3.5 w-3.5 text-amber-500" />
+            <span>Tải profile</span>
           </button>
 
           <button
             type="button"
             onClick={handleShare}
-            className="flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 py-3 px-3 text-slate-950 font-black text-xs shadow-md transition active:scale-98 cursor-pointer border border-amber-300"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer"
           >
-            <Share2 className="h-4 w-4" />
-            <span>{copied ? "Đã sao chép link!" : "Chia sẻ hồ sơ VIP"}</span>
+            <Share2 className="h-3.5 w-3.5 text-amber-500" />
+            <span>{copied ? "Đã sao chép" : "Chia sẻ hồ sơ VIP"}</span>
           </button>
         </div>
 

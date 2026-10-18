@@ -17,37 +17,124 @@ export class BusinessCardService {
   ) {}
 
   async listMyCards(userId: string) {
-    const cards = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY updated_at DESC`,
+    let cards = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC`,
       userId,
-    );
+    ).catch(() => []);
+
+    // If the user has 0 cards, auto-provision real Primary and Secondary cards
+    if (cards.length === 0) {
+      const mems = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT m.*, u.full_name as user_full_name, u.phone as user_phone, u.email as user_email, u.avatar_url as user_avatar
+         FROM public.members m
+         LEFT JOIN public.vione_users u ON m.user_id = u.id
+         WHERE m.user_id = $1::uuid OR m.id::text = $1
+         LIMIT 1`,
+        userId,
+      ).catch(() => []);
+
+      const m = mems[0] || {};
+      const baseCode = (m.code || userId.slice(0, 8) || 'ceo1983').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const name = m.name || m.user_full_name || 'Hội viên CLB CEO 1983';
+      const phone = m.phone || m.user_phone || null;
+      const email = m.email || m.user_email || null;
+      const avatar = m.avatar || m.user_avatar || null;
+      const defaultVis = JSON.stringify({
+        mode: 'public',
+        showContact: true,
+        showSocial: true,
+        showServices: true,
+        showNeeds: true,
+        showPhone: true,
+        showEmail: true,
+        showAddress: true,
+        showCompany: true,
+      });
+
+      // Insert primary card
+      const primarySlug = `card-${baseCode}-primary`;
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.member_business_cards (
+          slug, card_kind, status, public_mode, display_name, professional_title,
+          company_name, avatar_url, work_phone, work_email, address, website, bio,
+          visibility_settings, owner_user_id, member_id, updated_at
+        ) VALUES (
+          $1, 'primary', 'published', 'public', $2, $3,
+          $4, $5, $6, $7, $8, $9, $10,
+          $11::jsonb, $12::uuid, $13, NOW()
+        )`,
+        primarySlug, name, m.executive_role || m.department || 'Hội viên chính thức CLB CEO 1983',
+        'CLB Doanh Nhân CEO 1983', avatar, phone, email,
+        m.address || 'Trụ sở CLB Doanh Nhân CEO 1983, Hà Nội',
+        m.website || 'https://ceo1983club.com',
+        m.about || 'Hội viên chính thức CLB Doanh Nhân CEO 1983',
+        defaultVis, userId, m.id ? m.id : null,
+      ).catch(() => null);
+
+      // Insert secondary card
+      const secondarySlug = `card-${baseCode}-business`;
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.member_business_cards (
+          slug, card_kind, status, public_mode, display_name, professional_title,
+          company_name, avatar_url, work_phone, work_email, address, website, bio,
+          visibility_settings, owner_user_id, member_id, updated_at
+        ) VALUES (
+          $1, 'secondary', 'published', 'public', $2, $3,
+          $4, $5, $6, $7, $8, $9, $10,
+          $11::jsonb, $12::uuid, $13, NOW()
+        )`,
+        secondarySlug, name, 'Giám đốc / Chủ Doanh Nghiệp',
+        m.industry || m.about || 'Doanh nghiệp cá nhân', avatar, phone, email,
+        m.address || 'Hà Nội, Việt Nam',
+        m.website || 'https://ceo1983club.com',
+        'Danh thiếp kết nối đối tác & phát triển kinh doanh cá nhân.',
+        defaultVis, userId, m.id ? m.id : null,
+      ).catch(() => null);
+
+      cards = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC`,
+        userId,
+      ).catch(() => []);
+    }
+
     return cards;
   }
 
   async getMyCard(userId: string, id: string) {
-    const cards = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
-      id,
-    );
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let cards: any[] = [];
+    if (isUuid) {
+      cards = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
+        id,
+      );
+    } else {
+      cards = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT * FROM public.member_business_cards WHERE (slug = $1 OR id::text = $1) AND owner_user_id = $2::uuid`,
+        id, userId,
+      );
+    }
 
     if (!cards.length) throw new NotFoundException('Card not found');
     const card = cards[0];
     if (card.owner_user_id !== userId)
       throw new UnauthorizedException('Not your card');
 
+    const realId = card.id;
+
     const skills = await this.prisma.$queryRawUnsafe<any[]>(
       `SELECT * FROM public.business_card_skills WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      id,
+      realId,
     ).catch(() => []);
 
     const services = await this.prisma.$queryRawUnsafe<any[]>(
       `SELECT * FROM public.business_card_services WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      id,
+      realId,
     ).catch(() => []);
 
     const needs = await this.prisma.$queryRawUnsafe<any[]>(
       `SELECT * FROM public.business_card_needs WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      id,
+      realId,
     ).catch(() => []);
 
     return { ...card, skills, services, needs };
@@ -115,8 +202,9 @@ export class BusinessCardService {
     const bioEn = data.bio_en ?? data.bioEn ?? null;
 
     let targetId = id;
+    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-    if (id) {
+    if (isUuid) {
       const existing = await this.prisma.$queryRawUnsafe<any[]>(
         `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
         id,
@@ -194,10 +282,6 @@ export class BusinessCardService {
       targetId = inserted[0]?.id;
     }
 
-    // Each digital business card (primary or secondary) is strictly independent:
-    // avatar_url is persisted in member_business_cards for this specific card only,
-    // and does NOT overwrite the global member or user profile.
-
     // Sync skills, services, needs
     if (targetId) {
       await this.prisma.$executeRawUnsafe(
@@ -252,9 +336,19 @@ export class BusinessCardService {
   }
 
   async setStatus(userId: string, id: string, status: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let targetCardId = id;
+    if (!isUuid) {
+      const match = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND (slug = $2 OR id::text = $2) LIMIT 1`,
+        userId, id,
+      ).catch(() => []);
+      if (match.length > 0) targetCardId = match[0].id;
+    }
+
     const existing = await this.prisma.$queryRawUnsafe<any[]>(
       `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
-      id,
+      targetCardId,
     );
     if (!existing.length || existing[0].owner_user_id !== userId) {
       throw new UnauthorizedException('Not authorized');
@@ -262,7 +356,7 @@ export class BusinessCardService {
 
     await this.prisma.$executeRawUnsafe(
       `UPDATE public.member_business_cards SET status = $1, updated_at = NOW() WHERE id = $2::uuid`,
-      status, id,
+      status, targetCardId,
     );
     return { ok: true };
   }
@@ -282,27 +376,51 @@ export class BusinessCardService {
   }
 
   async setPrimary(userId: string, id: string) {
-    const existing = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
-      id,
-    );
-    if (!existing.length || existing[0].owner_user_id !== userId) {
-      throw new UnauthorizedException('Not authorized');
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let targetCardId = id;
+
+    if (!isUuid) {
+      // Find card by slug or virtual id
+      const match = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND (slug = $2 OR id::text = $2) LIMIT 1`,
+        userId, id,
+      ).catch(() => []);
+      if (match.length > 0) {
+        targetCardId = match[0].id;
+      } else {
+        const sec = await this.prisma.$queryRawUnsafe<any[]>(
+          `SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND card_kind = 'secondary' LIMIT 1`,
+          userId,
+        ).catch(() => []);
+        if (sec.length > 0) {
+          targetCardId = sec[0].id;
+        } else {
+          throw new NotFoundException('Card not found');
+        }
+      }
+    } else {
+      const existing = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
+        targetCardId,
+      ).catch(() => []);
+      if (!existing.length || existing[0].owner_user_id !== userId) {
+        throw new UnauthorizedException('Not authorized');
+      }
     }
 
-    // Demote all others
+    // Demote all other cards owned by this user to secondary
     await this.prisma.$executeRawUnsafe(
-      `UPDATE public.member_business_cards SET card_kind = 'secondary' WHERE owner_user_id = $1::uuid AND id != $2::uuid`,
-      userId, id,
+      `UPDATE public.member_business_cards SET card_kind = 'secondary', updated_at = NOW() WHERE owner_user_id = $1::uuid AND id != $2::uuid`,
+      userId, targetCardId,
     );
 
-    // Promote this one
+    // Promote target card to primary
     await this.prisma.$executeRawUnsafe(
-      `UPDATE public.member_business_cards SET card_kind = 'primary' WHERE id = $1::uuid`,
-      id,
+      `UPDATE public.member_business_cards SET card_kind = 'primary', updated_at = NOW() WHERE id = $1::uuid AND owner_user_id = $2::uuid`,
+      targetCardId, userId,
     );
 
-    return { ok: true };
+    return { ok: true, primaryId: targetCardId };
   }
 
   async deleteCard(userId: string, id: string) {
@@ -705,7 +823,7 @@ export class BusinessCardService {
       const cardRows = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.member_business_cards
         WHERE slug = ${code} OR id::text = ${code} OR owner_user_id::text = ${code}
-        ORDER BY updated_at DESC
+        ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC
         LIMIT 1
       `.catch(() => []);
 
@@ -755,12 +873,12 @@ export class BusinessCardService {
     const m = memRows[0] || {};
     const userId = m.user_id || cardRow?.owner_user_id || null;
 
-    // Load business card if not already loaded
+    // Load business card if not already loaded, prioritizing PRIMARY card!
     if (!cardRow && userId) {
       const cRows = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.member_business_cards
         WHERE owner_user_id = ${userId}::uuid OR member_id = ${m.id}::uuid
-        ORDER BY updated_at DESC
+        ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC
         LIMIT 1
       `.catch(() => []);
       if (cRows.length > 0) cardRow = cRows[0];
@@ -791,12 +909,19 @@ export class BusinessCardService {
       if (sRows.length > 0) settings = sRows[0];
     }
 
-    const showName = settings ? settings.show_name !== false : true;
-    const showCompany = settings ? settings.show_company !== false : true;
-    const showPhoto = settings ? settings.show_photo !== false : true;
-    const showEmail = settings ? settings.show_email !== false : true;
-    const showPhone = settings ? settings.show_phone !== false : true;
-    const showAddress = settings ? settings.show_address !== false : true;
+    // Parse visibility settings from the specific card (Primary or chosen card)
+    const cardVis = (typeof cardRow?.visibility_settings === 'string'
+      ? JSON.parse(cardRow.visibility_settings)
+      : cardRow?.visibility_settings) || {};
+
+    const showContact = cardVis.showContact !== false;
+    const showSocial = cardVis.showSocial !== false;
+    const showName = cardVis.showName !== false && (settings ? settings.show_name !== false : true);
+    const showCompany = cardVis.showCompany !== false && (settings ? settings.show_company !== false : true);
+    const showPhoto = cardVis.showPhoto !== false && (settings ? settings.show_photo !== false : true);
+    const showPhone = showContact && cardVis.showPhone !== false && (settings ? settings.show_phone !== false : true);
+    const showEmail = showContact && cardVis.showEmail !== false && (settings ? settings.show_email !== false : true);
+    const showAddress = showContact && cardVis.showAddress !== false && (settings ? settings.show_address !== false : true);
 
     // Resolve Name
     let resolvedPersonName =
@@ -860,11 +985,11 @@ export class BusinessCardService {
     // Resolve Phone & Email
     const resolvedPhone = showPhone
       ? (cardRow?.work_phone || m.phone || userRow?.phone || null)
-      : "Đã ẩn theo cài đặt riêng tư";
+      : null;
 
     const resolvedEmail = showEmail
       ? (cardRow?.work_email || m.email || userRow?.email || null)
-      : "Đã ẩn theo cài đặt riêng tư";
+      : null;
 
     const resolvedWebsite = showCompany
       ? (cardRow?.website || m.website || "https://ceo1983club.com")
@@ -879,6 +1004,7 @@ export class BusinessCardService {
     return {
       found: true,
       code: m.code || cardRow?.slug || code,
+      cardKind: cardRow?.card_kind || "primary",
       name: showName ? resolvedPersonName : "Hội viên CLB Doanh Nhân CEO 1983",
       company: showCompany ? resolvedCompanyName : "Đã ẩn theo cài đặt riêng tư",
       type: m.type || "company",
@@ -899,9 +1025,10 @@ export class BusinessCardService {
       userId: userId,
       headline: cardRow?.headline || null,
       bio: cardRow?.bio || null,
-      zaloUrl: cardRow?.zalo_url || null,
-      linkedinUrl: cardRow?.linkedin_url || null,
-      facebookUrl: cardRow?.facebook_url || null,
+      zaloUrl: showSocial ? (cardRow?.zalo_url || (resolvedPhone ? `https://zalo.me/${resolvedPhone.replace(/\D/g, '')}` : null)) : null,
+      linkedinUrl: showSocial ? (cardRow?.linkedin_url || null) : null,
+      facebookUrl: showSocial ? (cardRow?.facebook_url || null) : null,
+      visibilitySettings: cardVis,
       privacySettings: {
         showPhoto,
         showName,
@@ -909,6 +1036,7 @@ export class BusinessCardService {
         showPhone,
         showEmail,
         showAddress,
+        showSocial,
       },
     };
   }

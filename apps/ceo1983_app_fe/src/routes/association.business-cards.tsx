@@ -314,7 +314,11 @@ function BusinessCardsScreen() {
       // Merge other server cards if any beyond primary & secondary
       const others = serverCards ? serverCards.filter((c) => c.id !== primaryCard?.id && c.id !== secondaryCard?.id) : [];
 
-      setCards([officialPrimary, officialSecondary, ...others]);
+      if (serverCards && serverCards.length > 0) {
+        setCards(serverCards);
+      } else {
+        setCards([officialPrimary, officialSecondary, ...others]);
+      }
     } catch (e) {
       toast.error(tRef.current(cardPermissionErrorKey(e)));
     } finally {
@@ -1882,13 +1886,16 @@ function CardRow({
 
       {previewOpen ? (
         <CardPreviewModal
+          cardId={card.id}
           slug={card.slug}
           name={card.displayName || card.slug}
           title={card.professionalTitle || undefined}
           company={card.companyName || undefined}
           avatarUrl={card.avatarUrl}
+          cardKind={card.cardKind}
           published={published}
           onClose={() => setPreviewOpen(false)}
+          onPrimarySet={onChanged}
         />
       ) : null}
       <ConfirmDialog
@@ -1920,6 +1927,7 @@ function CardEditor({
   const [d, setD] = useState<Draft>(draft);
   const [saving, setSaving] = useState(false);
   const [skillInput, setSkillInput] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setD((prev) => ({ ...prev, [key]: value }));
@@ -1949,6 +1957,10 @@ function CardEditor({
             showSocial: d.visibility.showSocial,
             showServices: d.visibility.showServices,
             showNeeds: d.visibility.showNeeds,
+            showPhone: d.visibility.showPhone,
+            showEmail: d.visibility.showEmail,
+            showAddress: d.visibility.showAddress,
+            showCompany: d.visibility.showCompany,
           },
           displayName: d.displayName || null,
           professionalTitle: d.professionalTitle || null,
@@ -1975,8 +1987,6 @@ function CardEditor({
         },
       });
       try {
-        // Tách biệt hoàn toàn Danh thiếp số và Profile cá nhân:
-        // Cập nhật danh thiếp số độc lập, không thay đổi profile, thẻ hội viên hay danh thiếp khác
         const targetCardId = d.id || (res as any)?.id || (res as any)?.slug || d.slug;
         if (d.avatarUrl && targetCardId) {
           localStorage.setItem(`vba_card_avatar_${targetCardId}`, d.avatarUrl);
@@ -2006,13 +2016,23 @@ function CardEditor({
       <MemberHeader
         title={d.id ? t("bc.edit") : t("bc.new")}
         right={
-          <button
-            onClick={onClose}
-            aria-label={t("bc.cancel")}
-            className="grid h-9 w-9 place-items-center rounded-full text-[var(--vba-text-dim)] transition hover:bg-card/5"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="inline-flex items-center gap-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 px-3 py-1.5 text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-100 transition shadow-2xs"
+            >
+              <Eye className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
+              <span>Xem trước</span>
+            </button>
+            <button
+              onClick={onClose}
+              aria-label={t("bc.cancel")}
+              className="grid h-9 w-9 place-items-center rounded-full text-[var(--vba-text-dim)] transition hover:bg-card/5"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         }
       />
       <div className="space-y-4 px-4 py-4">
@@ -2179,25 +2199,45 @@ function CardEditor({
           {d.publicMode !== "private" ? (
             <div className="mt-1 space-y-1.5">
               <p className="text-[12px] font-semibold text-[var(--vba-text)]">
-                {t("bc.vis.rules")}
+                Tùy chọn hiển thị trường thông tin khi người khác quét QR:
               </p>
               <VisToggle
-                label={t("bc.vis.showContact")}
+                label="Hiển thị khối liên hệ"
                 checked={d.visibility.showContact}
                 onChange={(b) => set("visibility", { ...d.visibility, showContact: b })}
               />
               <VisToggle
-                label={t("bc.vis.showSocial")}
+                label="Hiển thị số điện thoại"
+                checked={d.visibility.showPhone !== false}
+                onChange={(b) => set("visibility", { ...d.visibility, showPhone: b })}
+              />
+              <VisToggle
+                label="Hiển thị email công việc"
+                checked={d.visibility.showEmail !== false}
+                onChange={(b) => set("visibility", { ...d.visibility, showEmail: b })}
+              />
+              <VisToggle
+                label="Hiển thị địa chỉ trụ sở"
+                checked={d.visibility.showAddress !== false}
+                onChange={(b) => set("visibility", { ...d.visibility, showAddress: b })}
+              />
+              <VisToggle
+                label="Hiển thị thông tin doanh nghiệp & website"
+                checked={d.visibility.showCompany !== false}
+                onChange={(b) => set("visibility", { ...d.visibility, showCompany: b })}
+              />
+              <VisToggle
+                label="Hiển thị mạng xã hội (Zalo, Facebook...)"
                 checked={d.visibility.showSocial}
                 onChange={(b) => set("visibility", { ...d.visibility, showSocial: b })}
               />
               <VisToggle
-                label={t("bc.vis.showServices")}
+                label="Hiển thị sản phẩm & dịch vụ"
                 checked={d.visibility.showServices}
                 onChange={(b) => set("visibility", { ...d.visibility, showServices: b })}
               />
               <VisToggle
-                label={t("bc.vis.showNeeds")}
+                label="Hiển thị nhu cầu kết nối & hợp tác"
                 checked={d.visibility.showNeeds}
                 onChange={(b) => set("visibility", { ...d.visibility, showNeeds: b })}
               />
@@ -2206,6 +2246,14 @@ function CardEditor({
         </Section>
 
         <div className="flex gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-400 bg-amber-50 hover:bg-amber-100 py-3 text-[13px] font-bold text-amber-900 transition shadow-2xs cursor-pointer"
+          >
+            <Eye className="h-4 w-4 text-[#003B95]" />
+            <span>Xem trước</span>
+          </button>
           <button
             onClick={onClose}
             className="flex-1 rounded-xl border border-[var(--vba-border-soft)] py-3 text-[13px] font-semibold text-[var(--vba-text)]"
@@ -2222,6 +2270,21 @@ function CardEditor({
           </button>
         </div>
       </div>
+
+      {previewOpen ? (
+        <CardPreviewModal
+          cardId={d.id}
+          slug={d.slug}
+          name={d.displayName || d.slug}
+          title={d.professionalTitle}
+          company={d.companyName}
+          avatarUrl={d.avatarUrl}
+          cardKind={d.cardKind}
+          draft={d}
+          published={true}
+          onClose={() => setPreviewOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

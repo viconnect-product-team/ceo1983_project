@@ -531,6 +531,31 @@ function Home() {
 
   const unreadNotifCount = notifications.filter((n) => n.unread).length;
 
+  // Real-time active polls count for core features badge
+  const [activePollsCount, setActivePollsCount] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("vba_active_polls_count");
+      return saved ? parseInt(saved, 10) : 1;
+    } catch {
+      return 1;
+    }
+  });
+
+  useEffect(() => {
+    fetchNestApi<any[]>("/voting/polls")
+      .then((polls) => {
+        if (Array.isArray(polls)) {
+          const activeCount = polls.filter((p) => p.status === "ACTIVE" || p.status === "OPEN" || !p.status).length;
+          const count = activeCount || polls.length || 1;
+          setActivePollsCount(count);
+          try {
+            localStorage.setItem("vba_active_polls_count", String(count));
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // User-scoped custom profile (STRICTLY FOR CURRENT LOGGED IN USER)
   const userProfileStorageKey = user?.id ? `vba_custom_profile_${user.id}` : null;
   const [customProfile, setCustomProfile] = useState<{
@@ -542,6 +567,11 @@ function Home() {
     companyLogo?: string | null;
     phone?: string;
     userId?: string;
+    linkedin?: string;
+    facebook?: string;
+    zalo?: string;
+    website?: string;
+    tiktok?: string;
   } | null>(() => {
     if (typeof window === "undefined" || !user?.id) return null;
     try {
@@ -1053,35 +1083,36 @@ function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
           </div>
 
-          {/* Card Body: Only member name + edit icon, job title, phone number */}
-          <div className="self-stretch px-4 pt-11 pb-4 flex flex-col justify-start items-start gap-1 overflow-hidden relative">
-            <div className="flex items-center justify-between w-full overflow-hidden">
-              <h2 className="text-slate-900 dark:text-white text-base font-extrabold font-sans leading-tight truncate">
-                {displayName || "Trần Tuấn Anh"}
-              </h2>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setQuickEditOpen(true);
-                }}
-                className="p-1 rounded-full hover:bg-amber-500/15 text-slate-400 hover:text-amber-500 transition-colors"
-                title="Chỉnh sửa thông tin"
-              >
-                <Pencil className="size-4 text-amber-500" />
-              </button>
-            </div>
+          {/* Card Body: Member name, job title, phone number + quick edit at bottom */}
+          <div className="self-stretch px-4 pt-11 pb-3 flex flex-col justify-start items-start gap-1 overflow-hidden relative">
+            <h2 className="text-slate-900 dark:text-white text-base font-extrabold font-sans leading-tight truncate w-full">
+              {displayName || "Trần Tuấn Anh"}
+            </h2>
 
             <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-xs font-semibold leading-4">
               <Briefcase className="size-3.5 shrink-0 text-[#003B95] dark:text-blue-400" />
               <span className="truncate">{displayTitle || "Hội viên Doanh nhân"}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs font-bold leading-5">
-              <Phone className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-emerald-700 dark:text-emerald-400 font-sans tracking-wide">
-                {displayPhone || "0901000001"}
-              </span>
+            <div className="self-stretch flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60 mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold leading-5">
+                <Phone className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-emerald-700 dark:text-emerald-400 font-sans tracking-wide">
+                  {displayPhone || "0901000001"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQuickEditOpen(true);
+                }}
+                className="px-2.5 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold inline-flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs border border-amber-500/25"
+                title="Chỉnh sửa thông tin"
+              >
+                <Pencil className="size-3 text-amber-500" />
+                <span>Chỉnh sửa</span>
+              </button>
             </div>
           </div>
 
@@ -1106,7 +1137,7 @@ function Home() {
         <div className="self-stretch px-3 py-4 flex flex-col justify-start items-start gap-3">
           {/* Hàng 1 */}
           <div className="self-stretch h-20 inline-flex justify-between items-start gap-1">
-            <Link to="/association/card" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+            <Link to="/association/business-cards" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
               <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
                 <img src="/icons/ceo1983/id-card.svg" alt="Danh thiếp số" className="size-7" />
               </div>
@@ -1117,7 +1148,9 @@ function Home() {
               <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
                 <img src="/icons/ceo1983/users.svg" alt="Danh bạ CEO" className="size-7" />
                 <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
-                  <span className="text-white text-[10px] font-bold font-sans leading-3">100+</span>
+                  <span className="text-white text-[10px] font-bold font-sans leading-3">
+                    {directoryMembers.length > 0 ? directoryMembers.length : (member ? "12" : "10")}
+                  </span>
                 </div>
               </div>
               <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Danh bạ CEO</div>
@@ -1151,7 +1184,9 @@ function Home() {
               <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
                 <img src="/icons/ceo1983/vote.svg" alt="Biểu quyết số" className="size-7" />
                 <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
-                  <span className="text-white text-[10px] font-bold font-sans leading-3">Mới</span>
+                  <span className="text-white text-[10px] font-bold font-sans leading-3">
+                    {activePollsCount > 0 ? activePollsCount : "1"}
+                  </span>
                 </div>
               </div>
               <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Biểu quyết số</div>
@@ -1164,7 +1199,7 @@ function Home() {
               <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Lịch sử</div>
             </Link>
 
-            <Link to={"/association/documents" as any} className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
+            <Link to="/association/library" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
               <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
                 <img src="/icons/ceo1983/folder-open.svg" alt="Kho tài liệu" className="size-7" />
               </div>
@@ -1187,8 +1222,26 @@ function Home() {
         <div className="w-full">
           <div className="mb-3 flex items-center justify-between">
             <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-              <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 text-xs border border-amber-500/40 shadow-xs">
-                <Calendar className="h-3.5 w-3.5 text-amber-400" />
+              <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 text-xs border border-amber-500/40 shadow-xs overflow-hidden p-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <g clipPath="url(#clip0_29_1175)">
+                    <path d="M20.5 7.508V3.5C20.5 3.23478 20.3946 2.98043 20.2071 2.79289C20.0196 2.60536 19.7652 2.5 19.5 2.5H1.5C1.23478 2.5 0.98043 2.60536 0.792893 2.79289C0.605357 2.98043 0.5 3.23478 0.5 3.5V7.508H20.5Z" fill="#C0D9FF"/>
+                    <path d="M20.5 4.5V3.5C20.5 3.23478 20.3946 2.98043 20.2071 2.79289C20.0196 2.60536 19.7652 2.5 19.5 2.5H1.5C1.23478 2.5 0.98043 2.60536 0.792893 2.79289C0.605357 2.98043 0.5 3.23478 0.5 3.5V4.5H20.5Z" fill="#EBF3FF"/>
+                    <path d="M0.5 7.508V17.5C0.5 17.7652 0.605357 18.0196 0.792893 18.2071C0.98043 18.3946 1.23478 18.5 1.5 18.5H19.5C19.7652 18.5 20.0196 18.3946 20.2071 18.2071C20.3946 18.0196 20.5 17.7652 20.5 17.5V7.5L0.5 7.508Z" fill="white"/>
+                    <path d="M9.5 18.5H1.5C1.23478 18.5 0.98043 18.3946 0.792893 18.2071C0.605357 18.0196 0.5 17.7652 0.5 17.5V3.5C0.5 3.23478 0.605357 2.98043 0.792893 2.79289C0.605357 2.98043 1.23478 2.5 1.5 2.5H19.5C19.7652 2.5 20.0196 2.60536 20.2071 2.79289C20.3946 2.98043 20.5 3.23478 20.5 3.5V10" strokeLinecap="round" strokeLinejoin="round" stroke="#002867"/>
+                    <path d="M5.5 0.500977V5.50098" strokeLinecap="round" strokeLinejoin="round" stroke="#002867"/>
+                    <path d="M15.5 0.500977V5.50098" strokeLinecap="round" strokeLinejoin="round" stroke="#002867"/>
+                    <path d="M0.5 7.50098H20.5" strokeLinecap="round" strokeLinejoin="round" stroke="#002867"/>
+                    <path d="M18.1999 11.927L19.7389 15.497H22.7329C22.8842 15.491 23.0337 15.532 23.1608 15.6142C23.288 15.6964 23.3866 15.8158 23.4433 15.9562C23.5 16.0966 23.5119 16.2511 23.4775 16.3985C23.4431 16.546 23.3639 16.6792 23.2509 16.78L20.6509 19.096L22.0909 22.408C22.1541 22.5595 22.1682 22.727 22.1312 22.887C22.0943 23.0469 22.008 23.1913 21.8847 23.2997C21.7614 23.4081 21.6072 23.4751 21.4439 23.4913C21.2805 23.5075 21.1161 23.472 20.9739 23.39L17.4999 21.43L14.0199 23.39C13.8778 23.472 13.7134 23.5075 13.55 23.4913C13.3866 23.4751 13.2325 23.4081 13.1092 23.2997C12.9858 23.1913 12.8996 23.0469 12.8626 22.887C12.8257 22.727 12.8397 22.5595 12.9029 22.408L14.3449 19.1L11.7449 16.784C11.6317 16.6837 11.5522 16.5508 11.5173 16.4036C11.4824 16.2563 11.4939 16.1019 11.5502 15.9615C11.6065 15.821 11.7048 15.7014 11.8316 15.619C11.9585 15.5365 12.1077 15.4953 12.2589 15.501H15.2589L16.7999 11.931C16.8684 11.8037 16.9701 11.6974 17.0941 11.6233C17.2181 11.5491 17.3599 11.51 17.5044 11.51C17.6489 11.51 17.7907 11.5491 17.9148 11.6233C18.0388 11.6974 18.1405 11.8037 18.2089 11.931L18.1999 11.927Z" fill="#C0D9FF"/>
+                    <path d="M19.744 15.5001L18.2 11.9271C18.1316 11.7998 18.0299 11.6935 17.9059 11.6194C17.7818 11.5452 17.64 11.5061 17.4955 11.5061C17.351 11.5061 17.2092 11.5452 17.0852 11.6194C16.9612 11.6935 16.8595 11.7998 16.791 11.9271L15.255 15.5001H12.255C12.1038 15.4944 11.9546 15.5356 11.8277 15.6181C11.7009 15.7005 11.6026 15.8201 11.5463 15.9606C11.49 16.101 11.4785 16.2554 11.5134 16.4027C11.5483 16.5499 11.6278 16.6827 11.741 16.7831L14.341 19.0981L12.904 22.4101C12.8329 22.5873 12.8294 22.7844 12.894 22.9641L20.364 15.5001H19.744Z" fill="#EBF3FF"/>
+                    <path d="M18.1999 11.927L19.7389 15.497H22.7329C22.8842 15.491 23.0337 15.532 23.1608 15.6142C23.288 15.6964 23.3866 15.8158 23.4433 15.9562C23.5 16.0966 23.5119 16.2511 23.4775 16.3985C23.4431 16.546 23.3639 16.6792 23.2509 16.78L20.6509 19.096L22.0909 22.408C22.1541 22.5595 22.1682 22.727 22.1312 22.887C22.0943 23.0469 22.008 23.1913 21.8847 23.2997C21.7614 23.4081 21.6072 23.4751 21.4439 23.4913C21.2805 23.5075 21.1161 23.472 20.9739 23.39L17.4999 21.43L14.0199 23.39C13.8778 23.472 13.7134 23.5075 13.55 23.4913C13.3866 23.4751 13.2325 23.4081 13.1092 23.2997C12.9858 23.1913 12.8996 23.0469 12.8626 22.887C12.8257 22.727 12.8397 22.5595 12.9029 22.408L14.3449 19.1L11.7449 16.784C11.6317 16.6837 11.5522 16.5508 11.5173 16.4036C11.4824 16.2563 11.4939 16.1019 11.5502 15.9615C11.6065 15.821 11.7048 15.7014 11.8316 15.619C11.9585 15.5365 12.1077 15.4953 12.2589 15.501H15.2589L16.7999 11.931C16.8684 11.8037 16.9701 11.6974 17.0941 11.6233C17.2181 11.5491 17.3599 11.51 17.5044 11.51C17.6489 11.51 17.7907 11.5491 17.9148 11.6233C18.0388 11.6974 18.1405 11.8037 18.2089 11.931L18.1999 11.927Z" strokeLinecap="round" strokeLinejoin="round" stroke="#002867"/>
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_29_1175">
+                      <rect width="24" height="24" fill="white"/>
+                    </clipPath>
+                  </defs>
+                </svg>
               </span>
               <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-amber-500 transition-colors flex items-center gap-1">
                 <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
@@ -1261,34 +1314,64 @@ function Home() {
           )}
         </div>
 
-        {/* Ưu Đãi Riêng Hội Viên & Đối Tác Banner */}
-        <div className="self-stretch min-h-[160px] relative rounded-2xl overflow-hidden shadow-md bg-gradient-to-r from-sky-950 via-blue-900 to-indigo-950 border border-amber-500/30 p-4 flex items-center justify-between">
-          <img className="w-full h-full object-cover absolute inset-0 opacity-25 mix-blend-overlay pointer-events-none" src="/images/ceo1983/image 10.png" alt="Ưu đãi" />
-          <div className="relative z-10 max-w-[65%] flex flex-col justify-start items-start gap-1">
-            <div className="text-amber-400 text-xl sm:text-2xl font-black font-sans leading-tight tracking-wide drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]">
+        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (LUNG LINH CHUẨN DESIGN) ── */}
+        <Link
+          to="/association/benefits"
+          className="self-stretch h-40 relative bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-lg border border-amber-500/25 block cursor-pointer group active:scale-[0.99] transition duration-200"
+        >
+          {/* Background image */}
+          <img
+            className="w-full h-60 left-0 top-[-21.24px] absolute object-cover"
+            src="/images/event/image-10.png"
+            alt="Ưu đãi hội viên"
+          />
+          {/* Ribbon mix blend */}
+          <img
+            className="w-80 h-56 left-[236.07px] top-[-216px] absolute origin-top-left rotate-[38.33deg] mix-blend-hard-light pointer-events-none"
+            src="/images/event/image-12.png"
+            alt=""
+          />
+          {/* Gift box 3D */}
+          <img
+            className="w-48 h-40 right-[-10px] top-[-0.24px] absolute object-contain pointer-events-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)]"
+            src="/images/event/image-13.png"
+            alt="Quà tặng"
+          />
+
+          {/* Heading Box */}
+          <div className="w-56 h-14 left-[15.09px] top-[11.61px] absolute pointer-events-none">
+            <div className="left-0 top-[2.36px] absolute text-amber-500 text-2xl font-bold font-sans leading-7 tracking-wide [text-shadow:_0px_0px_37px_rgb(255_186_0_/_1.00)]">
               Ưu Đãi Riêng
             </div>
-            <div className="text-white text-sm font-semibold font-sans">Hội Viên &amp; Đối Tác</div>
-            <p className="text-white/85 text-xs font-normal font-sans leading-4 mt-0.5">
-              Khám phá các <span className="text-amber-300 font-semibold">Chính sách trợ giá, Quà tặng liên kết</span> dành riêng cho bạn
-            </p>
-            <Link
-              to="/association/benefits"
-              className="mt-2 px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold font-sans rounded-full inline-flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
-            >
-              <span>Xem ưu đãi ngay</span>
-              <img src="/icons/ceo1983/chevron-right.svg" alt="Arrow" className="size-3 invert" />
-            </Link>
+            <div className="left-[2px] top-[28px] absolute text-white text-base font-sans font-semibold leading-8 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              Hội Viên &amp; Đối Tác
+            </div>
+            <div className="w-3.5 h-4 left-[151.81px] top-[11.85px] absolute opacity-40 bg-gradient-to-tr from-purple-200 to-amber-300 shadow-[0px_0px_61px_0px_rgba(218,181,255,0.90)] rounded-full pointer-events-none" />
+            <div className="w-2 h-2.5 left-[165.39px] top-[7.33px] absolute opacity-40 bg-gradient-to-tr from-purple-200 to-amber-300 shadow-[0px_0px_61px_0px_rgba(218,181,255,0.90)] rounded-full pointer-events-none" />
+            <div className="w-3 h-3.5 left-[3px] top-[34.34px] absolute opacity-40 bg-gradient-to-tr from-purple-200 to-amber-300 shadow-[0px_0px_79px_0px_rgba(218,181,255,0.90)] rounded-full pointer-events-none" />
           </div>
-          {/* Hộp quà vàng 3D sang trọng */}
-          <div className="relative z-10 shrink-0 flex items-center justify-center pr-1">
-            <img
-              src="/images/ceo1983/image 12.png"
-              alt="Hộp quà ưu đãi"
-              className="w-24 sm:w-28 h-auto object-contain drop-shadow-[0_10px_25px_rgba(251,191,36,0.45)]"
-            />
+
+          {/* Subtext description */}
+          <div className="max-w-[62%] left-[15.09px] top-[74px] absolute pointer-events-none">
+            <span className="text-white/90 text-xs font-normal font-sans leading-4 tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              Khám phá các{" "}
+            </span>
+            <span className="text-amber-400 font-semibold text-xs font-sans leading-4 tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              Chính sách trợ giá, Quà tặng liên kết, Quyền lợi giao thương
+            </span>
+            <span className="text-white text-xs font-normal font-sans leading-4 tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              {" "}dành riêng cho bạn
+            </span>
           </div>
-        </div>
+
+          {/* Button Xem ưu đãi ngay */}
+          <div className="px-3.5 py-1.5 left-[15.09px] top-[122px] absolute bg-amber-500 group-hover:bg-amber-400 rounded-full inline-flex justify-center items-center gap-1.5 shadow-md active:scale-95 transition-all">
+            <span className="text-slate-950 text-xs font-bold font-sans leading-none">
+              Xem ưu đãi ngay
+            </span>
+            <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
+          </div>
+        </Link>
 
         {/* CƠ HỘI & KẾT NỐI + SÀN THƯƠNG MẠI */}
         <div className="self-stretch inline-flex justify-start items-start gap-3">
@@ -1297,7 +1380,7 @@ function Home() {
             to="/association/opportunities"
             className="flex-1 self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-[0px_4px_13px_0px_rgba(174,113,21,0.10)] outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-between items-start gap-2.5 overflow-hidden group hover:border-amber-400 transition"
           >
-            <img className="w-full h-24 rounded-lg object-cover" src="/images/ceo1983/Rectangle 6-1.png" alt="Cơ hội & Kết nối" />
+            <img className="w-full h-24 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300" src="/images/ceo1983/Rectangle 6-1.png" alt="Cơ hội & Kết nối" />
             <div className="self-stretch flex flex-col justify-start items-start gap-1">
               <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">🤝 {opportunities.length || 6} cơ hội mới</span>
               <div className="self-stretch inline-flex justify-between items-center">
@@ -1317,7 +1400,7 @@ function Home() {
             to="/association/products"
             className="flex-1 self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-[0px_4px_13px_0px_rgba(174,113,21,0.10)] outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-between items-start gap-2.5 overflow-hidden group hover:border-amber-400 transition"
           >
-            <img className="w-full h-24 rounded-lg object-cover" src="/images/ceo1983/image 13.png" alt="Sàn thương mại" />
+            <img className="w-full h-24 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300" src="/images/ceo1983/marketplace-banner.jpg" alt="Sàn thương mại" />
             <div className="self-stretch flex flex-col justify-start items-start gap-1">
               <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">📦 {products.length || 3} sản phẩm mới</span>
               <div className="self-stretch inline-flex justify-between items-center">
@@ -1409,7 +1492,8 @@ function Home() {
             ]).map((item, i) => (
               <Link
                 key={item.id || i}
-                to={`/association/news/${item.id}` as any}
+                to="/association/news"
+                search={{ articleId: String(item.id) }}
                 className="w-64 relative bg-white dark:bg-slate-900 rounded-2xl outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-amber-400 transition"
               >
                 <div className="relative w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-800">
@@ -1521,6 +1605,11 @@ function Home() {
             (member as any)?.linkedinUrl ||
             (member as any)?.linkedin ||
             null,
+          zaloPhone:
+            (customProfile as any)?.zalo ||
+            (member as any)?.zaloPhone ||
+            displayPhone ||
+            null,
           website:
             (customProfile as any)?.website ||
             (member as any)?.website ||
@@ -1538,7 +1627,7 @@ function Home() {
         }}
       />
 
-      {/* ── MODAL CHỈNH SỬA NHANH NHƯ FACEBOOK (Req 1) ── */}
+      {/* ── MODAL CHỈNH SỬA NHANH NHƯ FACEBOOK (Req 1 & Req 10) ── */}
       <QuickProfileEditModal
         open={quickEditOpen}
         onClose={() => setQuickEditOpen(false)}
@@ -1549,6 +1638,33 @@ function Home() {
         initialAvatar={displayAvatar}
         initialCover={coverPhoto}
         initialCompanyLogo={companyLogo}
+        initialLinkedin={
+          (customProfile as any)?.linkedin ||
+          (member as any)?.linkedinUrl ||
+          (member as any)?.linkedin ||
+          ""
+        }
+        initialFacebook={
+          (customProfile as any)?.facebook ||
+          (member as any)?.facebookUrl ||
+          (member as any)?.facebook ||
+          ""
+        }
+        initialZalo={
+          (customProfile as any)?.zalo ||
+          (member as any)?.zaloPhone ||
+          ""
+        }
+        initialWebsite={
+          (customProfile as any)?.website ||
+          (member as any)?.website ||
+          ""
+        }
+        initialTiktok={
+          (customProfile as any)?.tiktok ||
+          (member as any)?.tiktokUrl ||
+          ""
+        }
         userId={user?.id}
         onSaved={(updated) => {
           setCustomProfile((prev) => ({ ...(prev || {}), ...updated }));

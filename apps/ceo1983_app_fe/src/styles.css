@@ -2513,8 +2513,7 @@ body:has(.vba-app),
   overflow-x: clip !important;
   overflow-x: hidden !important;
   overscroll-behavior-x: none !important;
-  overscroll-behavior-y: none !important;
-  overscroll-behavior: none !important;
+  overscroll-behavior-y: auto;
   touch-action: pan-y pinch-zoom;
   max-width: 100vw;
   width: 100%;

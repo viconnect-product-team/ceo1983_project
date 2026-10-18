@@ -378,13 +378,77 @@ export function MemberHeader({
   );
 }
 
+function FooterHomeIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M3.9104 13.7714C3.9104 13.0227 3.9104 12.6484 4.00689 12.3037C4.09237 11.9983 4.23284 11.7111 4.4214 11.4562C4.63427 11.1684 4.92975 10.9385 5.52071 10.4789L14.3613 3.60286C14.8193 3.24668 15.0482 3.06859 15.3011 3.00014C15.5242 2.93973 15.7593 2.93973 15.9824 3.00014C16.2352 3.06859 16.4642 3.24668 16.9222 3.60286L25.7628 10.4789C26.3537 10.9385 26.6492 11.1684 26.8621 11.4562C27.0506 11.7111 27.1911 11.9983 27.2766 12.3037C27.3731 12.6484 27.3731 13.0227 27.3731 13.7714V23.202C27.3731 24.662 27.3731 25.3921 27.0889 25.9497C26.839 26.4403 26.4402 26.8391 25.9497 27.089C25.392 27.3732 24.662 27.3732 23.2019 27.3732H8.08154C6.62151 27.3732 5.89149 27.3732 5.33383 27.089C4.8433 26.8391 4.44448 26.4403 4.19454 25.9497C3.9104 25.3921 3.9104 24.662 3.9104 23.202V13.7714Z"
+        fill={active ? "#E9F2FF" : "none"}
+      />
+      <path
+        d="M11.7313 27.3732V17.7274C11.7313 16.9974 11.7313 16.6324 11.8734 16.3535C11.9983 16.1083 12.1977 15.9089 12.443 15.7839C12.7218 15.6418 13.0868 15.6418 13.8169 15.6418H17.4666C18.1966 15.6418 18.5616 15.6418 18.8405 15.7839C19.0857 15.9089 19.2852 16.1083 19.4101 16.3535C19.5522 16.6324 19.5522 16.9974 19.5522 17.7274V27.3732"
+        fill={active ? "#E9F2FF" : "none"}
+      />
+      <path
+        d="M11.7313 27.3732V17.7274C11.7313 16.9974 11.7313 16.6324 11.8734 16.3535C11.9983 16.1083 12.1977 15.9089 12.443 15.7839C12.7218 15.6418 13.0868 15.6418 13.8169 15.6418H17.4666C18.1966 15.6418 18.5616 15.6418 18.8405 15.7839C19.0857 15.9089 19.2852 16.1083 19.4101 16.3535C19.5522 16.6324 19.5522 16.9974 19.5522 17.7274V27.3732M14.3613 3.60286L5.52071 10.4789C4.92975 10.9385 4.63427 11.1684 4.4214 11.4562C4.23284 11.7111 4.09237 11.9983 4.00689 12.3037C3.9104 12.6484 3.9104 13.0227 3.9104 13.7714V23.202C3.9104 24.662 3.9104 25.3921 4.19454 25.9497C4.44448 26.4403 4.8433 26.8391 5.33383 27.089C5.89149 27.3732 6.62151 27.3732 8.08154 27.3732H23.2019C24.662 27.3732 25.392 27.3732 25.9497 27.089C26.4402 26.8391 26.839 26.4403 27.0889 25.9497C27.3731 25.3921 27.3731 24.662 27.3731 23.202V13.7714C27.3731 13.0227 27.3731 12.6484 27.2766 12.3037C27.1911 11.9983 27.0506 11.7111 26.8621 11.4562C26.6492 11.1684 26.3537 10.9385 25.7628 10.4789L16.9222 3.60286C16.4642 3.24668 16.2352 3.06859 15.9824 3.00014C15.7593 2.93973 15.5242 2.93973 15.3011 3.00014C15.0482 3.06859 14.8193 3.24668 14.3613 3.60286Z"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke={active ? "#003B95" : "#64748B"}
+      />
+    </svg>
+  );
+}
+
+function FooterCalendarIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M27.3731 13.0348H3.9104M20.8557 2.60693V7.82086M10.4278 2.60693V7.82086M10.1671 28.6766H21.1164C23.3064 28.6766 24.4015 28.6766 25.2379 28.2504C25.9737 27.8755 26.572 27.2772 26.9469 26.5414C27.3731 25.705 27.3731 24.6099 27.3731 22.4199V11.4706C27.3731 9.28056 27.3731 8.18553 26.9469 7.34904C26.572 6.61324 25.9737 6.01502 25.2379 5.64011C24.4015 5.2139 23.3064 5.2139 21.1164 5.2139H10.1671C7.97706 5.2139 6.88203 5.2139 6.04554 5.64011C5.30974 6.01502 4.71152 6.61324 4.33661 7.34904C3.9104 8.18553 3.9104 9.28056 3.9104 11.4706V22.4199C3.9104 24.6099 3.9104 25.705 4.33661 26.5414C4.71152 27.2772 5.30974 27.8755 6.04554 28.2504C6.88203 28.6766 7.97706 28.6766 10.1671 28.6766Z"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke={active ? "#003B95" : "#64748B"}
+      />
+    </svg>
+  );
+}
+
+function FooterMessageIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M15.6417 27.3731C22.1208 27.3731 27.3731 22.1208 27.3731 15.6417C27.3731 9.1627 22.1208 3.9104 15.6417 3.9104C9.1627 3.9104 3.9104 9.1627 3.9104 15.6417C3.9104 17.2022 4.21507 18.6915 4.76817 20.0534C4.87403 20.314 4.92696 20.4444 4.95057 20.5497C4.97367 20.6528 4.98212 20.729 4.98213 20.8346C4.98215 20.9426 4.96255 21.0602 4.92335 21.2954L4.15041 25.933C4.06946 26.4187 4.02899 26.6615 4.10431 26.8371C4.17022 26.9908 4.29269 27.1133 4.44637 27.1792C4.62196 27.2545 4.86479 27.214 5.35044 27.1331L9.98808 26.3601C10.2233 26.3209 10.3409 26.3013 10.4488 26.3014C10.5545 26.3014 10.6307 26.3098 10.7338 26.3329C10.8391 26.3565 10.9694 26.4095 11.2301 26.5153C12.592 27.0684 14.0813 27.3731 15.6417 27.3731Z"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke={active ? "#003B95" : "#64748B"}
+      />
+    </svg>
+  );
+}
+
+function FooterUserIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M6.92967 25.3376C7.72261 23.4694 9.57395 22.1592 11.7313 22.1592H19.5522C21.7096 22.1592 23.5609 23.4694 24.3538 25.3376M20.8557 12.3831C20.8557 15.2626 18.5213 17.597 15.6418 17.597C12.7622 17.597 10.4278 15.2626 10.4278 12.3831C10.4278 9.50348 12.7622 7.16912 15.6418 7.16912C18.5213 7.16912 20.8557 9.50348 20.8557 12.3831ZM28.6766 15.6418C28.6766 22.8407 22.8407 28.6766 15.6418 28.6766C8.44282 28.6766 2.60693 22.8407 2.60693 15.6418C2.60693 8.44282 8.44282 2.60693 15.6418 2.60693C22.8407 2.60693 28.6766 8.44282 28.6766 15.6418Z"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke={active ? "#003B95" : "#64748B"}
+      />
+    </svg>
+  );
+}
+
 const tabs = [
-  { to: "/association", label: "m.shell.tab_home", icon: Home, exact: true },
-  { to: "/association/events", label: "m.events.title", icon: Calendar },
-  { to: "/association/card", label: "m.shell.tab_qr", icon: QrCode, center: true },
-  { to: "/association/messages", label: "m.shell.tab_messages", icon: MessageSquare },
-  { to: "/association/profile", label: "m.shell.tab_profile", icon: User },
-] satisfies { to: string; label: TKey; icon: typeof Home; exact?: boolean; center?: boolean }[];
+  { to: "/association", label: "m.shell.tab_home", icon: FooterHomeIcon, exact: true },
+  { to: "/association/events", label: "m.events.title", icon: FooterCalendarIcon },
+  { to: "/association/card", label: "m.shell.tab_qr", icon: null, center: true },
+  { to: "/association/messages", label: "m.shell.tab_messages", icon: FooterMessageIcon },
+  { to: "/association/profile", label: "m.shell.tab_profile", icon: FooterUserIcon },
+] satisfies { to: string; label: TKey; icon: any; exact?: boolean; center?: boolean }[];
 
 function useVirtualKeyboard() {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -541,7 +605,7 @@ function MemberTabBar() {
   const tabLabels: Record<string, { vi: string; en: string }> = {
     "/association": { vi: "Trang chủ", en: "Home" },
     "/association/events": { vi: "Sự kiện", en: "Events" },
-    "/association/card": { vi: "Thẻ hội viên", en: "Member Card" },
+    "/association/card": { vi: "Check-in", en: "Check-in" },
     "/association/messages": { vi: "Tin nhắn", en: "Messages" },
     "/association/profile": { vi: "Cá nhân", en: "Profile" },
   };
@@ -777,31 +841,37 @@ function MemberTabBar() {
                     navigate({ to: "/association/card" as any });
                     setQrModalOpen(true);
                   }}
-                  aria-label="Mã QR & Quét mã QR"
-                  className="-mt-6 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none pb-0.5"
+                  aria-label="Check-in & Quét mã QR"
+                  className="-mt-7 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none pb-0.5"
                 >
-                  {/* Navy Halo Aura */}
-                  <span className="absolute inset-0 -top-1 rounded-full bg-[#003B95]/20 blur-md animate-pulse pointer-events-none" />
+                  {/* Subtle Glow */}
+                  <span className="absolute inset-0 -top-1 rounded-full bg-blue-600/25 blur-md animate-pulse pointer-events-none" />
+
+                  {/* Circular Button matching user design: size-14, bg-linear-46 from-sky-900 to-blue-700 */}
                   <span
-                    className="relative grid h-14 w-14 place-items-center rounded-2xl shadow-[0_8px_20px_-4px_rgba(0,59,149,0.4)] group-hover:scale-105 group-active:scale-92 transition-transform overflow-hidden p-2.5"
+                    className="relative grid h-14 w-14 place-items-center rounded-full shadow-[0_8px_20px_-4px_rgba(0,59,149,0.5)] group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-2.5"
                     style={{
-                      background: "linear-gradient(135deg, #002B70 0%, #003B95 50%, #004BBB 100%)",
-                      border: "2px solid rgba(255, 255, 255, 0.4)",
-                      boxShadow:
-                        "0 6px 18px rgba(0, 59, 149, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                      background: "linear-gradient(135deg, #0c4a6e 0%, #0369a1 40%, #1d4ed8 100%)",
+                      border: "3px solid rgba(255, 255, 255, 0.85)",
+                      boxShadow: "0 6px 20px rgba(12, 74, 110, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.4)",
                     }}
                   >
-                    <QrCode
-                      className="h-7 w-7 text-white stroke-[2.2] filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                    <img
+                      src="/icons/footer/qr-code-02.svg"
+                      alt="Check-in"
+                      className="size-7 brightness-110 drop-shadow-sm"
                     />
                     {isMidAutumn && (
                       <span
-                        className="absolute -top-1.5 -right-1.5 text-[10px] select-none"
+                        className="absolute -top-1 -right-1 text-[10px] select-none"
                         aria-hidden="true"
                       >
                         🌕
                       </span>
                     )}
+                  </span>
+                  <span className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 mt-1">
+                    Check-in
                   </span>
                 </button>
               </div>
@@ -876,16 +946,14 @@ function MemberTabBar() {
               className="relative flex flex-1 flex-col items-center justify-end gap-1 py-1 transition-all touch-press select-none-touch active:scale-92 cursor-pointer"
             >
               <div className="relative">
-                <Icon
-                  className={`h-5 w-5 transition-transform duration-150 ${active ? "scale-110 text-[#003B95] dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}`}
-                />
+                {Icon && <Icon active={active} />}
                 {notificationBadge || seasonalBadge}
               </div>
               <span
-                className={`text-[10px] transition-colors select-none ${
+                className={`text-[11px] transition-colors select-none ${
                   active
-                    ? "font-extrabold text-[#003B95] dark:text-blue-400"
-                    : "font-medium text-slate-500 dark:text-slate-400"
+                    ? "font-bold text-[#003B95] dark:text-blue-400"
+                    : "font-normal text-slate-500 dark:text-slate-400"
                 }`}
               >
                 {lang === "en"

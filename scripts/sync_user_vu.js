@@ -1,8 +1,8 @@
 const { Client } = require('pg');
 
 const urls = [
-  { name: 'ceo1983_project', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?sslmode=disable' },
-  { name: 'vione_app', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/vione_app?sslmode=disable' }
+  { name: 'ceo1983_project', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/ceo1983_project' },
+  { name: 'vione_app', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/vione_app' }
 ];
 
 async function syncUserVu() {
@@ -63,6 +63,7 @@ async function syncUserVu() {
 
     // 4. members
     try {
+      await client.query(`ALTER TABLE public.members ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);`);
       const m = await client.query("SELECT * FROM public.members WHERE email = $1 OR user_id = $2::uuid", [email, userId]);
       if (m.rows.length === 0) {
         await client.query(`

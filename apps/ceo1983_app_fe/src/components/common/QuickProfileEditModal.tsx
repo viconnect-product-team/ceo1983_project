@@ -12,6 +12,10 @@ import {
   Loader2,
   Sparkles,
   Briefcase,
+  Globe,
+  Share2,
+  ExternalLink,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -33,6 +37,11 @@ export interface QuickProfileEditModalProps {
   initialCompanyLogo?: string | null;
   initialCompany?: string;
   initialTitle?: string;
+  initialLinkedin?: string;
+  initialFacebook?: string;
+  initialZalo?: string;
+  initialWebsite?: string;
+  initialTiktok?: string;
   userId?: string;
   onSaved?: (updated: {
     name: string;
@@ -42,6 +51,11 @@ export interface QuickProfileEditModalProps {
     companyLogo?: string | null;
     company?: string;
     title?: string;
+    linkedin?: string;
+    facebook?: string;
+    zalo?: string;
+    website?: string;
+    tiktok?: string;
   }) => void;
 }
 
@@ -55,6 +69,11 @@ export function QuickProfileEditModal({
   initialCompanyLogo = null,
   initialCompany = "",
   initialTitle = "",
+  initialLinkedin = "",
+  initialFacebook = "",
+  initialZalo = "",
+  initialWebsite = "",
+  initialTiktok = "",
   userId,
   onSaved,
 }: QuickProfileEditModalProps) {
@@ -63,6 +82,11 @@ export function QuickProfileEditModal({
   const [phone, setPhone] = useState(initialPhone);
   const [company, setCompany] = useState(initialCompany);
   const [title, setTitle] = useState(initialTitle);
+  const [linkedin, setLinkedin] = useState(initialLinkedin);
+  const [facebook, setFacebook] = useState(initialFacebook);
+  const [zalo, setZalo] = useState(initialZalo);
+  const [website, setWebsite] = useState(initialWebsite);
+  const [tiktok, setTiktok] = useState(initialTiktok);
   const [avatar, setAvatar] = useState<string | null>(initialAvatar);
   const [cover, setCover] = useState<string | null>(initialCover);
   const [companyLogo, setCompanyLogo] = useState<string | null>(initialCompanyLogo);
@@ -87,13 +111,31 @@ export function QuickProfileEditModal({
       setPhone(initialPhone);
       setCompany(initialCompany);
       setTitle(initialTitle);
+      setLinkedin(initialLinkedin);
+      setFacebook(initialFacebook);
+      setZalo(initialZalo);
+      setWebsite(initialWebsite);
+      setTiktok(initialTiktok);
       setAvatar(initialAvatar);
       setCover(initialCover);
       setCompanyLogo(initialCompanyLogo || null);
       setModalLogoError(false);
       setErrors({});
+
+      // Fallback read from localStorage if prop not provided
+      try {
+        const raw = localStorage.getItem("vba_custom_profile");
+        if (raw) {
+          const cp = JSON.parse(raw);
+          if (cp.linkedin && !initialLinkedin) setLinkedin(cp.linkedin);
+          if (cp.facebook && !initialFacebook) setFacebook(cp.facebook);
+          if (cp.zalo && !initialZalo) setZalo(cp.zalo);
+          if (cp.website && !initialWebsite) setWebsite(cp.website);
+          if (cp.tiktok && !initialTiktok) setTiktok(cp.tiktok);
+        }
+      } catch {}
     }
-  }, [open, initialName, initialPhone, initialCompany, initialTitle, initialAvatar, initialCover, initialCompanyLogo]);
+  }, [open, initialName, initialPhone, initialCompany, initialTitle, initialLinkedin, initialFacebook, initialZalo, initialWebsite, initialTiktok, initialAvatar, initialCover, initialCompanyLogo]);
 
   if (!open || !mounted || typeof document === "undefined") return null;
 
@@ -178,6 +220,11 @@ export function QuickProfileEditModal({
         avatar: avatar || null,
         cover: cover || null,
         companyLogo: companyLogo || null,
+        linkedin: linkedin.trim(),
+        facebook: facebook.trim(),
+        zalo: zalo.trim(),
+        website: website.trim(),
+        tiktok: tiktok.trim(),
         userId: userId || undefined,
       };
 
@@ -222,6 +269,10 @@ export function QuickProfileEditModal({
           coverUrl: updatedData.cover || existingMem.coverUrl,
           companyLogo: updatedData.companyLogo || existingMem.companyLogo,
           companyLogoUrl: updatedData.companyLogo || existingMem.companyLogoUrl,
+          facebookUrl: updatedData.facebook || existingMem.facebookUrl,
+          linkedinUrl: updatedData.linkedin || existingMem.linkedinUrl,
+          website: updatedData.website || existingMem.website,
+          zaloPhone: updatedData.zalo || existingMem.zaloPhone,
         };
         localStorage.setItem("vba_my_member", JSON.stringify(newMem));
         if (userId) {
@@ -316,13 +367,13 @@ export function QuickProfileEditModal({
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-4 [scrollbar-width:thin]">
-          {/* 1. Cover Photo & Company Logo Upload */}
+          {/* 1. Cover Photo Upload - ĐÃ BỎ CHỨC NĂNG TẢI LOGO TRÊN BÌA THEO YÊU CẦU */}
           <div className="space-y-1.5">
             <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span>Ảnh Bìa & Logo Doanh Nghiệp Trên Trang Chủ</span>
+              <span>Ảnh Bìa Doanh Nghiệp Trên Trang Chủ</span>
             </div>
 
-            {/* Banner preview with company logo overlay */}
+            {/* Banner preview */}
             <div className="relative h-32 w-full rounded-2xl overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] border border-amber-400/30 shadow-inner group">
               {cover ? (
                 <img
@@ -352,36 +403,6 @@ export function QuickProfileEditModal({
                   <Camera className="h-4 w-4" />
                 )}
               </button>
-
-              {/* Company Logo Overlay on Cover Banner - icon upload duy nhất */}
-              <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-2xl p-1 border border-white/15 shadow-md">
-                <div className="h-8 w-8 rounded-xl bg-white grid place-items-center overflow-hidden shrink-0 shadow-xs border border-white/20">
-                  {companyLogo && !modalLogoError ? (
-                    <img
-                      src={resolveMediaUrl(companyLogo) || companyLogo}
-                      alt="Logo công ty"
-                      onError={() => setModalLogoError(true)}
-                      className="h-full w-full object-contain p-0.5"
-                    />
-                  ) : (
-                    <Building2 className="h-4 w-4 text-slate-400" />
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  disabled={uploadingLogo}
-                  className="h-8 w-8 rounded-xl bg-white/20 hover:bg-white/30 text-white grid place-items-center transition active:scale-95 cursor-pointer shadow-xs"
-                  title="Đổi logo doanh nghiệp"
-                  aria-label="Đổi logo doanh nghiệp"
-                >
-                  {uploadingLogo ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-                  ) : (
-                    <Camera className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
             </div>
 
             <input
@@ -390,13 +411,6 @@ export function QuickProfileEditModal({
               accept="image/*"
               className="hidden"
               onChange={(e) => handleFileChange(e, "cover")}
-            />
-            <input
-              ref={logoInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileChange(e, "logo")}
             />
           </div>
 
@@ -520,6 +534,88 @@ export function QuickProfileEditModal({
                   placeholder="Ví dụ: Chủ tịch HĐQT, Tổng Giám Đốc, CEO..."
                   className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
                 />
+              </div>
+            </div>
+
+            {/* 4. Social Links & Network Platforms (Req 10) */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#003B95] dark:text-amber-400">
+                <Globe className="h-4 w-4" />
+                <span>Liên Kết Mạng Xã Hội & Kênh Cá Nhân</span>
+              </div>
+
+              {/* LinkedIn */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Hồ sơ LinkedIn (Profile URL)
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-[#0A66C2]">
+                    in
+                  </span>
+                  <input
+                    type="url"
+                    value={linkedin}
+                    onChange={(e) => setLinkedin(e.target.value)}
+                    placeholder="https://linkedin.com/in/..."
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-8 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                  />
+                </div>
+              </div>
+
+              {/* Facebook */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Trang Facebook cá nhân / Fanpage
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-[#1877F2]">
+                    f
+                  </span>
+                  <input
+                    type="url"
+                    value={facebook}
+                    onChange={(e) => setFacebook(e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-8 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                  />
+                </div>
+              </div>
+
+              {/* Zalo */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Số điện thoại Zalo / Link Zalo
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-[#0068FF]">
+                    Z
+                  </span>
+                  <input
+                    type="text"
+                    value={zalo}
+                    onChange={(e) => setZalo(e.target.value)}
+                    placeholder="Số Zalo hoặc https://zalo.me/..."
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-8 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                  />
+                </div>
+              </div>
+
+              {/* Website */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Website Doanh Nghiệp / Cá Nhân
+                </label>
+                <div className="relative">
+                  <Globe className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="url"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                  />
+                </div>
               </div>
             </div>
           </div>

@@ -2,8 +2,8 @@ const { Client } = require('pg');
 const bcrypt = require('bcrypt');
 
 const DB_URLS = [
-  { name: 'ceo1983_project', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?sslmode=disable' },
-  { name: 'vione_app', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/vione_app?sslmode=disable' }
+  { name: 'ceo1983_project', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/ceo1983_project' },
+  { name: 'vione_app', url: 'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/vione_app' }
 ];
 
 const ASSOC_ID = 'c1983000-0000-4000-8000-000000001983';
@@ -71,6 +71,14 @@ async function syncDb(dbConfig) {
   await client.connect();
 
   const hashedPw = await bcrypt.hash('123456', 10);
+
+  await client.query(`
+    ALTER TABLE public.members ADD COLUMN IF NOT EXISTS department VARCHAR(255);
+    ALTER TABLE public.members ADD COLUMN IF NOT EXISTS executive_role VARCHAR(255);
+    ALTER TABLE public.members ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+    ALTER TABLE public.members ADD COLUMN IF NOT EXISTS cover_url TEXT;
+    ALTER TABLE public.members ADD COLUMN IF NOT EXISTS business_card_slug VARCHAR(255);
+  `);
 
   for (const acc of ACCOUNTS) {
     console.log(`Processing: ${acc.email} (${acc.department})`);

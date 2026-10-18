@@ -19,6 +19,10 @@ export type VisibilitySettings = {
   showSocial: boolean;
   showServices: boolean;
   showNeeds: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showAddress?: boolean;
+  showCompany?: boolean;
 };
 
 export const DEFAULT_VISIBILITY: VisibilitySettings = {
@@ -27,6 +31,10 @@ export const DEFAULT_VISIBILITY: VisibilitySettings = {
   showSocial: true,
   showServices: true,
   showNeeds: true,
+  showPhone: true,
+  showEmail: true,
+  showAddress: true,
+  showCompany: true,
 };
 
 export function normalizeVisibility(raw: unknown, mode: PublicMode): VisibilitySettings {
@@ -37,6 +45,10 @@ export function normalizeVisibility(raw: unknown, mode: PublicMode): VisibilityS
     showSocial: v.showSocial ?? true,
     showServices: v.showServices ?? true,
     showNeeds: v.showNeeds ?? true,
+    showPhone: v.showPhone ?? true,
+    showEmail: v.showEmail ?? true,
+    showAddress: v.showAddress ?? true,
+    showCompany: v.showCompany ?? true,
   };
 }
 

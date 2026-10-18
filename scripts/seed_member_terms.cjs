@@ -1,5 +1,5 @@
 const { Client } = require('pg');
-const c = new Client({ connectionString: 'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@113.20.107.184:6432/ceo1983_project?sslmode=disable' });
+const c = new Client({ connectionString: 'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@14.225.217.232:5436/vione_app' });
 
 async function run() {
   await c.connect();
