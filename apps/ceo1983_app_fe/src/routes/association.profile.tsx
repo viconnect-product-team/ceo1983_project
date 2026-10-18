@@ -80,13 +80,11 @@ export const Route = createFileRoute("/association/profile")({
 
 function initials(name?: string) {
   if (!name) return "VIP";
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(-2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
+  const clean = name.replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim();
+  if (!clean) return "VIP";
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function isDeadAvatar(url?: string | null): boolean {

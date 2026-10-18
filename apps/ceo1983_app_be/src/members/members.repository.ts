@@ -75,7 +75,9 @@ export class MembersRepository {
         return this.prisma.$queryRaw<any[]>`
           SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
                  m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
-                 COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+                 COALESCE(m.avatar_url, m.avatar, up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+                 COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
+                 COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
                  COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
                  COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
           FROM public.members m
@@ -96,7 +98,9 @@ export class MembersRepository {
         return this.prisma.$queryRaw<any[]>`
           SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
                  m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
-                 COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+                 COALESCE(m.avatar_url, m.avatar, up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+                 COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
+                 COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
                  COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
                  COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
           FROM public.members m
@@ -120,7 +124,9 @@ export class MembersRepository {
       return this.prisma.$queryRaw<any[]>`
         SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
                m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
-               COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+               COALESCE(m.avatar_url, m.avatar, up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+               COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
+               COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
                COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
                COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
         FROM public.members m
@@ -138,7 +144,9 @@ export class MembersRepository {
     return this.prisma.$queryRaw<any[]>`
       SELECT m.id, m.code, m.name, m.contact, m.phone, m.email, m.about, m.address, m.website,
              m.industry, m.region, m.type, m.status, m.user_id, m.executive_role, m.department,
-             COALESCE(up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+             COALESCE(m.avatar_url, m.avatar, up.avatar_url, bi.avatar_url, vu.avatar_url) as avatar,
+             COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
+             COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
              COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
              COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
       FROM public.members m

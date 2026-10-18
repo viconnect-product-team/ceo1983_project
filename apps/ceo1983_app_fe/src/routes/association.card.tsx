@@ -121,13 +121,15 @@ function resolveDisplay(
   const isGeneric = !member?.name || member.name === "Thành viên mới" || member.name === "Hội viên CLB CEO 1983";
   const authUserName = currentUser?.name || currentUser?.user_metadata?.full_name;
 
-  // Custom profile or display settings takes priority over default mock/seed member
+  // Real member record from database takes first priority
+  const dbMemberName = (!isGeneric && member?.name) ? member.name.trim() : null;
   const customName = customProfile?.name?.trim() || s?.displayName?.trim();
-  const rawName = customName || ((!isGeneric && member?.name) ? member.name : (authUserName || member?.name || ""));
+  const rawName = dbMemberName || customName || authUserName || member?.name || "";
   const cleanName = rawName || "Hội viên CLB CEO 1983";
 
+  const dbCompany = (member as any)?.companyName || (member as any)?.company;
   const customCompany = customProfile?.company?.trim() || s?.displayCompany?.trim();
-  const rawCompany = customCompany || (member as any)?.companyName || (member as any)?.company;
+  const rawCompany = dbCompany || customCompany;
   const isOldSeed = rawCompany && (rawCompany.includes("Default Platform") || rawCompany.includes("CLB CEO 1983"));
   const cleanCompany = !rawCompany || isOldSeed ? "CLB Doanh Nhân CEO 1983" : rawCompany;
 
@@ -136,9 +138,9 @@ function resolveDisplay(
     company: cleanCompany.trim(),
     photo: (() => {
       const raw =
-        s?.photoUrl ||
         member?.avatar ||
         (member as any)?.avatarUrl ||
+        s?.photoUrl ||
         (currentUser as any)?.avatar_url ||
         (currentUser as any)?.user_metadata?.avatar_url ||
         customAvatar ||
@@ -163,14 +165,12 @@ function buildVCard(member: MyMember | null, d: Display): string {
 }
 
 function initials(name: string) {
-  return (
-    name
-      .trim()
-      .split(/\s+/)
-      .slice(-2)
-      .map((p) => p[0]?.toUpperCase() ?? "")
-      .join("") || "?"
-  );
+  if (!name) return "CEO";
+  const clean = name.replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim();
+  if (!clean) return "CEO";
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function resolveBenefitIcon(b: MemberBenefit, index: number) {
@@ -783,7 +783,7 @@ function CardScreen() {
   };
 
   return (
-    <div className="vba-animate min-h-full pb-20">
+    <div className="vba-animate min-h-full pb-36">
       <MemberHeader title={t("m.card.headerTitle")} back />
 
       <div className="px-4 pt-4">

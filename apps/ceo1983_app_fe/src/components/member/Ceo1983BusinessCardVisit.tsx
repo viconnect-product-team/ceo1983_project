@@ -127,13 +127,13 @@ export function Ceo1983BusinessCardVisit({
                     />
                   ) : (
                     <span className="grid h-full w-full place-items-center bg-gradient-to-tr from-[#002B70] to-[#003B95] text-base sm:text-lg font-black text-amber-300">
-                      {name
-                        .trim()
-                        .split(/\s+/)
-                        .slice(-2)
-                        .map((w) => w[0])
-                        .join("")
-                        .toUpperCase() || "CEO"}
+                      {(() => {
+                        const clean = (name || "").replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim();
+                        const parts = clean.split(/\s+/).filter(Boolean);
+                        if (parts.length === 0) return "CEO";
+                        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                      })()}
                     </span>
                   )}
                 </div>
@@ -142,12 +142,12 @@ export function Ceo1983BusinessCardVisit({
 
               {/* Thông tin tên & số điện thoại */}
               <div className="min-w-0 flex-1">
-                <h1 className="text-base sm:text-xl font-black tracking-wide text-[#002B70] uppercase leading-tight font-sans line-clamp-1">
-                  {name}
+                <h1 className="text-sm sm:text-lg font-black tracking-wide text-[#002B70] uppercase leading-tight font-sans line-clamp-2 break-words">
+                  {(name || "").replace(/\([^)]*\)/g, "").replace(/\[[^\]]*\]/g, "").trim() || name}
                 </h1>
 
                 {phone && (
-                  <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm text-[#1E293B]">
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs sm:text-sm text-[#1E293B]">
                     <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <a href={`tel:${phone}`} className="font-bold text-[#003B95] hover:underline truncate">
                       {phone}

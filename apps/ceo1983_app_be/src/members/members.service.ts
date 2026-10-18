@@ -531,9 +531,9 @@ export class MembersService {
       LIMIT 1
     `.catch(() => [] as any[]);
     const m = rows[0] || null;
-    const unifiedAvatar = cardSetting?.photo_url || m?.avatar || user?.avatar_url || profileAvatars[0]?.avatar || profile?.avatar_url || null;
+    const unifiedAvatar = cardSetting?.photo_url || m?.avatar_url || m?.avatar || user?.avatar_url || profileAvatars[0]?.avatar || profile?.avatar_url || null;
     const unifiedCompanyLogo = cardSetting?.company_logo_url || m?.company_logo_url || profileAvatars[0]?.company_logo || profile?.company_logo_url || null;
-    const unifiedCompanyName = cardSetting?.display_company || m?.company_name || profile?.company_name || m?.about || 'CLB Doanh Nhân CEO 1983';
+    const unifiedCompanyName = m?.company_name || cardSetting?.display_company || profile?.company_name || m?.about || 'CLB Doanh Nhân CEO 1983';
 
     if (rows.length > 0) {
       const memberName = (m.name && m.name !== 'Hội viên CEO 1983' && m.name !== 'Thành viên mới' && m.name !== 'Hội viên CEO 1983')
@@ -712,10 +712,29 @@ export class MembersService {
           email = COALESCE(${email || null}, email),
           address = COALESCE(${address || null}, address),
           website = COALESCE(${website || null}, website),
+          avatar_url = COALESCE(${avatar || null}, avatar_url),
           avatar = COALESCE(${avatar || null}, avatar),
           company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
           updated_at = NOW()
         WHERE user_id = ${userId}::uuid OR id::text = ${userId}::text
+      `.catch(() => null);
+
+      // Sync to member_business_cards
+      await this.prisma.$executeRaw`
+        UPDATE public.member_business_cards
+        SET
+          display_name = COALESCE(${name || null}, display_name),
+          professional_title = COALESCE(${title || null}, professional_title),
+          company_name = COALESCE(${company || null}, company_name),
+          avatar_url = COALESCE(${avatar || null}, avatar_url),
+          company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
+          work_phone = COALESCE(${phone || null}, work_phone),
+          work_email = COALESCE(${email || null}, work_email),
+          address = COALESCE(${address || null}, address),
+          website = COALESCE(${website || null}, website),
+          bio = COALESCE(${bio || null}, bio),
+          updated_at = NOW()
+        WHERE owner_user_id = ${userId}::uuid;
       `.catch(() => null);
     } catch {}
 

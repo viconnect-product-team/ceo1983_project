@@ -1836,3 +1836,39 @@
   + Cả hai phân hệ Mobile và CRM BẮT BUỘC cùng trỏ vào một instance PostgreSQL duy nhất: `ceo1983-postgres-prod:5432/vione_app`.
   + Các API endpoint của Mobile (Port 5444) và CRM (Port 5443) gồm `/api/events`, `/api/members`, `/api/opportunities`, `/api/invoices`, `/api/voting/polls`, v.v. phải trả về cùng cấu trúc dữ liệu và số lượng bản ghi 100% trùng khớp nhau.
   + Kiểm thử định kỳ bằng script kiểm tra đồng bộ (`scripts/verify_all_data_flows.js`) để đảm bảo không xảy ra hiện tượng lệch schema hoặc cô lập dữ liệu.
+
+# [BẮT BUỘC 104] Quy Chuẩn Thiết Kế Slide Nền Xanh Trắng, 2 Luồng Trọng Tâm Huyết Mạch & Góc Nhìn Quản Trị Hệ Thống Về Bộ Công Cụ Thực Tế
+- Thiết Kế Slide Trình Chiếu Chuẩn Widescreen 16:9 Nền Xanh Trắng (Corporate Navy & Crisp White Luxury):
+  + Tông màu chủ đạo: Nền trắng sáng tinh khôi `#FFFFFF` phối hợp trắng ngà ánh xanh `#F8FAFC`, dải gradient nhẹ `#EFF6FF` kết hợp xanh Navy hoàng gia `#003B95`, xanh Deep Cobalt `#0A1E3F`, điểm xuyết vàng Amber Gold `#D97706` / `#B45309`. Tuyệt đối không để slide tối đen bí bách.
+  + Hiện diện nhận diện thương hiệu: BẮT BUỘC có Logo chính thức của CLB Doanh Nhân CEO 1983 trên TẤT CẢ các slide (tại thanh Header chuẩn hóa).
+  + Bố cục đa dạng độc bản ("1 Slide 1 Kiểu"): Mỗi slide mang một cấu trúc trình bày riêng biệt (Hero cover, Trục timeline 7 mốc ngang, So sánh nỗi đau 3 cột, Khối đối xứng hệ sinh thái kép, Quy trình 5 bước dòng tiền, Báo cáo kế toán mẫu S07-DN, Bố cục 4 cánh buồm giao thương, Mockup thẻ 3D, v.v.).
+  + Hiệu ứng chuyển slide 3D thú vị khi thuyết trình (Interactive HTML Presentation): File HTML trình chiếu hỗ trợ 4 chế độ hiệu ứng 3D (Cube Flip, Slide Push, Parallax Zoom, Card Flip 3D), điều khiển mượt mà bằng phím mũi tên `←` `→`, `Space`, `Enter`, phím `F` Toàn màn hình và đồng hồ đếm ngược 180 phút (09:00 - 12:00).
+- Khẳng Định 2 Luồng Trọng Tâm Huyết Mạch Của Toàn Bộ Hệ Thống:
+  + Luồng 1: **Thanh Toán & Tài Chính Toàn Diện**: Sự kiện không chỉ là soát vé mà gắn liền chặt chẽ với dòng tiền (Dự toán ➔ Thu VietQR 1s ➔ Thu tiền mặt bàn tiếp đón ➔ Tạm ứng Ban Sự kiện ➔ Hoàn ứng tiền thừa ➔ Quyết toán thực chi ➔ Kết chuyển tự động vào Sổ Quỹ Tiền Mặt Thông tư 200/2014/TT-BTC Mẫu S07-DN nộp HanoiBA).
+  + Luồng 2: **Xúc Tiến Thương Mại & Giao Thương B2B**: Trái tim của tổ chức doanh nhân (Thẻ VIP vCard 1 chạm, Company Profile 2 trang, Sàn Marketplace ưu đãi nội bộ, Bảng Deal Cung - Cầu thời gian thực, Lịch hẹn B2B 1-on-1).
+- Tư Duy Người Làm Hệ Thống & Quản Lý Dự Án Về Bộ Công Cụ Thực Tế:
+  + TUYỆT ĐỐI KHÔNG sử dụng từ "miễn phí" hay "tặng kèm miễn phí" khi nói về các tính năng bổ trợ.
+  + Trình bày từ góc nhìn của **người làm hệ thống, quản lý dự án am hiểu vận hành thực tế**: Đội ngũ đã chủ động tích hợp sẵn **Bộ Công Cụ Hỗ Trợ Công Việc Thực Tế (Practical Operations Suite)** gồm Lịch họp số Sapphire Hub điểm danh QR động 30s chống gian lận, Bảng giao việc Kanban 6 Ban, VoIP nội bộ mã hóa đổ chuông nền native, và Mạng xã hội Moments B2B để BĐH giải quyết ngay các bài toán thường nhật mà không bị phân tán thông tin.
+
+# [BẮT BUỘC 105] Quy Chuẩn Đồng Bộ 100% Dữ Liệu Thật Database PostgreSQL (Không Fake/Mock), Chuẩn Hóa Avatar/Cover/Tên Thẻ & Bộ 4 File Phiên Họp Thứ Tư (09:00 - 12:00)
+- Tuyệt Đối Không Dùng Fake / Mock / Hard-coded Data Ở Frontend:
+  + Toàn bộ thông tin hội viên (Họ tên, mã hội viên, chức vụ, ban điều hành, tên doanh nghiệp, số điện thoại, email, địa chỉ, ảnh đại diện avatar_url, ảnh bìa cover_url) BẮT BUỘC được nạp và lấy trực tiếp từ bảng `public.members`, `public.vione_users`, `public.member_business_cards` trong Database PostgreSQL (`14.225.217.232:5436/vione_app`).
+  + Không sử dụng placeholder data hay dữ liệu tĩnh cài cắm trong mã nguồn Frontend.
+- Quy Chuẩn Xử Lý Avatar Initials Tránh Lỗi Ký Tự Ngoặc `V(`:
+  + Khi tên tài khoản có hậu tố ngoặc đơn như `"Phạm Văn Vũ (Admin)"`, hàm `initials(name)` BẮT BUỘC phải làm sạch chuỗi bằng `name.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim()` trước khi tách từ.
+  + Quy tắc lấy chữ cái đầu chuẩn tiếng Việt: Lấy chữ cái đầu của từ đầu tiên (Họ) và từ cuối cùng (Tên chính) để hiển thị 2 ký tự chuẩn (ví dụ `"Phạm Văn Vũ"` -> `"PV"`).
+- Quy Chuẩn Thẻ Doanh Thiếp Co Giãn Không Cụt Tên:
+  + Trên thẻ doanh thiếp (`Ceo1983BusinessCardVisit.tsx`), bỏ hậu tố `(Admin)` và dùng `line-clamp-2 break-words` với `text-sm sm:text-lg font-bold` để tên dài hiển thị trọn vẹn, không bị cắt cụt `...` trên màn hình điện thoại 360px - 390px.
+- Bộ 4 File Công Cụ Phục Vụ Cuộc Họp 3 Tiếng Thứ Tư (09:00 - 12:00):
+  + File 1: `BIEU_MAU_GHI_NHAN_Y_KIEN_TRAO_DOI_THU_4_CEO1983` (.xlsx, .docx, .md) cho phiên 09:45 - 11:45 (120 phút), mở lên điền trực tiếp thông tin, phân loại, phản hồi kỹ thuật, mức ưu tiên P0/P1/P2/P3.
+  + File 2: `BANG_MA_TRAN_CHOT_CHUC_NANG_HE_THONG_CEO1983` (.xlsx, .docx, .md) cho phiên 11:45 - 12:00 (15 phút), ma trận chốt 30 tính năng cốt lõi (Scope Freeze) chia theo 5 nhóm nghiệp vụ.
+  + File 3: `BIEN_BAN_CUOC_HOP_BDH_CLB_CEO1983_THU_4` (.docx, .md) biên bản cuộc họp chính thức của BĐH theo thể thức hành chính chuẩn.
+  + File 4: `TONG_KET_CUOC_HOP_VA_KE_HOACH_TRIEN_KHAI_CEO1983` (.docx, .md) tóm tắt điều hành và kế hoạch hành động 7 ngày.
+  + Toàn bộ file lưu trữ đồng thời tại `document/` và `apps/ceo1983_app_fe/public/docs/`.
+- Quy Chuẩn Lời Thoại Thuyết Trình Nâng Tầm Văn Phong Doanh Nhân & Phân Tích Bộ Công Cụ Thực Tế:
+  + Văn phong thuyết trình: Tuyệt đối không để câu chữ cộc lốc gạch đầu dòng khô khan; diễn giả phải sử dụng văn phong hùng biện, trang trọng, đĩnh đạc, thấu cảm sâu sắc nỗi vất vả của Ban Điều Hành kiêm nhiệm.
+  + Phân tích Bộ công cụ vận hành thực tế (Quản lý công việc Kanban, Cuộc họp & Điểm danh QR động 30s Sapphire Hub, Kho tài liệu số, VoIP): Khẳng định rõ ràng đây là các tính năng NẰM NGOÀI PHẠM VI YÊU CẦU BAN ĐẦU (BRD GỐC) của CEO 1983, nhưng dưới góc nhìn phát triển kỹ thuật và năng lực công nghệ lõi của ViConnect, đội ngũ đã chủ động kiến tạo sẵn để giải quyết bài toán vận hành 365 ngày của BĐH, không để công việc bị phân tán trên Zalo hay Google Drive.
+  + File Word lời thoại cập nhật: `document/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983_MOI.docx` và `apps/ceo1983_app_fe/public/docs/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983.docx`.
+
+
+
