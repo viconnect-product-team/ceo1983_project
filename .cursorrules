@@ -208,9 +208,14 @@
 #     + Các dữ liệu liên quan đến hành động của người dùng (như đã đăng ký vé, đã kết nối, đã giao dịch/đóng phí, đã đăng bài/sản phẩm) CHỈ ĐƯỢC HIỂN THỊ khi người dùng thực tế đã thực hiện hành động đó.
 #     + Khi người dùng chưa có dữ liệu (số lượng = 0), BẮT BUỘC hiển thị trạng thái rỗng (Empty State) trang nhã, lịch sự kèm nút điều hướng đến trang hành động (VD: 'Bạn chưa có vé sự kiện nào - Khám phá sự kiện & Đăng ký vé').
 #
-# [BẮT BUỘC 5] Giao tiếp Cơ sở dữ liệu & An Toàn SQL:
+# [BẮT BUỘC 5] Giao tiếp Cơ sở dữ liệu, An Toàn SQL & Mạng Docker Kép:
 #   - Khi dùng `$queryRaw`, luôn dùng tagged template strings của Prisma.
 #   - Tuyệt đối KHÔNG ép kiểu `::uuid` cho các trường có thể chứa chuỗi mã ký tự (như `public.members.id` chứa mã chữ như `"MBMUQ8JEXU"`). Khi so sánh giữa UUID và ID hội viên/người dùng, luôn cast an toàn sang `::text` (`uc.recipient_user_id::text = m.id::text` hoặc `m.association_id::text = ${assocId}::text`) để tránh lỗi Postgres `22P02: invalid input syntax for type uuid`.
+#   - Phòng vệ ép kiểu chuỗi rỗng sang UUID: Khi tham số `userId` là rỗng `""` hoặc chưa xác định danh tính (khách vãng lai), TUYỆT ĐỐI KHÔNG ép kiểu `${userId}::uuid` trong câu lệnh SQL; bắt buộc kiểm tra điều kiện `if (!userId || userId.trim() === '')` trước hoặc bỏ qua truy vấn bảng `memberships` để tránh lỗi cú pháp PostgreSQL `22P02: invalid input syntax for type uuid: ""`.
+#   - Chuẩn hóa Controller Guards cho Endpoint Bán Công Khai: Các endpoint phục vụ đồng thời cả khách vãng lai và người dùng có token đăng nhập (`GET /events`, `GET /events/:id`, danh bạ hội viên) BẮT BUỘC gắn `@UseGuards(OptionalJwtAuthGuard)` để Passport JWT trích xuất `req.user` khi có Authorization header.
+#   - Hạ tầng Mạng Docker Kép (Dual Docker Network Standard):
+#     + Các container dịch vụ Web CRM (`crm-backend-prod`, `crm-frontend-prod`) và Mobile App (`ceo1983-backend-prod`, `ceo1983-frontend-prod`) trên máy chủ VPS BẮT BUỘC kết nối đồng thời cả 2 Docker networks: `ceo1983-network` (để kết nối trực tiếp CSDL PostgreSQL `ceo1983-postgres-prod:5432` độ trễ cực thấp <5ms) và `vione-network` (để nhận traffic SSL reverse proxy từ `vione-ssl-proxy`).
+#     + Tuyệt đối không để backend rơi vào trạng thái cô lập mạng (network isolation mismatch) dẫn đến lỗi database timeout 10-15s và rỗng dữ liệu.
 #   - Khi chạy DDL khởi tạo bảng (`ensureTables`): TUYỆT ĐỐI KHÔNG gộp nhiều câu lệnh `CREATE TABLE` trong 1 chuỗi `$executeRawUnsafe` duy nhất vì prepared statements của PostgreSQL sẽ chặn lỗi `cannot insert multiple commands into a prepared statement`. Bắt buộc phải tách từng lệnh `executeRawUnsafe` riêng biệt kèm try/catch an toàn.
 #   - Nút QR Trung Tâm Thanh Điều Hướng Hội Viên (`MemberTabBar`): Nút QR giữa màn hình tuyệt đối KHÔNG có chữ/nhãn "Thẻ 83" bên dưới. Bấm vào là hiển thị ngay Modal Mã QR của tôi & Quét QR (`AssociationMemberQrModal`); khi bấm dấu "X" đóng modal thì lập tức hiển thị giao diện Thẻ hội viên (`/association/card`) như mặc định.
 #   - Tuyệt đối KHÔNG nối chuỗi SQL thủ công (tránh triệt để SQL Injection).
@@ -1801,3 +1806,33 @@
   + BẮT BUỘC sử dụng hàm chuẩn hóa kiểm tra URL: URL phải bắt đầu bằng `http://` hoặc `https://`, độ dài tối thiểu > 5 ký tự và không chứa các từ khóa placeholder như "chưa có", "chua co", "không có".
   + Nếu không thỏa mãn điều kiện `isValidDriveUrl`, BẮT BUỘC phải ẩn hoàn toàn nút/trường liên kết (trả về `null`), không để nút hiển thị mà bấm vào lại mở ra trang lỗi 404 hoặc thông báo không hợp lệ.
   + Tại Backend NestJS (`events.service.ts`), BẮT BUỘC dùng `sanitizeGalleryUrl` làm sạch trường dữ liệu `photo_gallery_url` trước khi lưu vào CSDL và trước khi trả về qua API.
+
+# [BẮT BUỘC 102] Quy Chuẩn Định Dạng Xuất File Excel Thu Chi Sổ Quỹ Nội Bộ (Thông Tư 200/2014/TT-BTC & Thông Tư 133/2016/TT-BTC Mẫu S07-DN / S04a-DNN)
+- Cấu Trúc Khối Tiêu Đề Cơ Quan & Pháp Lý Chuẩn Bộ Tài Chính:
+  + Dòng 0: Góc trái: `Đơn vị: CLB DOANH NHÂN CEO 1983 (HANOIBA)`; Góc phải: `Mẫu số S07-DN`.
+  + Dòng 1: Góc trái: `Địa chỉ: Tòa nhà HanoiBA, TP. Hà Nội`; Góc phải: `(Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)`.
+  + Dòng 3 (Tiêu đề chính giữa in hoa, cỡ chữ to): `SỔ QUỸ TIỀN MẶT & THEO DÕI THU NỘI BỘ` (Quản lý thu) / `SỔ QUỸ TIỀN MẶT & THEO DÕI CHI NỘI BỘ` (Quản lý chi).
+  + Dòng 4: `Loại quỹ: Quỹ hoạt động CLB Doanh Nhân CEO 1983`.
+  + Dòng 5: `Kỳ báo cáo: Năm tài chính 2026 (Ngày xuất: DD/MM/YYYY lúc HH:mm)`.
+  + Dòng 6: `Đơn vị tính: VNĐ`.
+- Cấu Trúc Cột Kế Toán Và Hạch Toán Quỹ:
+  + Cột bắt buộc: STT, Mã chứng từ (PT/PC), Ngày ghi sổ, Đối tác / Người nộp / Người nhận, Danh mục phân loại, Diễn giải nội dung, Hình thức thanh toán (Tiền mặt / Chuyển khoản), Tài khoản đối ứng (111 - Tiền mặt / 112 - TG Ngân hàng), Số tiền phát sinh (VNĐ), Trạng thái.
+  + Với Sổ Quỹ Chi: Bổ sung thêm các cột: Số tiền chi đề xuất, Số tiền tạm ứng, Hoàn ứng tiền thừa, Chi thực tế.
+- Hàng Tổng Cộng, Đọc Tiền Bằng Chữ & Chữ Ký Chuẩn:
+  + Hàng tổng cộng: Bắt buộc tính tổng tiền chính xác theo các cột số tiền.
+  + Bắt buộc dòng: `Số tiền bằng chữ: ...` được dịch tự động bằng hàm `numberToVietnameseWords` chuẩn ngữ pháp Việt Nam (VD: "Năm mươi triệu đồng chẵn.").
+  + Ghi chú lưu sổ: `- Sổ này có ... trang, đánh số từ trang 01 đến trang ...` và `- Ngày mở sổ: 01/01/2026`.
+  + Khối chữ ký 3 bên: `NGƯỜI GHI SỔ / LẬP BIỂU`, `THỦ QUỸ / KẾ TOÁN TRƯỞNG`, `CHỦ TỊCH / ĐẠI DIỆN BQT`.
+- Hỗ Trợ Đa Sheet (Multi-Sheet Workbook):
+  + Sheet 1: `So_Quy_Thu` / `So_Quy_Chi` (Sổ chi tiết chuẩn S07-DN).
+  + Sheet 2: `Tong_Hop_Danh_Muc` (Bảng tổng hợp theo danh mục thu/chi, số lượng món và tỷ trọng %).
+  + Sheet 3 (Tùy chọn): `Phieu_Thu_Mau_01_TT` / `Phieu_Chi_Mau_02_TT` (Mẫu phiếu thu/chi đóng dấu theo Quyết định 15 / Thông tư 200).
+
+# [BẮT BUỘC 103] Quy Chuẩn Đồng Bộ Hạ Tầng Mạng Và Dữ Liệu Giữa CEO 1983 Mobile (Port 5444) Và CRM Quản Trị (Port 5443)
+- Kết Nối Mạng Container Nginx Proxy Độc Lập:
+  + Tất cả container Backend và Frontend thuộc phân hệ CEO 1983 Mobile (`ceo1983-backend-prod`, `ceo1983-frontend-prod`) và CRM Quản trị (`crm-backend-prod`, `crm-frontend-prod`) BẮT BUỘC phải tham gia đồng thời cả 2 mạng Docker: `ceo1983-network` và `vione-network`.
+  + Nginx SSL Proxy (`vione-ssl-proxy`) nằm trên `vione-network`. Nếu thiếu mạng `vione-network`, proxy sẽ trả về lỗi HTTP 502 Bad Gateway khi người dùng truy cập cổng 5444.
+- Đảm Bảo 100% Đồng Nhất Cơ Sở Dữ Liệu Giữa Mobile Và CRM:
+  + Cả hai phân hệ Mobile và CRM BẮT BUỘC cùng trỏ vào một instance PostgreSQL duy nhất: `ceo1983-postgres-prod:5432/vione_app`.
+  + Các API endpoint của Mobile (Port 5444) và CRM (Port 5443) gồm `/api/events`, `/api/members`, `/api/opportunities`, `/api/invoices`, `/api/voting/polls`, v.v. phải trả về cùng cấu trúc dữ liệu và số lượng bản ghi 100% trùng khớp nhau.
+  + Kiểm thử định kỳ bằng script kiểm tra đồng bộ (`scripts/verify_all_data_flows.js`) để đảm bảo không xảy ra hiện tượng lệch schema hoặc cô lập dữ liệu.

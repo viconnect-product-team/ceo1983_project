@@ -33,7 +33,7 @@ import {
 } from "@/lib/finance.functions";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
-import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
@@ -401,25 +401,49 @@ function ExpensesPage() {
           : tx.amount || 0),
       0
     );
+    const words = numberToVietnameseWords(totalActual);
+
+    // Group summary by category for secondary sheet
+    const catMap = new Map<string, { count: number; total: number }>();
+    tc.sorted.forEach((tx) => {
+      const label = getCategoryLabel(tx.category);
+      const curr = catMap.get(label) || { count: 0, total: 0 };
+      const actual = tx.advanceAmount ? tx.advanceAmount - (tx.refundAmount || 0) : tx.amount || 0;
+      catMap.set(label, { count: curr.count + 1, total: curr.total + Number(actual || 0) });
+    });
+    const categorySummaryData = Array.from(catMap.entries()).map(([cat, info]) => ({
+      category: cat,
+      count: info.count,
+      total: info.total,
+      rate: totalActual > 0 ? ((info.total / totalActual) * 100).toFixed(1) + "%" : "0%",
+    }));
 
     exportToExcel<Transaction>({
-      title: "BÁO CÁO SỔ THEO DÕI CHI PHÍ & TẠM ỨNG HIỆP HỘI",
-      subtitle: "Hệ thống quản lý tài chính & thu chi Hiệp Hội Doanh Nhân CEO 1983",
-      filename: "so-theo-doi-chi-phi-ceo1983",
-      sheetName: "Nhat_Ky_Chi",
+      title: "SỔ QUỸ TIỀN MẶT & THEO DÕI CHI NỘI BỘ",
+      subtitle: "Kỳ báo cáo: Năm tài chính 2026 | Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983",
+      filename: "so-quy-chi-tien-mat-ceo1983",
+      sheetName: "So_Quy_Chi",
+      organization: "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
+      address: "Tòa nhà HanoiBA, TP. Hà Nội",
+      circularCode: "Mẫu số S07-DN",
+      circularNote: "(Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)",
+      fundType: "Quỹ hoạt động CLB Doanh Nhân CEO 1983",
+      currencyUnit: "VNĐ",
       columns: [
         { header: "Mã phiếu chi", key: "id", width: 16, value: (tx) => tx.id },
-        { header: "Ngày chi", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
+        { header: "Ngày ghi sổ", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
+        { header: "Người nhận / Đơn vị thụ hưởng", key: "recipient", width: 30, value: (tx) => tx.recipient || "—" },
         { header: "Danh mục chi", key: "category", width: 24, value: (tx) => getCategoryLabel(tx.category) },
         { header: "Nội dung chi", key: "description", width: 38, value: (tx) => tx.description },
-        { header: "Người nhận / Đơn vị", key: "recipient", width: 28, value: (tx) => tx.recipient || "—" },
-        { header: "Số tiền chi (VNĐ)", key: "amount", width: 20, value: (tx) => formatExcelCurrency(tx.amount) },
+        { header: "Hình thức", key: "method", width: 16, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "card" ? "Thẻ tín dụng" : "Chuyển khoản") },
+        { header: "TK Đối ứng", key: "acc", width: 18, value: (tx) => (tx.method === "cash" ? "111 - Tiền mặt" : "112 - TG Ngân hàng") },
+        { header: "Số tiền đề xuất (VNĐ)", key: "amount", width: 22, value: (tx) => formatExcelCurrency(tx.amount) },
         { header: "Số tiền tạm ứng", key: "advanceAmount", width: 20, value: (tx) => formatExcelCurrency(tx.advanceAmount || 0) },
         { header: "Hoàn ứng tiền thừa", key: "refundAmount", width: 20, value: (tx) => formatExcelCurrency(tx.refundAmount || 0) },
         {
           header: "Chi thực tế (VNĐ)",
           key: "actualAmount",
-          width: 20,
+          width: 22,
           value: (tx) =>
             formatExcelCurrency(
               tx.advanceAmount
@@ -427,13 +451,14 @@ function ExpensesPage() {
                 : tx.amount || 0
             ),
         },
-        { header: "Hình thức", key: "method", width: 16, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "card" ? "Thẻ tín dụng" : "Chuyển khoản") },
-        { header: "Trạng thái", key: "status", width: 16, value: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt") },
+        { header: "Trạng thái", key: "status", width: 18, value: (tx) => (tx.status === "completed" ? "Đã duyệt chi" : "Chờ duyệt") },
       ],
       data: tc.sorted,
       summaryRows: [
         [
-          "TỔNG CỘNG THỰC CHI:",
+          "TỔNG CỘNG THỰC CHI TRONG KỲ:",
+          "",
+          "",
           "",
           "",
           "",
@@ -443,11 +468,44 @@ function ExpensesPage() {
           formatExcelCurrency(totalRefund) + " đ",
           formatExcelCurrency(totalActual) + " đ",
           "",
-          "",
         ],
       ],
-      signerTitles: ["NGƯỜI LẬP BIỂU", "KẾ TOÁN TRƯỞNG / TRƯỞNG BAN", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+      amountInWords: words,
+      signerTitles: ["NGƯỜI GHI SỔ / LẬP BIỂU", "THỦ QUỸ / KẾ TOÁN TRƯỞNG", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+      secondarySheet: {
+        sheetName: "Tong_Hop_Danh_Muc_Chi",
+        title: "TỔNG HỢP CHI PHÍ THEO DANH MỤC PHÂN LOẠI",
+        subtitle: "Bảng phân tích cơ cấu các khoản chi Quỹ Hiệp Hội Doanh Nhân CEO 1983",
+        columns: [
+          { header: "Danh mục chi", key: "category", width: 30, value: (r) => r.category },
+          { header: "Số lượng giao dịch", key: "count", width: 20, value: (r) => r.count },
+          { header: "Tổng số tiền (VNĐ)", key: "total", width: 25, value: (r) => formatExcelCurrency(r.total) + " đ" },
+          { header: "Tỷ trọng (%)", key: "rate", width: 16, value: (r) => r.rate },
+        ],
+        data: categorySummaryData,
+        summaryRows: [
+          ["TỔNG CỘNG:", tc.sorted.length + " món", formatExcelCurrency(totalActual) + " đ", "100%"],
+        ],
+      },
+      voucherSheet: {
+        type: "chi",
+        sheetName: "Phieu_Chi_Mau_02_TT",
+        sampleVoucher: {
+          code: tc.sorted[0]?.id || "PC-2026-001",
+          date: formatDisplayDate(tc.sorted[0]?.date || new Date()),
+          personName: tc.sorted[0]?.recipient || "Đơn vị / Cá nhân thụ hưởng",
+          address: "Hà Nội",
+          reason: tc.sorted[0]?.description || "Chi phí hoạt động công tác CLB Doanh Nhân CEO 1983",
+          amount: tc.sorted[0]?.advanceAmount
+            ? tc.sorted[0].advanceAmount - (tc.sorted[0].refundAmount || 0)
+            : tc.sorted[0]?.amount || 35000000,
+          attachedDocs: "02 Hóa đơn GTGT & Hợp đồng nghiệm thu",
+          debitAccount: "642, 156",
+          creditAccount: tc.sorted[0]?.method === "cash" ? "111" : "112",
+        },
+      },
     });
+    toast.success("Đã xuất file Excel Sổ Quỹ Chi Nội Bộ chuẩn Thông tư 200/2014/TT-BTC!");
   };
 
   return (

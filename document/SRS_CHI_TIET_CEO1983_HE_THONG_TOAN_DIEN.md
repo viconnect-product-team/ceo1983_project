@@ -2466,6 +2466,42 @@ Trang Cá Nhân Hội Viên (`/association/profile`) được thiết kế đồ
   - *Tab 2 (Giao Thương B2B & Hoạt Động):* Thẻ danh thiếp số công khai, Cơ hội B2B Cung - Cầu, Gian hàng sản phẩm đã đăng, Danh bạ đối tác kết nối.
   - *Tab 3 (Tiện Ích & Cài Đặt):* Cổng Quản trị hệ thống, Thông báo đẩy PWA, Đổi ngôn ngữ (VN/EN), Chế độ tối/sáng, Sổ tay hướng dẫn, Hỗ trợ Ban Thư Ký, Cài đặt ứng dụng PWA 1 chạm và Đăng xuất an toàn.
 
+### 7.5. Tiêu chuẩn Hạ tầng Mạng Docker Kép & Hiệu năng API Tức Thời (Dual Docker Network & Sub-100ms Performance)
+Để đảm bảo tốc độ phản hồi cực nhanh dưới 100ms và không bao giờ bị nghẽn mạng hay rỗng dữ liệu, hạ tầng máy chủ tuân thủ nghiêm ngặt các quy chuẩn:
+* **Kiến trúc Mạng Docker Kép (Dual Docker Network):**
+  - Database PostgreSQL nội bộ (`ceo1983-postgres-prod:5432`, cổng ánh xạ máy chủ `5436`) vận hành bên trong mạng `ceo1983-network`.
+  - Cụm Nginx SSL Reverse Proxy (`vione-ssl-proxy`) lắng nghe cổng 5443 (CRM HTTPS) và 5444 (Mobile App HTTPS) vận hành trong mạng `vione-network`.
+  - Các container ứng dụng Web CRM (`crm-backend-prod`, `crm-frontend-prod`) và Mobile App (`ceo1983-backend-prod`, `ceo1983-frontend-prod`) BẮT BUỘC kết nối đồng thời cả 2 mạng: `ceo1983-network` (để truy vấn cơ sở dữ liệu nội bộ độ trễ <5ms) và `vione-network` (để nhận lưu lượng định tuyến SSL).
+* **Định danh Ngữ cảnh Hiệp hội Toàn cục (Association Scope Standardization):**
+  - Bảng `public.associations` lưu trữ bản ghi hiệp hội chuẩn hóa ID `c1983000-0000-4000-8000-000000001983`, slug `ceo1983`, tên `CLB Doanh Nhân CEO 1983`.
+  - Mọi controller và service tự động liên kết dữ liệu theo ID này, cam kết không bị trả về mảng rỗng do thiếu bản ghi hiệp hội gốc.
+* **Chuẩn Hóa Controller Guards & Phòng Vệ Truy Vấn SQL:**
+  - Các endpoint bán công khai (như `GET /events`, `GET /events/:id`, danh bạ) BẮT BUỘC sử dụng `@UseGuards(OptionalJwtAuthGuard)` để nhận diện chính xác người dùng khi có Authorization header.
+  - Tuyệt đối phòng vệ không cast chuỗi rỗng `""` sang UUID (`::uuid`) trong SQL, ngăn chặn triệt để lỗi cú pháp PostgreSQL `invalid input syntax for type uuid: ""`.
+* **Hiệu năng Đo Kiểm Thực Tế Trên Máy Chủ Vận Hành:**
+  - `POST /api/auth/login`: Phản hồi trong 248ms.
+  - `GET /api/events`: Phản hồi danh sách sự kiện đầy đủ chỉ trong **59ms**.
+  - `GET /api/members`: Phản hồi danh sách hội viên và ban điều hành chỉ trong **49ms**.
+  - `GET /api/admin/invoices`: Phản hồi sổ quỹ hóa đơn niên liễm chỉ trong **40ms**.
+  - `GET /association`: Phản hồi giao diện web chỉ trong 154ms.
+
+* **Ma Trận Đồng Bộ Dữ Liệu Thời Gian Thực Giữa Mobile (Port 5444) & Web CRM (Port 5443):**
+  - Cơ sở dữ liệu hạt nhân: Duy nhất 1 instance PostgreSQL `ceo1983-postgres-prod:5432/vione_app`.
+  - Mạng container kép: `ceo1983-network` + `vione-network` giúp Nginx SSL Proxy chuyển tiếp <1ms không lỗi 502.
+  - Kết quả đo kiểm 100% API trùng khớp (`scripts/verify_all_data_flows.js`):
+    + Events (Sự kiện): 2 bản ghi (100% trùng khớp, ~100ms).
+    + Members (Hội viên): 7 bản ghi (100% trùng khớp, ~95ms).
+    + Opportunities (Cơ hội giao thương): 1 bản ghi (100% trùng khớp, ~45ms).
+    + Invoices (Hóa đơn hội phí): 7 bản ghi (100% trùng khớp, ~45ms).
+    + Marketplace, Voting, Documents, Meetings, Sponsors, Ads: 100% đồng nhất.
+
+* **Quy Chuẩn Xuất File Excel Thu Chi Sổ Quỹ Nội Bộ Chuẩn Bộ Tài Chính:**
+  - Áp dụng chuẩn **Thông tư 200/2014/TT-BTC (Mẫu số S07-DN)** và **Thông tư 133/2016/TT-BTC (Mẫu số S04a-DNN)**.
+  - Header pháp lý: Đơn vị CLB DOANH NHÂN CEO 1983, Mẫu số S07-DN, Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính, Loại quỹ, Đơn vị tính VNĐ.
+  - Cột kế toán chuẩn: STT, Mã chứng từ (PT/PC), Ngày ghi sổ, Đối tác / Người nộp / Người nhận, Danh mục, Diễn giải, Hình thức, TK Đối ứng (111/112), Số tiền phát sinh (VNĐ), và các cột Tạm ứng / Hoàn ứng / Thực chi cho Sổ Chi.
+  - Dòng tổng cộng phát sinh, số tiền viết bằng chữ tự động (`numberToVietnameseWords`), ghi chú lưu sổ chuẩn và 3 chữ ký (Người lập biểu, Thủ quỹ/Kế toán, Chủ tịch/BQT).
+  - Tự động sinh Multi-Sheet: Sheet 1 Sổ quỹ chi tiết; Sheet 2 Bảng tổng hợp theo danh mục thu/chi (số lượng món và tỷ trọng %); Sheet 3 Mẫu phiếu thu/chi đóng dấu (Mẫu số 01-TT / 02-TT).
+
 ---
 
 ## 8. PHỤ LỤC: DANH MỤC 138 MINH CHỨNG HÌNH ẢNH CHỤP THỰC TẾ

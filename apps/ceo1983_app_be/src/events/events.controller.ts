@@ -14,6 +14,7 @@ import {
 import { EventsService } from './events.service';
 import { CreateEventDto, UpdateEventDto } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { DataScopeInterceptor } from '../auth/data-scope.interceptor';
@@ -60,6 +61,7 @@ export class EventsController {
   }
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @UseInterceptors(DataScopeInterceptor)
   @DataScope('event')
   async listEvents(
@@ -70,6 +72,7 @@ export class EventsController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @UseInterceptors(DataScopeInterceptor)
   @DataScope('event')
   async getEventById(@Request() req: any, @Param('id') id: string) {

@@ -116,30 +116,34 @@ export class EventsService implements OnModuleInit {
     if (requestedAssocId) {
       const isPlatformAdmin = await this.checkIsPlatformAdmin(userId);
       if (isPlatformAdmin) return requestedAssocId;
-      const mem = await this.prisma.$queryRaw<any[]>`
-        SELECT 1 FROM public.memberships 
-        WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid
-        UNION ALL
-        SELECT 1 FROM public.members
-        WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid AND status = 'active'
-      `.catch(() => []);
-      if (mem.length > 0) return requestedAssocId;
+      if (userId && typeof userId === 'string' && userId.trim() !== '' && userId !== '00000000-0000-0000-0000-000000000000') {
+        const mem = await this.prisma.$queryRaw<any[]>`
+          SELECT 1 FROM public.memberships 
+          WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid
+          UNION ALL
+          SELECT 1 FROM public.members
+          WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid AND status = 'active'
+        `.catch(() => []);
+        if (mem.length > 0) return requestedAssocId;
+      }
     }
 
-    const mems = await this.prisma.$queryRaw<any[]>`
-      SELECT association_id FROM (
-        SELECT association_id, is_default, created_at FROM public.memberships
-        WHERE user_id = ${userId}::uuid
-        UNION ALL
-        SELECT association_id, false AS is_default, created_at FROM public.members
-        WHERE user_id = ${userId}::uuid AND status = 'active'
-      ) m
-      ORDER BY is_default DESC, created_at ASC
-      LIMIT 1
-    `.catch(() => []);
+    if (userId && typeof userId === 'string' && userId.trim() !== '' && userId !== '00000000-0000-0000-0000-000000000000') {
+      const mems = await this.prisma.$queryRaw<any[]>`
+        SELECT association_id FROM (
+          SELECT association_id, is_default, created_at FROM public.memberships
+          WHERE user_id = ${userId}::uuid
+          UNION ALL
+          SELECT association_id, false AS is_default, created_at FROM public.members
+          WHERE user_id = ${userId}::uuid AND status = 'active'
+        ) m
+        ORDER BY is_default DESC, created_at ASC
+        LIMIT 1
+      `.catch(() => []);
 
-    if (mems.length > 0 && mems[0]?.association_id) {
-      return mems[0].association_id;
+      if (mems.length > 0 && mems[0]?.association_id) {
+        return mems[0].association_id;
+      }
     }
 
     // Fallback: ưu tiên association đang published (CEO1983)

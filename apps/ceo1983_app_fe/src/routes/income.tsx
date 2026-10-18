@@ -33,7 +33,7 @@ import {
 } from "@/lib/finance.functions";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
-import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
@@ -301,27 +301,82 @@ function IncomePage() {
 
   const handleExport = () => {
     const totalAmount = tc.sorted.reduce((acc, tx) => acc + Number(tx.amount || 0), 0);
+    const words = numberToVietnameseWords(totalAmount);
+
+    // Group summary by category for secondary sheet
+    const catMap = new Map<string, { count: number; total: number }>();
+    tc.sorted.forEach((tx) => {
+      const label = getCategoryLabel(tx.category);
+      const curr = catMap.get(label) || { count: 0, total: 0 };
+      catMap.set(label, { count: curr.count + 1, total: curr.total + Number(tx.amount || 0) });
+    });
+    const categorySummaryData = Array.from(catMap.entries()).map(([cat, info]) => ({
+      category: cat,
+      count: info.count,
+      total: info.total,
+      rate: totalAmount > 0 ? ((info.total / totalAmount) * 100).toFixed(1) + "%" : "0%",
+    }));
+
     exportToExcel<Transaction>({
-      title: "BÁO CÁO NHẬT KÝ THU QUỸ & HỘI PHÍ HỘI VIÊN",
-      subtitle: "Hệ thống quản lý tài chính & thu chi Hiệp Hội Doanh Nhân CEO 1983",
-      filename: "nhat-ky-thu-quy-ceo1983",
-      sheetName: "Nhat_Ky_Thu",
+      title: "SỔ QUỸ TIỀN MẶT & THEO DÕI THU NỘI BỘ",
+      subtitle: "Kỳ báo cáo: Năm tài chính 2026 | Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983",
+      filename: "so-quy-thu-tien-mat-ceo1983",
+      sheetName: "So_Quy_Thu",
+      organization: "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
+      address: "Tòa nhà HanoiBA, TP. Hà Nội",
+      circularCode: "Mẫu số S07-DN",
+      circularNote: "(Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)",
+      fundType: "Quỹ hoạt động CLB Doanh Nhân CEO 1983",
+      currencyUnit: "VNĐ",
       columns: [
         { header: "Mã phiếu thu", key: "id", width: 16, value: (tx) => tx.id },
-        { header: "Ngày thu", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
+        { header: "Ngày ghi sổ", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
+        { header: "Người nộp / Đơn vị", key: "recipient", width: 30, value: (tx) => tx.recipient || "—" },
         { header: "Danh mục thu", key: "category", width: 22, value: (tx) => getCategoryLabel(tx.category) },
         { header: "Nội dung thu", key: "description", width: 38, value: (tx) => tx.description },
-        { header: "Người nộp / Đơn vị", key: "recipient", width: 28, value: (tx) => tx.recipient || "—" },
-        { header: "Số tiền (VNĐ)", key: "amount", width: 20, value: (tx) => formatExcelCurrency(tx.amount) },
         { header: "Hình thức", key: "method", width: 16, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "card" ? "Thẻ tín dụng" : "Chuyển khoản") },
-        { header: "Trạng thái", key: "status", width: 16, value: (tx) => (tx.status === "completed" ? "Đã xác nhận" : "Chờ xử lý") },
+        { header: "TK Đối ứng", key: "acc", width: 18, value: (tx) => (tx.method === "cash" ? "111 - Tiền mặt" : "112 - TG Ngân hàng") },
+        { header: "Số tiền phát sinh Thu (VNĐ)", key: "amount", width: 22, value: (tx) => formatExcelCurrency(tx.amount) },
+        { header: "Ghi chú / Trạng thái", key: "status", width: 18, value: (tx) => (tx.status === "completed" ? "Đã nhập quỹ" : "Chờ xác nhận") },
       ],
       data: tc.sorted,
       summaryRows: [
-        ["TỔNG CỘNG TIỀN THU QUỸ:", "", "", "", "", formatExcelCurrency(totalAmount) + " đ", "", ""],
+        ["TỔNG CỘNG PHÁT SINH THU TRONG KỲ:", "", "", "", "", "", "", formatExcelCurrency(totalAmount) + " đ", ""],
       ],
-      signerTitles: ["NGƯỜI LẬP BIỂU", "THỦ QUỸ / KẾ TOÁN", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+      amountInWords: words,
+      signerTitles: ["NGƯỜI GHI SỔ / LẬP BIỂU", "THỦ QUỸ / KẾ TOÁN TRƯỞNG", "CHỦ TỊCH / ĐẠI DIỆN BQT"],
+      secondarySheet: {
+        sheetName: "Tong_Hop_Danh_Muc_Thu",
+        title: "TỔNG HỢP NGUỒN THU THEO DANH MỤC PHÂN LOẠI",
+        subtitle: "Bảng phân tích cơ cấu nguồn thu Quỹ Hiệp Hội Doanh Nhân CEO 1983",
+        columns: [
+          { header: "Danh mục thu", key: "category", width: 30, value: (r) => r.category },
+          { header: "Số lượng giao dịch", key: "count", width: 20, value: (r) => r.count },
+          { header: "Tổng số tiền (VNĐ)", key: "total", width: 25, value: (r) => formatExcelCurrency(r.total) + " đ" },
+          { header: "Tỷ trọng (%)", key: "rate", width: 16, value: (r) => r.rate },
+        ],
+        data: categorySummaryData,
+        summaryRows: [
+          ["TỔNG CỘNG:", tc.sorted.length + " món", formatExcelCurrency(totalAmount) + " đ", "100%"],
+        ],
+      },
+      voucherSheet: {
+        type: "thu",
+        sheetName: "Phieu_Thu_Mau_01_TT",
+        sampleVoucher: {
+          code: tc.sorted[0]?.id || "PT-2026-001",
+          date: formatDisplayDate(tc.sorted[0]?.date || new Date()),
+          personName: tc.sorted[0]?.recipient || "Đại diện Hội viên nộp quỹ",
+          address: "Hà Nội",
+          reason: tc.sorted[0]?.description || "Thu nộp hội phí hội viên CLB Doanh Nhân CEO 1983",
+          amount: tc.sorted[0]?.amount || 50000000,
+          attachedDocs: "01 Giấy báo có / Biên lai nộp tiền",
+          debitAccount: tc.sorted[0]?.method === "cash" ? "111" : "112",
+          creditAccount: "131, 511",
+        },
+      },
     });
+    toast.success("Đã xuất file Excel Sổ Quỹ Thu Nội Bộ chuẩn Thông tư 200/2014/TT-BTC!");
   };
 
   const getCategoryLabel = (cat: string) => {

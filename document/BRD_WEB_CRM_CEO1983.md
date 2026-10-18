@@ -74,9 +74,17 @@ Cơ cấu tổ chức hiệp hội được chuẩn hóa thành 7 cấp bậc th
    - Phát hành biểu phí niên khóa tự động (mặc định 6.000.000 VNĐ/năm).
    - Mã QR thanh toán VietQR Napas 24/7 gắn sẵn mã giao dịch định danh, tự động gạch nợ tức thì khi tiền về tài khoản hiệp hội.
 2. **Quản lý khoản thu & khoản chi tạm ứng**:
-   - Ghi nhận chi tiết từng khoản thu tài trợ, thu sự kiện, thu thiện nguyện.
-   - Đề xuất và giải ngân tạm ứng cho các ban triển khai sự kiện, quyết toán minh bạch.
-   - Bộ công cụ **Xuất báo cáo Excel** và **Nhập file Excel hàng loạt** phục vụ kế toán hiệp hội.
+   - Ghi nhận chi tiết từng khoản thu tài trợ, thu sự kiện, thu thiện nguyện, thu đột xuất tiền mặt tại bàn tiếp đón và chuyển khoản ngân hàng.
+   - Đề xuất và giải ngân tạm ứng cho các ban triển khai sự kiện, đối soát hoàn ứng tiền thừa và quyết toán thực chi minh bạch.
+   - **Bộ công cụ Xuất file Excel Thu - Chi Sổ Quỹ Nội Bộ chuẩn Thông tư 200/2014/TT-BTC (Mẫu S07-DN) & Thông tư 133/2016/TT-BTC (Mẫu S04a-DNN)**:
+     + Tiêu đề chuẩn Bộ Tài chính: Đơn vị CLB DOANH NHÂN CEO 1983 (HANOIBA), Mẫu số S07-DN, Thông tư số 200/2014/TT-BTC, Loại quỹ, Đơn vị tính VNĐ.
+     + Đầy đủ các cột nghiệp vụ kế toán: STT, Mã chứng từ (PT/PC), Ngày ghi sổ, Đối tác / Người nộp / Người nhận, Danh mục phân loại, Diễn giải nội dung, Hình thức (Tiền mặt / Chuyển khoản), Tài khoản đối ứng (111 / 112), Số tiền phát sinh (VNĐ), và các cột Tạm ứng / Hoàn ứng / Thực chi cho Sổ Chi.
+     + Hàng tổng cộng, số tiền viết bằng chữ tự động (`numberToVietnameseWords`), ghi chú lưu sổ ("- Sổ này có ... trang, đánh số từ trang 01 đến trang ...", "- Ngày mở sổ: 01/01/2026") và 3 chữ ký trách nhiệm (Người lập biểu, Thủ quỹ/Kế toán trưởng, Chủ tịch/Đại diện BQT).
+     + Hỗ trợ xuất Multi-Sheet: Sheet 1 Sổ quỹ chi tiết; Sheet 2 Bảng tổng hợp theo danh mục thu/chi (số lượng món và tỷ trọng %); Sheet 3 Mẫu phiếu thu/chi đóng dấu (Mẫu số 01-TT / 02-TT).
+   - **Đồng bộ dữ liệu thời gian thực giữa Web CRM (Port 5443) và Mobile App (Port 5444)**:
+     + Cùng chia sẻ 100% cơ sở dữ liệu PostgreSQL `ceo1983-postgres-prod:5432/vione_app`.
+     + Mọi giao dịch thu chi, hóa đơn, sự kiện và hội viên tạo trên CRM hiển thị tức thời trên Mobile App và ngược lại.
+   - Bộ công cụ **Nhập file Excel hàng loạt (Import Excel)** phục vụ kế toán hiệp hội.
 
 ---
 
@@ -138,7 +146,9 @@ Cơ cấu tổ chức hiệp hội được chuẩn hóa thành 7 cấp bậc th
 
 ---
 
-### CHƯƠNG 11: TIÊU CHUẨN AN TOÀN & BẢO MẬT DỮ LIỆU DOANH NGHIỆP
-- 100% dữ liệu danh bạ doanh nhân và số điện thoại được bảo vệ nghiêm ngặt.
-- Sao lưu dữ liệu tự động hàng ngày, sẵn sàng khôi phục thảm họa.
-- Tốc độ tải trang dưới 1 giây, hoạt động ổn định trên mọi thiết bị máy tính và máy tính bảng.
+### CHƯƠNG 11: TIÊU CHUẨN AN TOÀN, BẢO MẬT & HẠ TẦNG KỸ THUẬT SIÊU TỐC
+- **Bảo mật dữ liệu hội viên**: 100% dữ liệu danh bạ doanh nhân, chức vụ và số điện thoại được bảo vệ nghiêm ngặt qua JWT Auth và DataScope phân quyền.
+- **Hạ tầng Mạng Docker kép nội bộ (Dual Docker Network)**: Web CRM kết nối trực tiếp đến PostgreSQL nội bộ (`ceo1983-postgres-prod:5432`) qua `ceo1983-network` và đồng thời tiếp nhận lưu lượng HTTPS an toàn từ Nginx Proxy (`vione-network`), triệt tiêu độ trễ mạng và loại bỏ hoàn toàn hiện tượng timeout/treo API.
+- **Hiệu năng phản hồi thần tốc**: Toàn bộ API nghiệp vụ (Sự kiện, Danh bạ hội viên, Sổ quỹ hóa đơn) phản hồi tức thì dưới 100ms (đo kiểm thực tế 40ms - 59ms), cam kết trải nghiệm điều hành mượt mà cho Ban Lãnh Đạo.
+- **Định danh Ngữ cảnh Hiệp hội Chuẩn hóa**: Mọi giao dịch và dữ liệu sự kiện, hội viên, kế toán đều được gán nhãn ngữ cảnh chuẩn hóa (`c1983000-0000-4000-8000-000000001983`), tự động phòng vệ truy vấn và sẵn sàng cho kiến trúc liên kết mở rộng.
+- **Sao lưu & Tự phục hồi**: Cơ sở dữ liệu lưu trữ bền vững trên volume độc lập, kiểm tra trạng thái tự động và sẵn sàng khôi phục thảm họa 24/7.

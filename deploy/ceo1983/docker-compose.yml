@@ -19,6 +19,7 @@ services:
       - ceo1983-backend
     networks:
       - ceo1983-network
+      - vione-network
 
   ceo1983-backend:
     image: ${ASSOCIATION_BE_IMAGE:-ceo1983-backend}:latest
@@ -36,7 +37,14 @@ services:
     ports:
       - "${ASSOCIATION_PORT_BACKEND:-5003}:4000"
     networks:
-      - ceo1983-network
+      ceo1983-network:
+        aliases:
+          - backend
+          - ceo1983-backend
+      vione-network:
+        aliases:
+          - backend
+          - ceo1983-backend
 
 volumes:
   ceo1983-uploads-data:
@@ -45,4 +53,7 @@ volumes:
 networks:
   ceo1983-network:
     name: ceo1983-network
+    external: true
+  vione-network:
+    name: vione-network
     external: true

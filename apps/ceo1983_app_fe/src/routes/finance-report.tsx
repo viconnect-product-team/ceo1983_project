@@ -26,7 +26,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchNestApi } from "@/lib/api-client";
 import { listTransactionsFn, type Transaction } from "@/lib/finance.functions";
 import { useFmt, useT } from "@/lib/i18n";
-import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
 import { toast } from "sonner";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
@@ -255,9 +255,15 @@ function FinanceReport() {
 
     exportToExcel<Transaction>({
       title: "BÁO CÁO TỔNG HỢP KIỂM TOÁN TÀI CHÍNH & SỔ QUỸ THU CHI",
-      subtitle: `Kỳ báo cáo: ${period === "all" ? "Toàn bộ các kỳ hạch toán" : period === "month" ? "Tháng 03/2026" : period === "quarter" ? "Quý 1/2026" : "Năm tài chính 2026"} | Đơn vị: CLB Doanh Nhân CEO 1983`,
+      subtitle: `Kỳ báo cáo: ${period === "all" ? "Toàn bộ các kỳ hạch toán" : period === "month" ? "Tháng 03/2026" : period === "quarter" ? "Quý 1/2026" : "Năm tài chính 2026"} | Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983`,
       filename: "bao-cao-tai-chinh-kiem-toan-ceo1983",
       sheetName: "Nhat_Ky_Thu_Chi",
+      organization: "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
+      address: "Tòa nhà HanoiBA, TP. Hà Nội",
+      circularCode: "Mẫu số S07-DN",
+      circularNote: "(Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)",
+      fundType: "Quỹ hoạt động CLB Doanh Nhân CEO 1983",
+      currencyUnit: "VNĐ",
       data: transactions,
       columns: [
         { header: "Mã chứng từ", key: "id", width: 16, value: (tx) => tx.id },
@@ -265,16 +271,18 @@ function FinanceReport() {
         { header: "Loại giao dịch", key: "type", width: 16, value: (tx) => (tx.type === "income" ? "Khoản Thu" : "Khoản Chi") },
         { header: "Danh mục", key: "category", width: 22, value: (tx) => tx.category },
         { header: "Nội dung hạch toán", key: "description", width: 38, value: (tx) => tx.description },
-        { header: "Số tiền (VNĐ)", key: "amount", width: 20, value: (tx) => formatExcelCurrency(tx.amount) },
-        { header: "Phương thức", key: "method", width: 18, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "bank" ? "Chuyển khoản" : "Thẻ ngân hàng") },
+        { header: "Hình thức", key: "method", width: 18, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "bank" ? "Chuyển khoản" : "Thẻ ngân hàng") },
+        { header: "TK Đối ứng", key: "acc", width: 18, value: (tx) => (tx.method === "cash" ? "111 - Tiền mặt" : "112 - TG Ngân hàng") },
+        { header: "Số tiền (VNĐ)", key: "amount", width: 22, value: (tx) => formatExcelCurrency(tx.amount) },
         { header: "Đối tác / Người nộp - nhận", key: "recipient", width: 30, value: (tx) => tx.recipient || "—" },
         { header: "Trạng thái kiểm toán", key: "status", width: 18, value: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt") },
       ],
       summaryRows: [
-        ["TỔNG CỘNG NGUỒN THU:", "", "", "", "", formatExcelCurrency(totalIn) + " đ"],
-        ["TỔNG CỘNG KHOẢN CHI:", "", "", "", "", formatExcelCurrency(totalOut) + " đ"],
-        ["TỒN QUỸ RÒNG / THẶNG DƯ:", "", "", "", "", formatExcelCurrency(net) + " đ"],
+        ["TỔNG CỘNG NGUỒN THU:", "", "", "", "", "", "", formatExcelCurrency(totalIn) + " đ", "", ""],
+        ["TỔNG CỘNG KHOẢN CHI:", "", "", "", "", "", "", formatExcelCurrency(totalOut) + " đ", "", ""],
+        ["TỒN QUỸ RÒNG / THẶNG DƯ:", "", "", "", "", "", "", formatExcelCurrency(net) + " đ", "", ""],
       ],
+      amountInWords: numberToVietnameseWords(net >= 0 ? net : totalIn),
       signerTitles: ["NGƯỜI LẬP BÁO CÁO", "TRƯỞNG BAN TÀI CHÍNH", "CHỦ TỊCH CLB CEO 1983"],
     });
     toast.success("Đã xuất báo cáo tài chính chuẩn doanh nghiệp CEO 1983 (.xlsx)!");

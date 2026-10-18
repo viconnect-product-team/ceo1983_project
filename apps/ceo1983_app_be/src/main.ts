@@ -49,34 +49,36 @@ function probeTcp(host: string, port: number, timeoutMs = 1200): Promise<boolean
 }
 
 async function resolveDatabaseConfig() {
-  // Nếu DATABASE_URL đã được chỉ định rõ ràng từ môi trường Docker và không phải IP cũ
-  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('113.20.107.184')) {
+  // 1. Nếu DATABASE_URL đã được chỉ định rõ ràng từ môi trường Docker và không phải IP/cổng cũ đã đóng
+  if (
+    process.env.DATABASE_URL &&
+    !process.env.DATABASE_URL.includes('113.20.107.184') &&
+    !process.env.DATABASE_URL.includes('127.0.0.1:6432')
+  ) {
     console.log('\x1b[32m%s\x1b[0m', '================================================================');
     console.log('\x1b[32m%s\x1b[0m', `✅ [Database Config] Sử dụng DATABASE_URL từ môi trường: ${process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`);
     console.log('\x1b[32m%s\x1b[0m', '================================================================');
     return;
   }
 
-  const remoteUrl =
-    process.env.REMOTE_DATABASE_URL ||
-    'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@14.225.217.232:5436/vione_app?schema=public';
-  const localUrl =
-    process.env.LOCAL_DATABASE_URL ||
-    'postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@ceo1983-postgres-prod:5432/vione_app?schema=public';
+  // 2. Tự động kiểm tra kết nối CSDL nội bộ container (ceo1983-postgres-prod:5432)
+  const isDockerInternal = await probeTcp('ceo1983-postgres-prod', 5432, 1000);
 
-  const isRemoteReachable = await probeTcp('113.20.107.184', 6432, 1200);
-
-  if (isRemoteReachable) {
-    process.env.DATABASE_URL = remoteUrl;
+  if (isDockerInternal) {
+    process.env.DATABASE_URL =
+      process.env.LOCAL_DATABASE_URL ||
+      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@ceo1983-postgres-prod:5432/vione_app?schema=public';
     console.log('\x1b[32m%s\x1b[0m', '================================================================');
-    console.log('\x1b[32m%s\x1b[0m', '🌐 [Database Auto-Switch] ĐÃ PHÁT HIỆN INTERNET: Trỏ vào Database Online');
-    console.log('\x1b[32m%s\x1b[0m', '   Target: 113.20.107.184:6432/ceo1983_project');
+    console.log('\x1b[32m%s\x1b[0m', '🐳 [Database Auto-Config] MÔI TRƯỜNG DOCKER: Kết nối qua mạng ceo1983-network');
+    console.log('\x1b[32m%s\x1b[0m', '   Target: ceo1983-postgres-prod:5432/vione_app');
     console.log('\x1b[32m%s\x1b[0m', '================================================================');
   } else {
-    process.env.DATABASE_URL = localUrl;
+    process.env.DATABASE_URL =
+      process.env.REMOTE_DATABASE_URL ||
+      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/vione_app?schema=public';
     console.log('\x1b[33m%s\x1b[0m', '================================================================');
-    console.log('\x1b[33m%s\x1b[0m', '🏠 [Database Auto-Switch] MẤT MẠNG / OFFLINE: Tự động chuyển Database Local');
-    console.log('\x1b[33m%s\x1b[0m', '   Target: 127.0.0.1:6432/ceo1983_project (ceo1983-db-local)');
+    console.log('\x1b[33m%s\x1b[0m', '💻 [Database Auto-Config] MÁY CỤC BỘ / HOST: Kết nối server 14.225.217.232');
+    console.log('\x1b[33m%s\x1b[0m', '   Target: 14.225.217.232:5436/vione_app');
     console.log('\x1b[33m%s\x1b[0m', '================================================================');
   }
 }

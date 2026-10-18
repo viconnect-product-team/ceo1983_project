@@ -19,6 +19,7 @@ services:
       - crm-backend
     networks:
       - ceo1983-network
+      - vione-network
 
   crm-backend:
     image: ${ASSOCIATION_BE_IMAGE:-crm-backend}:latest
@@ -40,6 +41,10 @@ services:
         aliases:
           - backend
           - crm-backend
+      vione-network:
+        aliases:
+          - backend
+          - crm-backend
 
 volumes:
   ceo1983-uploads-data:
@@ -48,4 +53,7 @@ volumes:
 networks:
   ceo1983-network:
     name: ceo1983-network
+    external: true
+  vione-network:
+    name: vione-network
     external: true
