@@ -67,18 +67,18 @@ async function resolveDatabaseConfig() {
   if (isDockerInternal) {
     process.env.DATABASE_URL =
       process.env.LOCAL_DATABASE_URL ||
-      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@ceo1983-postgres-prod:5432/vione_app?schema=public';
+      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@ceo1983-postgres-prod:5432/ceo1983_project?schema=public';
     console.log('\x1b[32m%s\x1b[0m', '================================================================');
     console.log('\x1b[32m%s\x1b[0m', '🐳 [Database Auto-Config] MÔI TRƯỜNG DOCKER: Kết nối qua mạng ceo1983-network');
-    console.log('\x1b[32m%s\x1b[0m', '   Target: ceo1983-postgres-prod:5432/vione_app');
+    console.log('\x1b[32m%s\x1b[0m', '   Target: ceo1983-postgres-prod:5432/ceo1983_project');
     console.log('\x1b[32m%s\x1b[0m', '================================================================');
   } else {
     process.env.DATABASE_URL =
       process.env.REMOTE_DATABASE_URL ||
-      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/vione_app?schema=public';
+      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/ceo1983_project?schema=public';
     console.log('\x1b[33m%s\x1b[0m', '================================================================');
     console.log('\x1b[33m%s\x1b[0m', '💻 [Database Auto-Config] MÁY CỤC BỘ / HOST: Kết nối server 14.225.217.232');
-    console.log('\x1b[33m%s\x1b[0m', '   Target: 14.225.217.232:5436/vione_app');
+    console.log('\x1b[33m%s\x1b[0m', '   Target: 14.225.217.232:5436/ceo1983_project');
     console.log('\x1b[33m%s\x1b[0m', '================================================================');
   }
 }

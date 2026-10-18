@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
+import { GoogleMapAddressPicker } from "@/components/common/GoogleMapAddressPicker";
 import type { ConnectionMeetingItem } from "@/routes/business-connect.meetings.index";
 
 export interface EditMeetingModalProps {
@@ -152,6 +153,7 @@ export function EditMeetingModal({
       } catch {}
 
       toast.success("✓ Đã cập nhật thông tin cuộc gặp thành công!");
+      window.dispatchEvent(new CustomEvent("ceo1983:meetings-updated"));
       window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
       window.dispatchEvent(new CustomEvent("vba.meeting.changed"));
       if (onSuccess) onSuccess();
@@ -360,14 +362,13 @@ export function EditMeetingModal({
 
             {venueType === "offline" ? (
               <div className="pt-1 space-y-1">
-                <label className="text-[11px] text-muted-foreground">Địa điểm trực tiếp</label>
-                <input
-                  type="text"
-                  value={venue}
-                  onChange={(e) => setVenue(e.target.value)}
-                  placeholder="VD: Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội"
-                  className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:outline-none"
+                <GoogleMapAddressPicker
+                  label="Địa điểm trực tiếp"
                   required
+                  value={venue}
+                  onChange={(addr) => setVenue(addr)}
+                  placeholder="VD: Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội"
+                  showQuickLocations={true}
                 />
               </div>
             ) : (

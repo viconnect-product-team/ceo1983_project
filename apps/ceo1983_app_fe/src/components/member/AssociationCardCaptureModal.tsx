@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "@tanstack/react-router";
 import {
   Camera,
   Upload,
@@ -565,11 +566,6 @@ export function AssociationCardCaptureModal({
     }
   };
 
-  const handleOpenViOneApp = () => {
-    if (typeof window !== "undefined") {
-      window.open("https://14.225.217.232:5445/connect-app", "_blank");
-    }
-  };
 
   const handleRetake = () => {
     setCapturedImage(null);
@@ -776,7 +772,7 @@ export function AssociationCardCaptureModal({
                 </div>
               )}
 
-              {/* ── TRƯỜNG HỢP 2: KHÔNG THUỘC HIỆP HỘI -> THÔNG BÁO SANG APP VIONE ── */}
+              {/* ── TRƯỜNG HỢP 2: KHÔNG THUỘC HIỆP HỘI -> THÔNG BÁO ĐĂNG KÝ GIA NHẬP CLB CEO 1983 ── */}
               {memberStatus === "non_member" && (
                 <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl p-5 border-2 border-amber-500/60 shadow-xl shadow-amber-500/10 animate-scale-in text-slate-900 dark:text-white text-center">
                   <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 grid place-items-center text-amber-500 mb-3">
@@ -784,25 +780,23 @@ export function AssociationCardCaptureModal({
                   </div>
 
                   <h4 className="font-extrabold text-sm text-amber-600 dark:text-amber-400 uppercase tracking-wide">
-                    Thông Báo Danh Thiếp
+                    Thông Báo Danh Thiếp CEO 1983
                   </h4>
 
-                  {/* Thông báo chuẩn nguyên văn yêu cầu */}
+                  {/* Thông báo chuẩn nghiệp vụ Hiệp Hội Doanh Nhân CEO 1983 */}
                   <p className="text-xs text-slate-700 dark:text-slate-200 mt-2 px-1 font-semibold leading-relaxed">
-                    Chức năng chụp ảnh lưu danh bạ không áp dụng cho người không phải hội viên nhưng bạn có thể cài đặt app ViOne để sử dụng chức năng này.
+                    Chức năng lưu danh thiếp tự động dành riêng cho Hội viên CLB Doanh Nhân CEO 1983. Nếu bạn là doanh nhân mong muốn kết nối &amp; mở rộng giao thương, hãy đăng ký gia nhập Hiệp hội.
                   </p>
 
-                  {/* Nút liên kết trực tiếp đến trang web / app ViOne theo yêu cầu */}
+                  {/* Nút liên kết nội bộ đăng ký gia nhập Hiệp Hội CEO 1983 */}
                   <div className="mt-4 flex flex-col gap-2.5">
-                    <a
-                      href="https://14.225.217.232:5445/connect-app"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      to="/register"
                       className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#FFBE00] to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-98 transition-all cursor-pointer"
                     >
-                      <span>Cài Đặt / Mở Ứng Dụng ViOne</span>
+                      <span>Đăng Ký Gia Nhập Hiệp Hội CEO 1983</span>
                       <ExternalLink className="w-4 h-4" />
-                    </a>
+                    </Link>
 
                     <button
                       type="button"

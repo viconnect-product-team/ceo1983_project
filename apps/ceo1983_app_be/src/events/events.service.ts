@@ -917,7 +917,7 @@ export class EventsService implements OnModuleInit {
     const invoiceNo = `EV${regId}`;
     const vietQrUrl = isFree
       ? ''
-      : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(invoiceNo)}&accountName=${encodeURIComponent('CLB CEO 1983')}`;
+      : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(`${invoiceNo} ${phone || ''}`.trim())}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
 
     const driveInfo = event.photo_gallery_url ? `\n- Link kho ảnh sự kiện (Google Drive): ${event.photo_gallery_url}` : '';
 
@@ -2146,7 +2146,7 @@ export class EventsService implements OnModuleInit {
    */
   async guestRegister(eventId: string, guestData: any) {
     const eventRows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${eventId} OR slug = ${eventId} LIMIT 1
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
     `.catch(() => []);
 
     if (eventRows.length === 0) {
@@ -2190,9 +2190,11 @@ export class EventsService implements OnModuleInit {
       };
     }
 
-    const ticketPrice = (event.ticket_price !== undefined && event.ticket_price !== null)
-      ? Number(event.ticket_price)
-      : ((event.fee !== undefined && event.fee !== null) ? Number(event.fee) : 0);
+    const ticketPrice = (guestData?.ticketPrice !== undefined && Number(guestData?.ticketPrice) > 0)
+      ? Number(guestData.ticketPrice)
+      : ((event.ticket_price !== undefined && event.ticket_price !== null && Number(event.ticket_price) > 0)
+        ? Number(event.ticket_price)
+        : ((event.fee !== undefined && event.fee !== null) ? Number(event.fee) : 0));
     const isFree = ticketPrice === 0;
     const totalAmount = ticketPrice * ticketCount;
     const paymentStatus = isFree ? 'free' : 'pending';

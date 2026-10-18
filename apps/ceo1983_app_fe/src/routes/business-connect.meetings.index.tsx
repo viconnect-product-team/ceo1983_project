@@ -139,9 +139,11 @@ function MeetingsWorkspacePage() {
     loadMeetings();
     const onUpdate = () => loadMeetings();
     window.addEventListener("ceo1983:calendar-updated", onUpdate);
+    window.addEventListener("ceo1983:meetings-updated", onUpdate);
     window.addEventListener("vione:meetings-updated", onUpdate);
     return () => {
       window.removeEventListener("ceo1983:calendar-updated", onUpdate);
+      window.removeEventListener("ceo1983:meetings-updated", onUpdate);
       window.removeEventListener("vione:meetings-updated", onUpdate);
     };
   }, []);
@@ -162,6 +164,7 @@ function MeetingsWorkspacePage() {
       } catch {}
 
       toast.success("✓ Đã xóa cuộc gặp thành công!");
+      window.dispatchEvent(new CustomEvent("ceo1983:meetings-updated"));
       window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
       // Optimistic update
       setLocalMeetings((prev) => prev.filter((m) => m.id !== id));

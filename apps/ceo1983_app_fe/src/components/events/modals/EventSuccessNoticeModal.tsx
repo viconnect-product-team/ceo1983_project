@@ -79,27 +79,52 @@ export const EventSuccessNoticeModal: React.FC<EventSuccessNoticeModalProps> = (
             </span>
           </div>
         ) : (
-          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-2.5 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2 text-left">
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/60 p-3 text-[11px] text-amber-950 dark:text-amber-200 flex items-start gap-2.5 text-left border border-amber-300/60 shadow-xs">
             <MessageSquare className="h-4 w-4 shrink-0 text-[#003B95] dark:text-amber-400 mt-0.5" />
-            <span>
-              Hệ thống CRM đã gửi mã VietQR thanh toán vào mục <b>Kết nối</b> và thông tin xác nhận qua
-              email của bạn.
-            </span>
+            <div className="space-y-1">
+              <p className="font-bold text-[#003B95] dark:text-amber-300 text-xs">
+                ✉️ Đã gửi mã VietQR thanh toán về email!
+              </p>
+              <p className="leading-relaxed">
+                Hệ thống đã tự động gửi mã VietQR thanh toán phí tham dự về hòm thư của bạn. Bạn có thể quét mã VietQR trực tiếp bên dưới hoặc kiểm tra email để thanh toán:
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Direct QR Code Display in Modal 3 */}
-        {registeredSuccessInfo.qrCodeUrl && (
-          <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border-2 border-dashed border-emerald-500/50 inline-block shadow-sm">
+        {/* Khung hiển thị QR: Nếu có phí hiển thị VietQR, nếu miễn phí hiển thị QR check-in */}
+        {!isFreeOrZero ? (
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border-2 border-amber-400/80 shadow-md space-y-2 text-center">
+            <span className="text-[11px] font-black uppercase text-[#003B95] dark:text-amber-400 tracking-wider block">
+              Mã VietQR Thanh Toán Sự Kiện
+            </span>
             <img
-              src={registeredSuccessInfo.qrCodeUrl}
-              alt="QR Check-in"
-              className="w-40 h-40 mx-auto rounded-lg object-contain cursor-pointer"
+              src={`https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${registeredSuccessInfo.totalAmount}&addInfo=${encodeURIComponent(
+                `${registeredSuccessInfo.invoiceNo} ${registeredSuccessInfo.phone || ""}`.trim()
+              )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`}
+              alt="Mã VietQR Thanh Toán"
+              className="w-48 h-48 mx-auto rounded-xl object-contain border border-slate-200 dark:border-slate-700 p-1 bg-white"
             />
-            <div className="text-[11px] font-mono font-black text-slate-800 dark:text-slate-200 mt-1.5">
-              MÃ CHECK-IN: {registeredSuccessInfo.invoiceNo}
+            <div className="text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 py-1 px-2 rounded border border-amber-200 dark:border-amber-800">
+              Nội dung CK: {registeredSuccessInfo.invoiceNo} {registeredSuccessInfo.phone || ""}
+            </div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400">
+              MB Bank · STK: <b>1983000000</b> · CLB DOANH NHAN CEO 1983
             </div>
           </div>
+        ) : (
+          registeredSuccessInfo.qrCodeUrl && (
+            <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border-2 border-dashed border-emerald-500/50 inline-block shadow-sm">
+              <img
+                src={registeredSuccessInfo.qrCodeUrl}
+                alt="QR Check-in"
+                className="w-40 h-40 mx-auto rounded-lg object-contain cursor-pointer"
+              />
+              <div className="text-[11px] font-mono font-black text-slate-800 dark:text-slate-200 mt-1.5">
+                MÃ CHECK-IN: {registeredSuccessInfo.invoiceNo}
+              </div>
+            </div>
+          )
         )}
 
         <div className="pt-2 flex flex-col gap-2">

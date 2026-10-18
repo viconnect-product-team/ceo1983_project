@@ -48,6 +48,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { GoogleMapAddressPicker } from "@/components/common/GoogleMapAddressPicker";
+import { DepartmentMemberTreeSelect, type MemberTreeItem } from "@/components/common/DepartmentMemberTreeSelect";
 import { fetchNestApi } from "@/lib/api-client";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
@@ -140,11 +142,12 @@ function MeetingsPage() {
   const isSuperAdmin = isPlatformAdmin || isBQT;
   const role = (roleState.roles && roleState.roles[0]) || (srsRole as string);
 
-  // Role permissions: evaluated strictly via can() with matrix support
-  const canCreateMeeting = can("MEET_ADD") || can(PERMISSIONS.MEETING_MANAGE);
-  const canApproveMeeting = can("MEET_APPROVE") || can(PERMISSIONS.MEETING_MANAGE);
-  const canEditMeeting = can("MEET_EDIT") || can(PERMISSIONS.MEETING_MANAGE);
-  const canDeleteMeeting = can("MEET_DELETE") || can(PERMISSIONS.MEETING_MANAGE);
+  // Role permissions: Quản trị (Admin / Super Admin / BQT) luôn có toàn quyền tuyệt đối
+  const isHighLevelAdmin = isAdmin || isPlatformAdmin || isBQT || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "chu_tich" || (roleState.roles && roleState.roles.includes("admin"));
+  const canCreateMeeting = isHighLevelAdmin || can("MEET_ADD") || can(PERMISSIONS.MEETING_MANAGE);
+  const canApproveMeeting = isHighLevelAdmin || can("MEET_APPROVE") || can(PERMISSIONS.MEETING_MANAGE);
+  const canEditMeeting = isHighLevelAdmin || can("MEET_EDIT") || can(PERMISSIONS.MEETING_MANAGE);
+  const canDeleteMeeting = isHighLevelAdmin || can("MEET_DELETE") || can(PERMISSIONS.MEETING_MANAGE);
 
   const createFn = useServerFn(createMeetingFn);
   const updateFn = useServerFn(updateMeetingFn);
@@ -1160,17 +1163,21 @@ function MeetingsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold text-foreground block mb-1">Phòng ban phụ trách *</label>
+                  <label className="font-bold text-foreground block mb-1">Ban chủ trì chính *</label>
                   <select
                     value={formDepartment}
-                    onChange={(e) => {
-                      const dept = e.target.value;
-                      setFormDepartment(dept);
-                      setSelectedMembers((DEPARTMENT_MEMBERS[dept] || []).map((m) => m.email));
-                    }}
+                    onChange={(e) => setFormDepartment(e.target.value)}
                     className="w-full rounded-xl border border-border bg-background p-2.5 text-sm"
                   >
-                    {Object.keys(DEPARTMENT_MEMBERS).map((dept) => (
+                    {[
+                      "Ban Điều Hành",
+                      "Ban Thư Ký",
+                      "Ban Thành viên",
+                      "Ban Xúc tiến thương mại",
+                      "Ban Truyền thông",
+                      "Ban Tài chính",
+                      "Ban Thiện nguyện",
+                    ].map((dept) => (
                       <option key={dept} value={dept}>
                         {dept}
                       </option>
@@ -1179,43 +1186,18 @@ function MeetingsPage() {
                 </div>
               </div>
 
-              {/* Department Member Picker */}
-              <div className="rounded-xl border border-border bg-secondary/30 p-3.5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-foreground">
-                    Danh sách nhân sự {formDepartment} ({selectedMembers.length}/{deptMembers.length})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={selectAllDeptMembers}
-                    className="text-[11px] font-semibold text-primary hover:underline"
-                  >
-                    Chọn tất cả
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  {deptMembers.map((mem) => {
-                    const isSelected = selectedMembers.includes(mem.email);
-                    return (
-                      <div
-                        key={mem.email}
-                        onClick={() => toggleMemberSelection(mem.email)}
-                        className={`flex items-center gap-2.5 rounded-lg border p-2 cursor-pointer transition ${
-                          isSelected
-                            ? "border-primary bg-primary/10 text-foreground font-semibold"
-                            : "border-border/60 bg-card text-muted-foreground"
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="truncate text-xs">{mem.name}</p>
-                          <p className="truncate text-[10px] text-muted-foreground">
-                            {mem.role} · {mem.phone}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Tree Select Chọn người tham gia theo Ban chuyên môn & Search */}
+              <div className="rounded-2xl border border-border bg-card/40 p-3.5 space-y-2">
+                <DepartmentMemberTreeSelect
+                  selectedEmails={selectedMembers}
+                  defaultExpandedDept={formDepartment}
+                  onChange={(_items, emails) => {
+                    setSelectedMembers(emails);
+                  }}
+                  label="Thành viên tham dự (Chọn theo Ban chuyên môn - Hỗ trợ tìm kiếm & CSDL thật)"
+                  placeholder="Tìm kiếm thành viên theo tên, chức vụ, email, số điện thoại..."
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1417,42 +1399,21 @@ function MeetingsPage() {
                         </div>
                       ) : (
                         <div className="space-y-2.5 pt-1 border-t border-border/60">
-                          <div>
-                            <label className="text-[11px] font-semibold text-foreground block mb-1">
-                              Địa chỉ cụ thể phòng họp Offline *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={formLocation}
-                              onChange={(e) => {
-                                setFormLocation(e.target.value);
-                                setFormGpsUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.target.value)}`);
-                              }}
-                              placeholder="Ví dụ: Tòa nhà CEO Tower, Phạm Hùng, Cầu Giấy, Hà Nội"
-                              className="w-full rounded-lg border border-border bg-background p-2 text-xs text-foreground focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between mb-1">
-                              <span>Định vị Google Maps dẫn đường</span>
-                              <a
-                                href={formGpsUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[10px] text-primary font-bold hover:underline"
-                              >
-                                Mở thử vị trí ↗
-                              </a>
-                            </label>
-                            <input
-                              type="url"
-                              value={formGpsUrl}
-                              onChange={(e) => setFormGpsUrl(e.target.value)}
-                              placeholder="https://maps.google.com/..."
-                              className="w-full rounded-lg border border-border bg-background p-2 text-xs font-mono text-blue-600 focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
+                          <GoogleMapAddressPicker
+                            label="Địa chỉ cụ thể phòng họp Offline"
+                            required
+                            value={formLocation}
+                            onChange={(addr, extra) => {
+                              setFormLocation(addr);
+                              if (extra?.mapUrl) {
+                                setFormGpsUrl(extra.mapUrl);
+                              } else {
+                                setFormGpsUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`);
+                              }
+                            }}
+                            placeholder="Ví dụ: Tòa nhà CEO Tower, Phạm Hùng, Cầu Giấy, Hà Nội"
+                            showQuickLocations={true}
+                          />
                         </div>
                       )}
                     </div>

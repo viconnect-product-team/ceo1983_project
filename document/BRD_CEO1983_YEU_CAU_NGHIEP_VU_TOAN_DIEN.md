@@ -170,17 +170,6 @@ Hệ thống được thiết kế theo ma trận phân quyền chức năng bá
    - Mỗi mã vé QR chỉ được phép qua cổng an ninh 01 lần duy nhất. Lần quét thứ hai bắt buộc kích hoạt cảnh báo đỏ gian lận.
 7. **Quy tắc Biểu Quyết 1 Người 1 Phiếu (RULE-VOT-01):**
    - Mỗi hội viên chính thức chỉ có đúng 01 phiếu biểu quyết cho mỗi tờ trình, không thể can thiệp hay sửa đổi sau khi đã xác nhận.
-8. **Quy tắc Bắn Mail Tự Động Toàn Diện (RULE-NOTIF-01):**
-   - Hệ thống bắt buộc tự động gửi email thông báo và nhắc nhở về hòm thư của hội viên (với cơ chế fallback an toàn về hòm thư quản trị `vupv090120@gmail.com`) cho 6 luồng nghiệp vụ cốt lõi:
-     + *Cuộc họp được thêm (Offline tại Sapphire Hub/văn phòng & Online kèm link phòng họp)*.
-     + *Cuộc gặp kết nối B2B 1-on-1 đã lên lịch và khi được đối tác xác nhận*.
-     + *Đăng ký sự kiện thành công (E-Ticket) & Hướng dẫn thanh toán phí tham dự sự kiện (VietQR Napas 24/7)*.
-     + *Thông báo nộp hội phí thường niên định kỳ & Hóa đơn VietQR Napas đối soát tự động*.
-     + *Xác nhận thanh toán hội phí thường niên thành công (gạch nợ tức thời & gia hạn thẻ VIP)*.
-     + *Phân công công việc mới và nhắc nhở đôn đốc tiến độ công việc định kỳ đến người nhận việc*.
-9. **Quy tắc Bố Cục Nền Quản Trị CRM & Chuẩn Hóa Banner Ưu Đãi (RULE-UI-01):**
-   - Nền hệ thống quản trị CRM (`.bg-crm-system`) chỉ được phép hiển thị bên trong khu vực nội dung dạng lưới/dashboard (`<main>`), tuyệt đối không tràn phủ lên thanh điều hướng dọc (Sidebar) hay thanh tiêu đề trên (Header).
-   - Banner "Ưu Đãi Riêng Hội Viên & Đối Tác" trên Mobile App tuân thủ 100% đồ họa 3D nguyên bản (hộp quà 3D đỏ nơ vàng lấp lánh `banner-gift-3d.png`), dải màu xanh hoàng gia và chữ mạ vàng nổi bật.
 
 ---
 

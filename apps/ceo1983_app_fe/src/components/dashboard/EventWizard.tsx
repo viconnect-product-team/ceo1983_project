@@ -43,6 +43,7 @@ const emptyTicket = (): TicketDraft => ({ name: "", price: "", quantity: "", des
 
 import { VndCurrencyInput, parseVndNumber } from "@/components/dashboard/VndCurrencyInput";
 import { StandardDateInput, formatToDdmmyyyy } from "@/components/common/StandardDateInput";
+import { GoogleMapAddressPicker } from "@/components/common/GoogleMapAddressPicker";
 
 const TYPE_OPTS: EventType[] = ["forum", "workshop", "networking", "training"];
 const STATUS_OPTS: EventStatus[] = ["upcoming", "ongoing", "completed", "cancelled"];
@@ -208,6 +209,7 @@ function EventWizardDialog({
           name: info.name.trim(),
           date: info.date,
           location: info.location.trim(),
+          address: info.location.trim(),
           capacity: Number(info.capacity) || 0,
           type: info.type,
           status: info.status,
@@ -610,24 +612,23 @@ function InfoStep({
       </div>
 
       <div>
-        <label className={labelCls} htmlFor="ewz-location">
-          {t("ewz.field.location")} <span className="text-destructive font-bold">*</span>
-        </label>
-        <input
+        <GoogleMapAddressPicker
           id="ewz-location"
-          className={`${inputCls} ${errors.location ? "border-destructive ring-1 ring-destructive/30" : ""}`}
-          placeholder="Địa chỉ / Khách sạn tổ chức (ví dụ: Trung tâm Hội nghị Quốc gia, Hà Nội)..."
+          label={t("ewz.field.location")}
+          required
           value={info.location}
-          onChange={(e) => {
-            setInfo({ ...info, location: e.target.value });
+          onChange={(addr, extra) => {
+            setInfo({
+              ...info,
+              location: addr,
+              ...(extra?.mapUrl ? { photoGalleryUrl: info.photoGalleryUrl || extra.mapUrl } : {}),
+            });
             if (errors.location) setErrors((prev) => ({ ...prev, location: "" }));
           }}
+          placeholder="Địa chỉ / Khách sạn tổ chức (ví dụ: Trung tâm Hội nghị Quốc gia, Hà Nội)..."
+          error={errors.location}
+          showQuickLocations={true}
         />
-        {errors.location && (
-          <p className="mt-1 text-xs font-semibold text-destructive animate-in fade-in duration-150">
-            {errors.location}
-          </p>
-        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

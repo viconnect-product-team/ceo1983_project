@@ -3,6 +3,19 @@ const fs = require('fs');
 const path = require('path');
 
 const filesToVerify = [
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/common/DepartmentMemberTreeSelect.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/meetings.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/meetings/Create1on1MeetingModal.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/association.profile.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/member/CardPreviewModal.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/register.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/member/AssociationCardCaptureModal.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/association.profile.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/events.$eventId.register.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/guest-event-register.$eventId.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/events/modals/EventSuccessNoticeModal.tsx'),
+  path.resolve(__dirname, '../apps/ceo1983_app_be/src/events/events.service.ts'),
+  path.resolve(__dirname, '../apps/ceo1983_app_be/src/main.ts'),
   path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/landing/Ceo1983MemberRegistrationForm.tsx'),
   path.resolve(__dirname, '../apps/ceo1983_app_fe/src/components/marketplace/MarketplaceAdSlider.tsx'),
   path.resolve(__dirname, '../apps/ceo1983_app_fe/src/routes/association.members.tsx'),

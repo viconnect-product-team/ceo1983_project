@@ -16,6 +16,9 @@ import {
   Check,
   Loader2,
   Lock,
+  CheckCircle2,
+  Sparkles,
+  Briefcase,
 } from "lucide-react";
 import { Ceo1983BusinessCardVisit } from "@/components/member/Ceo1983BusinessCardVisit";
 import { CompanyProfileTwoPages } from "@/components/member/CompanyProfileTwoPages";
@@ -213,17 +216,17 @@ export function CardPreviewModal({
       aria-label="Xem trước danh thiếp số"
     >
       <div
-        className="relative my-auto flex max-h-[94vh] w-full max-w-[500px] flex-col overflow-hidden rounded-3xl bg-slate-50 text-slate-800 shadow-2xl border border-slate-200"
+        className="relative my-auto flex max-h-[94vh] w-full max-w-[520px] flex-col overflow-hidden rounded-3xl bg-slate-50 dark:bg-[#080d19] text-slate-800 dark:text-slate-100 shadow-2xl border border-slate-200 dark:border-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Bar */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shrink-0">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] px-4 py-3 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider ${
                 effectiveKind === "primary"
-                  ? "bg-blue-100 text-[#003B95] border border-blue-300"
-                  : "bg-slate-100 text-slate-700 border border-slate-300"
+                  ? "bg-blue-100 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                  : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
               }`}
             >
               {effectiveKind === "primary" ? (
@@ -235,8 +238,8 @@ export function CardPreviewModal({
                 <span>Danh thiếp phụ</span>
               )}
             </span>
-            <span className="truncate text-xs font-semibold text-slate-500">
-              Xem trước
+            <span className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Xem trước Thẻ &amp; Profile Hội Viên
             </span>
           </div>
 
@@ -260,7 +263,7 @@ export function CardPreviewModal({
               type="button"
               onClick={onClose}
               aria-label="Đóng"
-              className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+              className="grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition"
             >
               <X className="h-5 w-5" />
             </button>
@@ -274,23 +277,23 @@ export function CardPreviewModal({
         >
           {/* Card Kind Status Notification */}
           {effectiveKind === "primary" ? (
-            <div className="flex items-start gap-2.5 rounded-2xl bg-blue-50/90 border border-blue-200 p-3 text-xs leading-relaxed text-blue-950">
+            <div className="flex items-start gap-2.5 rounded-2xl bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 p-3 text-xs leading-relaxed text-blue-950 dark:text-blue-200">
               <Star className="h-4 w-4 shrink-0 text-amber-500 fill-amber-500 mt-0.5" />
               <div>
-                <p className="font-bold text-[#003B95]">Đây là Danh thiếp chính của bạn</p>
-                <p className="text-slate-600 mt-0.5 text-[11.5px]">
-                  Khi bất kỳ ai quét mã QR thẻ hội viên của bạn, thông tin và các trường tùy chọn bên dưới sẽ được hiển thị công khai.
+                <p className="font-bold text-[#003B95] dark:text-blue-400">Danh thiếp số chính thức CEO 1983</p>
+                <p className="text-slate-600 dark:text-slate-300 mt-0.5 text-[11.5px]">
+                  Khi bất kỳ ai quét mã QR thẻ hội viên của bạn, thẻ danh thiếp cùng toàn bộ Profile bên dưới sẽ hiển thị đồng bộ.
                 </p>
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50/90 border border-amber-200 p-3 text-xs leading-relaxed text-amber-950">
+            <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 p-3 text-xs leading-relaxed text-amber-950 dark:text-amber-200">
               <span className="text-sm">💼</span>
               <div>
-                <p className="font-bold text-amber-900">Đây là Danh thiếp phụ</p>
-                <p className="text-slate-600 mt-0.5 text-[11.5px]">
+                <p className="font-bold text-amber-900 dark:text-amber-400">Danh thiếp phụ</p>
+                <p className="text-slate-600 dark:text-slate-300 mt-0.5 text-[11.5px]">
                   Chỉ bạn thấy danh thiếp này cho đến khi bạn bấm{" "}
-                  <strong className="text-amber-800 font-bold">&quot;Đặt làm danh thiếp chính&quot;</strong> để kích hoạt cho người quét mã QR.
+                  <strong className="text-amber-800 dark:text-amber-300 font-bold">&quot;Đặt làm danh thiếp chính&quot;</strong>.
                 </p>
               </div>
             </div>
@@ -314,28 +317,63 @@ export function CardPreviewModal({
             />
           </div>
 
+          {/* ── KHỐI PROFILE HỘI VIÊN CHI TIẾT (ĐỒNG BỘ THEO MẪU PROFILE CEO 1983) ── */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-4 text-center shadow-sm space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <div className="size-14 rounded-full ring-2 ring-[#003B95] dark:ring-blue-400 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                {resolvedAvatar ? (
+                  <img src={resolvedAvatar} alt={effectiveName} className="size-full object-cover" />
+                ) : (
+                  <span className="text-lg font-black text-[#003B95] dark:text-blue-400">
+                    {effectiveName.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <div className="text-left min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white truncate">
+                    {effectiveName}
+                  </h3>
+                  <CheckCircle2 className="size-4 text-[#003B95] dark:text-blue-400 fill-[#003B95] dark:fill-blue-400 text-white shrink-0" />
+                </div>
+                <p className="text-xs font-bold text-[#003B95] dark:text-blue-400 truncate">
+                  {effectiveTitle}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  {showCompany ? effectiveCompany : "CLB Doanh Nhân CEO 1983"}
+                </p>
+              </div>
+            </div>
+
+            {/* Badge Hội viên chính thức CEO 1983 */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-400/50 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold">
+              <Sparkles className="size-3 text-amber-500 fill-amber-500" />
+              <span>Hội viên chính thức CLB Doanh Nhân CEO 1983</span>
+            </div>
+          </div>
+
           {/* ── 4 NÚT HÀNH ĐỘNG KẾT NỐI (GIỐNG THẺ HỘI VIÊN) ── */}
           <div className="grid grid-cols-4 gap-2 pt-1">
             <button
               type="button"
               onClick={handleDownloadVCard}
-              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 text-slate-900 shadow-2xs cursor-pointer"
+              className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] hover:bg-slate-50 dark:hover:bg-slate-800/80 transition active:scale-95 text-slate-900 dark:text-slate-100 shadow-2xs cursor-pointer"
             >
-              <Download className="h-4 w-4 text-slate-700" />
+              <Download className="h-4 w-4 text-slate-700 dark:text-slate-300" />
               <span className="text-[10px] font-bold">Lưu danh bạ</span>
             </button>
 
             {showPhone && cleanPhone ? (
               <a
                 href={`tel:${cleanPhone}`}
-                className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-emerald-300/80 bg-emerald-50 hover:bg-emerald-100 transition active:scale-95 text-emerald-900 shadow-2xs cursor-pointer"
+                className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-emerald-300/80 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition active:scale-95 text-emerald-900 dark:text-emerald-300 shadow-2xs cursor-pointer"
               >
-                <Phone className="h-4 w-4 text-emerald-600" />
+                <Phone className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[10px] font-bold">Gọi điện</span>
               </a>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
-                <Lock className="h-3.5 w-3.5 text-slate-300" />
+              <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-slate-400">
+                <Lock className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
                 <span className="text-[10px] font-bold">Đã ẩn số</span>
               </div>
             )}
@@ -345,32 +383,30 @@ export function CardPreviewModal({
                 href={`https://zalo.me/${cleanPhone}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-sky-300/80 bg-sky-50 hover:bg-sky-100 transition active:scale-95 text-sky-900 shadow-2xs cursor-pointer"
+                className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-sky-300/80 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition active:scale-95 text-sky-900 dark:text-sky-300 shadow-2xs cursor-pointer"
               >
                 <MessageCircle className="h-4 w-4 text-[#0068FF]" />
                 <span className="text-[10px] font-bold">Zalo</span>
               </a>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
-                <Lock className="h-3.5 w-3.5 text-slate-300" />
+              <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-slate-400">
+                <Lock className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
                 <span className="text-[10px] font-bold">Đã ẩn Zalo</span>
               </div>
             )}
 
-            {showSocial && effectiveFacebook ? (
+            {showEmail && effectiveEmail ? (
               <a
-                href={effectiveFacebook}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 transition active:scale-95 text-blue-900 shadow-2xs cursor-pointer"
+                href={`mailto:${effectiveEmail}`}
+                className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition active:scale-95 text-[#003B95] dark:text-blue-300 shadow-2xs cursor-pointer"
               >
-                <Facebook className="h-4 w-4 text-[#1877F2]" />
-                <span className="text-[10px] font-bold">Facebook</span>
+                <Mail className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+                <span className="text-[10px] font-bold">Gửi thư</span>
               </a>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400">
-                <Facebook className="h-3.5 w-3.5 text-slate-300" />
-                <span className="text-[10px] font-bold">Facebook</span>
+              <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-slate-400">
+                <Lock className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />
+                <span className="text-[10px] font-bold">Đã ẩn Email</span>
               </div>
             )}
           </div>
@@ -380,7 +416,7 @@ export function CardPreviewModal({
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-blue-200 bg-white text-[#003B95] hover:bg-blue-50 text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-blue-200 dark:border-blue-800 bg-white dark:bg-[#0F172A] text-[#003B95] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer"
             >
               <Share2 className="h-3.5 w-3.5 text-amber-500" />
               <span>{copied ? "Đã sao chép liên kết" : "Chia sẻ liên kết danh thiếp"}</span>
@@ -388,54 +424,54 @@ export function CardPreviewModal({
           </div>
 
           {/* Authentic Confirmation Banner */}
-          <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3.5 py-2.5 shadow-2xs">
-            <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600" />
-            <p className="text-[11.5px] font-semibold leading-snug text-emerald-900">
+          <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/90 dark:bg-emerald-950/40 px-3.5 py-2.5 shadow-2xs">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <p className="text-[11.5px] font-semibold leading-snug text-emerald-900 dark:text-emerald-200">
               Hồ sơ hợp lệ, được cấp chứng thực điện tử bởi CLB Doanh nhân CEO 1983.
             </p>
           </div>
 
-          {/* ── BẢNG THÔNG TIN HỘI VIÊN ĐƯỢC XÁC THỰC (THEO ĐÚNG TÙY CHỌN ẨN/HIỆN CỦA THẺ NÀY) ── */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-2.5 flex items-center gap-2 text-xs font-bold text-[#003B95] uppercase tracking-wider">
+          {/* ── BẢNG THÔNG TIN HỘI VIÊN ĐƯỢC XÁC THỰC ── */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
+            <h2 className="mb-2.5 flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-blue-400 uppercase tracking-wider">
               <Building2 className="h-4 w-4 text-amber-500" />
-              <span>Thông tin hiển thị cho người quét</span>
+              <span>Thông tin chi tiết Profile hội viên</span>
             </h2>
 
-            <dl className="divide-y divide-slate-100 text-[12px]">
+            <dl className="divide-y divide-slate-100 dark:divide-slate-800 text-[12px]">
               <div className="flex items-center justify-between gap-3 py-2">
-                <span className="text-slate-500 font-medium">Trạng thái</span>
-                <span className="font-semibold text-emerald-600">Chính thức (Active)</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Trạng thái</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Chính thức (Active)</span>
               </div>
 
               <div className="flex items-center justify-between gap-3 py-2">
-                <span className="text-slate-500 font-medium">Chức danh</span>
-                <span className="font-semibold text-slate-800 text-right">{effectiveTitle}</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Chức danh</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">{effectiveTitle}</span>
               </div>
 
               <div className="flex items-center justify-between gap-3 py-2">
-                <span className="text-slate-500 font-medium">Doanh nghiệp</span>
-                <span className="font-semibold text-slate-800 text-right">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Doanh nghiệp</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
                   {showCompany ? effectiveCompany : "Đã ẩn theo cài đặt riêng tư"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between gap-3 py-2">
-                <div className="flex items-center gap-1.5 text-slate-500 font-medium">
+                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
                   <Phone className="h-3.5 w-3.5 text-amber-500" />
                   <span>Điện thoại</span>
                 </div>
-                <span className={`font-semibold text-right ${showPhone ? "text-slate-800" : "text-slate-400 italic"}`}>
+                <span className={`font-semibold text-right ${showPhone ? "text-slate-800 dark:text-slate-200" : "text-slate-400 italic"}`}>
                   {showPhone ? effectivePhone : "Đã ẩn theo cài đặt riêng tư"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between gap-3 py-2">
-                <div className="flex items-center gap-1.5 text-slate-500 font-medium">
+                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
                   <Mail className="h-3.5 w-3.5 text-amber-500" />
                   <span>Email</span>
                 </div>
-                <span className={`font-semibold text-right ${showEmail ? "text-slate-800" : "text-slate-400 italic"}`}>
+                <span className={`font-semibold text-right ${showEmail ? "text-slate-800 dark:text-slate-200" : "text-slate-400 italic"}`}>
                   {showEmail ? effectiveEmail : "Đã ẩn theo cài đặt riêng tư"}
                 </span>
               </div>

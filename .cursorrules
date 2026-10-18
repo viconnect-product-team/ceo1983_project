@@ -1833,7 +1833,7 @@
   + Tất cả container Backend và Frontend thuộc phân hệ CEO 1983 Mobile (`ceo1983-backend-prod`, `ceo1983-frontend-prod`) và CRM Quản trị (`crm-backend-prod`, `crm-frontend-prod`) BẮT BUỘC phải tham gia đồng thời cả 2 mạng Docker: `ceo1983-network` và `vione-network`.
   + Nginx SSL Proxy (`vione-ssl-proxy`) nằm trên `vione-network`. Nếu thiếu mạng `vione-network`, proxy sẽ trả về lỗi HTTP 502 Bad Gateway khi người dùng truy cập cổng 5444.
 - Đảm Bảo 100% Đồng Nhất Cơ Sở Dữ Liệu Giữa Mobile Và CRM:
-  + Cả hai phân hệ Mobile và CRM BẮT BUỘC cùng trỏ vào một instance PostgreSQL duy nhất: `ceo1983-postgres-prod:5432/vione_app`.
+  + Cả hai phân hệ Mobile và CRM BẮT BUỘC cùng trỏ vào một instance PostgreSQL duy nhất: `ceo1983-postgres-prod:5432/ceo1983_project` (Cơ sở dữ liệu độc lập của CLB Doanh Nhân CEO 1983, tuyệt đối không dùng chung `vione_app`).
   + Các API endpoint của Mobile (Port 5444) và CRM (Port 5443) gồm `/api/events`, `/api/members`, `/api/opportunities`, `/api/invoices`, `/api/voting/polls`, v.v. phải trả về cùng cấu trúc dữ liệu và số lượng bản ghi 100% trùng khớp nhau.
   + Kiểm thử định kỳ bằng script kiểm tra đồng bộ (`scripts/verify_all_data_flows.js`) để đảm bảo không xảy ra hiện tượng lệch schema hoặc cô lập dữ liệu.
 
@@ -1870,5 +1870,39 @@
   + Phân tích Bộ công cụ vận hành thực tế (Quản lý công việc Kanban, Cuộc họp & Điểm danh QR động 30s Sapphire Hub, Kho tài liệu số, VoIP): Khẳng định rõ ràng đây là các tính năng NẰM NGOÀI PHẠM VI YÊU CẦU BAN ĐẦU (BRD GỐC) của CEO 1983, nhưng dưới góc nhìn phát triển kỹ thuật và năng lực công nghệ lõi của ViConnect, đội ngũ đã chủ động kiến tạo sẵn để giải quyết bài toán vận hành 365 ngày của BĐH, không để công việc bị phân tán trên Zalo hay Google Drive.
   + File Word lời thoại cập nhật: `document/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983_MOI.docx` và `apps/ceo1983_app_fe/public/docs/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983.docx`.
 
+# [BẮT BUỘC 106] Quy Chuẩn Loại Bỏ ViOne Tại Cổng /register, Chuẩn Hóa Luồng Đăng Ký Sự Kiện Có Phí Gửi Mã VietQR Về Email & Khôi Phục Giao Diện Profile CEO 1983 Chuẩn Gốc
+- Cổng Đăng Ký Hội Viên `/register` & Điều Hướng Danh Thiếp:
+  + Tuyệt đối KHÔNG nhúng component ViOne (`ConnectAppSignUp`) hay các liên kết sang app ViOne (`https://14.225.217.232:5445/connect-app`).
+  + Đường dẫn `/register` là Cổng Tiếp Nhận Hồ Sơ Gia Nhập CLB Doanh Nhân CEO 1983 chính thức (`Ceo1983MemberRegistrationForm`).
+  + Các nút CTA kêu gọi đăng ký hội viên từ popup lưu danh thiếp (`AssociationCardCaptureModal.tsx`) hay trang giới thiệu BẮT BUỘC sử dụng điều hướng nội bộ `<Link to="/register">` dẫn thẳng form đăng ký hội viên CEO 1983.
+- Quy Chuẩn Luồng Đăng Ký Sự Kiện Có Phí & Gửi Mã VietQR Về Email:
+  + Khi sự kiện có phí (`ticket_price > 0` hoặc `fee > 0`), backend `events.service.ts` hàm `guestRegister` BẮT BUỘC phải tạo mã QR VietQR (MB Bank `1983000000`, cú pháp `EV{regId} {phone}`) và gọi `mailService.sendEventTicketEmail(...)` gửi email thực tế đính kèm mã VietQR tới người đăng ký.
+  + Lưu ý Schema Database PostgreSQL: Bảng `public.events` KHÔNG CÓ cột `slug` và KHÔNG CÓ cột `title` (chỉ có cột `id`, `name`, `fee`, `ticket_price`). Mọi câu SQL `$queryRaw` tuyệt đối không được dùng cột `slug` trên bảng `events`.
+  + Phía Frontend, `EventSuccessNoticeModal.tsx` tự động hiển thị mã QR VietQR MB Bank thanh toán ngay trên modal khi sự kiện có phí kèm thông báo nổi bật "Đã gửi mã VietQR thanh toán về email!".
+- Quy Chuẩn Giao Diện Trang Cá Nhân Chuẩn App CEO 1983:
+  + Giao diện Trang cá nhân Profile trên App CEO 1983 (`association.profile.tsx`) phải tuân thủ chuẩn thiết kế tài liệu `document/images/guide_mobile/18_ho_so_ca_nhan.png`:
+    * Top bar `MemberHeader` với tiêu đề "Trang cá nhân" + icon Cài đặt (⚙️).
+    * Card thông tin hội viên bo tròn viền sáng kèm tick xanh xác thực.
+    * 3 Khối chức năng: `DANH THIẾP & HỘI VIÊN`, `HOẠT ĐỘNG & KINH DOANH`, `CÀI ĐẶT ỨNG DỤNG`.
+    * Cụm nút hành động: Đi tới Quản trị hệ thống (nếu có quyền), Chia sẻ cài app, Cài PWA 1 chạm, Đăng xuất.
+# [BẮT BUỘC 107] Quy Chuẩn Tree Select Phân Cấp Ban Chuyên Môn & CSDL Thật Cho Mọi Popup Chọn Người Trong CRM Quản Trị Hiệp Hội
+- Thay Thế Triệt Để Dropdown Tĩnh Hoặc Dữ Liệu Fake Bằng `DepartmentMemberTreeSelect.tsx`:
+  + Mọi chức năng có popup trong CRM quản trị hiệp hội có thao tác chọn người (tạo cuộc họp, tạo cuộc gặp kết nối 1-on-1, giao việc, v.v.) BẮT BUỘC sử dụng component cây phân cấp `DepartmentMemberTreeSelect`.
+  + Cấu trúc cây: Cấp 1 là các Ban chuyên môn (Ban Điều Hành, Ban Thư Ký, Ban Thành Viên, Ban Xúc Tiến Thương Mại, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện...), Cấp 2 là các Hội viên thuộc Ban đó.
+  + Gọi API trực tiếp từ Database PostgreSQL thật qua `/api/members` (`fetchNestApi`).
+  + Hỗ trợ Search real-time đa tiêu chí (Họ tên, chức vụ, email, số điện thoại, công ty), tự động mở rộng (auto-expand) các ban có kết quả khớp.
+  + Hỗ trợ Checkbox chọn cả ban hoặc từng thành viên lẻ, hiển thị danh sách chips đã chọn kèm nút xóa nhanh (x) và bộ đếm tổng số người tham gia.
 
+# [BẮT BUỘC 108] Quy Chuẩn Thiết Kế Profile Hội Viên Theo Mẫu Visual Thực Tế & Thẻ Danh Thiếp Đôi (VIP Card + Full Profile)
+- Layout Chuẩn Cho Trang Cá Nhân Hội Viên (`association.profile.tsx`):
+  + Ảnh bìa (Cover photo) tỷ lệ chuẩn 16:9 với badge mã hội viên `● M1983-xxx` góc trên bên trái và nút "Đổi ảnh bìa" góc trên bên phải.
+  + Card thông tin chính đè 1 phần lên ảnh bìa: Avatar tròn lớn ở giữa có nút camera đổi ảnh, Tên to kèm tích xanh xác minh (verified), Chức vụ, Tên công ty/CLB, Badge danh hiệu hội viên vàng đồng.
+  + 4 Nút thao tác nhanh nổi bật: Thẻ danh thiếp (`/association/card`), Chỉnh sửa hồ sơ (`QuickProfileEditModal`), Chia sẻ profile, và Mã QR hội viên (`AssociationMemberQrModal`).
+  + 3 Tab nghiệp vụ chuyên sâu: Hồ sơ & Giới thiệu, Giao thương B2B & Hoạt động, Tiện ích & Cài đặt.
+  + Khối "THÔNG TIN LIÊN HỆ & KẾT NỐI TRỰC TIẾP": Hotline với nút Gọi xanh lá và Email với nút Gửi thư viền xanh.
+  + Bảng màu chuẩn nhận diện CEO 1983: Deep Cobalt Navy (`#003B95`), Warm Amber Gold (`#D97706`/`#B45309`), Neutral White & Obsidian Dark (`#0F172A`).
+  + Tương thích 100% cả 2 theme **Sáng (Light)** và **Tối (Dark)**.
+- Quy Chuẩn Xem Trước Thẻ Danh Thiếp Số (`CardPreviewModal.tsx`):
+  + BẮT BUỘC hiển thị đồng thời cả **Thẻ hội viên VIP (`Ceo1983BusinessCardVisit`)** và **Profile chi tiết của hội viên** (Avatar, Tên, Tích xanh, Chức danh, Doanh nghiệp, Badge hội viên, Nút Gọi điện, Gửi thư, Zalo, Lưu danh bạ vCard, Bảng thông tin xác thực).
+  + Hỗ trợ nút chuyển đổi theme Sáng/Tối trực tiếp trong modal để người dùng xem trước diện mạo thẻ trong mọi điều kiện ánh sáng.
 

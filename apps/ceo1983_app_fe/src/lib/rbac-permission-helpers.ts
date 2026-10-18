@@ -403,19 +403,11 @@ export function normalizeActionRoles(action: {
  * Kiểm tra 1 route có được phép hiển thị trên Sidebar/CRM theo vai trò người dùng hay không
  */
 export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): boolean {
-  // Quản trị (Super Admin) luôn có toàn quyền xem tất cả chức năng
-  if (roleKey === "quan_tri") return true;
+  // Quản trị (Super Admin), Admin và Chủ tịch luôn có toàn quyền xem tất cả chức năng CRM
+  if (roleKey === "quan_tri" || roleKey === "admin" || roleKey === "chu_tich") return true;
 
   // Làm sạch route (bỏ query parameters & hash fragment: ví dụ /permissions?tab=matrix -> /permissions)
   const cleanRoute = (route || "").split("?")[0].split("#")[0];
-
-  // Admin và Quản trị luôn có toàn quyền truy cập nhóm Phân quyền
-  if (
-    (cleanRoute === "/permissions" || cleanRoute.startsWith("/permissions")) &&
-    roleKey === "admin"
-  ) {
-    return true;
-  }
 
   if (typeof window === "undefined") return true;
 

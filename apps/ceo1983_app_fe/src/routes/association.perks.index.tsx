@@ -91,13 +91,13 @@ const LUCKY_DRAW_PRIZES = [
   },
   {
     id: "lucky-prize-4",
-    title: "Giải Khuyến Khích: Thẻ Danh Thiếp Thông Minh ViOne NFC Kim Loại Khắc Tên",
+    title: "Giải Khuyến Khích: Thẻ Danh Thiếp Điện Tử Thông Minh CEO 1983 Smart NFC Mạ Vàng",
     category: "Trúng thưởng",
     discount: "Miễn Phí 100%",
-    summary: "Thẻ NFC kim loại đen bóng viền mạ vàng sang trọng tích hợp công nghệ chạm danh thiếp 1 chạm.",
-    partner: "ViOne Connect",
+    summary: "Thẻ NFC kim loại đen bóng viền mạ vàng sang trọng tích hợp công nghệ chạm danh thiếp 1 chạm CLB CEO 1983.",
+    partner: "Ban Công Nghệ & Chuyển Đổi Số CEO 1983",
     icon: "trophy",
-    code: "VIONE-NFC-CARD-VIP",
+    code: "CEO1983-NFC-CARD-VIP",
     claimed: false,
   },
 ];

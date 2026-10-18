@@ -126,6 +126,7 @@ function StandaloneGuestEventRegistrationPage() {
           position: position.trim(),
           ticketType,
           ticketCount,
+          ticketPrice,
           note: note.trim(),
         }),
       }).catch((err: any) => {
@@ -152,8 +153,8 @@ function StandaloneGuestEventRegistrationPage() {
         setResult(res);
         toast.success(
           isFree
-            ? `Đăng ký thành công! Mã quay thưởng: #${res.luckyNumber}`
-            : `Đăng ký thành công! Vui lòng quét mã VietQR để thanh toán phí.`
+            ? `Đăng ký thành công! Vé và mã quay thưởng đã được gửi tới email ${email.trim()}`
+            : `Đăng ký thành công! Mã VietQR thanh toán đã được gửi về email ${email.trim()}`
         );
         return;
       }

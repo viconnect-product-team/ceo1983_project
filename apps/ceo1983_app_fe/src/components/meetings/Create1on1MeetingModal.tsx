@@ -18,6 +18,8 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 import { fetchNestApi } from "@/lib/api-client";
+import { GoogleMapAddressPicker } from "@/components/common/GoogleMapAddressPicker";
+import { DepartmentMemberTreeSelect, type MemberTreeItem } from "@/components/common/DepartmentMemberTreeSelect";
 
 const meeting1on1Schema = z.object({
   title: z.string().trim().min(1, "Tiêu đề không được phép để trống"),
@@ -359,6 +361,7 @@ export function Create1on1MeetingModal({
 
       // 4. Bắn sự kiện cập nhật thời gian thực
       window.dispatchEvent(new CustomEvent("ceo1983:calendar-updated"));
+      window.dispatchEvent(new CustomEvent("ceo1983:meetings-updated"));
       window.dispatchEvent(new CustomEvent("vione:meetings-updated"));
 
       setConflictModalData(null);
@@ -386,7 +389,7 @@ export function Create1on1MeetingModal({
                 Tạo Cuộc Gặp Kết Nối 1-on-1
               </h3>
               <p className="text-xs text-muted-foreground">
-                Đồng bộ trực tiếp với Gặp gỡ kết nối trên App CEO 1983 & ViOne Connect
+                Đồng bộ trực tiếp với Lịch kết nối giao thương Hiệp hội CEO 1983
               </p>
             </div>
           </div>
@@ -468,32 +471,22 @@ export function Create1on1MeetingModal({
               </div>
             </div>
 
-            {/* Điện thoại & Doanh nghiệp */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="font-semibold text-foreground block mb-1 flex items-center gap-1">
-                  <Phone className="h-3.5 w-3.5 text-muted-foreground" /> Số điện thoại đối tác
-                </label>
-                <input
-                  type="tel"
-                  value={partnerPhone}
-                  onChange={(e) => setPartnerPhone(e.target.value)}
-                  placeholder="VD: 0983 123 456"
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-xs"
-                />
-              </div>
-              <div>
-                <label className="font-semibold text-foreground block mb-1 flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" /> Công ty / Doanh nghiệp
-                </label>
-                <input
-                  type="text"
-                  value={partnerCompany}
-                  onChange={(e) => setPartnerCompany(e.target.value)}
-                  placeholder="VD: Công ty CP Công nghệ ViOne"
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-xs"
-                />
-              </div>
+            {/* Chọn đối tác trực tiếp từ Ban chuyên môn CSDL (Dạng Tree Select có Search) */}
+            <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
+              <DepartmentMemberTreeSelect
+                multiple={false}
+                label="Chọn đối tác từ Ban chuyên môn (CSDL Hội viên CEO 1983)"
+                placeholder="Tìm kiếm đối tác theo tên, chức danh, email, SĐT..."
+                onChange={(selectedItems) => {
+                  if (selectedItems.length > 0) {
+                    const mem = selectedItems[0];
+                    setPartnerName(mem.name);
+                    if (mem.phone) setPartnerPhone(mem.phone);
+                    if (mem.company) setPartnerCompany(mem.company);
+                    if (errors.partnerName) setErrors((prev) => ({ ...prev, partnerName: "" }));
+                  }
+                }}
+              />
             </div>
 
             {/* Ngày & Giờ */}
@@ -563,15 +556,13 @@ export function Create1on1MeetingModal({
             {/* Địa điểm hoặc Nền tảng online */}
             {venueType === "offline" ? (
               <div>
-                <label className="font-semibold text-foreground block mb-1 flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-primary" /> Địa điểm hẹn gặp
-                </label>
-                <input
-                  type="text"
+                <GoogleMapAddressPicker
+                  label="Địa điểm hẹn gặp"
+                  required
                   value={venue}
-                  onChange={(e) => setVenue(e.target.value)}
+                  onChange={(addr) => setVenue(addr)}
                   placeholder="VD: Highlands Coffee Tòa V-Tower, 649 Kim Mã, Hà Nội"
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-xs"
+                  showQuickLocations={true}
                 />
               </div>
             ) : (
