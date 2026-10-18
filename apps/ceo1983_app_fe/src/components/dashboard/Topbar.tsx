@@ -13,7 +13,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { setOpen } = useCommandPalette();
 
   return (
-    <header className="sticky top-0 z-50 flex h-14 sm:h-16 lg:h-[72px] w-full items-center justify-between gap-1.5 sm:gap-2.5 lg:gap-4 border-b border-border bg-background/95 px-2.5 sm:px-4 lg:px-8 backdrop-blur-md max-w-full transition-colors duration-200">
+    <header className="sticky top-0 z-50 flex h-14 sm:h-16 lg:h-[72px] w-full items-center justify-between gap-1.5 sm:gap-2.5 lg:gap-4 border-b border-border bg-background px-2.5 sm:px-4 lg:px-8 max-w-full transition-colors duration-200">
       <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5 flex-1 lg:flex-initial">
         <button
           onClick={onMenuClick}

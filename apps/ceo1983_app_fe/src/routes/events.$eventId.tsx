@@ -40,6 +40,7 @@ import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGat
 import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
 import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
 import { EventGuestQrPresenterModal } from "@/components/events/EventGuestQrPresenterModal";
+import { isValidDriveUrl } from "@/components/events/modals/EventDetailModal";
 import {
   type EventItem,
   type Registration,
@@ -456,17 +457,22 @@ function EventDetailPage() {
               <QrCode className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
               Mã QR Đăng Ký Khách Mời (Quét Zalo)
             </button>
-            {((event as any).photoGalleryUrl || (event as any).photo_gallery_url) && (
-              <a
-                href={(event as any).photoGalleryUrl || (event as any).photo_gallery_url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition cursor-pointer"
-              >
-                <Camera className="h-4 w-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
-                Kho ảnh sự kiện (Google Drive)
-              </a>
-            )}
+            {(() => {
+              const rawDrive = (event as any)?.photoGalleryUrl || (event as any)?.photo_gallery_url || (event as any)?.driveUrl;
+              const validDrive = isValidDriveUrl(rawDrive) ? String(rawDrive).trim() : null;
+              if (!validDrive) return null;
+              return (
+                <a
+                  href={validDrive}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition cursor-pointer"
+                >
+                  <Camera className="h-4 w-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                  Kho ảnh sự kiện (Google Drive)
+                </a>
+              );
+            })()}
             {canManage && (
               <>
                 <button

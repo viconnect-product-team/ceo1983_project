@@ -24,6 +24,7 @@ export default defineConfig({
     http: 'node:http',
   },
   routeRules: {
+    '/api/**': { proxy: `${backendTarget}/api/**` },
     '/upload/**': { proxy: `${backendTarget}/api/upload/**` },
     '/api/upload/**': { proxy: `${backendTarget}/api/upload/**` },
     '/uploads/**': { proxy: `${backendTarget}/api/upload/**` },

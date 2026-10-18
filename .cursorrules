@@ -1736,6 +1736,68 @@
   + **Tab 2: Giao Thương B2B & Hoạt Động**: Thẻ danh thiếp số công khai, Cơ hội B2B Cung - Cầu, Gian hàng sản phẩm đã đăng, Danh bạ đối tác kết nối.
   + **Tab 3: Tiện Ích & Cài Đặt**: Cổng Quản trị hệ thống, Thông báo đẩy PWA, Đổi ngôn ngữ (VN/EN), Chế độ hiển thị, Sổ tay hướng dẫn, Hỗ trợ Ban Thư Ký, Cài đặt ứng dụng PWA 1 chạm và Đăng xuất an toàn.
 
+# [BẮT BUỘC 96] Quy Chuẩn Tự Động Bắn Email Thông Báo & Nhắc Nhở Đến Hội Viên & Admin
+- Các Sự Kiện BẮT BUỘC Tự Động Gửi Email Đến Hòm Thư Hội Viên:
+  + **1. Cuộc họp mới được thêm (Offline & Online)**:
+    * Thư mời họp `sendMeetingInvitationEmail` phải chứa: Tiêu đề cuộc họp, Mã cuộc họp, Thời gian (ngày + giờ), Địa điểm tổ chức (Sapphire Hub / Văn phòng) hoặc Link phòng họp Online (Google Meet / Zoom), Host cuộc họp và Ban chuyên môn phụ trách.
+  + **2. Cuộc gặp đã lên lịch (Kết nối B2B 1-on-1)**:
+    * Thư thông báo lịch hẹn `sendConnectionAppointmentEmail` gửi cho cả 2 bên khi tạo lịch hẹn (`requested`) và khi được đối tác xác nhận đồng ý (`confirmed`), kèm địa điểm/link họp và mục đích kết nối.
+  + **3. Đăng ký vé sự kiện thành công & Hướng dẫn thanh toán phí (VietQR)**:
+    * Đăng ký vé miễn phí: Gửi vé điện tử E-Ticket kèm mã QR check-in và số may mắn Lucky Draw.
+    * Đăng ký vé có phí: Gửi hướng dẫn thanh toán VietQR Napas động (số tài khoản MB Bank, số tiền, cú pháp) đến hội viên và đồng thời gửi đến hòm thư quản trị đại diện (`vupv090120@gmail.com`).
+    * Xác nhận thanh toán vé thành công (`recordWalkInCashPayment`): Bắn ngay `sendEventPaymentSuccessEmail` kèm mã hóa đơn và số tiền đã thanh toán.
+  + **4. Thông báo niên liễm hội phí & Xác nhận thanh toán thành công**:
+    * Khi tạo hóa đơn hoặc gửi nhắc nhở: Bắn `sendMembershipFeeNotificationEmail` kèm ảnh VietQR động và thông tin tài khoản ngân hàng.
+    * Khi hội viên hoàn tất thanh toán (`markInvoicePaid`, `payMyRenewal`): Bắn ngay `sendMembershipFeeSuccessEmail` xác nhận đã gạch nợ thành công, niên khóa gia hạn và thời hạn thẻ mới.
+  + **5. Phân công công việc & Nhắc nhở đôn đốc tiến độ**:
+    * Khi giao việc (`dispatchTaskAssignmentNotification`): Bắn `sendTaskAssignmentEmail` đến hòm thư người được giao việc với đầy đủ mô tả, thời hạn hoàn thành và sản phẩm bàn giao.
+    * Khi đôn đốc tiến độ hoặc đánh giá định kỳ (`remindTask`, `evaluateProgress`): Bắn `sendTaskReminderEmail` cập nhật % tiến độ thực tế, cảnh báo quá hạn và ý kiến chỉ đạo của Lãnh đạo.
+- Nguyên Tắc Fallback Email An Toàn Tuyệt Đối:
+  + Công thức xác định địa chỉ email người nhận: `const resolvedEmail = (attendeeEmail || member.email || user.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();`
+  + Tuyệt đối không để xảy ra tình trạng nuốt lỗi (silent drop) khi hội viên chưa cập nhật email; luôn có hòm thư đại diện tiếp nhận để không bỏ sót bất kỳ giao dịch hoặc lịch hẹn nào.
 
+# [BẮT BUỘC 97] Quy Chuẩn Thiết Kế Banner "Ưu Đãi Riêng" Chuẩn Mockup Figma (Image 1)
+- Độ Trung Thực Thị Giác & Asset Đồ Họa 3D Cao Cấp:
+  + Tuyệt đối không sử dụng thumbnail mờ, ảnh chụp cắt góc méo mó hoặc ribbon xoay góc vỡ giao diện.
+  + Phải sử dụng asset đồ họa 3D hộp quà đỏ nơ vàng có sao lấp lánh sắc nét (`/images/event/banner-gift-3d.png`), được tích hợp dải alpha chuyển màu ở cạnh trái để hòa quyện 100% vào nền xanh gradient.
+- Cấu Trúc Khung & Màu Sắc Container Banner:
+  + Nền: Gradient xanh hoàng gia siêu sang trọng `bg-gradient-to-r from-[#061644] via-[#0a2777] to-[#1242a7]` kết hợp 2 đốm sáng mờ nhẹ ở góc và giữa.
+  + Bo góc `rounded-[22px]`, đổ bóng nổi `shadow-xl`, viền sáng `border-blue-400/25`.
+- Cấu Trúc Typography & Bố Cục:
+  + Dòng 1: `Ưu Đãi Riêng` in đậm nghiêng màu vàng hoàng kim `#FFB300` cùng 2 ngôi sao lấp lánh `✦ ✦` (`text-[#FFD54F] animate-pulse`).
+  + Dòng 2: `✦ Hội Viên & Đối Tác` in đậm nghiêng màu trắng tinh khôi `#FFFFFF` với ngôi sao `✦` đặt đầu dòng.
+  + Dòng mô tả: Làm nổi bật 3 quyền lợi bằng màu vàng sáng `text-[#FFD54F] font-bold`: `Chính sách trợ giá`, `Quà tặng liên kết`, `Quyền lợi giao thương`.
+  + Nút CTA: Viên thuốc `bg-[#FFA000] hover:bg-[#FFB300] text-slate-950 font-extrabold text-xs rounded-full px-3.5 py-1.5 shadow-md flex items-center gap-1` ("Xem ưu đãi ngay >").
 
+# [BẮT BUỘC 98] Quy Chuẩn Giới Hạn Hình Nền Quản Trị CRM (Background Containment)
+- Tách Biệt Tuyệt Đối Giữa Khung Điều Hướng (Sidebar, Header) Và Vùng Nội Dung (Main Dashboard):
+  + Tuyệt đối KHÔNG áp dụng `background-attachment: fixed` trên class `.bg-crm-system` vì thuộc tính này gắn hình nền vào khung nhìn trình duyệt (viewport), khiến hình ảnh lộ xuyên qua Sidebar và Topbar.
+  + Tuyệt đối KHÔNG đặt class `bg-crm-system` lên thẻ wrapper cha bao ngoài toàn trang trong `AppShell.tsx`.
+  + Class `.bg-crm-system` chỉ được phép áp dụng duy nhất trên thẻ `<main className="flex-1 min-w-0 bg-crm-system px-4 py-6 lg:px-8">`, nơi hiển thị lưới dashboard và bảng biểu dữ liệu.
+  + Khung ngoài của `AppShell.tsx` phải đặt màu nền trung tính đặc `bg-slate-50 dark:bg-slate-950`.
+  + Thẻ `<header>` trong `Topbar.tsx` phải có nền đặc `bg-background` (loại bỏ độ trong suốt hoặc blur xuyên thấu không mong muốn), đảm bảo Sidebar và Header luôn sạch sẽ, chuyên nghiệp, không bị hình nền đè lấn.
 
+# [BẮT BUỘC 99] Quy Chuẩn Độc Lập Backdrop Popup & Modal (Portal-Based Full Screen Blur)
+- Thoát Khỏi Stacking Context Của Layout Chính Bằng React Portal:
+  + Mọi Modal hoặc Popup quản trị hệ thống (như `SponsorModal`, `SponsorPackageModal`, `EventDetailModal`, v.v.) được gọi bên trong các trang quản trị thuộc `<AppShell>` BẮT BUỘC phải dùng `createPortal(..., document.body)` từ `"react-dom"`.
+  + Tuyệt đối KHÔNG render trực tiếp thẻ overlay/modal bên trong cây DOM của `<main>` hoặc `AppShell`, vì container cha chứa `Topbar` (`sticky top-0 z-50`) và `Sidebar` có stacking context riêng, sẽ khiến backdrop bị co cụm trong vùng nội dung, không phủ mờ được Header và Sidebar.
+  + Kiểm tra an toàn SSR trước khi mount Portal: `if (!open) return null;` và `if (typeof document === "undefined") return null;`.
+- Styling Chuẩn Cho Backdrop & Hộp Thoại Modal:
+  + Backdrop wrapper: `fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-4 overflow-y-auto w-screen h-screen`.
+  + Thẻ card hộp thoại: `relative flex flex-col w-full max-w-xl my-auto rounded-2xl border border-border bg-card shadow-2xl overflow-hidden max-h-[90vh] z-[10000]`.
+
+# [BẮT BUỘC 100] Quy Chuẩn Cấu Hình Nitro Reverse Proxy & Tránh Lỗi API Pending Treo Request
+- Cấu Hình Proxy Đầy Đủ Trong `nitro.config.ts`:
+  + Khối `routeRules` của Nitro BẮT BUỘC phải khai báo định tuyến chuyển tiếp cho toàn bộ namespace API: `'/api/**': { proxy: `${backendTarget}/api/**` }`.
+  + Nếu thiếu route proxy này, khi người dùng gọi API trực tiếp trên cổng Frontend (5004), máy chủ Nitro sẽ coi đó là URL trang web TanStack Start và trả về phản hồi 404 HTML, gây ra lỗi parsing JSON hoặc treo trạng thái pending vô hạn.
+- Cơ Chế Timeout Bắt Buộc Trong API Client:
+  + Mọi hàm gọi mạng trung tâm (`fetchNestApi`, `fetchNestApiFromServer`) trong `api-client.ts` BẮT BUỘC phải thiết lập `signal: options.signal || (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(15000) : undefined)` để tự động ngắt kết nối sau 15 giây, tuyệt đối không để request treo vô hạn.
+- Đồng Bộ Cấu Hình Database Trong Fast Deploy (`deploy/crm/.env.production`):
+  + File `.env.production` tại thư mục deploy CRM BẮT BUỘC phải trỏ tới container database chính thức `ceo1983-postgres-prod:5432/vione_app`, tránh việc script `fast-deploy.ps1` copy đè cấu hình IP cũ vào `.env.crm`.
+
+# [BẮT BUỘC 101] Quy Chuẩn Kiểm Tra URL & Ẩn Hoàn Toàn Liên Kết Google Drive Khi Chưa Hợp Lệ
+- Kiểm Tra Nghiêm Ngặt Định Dạng URL Trước Khi Render (`isValidDriveUrl`):
+  + Tuyệt đối KHÔNG sử dụng điều kiện truthy đơn giản `if (photoGalleryUrl)` để hiển thị nút liên kết, vì các giá trị chuỗi rỗng `""`, khoảng trắng `" "`, dấu `#`, placeholder `"null"`, `"undefined"`, hoặc chuỗi văn bản `"chưa có link ảnh"` vẫn được coi là truthy trong JavaScript.
+  + BẮT BUỘC sử dụng hàm chuẩn hóa kiểm tra URL: URL phải bắt đầu bằng `http://` hoặc `https://`, độ dài tối thiểu > 5 ký tự và không chứa các từ khóa placeholder như "chưa có", "chua co", "không có".
+  + Nếu không thỏa mãn điều kiện `isValidDriveUrl`, BẮT BUỘC phải ẩn hoàn toàn nút/trường liên kết (trả về `null`), không để nút hiển thị mà bấm vào lại mở ra trang lỗi 404 hoặc thông báo không hợp lệ.
+  + Tại Backend NestJS (`events.service.ts`), BẮT BUỘC dùng `sanitizeGalleryUrl` làm sạch trường dữ liệu `photo_gallery_url` trước khi lưu vào CSDL và trước khi trả về qua API.

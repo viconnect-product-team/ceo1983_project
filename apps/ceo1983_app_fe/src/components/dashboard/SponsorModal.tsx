@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Handshake, X, Sparkles, Building2, Package, Check } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import type { Sponsor, SponsorPackage } from "@/lib/sponsors.functions";
@@ -96,6 +97,7 @@ export function SponsorModal({
   }, [open, initial]);
 
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
   // Handle selecting an existing package to auto-populate fields
   const handleSelectPackage = (pkgId: string) => {
@@ -119,15 +121,15 @@ export function SponsorModal({
     onSubmit(draft);
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-4 overflow-y-auto w-screen h-screen"
       role="dialog"
       aria-modal="true"
       onClick={() => !submitting && onClose()}
     >
       <div
-        className="relative flex flex-col w-full max-w-xl my-auto rounded-2xl border border-border bg-card shadow-2xl overflow-hidden max-h-[90vh]"
+        className="relative flex flex-col w-full max-w-xl my-auto rounded-2xl border border-border bg-card shadow-2xl overflow-hidden max-h-[90vh] z-[10000]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -402,6 +404,7 @@ export function SponsorModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

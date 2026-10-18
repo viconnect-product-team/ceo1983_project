@@ -28,6 +28,23 @@ function parseJsonArraySafe(val: any): any[] {
   return [];
 }
 
+function sanitizeGalleryUrl(url?: any): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (
+    trimmed === '#' ||
+    trimmed === 'null' ||
+    trimmed === 'undefined' ||
+    trimmed === 'false' ||
+    trimmed.toLowerCase().includes('chưa có') ||
+    trimmed.toLowerCase().includes('chua co') ||
+    !/^https?:\/\//i.test(trimmed)
+  ) {
+    return '';
+  }
+  return trimmed;
+}
+
 @Injectable()
 export class EventsService implements OnModuleInit {
   private readonly logger = new Logger(EventsService.name);
@@ -196,7 +213,7 @@ export class EventsService implements OnModuleInit {
       qrStaff: parseJsonArraySafe(r.qr_scanners),
       qrScanners: parseJsonArraySafe(r.qr_scanners),
       sponsors: parseJsonArraySafe(r.sponsors),
-      photoGalleryUrl: r.photo_gallery_url || r.photoGalleryUrl || '',
+      photoGalleryUrl: sanitizeGalleryUrl(r.photo_gallery_url || r.photoGalleryUrl),
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       associationId: r.association_id,
@@ -478,7 +495,7 @@ export class EventsService implements OnModuleInit {
     const sponsorsJson = JSON.stringify(Array.isArray(rawSponsors) ? rawSponsors : (rawSponsors ? [rawSponsors] : []));
     const desc = data.description ?? '';
     const evImg = data.image || data.banner || null;
-    const photoGallery = data.photoGalleryUrl || (data as any).photo_gallery_url || '';
+    const photoGallery = sanitizeGalleryUrl(data.photoGalleryUrl || (data as any).photo_gallery_url);
 
     const rawDate = data.date ? String(data.date).trim() : '';
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : new Date().toISOString().slice(0, 10);
@@ -602,7 +619,7 @@ export class EventsService implements OnModuleInit {
     const rawSponsors = data.sponsors !== undefined ? data.sponsors : current.sponsors;
     const sponsorsJson = JSON.stringify(Array.isArray(rawSponsors) ? rawSponsors : (rawSponsors ? [rawSponsors] : []));
     const desc = data.description !== undefined ? data.description : (current.description ?? '');
-    const photoGallery = data.photoGalleryUrl !== undefined ? data.photoGalleryUrl : (current.photo_gallery_url ?? '');
+    const photoGallery = data.photoGalleryUrl !== undefined ? sanitizeGalleryUrl(data.photoGalleryUrl) : sanitizeGalleryUrl(current.photo_gallery_url);
 
     const rawDate = date ? String(date).trim() : '';
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : (current.date ? (current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10)) : new Date().toISOString().slice(0, 10));
@@ -763,8 +780,8 @@ export class EventsService implements OnModuleInit {
         ticketCode: myReg ? String(myReg.id) : null,
         luckyNumber: myReg?.lucky_number ? `#${myReg.lucky_number}` : null,
         ticketType: myReg?.ticket_type || (ticketPriceNum === 0 ? 'Vé Tiêu Chuẩn' : 'Vé VIP Doanh Nhân'),
-        photoGalleryUrl: e.photo_gallery_url || '',
-        driveUrl: e.photo_gallery_url || '',
+        photoGalleryUrl: sanitizeGalleryUrl(e.photo_gallery_url),
+        driveUrl: sanitizeGalleryUrl(e.photo_gallery_url),
         qrScanners: parseJsonArraySafe(e.qr_scanners),
         qrStaff: parseJsonArraySafe(e.qr_scanners),
         sponsors: parseJsonArraySafe(e.sponsors),
@@ -1339,6 +1356,28 @@ export class EventsService implements OnModuleInit {
         now()
       )
     `.catch((err) => console.error('Error inserting walk-in transaction:', err));
+
+    // 3. Gửi email xác nhận thanh toán vé sự kiện thành công
+    try {
+      const recipientEmail = (reg.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+      const eventRows = await this.prisma.$queryRaw<any[]>`
+        SELECT title FROM public.events WHERE id = ${reg.event_id}::uuid LIMIT 1
+      `.catch(() => []);
+      const eventTitle = eventRows[0]?.title || 'Sự kiện Doanh nhân CEO 1983';
+
+      await this.mailService.sendEventPaymentSuccessEmail({
+        to: recipientEmail,
+        fullName: reg.member_name || 'Quý Hội viên',
+        eventTitle,
+        ticketType: reg.ticket_type || 'Vé tham dự sự kiện',
+        registrationId,
+        amountPaid: amount,
+        paymentMethod: 'Tiền mặt tại bàn đón tiếp',
+        luckyNumber: reg.lucky_number ? String(reg.lucky_number) : undefined,
+      });
+    } catch (mailErr: any) {
+      this.logger.warn(`Failed to dispatch event payment success email: ${mailErr?.message}`);
+    }
 
     return { ok: true, id: registrationId, txCode, amount, paymentStatus: 'paid', paymentMethod: 'cash' };
   }

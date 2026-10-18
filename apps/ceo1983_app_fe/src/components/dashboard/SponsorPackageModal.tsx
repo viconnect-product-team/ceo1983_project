@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Trash2, X, Package } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import type { SponsorPackage } from "@/lib/sponsors.functions";
@@ -75,6 +76,7 @@ export function SponsorPackageModal({
   }, [open, initial]);
 
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
   const setBenefit = (i: number, v: string) =>
     setDraft((d) => ({ ...d, benefits: d.benefits.map((b, idx) => (idx === i ? v : b)) }));
@@ -93,16 +95,16 @@ export function SponsorPackageModal({
     });
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-4 overflow-y-auto w-screen h-screen"
       role="dialog"
       aria-modal="true"
       aria-label={initial ? t("pkg.edit") : t("pkg.create")}
       onClick={() => !submitting && onClose()}
     >
       <div
-        className="relative flex flex-col w-full max-w-xl my-auto rounded-2xl border border-border bg-card shadow-2xl overflow-hidden max-h-[88vh]"
+        className="relative flex flex-col w-full max-w-xl my-auto rounded-2xl border border-border bg-card shadow-2xl overflow-hidden max-h-[88vh] z-[10000]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -302,6 +304,7 @@ export function SponsorPackageModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -90,11 +90,13 @@
   background-repeat: no-repeat;
   background-position: top center;
   background-size: cover;
-  background-attachment: fixed;
 }
 
 .dark .bg-crm-system {
   background-image: linear-gradient(to bottom, rgba(11, 17, 32, 0.15), rgba(11, 17, 32, 0.35)), url('/Background.png');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
 }
 
 :root {

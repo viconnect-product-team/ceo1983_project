@@ -40,6 +40,25 @@ export interface EventDetailModalProps {
   busy: string | null;
 }
 
+export function isValidDriveUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "#" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "false" ||
+    trimmed.toLowerCase().includes("chưa có") ||
+    trimmed.toLowerCase().includes("chua co") ||
+    trimmed.toLowerCase().includes("không có") ||
+    trimmed.toLowerCase().includes("khong co")
+  ) {
+    return false;
+  }
+  return /^https?:\/\//i.test(trimmed);
+}
+
 export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   selectedEvent,
   events,
@@ -64,6 +83,13 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     (rawSelImg ? resolveMediaUrl(rawSelImg) || rawSelImg : null) ||
     defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];
   const selectedAgenda = getEventAgenda(selectedEvent, selectedIndex >= 0 ? selectedIndex : 0);
+
+  const rawDriveUrl =
+    selectedEvent?.photoGalleryUrl ||
+    (selectedEvent as any)?.photo_gallery_url ||
+    (selectedEvent as any)?.driveUrl ||
+    (selectedAgenda as any)?.photoGalleryUrl;
+  const validDriveUrl = isValidDriveUrl(rawDriveUrl) ? String(rawDriveUrl).trim() : null;
 
   const sponsorList: Array<{ name: string; tier?: string }> = React.useMemo(() => {
     let list = selectedEvent?.sponsors;
@@ -262,11 +288,11 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Link ảnh sự kiện (Google Drive / Cloud storage) dành cho hội viên và ban truyền thông */}
-              {(selectedEvent.photoGalleryUrl || (selectedEvent as any).photo_gallery_url || (selectedEvent as any).driveUrl || selectedAgenda.photoGalleryUrl) && (
+              {/* Link ảnh sự kiện (Google Drive / Cloud storage) dành cho hội viên và ban truyền thông - Ẩn hoàn toàn nếu chưa có link hợp lệ */}
+              {validDriveUrl && (
                 <div className="pt-2 border-t border-amber-300/40">
                   <a
-                    href={selectedEvent.photoGalleryUrl || (selectedEvent as any).photo_gallery_url || (selectedEvent as any).driveUrl || selectedAgenda.photoGalleryUrl}
+                    href={validDriveUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"

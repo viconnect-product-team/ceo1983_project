@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
 import { AdminRepository } from './admin.repository';
+import { MailService } from '../mail/mail.service';
 
 export const DEMO_LEAD_STATUSES = [
   'new',
@@ -22,6 +23,7 @@ export class AdminService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly gateway: ConnectAppGateway,
     private readonly adminRepo: AdminRepository,
+    @Optional() private readonly mailService?: MailService,
   ) {}
 
   async onModuleInit() {
@@ -356,6 +358,22 @@ export class AdminService implements OnModuleInit {
       }
     }
 
+    if (this.mailService) {
+      const methodLabel = method === 'bank' ? 'Chuyển khoản VietQR' : method === 'cash' ? 'Tiền mặt' : method === 'card' ? 'Thẻ ngân hàng' : 'Ví điện tử';
+      const recipientEmail = (existing.invoice.member?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+      const memberName = existing.invoice.member?.name || 'Quý Hội viên';
+
+      this.mailService.sendMembershipFeeSuccessEmail({
+        to: recipientEmail,
+        memberName,
+        invoiceNo: existing.invoice.invoiceNo || id,
+        year: existing.invoice.year || new Date().getFullYear(),
+        amount: Number(existing.invoice.amount || 0),
+        paidDate: today,
+        paymentMethod: methodLabel,
+      }).catch((err) => console.warn('[markInvoicePaid] sendMembershipFeeSuccessEmail error:', err?.message));
+    }
+
     const updated = await this.getInvoiceById(id);
     return updated.invoice;
   }
@@ -458,6 +476,25 @@ export class AdminService implements OnModuleInit {
               VALUES (gen_random_uuid(), 'ADMIN', ${String(memberCode).toLowerCase()}, ${actionMsg}, NOW())
             `.catch(() => {});
           }
+
+          if (this.mailService) {
+            const recipientEmail = (existing.invoice.member?.email || memberRows[0]?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+            const memberName = existing.invoice.member?.name || memberRows[0]?.name || 'Quý Hội viên';
+
+            this.mailService.sendMembershipFeeNotificationEmail({
+              to: recipientEmail,
+              memberName,
+              invoiceNo,
+              year: existing.invoice.year || new Date().getFullYear(),
+              amount: invoiceAmount,
+              dueDate: existing.invoice.dueDate || 'Hôm nay',
+              vietQrUrl,
+              bankAccount: '0988888888',
+              bankOwner: 'CLB DOANH NHAN CEO 1983',
+              bankName: 'MB Bank',
+              reminderCount: (existing.invoice.member?.reminderCount || 0) + 1,
+            }).catch((err) => console.warn('[addInvoiceReminder] sendMembershipFeeNotificationEmail error:', err?.message));
+          }
         }
       } catch (e: any) {
         console.warn('[addInvoiceReminder] Failed to push notifications:', e?.message);
@@ -482,6 +519,29 @@ export class AdminService implements OnModuleInit {
     `;
 
     const created = await this.getInvoiceById(id);
+
+    if (this.mailService) {
+      const invoiceAmount = Number(created.invoice.amount || 0);
+      const invoiceNo = created.invoice.invoiceNo || id;
+      const vietQrUrl = `https://img.vietqr.io/image/MB-0988888888-compact2.png?amount=${invoiceAmount}&addInfo=${encodeURIComponent(invoiceNo)}`;
+      const recipientEmail = (created.invoice.member?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+      const memberName = created.invoice.member?.name || 'Quý Hội viên';
+
+      this.mailService.sendMembershipFeeNotificationEmail({
+        to: recipientEmail,
+        memberName,
+        invoiceNo,
+        year: created.invoice.year || new Date().getFullYear(),
+        amount: invoiceAmount,
+        dueDate: created.invoice.dueDate || `${year}-12-31`,
+        vietQrUrl,
+        bankAccount: '0988888888',
+        bankOwner: 'CLB DOANH NHAN CEO 1983',
+        bankName: 'MB Bank',
+        reminderCount: 0,
+      }).catch((err) => console.warn('[createInvoice] sendMembershipFeeNotificationEmail error:', err?.message));
+    }
+
     return created.invoice;
   }
 

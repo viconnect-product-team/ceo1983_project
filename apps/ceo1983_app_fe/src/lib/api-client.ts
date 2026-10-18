@@ -468,8 +468,14 @@ export async function fetchNestApi<T = any>(
   }
 
   const baseUrl = getBaseApiUrl();
+  const signal =
+    options.signal ||
+    (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
+      ? AbortSignal.timeout(15000)
+      : undefined);
   const response = await fetch(`${baseUrl}${mappedEndpoint}`, {
     ...options,
+    signal,
     body: requestBody,
     headers,
   });
@@ -508,13 +514,19 @@ export async function fetchNestApiFromServer<T = any>(
   }
 
   const baseUrl = getBaseApiUrl();
+  const signal =
+    options.signal ||
+    (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
+      ? AbortSignal.timeout(15000)
+      : undefined);
   const response = await fetch(`${baseUrl}${mappedEndpoint}`, {
     ...options,
+    signal,
     body: requestBody,
     headers,
   });
 
-  return handleResponse(response);
+  return handleResponse(response, endpoint);
 }
 
 export async function uploadFileToNest(

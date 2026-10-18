@@ -5,9 +5,10 @@ import { AdminRepository } from './admin.repository';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { ConnectAppModule } from '../connect-app/connect-app.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ConnectAppModule],
+  imports: [PrismaModule, AuthModule, ConnectAppModule, MailModule],
   controllers: [AdminController],
   providers: [AdminService, AdminRepository],
   exports: [AdminService, AdminRepository],

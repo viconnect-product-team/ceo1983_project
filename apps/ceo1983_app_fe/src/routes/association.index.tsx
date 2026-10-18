@@ -1314,62 +1314,56 @@ function Home() {
           )}
         </div>
 
-        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (LUNG LINH CHUẨN DESIGN) ── */}
+        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (CHUẨN IMAGE 1 FIGMA) ── */}
         <Link
           to="/association/benefits"
-          className="self-stretch h-40 relative bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-lg border border-amber-500/25 block cursor-pointer group active:scale-[0.99] transition duration-200"
+          className="self-stretch min-h-[164px] relative bg-gradient-to-r from-[#061644] via-[#0a2777] to-[#1242a7] rounded-[22px] overflow-hidden shadow-xl border border-blue-400/25 block cursor-pointer group active:scale-[0.99] transition duration-200"
         >
-          {/* Background image */}
+          {/* Subtle background glow accents */}
+          <div className="absolute -top-12 -left-12 w-44 h-44 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-48 h-32 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* 3D Red Gift Box with gold ribbon and stars (Right side, seamless blend) */}
           <img
-            className="w-full h-60 left-0 top-[-21.24px] absolute object-cover"
-            src="/images/event/image-10.png"
-            alt="Ưu đãi hội viên"
-          />
-          {/* Ribbon mix blend */}
-          <img
-            className="w-80 h-56 left-[236.07px] top-[-216px] absolute origin-top-left rotate-[38.33deg] mix-blend-hard-light pointer-events-none"
-            src="/images/event/image-12.png"
-            alt=""
-          />
-          {/* Gift box 3D */}
-          <img
-            className="w-48 h-40 right-[-10px] top-[-0.24px] absolute object-contain pointer-events-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)]"
-            src="/images/event/image-13.png"
-            alt="Quà tặng"
+            src="/images/event/banner-gift-3d.png"
+            alt="Quà tặng ưu đãi"
+            className="absolute right-0 top-0 bottom-0 h-full w-[48%] sm:w-[45%] max-w-[280px] object-cover object-left pointer-events-none select-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)] group-hover:scale-105 transition-transform duration-500"
           />
 
-          {/* Heading Box */}
-          <div className="w-56 h-14 left-[15.09px] top-[11.61px] absolute pointer-events-none">
-            <div className="left-0 top-[2.36px] absolute text-amber-500 text-2xl font-bold font-sans leading-7 tracking-wide [text-shadow:_0px_0px_37px_rgb(255_186_0_/_1.00)]">
-              Ưu Đãi Riêng
+          {/* Left Content Area */}
+          <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-5 max-w-[62%] sm:max-w-[60%]">
+            {/* Typography Header */}
+            <div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[21px] sm:text-2xl font-black italic tracking-wide text-[#FFB300] drop-shadow-[0_2px_12px_rgba(255,179,0,0.65)] font-sans">
+                  Ưu Đãi Riêng
+                </span>
+                <span className="text-[#FFD54F] text-xs sm:text-sm font-bold animate-pulse tracking-widest">
+                  ✦ ✦
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[#FFD54F] text-xs font-bold">✦</span>
+                <span className="text-[15px] sm:text-[17px] font-black italic text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] font-sans tracking-wide">
+                  Hội Viên &amp; Đối Tác
+                </span>
+              </div>
+
+              {/* Subtext description with highlighted keywords */}
+              <p className="text-[11px] sm:text-xs text-white/95 font-normal leading-relaxed mt-1.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                Khám phá các{" "}
+                <span className="text-[#FFD54F] font-bold">Chính sách trợ giá</span>,{" "}
+                <span className="text-[#FFD54F] font-bold">Quà tặng liên kết</span>,{" "}
+                <span className="text-[#FFD54F] font-bold">Quyền lợi giao thương</span>{" "}
+                dành riêng cho bạn
+              </p>
             </div>
-            <div className="left-[2px] top-[28px] absolute text-white text-base font-sans font-semibold leading-8 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              Hội Viên &amp; Đối Tác
+
+            {/* Pill CTA Button */}
+            <div className="mt-3.5 inline-flex items-center gap-1 self-start px-3.5 py-1.5 bg-[#FFA000] hover:bg-[#FFB300] group-hover:shadow-[0_4px_16px_rgba(255,160,0,0.5)] active:scale-95 text-slate-950 text-xs font-extrabold rounded-full shadow-md transition-all">
+              <span>Xem ưu đãi ngay</span>
+              <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
             </div>
-            <div className="w-3.5 h-4 left-[151.81px] top-[11.85px] absolute opacity-40 bg-gradient-to-tr from-purple-200 to-amber-300 shadow-[0px_0px_61px_0px_rgba(218,181,255,0.90)] rounded-full pointer-events-none" />
-            <div className="w-2 h-2.5 left-[165.39px] top-[7.33px] absolute opacity-40 bg-gradient-to-tr from-purple-200 to-amber-300 shadow-[0px_0px_61px_0px_rgba(218,181,255,0.90)] rounded-full pointer-events-none" />
-            <div className="w-3 h-3.5 left-[3px] top-[34.34px] absolute opacity-40 bg-gradient-to-tr from-purple-200 to-amber-300 shadow-[0px_0px_79px_0px_rgba(218,181,255,0.90)] rounded-full pointer-events-none" />
-          </div>
-
-          {/* Subtext description */}
-          <div className="max-w-[62%] left-[15.09px] top-[74px] absolute pointer-events-none">
-            <span className="text-white/90 text-xs font-normal font-sans leading-4 tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              Khám phá các{" "}
-            </span>
-            <span className="text-amber-400 font-semibold text-xs font-sans leading-4 tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              Chính sách trợ giá, Quà tặng liên kết, Quyền lợi giao thương
-            </span>
-            <span className="text-white text-xs font-normal font-sans leading-4 tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              {" "}dành riêng cho bạn
-            </span>
-          </div>
-
-          {/* Button Xem ưu đãi ngay */}
-          <div className="px-3.5 py-1.5 left-[15.09px] top-[122px] absolute bg-amber-500 group-hover:bg-amber-400 rounded-full inline-flex justify-center items-center gap-1.5 shadow-md active:scale-95 transition-all">
-            <span className="text-slate-950 text-xs font-bold font-sans leading-none">
-              Xem ưu đãi ngay
-            </span>
-            <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
           </div>
         </Link>
 

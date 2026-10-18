@@ -2068,6 +2068,29 @@ export class MembersService {
       WHERE user_id = ${userId}::uuid
     `.catch(() => null);
 
+    // Send confirmation email for successful fee payment / renewal
+    try {
+      const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+      const memRows = await this.prisma.$queryRaw<any[]>`
+        SELECT name, email, code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+      const memberName = memRows[0]?.name || user?.name || 'Quý Hội viên';
+      const recipientEmail = (memRows[0]?.email || user?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+      const currentYear = new Date().getFullYear();
+
+      await this.mailService.sendMembershipFeeSuccessEmail({
+        to: recipientEmail,
+        memberName,
+        invoiceNo: ref,
+        year: currentYear,
+        amount: Number(quote.amount || 15000000),
+        paidDate: new Date().toISOString().slice(0, 10),
+        paymentMethod: body.method === 'bank' ? 'Chuyển khoản VietQR' : body.method || 'Cổng thanh toán điện tử',
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to send membership fee success email for renewal: ${err?.message}`);
+    }
+
     return {
       success: true,
       reference: ref,

@@ -94,6 +94,119 @@ export interface SendRegistrationReceivedEmailOptions {
   memberId?: string;
 }
 
+export interface SendMeetingInvitationEmailOptions {
+  to: string;
+  recipientName: string;
+  meetingTitle: string;
+  meetingCode?: string;
+  meetingType?: 'online' | 'offline' | 'hybrid' | string;
+  date: string;
+  time: string;
+  venueOrLink: string;
+  hostName: string;
+  hostCompany?: string;
+  department?: string;
+  notes?: string;
+  portalUrl?: string;
+}
+
+export interface SendConnectionAppointmentEmailOptions {
+  to: string;
+  recipientName: string;
+  partnerName: string;
+  partnerCompany?: string;
+  partnerPhone?: string;
+  status?: 'requested' | 'confirmed' | 'declined' | string;
+  date: string;
+  time: string;
+  venueOrLink: string;
+  venueType?: 'online' | 'offline' | string;
+  purpose?: string;
+  notes?: string;
+  portalUrl?: string;
+}
+
+export interface SendEventPaymentSuccessEmailOptions {
+  to: string;
+  fullName: string;
+  phone?: string;
+  company?: string;
+  eventTitle: string;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
+  registrationId: string;
+  ticketType?: string;
+  ticketCount?: number;
+  luckyNumber?: string;
+  amountPaid: number;
+  paymentMethod?: string;
+  qrCodeUrl?: string;
+  portalUrl?: string;
+}
+
+export interface SendMembershipFeeNotificationEmailOptions {
+  to: string;
+  memberName: string;
+  memberCode?: string;
+  companyName?: string;
+  invoiceNo: string;
+  year: number;
+  amount: number;
+  dueDate: string;
+  bankAccount?: string;
+  bankName?: string;
+  bankOwner?: string;
+  vietQrUrl?: string;
+  portalUrl?: string;
+  reminderCount?: number;
+}
+
+export interface SendMembershipFeeSuccessEmailOptions {
+  to: string;
+  memberName: string;
+  memberCode?: string;
+  companyName?: string;
+  invoiceNo: string;
+  year: number;
+  amount: number;
+  paidDate?: string;
+  newTermEnd?: string;
+  paymentMethod?: string;
+  portalUrl?: string;
+}
+
+export interface SendTaskAssignmentEmailOptions {
+  to: string;
+  assigneeName: string;
+  taskCode: string;
+  taskTitle: string;
+  department: string;
+  assignedBy: string;
+  assignedByRole?: string;
+  priority: string;
+  startDate?: string;
+  dueDate: string;
+  description?: string;
+  deliverables?: string;
+  portalUrl?: string;
+}
+
+export interface SendTaskReminderEmailOptions {
+  to: string;
+  assigneeName: string;
+  taskCode: string;
+  taskTitle: string;
+  department: string;
+  reminderCount: number;
+  remindedBy: string;
+  dueDate: string;
+  currentProgress?: number;
+  status?: string;
+  evaluationFeedback?: string;
+  portalUrl?: string;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -1393,6 +1506,734 @@ export class MailService {
     const existing = await this.getTemplate(id);
     if (!existing) return false;
     return this.templatesStore.delete(existing.id);
+  }
+
+  /**
+   * 1. Gửi email thư mời tham dự cuộc họp (Cả Trực tiếp Offline và Trực tuyến Online)
+   */
+  async sendMeetingInvitationEmail(options: SendMeetingInvitationEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      recipientName,
+      meetingTitle,
+      meetingCode,
+      meetingType = 'offline',
+      date,
+      time,
+      venueOrLink,
+      hostName,
+      hostCompany,
+      department,
+      notes,
+      portalUrl,
+    } = options;
+
+    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const isOnline = meetingType === 'online' || (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/meetings';
+    const subject = `[CLB CEO 1983] Thư Mời Tham Dự ${isOnline ? 'Cuộc Họp Online' : 'Cuộc Họp Trực Tiếp'}: ${meetingTitle} - ${date}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.5); color: #FFD700; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+    .content { padding: 28px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .card-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #003B95; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #003B95; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    .btn-wrap { text-align: center; margin: 26px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 30px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; line-height: 1.6; }
+    .footer-brand { color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ ${isOnline ? 'Cuộc Họp Trực Tuyến Online' : 'Lịch Họp Trực Tiếp Offline'} ✦</div>
+      <h1 class="title">THƯ MỜI THAM DỰ CUỘC HỌP</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${recipientName}</strong>,</div>
+      <div class="intro">
+        Ban Tổ chức trân trọng kính mời Anh/Chị tham dự cuộc họp sau đây của Hiệp hội CEO 1983:
+      </div>
+      <div class="card-box">
+        <div class="card-title">📌 Thông Tin Chi Tiết Cuộc Họp</div>
+        <div class="info-row"><span class="info-label">Tên cuộc họp:</span><span class="info-value" style="color: #003B95;">${meetingTitle}</span></div>
+        ${meetingCode ? `<div class="info-row"><span class="info-label">Mã cuộc họp:</span><span class="info-value">${meetingCode}</span></div>` : ''}
+        <div class="info-row"><span class="info-label">Thời gian:</span><span class="info-value" style="color: #d97706;">${time} ngày ${date}</span></div>
+        <div class="info-row"><span class="info-label">Hình thức:</span><span class="info-value">${isOnline ? '💻 Trực tuyến (Online Meeting)' : '🏢 Gặp mặt trực tiếp (Offline)'}</span></div>
+        <div class="info-row"><span class="info-label">${isOnline ? 'Đường link họp:' : 'Địa điểm:'}</span><span class="info-value">${isOnline ? `<a href="${venueOrLink}" target="_blank" style="color:#0284c7;word-break:break-all;">${venueOrLink}</a>` : venueOrLink}</span></div>
+        <div class="info-row"><span class="info-label">Chủ trì / Tổ chức:</span><span class="info-value">${hostName}${hostCompany ? ` (${hostCompany})` : ''}</span></div>
+        ${department ? `<div class="info-row"><span class="info-label">Ban / Khối:</span><span class="info-value">${department}</span></div>` : ''}
+        ${notes ? `<div class="info-row"><span class="info-label">Ghi chú:</span><span class="info-value" style="font-weight: 500; font-style: italic;">${notes}</span></div>` : ''}
+      </div>
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">${isOnline ? '💻 Vào Phòng Họp Trực Tuyến' : '📅 Xem Chi Tiết Trên App Hiệp Hội'}</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[MEETING_INVITATION] ${meetingTitle} to ${recipientName} (${cleanTo})`,
+    });
+  }
+
+  /**
+   * 2. Gửi email cuộc gặp kết nối giao thương 1-on-1 (Lời mời hẹn gặp & Xác nhận lịch hẹn)
+   */
+  async sendConnectionAppointmentEmail(options: SendConnectionAppointmentEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      recipientName,
+      partnerName,
+      partnerCompany,
+      partnerPhone,
+      status = 'requested',
+      date,
+      time,
+      venueOrLink,
+      venueType = 'online',
+      purpose,
+      notes,
+      portalUrl,
+    } = options;
+
+    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const isConfirmed = status === 'confirmed' || status === 'accepted';
+    const isOnline = venueType === 'online' || (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/business-connect';
+
+    const subject = isConfirmed
+      ? `[CLB CEO 1983] Xác Nhận Lịch Hẹn Kết Nối 1-1 Thành Công với ${partnerName} - ${date}`
+      : `[CLB CEO 1983] Lời Mời Hẹn Gặp Kết Nối Giao Thương 1-1 từ Doanh Nhân ${partnerName}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.5); color: #FFD700; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+    .content { padding: 28px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .card-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #d97706; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #d97706; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    .btn-wrap { text-align: center; margin: 26px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 30px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; line-height: 1.6; }
+    .footer-brand { color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ ${isConfirmed ? 'Lịch Hẹn Kết Nối Đã Xác Nhận' : 'Lời Mời Hẹn Gặp Kết Nối 1-1'} ✦</div>
+      <h1 class="title">KẾT NỐI GIAO THƯƠNG B2B</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${recipientName}</strong>,</div>
+      <div class="intro">
+        ${isConfirmed
+          ? `Lịch hẹn kết nối giao thương 1-1 giữa Anh/Chị và <strong>${partnerName}</strong> đã được xác nhận thành công trên hệ thống Hiệp Hội CEO 1983.`
+          : `Doanh nhân <strong>${partnerName}</strong> ${partnerCompany ? `(đại diện <strong>${partnerCompany}</strong>)` : ''} vừa gửi lời mời hẹn gặp kết nối giao thương 1-1 tới Anh/Chị.`
+        }
+      </div>
+      <div class="card-box">
+        <div class="card-title">🤝 Chi Tiết Lịch Hẹn Kết Nối</div>
+        <div class="info-row"><span class="info-label">Đối tác:</span><span class="info-value" style="color: #003B95;">${partnerName}</span></div>
+        ${partnerCompany ? `<div class="info-row"><span class="info-label">Doanh nghiệp:</span><span class="info-value">${partnerCompany}</span></div>` : ''}
+        ${partnerPhone ? `<div class="info-row"><span class="info-label">Điện thoại liên hệ:</span><span class="info-value">${partnerPhone}</span></div>` : ''}
+        <div class="info-row"><span class="info-label">Thời gian:</span><span class="info-value" style="color: #d97706;">${time} ngày ${date}</span></div>
+        <div class="info-row"><span class="info-label">Hình thức:</span><span class="info-value">${isOnline ? '💻 Trực tuyến (Online Room)' : '🏢 Gặp mặt trực tiếp (Offline)'}</span></div>
+        <div class="info-row"><span class="info-label">${isOnline ? 'Đường link phòng họp:' : 'Địa điểm:'}</span><span class="info-value">${isOnline ? `<a href="${venueOrLink}" target="_blank" style="color:#0284c7;word-break:break-all;">${venueOrLink}</a>` : venueOrLink}</span></div>
+        <div class="info-row"><span class="info-label">Mục đích kết nối:</span><span class="info-value" style="font-weight: 500;">${purpose || notes || 'Gặp gỡ giao thương và xúc tiến hợp tác'}</span></div>
+      </div>
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở App Để Xem & Phản Hồi</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[CONNECTION_APPOINTMENT] ${partnerName} -> ${recipientName} (${cleanTo})`,
+    });
+  }
+
+  /**
+   * 3. Gửi email xác nhận thanh toán vé sự kiện thành công (Vé điện tử & Mã QR Check-in)
+   */
+  async sendEventPaymentSuccessEmail(options: SendEventPaymentSuccessEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      phone,
+      company,
+      eventTitle,
+      eventDate,
+      eventTime,
+      eventLocation,
+      registrationId,
+      ticketType = 'Vé chính thức',
+      ticketCount = 1,
+      luckyNumber,
+      amountPaid,
+      paymentMethod = 'VietQR / Chuyển khoản',
+      qrCodeUrl,
+      portalUrl,
+    } = options;
+
+    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/events';
+    const subject = `[CLB CEO 1983] Xác Nhận Thanh Toán Vé Sự Kiện Thành Công — ${eventTitle} (Mã vé: #${registrationId})`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e; color: #86efac; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+    .content { padding: 28px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .card-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #16a34a; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #16a34a; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    .qr-wrap { text-align: center; margin: 20px 0; padding: 16px; background: #ffffff; border-radius: 12px; border: 1px dashed #cbd5e1; }
+    .qr-img { width: 170px; height: 170px; object-fit: contain; }
+    .btn-wrap { text-align: center; margin: 26px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 30px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; line-height: 1.6; }
+    .footer-brand { color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✓ ĐÃ THANH TOÁN THÀNH CÔNG</div>
+      <h1 class="title">XÁC NHẬN THANH TOÁN VÉ</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
+      <div class="intro">
+        Ban Tổ chức xin trân trọng thông báo: Khoản thanh toán vé tham dự sự kiện <strong>${eventTitle}</strong> của Anh/Chị đã được ghi nhận thanh toán thành công vào hệ thống.
+      </div>
+      <div class="card-box">
+        <div class="card-title">🎟️ Thông Tin Vé & Check-in Chính Thức</div>
+        <div class="info-row"><span class="info-label">Sự kiện:</span><span class="info-value" style="color: #003B95;">${eventTitle}</span></div>
+        <div class="info-row"><span class="info-label">Thời gian:</span><span class="info-value">${eventTime ? `${eventTime}, ` : ''}${eventDate || 'Theo lịch trình'}</span></div>
+        <div class="info-row"><span class="info-label">Địa điểm:</span><span class="info-value">${eventLocation || 'Hà Nội'}</span></div>
+        <div class="info-row"><span class="info-label">Mã vé điện tử:</span><span class="info-value" style="color: #16a34a;">#${registrationId}</span></div>
+        <div class="info-row"><span class="info-label">Hạng vé:</span><span class="info-value">${ticketType} (x${ticketCount})</span></div>
+        <div class="info-row"><span class="info-label">Số tiền đã thanh toán:</span><span class="info-value" style="color: #d97706; font-size: 15px;">${amountPaid.toLocaleString('vi-VN')} VNĐ</span></div>
+        <div class="info-row"><span class="info-label">Phương thức:</span><span class="info-value">${paymentMethod}</span></div>
+        ${luckyNumber ? `<div class="info-row"><span class="info-label">Con số may mắn (Lucky Draw):</span><span class="info-value" style="color: #e11d48; font-size: 16px;">#${luckyNumber}</span></div>` : ''}
+      </div>
+
+      ${qrCodeUrl ? `
+      <div class="qr-wrap">
+        <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">MÃ QR CHECK-IN TẠI QUẦY LỄ TÂN</div>
+        <img src="${qrCodeUrl}" alt="QR Check-in" class="qr-img" />
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Anh/Chị vui lòng xuất trình mã QR này tại quầy đón tiếp để in thẻ và nhận quà.</div>
+      </div>
+      ` : ''}
+
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">🎟️ Xem Vé Trên App CEO 1983</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[EVENT_PAYMENT_SUCCESS] ${eventTitle} - ${registrationId} (${cleanTo})`,
+    });
+  }
+
+  /**
+   * 4. Gửi email thông báo hội phí thường niên & nhắc phí kèm mã VietQR
+   */
+  async sendMembershipFeeNotificationEmail(options: SendMembershipFeeNotificationEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      memberName,
+      memberCode,
+      companyName,
+      invoiceNo,
+      year,
+      amount,
+      dueDate,
+      bankAccount = '1983000000',
+      bankName = 'MB Bank (Ngân hàng TMCP Quân Đội)',
+      bankOwner = 'CLB DOANH NHAN CEO 1983',
+      vietQrUrl,
+      portalUrl,
+      reminderCount,
+    } = options;
+
+    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const isReminder = Boolean(reminderCount && reminderCount > 0);
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/profile';
+    const qrImg = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`HOIPHI ${memberCode || invoiceNo} ${memberName}`)}&accountName=${encodeURIComponent(bankOwner)}`;
+
+    const subject = isReminder
+      ? `[CLB CEO 1983] Nhắc Đóng Hội Phí Thường Niên Năm ${year} (Lần ${reminderCount}) — Hội Viên ${memberName}`
+      : `[CLB CEO 1983] Thông Báo Đóng Hội Phí Thường Niên Năm ${year} — Hội Viên ${memberName} (HĐ #${invoiceNo})`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.5); color: #FFD700; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+    .content { padding: 28px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .card-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #003B95; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #003B95; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    .vietqr-box { text-align: center; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 14px; padding: 18px; margin: 20px 0; }
+    .qr-img { width: 220px; height: 220px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background: #ffffff; padding: 8px; }
+    .btn-wrap { text-align: center; margin: 26px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 30px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; line-height: 1.6; }
+    .footer-brand { color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ ${isReminder ? `Nhắc Đóng Phí Lần ${reminderCount}` : 'Thông Báo Hội Phí Thường Niên'} ✦</div>
+      <h1 class="title">HỘI PHÍ THƯỜNG NIÊN NĂM ${year}</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${memberName}</strong>,</div>
+      <div class="intro">
+        Ban Tài chính & Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo tới Anh/Chị ${companyName ? `(đại diện <strong>${companyName}</strong>)` : ''} thông tin đóng hội phí thường niên năm <strong>${year}</strong> để tiếp tục duy trì tư cách hội viên chính thức và các quyền lợi giao thương.
+      </div>
+      <div class="card-box">
+        <div class="card-title">🧾 Chi Tiết Hóa Đơn Hội Phí</div>
+        <div class="info-row"><span class="info-label">Mã hóa đơn:</span><span class="info-value" style="color: #003B95;">#${invoiceNo}</span></div>
+        <div class="info-row"><span class="info-label">Hội viên:</span><span class="info-value">${memberName} ${memberCode ? `(${memberCode})` : ''}</span></div>
+        <div class="info-row"><span class="info-label">Niên khóa:</span><span class="info-value">Năm ${year}</span></div>
+        <div class="info-row"><span class="info-label">Số tiền hội phí:</span><span class="info-value" style="color: #d97706; font-size: 16px;">${amount.toLocaleString('vi-VN')} VNĐ</span></div>
+        <div class="info-row"><span class="info-label">Hạn nộp hội phí:</span><span class="info-value" style="color: #dc2626;">${dueDate}</span></div>
+      </div>
+
+      <div class="vietqr-box">
+        <div style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin-bottom: 6px;">QUÉT MÃ VIETQR ĐỂ THANH TOÁN TỰ ĐỘNG</div>
+        <div style="font-size: 12px; color: #475569; margin-bottom: 12px;">Số tiền và cú pháp chuyển khoản đã được tích hợp sẵn chính xác 100%</div>
+        <img src="${qrImg}" alt="VietQR Hội Phí" class="qr-img" />
+        <div style="margin-top: 12px; font-size: 12.5px; text-align: left; background: #ffffff; padding: 12px; border-radius: 8px;">
+          <div><strong>Ngân hàng:</strong> ${bankName}</div>
+          <div><strong>Số tài khoản:</strong> <span style="color:#003B95; font-weight:800; font-family:monospace; font-size:14px;">${bankAccount}</span></div>
+          <div><strong>Chủ tài khoản:</strong> ${bankOwner}</div>
+          <div><strong>Nội dung:</strong> <span style="color:#d97706; font-weight:800; font-family:monospace;">HOIPHI ${memberCode || invoiceNo} ${memberName}</span></div>
+        </div>
+      </div>
+
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở App Để Thanh Toán & Xem Chi Tiết</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[MEMBERSHIP_FEE_NOTICE] ${memberName} - #${invoiceNo} (${cleanTo})`,
+    });
+  }
+
+  /**
+   * 5. Gửi email xác nhận thanh toán hội phí thành công & gia hạn hội viên
+   */
+  async sendMembershipFeeSuccessEmail(options: SendMembershipFeeSuccessEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      memberName,
+      memberCode,
+      companyName,
+      invoiceNo,
+      year,
+      amount,
+      paidDate = new Date().toLocaleDateString('vi-VN'),
+      newTermEnd,
+      paymentMethod = 'Chuyển khoản ngân hàng',
+      portalUrl,
+    } = options;
+
+    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/profile';
+    const subject = `[CLB CEO 1983] Xác Nhận Hoàn Thành Hội Phí Năm ${year} — Hội Viên ${memberName}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e; color: #86efac; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+    .content { padding: 28px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .card-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #16a34a; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #16a34a; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    .btn-wrap { text-align: center; margin: 26px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 30px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; line-height: 1.6; }
+    .footer-brand { color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✓ ĐÃ HOÀN TẤT HỘI PHÍ</div>
+      <h1 class="title">XÁC NHẬN THANH TOÁN HỘI PHÍ</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${memberName}</strong>,</div>
+      <div class="intro">
+        Ban Tài chính & Ban Điều Hành CLB Doanh Nhân CEO 1983 xin trân trọng xác nhận: Khoản đóng hội phí thường niên năm <strong>${year}</strong> của Anh/Chị ${companyName ? `(đại diện <strong>${companyName}</strong>)` : ''} đã được hoàn tất thành công.
+      </div>
+      <div class="card-box">
+        <div class="card-title">🧾 Thông Tin Xác Nhận Hoàn Tất</div>
+        <div class="info-row"><span class="info-label">Hội viên:</span><span class="info-value" style="color: #003B95;">${memberName} ${memberCode ? `(${memberCode})` : ''}</span></div>
+        <div class="info-row"><span class="info-label">Mã hóa đơn / Biên lai:</span><span class="info-value">#${invoiceNo}</span></div>
+        <div class="info-row"><span class="info-label">Niên khóa hội phí:</span><span class="info-value">Năm ${year}</span></div>
+        <div class="info-row"><span class="info-label">Số tiền đã thanh toán:</span><span class="info-value" style="color: #16a34a; font-size: 16px;">${amount.toLocaleString('vi-VN')} VNĐ</span></div>
+        <div class="info-row"><span class="info-label">Ngày thanh toán:</span><span class="info-value">${paidDate}</span></div>
+        <div class="info-row"><span class="info-label">Phương thức:</span><span class="info-value">${paymentMethod}</span></div>
+        ${newTermEnd ? `<div class="info-row"><span class="info-label">Thời hạn hội viên chính thức:</span><span class="info-value" style="color: #d97706;">Đến hết ${newTermEnd}</span></div>` : ''}
+      </div>
+
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 12px; font-size: 13px; color: #166534; line-height: 1.5; margin-bottom: 20px;">
+        🌟 <strong>Quyền lợi hội viên duy trì:</strong> Anh/Chị được hưởng trọn vẹn toàn bộ quyền lợi tham gia các chương trình xúc tiến thương mại, kết nối B2B, gian hàng ưu đãi, và các sự kiện độc quyền của CLB CEO 1983.
+      </div>
+
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Xem Hồ Sơ & Quyền Lợi Hội Viên</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[MEMBERSHIP_FEE_SUCCESS] ${memberName} - #${invoiceNo} (${cleanTo})`,
+    });
+  }
+
+  /**
+   * 6. Gửi email thông báo phân công công việc mới cho người được giao việc
+   */
+  async sendTaskAssignmentEmail(options: SendTaskAssignmentEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      assigneeName,
+      taskCode,
+      taskTitle,
+      department,
+      assignedBy,
+      assignedByRole = 'Ban Quản trị',
+      priority,
+      startDate,
+      dueDate,
+      description,
+      deliverables,
+      portalUrl,
+    } = options;
+
+    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/tasks';
+    const subject = `[CLB CEO 1983] Bạn Được Phân Công Công Việc Mới: [${taskCode}] ${taskTitle}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.5); color: #FFD700; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+    .content { padding: 28px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .card-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #0284c7; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #0284c7; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    .btn-wrap { text-align: center; margin: 26px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 30px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; line-height: 1.6; }
+    .footer-brand { color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">✦ Phân Công Công Việc Mới ✦</div>
+      <h1 class="title">THÔNG BÁO GIAO VIỆC</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${assigneeName}</strong>,</div>
+      <div class="intro">
+        Anh/Chị vừa được <strong>${assignedBy}</strong> (${assignedByRole}) phân công phụ trách công việc mới trên hệ thống Hiệp Hội CEO 1983:
+      </div>
+      <div class="card-box">
+        <div class="card-title">📋 Thông Tin Công Việc</div>
+        <div class="info-row"><span class="info-label">Mã công việc:</span><span class="info-value" style="color: #003B95;">[${taskCode}]</span></div>
+        <div class="info-row"><span class="info-label">Tên công việc:</span><span class="info-value">${taskTitle}</span></div>
+        <div class="info-row"><span class="info-label">Ban phụ trách:</span><span class="info-value">${department}</span></div>
+        <div class="info-row"><span class="info-label">Người giao việc:</span><span class="info-value">${assignedBy}</span></div>
+        <div class="info-row"><span class="info-label">Mức độ ưu tiên:</span><span class="info-value" style="color: ${priority === 'HIGH' ? '#dc2626' : '#d97706'}; font-weight: 800;">${priority}</span></div>
+        ${startDate ? `<div class="info-row"><span class="info-label">Ngày bắt đầu:</span><span class="info-value">${startDate}</span></div>` : ''}
+        <div class="info-row"><span class="info-label">Hạn hoàn thành (Deadline):</span><span class="info-value" style="color: #dc2626; font-weight: 800;">${dueDate}</span></div>
+        ${description ? `<div class="info-row"><span class="info-label">Mô tả:</span><span class="info-value" style="font-weight: 400; text-align: left; max-width: 65%;">${description}</span></div>` : ''}
+        ${deliverables ? `<div class="info-row"><span class="info-label">Kết quả bàn giao:</span><span class="info-value" style="font-weight: 600; color: #16a34a; text-align: left; max-width: 65%;">${deliverables}</span></div>` : ''}
+      </div>
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">📋 Mở & Cập Nhật Tiến Độ Công Việc</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[TASK_ASSIGNMENT] ${taskCode} to ${assigneeName} (${cleanTo})`,
+    });
+  }
+
+  /**
+   * 7. Gửi email nhắc nhở tiến độ công việc & đôn đốc hạn chót cho người được giao việc
+   */
+  async sendTaskReminderEmail(options: SendTaskReminderEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      assigneeName,
+      taskCode,
+      taskTitle,
+      department,
+      reminderCount,
+      remindedBy,
+      dueDate,
+      currentProgress = 0,
+      status = 'Đang triển khai',
+      evaluationFeedback,
+      portalUrl,
+    } = options;
+
+    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/tasks';
+    const subject = `[CLB CEO 1983] Nhắc Nhở Tiến Độ Công Việc: [${taskCode}] ${taskTitle} (Đôn đốc lần ${reminderCount})`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001A4D 0%, #003B95 60%, #002B70 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .gold-badge { display: inline-block; background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; color: #fca5a5; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 900; margin: 0 0 8px 0; color: #ffffff; }
+    .subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.5; }
+    .content { padding: 28px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 14px; }
+    .intro { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .card-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 22px; border-left: 4px solid #ef4444; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #dc2626; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13.5px; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; }
+    .progress-bar { width: 100%; height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; margin-top: 6px; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 9999px; }
+    .btn-wrap { text-align: center; margin: 26px 0; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FF9500 100%); color: #001a4d; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 30px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(255, 149, 0, 0.35); }
+    .footer { background: #0b1329; padding: 22px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; line-height: 1.6; }
+    .footer-brand { color: #FFD700; font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="gold-badge">⏰ ĐÔN ĐỐC TIẾN ĐỘ LẦN ${reminderCount}</div>
+      <h1 class="title">NHẮC NHỞ HẠN CHÓT CÔNG VIỆC</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị <strong>${assigneeName}</strong>,</div>
+      <div class="intro">
+        Hệ thống và <strong>${remindedBy}</strong> xin gửi thông báo đôn đốc tiến độ công việc đang giao cho Anh/Chị phụ trách:
+      </div>
+      <div class="card-box">
+        <div class="card-title">⚠️ Tiến Độ Hiện Tại</div>
+        <div class="info-row"><span class="info-label">Mã công việc:</span><span class="info-value" style="color: #003B95;">[${taskCode}]</span></div>
+        <div class="info-row"><span class="info-label">Tên công việc:</span><span class="info-value">${taskTitle}</span></div>
+        <div class="info-row"><span class="info-label">Ban phụ trách:</span><span class="info-value">${department}</span></div>
+        <div class="info-row"><span class="info-label">Trạng thái:</span><span class="info-value">${status}</span></div>
+        <div class="info-row"><span class="info-label">Tiến độ hoàn thành:</span><span class="info-value" style="color: #0284c7; font-size: 15px;">${currentProgress}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width: ${Math.min(100, Math.max(0, currentProgress))}%;"></div></div>
+        <div class="info-row" style="margin-top: 10px;"><span class="info-label">Hạn chót (Deadline):</span><span class="info-value" style="color: #dc2626; font-size: 15px; font-weight: 800;">${dueDate}</span></div>
+        ${evaluationFeedback ? `
+        <div style="margin-top: 12px; padding: 10px; background: #fff1f2; border-radius: 8px; border: 1px dashed #fda4af;">
+          <div style="font-size: 12px; font-weight: 700; color: #be123c;">ĐÁNH GIÁ / Ý KIẾN CHỈ ĐẠO:</div>
+          <div style="font-size: 13px; color: #881337; margin-top: 4px; font-style: italic;">"${evaluationFeedback}"</div>
+        </div>
+        ` : ''}
+      </div>
+      <div class="btn-wrap">
+        <a href="${appUrl}" class="btn-primary" target="_blank">⚡ Cập Nhật Tiến Độ & Nộp Báo Cáo Ngay</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[TASK_REMINDER] ${taskCode} to ${assigneeName} (${cleanTo}) - Round ${reminderCount}`,
+    });
   }
 
   async sendTestByTemplateId(id: string, to: string, customVariables?: Record<string, string>) {

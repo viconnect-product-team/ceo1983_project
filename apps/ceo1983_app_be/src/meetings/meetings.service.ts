@@ -14,6 +14,8 @@ import * as crypto from 'crypto';
 
 export { CreateMeetingDto, UpdateMeetingDto, ConnectionAppointmentDto, UpdateMeetingStatusDto };
 
+import { MailService } from '../mail/mail.service';
+
 function isUuid(val: any): boolean {
   if (!val || typeof val !== 'string') return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val.trim());
@@ -31,6 +33,7 @@ export class MeetingsService {
     private readonly prisma: PrismaService,
     private readonly meetingsRepo: MeetingsRepository,
     @Optional() private readonly gateway?: ConnectAppGateway,
+    @Optional() private readonly mailService?: MailService,
   ) {}
 
   /**
@@ -272,6 +275,54 @@ export class MeetingsService {
           body: notifBody,
           refType: 'meeting',
         });
+      }
+    }
+
+    // 6. Gửi email thông báo cuộc họp (Online / Offline) cho hội viên và người tham dự
+    if (this.mailService) {
+      try {
+        let recipientEmail = '';
+        if (partnerPhone) {
+          const m = await this.prisma.$queryRaw<any[]>`SELECT email FROM public.members WHERE phone = ${partnerPhone} OR phone = ${partnerPhone.replace(/^0/, '+84')} LIMIT 1`.catch(() => []);
+          if (m[0]?.email) recipientEmail = m[0].email;
+        }
+        if (!recipientEmail && partnerUserId) {
+          const u = await this.prisma.$queryRaw<any[]>`SELECT email FROM public.vione_users WHERE id = ${partnerUserId}::uuid LIMIT 1`.catch(() => []);
+          if (u[0]?.email) recipientEmail = u[0].email;
+        }
+        const targetEmail = (recipientEmail || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+
+        await this.mailService.sendMeetingInvitationEmail({
+          to: targetEmail,
+          recipientName: partnerName || 'Quý Hội viên CEO 1983',
+          meetingTitle: title,
+          meetingCode: connCode,
+          meetingType: isOffline ? 'offline' : 'online',
+          date,
+          time,
+          venueOrLink: venue,
+          hostName,
+          notes,
+        });
+
+        // Gửi bản sao cho người tạo / người chủ trì cuộc họp nếu có email
+        const hostUser = await this.prisma.$queryRaw<any[]>`SELECT email FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1`.catch(() => []);
+        if (hostUser[0]?.email && hostUser[0].email.toLowerCase() !== targetEmail.toLowerCase()) {
+          await this.mailService.sendMeetingInvitationEmail({
+            to: hostUser[0].email,
+            recipientName: hostName,
+            meetingTitle: title,
+            meetingCode: connCode,
+            meetingType: isOffline ? 'offline' : 'online',
+            date,
+            time,
+            venueOrLink: venue,
+            hostName,
+            notes,
+          });
+        }
+      } catch (err: any) {
+        console.warn('[createMeeting] Email dispatch error:', err?.message);
       }
     }
 
@@ -1761,6 +1812,35 @@ export class MeetingsService {
       this.gateway.emitToAll('vba.meeting.changed', { id: meetingId, status: 'pending' });
     }
 
+    // 8. Bắn email thông báo lịch hẹn kết nối 1-on-1 cho người nhận lời mời
+    if (this.mailService) {
+      try {
+        let recipientEmail = recipientMember?.email;
+        if (!recipientEmail && recipientUserId) {
+          const u = await this.prisma.$queryRaw<any[]>`SELECT email FROM public.vione_users WHERE id = ${recipientUserId}::uuid LIMIT 1`.catch(() => []);
+          if (u[0]?.email) recipientEmail = u[0].email;
+        }
+        const targetEmail = (recipientEmail || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+
+        await this.mailService.sendConnectionAppointmentEmail({
+          to: targetEmail,
+          recipientName,
+          partnerName: requesterName,
+          partnerCompany: requesterCompany,
+          partnerPhone: requesterPhone,
+          status: 'requested',
+          date,
+          time,
+          venueOrLink: venue,
+          venueType,
+          purpose,
+          notes: purpose,
+        });
+      } catch (err: any) {
+        console.warn('[createConnectionAppointment] Email dispatch error:', err?.message);
+      }
+    }
+
     return {
       ok: true,
       meetingId,
@@ -1884,6 +1964,44 @@ export class MeetingsService {
         });
 
         this.gateway.emitToAll('vba.meeting.changed', { id: meetingId, status: finalStatus });
+      }
+    }
+
+    // 5. Bắn email xác nhận cuộc gặp đã lên lịch thành công cho cả 2 bên nếu đồng ý
+    if (finalStatus === 'confirmed' && this.mailService) {
+      try {
+        const hostUser = await this.prisma.$queryRawUnsafe<any[]>(`SELECT email, name FROM public.vione_users WHERE id = $1::uuid LIMIT 1`, hostUserId).catch(() => []);
+        const hostEmail = (hostUser[0]?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+        const respUser = await this.prisma.$queryRawUnsafe<any[]>(`SELECT email, name FROM public.vione_users WHERE id = $1::uuid LIMIT 1`, userId).catch(() => []);
+        const respEmail = (respUser[0]?.email || responder.email || '').trim();
+
+        await this.mailService.sendConnectionAppointmentEmail({
+          to: hostEmail,
+          recipientName: hostUser[0]?.name || 'Hội viên',
+          partnerName: responderName,
+          partnerCompany: responderCompany,
+          partnerPhone: responder.phone || '',
+          status: 'confirmed',
+          date: meeting.scheduled_start_at ? new Date(meeting.scheduled_start_at).toLocaleDateString('vi-VN') : 'Theo lịch hẹn',
+          time: 'Đã xác nhận',
+          venueOrLink: 'Phòng họp kết nối CEO 1983',
+          purpose: meeting.title,
+        });
+
+        if (respEmail && respEmail.toLowerCase() !== hostEmail.toLowerCase()) {
+          await this.mailService.sendConnectionAppointmentEmail({
+            to: respEmail,
+            recipientName: responderName,
+            partnerName: hostUser[0]?.name || 'Hội viên kết nối',
+            status: 'confirmed',
+            date: meeting.scheduled_start_at ? new Date(meeting.scheduled_start_at).toLocaleDateString('vi-VN') : 'Theo lịch hẹn',
+            time: 'Đã xác nhận',
+            venueOrLink: 'Phòng họp kết nối CEO 1983',
+            purpose: meeting.title,
+          });
+        }
+      } catch (err: any) {
+        console.warn('[respondConnectionAppointment] Email confirmation error:', err?.message);
       }
     }
 

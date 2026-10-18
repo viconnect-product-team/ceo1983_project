@@ -1,8 +1,9 @@
-import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, Optional } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TasksRepository } from './tasks.repository';
+import { MailService } from '../mail/mail.service';
 import {
   TaskSubtask,
   TaskComment,
@@ -47,6 +48,7 @@ export class TasksService {
 
   constructor(
     private readonly tasksRepo: TasksRepository,
+    @Optional() private readonly mailService?: MailService,
   ) {
     this.ensureInitialized();
   }
@@ -752,10 +754,73 @@ export class TasksService {
         // 2. Ghi vào public.member_notifications
         await this.tasksRepo.insertMemberNotification(targetMemberId || targetUserId, notifTitle, notifBody, task.id);
 
+        // 3. Bắn email thông báo giao việc đến hộp thư của người được giao việc
+        if (this.mailService) {
+          const resolvedEmail = (email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+          this.mailService.sendTaskAssignmentEmail({
+            to: resolvedEmail,
+            assigneeName: name || 'Cán bộ phụ trách',
+            taskCode: task.code,
+            taskTitle: task.title,
+            department: task.department,
+            assignedBy: creatorDisplayName,
+            assignedByRole: creatorDisplayRole,
+            priority: task.priority,
+            startDate: task.startDate,
+            dueDate: task.dueDate,
+            description: task.description,
+            deliverables: task.deliverables,
+          }).catch((err) => {
+            this.logger.warn(`Lỗi gửi email giao việc ${task.code}: ${err?.message}`);
+          });
+        }
+
         this.logger.log(`Đã gửi thông báo giao việc ${task.code} thành công đến user ${targetUserId}`);
       }
     } catch (e: any) {
       this.logger.error(`Lỗi trong dispatchTaskAssignmentNotification: ${e?.message}`);
+    }
+  }
+
+  /**
+   * Bắn email nhắc nhở tiến độ công việc và hạn chót cho người phụ trách
+   */
+  private async dispatchTaskReminderEmail(task: TaskItem, actorName: string, reminderCount: number, feedback?: string) {
+    if (!this.mailService) return;
+    try {
+      const allAssignees = (task.assignees && task.assignees.length > 0)
+        ? task.assignees
+        : (task.assignee ? [task.assignee] : []);
+
+      for (const assignee of allAssignees) {
+        let targetEmail = assignee.email;
+        if (!targetEmail && assignee.id) {
+          const u = await this.tasksRepo.findUserAndMemberById(assignee.id);
+          if (u.length && u[0].email) targetEmail = u[0].email;
+        }
+        if (!targetEmail && assignee.name) {
+          const u = await this.tasksRepo.findUserAndMemberByName(assignee.name);
+          if (u.length && u[0].email) targetEmail = u[0].email;
+        }
+        const resolvedEmail = (targetEmail || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+
+        await this.mailService.sendTaskReminderEmail({
+          to: resolvedEmail,
+          assigneeName: assignee.name || 'Cán bộ phụ trách',
+          taskCode: task.code,
+          taskTitle: task.title,
+          department: task.department,
+          reminderCount,
+          remindedBy: actorName,
+          dueDate: task.dueDate,
+          currentProgress: task.progress || 0,
+          status: task.status,
+          evaluationFeedback: feedback,
+        });
+        this.logger.log(`Đã gửi email nhắc nhở tiến độ công việc ${task.code} đến ${resolvedEmail}`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`Lỗi gửi email nhắc nhở công việc ${task.code}: ${err?.message}`);
     }
   }
 
@@ -962,6 +1027,7 @@ export class TasksService {
     this.dispatchTaskAssignmentNotification(task, `${actorName} (Nhắc nhở đôn đốc lần ${newCount})`).catch((err) => {
       this.logger.warn(`Reminder notification error: ${err?.message}`);
     });
+    this.dispatchTaskReminderEmail(task, actorName, newCount).catch(() => {});
 
     return task;
   }
@@ -1021,6 +1087,12 @@ export class TasksService {
     ).catch((err) => {
       this.logger.warn(`Evaluation notification error: ${err?.message}`);
     });
+    this.dispatchTaskReminderEmail(
+      task,
+      actorName,
+      task.delegation?.reminderCount || 1,
+      `${assessmentLabels[evalItem.statusAssessment] || evalItem.statusAssessment}: ${evalItem.feedback}`,
+    ).catch(() => {});
 
     return task;
   }
