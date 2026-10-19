@@ -277,7 +277,25 @@ function GlobalVoiceNavAssistant() {
     routerState?.location?.pathname ||
     (typeof window !== "undefined" ? window.location.pathname : "");
 
+  const [aiEnabled, setAiEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("ceo1983_ai_assistant_enabled") !== "false";
+  });
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setAiEnabled(localStorage.getItem("ceo1983_ai_assistant_enabled") !== "false");
+    };
+    window.addEventListener("ceo1983_ai_toggle", handleToggle);
+    window.addEventListener("storage", handleToggle);
+    return () => {
+      window.removeEventListener("ceo1983_ai_toggle", handleToggle);
+      window.removeEventListener("storage", handleToggle);
+    };
+  }, []);
+
   if (status !== "in" || !user) return null;
+  if (!aiEnabled) return null;
 
   // Robot chỉ xuất hiện trong mỗi app hiệp hội (/association/* hoặc /m/*), không xuất hiện ở CRM hệ thống hay app ViOne
   const isAssociationApp = pathname.startsWith("/association") || pathname.startsWith("/m");

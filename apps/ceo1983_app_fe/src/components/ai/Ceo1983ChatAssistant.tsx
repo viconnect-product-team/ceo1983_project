@@ -43,14 +43,19 @@ const OPENROUTER_FREE_MODELS = [
 
 export function isVoiceAiEnabled(): boolean {
   if (typeof window === "undefined") return true;
-  const val = localStorage.getItem(VOICE_AI_STORAGE_KEY);
-  return val !== "false";
+  const val1 = localStorage.getItem(VOICE_AI_STORAGE_KEY);
+  const val2 = localStorage.getItem("ceo1983_ai_assistant_enabled");
+  if (val1 === "false" || val2 === "false") return false;
+  return true;
 }
 
 export function setVoiceAiEnabled(enabled: boolean): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(VOICE_AI_STORAGE_KEY, enabled ? "true" : "false");
+  const str = enabled ? "true" : "false";
+  localStorage.setItem(VOICE_AI_STORAGE_KEY, str);
+  localStorage.setItem("ceo1983_ai_assistant_enabled", str);
   window.dispatchEvent(new Event(VOICE_AI_EVENT_NAME));
+  window.dispatchEvent(new Event("ceo1983_ai_toggle"));
 }
 
 export interface AssistantMessage {
@@ -169,6 +174,21 @@ export function Ceo1983ChatAssistant() {
     } catch {}
     return false;
   });
+  const [aiActive, setAiActive] = useState<boolean>(() => isVoiceAiEnabled());
+
+  useEffect(() => {
+    const handleSync = () => {
+      setAiActive(isVoiceAiEnabled());
+    };
+    window.addEventListener(VOICE_AI_EVENT_NAME, handleSync);
+    window.addEventListener("ceo1983_ai_toggle", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener(VOICE_AI_EVENT_NAME, handleSync);
+      window.removeEventListener("ceo1983_ai_toggle", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number; posX: number; posY: number }>({
     x: 0,
@@ -600,7 +620,7 @@ export function Ceo1983ChatAssistant() {
     if (/(^|\s)ban(\s|$)/.test(norm.replace(/ban be/g, "")) && /(co cau|chuyen mon|to chuc|cac ban|ban nao)/.test(norm)) {
       return {
         text: `Dạ cơ cấu tổ chức CLB Doanh Nhân CEO 1983 trực thuộc HanoiBA gồm **6 Ban chuyên môn cốt lõi**:\n\n1. 🏛️ **Ban Điều Hành**: Lãnh đạo chung, định hướng chiến lược và đại diện CLB.\n2. 👥 **Ban Thành Viên**: Phát triển mạng lưới, thẩm định hồ sơ kết nạp và chăm sóc hội viên.\n3. 💼 **Ban Xúc Tiến Thương Mại**: Điều phối giao thương B2B, tổ chức phiên kết nối cung cầu.\n4. 📢 **Ban Truyền Thông**: Quảng bá hình ảnh, phụ trách Caravan, Gala và bản tin số.\n5. 💰 **Ban Tài Chính**: Quản trị ngân sách, quỹ CLB và thu hội phí niên liễm.\n6. ❤️ **Ban Thiện Nguyện**: Tổ chức các chương trình an sinh xã hội, vì cộng đồng vùng cao.\n\nMọi hoạt động và phê duyệt đều được phân quyền chặt chẽ trên hệ thống số hóa của CLB ạ!`,
-        actionLink: { label: "Xem Phân Quyền & Ban Chuyên Môn", route: "/association/permissions" },
+        actionLink: { label: "Xem Danh Bạ & Ban Chuyên Môn", route: "/association/members" },
         suggestions: ["Ban chấp hành gồm ai?", "Ban truyền thông làm gì?", "Hội phí bao nhiêu?"],
       };
     }
@@ -633,7 +653,7 @@ export function Ceo1983ChatAssistant() {
           `  - **Anh Nguyễn Thế Duẩn** (Phó Chủ tịch)\n` +
           `📜 **Tổng thư ký**: **Anh Nguyễn Đình Toản** (Trưởng ban Thư ký)\n\n` +
           `Ban Chấp Hành luôn sát cánh cùng hơn 200 doanh nhân tuổi Quý Hợi 1983 phát triển bền vững và gắn kết!`,
-        actionLink: { label: "Xem Phân Quyền & Ban Chuyên Môn", route: "/association/permissions" },
+        actionLink: { label: "Xem Danh Bạ & Ban Chuyên Môn", route: "/association/members" },
         suggestions: ["Ban truyền thông làm gì?", "Hội phí bao nhiêu?", "Lịch sự kiện sắp tới"],
       };
     }
@@ -1021,7 +1041,7 @@ HƯỚNG DẪN TRẢ LỜI:
 
   // Do not render if user is not logged in or disabled, or outside mobile/association app
   const pathname = typeof window !== "undefined" ? window.location.pathname : "";
-  if (!user || !isVoiceAiEnabled() || (!pathname.startsWith("/association") && !pathname.startsWith("/m"))) return null;
+  if (!user || !aiActive || !isVoiceAiEnabled() || (!pathname.startsWith("/association") && !pathname.startsWith("/m"))) return null;
 
   return (
     <>

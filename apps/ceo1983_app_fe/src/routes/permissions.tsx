@@ -1,19 +1,25 @@
 import { useState, useRef } from "react";
 import { createFileRoute, useBlocker } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldCheck,
   Lock,
   AlertTriangle,
   Save,
   LogOut,
+  Users,
+  Building2,
+  SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card } from "@/components/dashboard/PageKit";
 import { useRole } from "@/hooks/use-role";
 import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
+import { MemberPermissionsByCommittee } from "@/components/dashboard/MemberPermissionsByCommittee";
 import { DepartmentManagementSection } from "@/components/dashboard/DepartmentManagementSection";
 import { dispatchPermissionSyncEvent } from "@/lib/rbac-permission-helpers";
+import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/permissions")({
   component: PermissionsPage,
@@ -122,6 +128,7 @@ export function normalizeDept(d?: string): string {
 
 function PermissionsPage() {
   const { isPlatformAdmin, isBQT, isAdmin, srsRole, loading } = useRole();
+  const qc = useQueryClient();
   const hasAccess =
     isPlatformAdmin ||
     isBQT ||
@@ -132,13 +139,50 @@ function PermissionsPage() {
     srsRole === "quan_tri" ||
     srsRole === "ban_dieu_hanh";
 
+  const [activeTab, setActiveTab] = useState<"committee" | "matrix" | "departments">("committee");
+
+  // Fetch Members List for Committee Permissions
+  const {
+    data: members = [],
+    isLoading: membersLoading,
+    refetch: refetchMembers,
+  } = useQuery({
+    queryKey: ["permissions-members"],
+    queryFn: async () => {
+      const res = await fetchNestApi<any[]>("/members");
+      return Array.isArray(res) ? res : [];
+    },
+  });
+
+  // API update role & department for a member
+  const handleUpdateRoleDept = async (p: {
+    memberId: string;
+    executiveRole: string;
+    department: string;
+    associationId?: string;
+  }) => {
+    const res = await fetchNestApi(`/members/${p.memberId}/role-dept`, {
+      method: "PATCH",
+      body: JSON.stringify(p),
+    });
+    await qc.invalidateQueries({ queryKey: ["permissions-members"] });
+    await qc.invalidateQueries({ queryKey: ["members"] });
+    refetchMembers();
+    return res;
+  };
+
   const [matrixDirty, setMatrixDirty] = useState(false);
+  const [committeeDirty, setCommitteeDirty] = useState(false);
+  const isDirty = matrixDirty || committeeDirty;
+
   const matrixSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const matrixDiscardRef = useRef<(() => void) | null>(null);
+  const committeeSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const committeeDiscardRef = useRef<(() => void) | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const blocker = useBlocker({
-    shouldBlockFn: () => matrixDirty,
+    shouldBlockFn: () => isDirty,
     withResolver: true,
     enableBeforeUnload: true,
   });
@@ -148,12 +192,16 @@ function PermissionsPage() {
   const handleSaveAndProceed = async () => {
     setIsSaving(true);
     try {
-      if (matrixSaveRef.current) {
+      if (matrixDirty && matrixSaveRef.current) {
         await matrixSaveRef.current();
       }
+      if (committeeDirty && committeeSaveRef.current) {
+        await committeeSaveRef.current();
+      }
       setMatrixDirty(false);
+      setCommitteeDirty(false);
       dispatchPermissionSyncEvent();
-      toast.success("Đã lưu các thay đổi ma trận phân quyền!");
+      toast.success("Đã lưu các thay đổi phân quyền!");
       blocker.proceed?.();
     } catch (err: any) {
       toast.error(err?.message || "Lỗi khi lưu phân quyền");
@@ -166,7 +214,11 @@ function PermissionsPage() {
     if (matrixDiscardRef.current) {
       matrixDiscardRef.current();
     }
+    if (committeeDiscardRef.current) {
+      committeeDiscardRef.current();
+    }
     setMatrixDirty(false);
+    setCommitteeDirty(false);
     toast.info("Đã hủy các thay đổi chưa lưu.");
     blocker.proceed?.();
   };
@@ -191,13 +243,99 @@ function PermissionsPage() {
 
   return (
     <AppShell>
-      <div className="w-full min-h-screen bg-[#f8fafc] dark:bg-slate-950">
-        {/* Ma Trận Phân Quyền Vai Trò Hệ Thống */}
-        <RbacPermissionMatrix
-          onDirtyChange={setMatrixDirty}
-          saveTriggerRef={matrixSaveRef}
-          discardTriggerRef={matrixDiscardRef}
-        />
+      <div className="w-full min-h-screen bg-[#f8fafc] dark:bg-slate-950 pb-16">
+        {/* Top Header & Navigation Tabs */}
+        <div className="border-b border-border/80 bg-background/95 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-3.5 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#003B95]/10 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  RBAC V2 & BAN CHUYÊN MÔN
+                </span>
+                {isDirty && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 animate-pulse">
+                    <AlertTriangle className="w-3 h-3" />
+                    Có thay đổi chưa lưu
+                  </span>
+                )}
+              </div>
+              <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight mt-1">
+                Phân Quyền & Quản Trị Vai Trò CEO 1983
+              </h1>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-muted/70 border border-border/60">
+              <button
+                type="button"
+                onClick={() => setActiveTab("committee")}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "committee"
+                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Theo Ban & Hội Viên</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("matrix")}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "matrix"
+                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                <span>Ma Trận Hệ Thống & App Mobile</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("departments")}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "departments"
+                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Ban Chuyên Môn</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab 1: Member Permissions by Committee */}
+        <div className={activeTab === "committee" ? "block" : "hidden"}>
+          <MemberPermissionsByCommittee
+            members={members}
+            loading={membersLoading}
+            onUpdateRoleDept={handleUpdateRoleDept}
+            onDirtyChange={setCommitteeDirty}
+            saveTriggerRef={committeeSaveRef}
+            discardTriggerRef={committeeDiscardRef}
+          />
+        </div>
+
+        {/* Tab 2: System & Mobile App RBAC Matrix */}
+        <div className={activeTab === "matrix" ? "block" : "hidden"}>
+          <RbacPermissionMatrix
+            onDirtyChange={setMatrixDirty}
+            saveTriggerRef={matrixSaveRef}
+            discardTriggerRef={matrixDiscardRef}
+          />
+        </div>
+
+        {/* Tab 3: Custom Department Management */}
+        <div className={activeTab === "departments" ? "block" : "hidden"}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <DepartmentManagementSection />
+          </div>
+        </div>
       </div>
 
       {showUnsavedModal && (

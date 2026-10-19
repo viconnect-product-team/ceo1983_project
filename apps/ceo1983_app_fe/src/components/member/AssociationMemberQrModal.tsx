@@ -62,7 +62,7 @@ export function AssociationMemberQrModal({
   defaultTab = "my_qr",
   memberCode = "",
   memberName = "Hội viên CLB CEO 1983",
-  memberTitle = "Hội viên chính thức",
+  memberTitle = "Doanh nhân CEO 1983",
   memberCompany = "CLB Doanh Nhân CEO 1983",
   memberAvatar = null,
 }: AssociationMemberQrModalProps) {
@@ -259,7 +259,7 @@ export function AssociationMemberQrModal({
           code,
           name: `Hội viên ${code}`,
           company: "CLB Doanh Nhân CEO 1983",
-          title: "Hội viên chính thức",
+          title: "Doanh nhân CEO 1983",
           avatar: null,
         });
       }
@@ -268,7 +268,7 @@ export function AssociationMemberQrModal({
         code,
         name: `Hội viên ${code}`,
         company: "CLB Doanh Nhân CEO 1983",
-        title: "Hội viên chính thức",
+        title: "Doanh nhân CEO 1983",
         avatar: null,
       });
     }

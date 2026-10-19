@@ -176,7 +176,13 @@ export function MemberPermissionsByCommittee({
         for (const act of feat.actions || []) {
           const cRoles = act.roles || {};
           const isForRole = cRoles[role] === true || ((role === "quan_tri" || role === "chu_tich") && cRoles[role] !== false);
-          const isForComm = cKey && cRoles[cKey] === true;
+          const isForComm =
+            Boolean(cKey && (
+              cRoles[cKey] === true ||
+              (cKey === "dieu_hanh" && (cRoles["bqt"] === true || cRoles["ban_dieu_hanh"] === true)) ||
+              (cKey === "thu_ky" && (cRoles["tong_thu_ky"] === true || cRoles["ban_thu_ky"] === true)) ||
+              (cKey === "tai_chinh" && (cRoles["btc"] === true || cRoles["ban_tai_chinh"] === true))
+            ));
 
           // If role or committee has explicitly revoked (false)
           if (cRoles[role] === false || (cKey && cRoles[cKey] === false)) {

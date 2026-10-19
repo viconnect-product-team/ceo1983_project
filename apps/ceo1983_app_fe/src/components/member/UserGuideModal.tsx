@@ -232,14 +232,14 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-black tracking-tight text-white flex items-center gap-1.5">
-                  <span>HƯỚNG DẪN THAO TÁC TỪNG MÀN HÌNH</span>
+                  <span>HƯỚNG DẪN SỬ DỤNG APP HIỆP HỘI CEO 1983</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 uppercase font-black">
-                    Chuẩn CEO 1983
+                    Chỉ Dành Cho App
                   </span>
                 </h3>
               </div>
               <p className="text-[11px] text-sky-200">
-                Chỉ dẫn cụ thể từng điểm chạm, cử chỉ vuốt chạm và đặc quyền phân quyền các Ban
+                Chỉ dẫn thao tác 10 màn hình di động, chạm thẻ NFC, quét card visit AI và quyền lợi Hội viên CEO 1983
               </p>
             </div>
           </div>
@@ -277,7 +277,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             }`}
           >
             <Smartphone className="h-3.5 w-3.5" />
-            <span>Chỉ Dẫn 10 Màn Hình Chi Tiết</span>
+            <span>10 Màn Hình App CEO 1983</span>
           </button>
 
           <button
@@ -290,7 +290,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
             }`}
           >
             <FileText className="h-3.5 w-3.5" />
-            <span>Cẩm Nang PDF & Hotline 5 Ban</span>
+            <span>Sổ Tay PDF App CEO 1983 &amp; Hotline</span>
           </button>
         </div>
 
@@ -792,8 +792,11 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
               <div className="flex items-center justify-between mb-3 shrink-0">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-[#003B95] dark:text-sky-400" />
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                    Tài Liệu Hướng Dẫn Sử Dụng Chính Thức (.PDF)
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Sổ Tay Hướng Dẫn Sử Dụng App CEO 1983 (.PDF)</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-[#003B95] dark:text-sky-300 font-bold border border-blue-400/30">
+                      Chỉ Cho Mobile App
+                    </span>
                   </h3>
                 </div>
 
@@ -806,7 +809,7 @@ export function UserGuideModal({ open, onClose, defaultScreenId }: UserGuideModa
                     className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1.5 shadow-xs"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    <span>Tải Về PDF</span>
+                    <span>Tải Sổ Tay App CEO 1983</span>
                   </a>
 
                   {hasAdminPrivilege && (

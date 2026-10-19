@@ -779,8 +779,10 @@ function MemberTabBar() {
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
-  // Automatically hide bottom tab bar when mobile keyboard is open or user is typing
-  if (keyboardOpen) return null;
+  // Automatically hide bottom tab bar when mobile keyboard is open, user is typing,
+  // OR when mustChangePassword is required for a new member
+  const isMustChangePassword = typeof window !== "undefined" && localStorage.getItem("vba_must_change_password") === "true";
+  if (keyboardOpen || isMustChangePassword) return null;
 
   return (
     <>

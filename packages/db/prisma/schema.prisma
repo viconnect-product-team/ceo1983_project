@@ -3881,9 +3881,21 @@ model members {
   new_term_end   DateTime? @db.Date
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
   updated_at     DateTime  @default(now()) @db.Timestamptz(6)
-  user_id        String?   @db.Uuid
-  association_id String    @db.Uuid
-  payment_status String    @default("unpaid") @db.Text
+  user_id                  String?   @db.Uuid
+  association_id           String    @db.Uuid
+  payment_status           String    @default("unpaid") @db.Text
+  department               String?   @db.VarChar
+  executive_role           String?   @db.VarChar
+  avatar_url               String?   @db.Text
+  cover_url                String?   @db.Text
+  business_card_slug       String?   @db.VarChar
+  company_name             String?   @db.VarChar
+  avatar                   String?   @db.Text
+  company_logo_url         String?   @db.Text
+  company_size             String?   @db.Text
+  industry_detail          String?   @db.Text
+  featured_products        Json?
+  card_visibility_settings Json?
 }
 
 model events {

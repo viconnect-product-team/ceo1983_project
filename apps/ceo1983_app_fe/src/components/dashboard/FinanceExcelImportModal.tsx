@@ -36,7 +36,7 @@ export interface ParsedFinanceRow {
 }
 
 export interface FinanceExcelImportModalProps {
-  type: "income" | "expense";
+  type: "income" | "expense" | "all";
   isOpen: boolean;
   onClose: () => void;
   onImportSuccess?: () => void;
@@ -169,7 +169,8 @@ export function FinanceExcelImportModal({
 
   if (!isOpen) return null;
 
-  const isIncome = type === "income";
+  const [selectedMode, setSelectedMode] = useState<"income" | "expense">(type === "expense" ? "expense" : "income");
+  const isIncome = type === "all" ? selectedMode === "income" : type === "income";
 
   const handleDownloadTemplate = () => {
     const wb = XLSX.utils.book_new();
@@ -463,7 +464,7 @@ export function FinanceExcelImportModal({
 
         parsed.push({
           date,
-          type,
+          type: isIncome ? "income" : "expense",
           category: catInfo.key,
           categoryLabel: catInfo.label,
           description: rawDesc || "Giao dịch import từ Excel",
@@ -614,6 +615,30 @@ export function FinanceExcelImportModal({
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {type === "all" && (
+            <div className="flex items-center gap-2 p-1.5 rounded-xl bg-muted/60 w-fit">
+              <span className="text-xs font-bold text-muted-foreground mr-1">Chế độ nhập:</span>
+              <button
+                type="button"
+                onClick={() => { setSelectedMode("income"); setRows([]); setSelectedIndices(new Set()); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  isIncome ? "bg-emerald-600 text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Thu Quỹ & Hội Phí
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedMode("expense"); setRows([]); setSelectedIndices(new Set()); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  !isIncome ? "bg-rose-600 text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Khoản Chi & Tạm Ứng
+              </button>
+            </div>
+          )}
+
           {/* Action Row: Template Download & Upload Area */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1 p-4 rounded-xl border border-border bg-muted/20 flex flex-col justify-between space-y-3">

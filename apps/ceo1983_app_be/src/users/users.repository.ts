@@ -269,9 +269,18 @@ export class UsersRepository {
 
   async completeOnboardingStatus(userId: string): Promise<void> {
     await this.prisma.$executeRaw`
-      UPDATE public.user_profiles
-      SET onboarding_status = 'completed'::public.onboarding_status, updated_at = now()
-      WHERE user_id = ${userId}::uuid
+      INSERT INTO public.user_profiles (user_id, onboarding_status, must_change_password, account_status, updated_at)
+      VALUES (${userId}::uuid, 'completed', false, 'active', NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        onboarding_status = 'completed',
+        must_change_password = false,
+        updated_at = NOW()
+    `.catch(() => null);
+
+    await this.prisma.$executeRaw`
+      UPDATE public.vione_users
+      SET must_change_password = false, updated_at = NOW()
+      WHERE id = ${userId}::uuid
     `.catch(() => null);
   }
 
@@ -283,6 +292,37 @@ export class UsersRepository {
       LIMIT 1
     `.catch(() => []);
     return rows?.[0]?.onboarding_status || null;
+  }
+
+  async checkMustChangePassword(userId: string): Promise<boolean> {
+    try {
+      const userRows = await this.prisma.$queryRaw<any[]>`
+        SELECT email, username, must_change_password
+        FROM public.vione_users
+        WHERE id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => []);
+      const user = userRows?.[0];
+      if (user?.email === 'admin@connect.vn' || user?.username === 'admin@connect.vn') {
+        return false;
+      }
+      if (user?.must_change_password === true) {
+        return true;
+      }
+      const profileRows = await this.prisma.$queryRaw<any[]>`
+        SELECT onboarding_status::text as onboarding_status, must_change_password
+        FROM public.user_profiles
+        WHERE user_id = ${userId}::uuid
+        LIMIT 1
+      `.catch(() => []);
+      const profile = profileRows?.[0];
+      if (profile?.must_change_password === true || profile?.onboarding_status === 'new') {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   async countUsers(where: any): Promise<number> {

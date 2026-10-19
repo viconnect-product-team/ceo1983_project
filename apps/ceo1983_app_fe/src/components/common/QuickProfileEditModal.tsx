@@ -42,6 +42,9 @@ export interface QuickProfileEditModalProps {
   initialZalo?: string;
   initialWebsite?: string;
   initialTiktok?: string;
+  initialCompanySize?: string;
+  initialIndustry?: string;
+  initialBio?: string;
   userId?: string;
   onSaved?: (updated: {
     name: string;
@@ -56,6 +59,9 @@ export interface QuickProfileEditModalProps {
     zalo?: string;
     website?: string;
     tiktok?: string;
+    companySize?: string;
+    industry?: string;
+    bio?: string;
   }) => void;
 }
 
@@ -74,6 +80,9 @@ export function QuickProfileEditModal({
   initialZalo = "",
   initialWebsite = "",
   initialTiktok = "",
+  initialCompanySize = "",
+  initialIndustry = "",
+  initialBio = "",
   userId,
   onSaved,
 }: QuickProfileEditModalProps) {
@@ -82,6 +91,9 @@ export function QuickProfileEditModal({
   const [phone, setPhone] = useState(initialPhone);
   const [company, setCompany] = useState(initialCompany);
   const [title, setTitle] = useState(initialTitle);
+  const [companySize, setCompanySize] = useState(initialCompanySize);
+  const [industry, setIndustry] = useState(initialIndustry);
+  const [bio, setBio] = useState(initialBio);
   const [linkedin, setLinkedin] = useState(initialLinkedin);
   const [facebook, setFacebook] = useState(initialFacebook);
   const [zalo, setZalo] = useState(initialZalo);
@@ -111,6 +123,9 @@ export function QuickProfileEditModal({
       setPhone(initialPhone);
       setCompany(initialCompany);
       setTitle(initialTitle);
+      setCompanySize(initialCompanySize);
+      setIndustry(initialIndustry);
+      setBio(initialBio);
       setLinkedin(initialLinkedin);
       setFacebook(initialFacebook);
       setZalo(initialZalo);
@@ -132,10 +147,13 @@ export function QuickProfileEditModal({
           if (cp.zalo && !initialZalo) setZalo(cp.zalo);
           if (cp.website && !initialWebsite) setWebsite(cp.website);
           if (cp.tiktok && !initialTiktok) setTiktok(cp.tiktok);
+          if (cp.companySize && !initialCompanySize) setCompanySize(cp.companySize);
+          if (cp.industry && !initialIndustry) setIndustry(cp.industry);
+          if (cp.bio && !initialBio) setBio(cp.bio);
         }
       } catch {}
     }
-  }, [open, initialName, initialPhone, initialCompany, initialTitle, initialLinkedin, initialFacebook, initialZalo, initialWebsite, initialTiktok, initialAvatar, initialCover, initialCompanyLogo]);
+  }, [open, initialName, initialPhone, initialCompany, initialTitle, initialCompanySize, initialIndustry, initialBio, initialLinkedin, initialFacebook, initialZalo, initialWebsite, initialTiktok, initialAvatar, initialCover, initialCompanyLogo]);
 
   if (!open || !mounted || typeof document === "undefined") return null;
 
@@ -217,6 +235,9 @@ export function QuickProfileEditModal({
         phone: phone.trim(),
         company: company.trim(),
         title: title.trim(),
+        companySize: companySize.trim(),
+        industry: industry.trim(),
+        bio: bio.trim(),
         avatar: avatar || null,
         cover: cover || null,
         companyLogo: companyLogo || null,
@@ -236,6 +257,12 @@ export function QuickProfileEditModal({
         localStorage.setItem("vba_custom_profile", JSON.stringify(updatedData));
         if (title.trim()) {
           localStorage.setItem("vba_member_title", title.trim());
+        }
+        if (companySize.trim()) {
+          localStorage.setItem("vba_member_company_size", companySize.trim());
+        }
+        if (industry.trim()) {
+          localStorage.setItem("vba_member_industry", industry.trim());
         }
         if (cover) {
           localStorage.setItem("vba_member_cover_photo", cover);
@@ -265,6 +292,9 @@ export function QuickProfileEditModal({
           company: updatedData.company || existingMem.company,
           companyName: updatedData.company || existingMem.companyName,
           title: updatedData.title || existingMem.title,
+          companySize: updatedData.companySize || existingMem.companySize,
+          industry: updatedData.industry || existingMem.industry,
+          bio: updatedData.bio || existingMem.bio,
           avatar: updatedData.avatar || existingMem.avatar,
           coverUrl: updatedData.cover || existingMem.coverUrl,
           companyLogo: updatedData.companyLogo || existingMem.companyLogo,
@@ -298,6 +328,10 @@ export function QuickProfileEditModal({
         phone: phone.trim(),
         company: company.trim(),
         title: title.trim(),
+        website: website.trim(),
+        companySize: companySize.trim(),
+        industry: industry.trim(),
+        bio: bio.trim(),
         avatar: avatar,
         coverUrl: cover,
         companyLogoUrl: companyLogo,
@@ -537,6 +571,79 @@ export function QuickProfileEditModal({
                   className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Tên Doanh Nghiệp / Công Ty
+              </label>
+              <div className="relative">
+                <Building2 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Ví dụ: Công ty Cổ phần Tập đoàn CEO 1983..."
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Quy Mô Nhân Sự
+                </label>
+                <input
+                  type="text"
+                  value={companySize}
+                  onChange={(e) => setCompanySize(e.target.value)}
+                  placeholder="VD: 50 - 100 nhân sự"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Lĩnh Vực Hoạt Động
+                </label>
+                <input
+                  type="text"
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  placeholder="VD: Công nghệ thông tin..."
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Website Doanh Nghiệp
+              </label>
+              <div className="relative">
+                <Globe className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Giới Thiệu Doanh Nghiệp / Định Hướng
+              </label>
+              <textarea
+                rows={3}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Giới thiệu năng lực, giải pháp cốt lõi của doanh nghiệp..."
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition resize-none"
+              />
             </div>
 
             {/* 4. Social Links & Network Platforms (Req 10) */}

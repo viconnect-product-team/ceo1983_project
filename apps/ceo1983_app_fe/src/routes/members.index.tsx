@@ -14,7 +14,6 @@ import {
   MapPin,
   Pencil,
   Pin,
-  Plus,
   Search,
   Shield,
   Star,
@@ -359,7 +358,6 @@ function MembersPage() {
   }, [members]);
   const unpaidCount = members.length - paidCount;
 
-  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [deleting, setDeleting] = useState<Member | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -473,17 +471,6 @@ function MembersPage() {
         });
         toast.success(t("members.updated"));
         setEditing(null);
-      } else {
-        if (!can(PERMISSIONS.MEMBER_CREATE)) {
-          toast.error("Bạn không có quyền thêm mới hội viên!");
-          return;
-        }
-        await fetchNestApi("/members", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-        toast.success(t("members.created"));
-        setOpen(false);
       }
       await qc.invalidateQueries({ queryKey: ["members"] });
       await qc.invalidateQueries({ queryKey: ["renewals"] });
@@ -846,16 +833,6 @@ function MembersPage() {
             >
               <Download className="h-4 w-4 text-muted-foreground" />
               {t("members.export")}
-            </button>
-          )}
-          {can(PERMISSIONS.MEMBER_CREATE) && (
-            <button
-              onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <Plus className="h-4 w-4" />
-              {t("members.add")}
             </button>
           )}
         </div>
@@ -1498,16 +1475,6 @@ function MembersPage() {
         </div>
       )}
 
-      <CrudModal
-        open={open}
-        title={t("members.add")}
-        fields={fields}
-        submitting={submitting}
-        submitLabel={t("common.create")}
-        cancelLabel={t("common.cancel")}
-        onSubmit={onSubmit}
-        onClose={() => setOpen(false)}
-      />
 
       <CrudModal
         open={!!editing}

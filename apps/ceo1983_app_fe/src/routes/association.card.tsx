@@ -927,7 +927,7 @@ function CardScreen() {
             </div>
             <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
               <span className="font-semibold text-slate-500 dark:text-slate-400">Chức vụ:</span>
-              <span className="font-bold text-[#003B95] dark:text-blue-400">{customProfile?.title || effectiveMember?.title || (effectiveMember as any)?.position || "Hội viên chính thức"}</span>
+              <span className="font-bold text-[#003B95] dark:text-blue-400">{customProfile?.title || effectiveMember?.title || (effectiveMember as any)?.position || "Doanh nhân CEO 1983"}</span>
             </div>
             {/* Đã bỏ trường Hotline / Số điện thoại liên hệ theo yêu cầu */}
 

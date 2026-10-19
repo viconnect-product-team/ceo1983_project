@@ -921,12 +921,7 @@ export class UsersService {
 
   async checkMustChangePassword(userId: string): Promise<boolean> {
     try {
-      const user = await this.usersRepo.findById(userId);
-      if (user?.email === 'admin@connect.vn' || user?.username === 'admin@connect.vn') {
-        return false;
-      }
-      const status = await this.usersRepo.getOnboardingStatus(userId);
-      return status === 'new';
+      return await this.usersRepo.checkMustChangePassword(userId);
     } catch {
       return false;
     }

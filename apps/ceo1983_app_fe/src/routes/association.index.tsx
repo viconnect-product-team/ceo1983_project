@@ -1312,58 +1312,35 @@ function Home() {
           )}
         </div>
 
-        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (CHUẨN IMAGE 1 FIGMA) ── */}
-        <Link
-          to="/association/benefits"
-          className="self-stretch min-h-[164px] relative bg-gradient-to-r from-[#061644] via-[#0a2777] to-[#1242a7] rounded-[22px] overflow-hidden shadow-xl border border-blue-400/25 block cursor-pointer group active:scale-[0.99] transition duration-200"
-        >
-          {/* Subtle background glow accents */}
-          <div className="absolute -top-12 -left-12 w-44 h-44 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-48 h-32 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (DÙNG ẢNH 2 & BÓC TÁCH NÚT RA) ── */}
+        <div className="self-stretch flex flex-col gap-2.5">
+          <Link
+            to="/association/perks"
+            className="w-full relative rounded-[22px] overflow-hidden shadow-xl border border-blue-400/25 block cursor-pointer group active:scale-[0.99] transition duration-200 bg-slate-950"
+          >
+            {/* Ảnh 2: uu_dai_event.jpg hiển thị sắc nét toàn diện không bị che khuất */}
+            <img
+              src="/uu_dai_event.jpg"
+              alt="Ưu đãi riêng Hội viên & Đối tác"
+              className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-500 rounded-[22px] block"
+            />
+          </Link>
 
-          {/* 3D Red Gift Box with gold ribbon and stars (Right side, seamless blend) */}
-          <img
-            src="/images/event/banner-gift-3d.png"
-            alt="Quà tặng ưu đãi"
-            className="absolute right-0 top-0 bottom-0 h-full w-[48%] sm:w-[45%] max-w-[280px] object-cover object-left pointer-events-none select-none drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)] group-hover:scale-105 transition-transform duration-500"
-          />
-
-          {/* Left Content Area */}
-          <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-5 max-w-[62%] sm:max-w-[60%]">
-            {/* Typography Header */}
-            <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[21px] sm:text-2xl font-black italic tracking-wide text-[#FFB300] drop-shadow-[0_2px_12px_rgba(255,179,0,0.65)] font-sans">
-                  Ưu Đãi Riêng
-                </span>
-                <span className="text-[#FFD54F] text-xs sm:text-sm font-bold animate-pulse tracking-widest">
-                  ✦ ✦
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[#FFD54F] text-xs font-bold">✦</span>
-                <span className="text-[15px] sm:text-[17px] font-black italic text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] font-sans tracking-wide">
-                  Hội Viên &amp; Đối Tác
-                </span>
-              </div>
-
-              {/* Subtext description with highlighted keywords */}
-              <p className="text-[11px] sm:text-xs text-white/95 font-normal leading-relaxed mt-1.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                Khám phá các{" "}
-                <span className="text-[#FFD54F] font-bold">Chính sách trợ giá</span>,{" "}
-                <span className="text-[#FFD54F] font-bold">Quà tặng liên kết</span>,{" "}
-                <span className="text-[#FFD54F] font-bold">Quyền lợi giao thương</span>{" "}
-                dành riêng cho bạn
-              </p>
+          {/* Bóc tách nút ra riêng biệt theo yêu cầu người dùng */}
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+              <Sparkles className="size-3.5 text-amber-500" />
+              <span className="font-bold">Đặc quyền dành riêng cho Hội viên CLB</span>
             </div>
-
-            {/* Pill CTA Button */}
-            <div className="mt-3.5 inline-flex items-center gap-1 self-start px-3.5 py-1.5 bg-[#FFA000] hover:bg-[#FFB300] group-hover:shadow-[0_4px_16px_rgba(255,160,0,0.5)] active:scale-95 text-slate-950 text-xs font-extrabold rounded-full shadow-md transition-all">
+            <Link
+              to="/association/perks"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#FFA000] to-[#FFB300] hover:from-[#FFB300] hover:to-[#FFC107] active:scale-95 text-slate-950 text-xs font-black rounded-full shadow-md hover:shadow-[0_4px_16px_rgba(255,160,0,0.4)] transition-all cursor-pointer"
+            >
               <span>Xem ưu đãi ngay</span>
               <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
-            </div>
+            </Link>
           </div>
-        </Link>
+        </div>
 
         {/* CƠ HỘI & KẾT NỐI + SÀN THƯƠNG MẠI */}
         <div className="self-stretch inline-flex justify-start items-start gap-3">

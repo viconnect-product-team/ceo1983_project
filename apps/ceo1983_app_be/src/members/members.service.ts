@@ -560,6 +560,10 @@ export class MembersService {
         region: m.region ?? profile?.region ?? '',
         address: m.address ?? '',
         website: m.website ?? null,
+        companySize: m.company_size || '20 - 50 nhân sự',
+        company_size: m.company_size || '20 - 50 nhân sự',
+        about: m.about ?? null,
+        bio: m.about ?? null,
         joinedAt: m.joined_at ? (m.joined_at instanceof Date ? m.joined_at.toISOString().slice(0, 10) : String(m.joined_at).slice(0, 10)) : null,
         executiveRole: m.executive_role || 'member',
         executive_role: m.executive_role || 'member',
@@ -596,6 +600,10 @@ export class MembersService {
       region: '',
       address: '',
       website: null,
+      companySize: '20 - 50 nhân sự',
+      company_size: '20 - 50 nhân sự',
+      about: null,
+      bio: null,
       joinedAt: null,
       avatar: unifiedAvatar,
       avatarUrl: unifiedAvatar,
@@ -662,12 +670,17 @@ export class MembersService {
     address?: string;
     website?: string;
     bio?: string;
+    companySize?: string;
+    company_size?: string;
+    industry?: string;
   }) {
     if (!userId) {
       throw new BadRequestException('User ID is required');
     }
 
     const { name, title, company, phone, email, address, website, bio } = data;
+    const companySize = data.companySize || data.company_size || (data as any)?.staffSize;
+    const industry = data.industry;
     const avatar = data.avatar || (data as any)?.avatarUrl;
     const companyLogo = data.companyLogo || (data as any)?.companyLogoUrl;
 
@@ -712,6 +725,8 @@ export class MembersService {
           email = COALESCE(${email || null}, email),
           address = COALESCE(${address || null}, address),
           website = COALESCE(${website || null}, website),
+          company_size = COALESCE(${companySize || null}, company_size),
+          industry = COALESCE(${industry || null}, industry),
           avatar_url = COALESCE(${avatar || null}, avatar_url),
           avatar = COALESCE(${avatar || null}, avatar),
           company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
@@ -2418,6 +2433,9 @@ export class MembersService {
     needs?: string;
     offers?: string;
     notes?: string;
+    businessField?: string;
+    attachments?: any;
+    associationId?: string;
   }) {
     const {
       fullName,
@@ -2435,17 +2453,24 @@ export class MembersService {
       needs,
       offers,
       notes,
+      businessField,
+      attachments,
+      associationId,
     } = data;
 
     if (!fullName || !phone || !email || !companyName) {
       throw new BadRequestException('Vui lòng điền đầy đủ Họ tên, Số điện thoại, Email và Tên doanh nghiệp');
     }
 
-    // Association CEO 1983
-    const assocRows = await this.prisma.$queryRaw<any[]>`
-      SELECT id FROM public.associations ORDER BY landing_published DESC, created_at DESC LIMIT 1
-    `.catch(() => []);
-    const assocId = assocRows[0]?.id || null;
+    // Association CEO 1983 fallback default
+    const DEFAULT_ASSOC_ID = 'c1983000-0000-4000-8000-000000001983';
+    let assocId = associationId || null;
+    if (!assocId) {
+      const assocRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.associations ORDER BY landing_published DESC, created_at DESC LIMIT 1
+      `.catch(() => []);
+      assocId = assocRows[0]?.id || DEFAULT_ASSOC_ID;
+    }
 
     const now = new Date();
     const id = `MB${now.getTime().toString(36).toUpperCase()}`;
@@ -2460,65 +2485,108 @@ export class MembersService {
       needs: needs || '',
       offers: offers || '',
       notes: notes || '',
+      businessField: businessField || '',
+      staffSize: staffSize || '',
+      attachments: attachments || [],
     });
 
-    await this.prisma.$executeRaw`
-      INSERT INTO public.members (
-        id, code, name, contact, email, phone, type, level, industry, region, status,
-        joined_at, fee_year, fee_paid, address, website, tax_code, about,
-        executive_role, department, company_size, company_name,
-        association_id, created_at, updated_at
-      ) VALUES (
-        ${id},
-        '',
-        ${companyName},
-        ${fullName},
-        ${email.trim().toLowerCase()},
-        ${phone.trim()},
-        'company',
-        'memberLevel.medium',
-        ${industry || 'ind.trade'},
-        'region.north',
-        'pending',
-        ${joinedAt}::date,
-        ${feeYear},
-        false,
-        ${address || ''},
-        ${website || null},
-        ${taxCode || null},
-        ${aboutMeta},
-        'member',
-        'Hội viên ceo1983',
-        ${staffSize || null},
-        ${companyName},
-        ${assocId}::uuid,
-        NOW(),
-        NOW()
-      )
-    `;
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.members (
+          id, code, name, contact, email, phone, type, level, industry, region, status,
+          joined_at, fee_year, fee_paid, address, website, tax_code, about,
+          executive_role, department, company_size, company_name,
+          association_id, created_at, updated_at
+        ) VALUES (
+          ${id},
+          '',
+          ${companyName},
+          ${fullName},
+          ${email.trim().toLowerCase()},
+          ${phone.trim()},
+          'company',
+          'memberLevel.medium',
+          ${industry || 'ind.trade'},
+          'region.north',
+          'pending',
+          ${joinedAt}::date,
+          ${feeYear},
+          false,
+          ${address || ''},
+          ${website || null},
+          ${taxCode || null},
+          ${aboutMeta},
+          'member',
+          'Hội viên ceo1983',
+          ${staffSize || null},
+          ${companyName},
+          ${assocId}::uuid,
+          NOW(),
+          NOW()
+        )
+      `;
+    } catch (insertErr: any) {
+      this.logger.warn(`Lỗi insert public.members có company_size: ${insertErr?.message}. Đang thử insert fallback...`);
+      try {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.members (
+            id, code, name, contact, email, phone, type, level, industry, region, status,
+            joined_at, fee_year, fee_paid, address, website, tax_code, about,
+            executive_role, department, company_name,
+            association_id, created_at, updated_at
+          ) VALUES (
+            ${id},
+            '',
+            ${companyName},
+            ${fullName},
+            ${email.trim().toLowerCase()},
+            ${phone.trim()},
+            'company',
+            'memberLevel.medium',
+            ${industry || 'ind.trade'},
+            'region.north',
+            'pending',
+            ${joinedAt}::date,
+            ${feeYear},
+            false,
+            ${address || ''},
+            ${website || null},
+            ${taxCode || null},
+            ${aboutMeta},
+            'member',
+            'Hội viên ceo1983',
+            ${companyName},
+            ${assocId}::uuid,
+            NOW(),
+            NOW()
+          )
+        `;
+      } catch (fallbackErr: any) {
+        this.logger.error(`Lỗi nghiêm trọng khi lưu thông tin đăng ký: ${fallbackErr?.message}`, fallbackErr?.stack);
+        throw new BadRequestException('Không thể ghi nhận hồ sơ đăng ký vào hệ thống. Vui lòng kiểm tra lại thông tin hoặc thử lại sau!');
+      }
+    }
 
     // Thông báo cho Ban Quản Trị & Ban Thành Viên
-    const notifCode = `REG-${Date.now().toString().slice(-6)}`;
     await this.prisma.$executeRaw`
       INSERT INTO public.notifications (
-        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
+        id, tenant_id, kind, title, description, occurred_at, created_at, app_scope, target_app, target_channel, pushed_to_messages
       ) VALUES (
         gen_random_uuid(),
-        ${notifCode},
+        ${assocId}::uuid,
+        'member_registration',
         ${`Hồ sơ đăng ký mới: ${companyName}`},
         ${`Hội viên ${fullName} (${companyName}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983. Vui lòng kiểm tra và phê duyệt.`},
+        NOW(),
+        NOW(),
+        'ceo1983',
+        'ceo1983',
         'admins',
-        'system',
-        'sent',
-        NOW(),
-        1,
-        ${assocId}::uuid,
-        'ceo1983',
-        'ceo1983',
-        NOW(),
-        NOW()
+        true
       )
-    `.catch(() => {});
+    `.catch((notifErr: any) => {
+      this.logger.warn(`Lỗi ghi notification: ${notifErr?.message}`);
+    });
 
     // Bắn thư cảm ơn về email ngay khi điền form đăng ký xong (Yêu cầu 8)
     void this.mailService.sendRegistrationReceivedEmail({
@@ -2741,6 +2809,36 @@ export class MembersService {
       });
     }
 
+    // Thiết lập bắt buộc đổi mật khẩu lần đầu đăng nhập
+    await this.prisma.$executeRaw`
+      UPDATE public.vione_users
+      SET must_change_password = true, updated_at = NOW()
+      WHERE id = ${assignedUserId}::uuid
+    `.catch(() => null);
+
+    // Đồng bộ hồ sơ người dùng vào user_profiles với onboarding_status = 'new'
+    await this.prisma.$executeRaw`
+      INSERT INTO public.user_profiles (
+        user_id, display_name, company_name, onboarding_status, must_change_password, account_status, created_at, updated_at
+      ) VALUES (
+        ${assignedUserId}::uuid,
+        ${member.contact || member.name},
+        ${member.company_name || member.name || 'CLB Doanh Nhân CEO 1983'},
+        'new',
+        true,
+        'active',
+        NOW(),
+        NOW()
+      )
+      ON CONFLICT (user_id) DO UPDATE SET
+        onboarding_status = 'new',
+        must_change_password = true,
+        account_status = 'active',
+        updated_at = NOW()
+    `.catch((profileErr: any) => {
+      this.logger.warn(`Could not upsert user_profiles for member: ${profileErr?.message}`);
+    });
+
     // Đồng bộ vào auth.users để thỏa mãn ràng buộc khóa ngoại members_user_id_fkey
     try {
       await this.prisma.$executeRaw`
@@ -2769,12 +2867,12 @@ export class MembersService {
       WHERE id::text = ${memberId}::text
     `;
 
-    // 5. Gắn quyền membership nếu có association_id
+    // 5. Gắn quyền membership nếu có association_id (mặc định là vai trò member cá nhân)
     if (member.association_id) {
       await this.prisma.$executeRaw`
         INSERT INTO public.memberships (id, user_id, association_id, role, status, created_at, updated_at)
         VALUES (gen_random_uuid(), ${assignedUserId}::uuid, ${member.association_id}::uuid, 'member', 'active', NOW(), NOW())
-        ON CONFLICT DO NOTHING
+        ON CONFLICT (user_id, association_id) DO UPDATE SET role = 'member', status = 'active', updated_at = NOW()
       `.catch(() => {});
     }
 

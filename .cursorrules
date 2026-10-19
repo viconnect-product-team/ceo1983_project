@@ -17,6 +17,8 @@
 # - Styling & UI Components: Tailwind CSS, Radix UI Primitives, Lucide React, Framer Motion, Sonner Toast.
 # - PWA & Mobile: Progressive Web App (manifest.webmanifest, Service Worker, Apple Touch Icons), Capacitor / Cordova wrapper (mobile_ceo1983).
 # - Kiến trúc Thuần NestJS (Pure NestJS Architecture): 100% dữ liệu nghiệp vụ (Meetings, Opportunities, Marketplace, News, Events, Documents, Sponsors, Members) phải đi qua NestJS REST API (`fetchNestApiFromServer` / `fetchNestApi`) kết nối trực tiếp đến PostgreSQL `ceo1983_project` trên `14.225.217.232:5436`. TUYỆT ĐỐI KHÔNG dùng Supabase PostgREST client (`supabaseAdmin.from(...)`, `getDb.from(...)`) trong các server function nghiệp vụ nhằm tránh lỗi PostgREST schema cache.
+# - Đồng Bộ Schema SQL & Fallback An Toàn (Raw SQL & Schema Synchronization): Mọi câu lệnh SQL Raw (`$executeRaw`, `$queryRaw`) thao tác trên các bảng lõi (`public.members`, `public.notifications`, v.v.) phải đồng bộ 100% với các cột thực tế trong CSDL PostgreSQL `ceo1983_project` (ví dụ: `company_size`, `industry_detail`, `featured_products`, `card_visibility_settings`). Bắt buộc trang bị try-catch và cơ chế fallback an toàn (fallback query không chứa cột tùy chọn) để đảm bảo không bao giờ ném lỗi `42703: column does not exist` gây gián đoạn luồng người dùng (HTTP 500).
+
 
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)
@@ -1918,3 +1920,85 @@
   + BẮT BUỘC hiển thị đồng thời cả **Thẻ hội viên VIP (`Ceo1983BusinessCardVisit`)** và **Profile chi tiết của hội viên** (Avatar, Tên, Tích xanh, Chức danh, Doanh nghiệp, Badge hội viên, Nút Gọi điện, Gửi thư, Zalo, Lưu danh bạ vCard, Bảng thông tin xác thực).
   + Hỗ trợ nút chuyển đổi theme Sáng/Tối trực tiếp trong modal để người dùng xem trước diện mạo thẻ trong mọi điều kiện ánh sáng.
 
+# [BẮT BUỘC 109] Quy Chuẩn Khóa Đổi Mật Khẩu Bắt Buộc Trên App, Gỡ Bỏ Phân Quyền Mobile & Quản Lý Quyền Theo Ban Chuyên Môn Trên Web CRM
+- Quy Chuẩn Khóa Đổi Mật Khẩu Bắt Buộc (Mandatory Password Change Lock):
+  + Bảng `public.vione_users` và `public.user_profiles` lưu trữ cờ `must_change_password` (boolean).
+  + Khi Ban Thư Ký duyệt kết nạp hội viên (`approveMemberAndSendCredentials`), tài khoản được khởi tạo với mật khẩu ngẫu nhiên tạm thời và `must_change_password = true`.
+  + Phía Mobile App (`MemberShell.tsx`), khi `vba_must_change_password === "true"`, BẮT BUỘC ẩn thanh điều hướng dưới (Bottom Tab Bar) và ép buộc người dùng chuyển hướng tới `/association/settings` (màn đổi mật khẩu).
+  + Tại `association.settings.tsx`, khi cờ đổi mật khẩu đang bật, khóa nút quay lại (`canGoBack = false`), ngăn chặn việc thoát hoặc bấm chuyển route khác cho đến khi nhập mật khẩu mới thành công.
+  + Sau khi đổi mật khẩu thành công, cờ `must_change_password` được cập nhật thành `false` ở cả CSDL và LocalStorage/Session, mở khóa toàn bộ ứng dụng.
+- Loại Bỏ Hoàn Toàn Mục "Phân Quyền" Khỏi Mobile App:
+  + Tuyệt đối KHÔNG hiển thị liên kết hoặc giao diện phân quyền trên Mobile App (`/association/profile`, `Ceo1983ChatAssistant.tsx`, v.v.).
+  + Tuyến `/association/permissions` tự động chuyển hướng an toàn về trang chủ `/association`.
+- Quản Lý Phân Quyền Theo Ban Chuyên Môn & Ma Trận 10 Nhóm Tính Năng Mobile Tại CRM (`/permissions`):
+  + Tab 1: Phân quyền theo Ban chuyên môn (`MemberPermissionsByCommittee.tsx`): Tự động gom nhóm hội viên theo 7 Ban (Ban Điều Hành, Ban Thư Ký, Ban Thành Viên, Ban Xúc Tiến Thương Mại, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện). Quyền hạn của ban được kế thừa tức thời; hỗ trợ cập nhật vai trò và ban chuyên môn qua API `PATCH /api/members/:id/role-dept`.
+  + Tab 2: Ma trận RBAC Nâng cao (`RbacPermissionMatrix.tsx`): Bổ sung Nhóm 9 (Mobile App) bao quát 10 nhóm tính năng cốt lõi (Profile & Thẻ VIP, Danh bạ, Kết nối 1-on-1, Moments B2B, Tin tức & Thông báo, Sự kiện & Quét vé QR, Họp BCH & Điểm danh Sapphire Hub, Gian hàng Marketplace & Báo giá, Quản lý công việc Kanban, Khảo sát số).
+  + Hội viên phổ thông (Role `member`): Mặc định chỉ có quyền xem danh bạ cá nhân và giao thương, tuyệt đối không có quyền quản trị hay truy cập menu tài chính, nhà tài trợ, cài đặt.
+
+# [BẮT BUỘC 110] Quy Chuẩn Không Tạo Hội Viên Thủ Công Trên CRM & Chuẩn Hóa Xuất/Nhập Dữ Liệu Excel (.xlsx) Báo Cáo Tài Chính & Nhà Tài Trợ
+- Chặn Tạo Hội Viên Mới Thủ Công Tại CRM:
+  + Tuyệt đối KHÔNG cung cấp nút `+ Thêm hội viên` hay form tạo hội viên thủ công tùy tiện trong trang `/members` của Web CRM.
+  + 100% hồ sơ hội viên mới phải đăng ký minh bạch qua Cổng thông tin công khai (`/register` hoặc `/landing`) để được thẩm định và duyệt theo đúng quy trình hiệp hội.
+  + Trang `/members` chỉ phục vụ tìm kiếm, lọc, xem chi tiết, chỉnh sửa thông tin hội viên hiện có và duyệt hồ sơ mới.
+- Quy Chuẩn Xuất/Nhập Báo Cáo Tài Chính & Sổ Quỹ Tiền Mặt (`/finance-report`):
+  + Xuất Excel (.xlsx) chuẩn Thông tư 200/2014/TT-BTC (Mẫu S07-DN): Bao gồm đầy đủ tiêu đề cơ quan chủ quản HanoiBA, tên CLB Doanh Nhân CEO 1983, số tài khoản MB Bank `1983000000`, dòng chứng từ thu/chi chi tiết, tổng thu, tổng chi, số dư lũy kế và 3 chữ ký số lãnh đạo (Người lập biểu, Thủ quỹ, Kế toán trưởng).
+  + Nhập File Excel/CSV (`FinanceExcelImportModal.tsx`): Tự động nhận diện cột Ngày, Mã giao dịch, Nội dung, Số tiền, Loại giao dịch (Thu/Chi), Phương thức thanh toán; hiển thị preview đối soát trước khi ghi vào CSDL.
+- Quy Chuẩn Xuất/Nhập Báo Cáo Nhà Tài Trợ (`/sponsors` & `/sponsor-report`):
+  + Xuất Excel (.xlsx) chuẩn nhận diện CEO 1983: Bảng danh sách nhà tài trợ phân hạng theo Kim Cương, Bạch Kim, Vàng, Bạc, Đồng; thống kê giá trị tài trợ, tình trạng hợp đồng, người liên hệ, điện thoại, email.
+  + Nhập Dữ Liệu Nhà Tài Trợ Từ Excel (`SponsorExcelImportModal.tsx`): Tự động phân tích và trích xuất sâu các trường: Tên doanh nghiệp/nhà tài trợ, Hạng tài trợ, Gói tài trợ, Người đại diện, Email, Số điện thoại, Số tiền cam kết/thực đóng, Ngày tham gia tài trợ, Trạng thái (Đang hoạt động/Chờ duyệt). Tích hợp bảng preview chia tab lọc theo trạng thái, thanh tiến trình import và lưu trực tiếp vào CSDL qua `createSponsorFn`.
+
+# [BẮT BUỘC 111] Quy Chuẩn Profile Hội Viên 1 Trang Tinh Gọn (Single-Page Profile), 4 Trường Thông Tin Cốt Lõi & Bảng Màu Tùy Biến
+- Tinh Gọn 1 Trang Duy Nhất (Single-Page Experience):
+  + Trên màn hình Profile hội viên Mobile App (`association.profile.tsx`), LOẠI BỎ TOÀN BỘ các tab phức tạp ở nửa dưới (Tab Hồ sơ, Tab Giao thương, Tab Cài đặt, danh sách cài đặt dài và gian hàng sản phẩm trùng lặp).
+  + Giao diện phải nằm trọn vẹn và gọn gàng trong 1 trang duy nhất, ưu tiên hiển thị định danh cá nhân và giới thiệu doanh nghiệp.
+- Cấu Trúc Khối Thông Tin Cốt Lõi & Chỉ Giữ 4 Trường Thiết Yếu:
+  + Đoạn giới thiệu tổng quan doanh nghiệp / tiểu sử ngắn (`bio` / `about`).
+  + Đúng 4 trường thông tin bắt buộc:
+    1. **Quy mô nhân sự** (Users icon): Số lượng lao động / quy mô công ty.
+    2. **Lĩnh vực hoạt động** (Briefcase icon): Ngành nghề kinh doanh cốt lõi.
+    3. **Số điện thoại / Hotline** (Phone icon): Có nút Gọi trực tiếp (`tel:`) và nút Sao chép số điện thoại nhanh.
+    4. **Website công ty** (Globe icon): Có nút Mở liên kết ngoài trực tiếp tới website doanh nghiệp.
+  + Modal chỉnh sửa nhanh `QuickProfileEditModal.tsx` và Backend `MembersService` phải hỗ trợ đầy đủ các trường `companySize`, `industry`, `website`, `bio` và đồng bộ 2 chiều CSDL `members`.
+- Bộ Chọn Bảng Màu Bố Cục Nền (Layout Color Palette Switcher):
+  + Tích hợp thanh chọn bảng màu ngay trên thẻ doanh nghiệp, cho phép người dùng tự bấm đổi tông màu hiển thị theo sở thích.
+  + Mặc định: Kiểu **Trắng Xanh** (`white-blue` - Sapphire Blue trên nền sáng thanh lịch).
+  + Các tùy chọn bố cục màu khác: **Vàng Kim** (`white-amber`), **Xanh Ngọc** (`white-emerald`), **Bạc Tối Giản** (`white-slate`), **Xanh Đêm Obsidian** (`obsidian-night`).
+  + Lựa chọn màu sắc được lưu vào `localStorage` (`vba_profile_color_palette`) để duy trì xuyên suốt các phiên sử dụng.
+
+# [BẮT BUỘC 112] Quy Chuẩn Profile Hình Học Cắt Vát (Chuẩn Ảnh 1 - Geometric Flyer), Bộ Chuyển Bố Cục & Banner Ưu Đãi Hội Viên Tách Nút (Chuẩn Ảnh 2)
+- Layout Chuẩn Ảnh 1 Cho Profile Doanh Nghiệp (`association.profile.tsx`):
+  + **Ảnh Nền Bị Cắt Giảm**: Sử dụng `clipPath: polygon(0 0, 100% 0, 100% 78%, 0 100%)` tạo góc vát chéo hình học phong cách brochure hiện đại.
+  + **2 Cánh Đa Giác Nghiêng**: Cánh trái ("TĂNG TRƯỞNG LIÊN TỤC") và Cánh phải ("CHUYỂN ĐỔI SỐ TOÀN DIỆN" / Mã hội viên) với nền vàng rực rỡ và viền nổi.
+  + **Khối Trung Tâm Xếp Tầng**: Đè lên phần ảnh nền bị cắt vát, hiển thị Avatar tròn có camera, Tên doanh nghiệp, Chức vụ và Họ tên hội viên.
+  + **Bắt Buộc Có Phần Giới Thiệu**: Khối `ABOUT US — GIỚI THIỆU DOANH NGHIỆP` đặt ngay bên dưới.
+  + **4 Trường Cốt Lõi**: Lĩnh vực hoạt động, Quy mô nhân sự (OUR SERVICES) và Số điện thoại, Website công ty (FIND US).
+- Bộ Chọn 3 Bố Cục (Layout Switcher):
+  + `geometric`: Cắt Vát Đa Giác (Chuẩn Ảnh 1 - Flyer Geometric)
+  + `executive`: Thẻ Doanh Nhân VIP (Ảnh bìa cong mềm mại & Avatar lớn)
+  + `minimal`: Tối Giản Siêu Gọn (Phẳng 1 màn hình)
+  + Lưu vào `localStorage` (`vba_profile_layout_mode`).
+- Bộ Chọn 6 Bảng Màu (Palette Switcher):
+  + `creative-teal` (Cyan & Vàng Nắng Chuẩn Ảnh 1), `white-blue`, `white-amber`, `white-emerald`, `white-slate`, `obsidian-night`.
+- Banner Ưu Đãi Hội Viên Tách Nút (Chuẩn Ảnh 2 - `association.index.tsx`):
+  + Sử dụng trực tiếp tệp hình ảnh thiết kế gốc **Ảnh 2 (`/uu_dai_event.jpg`)** làm banner toàn cảnh sắc nét.
+  + Bóc tách nút bấm CTA ("Xem ưu đãi ngay →") ra bên ngoài/bên dưới banner, không che lấp chữ và hình ảnh gốc của banner, liên kết thẳng tới `/association/perks`.
+
+# [BẮT BUỘC 113] Quy Chuẩn Bật/Tắt Trợ Lý AI Tại Màn Cá Nhân & Cài Đặt; Trung Tâm Hướng Dẫn Sử Dụng Chỉ Hiển Thị Chuyên Biệt Cho App CEO 1983
+- Bật / Tắt Trợ Lý AI Thời Gian Thực (AI Assistant Toggle):
+  + Cả Màn cài đặt (`association.settings.tsx`) và Màn cá nhân (`association.profile.tsx`) bắt buộc trang bị công tắc Toggle Switch Bật/Tắt Trợ lý AI CEO 1983.
+  + Khi tắt: Robot AI ẩn hoàn toàn khỏi màn hình, lưu `ceo1983_voice_ai_enabled = 'false'` và `ceo1983_ai_assistant_enabled = 'false'`, đồng thời dispatch event `ceo1983_ai_toggle` và `VOICE_AI_EVENT_NAME`.
+  + `GlobalVoiceNavAssistant` (`__root.tsx`) và `Ceo1983ChatAssistant.tsx` lắng nghe sự kiện để ẩn/hiện robot AI ngay lập tức mà không cần reload trang.
+- Trung Tâm Hướng Dẫn Sử Dụng Chuyên Biệt Cho App CEO 1983:
+  + Màn cá nhân và Cài đặt tích hợp nút mở trực tiếp `UserGuideModal` với huy hiệu "Chỉ Dành Cho App".
+  + Header `MemberHeader` của trang Profile bổ sung nút Hướng dẫn sử dụng (`HelpCircle`) và Cài đặt (`Settings`).
+  + `UserGuideModal.tsx` chỉ hiển thị tài liệu và 10 màn hình hướng dẫn thao tác di động cho App CEO 1983; nút tải PDF tải tệp `/docs/HUONG_DAN_SU_DUNG_APP_HIEP_HOI_CEO1983.pdf`. Tuyệt đối không hiển thị nội dung Web CRM Quản trị.
+
+# [BẮT BUỘC 114] Quy Chuẩn Loại Bỏ Text "Hội Viên Chính Thức" & Tinh Gọn 4 Nút Hành Động Màn Cá Nhân (Không Background)
+- Loại Bỏ Triệt Để Text & Badge "Hội Viên Chính Thức":
+  + Khi người dùng đã đăng nhập vào hệ sinh thái CLB Doanh Nhân CEO 1983, mặc định người dùng đã là hội viên. Tuyệt đối KHÔNG hiển thị các text, badge hoặc nhãn ruy băng thừa thãi như "Hội viên chính thức", "Hội viên chính thức CLB Doanh Nhân CEO 1983".
+  + Các fallback chức vụ hiển thị cho hội viên chuẩn hóa thành "Doanh nhân CEO 1983" (hoặc chức vụ thực tế do hội viên thiết lập).
+  + Áp dụng đồng bộ trên Màn cá nhân (`association.profile.tsx`), Modal danh thiếp (`CardPreviewModal.tsx`), Trang danh thiếp (`association.card.tsx`), và Modal mã QR (`AssociationMemberQrModal.tsx`).
+- Nút Bấm Hành Động Màn Cá Nhân Tinh Gọn & Không Nền (Transparent Background):
+  + 4 nút chức năng cốt lõi (`Danh thiếp`, `Sửa hồ sơ`, `Chia sẻ`, `Mã QR`) phải được thiết kế nhỏ gọn, tinh tế, không chiếm dụng chiều cao màn hình.
+  + TUYỆT ĐỐI KHÔNG sử dụng khung màu nền lớn (`bg-slate-50`, `bg-blue-50`, `bg-amber-50`, v.v.) và không bọc icon trong các ô vuông cồng kềnh.
+  + Sử dụng phong cách phẳng trong suốt (`bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60`), icon thanh mảnh trực tiếp (`size-4.5`), nhãn chữ nhỏ tinh gọn (`text-[10.5px] font-semibold`).

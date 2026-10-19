@@ -96,7 +96,7 @@ export function CardPreviewModal({
   // Merge draft / fetched details / fallback props
   const effectiveKind = draft?.cardKind || cardDetails?.cardKind || cardKind;
   const effectiveName = draft?.displayName || cardDetails?.displayName || name || "Hội viên CLB CEO 1983";
-  const effectiveTitle = draft?.professionalTitle || cardDetails?.professionalTitle || title || "Hội viên chính thức CLB CEO 1983";
+  const effectiveTitle = draft?.professionalTitle || cardDetails?.professionalTitle || title || "Doanh nhân CEO 1983";
   const effectiveCompany = draft?.companyName || cardDetails?.companyName || company || "CLB Doanh Nhân CEO 1983";
   const effectivePhone = draft?.workPhone || cardDetails?.workPhone || "";
   const effectiveEmail = draft?.workEmail || cardDetails?.workEmail || "";
@@ -345,11 +345,6 @@ export function CardPreviewModal({
               </div>
             </div>
 
-            {/* Badge Hội viên chính thức CEO 1983 */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-400/50 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold">
-              <Sparkles className="size-3 text-amber-500 fill-amber-500" />
-              <span>Hội viên chính thức CLB Doanh Nhân CEO 1983</span>
-            </div>
           </div>
 
           {/* ── 4 NÚT HÀNH ĐỘNG KẾT NỐI (GIỐNG THẺ HỘI VIÊN) ── */}

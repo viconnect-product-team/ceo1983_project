@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Check,
   Download,
+  FileSpreadsheet,
   Handshake,
   Lock,
   Mail,
@@ -13,6 +14,7 @@ import {
   Search,
   Trash2,
   TrendingUp,
+  Upload,
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +34,8 @@ import {
   type Sponsor,
 } from "@/lib/sponsors.functions";
 import { SponsorModal, type SponsorDraft } from "@/components/dashboard/SponsorModal";
+import { SponsorExcelImportModal } from "@/components/dashboard/SponsorExcelImportModal";
+import { exportToExcel, formatDisplayDate, formatExcelCurrency } from "@/lib/excel-export";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 
@@ -74,6 +78,7 @@ function SponsorsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const onSubmit = async (draft: SponsorDraft) => {
     setSubmitting(true);
@@ -173,38 +178,69 @@ function SponsorsPage() {
 
   const totalAmount = useMemo(() => SPONSORS.reduce((acc, s) => acc + s.amount, 0), [SPONSORS]);
 
-  const exportCsv = () => {
-    const header = [
-      t("sponsors.col.code"),
-      t("sponsors.col.name"),
-      t("sponsors.col.tier"),
-      t("sponsors.col.contact"),
-      "Email",
-      "Phone",
-      t("sponsors.col.value"),
-      t("sponsors.col.since"),
-      t("sponsors.col.status"),
-    ];
-    const rows = filtered.map((s) => [
-      s.id,
-      `"${s.name.replace(/"/g, '""')}"`,
-      s.tier,
-      `"${s.contact.replace(/"/g, '""')}"`,
-      s.email,
-      s.phone,
-      s.amount,
-      s.since,
-      s.status,
-    ]);
-    const csv = [header.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sponsors-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(t("sponsors.exportToast"));
+  const exportExcel = () => {
+    const total = filtered.reduce((acc, s) => acc + s.amount, 0);
+
+    exportToExcel<Sponsor>({
+      title: "DANH SÁCH ĐỐI TÁC & NHÀ TÀI TRỢ CHÍNH THỨC",
+      subtitle: `Hiệp Hội Doanh Nhân CEO 1983 (HanoiBA) | Tổng số: ${filtered.length} nhà tài trợ đồng hành`,
+      filename: `danh-sach-nha-tai-tro-ceo1983-${new Date().toISOString().slice(0, 10)}`,
+      sheetName: "Nha_Tai_Tro",
+      organization: "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
+      address: "Tòa nhà HanoiBA, TP. Hà Nội",
+      circularCode: "Mẫu số B03-TT",
+      circularNote: "(Ban hành theo quy chế xúc tiến thương mại & tài trợ CLB CEO 1983)",
+      fundType: "Nguồn quỹ tài trợ & phát triển hiệp hội",
+      currencyUnit: "VNĐ",
+      data: filtered,
+      columns: [
+        { header: "Mã NT", key: "id", width: 14, value: (s) => s.id },
+        { header: "Tên Nhà Tài Trợ / Doanh Nghiệp", key: "name", width: 36, value: (s) => s.name },
+        {
+          header: "Hạng Tài Trợ",
+          key: "tier",
+          width: 16,
+          value: (s) =>
+            s.tier === "platinum"
+              ? "Kim Cương"
+              : s.tier === "gold"
+              ? "Vàng"
+              : s.tier === "silver"
+              ? "Bạc"
+              : "Đồng",
+        },
+        {
+          header: "Hình Thức",
+          key: "pkg",
+          width: 16,
+          value: (s) => (s.packageType === "in_kind" ? "Hiện vật" : "Tiền mặt"),
+        },
+        { header: "Chi tiết hiện vật", key: "inKind", width: 32, value: (s) => s.inKindDescription || "—" },
+        { header: "Đại Diện / Người Liên Hệ", key: "contact", width: 24, value: (s) => s.contact || "—" },
+        { header: "Email", key: "email", width: 26, value: (s) => s.email || "—" },
+        { header: "Số Điện Thoại", key: "phone", width: 18, value: (s) => s.phone || "—" },
+        {
+          header: "Giá Trị Tài Trợ (VNĐ)",
+          key: "amount",
+          width: 22,
+          value: (s) => formatExcelCurrency(s.amount),
+        },
+        { header: "Ngày Tham Gia", key: "since", width: 16, value: (s) => formatDisplayDate(s.since) },
+        { header: "Số Sự Kiện", key: "events", width: 14, value: (s) => s.events },
+        {
+          header: "Trạng Thái",
+          key: "status",
+          width: 18,
+          value: (s) => (s.status === "active" ? "Đang hoạt động" : "Hết hạn"),
+        },
+      ],
+      summaryRows: [
+        ["TỔNG GIÁ TRỊ TÀI TRỢ", "", "", "", "", "", "", "", formatExcelCurrency(total)],
+        ["TỔNG SỐ ĐỐI TÁC ĐỒNG HÀNH", "", "", "", "", "", "", "", `${filtered.length} doanh nghiệp`],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "TRƯỞNG BAN TÀI TRỢ", "CHỦ TỊCH CLB"],
+    });
+    toast.success("Đã xuất danh sách nhà tài trợ sang file Excel (.xlsx) chuẩn!");
   };
 
   return (
@@ -215,11 +251,18 @@ function SponsorsPage() {
         actions={
           <div className="flex items-center gap-2">
             <button
-              onClick={exportCsv}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-muted transition cursor-pointer"
+              onClick={() => setImportModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 px-3.5 py-2 text-xs font-semibold text-[#003B95] dark:text-blue-300 shadow-xs hover:bg-blue-100/60 transition cursor-pointer"
             >
-              <Download className="h-4 w-4" />
-              <span>{t("common.exportCsv")}</span>
+              <Upload className="h-4 w-4" />
+              <span>Nhập file Excel</span>
+            </button>
+            <button
+              onClick={exportExcel}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40 px-3.5 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 shadow-xs hover:bg-emerald-100/60 transition cursor-pointer"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+              <span>Xuất Excel (.xlsx)</span>
             </button>
             {can(PERMISSIONS.SPONSOR_CREATE) && (
               <button
@@ -531,6 +574,13 @@ function SponsorsPage() {
           setEditing(null);
         }}
         onSubmit={onSubmit}
+      />
+
+      {/* Sponsor Excel Import Modal with Deep Data Extraction */}
+      <SponsorExcelImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImportSuccess={reload}
       />
     </AppShell>
   );

@@ -22,6 +22,10 @@ import {
   Send,
   Eye,
   EyeOff,
+  Bot,
+  BookOpen,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -39,6 +43,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { requestNotificationPermission, sendCallNotification } from "@/lib/notification-permissions";
+import { UserGuideModal } from "@/components/member/UserGuideModal";
+import {
+  isVoiceAiEnabled,
+  setVoiceAiEnabled,
+  VOICE_AI_EVENT_NAME,
+} from "@/components/ai/Ceo1983ChatAssistant";
 
 export const Route = createFileRoute("/association/settings")({
   ssr: false,
@@ -103,6 +113,28 @@ function AssociationSettingsScreen() {
 
   // Preferences states
   const [notifEnabled, setNotifEnabled] = useState(true);
+  const [aiEnabled, setAiEnabledState] = useState(() => isVoiceAiEnabled());
+  const [userGuideOpen, setUserGuideOpen] = useState(false);
+
+  useEffect(() => {
+    const handleSyncAi = () => {
+      setAiEnabledState(isVoiceAiEnabled());
+    };
+    window.addEventListener(VOICE_AI_EVENT_NAME, handleSyncAi);
+    window.addEventListener("ceo1983_ai_toggle", handleSyncAi);
+    window.addEventListener("storage", handleSyncAi);
+    return () => {
+      window.removeEventListener(VOICE_AI_EVENT_NAME, handleSyncAi);
+      window.removeEventListener("ceo1983_ai_toggle", handleSyncAi);
+      window.removeEventListener("storage", handleSyncAi);
+    };
+  }, []);
+
+  const handleToggleAi = (checked: boolean) => {
+    setAiEnabledState(checked);
+    setVoiceAiEnabled(checked);
+    toast.success(checked ? "Đã bật Trợ lý AI CEO 1983" : "Đã tắt Trợ lý AI CEO 1983");
+  };
 
   // Sync initial identifier from user or member data when loaded
   useEffect(() => {
@@ -267,7 +299,7 @@ function AssociationSettingsScreen() {
       <MemberHeader
         title="Bảo mật & Cài đặt"
         subtitle="Hiệp hội Doanh nhân CEO 1983"
-        back
+        back={required !== "true"}
       />
 
       <div className="mx-4 mt-4 space-y-4">
@@ -430,148 +462,231 @@ function AssociationSettingsScreen() {
           </form>
         </section>
 
-        {/* 2. Theme Preferences */}
-        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
-            <Sparkles className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> {lang === "en" ? "Appearance" : "Giao diện hiển thị"}
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { mode: "light" as Theme, icon: Sun, label: lang === "en" ? "Light" : "Sáng" },
-              { mode: "dark" as Theme, icon: Moon, label: lang === "en" ? "Dark" : "Tối" },
-            ].map(({ mode, icon: Icon, label }) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setTheme(mode)}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${
-                  theme === mode
-                    ? "border-[#003B95] dark:border-amber-500 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-xs font-bold"
-                    : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <Icon className="h-5 w-5 mb-1" />
-                <span className="text-[12px]">{label}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        {required !== "true" && (
+          <>
+            {/* 2. Theme Preferences */}
+            <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
+                <Sparkles className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" /> {lang === "en" ? "Appearance" : "Giao diện hiển thị"}
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { mode: "light" as Theme, icon: Sun, label: lang === "en" ? "Light" : "Sáng" },
+                  { mode: "dark" as Theme, icon: Moon, label: lang === "en" ? "Dark" : "Tối" },
+                ].map(({ mode, icon: Icon, label }) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setTheme(mode)}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${
+                      theme === mode
+                        ? "border-[#003B95] dark:border-amber-500 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-xs font-bold"
+                        : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 mb-1" />
+                    <span className="text-[12px]">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
 
-
-
-        {/* 4. Notification Settings */}
-        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Bell className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
-              <div>
-                <div className="text-[13px] font-bold text-slate-900 dark:text-white">
-                  Thông báo nợ phí, Tin nhắn & Cuộc gọi
+            {/* 4. Notification Settings */}
+            <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Bell className="h-4 w-4 text-[#003B95] dark:text-amber-400" />
+                  <div>
+                    <div className="text-[13px] font-bold text-slate-900 dark:text-white">
+                      Thông báo nợ phí, Tin nhắn & Cuộc gọi
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Nhận chuông và tin nhắn thông báo ngay cả khi thoát/ẩn ứng dụng
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Nhận chuông và tin nhắn thông báo ngay cả khi thoát/ẩn ứng dụng
+                <input
+                  type="checkbox"
+                  checked={notifEnabled}
+                  onChange={async (e) => {
+                    const checked = e.target.checked;
+                    setNotifEnabled(checked);
+                    if (checked) {
+                      await requestNotificationPermission();
+                    }
+                    toast.success(checked ? "Đã bật thông báo nền & cuộc gọi" : "Đã tắt thông báo");
+                  }}
+                  className="h-5 w-5 accent-[#003B95] rounded cursor-pointer"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Kiểm tra chuông gọi đến & rung ngoài màn hình khóa:
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const granted = await requestNotificationPermission();
+                    if (granted !== "granted") {
+                      toast.error("Vui lòng cấp quyền thông báo trên trình duyệt / thiết bị!");
+                      return;
+                    }
+                    toast.info("Đang kích hoạt chuông gọi sau 2.5s. Hãy nhấn phím HOME hoặc ẩn ứng dụng ngay để trải nghiệm thông báo ngoài màn hình!", {
+                      duration: 5000,
+                    });
+                    setTimeout(() => {
+                      sendCallNotification(
+                        "CEO Nguyễn Văn A",
+                        "https://vba-storage.s3.ap-southeast-1.amazonaws.com/avatars/default.png",
+                        "call-test-room-1983"
+                      );
+                    }, 2500);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold hover:bg-blue-100 transition cursor-pointer shrink-0"
+                >
+                  Test chuông gọi nền
+                </button>
+              </div>
+            </section>
+
+            {/* 3. AI Assistant Settings */}
+            <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                    <Bot className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>Trợ lý AI CEO 1983</span>
+                      <span className="text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        AI 5.0
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Hiển thị nút trợ lý AI nổi trên màn hình để hỗ trợ tìm kiếm đối tác & tra cứu nghiệp vụ CLB
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={aiEnabled}
+                  onChange={(e) => handleToggleAi(e.target.checked)}
+                  className="h-5 w-5 accent-[#003B95] rounded cursor-pointer"
+                />
+              </div>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                {aiEnabled
+                  ? "✓ Trợ lý AI đang hoạt động: Bạn có thể chạm vào biểu tượng robot ở góc màn hình để hỏi thông tin, kết nối hội viên và điều hướng nhanh."
+                  : "✕ Đã tắt nút Trợ lý AI: Màn hình sẽ thông thoáng hơn và không xuất hiện bóng chat robot."}
+              </p>
+            </section>
+
+            {/* 4. Help & User Guide (Dành riêng cho App CEO 1983) */}
+            <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-slate-200 dark:border-white/10 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-blue-500/10 dark:bg-blue-400/10 border border-blue-500/30 flex items-center justify-center text-[#003B95] dark:text-sky-400 shrink-0">
+                    <BookOpen className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>Hướng dẫn sử dụng App CEO 1983</span>
+                      <span className="text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40">
+                        Chỉ Dành Cho App
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Sổ tay thao tác 10 màn hình, chạm thẻ NFC, quét card AI & tài liệu di động chính thức
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={notifEnabled}
-              onChange={async (e) => {
-                const checked = e.target.checked;
-                setNotifEnabled(checked);
-                if (checked) {
-                  await requestNotificationPermission();
-                }
-                toast.success(checked ? "Đã bật thông báo nền & cuộc gọi" : "Đã tắt thông báo");
-              }}
-              className="h-5 w-5 accent-[#003B95] rounded cursor-pointer"
-            />
-          </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              Kiểm tra chuông gọi đến & rung ngoài màn hình khóa:
-            </span>
-            <button
-              type="button"
-              onClick={async () => {
-                const granted = await requestNotificationPermission();
-                if (granted !== "granted") {
-                  toast.error("Vui lòng cấp quyền thông báo trên trình duyệt / thiết bị!");
-                  return;
-                }
-                toast.info("Đang kích hoạt chuông gọi sau 2.5s. Hãy nhấn phím HOME hoặc ẩn ứng dụng ngay để trải nghiệm thông báo ngoài màn hình!", {
-                  duration: 5000,
-                });
-                setTimeout(() => {
-                  sendCallNotification(
-                    "CEO Nguyễn Văn A",
-                    "https://vba-storage.s3.ap-southeast-1.amazonaws.com/avatars/default.png",
-                    "call-test-room-1983"
-                  );
-                }, 2500);
-              }}
-              className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold hover:bg-blue-100 transition cursor-pointer shrink-0"
-            >
-              Test chuông gọi nền
-            </button>
-          </div>
-        </section>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => setUserGuideOpen(true)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white py-2.5 px-3 text-xs font-bold transition shadow-xs cursor-pointer active:scale-98"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  <span>Mở Hướng Dẫn 10 Chức Năng</span>
+                </button>
 
-        {/* 5. Account Deactivation Section */}
-        <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-rose-200/80 dark:border-rose-950/50 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                <ShieldAlert className="h-4 w-4" /> Vô hiệu hóa tài khoản
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Tạm dừng hoạt động tài khoản hội viên của bạn. Hồ sơ và danh thiếp sẽ tạm ẩn khỏi danh bạ cho đến khi bạn yêu cầu mở lại qua Ban Thư Ký.
+                <a
+                  href="/docs/HUONG_DAN_SU_DUNG_APP_HIEP_HOI_CEO1983.pdf"
+                  download="HUONG_DAN_SU_DUNG_APP_HIEP_HOI_CEO1983.pdf"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 py-2.5 px-3 text-xs font-bold transition cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Tải Sổ Tay PDF App CEO 1983</span>
+                </a>
+              </div>
+
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 italic">
+                * Chỉ hiển thị hướng dẫn thao tác trên ứng dụng di động Hiệp hội CEO 1983 (không hiển thị Web CRM quản trị).
+              </p>
+            </section>
+
+            {/* 5. Account Deactivation Section */}
+            <section className="p-4 rounded-2xl bg-white dark:bg-[#131a27] border border-rose-200/80 dark:border-rose-950/50 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                    <ShieldAlert className="h-4 w-4" /> Vô hiệu hóa tài khoản
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    Tạm dừng hoạt động tài khoản hội viên của bạn. Hồ sơ và danh thiếp sẽ tạm ẩn khỏi danh bạ cho đến khi bạn yêu cầu mở lại qua Ban Thư Ký.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDeactivateModalOpen(true)}
+                  className="shrink-0 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 px-3 py-2 text-xs font-bold hover:bg-rose-100 transition active:scale-95 cursor-pointer"
+                >
+                  Vô hiệu hóa
+                </button>
+              </div>
+            </section>
+
+            {/* 6. Conditional Logout Button */}
+            <div className="pt-2 space-y-2">
+              <button
+                type="button"
+                disabled={!passwordChangedInSession}
+                onClick={handleLogout}
+                className={`w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-xs font-bold transition-all shadow-sm ${
+                  passwordChangedInSession
+                    ? "bg-[#003B95] hover:bg-[#002B70] text-white active:scale-[0.99] cursor-pointer"
+                    : "bg-slate-200 dark:bg-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60"
+                }`}
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Đăng xuất</span>
+              </button>
+
+              {/* Conditional Note */}
+              <p className="text-[11px] text-center leading-snug px-2">
+                {!passwordChangedInSession ? (
+                  <span className="text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
+                    <span>🔒</span>
+                    <span>
+                      Để đảm bảo an toàn tài khoản, vui lòng đổi mật khẩu thành công ít nhất một lần để kích hoạt quyền Đăng xuất.
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
+                    <span>✅</span>
+                    <span>Mật khẩu đã được cập nhật trong phiên. Bạn có thể đăng xuất bất cứ lúc nào.</span>
+                  </span>
+                )}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setDeactivateModalOpen(true)}
-              className="shrink-0 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 px-3 py-2 text-xs font-bold hover:bg-rose-100 transition active:scale-95 cursor-pointer"
-            >
-              Vô hiệu hóa
-            </button>
-          </div>
-        </section>
-
-        {/* 6. Conditional Logout Button */}
-        <div className="pt-2 space-y-2">
-          <button
-            type="button"
-            disabled={!passwordChangedInSession}
-            onClick={handleLogout}
-            className={`w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-xs font-bold transition-all shadow-sm ${
-              passwordChangedInSession
-                ? "bg-[#003B95] hover:bg-[#002B70] text-white active:scale-[0.99] cursor-pointer"
-                : "bg-slate-200 dark:bg-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60"
-            }`}
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Đăng xuất</span>
-          </button>
-
-          {/* Conditional Note */}
-          <p className="text-[11px] text-center leading-snug px-2">
-            {!passwordChangedInSession ? (
-              <span className="text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
-                <span>🔒</span>
-                <span>
-                  Để đảm bảo an toàn tài khoản, vui lòng đổi mật khẩu thành công ít nhất một lần để kích hoạt quyền Đăng xuất.
-                </span>
-              </span>
-            ) : (
-              <span className="text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
-                <span>✅</span>
-                <span>Mật khẩu đã được cập nhật trong phiên. Bạn có thể đăng xuất bất cứ lúc nào.</span>
-              </span>
-            )}
-          </p>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Account Deactivation Modal */}
@@ -743,6 +858,12 @@ function AssociationSettingsScreen() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Modal Hướng Dẫn Sử Dụng App CEO 1983 */}
+      <UserGuideModal
+        open={userGuideOpen}
+        onClose={() => setUserGuideOpen(false)}
+      />
     </div>
   );
 }

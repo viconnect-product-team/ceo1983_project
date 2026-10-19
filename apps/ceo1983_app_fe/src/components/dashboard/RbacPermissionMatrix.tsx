@@ -64,6 +64,7 @@ export const COMMITTEES: CommitteeRole[] = [
   { key: "thanh_vien", name: "Ban Thành Viên", shortName: "Ban Thành Viên", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800" },
   { key: "xuc_tien", name: "Ban Xúc Tiến Thương Mại", shortName: "Ban Xúc Tiến TM", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800" },
   { key: "truyen_thong", name: "Ban Truyền Thông", shortName: "Ban Truyền Thông", color: "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800" },
+  { key: "tai_chinh", name: "Ban Tài Chính", shortName: "Ban Tài Chính", color: "text-yellow-700 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800" },
   { key: "thien_nguyen", name: "Ban Thiện Nguyện", shortName: "Ban Thiện Nguyện", color: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800" },
 ];
 
@@ -614,6 +615,106 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
           { id: "act_doc_add", name: "Tải lên tài liệu mới", code: "DOC_ADD", description: "Lưu trữ văn bản, nghị quyết chính thức mới", apiEndpoint: "POST /api/documents", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true, tong_thu_ky: true } },
           { id: "act_doc_edit", name: "Chỉnh sửa tài liệu", code: "DOC_EDIT", description: "Cập nhật tên tài liệu hoặc ghi chú", apiEndpoint: "PUT /api/documents/:id", roles: { bqt: true, thu_ky: true, quan_tri: true, admin: true } },
           { id: "act_doc_delete", name: "Xóa tài liệu", code: "DOC_DELETE", description: "Xóa tài liệu không còn hiệu lực", apiEndpoint: "DELETE /api/documents/:id", roles: { bqt: true, quan_tri: true, admin: true } },
+        ],
+      },
+    ],
+  },
+
+  // NHÓM 9: ỨNG DỤNG DI ĐỘNG CEO 1983 (CEO1983 MOBILE APP)
+  {
+    id: "cat_mobile_app",
+    name: "ỨNG DỤNG DI ĐỘNG CEO 1983",
+    iconName: "IdCard",
+    features: [
+      {
+        id: "feat_app_home",
+        name: "Trang chủ & Bảng tin App",
+        route: "/association",
+        description: "Truy cập màn hình chính, xem tin tức nổi bật và hoạt động hiệp hội trên App",
+        actions: [
+          { id: "act_app_home_view", name: "Xem Trang chủ & Bảng tin", code: "APP_HOME_VIEW", description: "Truy cập Trang chủ và theo dõi bảng tin", apiEndpoint: "GET /api/app/feed", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_news_post", name: "Đăng bài viết hoạt động lên App", code: "APP_NEWS_POST", description: "Đăng tải bài viết tin tức, thông báo trực tiếp lên App", apiEndpoint: "POST /api/app/news", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
+          { id: "act_app_news_comment", name: "Bình luận & Thả tim tương tác", code: "APP_NEWS_COMMENT", description: "Tương tác, bình luận bài viết", apiEndpoint: "POST /api/app/comments", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+        ],
+      },
+      {
+        id: "feat_app_smart_card",
+        name: "Thẻ Hội Viên & Danh Thiếp Số",
+        route: "/association/card",
+        description: "Smart VIP Card, mã QR định danh và danh thiếp số lãnh đạo",
+        actions: [
+          { id: "act_app_card_view", name: "Xem Thẻ Hội Viên & Smart Card", code: "APP_CARD_VIEW", description: "Xem thẻ hội viên thông minh, số thẻ và hợp đồng", apiEndpoint: "GET /api/app/card", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_card_share", name: "Chia sẻ Danh thiếp số công khai", code: "APP_CARD_SHARE", description: "Tạo link và mã QR danh thiếp số gửi đối tác", apiEndpoint: "GET /api/app/card/share", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_card_scan", name: "Quét mã QR Thẻ hội viên đối tác", code: "APP_CARD_SCAN", description: "Dùng camera quét mã QR trên thẻ hội viên khác", apiEndpoint: "POST /api/app/card/scan", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+        ],
+      },
+      {
+        id: "feat_app_members",
+        name: "Danh Bạ Hội Viên Trên App",
+        route: "/association/members",
+        description: "Tra cứu danh bạ các lãnh đạo và doanh nghiệp trong CLB",
+        actions: [
+          { id: "act_app_mem_dir", name: "Xem Danh bạ Hội viên CLB", code: "APP_MEM_DIR", description: "Xem thông tin doanh nhân, ngành nghề và công ty", apiEndpoint: "GET /api/app/members", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_mem_contact", name: "Xem Hotline & Liên hệ Lãnh đạo", code: "APP_MEM_CONTACT", description: "Xem số điện thoại, email và trụ sở công ty", apiEndpoint: "GET /api/app/members/contact", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+        ],
+      },
+      {
+        id: "feat_app_b2b_connect",
+        name: "Kết Nối Giao Thương B2B & Tin Nhắn",
+        route: "/association/messages",
+        description: "Gửi lời mời kết nối, đặt lịch hẹn gặp 1-1 và chat trao đổi",
+        actions: [
+          { id: "act_app_b2b_invite", name: "Gửi lời mời kết nối 1-on-1", code: "APP_B2B_INVITE", description: "Mời lãnh đạo doanh nghiệp khác gặp gỡ kết nối", apiEndpoint: "POST /api/app/b2b/invite", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_b2b_chat", name: "Nhắn tin trực tiếp giữa các hội viên", code: "APP_B2B_CHAT", description: "Trao đổi tin nhắn, gửi file và chia sẻ danh thiếp", apiEndpoint: "POST /api/app/messages", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+        ],
+      },
+      {
+        id: "feat_app_opportunities",
+        name: "Sàn Cơ Hội Giao Thương B2B",
+        route: "/association/opportunities",
+        description: "Đăng tải và tìm kiếm cơ hội hợp tác kinh doanh",
+        actions: [
+          { id: "act_app_opp_view", name: "Xem danh sách Cơ hội kinh doanh", code: "APP_OPP_VIEW", description: "Tra cứu nhu cầu mua, bán và hợp tác đầu tư", apiEndpoint: "GET /api/app/opportunities", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_opp_create", name: "Đăng cơ hội kinh doanh mới", code: "APP_OPP_CREATE", description: "Đăng bài chia sẻ nhu cầu giao thương của doanh nghiệp", apiEndpoint: "POST /api/app/opportunities", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+        ],
+      },
+      {
+        id: "feat_app_products",
+        name: "Gian Hàng Doanh Nghiệp (Marketplace)",
+        route: "/association/products",
+        description: "Quảng bá sản phẩm, dịch vụ và giải pháp doanh nghiệp",
+        actions: [
+          { id: "act_app_prd_view", name: "Xem danh mục Sản phẩm / Dịch vụ", code: "APP_PRD_VIEW", description: "Xem sản phẩm của các doanh nghiệp hội viên", apiEndpoint: "GET /api/app/products", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_prd_create", name: "Đăng bán Sản phẩm / Dịch vụ mới", code: "APP_PRD_CREATE", description: "Đưa sản phẩm dịch vụ lên gian hàng App", apiEndpoint: "POST /api/app/products", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+        ],
+      },
+      {
+        id: "feat_app_events",
+        name: "Sự Kiện & Vé Điện Tử E-Ticket",
+        route: "/association/events",
+        description: "Đăng ký tham dự sự kiện, nhận vé QR và check-in",
+        actions: [
+          { id: "act_app_evt_join", name: "Đăng ký tham gia Sự kiện & Nhận vé", code: "APP_EVT_JOIN", description: "Đăng ký sự kiện, đại hội và nhận mã QR vé", apiEndpoint: "POST /api/app/events/register", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_evt_scan", name: "Soát vé / Quét mã Check-in sự kiện", code: "APP_EVT_SCAN", description: "Quyền dành cho ban tổ chức để quét QR check-in", apiEndpoint: "POST /api/app/events/checkin", roles: { bqt: true, thu_ky: true, truyen_thong: true, quan_tri: true, admin: true, tong_thu_ky: true } },
+        ],
+      },
+      {
+        id: "feat_app_voting",
+        name: "Biểu Quyết & Bầu Cử Trực Tuyến",
+        route: "/association/voting",
+        description: "Bỏ phiếu bầu cử ban điều hành và biểu quyết nghị quyết",
+        actions: [
+          { id: "act_app_vote_participate", name: "Tham gia Bỏ phiếu / Biểu quyết", code: "APP_VOTE_PARTICIPATE", description: "Thực hiện quyền biểu quyết trực tuyến trên App", apiEndpoint: "POST /api/app/voting/vote", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+        ],
+      },
+      {
+        id: "feat_app_finance_profile",
+        name: "Hội Phí Cá Nhân & Hồ Sơ Lãnh Đạo",
+        route: "/association/profile",
+        description: "Quản lý niên liễm cá nhân và thông tin hồ sơ lãnh đạo",
+        actions: [
+          { id: "act_app_fee_view", name: "Xem thông tin Hội phí & Niên liễm cá nhân", code: "APP_FEE_VIEW", description: "Xem hóa đơn niên liễm và lịch sử đóng phí", apiEndpoint: "GET /api/app/fees/me", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_app_profile_edit", name: "Chỉnh sửa Hồ sơ cá nhân & Logo công ty", code: "APP_PROFILE_EDIT", description: "Tự cập nhật chức danh, logo, hotline, giới thiệu", apiEndpoint: "PUT /api/app/profile", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
         ],
       },
     ],

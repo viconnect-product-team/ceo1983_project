@@ -517,12 +517,13 @@ export const COMMITTEE_PERMISSIONS_STORAGE_KEY = "ceo1983_committee_permissions_
 export function normalizeCommitteeKey(dept?: string): string {
   if (!dept) return "thanh_vien";
   const s = dept.toLowerCase().trim();
-  if (s.includes("quản trị") || s.includes("bqt") || s.includes("điều hành")) return "bqt";
-  if (s.includes("thư ký") || s.includes("btk") || s.includes("tong_thu_ky")) return "thu_ky";
-  if (s.includes("thành viên") || s.includes("btv")) return "thanh_vien";
-  if (s.includes("xúc tiến") || s.includes("bxt") || s.includes("thương mại")) return "xuc_tien";
-  if (s.includes("truyền thông") || s.includes("btt")) return "truyen_thong";
-  if (s.includes("thiện nguyện") || s.includes("btn") || s.includes("an sinh")) return "thien_nguyen";
+  if (s.includes("quản trị") || s.includes("bqt") || s.includes("điều hành") || s === "dieu_hanh") return "dieu_hanh";
+  if (s.includes("thư ký") || s.includes("btk") || s.includes("tong_thu_ky") || s === "thu_ky") return "thu_ky";
+  if (s.includes("tài chính") || s.includes("btc") || s === "tai_chinh") return "tai_chinh";
+  if (s.includes("thành viên") || s.includes("btv") || s === "thanh_vien") return "thanh_vien";
+  if (s.includes("xúc tiến") || s.includes("bxt") || s.includes("thương mại") || s === "xuc_tien") return "xuc_tien";
+  if (s.includes("truyền thông") || s.includes("btt") || s === "truyen_thong") return "truyen_thong";
+  if (s.includes("thiện nguyện") || s.includes("btn") || s.includes("an sinh") || s === "thien_nguyen") return "thien_nguyen";
   return "thanh_vien";
 }
 

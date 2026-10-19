@@ -19,6 +19,7 @@ import {
   Coins,
   X,
   Printer,
+  Upload,
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
@@ -30,6 +31,7 @@ import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietname
 import { toast } from "sonner";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
 
 const FALLBACK_TRANSACTIONS: Transaction[] = [
   {
@@ -170,6 +172,7 @@ function FinanceReport() {
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const txQuery = useQuery({
     queryKey: ["finance-report-data", statusFilter],
@@ -302,11 +305,19 @@ function FinanceReport() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => setShowImportModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#003B95] dark:text-blue-300 shadow-xs hover:bg-blue-100/60 cursor-pointer transition-all"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Nhập File Excel</span>
+            </button>
+            <button
+              type="button"
               onClick={handleExportCsv}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-sm hover:bg-muted cursor-pointer transition-all"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40 px-3.5 py-2 text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 shadow-xs hover:bg-emerald-100/60 cursor-pointer transition-all"
             >
               <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-              <span>Xuất Báo Cáo Excel</span>
+              <span>Xuất Excel (.xlsx)</span>
             </button>
             <button
               type="button"
@@ -845,6 +856,13 @@ function FinanceReport() {
           </div>
         </div>
       )}
+
+      <FinanceExcelImportModal
+        type="all"
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportSuccess={() => txQuery.refetch()}
+      />
     </AppShell>
   );
 }
