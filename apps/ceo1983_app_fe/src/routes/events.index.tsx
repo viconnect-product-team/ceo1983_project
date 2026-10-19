@@ -149,6 +149,7 @@ function EventsPage() {
 
   const fields: CrudField[] = [
     { name: "name", label: t("events.col.event"), type: "text", required: true },
+    { name: "tagline", label: "Khẩu hiệu / Thông điệp phụ trên Banner (Tagline)", type: "text" },
     { name: "image", label: "Ảnh banner sự kiện", type: "image" },
     { name: "date", label: t("events.col.date"), type: "date", required: true },
     { name: "location", label: t("events.col.location"), type: "text" },

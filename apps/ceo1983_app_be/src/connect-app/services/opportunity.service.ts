@@ -4,6 +4,31 @@ import { ConnectAppGateway } from '../connect-app.gateway';
 import * as crypto from 'crypto';
 import { z } from 'zod';
 
+function safeParseImages(val: any): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val.filter((x) => typeof x === 'string' && x.trim() !== '');
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((x) => typeof x === 'string' && x.trim() !== '');
+        }
+      } catch {
+        // fallback
+      }
+    }
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+      return [trimmed];
+    }
+  }
+  return [];
+}
+
 @Injectable()
 export class ConnectOpportunityService {
   constructor(
@@ -538,7 +563,7 @@ export class ConnectOpportunityService {
                COALESCE(m.phone, o.contact_phone, '') as contact_phone,
                COALESCE(m.executive_role, o.contact_title, 'Đại diện hợp tác') as contact_title,
                COALESCE(m.name, bi.company_name, o.company, 'CLB Doanh Nhân CEO 1983') as company,
-               o.image,
+               o.image, o.images,
                COALESCE(up.display_name, m.contact, m.name, u.name, o.contact_name, 'Hội viên CLB') as poster_name,
                COALESCE(up.avatar_url, m.cover_url, u.avatar_url, '') as poster_avatar,
                COALESCE(m.phone, o.contact_phone, '') as poster_phone,
@@ -572,37 +597,42 @@ export class ConnectOpportunityService {
       }
 
       return {
-        opportunities: opps.map(r => ({
-          id: String(r.id),
-          posterId: String(r.poster_id || ''),
-          posterName: r.poster_name || undefined,
-          posterAvatar: r.poster_avatar || undefined,
-          posterPhone: r.poster_phone || undefined,
-          posterCompany: r.poster_company || undefined,
-          title: r.title,
-          description: r.description || '',
-          type: r.type || 'opp.type.partnership',
-          budgetMin: r.budget_min != null ? Number(r.budget_min) : undefined,
-          budgetMax: r.budget_max != null ? Number(r.budget_max) : undefined,
-          region: r.region || '',
-          industry: r.industry || '',
-          deadline: r.deadline ? new Date(r.deadline).toISOString() : new Date().toISOString(),
-          status: r.status || 'open',
-          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
-          views: Number(r.views || 0),
-          emoji: r.emoji || '💡',
-          claimedById: r.claimed_by_id || undefined,
-          claimedByName: r.claimed_by_name || undefined,
-          claimedAt: r.claimed_at ? new Date(r.claimed_at).toISOString() : undefined,
-          claimedPhone: r.claimed_phone || undefined,
-          claimedCompany: r.claimed_company || undefined,
-          contactName: r.contact_name || undefined,
-          contactPhone: r.contact_phone || undefined,
-          contactTitle: r.contact_title || undefined,
-          company: r.company || undefined,
-          image: r.image || undefined,
-          thumbnail: r.image || undefined,
-        })),
+        opportunities: opps.map(r => {
+          const imgList = safeParseImages(r.images || (r.image ? [r.image] : []));
+          const firstImg = imgList[0] || r.image || undefined;
+          return {
+            id: String(r.id),
+            posterId: String(r.poster_id || ''),
+            posterName: r.poster_name || undefined,
+            posterAvatar: r.poster_avatar || undefined,
+            posterPhone: r.poster_phone || undefined,
+            posterCompany: r.poster_company || undefined,
+            title: r.title,
+            description: r.description || '',
+            type: r.type || 'opp.type.partnership',
+            budgetMin: r.budget_min != null ? Number(r.budget_min) : undefined,
+            budgetMax: r.budget_max != null ? Number(r.budget_max) : undefined,
+            region: r.region || '',
+            industry: r.industry || '',
+            deadline: r.deadline ? new Date(r.deadline).toISOString() : new Date().toISOString(),
+            status: r.status || 'open',
+            createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+            views: Number(r.views || 0),
+            emoji: r.emoji || '💡',
+            claimedById: r.claimed_by_id || undefined,
+            claimedByName: r.claimed_by_name || undefined,
+            claimedAt: r.claimed_at ? new Date(r.claimed_at).toISOString() : undefined,
+            claimedPhone: r.claimed_phone || undefined,
+            claimedCompany: r.claimed_company || undefined,
+            contactName: r.contact_name || undefined,
+            contactPhone: r.contact_phone || undefined,
+            contactTitle: r.contact_title || undefined,
+            company: r.company || undefined,
+            image: firstImg,
+            thumbnail: firstImg,
+            images: imgList,
+          };
+        }),
         interests: interests.map(it => ({
           id: String(it.id),
           opportunityId: String(it.opportunity_id),
@@ -661,6 +691,9 @@ export class ConnectOpportunityService {
         ORDER BY oi.created_at DESC
       `.catch(() => []);
 
+      const imgList = safeParseImages(r.images || (r.image ? [r.image] : []));
+      const firstImg = imgList[0] || r.image || undefined;
+
       return {
         opportunity: {
           id: String(r.id),
@@ -690,8 +723,9 @@ export class ConnectOpportunityService {
           contactPhone: r.contact_phone || undefined,
           contactTitle: r.contact_title || undefined,
           company: r.company || undefined,
-          image: r.image || undefined,
-          thumbnail: r.image || undefined,
+          image: firstImg,
+          thumbnail: firstImg,
+          images: imgList,
         },
         interests: interests.map(it => ({
           id: String(it.id),
@@ -734,14 +768,15 @@ export class ConnectOpportunityService {
     const contactPhone = (data.contactPhone || mem[0]?.phone || '').trim();
     const contactTitle = (data.contactTitle || 'Đại diện hợp tác').trim();
     const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
-    const oppImage = data.image || data.thumbnail || null;
+    const images: string[] = safeParseImages(data.images || (data.image ? [data.image] : []));
+    const oppImage = images[0] || data.image || data.thumbnail || null;
 
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
           id, association_id, poster_id, title, description, type,
           budget_min, budget_max, region, industry, deadline, status, views, emoji,
-          image, contact_name, contact_phone, contact_title, company, created_at, updated_at
+          image, images, contact_name, contact_phone, contact_title, company, created_at, updated_at
         ) VALUES (
           ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
           ${data.description || ''}, ${data.type || 'opp.type.partnership'},
@@ -750,7 +785,7 @@ export class ConnectOpportunityService {
           ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
           'open', 0, ${data.emoji || '💡'},
-          ${oppImage}, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
+          ${oppImage}, ${JSON.stringify(images)}::jsonb, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
           now(), now()
         )
       `;
@@ -759,7 +794,7 @@ export class ConnectOpportunityService {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
           id, association_id, poster_id, title, description, type,
-          budget_min, budget_max, region, industry, deadline, status, views, emoji, created_at, updated_at
+          budget_min, budget_max, region, industry, deadline, status, views, emoji, images, created_at, updated_at
         ) VALUES (
           ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
           ${data.description || ''}, ${data.type || 'opp.type.partnership'},
@@ -767,7 +802,7 @@ export class ConnectOpportunityService {
           ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
           ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
-          'open', 0, ${data.emoji || '💡'}, now(), now()
+          'open', 0, ${data.emoji || '💡'}, ${JSON.stringify(images)}::jsonb, now(), now()
         )
       `;
     }
@@ -785,7 +820,9 @@ export class ConnectOpportunityService {
   }
 
   async updateOpportunity(userId: string, opportunityId: string, data: any) {
-    const oppImage = data.image !== undefined ? data.image : data.thumbnail;
+    const images: string[] | null = data.images || data.image ? safeParseImages(data.images || [data.image]) : null;
+    const oppImage = images && images[0] ? images[0] : (data.image !== undefined ? data.image : data.thumbnail);
+
     await this.prisma.$executeRaw`
       UPDATE public.opportunities
       SET
@@ -802,6 +839,7 @@ export class ConnectOpportunityService {
         contact_title = COALESCE(${data.contactTitle}, contact_title),
         company = COALESCE(${data.company}, company),
         image = COALESCE(${oppImage}, image),
+        images = CASE WHEN ${images ? true : false} THEN ${JSON.stringify(images || [])}::jsonb ELSE images END,
         updated_at = now()
       WHERE id = ${opportunityId}
     `.catch(async () => {
@@ -903,6 +941,9 @@ export class ConnectOpportunityService {
           formattedVal = 'Thỏa thuận B2B';
         }
 
+        const imgList = safeParseImages(o.images || (o.image ? [o.image] : []));
+        const firstImg = imgList[0] || o.image || o.cover_image || null;
+
         return {
           id: String(o.id),
           tag: tagVi,
@@ -912,8 +953,9 @@ export class ConnectOpportunityService {
           time: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
           color: OPP_COLORS[i % OPP_COLORS.length],
           interested: myInterests.has(String(o.id)),
-          image: o.image || o.cover_image || null,
-          thumbnail: o.image || o.cover_image || null,
+          image: firstImg,
+          thumbnail: firstImg,
+          images: imgList,
           posterId: o.poster_id || o.poster_code || 'admin',
           posterCode: o.poster_code || o.poster_id || 'admin',
           posterName: o.poster_name || o.contact_name || o.poster_company || 'Hội viên CLB',

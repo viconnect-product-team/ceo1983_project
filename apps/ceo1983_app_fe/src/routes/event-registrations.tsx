@@ -348,6 +348,65 @@ function RegPage() {
     }
   };
 
+  const handleConfirmBankPayment = async (r: Registration) => {
+    if (
+      !window.confirm(
+        `Xác nhận hội viên "${r.memberName}" ĐÃ THANH TOÁN phí tham dự sự kiện?\n` +
+        `Số tiền: ${fmt.money(r.paymentAmount || 0)}\n\n` +
+        `Sau khi xác nhận:\n` +
+        `1. Hệ thống sẽ kích hoạt vé chính thức (Trạng thái: Đã thanh toán).\n` +
+        `2. Tự động sinh mã QR Check-in và gửi email Vé Điện Tử (E-Ticket) tới "${r.email}".`
+      )
+    ) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res: any = await fetchNestApi(`/events/registrations/${r.id}/confirm-payment`, {
+        method: "POST",
+        body: JSON.stringify({ method: "bank_transfer" }),
+      });
+      setRegistrationsList((prev) =>
+        prev.map((item) =>
+          item.id === r.id ? { ...item, paymentStatus: "paid", status: "confirmed" } : item,
+        ),
+      );
+      toast.success(
+        res?.message || `Đã xác nhận thanh toán và gửi vé QR check-in về email ${r.email}!`,
+      );
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi xác nhận thanh toán");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReconcilePayment = async (r: Registration) => {
+    setSubmitting(true);
+    try {
+      const res: any = await fetchNestApi(`/events/registrations/${r.id}/reconcile-payment`, {
+        method: "POST",
+      });
+      if (res?.matched) {
+        setRegistrationsList((prev) =>
+          prev.map((item) =>
+            item.id === r.id ? { ...item, paymentStatus: "paid", status: "confirmed" } : item,
+          ),
+        );
+        toast.success(`Dòng tiền khớp! Đã tự động kích hoạt vé và gửi vé QR về email ${r.email}.`);
+        await router.invalidate();
+      } else {
+        toast.info(res?.message || `Chưa phát hiện giao dịch khớp với hóa đơn EV${r.id}. Bạn có thể bấm xác nhận thủ công.`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi kiểm tra đối soát dòng tiền");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSendReminder = async (r: Registration) => {
     try {
       const res: any = await sendReminder({
@@ -767,15 +826,39 @@ function RegPage() {
                           Form
                         </button>
 
+                        {/* Xác nhận đã thanh toán chuyển khoản và đẩy vé QR */}
+                        {!isPaid && !isCancelled && (
+                          <button
+                            onClick={() => handleConfirmBankPayment(r)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer"
+                            title="Xác nhận đã thanh toán chuyển khoản và tự động gửi email vé kèm mã QR check-in"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Đã thanh toán
+                          </button>
+                        )}
+
+                        {/* Kiểm tra đối soát dòng tiền VietQR MB Bank */}
+                        {!isPaid && !isCancelled && (
+                          <button
+                            onClick={() => handleReconcilePayment(r)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:text-blue-300 cursor-pointer"
+                            title="Kiểm tra đối soát dòng tiền VietQR MB Bank tự động"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Đối soát
+                          </button>
+                        )}
+
                         {/* Thu tiền mặt tại chỗ nếu chưa nộp */}
                         {!isPaid && !isCancelled && (
                           <button
                             onClick={() => handleWalkInCashPayment(r)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-slate-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-slate-800 cursor-pointer"
                             title="Thu tiền mặt tại bàn tiếp đón và tự động lưu Quản lý thu"
                           >
                             <Coins className="h-3.5 w-3.5" />
-                            Thu tiền mặt
+                            Tiền mặt
                           </button>
                         )}
 

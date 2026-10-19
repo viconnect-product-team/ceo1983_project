@@ -374,6 +374,27 @@ export function ShopeeProductDetailModal({
                   {product.description ||
                     "Giải pháp chất lượng cao cung cấp bởi doanh nghiệp hội viên CLB CEO 1983, hướng tới tăng trưởng đột phá và kết nối thương mại bền vững."}
                 </p>
+
+                {/* Video Giới thiệu Sản phẩm (nếu có) */}
+                {product.videoUrl && (
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="size-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300 truncate">
+                        Có Video giới thiệu sản phẩm
+                      </span>
+                    </div>
+                    <a
+                      href={product.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-[#003B95] text-white hover:bg-blue-800 text-[11px] font-bold shadow-xs transition flex items-center gap-1 shrink-0 cursor-pointer"
+                    >
+                      <span>Xem Video</span>
+                      <Share2 className="size-3" />
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

@@ -176,10 +176,16 @@ export function EventSponsorPackageSelector({
         sponsorName: s.name,
         packageId: matchedPkg?.id,
         packageName: matchedPkg
-          ? `${(TIER_META[matchedPkg.tier] || DEFAULT_TIER).name} - ${matchedPkg.packageType === "in_kind" ? "Hiện vật" : "Tiền mặt"}`
+          ? `${(TIER_META[matchedPkg.tier] || DEFAULT_TIER).name} - ${
+              matchedPkg.packageType === "in_kind"
+                ? "Hiện vật"
+                : matchedPkg.packageType === "cash"
+                ? "Tiền mặt"
+                : "Chuyển khoản"
+            }`
           : tierMeta.name,
         tier: (matchedPkg?.tier || s.tier) as any,
-        packageType: matchedPkg?.packageType || s.packageType || "cash",
+        packageType: (matchedPkg?.packageType || s.packageType || "bank_transfer") as any,
         amount: Number(matchedPkg?.price ?? s.amount ?? 0),
         inKindDescription: s.inKindDescription || matchedPkg?.inKindDescription || "",
         benefits: matchedPkg?.benefits || [],
@@ -201,7 +207,13 @@ export function EventSponsorPackageSelector({
         return {
           ...item,
           packageId: pkg.id,
-          packageName: `${tierMeta.name} - ${pkg.packageType === "in_kind" ? "Hiện vật" : "Tiền mặt"}`,
+          packageName: `${tierMeta.name} - ${
+            pkg.packageType === "in_kind"
+              ? "Hiện vật"
+              : pkg.packageType === "cash"
+              ? "Tiền mặt"
+              : "Chuyển khoản"
+          }`,
           tier: pkg.tier as any,
           packageType: pkg.packageType,
           amount: Number(pkg.price || 0),
@@ -254,10 +266,16 @@ export function EventSponsorPackageSelector({
           sponsorName: s.name,
           packageId: matchedPkg?.id,
           packageName: matchedPkg
-            ? `${(TIER_META[matchedPkg.tier] || DEFAULT_TIER).name} - ${matchedPkg.packageType === "in_kind" ? "Hiện vật" : "Tiền mặt"}`
+            ? `${(TIER_META[matchedPkg.tier] || DEFAULT_TIER).name} - ${
+                matchedPkg.packageType === "in_kind"
+                  ? "Hiện vật"
+                  : matchedPkg.packageType === "cash"
+                  ? "Tiền mặt"
+                  : "Chuyển khoản"
+              }`
             : tierMeta.name,
           tier: (matchedPkg?.tier || s.tier) as any,
-          packageType: matchedPkg?.packageType || s.packageType || "cash",
+          packageType: (matchedPkg?.packageType || s.packageType || "bank_transfer") as any,
           amount: Number(matchedPkg?.price ?? s.amount ?? 0),
           inKindDescription: s.inKindDescription || matchedPkg?.inKindDescription || "",
           benefits: matchedPkg?.benefits || [],
@@ -274,6 +292,9 @@ export function EventSponsorPackageSelector({
 
   // Quick calculations
   const totalValue = safeSelected.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+  const bankTransferTotal = safeSelected
+    .filter((s) => (s.packageType || "bank_transfer") === "bank_transfer")
+    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
   const cashTotal = safeSelected
     .filter((s) => s.packageType === "cash")
     .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
@@ -345,7 +366,9 @@ export function EventSponsorPackageSelector({
               Tổng: {fmt.money(totalValue)}
             </span>
             <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-              <span>(Tiền mặt: {fmt.money(cashTotal)}</span>
+              <span>(CK: {fmt.money(bankTransferTotal)}</span>
+              <span>•</span>
+              <span>Tiền mặt: {fmt.money(cashTotal)}</span>
               <span>•</span>
               <span>Hiện vật: {fmt.money(inKindTotal)})</span>
             </div>
@@ -447,16 +470,22 @@ export function EventSponsorPackageSelector({
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
                               item.packageType === "in_kind"
                                 ? "bg-purple-500/15 text-purple-700 dark:text-purple-300"
-                                : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                : item.packageType === "cash"
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                : "bg-blue-500/15 text-[#003B95] dark:text-blue-300"
                             }`}
                           >
                             {item.packageType === "in_kind" ? (
                               <>
                                 <Gift className="h-3 w-3" /> Tài trợ Hiện vật
                               </>
-                            ) : (
+                            ) : item.packageType === "cash" ? (
                               <>
                                 <DollarSign className="h-3 w-3" /> Tài trợ Tiền mặt
+                              </>
+                            ) : (
+                              <>
+                                <DollarSign className="h-3 w-3" /> Chuyển khoản VietQR
                               </>
                             )}
                           </span>
@@ -493,7 +522,11 @@ export function EventSponsorPackageSelector({
                             return (
                               <option key={pkg.id} value={pkg.id}>
                                 {pMeta.icon} {pMeta.name} ({fmt.money(pkg.price)}) -{" "}
-                                {pkg.packageType === "in_kind" ? "Hiện vật" : "Tiền mặt"}
+                                {pkg.packageType === "in_kind"
+                                  ? "Hiện vật"
+                                  : pkg.packageType === "cash"
+                                  ? "Tiền mặt"
+                                  : "Chuyển khoản"}
                               </option>
                             );
                           })}

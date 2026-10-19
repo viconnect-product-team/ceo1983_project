@@ -15,12 +15,14 @@ export type AssignedEvent = {
   amount?: number;
 };
 
+export type PackageType = "bank_transfer" | "cash" | "in_kind";
+
 export type Sponsor = {
   id: string;
   name: string;
   tier: "platinum" | "gold" | "silver" | "bronze";
   sponsorType: "regular" | "new";
-  packageType: "cash" | "in_kind";
+  packageType: PackageType;
   inKindDescription?: string;
   contact: string;
   email: string;
@@ -37,7 +39,7 @@ export type SponsorPackage = {
   id: string;
   tier: "platinum" | "gold" | "silver" | "bronze";
   price: number;
-  packageType: "cash" | "in_kind";
+  packageType: PackageType;
   inKindDescription?: string;
   benefits: string[];
   available: number;
@@ -76,7 +78,7 @@ const sponsorInput = z.object({
   name: z.string().min(1).max(200),
   tier: z.enum(["platinum", "gold", "silver", "bronze"]).default("bronze"),
   sponsorType: z.enum(["regular", "new"]).default("new"),
-  packageType: z.enum(["cash", "in_kind"]).default("cash"),
+  packageType: z.enum(["bank_transfer", "cash", "in_kind"]).default("bank_transfer"),
   inKindDescription: z.string().max(1000).optional().default(""),
   contact: z.string().max(120).default(""),
   email: z.string().max(160).default(""),
@@ -131,7 +133,7 @@ export const sendSponsorThankYouEmailFn = createServerFn({ method: "POST" })
 const packageInput = z.object({
   tier: z.enum(["platinum", "gold", "silver", "bronze"]),
   price: z.number().min(0).max(1e12).default(0),
-  packageType: z.enum(["cash", "in_kind"]).default("cash"),
+  packageType: z.enum(["bank_transfer", "cash", "in_kind"]).default("bank_transfer"),
   inKindDescription: z.string().max(1000).optional().default(""),
   benefits: z.array(z.string().min(1).max(200)).max(30).default([]),
   available: z.number().int().min(0).max(100000).default(0),

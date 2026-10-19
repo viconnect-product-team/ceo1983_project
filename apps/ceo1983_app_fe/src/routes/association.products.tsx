@@ -705,6 +705,8 @@ function ProductsScreen() {
   }, [reload]);
 
   const [formPhoto, setFormPhoto] = useState("");
+  const [formPhotos, setFormPhotos] = useState<string[]>([]);
+  const [formVideoUrl, setFormVideoUrl] = useState("");
   const [formName, setFormName] = useState("");
   const [formCompany, setFormCompany] = useState(() => {
     if (typeof window !== "undefined") {
@@ -739,6 +741,8 @@ function ProductsScreen() {
 
   // Form states for editing product
   const [editPhoto, setEditPhoto] = useState("");
+  const [editPhotos, setEditPhotos] = useState<string[]>([]);
+  const [editVideoUrl, setEditVideoUrl] = useState("");
   const [editName, setEditName] = useState("");
   const [editCompany, setEditCompany] = useState("");
   const [editCategory, setEditCategory] = useState("Công nghệ & Phần mềm");
@@ -1033,15 +1037,18 @@ function ProductsScreen() {
       return;
     }
     setEditingProduct(p);
-    setEditPhoto(p.imageUrl || "");
+    const pPhotos = p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls : (p.imageUrl ? [p.imageUrl] : []);
+    setEditPhoto(p.imageUrl || pPhotos[0] || "");
+    setEditPhotos(pPhotos);
+    setEditVideoUrl(p.videoUrl || "");
     setEditName(p.name || "");
     setEditCompany(p.company || member?.title || "");
     setEditCategory(p.category || "Công nghệ & Phần mềm");
     setEditPrice(p.memberPrice || p.price || "");
     setEditOriginalPrice(p.originalPrice || "");
-    setEditUnit("Gói");
-    setEditCurrency("VND");
-    setEditDesc("");
+    setEditUnit(p.unit || "Gói");
+    setEditCurrency(p.currency || "VND");
+    setEditDesc(p.description || "");
   };
 
   const handleDeleteProduct = async (id: string, e?: React.MouseEvent) => {
@@ -1099,33 +1106,31 @@ function ProductsScreen() {
     const cleanPrice = Number(editPrice.replace(/\D/g, "")) || 0;
     const cleanOriginalPrice = Number(editOriginalPrice.replace(/\D/g, "")) || cleanPrice;
 
+    const finalPhotos = editPhotos.length > 0 ? editPhotos : (editPhoto ? [editPhoto] : []);
+    const updatePayload = {
+      name: editName.trim(),
+      title: editName.trim(),
+      description: editDesc.trim(),
+      price: cleanPrice,
+      originalPrice: cleanOriginalPrice,
+      memberPrice: cleanPrice,
+      category: editCategory,
+      imageUrl: finalPhotos[0] || editPhoto || null,
+      imageUrls: finalPhotos,
+      videoUrl: editVideoUrl.trim() || null,
+      company: editCompany.trim(),
+      unit: editUnit,
+      currency: editCurrency,
+    };
+
     try {
       await fetchNestApi(`/products/${editingProduct.id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          name: editName.trim(),
-          title: editName.trim(),
-          description: editDesc.trim(),
-          price: cleanPrice,
-          originalPrice: cleanOriginalPrice,
-          memberPrice: cleanPrice,
-          category: editCategory,
-          imageUrl: editPhoto || null,
-          company: editCompany.trim(),
-        }),
+        body: JSON.stringify(updatePayload),
       }).catch(() =>
         fetchNestApi(`/marketplace/products/${editingProduct.id}`, {
           method: "PATCH",
-          body: JSON.stringify({
-            title: editName.trim(),
-            name: editName.trim(),
-            description: editDesc.trim(),
-            price: cleanPrice,
-            originalPrice: cleanOriginalPrice,
-            category: editCategory,
-            imageUrl: editPhoto || null,
-            company: editCompany.trim(),
-          }),
+          body: JSON.stringify(updatePayload),
         })
       );
       toast.success("Đã cập nhật thông tin sản phẩm thành công!");
@@ -1148,6 +1153,8 @@ function ProductsScreen() {
     const cleanPrice = Number(formPrice.replace(/\D/g, "")) || 0;
     const cleanOriginalPrice = Number(formOriginalPrice.replace(/\D/g, "")) || cleanPrice;
 
+    const finalPhotos = formPhotos.length > 0 ? formPhotos : (formPhoto ? [formPhoto] : []);
+
     const payload = {
       name: formName.trim(),
       title: formName.trim(),
@@ -1159,8 +1166,9 @@ function ProductsScreen() {
       currency: formCurrency,
       category: formCategory,
       status: "active",
-      imageUrl: formPhoto || null,
-      imageUrls: formPhoto ? [formPhoto] : [],
+      imageUrl: finalPhotos[0] || formPhoto || null,
+      imageUrls: finalPhotos,
+      videoUrl: formVideoUrl.trim() || null,
       company: formCompany.trim() || resolvedProfileCompany || "CLB Doanh Nhân CEO 1983",
       companyIntro: formCompanyIntro.trim(),
       companySize: formCompanySize,
@@ -1183,6 +1191,8 @@ function ProductsScreen() {
       toast.success(isEn ? "Product posted successfully!" : "Đã đăng sản phẩm thành công lên sàn!");
       setPostModalOpen(false);
       setFormPhoto("");
+      setFormPhotos([]);
+      setFormVideoUrl("");
       setFormName("");
       setFormCompany(resolvedProfileCompany || "");
       setFormCompanyIntro("");
@@ -2805,6 +2815,10 @@ function ProductsScreen() {
         setFormCompanyIntro={setFormCompanyIntro}
         formPhoto={formPhoto}
         setFormPhoto={setFormPhoto}
+        formPhotos={formPhotos}
+        setFormPhotos={setFormPhotos}
+        formVideoUrl={formVideoUrl}
+        setFormVideoUrl={setFormVideoUrl}
         formName={formName}
         setFormName={setFormName}
         formOriginalPrice={formOriginalPrice}
@@ -2856,6 +2870,10 @@ function ProductsScreen() {
         isEn={isEn}
         editPhoto={editPhoto}
         setEditPhoto={setEditPhoto}
+        editPhotos={editPhotos}
+        setEditPhotos={setEditPhotos}
+        editVideoUrl={editVideoUrl}
+        setEditVideoUrl={setEditVideoUrl}
         editName={editName}
         setEditName={setEditName}
         editCompany={editCompany}

@@ -193,6 +193,12 @@
 #     + Dark Mode: Toàn bộ biểu tượng trên trang chủ mobile ở Dark Mode bắt buộc sử dụng bảng màu dạ quang phát sáng rực rỡ (`#FBBF24`, `#38BDF8`, `#34D399`, `#A78BFA`, `#FB7185`) kèm viền neon tinh tế; tuyệt đối không để icon chìm vào nền tối.
 #     + Nút QR Trung Tâm Navigation (`MemberShell`): Bấm nút QR tròn ở giữa thanh điều hướng đáy lập tức mở popup `AssociationMemberQrModal` (hiển thị thẻ QR hội viên và tab máy ảnh quét QR siêu tốc 0.1s), không điều hướng sang trang `/association/card`.
 #     + Đồng Bộ Chủ Đề (Themes & Birthday): Hỗ trợ chủ đề Sinh nhật CEO 1983 (`ceo1983-birthday`) với bóng bay, pháo hoa, bánh kem sinh nhật; cấu hình theme từ CRM tự động cập nhật banner và không khí hội viên mobile app trong thời gian thực.
+#   - Chuẩn Giao Diện Ưu Đãi Hội Viên & Cài Đặt App (Perks, AI Switch & Fast Install App):
+#     + Màn Ưu đãi (`/association/perks`): Bắt buộc dùng theme sáng thanh nhã (loại bỏ màu tối, viền vàng gold sang trọng), toàn bộ icon ưu đãi bắt buộc đồng bộ sử dụng ảnh 3D hộp quà phát sáng `/f7e3331b1c09a1006d5662da8900f36748428901.png`.
+#     + Nút Bật/Tắt AI (Switch): Track phải có viền rõ ràng (`border-slate-400` trên light theme), thumb tròn trắng có đổ bóng và ring sắc nét, có nhãn trạng thái trực quan "Đang bật" / "Đã tắt" để không bị chìm/sáng mờ trên theme sáng.
+#     + Nút Cài Đặt App (`association.profile.tsx`, `association.settings.tsx`): Bắt buộc dùng gradient Hoàng Gia Amber Gold (`from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black border border-amber-300`) nổi bật rực rỡ trên cả theme tối và theme sáng; tích hợp `handleFastInstallApp` tự động kích hoạt prompt PWA, tự động tải tệp APK Android `/docs/CEO1983-app-latest.apk`, và hướng dẫn 1 chạm trên iOS Safari.
+#     + Banner Ưu Đãi Trang Chủ (`association.index.tsx`): Nút "Khám phá ngay" và badge "Đặc quyền Hội viên" bắt buộc đặt trực tiếp bên trong ảnh banner `uu_dai_event.jpg` (kèm gradient bảo vệ tương phản ở đáy ảnh), loại bỏ hoàn toàn các thanh bóc tách nút rời bên ngoài.
+#     + Trường Khẩu Hiệu / Tagline Banner Sự Kiện (`EventWizard.tsx`, `events.index.tsx`): Tuyệt đối không hardcode text slogan trên Live Banner Preview sự kiện. Bắt buộc cung cấp trường `tagline` (Khẩu hiệu / Thông điệp phụ trên Banner) đồng bộ giữa Frontend và Backend NestJS (`public.events.tagline`), tự động cập nhật preview thời gian thực và tự động điền gợi ý theo loại sự kiện.
 #   - Chuẩn Bắt Buộc Đổi Mật Khẩu & Kích Hoạt Tài Khoản Cho Hội Viên Mới (Mandatory Password Change & Activation Flow):
 #     + Khi hội viên mới nhận tài khoản qua email đăng nhập vào App CEO 1983 (`/association/login`), nếu cờ `mustChangePassword` hoặc `onboarding_status === 'new'`, hệ thống BẮT BUỘC lưu cờ `vba_must_change_password` và chuyển hướng ngay tới `/association/settings?action=change_password&required=true`.
 #     + Bắt buộc bảo vệ toàn diện tại Router Guard (`association.tsx` - `beforeLoad`): Chặn hội viên truy cập mọi route khác của App Hiệp hội nếu chưa hoàn thành đổi mật khẩu.
@@ -2002,3 +2008,45 @@
   + 4 nút chức năng cốt lõi (`Danh thiếp`, `Sửa hồ sơ`, `Chia sẻ`, `Mã QR`) phải được thiết kế nhỏ gọn, tinh tế, không chiếm dụng chiều cao màn hình.
   + TUYỆT ĐỐI KHÔNG sử dụng khung màu nền lớn (`bg-slate-50`, `bg-blue-50`, `bg-amber-50`, v.v.) và không bọc icon trong các ô vuông cồng kềnh.
   + Sử dụng phong cách phẳng trong suốt (`bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60`), icon thanh mảnh trực tiếp (`size-4.5`), nhãn chữ nhỏ tinh gọn (`text-[10.5px] font-semibold`).
+# [BẮT BUỘC 115] Quy Chuẩn Tái Cấu Trúc Luồng Nhà Tài Trợ & Gói Tài Trợ: Phân Định 3 Hình Thức Riêng Biệt, Tích Hợp API Gói & Tạo Nhanh, Cho Phép Nhập Số Tiền Thực Tế Tùy Biến, Tự Động Bắn Email VietQR
+- Phân Định Rõ Ràng 3 Hình Thức Tài Trợ Riêng Biệt:
+  + Toàn bộ hệ sinh thái (DB, NestJS Backend, TanStack Router Frontend, Excel Export/Import, Event Sponsors) phải phân chia dứt khoát 3 hình thức đóng góp qua kiểu `PackageType = "bank_transfer" | "cash" | "in_kind"`:
+    1. **Chuyển khoản (VietQR)**: Quét mã QR thanh toán định danh ngân hàng MB Bank 1983000000.
+    2. **Tiền mặt**: Nộp tiền mặt trực tiếp tại văn phòng hiệp hội hoặc quầy lễ tân sự kiện.
+    3. **Hiện vật**: Đóng góp sản phẩm, dịch vụ, trang thiết bị, quà tặng có quy đổi giá trị và mô tả chi tiết.
+  + Bộ lọc thống kê, tab bảng dữ liệu và mẫu xuất/nhập Excel bắt buộc phản ánh chuẩn xác 3 hình thức này.
+- Trường Chọn Gói Tài Trợ & Tạo Gói Nhanh 1 Chạm Tại Modal Nhà Tài Trợ (`SponsorModal.tsx`):
+  + Bắt buộc gọi API `listSponsorPackagesFn()` để tải danh sách gói tài trợ thực tế từ hệ thống.
+  + Nếu một hạng tài trợ/hình thức nào chưa có dữ liệu gói trong hệ thống: hiển thị thông báo trực quan "Chưa có gói tài trợ nào thuộc hạng này" kèm nút bấm **[+ Tạo Gói Mới Ngay]**.
+  + Nhấp nút sẽ mở ngay popup tạo gói tài trợ (`SponsorPackageModal`), sau khi lưu thành công tự động reload API và chọn ngay gói mới tạo vào form nhà tài trợ.
+- Cho Phép Nhập Giá Trị Thực Tế Tùy Biến Theo Số Tiền Nhà Tài Trợ Mong Muốn:
+  + Khi chọn gói tài trợ, hệ thống tự động gợi ý giá niêm yết của gói nhưng TUYỆT ĐỐI KHÔNG ép buộc/khóa cứng số tiền.
+  + Phải cho phép người dùng tự do nhập/điều chỉnh giá trị tài trợ thực tế theo đúng số tiền mà nhà tài trợ mong muốn (`VndCurrencyInput`).
+- Tự Động Bắn Email Kèm Mã VietQR Đúng Số Tiền Khai Báo Về Email Nhà Tài Trợ (`sponsors.service.ts`):
+  + Ngay sau khi tạo mới thành công nhà tài trợ (hoặc khi bấm nút "Gửi lại thư tri ân"), Backend NestJS tự động tạo và gửi email HTML cao cấp kèm mã VietQR động:
+    * API VietQR: `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${numAmount}&addInfo=${encodedAddInfo}`
+    * Ngân hàng thụ hưởng: **MB Bank (Ngân hàng TMCP Quân Đội)**
+    * Số tài khoản: **1983000000**
+    * Tên thụ hưởng: **CLB DOANH NHAN CEO 1983**
+    * Cú pháp chuyển khoản định danh: `TT [MÃ NHÀ TÀI TRỢ] [TÊN DOANH NGHIỆP]`
+    * Hiển thị bảng tổng hợp quyền lợi và lời tri ân trang trọng từ Ban Chủ Nhiệm Hiệp Hội Doanh Nhân CEO 1983 (HanoiBA).
+
+# [BẮT BUỘC 116] Quy Chuẩn Luồng Sự Kiện Có Phí, Đa Phương Tiện Marketplace/B2B, Mạng Xã Hội Web CRM 3 Tab & Lên Lịch Gặp 1-on-1
+- Luồng Sự Kiện Có Phí & Kích Hoạt Vé QR Kèm Email:
+  + Khi hội viên đăng ký sự kiện có phí: hệ thống đánh dấu trạng thái chưa thanh toán (`registered: false`), TUYỆT ĐỐI KHÔNG sinh mã QR vé check-in, chỉ hiển thị mã VietQR thanh toán MB Bank kèm hướng dẫn nộp phí.
+  + Tại Web CRM Quản trị (`/event-registrations`): Ban Truyền Thông / Admin có 2 nút hành động:
+    * `[✓ Đã thanh toán]`: Cập nhật trạng thái vé sang `paid`, kích hoạt vé (`registered: true`), sinh mã QR vé check-in chuẩn và tự động bắn Email E-ticket HTML kèm mã QR check-in về email người tham gia.
+    * `[🔍 Đối soát]`: Mở modal đối soát chi tiết dòng tiền, mã giao dịch ngân hàng và đối chiếu số tiền thực tế.
+- Đa Phương Tiện Cho Sản Phẩm Marketplace & Cơ Hội Hợp Tác B2B:
+  + Gian hàng sản phẩm: Bắt buộc hỗ trợ upload & chỉnh sửa nhiều ảnh sản phẩm (`imageUrls`) và link video giới thiệu (`videoUrl`).
+  + Cơ hội B2B: Bắt buộc hỗ trợ nhiều ảnh minh họa (`images` jsonb) kèm album ảnh phong phú trong modal chi tiết.
+- Quản Lý Tin Tức & Tài Liệu:
+  + Tin tức: Hỗ trợ trường `type: "multi-image"` trong `CrudModal` cho phép đăng nhiều hình ảnh sự kiện, phóng sự.
+  + Tài liệu (`documents.index.tsx`): Cho phép chọn và tải lên hàng loạt tệp tin cùng lúc (`<input type="file" multiple ... />`).
+- Brochure Doanh Nghiệp Tại Thẻ Hội Viên:
+  + Hồ sơ năng lực doanh nghiệp (Brochure / Flyer) hiển thị trực tiếp ngay bên dưới Thẻ hội viên điện tử tại `association.card.tsx`, không làm nặng trang Profile cá nhân.
+- Mạng Xã Hội Doanh Nhân Web CRM (`/network`):
+  + 3 Tab chức năng trực quan: Bảng tin (Feed tổng hợp Sản phẩm, Cơ hội, Tin tức), Nhắn tin (Messages), Kết nối (Thành viên phân loại theo 7 Ban chuyên môn).
+  + Mỗi card bài đăng trên Bảng tin có nút **[🤝 Lên lịch cuộc gặp 1-on-1]** mở modal `ScheduleMeetingModal` đặt lịch gặp trực tiếp trên Web CRM mà không cần mở App mobile, tự động gửi tin nhắn lịch hẹn vào thread 1-on-1.
+
+

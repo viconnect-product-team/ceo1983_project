@@ -26,6 +26,7 @@ import {
   BookOpen,
   Download,
   ExternalLink,
+  Smartphone,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -134,6 +135,49 @@ function AssociationSettingsScreen() {
     setAiEnabledState(checked);
     setVoiceAiEnabled(checked);
     toast.success(checked ? "Đã bật Trợ lý AI CEO 1983" : "Đã tắt Trợ lý AI CEO 1983");
+  };
+
+  // Cài đặt ứng dụng nhanh 1 chạm (PWA Native Prompt / APK Android / iOS Safari)
+  const handleFastInstallApp = async () => {
+    const p = (window as any).__pwaInstallPrompt;
+    if (p && typeof p.prompt === "function") {
+      try {
+        p.prompt();
+        const choice = await p.userChoice;
+        if (choice?.outcome === "accepted") {
+          toast.success("Ứng dụng đang được tự động cài đặt lên màn hình chính!");
+        }
+        (window as any).__pwaInstallPrompt = null;
+        return;
+      } catch (err) {
+        console.warn("Fast install prompt error:", err);
+      }
+    }
+
+    const userAgent = typeof window !== "undefined" ? window.navigator.userAgent.toLowerCase() : "";
+    const isAndroid = /android/i.test(userAgent);
+    const isIos = /iphone|ipad|ipod/i.test(userAgent);
+
+    if (isAndroid) {
+      toast.info("Đang tự động tải bộ cài APK ứng dụng CEO 1983 cho Android...");
+      const link = document.createElement("a");
+      link.href = "/docs/CEO1983-app-latest.apk";
+      link.download = "CEO1983-app-latest.apk";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    if (isIos) {
+      toast.info("Chạm nút Chia sẻ ⎋ dưới đáy Safari → chọn 'Thêm vào MH chính' ⊞", {
+        duration: 5000,
+      });
+      window.dispatchEvent(new CustomEvent("open-install-prompt"));
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent("open-install-prompt"));
   };
 
   // Sync initial identifier from user or member data when loaded
@@ -505,19 +549,33 @@ function AssociationSettingsScreen() {
                     </div>
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={notifEnabled}
-                  onChange={async (e) => {
-                    const checked = e.target.checked;
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={notifEnabled}
+                  onClick={async () => {
+                    const checked = !notifEnabled;
                     setNotifEnabled(checked);
                     if (checked) {
                       await requestNotificationPermission();
                     }
                     toast.success(checked ? "Đã bật thông báo nền & cuộc gọi" : "Đã tắt thông báo");
                   }}
-                  className="h-5 w-5 accent-[#003B95] rounded cursor-pointer"
-                />
+                  className={`w-12 h-6 p-0.5 rounded-full flex items-center transition-colors cursor-pointer shrink-0 border ${
+                    notifEnabled
+                      ? "bg-[#003B95] border-[#003B95]"
+                      : "bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600"
+                  }`}
+                  aria-label="Bật tắt thông báo"
+                >
+                  <div
+                    className={`size-5 rounded-full shadow-md transform transition-transform ${
+                      notifEnabled
+                        ? "translate-x-6 bg-white"
+                        : "translate-x-0.5 bg-white border border-slate-200 dark:border-transparent"
+                    }`}
+                  />
+                </button>
               </div>
 
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
@@ -569,12 +627,31 @@ function AssociationSettingsScreen() {
                     </div>
                   </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={aiEnabled}
-                  onChange={(e) => handleToggleAi(e.target.checked)}
-                  className="h-5 w-5 accent-[#003B95] rounded cursor-pointer"
-                />
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-bold hidden sm:inline ${aiEnabled ? "text-[#003B95] dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>
+                    {aiEnabled ? "Đang bật" : "Đã tắt"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={aiEnabled}
+                    onClick={() => handleToggleAi(!aiEnabled)}
+                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-all cursor-pointer shrink-0 border ${
+                      aiEnabled
+                        ? "bg-gradient-to-r from-[#003B95] to-[#002766] border-[#003B95] shadow-xs"
+                        : "bg-slate-300 dark:bg-slate-700 border-slate-400 dark:border-slate-600 shadow-inner"
+                    }`}
+                    aria-label="Bật tắt Trợ lý AI CEO 1983"
+                  >
+                    <div
+                      className={`size-5 rounded-full shadow-md transform transition-transform ${
+                        aiEnabled
+                          ? "translate-x-6 bg-white ring-1 ring-black/10"
+                          : "translate-x-0.5 bg-white dark:bg-slate-200 border border-slate-300 dark:border-slate-500"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
               <p className="text-[10.5px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/80">
                 {aiEnabled
@@ -592,17 +669,37 @@ function AssociationSettingsScreen() {
                   </div>
                   <div>
                     <div className="text-[13px] font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <span>Hướng dẫn sử dụng App CEO 1983</span>
+                      <span>Hướng dẫn & Cài đặt App CEO 1983</span>
                       <span className="text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40">
                         Chỉ Dành Cho App
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Sổ tay thao tác 10 màn hình, chạm thẻ NFC, quét card AI & tài liệu di động chính thức
+                      Sổ tay thao tác 10 màn hình, chạm thẻ NFC, quét card AI & cài nhanh lên điện thoại
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Nút Cài đặt ứng dụng nhanh 1 chạm */}
+              <button
+                type="button"
+                onClick={handleFastInstallApp}
+                className="w-full flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 py-3 px-3.5 text-xs font-black transition shadow-[0_4px_14px_rgba(245,158,11,0.25)] border border-amber-300 cursor-pointer active:scale-98 group"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="size-6 rounded-lg bg-slate-950/10 grid place-items-center">
+                    <Smartphone className="size-3.5 text-slate-950" />
+                  </div>
+                  <span>Cài Đặt Ứng Dụng CEO 1983 (Cài Nhanh)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded-full bg-slate-950 text-amber-300 uppercase">
+                    Tự động
+                  </span>
+                  <Download className="size-3.5 text-slate-950 group-hover:translate-y-0.5 transition-transform" />
+                </div>
+              </button>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
                 <button

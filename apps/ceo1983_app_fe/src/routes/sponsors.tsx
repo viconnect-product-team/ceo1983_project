@@ -64,7 +64,9 @@ function SponsorsPage() {
   const [q, setQ] = useUrlState<string>("q", "");
   const [tier, setTier] = useState<Sponsor["tier"] | "all">("all");
   const [sponsorTypeFilter, setSponsorTypeFilter] = useState<"all" | "regular" | "new">("all");
-  const [packageTypeFilter, setPackageTypeFilter] = useState<"all" | "cash" | "in_kind">("all");
+  const [packageTypeFilter, setPackageTypeFilter] = useState<
+    "all" | "bank_transfer" | "cash" | "in_kind"
+  >("all");
   const [eventAssignedFilter, setEventAssignedFilter] = useState<"all" | "assigned" | "available">(
     "all",
   );
@@ -96,7 +98,9 @@ function SponsorsPage() {
       } else {
         await createFn({ data: payload as never });
         if (payload.email && payload.email.includes("@")) {
-          toast.success("Thêm nhà tài trợ thành công! Đã tự động gửi email tri ân đến đối tác.");
+          toast.success(
+            "Thêm nhà tài trợ thành công! Đã tự động gửi email kèm mã VietQR và thông tin tài trợ đến đối tác."
+          );
         } else {
           toast.success(t("common.created"));
         }
@@ -212,8 +216,13 @@ function SponsorsPage() {
         {
           header: "Hình Thức",
           key: "pkg",
-          width: 16,
-          value: (s) => (s.packageType === "in_kind" ? "Hiện vật" : "Tiền mặt"),
+          width: 20,
+          value: (s) =>
+            s.packageType === "in_kind"
+              ? "Hiện vật"
+              : s.packageType === "cash"
+              ? "Tiền mặt"
+              : "Chuyển khoản (VietQR)",
         },
         { header: "Chi tiết hiện vật", key: "inKind", width: 32, value: (s) => s.inKindDescription || "—" },
         { header: "Đại Diện / Người Liên Hệ", key: "contact", width: 24, value: (s) => s.contact || "—" },
@@ -337,8 +346,9 @@ function SponsorsPage() {
           className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs cursor-pointer"
         >
           <option value="all">Tất cả hình thức</option>
-          <option value="cash">💵 Bằng Tiền mặt/CK</option>
-          <option value="in_kind">🎁 Bằng Hiện vật</option>
+          <option value="bank_transfer">🏦 Chuyển khoản (VietQR)</option>
+          <option value="cash">💵 Tiền mặt trực tiếp</option>
+          <option value="in_kind">🎁 Tài trợ Hiện vật</option>
         </select>
         <select
           value={tier}
@@ -450,9 +460,13 @@ function SponsorsPage() {
                           </span>
                         )}
                       </div>
-                    ) : (
+                    ) : s.packageType === "cash" ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10.5px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap">
-                        💵 Bằng Tiền
+                        💵 Tiền mặt
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[10.5px] font-bold text-[#003B95] dark:text-blue-300 whitespace-nowrap">
+                        🏦 Chuyển khoản
                       </span>
                     )}
                   </td>

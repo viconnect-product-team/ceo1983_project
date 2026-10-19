@@ -27,6 +27,7 @@ type TicketDraft = {
 
 type Info = {
   name: string;
+  tagline?: string;
   date: string;
   location: string;
   capacity: string;
@@ -88,6 +89,7 @@ function EventWizardDialog({
   const [submitting, setSubmitting] = useState(false);
   const [info, setInfo] = useState<Info>({
     name: "",
+    tagline: defaultTpl.tagline,
     date: "",
     location: "",
     capacity: "",
@@ -105,6 +107,7 @@ function EventWizardDialog({
     setStep(0);
     setInfo({
       name: "",
+      tagline: defaultTpl.tagline,
       date: "",
       location: "",
       capacity: "",
@@ -207,6 +210,7 @@ function EventWizardDialog({
         method: "POST",
         body: JSON.stringify({
           name: info.name.trim(),
+          tagline: (info.tagline || "").trim(),
           date: info.date,
           location: info.location.trim(),
           address: info.location.trim(),
@@ -393,6 +397,7 @@ function InfoStep({
       ...info,
       type: newType,
       name: tpl.name,
+      tagline: tpl.tagline,
       location: tpl.defaultLocation,
       capacity: tpl.defaultCapacity,
       imageUrl: tpl.bgImage,
@@ -480,7 +485,7 @@ function InfoStep({
               {info.name || currentTpl.name}
             </h4>
             <p className="mt-1 text-xs font-semibold drop-shadow-sm line-clamp-1" style={{ color: currentTpl.accentColor }}>
-              {currentTpl.tagline}
+              {info.tagline !== undefined && info.tagline !== "" ? info.tagline : currentTpl.tagline}
             </p>
           </div>
 
@@ -518,6 +523,25 @@ function InfoStep({
             {errors.name}
           </p>
         )}
+      </div>
+
+      {/* Trường mới: Khẩu hiệu / Thông điệp phụ trên Banner */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className={labelCls} htmlFor="ewz-tagline">
+            Khẩu hiệu / Thông điệp phụ trên Banner (Tagline / Slogan)
+          </label>
+          <span className="text-[10px] text-muted-foreground">Hiển thị trực tiếp dưới tiêu đề banner xem trước</span>
+        </div>
+        <input
+          id="ewz-tagline"
+          className={inputCls}
+          placeholder="Nhập khẩu hiệu banner (ví dụ: Bứt phá tăng trưởng & Kết nối giao thương đa ngành)..."
+          value={info.tagline ?? ""}
+          onChange={(e) => {
+            setInfo({ ...info, tagline: e.target.value });
+          }}
+        />
       </div>
 
       {/* Event Banner / Photo Upload */}

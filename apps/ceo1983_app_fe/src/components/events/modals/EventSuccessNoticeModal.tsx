@@ -22,7 +22,7 @@ export const EventSuccessNoticeModal: React.FC<EventSuccessNoticeModalProps> = (
 
   return (
     <Dialog open={!!registeredSuccessInfo} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-sm p-5 rounded-2xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] text-center space-y-3">
+      <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] max-h-[90dvh] overflow-y-auto overscroll-contain p-5 rounded-3xl border-slate-200 dark:border-slate-800 bg-[var(--vba-surface,#fff)] text-center space-y-3 shadow-2xl">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
           <Check className="h-6 w-6 stroke-[3]" />
         </div>
@@ -83,10 +83,10 @@ export const EventSuccessNoticeModal: React.FC<EventSuccessNoticeModalProps> = (
             <MessageSquare className="h-4 w-4 shrink-0 text-[#003B95] dark:text-amber-400 mt-0.5" />
             <div className="space-y-1">
               <p className="font-bold text-[#003B95] dark:text-amber-300 text-xs">
-                ✉️ Đã gửi mã VietQR thanh toán về email!
+                ✉️ Hướng dẫn thanh toán phí tham dự sự kiện
               </p>
               <p className="leading-relaxed">
-                Hệ thống đã tự động gửi mã VietQR thanh toán phí tham dự về hòm thư của bạn. Bạn có thể quét mã VietQR trực tiếp bên dưới hoặc kiểm tra email để thanh toán:
+                Vui lòng quét mã VietQR bên dưới hoặc chuyển khoản theo đúng cú pháp. Sau khi hệ thống hoặc Ban Truyền Thông xác nhận thanh toán, mã QR vé check-in sẽ được cấp và gửi về email của bạn.
               </p>
             </div>
           </div>
@@ -128,34 +128,28 @@ export const EventSuccessNoticeModal: React.FC<EventSuccessNoticeModalProps> = (
         )}
 
         <div className="pt-2 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => onViewPass(registeredSuccessInfo)}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 text-white font-bold text-xs shadow-md shadow-[#003B95]/25 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-          >
-            <Ticket className="h-3.5 w-3.5 text-amber-400" />
-            <span>Xem Thẻ Vé Điện Tử VIP & Phóng To QR</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-
-          {!isFreeOrZero && (
+          {isFreeOrZero ? (
             <button
               type="button"
-              onClick={onGoToMessages}
-              style={{ color: "#ffffff" }}
-              className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              onClick={() => onViewPass(registeredSuccessInfo)}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/40 text-white font-bold text-xs shadow-md shadow-[#003B95]/25 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
-              <span>Đến mục Kết nối để thanh toán VietQR</span>
+              <Ticket className="h-3.5 w-3.5 text-amber-400" />
+              <span>Xem Thẻ Vé Điện Tử VIP & Phóng To QR</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
+          ) : (
+            <div className="rounded-xl bg-blue-50 dark:bg-blue-950/40 p-2.5 text-[11px] text-blue-900 dark:text-blue-300 text-left leading-relaxed">
+              ℹ️ <i>Vé check-in có mã QR sẽ được gửi tự động tới email và tin nhắn ngay sau khi hệ thống ghi nhận thanh toán của bạn.</i>
+            </div>
           )}
 
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+            className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition cursor-pointer"
           >
-            Đóng
+            Đã hiểu & Hoàn tất
           </button>
         </div>
       </DialogContent>

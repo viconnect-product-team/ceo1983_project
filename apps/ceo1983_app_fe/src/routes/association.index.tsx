@@ -1312,34 +1312,34 @@ function Home() {
           )}
         </div>
 
-        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (DÙNG ẢNH 2 & BÓC TÁCH NÚT RA) ── */}
-        <div className="self-stretch flex flex-col gap-2.5">
+        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (NÚT KHÁM PHÁ NẰM TRỰC TIẾP TRONG ẢNH) ── */}
+        <div className="self-stretch">
           <Link
             to="/association/perks"
-            className="w-full relative rounded-[22px] overflow-hidden shadow-xl border border-blue-400/25 block cursor-pointer group active:scale-[0.99] transition duration-200 bg-slate-950"
+            className="w-full relative rounded-[22px] overflow-hidden shadow-xl border border-amber-400/30 dark:border-amber-400/20 block cursor-pointer group active:scale-[0.99] transition duration-200 bg-slate-950"
           >
-            {/* Ảnh 2: uu_dai_event.jpg hiển thị sắc nét toàn diện không bị che khuất */}
+            {/* Ảnh banner ưu đãi */}
             <img
               src="/uu_dai_event.jpg"
               alt="Ưu đãi riêng Hội viên & Đối tác"
               className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-500 rounded-[22px] block"
             />
-          </Link>
 
-          {/* Bóc tách nút ra riêng biệt theo yêu cầu người dùng */}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-              <Sparkles className="size-3.5 text-amber-500" />
-              <span className="font-bold">Đặc quyền dành riêng cho Hội viên CLB</span>
+            {/* Gradient mờ bảo vệ độ tương phản ở đáy ảnh */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/30 to-transparent pointer-events-none" />
+
+            {/* Badge đặc quyền bên góc trái dưới trong ảnh */}
+            <div className="absolute bottom-2.5 left-2.5 sm:bottom-3.5 sm:left-3.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-[10.5px] sm:text-xs font-bold shadow-md pointer-events-none">
+              <Sparkles className="size-3 text-amber-400" />
+              <span>Đặc quyền Hội viên</span>
             </div>
-            <Link
-              to="/association/perks"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#FFA000] to-[#FFB300] hover:from-[#FFB300] hover:to-[#FFC107] active:scale-95 text-slate-950 text-xs font-black rounded-full shadow-md hover:shadow-[0_4px_16px_rgba(255,160,0,0.4)] transition-all cursor-pointer"
-            >
-              <span>Xem ưu đãi ngay</span>
+
+            {/* Nút Khám phá ngay nằm trực tiếp bên trong ảnh ở góc phải dưới */}
+            <div className="absolute bottom-2.5 right-2.5 sm:bottom-3.5 sm:right-3.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-amber-300 group-hover:scale-105 active:scale-95 transition-all">
+              <span>Khám phá ngay</span>
               <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
-            </Link>
-          </div>
+            </div>
+          </Link>
         </div>
 
         {/* CƠ HỘI & KẾT NỐI + SÀN THƯƠNG MẠI */}

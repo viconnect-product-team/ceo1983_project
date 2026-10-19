@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Trash2, X, Package } from "lucide-react";
 import { useT } from "@/lib/i18n";
-import type { SponsorPackage } from "@/lib/sponsors.functions";
+import type { SponsorPackage, PackageType } from "@/lib/sponsors.functions";
 import { VndCurrencyInput } from "@/components/dashboard/VndCurrencyInput";
 
 export type PackageDraft = {
   tier: SponsorPackage["tier"];
   price: number;
-  packageType: "cash" | "in_kind";
+  packageType: PackageType;
   inKindDescription: string;
   available: number;
   sold: number;
@@ -38,7 +38,7 @@ export function SponsorPackageModal({
   const [draft, setDraft] = useState<PackageDraft>({
     tier: "gold",
     price: 0,
-    packageType: "cash",
+    packageType: "bank_transfer",
     inKindDescription: "",
     available: 10,
     sold: 0,
@@ -52,7 +52,7 @@ export function SponsorPackageModal({
           ? {
               tier: initial.tier,
               price: initial.price || 0,
-              packageType: initial.packageType || "cash",
+              packageType: initial.packageType || "bank_transfer",
               inKindDescription: initial.inKindDescription || "",
               available: initial.available ?? 10,
               sold: initial.sold ?? 0,
@@ -61,7 +61,7 @@ export function SponsorPackageModal({
           : {
               tier: "gold",
               price: 50000000,
-              packageType: "cash",
+              packageType: "bank_transfer",
               inKindDescription: "",
               available: 10,
               sold: 0,
@@ -166,11 +166,12 @@ export function SponsorPackageModal({
                   className={inputCls}
                   value={draft.packageType}
                   onChange={(e) =>
-                    setDraft({ ...draft, packageType: e.target.value as "cash" | "in_kind" })
+                    setDraft({ ...draft, packageType: e.target.value as PackageType })
                   }
                 >
-                  <option value="cash">💵 Tài trợ bằng Tiền</option>
-                  <option value="in_kind">🎁 Tài trợ Hiện vật</option>
+                  <option value="bank_transfer">🏦 Tài trợ Chuyển khoản (Có mã VietQR)</option>
+                  <option value="cash">💵 Tài trợ Tiền mặt (Trực tiếp)</option>
+                  <option value="in_kind">🎁 Tài trợ Hiện vật (Sản phẩm / Quà tặng)</option>
                 </select>
               </div>
             </div>

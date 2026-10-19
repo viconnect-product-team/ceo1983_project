@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { createPortal } from "react-dom";
-import { Pencil, Trash2, ImagePlus, X } from "lucide-react";
+import { Pencil, Trash2, ImagePlus, X, Video } from "lucide-react";
 import { toast } from "sonner";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
@@ -15,6 +15,10 @@ export interface ProductEditModalProps {
   availableCategories?: string[];
   editPhoto: string;
   setEditPhoto: (val: string) => void;
+  editPhotos?: string[];
+  setEditPhotos?: (val: string[]) => void;
+  editVideoUrl?: string;
+  setEditVideoUrl?: (val: string) => void;
   editName: string;
   setEditName: (val: string) => void;
   editCompany: string;
@@ -39,6 +43,10 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   availableCategories,
   editPhoto,
   setEditPhoto,
+  editPhotos = [],
+  setEditPhotos,
+  editVideoUrl = "",
+  setEditVideoUrl,
   editName,
   setEditName,
   editCompany,
@@ -126,25 +134,37 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-3 [scrollbar-width:thin]" data-modal-body>
-            {/* Image upload / preview */}
+            {/* Image upload / preview gallery */}
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {isEn ? "Product Image" : "Hình ảnh đại diện sản phẩm"}
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {isEn ? "Product Images" : "Hình ảnh sản phẩm (Nhiều ảnh)"}
+                </label>
+                <span className="text-[10.5px] text-slate-400">
+                  {editPhotos.length > 0 ? `Đã có ${editPhotos.length} ảnh` : "Tối đa 10 ảnh"}
+                </span>
+              </div>
+
               <input
                 type="file"
+                multiple
                 ref={localImageInputRef}
                 accept="image/*"
                 className="hidden"
                 onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const tid = toast.loading("Đang tải ảnh sản phẩm lên MinIO...");
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
+                  const tid = toast.loading(`Đang tải ${files.length} ảnh sản phẩm lên MinIO...`);
                   try {
-                    const uploadedUrl = await uploadFileToNest(file, "products");
-                    if (uploadedUrl) {
-                      setEditPhoto(uploadedUrl);
-                      toast.success("Đã tải ảnh sản phẩm lên MinIO thành công!", { id: tid });
+                    const uploadPromises = Array.from(files).map((f) => uploadFileToNest(f, "products"));
+                    const uploadedUrls = (await Promise.all(uploadPromises)).filter(Boolean) as string[];
+                    if (uploadedUrls.length > 0) {
+                      const merged = [...editPhotos, ...uploadedUrls];
+                      if (setEditPhotos) setEditPhotos(merged);
+                      if (!editPhoto || editPhotos.length === 0) {
+                        setEditPhoto(merged[0]);
+                      }
+                      toast.success(`Đã tải thành công ${uploadedUrls.length} ảnh lên MinIO!`, { id: tid });
                     }
                   } catch (err: any) {
                     toast.error(err?.message || "Tải ảnh sản phẩm thất bại!", { id: tid });
@@ -153,19 +173,48 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                   }
                 }}
               />
-              {editPhoto ? (
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
-                  <img
-                    src={resolveMediaUrl(editPhoto) || editPhoto}
-                    alt="Preview"
-                    className="w-full h-36 object-cover"
-                  />
+
+              {/* Thumbnails list */}
+              {editPhotos.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {editPhotos.map((photoUrl, idx) => (
+                      <div
+                        key={`${photoUrl}-${idx}`}
+                        className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 aspect-square"
+                      >
+                        <img
+                          src={resolveMediaUrl(photoUrl) || photoUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#003B95] text-white text-[9.5px] font-bold shadow-xs">
+                            Ảnh chính
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = editPhotos.filter((_, i) => i !== idx);
+                            if (setEditPhotos) setEditPhotos(updated);
+                            setEditPhoto(updated[0] || "");
+                          }}
+                          className="absolute top-1.5 right-1.5 size-6 rounded-md bg-black/75 text-white hover:bg-rose-600 grid place-items-center opacity-90 transition cursor-pointer"
+                          title="Xóa ảnh này"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setEditPhoto("")}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-rose-600 text-white hover:bg-rose-700 shadow cursor-pointer transition"
+                    onClick={() => localImageInputRef.current?.click()}
+                    className="w-full py-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <ImagePlus className="size-4 text-amber-500" />
+                    <span>+ Tải thêm ảnh khác lên MinIO</span>
                   </button>
                 </div>
               ) : (
@@ -176,10 +225,30 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                 >
                   <ImagePlus className="h-6 w-6 text-slate-400" />
                   <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    {isEn ? "Click to upload new image" : "Chọn ảnh từ thiết bị (JPG, PNG, WebP)"}
+                    {isEn ? "Click to upload product images (multiple)" : "Chọn ảnh từ thiết bị (Cho phép chọn nhiều ảnh)"}
                   </span>
+                  <span className="text-[10px] text-slate-400">PNG, JPG, WEBP (Lưu trực tiếp MinIO)</span>
                 </button>
               )}
+            </div>
+
+            {/* Video URL Input */}
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {isEn ? "Video Introduction URL (Optional)" : "Link Video giới thiệu sản phẩm (Tùy chọn)"}
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                  <Video className="size-4" />
+                </div>
+                <input
+                  type="url"
+                  value={editVideoUrl}
+                  onChange={(e) => setEditVideoUrl?.(e.target.value)}
+                  placeholder="https://youtube.com/watch?v=... hoặc video MP4 / TikTok"
+                  className="w-full rounded-xl border-0 bg-slate-100 dark:bg-white/[0.06] pl-8 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-0 focus:ring-1 focus:ring-[#003B95]"
+                />
+              </div>
             </div>
 
             <div>

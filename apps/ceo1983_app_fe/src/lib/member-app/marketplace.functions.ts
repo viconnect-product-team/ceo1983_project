@@ -14,10 +14,14 @@ export type MyProduct = {
   time: string;
   description?: string;
   imageUrl?: string;
+  imageUrls?: string[];
+  videoUrl?: string;
   price?: string;
   priceNumber?: number;
   originalPrice?: string;
   memberPrice?: string;
+  unit?: string;
+  currency?: string;
   sellerId?: string;
   sellerName?: string;
   sellerAvatar?: string;
@@ -38,9 +42,17 @@ export const listMyProducts = createServerFn({ method: "GET" })
         items = await fetchNestApiFromServer<any[]>("/products", token).catch(() => []);
       }
       return (items ?? []).map((p: any) => {
-        const img = (Array.isArray(p.imageUrls) && p.imageUrls.length > 0 ? p.imageUrls[0] : null) ||
-                    (Array.isArray(p.image_urls) && p.image_urls.length > 0 ? p.image_urls[0] : null) ||
-                    p.imageUrl || p.image_url || p.image || null;
+        let imgs: string[] = [];
+        if (Array.isArray(p.imageUrls)) imgs = p.imageUrls;
+        else if (Array.isArray(p.image_urls)) imgs = p.image_urls;
+        else if (typeof p.imageUrls === "string" && p.imageUrls.startsWith("[")) {
+          try { imgs = JSON.parse(p.imageUrls); } catch {}
+        } else if (typeof p.image_urls === "string" && p.image_urls.startsWith("[")) {
+          try { imgs = JSON.parse(p.image_urls); } catch {}
+        }
+        const img = (imgs.length > 0 ? imgs[0] : null) || p.imageUrl || p.image_url || p.image || null;
+        if (img && !imgs.includes(img)) imgs = [img, ...imgs];
+
         const numPrice = Number(p.price || p.priceNumber || 0) || (parseInt(String(p.price || "").replace(/\D/g, ""), 10) || 0);
         const formattedPrice = p.priceText || (numPrice > 0 ? `${numPrice.toLocaleString("vi-VN")} đ` : (p.price ? String(p.price) : "Thỏa thuận"));
         return {
@@ -51,7 +63,12 @@ export const listMyProducts = createServerFn({ method: "GET" })
           likes: p.likes ?? 0,
           views: p.views ?? 0,
           time: p.createdAt || p.created_at || p.time || new Date().toISOString(),
+          description: p.description || p.desc || "",
           imageUrl: img,
+          imageUrls: imgs,
+          videoUrl: p.videoUrl || p.video_url || undefined,
+          unit: p.unit || "Gói",
+          currency: p.currency || "VND",
           price: formattedPrice,
           priceNumber: numPrice,
           originalPrice: p.originalPrice || p.original_price ? `${Number(p.originalPrice || p.original_price).toLocaleString("vi-VN")} đ` : undefined,

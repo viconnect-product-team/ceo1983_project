@@ -39,6 +39,7 @@ export type CrudField =
     }
   | { name: string; label: string; type: "custom"; render: (value: any, onChange: (val: any) => void) => ReactNode; required?: boolean }
   | { name: string; label: string; type: "image"; required?: boolean; placeholder?: string }
+  | { name: string; label: string; type: "multi-image"; required?: boolean; placeholder?: string }
   | { name: string; label: string; type: "file"; required?: boolean; placeholder?: string; accept?: string };
 
 export type CrudValues = Record<string, any>;
@@ -284,7 +285,7 @@ export function CrudModal({
       setErrors({});
       const base: CrudValues = {};
       for (const f of fields) {
-        if (f.type === "multi-select") {
+        if (f.type === "multi-select" || f.type === "multi-image") {
           const raw = initial?.[f.name];
           if (Array.isArray(raw)) {
             base[f.name] = raw;
@@ -338,6 +339,10 @@ export function CrudModal({
           if (!Array.isArray(raw) || raw.length === 0) {
             validationErrors[f.name] = `Vui lòng chọn ít nhất một mục cho ${f.label}`;
           }
+        } else if (f.type === "multi-image") {
+          if (!Array.isArray(raw) || raw.length === 0) {
+            validationErrors[f.name] = `Vui lòng tải lên ít nhất một ảnh cho ${f.label}`;
+          }
         } else if (f.type === "image") {
           if (!raw || String(raw).trim() === "") {
             validationErrors[f.name] = `Vui lòng tải lên ảnh cho ${f.label}`;
@@ -376,7 +381,7 @@ export function CrudModal({
       const raw = values[f.name];
       if (f.type === "number") {
         out[f.name] = Number(raw) || 0;
-      } else if (f.type === "multi-select") {
+      } else if (f.type === "multi-select" || f.type === "multi-image") {
         out[f.name] = Array.isArray(raw) ? raw : [];
       } else if (f.type === "custom") {
         out[f.name] = raw !== undefined ? raw : [];
@@ -484,6 +489,132 @@ export function CrudModal({
                       onChange={(e) => set(f.name, e.target.value)}
                       className={`${stateInputCls} text-xs`}
                     />
+                  </div>
+                ) : f.type === "multi-image" ? (
+                  <div className="space-y-3">
+                    {/* Danh sách ảnh hiện tại */}
+                    {Array.isArray(values[f.name]) && values[f.name].length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                        {values[f.name].map((url: string, idx: number) => (
+                          <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted/40 shadow-xs">
+                            <img
+                              src={resolveMediaUrl(url) || url}
+                              alt={`Ảnh ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            {idx === 0 && (
+                              <span className="absolute top-1.5 left-1.5 bg-primary/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                                Ảnh chính
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = (values[f.name] as string[]).filter((_, i) => i !== idx);
+                                set(f.name, next);
+                                if (idx === 0 && values.image === url) {
+                                  set("image", next[0] || "");
+                                }
+                              }}
+                              className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-md bg-black/70 text-white hover:bg-rose-600 transition cursor-pointer opacity-90 group-hover:opacity-100"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Khu vực upload nhiều ảnh */}
+                    <label
+                      className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 transition ${
+                        hasErr
+                          ? "border-destructive bg-destructive/5 hover:border-destructive"
+                          : "border-border hover:border-primary/50 hover:bg-muted/40"
+                      }`}
+                    >
+                      {uploadingImage[f.name] ? (
+                        <>
+                          <Loader2 className="h-7 w-7 text-primary animate-spin mb-1.5" />
+                          <span className="text-xs font-semibold text-foreground">Đang tải các ảnh lên MinIO...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus className="h-7 w-7 text-muted-foreground mb-1.5" />
+                          <span className="text-xs font-semibold text-foreground">Chọn nhiều ảnh tải lên (Click để chọn hoặc kéo thả)</span>
+                          <span className="text-[11px] text-muted-foreground mt-0.5">Hỗ trợ chọn cùng lúc nhiều file PNG, JPG, WEBP</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        disabled={uploadingImage[f.name]}
+                        className="hidden"
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files || []);
+                          if (!files.length) return;
+                          setUploadingImage((prev) => ({ ...prev, [f.name]: true }));
+                          try {
+                            const urls = await Promise.all(files.map((file) => uploadFile(file, file.name)));
+                            const valid = urls.filter(Boolean) as string[];
+                            const current = Array.isArray(values[f.name]) ? values[f.name] : [];
+                            const combined = [...current, ...valid];
+                            set(f.name, combined);
+                            if (!values.image && combined[0]) {
+                              set("image", combined[0]);
+                            }
+                            toast.success(`Đã tải lên thành công ${valid.length} ảnh!`);
+                          } catch (err: any) {
+                            console.error("CrudModal multi-image upload error:", err);
+                            toast.error("Không thể tải ảnh: " + (err?.message || "Lỗi tải tệp"));
+                          } finally {
+                            setUploadingImage((prev) => ({ ...prev, [f.name]: false }));
+                          }
+                        }}
+                      />
+                    </label>
+
+                    {/* Dán URL ảnh trực tiếp nếu cần */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Hoặc dán URL ảnh bổ sung..."
+                        id={`input-add-url-${f.name}`}
+                        className={`${stateInputCls} text-xs flex-1`}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const input = e.currentTarget;
+                            const val = input.value.trim();
+                            if (val) {
+                              const current = Array.isArray(values[f.name]) ? values[f.name] : [];
+                              const combined = [...current, val];
+                              set(f.name, combined);
+                              if (!values.image) set("image", combined[0]);
+                              input.value = "";
+                            }
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = document.getElementById(`input-add-url-${f.name}`) as HTMLInputElement | null;
+                          const val = input?.value.trim();
+                          if (val) {
+                            const current = Array.isArray(values[f.name]) ? values[f.name] : [];
+                            const combined = [...current, val];
+                            set(f.name, combined);
+                            if (!values.image) set("image", combined[0]);
+                            if (input) input.value = "";
+                          }
+                        }}
+                        className="px-3 py-2 rounded-lg bg-muted text-xs font-semibold text-foreground hover:bg-muted/80 transition cursor-pointer"
+                      >
+                        Thêm URL
+                      </button>
+                    </div>
                   </div>
                 ) : f.type === "file" ? (
                   <div className="space-y-2">

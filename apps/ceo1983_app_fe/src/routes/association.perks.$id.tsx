@@ -40,13 +40,17 @@ function PerkDetailScreen() {
         {perk && (
           <div className="space-y-4">
             {/* Hero Card with Navy & Amber Gold Theme */}
-            <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-[#003B95]/15 via-amber-500/5 to-transparent p-6 shadow-sm">
+            <div className="relative overflow-hidden rounded-3xl border border-amber-300/80 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 dark:from-[#003B95]/15 dark:via-amber-500/5 dark:to-transparent p-6 shadow-sm">
               <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-amber-400/15 blur-2xl" />
-              <div className="pointer-events-none absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-[#003B95]/15 blur-xl" />
+              <div className="pointer-events-none absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-[#003B95]/10 blur-xl" />
 
               <div className="relative z-10 space-y-3">
-                <span className="flex h-15 w-15 items-center justify-center rounded-2xl bg-gradient-to-br from-[#003B95] to-[#1E40AF] text-amber-300 shadow-lg shadow-[#003B95]/25 border border-amber-500/30">
-                  <Icon className="h-7 w-7 text-amber-300" />
+                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100/80 dark:bg-gradient-to-br dark:from-[#003B95] dark:to-[#1E40AF] p-1.5 shadow-md border border-amber-300 dark:border-amber-500/30">
+                  <img
+                    src="/f7e3331b1c09a1006d5662da8900f36748428901.png"
+                    alt={perk.title}
+                    className="h-full w-full object-contain filter drop-shadow-md animate-subtle-bounce"
+                  />
                 </span>
 
                 <div className="flex flex-wrap items-center gap-2 pt-1">

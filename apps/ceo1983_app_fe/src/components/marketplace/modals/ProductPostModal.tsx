@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { PackageCheck, Store, ImagePlus, Trash2, X } from "lucide-react";
+import { PackageCheck, Store, ImagePlus, Trash2, X, Video, Film } from "lucide-react";
 import { toast } from "sonner";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
@@ -22,6 +22,10 @@ export interface ProductPostModalProps {
   setFormCompanyIntro: (val: string) => void;
   formPhoto: string;
   setFormPhoto: (val: string) => void;
+  formPhotos?: string[];
+  setFormPhotos?: (val: string[]) => void;
+  formVideoUrl?: string;
+  setFormVideoUrl?: (val: string) => void;
   formName: string;
   setFormName: (val: string) => void;
   formOriginalPrice: string;
@@ -52,6 +56,10 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
   setFormCompanyIntro,
   formPhoto,
   setFormPhoto,
+  formPhotos = [],
+  setFormPhotos,
+  formVideoUrl = "",
+  setFormVideoUrl,
   formName,
   setFormName,
   formOriginalPrice,
@@ -227,56 +235,108 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
                 <span>2. Thông tin Sản Phẩm / Dịch Vụ</span>
               </div>
 
-              {/* Photo Upload */}
+              {/* Photo Upload & Gallery */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                    {isEn ? "Product Images" : "Hình ảnh sản phẩm (Nhiều ảnh)"}
+                  </label>
+                  <span className="text-[10.5px] text-slate-400">
+                    {formPhotos.length > 0 ? `Đã chọn ${formPhotos.length} ảnh` : "Tối đa 10 ảnh"}
+                  </span>
+                </div>
+
+                {/* Danh sách ảnh thumbnails nếu đã chọn */}
+                {formPhotos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-2.5">
+                    {formPhotos.map((photoUrl, idx) => (
+                      <div
+                        key={`${photoUrl}-${idx}`}
+                        className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 aspect-square"
+                      >
+                        <img
+                          src={resolveMediaUrl(photoUrl) || photoUrl}
+                          alt={`Sản phẩm ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-[#003B95] text-white text-[9.5px] font-bold shadow-xs">
+                            Ảnh chính
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = formPhotos.filter((_, i) => i !== idx);
+                            if (setFormPhotos) setFormPhotos(updated);
+                            setFormPhoto(updated[0] || "");
+                          }}
+                          className="absolute top-1.5 right-1.5 size-6 rounded-md bg-black/75 text-white hover:bg-rose-600 grid place-items-center opacity-90 transition cursor-pointer"
+                          title="Xóa ảnh này"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Nút bấm tải thêm ảnh */}
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-3 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
+                  <ImagePlus className="h-5 w-5 text-[#003B95] dark:text-amber-400 mb-1" />
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                    {formPhotos.length > 0
+                      ? (isEn ? "Add more images" : "+ Tải thêm ảnh khác lên MinIO")
+                      : (isEn ? "Click to upload product images (multiple)" : "Chọn ảnh sản phẩm tải lên (Cho phép chọn nhiều ảnh)")}
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP (Lưu trực tiếp MinIO)</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const files = e.target.files;
+                      if (!files || files.length === 0) return;
+                      const tid = toast.loading(`Đang tải ${files.length} ảnh sản phẩm lên MinIO...`);
+                      try {
+                        const uploadPromises = Array.from(files).map((f) => uploadFileToNest(f, "products"));
+                        const uploadedUrls = (await Promise.all(uploadPromises)).filter(Boolean) as string[];
+                        if (uploadedUrls.length > 0) {
+                          const merged = [...formPhotos, ...uploadedUrls];
+                          if (setFormPhotos) setFormPhotos(merged);
+                          if (!formPhoto || formPhotos.length === 0) {
+                            setFormPhoto(merged[0]);
+                          }
+                          toast.success(`Đã tải thành công ${uploadedUrls.length} ảnh lên MinIO!`, { id: tid });
+                        }
+                      } catch (err: any) {
+                        toast.error(err?.message || "Tải ảnh sản phẩm thất bại!", { id: tid });
+                      } finally {
+                        if (e.target) e.target.value = "";
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              {/* Video URL Input */}
               <div>
                 <label className="mb-1 block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                  {isEn ? "Product Image" : "Ảnh sản phẩm (Rõ nét)"}
+                  {isEn ? "Video Introduction URL (Optional)" : "Link Video giới thiệu sản phẩm (Tùy chọn)"}
                 </label>
-                {formPhoto ? (
-                  <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                    <img
-                      src={resolveMediaUrl(formPhoto) || formPhoto}
-                      alt="Ảnh sản phẩm"
-                      className="h-36 w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFormPhoto("")}
-                      className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-black/75 text-white hover:bg-rose-600 transition cursor-pointer"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <Video className="size-4" />
                   </div>
-                ) : (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/40 p-4 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-slate-800/70 transition">
-                    <ImagePlus className="h-6 w-6 text-[#003B95] dark:text-amber-400 mb-1" />
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                      {isEn ? "Click to upload product image" : "Chọn ảnh sản phẩm tải lên (Lưu MinIO)"}
-                    </span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const tid = toast.loading("Đang tải ảnh sản phẩm lên MinIO...");
-                        try {
-                          const uploadedUrl = await uploadFileToNest(file, "products");
-                          if (uploadedUrl) {
-                            setFormPhoto(uploadedUrl);
-                            toast.success("Đã tải ảnh sản phẩm lên MinIO thành công!", { id: tid });
-                          }
-                        } catch (err: any) {
-                          toast.error(err?.message || "Tải ảnh sản phẩm thất bại!", { id: tid });
-                        } finally {
-                          if (e.target) e.target.value = "";
-                        }
-                      }}
-                    />
-                  </label>
-                )}
+                  <input
+                    type="url"
+                    value={formVideoUrl}
+                    onChange={(e) => setFormVideoUrl?.(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=... hoặc link video MP4 / TikTok"
+                    className="w-full rounded-xl border-0 bg-white dark:bg-slate-800 pl-8 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#003B95]"
+                  />
+                </div>
               </div>
 
               <div>

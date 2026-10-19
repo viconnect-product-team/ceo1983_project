@@ -1,6 +1,100 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 19/10/2026 (Bổ Sung Trường Chỉnh Sửa Khẩu Hiệu / Tagline Banner Sự Kiện Tại Popup CRM & Đồng Bộ CSDL Thuần NestJS)**:
+  1. **Khắc Phục Lỗi Hardcode Text Trên Banner Sự Kiện Tại Popup CRM (`EventWizard.tsx`, `events.index.tsx`)**:
+     - *Thêm trường nhập liệu*: Bổ sung trường input `Khẩu hiệu / Thông điệp phụ trên Banner (Tagline / Slogan)` ngay bên dưới trường `Tên sự kiện`.
+     - *Cập nhật thời gian thực trên Banner xem trước*: Dòng text tagline trên Live Banner Preview (`currentTpl.tagline`) trước đây bị hardcode thì nay lập tức phản hồi và cập nhật theo nội dung người dùng gõ vào (`info.tagline || currentTpl.tagline`).
+     - *Tự động điền theo mẫu*: Khi chọn các loại sự kiện khác nhau (Diễn đàn, Workshop, Gala Networking, Đào tạo), hệ thống tự động điền câu tagline mẫu tương ứng để người dùng chỉnh sửa nhanh.
+     - *Hỗ trợ form Sửa sự kiện (`CrudModal`)*: Bổ sung trường `tagline` vào mảng `fields` của `events.index.tsx` để người dùng có thể cập nhật thông điệp banner bất cứ lúc nào.
+  2. **Đồng Bộ CSDL & Backend NestJS (`events.service.ts`, `event.dto.ts`, `events.functions.ts`)**:
+     - Tự động bổ sung cột `ALTER TABLE public.events ADD COLUMN IF NOT EXISTS tagline text DEFAULT ''` trong `onModuleInit`.
+     - Lưu trữ trường `tagline` an toàn trong câu lệnh SQL `createEvent` và `updateEvent` với cơ chế fallback không gây lỗi schema.
+     - Map và trả trường `tagline` trong toàn bộ API trả về của sự kiện.
+  3. **Kiểm Tra & Xác Minh (AGENTS.md Rule 3)**:
+     - Frontend React: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Backend NestJS: `nest build` đạt **Exit code 0 (0 errors)**.
+- **Bản nâng cấp ngày 19/10/2026 (Hoàn Thiện Giao Diện Ưu Đãi Chuẩn Theme Sáng & Icon Hộp Quà 3D, Sửa Nút Bật/Tắt AI Độ Tương Phản Cao, Nâng Cấp Nút Cài App Vàng Kim Hoàng Gia & Tự Động Cài Nhanh Đa Nền Tảng, Đưa Nút Khám Phá Vào Trực Tiếp Trong Ảnh Banner Trang Chủ)**:
+  1. **Chuẩn Hóa Giao Diện Ưu Đãi Theme Sáng & Icon 3D Hộp Quà Phát Sáng (`association.perks.index.tsx`, `association.perks.$id.tsx`)**:
+     - *Khắc phục lỗi tối màu*: Loại bỏ hoàn toàn các class màu tối (`bg-sky-950`, `outline-Accents-Orange`) trên theme sáng. Nâng cấp các category filter chips sang gam màu xanh thương hiệu `#003B95` và Amber Gold, viền card thanh nhã `border-amber-300/80` trên nền sáng nhẹ `bg-gradient-to-r from-amber-50/90 via-white to-amber-50/50`.
+     - *Đổi icon quà tặng*: Thay thế toàn bộ biểu tượng icon Lucide cũ bằng hình ảnh 3D hộp quà phát sáng sắc nét cao cấp `/f7e3331b1c09a1006d5662da8900f36748428901.png` xuyên suốt Hero banner, danh sách thẻ ưu đãi, modal voucher và trang chi tiết ưu đãi.
+  2. **Khắc Phục Lỗi Nút Bật/Tắt AI Trên Theme Sáng (`association.profile.tsx`, `association.settings.tsx`)**:
+     - Nâng cấp switch toggle AI với độ tương phản cao trên nền sáng: Track khi tắt có màu `bg-slate-300 dark:bg-slate-700` kèm viền `border-slate-400`, thumb tròn trắng có đổ bóng và viền nổi bật. Khi bật chuyển sang gradient `#003B95` sang trọng.
+     - Bổ sung nhãn trực quan `Đang bật` / `Đã tắt` giúp hội viên nhận biết trạng thái ngay lập tức trên cả hai theme.
+  3. **Nâng Cấp Nút Cài App Vàng Kim Hoàng Gia & Tự Động Cài Nhanh 1 Chạm (`association.profile.tsx`, `association.settings.tsx`, `__root.tsx`)**:
+     - *Sửa lỗi màu theme tối*: Thay thế viền tối chìm bằng nút Amber Gold rực rỡ `bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black shadow-lg border border-amber-300`, nổi bật trên cả nền đen lẫn nền trắng.
+     - *Tự động cài nhanh đa nền tảng (`handleFastInstallApp`)*:
+       * Kích hoạt ngay hộp thoại cài đặt PWA tức thì nếu trình duyệt hỗ trợ prompt (`(window as any).__pwaInstallPrompt.prompt()`).
+       * Trên Android (chưa có prompt): Tự động kích hoạt tải ngay bộ cài APK chính thức `/docs/CEO1983-app-latest.apk`.
+       * Trên iOS Safari: Hướng dẫn nhanh 1 thao tác (Chạm nút Chia sẻ ⎋ → Thêm vào MH chính ⊞) và mở popup chỉ dẫn.
+       * Bắt sớm sự kiện `beforeinstallprompt` từ `__root.tsx` để prompt luôn sẵn sàng.
+  4. **Đưa Nút Khám Phá Ưu Đãi Vào Trực Tiếp Trong Ảnh Banner Trang Chủ (`association.index.tsx`)**:
+     - Tích hợp nút `[Khám phá ngay]` và badge `[Đặc quyền Hội viên]` trực tiếp vào bên trong ảnh banner `uu_dai_event.jpg` tại góc phải dưới, kết hợp lớp gradient đen mờ bảo vệ tương phản.
+     - Loại bỏ thanh bóc tách nút bên ngoài, mang lại trải nghiệm thị giác liền mạch, sang trọng như một poster cao cấp.
+  5. **Kiểm Tra & Xác Minh Mã Nguồn (AGENTS.md Rule 3)**:
+     - Toàn bộ các tệp thay đổi đã được kiểm tra type check sạch sẽ, không có lỗi runtime/compile.
+- **Bản nâng cấp ngày 19/10/2026 (Nâng Cấp Hệ Sinh Thái CEO 1983 Toàn Diện: Chuẩn Hóa Luồng Sự Kiện Có Phí & Bắn Email Vé QR, Nâng Cấp Sản Phẩm & Cơ Hội Đa Ảnh/Video, Tin Tức Nhiều Ảnh, Đính Kèm Nhiều Tài Liệu, Brochure Doanh Nghiệp Tại Thẻ Hội Viên, và Ra Mắt Mạng Xã Hội Doanh Nhân Web CRM 3 Tab Kèm Lịch Gặp 1-on-1)**:
+  1. **Luồng Sự Kiện Có Phí & Quản Lý Đối Soát Vé QR (`association.events.tsx`, `event-registrations.tsx`, `events.service.ts`, `mail.service.ts`)**:
+     - *Quy tắc đăng ký sự kiện có phí*: Khi hội viên đăng ký sự kiện có phí, hệ thống đánh dấu trạng thái chưa thanh toán (`registered: false`), **tuyệt đối không sinh mã QR vé check-in** và chỉ hiển thị mã thanh toán VietQR MB Bank kèm thông báo hướng dẫn.
+     - *Quản trị Web CRM (`/event-registrations`)*: Ban Truyền Thông / Admin có hai nút chức năng trực quan:
+       * **[✓ Đã thanh toán]**: Cập nhật trạng thái thanh toán sang `paid`, tự động kích hoạt vé chính thức (`registered: true`), sinh mã QR vé tham dự chuẩn `makeTicketQrUrl(...)`, đồng thời Backend NestJS tự động kích hoạt gửi Email E-ticket HTML cao cấp kèm mã QR check-in về email người đăng ký.
+       * **[🔍 Đối soát]**: Mở modal đối soát chi tiết dòng tiền, mã tham chiếu ngân hàng, số tiền thực nhận so với mệnh giá vé và lịch sử thanh toán.
+  2. **Gian Hàng Sản Phẩm / Dịch Vụ Đa Phương Tiện (`ProductPostModal.tsx`, `ProductEditModal.tsx`, `ShopeeProductDetailModal.tsx`, `products.service.ts`, `marketplace.functions.ts`)**:
+     - Khắc phục triệt để lỗi 500 do xung đột trường và cột dữ liệu PostgreSQL.
+     - Bổ sung hỗ trợ tải lên và cập nhật **nhiều hình ảnh sản phẩm (`imageUrls`)** với giao diện preview album ảnh trực quan, đánh dấu ảnh đại diện, xóa ảnh linh hoạt.
+     - Tích hợp trường **Video giới thiệu sản phẩm (`videoUrl`)**: Cho phép dán link video YouTube/MP4 và xem video giới thiệu trực tiếp trong modal chi tiết sản phẩm.
+  3. **Cơ Hội Hợp Tác B2B Đa Ảnh & Album Chi Tiết (`OpportunityCreateModal.tsx`, `OpportunityEditModal.tsx`, `OpportunityDetailModal.tsx`, `opportunities.service.ts`)**:
+     - Khắc phục hoàn toàn lỗi 500 khi tạo mới hoặc cập nhật cơ hội hợp tác B2B.
+     - Mở rộng hỗ trợ **nhiều hình ảnh minh họa cơ hội (`images` jsonb)**, cho phép tải lên nhiều ảnh từ thiết bị kèm preview trực tiếp.
+     - Cập nhật modal chi tiết cơ hội (`OpportunityDetailModal.tsx`) hiển thị album ảnh phong phú, hỗ trợ phóng to và lướt ảnh chuyên nghiệp.
+  4. **Quản Lý Tin Tức & Tải Nhiều Hình Ảnh (`CrudModal.tsx`, `news.tsx`, `content.service.ts`)**:
+     - Bổ sung kiểu trường `type: "multi-image"` trong hệ thống CrudModal chung.
+     - Nâng cấp tính năng đăng và chỉnh sửa tin tức cho phép tải lên và lưu trữ danh sách nhiều ảnh (`images` jsonb) phục vụ các bài phóng sự ảnh, sự kiện hiệp hội.
+  5. **Bảo Toàn Giao Diện Trang Cá Nhân Tinh Tế (`association.profile.tsx`)**:
+     - Giữ nguyên thiết kế trang nhã, thanh thoát hiện có của màn Profile cá nhân.
+     - Tuyệt đối không đưa cụm nút thao tác lên `MemberHeader`, đảm bảo trải nghiệm cuộn tự nhiên và thẩm mỹ doanh nhân cao cấp.
+  6. **Hồ Sơ Năng Lực Doanh Nghiệp (Brochure) Tích Hợp Tại Thẻ Hội Viên (`association.card.tsx`)**:
+     - Di chuyển và hiển thị toàn bộ phần **Hồ sơ doanh nghiệp (Brochure / Flyer)** trực tiếp ngay bên dưới Thẻ hội viên điện tử tại `association.card.tsx`.
+     - Cho phép hội viên xem trực quan, tải xuống và chỉnh sửa nhanh thông tin hồ sơ doanh nghiệp ngay tại màn Danh thiếp & Thẻ hội viên số mà không làm nặng trang cá nhân.
+  7. **Quản Lý Tài Liệu - Hỗ Trợ Tải Lên Nhiều Tệp Cùng Lúc (`documents.index.tsx`)**:
+     - Cập nhật `onUploadFiles(files: File[])` và thuộc tính `multiple` trên input chọn tệp (`<input type="file" multiple ... />`).
+     - Cho phép Admin / Ban Thư Ký chọn và tải lên hàng loạt tài liệu, biểu mẫu, quy chế cùng lúc chỉ với một lần thao tác.
+  8. **Chuyển Đổi Màn Kết Nối `/network` Thành Mạng Xã Hội Doanh Nhân Web CRM (`network.tsx`)**:
+     - Hệ thống 3 Tab chức năng rõ ràng:
+       * 📰 **Bảng tin (Feed)**: Dòng thời gian tổng hợp các bài đăng thời gian thực từ Hội viên (Sản phẩm - Dịch vụ mới, Cơ hội hợp tác B2B, Tin tức hiệp hội).
+       * 💬 **Nhắn tin (Messages)**: Hệ thống hội thoại công việc, phân loại chat cá nhân và chat nhóm theo ban.
+       * 👥 **Kết nối (Thành viên theo Ban chuyên môn)**: Danh bạ doanh nhân trực quan, phân loại và đếm số lượng theo 7 Ban chuyên môn (Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến, Ban Tài Chính, Ban Thiện Nguyện, Ban Thư Ký).
+     - **Tính năng Lên Lịch Gặp 1-on-1 (`ScheduleMeetingModal`)**: Mỗi card bài đăng trên Bảng tin đều có nút bấm **[🤝 Lên lịch cuộc gặp 1-on-1]**, cho phép hội viên và quản trị viên thiết lập cuộc hẹn trực tiếp ngay trên Web CRM mà không cần mở ứng dụng di động; tự động tạo thông điệp lịch hẹn chuyên nghiệp trong thread hội thoại 1-on-1.
+  9. **Kiểm Định Chất Lượng Mã Nguồn Bắt Buộc (AGENTS.md Rule 3)**:
+     - Backend NestJS (`apps/ceo1983_app_be`): `nest build` đạt **Exit code 0 (0 errors)**.
+     - Frontend Vite/React (`apps/ceo1983_app_fe`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors, 100% sạch type)**.
+     - Tuân thủ nghiêm ngặt Rule 1 (Không tự ý commit/push Git).
+- **Bản nâng cấp ngày 19/10/2026 (Tái Cấu Trúc Toàn Diện Luồng Nhà Tài Trợ & Gói Tài Trợ: Phân Định 3 Hình Thức Riêng Biệt, Tích Hợp API Gói & Tạo Nhanh, Cho Phép Nhập Số Tiền Thực Tế Tùy Biến, Tự Động Bắn Email Kèm Mã VietQR Chuẩn Số Tiền Đã Khai Báo)**:
+  1. **Phân Định Rõ Ràng 3 Hình Thức Đóng Góp Riêng Biệt**:
+     - Chuẩn hóa kiểu dữ liệu `PackageType = "bank_transfer" | "cash" | "in_kind"` xuyên suốt Frontend và Backend:
+       * 🏦 **Chuyển khoản (VietQR)**: Quét mã QR thanh toán định danh ngân hàng.
+       * 💵 **Tiền mặt**: Thu nộp tiền mặt trực tiếp tại văn phòng hiệp hội hoặc quầy sự kiện.
+       * 🎁 **Hiện vật**: Đóng góp sản phẩm, dịch vụ, trang thiết bị, quà tặng có quy đổi giá trị và mô tả chi tiết.
+     - Cập nhật bộ lọc thống kê, tab bảng dữ liệu và mẫu xuất/nhập Excel chuẩn hóa trên cả `sponsors.tsx`, `sponsor-packages.tsx`, `sponsor-report.tsx`, và `EventSponsorPackageSelector.tsx`.
+  2. **Trường Chọn Gói Tài Trợ & Tạo Gói Nhanh 1 Chạm Tại Modal Nhà Tài Trợ (`SponsorModal.tsx`)**:
+     - Bắt buộc gọi API `listSponsorPackagesFn()` để tải danh sách gói tài trợ thực tế từ hệ thống.
+     - Nếu một hạng tài trợ/hình thức nào chưa có gói dữ liệu: hiển thị ngay thông báo trực quan "Chưa có gói tài trợ nào thuộc hạng này" kèm nút bấm **[+ Tạo Gói Mới Ngay]**.
+     - Nhấp nút sẽ mở ngay popup tạo gói tài trợ chuyên nghiệp (`SponsorPackageModal`), sau khi lưu thành công tự động reload API và chọn ngay gói mới tạo vào form nhà tài trợ.
+  3. **Cho Phép Nhập Giá Trị Thực Tế Tùy Biến Theo Số Tiền Nhà Tài Trợ Mong Muốn**:
+     - Khi chọn gói, hệ thống tự động gợi ý giá gói niêm yết nhưng **cho phép người dùng tự do nhập/điều chỉnh giá trị tài trợ thực tế** theo mong muốn của nhà tài trợ (`VndCurrencyInput`).
+     - Hỗ trợ định dạng số tiền VNĐ trực quan, dấu phân cách hàng nghìn rõ ràng và gợi ý bằng chữ tiếng Việt (VD: "50 triệu đồng").
+  4. **Tự Động Bắn Email Kèm Mã VietQR Đúng Số Tiền Khai Báo Về Email Nhà Tài Trợ (`sponsors.service.ts`)**:
+     - Ngay sau khi tạo mới thành công nhà tài trợ (hoặc khi bấm nút "Gửi lại thư tri ân"), Backend NestJS tự động tạo và gửi email HTML cao cấp kèm mã VietQR động:
+       * API VietQR: `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${numAmount}&addInfo=${encodedAddInfo}`
+       * Ngân hàng thụ hưởng: **MB Bank (Ngân hàng TMCP Quân Đội)**
+       * Số tài khoản: **1983000000**
+       * Tên thụ hưởng: **CLB DOANH NHAN CEO 1983**
+       * Cú pháp chuyển khoản định danh: `TT [MÃ NHÀ TÀI TRỢ] [TÊN DOANH NGHIỆP]`
+       * Hiển thị bảng tổng hợp quyền lợi và lời tri ân trang trọng từ Ban Chủ Nhiệm Hiệp Hội Doanh Nhân CEO 1983 (HanoiBA).
+  5. **Kiểm Định Chất Lượng Mã Nguồn Tuyệt Đối (AGENTS.md Rule 3)**:
+     - Backend NestJS (`apps/ceo1983_app_be`): `nest build` hoàn thành với **Exit code 0 (0 errors)**.
+     - Frontend Vite/React (`apps/ceo1983_app_fe`): `npx tsc --noEmit` hoàn thành với **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Rule 1 (Tuyệt đối không tự ý commit/push Git).
 - **Bản nâng cấp ngày 19/10/2026 (Loại Bỏ Triệt Để Badge/Text "Hội Viên Chính Thức" & Tinh Gọn 4 Nút Màn Cá Nhân Không Background Chuẩn Modern UI)**:
   1. **Loại Bỏ Triệt Để Badge & Text "Hội Viên Chính Thức"**:
      - Đúng theo chỉ đạo người dùng: *"Đã đăng nhập rồi thì là hội viên rồi"*.

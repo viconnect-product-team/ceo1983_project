@@ -130,77 +130,35 @@ function PerksScreen() {
     <div className="vba-animate pb-24">
       <MemberHeader title="Ưu đãi & Trúng thưởng" back />
 
-      {/* Luxury Animated Gift Box Banner - CEO 1983 Navy & Amber Gold */}
+      {/* ── BỐ CỤC MÀN ƯU ĐÃI CHUẨN THEME SÁNG & SANG TRỌNG ── */}
       <div className="px-4 pt-3">
         <div
           onClick={() => setGiftModalOpen(true)}
-          className="relative overflow-hidden rounded-2xl border border-amber-500/40 bg-gradient-to-br from-[#003B95] via-[#071322] to-[#0A1A3A] p-5 shadow-xl cursor-pointer group transition-transform active:scale-98"
+          className="self-stretch px-4 py-3.5 bg-gradient-to-r from-amber-50/90 via-white to-amber-50/50 dark:from-[#1c1810] dark:via-[#131a26] dark:to-[#17130c] rounded-2xl border border-amber-300/80 dark:border-amber-500/40 inline-flex flex-col justify-center items-start gap-3 w-full shadow-sm hover:shadow-md hover:border-amber-400 transition active:scale-[0.99] cursor-pointer group"
         >
-          {/* Ambient Background Light Rays & Glow */}
-          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-amber-400/20 blur-3xl" />
-          <div className="pointer-events-none absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-[#003B95]/40 blur-2xl" />
-
-          {/* Light Rays Escaping Outward */}
-          <div
-            className="pointer-events-none absolute left-10 top-1/2 -translate-y-1/2 -translate-x-1/2 h-36 w-36 rounded-full opacity-60"
-            style={{
-              background: "radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(217, 119, 6, 0.2) 50%, transparent 80%)",
-              animation: "vba-ray-burst 2.8s ease-out infinite",
-            }}
-          />
-
-          <div className="relative z-10 flex items-center gap-4">
-            {/* The Animated Gift Box */}
-            <div className="relative flex-shrink-0">
-              {/* Outer Radiant Aura */}
-              <div
-                className="absolute -inset-2 rounded-2xl opacity-75"
-                style={{
-                  animation: "vba-gift-glow 2s ease-in-out infinite",
-                  background: "radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(56, 189, 248, 0.2) 70%)",
-                }}
-              />
-
-              {/* Shaking Gift Box Container */}
-              <div
-                className="relative grid h-16 w-16 place-items-center rounded-2xl border-2 border-white/80 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-[0_4px_20px_rgba(14,165,233,0.45)]"
-                style={{
-                  animation: "vba-gift-shake 1.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite 1.8s",
-                }}
-              >
-                {/* 3D Gift Box Ribbon Cross */}
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2.5 bg-red-600 shadow-xs" />
-                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-2.5 bg-red-600 shadow-xs" />
-
-                {/* Ribbon Bow on Top */}
-                <span className="absolute -top-2.5 text-[15px] filter drop-shadow-[0_2px_4px_rgba(220,38,38,0.7)] select-none">
-                  🎀
-                </span>
-
-                <Gift className="relative z-10 h-8 w-8 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
-
-                {/* Floating Bling Bling Sparkles */}
-                <span className="pointer-events-none absolute -top-3 -right-2 text-[11px] text-amber-100 animate-pollen-1 select-none" aria-hidden="true">✨</span>
-                <span className="pointer-events-none absolute top-0 -left-3 text-[10px] text-yellow-200 animate-pollen-2 select-none" aria-hidden="true">✦</span>
-                <span className="pointer-events-none absolute -bottom-2 -right-1 text-[8px] text-amber-200 animate-pollen-3 select-none" aria-hidden="true">⋆</span>
-                <span className="pointer-events-none absolute -top-4 left-3 text-[12px] text-white animate-bling select-none" aria-hidden="true">✨</span>
+          <div className="self-stretch inline-flex justify-between items-center w-full">
+            <div className="flex justify-start items-center gap-3">
+              <div className="size-16 shrink-0 relative flex items-center justify-center">
+                <img
+                  className="size-16 object-contain group-hover:scale-108 transition-transform duration-300 drop-shadow-md animate-subtle-bounce"
+                  src="/f7e3331b1c09a1006d5662da8900f36748428901.png"
+                  alt="Ưu đãi & trúng thưởng"
+                />
+              </div>
+              <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 min-w-0">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300/80 dark:border-amber-700/80 text-amber-900 dark:text-amber-300 text-[10.5px] font-extrabold tracking-wide">
+                  👑 Đặc quyền VIP Hội Viên
+                </div>
+                <div className="text-slate-900 dark:text-white text-base font-bold leading-5 line-clamp-1">
+                  Ưu đãi &amp; trúng thưởng
+                </div>
+                <div className="text-slate-600 dark:text-slate-300 text-xs font-medium leading-4 line-clamp-1">
+                  Chạm để mở quà &amp; quay thưởng may mắn
+                </div>
               </div>
             </div>
-
-            {/* Banner Text - Crisp White on Navy & Gold */}
-            <div className="min-w-0 flex-1 text-white">
-              <div className="flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-300 border border-amber-500/40 backdrop-blur-xs">
-                  <Sparkles className="h-2.5 w-2.5 text-amber-300" /> ĐẶC QUYỀN VIP
-                </span>
-                <span className="text-[10px] text-amber-200 font-medium">Chạm để mở quà & quay thưởng</span>
-              </div>
-              <h2 className="mt-1 text-[15.5px] font-black text-white leading-snug drop-shadow-sm">
-                Ưu Đãi & Danh Mục Trúng Thưởng
-              </h2>
-              <p className="mt-0.5 line-clamp-1 text-[11.5px] text-slate-200">
-                Gói voucher độc quyền, quà bốc thăm trúng thưởng & quyền lợi kết nối 2026.
-              </p>
+            <div className="text-amber-500 shrink-0 group-hover:translate-x-1 transition-transform">
+              <ChevronRight className="size-5 stroke-[2.5]" />
             </div>
           </div>
         </div>
@@ -216,17 +174,17 @@ function PerksScreen() {
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition active:scale-95 cursor-pointer ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition active:scale-95 cursor-pointer shadow-2xs ${
                 isActive
                   ? isLucky
-                    ? "bg-sky-950 text-white shadow-md shadow-blue-900/25"
-                    : "bg-[#003B95] text-white shadow-md shadow-blue-900/25"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25 border border-amber-400"
+                    : "bg-[#003B95] text-white shadow-md shadow-blue-900/25 border border-[#003B95]"
                   : isLucky
-                    ? "bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-amber-800 dark:text-amber-300"
-                    : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    ? "bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-300 hover:bg-amber-200"
+                    : "bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
               }`}
             >
-              {isLucky && <Trophy className={`h-3.5 w-3.5 ${isActive ? "text-white" : "text-slate-500"}`} />}
+              {isLucky && <Trophy className={`h-3.5 w-3.5 ${isActive ? "text-slate-950" : "text-amber-600 dark:text-amber-400"}`} />}
               <span>{cat}</span>
               {isLucky && (
                 <span className="h-2 w-2 rounded-full bg-red-500 animate-ping inline-block ml-0.5" />
@@ -253,12 +211,14 @@ function PerksScreen() {
               <X className="h-4 w-4" />
             </button>
 
-            {/* Glowing Big Gift Box */}
+            {/* Glowing Big 3D Gift Box from Image 1 */}
             <div className="relative mx-auto my-3 grid h-24 w-24 place-items-center">
               <span className="absolute inset-0 rounded-full bg-amber-400/20 animate-ping duration-1000" />
-              <div className="relative z-10 grid h-18 w-18 place-items-center rounded-2xl bg-gradient-to-tr from-[#003B95] to-[#1E40AF] text-white shadow-lg shadow-amber-500/20 border border-amber-500/30">
-                <Gift className="h-10 w-10 text-amber-300" />
-              </div>
+              <img
+                src="/f7e3331b1c09a1006d5662da8900f36748428901.png"
+                alt="Quà tặng đặc quyền"
+                className="relative z-10 h-20 w-20 object-contain drop-shadow-xl animate-subtle-bounce"
+              />
             </div>
 
             <h3 className="text-xl font-black text-[#003B95] dark:text-amber-400">Chúc Mừng Bạn!</h3>
@@ -363,7 +323,6 @@ function PerksScreen() {
           </p>
         )}
         {combinedPerks.map((p) => {
-          const Icon = PERK_ICONS[(p as any).icon] ?? Gift;
           const isPrize = (p as any).category === "Trúng thưởng";
 
           if (isPrize) {
@@ -371,10 +330,14 @@ function PerksScreen() {
               <div
                 key={p.id}
                 onClick={() => setActivePrize(p as any)}
-                className="flex items-center gap-3 rounded-2xl border border-amber-300/80 dark:border-amber-500/40 p-3.5 bg-gradient-to-r from-amber-50/70 via-white to-amber-50/40 dark:from-[#1c1810] dark:via-[#131a26] dark:to-[#17130c] shadow-sm hover:border-amber-500 transition active:scale-[0.99] cursor-pointer"
+                className="flex items-center gap-3 rounded-2xl border border-amber-300/80 dark:border-amber-500/40 p-3.5 bg-gradient-to-r from-amber-50/80 via-white to-amber-50/50 dark:from-[#1c1810] dark:via-[#131a26] dark:to-[#17130c] shadow-sm hover:border-amber-500 hover:shadow-md transition active:scale-[0.99] cursor-pointer group"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950 shadow-xs">
-                  <Trophy className="h-5 w-5 stroke-[2.2]" />
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100/90 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/80 p-1 shadow-2xs group-hover:scale-108 transition-transform duration-300">
+                  <img
+                    src="/f7e3331b1c09a1006d5662da8900f36748428901.png"
+                    alt={p.title}
+                    className="h-full w-full object-contain filter drop-shadow-sm"
+                  />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -387,16 +350,16 @@ function PerksScreen() {
                       </span>
                     )}
                   </div>
-                  <h2 className="mt-1 truncate text-[14px] font-bold text-slate-900 dark:text-white">
+                  <h2 className="mt-1 truncate text-[14px] font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                     {p.title}
                   </h2>
                   {p.summary && (
-                    <p className="mt-0.5 line-clamp-1 text-[11.5px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 line-clamp-1 text-[11.5px] text-slate-600 dark:text-slate-400">
                       {p.summary}
                     </p>
                   )}
                 </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-amber-500" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
               </div>
             );
           }
@@ -406,10 +369,14 @@ function PerksScreen() {
               key={p.id}
               to="/association/perks/$id"
               params={{ id: p.id }}
-              className="flex items-center gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs hover:border-amber-500/40 transition active:scale-[0.99]"
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs hover:border-amber-400/80 hover:shadow-md transition active:scale-[0.99] group"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-700 text-[#003B95] dark:text-amber-400">
-                <Icon className="h-5 w-5 stroke-[2.2]" />
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50/90 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-700/60 p-1 shadow-2xs group-hover:scale-108 transition-transform duration-300">
+                <img
+                  src="/f7e3331b1c09a1006d5662da8900f36748428901.png"
+                  alt={p.title}
+                  className="h-full w-full object-contain filter drop-shadow-sm"
+                />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -424,16 +391,16 @@ function PerksScreen() {
                     </span>
                   )}
                 </div>
-                <h2 className="mt-1 truncate text-[14px] font-bold text-slate-900 dark:text-white">
+                <h2 className="mt-1 truncate text-[14px] font-bold text-slate-900 dark:text-white group-hover:text-[#003B95] dark:group-hover:text-amber-400 transition-colors">
                   {p.title}
                 </h2>
                 {p.summary && (
-                  <p className="mt-0.5 line-clamp-1 text-[11.5px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-0.5 line-clamp-1 text-[11.5px] text-slate-600 dark:text-slate-400">
                     {p.summary}
                   </p>
                 )}
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           );
         })}

@@ -115,6 +115,12 @@ function NewsPage() {
       type: "image",
       placeholder: "Tải ảnh lên từ máy tính hoặc dán link ảnh...",
     },
+    {
+      name: "images",
+      label: "Album ảnh tin tức (Tải nhiều ảnh)",
+      type: "multi-image",
+      placeholder: "Chọn nhiều ảnh để tạo album ảnh cho bài viết...",
+    },
     { name: "excerpt", label: t("news.col.excerpt"), type: "textarea", placeholder: "Nhập đoạn tóm lược nội dung chính hiển thị ngoài danh sách tin tức..." },
   ];
 
@@ -513,7 +519,14 @@ function NewsPage() {
         open={open}
         title={editing ? t("common.editTitle") : t("news.create")}
         fields={fields}
-        initial={editing ? (editing as unknown as CrudValues) : undefined}
+        initial={
+          editing
+            ? ({
+                ...editing,
+                images: editing.images && editing.images.length > 0 ? editing.images : (editing.image ? [editing.image] : []),
+              } as unknown as CrudValues)
+            : undefined
+        }
         submitting={submitting}
         submitLabel={editing ? t("common.save") : t("common.create")}
         cancelLabel={t("common.cancel")}

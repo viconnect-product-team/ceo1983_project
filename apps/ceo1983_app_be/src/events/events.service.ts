@@ -58,6 +58,7 @@ export class EventsService implements OnModuleInit {
   async onModuleInit() {
     await this.prisma.$executeRawUnsafe(`
       ALTER TABLE public.events ADD COLUMN IF NOT EXISTS photo_gallery_url text DEFAULT '';
+      ALTER TABLE public.events ADD COLUMN IF NOT EXISTS tagline text DEFAULT '';
     `).catch(() => {});
   }
 
@@ -218,6 +219,7 @@ export class EventsService implements OnModuleInit {
       qrScanners: parseJsonArraySafe(r.qr_scanners),
       sponsors: parseJsonArraySafe(r.sponsors),
       photoGalleryUrl: sanitizeGalleryUrl(r.photo_gallery_url || r.photoGalleryUrl),
+      tagline: r.tagline ?? '',
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       associationId: r.association_id,
@@ -500,6 +502,7 @@ export class EventsService implements OnModuleInit {
     const desc = data.description ?? '';
     const evImg = data.image || data.banner || null;
     const photoGallery = sanitizeGalleryUrl(data.photoGalleryUrl || (data as any).photo_gallery_url);
+    const tagline = data.tagline ? String(data.tagline).trim() : '';
 
     const rawDate = data.date ? String(data.date).trim() : '';
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : new Date().toISOString().slice(0, 10);
@@ -508,32 +511,62 @@ export class EventsService implements OnModuleInit {
     // Validate địa điểm trùng khung giờ
     await this.validateEventLocationConflict(safeDate, data.location ?? '');
 
-    await this.prisma.$executeRaw`
-      INSERT INTO public.events (
-        id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, created_at, updated_at
-      ) VALUES (
-        ${eventId},
-        ${data.name},
-        ${safeDate}::date,
-        ${data.location ?? ''},
-        ${safeCapacity},
-        0,
-        ${data.status ?? 'upcoming'},
-        ${data.type ?? 'forum'},
-        ${qrFields}::text[],
-        ${assocId}::uuid,
-        ${evImg},
-        ${evImg},
-        ${ticketPrice},
-        ${ticketPrice},
-        ${desc},
-        ${photoGallery},
-        ${scannersJson}::jsonb,
-        ${sponsorsJson}::jsonb,
-        now(),
-        now()
-      )
-    `;
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.events (
+          id, name, tagline, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, created_at, updated_at
+        ) VALUES (
+          ${eventId},
+          ${data.name},
+          ${tagline},
+          ${safeDate}::date,
+          ${data.location ?? ''},
+          ${safeCapacity},
+          0,
+          ${data.status ?? 'upcoming'},
+          ${data.type ?? 'forum'},
+          ${qrFields}::text[],
+          ${assocId}::uuid,
+          ${evImg},
+          ${evImg},
+          ${ticketPrice},
+          ${ticketPrice},
+          ${desc},
+          ${photoGallery},
+          ${scannersJson}::jsonb,
+          ${sponsorsJson}::jsonb,
+          now(),
+          now()
+        )
+      `;
+    } catch {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.events (
+          id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, created_at, updated_at
+        ) VALUES (
+          ${eventId},
+          ${data.name},
+          ${safeDate}::date,
+          ${data.location ?? ''},
+          ${safeCapacity},
+          0,
+          ${data.status ?? 'upcoming'},
+          ${data.type ?? 'forum'},
+          ${qrFields}::text[],
+          ${assocId}::uuid,
+          ${evImg},
+          ${evImg},
+          ${ticketPrice},
+          ${ticketPrice},
+          ${desc},
+          ${photoGallery},
+          ${scannersJson}::jsonb,
+          ${sponsorsJson}::jsonb,
+          now(),
+          now()
+        )
+      `;
+    }
 
     // Handle ticket types if provided (wizard)
     let ticketRows: any[] = [];
@@ -624,6 +657,7 @@ export class EventsService implements OnModuleInit {
     const sponsorsJson = JSON.stringify(Array.isArray(rawSponsors) ? rawSponsors : (rawSponsors ? [rawSponsors] : []));
     const desc = data.description !== undefined ? data.description : (current.description ?? '');
     const photoGallery = data.photoGalleryUrl !== undefined ? sanitizeGalleryUrl(data.photoGalleryUrl) : sanitizeGalleryUrl(current.photo_gallery_url);
+    const tagline = data.tagline !== undefined ? String(data.tagline).trim() : (current.tagline ?? '');
 
     const rawDate = date ? String(date).trim() : '';
     const safeDate = rawDate ? (rawDate.includes('T') ? rawDate.slice(0, 10) : rawDate) : (current.date ? (current.date instanceof Date ? current.date.toISOString().slice(0, 10) : String(current.date).slice(0, 10)) : new Date().toISOString().slice(0, 10));
@@ -633,25 +667,48 @@ export class EventsService implements OnModuleInit {
     // Validate địa điểm trùng khung giờ khi cập nhật
     await this.validateEventLocationConflict(safeDate, location ?? '', id);
 
-    await this.prisma.$executeRaw`
-      UPDATE public.events SET
-        name = ${name},
-        date = ${safeDate}::date,
-        location = ${location},
-        capacity = ${safeCapacity},
-        type = ${type},
-        status = ${status},
-        image = ${evImg},
-        banner = ${evImg},
-        ticket_price = ${safeTicketPrice},
-        fee = ${safeTicketPrice},
-        description = ${desc},
-        photo_gallery_url = ${photoGallery},
-        qr_scanners = ${scannersJson}::jsonb,
-        sponsors = ${sponsorsJson}::jsonb,
-        updated_at = now()
-      WHERE id = ${id}
-    `;
+    try {
+      await this.prisma.$executeRaw`
+        UPDATE public.events SET
+          name = ${name},
+          tagline = ${tagline},
+          date = ${safeDate}::date,
+          location = ${location},
+          capacity = ${safeCapacity},
+          type = ${type},
+          status = ${status},
+          image = ${evImg},
+          banner = ${evImg},
+          ticket_price = ${safeTicketPrice},
+          fee = ${safeTicketPrice},
+          description = ${desc},
+          photo_gallery_url = ${photoGallery},
+          qr_scanners = ${scannersJson}::jsonb,
+          sponsors = ${sponsorsJson}::jsonb,
+          updated_at = now()
+        WHERE id = ${id}
+      `;
+    } catch {
+      await this.prisma.$executeRaw`
+        UPDATE public.events SET
+          name = ${name},
+          date = ${safeDate}::date,
+          location = ${location},
+          capacity = ${safeCapacity},
+          type = ${type},
+          status = ${status},
+          image = ${evImg},
+          banner = ${evImg},
+          ticket_price = ${safeTicketPrice},
+          fee = ${safeTicketPrice},
+          description = ${desc},
+          photo_gallery_url = ${photoGallery},
+          qr_scanners = ${scannersJson}::jsonb,
+          sponsors = ${sponsorsJson}::jsonb,
+          updated_at = now()
+        WHERE id = ${id}
+      `;
+    }
 
     return this.getEventById(userId, id);
   }
@@ -887,6 +944,7 @@ export class EventsService implements OnModuleInit {
       ? event.association_id
       : 'c1983000-0000-4000-8000-000000001983';
 
+    const initialStatus = isFree ? 'confirmed' : 'pending';
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
         id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, lucky_number, created_at, updated_at
@@ -897,7 +955,7 @@ export class EventsService implements OnModuleInit {
         ${memberName},
         ${email},
         now()::date,
-        'confirmed',
+        ${initialStatus},
         ${ticketType},
         ${targetAssociationId}::uuid,
         ${paymentStatus},
@@ -908,12 +966,16 @@ export class EventsService implements OnModuleInit {
       )
     `;
 
-    // Increment registered count
-    await this.prisma.$executeRaw`
-      UPDATE public.events SET registered = registered + 1, updated_at = now() WHERE id = ${eventId}
-    `.catch(() => null);
+    // Increment registered count only when event is free (paid events increment when payment is confirmed)
+    if (isFree) {
+      await this.prisma.$executeRaw`
+        UPDATE public.events SET registered = registered + 1, updated_at = now() WHERE id = ${eventId}
+      `.catch(() => null);
+    }
 
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
+    const qrCodeUrl = isFree
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`
+      : '';
     const invoiceNo = `EV${regId}`;
     const vietQrUrl = isFree
       ? ''
@@ -1050,7 +1112,7 @@ export class EventsService implements OnModuleInit {
 
     return {
       ok: true,
-      registered: true,
+      registered: isFree,
       registrationId: regId,
       eventId,
       ticketType,
@@ -1058,14 +1120,15 @@ export class EventsService implements OnModuleInit {
       totalAmount,
       isFree,
       paymentStatus,
-      status: 'confirmed',
+      status: initialStatus,
       luckyNumber: luckyNum,
       qrCodeUrl,
+      vietQrUrl,
       memberName,
       eventTitle: event.title || event.name,
       message: isFree
         ? 'Đăng ký vé tham dự sự kiện miễn phí thành công! Thông tin vé và mã QR check-in đã được gửi tới email của Anh/Chị.'
-        : 'Đăng ký sự kiện thành công! Vui lòng hoàn tất thanh toán theo hóa đơn VietQR trong mục Tin nhắn.',
+        : 'Đã tiếp nhận đăng ký tham dự sự kiện! Vui lòng chuyển khoản thanh toán theo mã VietQR. Sau khi xác nhận thanh toán, hệ thống sẽ cấp mã QR vé và gửi email vé điện tử cho Anh/Chị.',
     };
   }
 
@@ -1422,6 +1485,168 @@ export class EventsService implements OnModuleInit {
         message: `Đã gửi thông báo nhắc nhở thanh toán lần ${currentReminders}/3 thành công.`,
       };
     }
+  }
+
+  async confirmBankPayment(userId: string, registrationId: string, paymentMethod = 'bank_transfer') {
+    const regRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.event_registrations WHERE id = ${registrationId} LIMIT 1
+    `.catch(() => []);
+    if (regRows.length === 0) throw new NotFoundException('Không tìm thấy phiếu đăng ký sự kiện');
+    const reg = regRows[0];
+
+    const isAlreadyPaid = reg.payment_status === 'paid';
+    const amount = Number(reg.payment_amount || 0);
+
+    // 1. Update event_registrations to paid & confirmed
+    await this.prisma.$executeRaw`
+      UPDATE public.event_registrations
+      SET payment_status = 'paid',
+          status = 'confirmed',
+          payment_method = ${paymentMethod},
+          paid_at = now(),
+          updated_at = now()
+      WHERE id = ${registrationId}
+    `;
+
+    // 2. Increment registered count in events table if not already paid
+    if (!isAlreadyPaid) {
+      await this.prisma.$executeRaw`
+        UPDATE public.events SET registered = registered + 1, updated_at = now() 
+        WHERE id = ${reg.event_id}::uuid OR id::text = ${reg.event_id}::text
+      `.catch(() => null);
+    }
+
+    // 3. Generate QR Code Check-in
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(registrationId)}`;
+
+    // 4. Record income in transactions if amount > 0
+    const txCode = `THU-CK-EV${registrationId}`;
+    if (amount > 0) {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.transactions (
+          id, code, date, type, category, description, amount, method, status, association_id, recipient, invoice_url, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(),
+          ${txCode},
+          now()::date,
+          'income',
+          'event_fee',
+          ${'Xác nhận thanh toán phí tham dự sự kiện: ' + (reg.member_name || 'Hội viên') + ' (' + registrationId + ')'},
+          ${amount},
+          ${paymentMethod},
+          'completed',
+          ${reg.association_id ? reg.association_id : 'c1983000-0000-4000-8000-000000001983'}::uuid,
+          ${reg.member_name || 'Hội viên'},
+          ${'/invoices/' + txCode + '.pdf'},
+          now(),
+          now()
+        )
+      `.catch((err) => console.error('Error inserting event confirmation transaction:', err));
+    }
+
+    // 5. Fetch event details for email & notifications
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT title, name, date, location, photo_gallery_url FROM public.events 
+      WHERE id = ${reg.event_id}::uuid OR id::text = ${reg.event_id}::text LIMIT 1
+    `.catch(() => []);
+    const event = eventRows[0] || {};
+    const eventTitle = event.title || event.name || 'Sự kiện CLB CEO 1983';
+    const eventDateStr = event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra';
+
+    // 6. Gửi Email Vé Điện Tử kèm Mã QR Check-in về email của người đăng ký
+    const recipientEmail = (reg.email || '').trim();
+    if (recipientEmail && recipientEmail.includes('@')) {
+      try {
+        await this.mailService.sendEventTicketEmail({
+          to: recipientEmail,
+          fullName: reg.member_name || 'Quý Hội viên',
+          eventTitle,
+          eventDate: eventDateStr,
+          eventLocation: event.location || 'Hà Nội',
+          registrationId,
+          ticketType: reg.ticket_type || 'Vé tham dự sự kiện',
+          ticketCount: 1,
+          luckyNumber: reg.lucky_number ? String(reg.lucky_number) : undefined,
+          isFree: false,
+          paymentConfirmed: true,
+          totalAmount: amount,
+          qrCodeUrl,
+          vietQrUrl: '',
+          bankAccount: '1983000000',
+          bankName: 'MB Bank (Quân Đội)',
+          bankOwner: 'CLB DOANH NHAN CEO 1983',
+        });
+        this.logger.log(`Confirmed event ticket email dispatched to ${recipientEmail} (Registration: ${registrationId})`);
+      } catch (mailErr: any) {
+        this.logger.warn(`Failed to dispatch confirmed event ticket email: ${mailErr?.message}`);
+      }
+    }
+
+    // 7. Gửi tin nhắn qua kênh channel_media nếu có member_code
+    if (reg.member_code) {
+      const confirmMsg = `Kính gửi Anh/Chị ${reg.member_name || 'Hội viên'}, Ban Truyền Thông & Ban Thư Ký CLB Doanh Nhân CEO 1983 xin thông báo: Giao dịch thanh toán phí tham dự sự kiện "${eventTitle}" của Anh/Chị đã được xác nhận thành công!\n\n- Mã vé: ${registrationId}\n- Số may mắn (Lucky Draw): #${reg.lucky_number || ''}\n- Số tiền đã thanh toán: ${new Intl.NumberFormat('vi-VN').format(amount)} đ\n- Thời gian: ${eventDateStr}\n- Địa điểm: ${event.location || 'Hà Nội'}\n\nVé điện tử kèm mã QR check-in đã được gửi về email của Anh/Chị. Anh/Chị cũng có thể xuất trình thẻ vé bên dưới khi tới dự sự kiện.`;
+      const ticketActionMsg = `[action:ticket|eventId:${reg.event_id}|eventTitle:${encodeURIComponent(eventTitle)}|ticketCode:${registrationId}|lucky:${reg.lucky_number || ''}|time:${encodeURIComponent(eventDateStr)}|location:${encodeURIComponent(event.location || 'Địa điểm tổ chức')}|attendee:${encodeURIComponent(reg.member_name || '')}|qr:${encodeURIComponent(qrCodeUrl)}|type:${encodeURIComponent(reg.ticket_type || 'Standard')}|count:1]`;
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'channel_media', ${String(reg.member_code).toLowerCase()}, ${confirmMsg}, NOW() - interval '1 second')
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'channel_media', ${String(reg.member_code).toLowerCase()}, ${ticketActionMsg}, NOW())
+      `.catch(() => {});
+    }
+
+    return {
+      ok: true,
+      id: registrationId,
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      qrCodeUrl,
+      message: 'Đã xác nhận thanh toán thành công và đẩy vé điện tử kèm mã QR về email của người đăng ký.',
+    };
+  }
+
+  async reconcilePayment(userId: string, registrationId: string) {
+    const regRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.event_registrations WHERE id = ${registrationId} LIMIT 1
+    `.catch(() => []);
+    if (regRows.length === 0) throw new NotFoundException('Không tìm thấy đăng ký');
+    const reg = regRows[0];
+
+    if (reg.payment_status === 'paid') {
+      return {
+        ok: true,
+        matched: true,
+        status: 'paid',
+        message: 'Phiếu đăng ký này đã được ghi nhận thanh toán thành công.',
+      };
+    }
+
+    const expectedContent = `EV${registrationId}`;
+    const expectedAmount = Number(reg.payment_amount || 0);
+
+    // Kiểm tra dòng tiền trong bảng transactions hoặc đối soát ngân hàng
+    const txMatch = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.transactions 
+      WHERE (description ILIKE ${'%' + expectedContent + '%'} OR code ILIKE ${'%' + expectedContent + '%'})
+        AND status = 'completed'
+      LIMIT 1
+    `.catch(() => []);
+
+    if (txMatch.length > 0) {
+      // Tự động kích hoạt thanh toán
+      return this.confirmBankPayment(userId, registrationId, 'vietqr_auto');
+    }
+
+    return {
+      ok: true,
+      matched: false,
+      invoiceCode: expectedContent,
+      expectedAmount,
+      message: `Chưa phát hiện giao dịch chuyển khoản khớp với cú pháp ${expectedContent} (${new Intl.NumberFormat('vi-VN').format(expectedAmount)} đ). Bạn có thể bấm nút "Xác nhận đã thanh toán" để duyệt thủ công.`,
+    };
   }
 
   async getCheckinState(_userId: string) {

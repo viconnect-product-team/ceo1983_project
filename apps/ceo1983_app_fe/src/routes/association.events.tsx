@@ -779,6 +779,7 @@ function EventsScreen() {
     luckyNumber?: string;
     seatAssignment?: string;
     qrCodeUrl?: string;
+    phone?: string;
     event?: MyEvent | null;
   } | null>(null);
   const [ticketPassModal, setTicketPassModal] = useState<{
@@ -913,13 +914,17 @@ function EventsScreen() {
         },
       });
 
-      setLocalRegistered((prev) => ({ ...prev, [eventId]: true }));
+      if (isFree) {
+        setLocalRegistered((prev) => ({ ...prev, [eventId]: true }));
+      }
       setRegisteringEvent(null);
       setSelectedEvent(null);
 
       const luckyNum = (res as any)?.luckyNumber || (res as any)?.lucky_number || `#${Math.floor(1000 + Math.random() * 9000)}`;
       const resolvedInvNo = (res as any)?.registrationId || (res as any)?.regId || (res as any)?.invoiceNo || tempInvNo;
-      const resolvedQrUrl = (res as any)?.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(resolvedInvNo)}`;
+      const resolvedQrUrl = isFree
+        ? ((res as any)?.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(resolvedInvNo)}`)
+        : "";
 
       // Quy định xếp chỗ: Không tự động xếp chỗ từ hệ thống. Xếp chỗ chỉ khi Ban Truyền Thông tự xếp trên CRM.
       const defaultSeat = "Chờ Ban Truyền Thông xếp chỗ";
@@ -933,66 +938,71 @@ function EventsScreen() {
         luckyNumber: luckyNum,
         seatAssignment: defaultSeat,
         qrCodeUrl: resolvedQrUrl,
+        phone: formPhone.trim(),
         event: registeringEvent,
       });
 
-      // Persist in localStorage for History integration
-      try {
-        const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
-        const newRecord = {
-          id: resolvedInvNo,
-          eventId,
-          name: registeringEvent.title,
-          date: registeringEvent.date || new Date().toISOString(),
-          place: registeringEvent.place || "Hà Nội",
-          checkedIn: false,
-          ticketCode: resolvedInvNo,
-          luckyNumber: luckyNum,
-          seatAssignment: "Chờ Ban Truyền Thông xếp chỗ",
-          ticketCount: actualTicketCount,
-          ticketType: formTicketType,
-          totalAmount,
-          registeredAt: new Date().toISOString(),
-          image: (registeringEvent as any).image,
-          qrCodeUrl: resolvedQrUrl,
-        };
-        const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
-        localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
+      // Chỉ lưu vé vào danh sách vé tham gia chính thức khi sự kiện miễn phí (Sự kiện có phí phải chờ xác nhận thanh toán)
+      if (isFree) {
+        try {
+          const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+          const newRecord = {
+            id: resolvedInvNo,
+            eventId,
+            name: registeringEvent.title,
+            date: registeringEvent.date || new Date().toISOString(),
+            place: registeringEvent.place || "Hà Nội",
+            checkedIn: false,
+            ticketCode: resolvedInvNo,
+            luckyNumber: luckyNum,
+            seatAssignment: "Chờ Ban Truyền Thông xếp chỗ",
+            ticketCount: actualTicketCount,
+            ticketType: formTicketType,
+            totalAmount,
+            registeredAt: new Date().toISOString(),
+            image: (registeringEvent as any).image,
+            qrCodeUrl: resolvedQrUrl,
+          };
+          const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
+          localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
 
-        const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
-        const newAct = {
-          id: `act-${Date.now()}`,
-          type: "event",
-          title: `Đã đăng ký vé tham dự sự kiện: ${registeringEvent.title}`,
-          detail: `Số vé: ${actualTicketCount} (${formTicketType}) · Mã vé: ${resolvedInvNo}`,
-          date: new Date().toISOString(),
-          category: "Sự kiện",
-        };
-        localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
+          const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
+          const newAct = {
+            id: `act-${Date.now()}`,
+            type: "event",
+            title: `Đã đăng ký vé tham dự sự kiện: ${registeringEvent.title}`,
+            detail: `Số vé: ${actualTicketCount} (${formTicketType}) · Mã vé: ${resolvedInvNo}`,
+            date: new Date().toISOString(),
+            category: "Sự kiện",
+          };
+          localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
 
-        window.dispatchEvent(new Event("vba.events.changed"));
-        window.dispatchEvent(new Event("vba.history.changed"));
-      } catch (err) {
-        console.warn("Could not save to localStorage", err);
+          window.dispatchEvent(new Event("vba.events.changed"));
+          window.dispatchEvent(new Event("vba.history.changed"));
+        } catch (err) {
+          console.warn("Could not save to localStorage", err);
+        }
       }
 
       if (isFree) {
         toast.success(`Đăng ký thành công! Số vé may mắn của bạn: ${luckyNum}`);
       } else {
         toast.success(
-          isEn
-            ? `Registered successfully! Your lucky number is ${luckyNum}`
-            : `Đăng ký thành công! Số vé may mắn của bạn: ${luckyNum}`,
+          "Đã tiếp nhận đăng ký tham gia sự kiện! Vui lòng quét mã VietQR để hoàn tất thanh toán và kích hoạt vé QR.",
         );
       }
       reload();
     } catch (err: any) {
-      setLocalRegistered((prev) => ({ ...prev, [eventId]: true }));
+      if (isFree) {
+        setLocalRegistered((prev) => ({ ...prev, [eventId]: true }));
+      }
       setRegisteringEvent(null);
       setSelectedEvent(null);
 
       const fallbackLuckyNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
-      const fallbackQr = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tempInvNo)}`;
+      const fallbackQr = isFree
+        ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tempInvNo)}`
+        : "";
       setRegisteredSuccessInfo({
         eventTitle: registeringEvent.title,
         totalAmount,
@@ -1001,46 +1011,48 @@ function EventsScreen() {
         isFree,
         luckyNumber: fallbackLuckyNum,
         qrCodeUrl: fallbackQr,
+        phone: formPhone.trim(),
         event: registeringEvent,
       });
 
-      
-      try {
-        const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
-        const newRecord = {
-          id: tempInvNo,
-          eventId,
-          name: registeringEvent.title,
-          date: registeringEvent.date || new Date().toISOString(),
-          place: registeringEvent.place || "Hà Nội",
-          checkedIn: false,
-          ticketCode: tempInvNo,
-          luckyNumber: fallbackLuckyNum,
-          ticketCount: actualTicketCount,
-          ticketType: formTicketType,
-          totalAmount,
-          registeredAt: new Date().toISOString(),
-          image: (registeringEvent as any).image,
-          qrCodeUrl: fallbackQr,
-        };
-        const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
-        localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
+      if (isFree) {
+        try {
+          const existingRecords = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+          const newRecord = {
+            id: tempInvNo,
+            eventId,
+            name: registeringEvent.title,
+            date: registeringEvent.date || new Date().toISOString(),
+            place: registeringEvent.place || "Hà Nội",
+            checkedIn: false,
+            ticketCode: tempInvNo,
+            luckyNumber: fallbackLuckyNum,
+            ticketCount: actualTicketCount,
+            ticketType: formTicketType,
+            totalAmount,
+            registeredAt: new Date().toISOString(),
+            image: (registeringEvent as any).image,
+            qrCodeUrl: fallbackQr,
+          };
+          const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
+          localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
 
-        const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
-        const newAct = {
-          id: `act-${Date.now()}`,
-          type: "event",
-          title: `Đã đăng ký vé tham dự sự kiện: ${registeringEvent.title}`,
-          detail: `Số vé: ${actualTicketCount} (${formTicketType}) · Mã vé: ${tempInvNo}`,
-          date: new Date().toISOString(),
-          category: "Sự kiện",
-        };
-        localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
+          const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
+          const newAct = {
+            id: `act-${Date.now()}`,
+            type: "event",
+            title: `Đã đăng ký vé tham dự sự kiện: ${registeringEvent.title}`,
+            detail: `Số vé: ${actualTicketCount} (${formTicketType}) · Mã vé: ${tempInvNo}`,
+            date: new Date().toISOString(),
+            category: "Sự kiện",
+          };
+          localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
 
-        window.dispatchEvent(new Event("vba.events.changed"));
-        window.dispatchEvent(new Event("vba.history.changed"));
-      } catch (err) {
-        console.warn("Could not save to localStorage", err);
+          window.dispatchEvent(new Event("vba.events.changed"));
+          window.dispatchEvent(new Event("vba.history.changed"));
+        } catch (err) {
+          console.warn("Could not save to localStorage", err);
+        }
       }
 
       toast.success(isFree ? `Đăng ký vé miễn phí thành công! Số may mắn: ${fallbackLuckyNum}` : `Đăng ký thành công! Số may mắn: ${fallbackLuckyNum}`);

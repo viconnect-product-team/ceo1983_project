@@ -70,6 +70,23 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
   interestedIds,
   onInterest,
 }) => {
+  const [activeImgIdx, setActiveImgIdx] = React.useState(0);
+
+  const allImages = React.useMemo(() => {
+    const list: string[] = [];
+    if (selectedOpp?.image) list.push(selectedOpp.image);
+    if (Array.isArray((selectedOpp as any)?.images)) {
+      (selectedOpp as any).images.forEach((img: string) => {
+        if (img && !list.includes(img)) list.push(img);
+      });
+    }
+    return list.length > 0 ? list : [defaultOppImages[0]];
+  }, [selectedOpp, defaultOppImages]);
+
+  React.useEffect(() => {
+    setActiveImgIdx(0);
+  }, [selectedOpp]);
+
   if (typeof document === "undefined" || !selectedOpp) return null;
 
   return createPortal(
@@ -81,16 +98,12 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
         className="w-full max-w-[440px] max-h-[90dvh] flex flex-col rounded-3xl bg-white dark:bg-[#0f172a] shadow-2xl text-slate-900 dark:text-white overflow-hidden animate-scale-in border border-slate-200 dark:border-white/10"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Poster Header (Image 4) */}
+        {/* Poster Header */}
         <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-slate-900 shrink-0">
           <img
-            src={
-              (selectedOpp.image
-                ? resolveMediaUrl(selectedOpp.image) || selectedOpp.image
-                : null) || defaultOppImages[0]
-            }
+            src={resolveMediaUrl(allImages[activeImgIdx]) || allImages[activeImgIdx]}
             alt={selectedOpp.title}
-            className="h-full w-full object-cover opacity-90"
+            className="h-full w-full object-cover opacity-90 transition-all duration-300"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25" />
           <button
@@ -120,6 +133,28 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             </p>
           </div>
         </div>
+
+        {/* Dải thumbnails nếu có nhiều ảnh */}
+        {allImages.length > 1 && (
+          <div className="flex items-center gap-2 p-2 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 overflow-x-auto shrink-0 [scrollbar-width:none]">
+            {allImages.map((img, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveImgIdx(idx)}
+                className={`size-11 rounded-lg overflow-hidden shrink-0 border-2 transition cursor-pointer ${
+                  activeImgIdx === idx ? "border-[#003B95] ring-2 ring-[#003B95]/30" : "border-transparent opacity-60 hover:opacity-100"
+                }`}
+              >
+                <img
+                  src={resolveMediaUrl(img) || img}
+                  alt={`Ảnh ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* 3-Column Metadata Strip */}
         <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center border-b border-slate-100 dark:border-white/5 shrink-0">

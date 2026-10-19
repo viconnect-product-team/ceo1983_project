@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Building2,
+  Calendar,
   Check,
   Clock,
   Download,
@@ -11,9 +12,12 @@ import {
   FileArchive,
   FileSpreadsheet,
   FileText,
+  Handshake,
   Image as ImageIcon,
   Loader2,
+  MapPin,
   MessageSquare,
+  Newspaper,
   Package,
   Paperclip,
   Pin,
@@ -21,13 +25,17 @@ import {
   Plus,
   Search,
   Send,
+  Share2,
   Shield,
+  Sparkles,
+  Tag,
   Trash2,
   User,
   UserCheck,
   UserPlus,
   UserX,
   Users,
+  Video,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -48,6 +56,10 @@ import { useFmt, useT } from "@/lib/i18n";
 import { MEMBERS, hydrateMembers, type Member } from "@/lib/members-data";
 import { type Product } from "@/lib/marketplace-data";
 import { listProductsFn } from "@/lib/marketplace.functions";
+import { listOpportunitiesFn } from "@/lib/opportunities.functions";
+import type { Opportunity } from "@/lib/opportunities-data";
+import { listNewsFn } from "@/lib/news.functions";
+import type { NewsArticle } from "@/lib/extra-data";
 import { listPeersFn } from "@/lib/members.functions";
 import {
   CURRENT_USER_ID,
@@ -82,7 +94,7 @@ import {
   type ConnectionStatus,
 } from "@/lib/networking-data";
 import { getNetworkStateFn } from "@/lib/networking.functions";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { mergeMembersWithAccounts, readManagedAccounts } from "@/lib/committee-accounts";
 
 /** Map bản ghi /members (DB) → Member cho danh bạ chat. */
@@ -187,14 +199,18 @@ export const Route = createFileRoute("/network")({
   },
   loader: async () => {
     try {
-      const [productsRes, networkRes, membersRes] = await Promise.allSettled([
+      const [productsRes, networkRes, membersRes, oppsRes, newsRes] = await Promise.allSettled([
         listProductsFn().catch(() => []),
         getNetworkStateFn().catch(() => ({ currentMemberId: null, statuses: {}, timestamps: {}, messages: [] })),
         listPeersFn().catch(() => []),
+        listOpportunitiesFn().catch(() => []),
+        listNewsFn().catch(() => []),
       ]);
       const products = productsRes.status === "fulfilled" && Array.isArray(productsRes.value) ? productsRes.value : [];
       const network = networkRes.status === "fulfilled" && networkRes.value ? networkRes.value : { currentMemberId: null, statuses: {}, timestamps: {}, messages: [] };
       const members = membersRes.status === "fulfilled" && Array.isArray(membersRes.value) ? membersRes.value : [];
+      const opportunities = oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value) ? (oppsRes.value as Opportunity[]) : [];
+      const news = newsRes.status === "fulfilled" && Array.isArray(newsRes.value) ? (newsRes.value as NewsArticle[]) : [];
 
       // Hiển thị TOÀN BỘ tài khoản thuộc các Ban: gộp danh bạ + toàn bộ /members + tài khoản quản trị (/accounts)
       let allDbMembers: Member[] = [];
@@ -213,19 +229,21 @@ export const Route = createFileRoute("/network")({
         readManagedAccounts(),
       );
       hydrateMembers(merged.length > 0 ? merged : (members ?? []));
-      return { products, network };
+      return { products, network, opportunities, news };
     } catch (e) {
       console.warn("Error in network loader:", e);
       return {
         products: [],
         network: { currentMemberId: null, statuses: {}, timestamps: {}, messages: [] },
+        opportunities: [],
+        news: [],
       };
     }
   },
   component: NetworkPage,
 });
 
-type Tab = "discover" | "messages";
+type Tab = "feed" | "messages" | "members";
 
 function useNetworkTick() {
   const [, setN] = useState(0);
@@ -1456,6 +1474,483 @@ function NewGroupChatDialog({
   );
 }
 
+export type FeedItem = {
+  id: string;
+  type: "product" | "opportunity" | "news";
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorSubtitle: string;
+  authorCommittee: string;
+  authorAvatar?: string;
+  createdAt: string;
+  badge: {
+    label: string;
+    colorCls: string;
+  };
+  priceOrBudget?: string;
+  images: string[];
+  videoUrl?: string;
+  linkTo?: string;
+  raw: any;
+};
+
+export function findMemberForFeed(authorId?: string, authorName?: string): Member {
+  if (authorId) {
+    const found = MEMBERS.find((m) => m.id === authorId || m.code === authorId);
+    if (found) return found;
+  }
+  if (authorName) {
+    const clean = authorName.toLowerCase().trim();
+    const found = MEMBERS.find(
+      (m) =>
+        m.name.toLowerCase().includes(clean) ||
+        clean.includes(m.name.toLowerCase()) ||
+        (m.contact && (m.contact.toLowerCase().includes(clean) || clean.includes(m.contact.toLowerCase()))),
+    );
+    if (found) return found;
+  }
+  return (
+    MEMBERS[0] || {
+      id: "admin-c1983",
+      code: "CEO1983-001",
+      name: authorName || "Ban Điều Hành CEO 1983",
+      contact: "CEO 1983 HanoiBA",
+      email: "contact@ceo1983.vn",
+      phone: "",
+      type: "individual",
+      level: "memberLevel.high",
+      industry: "Hiệp Hội Doanh Nhân",
+      region: "Hà Nội",
+      status: "active",
+      joinedAt: new Date().toISOString(),
+      feeYear: 2026,
+      feePaid: true,
+      department: "Ban Điều Hành",
+    }
+  );
+}
+
+function ScheduleMeetingModal({
+  target,
+  onClose,
+  onScheduled,
+}: {
+  target: {
+    memberId: string;
+    name: string;
+    subtitle?: string;
+    avatar?: string;
+    contextTitle?: string;
+  } | null;
+  onClose: () => void;
+  onScheduled: (memberId: string) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  });
+  const [time, setTime] = useState("09:00");
+  const [type, setType] = useState<"offline" | "online">("offline");
+  const [location, setLocation] = useState("Văn phòng CEO 1983 hoặc Cafe Doanh nhân");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (target) {
+      setTitle(
+        target.contextTitle
+          ? `Gặp gỡ trao đổi về: ${target.contextTitle}`
+          : `Gặp gỡ kết nối 1-on-1 cùng ${target.name}`,
+      );
+      if (type === "offline") {
+        setLocation("Văn phòng CEO 1983 hoặc Cafe Doanh nhân");
+      }
+    }
+  }, [target, type]);
+
+  if (!target) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      toast.error("Vui lòng nhập chủ đề cuộc gặp!");
+      return;
+    }
+    if (!date) {
+      toast.error("Vui lòng chọn ngày gặp!");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const typeLabel = type === "offline" ? "Trực tiếp (Offline)" : "Trực tuyến (Google Meet/Zoom)";
+      const meetingMessage =
+        `🤝 [LỜI MỜI LÊN LỊCH CUỘC GẶP 1-ON-1]\n` +
+        `📌 Chủ đề: ${title.trim()}\n` +
+        `📅 Thời gian: ${time} ngày ${date}\n` +
+        `📍 Hình thức: ${typeLabel}\n` +
+        `🏢 Địa điểm / Link họp: ${location.trim() || (type === "offline" ? "Tại văn phòng / Hẹn trước" : "Google Meet")}\n` +
+        (notes.trim() ? `📝 Ghi chú: ${notes.trim()}\n` : "") +
+        `\n(Lời mời được gửi tự động từ Mạng Xã Hội Doanh Nhân CEO 1983)`;
+
+      await sendMessage(target.memberId, meetingMessage);
+      toast.success(`Đã gửi lời mời lên lịch cuộc gặp 1-on-1 tới ${target.name} qua hộp thư nội bộ!`);
+      onClose();
+      onScheduled(target.memberId);
+    } catch (err: any) {
+      toast.error("Không thể gửi lời mời: " + (err?.message || "Lỗi kết nối"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-4 bg-muted/20">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Handshake className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-foreground">Lên lịch cuộc gặp 1-on-1</h3>
+              <p className="text-xs text-muted-foreground">Đặt hẹn gặp trực tiếp hoặc trực tuyến cùng đối tác</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Target Info */}
+        <div className="px-5 py-3 bg-primary/5 border-b border-border/50 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-primary/15 text-primary font-bold grid place-items-center text-sm shrink-0 border border-primary/20">
+            {target.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-muted-foreground">Đối tác kết nối:</div>
+            <div className="text-sm font-bold text-foreground truncate">{target.name}</div>
+            {target.subtitle && <div className="text-xs text-muted-foreground truncate">{target.subtitle}</div>}
+          </div>
+        </div>
+
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">
+              Chủ đề cuộc gặp <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="VD: Trao đổi hợp tác phân phối sản phẩm, chia sẻ kinh nghiệm..."
+              className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">
+                Ngày gặp <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">
+                Thời gian <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="time"
+                required
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1.5 block">Hình thức gặp gỡ</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setType("offline");
+                  setLocation("Văn phòng CEO 1983 hoặc Cafe Doanh nhân");
+                }}
+                className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${
+                  type === "offline"
+                    ? "border-primary bg-primary/10 text-primary shadow-xs"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                Trực tiếp (Offline)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setType("online");
+                  setLocation("Google Meet (sẽ gửi link họp)");
+                }}
+                className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${
+                  type === "online"
+                    ? "border-primary bg-primary/10 text-primary shadow-xs"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <Video className="h-3.5 w-3.5" />
+                Trực tuyến (Online)
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">
+              {type === "offline" ? "Địa điểm cuộc gặp" : "Link phòng họp trực tuyến"}
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder={type === "offline" ? "VD: Cafe Highlands, Văn phòng Công ty..." : "VD: https://meet.google.com/xyz"}
+              className="w-full h-10 rounded-lg border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground mb-1 block">Nội dung / Ghi chú bổ sung</label>
+            <textarea
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Thông tin thêm cần chuẩn bị, tài liệu liên quan..."
+              className="w-full rounded-lg border border-border bg-card p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+            />
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted transition cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-95 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              style={{ background: "#003B95" }}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Đang gửi lời mời...
+                </>
+              ) : (
+                <>
+                  <Handshake className="h-3.5 w-3.5" />
+                  Xác nhận lên lịch & Gửi tin nhắn
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function FeedCard({
+  item,
+  onOpenChat,
+  onScheduleMeeting,
+}: {
+  item: FeedItem;
+  onOpenChat: (authorId: string) => void;
+  onScheduleMeeting: (target: { memberId: string; name: string; subtitle?: string; contextTitle?: string }) => void;
+}) {
+  const fmt = useFmt();
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <Card className="p-5 border border-border bg-card rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+      <div>
+        {/* Post Author Header */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="h-10 w-10 rounded-full font-bold text-white grid place-items-center shrink-0 shadow-xs"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              {item.authorName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold text-sm text-foreground truncate">{item.authorName}</span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  <Shield className="h-3 w-3" />
+                  {item.authorCommittee}
+                </span>
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate">{item.authorSubtitle}</div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${item.badge.colorCls}`}>
+              {item.badge.label}
+            </span>
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {item.createdAt ? fmt.rel(item.createdAt) : "Gần đây"}
+            </span>
+          </div>
+        </div>
+
+        {/* Post Title */}
+        <h4 className="text-base font-bold text-foreground mb-2 line-clamp-2 leading-snug">
+          {item.title}
+        </h4>
+
+        {/* Price / Budget Pill if available */}
+        {item.priceOrBudget && (
+          <div className="mb-3">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-emerald-500/20">
+              💰 {item.type === "product" ? `Giá niêm yết: ${item.priceOrBudget}` : `Ngân sách: ${item.priceOrBudget}`}
+            </span>
+          </div>
+        )}
+
+        {/* Post Content */}
+        <p className={`text-xs text-muted-foreground leading-relaxed mb-3 ${expanded ? "" : "line-clamp-3"}`}>
+          {item.content}
+        </p>
+        {item.content && item.content.length > 180 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="text-[11px] font-semibold text-primary hover:underline mb-3 cursor-pointer block"
+          >
+            {expanded ? "Thu gọn" : "Xem thêm..."}
+          </button>
+        )}
+
+        {/* Media Preview (Images) */}
+        {item.images && item.images.length > 0 && (
+          <div className="mb-3">
+            {item.images.length === 1 ? (
+              <div className="relative aspect-video max-h-60 w-full rounded-xl overflow-hidden border border-border bg-muted/30">
+                <img
+                  src={resolveMediaUrl(item.images[0]) || item.images[0]}
+                  alt={item.title}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {item.images.slice(0, 3).map((url, idx) => (
+                  <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-border bg-muted/30">
+                    <img
+                      src={resolveMediaUrl(url) || url}
+                      alt={`${item.title} ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {idx === 2 && item.images.length > 3 && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center font-bold text-white text-xs">
+                        +{item.images.length - 3} ảnh
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Video Link if available */}
+        {item.videoUrl && (
+          <div className="mb-3">
+            <a
+              href={item.videoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-500/20 transition"
+            >
+              <Video className="h-3.5 w-3.5" />
+              <span>Xem Video giới thiệu</span>
+              <ExternalLink className="h-3 w-3 opacity-60" />
+            </a>
+          </div>
+        )}
+      </div>
+
+      {/* Card Action Buttons */}
+      <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() =>
+            onScheduleMeeting({
+              memberId: item.authorId,
+              name: item.authorName,
+              subtitle: item.authorSubtitle,
+              contextTitle: item.title,
+            })
+          }
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-95 active:scale-95 cursor-pointer"
+          style={{ background: "#003B95" }}
+        >
+          <Handshake className="h-4 w-4" />
+          <span>🤝 Lên lịch cuộc gặp 1-on-1</span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onOpenChat(item.authorId)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition cursor-pointer"
+          >
+            <MessageSquare className="h-3.5 w-3.5 text-primary" />
+            <span>Nhắn tin</span>
+          </button>
+
+          {item.linkTo && (
+            <Link
+              to={item.linkTo}
+              className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
+            >
+              <span>Chi tiết</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function NetworkPage() {
   useNetworkTick();
   const t = useT();
@@ -1463,7 +1958,7 @@ function NetworkPage() {
   const navigate = useNavigate();
 
   const search = Route.useSearch();
-  const { products, network } = Route.useLoaderData() as {
+  const { products, network, opportunities, news } = Route.useLoaderData() as {
     products: Product[];
     network: {
       currentMemberId: string | null;
@@ -1471,6 +1966,8 @@ function NetworkPage() {
       timestamps: Record<string, string>;
       messages: ChatMessage[];
     };
+    opportunities: Opportunity[];
+    news: NewsArticle[];
   };
   const productsById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -1490,7 +1987,15 @@ function NetworkPage() {
     return () => clearInterval(id);
   }, []);
 
-  const [tab, setTab] = useState<Tab>("discover");
+  const [tab, setTab] = useState<Tab>("feed");
+  const [feedTypeFilter, setFeedTypeFilter] = useState<"all" | "product" | "opportunity" | "news">("all");
+  const [meetingTarget, setMeetingTarget] = useState<{
+    memberId: string;
+    name: string;
+    subtitle?: string;
+    avatar?: string;
+    contextTitle?: string;
+  } | null>(null);
   const [query, setQuery] = useState("");
   const [selectedCommittee, setSelectedCommittee] = useState<string>("Tất cả các ban");
   const [showNewChat, setShowNewChat] = useState(false);
@@ -1621,13 +2126,148 @@ function NetworkPage() {
     setDraft(undefined);
   };
 
-  const TABS: { key: Tab; label: string; count?: number }[] = [
+  // Feed Items Synthesis
+  const feedItems = useMemo(() => {
+    const list: FeedItem[] = [];
+
+    // 1. Products
+    products.forEach((p) => {
+      const mem = findMemberForFeed(p.sellerId, p.sellerName);
+      const committee = getMemberCommittee(mem);
+      const rawP = p as any;
+      const images = (p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls : rawP.imageUrl ? [rawP.imageUrl] : []) || [];
+      list.push({
+        id: `prod-${p.id}`,
+        type: "product",
+        title: p.title,
+        content: p.description || rawP.fullDescription || "Sản phẩm - Dịch vụ tiêu biểu từ Hội viên Doanh nhân CEO 1983",
+        authorId: mem.id,
+        authorName: p.sellerName || mem.name,
+        authorSubtitle: rawP.sellerCompany || rawP.company || getCleanMemberSubtitle(mem),
+        authorCommittee: committee,
+        authorAvatar: p.sellerAvatar || "",
+        createdAt: p.createdAt || "",
+        badge: {
+          label: "Sản phẩm mới",
+          colorCls: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+        },
+        priceOrBudget: p.price ? fmt.money(p.price) : undefined,
+        images,
+        videoUrl: rawP.videoUrl,
+        linkTo: `/marketplace?id=${p.id}`,
+        raw: p,
+      });
+    });
+
+    // 2. Opportunities
+    opportunities.forEach((opp) => {
+      const mem = findMemberForFeed(opp.posterId, opp.posterName || opp.contactName);
+      const committee = getMemberCommittee(mem);
+      const rawOpp = opp as any;
+      const images = (rawOpp.images && rawOpp.images.length > 0 ? rawOpp.images : opp.image ? [opp.image] : []) || [];
+      const budgetStr =
+        opp.budgetMin || opp.budgetMax
+          ? `${fmt.money(opp.budgetMin || 0)}${opp.budgetMax ? ` - ${fmt.money(opp.budgetMax)}` : ""}`
+          : undefined;
+      list.push({
+        id: `opp-${opp.id}`,
+        type: "opportunity",
+        title: opp.title,
+        content: opp.description || "Cơ hội hợp tác B2B, giao thương mở rộng mạng lưới kinh doanh.",
+        authorId: mem.id,
+        authorName: opp.posterName || opp.contactName || mem.name,
+        authorSubtitle: opp.company || opp.contactTitle || getCleanMemberSubtitle(mem),
+        authorCommittee: committee,
+        authorAvatar: opp.posterAvatar || "",
+        createdAt: opp.createdAt || "",
+        badge: {
+          label: "Cơ hội B2B",
+          colorCls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+        },
+        priceOrBudget: budgetStr,
+        images,
+        linkTo: `/opportunities?id=${opp.id}`,
+        raw: opp,
+      });
+    });
+
+    // 3. News
+    news.forEach((n) => {
+      const mem = findMemberForFeed(undefined, n.author);
+      const images = n.images && n.images.length > 0 ? n.images : n.image ? [n.image] : [];
+      list.push({
+        id: `news-${n.id}`,
+        type: "news",
+        title: n.title,
+        content: n.excerpt || "Tin tức & sự kiện mới nhất từ Hiệp hội Doanh nhân CEO 1983.",
+        authorId: mem.id,
+        authorName: n.author || "Ban Truyền Thông",
+        authorSubtitle: n.category || "Hiệp Hội CEO 1983",
+        authorCommittee: "Ban Truyền Thông",
+        createdAt: n.publishedAt || "",
+        badge: {
+          label: "Tin tức",
+          colorCls: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+        },
+        images,
+        linkTo: `/news`,
+        raw: n,
+      });
+    });
+
+    return list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  }, [products, opportunities, news, fmt]);
+
+  const filteredFeed = useMemo(() => {
+    let result = feedItems;
+    if (feedTypeFilter !== "all") {
+      result = result.filter((item) => item.type === feedTypeFilter);
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.content.toLowerCase().includes(q) ||
+          item.authorName.toLowerCase().includes(q) ||
+          item.authorSubtitle.toLowerCase().includes(q) ||
+          item.authorCommittee.toLowerCase().includes(q),
+      );
+    }
+    return result;
+  }, [feedItems, feedTypeFilter, query]);
+
+  const [feedPage, setFeedPage] = useState(1);
+  const FEED_PER_PAGE = 8;
+  const feedPages = Math.max(1, Math.ceil(filteredFeed.length / FEED_PER_PAGE));
+  const pagedFeed = useMemo(() => {
+    const start = (feedPage - 1) * FEED_PER_PAGE;
+    return filteredFeed.slice(start, start + FEED_PER_PAGE);
+  }, [filteredFeed, feedPage]);
+
+  useEffect(() => {
+    setFeedPage(1);
+  }, [feedTypeFilter, query]);
+
+  const TABS: { key: Tab; label: string; count?: number; icon: React.ReactNode }[] = [
     {
-      key: "discover",
-      label: "Nhân sự & Các Ban",
-      count: MEMBERS.length,
+      key: "feed",
+      label: "Bảng tin Doanh Nhân",
+      count: filteredFeed.length,
+      icon: <Newspaper className="h-4 w-4" />,
     },
-    { key: "messages", label: "Hộp thư trao đổi", count: messageList.length + groupList.length },
+    {
+      key: "messages",
+      label: "Nhắn tin & Nhóm",
+      count: messageList.length + groupList.length,
+      icon: <MessageSquare className="h-4 w-4" />,
+    },
+    {
+      key: "members",
+      label: "Kết nối theo Ban",
+      count: MEMBERS.length,
+      icon: <Users className="h-4 w-4" />,
+    },
   ];
 
   return (
@@ -1643,34 +2283,34 @@ function NetworkPage() {
       </div>
 
       <PageHeader
-        title={t("net.title")}
-        subtitle="Hệ thống trao đổi công việc 1-on-1 nội bộ giữa Ban Điều Hành và các Ban Chuyên Môn CEO 1983"
+        title="Mạng Xã Hội Doanh Nhân CEO 1983"
+        subtitle="Không gian kết nối giao thương B2B, chia sẻ sản phẩm dịch vụ, cập nhật tin tức và thiết lập cuộc hẹn 1-on-1 trực tiếp"
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
+          label="Bài đăng giao thương"
+          value={fmt.num(feedItems.length)}
+          tone="primary"
+          icon={<Newspaper className="h-4 w-4" />}
+        />
+        <StatCard
           label="Tổng nhân sự & Hội viên"
           value={fmt.num(MEMBERS.filter((m) => m.id !== CURRENT_USER_ID).length)}
-          tone="primary"
+          tone="success"
           icon={<Users className="h-4 w-4" />}
         />
         <StatCard
           label="Ban Chuyên Môn"
           value="7 ban"
-          tone="success"
+          tone="info"
           icon={<Shield className="h-4 w-4" />}
         />
         <StatCard
           label="Cuộc trao đổi"
           value={fmt.num(messageList.length + groupList.length)}
-          tone="info"
-          icon={<MessageSquare className="h-4 w-4" />}
-        />
-        <StatCard
-          label="Trao đổi trực tiếp"
-          value="Không rào cản"
           tone="warning"
-          icon={<Send className="h-4 w-4" />}
+          icon={<MessageSquare className="h-4 w-4" />}
         />
       </div>
 
@@ -1681,16 +2321,24 @@ function NetworkPage() {
           return (
             <button
               key={tb.key}
-              onClick={() => setTab(tb.key)}
-              className={`relative -mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
+              onClick={() => {
+                setTab(tb.key);
+                setQuery("");
+              }}
+              className={`relative -mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition flex items-center gap-2 cursor-pointer ${
                 active
-                  ? "border-primary text-foreground font-semibold"
+                  ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tb.label}
+              {tb.icon}
+              <span>{tb.label}</span>
               {tb.count != null && tb.count > 0 && (
-                <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-foreground">
+                <span
+                  className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   {tb.count}
                 </span>
               )}
@@ -1699,8 +2347,153 @@ function NetworkPage() {
         })}
       </div>
 
-      {tab !== "messages" && (
-        <div className="mb-4 space-y-3">
+      {/* ── TAB 1: BẢNG TIN DOANH NHÂN (FEED) ── */}
+      {tab === "feed" && (
+        <div className="space-y-4">
+          {/* Feed Filter Chips & Quick Actions */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
+              {[
+                { key: "all", label: "Tất cả bài viết", count: feedItems.length },
+                {
+                  key: "product",
+                  label: "🛒 Sản phẩm mới",
+                  count: feedItems.filter((i) => i.type === "product").length,
+                },
+                {
+                  key: "opportunity",
+                  label: "💡 Cơ hội B2B",
+                  count: feedItems.filter((i) => i.type === "opportunity").length,
+                },
+                {
+                  key: "news",
+                  label: "📰 Tin tức sự kiện",
+                  count: feedItems.filter((i) => i.type === "news").length,
+                },
+              ].map((item) => {
+                const isSelected = feedTypeFilter === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setFeedTypeFilter(item.key as typeof feedTypeFilter)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-secondary/70 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                        isSelected
+                          ? "bg-primary-foreground/25 text-primary-foreground font-bold"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link
+                to="/marketplace"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold hover:bg-muted transition text-foreground"
+              >
+                <Plus className="h-3.5 w-3.5 text-primary" />
+                <span>Đăng sản phẩm</span>
+              </Link>
+              <Link
+                to="/opportunities"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold hover:bg-muted transition text-foreground"
+              >
+                <Plus className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Đăng cơ hội B2B</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Search Box for Feed */}
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 shadow-[var(--shadow-card)]">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tìm kiếm bài viết theo tiêu đề, nội dung, người đăng, ban chuyên môn..."
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Xóa
+              </button>
+            )}
+          </div>
+
+          {/* Feed Content Grid */}
+          {filteredFeed.length === 0 ? (
+            <Card className="p-12 text-center text-sm text-muted-foreground flex flex-col items-center justify-center gap-3">
+              <Newspaper className="h-10 w-10 text-muted-foreground/50" />
+              <div>Không tìm thấy bài viết hoặc nội dung nào phù hợp với bộ lọc hiện tại.</div>
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-muted"
+                >
+                  Xóa từ khóa tìm kiếm
+                </button>
+              )}
+            </Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {pagedFeed.map((item) => (
+                  <FeedCard
+                    key={item.id}
+                    item={item}
+                    onOpenChat={openChat}
+                    onScheduleMeeting={(target) => setMeetingTarget(target)}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination for Feed */}
+              {feedPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-3 pt-4 border-t border-border">
+                  <button
+                    onClick={() => setFeedPage((p) => Math.max(1, p - 1))}
+                    disabled={feedPage <= 1}
+                    className="rounded-lg border border-input px-3.5 py-1.5 text-sm font-medium text-foreground disabled:opacity-40 cursor-pointer"
+                  >
+                    {t("net.page.prev")}
+                  </button>
+                  <span className="text-sm text-muted-foreground">
+                    Trang {feedPage} / {feedPages} ({filteredFeed.length} bài đăng)
+                  </span>
+                  <button
+                    onClick={() => setFeedPage((p) => Math.min(feedPages, p + 1))}
+                    disabled={feedPage >= feedPages}
+                    className="rounded-lg border border-input px-3.5 py-1.5 text-sm font-medium text-foreground disabled:opacity-40 cursor-pointer"
+                  >
+                    {t("net.page.next")}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB 3: KẾT NỐI THEO BAN CHUYÊN MÔN (MEMBERS) ── */}
+      {tab === "members" && (
+        <div className="space-y-3">
           {/* Committee Filter Chips */}
           <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
             <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
@@ -1719,7 +2512,7 @@ function NetworkPage() {
                 <button
                   key={comm}
                   onClick={() => setSelectedCommittee(comm)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                     isSelected
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "bg-secondary/70 text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -1752,18 +2545,14 @@ function NetworkPage() {
             {query && (
               <button
                 onClick={() => setQuery("")}
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 Xóa
               </button>
             )}
           </div>
-        </div>
-      )}
 
-      {tab === "discover" && (
-        <>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 pt-1">
             <div className="text-xs text-muted-foreground">
               {selectedCommittee !== "Tất cả các ban" ? `${selectedCommittee} · ` : ""}
               Hiển thị {fmt.num(discoverFiltered.length)} nhân sự / hội viên
@@ -1794,14 +2583,31 @@ function NetworkPage() {
                     key={m.id}
                     member={m}
                     rightSlot={
-                      <button
-                        onClick={() => openChat(m.id)}
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95"
-                        style={{ background: "#003B95" }}
-                      >
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        <span>Nhắn tin trao đổi</span>
-                      </button>
+                      <div className="flex items-center gap-2 w-full">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setMeetingTarget({
+                              memberId: m.id,
+                              name: m.name,
+                              subtitle: getCleanMemberSubtitle(m),
+                            })
+                          }
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border dark:border-amber-800 transition cursor-pointer"
+                        >
+                          <Handshake className="h-3.5 w-3.5" />
+                          <span>Đặt lịch 1-on-1</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openChat(m.id)}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95 cursor-pointer"
+                          style={{ background: "#003B95" }}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>Nhắn tin</span>
+                        </button>
+                      </div>
                     }
                   />
                 ))}
@@ -1812,7 +2618,7 @@ function NetworkPage() {
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={safePage <= 1}
-                    className="rounded-lg border border-input px-3 py-1.5 text-sm font-medium text-foreground disabled:opacity-40"
+                    className="rounded-lg border border-input px-3 py-1.5 text-sm font-medium text-foreground disabled:opacity-40 cursor-pointer"
                   >
                     {t("net.page.prev")}
                   </button>
@@ -1822,7 +2628,7 @@ function NetworkPage() {
                   <button
                     onClick={() => setPage((p) => Math.min(discoverPages, p + 1))}
                     disabled={safePage >= discoverPages}
-                    className="rounded-lg border border-input px-3 py-1.5 text-sm font-medium text-foreground disabled:opacity-40"
+                    className="rounded-lg border border-input px-3 py-1.5 text-sm font-medium text-foreground disabled:opacity-40 cursor-pointer"
                   >
                     {t("net.page.next")}
                   </button>
@@ -1830,7 +2636,7 @@ function NetworkPage() {
               )}
             </>
           )}
-        </>
+        </div>
       )}
 
       {tab === "messages" && (
@@ -2036,6 +2842,13 @@ function NetworkPage() {
           setTab("messages");
           setActivePeer(g.id);
         }}
+      />
+
+      {/* Schedule 1-on-1 Meeting Modal */}
+      <ScheduleMeetingModal
+        target={meetingTarget}
+        onClose={() => setMeetingTarget(null)}
+        onScheduled={(id) => openChat(id)}
       />
     </AppShell>
   );

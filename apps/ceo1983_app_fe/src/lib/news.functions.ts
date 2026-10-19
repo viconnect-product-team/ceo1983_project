@@ -7,6 +7,20 @@ import { fetchNestApiFromServer } from "@/lib/api-client";
 type Row = Record<string, unknown>;
 
 function mapNews(n: Row): NewsArticle {
+  let images: string[] = [];
+  if (Array.isArray(n.images)) {
+    images = n.images.map(String);
+  } else if (typeof n.images === "string") {
+    try {
+      const parsed = JSON.parse(n.images);
+      if (Array.isArray(parsed)) images = parsed.map(String);
+    } catch {}
+  }
+  const coverImage = (n.cover_image as string) || (n.coverImage as string) || (n.image as string) || images[0] || "";
+  if (images.length === 0 && coverImage) {
+    images = [coverImage];
+  }
+
   return {
     id: (n.code || n.id) as string,
     title: n.title as string,
@@ -16,7 +30,8 @@ function mapNews(n: Row): NewsArticle {
     views: (n.views as number) ?? 0,
     status: (n.status as NewsArticle["status"]) || "published",
     excerpt: (n.excerpt as string) ?? "",
-    image: (n.cover_image as string) || (n.coverImage as string) || (n.image as string) || "",
+    image: coverImage,
+    images: images,
   };
 }
 
@@ -43,6 +58,7 @@ const newsInput = z.object({
   status: z.enum(["published", "draft", "scheduled"]),
   excerpt: z.string().max(2000).default(""),
   image: z.string().optional().default(""),
+  images: z.array(z.string()).optional().default([]),
 });
 
 export const createNewsFn = createServerFn({ method: "POST" })
@@ -50,12 +66,16 @@ export const createNewsFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => newsInput.parse(d))
   .handler(async ({ data, context }): Promise<NewsArticle> => {
     const token = (context as any)?.token;
+    const cover = data.image || (data.images && data.images[0]) || "";
+    const imagesList = data.images && data.images.length > 0 ? data.images : (cover ? [cover] : []);
+
     const created = await fetchNestApiFromServer<any>("/content/admin/news", token, {
       method: "POST",
       body: JSON.stringify({
         ...data,
-        cover_image: data.image || null,
-        coverImage: data.image || null,
+        cover_image: cover || null,
+        coverImage: cover || null,
+        images: imagesList,
         associationId: "c1983000-0000-4000-8000-000000001983",
       }),
     });
@@ -73,7 +93,8 @@ export const createNewsFn = createServerFn({ method: "POST" })
       views: 0,
       status: data.status,
       excerpt: data.excerpt,
-      image: data.image || "",
+      image: cover,
+      images: imagesList,
     };
   });
 
@@ -82,12 +103,16 @@ export const updateNewsFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => newsInput.extend({ id: z.string().min(1).max(128) }).parse(d))
   .handler(async ({ data, context }): Promise<NewsArticle> => {
     const token = (context as any)?.token;
+    const cover = data.image || (data.images && data.images[0]) || "";
+    const imagesList = data.images && data.images.length > 0 ? data.images : (cover ? [cover] : []);
+
     const updated = await fetchNestApiFromServer<any>(`/content/admin/news/${encodeURIComponent(data.id)}`, token, {
       method: "PUT",
       body: JSON.stringify({
         ...data,
-        cover_image: data.image || null,
-        coverImage: data.image || null,
+        cover_image: cover || null,
+        coverImage: cover || null,
+        images: imagesList,
       }),
     });
 
@@ -104,7 +129,8 @@ export const updateNewsFn = createServerFn({ method: "POST" })
       views: 0,
       status: data.status,
       excerpt: data.excerpt,
-      image: data.image || "",
+      image: cover,
+      images: imagesList,
     };
   });
 

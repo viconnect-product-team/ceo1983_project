@@ -81,6 +81,13 @@
    - Tab **Giao thương**: Tích hợp danh thiếp số điện tử, cơ hội kết nối B2B, gian hàng sản phẩm và danh bạ doanh nhân.
    - Tab **Cài đặt**: Tích hợp công tắc Bật/Tắt Trợ lý AI tức thì, Sổ tay hướng dẫn sử dụng App, Đổi mật khẩu, Chế độ ban đêm và Trung tâm hỗ trợ.
 
-
-
-
+### BÀI 9: HỒ SƠ DOANH NGHIỆP TẠI THẺ HỘI VIÊN, ĐĂNG KÝ SỰ KIỆN CÓ PHÍ & GIAN HÀNG ĐA PHƯƠNG TIỆN
+1. **Hồ Sơ Năng Lực Doanh Nghiệp (Brochure / Flyer) Tại Thẻ Hội Viên (`/association/card`)**:
+   - Khối hồ sơ doanh nghiệp được tích hợp hiển thị ngay bên dưới Thẻ hội viên VIP điện tử.
+   - Hội viên có thể xem trực quan thông tin giới thiệu, lĩnh vực kinh doanh, quy mô, brochure năng lực của công ty và chia sẻ nhanh cho đối tác khi gặp gỡ.
+2. **Quy Trình Đăng Ký Sự Kiện Có Phí & Nhận Vé E-Ticket**:
+   - Khi chọn đăng ký sự kiện có phí: Ứng dụng cung cấp mã VietQR thanh toán chuẩn số tiền vé về tài khoản MB Bank `1983000000` kèm cú pháp chuyển khoản định danh.
+   - Vé tham dự chỉ được kích hoạt (sinh mã QR check-in vào ví vé) sau khi Ban Tổ Chức / Admin xác nhận thanh toán trên hệ thống; đồng thời hệ thống tự động gửi email E-ticket chứa mã QR vé check-in về email của hội viên.
+3. **Đăng Sản Phẩm & Cơ Hội Hợp Tác Đa Phương Tiện**:
+   - Gian hàng Marketplace: Đăng tải nhiều ảnh sản phẩm sắc nét, chèn link video giới thiệu (YouTube hoặc video trực tiếp) để tăng tính sinh động và uy tín cho sản phẩm.
+   - Cơ hội B2B: Đăng kèm album nhiều ảnh thực tế của hàng hóa, máy móc, xưởng sản xuất để đối tác dễ dàng đánh giá năng lực.

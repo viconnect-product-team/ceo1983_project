@@ -92,7 +92,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
   return (
     <Dialog open={!!registeringEvent} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-md w-[95vw] sm:w-full h-[90vh] sm:h-auto max-h-[90vh] max-h-[90dvh] flex flex-col p-0 rounded-3xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xl"
+        className="max-w-md w-[95vw] sm:w-full h-[90vh] max-h-[90vh] max-h-[90dvh] flex flex-col p-0 rounded-3xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xl"
       >
         <DialogHeader className="shrink-0 p-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
           <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">

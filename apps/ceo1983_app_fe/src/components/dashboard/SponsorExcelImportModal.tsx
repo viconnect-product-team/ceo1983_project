@@ -25,7 +25,7 @@ export interface ParsedSponsorRow {
   name: string;
   tier: "platinum" | "gold" | "silver" | "bronze";
   tierLabel: string;
-  packageType: "cash" | "in_kind";
+  packageType: "bank_transfer" | "cash" | "in_kind";
   inKindDescription?: string;
   contact: string;
   email: string;
@@ -107,12 +107,24 @@ function mapTier(raw: string): { key: "platinum" | "gold" | "silver" | "bronze";
   return { key: "bronze", label: "Đồng" };
 }
 
-function mapPackageType(raw: string): "cash" | "in_kind" {
+function mapPackageType(raw: string): "bank_transfer" | "cash" | "in_kind" {
   const norm = (raw || "").toLowerCase().trim();
-  if (norm.includes("hiện vật") || norm.includes("in_kind") || norm.includes("sản phẩm") || norm.includes("hàng hóa")) {
+  if (
+    norm.includes("hiện vật") ||
+    norm.includes("in_kind") ||
+    norm.includes("sản phẩm") ||
+    norm.includes("hàng hóa")
+  ) {
     return "in_kind";
   }
-  return "cash";
+  if (
+    norm.includes("tiền mặt") ||
+    norm.includes("cash") ||
+    norm.includes("trực tiếp")
+  ) {
+    return "cash";
+  }
+  return "bank_transfer";
 }
 
 function mapStatus(raw: string): "active" | "expired" {
@@ -169,7 +181,7 @@ export function SponsorExcelImportModal({
         1,
         "Công ty Cổ phần Tập đoàn Hòa Bình",
         "Kim Cương",
-        "Tiền mặt",
+        "Chuyển khoản",
         100000000,
         "",
         "Ông Nguyễn Văn A",
@@ -183,7 +195,7 @@ export function SponsorExcelImportModal({
         2,
         "Ngân hàng Thương mại Cổ phần Ngoại thương Việt Nam (Vietcombank)",
         "Vàng",
-        "Tiền mặt",
+        "Chuyển khoản",
         50000000,
         "",
         "Bà Trần Thị B",

@@ -325,68 +325,87 @@ function DocsPage() {
     }
   };
 
-  const onUploadFile = async (f: File) => {
+  const onUploadFiles = async (files: File[]) => {
+    if (!files.length) return;
     setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", f);
+    let successCount = 0;
+    let failCount = 0;
+    const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
+    const headers = new Headers();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("vibe_token") : null;
-      const headers = new Headers();
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
+    const toastId = toast.loading(`Đang tải lên 0/${files.length} tài liệu...`);
+
+    const validTypes = [
+      "pdf",
+      "doc",
+      "docx",
+      "xls",
+      "xlsx",
+      "ppt",
+      "pptx",
+      "txt",
+      "csv",
+      "zip",
+      "rar",
+      "png",
+      "jpg",
+      "jpeg",
+    ];
+
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      toast.loading(`Đang tải lên (${i + 1}/${files.length}): ${f.name}...`, { id: toastId });
+      try {
+        const formData = new FormData();
+        formData.append("file", f);
+
+        const response = await fetch(getNestApiUrl("/upload/file"), {
+          method: "POST",
+          body: formData,
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.statusText}`);
+        }
+        const resData = await response.json();
+        const path = resData.url;
+
+        const ext = (f.name.split(".").pop() ?? "").toLowerCase();
+        const type = (validTypes.includes(ext) ? ext : "other") as Document["type"];
+        const size =
+          f.size >= 1048576
+            ? `${(f.size / 1048576).toFixed(1)} MB`
+            : `${Math.max(1, Math.round(f.size / 1024))} KB`;
+
+        await createFn({
+          data: {
+            name: f.name,
+            category: t("doc.uploadDefaultCat"),
+            size,
+            uploadedBy: "",
+            type,
+            filePath: path,
+          } as never,
+        });
+        successCount++;
+      } catch (err: any) {
+        console.error("Error uploading doc:", f.name, err);
+        failCount++;
       }
+    }
 
-      const response = await fetch(getNestApiUrl("/upload/file"), {
-        method: "POST",
-        body: formData,
-        headers,
+    setUploading(false);
+    if (successCount > 0) {
+      toast.success(`Đã tải lên thành công ${successCount} tài liệu!${failCount > 0 ? ` (${failCount} lỗi)` : ""}`, {
+        id: toastId,
       });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
-      }
-      const resData = await response.json();
-      const path = resData.url;
-
-      const ext = (f.name.split(".").pop() ?? "").toLowerCase();
-      const validTypes = [
-        "pdf",
-        "doc",
-        "docx",
-        "xls",
-        "xlsx",
-        "ppt",
-        "pptx",
-        "txt",
-        "csv",
-        "zip",
-        "rar",
-        "png",
-        "jpg",
-        "jpeg",
-      ];
-      const type = (validTypes.includes(ext) ? ext : "other") as Document["type"];
-      const size =
-        f.size >= 1048576
-          ? `${(f.size / 1048576).toFixed(1)} MB`
-          : `${Math.max(1, Math.round(f.size / 1024))} KB`;
-      await createFn({
-        data: {
-          name: f.name,
-          category: t("doc.uploadDefaultCat"),
-          size,
-          uploadedBy: "",
-          type,
-          filePath: path,
-        } as never,
-      });
-      toast.success(t("doc.uploaded"));
       await router.invalidate();
-    } catch (e) {
-      toast.error(String((e as Error).message ?? e));
-    } finally {
-      setUploading(false);
+    } else {
+      toast.error(`Tải tài liệu thất bại!`, { id: toastId });
     }
   };
 
@@ -638,22 +657,23 @@ function DocsPage() {
                 <input
                   ref={fileRef}
                   type="file"
+                  multiple
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.png,.jpg,.jpeg"
                   className="hidden"
                   aria-hidden="true"
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void onUploadFile(f);
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) void onUploadFiles(files);
                     e.target.value = "";
                   }}
                 />
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground shadow-[var(--shadow-card)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground shadow-[var(--shadow-card)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 cursor-pointer"
                 >
                   <Upload className="h-4 w-4" aria-hidden="true" />
-                  {t("doc.upload")}
+                  {uploading ? "Đang tải lên..." : "Tải lên tài liệu"}
                 </button>
               </>
             )}

@@ -415,6 +415,19 @@ function RootComponent() {
     };
   }, []);
 
+  // Capture beforeinstallprompt early so it's always ready for 1-tap fast app install
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      (window as any).__pwaInstallPrompt = e;
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+    };
+  }, []);
+
   // Hydrate from localStorage on mount
   useEffect(() => {
     try {

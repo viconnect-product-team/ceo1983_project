@@ -56,7 +56,7 @@ export class SponsorsService {
         benefits: Array.isArray(r.benefits) ? r.benefits : [],
         available: Number(r.available ?? 0),
         sold: Number(r.sold ?? 0),
-        packageType: (r.package_type || 'cash') as PackageType,
+        packageType: (r.package_type || 'bank_transfer') as PackageType,
         inKindDescription: r.in_kind_description || '',
         createdAt: r.created_at,
         updatedAt: r.updated_at,
@@ -80,7 +80,7 @@ export class SponsorsService {
       benefits: Array.isArray(r.benefits) ? r.benefits : [],
       available: Number(r.available ?? 0),
       sold: Number(r.sold ?? 0),
-      packageType: (r.package_type || 'cash') as PackageType,
+      packageType: (r.package_type || 'bank_transfer') as PackageType,
       inKindDescription: r.in_kind_description || '',
       createdAt: r.created_at,
       updatedAt: r.updated_at,
@@ -97,7 +97,7 @@ export class SponsorsService {
     const benefits = dto.benefits || [];
     const available = Math.round(dto.available ?? 0);
     const sold = Math.round(dto.sold ?? 0);
-    const packageType = dto.packageType || 'cash';
+    const packageType = dto.packageType || 'bank_transfer';
     const inKindDescription = dto.inKindDescription || null;
     const associationId = await this.resolveAssociationId(dto.associationId);
 
@@ -176,7 +176,7 @@ export class SponsorsService {
           name: r.name,
           tier: r.tier || 'bronze',
           sponsorType: (r.sponsor_type || 'new') as SponsorType,
-          packageType: (r.package_type || 'cash') as PackageType,
+          packageType: (r.package_type || 'bank_transfer') as PackageType,
           inKindDescription: r.in_kind_description || '',
           contact: r.contact || '',
           email: r.email || '',
@@ -208,7 +208,7 @@ export class SponsorsService {
       name: r.name,
       tier: r.tier || 'bronze',
       sponsorType: (r.sponsor_type || 'new') as SponsorType,
-      packageType: (r.package_type || 'cash') as PackageType,
+      packageType: (r.package_type || 'bank_transfer') as PackageType,
       inKindDescription: r.in_kind_description || '',
       contact: r.contact || '',
       email: r.email || '',
@@ -230,7 +230,7 @@ export class SponsorsService {
     const name = dto.name;
     const tier = dto.tier || 'bronze';
     const sponsorType = dto.sponsorType || 'new';
-    const packageType = dto.packageType || 'cash';
+    const packageType = dto.packageType || 'bank_transfer';
     const inKindDescription = dto.inKindDescription || null;
     const contact = dto.contact || '';
     const email = dto.email || '';
@@ -495,11 +495,97 @@ export class SponsorsService {
       ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(sponsor.amount))
       : (sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật' : '0 đ');
 
-    const packageTypeLabel = sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật / Sản phẩm dịch vụ' : 'Tài trợ Tài chính (Tiền mặt)';
+    const packageTypeLabels: Record<string, string> = {
+      bank_transfer: 'Tài trợ Chuyển khoản (VietQR Napas 24/7)',
+      cash: 'Tài trợ Tiền mặt (Trực tiếp)',
+      in_kind: 'Tài trợ Hiện vật / Sản phẩm dịch vụ',
+    };
+    const packageTypeLabel = packageTypeLabels[sponsor.packageType || 'bank_transfer'] || (sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật' : 'Tài trợ Chuyển khoản');
     const safeSince = sponsor.since ? String(sponsor.since).slice(0, 10) : new Date().toISOString().slice(0, 10);
     const greetingName = sponsor.contact ? `${sponsor.contact} (Đại diện ${sponsor.name})` : sponsor.name;
 
-    const subject = `[CLB CEO 1983] Thư Tri Ân & Vinh Danh Nhà Tài Trợ — ${sponsor.name}`;
+    const numAmount = Number(sponsor.amount || 0);
+    const bankAccount = '1983000000';
+    const bankName = 'Ngân hàng TMCP Quân Đội (MB Bank)';
+    const bankOwner = 'CLB DOANH NHAN CEO 1983';
+    const memo = `TT ${sponsor.id} ${sponsor.name}`.slice(0, 25).trim();
+    const vietQrUrl = `https://img.vietqr.io/image/MB-${bankAccount}-compact2.png?amount=${numAmount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(bankOwner)}`;
+
+    let paymentMethodHtml = '';
+    if (sponsor.packageType === 'cash') {
+      paymentMethodHtml = `
+      <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 16px; padding: 20px; margin: 24px 0;">
+        <div style="font-size: 13px; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 6px;">
+          💵 HÌNH THỨC TÀI TRỢ: TIỀN MẶT
+        </div>
+        <p style="font-size: 13px; color: #15803d; margin: 0 0 10px 0; line-height: 1.6;">
+          Số tiền tài trợ đã đăng ký: <strong style="font-size: 15px; color: #166534;">${formattedAmount}</strong>.
+        </p>
+        <p style="font-size: 12.5px; color: #14532d; margin: 0; line-height: 1.6;">
+          Ban Tài chính CLB Doanh Nhân CEO 1983 sẽ liên hệ trực tiếp với Anh/Chị để tiếp nhận tại Văn phòng Hiệp hội hoặc tại Bàn Lễ tân sự kiện và phát hành Phiếu thu tài chính có đóng dấu xác nhận.
+        </p>
+      </div>
+      `;
+    } else if (sponsor.packageType === 'in_kind') {
+      paymentMethodHtml = `
+      <div style="background: #faf5ff; border: 1px solid #d8b4fe; border-radius: 16px; padding: 20px; margin: 24px 0;">
+        <div style="font-size: 13px; font-weight: 800; color: #6b21a8; text-transform: uppercase; margin-bottom: 6px;">
+          🎁 HÌNH THỨC TÀI TRỢ: HIỆN VẬT / SẢN PHẨM DỊCH VỤ
+        </div>
+        <p style="font-size: 13px; color: #7e22ce; margin: 0 0 6px 0; line-height: 1.6;">
+          Mô tả hiện vật: <strong>${sponsor.inKindDescription || 'Theo danh mục quà tặng / sản phẩm đối tác cam kết'}</strong>
+        </p>
+        <p style="font-size: 12.5px; color: #9333ea; margin: 0; line-height: 1.6;">
+          Định giá quy đổi tương đương: <strong style="color: #6b21a8;">${formattedAmount}</strong>. Ban Tổ chức sẽ phối hợp tiếp nhận và bố trí vị trí trưng bày trang trọng tại Gala sự kiện.
+        </p>
+      </div>
+      `;
+    } else {
+      // Default: bank_transfer (Chuyển khoản)
+      paymentMethodHtml = `
+      <div style="background: #ffffff; border: 2px solid #002B7A; border-radius: 18px; padding: 24px; margin: 24px 0; text-align: center; box-shadow: 0 8px 24px rgba(0, 43, 122, 0.08);">
+        <div style="display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+          ✦ MÃ VIETQR CHUYỂN KHOẢN TÀI TRỢ CHÍNH THỨC ✦
+        </div>
+        <div style="font-size: 15px; font-weight: 800; color: #001B54; margin-bottom: 6px;">
+          Số Tiền Khai Báo Tài Trợ: <span style="color: #d97706;">${formattedAmount}</span>
+        </div>
+        <p style="font-size: 12.5px; color: #64748b; margin: 0 0 16px 0;">
+          Quý Doanh nghiệp vui lòng mở bất kỳ Ứng dụng Ngân hàng nào để quét mã VietQR Napas 24/7 dưới đây:
+        </p>
+        <div style="display: inline-block; background: #ffffff; padding: 12px; border-radius: 16px; border: 2px solid #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+          <img src="${vietQrUrl}" alt="VietQR Thanh Toán Tài Trợ" style="width: 240px; height: 240px; display: block; margin: 0 auto; object-fit: contain;" />
+        </div>
+        <div style="margin-top: 18px; text-align: left; background: #f8fafc; border-radius: 12px; padding: 14px 18px; border: 1px solid #e2e8f0; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 7px;">
+            <span style="color: #64748b;">Ngân hàng thụ hưởng:</span>
+            <strong style="color: #0f172a;">${bankName}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 7px;">
+            <span style="color: #64748b;">Số tài khoản:</span>
+            <strong style="color: #002B7A; font-family: monospace; font-size: 15px;">${bankAccount}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 7px;">
+            <span style="color: #64748b;">Chủ tài khoản:</span>
+            <strong style="color: #0f172a;">${bankOwner}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 7px;">
+            <span style="color: #64748b;">Số tiền chuyển khoản:</span>
+            <strong style="color: #d97706; font-size: 15px;">${formattedAmount}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b;">Nội dung chuyển khoản:</span>
+            <strong style="color: #002B7A; font-family: monospace;">${memo}</strong>
+          </div>
+        </div>
+        <p style="font-size: 11.5px; color: #64748b; margin: 12px 0 0 0; font-style: italic;">
+          * Máy chủ CLB CEO 1983 sẽ tự động đối soát và phát hành Giấy Chứng Nhận Tài Trợ Điện Tử ngay sau khi giao dịch thành công.
+        </p>
+      </div>
+      `;
+    }
+
+    const subject = `[CLB CEO 1983] Thư Tri Ân & Mã VietQR Xác Nhận Tài Trợ — ${sponsor.name}`;
 
     const html = `
 <!DOCTYPE html>
@@ -593,6 +679,8 @@ export class SponsorsService {
         </table>
       </div>
 
+      ${paymentMethodHtml}
+
       <div class="benefits-box">
         <div class="benefits-title">★ CAM KẾT QUYỀN LỢI ĐẶC QUYỀN</div>
         <div class="benefit-item">✓ Vinh danh trang trọng thương hiệu trên toàn bộ backdrop, kỷ yếu, ấn phẩm và truyền thông số của CLB.</div>
@@ -631,7 +719,7 @@ export class SponsorsService {
       subject,
       html,
       fromName: 'CLB Doanh Nhân CEO 1983',
-      auditContext: `[SPONSOR_THANK_YOU] SponsorId: ${sponsor.id} | Tier: ${sponsor.tier}`,
+      auditContext: `[SPONSOR_CONFIRMATION_QR] SponsorId: ${sponsor.id} | Tier: ${sponsor.tier} | Amount: ${numAmount}`,
     });
   }
 }

@@ -33,6 +33,7 @@ import {
   Bot,
   CreditCard,
   Smartphone,
+  Download,
   HelpCircle,
   BadgeCheck,
 } from "lucide-react";
@@ -161,6 +162,53 @@ export default function ProfileScreen() {
       localStorage.setItem("vba_push_notifications_enabled", "false");
       toast.info(isEn ? "Push notifications disabled." : "Đã tắt thông báo đẩy.");
     }
+  };
+
+  // Cài đặt ứng dụng nhanh 1 chạm (PWA Native Prompt / Tải APK Android / Hướng dẫn iOS Safari)
+  const handleFastInstallApp = async () => {
+    // 1. Nếu có prompt PWA từ trình duyệt (Chrome/Edge/Samsung Internet): Kích hoạt hộp thoại cài đặt ngay lập tức!
+    const p = (window as any).__pwaInstallPrompt;
+    if (p && typeof p.prompt === "function") {
+      try {
+        p.prompt();
+        const choice = await p.userChoice;
+        if (choice?.outcome === "accepted") {
+          toast.success("Ứng dụng đang được tự động cài đặt lên màn hình chính!");
+        }
+        (window as any).__pwaInstallPrompt = null;
+        return;
+      } catch (err) {
+        console.warn("Fast install prompt error:", err);
+      }
+    }
+
+    const userAgent = typeof window !== "undefined" ? window.navigator.userAgent.toLowerCase() : "";
+    const isAndroid = /android/i.test(userAgent);
+    const isIos = /iphone|ipad|ipod/i.test(userAgent);
+
+    // 2. Nếu là Android (không có sự kiện prompt trước đó): Tự động kích hoạt tải nhanh tệp APK cài đặt gốc
+    if (isAndroid) {
+      toast.info("Đang tự động tải bộ cài APK ứng dụng CEO 1983 cho Android...");
+      const link = document.createElement("a");
+      link.href = "/docs/CEO1983-app-latest.apk";
+      link.download = "CEO1983-app-latest.apk";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // 3. Nếu là iOS: Thông báo nhanh 1 thao tác và mở popup chỉ dẫn
+    if (isIos) {
+      toast.info("Chạm nút Chia sẻ ⎋ dưới đáy Safari → chọn 'Thêm vào MH chính' ⊞", {
+        duration: 5000,
+      });
+      window.dispatchEvent(new CustomEvent("open-install-prompt"));
+      return;
+    }
+
+    // 4. Môi trường khác: Mở popup hướng dẫn cài đặt PWA
+    window.dispatchEvent(new CustomEvent("open-install-prompt"));
   };
 
   // Avatar & Cover upload refs & states
@@ -916,21 +964,31 @@ export default function ProfileScreen() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={voiceAiEnabled}
-                  onClick={handleToggleVoiceAi}
-                  className={`w-12 h-6 p-0.5 rounded-full flex items-center transition-colors cursor-pointer shrink-0 ${
-                    voiceAiEnabled ? "bg-[#003B95]" : "bg-slate-300 dark:bg-slate-700"
-                  }`}
-                >
-                  <div
-                    className={`size-5 bg-white rounded-full shadow-md transform transition ${
-                      voiceAiEnabled ? "translate-x-6" : "translate-x-0.5"
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-bold hidden sm:inline ${voiceAiEnabled ? "text-[#003B95] dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>
+                    {voiceAiEnabled ? "Đang bật" : "Đã tắt"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={voiceAiEnabled}
+                    onClick={handleToggleVoiceAi}
+                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-all cursor-pointer shrink-0 border ${
+                      voiceAiEnabled
+                        ? "bg-gradient-to-r from-[#003B95] to-[#002766] border-[#003B95] shadow-xs"
+                        : "bg-slate-300 dark:bg-slate-700 border-slate-400 dark:border-slate-600 shadow-inner"
                     }`}
-                  />
-                </button>
+                    aria-label="Bật tắt Trợ lý AI CEO 1983"
+                  >
+                    <div
+                      className={`size-5 rounded-full shadow-md transform transition-transform ${
+                        voiceAiEnabled
+                          ? "translate-x-6 bg-white ring-1 ring-black/10"
+                          : "translate-x-0.5 bg-white dark:bg-slate-200 border border-slate-300 dark:border-slate-500"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
               {/* Item 2: Hướng dẫn sử dụng App CEO 1983 (CHỈ DÀNH CHO APP) */}
@@ -974,13 +1032,18 @@ export default function ProfileScreen() {
                   role="switch"
                   aria-checked={isNotificationEnabled}
                   onClick={handleToggleNotification}
-                  className={`w-12 h-6 p-0.5 rounded-full flex items-center transition-colors cursor-pointer shrink-0 ${
-                    isNotificationEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+                  className={`w-12 h-6 p-0.5 rounded-full flex items-center transition-colors cursor-pointer shrink-0 border ${
+                    isNotificationEnabled
+                      ? "bg-emerald-500 border-emerald-500"
+                      : "bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600"
                   }`}
+                  aria-label="Bật tắt thông báo đẩy"
                 >
                   <div
-                    className={`size-5 bg-white rounded-full shadow-md transform transition ${
-                      isNotificationEnabled ? "translate-x-6" : "translate-x-0.5"
+                    className={`size-5 rounded-full shadow-md transform transition-transform ${
+                      isNotificationEnabled
+                        ? "translate-x-6 bg-white"
+                        : "translate-x-0.5 bg-white border border-slate-200 dark:border-transparent"
                     }`}
                   />
                 </button>
@@ -1109,28 +1172,27 @@ export default function ProfileScreen() {
                 </Link>
               )}
 
-              {/* Cài lên màn hình điện thoại (PWA) */}
+              {/* Cài lên màn hình điện thoại (PWA / APK Android / iOS Add to Home) */}
               <button
                 type="button"
-                onClick={async () => {
-                  const p = (window as any).__pwaInstallPrompt;
-                  if (p) {
-                    try {
-                      p.prompt();
-                      const choice = await p.userChoice;
-                      if (choice?.outcome === "accepted") {
-                        toast.success("Ứng dụng đang được cài lên màn hình!");
-                      }
-                      (window as any).__pwaInstallPrompt = null;
-                      return;
-                    } catch {}
-                  }
-                  window.dispatchEvent(new CustomEvent("open-install-prompt"));
-                }}
-                className="w-full p-3.5 rounded-2xl border border-[#003B95] dark:border-blue-400 text-[#003B95] dark:text-blue-300 bg-white dark:bg-[#0F172A] flex items-center justify-center gap-2 font-bold text-sm transition active:scale-95 cursor-pointer"
+                onClick={handleFastInstallApp}
+                className="w-full p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-[0_6px_20px_rgba(245,158,11,0.35)] dark:shadow-[0_6px_20px_rgba(245,158,11,0.25)] border border-amber-300/80 flex items-center justify-between px-4 transition-all duration-200 active:scale-95 cursor-pointer group"
               >
-                <Smartphone className="size-4" />
-                <span>Cài đặt ứng dụng lên màn hình chính</span>
+                <div className="flex items-center gap-2.5">
+                  <div className="size-8 rounded-xl bg-slate-950/10 grid place-items-center">
+                    <Smartphone className="size-4.5 text-slate-950" />
+                  </div>
+                  <div className="text-left">
+                    <div className="leading-tight">Cài đặt ứng dụng CEO 1983</div>
+                    <div className="text-[10px] font-semibold text-slate-800/80">Cài nhanh lên màn hình chính • Chạy mượt như App</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 uppercase tracking-wider shadow-xs">
+                    Cài nhanh
+                  </span>
+                  <Download className="size-4 text-slate-950 group-hover:translate-y-0.5 transition-transform" />
+                </div>
               </button>
 
               {/* Đăng xuất tài khoản */}

@@ -263,6 +263,7 @@ function OpportunitiesScreen() {
   const [newDeadline, setNewDeadline] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newImage, setNewImage] = useState<string | null>(null);
+  const [newImages, setNewImages] = useState<string[]>([]);
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactTitle, setNewContactTitle] = useState("");
@@ -282,6 +283,7 @@ function OpportunitiesScreen() {
   const [editDeadline, setEditDeadline] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editImage, setEditImage] = useState<string | null>(null);
+  const [editImages, setEditImages] = useState<string[]>([]);
   const [editContactName, setEditContactName] = useState("");
   const [editContactPhone, setEditContactPhone] = useState("");
   const [editContactTitle, setEditContactTitle] = useState("");
@@ -540,19 +542,27 @@ function OpportunitiesScreen() {
   }
 
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     setUploadingImage(true);
+    const tid = toast.loading(`Đang tải ${files.length} ảnh lên máy chủ MinIO...`);
     try {
-      const uploadedUrl = await uploadFileToNest(file, "opportunities");
-      if (isEdit) {
-        setEditImage(uploadedUrl);
-      } else {
-        setNewImage(uploadedUrl);
+      const uploadPromises = Array.from(files).map((f) => uploadFileToNest(f, "opportunities"));
+      const uploadedUrls = (await Promise.all(uploadPromises)).filter(Boolean) as string[];
+      if (uploadedUrls.length > 0) {
+        if (isEdit) {
+          const merged = [...editImages, ...uploadedUrls];
+          setEditImages(merged);
+          setEditImage(merged[0]);
+        } else {
+          const merged = [...newImages, ...uploadedUrls];
+          setNewImages(merged);
+          setNewImage(merged[0]);
+        }
+        toast.success(`Đã tải thành công ${uploadedUrls.length} ảnh lên MinIO!`, { id: tid });
       }
-      toast.success("Đã tải ảnh lên máy chủ MinIO thành công");
     } catch (err: any) {
-      toast.error(err?.message || "Tải ảnh lên máy chủ thất bại!");
+      toast.error(err?.message || "Tải ảnh lên máy chủ thất bại!", { id: tid });
     } finally {
       setUploadingImage(false);
       if (e.target) e.target.value = "";
@@ -568,7 +578,11 @@ function OpportunitiesScreen() {
     setEditBudgetMin(o.budgetMin ? Number(o.budgetMin).toLocaleString("vi-VN") : "");
     setEditBudgetMax(o.budgetMax ? Number(o.budgetMax).toLocaleString("vi-VN") : "");
     setEditDesc(o.description || "");
-    setEditImage(o.image || null);
+    const oppImgs = (o as any).images && Array.isArray((o as any).images) && (o as any).images.length > 0
+      ? (o as any).images
+      : (o.image ? [o.image] : []);
+    setEditImage(o.image || oppImgs[0] || null);
+    setEditImages(oppImgs);
     setEditContactName(o.contactName || member?.name || "");
     setEditContactPhone(o.contactPhone || member?.phone || "");
     setEditContactTitle(o.contactTitle || member?.title || "");
@@ -615,6 +629,8 @@ function OpportunitiesScreen() {
     const cleanBudgetMin = Number(editBudgetMin.replace(/\D/g, "")) || 0;
     const cleanBudgetMax = Number(editBudgetMax.replace(/\D/g, "")) || 0;
 
+    const finalImgs = editImages.length > 0 ? editImages : (editImage ? [editImage] : []);
+
     try {
       await fetchNestApi(`/opportunities/${editingOpp.id}`, {
         method: "PATCH",
@@ -631,7 +647,8 @@ function OpportunitiesScreen() {
           contactPhone: editContactPhone.trim(),
           contactTitle: editContactTitle.trim(),
           company: editCompany.trim(),
-          image: editImage || null,
+          image: finalImgs[0] || null,
+          images: finalImgs,
         }),
       });
       toast.success("Cập nhật cơ hội thành công!");
@@ -679,6 +696,8 @@ function OpportunitiesScreen() {
     const cleanBudgetMin = Number(newBudgetMin.replace(/\D/g, "")) || 0;
     const cleanBudgetMax = Number(newBudgetMax.replace(/\D/g, "")) || 0;
 
+    const finalImgs = newImages.length > 0 ? newImages : (newImage ? [newImage] : []);
+
     try {
       await fetchNestApi("/opportunities", {
         method: "POST",
@@ -699,7 +718,8 @@ function OpportunitiesScreen() {
           contactPhone: finalContactPhone,
           contactTitle: newContactTitle.trim() || "Đại diện hợp tác",
           company: finalCompany,
-          image: newImage || null,
+          image: finalImgs[0] || null,
+          images: finalImgs,
         }),
       });
       toast.success("Đã đăng cơ hội thành công lên hệ thống!");
@@ -710,6 +730,7 @@ function OpportunitiesScreen() {
       setNewBudgetMax("");
       setNewDeadline("");
       setNewImage(null);
+      setNewImages([]);
       reload();
     } catch {
       toast.error("Không thể đăng cơ hội. Vui lòng thử lại!");
@@ -1096,6 +1117,8 @@ function OpportunitiesScreen() {
         onSubmit={handleCreateOpp}
         newImage={newImage}
         setNewImage={setNewImage}
+        newImages={newImages}
+        setNewImages={setNewImages}
         imageInputRef={imageInputRef}
         handleImageFileChange={handleImageFileChange}
         uploadingImage={uploadingImage}
@@ -1135,6 +1158,8 @@ function OpportunitiesScreen() {
         onSubmit={handleUpdateOpp}
         editImage={editImage}
         setEditImage={setEditImage}
+        editImages={editImages}
+        setEditImages={setEditImages}
         editImageInputRef={editImageInputRef}
         handleImageFileChange={handleImageFileChange}
         uploadingImage={uploadingImage}

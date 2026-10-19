@@ -117,6 +117,7 @@ function PackagesPage() {
     const totalSoldSlots = packages.reduce((acc, p) => acc + (p.sold || 0), 0);
     const totalIssuanceValue = packages.reduce((acc, p) => acc + ((p.price || 0) * (p.available || 0)), 0);
     const totalSoldValue = packages.reduce((acc, p) => acc + ((p.price || 0) * (p.sold || 0)), 0);
+    const bankTransferCount = packages.filter((p) => (p.packageType || "bank_transfer") === "bank_transfer").length;
     const cashCount = packages.filter((p) => p.packageType === "cash").length;
     const inKindCount = packages.filter((p) => p.packageType === "in_kind").length;
     const fillRate = totalAvailableSlots > 0 ? Math.round((totalSoldSlots / totalAvailableSlots) * 100) : 0;
@@ -127,6 +128,7 @@ function PackagesPage() {
       totalSoldSlots,
       totalIssuanceValue,
       totalSoldValue,
+      bankTransferCount,
       cashCount,
       inKindCount,
       fillRate,
@@ -137,7 +139,8 @@ function PackagesPage() {
   const filteredPackages = useMemo(() => {
     return packages.filter((p) => {
       if (selectedTier !== "all" && p.tier !== selectedTier) return false;
-      if (selectedType !== "all" && (p.packageType || "cash") !== selectedType) return false;
+      const pType = p.packageType || "bank_transfer";
+      if (selectedType !== "all" && pType !== selectedType) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const tierName = t(TIER_KEY[p.tier] as never).toLowerCase();
@@ -191,7 +194,7 @@ function PackagesPage() {
           label="Tổng Gói & Phân Loại"
           value={`${metrics.totalPackages} Gói định mức`}
           tone="primary"
-          hint={`${metrics.cashCount} gói bằng tiền · ${metrics.inKindCount} gói hiện vật`}
+          hint={`${metrics.bankTransferCount} chuyển khoản · ${metrics.cashCount} tiền mặt · ${metrics.inKindCount} hiện vật`}
           icon={<Package className="h-4 w-4 text-blue-500" />}
         />
         <StatCard
@@ -251,8 +254,9 @@ function PackagesPage() {
             className="h-10 rounded-xl border border-border bg-background px-3 text-xs font-semibold text-foreground outline-none focus:border-primary cursor-pointer"
           >
             <option value="all">Tất cả hình thức</option>
-            <option value="cash">💵 Gói bằng Tiền</option>
-            <option value="in_kind">🎁 Gói Hiện vật</option>
+            <option value="bank_transfer">🏦 Gói Chuyển Khoản (QR)</option>
+            <option value="cash">💵 Gói Tiền Mặt</option>
+            <option value="in_kind">🎁 Gói Hiện Vật</option>
           </select>
         </div>
       </div>
@@ -326,10 +330,16 @@ function PackagesPage() {
                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
                           p.packageType === "in_kind"
                             ? "bg-purple-950/50 text-purple-200 border border-purple-400/40"
-                            : "bg-amber-950/50 text-amber-200 border border-amber-400/40"
+                            : p.packageType === "cash"
+                            ? "bg-emerald-950/50 text-emerald-200 border border-emerald-400/40"
+                            : "bg-blue-950/50 text-blue-200 border border-blue-400/40"
                         }`}
                       >
-                        {p.packageType === "in_kind" ? "🎁 Gói Hiện Vật" : "💵 Gói Bằng Tiền"}
+                        {p.packageType === "in_kind"
+                          ? "🎁 Gói Hiện Vật"
+                          : p.packageType === "cash"
+                          ? "💵 Gói Tiền Mặt"
+                          : "🏦 Gói Chuyển Khoản (QR)"}
                       </span>
                     </div>
 

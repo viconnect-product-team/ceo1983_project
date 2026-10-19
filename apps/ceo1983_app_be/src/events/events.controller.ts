@@ -177,6 +177,27 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc')
+  @Post('registrations/:id/confirm-payment')
+  async confirmPayment(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('method') method?: string,
+  ) {
+    return this.eventsService.confirmBankPayment(req.user.id, id, method || 'bank_transfer');
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc')
+  @Post('registrations/:id/reconcile-payment')
+  async reconcilePayment(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
+    return this.eventsService.reconcilePayment(req.user.id, id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt')
   @Post(':id/attendees/add-or-checkin')
   async addOrCheckinAttendee(

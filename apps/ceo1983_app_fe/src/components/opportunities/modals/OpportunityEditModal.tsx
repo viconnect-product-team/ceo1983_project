@@ -9,6 +9,7 @@ import {
   User,
   Phone,
   Briefcase,
+  Loader2,
 } from "lucide-react";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { formatDisplayDate } from "@/lib/date-format";
@@ -19,6 +20,8 @@ export interface OpportunityEditModalProps {
   onSubmit: (e: React.FormEvent) => void;
   editImage: string | null;
   setEditImage: (img: string | null) => void;
+  editImages?: string[];
+  setEditImages?: (imgs: string[]) => void;
   editImageInputRef: React.RefObject<HTMLInputElement | null>;
   handleImageFileChange: (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => void;
   uploadingImage: boolean;
@@ -58,6 +61,8 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
   onSubmit,
   editImage,
   setEditImage,
+  editImages = [],
+  setEditImages,
   editImageInputRef,
   handleImageFileChange,
   uploadingImage,
@@ -117,19 +122,74 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
 
         <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-3.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
-            {/* Image upload */}
+            {/* Image upload gallery */}
             <div>
-              <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Hình ảnh minh họa / Poster cơ hội
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block">
+                  Hình ảnh minh họa / Poster cơ hội (Nhiều ảnh)
+                </label>
+                <span className="text-[10.5px] text-slate-400">
+                  {editImages.length > 0 ? `Đã có ${editImages.length} ảnh` : "Tối đa 10 ảnh"}
+                </span>
+              </div>
               <input
                 type="file"
+                multiple
                 ref={editImageInputRef}
                 accept="image/*"
                 className="hidden"
                 onChange={(e) => handleImageFileChange(e, true)}
               />
-              {editImage ? (
+
+              {editImages.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {editImages.map((imgUrl, idx) => (
+                      <div
+                        key={`${imgUrl}-${idx}`}
+                        className="relative group rounded-xl overflow-hidden border border-amber-500/30 bg-slate-900/10 aspect-square"
+                      >
+                        <img
+                          src={resolveMediaUrl(imgUrl) || imgUrl}
+                          alt="Hình ảnh cơ hội"
+                          className="w-full h-full object-cover"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-[#003B95] text-white text-[9px] font-bold shadow-xs">
+                            Ảnh bìa
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = editImages.filter((_, i) => i !== idx);
+                            if (setEditImages) setEditImages(updated);
+                            setEditImage(updated[0] || null);
+                          }}
+                          className="absolute top-1 right-1 p-1 rounded-md bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
+                          title="Xóa ảnh này"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => editImageInputRef.current?.click()}
+                    disabled={uploadingImage}
+                    className="w-full py-2 rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-amber-500 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    {uploadingImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                    ) : (
+                      <ImagePlus className="h-4 w-4 text-amber-500" />
+                    )}
+                    <span>+ Tải thêm ảnh khác từ thiết bị</span>
+                  </button>
+                </div>
+              ) : editImage ? (
                 <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 max-h-44 bg-slate-900/10">
                   <img
                     src={resolveMediaUrl(editImage) || editImage}
@@ -138,7 +198,10 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
                   />
                   <button
                     type="button"
-                    onClick={() => setEditImage(null)}
+                    onClick={() => {
+                      setEditImage(null);
+                      if (setEditImages) setEditImages([]);
+                    }}
                     className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer transition"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -153,8 +216,9 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
                 >
                   <ImagePlus className="h-6 w-6 text-slate-400" />
                   <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">
-                    {uploadingImage ? "Đang tải ảnh lên..." : "Tải ảnh mới từ thiết bị"}
+                    {uploadingImage ? "Đang tải ảnh lên..." : "Tải ảnh mới từ thiết bị (Chọn nhiều ảnh)"}
                   </span>
+                  <span className="text-[10.5px] text-slate-400">JPG, PNG, WebP (Tối đa 10MB)</span>
                 </button>
               )}
             </div>

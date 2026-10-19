@@ -4,6 +4,31 @@ import { ConnectAppGateway } from '../connect-app.gateway';
 import { ConnectMessengerService } from './messenger.service';
 import * as crypto from 'crypto';
 
+function safeParseImages(val: any): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val.filter((x) => typeof x === 'string' && x.trim() !== '');
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((x) => typeof x === 'string' && x.trim() !== '');
+        }
+      } catch {
+        // fallback
+      }
+    }
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+      return [trimmed];
+    }
+  }
+  return [];
+}
+
 @Injectable()
 export class ConnectMarketplaceService {
   constructor(
@@ -60,10 +85,11 @@ export class ConnectMarketplaceService {
       return rows.map((p) => {
         const numPrice = Number(p.price || p.sale_price || p.cost || 0);
         const formattedPrice = p.price_text || (numPrice > 0 ? `${numPrice.toLocaleString('vi-VN')} đ` : (p.price || 'Liên hệ báo giá'));
-        const imgList = Array.isArray(p.image_urls) ? p.image_urls : (typeof p.image_urls === 'string' ? JSON.parse(p.image_urls) : []);
+        const imgList = safeParseImages(p.image_urls);
         const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || p.image_url || p.image || null;
+        const finalImgList = imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []);
         return {
-          id: String(p.id),
+          id: String(p.custom_id || p.id),
           name: p.name || p.title || 'Sản phẩm doanh nghiệp',
           title: p.title || p.name || 'Sản phẩm doanh nghiệp',
           company: p.seller_company || p.company || p.association_name || 'CLB Doanh Nhân CEO 1983',
@@ -76,7 +102,8 @@ export class ConnectMarketplaceService {
           time: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
           createdAt: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
           imageUrl: firstImg,
-          imageUrls: imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []),
+          imageUrls: finalImgList,
+          videoUrl: p.video_url || undefined,
           price: formattedPrice,
           originalPrice: p.original_price ? `${Number(p.original_price).toLocaleString('vi-VN')} đ` : undefined,
           memberPrice: p.member_discount_price || p.member_price ? `${Number(p.member_discount_price || p.member_price).toLocaleString('vi-VN')} đ` : undefined,
@@ -101,8 +128,9 @@ export class ConnectMarketplaceService {
     const memberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : price;
     const unit = data.unit || 'Gói';
     const currency = data.currency || 'VND';
-    const imageUrls: string[] = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : []);
+    const imageUrls: string[] = safeParseImages(data.imageUrls || (data.imageUrl ? [data.imageUrl] : []));
     const imageUrl = imageUrls[0] || data.imageUrl || null;
+    const videoUrl = data.videoUrl || data.video_url || null;
     const sellerId = String(data.sellerId || userId || 'ceo1983');
     const status = data.status || 'active';
     const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
@@ -110,14 +138,14 @@ export class ConnectMarketplaceService {
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.products (
-          id, title, name, description, company, category,
+          custom_id, title, name, description, company, category,
           price, original_price, member_price, unit, currency,
-          image_url, image_urls, seller_id, status, views, emoji,
+          image_url, image_urls, video_url, seller_id, status, views, emoji,
           association_id, created_at, updated_at
         ) VALUES (
           ${prodId}, ${name}, ${name}, ${description}, ${company}, ${category},
           ${price}, ${originalPrice}, ${memberPrice}, ${unit}, ${currency},
-          ${imageUrl}, ${imageUrls}::text[], ${sellerId}, ${status}, 0, '🛍️',
+          ${imageUrl}, ${JSON.stringify(imageUrls)}::jsonb, ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
           ${assocId}::uuid, now(), now()
         )
       `;
@@ -125,14 +153,12 @@ export class ConnectMarketplaceService {
       console.warn('createProduct primary insert failed, using fallback:', err?.message);
       await this.prisma.$executeRaw`
         INSERT INTO public.products (
-          id, title, name, description, category, price,
-          image_urls,
-          seller_id, status, views, emoji,
+          custom_id, title, name, description, category, price,
+          image_urls, video_url, seller_id, status, views, emoji,
           association_id, created_at, updated_at
         ) VALUES (
           ${prodId}, ${name}, ${name}, ${description}, ${category}, ${price},
-          ${imageUrls}::text[],
-          ${sellerId}, ${status}, 0, '🛍️',
+          ${JSON.stringify(imageUrls)}::jsonb, ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
           ${assocId}::uuid, now(), now()
         )
       `;
@@ -145,8 +171,9 @@ export class ConnectMarketplaceService {
     const cleanPrice = data.price !== undefined && data.price !== null && data.price !== '' ? Number(data.price) : null;
     const cleanOriginalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? Number(data.originalPrice) : cleanPrice;
     const cleanMemberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : cleanPrice;
-    const imageUrls: string[] | null = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : null);
+    const imageUrls: string[] | null = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
     const imageUrl = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
+    const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : null);
 
     try {
       await this.prisma.$executeRaw`
@@ -163,9 +190,10 @@ export class ConnectMarketplaceService {
           unit = COALESCE(${data.unit}, unit),
           currency = COALESCE(${data.currency}, currency),
           image_url = COALESCE(${imageUrl}, image_url),
-          image_urls = COALESCE(${imageUrls}::text[], image_urls),
+          image_urls = CASE WHEN ${imageUrls ? true : false} THEN ${JSON.stringify(imageUrls || [])}::jsonb ELSE image_urls END,
+          video_url = COALESCE(${videoUrl}, video_url),
           updated_at = now()
-        WHERE id = ${productId}
+        WHERE custom_id = ${productId} OR id::text = ${productId}
       `;
     } catch (err: any) {
       console.warn('updateProduct primary update failed, using fallback:', err?.message);
@@ -176,7 +204,7 @@ export class ConnectMarketplaceService {
           description = COALESCE(${data.description}, description),
           price = COALESCE(${cleanPrice}, price),
           updated_at = now()
-        WHERE id = ${productId}
+        WHERE custom_id = ${productId} OR id::text = ${productId}
       `;
     }
     return { ok: true };
@@ -184,15 +212,12 @@ export class ConnectMarketplaceService {
 
   async deleteProduct(userId: string, productId: string) {
     await this.prisma.$executeRaw`
-      DELETE FROM public.products WHERE id = ${productId}
+      DELETE FROM public.products WHERE custom_id = ${productId} OR id::text = ${productId}
     `.catch((err) => {
       console.warn('deleteProduct failed:', err?.message);
     });
     return { ok: true };
   }
-
-
-
 
   async listMarketplaceProducts(query?: any) {
     const rows = await this.prisma.$queryRaw<any[]>`
@@ -234,13 +259,13 @@ export class ConnectMarketplaceService {
     });
 
     return rows.map((r) => {
-      const imgList = Array.isArray(r.image_urls) ? r.image_urls : (typeof r.image_urls === 'string' ? JSON.parse(r.image_urls) : []);
+      const imgList = safeParseImages(r.image_urls);
       const cat = r.category ?? 'mk.cat.other';
       const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || r.image_url || r.image || '';
       const finalImgList = imgList && imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []);
 
       return {
-        id: r.id,
+        id: String(r.custom_id || r.id),
         sellerId: r.seller_id,
         sellerName: r.seller_name || undefined,
         sellerAvatar: r.seller_avatar || undefined,
@@ -262,6 +287,7 @@ export class ConnectMarketplaceService {
         pdfUrl: r.pdf_url ?? '',
         imageUrls: finalImgList,
         imageUrl: firstImg,
+        videoUrl: r.video_url || undefined,
         websiteUrl: r.website_url ?? '',
         facebookUrl: r.facebook_url ?? '',
         associationId: r.association_id,
@@ -302,13 +328,13 @@ export class ConnectMarketplaceService {
       LEFT JOIN public.vione_users u ON (p.seller_id = u.id::text OR (m.user_id IS NOT NULL AND m.user_id = u.id))
       LEFT JOIN public.user_profiles up ON (u.id = up.user_id)
       LEFT JOIN public.business_identities bi ON (p.seller_id = bi.owner_user_id::text)
-      WHERE p.id = ${id} LIMIT 1
+      WHERE (p.custom_id = ${id} OR p.id::text = ${id}) LIMIT 1
     `.catch(() => []);
     if (rows.length === 0) return null;
     const r = rows[0];
     // Bump views
     await this.prisma.$executeRaw`
-      UPDATE public.products SET views = COALESCE(views, 0) + 1 WHERE id = ${id}
+      UPDATE public.products SET views = COALESCE(views, 0) + 1 WHERE custom_id = ${id} OR id::text = ${id}
     `.catch(() => {});
 
     const quotes = await this.prisma.$queryRaw<any[]>`
@@ -321,19 +347,24 @@ export class ConnectMarketplaceService {
       LEFT JOIN public.members m ON (q.buyer_id = m.user_id::text OR q.buyer_id = m.id OR q.buyer_id = m.code)
       LEFT JOIN public.vione_users u ON (q.buyer_id = u.id::text)
       LEFT JOIN public.business_identities bi ON (q.buyer_id = bi.owner_user_id::text)
-      WHERE q.product_id = ${id}
+      WHERE (q.product_id = ${id} OR q.product_id = ${r.custom_id} OR q.product_id = ${String(r.id)})
       ORDER BY q.created_at DESC
     `.catch(() => []);
 
+    const imgList = safeParseImages(r.image_urls);
+    const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || r.image_url || r.image || '';
+    const finalImgList = imgList && imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []);
+
     return {
       product: {
-        id: r.id,
+        id: String(r.custom_id || r.id),
         sellerId: r.seller_id,
         sellerName: r.seller_name || undefined,
         sellerAvatar: r.seller_avatar || undefined,
         sellerPhone: r.seller_phone || undefined,
         sellerCompany: r.seller_company || undefined,
         title: r.title,
+        name: r.name || r.title,
         description: r.description ?? '',
         price: Number(r.price ?? 0),
         category: r.category ?? 'mk.cat.other',
@@ -343,7 +374,9 @@ export class ConnectMarketplaceService {
         views: Number(r.views ?? 0) + 1,
         emoji: r.emoji ?? '🛍️',
         pdfUrl: r.pdf_url ?? '',
-        imageUrls: Array.isArray(r.image_urls) ? r.image_urls : (typeof r.image_urls === 'string' ? JSON.parse(r.image_urls) : []),
+        imageUrls: finalImgList,
+        imageUrl: firstImg,
+        videoUrl: r.video_url || undefined,
         websiteUrl: r.website_url ?? '',
         facebookUrl: r.facebook_url ?? '',
         associationId: r.association_id,
@@ -372,8 +405,9 @@ export class ConnectMarketplaceService {
     const id = data.id || `prod-${Date.now()}`;
     const sellerId = String(data.sellerId || userId || 'ceo1983');
     const title = (data.title || data.name || 'Sản phẩm mới').trim();
-    const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : []);
+    const imageUrls = safeParseImages(data.imageUrls || (data.imageUrl ? [data.imageUrl] : []));
     const firstImage = imageUrls[0] || data.imageUrl || data.image || null;
+    const videoUrl = data.videoUrl || data.video_url || null;
     const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
     const originalPrice = data.originalPrice !== undefined ? Number(data.originalPrice) : Number(data.price ?? 0);
     const memberPrice = data.memberPrice !== undefined ? Number(data.memberPrice) : Number(data.price ?? 0);
@@ -383,14 +417,14 @@ export class ConnectMarketplaceService {
 
     const rows = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.products (
-        id, seller_id, title, name, description, price, original_price, member_price, unit, currency,
-        category, status, views, emoji, pdf_url, image_urls, image_url, company, website_url, facebook_url,
+        custom_id, seller_id, title, name, description, price, original_price, member_price, unit, currency,
+        category, status, views, emoji, pdf_url, image_urls, image_url, video_url, company, website_url, facebook_url,
         association_id, created_at, updated_at
       ) VALUES (
         ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
         ${originalPrice}, ${memberPrice}, ${unit}, ${currency},
         ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
-        ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${firstImage}, ${company}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
+        ${data.pdfUrl ?? ''}, ${JSON.stringify(imageUrls)}::jsonb, ${firstImage}, ${videoUrl}, ${company}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
         ${assocId}::uuid, NOW(), NOW()
       )
       RETURNING *
@@ -398,11 +432,11 @@ export class ConnectMarketplaceService {
       console.warn('createMarketplaceProduct primary insert failed, using fallback:', err?.message);
       return this.prisma.$queryRaw<any[]>`
         INSERT INTO public.products (
-          id, seller_id, title, description, price, category, status, views, emoji, pdf_url, image_urls, website_url, facebook_url, association_id, created_at, updated_at
+          custom_id, seller_id, title, description, price, category, status, views, emoji, pdf_url, image_urls, video_url, website_url, facebook_url, association_id, created_at, updated_at
         ) VALUES (
           ${id}, ${sellerId}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
           ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
-          ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
+          ${data.pdfUrl ?? ''}, ${JSON.stringify(imageUrls)}::jsonb, ${videoUrl}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
           ${assocId}::uuid, NOW(), NOW()
         )
         RETURNING *
@@ -410,7 +444,7 @@ export class ConnectMarketplaceService {
     });
     const r = rows[0] || {};
     return {
-      id: r.id || id,
+      id: String(r.custom_id || r.id || id),
       sellerId: r.seller_id,
       title: r.title || title,
       name: r.name || r.title || title,
@@ -426,8 +460,9 @@ export class ConnectMarketplaceService {
       views: 0,
       emoji: r.emoji ?? '🛍️',
       pdfUrl: r.pdf_url ?? '',
-      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : (firstImage ? [firstImage] : []),
+      imageUrls: imageUrls.length > 0 ? imageUrls : (firstImage ? [firstImage] : []),
       imageUrl: firstImage,
+      videoUrl: videoUrl || undefined,
       company: company || r.company || 'CLB Doanh Nhân CEO 1983',
       websiteUrl: r.website_url ?? '',
       facebookUrl: r.facebook_url ?? '',
@@ -436,8 +471,9 @@ export class ConnectMarketplaceService {
 
   async updateMarketplaceProduct(userId: string, id: string, data: any) {
     const title = data.title || data.name;
-    const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : (data.imageUrl ? [data.imageUrl] : null);
+    const imageUrls = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
     const firstImage = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
+    const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : null);
     const cleanPrice = data.price !== undefined ? Number(data.price) : null;
     const cleanOriginalPrice = data.originalPrice !== undefined ? Number(data.originalPrice) : null;
     const cleanMemberPrice = data.memberPrice !== undefined ? Number(data.memberPrice) : null;
@@ -455,7 +491,8 @@ export class ConnectMarketplaceService {
         unit = COALESCE(${data.unit}, unit),
         currency = COALESCE(${data.currency}, currency),
         image_url = COALESCE(${firstImage}, image_url),
-        image_urls = COALESCE(${imageUrls}::text[], image_urls),
+        image_urls = CASE WHEN ${imageUrls ? true : false} THEN ${JSON.stringify(imageUrls || [])}::jsonb ELSE image_urls END,
+        video_url = COALESCE(${videoUrl}, video_url),
         category = COALESCE(${data.category}, category),
         status = COALESCE(${data.status}, status),
         emoji = COALESCE(${data.emoji}, emoji),
@@ -463,13 +500,14 @@ export class ConnectMarketplaceService {
         website_url = COALESCE(${data.websiteUrl}, website_url),
         facebook_url = COALESCE(${data.facebookUrl}, facebook_url),
         updated_at = NOW()
-      WHERE id = ${id}
+      WHERE custom_id = ${id} OR id::text = ${id}
       RETURNING *
     `;
     if (rows.length === 0) return null;
     const r = rows[0];
+    const parsedImages = safeParseImages(r.image_urls);
     return {
-      id: r.id,
+      id: String(r.custom_id || r.id),
       sellerId: r.seller_id,
       title: r.title,
       description: r.description ?? '',
@@ -480,7 +518,9 @@ export class ConnectMarketplaceService {
       views: Number(r.views ?? 0),
       emoji: r.emoji ?? '🛍️',
       pdfUrl: r.pdf_url ?? '',
-      imageUrls: Array.isArray(r.image_urls) ? r.image_urls : [],
+      imageUrls: parsedImages,
+      imageUrl: parsedImages[0] || r.image_url || '',
+      videoUrl: r.video_url || undefined,
       websiteUrl: r.website_url ?? '',
       facebookUrl: r.facebook_url ?? '',
     };
@@ -488,7 +528,7 @@ export class ConnectMarketplaceService {
 
   async deleteMarketplaceProduct(userId: string, id: string) {
     await this.prisma.$executeRaw`
-      DELETE FROM public.products WHERE id = ${id}
+      DELETE FROM public.products WHERE custom_id = ${id} OR id::text = ${id}
     `;
     return { ok: true };
   }
@@ -498,12 +538,12 @@ export class ConnectMarketplaceService {
       UPDATE public.products
       SET status = CASE WHEN status = 'sold' THEN 'active' ELSE 'sold' END,
           updated_at = NOW()
-      WHERE id = ${id}
+      WHERE custom_id = ${id} OR id::text = ${id}
       RETURNING *
     `;
     if (rows.length === 0) return null;
     const r = rows[0];
-    return { id: r.id, status: r.status };
+    return { id: String(r.custom_id || r.id), status: r.status };
   }
 
   async listProductQuotes(userId: string) {

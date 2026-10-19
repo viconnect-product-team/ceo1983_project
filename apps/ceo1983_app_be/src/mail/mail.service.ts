@@ -28,6 +28,7 @@ export interface SendEventTicketEmailOptions {
   ticketCount?: number;
   luckyNumber?: string;
   isFree?: boolean;
+  paymentConfirmed?: boolean;
   totalAmount?: number;
   qrCodeUrl?: string;
   vietQrUrl?: string;
@@ -507,6 +508,7 @@ export class MailService {
       ticketCount = 1,
       luckyNumber,
       isFree = true,
+      paymentConfirmed = false,
       totalAmount = 0,
       qrCodeUrl,
       vietQrUrl,
@@ -514,6 +516,8 @@ export class MailService {
       bankName = 'MB Bank (Quân Đội)',
       bankOwner = 'CLB DOANH NHAN CEO 1983',
     } = options;
+
+    const isConfirmedTicket = isFree || paymentConfirmed;
 
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
@@ -525,9 +529,11 @@ export class MailService {
     const qrSrc = qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`;
     const vietQrSrc = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
 
-    const subject = isFree
+    const subject = paymentConfirmed
+      ? `[CLB CEO 1983] Xác Nhận Đã Thanh Toán & Vé Điện Tử Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
+      : isFree
       ? `[CLB CEO 1983] Vé Điện Tử & Mã QR Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
-      : `[CLB CEO 1983] Hướng Dẫn Thanh Toán VietQR & Vé Tham Dự: ${eventTitle} — ${fullName} (#${registrationId})`;
+      : `[CLB CEO 1983] Hướng Dẫn Thanh Toán VietQR & Đăng Ký: ${eventTitle} — ${fullName} (#${registrationId})`;
 
     const html = `
 <!DOCTYPE html>
@@ -581,7 +587,7 @@ export class MailService {
 <body>
   <div class="container">
     <div class="header">
-      <div class="gold-badge">${isFree ? '✦ VÉ THAM DỰ SỰ KIỆN ĐIỆN TỬ (E-TICKET) ✦' : '✦ HƯỚNG DẪN THANH TOÁN PHÍ THAM DỰ ✦'}</div>
+      <div class="gold-badge">${paymentConfirmed ? '✦ VÉ ĐIỆN TỬ - ĐÃ XÁC NHẬN THANH TOÁN ✦' : (isFree ? '✦ VÉ THAM DỰ SỰ KIỆN ĐIỆN TỬ (E-TICKET) ✦' : '✦ HƯỚNG DẪN THANH TOÁN PHÍ THAM DỰ ✦')}</div>
       <h1 class="title">CLB DOANH NHÂN CEO 1983</h1>
       <p class="subtitle">Hệ Sinh Thái Kết Nối & Giao Thương Doanh Nhân Đẳng Cấp</p>
     </div>
@@ -589,9 +595,11 @@ export class MailService {
     <div class="content">
       <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
       <div class="intro">
-        ${isFree 
+        ${paymentConfirmed
+          ? `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Giao dịch thanh toán phí tham dự sự kiện của Anh/Chị đã được <strong>xác nhận thành công</strong>! Dưới đây là <strong>Vé Điện Tử và Mã QR Check-in</strong> chính thức của Anh/Chị tại sự kiện:`
+          : isFree 
           ? `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã <strong>đăng ký thành công</strong> vé tham dự sự kiện. Dưới đây là thông tin vé điện tử và <strong>Mã QR Check-in</strong> chính thức của Anh/Chị:`
-          : `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng cảm ơn Anh/Chị đã đăng ký tham gia sự kiện. Dưới đây là <strong>Mã VietQR thanh toán phí tham dự</strong> và thông tin tài khoản chuyển khoản chính thức:`
+          : `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng cảm ơn Anh/Chị đã gửi phiếu đăng ký tham gia sự kiện. Dưới đây là <strong>Mã VietQR thanh toán phí tham dự</strong>. Vui lòng chuyển khoản để hệ thống kích hoạt vé QR check-in cho Anh/Chị:`
         }
       </div>
 
@@ -602,8 +610,8 @@ export class MailService {
           <div class="event-meta">🗓️ Thời gian: <strong>${eventDate || ''} ${eventTime ? '· ' + eventTime : ''}</strong></div>
         </div>
 
-        ${!isFree ? `
-        <!-- TEMPLATE MÃ VIETQR THANH TOÁN DÀNH CHO SỰ KIỆN CÓ PHÍ -->
+        ${!isConfirmedTicket ? `
+        <!-- TEMPLATE MÃ VIETQR THANH TOÁN DÀNH CHO SỰ KIỆN CÓ PHÍ CHỜ THANH TOÁN -->
         <div class="qr-container">
           <div style="font-weight: 800; color: #003B95; font-size: 14px; text-transform: uppercase;">MÃ VIETQR THANH TOÁN PHÍ THAM DỰ</div>
           <div class="price-tag">${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ</div>
@@ -620,11 +628,11 @@ export class MailService {
           </div>
         </div>
         ` : `
-        <!-- TEMPLATE MÃ QR CHECK-IN DÀNH CHO SỰ KIỆN MIỄN PHÍ -->
+        <!-- TEMPLATE MÃ QR CHECK-IN DÀNH CHO VÉ ĐÃ XÁC NHẬN / ĐÃ THANH TOÁN -->
         <div class="qr-container">
           <img src="${qrSrc}" alt="Mã QR Check-in" class="qr-img" />
           <div class="qr-caption">MÃ VÉ: ${registrationId}</div>
-          <div class="qr-hint">Xuất trình mã QR này tại bàn tiếp đón để Ban Tổ Chức quét check-in</div>
+          <div class="qr-hint">Xuất trình mã QR này tại bàn tiếp đón để Ban Tổ Chức quét check-in vào cửa</div>
         </div>
         `}
 
@@ -658,9 +666,12 @@ export class MailService {
           <div class="info-row">
             <div class="info-cell-label">Trạng thái vé:</div>
             <div class="info-cell-value">
-              ${isFree 
-                ? '<span class="badge-status">✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)</span>' 
-                : '<span class="badge-status-pending">⏳ CHỜ THANH TOÁN VIETQR</span>'
+              ${paymentConfirmed
+                ? '<span class="badge-status">✓ ĐÃ THANH TOÁN (HỢP LỆ)</span>'
+                : (isFree 
+                  ? '<span class="badge-status">✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)</span>' 
+                  : '<span class="badge-status-pending">⏳ CHỜ THANH TOÁN VIETQR</span>'
+                )
               }
             </div>
           </div>
@@ -668,13 +679,13 @@ export class MailService {
       </div>
 
       <div class="checkin-guide">
-        ${isFree ? `
+        ${isConfirmedTicket ? `
         <strong>📌 Hướng dẫn Check-in tại sự kiện:</strong>
         <br>1. Khi đến địa điểm tổ chức, Anh/Chị vui lòng mở email này xuất trình <strong>Mã QR vé</strong> trên cho Ban Thư Ký tại bàn đón tiếp.
         <br>2. Ban Tổ Chức sẽ quét mã check-in trong 1 giây và trao thẻ đại biểu, tài liệu cùng quà tặng tham gia sự kiện.
         ` : `
         <strong>📌 Hướng dẫn sau khi chuyển khoản:</strong>
-        <br>1. Sau khi Anh/Chị chuyển khoản thành công, hệ thống đối soát Napas 24/7 sẽ tự động kích hoạt vé chính thức.
+        <br>1. Sau khi Anh/Chị chuyển khoản thành công, hệ thống đối soát Napas 24/7 hoặc Ban Truyền Thông xác nhận sẽ tự động kích hoạt vé chính thức.
         <br>2. Ban Thư Ký sẽ gửi email thông báo vé đã kích hoạt kèm mã QR check-in vào cửa chính thức cho Anh/Chị.
         `}
       </div>

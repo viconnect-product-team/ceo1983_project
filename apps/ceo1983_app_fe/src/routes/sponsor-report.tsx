@@ -78,8 +78,13 @@ function ReportPage() {
         {
           header: "Hình Thức",
           key: "pkg",
-          width: 16,
-          value: (s) => (s.packageType === "in_kind" ? "Hiện vật" : "Tiền mặt"),
+          width: 20,
+          value: (s) =>
+            s.packageType === "in_kind"
+              ? "Hiện vật"
+              : s.packageType === "cash"
+              ? "Tiền mặt"
+              : "Chuyển khoản (VietQR)",
         },
         { header: "Mô tả hiện vật", key: "inKind", width: 30, value: (s) => s.inKindDescription || "—" },
         { header: "Đại Diện / Người Liên Hệ", key: "contact", width: 24, value: (s) => s.contact || "—" },

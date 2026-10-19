@@ -17,7 +17,7 @@ export type Attendee = {
   seatAssignment?: string;
   paymentStatus?: string;
   sponsorType?: "regular" | "new";
-  packageType?: "cash" | "in_kind";
+  packageType?: "bank_transfer" | "cash" | "in_kind";
   inKindDescription?: string;
 };
 
