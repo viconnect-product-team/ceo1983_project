@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CheckSquare,
@@ -713,10 +714,10 @@ function ProductModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" onClick={onClose} />
-      <Card className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col p-6">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-6 overflow-y-auto w-screen h-screen">
+      <div className="absolute inset-0" onClick={onClose} />
+      <Card className="relative z-[10000] flex max-h-[90vh] w-full max-w-2xl flex-col p-5 sm:p-7 shadow-2xl rounded-2xl mx-auto my-auto bg-card border border-border">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-bold text-foreground">
             {t(isEdit ? "mk.form.editTitle" : "mk.form.title")}
@@ -1070,6 +1071,8 @@ function ProductModal({
       </Card>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : null;
 }
 
 type ProductActions = {

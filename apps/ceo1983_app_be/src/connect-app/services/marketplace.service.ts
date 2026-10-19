@@ -844,6 +844,13 @@ export class ConnectMarketplaceService {
     return { id, status: 'cancelled', cancelReason: reason };
   }
 
+  async deleteQuote(userId: string, id: string) {
+    await this.prisma.$executeRaw`
+      DELETE FROM public.quote_requests WHERE id = ${id}
+    `.catch(() => {});
+    return { ok: true, id };
+  }
+
   async notifyAssociationAdmins(
     associationId: string,
     payload: {

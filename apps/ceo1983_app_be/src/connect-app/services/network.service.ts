@@ -988,7 +988,7 @@ export class ConnectNetworkService {
         connectionId: reqId,
       });
       const actionTarget = JSON.stringify({
-        route: '/connect-app/network',
+        route: '/association/members',
         search: { tab: 'requests' },
       });
       const dedupeKey = `connection_request:${reqId}:${Date.now()}`;
@@ -1060,7 +1060,7 @@ export class ConnectNetworkService {
         action: {
           kind: 'open_route',
           labelKey: 'bc.notif.action.viewConnectionRequests',
-          targetRoute: '/connect-app/network',
+          targetRoute: '/association/members',
           targetSearch: { tab: 'requests' },
         },
         priority: 'high',
@@ -1141,7 +1141,7 @@ export class ConnectNetworkService {
           connectionStatus: 'accepted',
         });
         const actionTarget = JSON.stringify({
-          route: '/connect-app/network',
+          route: '/association/members',
           search: { tab: 'connections' },
         });
         const dedupeKey = `connection_accepted:${actualConnId}`;
@@ -1195,7 +1195,7 @@ export class ConnectNetworkService {
           action: {
             kind: 'open_route',
             labelKey: 'bc.notif.action.view',
-            targetRoute: '/connect-app/network',
+            targetRoute: '/association/members',
             targetSearch: { tab: 'connections' },
           },
           priority: 'normal',
@@ -2026,7 +2026,7 @@ export class ConnectNetworkService {
     };
     const safeData = JSON.stringify(safeDataObj);
     const actionTarget = JSON.stringify({
-      route: '/connect-app/network',
+      route: '/association/members',
       search: { tab: 'requests' },
     });
     const dedupeKey = `connection_request:${reqId}:${Date.now()}`;
@@ -2085,7 +2085,7 @@ export class ConnectNetworkService {
         action: {
           kind: 'open_route',
           labelKey: 'bc.notif.action.viewConnectionRequests',
-          targetRoute: '/connect-app/network',
+          targetRoute: '/association/members',
           targetSearch: { tab: 'requests' },
         },
         priority: 'high',

@@ -33,7 +33,16 @@ function NewsPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
-  const { can } = useRole();
+  const { can, isAdmin, isPlatformAdmin, isPresident, isChuTich, canManageMedia, isTruongBanTruyenThong } = useRole();
+  const canManageNews = Boolean(
+    isAdmin ||
+    isPlatformAdmin ||
+    isPresident ||
+    isChuTich ||
+    canManageMedia ||
+    isTruongBanTruyenThong ||
+    can(PERMISSIONS.MEDIA_MANAGE)
+  );
   const NEWS = Route.useLoaderData() as NewsArticle[];
   const published = NEWS.filter((n) => n.status === "published");
   const scheduled = NEWS.filter((n) => n.status === "scheduled");
@@ -110,7 +119,7 @@ function NewsPage() {
   ];
 
   const onSubmit = async (v: CrudValues) => {
-    if (!can(PERMISSIONS.MEDIA_MANAGE)) {
+    if (!canManageNews) {
       toast.error("Bạn không có quyền tạo hoặc chỉnh sửa tin tức!");
       return;
     }
@@ -134,7 +143,7 @@ function NewsPage() {
   };
 
   const onDelete = async (n: NewsArticle) => {
-    if (!can(PERMISSIONS.MEDIA_MANAGE)) {
+    if (!canManageNews) {
       toast.error("Bạn không có quyền xóa bài viết tin tức!");
       return;
     }

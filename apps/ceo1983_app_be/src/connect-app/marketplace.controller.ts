@@ -90,4 +90,9 @@ export class MarketplaceController {
   ) {
     return this.connectAppService.cancelQuote(req.user.id, id, reason);
   }
+
+  @Delete('quotes/:id')
+  async deleteQuote(@Request() req: any, @Param('id') id: string) {
+    return this.connectAppService.deleteQuote(req.user.id, id);
+  }
 }

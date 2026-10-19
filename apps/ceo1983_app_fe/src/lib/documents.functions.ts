@@ -14,6 +14,9 @@ export type Document = {
   docScope?: "association" | "enterprise";
   enterpriseName?: string;
   enterpriseId?: string;
+  filePath?: string;
+  url?: string;
+  fileUrl?: string;
 };
 
 export const listDocumentsFn = createServerFn({ method: "GET" })
@@ -84,8 +87,10 @@ export const getDocumentUrlFn = createServerFn({ method: "GET" })
     const res = await fetchNestApiFromServer(`/documents/${data.id}/url`, token);
     if (!res || !res.url) return null;
     
-    const apiHost = process.env.VITE_API_URL || "http://localhost:3000";
-    return res.url.startsWith("http") ? res.url : `${apiHost}${res.url}`;
+    if (res.url.startsWith("http")) return res.url;
+    const cleanUrl = res.url.startsWith("/api") ? res.url : `/api${res.url.startsWith("/") ? res.url : `/${res.url}`}`;
+    const apiHost = process.env.VITE_PUBLIC_API_URL || process.env.VITE_API_URL || "";
+    return apiHost ? `${apiHost}${cleanUrl}` : cleanUrl;
   });
 
 export const deleteDocumentFn = createServerFn({ method: "POST" })

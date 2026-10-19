@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+import { fetchNestApiFromServer } from "./api-client";
 
 // Data fields that can be embedded into an event's ticket QR code.
 export const QR_FIELDS = ["registration_code", "verify_url", "ticket_code"] as const;
@@ -73,38 +71,38 @@ export type Registration = {
 
 type Row = Record<string, unknown>;
 
-function mapEvent(r: Row): EventItem {
-  return {
-    id: r.id as string,
-    name: r.name as string,
-    date: r.date as string,
-    location: (r.location as string) ?? "",
-    capacity: (r.capacity as number) ?? 0,
-    registered: (r.registered as number) ?? 0,
-    status: r.status as EventItem["status"],
-    type: r.type as EventItem["type"],
-    qrFields: normalizeQrFields(r.qr_fields),
-    image: (r.image as string) ?? null,
-    banner: (r.banner as string) ?? null,
-    ticketPrice: r.ticket_price !== undefined && r.ticket_price !== null ? Number(r.ticket_price) : null,
-  };
-}
-
 function normalizeQrFields(v: unknown): QrField[] {
   const arr = Array.isArray(v) ? (v as string[]) : [];
   const valid = arr.filter((f): f is QrField => (QR_FIELDS as readonly string[]).includes(f));
   return valid.length ? valid : ["registration_code"];
 }
 
+function mapEvent(r: Row): EventItem {
+  return {
+    id: (r.id || r.code) as string,
+    name: (r.name || r.title) as string,
+    date: r.date ? (r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10)) : "",
+    location: (r.location as string) ?? "",
+    capacity: Number(r.capacity ?? 0),
+    registered: Number(r.registered ?? 0),
+    status: (r.status as EventItem["status"]) || "upcoming",
+    type: (r.type as EventItem["type"]) || "networking",
+    qrFields: normalizeQrFields(r.qr_fields || r.qrFields),
+    image: ((r.image || r.imageUrl || r.cover_image) as string) ?? null,
+    banner: (r.banner as string) ?? null,
+    ticketPrice: r.ticket_price !== undefined && r.ticket_price !== null ? Number(r.ticket_price) : null,
+  };
+}
+
 function mapTicket(r: Row): TicketType {
   return {
     id: r.id as string,
-    eventId: r.event_id as string,
+    eventId: (r.event_id || r.eventId) as string,
     name: r.name as string,
     price: Number(r.price ?? 0),
     quantity: Number(r.quantity ?? 0),
     description: (r.description as string) ?? "",
-    sortOrder: Number(r.sort_order ?? 0),
+    sortOrder: Number(r.sort_order ?? r.sortOrder ?? 0),
   };
 }
 
@@ -127,19 +125,16 @@ function mapReg(r: Row): Registration {
   };
 }
 
-import { fetchNestApiFromServer } from "./api-client";
-
 export const listEventsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<EventItem[]> => {
     try {
       const res = await fetchNestApiFromServer<any>("/events", context.token);
       if (Array.isArray(res)) return res.map((r: any) => mapEvent(r as Row));
-    } catch (err) {
-      console.warn("[listEventsFn] Nest API failed, falling back to db:", err);
+    } catch (err: any) {
+      console.warn("[listEventsFn] Nest API error:", err?.message);
     }
-    const { data } = await getDb(context).from("events").select("*").order("date", { ascending: true });
-    return (data ?? []).map((r: any) => mapEvent(r as Row));
+    return [];
   });
 
 export const listRegistrationsFn = createServerFn({ method: "GET" })
@@ -148,11 +143,10 @@ export const listRegistrationsFn = createServerFn({ method: "GET" })
     try {
       const res = await fetchNestApiFromServer<any>("/events/registrations", context.token);
       if (Array.isArray(res)) return res.map((r: any) => mapReg(r as Row));
-    } catch (err) {
-      console.warn("[listRegistrationsFn] Nest API failed, falling back to db:", err);
+    } catch (err: any) {
+      console.warn("[listRegistrationsFn] Nest API error:", err?.message);
     }
-    const { data } = await getDb(context).from("event_registrations").select("*").order("registered_at", { ascending: false });
-    return (data ?? []).map((r: any) => mapReg(r as Row));
+    return [];
   });
 
 export const listEventsWithRegistrationsFn = createServerFn({ method: "GET" })
@@ -161,16 +155,12 @@ export const listEventsWithRegistrationsFn = createServerFn({ method: "GET" })
     try {
       const res = await fetchNestApiFromServer<any>("/events/with-registrations", context.token);
       if (res && Array.isArray(res.events)) return res;
-    } catch (err) {
-      console.warn("[listEventsWithRegistrationsFn] Nest API failed, falling back to db:", err);
+    } catch (err: any) {
+      console.warn("[listEventsWithRegistrationsFn] Nest API error:", err?.message);
     }
-    const [eventsRes, regsRes] = await Promise.all([
-      getDb(context).from("events").select("*").order("date", { ascending: true }),
-      getDb(context).from("event_registrations").select("*").order("registered_at", { ascending: false }),
-    ]);
     return {
-      events: (eventsRes.data ?? []).map((r: any) => mapEvent(r as Row)),
-      registrations: (regsRes.data ?? []).map((r: any) => mapReg(r as Row)),
+      events: [],
+      registrations: [],
     };
   });
 
@@ -354,5 +344,3 @@ export const addEventAttendeeFn = createServerFn({ method: "POST" })
       },
     );
   });
-
-

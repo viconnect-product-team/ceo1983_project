@@ -84,14 +84,39 @@ export const Route = createFileRoute("/association")({
     if (typeof window !== "undefined") {
       let mustChange = false;
       try {
-        const flag = localStorage.getItem("vba_must_change_password");
-        if (flag === "true") {
-          mustChange = true;
+        const rawUser = localStorage.getItem("auth_user") || localStorage.getItem("user");
+        let parsedUser: any = null;
+        if (rawUser) {
+          try {
+            parsedUser = JSON.parse(rawUser);
+          } catch {}
+        }
+        const userEmail = (parsedUser?.email || "").toLowerCase().trim();
+        const userRole = (parsedUser?.role || parsedUser?.user_metadata?.role || "").toLowerCase().trim();
+        const isSystemAdmin =
+          userEmail === "admin@connect.vn" ||
+          userEmail === "admin@ceo1983.com" ||
+          userEmail === "ceo.tongthuky@ceo1983.com" ||
+          userRole === "admin" ||
+          userRole === "quan_tri" ||
+          userRole === "platform_admin";
+
+        if (isSystemAdmin) {
+          mustChange = false;
+          try {
+            localStorage.removeItem("vba_must_change_password");
+          } catch {}
         } else {
-          const rawUser = localStorage.getItem("auth_user");
-          if (rawUser) {
-            const u = JSON.parse(rawUser);
-            if (u?.mustChangePassword || u?.onboarding_status === "new" || u?.profile?.onboarding_status === "new") {
+          const flag = localStorage.getItem("vba_must_change_password");
+          if (flag === "true") {
+            mustChange = true;
+          } else if (parsedUser) {
+            if (
+              parsedUser?.mustChangePassword ||
+              parsedUser?.must_change_password ||
+              parsedUser?.onboarding_status === "new" ||
+              parsedUser?.profile?.onboarding_status === "new"
+            ) {
               mustChange = true;
             }
           }

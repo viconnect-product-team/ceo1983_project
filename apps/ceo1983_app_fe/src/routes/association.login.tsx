@@ -161,7 +161,15 @@ function AssociationLoginPage() {
         setAuthData(res);
         applyRememberPreference(remember, cleanId);
 
-        if (res.mustChangePassword || res.user?.mustChangePassword) {
+        const isSystemAdmin =
+          cleanId.toLowerCase() === "admin@connect.vn" ||
+          cleanId.toLowerCase() === "admin@ceo1983.com" ||
+          cleanId.toLowerCase() === "ceo.tongthuky@ceo1983.com" ||
+          res.user?.role === "admin" ||
+          res.user?.role === "quan_tri" ||
+          res.user?.role === "platform_admin";
+
+        if (!isSystemAdmin && (res.mustChangePassword || res.user?.mustChangePassword)) {
           try {
             localStorage.setItem("vba_must_change_password", "true");
           } catch {}

@@ -793,7 +793,9 @@ export class MembersService {
 
   async getMemberById(userId: string, id: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id::text = ${id} OR code = ${id} LIMIT 1
+      SELECT * FROM public.members 
+      WHERE id::text = ${id} OR code = ${id} OR user_id::text = ${id} 
+      LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) {

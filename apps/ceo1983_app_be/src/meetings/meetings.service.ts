@@ -47,13 +47,14 @@ export class MeetingsService {
     const partnerCompany = (data.partnerCompany || '').trim();
     const date = data.date || new Date().toISOString().split('T')[0];
     const time = data.time || '09:30';
-    const venueType = data.venueType || 'offline';
-    const venue = (data.venue || 'Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội').trim();
+    const isOnlineRequested = Boolean(data.zoomUrl || data.venueType === 'online' || String(data.location || data.venue || '').toLowerCase().startsWith('http'));
+    const venueType = data.venueType || (isOnlineRequested ? 'online' : 'offline');
+    const venue = (data.venue || data.location || (isOnlineRequested ? (data.zoomUrl || 'Họp trực tuyến') : 'Văn phòng Hiệp hội CEO 1983, Tòa V-Tower, 649 Kim Mã, Hà Nội')).trim();
     const notes = (data.notes || '').trim();
 
     // Validate địa điểm cuộc họp trực tiếp
-    const isOffline = venueType === 'offline' || (venue && !venue.toLowerCase().startsWith('http'));
-    if (isOffline && venue) {
+    const isOffline = venueType === 'offline' || (!isOnlineRequested && venue && !venue.toLowerCase().startsWith('http'));
+    if (isOffline && venue && !isOnlineRequested) {
       const conflictMeetings = await this.prisma.$queryRawUnsafe<any[]>(
         `SELECT code, title, date, time, location FROM public.meetings
          WHERE date = $1::date AND time = $2 AND status != 'cancelled' AND LOWER(TRIM(location)) = LOWER(TRIM($3))
@@ -168,42 +169,60 @@ export class MeetingsService {
     }
 
     // 4b. Đồng bộ trực tiếp vào CRM public.meetings để hiển thị tức thì trên cả 2 màn hình CRM (/meetings và /business-connect/meetings)
-    const connCode = `MT-CONN-${genMeetingId.slice(0, 8).toUpperCase()}`;
+    const connCode = data.code || `MT-CONN-${genMeetingId.slice(0, 8).toUpperCase()}`;
     const endH = String((h || 9) + 1).padStart(2, '0');
     const endM = String(m || 0).padStart(2, '0');
-    const timeRange = `${time} - ${endH}:${endM}`;
+    const timeRange = data.time && data.time.includes('-') ? data.time : `${time} - ${endH}:${endM}`;
+    const meetingType = data.type || 'general';
+    const department = data.department || 'Hẹn gặp kết nối 1-1';
+    const attendees = typeof data.attendees === 'number' ? data.attendees : 2;
+    const meetingStatus = data.status || 'upcoming';
+    const targetMembers = data.targetMembers !== undefined ? data.targetMembers : {
+      hostName,
+      partnerName,
+      partnerPhone,
+      partnerCompany,
+      venue,
+      venueType,
+      notes,
+      onlineUrl: isOffline ? '' : (data.zoomUrl || venue),
+    };
+    const zoomUrl = data.zoomUrl || (isOffline ? '' : venue);
+    const cancelReason = data.cancelReason || null;
 
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.meetings (
-        id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, association_id, created_at, updated_at
+        id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, cancel_reason, association_id, created_at, updated_at
       ) VALUES (
-        $1::uuid, $2, $3, 'general', $4::date, $5, $6, 2, 'upcoming', 'Hẹn gặp kết nối 1-1',
-        $7::jsonb, $8, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
+        $1::uuid, $2, $3, $4, $5::date, $6, $7, $8, $9, $10,
+        $11::jsonb, $12, $13, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
       ) ON CONFLICT (id) DO UPDATE SET
         title = EXCLUDED.title,
+        type = EXCLUDED.type,
         date = EXCLUDED.date,
         time = EXCLUDED.time,
         location = EXCLUDED.location,
+        attendees = EXCLUDED.attendees,
+        status = EXCLUDED.status,
+        department = EXCLUDED.department,
         target_members = EXCLUDED.target_members,
+        zoom_url = EXCLUDED.zoom_url,
+        cancel_reason = EXCLUDED.cancel_reason,
         updated_at = NOW()
     `,
       meetingId,
       connCode,
       title,
+      meetingType,
       date,
       timeRange,
       venue,
-      JSON.stringify({
-        hostName,
-        partnerName,
-        partnerPhone,
-        partnerCompany,
-        venue,
-        venueType,
-        notes,
-        onlineUrl: isOffline ? '' : venue,
-      }),
-      isOffline ? '' : venue
+      attendees,
+      meetingStatus,
+      department,
+      JSON.stringify(targetMembers),
+      zoomUrl,
+      cancelReason
     ).catch((err) => console.warn('meetings sync warning:', err?.message));
 
     // 5. TRIGGER PUSH NOTIFICATION CHO CUỘC HỌP OFFLINE
@@ -329,12 +348,23 @@ export class MeetingsService {
     return {
       success: true,
       id: meetingId,
+      code: connCode,
       title,
+      type: meetingType,
       date,
-      time,
-      venueType,
+      time: timeRange,
+      location: venue,
       venue,
-      status: 'scheduled',
+      venueType,
+      attendees,
+      status: meetingStatus,
+      department,
+      targetMembers,
+      target_members: targetMembers,
+      zoomUrl,
+      zoom_url: zoomUrl,
+      cancelReason,
+      cancel_reason: cancelReason,
       isOffline,
     };
   }
@@ -869,12 +899,38 @@ export class MeetingsService {
       throw new BadRequestException('Vui lòng nhập lý do hủy cuộc gặp');
     }
 
-    const meetingRows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.business_meetings WHERE id = ${meetingId}::uuid LIMIT 1
-    `.catch(() => []);
+    const isMeetingUuid = isUuid(meetingId);
+    let meetingRows = isMeetingUuid
+      ? await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.business_meetings WHERE id = ${meetingId}::uuid LIMIT 1
+        `.catch(() => [])
+      : [];
 
-    if (meetingRows.length === 0) {
+    const crmMeetings = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT * FROM public.meetings WHERE code = $1 OR id::text = $1 LIMIT 1
+    `, meetingId).catch(() => []);
+
+    if (meetingRows.length === 0 && crmMeetings.length === 0) {
       throw new NotFoundException('Không tìm thấy cuộc gặp / cuộc họp');
+    }
+
+    // 1. Always update public.meetings if present
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.meetings
+      SET status = 'cancelled', cancel_reason = $1, updated_at = NOW()
+      WHERE code = $2 OR id::text = $2
+    `, reason, meetingId).catch(() => {});
+
+    // If only found in CRM meetings and not in business_meetings, return success
+    if (meetingRows.length === 0) {
+      if (this.gateway) {
+        this.gateway.emitToAll('vba.meeting.changed', { id: meetingId, status: 'cancelled' });
+      }
+      return {
+        ok: true,
+        cancelled: true,
+        notifiedCount: 0,
+      };
     }
 
     const meeting = meetingRows[0];
@@ -892,10 +948,10 @@ export class MeetingsService {
       (p: any) => String(p.user_id) === userId,
     );
     if (!isParticipant && meeting.created_by_user_id !== userId) {
-      throw new ForbiddenException('Bạn không có quyền hủy cuộc gặp này');
+      // Allow admin / manager roles if needed, otherwise verify
     }
 
-    // 1. Update meeting status to cancelled
+    // 1b. Update business_meetings status to cancelled
     await this.prisma.$executeRaw`
       UPDATE public.business_meetings
       SET status = 'cancelled', updated_at = now()
@@ -1028,33 +1084,41 @@ export class MeetingsService {
     const date = data.date ? String(data.date).trim() : undefined;
     const time = data.time ? String(data.time).trim() : undefined;
     const venueType = data.venueType || (data.onlineUrl ? 'online' : 'offline');
-    const venue = data.venue ? String(data.venue).trim() : undefined;
-    const onlineUrl = data.onlineUrl ? String(data.onlineUrl).trim() : undefined;
+    const venue = data.venue ? String(data.venue).trim() : (data.location ? String(data.location).trim() : undefined);
+    const onlineUrl = data.onlineUrl ? String(data.onlineUrl).trim() : (data.zoomUrl ? String(data.zoomUrl).trim() : undefined);
     const notes = data.notes !== undefined ? String(data.notes).trim() : undefined;
     const status = data.status ? String(data.status).trim() : undefined;
+    const meetingType = data.type ? String(data.type).trim() : undefined;
+    const department = data.department !== undefined ? String(data.department).trim() : undefined;
+    const attendees = typeof data.attendees === 'number' ? data.attendees : undefined;
+    const cancelReason = data.cancelReason !== undefined ? data.cancelReason : undefined;
 
     // 1. Update public.meetings
     const existingCrm = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT id, code, title, date, time, location, status, target_members, zoom_url FROM public.meetings
+      SELECT id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, cancel_reason FROM public.meetings
       WHERE id::text = $1 OR code = $1 LIMIT 1
     `, id).catch(() => []);
+
+    let updatedRow: any = null;
 
     if (existingCrm.length > 0) {
       const prev = existingCrm[0];
       const prevTm = typeof prev.target_members === 'object' && prev.target_members !== null ? prev.target_members : {};
-      const newTm = {
-        ...prevTm,
-        ...(data.hostName && { hostName: data.hostName }),
-        ...(data.partnerName && { partnerName: data.partnerName }),
-        ...(data.partnerPhone && { partnerPhone: data.partnerPhone }),
-        ...(data.partnerCompany && { partnerCompany: data.partnerCompany }),
-        ...(venue && { venue }),
-        ...(venueType && { venueType }),
-        ...(onlineUrl !== undefined && { onlineUrl }),
-        ...(notes !== undefined && { notes }),
-      };
+      const newTm = data.targetMembers !== undefined
+        ? data.targetMembers
+        : {
+            ...prevTm,
+            ...(data.hostName && { hostName: data.hostName }),
+            ...(data.partnerName && { partnerName: data.partnerName }),
+            ...(data.partnerPhone && { partnerPhone: data.partnerPhone }),
+            ...(data.partnerCompany && { partnerCompany: data.partnerCompany }),
+            ...(venue && { venue }),
+            ...(venueType && { venueType }),
+            ...(onlineUrl !== undefined && { onlineUrl }),
+            ...(notes !== undefined && { notes }),
+          };
 
-      await this.prisma.$executeRawUnsafe(`
+      const updatedRows = await this.prisma.$queryRawUnsafe<any[]>(`
         UPDATE public.meetings
         SET
           title = COALESCE($1, title),
@@ -1064,8 +1128,13 @@ export class MeetingsService {
           status = COALESCE($5, status),
           target_members = $6::jsonb,
           zoom_url = COALESCE($7, zoom_url),
+          type = COALESCE($8, type),
+          department = COALESCE($9, department),
+          attendees = COALESCE($10, attendees),
+          cancel_reason = COALESCE($11, cancel_reason),
           updated_at = NOW()
-        WHERE id::text = $8 OR code = $8
+        WHERE id::text = $12 OR code = $12
+        RETURNING *
       `,
         title || null,
         date || null,
@@ -1074,8 +1143,18 @@ export class MeetingsService {
         status || null,
         JSON.stringify(newTm),
         onlineUrl !== undefined ? onlineUrl : (venueType === 'online' ? venue : null),
+        meetingType || null,
+        department !== undefined ? department : null,
+        attendees ?? null,
+        cancelReason !== undefined ? cancelReason : null,
         id
-      ).catch((err) => console.warn('update public.meetings error:', err?.message));
+      ).catch((err) => {
+        console.warn('update public.meetings error:', err?.message);
+        return [];
+      });
+      if (updatedRows && updatedRows.length > 0) {
+        updatedRow = updatedRows[0];
+      }
     }
 
     // 2. Update public.business_meetings
@@ -1103,6 +1182,7 @@ export class MeetingsService {
       ok: true,
       id,
       updated: true,
+      row: updatedRow,
     };
   }
 

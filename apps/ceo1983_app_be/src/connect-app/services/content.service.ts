@@ -226,7 +226,7 @@ export class ConnectContentService {
         ${data.content ?? ''},
         ${img},
         0,
-        ${data.associationId ? data.associationId : null}::uuid,
+        ${data.associationId || 'c1983000-0000-4000-8000-000000001983'}::uuid,
         NOW(),
         NOW()
       )

@@ -74,8 +74,9 @@ export class AuthService {
       isDepartmentLeader: Boolean(details?.isDepartmentLeader),
       permissions,
     };
+    const isSystemAdmin = user.email === 'admin@connect.vn' || user.username === 'admin@connect.vn' || Boolean(details?.isAdmin) || resolvedRole === 'quan_tri' || resolvedRole === 'admin';
+    const mustChangePassword = isSystemAdmin ? false : await this.usersService.checkMustChangePassword(user.id);
     const refreshPayload = { sub: user.id, type: 'refresh' };
-    const mustChangePassword = await this.usersService.checkMustChangePassword(user.id);
 
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),

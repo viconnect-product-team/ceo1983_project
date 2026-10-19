@@ -36,19 +36,21 @@ export class SponsorsRepository {
   }
 
   async insertPackage(id: string, tier: string, price: bigint, benefits: string[], available: number, sold: number, associationId: string, packageType: string, inKindDescription: string | null): Promise<void> {
-    await this.prisma.$executeRaw`
-      INSERT INTO public.sponsor_packages (id, tier, price, benefits, available, sold, association_id, package_type, in_kind_description, created_at, updated_at)
-      VALUES (${id}, ${tier}, ${price}, ${benefits}::text[], ${available}, ${sold}, ${associationId}::uuid, ${packageType}, ${inKindDescription}, NOW(), NOW())
-    `;
+    await this.prisma.$executeRawUnsafe(
+      `INSERT INTO public.sponsor_packages (id, tier, price, benefits, available, sold, association_id, package_type, in_kind_description, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::uuid, $8, $9, NOW(), NOW())`,
+      id, tier, price, benefits || [], available, sold, associationId, packageType, inKindDescription
+    );
   }
 
   async updatePackageRaw(id: string, tier: string, price: bigint, benefits: string[], available: number, sold: number, packageType: string, inKindDescription: string | null): Promise<void> {
-    await this.prisma.$executeRaw`
-      UPDATE public.sponsor_packages
-      SET tier = ${tier}, price = ${price}, benefits = ${benefits}::text[], available = ${available}, sold = ${sold},
-          package_type = ${packageType}, in_kind_description = ${inKindDescription}, updated_at = NOW()
-      WHERE id = ${id}
-    `;
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.sponsor_packages
+       SET tier = $2, price = $3, benefits = $4, available = $5, sold = $6,
+           package_type = $7, in_kind_description = $8, updated_at = NOW()
+       WHERE id = $1`,
+      id, tier, price, benefits || [], available, sold, packageType, inKindDescription
+    );
   }
 
   async deletePackageRaw(id: string): Promise<void> {
@@ -94,20 +96,22 @@ export class SponsorsRepository {
   }
 
   async insertSponsor(id: string, name: string, tier: string, sponsorType: string, packageType: string, inKindDescription: string | null, contact: string, email: string, phone: string, amount: bigint, events: number, since: string, status: string, associationId: string): Promise<void> {
-    await this.prisma.$executeRaw`
-      INSERT INTO public.sponsors (id, name, tier, sponsor_type, package_type, in_kind_description, contact, email, phone, amount, events, since, status, association_id, created_at, updated_at)
-      VALUES (${id}, ${name}, ${tier}, ${sponsorType}, ${packageType}, ${inKindDescription}, ${contact}, ${email}, ${phone}, ${amount}, ${events}, ${since}::date, ${status}, ${associationId}::uuid, NOW(), NOW())
-    `;
+    await this.prisma.$executeRawUnsafe(
+      `INSERT INTO public.sponsors (id, name, tier, sponsor_type, package_type, in_kind_description, contact, email, phone, amount, events, since, status, association_id, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::date, $13, $14::uuid, NOW(), NOW())`,
+      id, name, tier, sponsorType, packageType, inKindDescription, contact, email, phone, amount, events, since, status, associationId
+    );
   }
 
   async updateSponsorRaw(id: string, name: string, tier: string, sponsorType: string, packageType: string, inKindDescription: string | null, contact: string, email: string, phone: string, amount: bigint, events: number, since: string, status: string): Promise<void> {
-    await this.prisma.$executeRaw`
-      UPDATE public.sponsors
-      SET name = ${name}, tier = ${tier}, sponsor_type = ${sponsorType}, package_type = ${packageType}, in_kind_description = ${inKindDescription},
-          contact = ${contact}, email = ${email}, phone = ${phone},
-          amount = ${amount}, events = ${events}, since = ${since}::date, status = ${status}, updated_at = NOW()
-      WHERE id = ${id}
-    `;
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE public.sponsors
+       SET name = $2, tier = $3, sponsor_type = $4, package_type = $5, in_kind_description = $6,
+           contact = $7, email = $8, phone = $9,
+           amount = $10, events = $11, since = $12::date, status = $13, updated_at = NOW()
+       WHERE id = $1`,
+      id, name, tier, sponsorType, packageType, inKindDescription, contact, email, phone, amount, events, since, status
+    );
   }
 
   async deleteSponsorRaw(id: string): Promise<void> {

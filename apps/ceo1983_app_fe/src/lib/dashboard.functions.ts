@@ -1,9 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fetchNestApiFromServer } from "./api-client";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 
 export type DashboardStats = {
   totalMembers: number;

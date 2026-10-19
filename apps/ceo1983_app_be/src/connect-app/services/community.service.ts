@@ -976,7 +976,7 @@ export class ConnectCommunityService {
           ${approved ? 'bc.notif.kind.community_join_approved.title' : 'bc.notif.kind.community_join_rejected.title'},
           ${approved ? 'bc.notif.kind.community_join_approved.body' : 'bc.notif.kind.community_join_rejected.body'},
           'bc.notif.action.viewJoinHistory', 'open_route',
-          ${JSON.stringify({ route: "/connect-app/community", search: { tab: "history" } })}::jsonb,
+          ${JSON.stringify({ route: "/association", search: { tab: "history" } })}::jsonb,
           ${JSON.stringify({ communityName: name })}::jsonb,
           'normal', 'delivered', ${now}, ${`community_join:${r.id}:${r.status}`}
         )

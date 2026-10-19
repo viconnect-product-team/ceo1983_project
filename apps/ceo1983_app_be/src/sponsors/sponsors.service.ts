@@ -40,7 +40,7 @@ export class SponsorsService {
     if (assocId) return assocId;
     const defaultId = await this.sponsorsRepo.resolveDefaultAssociationId();
     if (defaultId) return defaultId;
-    return 'ba000000-0000-4000-8000-000000000001';
+    return 'c1983000-0000-4000-8000-000000001983';
   }
 
   // ── SPONSOR PACKAGES ────────────────────────────────────────────────────────
@@ -89,7 +89,9 @@ export class SponsorsService {
 
   async createPackage(dto: CreateSponsorPackageDto & { associationId?: string }) {
     const lastPkg = await this.sponsorsRepo.getLastPackageId();
-    const id = lastPkg.length > 0 ? (BigInt(lastPkg[0].id) + 1n).toString() : '30001';
+    const id = lastPkg.length > 0 && lastPkg[0]?.id && !isNaN(Number(lastPkg[0].id))
+      ? (BigInt(lastPkg[0].id) + 1n).toString()
+      : '30001';
     const tier = dto.tier || 'bronze';
     const price = BigInt(Math.round(dto.price || 0));
     const benefits = dto.benefits || [];
@@ -222,7 +224,9 @@ export class SponsorsService {
 
   async createSponsor(dto: CreateSponsorDto) {
     const lastSp = await this.sponsorsRepo.getLastSponsorId();
-    const id = lastSp.length > 0 ? (BigInt(lastSp[0].id) + 1n).toString() : '20001';
+    const id = lastSp.length > 0 && lastSp[0]?.id && !isNaN(Number(lastSp[0].id))
+      ? (BigInt(lastSp[0].id) + 1n).toString()
+      : '20001';
     const name = dto.name;
     const tier = dto.tier || 'bronze';
     const sponsorType = dto.sponsorType || 'new';

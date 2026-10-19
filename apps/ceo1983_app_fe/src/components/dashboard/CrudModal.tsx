@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState, useMemo } from "react";
-import { X, ImagePlus, Trash2, Loader2, Check } from "lucide-react";
+import { X, ImagePlus, Trash2, Loader2, Check, FileText, UploadCloud } from "lucide-react";
 import { uploadFile, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 
@@ -38,7 +38,8 @@ export type CrudField =
       placeholder?: string;
     }
   | { name: string; label: string; type: "custom"; render: (value: any, onChange: (val: any) => void) => ReactNode; required?: boolean }
-  | { name: string; label: string; type: "image"; required?: boolean; placeholder?: string };
+  | { name: string; label: string; type: "image"; required?: boolean; placeholder?: string }
+  | { name: string; label: string; type: "file"; required?: boolean; placeholder?: string; accept?: string };
 
 export type CrudValues = Record<string, any>;
 
@@ -276,6 +277,7 @@ export function CrudModal({
   const [values, setValues] = useState<CrudValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploadingImage, setUploadingImage] = useState<Record<string, boolean>>({});
+  const [uploadingFile, setUploadingFile] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (open) {
@@ -339,6 +341,10 @@ export function CrudModal({
         } else if (f.type === "image") {
           if (!raw || String(raw).trim() === "") {
             validationErrors[f.name] = `Vui lòng tải lên ảnh cho ${f.label}`;
+          }
+        } else if (f.type === "file") {
+          if (!raw || String(raw).trim() === "") {
+            validationErrors[f.name] = `Vui lòng tải lên tệp cho ${f.label}`;
           }
         } else if (f.type === "custom") {
           if (
@@ -475,6 +481,95 @@ export function CrudModal({
                       type="text"
                       value={String(values[f.name] ?? "")}
                       placeholder={f.placeholder || "Hoặc dán URL ảnh trực tiếp..."}
+                      onChange={(e) => set(f.name, e.target.value)}
+                      className={`${stateInputCls} text-xs`}
+                    />
+                  </div>
+                ) : f.type === "file" ? (
+                  <div className="space-y-2">
+                    {values[f.name] ? (
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <FileText className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-semibold text-foreground truncate">
+                              {values.name || "Tệp tài liệu đã tải lên"}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground truncate">
+                              {String(values[f.name])}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => set(f.name, "")}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-destructive hover:bg-destructive/10 transition cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label
+                        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition ${
+                          hasErr
+                            ? "border-destructive bg-destructive/5 hover:border-destructive"
+                            : "border-border hover:border-primary/50 hover:bg-muted/40"
+                        }`}
+                      >
+                        {uploadingFile[f.name] ? (
+                          <>
+                            <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+                            <span className="text-xs font-semibold text-foreground">Đang tải tệp lên hệ thống...</span>
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                            <span className="text-xs font-semibold text-foreground">Chọn tệp tài liệu để tải lên</span>
+                            <span className="text-[11px] text-muted-foreground mt-0.5">PDF, DOCX, XLSX, PPTX, ZIP, RAR...</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept={f.accept || ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.png,.jpg,.jpeg"}
+                          disabled={uploadingFile[f.name]}
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setUploadingFile((prev) => ({ ...prev, [f.name]: true }));
+                            try {
+                              const uploadedUrl = await uploadFile(file, file.name);
+                              if (uploadedUrl) {
+                                set(f.name, uploadedUrl);
+                                if (!values.name || values.name === "") {
+                                  set("name", file.name.replace(/\.[^/.]+$/, ""));
+                                }
+                                const ext = (file.name.split(".").pop() ?? "").toLowerCase();
+                                const validTypes = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv", "zip", "rar", "png", "jpg", "jpeg"];
+                                if (validTypes.includes(ext)) {
+                                  set("type", ext);
+                                }
+                                const sizeStr = file.size >= 1048576
+                                  ? `${(file.size / 1048576).toFixed(1)} MB`
+                                  : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+                                set("size", sizeStr);
+                              }
+                            } catch (err: any) {
+                              console.error("CrudModal file upload error:", err);
+                              toast.error("Không thể tải tệp lên hệ thống: " + (err?.message || "Lỗi kết nối"));
+                            } finally {
+                              setUploadingFile((prev) => ({ ...prev, [f.name]: false }));
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                    <input
+                      type="text"
+                      value={String(values[f.name] ?? "")}
+                      placeholder={f.placeholder || "Hoặc dán đường dẫn tệp (URL) đính kèm..."}
                       onChange={(e) => set(f.name, e.target.value)}
                       className={`${stateInputCls} text-xs`}
                     />

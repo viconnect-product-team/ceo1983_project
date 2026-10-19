@@ -16,6 +16,7 @@
 # - Data Fetching & State: TanStack React Query (@tanstack/react-query), React Context (AuthContext).
 # - Styling & UI Components: Tailwind CSS, Radix UI Primitives, Lucide React, Framer Motion, Sonner Toast.
 # - PWA & Mobile: Progressive Web App (manifest.webmanifest, Service Worker, Apple Touch Icons), Capacitor / Cordova wrapper (mobile_ceo1983).
+# - Kiến trúc Thuần NestJS (Pure NestJS Architecture): 100% dữ liệu nghiệp vụ (Meetings, Opportunities, Marketplace, News, Events, Documents, Sponsors, Members) phải đi qua NestJS REST API (`fetchNestApiFromServer` / `fetchNestApi`) kết nối trực tiếp đến PostgreSQL `ceo1983_project` trên `14.225.217.232:5436`. TUYỆT ĐỐI KHÔNG dùng Supabase PostgREST client (`supabaseAdmin.from(...)`, `getDb.from(...)`) trong các server function nghiệp vụ nhằm tránh lỗi PostgREST schema cache.
 
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)
@@ -111,6 +112,17 @@
 #     + Cơ Chế Auto-Select Khi Focus: Tất cả các component nhập tiền tệ (`StandardCurrencyInput`, `VndCurrencyInput`, `FormattedCurrencyInput`) và các ô nhập số/giá/ngân sách bắt buộc tích hợp `setTimeout(() => inputRef.current?.select(), 20)` khi `onFocus` để người dùng nhấp chuột hoặc chạm vào là bôi đen toàn bộ giá trị cũ, gõ phím mới là ghi đè ngay tức thì mà không cần phải xóa thủ công từng ký tự.
 #     + Loại Bỏ Số 0 Cản Trở Ở Đầu: Tuyệt đối không để số `0` mặc định che khuất placeholder; khi gõ số sau `0`, tự động bóc tách số `0` ở đầu (`clean = digits.replace(/^0+(?=\d)/, "")`) để không bị thành chuỗi số sai lệch (ví dụ gõ 5 vào 0 không bị thành 50 hay 05).
 #     + Bảo Toàn Vị Trí Con Trỏ (Caret Preservation): Khi định dạng dấu chấm ngăn cách hàng nghìn (`.`), tính toán chính xác số lượng chữ số đứng trước con trỏ để đặt lại vị trí con trỏ sau khi render, ngăn chặn hiện tượng nhảy con trỏ về cuối ô nhập.
+# [BẮT BUỘC 5] Cơ sở dữ liệu Chuẩn Duy nhất (`ceo1983_project`) & Đồng bộ 2 Chiều:
+#   - Máy chủ CSDL chuẩn duy nhất của dự án là PostgreSQL `ceo1983_project` tại `14.225.217.232:5436`.
+#   - Tuyệt đối KHÔNG trỏ về host cũ `113.20.107.184` và TUYỆT ĐỐI KHÔNG liên quan hay phụ thuộc vào CSDL `vione_app`.
+#   - Dữ liệu tạo từ CRM Hiệp hội thì App Mobile CEO 1983 đọc được đầy đủ, ngược lại dữ liệu tạo từ Mobile App thì CRM Hiệp hội hiển thị chuẩn xác (cùng chung schema và database).
+#   - Mọi bản ghi hội viên, sự kiện, gói tài trợ, nhà tài trợ, cuộc họp, cơ hội, sản phẩm, tin tức, tài liệu phải liên kết với mã định danh hiệp hội chuẩn `c1983000-0000-4000-8000-000000001983`.
+#
+# [BẮT BUỘC 6] Khắc phục Schema Cache & Raw Queries An Toàn:
+#   - Phòng vệ lỗi Supabase PostgREST Schema Cache: Khi server chưa reload schema cache, client ném lỗi `Could not find the '<column>' column of '<table>' in the schema cache`. Các hàm thao tác bảng (`opportunities`, `meetings`, etc.) bắt buộc có cơ chế try/catch tự động retry loại bỏ cột đó nếu gặp lỗi schema cache.
+#   - Mảng native PostgreSQL trong Prisma Raw Runner: Dùng `$executeRawUnsafe` với placeholders `$1, $2, ...` và truyền trực tiếp mảng JS `string[]` để PostgreSQL tự ánh xạ mảng `text[]`, tuyệt đối không dùng inline template literals `${arr}::text[]` gây lỗi serialization.
+#   - Tài khoản Quản trị Hệ thống (`admin@connect.vn`, `quan_tri`, `admin`): Luôn bypass cờ `vba_must_change_password`, tuyệt đối không để tài khoản admin bị kẹt trong vòng lặp bắt đổi mật khẩu.
+#
 #   - Quy Chuẩn Thẻ Hội Viên Trang Chủ & Thẻ Trung Tâm (Member Card Standards):
 #     + Thẻ Hội Viên Trang Chủ (Hero Member Card): Ngoài ảnh bìa, avatar, tên hội viên, chức danh, số điện thoại và icon chỉnh sửa thì TUYỆT ĐỐI KHÔNG xuất hiện bất kỳ thông tin nào khác (không hiện logo, không hiện tên công ty, không hiện badge dư thừa).
 #     + Thẻ Hội Viên Ở Giữa (Central Card): Bỏ hiện tên công ty cùng logo doanh nghiệp; chỉ hiện Họ tên và Số điện thoại; Phần mã QR làm kích thước to hơn (`size={200}`) hiển thị nổi bật và quét nhanh chóng.

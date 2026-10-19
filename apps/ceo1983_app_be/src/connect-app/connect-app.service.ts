@@ -1687,6 +1687,7 @@ export class ConnectAppService implements OnModuleInit {
   updateQuoteStatus(userId: string, id: string, status: string) { return this.marketplaceService.updateQuoteStatus(userId, id, status); }
   sendQuoteReminder(userId: string, id: string) { return this.marketplaceService.sendQuoteReminder(userId, id); }
   cancelQuote(userId: string, id: string, reason: string) { return this.marketplaceService.cancelQuote(userId, id, reason); }
+  deleteQuote(userId: string, id: string) { return this.marketplaceService.deleteQuote(userId, id); }
 
   // ==========================================
   // 13. Public Registration - Delegated to ConnectPublicRegistrationService

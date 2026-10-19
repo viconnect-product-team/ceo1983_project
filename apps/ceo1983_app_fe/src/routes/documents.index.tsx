@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { getNestApiUrl } from "@/lib/api-client";
+import { getNestApiUrl, resolveMediaUrl } from "@/lib/api-client";
 
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, TableShell } from "@/components/dashboard/PageKit";
@@ -192,6 +192,13 @@ function DocsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fields: CrudField[] = [
+    {
+      name: "filePath",
+      label: "Tệp tài liệu đính kèm",
+      type: "file",
+      required: true,
+      placeholder: "Chọn hoặc dán đường dẫn tệp tài liệu...",
+    },
     { name: "name", label: t("doc.col.name"), type: "text", required: true, placeholder: "Nhập tên tài liệu..." },
     {
       name: "docScope",
@@ -303,12 +310,16 @@ function DocsPage() {
 
   const onDownload = async (d: Document) => {
     try {
-      const url = await urlFn({ data: { id: d.id } });
-      if (!url) {
+      let rawUrl: string | null | undefined = d.filePath || d.url || d.fileUrl;
+      if (!rawUrl) {
+        rawUrl = await urlFn({ data: { id: d.id } });
+      }
+      if (!rawUrl) {
         toast.error(t("doc.noFile"));
         return;
       }
-      window.open(url, "_blank", "noopener");
+      const finalUrl = resolveMediaUrl(rawUrl) || rawUrl;
+      window.open(finalUrl, "_blank", "noopener");
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     }

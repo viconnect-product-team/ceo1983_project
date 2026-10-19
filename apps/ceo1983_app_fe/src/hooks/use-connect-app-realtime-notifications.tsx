@@ -238,14 +238,15 @@ export function useConnectAppRealtimeNotifications() {
           label: "Xem hồ sơ",
           onClick: () => {
             if (typeof window !== "undefined") {
+              const isApp = window.location.pathname.startsWith("/association");
               const uId =
                 data?.accepterUserId ||
                 data?.actorUserId ||
                 data?.safeDisplayData?.counterpartUserId;
               if (uId) {
-                window.location.href = `/connect-app/network/u:${uId}`;
+                window.location.href = isApp ? `/association/members/${uId}` : `/members/${uId}`;
               } else {
-                window.location.href = "/connect-app/network";
+                window.location.href = isApp ? "/association/members" : "/members";
               }
             }
           },
@@ -328,11 +329,32 @@ export function useConnectAppRealtimeNotifications() {
         notifCategory === "b2b" ||
         notif?.action?.targetRoute?.includes("opportunities");
 
+      const resolveTargetRoute = (target?: string | null) => {
+        const isApp = typeof window !== "undefined" && window.location.pathname.startsWith("/association");
+        if (!target || target === "/connect-app" || target === "/connect-app/notifications") {
+          return isApp ? "/association/notifications" : "/notifications";
+        }
+        if (target.startsWith("/connect-app/network")) {
+          const personPart = target.replace("/connect-app/network", "");
+          return isApp ? `/association/members${personPart}` : `/members${personPart}`;
+        }
+        if (target.startsWith("/connect-app/opportunities") || target.startsWith("/opportunities")) {
+          return isApp ? "/association/opportunities" : "/opportunities";
+        }
+        if (target.startsWith("/connect-app")) {
+          const sub = target.replace(/^\/connect-app\/?/, "");
+          return isApp ? (sub ? `/association/${sub}` : "/association") : (sub ? `/${sub}` : "/dashboard");
+        }
+        return target;
+      };
+
+      const finalRoute = resolveTargetRoute(notif?.action?.targetRoute);
+
       sendExternalNotification(title, {
         body: desc,
         tag: `notif-${notifId}`,
         type: isOpp ? "opportunity" : "notification",
-        url: notif?.action?.targetRoute || "/association",
+        url: finalRoute,
       });
 
       toast.info(title, {
@@ -341,8 +363,7 @@ export function useConnectAppRealtimeNotifications() {
           label: "Xem ngay",
           onClick: () => {
             if (typeof window !== "undefined") {
-              const route = notif?.action?.targetRoute || "/connect-app/notifications";
-              window.location.href = route;
+              window.location.href = finalRoute;
             }
           },
         },
