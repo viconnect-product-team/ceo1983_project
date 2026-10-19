@@ -1402,21 +1402,25 @@ function Home() {
               { name: "Cao Văn Mạnh", company: "Cao Văn Mạnh", code: "VM" },
               { name: "Dương Thị Huệ", company: "Dương Thị Huệ", code: "TH" },
               { name: "Nguyễn Văn Hùng", company: "Hùng Vương JSC", code: "VH" },
-            ]).map((m, i) => (
-              <Link
-                key={(m as any).id || (m as any).code || i}
-                to="/association/members"
-                className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-amber-400 transition"
-              >
-                <div className="size-9 bg-sky-900 rounded-xl outline outline-1 outline-amber-400 flex justify-center items-center shrink-0">
-                  <span className="text-yellow-500 text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(m.name)}</span>
-                </div>
-                <div className="inline-flex flex-col justify-start items-start min-w-0">
-                  <span className="text-slate-800 dark:text-white text-xs font-bold truncate max-w-[120px]">{m.name}</span>
-                  <span className="text-slate-400 text-[11px] truncate max-w-[120px]">{m.company || m.name}</span>
-                </div>
-              </Link>
-            ))}
+            ]).map((m, i) => {
+              const pName = (m as any).personName || (m as any).contact || m.name || "Hội viên";
+              const cName = (m as any).company || ((m as any).type === 'company' ? m.name : '') || (m as any).companyName || "Doanh nghiệp hội viên";
+              return (
+                <Link
+                  key={(m as any).id || (m as any).code || i}
+                  to="/association/members"
+                  className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-amber-400 transition"
+                >
+                  <div className="size-9 bg-sky-900 rounded-xl outline outline-1 outline-amber-400 flex justify-center items-center shrink-0">
+                    <span className="text-yellow-500 text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(pName)}</span>
+                  </div>
+                  <div className="inline-flex flex-col justify-start items-start min-w-0">
+                    <span className="text-slate-800 dark:text-white text-xs font-bold truncate max-w-[120px]">{pName}</span>
+                    <span className="text-slate-400 text-[11px] truncate max-w-[120px]">{cName}</span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
 

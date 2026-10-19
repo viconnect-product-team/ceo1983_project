@@ -293,6 +293,9 @@ export class MembersService {
       code: r.code ?? '',
       name: r.name,
       contact: r.contact ?? '',
+      personName: r.contact || r.name,
+      company: (r.type === 'company' ? r.name : '') || r.company_name || 'CLB Doanh Nhân CEO 1983',
+      companyName: (r.type === 'company' ? r.name : '') || r.company_name || 'CLB Doanh Nhân CEO 1983',
       email: r.email ?? '',
       phone: r.phone ?? '',
       type: mappedType,
@@ -332,8 +335,6 @@ export class MembersService {
       avatar: r.avatar || r.avatar_url || null,
       companyLogo: r.company_logo_url || null,
       companyLogoUrl: r.company_logo_url || null,
-      company: r.company_name || r.company || r.about || null,
-      companyName: r.company_name || r.company || r.about || null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     };
@@ -410,13 +411,18 @@ export class MembersService {
     const assocId = await this.getAssociationIdForUser(userId);
     const rows = await this.membersRepo.findDirectoryMembers(assocId, userId, connectedOnly);
 
-    return rows.map((m) => ({
-      id: m.id ?? m.user_id ?? m.code ?? '',
-      code: m.code ?? '',
-      name: m.name,
-      contact: m.contact ?? m.person_name ?? '',
-      personName: m.person_name ?? m.contact ?? m.name,
-      personTitle: m.person_title ?? '',
+    return rows.map((m) => {
+      const personalName = m.person_name ?? m.contact ?? m.name ?? '';
+      const compName = (m.type === 'company' ? m.name : '') || m.company_name || m.company || 'CLB Doanh Nhân CEO 1983';
+      return {
+        id: m.id ?? m.user_id ?? m.code ?? '',
+        code: m.code ?? '',
+        name: personalName,
+        company: compName,
+        companyName: compName,
+        contact: m.contact ?? m.person_name ?? '',
+        personName: personalName,
+        personTitle: m.person_title ?? '',
       email: m.email ?? null,
       phone: m.phone ?? null,
       about: m.about ?? null,
@@ -431,8 +437,9 @@ export class MembersService {
       executive_role: m.executive_role || 'member',
       department: m.department || 'Hội viên CEO 1983',
       role: m.executive_role || 'member',
-      avatar: m.avatar ?? null,
-    }));
+        avatar: m.avatar ?? null,
+      };
+    });
   }
 
   // Mobile API: get current user member info for profile
@@ -2481,7 +2488,6 @@ export class MembersService {
       representative: fullName,
       position: position || '',
       birthYear: birthYear || '',
-      boardWish: boardWish || 'Ban Thiện Nguyện & An Sinh Xã Hội',
       needs: needs || '',
       offers: offers || '',
       notes: notes || '',
@@ -2595,7 +2601,6 @@ export class MembersService {
       phone,
       companyName,
       position: position || 'Đại diện Doanh nghiệp',
-      boardWish: boardWish || 'Ban Thiện Nguyện & An Sinh Xã Hội',
       industry: industry || 'Kinh doanh & Quản lý',
       needs,
       offers,

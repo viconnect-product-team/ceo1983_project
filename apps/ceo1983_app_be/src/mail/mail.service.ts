@@ -499,6 +499,51 @@ export class MailService {
   }
 
   /**
+   * Helper tải hoặc tự sinh buffer ảnh VietQR để đính kèm inline CID trong Email MIME
+   * Đảm bảo Gmail, Outlook không bị lỗi vỡ ảnh do Google Image Proxy chặn URL bên ngoài.
+   */
+  private async getVietQrAttachment(
+    qrUrlOrText: string,
+    cid: string,
+    filename: string,
+  ): Promise<{ filename: string; content: Buffer; cid: string; contentType: string } | null> {
+    try {
+      if (qrUrlOrText.startsWith('http://') || qrUrlOrText.startsWith('https://')) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3500);
+        const res = await fetch(qrUrlOrText, { signal: controller.signal }).catch(() => null);
+        clearTimeout(timeout);
+        if (res && res.ok) {
+          const ab = await res.arrayBuffer();
+          return {
+            filename,
+            content: Buffer.from(ab),
+            cid,
+            contentType: 'image/png',
+          };
+        }
+      }
+    } catch {}
+
+    // Fallback: Tự sinh buffer mã QR nội bộ qua thư viện qrcode
+    try {
+      const qrBuf = await QRCode.toBuffer(qrUrlOrText, {
+        width: 320,
+        margin: 1,
+        color: { dark: '#003B95', light: '#FFFFFF' },
+      });
+      return {
+        filename,
+        content: qrBuf,
+        cid,
+        contentType: 'image/png',
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Gửi email xác nhận vé sự kiện điện tử (E-Ticket) kèm thông tin người đăng ký và mã QR check-in
    */
   async sendEventTicketEmail(options: SendEventTicketEmailOptions): Promise<{ ok: boolean; message?: string }> {
@@ -558,11 +603,17 @@ export class MailService {
       }
     }
 
+    const vietQrUrlStr = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
+    let vietQrAttachment: { filename: string; content: Buffer; cid: string; contentType: string } | null = null;
+    if (!isConfirmedTicket) {
+      vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vietqr_payment_qr', `vietqr-${registrationId}.png`);
+    }
+
     const appEventsUrl = 'https://14.225.217.232:5444/association/events';
     const qrSrc = qrAttachment
       ? 'cid:event_ticket_qr'
       : (qrCodeUrl || qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`);
-    const vietQrSrc = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
+    const vietQrSrc = vietQrAttachment ? 'cid:vietqr_payment_qr' : vietQrUrlStr;
 
     const subject = paymentConfirmed
       ? `[CLB CEO 1983] Xác Nhận Đã Thanh Toán & Vé Điện Tử Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
@@ -692,7 +743,7 @@ export class MailService {
             <div class="info-cell-label">Loại vé & Số lượng:</div>
             <div class="info-cell-value">${ticketCount} vé (${ticketType})</div>
           </div>
-          ${luckyNumber ? `
+          ${isConfirmedTicket && luckyNumber ? `
           <div class="info-row">
             <div class="info-cell-label">Số may mắn quay thưởng:</div>
             <div class="info-cell-value"><span class="badge-lucky">Lucky #${luckyNumber}</span></div>
@@ -733,12 +784,16 @@ export class MailService {
     <div class="footer">
       <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
       <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
-      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="https://14.225.217.232:5444" style="color: #93c5fd; text-decoration: none;">14.225.217.232:5444</a></div>
+      <div>Website chính thức: <a href="https://ceo1983.com" style="color: #93c5fd; text-decoration: none;">ceo1983.com</a></div>
     </div>
   </div>
 </body>
 </html>
     `;
+
+    const attachments: Array<{ filename: string; content: Buffer; cid: string; contentType: string }> = [];
+    if (qrAttachment) attachments.push(qrAttachment);
+    if (vietQrAttachment) attachments.push(vietQrAttachment);
 
     return this.dispatchSmtpEmail({
       to: cleanTo,
@@ -746,7 +801,7 @@ export class MailService {
       html,
       fromName: 'Ban Tổ Chức Sự Kiện CEO 1983',
       auditContext: `[EVENT_TICKET_EMAIL] RegId: ${registrationId} | Event: ${eventTitle} | Name: ${fullName}`,
-      attachments: qrAttachment ? [qrAttachment] : undefined,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
   }
 
@@ -1353,12 +1408,6 @@ export class MailService {
           <span class="info-label">Email tiếp nhận:</span>
           <span class="info-value" style="font-family: monospace;">${cleanTo}</span>
         </div>
-        ${boardWish ? `
-        <div class="info-row">
-          <span class="info-label">Ban nguyện vọng:</span>
-          <span class="info-value" style="color: #d97706;">${boardWish}</span>
-        </div>
-        ` : ''}
         ${industry ? `
         <div class="info-row">
           <span class="info-label">Lĩnh vực hoạt động:</span>
@@ -1913,7 +1962,9 @@ export class MailService {
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
     const isReminder = Boolean(reminderCount && reminderCount > 0);
     const appUrl = portalUrl || 'https://14.225.217.232:5444/association/profile';
-    const qrImg = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`HOIPHI ${memberCode || invoiceNo} ${memberName}`)}&accountName=${encodeURIComponent(bankOwner)}`;
+    const vietQrUrlStr = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`HOIPHI ${memberCode || invoiceNo} ${memberName}`)}&accountName=${encodeURIComponent(bankOwner)}`;
+    const vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vietqr_fee_qr', `vietqr-fee-${invoiceNo}.png`);
+    const qrImg = vietQrAttachment ? 'cid:vietqr_fee_qr' : vietQrUrlStr;
 
     const subject = isReminder
       ? `[CLB CEO 1983] Nhắc Đóng Hội Phí Thường Niên Năm ${year} (Lần ${reminderCount}) — Hội Viên ${memberName}`
@@ -2001,6 +2052,7 @@ export class MailService {
       html,
       fromName: 'CLB Doanh Nhân CEO 1983',
       auditContext: `[MEMBERSHIP_FEE_NOTICE] ${memberName} - #${invoiceNo} (${cleanTo})`,
+      attachments: vietQrAttachment ? [vietQrAttachment] : undefined,
     });
   }
 

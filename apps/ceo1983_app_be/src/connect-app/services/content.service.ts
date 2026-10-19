@@ -27,11 +27,109 @@ function safeParseImages(val: any): string[] {
   return [];
 }
 
+const DEFAULT_OFFICIAL_NEWS = [
+  {
+    code: 'NEWS-001',
+    title: 'Hiệp hội CEO 1983 phát động chương trình Xúc tiến Thương mại & Kết nối Giao thương Toàn diện 2026',
+    category: 'Giao thương B2B',
+    author: 'Ban Thư ký & Ban Truyền thông',
+    published_at: '2026-09-20',
+    excerpt: 'Chương trình trọng điểm quy tụ hơn 200+ doanh nghiệp hội viên cùng các phiên kết nối 1-1, ký kết thỏa thuận hợp tác thương mại đa ngành và mở rộng chuỗi cung ứng nội khối.',
+    cover_image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80',
+    views: 428,
+  },
+  {
+    code: 'NEWS-002',
+    title: 'Đại hội Hội viên thường niên CLB CEO 1983: Bầu cử Ban Chấp Hành nhiệm kỳ 2026 - 2029',
+    category: 'Hoạt động CLB',
+    author: 'Ban Chấp Hành CLB',
+    published_at: '2026-09-18',
+    excerpt: 'Đánh giá kết quả hoạt động năm qua và thông qua nghị quyết nhiệm kỳ mới với nhiều chính sách hỗ trợ tăng trưởng doanh thu và bảo trợ thương hiệu cho hội viên.',
+    cover_image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80',
+    views: 315,
+  },
+  {
+    code: 'NEWS-003',
+    title: 'Chương trình Caravan Thiện nguyện 2026: Trao 200 suất học bổng cho học sinh nghèo vượt khó',
+    category: 'Thiện nguyện',
+    author: 'Ban Thiện nguyện',
+    published_at: '2026-09-15',
+    excerpt: 'Hành trình lan tỏa yêu thương của cộng đồng doanh nhân tuổi Hợi 1983, mang hơi ấm và cơ hội học tập phát triển tài năng đến các điểm trường vùng cao.',
+    cover_image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=80',
+    views: 289,
+  },
+  {
+    code: 'NEWS-004',
+    title: 'Diễn đàn Kinh tế & Chuyển đổi số Doanh nghiệp: Tối ưu hóa chuỗi cung ứng bằng Trí tuệ Nhân tạo',
+    category: 'Tin doanh nghiệp',
+    author: 'Ban Xúc tiến Thương mại',
+    published_at: '2026-09-12',
+    excerpt: 'Chuyên gia công nghệ hàng đầu chia sẻ giải pháp tự động hóa vận hành, quản trị khách hàng CRM và giải pháp phân tích dữ liệu chuyên sâu cho lãnh đạo CEO.',
+    cover_image: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80',
+    views: 512,
+  },
+  {
+    code: 'NEWS-005',
+    title: 'Giải Golf Doanh nhân CEO 1983 Championship: Giao lưu thể thao & kết nối đối tác chiến lược',
+    category: 'Hoạt động CLB',
+    author: 'Ban Thể thao & Sự kiện',
+    published_at: '2026-09-10',
+    excerpt: 'Sân chơi thể thao đẳng cấp kết hợp dạ tiệc Gala vinh danh các tay golf xuất sắc và tạo điều kiện xúc tiến các thương vụ đầu tư quy mô lớn.',
+    cover_image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&auto=format&fit=crop&q=80',
+    views: 376,
+  },
+  {
+    code: 'NEWS-006',
+    title: 'Doanh nghiệp thành viên CEO 1983 ra mắt dòng sản phẩm tiêu chuẩn xuất khẩu sang thị trường Châu Âu',
+    category: 'Tin doanh nghiệp',
+    author: 'Ban Truyền thông',
+    published_at: '2026-09-05',
+    excerpt: 'Khẳng định chất lượng sản phẩm thương hiệu Việt trên bản đồ quốc tế, mở ra cơ hội hợp tác phân phối độc quyền và gia công liên kết cho các hội viên CLB.',
+    cover_image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
+    views: 640,
+  },
+];
+
 @Injectable()
 export class ConnectContentService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async ensureSeedNews(): Promise<void> {
+    try {
+      const count = await this.prisma.$queryRaw<any[]>`
+        SELECT COUNT(*)::int as cnt FROM public.news
+      `.catch(() => [{ cnt: 0 }]);
+      if (Number(count[0]?.cnt || 0) === 0) {
+        for (const item of DEFAULT_OFFICIAL_NEWS) {
+          const imgsJson = JSON.stringify([item.cover_image]);
+          await this.prisma.$executeRaw`
+            INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, cover_image, images, views, created_at, updated_at)
+            VALUES (
+              ${item.code},
+              ${item.title},
+              ${item.category},
+              ${item.author},
+              ${item.published_at},
+              'published',
+              ${item.excerpt},
+              ${item.excerpt},
+              ${item.cover_image},
+              ${imgsJson}::jsonb,
+              ${item.views},
+              NOW(),
+              NOW()
+            )
+            ON CONFLICT DO NOTHING
+          `.catch(() => {});
+        }
+      }
+    } catch (e: any) {
+      console.warn('ensureSeedNews warning:', e?.message);
+    }
+  }
+
   async listPublishedNews() {
+    await this.ensureSeedNews();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, category, author, excerpt, cover_image, images, views, created_at
       FROM public.news
@@ -212,6 +310,7 @@ export class ConnectContentService {
   // ---------------------------------------------------------------------------
 
   async listAdminNews() {
+    await this.ensureSeedNews();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, code, title, category, author, published_at, views, status, excerpt, content, cover_image, images, association_id, created_at, updated_at
       FROM public.news

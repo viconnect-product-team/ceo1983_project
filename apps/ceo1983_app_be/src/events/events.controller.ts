@@ -177,7 +177,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc', 'btk', 'btv', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_tai_chinh', 'truong_ban_kiem_soat', 'member')
   @Post('registrations/:id/confirm-payment')
   async confirmPayment(
     @Request() req: any,
@@ -188,7 +188,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc', 'btk', 'btv', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_tai_chinh', 'truong_ban_kiem_soat', 'member')
   @Post('registrations/:id/reconcile-payment')
   async reconcilePayment(
     @Request() req: any,

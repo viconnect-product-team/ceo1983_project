@@ -691,18 +691,18 @@ function RegPage() {
       {/* Main Table */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
         <div className="relative overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm">
+          <table className="w-full min-w-[1450px] border-separate border-spacing-0 text-sm">
             <thead>
-              <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
-                <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">Mã ĐK</th>
-                <th className="px-4 py-3 border-b border-border">Người tham gia</th>
-                <th className="px-4 py-3 border-b border-border">Chỗ ngồi / Bàn VIP</th>
-                <th className="px-4 py-3 border-b border-border">Hạng vé</th>
-                <th className="px-4 py-3 border-b border-border">Thanh toán & Phí</th>
-                <th className="px-4 py-3 border-b border-border">Check-in</th>
-                <th className="px-4 py-3 border-b border-border">Trạng thái</th>
-                <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">Thao tác quản trị</th>
+              <tr className="border-b border-border bg-secondary text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <th className="sticky left-0 z-20 w-14 min-w-[56px] bg-secondary px-3 py-3 text-center text-xs font-bold border-b border-border whitespace-nowrap">STT</th>
+                <th className="sticky left-[56px] z-20 w-24 min-w-[96px] bg-secondary px-4 py-3 text-xs font-bold border-b border-border whitespace-nowrap">Mã ĐK</th>
+                <th className="min-w-[220px] px-4 py-3 border-b border-border whitespace-nowrap">Người tham gia</th>
+                <th className="min-w-[180px] px-4 py-3 border-b border-border whitespace-nowrap">Chỗ ngồi / Bàn VIP</th>
+                <th className="min-w-[120px] px-4 py-3 border-b border-border whitespace-nowrap">Hạng vé</th>
+                <th className="min-w-[190px] px-4 py-3 border-b border-border whitespace-nowrap">Thanh toán & Phí</th>
+                <th className="min-w-[130px] px-4 py-3 border-b border-border whitespace-nowrap">Check-in</th>
+                <th className="min-w-[110px] px-4 py-3 border-b border-border whitespace-nowrap">Trạng thái</th>
+                <th className="sticky right-0 z-20 min-w-[440px] bg-secondary px-4 py-3 text-right text-xs font-bold border-b border-border shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap">Thao tác quản trị</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -713,19 +713,19 @@ function RegPage() {
 
                 return (
                   <tr key={r.id} className="group border-b border-border/50 transition hover:bg-secondary/40">
-                    <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                    <td className="sticky left-0 z-10 w-14 min-w-[56px] bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted border-b border-border/50 whitespace-nowrap">
                       {(tc.page - 1) * tc.pageSize + idx + 1}
                     </td>
-                    <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-bold text-primary group-hover:bg-muted/70 border-b border-border/50">
+                    <td className="sticky left-[56px] z-10 w-24 min-w-[96px] bg-card px-4 py-3 font-mono text-[12px] font-bold text-primary group-hover:bg-muted border-b border-border/50 whitespace-nowrap">
                       {r.id}
                     </td>
-                    <td className="px-4 py-3 border-b border-border/50">
+                    <td className="min-w-[220px] px-4 py-3 border-b border-border/50">
                       <div className="font-semibold text-foreground">{r.memberName}</div>
                       <div className="text-[11px] text-muted-foreground">{r.email} · {r.memberCode}</div>
                     </td>
 
                     {/* Chỗ ngồi / Bàn VIP */}
-                    <td className="px-4 py-3 border-b border-border/50">
+                    <td className="min-w-[180px] px-4 py-3 border-b border-border/50">
                       {r.seatAssignment ? (
                         <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
                           <MapPin className="h-3.5 w-3.5" />
@@ -753,7 +753,7 @@ function RegPage() {
                       )}
                     </td>
 
-                    <td className="px-4 py-3 border-b border-border/50">
+                    <td className="min-w-[120px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
                         <Tag className="h-3 w-3" />
                         {r.ticketType || "VIP Pass"}
@@ -761,7 +761,7 @@ function RegPage() {
                     </td>
 
                     {/* Thanh toán & Phí */}
-                    <td className="px-4 py-3 border-b border-border/50">
+                    <td className="min-w-[190px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
                           <span
@@ -786,7 +786,7 @@ function RegPage() {
                     </td>
 
                     {/* Checkin status */}
-                    <td className="px-4 py-3 border-b border-border/50">
+                    <td className="min-w-[130px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
                       {r.checkedInAt ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -797,15 +797,15 @@ function RegPage() {
                       )}
                     </td>
 
-                    <td className="px-4 py-3 border-b border-border/50">
+                    <td className="min-w-[110px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
                       <Pill color={isPaid ? "success" : isCancelled ? "danger" : "warning"}>
                         {isCancelled ? "Đã hủy" : isPaid ? "Hợp lệ" : "Chờ phí"}
                       </Pill>
                     </td>
 
                     {/* Action Buttons */}
-                    <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="sticky right-0 z-10 min-w-[440px] bg-card px-4 py-3 group-hover:bg-card border-b border-border/50 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                         {/* Xem QR checkin */}
                         <button
                           onClick={() => handleOpenQr(r)}

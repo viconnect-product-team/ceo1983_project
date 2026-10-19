@@ -49,8 +49,9 @@ export class UsersController {
     @Request() req: any,
     @Body() body: ChangePasswordDto,
   ) {
+    const userId = req.user?.id || req.user?.sub || req.user?.userId || '';
     return this.usersService.changePassword(
-      req.user.id,
+      userId,
       body.currentPassword || '',
       body.newPassword,
       {

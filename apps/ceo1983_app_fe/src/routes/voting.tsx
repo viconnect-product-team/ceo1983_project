@@ -709,8 +709,8 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
                       const evDate = (ev as any).date || (ev as any).eventDate || (ev as any).startDate;
                       if (evDate) {
                         const dStr = typeof evDate === "string" ? evDate.slice(0, 10) : new Date(evDate).toISOString().slice(0, 10);
-                        if (!startsAt) setStartsAt(dStr);
-                        if (!endsAt) setEndsAt(dStr);
+                        setStartsAt(dStr);
+                        setEndsAt(dStr);
                       }
                     }
                   }

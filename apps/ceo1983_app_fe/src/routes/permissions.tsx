@@ -16,8 +16,8 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { Card } from "@/components/dashboard/PageKit";
 import { useRole } from "@/hooks/use-role";
 import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
+import { CommitteesPermissionManager } from "@/components/dashboard/CommitteesPermissionManager";
 import { MemberPermissionsByCommittee } from "@/components/dashboard/MemberPermissionsByCommittee";
-import { DepartmentManagementSection } from "@/components/dashboard/DepartmentManagementSection";
 import { dispatchPermissionSyncEvent } from "@/lib/rbac-permission-helpers";
 import { fetchNestApi } from "@/lib/api-client";
 
@@ -139,7 +139,7 @@ function PermissionsPage() {
     srsRole === "quan_tri" ||
     srsRole === "ban_dieu_hanh";
 
-  const [activeTab, setActiveTab] = useState<"committee" | "matrix" | "departments">("committee");
+  const [activeTab, setActiveTab] = useState<"matrix" | "committees" | "accounts_by_committee">("matrix");
 
   // Fetch Members List for Committee Permissions
   const {
@@ -265,21 +265,8 @@ function PermissionsPage() {
               </h1>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-muted/70 border border-border/60">
-              <button
-                type="button"
-                onClick={() => setActiveTab("committee")}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "committee"
-                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>Theo Ban & Hội Viên</span>
-              </button>
-
+            {/* Navigation Tabs (3 Phân Hệ Phân Quyền) */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-muted/70 border border-border/60">
               <button
                 type="button"
                 onClick={() => setActiveTab("matrix")}
@@ -290,38 +277,39 @@ function PermissionsPage() {
                 }`}
               >
                 <SlidersHorizontal className="w-4 h-4" />
-                <span>Ma Trận Hệ Thống & App Mobile</span>
+                <span>Phân Hệ 1: Ma Trận Phân Quyền</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setActiveTab("departments")}
+                onClick={() => setActiveTab("committees")}
                 className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "departments"
+                  activeTab === "committees"
                     ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
                     : "text-muted-foreground hover:text-foreground hover:bg-card/50"
                 }`}
               >
                 <Building2 className="w-4 h-4" />
-                <span>Ban Chuyên Môn</span>
+                <span>Phân Hệ 2: Ban Chuyên Môn</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("accounts_by_committee")}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "accounts_by_committee"
+                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Phân Hệ 3: Phân Quyền Tài Khoản Theo Từng Ban</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tab 1: Member Permissions by Committee */}
-        <div className={activeTab === "committee" ? "block" : "hidden"}>
-          <MemberPermissionsByCommittee
-            members={members}
-            loading={membersLoading}
-            onUpdateRoleDept={handleUpdateRoleDept}
-            onDirtyChange={setCommitteeDirty}
-            saveTriggerRef={committeeSaveRef}
-            discardTriggerRef={committeeDiscardRef}
-          />
-        </div>
-
-        {/* Tab 2: System & Mobile App RBAC Matrix */}
+        {/* Phân Hệ 1: Ma Trận Phân Quyền Hệ Thống & App Mobile */}
         <div className={activeTab === "matrix" ? "block" : "hidden"}>
           <RbacPermissionMatrix
             onDirtyChange={setMatrixDirty}
@@ -330,11 +318,28 @@ function PermissionsPage() {
           />
         </div>
 
-        {/* Tab 3: Custom Department Management */}
-        <div className={activeTab === "departments" ? "block" : "hidden"}>
+        {/* Phân Hệ 2: Phân Quyền Ban Chuyên Môn */}
+        <div className={activeTab === "committees" ? "block" : "hidden"}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <DepartmentManagementSection />
+            <CommitteesPermissionManager
+              onMatrixChanged={() => {
+                qc.invalidateQueries({ queryKey: ["permissions-members"] });
+                refetchMembers();
+              }}
+            />
           </div>
+        </div>
+
+        {/* Phân Hệ 3: Phân Quyền Tài Khoản Theo Từng Ban */}
+        <div className={activeTab === "accounts_by_committee" ? "block" : "hidden"}>
+          <MemberPermissionsByCommittee
+            members={members}
+            loading={membersLoading}
+            onUpdateRoleDept={handleUpdateRoleDept}
+            onDirtyChange={setCommitteeDirty}
+            saveTriggerRef={committeeSaveRef}
+            discardTriggerRef={committeeDiscardRef}
+          />
         </div>
       </div>
 

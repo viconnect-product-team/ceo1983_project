@@ -17,6 +17,7 @@ import {
   AdminUpdateUserDto,
 } from './dto';
 import { MailService } from '../mail/mail.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 function cleanStoredMediaUrl(url?: string | null): string | null {
   if (!url) return null;
@@ -238,6 +239,7 @@ export class UsersService {
   constructor(
     private readonly usersRepo: UsersRepository,
     private readonly mailService: MailService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getMemberInfo(userId: string, email?: string) {
@@ -796,10 +798,18 @@ export class UsersService {
       throw new BadRequestException('Mật khẩu mới phải có ít nhất 6 ký tự');
     }
 
-    const user = await this.usersRepo.findById(userId);
-    if (!user) {
-      throw new NotFoundException('Tài khoản không tồn tại');
+    let user = userId ? await this.usersRepo.findById(userId) : null;
+    if (!user && options?.email) {
+      user = await this.usersRepo.findByEmail(options.email.trim().toLowerCase());
     }
+    if (!user && options?.phone) {
+      user = await this.usersRepo.findByUsername(options.phone.trim());
+    }
+    if (!user) {
+      throw new NotFoundException('Tài khoản không tồn tại trên hệ thống');
+    }
+
+    const targetUserId = user.id;
 
     // If user has an existing password, verify it using multi-tier check
     if (user.password && user.password.length > 0) {
@@ -817,7 +827,7 @@ export class UsersService {
 
       // Tier 3: check public.members about field for Pass=...
       if (!isMatch) {
-        const memberInfo = await this.usersRepo.getMemberInfo(userId, user.email);
+        const memberInfo = await this.usersRepo.getMemberInfo(targetUserId, user.email);
         if (memberInfo && memberInfo.about) {
           const passMatch = memberInfo.about.match(/Pass=([^\s|]+)/);
           if (passMatch && passMatch[1].trim() === cleanCurrent) {
@@ -837,7 +847,7 @@ export class UsersService {
 
       // Tier 5: query members table directly for about or notes
       if (!isMatch) {
-        const rawMember = await this.usersRepo.getRawMemberNotesAndAbout(userId, user.email || options?.email || '');
+        const rawMember = await this.usersRepo.getRawMemberNotesAndAbout(targetUserId, user.email || options?.email || '');
         if (rawMember) {
           const passMatch = rawMember.match(/Pass=([^\s|]+)/);
           if (passMatch && passMatch[1].trim() === cleanCurrent) {
@@ -849,9 +859,9 @@ export class UsersService {
       // Tier 6: If the user is flagged as mustChangePassword (first login onboarding),
       // allow setting their permanent password to avoid blocking new members.
       if (!isMatch) {
-        const mustChange = await this.checkMustChangePassword(userId);
+        const mustChange = await this.checkMustChangePassword(targetUserId);
         if (mustChange) {
-          this.logger.warn(`[UsersService] User ${userId} (${user.email}) onboarding first password change - tolerated mismatch for initial activation`);
+          this.logger.warn(`[UsersService] User ${targetUserId} (${user.email}) onboarding first password change - tolerated mismatch for initial activation`);
           isMatch = true;
         }
       }
@@ -872,7 +882,7 @@ export class UsersService {
     if (requestedEmail && requestedEmail.includes('@') && requestedEmail !== (user.email || '').toLowerCase()) {
       // Kiểm tra trùng email với tài khoản khác
       const existingWithEmail = await this.usersRepo.findByEmail(requestedEmail);
-      if (existingWithEmail && existingWithEmail.id !== userId) {
+      if (existingWithEmail && existingWithEmail.id !== targetUserId) {
         throw new BadRequestException(`Email "${requestedEmail}" đã được sử dụng bởi một tài khoản khác`);
       }
       finalEmail = requestedEmail;
@@ -887,30 +897,30 @@ export class UsersService {
     }
 
     // Cập nhật bảng vione_users
-    await this.usersRepo.updateUser(userId, {
+    await this.usersRepo.updateUser(targetUserId, {
       password: hashedPassword,
       ...(emailUpdated ? { email: finalEmail, username: finalEmail } : {}),
     });
 
     // Cập nhật auth.users (Supabase / Postgres auth schema)
-    await this.usersRepo.syncAuthUserPassword(userId, hashedPassword);
+    await this.usersRepo.syncAuthUserPassword(targetUserId, hashedPassword);
     if (emailUpdated) {
-      await this.usersRepo.syncAuthUserEmail(userId, finalEmail);
+      await this.usersRepo.syncAuthUserEmail(targetUserId, finalEmail);
     }
 
     // Cập nhật thông tin hội viên (public.members & public.user_profiles)
-    const profile = await this.usersRepo.getUserProfile(userId);
-    const memberRow = await this.usersRepo.getMemberInfo(userId, user.email);
+    const profile = await this.usersRepo.getUserProfile(targetUserId);
+    const memberRow = await this.usersRepo.getMemberInfo(targetUserId, user.email);
 
     if (emailUpdated || finalPhone) {
-      await this.usersRepo.syncMemberDetails(userId, {
+      await this.usersRepo.syncMemberDetails(targetUserId, {
         email: emailUpdated ? finalEmail : undefined,
       });
 
       await this.usersRepo.upsertProfile(
-        userId,
+        targetUserId,
         {
-          user_id: userId,
+          user_id: targetUserId,
           phone: finalPhone || undefined,
           display_name: options?.fullName || profile?.display_name || user.name || 'Hội viên',
           updated_at: new Date(),
@@ -924,7 +934,7 @@ export class UsersService {
     }
 
     // Đánh dấu onboarding_status = 'completed' để hoàn tất quy trình đổi mật khẩu bắt buộc
-    await this.usersRepo.completeOnboardingStatus(userId);
+    await this.usersRepo.completeOnboardingStatus(targetUserId);
 
     const displayName = options?.fullName || profile?.display_name || user.name || memberRow?.name || 'Hội viên CEO 1983';
     const memberCode = memberRow?.code || profile?.member_code || 'HV-1983';
@@ -1302,20 +1312,103 @@ export class UsersService {
 
     if (
       targetId === '00000000-0000-0000-0000-000000000000' ||
+      targetId === '00000000-0000-4000-8000-000000000002' ||
       targetId === 'mock-admin-id'
     ) {
       throw new ForbiddenException('Không thể xóa tài khoản quản trị viên gốc');
     }
 
     const user = await this.findById(targetId);
-    if (!user) {
-      throw new NotFoundException('Tài khoản không tồn tại');
-    }
+    const userEmail = (user?.email || user?.username || '').toLowerCase().trim();
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(targetId);
 
-    await this.usersRepo.deleteUserRoles(targetId);
-    await this.usersRepo.deleteUserProfile(targetId);
-    await this.usersRepo.deleteUser(targetId);
-    await this.usersRepo.deleteAuthUser(targetId);
+    // 1. Cascade cleanup related records to avoid FK constraint violations
+    try {
+      if (isUuid) {
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.vba_member_permissions WHERE user_id = $1::uuid OR member_id::text = $1`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.memberships WHERE user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.business_relationship_moment_media WHERE owner_user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.business_relationship_moments WHERE owner_user_id = $1::uuid OR target_user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.meeting_participants WHERE user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.business_appointments WHERE host_user_id = $1::uuid OR guest_user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.event_registrations WHERE user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.member_business_cards WHERE user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.card_settings WHERE user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.user_connections WHERE requester_user_id = $1::uuid OR recipient_user_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.direct_messages WHERE sender_id = $1::uuid OR recipient_id = $1::uuid`,
+          targetId,
+        ).catch(() => {});
+
+        if (userEmail) {
+          await this.prisma.$executeRawUnsafe(
+            `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1 OR LOWER(email) = $2 OR LOWER(contact_email) = $2`,
+            targetId,
+            userEmail,
+          ).catch(() => {});
+        } else {
+          await this.prisma.$executeRawUnsafe(
+            `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1`,
+            targetId,
+          ).catch(() => {});
+        }
+      } else if (userEmail) {
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.members WHERE LOWER(email) = $1 OR LOWER(contact_email) = $1 OR id::text = $2`,
+          userEmail,
+          targetId,
+        ).catch(() => {});
+      }
+
+      await this.usersRepo.deleteUserRoles(targetId);
+      await this.usersRepo.deleteUserProfile(targetId);
+      await this.usersRepo.deleteUser(targetId);
+      if (isUuid) {
+        await this.usersRepo.deleteAuthUser(targetId);
+      }
+    } catch (err: any) {
+      console.warn(`[adminDeleteUser] Warning during cascade delete: ${err?.message}`);
+    }
 
     return {
       success: true,

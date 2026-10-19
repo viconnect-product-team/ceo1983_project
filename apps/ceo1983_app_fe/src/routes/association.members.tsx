@@ -240,7 +240,7 @@ function MembersScreen() {
   }, [meetingsList]);
 
   const confirmedMeetingsCount = useMemo(() => {
-    return meetingsList.filter((m) => m.status === "confirmed" || m.status === "accepted").length;
+    return meetingsList.filter((m) => m.status === "confirmed" || m.status === "accepted" || m.status === "scheduled" || m.status === "upcoming" || m.status === "active").length;
   }, [meetingsList]);
 
   const fetchMeetings = async () => {
@@ -619,7 +619,7 @@ function MembersScreen() {
   const filteredMeetings = useMemo(() => {
     let list = meetingsList;
     if (meetingSubTab === "confirmed") {
-      list = list.filter((m) => m.status === "confirmed" || m.status === "accepted");
+      list = list.filter((m) => m.status === "confirmed" || m.status === "accepted" || m.status === "scheduled" || m.status === "upcoming" || m.status === "active");
     } else if (meetingSubTab === "pending") {
       list = list.filter((m) => m.status === "pending" || m.status === "draft");
     }

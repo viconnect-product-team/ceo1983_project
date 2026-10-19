@@ -19,6 +19,9 @@
 # - Kiến trúc Thuần NestJS (Pure NestJS Architecture): 100% dữ liệu nghiệp vụ (Meetings, Opportunities, Marketplace, News, Events, Documents, Sponsors, Members) phải đi qua NestJS REST API (`fetchNestApiFromServer` / `fetchNestApi`) kết nối trực tiếp đến PostgreSQL `ceo1983_project` trên `14.225.217.232:5436`. TUYỆT ĐỐI KHÔNG dùng Supabase PostgREST client (`supabaseAdmin.from(...)`, `getDb.from(...)`) trong các server function nghiệp vụ nhằm tránh lỗi PostgREST schema cache.
 # - Chuẩn Nhập Ngày Tháng Di Động & Mở Picker Native (Standard Date Input & Native Mobile Picker): Khi tạo trường nhập ngày tháng (`StandardDateInput`), BẮT BUỘC phải có cơ chế tự động mask/chèn dấu `/` khi người dùng gõ số trên bàn phím số di động (`inputMode="numeric"`) do iOS không có phím gạch chéo. Icon lịch BẮT BUỘC sử dụng Native `<input type="date">` overlay trong suốt (`opacity-0 absolute inset-0`) để cử chỉ chạm vật lý kích hoạt trực tiếp picker native của iOS/Android mà không bị WebKit chặn `.showPicker()`.
 # - Tiêu Chuẩn Responsive Di Động & Thanh Cuộn Danh Bạ (Mobile Responsiveness & Viewport Adaptability): Mọi màn hình danh bạ/danh sách dài TUYỆT ĐỐI KHÔNG dùng thanh dải chữ cái A-Z dọc cố định trên màn hình điện thoại (gây đè nội dung và lỗi chạm). Phải dùng thanh A-Z cuộn ngang (`sm:hidden overflow-x-auto`), thanh dọc chỉ hiện từ màn hình tablet/desktop (`hidden sm:flex`). Các nút thao tác trên thẻ hội viên phải dàn lưới cân đối (`grid grid-cols-5 sm:flex`), container phải responsive `flex-col sm:flex-row` để đảm bảo tương thích 100% các dòng điện thoại từ 320px đến 430px+.
+# - Quy Chuẩn Email & Đính Kèm Ảnh VietQR Inline CID: Mọi email có mã QR thanh toán hoặc vé QR BẮT BUỘC phải đính kèm dưới dạng MIME Attachment Inline CID (`cid:vietqr_payment_qr`, `cid:event_ticket_qr`) bằng thư viện `qrcode` hoặc tải buffer. Tuyệt đối không dùng URL ảnh bên ngoài (`img.vietqr.io`, v.v.) vì Google Image Proxy của Gmail và các mail client sẽ chặn và làm vỡ ảnh. Luồng đăng ký sự kiện có phí chỉ gửi thông báo kèm VietQR thanh toán; tuyệt đối không sinh mã lucky draw hay vé QR cho đến khi quản trị viên xác nhận đã thanh toán (`confirmBankPayment`).
+# - Bản Đồ Chọn Vị Trí Di Chuyển Ghim Trực Quan (Interactive Map Picker): Mọi tính năng chọn địa điểm cuộc họp/sự kiện BẮT BUỘC tích hợp bản đồ tương tác với điểm ghim đỏ có thể kéo thả (`draggable pin`), chạm hoặc click để nhảy điểm ghim, tự động tìm kiếm địa danh và đảo ngược địa chỉ (Reverse Geocoding OpenStreetMap Nominatim), định vị GPS chính xác như các ứng dụng đặt xe/giao hàng.
+# - Đồng Bộ Dữ Liệu CSDL & Ứng Dụng (Database-First Synchronization): Các danh mục tin tức và biểu quyết phải luôn đồng bộ giữa Web CRM và App qua PostgreSQL `public.news`, `public.polls`. Sử dụng cơ chế nạp tự động (Seed on Read) khi bảng trống để đảm bảo cả hệ thống quản trị và ứng dụng di động hiển thị đồng nhất 100% các bài viết và phiên biểu quyết chuẩn Điều lệ Hiệp hội.
 
 
 # ------------------------------------------------------------------------------
@@ -2093,5 +2096,21 @@
   + Email client (Gmail, Outlook, Apple Mail) chặn hoàn toàn ảnh từ domain ngoài như `api.qrserver.com`.
   + Bắt buộc sinh mã QR dạng ảnh PNG buffer bằng thư viện `qrcode` và đính kèm trực tiếp vào email thông qua cơ chế Content-ID (`cid:event_ticket_qr`, `cid:event_payment_qr`) với `Content-Disposition: inline`.
   + Thẻ HTML ảnh trong template email trỏ trực tiếp vào CID nội tuyến: `<img src="cid:event_ticket_qr" alt="Mã QR Check-in" width="220" height="220" />`.
+
+# [BẮT BUỘC 118] Quy Chuẩn 3 Tính Năng Phân Quyền CRM, Quản Lý Ban Chuyên Môn & Xóa Tài Khoản Cascade
+- Quy Chuẩn 1: Hệ Thống Phân Quyền CRM 3 Phân Hệ Rõ Ràng (`permissions.tsx`):
+  + Phân Hệ 1: Ma Trận Phân Quyền Vai Trò Hệ Thống (`RbacPermissionMatrix`).
+  + Phân Hệ 2: Phân Quyền Theo Ban Chuyên Môn (`CommitteesPermissionManager`).
+  + Phân Hệ 3: Phân Quyền Tài Khoản Theo Từng Ban (`MemberPermissionsByCommittee`): Nhóm tài khoản theo ban chuyên môn, kế thừa 4 quyền cốt lõi (Thêm, Sửa, Xóa, Duyệt) từ Ban & Vai trò, đồng thời cho phép quản trị viên tùy biến ghi đè quyền hạn riêng biệt cho từng tài khoản cụ thể.
+  + Xóa bỏ tab "Quản Lý Ban Chuyên Môn" trùng lặp khỏi trang `/permissions` (chức năng này đã có riêng tại `/departments` ở Sidebar).
+- Quy Chuẩn 2: Quản Lý Ban Chuyên Môn Độc Lập Khởi Tạo 0 Thành Viên (`departments.tsx`):
+  + Ban chuyên môn mới tạo BẮT BUỘC khởi tạo với đúng 0 thành viên (`memberCount = 0`), tuyệt đối không tự động gán tài khoản ngẫu nhiên.
+  + Việc phân bổ thành viên vào ban chỉ được thực hiện thông qua trang Quản lý tài khoản (`/accounts`).
+  + Modal chỉnh sửa ban chuyên môn và nút "Thành viên" trên bảng BẮT BUỘC hiển thị danh sách các tài khoản đang thuộc ban đó kèm liên kết nhanh đến `/accounts`.
+- Quy Chuẩn 3: Xóa Tài Khoản Cascade Toàn Diện (`users.service.ts`, `accounts.tsx`):
+  + Khi xóa tài khoản tại `/accounts`, backend thực hiện xóa dọn dẹp theo thứ tự khóa ngoại (Cascade FK Cleanup) trên 12 bảng liên kết: `vba_member_permissions`, `memberships`, `business_relationship_moment_media`, `business_relationship_moments`, `meeting_participants`, `business_appointments`, `event_registrations`, `member_business_cards`, `card_settings`, `user_connections`, `direct_messages`, và `members` trước khi xóa `vione_users`/`auth.users`.
+  + Đảm bảo không xảy ra lỗi 500 ForeignKeyViolation của PostgreSQL và tài khoản bị xóa triệt để khỏi hệ thống và đồng bộ ngay trên giao diện.
+
+
 
 

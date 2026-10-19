@@ -327,16 +327,36 @@ function AccountsPage() {
     setIsEditOpen(false);
   };
 
-  const handleDeleteAccount = (acc: UserAccountItem) => {
+  const handleDeleteAccount = async (acc: UserAccountItem) => {
     if (acc.role === "quan_tri" || acc.code === "ADMIN-001") {
       toast.error("Tài khoản Quản trị cấp cao không thể xóa!");
       return;
     }
 
-    const next = accounts.filter((a) => a.id !== acc.id);
-    setAccounts(next);
-    setDeleteConfirmAccount(null);
-    toast.success(`Đã xóa tài khoản "${acc.name}". Bấm 'Lưu Thay Đổi' để hoàn tất.`);
+    try {
+      // 1. Call Backend Delete API for user and member
+      if (acc.id) {
+        await Promise.allSettled([
+          fetchNestApi(`/users/${acc.id}`, { method: "DELETE" }),
+          fetchNestApi(`/members/${acc.id}`, { method: "DELETE" }),
+        ]);
+      }
+
+      // 2. Update local state
+      const next = accounts.filter((a) => a.id !== acc.id && a.email !== acc.email);
+      setAccounts(next);
+      setDeleteConfirmAccount(null);
+
+      // 3. Persist to storage & notify other tabs
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+      } catch {}
+
+      toast.success(`Đã xóa tài khoản "${acc.name}" thành công.`);
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi xóa tài khoản");
+    }
   };
 
   const filteredAccounts = useMemo(() => {

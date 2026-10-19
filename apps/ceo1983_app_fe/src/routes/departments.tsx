@@ -147,7 +147,14 @@ function matchesDept(m: any, d: DepartmentItem): boolean {
     return mDept.includes("thiện nguyện") || mDept.includes("từ thiện") || mDept === "btn" || mDept === "thien_nguyen";
   }
 
-  return mDept.includes(dName) || dName.includes(mDept) || (Boolean(dCode) && mDept.includes(dCode));
+  // For custom non-core departments, require exact match or canonical slug equality
+  const norm = (s: string) =>
+    s
+      .replace(/^(ban|phòng|khoa)\s+/gi, "")
+      .replace(/\s+/g, "_")
+      .toLowerCase();
+
+  return norm(mDept) === norm(dName) || (Boolean(dCode) && norm(mDept) === norm(dCode));
 }
 
 function DepartmentsPage() {
@@ -524,10 +531,15 @@ function DepartmentsPage() {
                     </td>
 
                     <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[11px] border border-amber-500/20">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenView(dept)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[11px] border border-amber-500/20 hover:bg-amber-500/20 transition cursor-pointer"
+                        title="Bấm để xem danh sách tài khoản thuộc ban"
+                      >
                         <Users className="h-3 w-3" />
                         <span>{deptMembers.length} thành viên</span>
-                      </span>
+                      </button>
                     </td>
 
                     <td className="py-3 px-4">
@@ -866,6 +878,54 @@ function DepartmentsPage() {
                   </select>
                 </div>
               </div>
+
+              {editingDeptId && (
+                <div className="rounded-xl border border-border/70 p-3 bg-muted/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-[#003B95]" />
+                      <span>Tài khoản thuộc ban này ({deptMembersMap[editingDeptId]?.length || 0})</span>
+                    </label>
+                    <a
+                      href="/accounts"
+                      className="text-[11px] font-semibold text-[#003B95] hover:underline"
+                    >
+                      Quản lý tại /accounts →
+                    </a>
+                  </div>
+                  {(!deptMembersMap[editingDeptId] || deptMembersMap[editingDeptId].length === 0) ? (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Ban này chưa có tài khoản nào được phân công. Hãy gán tài khoản vào ban tại trang Quản lý tài khoản.
+                    </p>
+                  ) : (
+                    <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                      {deptMembersMap[editingDeptId].map((m: any, idx: number) => (
+                        <div
+                          key={m.id || m.code || idx}
+                          className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg bg-background border border-border/50"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-6 h-6 rounded-full bg-[#003B95]/10 text-[#003B95] flex items-center justify-center font-bold text-[10px] shrink-0">
+                              {(m.name || m.fullName || "U").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-foreground truncate">
+                                {m.name || m.fullName || "Hội viên"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground truncate">
+                                {m.email} {m.phone ? `• ${m.phone}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60 shrink-0">
+                            {m.role || m.executiveRole || "Thành viên"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-3 border-t border-border">
                 <button

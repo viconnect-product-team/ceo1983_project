@@ -311,37 +311,46 @@ export class MeetingsService {
         }
         const targetEmail = (recipientEmail || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
 
-        await this.mailService.sendMeetingInvitationEmail({
-          to: targetEmail,
-          recipientName: partnerName || 'Quý Hội viên CEO 1983',
-          meetingTitle: title,
-          meetingCode: connCode,
-          meetingType: isOffline ? 'offline' : 'online',
-          date,
-          time,
-          venueOrLink: venue,
-          hostName,
-          notes,
-        });
+        // Gửi email mời họp bất đồng bộ trong background để API tạo cuộc họp phản hồi tức thì
+        void (async () => {
+          try {
+            if (this.mailService) {
+              await this.mailService.sendMeetingInvitationEmail({
+                to: targetEmail,
+                recipientName: partnerName || 'Quý Hội viên CEO 1983',
+                meetingTitle: title,
+                meetingCode: connCode,
+                meetingType: isOffline ? 'offline' : 'online',
+                date,
+                time,
+                venueOrLink: venue,
+                hostName,
+                notes,
+              });
+            }
 
-        // Gửi bản sao cho người tạo / người chủ trì cuộc họp nếu có email
-        const hostUser = await this.prisma.$queryRaw<any[]>`SELECT email FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1`.catch(() => []);
-        if (hostUser[0]?.email && hostUser[0].email.toLowerCase() !== targetEmail.toLowerCase()) {
-          await this.mailService.sendMeetingInvitationEmail({
-            to: hostUser[0].email,
-            recipientName: hostName,
-            meetingTitle: title,
-            meetingCode: connCode,
-            meetingType: isOffline ? 'offline' : 'online',
-            date,
-            time,
-            venueOrLink: venue,
-            hostName,
-            notes,
-          });
-        }
+            // Gửi bản sao cho người tạo / người chủ trì cuộc họp nếu có email
+            const hostUser = await this.prisma.$queryRaw<any[]>`SELECT email FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1`.catch(() => []);
+            if (this.mailService && hostUser[0]?.email && hostUser[0].email.toLowerCase() !== targetEmail.toLowerCase()) {
+              await this.mailService.sendMeetingInvitationEmail({
+                to: hostUser[0].email,
+                recipientName: hostName,
+                meetingTitle: title,
+                meetingCode: connCode,
+                meetingType: isOffline ? 'offline' : 'online',
+                date,
+                time,
+                venueOrLink: venue,
+                hostName,
+                notes,
+              });
+            }
+          } catch (err: any) {
+            console.warn('[createMeeting] Email background dispatch error:', err?.message);
+          }
+        })();
       } catch (err: any) {
-        console.warn('[createMeeting] Email dispatch error:', err?.message);
+        console.warn('[createMeeting] Email setup error:', err?.message);
       }
     }
 
@@ -1371,7 +1380,8 @@ export class MeetingsService {
         );
 
         if (!isAdminUser && !isUserHost && !isUserInvitee) {
-          continue;
+          const isGeneral = participants.length <= 1;
+          if (!isGeneral) continue;
         }
 
         meetingItems.push({
@@ -1406,9 +1416,8 @@ export class MeetingsService {
         SELECT 
           id, code, title, date, time, location, notes, status, department, target_members, zoom_url, created_at, updated_at
         FROM public.meetings
-        WHERE department ILIKE '%kết nối%' OR code ILIKE 'MT-CONN-%'
-        ORDER BY date DESC
-        LIMIT 50
+        ORDER BY date DESC, created_at DESC
+        LIMIT 100
       `).catch(() => []);
 
       for (const cm of crmMeetings) {
@@ -1476,7 +1485,8 @@ export class MeetingsService {
         );
 
         if (!isAdminUser && !isUserHost && !isUserInvitee) {
-          continue;
+          const isGeneral = !cm.target_members || (Array.isArray(cm.target_members) && cm.target_members.length === 0);
+          if (!isGeneral) continue;
         }
 
         seenIds.add(cmCode);

@@ -71,9 +71,14 @@ export class UsersRepository {
   }
 
   async findById(id: string): Promise<vione_users | null> {
+    if (!id || typeof id !== 'string') return null;
+    const clean = id.trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean)) {
+      return null;
+    }
     return this.prisma.vione_users
       .findUnique({
-        where: { id },
+        where: { id: clean },
       })
       .catch(() => null);
   }

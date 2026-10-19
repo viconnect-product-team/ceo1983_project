@@ -1,11 +1,88 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+function toValidUuid(id: string | null | undefined): string | null {
+  if (!id) return null;
+  const clean = String(id).trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean)) {
+    return clean;
+  }
+  return null;
+}
+
 @Injectable()
 export class VotingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async ensureSeedPolls(): Promise<void> {
+    try {
+      const count = await this.prisma.$queryRaw<any[]>`
+        SELECT COUNT(*)::int as cnt FROM public.polls
+      `.catch(() => [{ cnt: 0 }]);
+
+      if (Number(count[0]?.cnt || 0) === 0) {
+        const seedPolls = [
+          {
+            id: 'c1983000-0000-4000-8000-000000000001',
+            title: 'Thông qua Báo cáo Tài chính kiểm toán 2025 & Dự toán Ngân sách 2026',
+            description: 'Căn cứ Điều lệ Hiệp hội, Ban Điều Hành kính trình toàn thể Quý Hội viên biểu quyết thông qua báo cáo quyết toán tài chính năm 2025 và hạn mức phân bổ ngân sách xúc tiến thương mại năm 2026.',
+            status: 'open',
+            startDate: new Date('2026-09-20'),
+            endDate: new Date('2026-12-31'),
+            options: ['Đồng ý', 'Bác bỏ', 'Phiếu trắng'],
+          },
+          {
+            id: 'c1983000-0000-4000-8000-000000000002',
+            title: 'Phê chuẩn kiện toàn nhân sự Ban Xúc Tiến Thương Mại & Ban Pháp Chế',
+            description: 'Biểu quyết phê chuẩn bổ nhiệm bổ sung 02 Phó Ban Xúc Tiến Thương Mại và 01 Phó Ban Pháp Chế nhằm tăng cường năng lực kết nối doanh nghiệp giai đoạn cuối năm.',
+            status: 'open',
+            startDate: new Date('2026-09-25'),
+            endDate: new Date('2026-12-31'),
+            options: ['Đồng ý', 'Bác bỏ', 'Phiếu trắng'],
+          },
+          {
+            id: 'c1983000-0000-4000-8000-000000000003',
+            title: 'Lựa chọn cung đường & chủ đề chương trình Caravan Doanh Nhân 2026',
+            description: 'Toàn thể Hội viên tham gia biểu quyết lựa chọn cung đường di chuyển và chương trình thiện nguyện đồng hành cùng Caravan CEO 1983.',
+            status: 'closed',
+            startDate: new Date('2026-08-10'),
+            endDate: new Date('2026-08-20'),
+            options: ['Đồng ý', 'Bác bỏ', 'Phiếu trắng'],
+          },
+          {
+            id: 'c1983000-0000-4000-8000-000000000004',
+            title: 'Sửa đổi Quy chế xét duyệt kết nạp Hội viên chính thức năm 2026',
+            description: 'Quy chế mới áp dụng tiêu chuẩn xác thực pháp lý doanh nghiệp và chứng thư số hóa danh thiếp thông minh cho toàn thể hội viên gia nhập.',
+            status: 'closed',
+            startDate: new Date('2026-07-15'),
+            endDate: new Date('2026-07-25'),
+            options: ['Đồng ý', 'Bác bỏ', 'Phiếu trắng'],
+          },
+        ];
+
+        for (const sp of seedPolls) {
+          await this.prisma.$executeRaw`
+            INSERT INTO public.polls (id, title, description, status, start_date, end_date, created_at, updated_at)
+            VALUES (${sp.id}::uuid, ${sp.title}, ${sp.description}, ${sp.status}, ${sp.startDate}, ${sp.endDate}, now(), now())
+            ON CONFLICT (id) DO NOTHING
+          `.catch(() => {});
+
+          for (const optTitle of sp.options) {
+            await this.prisma.$executeRaw`
+              INSERT INTO public.poll_options (poll_id, title, votes_count, created_at)
+              VALUES (${sp.id}::uuid, ${optTitle}, 0, now())
+            `.catch(() => {});
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn('ensureSeedPolls warning:', e?.message);
+    }
+  }
+
   async listPollsRaw(userId: string): Promise<any[]> {
+    await this.ensureSeedPolls();
+    const safeUserId = toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
     return this.prisma.$queryRaw<any[]>`
       SELECT p.*,
         e.name as event_name,
@@ -19,8 +96,8 @@ export class VotingRepository {
           'crm_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND pv.source_app = 'crm')
         ))
          FROM public.poll_options o WHERE o.poll_id = p.id) as options,
-        (SELECT v.option_id FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote,
-        (SELECT v.source_app FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote_source,
+        (SELECT v.option_id FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${safeUserId}::uuid LIMIT 1) as my_vote,
+        (SELECT v.source_app FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${safeUserId}::uuid LIMIT 1) as my_vote_source,
         (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id) as calculated_total_votes,
         json_build_object(
           'associationApp', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND (pv.source_app = 'association_app' OR pv.source_app IS NULL)),
@@ -40,6 +117,8 @@ export class VotingRepository {
   }
 
   async getPollByIdRaw(userId: string, id: string): Promise<any[]> {
+    const safeUserId = toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
+    const safePollId = toValidUuid(id) || '00000000-0000-0000-0000-000000000000';
     return this.prisma.$queryRaw<any[]>`
       SELECT p.*,
         e.name as event_name,
@@ -53,8 +132,8 @@ export class VotingRepository {
           'crm_votes', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.option_id = o.id AND pv.source_app = 'crm')
         ))
          FROM public.poll_options o WHERE o.poll_id = p.id) as options,
-        (SELECT v.option_id FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote,
-        (SELECT v.source_app FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${userId}::uuid LIMIT 1) as my_vote_source,
+        (SELECT v.option_id FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${safeUserId}::uuid LIMIT 1) as my_vote,
+        (SELECT v.source_app FROM public.poll_votes v WHERE v.poll_id = p.id AND v.user_id = ${safeUserId}::uuid LIMIT 1) as my_vote_source,
         (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id) as calculated_total_votes,
         json_build_object(
           'associationApp', (SELECT COUNT(*)::int FROM public.poll_votes pv WHERE pv.poll_id = p.id AND (pv.source_app = 'association_app' OR pv.source_app IS NULL)),
@@ -62,50 +141,60 @@ export class VotingRepository {
         ) as source_stats
       FROM public.polls p
       LEFT JOIN public.events e ON p.event_id = e.id
-      WHERE p.id = ${id}::uuid
+      WHERE p.id = ${safePollId}::uuid
       LIMIT 1
     `.catch(() => [] as any[]);
   }
 
   async insertVote(voteId: string, pollId: string, optionId: string, userId: string, source: string): Promise<void> {
+    const safeVoteId = toValidUuid(voteId) || crypto.randomUUID();
+    const safePollId = toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
+    const safeOptId = toValidUuid(optionId) || '00000000-0000-0000-0000-000000000000';
+    const safeUserId = toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
     await this.prisma.$executeRaw`
       INSERT INTO public.poll_votes (id, poll_id, option_id, user_id, source_app, created_at)
-      VALUES (${voteId}::uuid, ${pollId}::uuid, ${optionId}::uuid, ${userId}::uuid, ${source}, now())
-      ON CONFLICT (poll_id, user_id) DO UPDATE SET option_id = ${optionId}::uuid, source_app = ${source}, created_at = now()
+      VALUES (${safeVoteId}::uuid, ${safePollId}::uuid, ${safeOptId}::uuid, ${safeUserId}::uuid, ${source}, now())
+      ON CONFLICT (poll_id, user_id) DO UPDATE SET option_id = ${safeOptId}::uuid, source_app = ${source}, created_at = now()
     `.catch(async () => {
       await this.prisma.$executeRaw`
-        DELETE FROM public.poll_votes WHERE poll_id = ${pollId}::uuid AND user_id = ${userId}::uuid
+        DELETE FROM public.poll_votes WHERE poll_id = ${safePollId}::uuid AND user_id = ${safeUserId}::uuid
       `.catch(() => {});
       await this.prisma.$executeRaw`
         INSERT INTO public.poll_votes (id, poll_id, option_id, user_id, source_app, created_at)
-        VALUES (${voteId}::uuid, ${pollId}::uuid, ${optionId}::uuid, ${userId}::uuid, ${source}, now())
+        VALUES (${safeVoteId}::uuid, ${safePollId}::uuid, ${safeOptId}::uuid, ${safeUserId}::uuid, ${source}, now())
       `.catch(() => {});
     });
 
     await this.prisma.$executeRaw`
       UPDATE public.poll_options
       SET votes_count = (SELECT COUNT(*)::int FROM public.poll_votes WHERE option_id = public.poll_options.id)
-      WHERE poll_id = ${pollId}::uuid
+      WHERE poll_id = ${safePollId}::uuid
     `.catch(() => {});
   }
 
   async findEventDate(eventId: string): Promise<any[]> {
+    const validEvId = toValidUuid(eventId);
+    if (!validEvId) return [];
     return this.prisma.$queryRaw<any[]>`
-      SELECT date FROM public.events WHERE id = ${eventId} LIMIT 1
+      SELECT date FROM public.events WHERE id = ${validEvId}::uuid LIMIT 1
     `.catch(() => []);
   }
 
   async insertPoll(pollId: string, title: string, description: string | null, startDt: Date, endDt: Date, eventId: string | null): Promise<void> {
+    const safePollId = toValidUuid(pollId) || crypto.randomUUID();
+    const validEventId = toValidUuid(eventId);
     await this.prisma.$executeRaw`
       INSERT INTO public.polls (id, title, description, status, start_date, end_date, event_id, created_at, updated_at)
-      VALUES (${pollId}::uuid, ${title}, ${description}, 'open', ${startDt}, ${endDt}, ${eventId}, now(), now())
+      VALUES (${safePollId}::uuid, ${title}, ${description}, 'open', ${startDt}, ${endDt}, ${validEventId}::uuid, now(), now())
     `;
   }
 
   async insertPollOption(optId: string, pollId: string, title: string): Promise<void> {
+    const safeOptId = toValidUuid(optId) || crypto.randomUUID();
+    const safePollId = toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
     await this.prisma.$executeRaw`
       INSERT INTO public.poll_options (id, poll_id, title, votes_count, created_at)
-      VALUES (${optId}::uuid, ${pollId}::uuid, ${title}, 0, now())
+      VALUES (${safeOptId}::uuid, ${safePollId}::uuid, ${title}, 0, now())
     `.catch(() => {});
   }
 

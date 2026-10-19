@@ -814,19 +814,25 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
                     search={REVIEW_SEARCH_RESET}
                     className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3 transition-colors hover:border-primary/40 hover:bg-muted/40"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                        {(m.name || "U").charAt(0).toUpperCase()}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="truncate text-[13px] font-semibold text-foreground">
-                          {m.name}
+                    {(() => {
+                      const pName = (m as any).personName || m.contact || m.name || "Hội viên";
+                      const cName = (m as any).company || (m.type === 'company' ? m.name : '') || (m as any).companyName || m.industry || "Doanh nghiệp thành viên";
+                      return (
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                            {(pName || "U").charAt(0).toUpperCase()}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="truncate text-[13px] font-semibold text-foreground">
+                              {pName}
+                            </div>
+                            <div className="truncate text-[11px] text-muted-foreground">
+                              {cName}
+                            </div>
+                          </div>
                         </div>
-                        <div className="truncate text-[11px] text-muted-foreground">
-                          {m.company || m.industry || "Doanh nghiệp thành viên"}
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
                     <div className="shrink-0 text-right">
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-500/10 text-emerald-500">
                         {m.status === "active" ? "Chính thức" : "Mới đăng ký"}

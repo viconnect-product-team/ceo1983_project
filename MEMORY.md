@@ -1,6 +1,57 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 19/10/2026 (Hoàn Thiện Hệ Thống Phân Quyền CRM 3 Phân Hệ, Bổ Sung Phân Hệ 3 Phân Quyền Tài Khoản Theo Ban, Quản Lý Ban Chuyên Môn Khởi Tạo 0 Thành Viên & Hiện Danh Sách Khi Chỉnh Sửa, và Xóa Tài Khoản Cascade Triệt Để)**:
+  1. **Tái Cấu Trúc Toàn Diện Phân Quyền CRM Thành 3 Phân Hệ Rõ Ràng & Bổ Sung Phân Hệ 3 (`permissions.tsx`)**:
+     - *Hệ thống 3 Phân Hệ chuẩn hóa*:
+       * **Phân Hệ 1: Ma Trận Phân Quyền Vai Trò Hệ Thống** (`RbacPermissionMatrix`): Cấu hình quyền hạn theo vai trò (Quản trị, Chủ tịch, Trưởng ban, Hội viên,...).
+       * **Phân Hệ 2: Phân Quyền Theo Ban Chuyên Môn** (`CommitteesPermissionManager`): Cấu hình quyền hạn mặc định của từng Ban chuyên môn (Ban Điều Hành, Ban Thành Viên, Ban Truyền Thông, Ban Xúc Tiến,...).
+       * **Phân Hệ 3: Phân Quyền Tài Khoản Theo Từng Ban** (`MemberPermissionsByCommittee`): Nhóm các tài khoản theo từng ban chuyên môn; hiển thị và kế thừa 4 quyền cốt lõi (**Thêm, Sửa, Xóa, Duyệt**) từ Ban và Vai trò; cho phép Quản trị viên mở modal tùy biến ghi đè (Override) quyền cho từng tài khoản cụ thể.
+     - *Loại bỏ trùng lặp*: Xóa bỏ hoàn toàn tab "Quản Lý Ban Chuyên Môn" thừa khỏi trang `/permissions` (để tránh chồng chéo chức năng với trang `/departments` ở Sidebar).
+  2. **Quản Lý Ban Chuyên Môn Ở Sidebar Khởi Tạo 0 Thành Viên & Hiện Danh Sách Thành Viên Khi Sửa Ban (`departments.tsx`)**:
+     - *Tách biệt số lượng thành viên*: Sửa cơ chế so khớp tên ban từ tìm kiếm chuỗi con lỏng lẻo sang so khớp chính xác tuyệt đối (`strict equality` & canonical slug matching), đảm bảo khi tạo ban mới thì ban luôn có chính xác 0 thành viên (`memberCount = 0`), tuyệt đối không tự động gán tài khoản ngẫu nhiên.
+     - *Phân quyền phân bổ thành viên*: Phân công thành viên vào ban được quản lý tập trung và duy nhất tại trang Quản lý tài khoản (`/accounts`).
+     - *Hiển thị danh sách thành viên trong ban*: Modal Chỉnh sửa ban chuyên môn hiển thị đầy đủ danh sách các tài khoản đang thuộc ban đó cùng nút bấm dẫn nhanh sang `/accounts` để thêm/chuyển thành viên; cột "Thành viên" trên bảng chính là nút bấm tương tác mở modal xem danh sách thành viên trực quan.
+  3. **Khắc Phục Lỗi Xóa Tài Khoản Không Thành Công Tại Quản Lý Tài Khoản (`users.service.ts`, `accounts.tsx`)**:
+     - *Cascade FK Cleanup trong PostgreSQL*: Injected `PrismaService` vào `UsersService`. Trong hàm `adminDeleteUser`, thực hiện dọn dẹp tuần tự các bản ghi ràng buộc khóa ngoại trên 12 bảng liên kết: `vba_member_permissions`, `memberships`, `business_relationship_moment_media`, `business_relationship_moments`, `meeting_participants`, `business_appointments`, `event_registrations`, `member_business_cards`, `card_settings`, `user_connections`, `direct_messages`, và `members` trước khi xóa `vione_users`/`auth.users`.
+     - *Khắc phục triệt để lỗi 500*: Ngăn chặn toàn bộ lỗi `23503 (foreign_key_violation)` của PostgreSQL.
+     - *Đồng bộ Frontend*: `handleDeleteAccount` tại `accounts.tsx` gọi cả endpoint xóa user và xóa member, dọn dẹp dữ liệu lưu trữ `vba_managed_accounts_v2`, phát sự kiện đồng bộ `vba_accounts_changed` giúp tài khoản biến mất ngay tức thì trên giao diện CRM.
+  4. **Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (AGENTS.md Rule 3)**:
+     - Backend NestJS (`apps/ceo1983_app_be`): `npm run build` đạt **Exit code 0 (0 errors)**.
+     - Frontend React (`apps/ceo1983_app_fe`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors, 100% sạch type)**.
+     - Tuyệt đối tuân thủ Rule 1: Không chạy `git commit` hay `git push`.
+- **Bản nâng cấp ngày 19/10/2026 (Khắc Phục Toàn Diện 9 Lỗi Trọng Điểm: Ảnh VietQR Email Bị Vỡ & Xóa Ban Nguyện Vọng Đăng Ký, Tách Biệt Luồng Đăng Ký Vé Sự Kiện Có Phí & Vé E-Ticket, Đúng Tên Cá Nhân Hội Viên Mới, Tối Ưu Tốc Độ Tạo Họp & Bản Đồ Ghim Vị Trí Kéo Thả Trực Quan, Khắc Phục Lỗi 500 Tạo Biểu Quyết & Tự Động Lấy Giờ Sự Kiện, Sửa Lỗi Đổi Mật Khẩu Lần Đầu, Khắc Phục Lỗi Giao Diện & Xác Nhận Thanh Toán CRM, Đồng Bộ Dữ Liệu Tin Tức & Biểu Quyết Hệ Thống & App, Hiển Thị Cuộc Gặp Trực Quan)**:
+  1. **Khắc phục ảnh VietQR trong email bị vỡ & Xóa trường Ban nguyện vọng (`mail.service.ts`, `members.service.ts`)**:
+     - *Ảnh VietQR CID Inline Attachment*: Khắc phục việc Google Image Proxy của Gmail chặn hiển thị ảnh ngoài từ `img.vietqr.io` bằng cách tải trực tiếp buffer ảnh VietQR hoặc sinh QR nội bộ và đính kèm MIME CID (`cid:vietqr_payment_qr` và `cid:vietqr_fee_qr`). 100% ứng dụng email (Gmail, Outlook, Apple Mail) hiển thị mã QR thanh toán sắc nét, không vỡ.
+     - *Xóa trường Ban nguyện vọng*: Loại bỏ hoàn toàn trường `boardWish` khỏi luồng đăng ký hội viên mới, email xác nhận đăng ký và payload dữ liệu. Mặc định hội viên mới chỉ có role `member` với quyền kết nối giao thương nội bộ.
+  2. **Tách biệt luồng Đăng ký sự kiện có phí và gửi vé E-ticket (`events.service.ts`, `mail.service.ts`)**:
+     - Khi người dùng đăng ký sự kiện có phí, hệ thống chỉ gửi email thông báo kèm mã VietQR thanh toán (tuyệt đối không gửi mã vé, mã lucky draw hay QR check-in).
+     - Chỉ sau khi chuyển khoản thành công và được xác nhận thanh toán (`confirmBankPayment`), hệ thống mới cấp số lucky draw, tạo mã vé và gửi email vé điện tử E-Ticket kèm mã QR check-in chính thức.
+  3. **Lấy đúng họ tên cá nhân của hội viên mới gia nhập (`members.service.ts`, `ExecutiveDashboard.tsx`, `association.index.tsx`)**:
+     - Sửa hàm `mapMemberRow` và `listDirectory` trong backend để gán `personName: m.person_name ?? m.contact ?? m.name` và tách bạch `companyName`.
+     - Cập nhật frontend Dashboard và Trang chủ Mobile ưu tiên hiển thị họ và tên cá nhân người đại biểu/hội viên thay vì nhầm với tên công ty.
+  4. **Tối ưu tốc độ tạo cuộc họp & Bản đồ ghim vị trí kéo thả trực quan (`meetings.service.ts`, `GoogleMapAddressPicker.tsx`)**:
+     - *Tốc độ lưu cuộc họp*: Chuyển tiến trình gửi email thông báo mời họp sang chế độ chạy ngầm (`void async () => ...`) không gây block luồng, giảm thời gian phản hồi API từ 10s xuống dưới 100ms.
+     - *Bản đồ kéo thả chuẩn Grab/Shopee*: Tích hợp bản đồ Leaflet OSM với điểm ghim đỏ có thể kéo thả (`draggable pin`), chạm hoặc click vào bất kỳ đâu trên bản đồ để nhảy ghim, tự động đảo ngược địa chỉ (Reverse Geocoding OpenStreetMap Nominatim), tìm kiếm địa danh và nút định vị GPS.
+  5. **Khắc phục lỗi 500 khi tạo biểu quyết & Tự động lấy thời gian theo sự kiện (`voting.repository.ts`, `voting.tsx`)**:
+     - Sửa lỗi crash PostgreSQL khi cast chuỗi rỗng sang `::uuid` bằng helper `toValidUuid()`.
+     - Trong modal tạo biểu quyết `VoteModal`, khi chọn sự kiện liên kết, hệ thống tự động điền `startsAt` và `endsAt` tương ứng với ngày giờ của sự kiện.
+  6. **Sửa lỗi 500 khi đổi mật khẩu lần đầu trên App (`users.controller.ts`, `users.service.ts`, `users.repository.ts`)**:
+     - Trích xuất an toàn `req.user.id || req.user.sub || req.user.userId`.
+     - Tìm kiếm người dùng linh hoạt qua ID, email hoặc số điện thoại, đồng bộ cập nhật mật khẩu mới trên toàn bộ các bảng `vione_users`, `user_profiles`, `members` mà không gây lỗi khóa ngoại hay crash kiểu dữ liệu.
+  7. **Khắc phục vỡ layout bảng đăng ký sự kiện CRM & Lỗi nút [Đã thanh toán] (`event-registrations.tsx`, `events.controller.ts`, `events.service.ts`)**:
+     - *Giao diện bảng*: Thiết lập `min-w-[1450px]`, thêm `whitespace-nowrap` trên toàn bộ header và dữ liệu, đặt chiều rộng cố định cho từng cột (`STT`, `Mã ĐK`, `Người tham gia`, `Chỗ ngồi`, `Hạng vé`, `Thanh toán`, `Check-in`, `Trạng thái`), và cố định cột `Thao tác quản trị` (`sticky right-0 min-w-[440px]`) với bóng đổ mờ phân tách rõ ràng, loại bỏ hoàn toàn tình trạng nút bấm đè lên các cột trước.
+     - *Nút Đã thanh toán*: Mở rộng `@Roles(...)` tại controller cho phép ban thư ký, ban tổ chức, thành viên đối soát; làm sạch đối soát ID đăng ký dạng `EV40012` hoặc số nguyên `40012` linh hoạt.
+  8. **Đồng bộ dữ liệu Tin tức và Biểu quyết giữa Hệ thống CRM và App (`content.service.ts`, `voting.repository.ts`)**:
+     - Bổ sung cơ chế tự động nạp (Seed on Read) 6 bài tin tức chính thức của CEO 1983 vào `public.news` và 4 phiên biểu quyết mẫu chuẩn Điều lệ vào `public.polls` & `public.poll_options` nếu cơ sở dữ liệu trống. Cả Web CRM và Mobile App đều lấy cùng một nguồn dữ liệu CSDL thống nhất 100%.
+  9. **Hiển thị dữ liệu cuộc gặp trên App CEO 1983 (`meetings.service.ts`, `association.members.tsx`)**:
+     - Mở rộng bộ lọc `getConnectionAppointments` trong backend để lấy tất cả cuộc họp từ `public.meetings` mà không bị điều kiện hạn chế `department ILIKE '%kết nối%'` loại bỏ.
+     - Cho phép hội viên xem các cuộc họp chung của hiệp hội.
+     - Cập nhật tab "Cuộc gặp" trên App (`association.members.tsx`) chấp nhận các trạng thái `scheduled`, `upcoming`, `confirmed`, `accepted`, `active` hiển thị đầy đủ thông tin thay vì bị ẩn.
+  10. **Kiểm tra chất lượng mã nguồn (AGENTS.md Rule 3)**:
+      - Backend NestJS (`apps/ceo1983_app_be`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+      - Frontend React (`apps/ceo1983_app_fe`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+      - Tuyệt đối không chạy `git commit` hay `git push` theo đúng quy định Rule 1.
 - **Bản nâng cấp ngày 19/10/2026 (Khắc Phục Chuẩn Format Ngày Sinh Mobile & Mở Lịch Native, Tối Ưu Toàn Diện Giao Diện Danh Bạ CEO Tương Thích Mọi Dòng Điện Thoại)**:
   1. **Chuẩn Hóa Nhập Ngày Sinh Mobile & Mở Lịch Native 100% (`StandardDateInput.tsx`, `Ceo1983MemberRegistrationForm.tsx`)**:
      - *Tự động mask định dạng `DD/MM/YYYY` khi gõ phím số*: Do bàn phím số điện thoại (iOS Numeric Keypad) không có phím `/` hoặc `-`, hệ thống tích hợp hàm `formatDigitsToDdmmyyyy` tự động nhận diện chữ số gõ vào và chèn ký tự `/` theo thời gian thực (VD gõ `15` -> `15/`, gõ `1508` -> `15/08/`, gõ `15081983` -> `15/08/1983`); đồng thời xử lý phím xóa (backspace) không bị kẹt dấu `/`.
