@@ -17,7 +17,8 @@
 # - Styling & UI Components: Tailwind CSS, Radix UI Primitives, Lucide React, Framer Motion, Sonner Toast.
 # - PWA & Mobile: Progressive Web App (manifest.webmanifest, Service Worker, Apple Touch Icons), Capacitor / Cordova wrapper (mobile_ceo1983).
 # - Kiến trúc Thuần NestJS (Pure NestJS Architecture): 100% dữ liệu nghiệp vụ (Meetings, Opportunities, Marketplace, News, Events, Documents, Sponsors, Members) phải đi qua NestJS REST API (`fetchNestApiFromServer` / `fetchNestApi`) kết nối trực tiếp đến PostgreSQL `ceo1983_project` trên `14.225.217.232:5436`. TUYỆT ĐỐI KHÔNG dùng Supabase PostgREST client (`supabaseAdmin.from(...)`, `getDb.from(...)`) trong các server function nghiệp vụ nhằm tránh lỗi PostgREST schema cache.
-# - Đồng Bộ Schema SQL & Fallback An Toàn (Raw SQL & Schema Synchronization): Mọi câu lệnh SQL Raw (`$executeRaw`, `$queryRaw`) thao tác trên các bảng lõi (`public.members`, `public.notifications`, v.v.) phải đồng bộ 100% với các cột thực tế trong CSDL PostgreSQL `ceo1983_project` (ví dụ: `company_size`, `industry_detail`, `featured_products`, `card_visibility_settings`). Bắt buộc trang bị try-catch và cơ chế fallback an toàn (fallback query không chứa cột tùy chọn) để đảm bảo không bao giờ ném lỗi `42703: column does not exist` gây gián đoạn luồng người dùng (HTTP 500).
+# - Chuẩn Nhập Ngày Tháng Di Động & Mở Picker Native (Standard Date Input & Native Mobile Picker): Khi tạo trường nhập ngày tháng (`StandardDateInput`), BẮT BUỘC phải có cơ chế tự động mask/chèn dấu `/` khi người dùng gõ số trên bàn phím số di động (`inputMode="numeric"`) do iOS không có phím gạch chéo. Icon lịch BẮT BUỘC sử dụng Native `<input type="date">` overlay trong suốt (`opacity-0 absolute inset-0`) để cử chỉ chạm vật lý kích hoạt trực tiếp picker native của iOS/Android mà không bị WebKit chặn `.showPicker()`.
+# - Tiêu Chuẩn Responsive Di Động & Thanh Cuộn Danh Bạ (Mobile Responsiveness & Viewport Adaptability): Mọi màn hình danh bạ/danh sách dài TUYỆT ĐỐI KHÔNG dùng thanh dải chữ cái A-Z dọc cố định trên màn hình điện thoại (gây đè nội dung và lỗi chạm). Phải dùng thanh A-Z cuộn ngang (`sm:hidden overflow-x-auto`), thanh dọc chỉ hiện từ màn hình tablet/desktop (`hidden sm:flex`). Các nút thao tác trên thẻ hội viên phải dàn lưới cân đối (`grid grid-cols-5 sm:flex`), container phải responsive `flex-col sm:flex-row` để đảm bảo tương thích 100% các dòng điện thoại từ 320px đến 430px+.
 
 
 # ------------------------------------------------------------------------------
@@ -2047,6 +2048,50 @@
   + Hồ sơ năng lực doanh nghiệp (Brochure / Flyer) hiển thị trực tiếp ngay bên dưới Thẻ hội viên điện tử tại `association.card.tsx`, không làm nặng trang Profile cá nhân.
 - Mạng Xã Hội Doanh Nhân Web CRM (`/network`):
   + 3 Tab chức năng trực quan: Bảng tin (Feed tổng hợp Sản phẩm, Cơ hội, Tin tức), Nhắn tin (Messages), Kết nối (Thành viên phân loại theo 7 Ban chuyên môn).
-  + Mỗi card bài đăng trên Bảng tin có nút **[🤝 Lên lịch cuộc gặp 1-on-1]** mở modal `ScheduleMeetingModal` đặt lịch gặp trực tiếp trên Web CRM mà không cần mở App mobile, tự động gửi tin nhắn lịch hẹn vào thread 1-on-1.
+# [BẮT BUỘC 117] Quy Chuẩn 6 Trọng Điểm: Đồng Thuận Kết Nối Danh Bạ, Hồ Sơ Năng Lực Nền Trắng 2 Ảnh Hình Khối (Tam Giác & Nửa Hình Thoi), Luồng Sự Kiện Có Phí Chờ Ban Duyệt & Bắn Mail Vé, Đổi Mật Khẩu Hội Viên Mới Đa Tầng Kèm Toggle Ẩn/Hiện, Vòng Quay May Mắn CRM Nạp Người Check-in Thật & Lưu Cấu Hình Giải Thưởng, Mã QR Email Đính Kèm Inline CID Triệt Tiêu Lỗi Ảnh
+- Quy Chuẩn 1: Đồng Thuận Khi Kết Nối Danh Bạ Hội Viên (`association.members.tsx`, `MemberProfileModal.tsx`):
+  + Khi người dùng bấm "Kết nối", TUYỆT ĐỐI KHÔNG tự động lưu vào danh sách đã kết nối (`vba.connected_members`) khi chưa có sự đồng ý của đối phương.
+  + Nút bấm chuyển sang trạng thái "Đang chờ đồng ý" (`localSentRequests`, `localPending`, `requestSent: true`, icon Clock màu vàng hổ phách).
+  + Chỉ khi đối phương phê duyệt / chấp thuận thì hai bên mới chính thức chuyển sang trạng thái "Đã kết nối" (`vba.connected_members`).
+- Quy Chuẩn 2: Hồ Sơ Năng Lực Doanh Nghiệp Nền Trắng 2 Ảnh Hình Khối (`CompanyProfileTwoPages.tsx`, `CompanyProfileEditModal.tsx`):
+  + Nền giao diện: Bắt buộc sử dụng nền trắng trang trọng (`#ffffff`, `bg-white`).
+  + Hình khối trang trí: Bắt buộc gồm đủ 2 ảnh cắt hình học tinh xảo:
+    1. Một ảnh hình tam giác ở phía trên (`clipPath: polygon(50% 0%, 0% 100%, 100% 100%)`).
+    2. Một ảnh nửa hình thoi (kim cương úp) ở phía dưới (`clipPath: polygon(0% 0%, 100% 0%, 50% 100%)`).
+  + Cấu trúc dữ liệu: Bắt buộc CHỈ GỒM ĐÚNG 8 trường cốt lõi, không hiển thị trường dư thừa:
+    1. Logo doanh nghiệp (`companyLogoUrl`)
+    2. Tên doanh nghiệp (`companyName`)
+    3. Giới thiệu doanh nghiệp (`aboutUs`)
+    4. Lĩnh vực hoạt động (`industry`)
+    5. Năng lực nhân sự (`personnelCompetence`)
+    6. Website doanh nghiệp (`website`)
+    7. Hotline / Số điện thoại (`hotline`)
+    8. Địa chỉ trụ sở (`officeAddress`)
+- Quy Chuẩn 3: Luồng Sự Kiện Có Phí Bỏ Tự Động Thanh Toán, Chờ Ban Duyệt & Bắn Mail E-Ticket (`events.service.ts`, `events.controller.ts`):
+  + Khi đăng ký sự kiện có phí (`!isFree`): Hệ thống lưu trạng thái `status: 'pending'`, `payment_status: 'pending'`. TUYỆT ĐỐI KHÔNG tự động đánh dấu đã thanh toán, không tăng bộ đếm đăng ký sự kiện và không gửi email vé check-in ngay.
+  + Màn hình sau đăng ký chỉ hiển thị thông tin chuyển khoản VietQR MB Bank 1983000000 kèm hướng dẫn chờ Ban Truyền thông & Ban Tài chính đối soát.
+  + Ban Truyền thông / Ban Tài chính kiểm tra chứng từ tại CRM và bấm "Xác nhận đã thanh toán" (`POST /events/registrations/:id/confirm-payment`): Lúc này hệ thống mới chuyển `payment_status = 'paid'`, `status = 'confirmed'`, tăng số lượng đại biểu và lập tức bắn Email xác nhận vé kèm mã QR Check-in đến người tham dự.
+  + Sự kiện miễn phí (`isFree`): Vẫn tiếp tục xác nhận tự động và gửi email vé ngay lập tức.
+- Quy Chuẩn 4: Xác Thực Mật Khẩu Đa Tầng Cho Hội Viên Mới & Nút Ẩn/Hiện Mật Khẩu (`users.service.ts`, `auth.service.ts`, `association.settings.tsx`, `AssociationAppSignIn.tsx`):
+  + Cơ chế xác thực mật khẩu cũ đa tầng (`changePassword`):
+    * Loại bỏ triệt để khoảng trắng đầu cuối (`trim()`), khoảng trắng zero-width (`\u200B-\u200D\uFEFF\u00A0`).
+    * So khớp bcrypt hash chuẩn.
+    * So khớp mật khẩu văn bản thô (plain-text fallback).
+    * So khớp mật khẩu khởi tạo từ email lưu trong `public.members.about` định dạng `Pass=([^\s|]+)`.
+    * Kiểm tra dung sai cho phiên hội viên mới trong chế độ bắt buộc đổi mật khẩu lần đầu (`must_change_password === true`).
+  + Nút ẩn/hiện mật khẩu (Eye / EyeOff): Toàn bộ các ô nhập mật khẩu tại màn hình Đăng nhập (`AssociationAppSignIn`) và màn hình Đổi mật khẩu (`association.settings.tsx`: Mật khẩu hiện tại từ mail, Mật khẩu mới, Xác nhận mật khẩu mới) BẮT BUỘC phải có icon con mắt chuyển đổi ẩn/hiện.
+- Quy Chuẩn 5: Vòng Quay May Mắn CRM Nạp Đại Biểu Đã Check-in Thật & Lưu Cấu Hình Giải Thưởng (`admin.service.ts`, `sponsors.controller.ts`, `LuckyDrawLandingBanner.tsx`):
+  + Bảng `public.event_registrations` bắt buộc hỗ trợ các cột `checked_in_at TIMESTAMPTZ` và `seat_assignment TEXT`.
+  + Truy vấn danh sách đại biểu tham gia bốc thăm (`getLuckyDrawConfig`):
+    * Truy vấn chuẩn xác từ `public.event_registrations er` với điều kiện `er.event_id = $1 AND er.checked_in_at IS NOT NULL`.
+    * Trích xuất các trường: `COALESCE(er.lucky_number, er.id) as code`, `COALESCE(er.member_name, m.name) as name`, `COALESCE(m.company_name, 'Doanh nghiệp CEO 1983') as company`, `COALESCE(er.seat_assignment, 'VIP Bàn 01') as seat`.
+    * Fallback mềm nếu chưa có ai check-in: nạp danh sách đăng ký đã xác nhận, sau đó fallback sang danh sách hội viên chính thức `public.members` với các cột chuẩn `name`, `company_name`, `code`.
+  + Lưu cấu hình và giải thưởng sự kiện (`saveLuckyDrawConfig`):
+    * Upsert danh sách giải thưởng vào `public.event_prizes` xử lý an toàn kiểu số nguyên `amount BigInt` và lưu cấu hình tổng vào `public.app_settings`.
+    * Mở rộng `@Roles(...)` tại `sponsors.controller.ts` để mọi ban lãnh đạo và ban quản trị đều có quyền tạo và chỉnh sửa giải thưởng.
+- Quy Chuẩn 6: Mã QR Email Đính Kèm Inline CID Triệt Tiêu Lỗi Không Hiển Thị Ảnh (`mail.service.ts`):
+  + Email client (Gmail, Outlook, Apple Mail) chặn hoàn toàn ảnh từ domain ngoài như `api.qrserver.com`.
+  + Bắt buộc sinh mã QR dạng ảnh PNG buffer bằng thư viện `qrcode` và đính kèm trực tiếp vào email thông qua cơ chế Content-ID (`cid:event_ticket_qr`, `cid:event_payment_qr`) với `Content-Disposition: inline`.
+  + Thẻ HTML ảnh trong template email trỏ trực tiếp vào CID nội tuyến: `<img src="cid:event_ticket_qr" alt="Mã QR Check-in" width="220" height="220" />`.
 
 

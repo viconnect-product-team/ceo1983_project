@@ -1049,8 +1049,9 @@ export class EventsService implements OnModuleInit {
       }
     }
 
-    // Gửi email vé sự kiện điện tử (E-Ticket) có mã QR và mã số quay thưởng Lucky Draw hoặc VietQR thanh toán
-    if (email && email.includes('@')) {
+    // Gửi email vé sự kiện điện tử (E-Ticket) CHỈ DÀNH CHO SỰ KIỆN MIỄN PHÍ (0đ).
+    // Sự kiện có phí phải chờ Ban Truyền Thông / Tài Chính kiểm tra và bấm "Đã thanh toán" mới gửi vé kèm QR check-in!
+    if (isFree && email && email.includes('@')) {
       try {
         await this.mailService.sendEventTicketEmail({
           to: email,
@@ -1065,15 +1066,15 @@ export class EventsService implements OnModuleInit {
           ticketType,
           ticketCount,
           luckyNumber: luckyNum,
-          isFree,
-          totalAmount,
+          isFree: true,
+          totalAmount: 0,
           qrCodeUrl,
-          vietQrUrl,
+          vietQrUrl: '',
           bankAccount: '1983000000',
           bankName: 'MB Bank (Quân Đội)',
           bankOwner: 'CLB DOANH NHAN CEO 1983',
         });
-        this.logger.log(`Member event ticket email dispatched to ${email} (Registration: ${regId}, Lucky #${luckyNum})`);
+        this.logger.log(`Member free event ticket email dispatched to ${email} (Registration: ${regId}, Lucky #${luckyNum})`);
       } catch (err: any) {
         this.logger.warn(`Failed to dispatch event ticket email to member ${email}: ${err?.message}`);
       }
@@ -2454,6 +2455,9 @@ export class EventsService implements OnModuleInit {
       ? event.association_id
       : 'c1983000-0000-4000-8000-000000001983';
 
+    const initialGuestStatus = isFree ? 'confirmed' : 'pending';
+    const guestPaymentStatus = isFree ? 'free' : 'pending';
+
     await this.prisma.$executeRaw`
       INSERT INTO public.event_registrations (
         id, event_id, member_code, member_name, email, registered_at, status, ticket_type, association_id, payment_status, payment_amount, lucky_number, qr_payload, created_at, updated_at
@@ -2464,10 +2468,10 @@ export class EventsService implements OnModuleInit {
         ${fullName},
         ${email},
         now()::date,
-        'confirmed',
+        ${initialGuestStatus},
         ${ticketType},
         ${targetAssociationId}::uuid,
-        ${paymentStatus},
+        ${guestPaymentStatus},
         ${totalAmount},
         ${luckyNum},
         ${qrPayload},
@@ -2476,44 +2480,51 @@ export class EventsService implements OnModuleInit {
       )
     `;
 
-    // Cập nhật số lượng người đăng ký
-    await this.prisma.$executeRaw`
-      UPDATE public.events SET registered = registered + ${ticketCount}, updated_at = now() WHERE id = ${resolvedEventId}
-    `.catch(() => null);
+    // Cập nhật số lượng người đăng ký chỉ khi sự kiện miễn phí (sự kiện có phí sẽ tăng khi admin xác nhận thanh toán)
+    if (isFree) {
+      await this.prisma.$executeRaw`
+        UPDATE public.events SET registered = registered + ${ticketCount}, updated_at = now() WHERE id = ${resolvedEventId}
+      `.catch(() => null);
+    }
 
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`;
+    const qrCodeUrl = isFree
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`
+      : '';
     const invoiceNo = `EV${regId}`;
     const vietQrUrl = isFree
       ? ''
       : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(`${invoiceNo} ${phone}`)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
 
-    // Gửi email vé / thanh toán ngay lập tức cho người tham dự
-    try {
-      await this.mailService.sendEventTicketEmail({
-        to: email,
-        fullName,
-        phone,
-        company,
-        position,
-        eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
-        eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
-        eventTime: event.time || '08:30 - 12:00',
-        eventLocation: event.location || 'Hà Nội',
-        registrationId: regId,
-        ticketType,
-        ticketCount,
-        luckyNumber: luckyNum,
-        isFree,
-        totalAmount,
-        qrCodeUrl,
-        vietQrUrl,
-        bankAccount: '1983000000',
-        bankName: 'MB Bank (Quân Đội)',
-        bankOwner: 'CLB DOANH NHAN CEO 1983',
-      });
-      this.logger.log(`Guest registration ticket email dispatched to ${email} (Lucky #${luckyNum})`);
-    } catch (err: any) {
-      this.logger.warn(`Failed to dispatch event ticket email to guest ${email}: ${err?.message}`);
+    // Gửi email vé điện tử E-Ticket CHỈ DÀNH CHO SỰ KIỆN MIỄN PHÍ (0đ)
+    // Sự kiện có phí phải chờ Ban Truyền Thông / Tài Chính kiểm tra và bấm "Đã thanh toán" mới gửi vé kèm QR check-in!
+    if (isFree && email && email.includes('@')) {
+      try {
+        await this.mailService.sendEventTicketEmail({
+          to: email,
+          fullName,
+          phone,
+          company,
+          position,
+          eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+          eventDate: event.date ? (event.date instanceof Date ? event.date.toLocaleDateString('vi-VN') : String(event.date).slice(0, 10)) : 'Sắp diễn ra',
+          eventTime: event.time || '08:30 - 12:00',
+          eventLocation: event.location || 'Hà Nội',
+          registrationId: regId,
+          ticketType,
+          ticketCount,
+          luckyNumber: luckyNum,
+          isFree: true,
+          totalAmount: 0,
+          qrCodeUrl,
+          vietQrUrl: '',
+          bankAccount: '1983000000',
+          bankName: 'MB Bank (Quân Đội)',
+          bankOwner: 'CLB DOANH NHAN CEO 1983',
+        });
+        this.logger.log(`Guest registration free ticket email dispatched to ${email} (Lucky #${luckyNum})`);
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch event ticket email to guest ${email}: ${err?.message}`);
+      }
     }
 
     // Tự động gửi email thanh toán VietQR về mail chính (vupv090120@gmail.com) khi khách đăng ký vé có phí

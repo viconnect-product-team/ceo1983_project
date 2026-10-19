@@ -94,6 +94,9 @@ function AssociationSettingsScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Account activation summary popup modal
@@ -192,19 +195,23 @@ function AssociationSettingsScreen() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanCurrent = currentPassword.trim();
+    const cleanNew = newPassword.trim();
+    const cleanConfirm = confirmPassword.trim();
+
     if (!identifier.trim()) {
       toast.error("Vui lòng nhập email hoặc tài khoản đăng nhập.");
       return;
     }
-    if (!currentPassword || !newPassword) {
+    if (!cleanCurrent || !cleanNew) {
       toast.error("Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.");
       return;
     }
-    if (newPassword !== confirmPassword) {
+    if (cleanNew !== cleanConfirm) {
       toast.error("Mật khẩu xác nhận không khớp.");
       return;
     }
-    if (newPassword.length < 6) {
+    if (cleanNew.length < 6) {
       toast.error("Mật khẩu mới phải có ít nhất 6 ký tự.");
       return;
     }
@@ -213,8 +220,8 @@ function AssociationSettingsScreen() {
     try {
       let res: any = null;
       const payload = {
-        currentPassword,
-        newPassword,
+        currentPassword: cleanCurrent,
+        newPassword: cleanNew,
         email: identifier.trim(),
         phone: phone.trim() || undefined,
         fullName: member?.name || user?.name,
@@ -455,40 +462,70 @@ function AssociationSettingsScreen() {
               <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                 Mật khẩu hiện tại (mật khẩu được cấp ở mail)
               </label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
-              />
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Nhập hoặc dán mật khẩu từ mail..."
+                  required
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 pr-10 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  aria-label={showCurrentPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                 Mật khẩu mới
               </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Tối thiểu 6 ký tự"
-                required
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
-              />
+              <div className="relative">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Tối thiểu 6 ký tự"
+                  required
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 pr-10 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label={showNewPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                 Xác nhận mật khẩu mới
               </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu mới"
-                required
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Nhập lại mật khẩu mới"
+                  required
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 pr-10 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 focus:ring-2 focus:ring-[#003B95]/20 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <button
               type="submit"

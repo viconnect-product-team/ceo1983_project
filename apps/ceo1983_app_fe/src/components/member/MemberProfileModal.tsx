@@ -16,6 +16,7 @@ import {
   Check,
   UserMinus,
   CreditCard,
+  Clock,
 } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ import type { DirectoryMember } from "@/lib/member-app.functions";
 export interface MemberProfileModalProps {
   member: DirectoryMember | null;
   initialConnected?: boolean;
+  isPending?: boolean;
   onClose: () => void;
   onMessage?: (member: DirectoryMember) => void;
   onConnect?: (member: DirectoryMember) => void;
@@ -33,6 +35,7 @@ export interface MemberProfileModalProps {
 export function MemberProfileModal({
   member,
   initialConnected,
+  isPending,
   onClose,
   onMessage,
   onConnect,
@@ -77,9 +80,15 @@ export function MemberProfileModal({
     return false;
   });
 
+  const [requestSent, setRequestSent] = useState(() => Boolean(isPending));
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setRequestSent(Boolean(isPending));
+  }, [isPending, member?.code, member?.userId]);
 
   // Kiểm tra trạng thái đã kết nối đồng bộ
   useEffect(() => {
@@ -139,14 +148,20 @@ export function MemberProfileModal({
       } catch {}
 
       setConnected(false);
+      setRequestSent(false);
       toast.success(`Đã hủy kết nối với hội viên ${displayName}`);
       if (onDisconnect) onDisconnect(member);
       return;
     }
 
-    // GẮN KẾT / KẾT NỐI
+    if (requestSent) {
+      toast.info(`Lời mời kết nối tới ${displayName} đã được gửi. Vui lòng chờ đối phương phản hồi.`);
+      return;
+    }
+
+    // GỬI LỜI MỜI KẾT NỐI (Chờ đối phương đồng ý)
     try {
-      // 1. Xóa khỏi danh sách ngắt kết nối
+      // Xóa khỏi danh sách ngắt kết nối nếu có trước đó
       const storedD = localStorage.getItem("vba.disconnected_members");
       const dList: string[] = storedD ? JSON.parse(storedD) : [];
       const nextD = dList.filter((c) => {
@@ -154,24 +169,10 @@ export function MemberProfileModal({
         return lower !== mCode && lower !== mUserId;
       });
       localStorage.setItem("vba.disconnected_members", JSON.stringify(nextD));
-
-      // 2. Lưu vào danh sách đã kết nối
-      const storedC = localStorage.getItem("vba.connected_members");
-      const cList: string[] = storedC ? JSON.parse(storedC) : [];
-      if (!cList.includes(mCode)) cList.push(mCode);
-      if (mUserId && !cList.includes(mUserId)) cList.push(mUserId);
-      localStorage.setItem("vba.connected_members", JSON.stringify(cList));
-
-      // 3. Bắn event toàn hệ thống
-      window.dispatchEvent(
-        new CustomEvent("vba.connection.changed", {
-          detail: { memberCode: member.code, userId: member.userId, connected: true },
-        }),
-      );
     } catch {}
 
-    setConnected(true);
-    toast.success(`Đã gửi yêu cầu kết nối tới hội viên ${displayName}`);
+    setRequestSent(true);
+    toast.success(`Đã gửi lời mời kết nối tới ${displayName}. Đang chờ đối phương đồng ý.`);
     if (onConnect) onConnect(member);
   };
 
@@ -339,13 +340,20 @@ export function MemberProfileModal({
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[12.5px] font-bold transition active:scale-95 cursor-pointer shadow-md ${
                 connected
                   ? "border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 shadow-rose-500/10"
-                  : "bg-[#003B95] hover:bg-[#002B70] text-white shadow-blue-900/20"
+                  : requestSent
+                    ? "border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 shadow-amber-500/10"
+                    : "bg-[#003B95] hover:bg-[#002B70] text-white shadow-blue-900/20"
               }`}
             >
               {connected ? (
                 <>
                   <UserMinus className="h-4 w-4 text-rose-600 dark:text-rose-400" />
                   <span>Hủy kết nối</span>
+                </>
+              ) : requestSent ? (
+                <>
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span>Đang chờ đồng ý</span>
                 </>
               ) : (
                 <>

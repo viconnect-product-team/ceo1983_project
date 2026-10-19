@@ -118,19 +118,19 @@ export class SponsorsController {
   }
 
   @Post('prizes')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'quan_tri', 'chu_tich', 'president', 'bqt', 'btc', 'btt', 'ban_dieu_hanh', 'tong_thu_ky', 'truong_ban', 'member')
   async createPrize(@Body() body: CreateEventPrizeDto) {
     return this.sponsorsService.createPrize(body);
   }
 
   @Put('prizes/:id')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'quan_tri', 'chu_tich', 'president', 'bqt', 'btc', 'btt', 'ban_dieu_hanh', 'tong_thu_ky', 'truong_ban', 'member')
   async updatePrize(@Param('id') id: string, @Body() body: UpdateEventPrizeDto) {
     return this.sponsorsService.updatePrize(id, body);
   }
 
   @Delete('prizes/:id')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'quan_tri', 'chu_tich', 'president', 'bqt', 'btc', 'btt', 'ban_dieu_hanh', 'tong_thu_ky', 'truong_ban', 'member')
   async deletePrize(@Param('id') id: string) {
     return this.sponsorsService.deletePrize(id);
   }

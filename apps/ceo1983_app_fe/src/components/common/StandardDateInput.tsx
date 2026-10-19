@@ -96,6 +96,32 @@ export function formatToIso(val?: string | null): string {
 }
 
 /**
+ * Automatically formats typed digits into DD/MM/YYYY while typing
+ */
+export function formatDigitsToDdmmyyyy(raw: string, prevRaw: string): string {
+  // If user is deleting character, don't auto-append slashes
+  if (raw.length < prevRaw.length) {
+    if (raw.endsWith("/") || raw.endsWith("-")) {
+      return raw.slice(0, -1);
+    }
+    return raw;
+  }
+
+  // Clean characters, keep digits, slashes and dashes
+  const clean = raw.replace(/[^\d\/\.-]/g, "");
+
+  // If user typed digits only, automatically insert slashes
+  if (!clean.includes("/") && !clean.includes("-") && !clean.includes(".")) {
+    const digits = clean.slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+
+  return clean.replace(/\/+/g, "/").slice(0, 10);
+}
+
+/**
  * Cleanly formats user date on blur or when fully typed, without mutating keystrokes mid-typing
  */
 export function StandardDateInput({
@@ -132,22 +158,23 @@ export function StandardDateInput({
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    setDisplayText(raw);
+    const formatted = formatDigitsToDdmmyyyy(raw, displayText);
+    setDisplayText(formatted);
 
-    if (!raw.trim()) {
+    if (!formatted.trim()) {
       setIsInvalid(false);
       onChange("", "");
       return;
     }
 
-    const parsed = parseFlexibleDate(raw);
+    const parsed = parseFlexibleDate(formatted);
     if (parsed.isValid) {
       setIsInvalid(false);
       onChange(parsed.iso, parsed.display);
     } else {
       // Keep the typed value in parent state so it doesn't get cleared or reset during re-renders
       setIsInvalid(false);
-      onChange(raw, raw);
+      onChange(formatted, formatted);
     }
   };
 
@@ -203,22 +230,11 @@ export function StandardDateInput({
     }
   };
 
-  const openCalendar = () => {
-    if (datePickerRef.current && !disabled) {
-      try {
-        if (typeof datePickerRef.current.showPicker === "function") {
-          datePickerRef.current.showPicker();
-        } else {
-          datePickerRef.current.click();
-        }
-      } catch {
-        datePickerRef.current.click();
-      }
-    }
-  };
-
   const parsedCurrent = parseFlexibleDate(displayText);
-  const currentIso = parsedCurrent.isValid ? parsedCurrent.iso : "";
+  const validPickerIso =
+    parsedCurrent.isValid && !parsedCurrent.iso.includes("-00")
+      ? parsedCurrent.iso
+      : "";
 
   return (
     <div className="relative flex flex-col w-full">
@@ -243,43 +259,35 @@ export function StandardDateInput({
           }`}
         />
 
-        {/* Hidden native date picker utilized for showPicker() */}
-        <input
-          ref={datePickerRef}
-          type="date"
-          lang="vi-VN"
-          tabIndex={-1}
-          disabled={disabled}
-          min={min}
-          max={max}
-          value={currentIso}
-          onChange={handleNativePickerChange}
-          className="sr-only"
-          style={{
-            position: "absolute",
-            width: "1px",
-            height: "1px",
-            padding: 0,
-            margin: "-1px",
-            overflow: "hidden",
-            clip: "rect(0, 0, 0, 0)",
-            border: 0,
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Clickable Calendar Icon Button */}
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={openCalendar}
-          disabled={disabled}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-[#003B95] dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer pointer-events-auto"
-          aria-label="Chọn ngày từ lịch"
+        {/* Interactive Calendar Icon & Native Date Trigger (100% Mobile Compatible) */}
+        <div
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:text-[#003B95] dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
           title="Chọn ngày từ lịch"
         >
-          <Calendar className="h-4 w-4" />
-        </button>
+          <Calendar className="h-4.5 w-4.5 pointer-events-none group-hover:scale-110 transition-transform" />
+
+          {/* Native HTML5 Date Input: directly overlaid with opacity 0 so finger tap on mobile hits native input */}
+          <input
+            ref={datePickerRef}
+            type="date"
+            lang="vi-VN"
+            tabIndex={-1}
+            disabled={disabled}
+            min={min || "1920-01-01"}
+            max={max || "2035-12-31"}
+            value={validPickerIso}
+            onChange={handleNativePickerChange}
+            onClick={(e) => {
+              try {
+                if (typeof (e.currentTarget as any).showPicker === "function") {
+                  (e.currentTarget as any).showPicker();
+                }
+              } catch {}
+            }}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            aria-label={ariaLabel || "Chọn ngày từ lịch"}
+          />
+        </div>
       </div>
 
       {isInvalid && displayText.trim() && (

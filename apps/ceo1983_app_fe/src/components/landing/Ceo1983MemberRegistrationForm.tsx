@@ -34,7 +34,7 @@ export function Ceo1983MemberRegistrationForm() {
   const [email, setEmail] = useState("");
   const [position, setPosition] = useState("Tổng Giám Đốc / CEO");
   const [customPosition, setCustomPosition] = useState("");
-  const [birthDate, setBirthDate] = useState("00/00/1983");
+  const [birthDate, setBirthDate] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [industry, setIndustry] = useState("ind.trade");
   const [customIndustry, setCustomIndustry] = useState("");
@@ -381,7 +381,7 @@ export function Ceo1983MemberRegistrationForm() {
                 <StandardDateInput
                   value={birthDate}
                   placeholder="dd/mm/yyyy (VD: 15/08/1983)"
-                  onChange={(iso) => setBirthDate(iso)}
+                  onChange={(iso, display) => setBirthDate(display || iso)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50 text-slate-800"
                 />
               </div>

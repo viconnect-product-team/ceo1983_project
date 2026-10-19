@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as QRCode from 'qrcode';
 
 export interface SendAccountEmailOptions {
   to: string;
@@ -286,6 +287,13 @@ export class MailService {
     html: string;
     fromName?: string;
     auditContext?: string;
+    attachments?: Array<{
+      filename: string;
+      content?: Buffer | string;
+      path?: string;
+      cid?: string;
+      contentType?: string;
+    }>;
   }): Promise<{ ok: boolean; message: string; messageId?: string; isSuppressed?: boolean }> {
     const cleanTo = (options.to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
@@ -325,6 +333,7 @@ export class MailService {
           to: cleanTo,
           subject: options.subject,
           html: options.html,
+          attachments: options.attachments,
         });
         this.logger.log(`Email dispatched successfully to ${cleanTo}. Id: ${info.messageId}`);
         return { ok: true, message: 'Email sent successfully via SMTP', messageId: info.messageId };
@@ -525,8 +534,34 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
+    let qrAttachment: { filename: string; content: Buffer; cid: string; contentType: string } | null = null;
+    let qrDataUrl = '';
+    if (isConfirmedTicket) {
+      try {
+        const qrBuffer = await QRCode.toBuffer(String(registrationId), {
+          width: 300,
+          margin: 1,
+          color: {
+            dark: '#003B95',
+            light: '#FFFFFF',
+          },
+        });
+        qrAttachment = {
+          filename: `ticket-${registrationId}-qr.png`,
+          content: qrBuffer,
+          cid: 'event_ticket_qr',
+          contentType: 'image/png',
+        };
+        qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
+      } catch (qrErr) {
+        this.logger.warn(`Could not generate QR code buffer for ticket #${registrationId}: ${(qrErr as any)?.message}`);
+      }
+    }
+
     const appEventsUrl = 'https://14.225.217.232:5444/association/events';
-    const qrSrc = qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`;
+    const qrSrc = qrAttachment
+      ? 'cid:event_ticket_qr'
+      : (qrCodeUrl || qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`);
     const vietQrSrc = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
 
     const subject = paymentConfirmed
@@ -711,6 +746,7 @@ export class MailService {
       html,
       fromName: 'Ban Tổ Chức Sự Kiện CEO 1983',
       auditContext: `[EVENT_TICKET_EMAIL] RegId: ${registrationId} | Event: ${eventTitle} | Name: ${fullName}`,
+      attachments: qrAttachment ? [qrAttachment] : undefined,
     });
   }
 
@@ -1748,6 +1784,28 @@ export class MailService {
     const appUrl = portalUrl || 'https://14.225.217.232:5444/association/events';
     const subject = `[CLB CEO 1983] Xác Nhận Thanh Toán Vé Sự Kiện Thành Công — ${eventTitle} (Mã vé: #${registrationId})`;
 
+    let qrAttachment: { filename: string; content: Buffer; cid: string; contentType: string } | null = null;
+    let qrDataUrl = '';
+    try {
+      const qrBuffer = await QRCode.toBuffer(String(registrationId), {
+        width: 300,
+        margin: 1,
+        color: {
+          dark: '#003B95',
+          light: '#FFFFFF',
+        },
+      });
+      qrAttachment = {
+        filename: `ticket-${registrationId}-qr.png`,
+        content: qrBuffer,
+        cid: 'event_payment_qr',
+        contentType: 'image/png',
+      };
+      qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
+    } catch (qrErr) {
+      this.logger.warn(`Could not generate QR code buffer for payment ticket #${registrationId}: ${(qrErr as any)?.message}`);
+    }
+
     const html = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -1801,13 +1859,11 @@ export class MailService {
         ${luckyNumber ? `<div class="info-row"><span class="info-label">Con số may mắn (Lucky Draw):</span><span class="info-value" style="color: #e11d48; font-size: 16px;">#${luckyNumber}</span></div>` : ''}
       </div>
 
-      ${qrCodeUrl ? `
       <div class="qr-wrap">
         <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">MÃ QR CHECK-IN TẠI QUẦY LỄ TÂN</div>
-        <img src="${qrCodeUrl}" alt="QR Check-in" class="qr-img" />
+        <img src="${qrAttachment ? 'cid:event_payment_qr' : (qrCodeUrl || qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`)}" alt="QR Check-in" class="qr-img" width="170" height="170" />
         <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Anh/Chị vui lòng xuất trình mã QR này tại quầy đón tiếp để in thẻ và nhận quà.</div>
       </div>
-      ` : ''}
 
       <div class="btn-wrap">
         <a href="${appUrl}" class="btn-primary" target="_blank">🎟️ Xem Vé Trên App CEO 1983</a>
@@ -1829,6 +1885,7 @@ export class MailService {
       html,
       fromName: 'CLB Doanh Nhân CEO 1983',
       auditContext: `[EVENT_PAYMENT_SUCCESS] ${eventTitle} - ${registrationId} (${cleanTo})`,
+      attachments: qrAttachment ? [qrAttachment] : undefined,
     });
   }
 

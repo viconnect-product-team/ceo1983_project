@@ -1834,36 +1834,70 @@ export class AdminService implements OnModuleInit {
             ? `${totalValNumber.toLocaleString('vi-VN')} VNĐ`
             : '500.000.000 VNĐ';
 
-          // Fetch real attendee candidates from event_registrations or active members
-          const regCandidates = await this.prisma.$queryRaw<any[]>`
-            SELECT er.ticket_code as code, m.full_name as name, m.company_name as company, er.seat_number as seat
+          // 1. Fetch real checked-in attendees for this event
+          const checkedInCandidates = await this.prisma.$queryRaw<any[]>`
+            SELECT 
+              COALESCE(er.lucky_number, er.id) as code,
+              COALESCE(er.member_name, m.name, 'Hội viên CEO') as name,
+              COALESCE(m.company_name, 'Doanh nghiệp CEO 1983') as company,
+              COALESCE(er.seat_assignment, 'VIP Bàn 01') as seat,
+              er.checked_in_at,
+              COALESCE(m.phone, '') as phone
             FROM public.event_registrations er
-            JOIN public.members m ON er.member_id = m.id
-            WHERE er.event_id = ${ev.id} AND er.status = 'approved'
-            LIMIT 50
+            LEFT JOIN public.members m ON (m.code = er.member_code OR (er.email IS NOT NULL AND er.email != '' AND m.email = er.email))
+            WHERE er.event_id = ${ev.id} AND er.checked_in_at IS NOT NULL
+            ORDER BY er.checked_in_at DESC
+            LIMIT 100
           `.catch(() => []);
 
-          let candidates = regCandidates.map((c) => ({
+          let candidates = checkedInCandidates.map((c) => ({
             name: c.name || 'Hội viên CEO',
             company: c.company || 'Doanh nghiệp CEO 1983',
-            code: c.code || `#${Math.floor(1000 + Math.random() * 9000)}`,
+            code: c.code ? (String(c.code).startsWith('#') ? String(c.code) : `#${c.code}`) : `#${Math.floor(1000 + Math.random() * 9000)}`,
             seat: c.seat || 'Khu vực VIP',
+            phone: c.phone || '',
           }));
 
+          // 2. If no attendees checked in yet, load confirmed event registrants
           if (candidates.length === 0) {
-            // Fallback to active real members in database
+            const regCandidates = await this.prisma.$queryRaw<any[]>`
+              SELECT 
+                COALESCE(er.lucky_number, er.id) as code,
+                COALESCE(er.member_name, m.name, 'Hội viên CEO') as name,
+                COALESCE(m.company_name, 'Doanh nghiệp CEO 1983') as company,
+                COALESCE(er.seat_assignment, 'VIP Bàn 01') as seat,
+                COALESCE(m.phone, '') as phone
+              FROM public.event_registrations er
+              LEFT JOIN public.members m ON (m.code = er.member_code OR (er.email IS NOT NULL AND er.email != '' AND m.email = er.email))
+              WHERE er.event_id = ${ev.id} AND (er.status = 'confirmed' OR er.payment_status = 'free')
+              ORDER BY er.created_at DESC
+              LIMIT 100
+            `.catch(() => []);
+
+            candidates = regCandidates.map((c) => ({
+              name: c.name || 'Hội viên CEO',
+              company: c.company || 'Doanh nghiệp CEO 1983',
+              code: c.code ? (String(c.code).startsWith('#') ? String(c.code) : `#${c.code}`) : `#${Math.floor(1000 + Math.random() * 9000)}`,
+              seat: c.seat || 'Khu vực VIP',
+              phone: c.phone || '',
+            }));
+          }
+
+          // 3. Fallback to active real members if event has no registrations at all
+          if (candidates.length === 0) {
             const memberRows = await this.prisma.$queryRaw<any[]>`
-              SELECT id, full_name as name, company_name as company, phone
+              SELECT id, code, name, COALESCE(company_name, 'Doanh nghiệp CEO 1983') as company, phone
               FROM public.members
-              WHERE status = 'active'
-              LIMIT 25
+              WHERE status = 'active' OR status IS NULL
+              LIMIT 30
             `.catch(() => []);
 
             candidates = memberRows.map((m, mIdx) => ({
               name: m.name || `Doanh nhân CEO ${mIdx + 1}`,
               company: m.company || 'Công ty thành viên CEO 1983',
-              code: `#${1980 + (mIdx % 50)}`,
+              code: m.code ? `#${m.code}` : `#${1980 + (mIdx % 50)}`,
               seat: `Bàn VIP 0${(mIdx % 5) + 1} - Ghế 0${(mIdx % 8) + 1}`,
+              phone: m.phone || '',
             }));
           }
 
@@ -1909,23 +1943,38 @@ export class AdminService implements OnModuleInit {
       if (ev.id && Array.isArray(ev.prizes)) {
         for (const prz of ev.prizes) {
           if (prz.id && prz.title) {
-            const amount = BigInt(Math.round(prz.amount || 0));
+            const amount = BigInt(Math.round(Number(prz.amount) || 0));
+            const przId = String(prz.id);
+            const evId = String(ev.id);
+            const rankName = String(prz.rankName || 'Giải Thưởng');
+            const title = String(prz.title);
+            const value = String(prz.value || (amount > 0n ? `${Number(amount).toLocaleString('vi-VN')} VNĐ` : 'Đang cập nhật'));
+            const quantity = Math.max(1, Math.round(Number(prz.quantity) || 1));
+            const targetType = String(prz.targetType || 'PRODUCT');
+            const targetId = prz.targetId ? String(prz.targetId) : null;
+            const sponsorName = String(prz.sponsor || prz.sponsorName || 'Nhà tài trợ CEO 1983');
+            const description = String(prz.description || '');
+            const iconName = String(prz.iconName || 'Gift');
+            const imageUrl = prz.imageUrl ? String(prz.imageUrl) : null;
+            const highlightColor = String(prz.highlightColor || 'from-amber-500 to-yellow-600');
+
             await this.prisma.$executeRaw`
               INSERT INTO public.event_prizes (
                 id, event_id, rank_name, title, value, amount, quantity,
                 target_type, target_id, sponsor_name, description,
                 icon_name, image_url, highlight_color, status, created_at, updated_at
               ) VALUES (
-                ${prz.id}, ${ev.id}, ${prz.rankName || 'Giải Thưởng'}, ${prz.title},
-                ${prz.value || 'Đang cập nhật'}, ${amount}, ${prz.quantity || 1},
-                ${prz.targetType || 'PRODUCT'}, ${prz.targetId || null},
-                ${prz.sponsor || 'Nhà tài trợ CEO 1983'}, ${prz.description || ''},
-                ${prz.iconName || 'Gift'}, ${prz.imageUrl || null},
-                ${prz.highlightColor || 'from-amber-500 to-yellow-600'}, 'active',
+                ${przId}, ${evId}, ${rankName}, ${title},
+                ${value}, ${amount}, ${quantity},
+                ${targetType}, ${targetId},
+                ${sponsorName}, ${description},
+                ${iconName}, ${imageUrl},
+                ${highlightColor}, 'active',
                 NOW(), NOW()
               )
               ON CONFLICT (id) DO UPDATE
               SET rank_name = EXCLUDED.rank_name,
+                  event_id = EXCLUDED.event_id,
                   title = EXCLUDED.title,
                   value = EXCLUDED.value,
                   amount = EXCLUDED.amount,
@@ -1937,8 +1986,11 @@ export class AdminService implements OnModuleInit {
                   icon_name = EXCLUDED.icon_name,
                   image_url = EXCLUDED.image_url,
                   highlight_color = EXCLUDED.highlight_color,
+                  status = 'active',
                   updated_at = NOW()
-            `.catch(() => {});
+            `.catch((e: any) => {
+              console.error('[saveLuckyDrawConfig] Failed to upsert prize:', przId, e?.message);
+            });
           }
         }
       }
@@ -1949,15 +2001,19 @@ export class AdminService implements OnModuleInit {
       updatedAt: new Date().toISOString(),
     });
 
+    const isUuid = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+
     await this.prisma.$executeRawUnsafe(
       `
       INSERT INTO public.app_settings (key, value, updated_at, updated_by)
-      VALUES ('crm_lucky_draw_config', $1::jsonb, NOW(), ${userId ? `'${userId}'::uuid` : 'NULL'})
+      VALUES ('crm_lucky_draw_config', $1::jsonb, NOW(), ${isUuid ? `'${userId}'::uuid` : 'NULL'})
       ON CONFLICT (key) DO UPDATE
       SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
     `,
       jsonValue,
-    );
+    ).catch((err: any) => {
+      console.error('[saveLuckyDrawConfig] Error updating app_settings:', err?.message);
+    });
 
     return {
       success: true,

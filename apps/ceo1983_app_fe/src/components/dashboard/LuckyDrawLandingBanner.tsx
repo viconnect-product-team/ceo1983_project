@@ -24,6 +24,7 @@ import {
   Upload,
   Loader2,
   Image as ImageIcon,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -582,32 +583,38 @@ function LuckyDrawSetupModal({
 
     setSavingPrize(true);
     try {
-      const createdPrize = await fetchNestApi<any>("/sponsors/prizes", {
-        method: "POST",
-        body: JSON.stringify({
-          eventId: formData.id,
-          rankName: newRankName.trim() || "Giải Thưởng",
-          title: newTitle.trim(),
-          value: newValue.trim() || (newAmount > 0 ? `${newAmount.toLocaleString("vi-VN")} VNĐ` : "Liên hệ"),
-          amount: newAmount,
-          quantity: newQuantity,
-          targetType: newTargetType,
-          targetId: newTargetId || null,
-          sponsorName: newSponsor.trim() || "",
-          description: newDesc.trim() || "",
-          iconName: "Gift",
-          imageUrl: newImageUrl || null,
-        }),
-      });
+      let createdPrize: any = null;
+      try {
+        createdPrize = await fetchNestApi<any>("/sponsors/prizes", {
+          method: "POST",
+          body: JSON.stringify({
+            eventId: formData.id,
+            rankName: newRankName.trim() || "Giải Thưởng",
+            title: newTitle.trim(),
+            value: newValue.trim() || (newAmount > 0 ? `${newAmount.toLocaleString("vi-VN")} VNĐ` : "Liên hệ"),
+            amount: newAmount,
+            quantity: newQuantity,
+            targetType: newTargetType,
+            targetId: newTargetId || null,
+            sponsorName: newSponsor.trim() || "",
+            description: newDesc.trim() || "",
+            iconName: "Gift",
+            imageUrl: newImageUrl || null,
+          }),
+        });
+      } catch (err: any) {
+        console.warn("[handleAddPrize] Direct /sponsors/prizes POST will sync on setup save:", err?.message);
+      }
 
+      const generatedId = `PRZ-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
       const newPrizeItem: LuckyPrize = {
-        id: createdPrize?.id || `prz-${Date.now()}`,
-        rankName: createdPrize?.rankName || newRankName.trim(),
+        id: createdPrize?.id || generatedId,
+        rankName: createdPrize?.rankName || newRankName.trim() || "Giải Thưởng",
         title: createdPrize?.title || newTitle.trim(),
-        value: createdPrize?.value || newValue.trim(),
+        value: createdPrize?.value || newValue.trim() || (newAmount > 0 ? `${newAmount.toLocaleString("vi-VN")} VNĐ` : "Liên hệ"),
         amount: createdPrize?.amount || newAmount,
-        sponsor: createdPrize?.sponsorName || newSponsor.trim(),
-        description: createdPrize?.description || newDesc.trim(),
+        sponsor: createdPrize?.sponsorName || newSponsor.trim() || "Nhà tài trợ CEO 1983",
+        description: createdPrize?.description || newDesc.trim() || "",
         iconName: "Gift",
         quantity: newQuantity,
         targetType: newTargetType,
@@ -628,7 +635,7 @@ function LuckyDrawSetupModal({
       setNewDesc("");
       setNewTargetId("");
       setNewImageUrl("");
-      toast.success("Đã thêm giải thưởng thành công!");
+      toast.success("Đã thêm giải thưởng vào danh sách cấu hình!");
     } catch (err: any) {
       toast.error("Không thể lưu giải thưởng: " + (err?.message || "Lỗi kết nối"));
     } finally {
@@ -1220,6 +1227,17 @@ function InteractiveLuckyDrawModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Checked-in Attendees Summary Banner */}
+          <div className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs">
+            <span className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+              <Users className="w-4 h-4 text-amber-500" />
+              <span>Danh sách đại biểu đã check-in:</span>
+            </span>
+            <span className="font-extrabold text-amber-800 dark:text-amber-200 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-400/30">
+              {candidates.length} đại biểu hợp lệ
+            </span>
           </div>
 
           {/* Random Slot Display */}

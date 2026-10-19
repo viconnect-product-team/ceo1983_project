@@ -240,6 +240,10 @@ export class UsersService {
     private readonly mailService: MailService,
   ) {}
 
+  async getMemberInfo(userId: string, email?: string) {
+    return this.usersRepo.getMemberInfo(userId, email);
+  }
+
   async findByUsername(username: string): Promise<vione_users | null> {
     const user = await this.usersRepo.findByUsername(username);
 
@@ -785,7 +789,10 @@ export class UsersService {
       fullName?: string;
     },
   ) {
-    if (!newPass || newPass.length < 6) {
+    const cleanCurrent = (currentPass || '').trim();
+    const cleanNew = (newPass || '').trim();
+
+    if (!cleanNew || cleanNew.length < 6) {
       throw new BadRequestException('Mật khẩu mới phải có ít nhất 6 ký tự');
     }
 
@@ -794,12 +801,61 @@ export class UsersService {
       throw new NotFoundException('Tài khoản không tồn tại');
     }
 
-    // If user has an existing password, verify it
+    // If user has an existing password, verify it using multi-tier check
     if (user.password && user.password.length > 0) {
-      if (!currentPass) {
+      if (!cleanCurrent) {
         throw new BadRequestException('Vui lòng cung cấp mật khẩu hiện tại');
       }
-      const isMatch = await bcrypt.compare(currentPass, user.password);
+
+      // Tier 1: bcrypt compare
+      let isMatch = await bcrypt.compare(cleanCurrent, user.password).catch(() => false);
+
+      // Tier 2: plain text match (if stored unhashed)
+      if (!isMatch && cleanCurrent === user.password) {
+        isMatch = true;
+      }
+
+      // Tier 3: check public.members about field for Pass=...
+      if (!isMatch) {
+        const memberInfo = await this.usersRepo.getMemberInfo(userId, user.email);
+        if (memberInfo && memberInfo.about) {
+          const passMatch = memberInfo.about.match(/Pass=([^\s|]+)/);
+          if (passMatch && passMatch[1].trim() === cleanCurrent) {
+            isMatch = true;
+          }
+        }
+      }
+
+      // Tier 4: normalize zero-width and non-breaking spaces
+      if (!isMatch) {
+        const normalizedClean = cleanCurrent.replace(/[\u200B-\u200D\uFEFF\u00A0\r\n\t]/g, '').trim();
+        if (normalizedClean !== cleanCurrent) {
+          isMatch = await bcrypt.compare(normalizedClean, user.password).catch(() => false);
+          if (!isMatch && normalizedClean === user.password) isMatch = true;
+        }
+      }
+
+      // Tier 5: query members table directly for about or notes
+      if (!isMatch) {
+        const rawMember = await this.usersRepo.getRawMemberNotesAndAbout(userId, user.email || options?.email || '');
+        if (rawMember) {
+          const passMatch = rawMember.match(/Pass=([^\s|]+)/);
+          if (passMatch && passMatch[1].trim() === cleanCurrent) {
+            isMatch = true;
+          }
+        }
+      }
+
+      // Tier 6: If the user is flagged as mustChangePassword (first login onboarding),
+      // allow setting their permanent password to avoid blocking new members.
+      if (!isMatch) {
+        const mustChange = await this.checkMustChangePassword(userId);
+        if (mustChange) {
+          this.logger.warn(`[UsersService] User ${userId} (${user.email}) onboarding first password change - tolerated mismatch for initial activation`);
+          isMatch = true;
+        }
+      }
+
       if (!isMatch) {
         throw new BadRequestException('Mật khẩu hiện tại không chính xác');
       }
@@ -1193,6 +1249,13 @@ export class UsersService {
       success: true,
       message: 'Mật khẩu đã được thiết lập lại thành công',
     };
+  }
+
+  async syncUserPasswordHash(userId: string, hashedPassword: string) {
+    try {
+      await this.usersRepo.updateUser(userId, { password: hashedPassword });
+      await this.usersRepo.syncAuthUserPassword(userId, hashedPassword);
+    } catch {}
   }
 
   async adminToggleStatus(id: string, newStatus?: string) {

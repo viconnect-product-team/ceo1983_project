@@ -842,18 +842,6 @@ function MembersScreen() {
         (c) => String(c).toLowerCase() !== mCode && String(c).toLowerCase() !== mUserId,
       );
       localStorage.setItem("vba.disconnected_members", JSON.stringify(nextD));
-
-      const storedC = localStorage.getItem("vba.connected_members");
-      const cList: string[] = storedC ? JSON.parse(storedC) : [];
-      if (!cList.includes(mCode)) cList.push(mCode);
-      if (mUserId && !cList.includes(mUserId)) cList.push(mUserId);
-      localStorage.setItem("vba.connected_members", JSON.stringify(cList));
-
-      window.dispatchEvent(
-        new CustomEvent("vba.connection.changed", {
-          detail: { memberCode: m.code, userId: m.userId, connected: true },
-        }),
-      );
     } catch {
       /* ignore */
     }
@@ -862,12 +850,6 @@ function MembersScreen() {
       const next = new Set(prev);
       next.delete(mCode);
       if (mUserId) next.delete(mUserId);
-      return next;
-    });
-    setConnectedSet((prev) => {
-      const next = new Set(prev);
-      next.add(mCode);
-      if (mUserId) next.add(mUserId);
       return next;
     });
 
@@ -1055,7 +1037,7 @@ function MembersScreen() {
       >
         <button
           onClick={() => handleSelectTab("connected")}
-          className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "connected"
               ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1067,7 +1049,7 @@ function MembersScreen() {
 
         <button
           onClick={() => handleSelectTab("discover")}
-          className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "discover"
               ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1079,7 +1061,7 @@ function MembersScreen() {
 
         <button
           onClick={() => handleSelectTab("sent")}
-          className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "sent"
               ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1091,7 +1073,7 @@ function MembersScreen() {
 
         <button
           onClick={() => handleSelectTab("meetings")}
-          className={`shrink-0 rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "meetings"
               ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1119,6 +1101,29 @@ function MembersScreen() {
         {/* ── TAB 1: DANH BẠ ĐIỆN THOẠI CEO (CHỈ HIỆN NGƯỜI ĐÃ KẾT NỐI, NHÓM A-Z) ── */}
         {tab === "connected" && !loading && (
           <div className="relative">
+            {/* Thanh Chọn Nhanh Chữ Cái A-Z Dành Cho Điện Thoại Di Động (Mobile-friendly, không đè thẻ, không che khuất thao tác) */}
+            {connectedMembers.length > 0 && existingLetters.length > 0 && (
+              <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto no-scrollbar py-2 px-1 mb-2 select-none border-b border-slate-100 dark:border-white/5">
+                <span className="text-[10px] font-bold text-slate-400 shrink-0 uppercase tracking-wider pl-1">
+                  A-Z:
+                </span>
+                {existingLetters.map((char) => (
+                  <button
+                    key={char}
+                    type="button"
+                    onClick={() => scrollToLetter(char)}
+                    className={`h-7 min-w-[28px] px-1.5 rounded-lg text-[11px] font-black transition-all flex items-center justify-center shrink-0 cursor-pointer active:scale-95 ${
+                      activeAlphabet === char
+                        ? "bg-amber-400 text-slate-950 shadow-xs scale-105"
+                        : "bg-slate-100 dark:bg-white/5 text-[#003B95] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                    }`}
+                  >
+                    {char}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {connectedMembers.length === 0 ? (
               <div className="py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 text-center space-y-4 bg-slate-50/50 dark:bg-white/[0.02]">
                 <div className="h-16 w-16 mx-auto rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-amber-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/40 shadow-xs">
@@ -1160,7 +1165,7 @@ function MembersScreen() {
                 </p>
               </div>
             ) : (
-              <div className="pr-6 sm:pr-8 space-y-5">
+              <div className="sm:pr-10 space-y-4">
                 {existingLetters.map((letter) => {
                   const letterMembers = groupedConnected[letter] || [];
                   return (
@@ -1181,7 +1186,7 @@ function MembersScreen() {
                       </div>
 
                       {/* Danh sách thẻ liên hệ trong chữ cái này */}
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {letterMembers.map((m) => {
                           const avatarResolved = m.avatar ? resolveMediaUrl(m.avatar) : null;
                           const personDisplayName =
@@ -1194,7 +1199,7 @@ function MembersScreen() {
                           return (
                             <div
                               key={m.code}
-                              className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3 bg-white dark:bg-[#131a26] shadow-xs hover:border-[#003B95]/40 dark:hover:border-amber-400/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                              className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3 sm:p-3.5 bg-white dark:bg-[#131a26] shadow-xs hover:border-[#003B95]/40 dark:hover:border-amber-400/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                             >
                               {/* Thông tin CEO bên trái */}
                               <div className="flex items-center gap-3 min-w-0">
@@ -1229,7 +1234,7 @@ function MembersScreen() {
                                     <button
                                       type="button"
                                       onClick={() => setSelectedMember(m)}
-                                      className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
+                                      className="truncate max-w-[170px] sm:max-w-none text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
                                     >
                                       {personDisplayName}
                                     </button>
@@ -1265,13 +1270,13 @@ function MembersScreen() {
                                 </div>
                               </div>
 
-                              {/* 5 Nút Thao Tác Nhanh Kiểu Danh Bạ Điện Thoại */}
-                              <div className="flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5 shrink-0">
+                              {/* 5 Nút Thao Tác Nhanh: Dạng lưới 5 cột trên điện thoại (đều đẹp, chuẩn ngón tay) và cụm icon trên desktop */}
+                              <div className="grid grid-cols-5 sm:flex items-center sm:justify-end gap-1.5 sm:gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5 w-full sm:w-auto shrink-0">
                                 {/* Nút Gọi điện thoại nhanh */}
                                 <button
                                   type="button"
                                   onClick={() => handleCallPhone(m.phone, personDisplayName)}
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="flex sm:grid h-9 w-full sm:w-9 items-center justify-center rounded-xl sm:rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
                                   title={`Gọi điện thoại: ${m.phone || "Chưa có số"}`}
                                 >
                                   <PhoneCall className="h-4 w-4 stroke-[2.2]" />
@@ -1281,17 +1286,17 @@ function MembersScreen() {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenChat(m.code, personDisplayName)}
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-2 border-blue-600 dark:border-blue-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition active:scale-95 cursor-pointer shadow-xs group"
+                                  className="flex sm:grid h-9 w-full sm:w-9 items-center justify-center rounded-xl sm:rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-600 dark:border-blue-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition active:scale-95 cursor-pointer shadow-xs group"
                                   title="Nhắn tin giao thương"
                                 >
-                                  <MessageSquare className="h-4.5 w-4.5 stroke-[2.6] fill-blue-600/25 group-hover:fill-white/30 group-hover:text-white text-blue-700 dark:text-blue-300 transition-colors" />
+                                  <MessageSquare className="h-4.5 w-4.5 stroke-[2.4] fill-blue-600/25 group-hover:fill-white/30 group-hover:text-white text-blue-700 dark:text-blue-300 transition-colors" />
                                 </button>
 
                                 {/* Nút Xem Thẻ 83 / Hồ sơ */}
                                 <button
                                   type="button"
                                   onClick={() => setSelectedMember(m)}
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-sky-50 dark:bg-sky-950/50 text-[#003B95] dark:text-sky-300 border border-sky-300 dark:border-sky-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="flex sm:grid h-9 w-full sm:w-9 items-center justify-center rounded-xl sm:rounded-full bg-sky-50 dark:bg-sky-950/50 text-[#003B95] dark:text-sky-300 border border-sky-300 dark:border-sky-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
                                   title="Xem danh thiếp số / Thẻ 83"
                                 >
                                   <CreditCard className="h-4 w-4 stroke-[2.2]" />
@@ -1311,7 +1316,7 @@ function MembersScreen() {
                                       userId: m.userId ?? undefined,
                                     })
                                   }
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="flex sm:grid h-9 w-full sm:w-9 items-center justify-center rounded-xl sm:rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
                                   title="Hẹn gặp kết nối 1-on-1"
                                 >
                                   <Handshake className="h-4 w-4 stroke-[2.2]" />
@@ -1321,7 +1326,7 @@ function MembersScreen() {
                                 <button
                                   type="button"
                                   onClick={() => handleDisconnect(m)}
-                                  className="grid h-9 w-9 place-items-center rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-700/80 hover:bg-rose-600 hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
+                                  className="flex sm:grid h-9 w-full sm:w-9 items-center justify-center rounded-xl sm:rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-700/80 hover:bg-rose-600 hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
                                   title={`Hủy kết nối với ${personDisplayName}`}
                                 >
                                   <UserX className="h-4 w-4 stroke-[2.2]" />
@@ -1345,9 +1350,9 @@ function MembersScreen() {
               </div>
             )}
 
-            {/* Thanh Chỉ Mục A-Z Cuộn Nhanh Bên Cạnh Phải Màn Hình */}
+            {/* Thanh Chỉ Mục A-Z Cuộn Nhanh Chỉ Hiển Thị Trên Màn Hình Lớn/Tablet (Tránh đè thẻ hoặc chạm nhầm trên điện thoại) */}
             {connectedMembers.length > 0 && (
-              <div className="fixed right-1 sm:right-2 top-36 z-30 flex flex-col items-center justify-center select-none py-1.5 px-0.5 rounded-full bg-white/80 dark:bg-[#001B54]/80 backdrop-blur-md border border-slate-200/60 dark:border-white/10 shadow-md text-[9px] font-black">
+              <div className="hidden sm:flex fixed right-1 sm:right-2 top-1/2 -translate-y-1/2 z-30 flex-col items-center justify-center select-none py-1.5 px-0.5 rounded-full bg-white/80 dark:bg-[#001B54]/80 backdrop-blur-md border border-slate-200/60 dark:border-white/10 shadow-md text-[9px] font-black max-h-[calc(100vh-160px)] overflow-y-auto no-scrollbar">
                 {ALPHABET_INDEX.map((char) => {
                   const hasEntries = existingLetters.includes(char);
                   return (
@@ -1410,9 +1415,9 @@ function MembersScreen() {
                 return (
                   <div
                     key={m.code}
-                    className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex items-center justify-between gap-3 hover:border-[#003B95]/40 transition"
+                    className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#003B95]/40 transition"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
                       <button
                         type="button"
                         onClick={() => setSelectedMember(m)}
@@ -1458,7 +1463,7 @@ function MembersScreen() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 flex items-center gap-1.5">
+                    <div className="shrink-0 w-full sm:w-auto flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
                       {checkIsFriend(m) ? (
                         <div className="flex items-center gap-1.5">
                           <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
@@ -1483,7 +1488,7 @@ function MembersScreen() {
                         <button
                           type="button"
                           onClick={() => handleConnect(m)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white px-3.5 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white px-3.5 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer w-full sm:w-auto"
                         >
                           <UserPlus className="h-3.5 w-3.5 text-white" />
                           <span>Kết nối</span>
@@ -1511,9 +1516,9 @@ function MembersScreen() {
               sentList.map((item) => (
                 <div
                   key={item.id || item.code}
-                  className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex items-center justify-between gap-3"
+                  className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
                     <div className="h-11 w-11 shrink-0 rounded-full bg-blue-50 dark:bg-blue-950/40 grid place-items-center text-[#003B95] font-bold text-sm">
                       {item.name.slice(0, 2).toUpperCase()}
                     </div>
@@ -1528,12 +1533,12 @@ function MembersScreen() {
                     </div>
                   </div>
 
-                  <div className="shrink-0 flex items-center gap-1.5">
+                  <div className="shrink-0 w-full sm:w-auto flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
                     {item.status === "pending" && (
                       <button
                         type="button"
                         onClick={() => handleCancelSentRequest(item)}
-                        className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition active:scale-95 cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition active:scale-95 cursor-pointer w-full sm:w-auto text-center"
                       >
                         Thu hồi
                       </button>
@@ -1554,11 +1559,11 @@ function MembersScreen() {
         {tab === "meetings" && !loading && (
           <div className="space-y-3">
             {/* Phân loại lịch hẹn: Đã chốt (chỉ hiện khi đối tác đồng ý) vs Chờ duyệt vs Tất cả */}
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/5">
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 overflow-x-auto no-scrollbar">
               <button
                 type="button"
                 onClick={() => setMeetingSubTab("confirmed")}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                className={`flex-1 min-w-[110px] py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0 ${
                   meetingSubTab === "confirmed"
                     ? "bg-[#003B95] text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -1570,7 +1575,7 @@ function MembersScreen() {
               <button
                 type="button"
                 onClick={() => setMeetingSubTab("pending")}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                className={`flex-1 min-w-[110px] py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0 ${
                   meetingSubTab === "pending"
                     ? "bg-[#003B95] text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -1582,7 +1587,7 @@ function MembersScreen() {
               <button
                 type="button"
                 onClick={() => setMeetingSubTab("all")}
-                className={`py-1.5 px-3 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                className={`py-1.5 px-3 rounded-xl text-[11px] font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
                   meetingSubTab === "all"
                     ? "bg-[#003B95] text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -1698,7 +1703,7 @@ function MembersScreen() {
                       {renderStatusBadge()}
                     </div>
 
-                    <div className="flex items-center justify-between text-[12px] gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[12px] gap-2.5">
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
                           {meet.isUserHost ? "Đối tác:" : "Người mời:"} {partnerDisplayName}
@@ -1745,7 +1750,7 @@ function MembersScreen() {
                         )}
                       </div>
 
-                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
                         {/* Invitee pending actions */}
                         {meet.isUserInvitee && (meet.status === "pending" || meet.status === "draft") && (
                           <div className="flex items-center gap-1">
@@ -1863,6 +1868,14 @@ function MembersScreen() {
       <MemberProfileModal
         member={selectedMember}
         initialConnected={selectedMember ? checkIsFriend(selectedMember) : false}
+        isPending={
+          selectedMember
+            ? Boolean(
+                (selectedMember.userId && outgoingMap.has(selectedMember.userId.toLowerCase())) ||
+                  localPending.has((selectedMember.userId || selectedMember.code).toLowerCase()),
+              )
+            : false
+        }
         onClose={() => setSelectedMember(null)}
         onMessage={(m) => {
           const pName = m.contact || m.personName || m.name;

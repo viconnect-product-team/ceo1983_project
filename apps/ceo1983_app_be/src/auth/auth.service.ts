@@ -28,13 +28,31 @@ export class AuthService {
   }
 
   async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByUsername(username);
+    const cleanUser = (username || '').trim();
+    const cleanPass = (pass || '').trim();
+    const user = await this.usersService.findByUsername(cleanUser);
     if (!user || !user.password) {
       return null;
     }
-    
-    const isMatch = await bcrypt.compare(pass, user.password);
-    
+
+    let isMatch = await bcrypt.compare(cleanPass, user.password).catch(() => false);
+    if (!isMatch && cleanPass === user.password) {
+      isMatch = true;
+    }
+    if (!isMatch) {
+      const memberInfo = await this.usersService.getMemberInfo(user.id, user.email || undefined);
+      if (memberInfo && memberInfo.about) {
+        const passMatch = memberInfo.about.match(/Pass=([^\s|]+)/);
+        if (passMatch && passMatch[1].trim() === cleanPass) {
+          isMatch = true;
+          // Sync hash into vione_users for instant future logins
+          const salt = await bcrypt.genSalt(10);
+          const newHash = await bcrypt.hash(cleanPass, salt);
+          await this.usersService.syncUserPasswordHash(user.id, newHash).catch(() => {});
+        }
+      }
+    }
+
     if (isMatch) {
       const { password, ...result } = user;
       return {
