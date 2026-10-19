@@ -1,6 +1,52 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện 8 Điểm Trọng Điểm: Sửa Lỗi Đổi Mật Khẩu 500 & Đăng Nhập 401, Chuẩn Hóa Họ Tên Cá Nhân Hội Viên vs Tên Công Ty, Mẫu Email Cảm Ơn Đăng Ký Chuẩn Tiếng Việt, Tinh Gọn Quản Trị Phân Quyền CRM Duy Nhất Phân Hệ 1 & 6 Ban Chuyên Môn + Quyền App Mobile, Phân Giải JSON Hồ Sơ Chi Tiết & Quy Mô Nhân Sự, Bảng Tin B2B Ảnh Chuẩn Facebook Không Bình Luận/Cảm Xúc Chỉ Nhắn Tin & Hẹn Gặp 1-1, Nút Quay Lại Đăng Nhập Khi Đổi Mật Khẩu Bắt Buộc, Tắt Vĩnh Viễn Trợ Lý AI Khi Bấm X)**:
+  1. **Khắc phục lỗi Đổi mật khẩu HTTP 500 & Đăng nhập HTTP 401 (`users.repository.ts`, `auth.service.ts`)**:
+     - *Nguyên nhân sập 500*: Bảng `user_profiles` không có trong Prisma client schema (`@vibe/db`), khi gọi `this.prisma.user_profiles` gây unhandled exception 500.
+     - *Giải pháp*: Thay thế 100% các lệnh thao tác `user_profiles` sang Raw SQL an toàn (`$executeRawUnsafe` và `$queryRawUnsafe`).
+     - *Xử lý lỗi đăng nhập 401*: Loại bỏ ký tự ẩn/khoảng trắng vô hình Unicode (`[\u200B-\u200D\uFEFF\u00A0\r\n\t]`) trước khi so khớp Bcrypt; hỗ trợ fallback đối soát mật khẩu khởi tạo từ ghi chú/about của hội viên.
+  2. **Chuẩn hóa trường Họ tên cá nhân Hội viên vs Tên Doanh nghiệp (`members.service.ts`, `public-registration.service.ts`, CSDL PostgreSQL)**:
+     - Khắc phục lỗi đảo ngược tên trên bảng CRM: Mọi luồng đăng ký hội viên lưu `name = fullName`, `contact = fullName`, `company_name = companyName`, `company_size = staffSize`.
+     - Sửa `mapMemberRow` trong backend ưu tiên lấy họ tên đại diện từ JSON `about` làm `name`, đưa tên doanh nghiệp vào `company`.
+     - Cập nhật trực tiếp bản ghi hội viên `MBMVFHGDHY` (Phạm An Nam - Vione) trong CSDL: `name = 'Phạm An Nam'`, `contact = 'Phạm An Nam'`, `company_name = 'Vione'`, `company_size = '10 - 50 nhân sự'`.
+  3. **Mẫu Email Cảm ơn Đăng ký chuẩn Tiếng Việt & Bỏ Ban nguyện vọng (`mail.service.ts`)**:
+     - Ánh xạ toàn bộ mã ngành nghề kỹ thuật (`ind.trade` -> "Thương mại & Bán lẻ", `ind.it` -> "Công nghệ thông tin & Viễn thông", `ind.fnb` -> "Ẩm thực & Nhà hàng F&B", v.v.) sang tiếng Việt trang trọng.
+     - Xóa bỏ trường "Ban nguyện vọng" khỏi nội dung thư cảm ơn gửi tới hội viên.
+  4. **Tinh gọn Phân quyền CRM & Phân rã 6 Ban chuyên môn + Quyền App Mobile (`permissions.tsx`, `RbacPermissionMatrix.tsx`, `rbac-permission-helpers.ts`)**:
+     - Giữ lại DUY NHẤT Phân hệ 1: Ma trận phân quyền hệ thống (`RbacPermissionMatrix`), loại bỏ hoàn toàn các tab con rườm rà (Phân hệ 2 & 3).
+     - Phân rã vai trò thành viên thành 6 ban chuyên môn cụ thể: `thanh_vien_ban_su_kien`, `thanh_vien_ban_xuc_tien`, `thanh_vien_ban_thanh_vien`, `thanh_vien_ban_truyen_thong`, `thanh_vien_ban_tai_chinh`, `thanh_vien_ban_thien_nguyen`, và `member` (App CEO 1983).
+     - Bổ sung nhóm quyền ứng dụng di động (`cat_mobile_app`) với đầy đủ 10 quyền di động lên Ma trận phân quyền.
+  5. **Phân giải JSON Hồ sơ chi tiết & Quy mô nhân sự (`members.$memberId.tsx`, `association.profile.tsx`)**:
+     - Phân giải chuỗi JSON `about` thành các trường thông tin lãnh đạo rõ ràng: Người đại diện, Chức vụ, Năm sinh, Quy mô nhân sự, Nhu cầu kết nối, Năng lực cung ứng. Tuyệt đối không hiển thị raw JSON string cho người dùng.
+     - Hiển thị đầy đủ Quy mô nhân sự dưới mục "QUY MÔ NHÂN SỰ" với icon `Users`.
+  6. **Bảng tin B2B Mạng xã hội Ảnh chuẩn Facebook không Bình luận/Cảm xúc (`NetworkFeedCard.tsx`, `network.tsx`)**:
+     - Thiết kế lưới ảnh chuyên nghiệp theo bố cục Facebook (1 ảnh hero, 2 ảnh 50/50, 3 ảnh 1 trái 2 phải, 4+ ảnh lưới 2x2 với badge `+N`).
+     - Tuyệt đối loại bỏ tính năng thả cảm xúc (like, reaction) và bình luận (comment) để đảm bảo không gian giao lưu chuẩn mực doanh nhân.
+     - Cung cấp duy nhất 2 nút hành động: "💬 Nhắn tin" trực tiếp và "🤝 Setup cuộc gặp 1-1".
+  7. **Nút Quay lại màn hình đăng nhập khi đổi mật khẩu bắt buộc (`association.settings.tsx`, `MemberShell.tsx`)**:
+     - Bổ sung prop `onBack?: () => void` vào `MemberHeader`.
+     - Khi `required === "true"`, cung cấp nút bấm "Quay lại màn hình đăng nhập" và thanh điều hướng `MemberHeader` cho phép hủy phiên làm việc, xóa session và quay về trang `/association/login`.
+  8. **Tắt Vĩnh viễn Trợ lý AI khi bấm biểu tượng X (`Ceo1983ChatAssistant.tsx`, `__root.tsx`)**:
+     - Khi người dùng bấm X trên widget trợ lý AI, hệ thống tắt hoàn toàn AI (`setVoiceAiEnabled(false)`, lưu cờ `ceo1983_ai_disabled_permanently = true`), ẩn toàn bộ widget và nút mini dock.
+     - Chặn tuyệt đối AI không xuất hiện trên bất kỳ trang CRM quản trị nào; chỉ được bật lại khi người dùng chủ động kích hoạt lại trong mục Cài đặt.
+- **Bản nâng cấp ngày 19/10/2026 (Chuẩn Hóa Toàn Diện Bố Cục Thuyết Trình, Slide Deck 17 Trang & Kịch Bản Lời Nói Demo Song Song 180 Phút Cho Buổi Thứ 4 Tuần Sau - CEO 1983 x ViConnect)**:
+  1. **Bố Cục Thuyết Trình & Slide Deck 4 Giai Đoạn Chuẩn Hóa (`BO_CUC_SLIDE_VA_KICH_BAN_DEMO_THU_4_CEO1983.md`, `SLIDE_CHINH_THUC_THU_4_CEO1983.html`)**:
+     - *Phần 1: Giới thiệu & Khởi động (09:00 - 09:10)*: Mở đầu bằng lời chào chính thức *"Em chào tất cả mọi người"*; giới thiệu thành phần đoàn công tác ViConnect & ViOne; công bố mốc thời gian 09:00 - 12:00; mời đại diện Ban Thường Trực CEO 1983 giới thiệu thành phần tham gia.
+     - *Phần 2: Báo cáo sản phẩm 30-40 phút (09:10 - 09:45)*:
+       * 2.1: Mở đầu bài trình bày tầm nhìn số hóa điều hành và kết nối giao thương độc quyền.
+       * 2.2: Liệt kê 3 bài toán lớn và 3 yêu cầu ban đầu (mô tả ngắn gọn 1-2 dòng mỗi ý): Quản trị thành viên, Quản lý sự kiện, Xúc tiến thương mại (cơ hội, marketplace); tuyên bố kết hợp giải pháp ViOne x ViConnect tạo nên Web CRM và Mobile App.
+       * Trình bày theo quy trình sử dụng và chức năng song song 8 cặp: (1) Đăng ký & Đăng nhập & Duyệt tài khoản, (2) Định danh Hội viên VIP & Danh thiếp số QR vCard vs Danh bạ 11 ngành, (3) Quản lý Sự kiện & Vé E-Ticket vs Soát vé Check-in 1 giây, (4) Sàn Marketplace B2B nội bộ (gói Obsidian/Amber, Deep Cobalt Navy) vs Duyệt gian hàng, (5) Bảng Deal Cơ hội kinh doanh thời gian thực vs Đo lường giá trị giao thương, (6) Mạng lưới Kết nối B2B & Đặt lịch hẹn 1-on-1 thông minh, (7) Điểm sáng ViConnect: Thu Chi tự động VietQR Napas gạch nợ 1s & Sổ quỹ Thông tư 200/2014/TT-BTC nộp HanoiBA, (8) Tháp chỉ huy Executive Dashboard 360 độ & Ma trận phân quyền 3 phân hệ 6 Ban chuyên môn.
+     - *Phần 3: Phiên nhận xét từ đối tác (09:45 - 10:45)*: Đúng 2 slide cô đọng, trình bày quy trình tiếp nhận và phân loại P0/P1/P2, mở trực tiếp biểu mẫu Excel ghi nhận thời gian thực trên màn chiếu.
+     - *Phần 4: Kết thúc & Tổng kết cuộc họp (10:45 - 12:00)*: Đúng 2 slide cô đọng, bảng đánh giá "Cái gì chốt - Cái gì sửa" (Scope Freeze 30 chức năng, 100% Pass; xử lý P0/P1 trong 48h); cam kết văn bản: Biên bản cuộc họp gửi trong 24h, Kế hoạch hành động chi tiết gửi trong 48h; lộ trình 7 ngày tiến tới Go-Live.
+  2. **Tài Liệu Hướng Dẫn Lời Nói & Thứ Tự Demo Thao Tác Chức Năng Xuyên Suốt (Speaker Script & Live Demo Action Guide)**:
+     - Xây dựng bảng kịch bản 3 cột chi tiết từng bước: Thiết bị & Phân hệ, Thao tác thực tế của người demo (click đâu, mở màn hình nào, gõ gì trên App và CRM), và Câu văn lời nói của Diễn giả (Verbatim Script) khớp từng cú click chuột, giải thích sâu sắc bài toán vận hành và giá trị thực tế cho CLB.
+     - Kèm lời thoại điều phối Phiên nhận xét và Lời thoại bế mạc tổng kết trang trọng.
+  3. **Tạo File Slide Trình Chiếu Tương Tác Sắc Nét 16:9 (`SLIDE_CHINH_THUC_THU_4_CEO1983.html`)**:
+     - Đúng 17 slide, chuẩn bảng màu Deep Cobalt Navy `#003B95` & Warm Amber Gold, có thanh Presenter HUD điều khiển, đồng hồ bấm giờ, nút Fullscreen, chuyển slide bằng phím bàn phím mượt mà.
+  4. **Kiểm Tra & Tuân Thủ (AGENTS.md Rules 1 & 2)**:
+     - Cập nhật đầy đủ MEMORY.md, đồng bộ `KICH_BAN_VA_SLIDE_THUYET_TRINH_THU_4_CEO1983.md`.
+     - Tuyệt đối không chạy `git commit` hay `git push`.
 - **Bản nâng cấp ngày 19/10/2026 (Hoàn Thiện Hệ Thống Phân Quyền CRM 3 Phân Hệ, Bổ Sung Phân Hệ 3 Phân Quyền Tài Khoản Theo Ban, Quản Lý Ban Chuyên Môn Khởi Tạo 0 Thành Viên & Hiện Danh Sách Khi Chỉnh Sửa, và Xóa Tài Khoản Cascade Triệt Để)**:
   1. **Tái Cấu Trúc Toàn Diện Phân Quyền CRM Thành 3 Phân Hệ Rõ Ràng & Bổ Sung Phân Hệ 3 (`permissions.tsx`)**:
      - *Hệ thống 3 Phân Hệ chuẩn hóa*:

@@ -256,11 +256,11 @@ export class ConnectPublicRegistrationService {
       if (targetAssocUuid) {
         await this.prisma.$executeRaw`
           INSERT INTO public.members (
-            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, association_id, created_at, updated_at
+            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, association_id, company_name, created_at, updated_at
           ) VALUES (
             ${memberId},
             '',
-            ${company},
+            ${fullName},
             ${fullName},
             ${email},
             ${phone},
@@ -275,18 +275,46 @@ export class ConnectPublicRegistrationService {
             ${detailedNotes},
             ${verifiedUserId ? verifiedUserId : null}::uuid,
             ${targetAssocUuid}::uuid,
+            ${company},
             now(),
             now()
           )
-        `;
+        `.catch(async () => {
+          // Fallback if company_name column is not in older schema
+          await this.prisma.$executeRaw`
+            INSERT INTO public.members (
+              id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, association_id, created_at, updated_at
+            ) VALUES (
+              ${memberId},
+              '',
+              ${fullName},
+              ${fullName},
+              ${email},
+              ${phone},
+              'company',
+              'memberLevel.medium',
+              ${industry || 'ind.it'},
+              'region.north',
+              'pending',
+              ${joinedAt}::date,
+              ${feeYear},
+              false,
+              ${detailedNotes},
+              ${verifiedUserId ? verifiedUserId : null}::uuid,
+              ${targetAssocUuid}::uuid,
+              now(),
+              now()
+            )
+          `;
+        });
       } else {
         await this.prisma.$executeRaw`
           INSERT INTO public.members (
-            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, created_at, updated_at
+            id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, company_name, created_at, updated_at
           ) VALUES (
             ${memberId},
             '',
-            ${company},
+            ${fullName},
             ${fullName},
             ${email},
             ${phone},
@@ -300,10 +328,37 @@ export class ConnectPublicRegistrationService {
             false,
             ${detailedNotes},
             ${verifiedUserId ? verifiedUserId : null}::uuid,
+            ${company},
             now(),
             now()
           )
-        `;
+        `.catch(async () => {
+          // Fallback if company_name column is not in older schema
+          await this.prisma.$executeRaw`
+            INSERT INTO public.members (
+              id, code, name, contact, email, phone, type, level, industry, region, status, joined_at, fee_year, fee_paid, about, user_id, created_at, updated_at
+            ) VALUES (
+              ${memberId},
+              '',
+              ${fullName},
+              ${fullName},
+              ${email},
+              ${phone},
+              'company',
+              'memberLevel.medium',
+              ${industry || 'ind.it'},
+              'region.north',
+              'pending',
+              ${joinedAt}::date,
+              ${feeYear},
+              false,
+              ${detailedNotes},
+              ${verifiedUserId ? verifiedUserId : null}::uuid,
+              now(),
+              now()
+            )
+          `;
+        });
       }
 
       // Gửi email thông báo tài khoản với mật khẩu ngẫu nhiên tới hòm thư hội viên mới

@@ -30,25 +30,39 @@ export class AuthService {
   async validateUser(username: string, pass: string): Promise<any> {
     const cleanUser = (username || '').trim();
     const cleanPass = (pass || '').trim();
+    const normalizedPass = cleanPass.replace(/[\u200B-\u200D\uFEFF\u00A0\r\n\t]/g, '').trim();
+
     const user = await this.usersService.findByUsername(cleanUser);
     if (!user || !user.password) {
       return null;
     }
 
+    // Tier 1: bcrypt compare
     let isMatch = await bcrypt.compare(cleanPass, user.password).catch(() => false);
-    if (!isMatch && cleanPass === user.password) {
+    if (!isMatch && normalizedPass !== cleanPass) {
+      isMatch = await bcrypt.compare(normalizedPass, user.password).catch(() => false);
+    }
+
+    // Tier 2: plain text equality
+    if (!isMatch && (cleanPass === user.password || normalizedPass === user.password)) {
       isMatch = true;
     }
+
+    // Tier 3: check public.members about / notes field for Pass=...
     if (!isMatch) {
       const memberInfo = await this.usersService.getMemberInfo(user.id, user.email || undefined);
-      if (memberInfo && memberInfo.about) {
-        const passMatch = memberInfo.about.match(/Pass=([^\s|]+)/);
-        if (passMatch && passMatch[1].trim() === cleanPass) {
-          isMatch = true;
-          // Sync hash into vione_users for instant future logins
-          const salt = await bcrypt.genSalt(10);
-          const newHash = await bcrypt.hash(cleanPass, salt);
-          await this.usersService.syncUserPasswordHash(user.id, newHash).catch(() => {});
+      const rawText = `${memberInfo?.about || ''} ${memberInfo?.notes || ''}`.trim();
+      if (rawText) {
+        const passMatch = rawText.match(/Pass=([^\s|]+)/);
+        if (passMatch) {
+          const expected = passMatch[1].trim();
+          if (expected === cleanPass || expected === normalizedPass) {
+            isMatch = true;
+            // Sync hash into vione_users for instant future logins
+            const salt = await bcrypt.genSalt(10);
+            const newHash = await bcrypt.hash(cleanPass || normalizedPass, salt);
+            await this.usersService.syncUserPasswordHash(user.id, newHash).catch(() => {});
+          }
         }
       }
     }

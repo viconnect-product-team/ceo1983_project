@@ -6,15 +6,17 @@
 // (Ghi nhớ · Bình luận · Thích · Kết nối · "…") nằm ngoài liên kết để giữ ngữ nghĩa đúng.
 
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
   Check,
   Globe,
+  Handshake,
   Loader2,
   Lock,
   MapPin,
+  MessageSquare,
   MoreHorizontal,
   Trash2,
   UserPlus,
@@ -34,10 +36,8 @@ import { useNetworkRowConnect } from "@/hooks/use-network-row-connect";
 import { ConnectConfirmDialog } from "./ConnectConfirmDialog";
 import { networkFeedKeys } from "@/hooks/use-network-feed";
 import { MomentManageSheet } from "./MomentManageSheet";
-import { MomentActionBar } from "./moments/MomentActionBar";
-import { MomentCommentSheet } from "./moments/MomentCommentSheet";
 import { MomentImageViewer } from "./moments/MomentImageViewer";
-import { useMomentComments } from "@/hooks/use-moment-comments";
+import { Create1on1MeetingModal } from "@/components/meetings/Create1on1MeetingModal";
 import type { BcNetworkFeedItem } from "@/lib/business-connect/mobile/network-feed.types";
 import type { BcMobileNetworkPerson } from "@/hooks/use-business-connect-network";
 
@@ -74,6 +74,7 @@ function PhotoGrid({
   if (urls.length === 0) return null;
   const resolved = urls.map((u) => resolveMediaUrl(u) || u);
 
+  // 1 photo: Full width hero photo
   if (resolved.length === 1) {
     return (
       <button
@@ -91,27 +92,88 @@ function PhotoGrid({
     );
   }
 
-  const shown = resolved.slice(0, 3);
-  const extra = resolved.length - shown.length;
+  // 2 photos: 2 equal square photos side-by-side
+  if (resolved.length === 2) {
+    return (
+      <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-xl overflow-hidden ring-1 ring-[var(--bc-mobile-border)]">
+        {resolved.map((url, i) => (
+          <button
+            key={url}
+            type="button"
+            onClick={() => onImageClick?.(i)}
+            className="relative block w-full text-left cursor-pointer overflow-hidden group focus:outline-none"
+          >
+            <img
+              src={url}
+              alt={`${alt} ${i + 1}`}
+              loading="lazy"
+              className="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-[1.02] active:scale-[0.98]"
+            />
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  // 3 photos: 1 large on left spanning 2 rows, 2 stacked on right
+  if (resolved.length === 3) {
+    return (
+      <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-xl overflow-hidden ring-1 ring-[var(--bc-mobile-border)]">
+        <button
+          type="button"
+          onClick={() => onImageClick?.(0)}
+          className="relative row-span-2 block w-full text-left cursor-pointer overflow-hidden group focus:outline-none"
+        >
+          <img
+            src={resolved[0]}
+            alt={`${alt} 1`}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02] active:scale-[0.98]"
+          />
+        </button>
+        <div className="flex flex-col gap-1.5">
+          {resolved.slice(1, 3).map((url, i) => (
+            <button
+              key={url}
+              type="button"
+              onClick={() => onImageClick?.(i + 1)}
+              className="relative block w-full text-left cursor-pointer overflow-hidden group focus:outline-none"
+            >
+              <img
+                src={url}
+                alt={`${alt} ${i + 2}`}
+                loading="lazy"
+                className="aspect-video w-full object-cover transition-transform duration-200 group-hover:scale-[1.02] active:scale-[0.98]"
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 4 or more photos: Facebook collage style with +N badge
+  const shown = resolved.slice(0, 4);
+  const extra = resolved.length - 4;
   return (
-    <div className="mt-3 grid grid-cols-3 gap-1.5">
+    <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-xl overflow-hidden ring-1 ring-[var(--bc-mobile-border)]">
       {shown.map((url, i) => (
         <button
           key={url}
           type="button"
           onClick={() => onImageClick?.(i)}
-          className="relative block w-full text-left cursor-pointer overflow-hidden rounded-lg group focus:outline-none"
+          className="relative block w-full text-left cursor-pointer overflow-hidden group focus:outline-none"
         >
           <img
             src={url}
-            alt={alt}
+            alt={`${alt} ${i + 1}`}
             loading="lazy"
-            className="aspect-square w-full rounded-lg object-cover ring-1 ring-[var(--bc-mobile-border)] transition-transform duration-200 group-hover:scale-[1.02] active:scale-[0.98]"
+            className="aspect-square w-full object-cover transition-transform duration-200 group-hover:scale-[1.02] active:scale-[0.98]"
           />
-          {i === shown.length - 1 && extra > 0 ? (
+          {i === 3 && extra > 0 ? (
             <span
               aria-hidden="true"
-              className="absolute inset-0 grid place-items-center rounded-lg bg-[#04111F]/70 text-[18px] font-bold text-white backdrop-blur-[1px]"
+              className="absolute inset-0 grid place-items-center bg-[#04111F]/70 text-2xl font-bold text-white backdrop-blur-[2px]"
             >
               +{extra}
             </span>
@@ -296,11 +358,12 @@ function FeedActionRow({
 }) {
   const t = useT();
   const fmt = useFmt();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const viewerUserId = useViewerUserId();
   const [manageOpen, setManageOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [meetingModalOpen, setMeetingModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -324,13 +387,13 @@ function FeedActionRow({
        item.owner?.userId === viewerUserId)
   );
 
-  const {
-    totalComments,
-    likesCount,
-    userLiked,
-    toggleMomentLike,
-    isLikingMoment,
-  } = useMomentComments(item.momentId);
+  const handleDirectMessage = () => {
+    if (authorUserId) {
+      navigate({ to: "/connect-app/inbox/$threadId", params: { threadId: authorUserId } });
+    } else {
+      navigate({ to: "/connect-app/inbox" });
+    }
+  };
 
   const eligible = Boolean(person && person.relationshipKind !== "connection" && person.cardSlug);
   const { state, connect, accept, decline, cancel, busy } = useNetworkRowConnect(
@@ -499,22 +562,27 @@ function FeedActionRow({
         </div>
       )}
 
-      {/* Thanh tương tác Thích - Bình luận - Chia sẻ - Lưu */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <MomentActionBar
-            momentId={item.momentId}
-            commentsCount={totalComments}
-            isCommentsOpen={commentsOpen}
-            onToggleComments={() => setCommentsOpen((prev) => !prev)}
-            likesCount={likesCount}
-            userLiked={userLiked}
-            onToggleLike={() => toggleMomentLike()}
-            isLikeBusy={isLikingMoment}
-            onShare={handleShare}
-            isBookmarked={isBookmarked}
-            onToggleBookmark={handleToggleBookmark}
-          />
+      {/* 2 Nút hành động chuẩn: "💬 Nhắn tin" & "🤝 Setup cuộc gặp 1-1" (Không cảm xúc, không bình luận) */}
+      <div className="mt-3 pt-3 border-t border-[var(--bc-mobile-border)] flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-1">
+          <button
+            type="button"
+            onClick={handleDirectMessage}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-white shadow-xs transition hover:opacity-90 active:scale-95 cursor-pointer"
+            style={{ background: "#003B95" }}
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span>Nhắn tin</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMeetingModalOpen(true)}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border dark:border-amber-800 transition active:scale-95 cursor-pointer shadow-xs"
+          >
+            <Handshake className="h-3.5 w-3.5" />
+            <span>Setup cuộc gặp 1-1</span>
+          </button>
         </div>
 
         {/* Menu mở rộng (Xem hồ sơ, Sao chép link, Chỉnh sửa / Xoá khoảnh khắc) */}
@@ -523,7 +591,7 @@ function FeedActionRow({
             <button
               type="button"
               aria-label={t("bc.mobile.network.feed.more")}
-              className="mt-2 ml-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors duration-150 active:bg-[var(--bc-mobile-surface-2)] hover:text-[#e4e6eb] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] cursor-pointer"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors duration-150 active:bg-[var(--bc-mobile-surface-2)] hover:text-[#e4e6eb] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8B282] cursor-pointer"
             >
               <MoreHorizontal aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
             </button>
@@ -577,24 +645,14 @@ function FeedActionRow({
         </DropdownMenu>
       </div>
 
-      {/* Facebook-style Bottom Sheet Bình luận */}
-      <MomentCommentSheet
-        momentId={item.momentId}
-        open={commentsOpen}
-        onClose={() => setCommentsOpen(false)}
-        authorName={authorName}
-        postPreview={{
-          authorName,
-          authorAvatar,
-          authorRoleLine,
-          timeDisplay,
-          place,
-          content: item.note || item.eventName,
-          photos: item.photoUrls || [],
-          likeCount: likesCount,
-          isLiked: userLiked,
-          onToggleLike: () => toggleMomentLike(),
-        }}
+      {/* Modal Lên Lịch Cuộc Gặp 1-on-1 */}
+      <Create1on1MeetingModal
+        isOpen={meetingModalOpen}
+        onClose={() => setMeetingModalOpen(false)}
+        defaultPartnerName={authorName}
+        defaultPartnerCompany={authorCompany || ""}
+        defaultTitle={`Gặp gỡ kết nối 1-on-1 cùng ${authorName}`}
+        defaultNotes={`Kết nối từ bài đăng trên bảng tin: ${item.note || item.eventName || ""}`}
       />
 
       {/* Sheet quản lý / sửa ghi chú khoảnh khắc */}

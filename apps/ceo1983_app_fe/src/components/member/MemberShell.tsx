@@ -326,11 +326,13 @@ export function MemberHeader({
   subtitle,
   back,
   right,
+  onBack,
 }: {
   title: string;
   subtitle?: string;
   back?: boolean;
   right?: ReactNode;
+  onBack?: () => void;
 }) {
   const t = useT();
   const navigate = useNavigate();
@@ -339,6 +341,10 @@ export function MemberHeader({
     try {
       if (navigator.vibrate) navigator.vibrate(10);
     } catch {}
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (typeof window !== "undefined" && window.history.length > 2) {
       window.history.back();
     } else {

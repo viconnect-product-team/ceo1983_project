@@ -88,7 +88,13 @@ export const SYSTEM_ROLES: SystemRole[] = [
   { key: "truong_ban_xuc_tien", name: "Trưởng ban xúc tiến TM", shortName: "Trưởng ban Xúc Tiến TM", color: "text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800", desc: "Điều phối cơ hội giao thương, kết nối B2B & kinh doanh" },
   { key: "truong_ban_tai_chinh", name: "Trưởng ban tài chính", shortName: "Trưởng ban Tài Chính", color: "text-yellow-700 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800", desc: "Quản lý quỹ, thu chi & ngân sách hiệp hội" },
   { key: "truong_ban_thien_nguyen", name: "Trưởng ban thiện nguyện", shortName: "Trưởng ban Thiện Nguyện", color: "text-teal-700 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800", desc: "Tổ chức hoạt động thiện nguyện vì cộng đồng" },
-  { key: "member", name: "Thành viên", shortName: "Thành viên", color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800", desc: "Hội viên chính thức tham gia sinh hoạt & giao thương" },
+  { key: "thanh_vien_ban_su_kien", name: "Thành viên ban sự kiện", shortName: "Thành viên Ban Sự Kiện", color: "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800", desc: "Thành viên chuyên trách Ban Sự Kiện" },
+  { key: "thanh_vien_ban_xuc_tien", name: "Thành viên ban xúc tiến", shortName: "Thành viên Ban Xúc Tiến TM", color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800", desc: "Thành viên chuyên trách Ban Xúc Tiến Thương Mại" },
+  { key: "thanh_vien_ban_thanh_vien", name: "Thành viên ban thành viên", shortName: "Thành viên Ban Thành Viên", color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800", desc: "Thành viên chuyên trách Ban Thành Viên" },
+  { key: "thanh_vien_ban_truyen_thong", name: "Thành viên ban truyền thông", shortName: "Thành viên Ban Truyền Thông", color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800", desc: "Thành viên chuyên trách Ban Truyền Thông" },
+  { key: "thanh_vien_ban_tai_chinh", name: "Thành viên ban tài chính", shortName: "Thành viên Ban Tài Chính", color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800", desc: "Thành viên chuyên trách Ban Tài Chính" },
+  { key: "thanh_vien_ban_thien_nguyen", name: "Thành viên ban thiện nguyện", shortName: "Thành viên Ban Thiện Nguyện", color: "text-teal-600 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800", desc: "Thành viên chuyên trách Ban Thiện Nguyện" },
+  { key: "member", name: "Hội viên (App CEO 1983)", shortName: "Hội viên CEO 1983", color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800", desc: "Hội viên sinh hoạt chính thức qua ứng dụng CEO 1983 Mobile" },
 ];
 
 export function getDynamicSystemRoles(): SystemRole[] {
@@ -742,6 +748,15 @@ export const DETECTABLE_SYSTEM_FEATURES = [
   { name: "Khảo sát & Biểu quyết", route: "/voting", catId: "cat_governance", desc: "Biểu quyết trực tuyến, bầu cử ban điều hành và khảo sát" },
   { name: "Thông báo & Tin nhắn", route: "/notifications", catId: "cat_system", desc: "Gửi thông báo đẩy, email và tin nhắn tức thời đến hội viên" },
   { name: "Ma trận phân quyền & Tài khoản", route: "/permissions", catId: "cat_system", desc: "Thiết lập phân quyền hệ thống và quản lý tài khoản người dùng" },
+  { name: "App: Smart VIP Card & Danh thiếp số", route: "/association/card", catId: "cat_mobile_app", desc: "Smart VIP Card, mã QR định danh và danh thiếp số lãnh đạo trên App" },
+  { name: "App: Bảng tin nội bộ & Khoảnh khắc", route: "/association/feed", catId: "cat_mobile_app", desc: "Bảng tin giao lưu, chia sẻ hoạt động và hình ảnh doanh nghiệp trên App" },
+  { name: "App: Danh bạ Hội viên & Lãnh đạo", route: "/association/members", catId: "cat_mobile_app", desc: "Tra cứu danh bạ các lãnh đạo và doanh nghiệp trong CLB trên App" },
+  { name: "App: Kết nối B2B & Tin nhắn riêng", route: "/association/messages", catId: "cat_mobile_app", desc: "Gửi lời mời kết nối, hẹn gặp 1-on-1 và chat trao đổi trên App" },
+  { name: "App: Sàn cơ hội kinh doanh B2B", route: "/association/opportunities", catId: "cat_mobile_app", desc: "Đăng tải và tìm kiếm cơ hội hợp tác kinh doanh trên App" },
+  { name: "App: Gian hàng Marketplace", route: "/association/products", catId: "cat_mobile_app", desc: "Quảng bá sản phẩm, dịch vụ và giải pháp doanh nghiệp trên App" },
+  { name: "App: Sự kiện & Vé điện tử E-Ticket", route: "/association/events", catId: "cat_mobile_app", desc: "Đăng ký tham dự sự kiện, nhận vé QR và check-in trên App" },
+  { name: "App: Biểu quyết & Bầu cử trực tuyến", route: "/association/voting", catId: "cat_mobile_app", desc: "Bỏ phiếu bầu cử ban điều hành và biểu quyết nghị quyết trên App" },
+  { name: "App: Hội phí cá nhân & Hồ sơ lãnh đạo", route: "/association/profile", catId: "cat_mobile_app", desc: "Quản lý niên liễm cá nhân và thông tin hồ sơ lãnh đạo trên App" },
 ];
 
 export interface RbacPermissionMatrixProps {
@@ -1456,6 +1471,69 @@ export function RbacPermissionMatrix({
           TRƯỞNG BAN
           <br />
           THIỆN NGUYỆN
+        </span>
+      );
+    }
+    if (role.key === "thanh_vien_ban_su_kien") {
+      return (
+        <span className="text-center">
+          THÀNH VIÊN
+          <br />
+          BAN SỰ KIỆN
+        </span>
+      );
+    }
+    if (role.key === "thanh_vien_ban_xuc_tien") {
+      return (
+        <span className="text-center">
+          THÀNH VIÊN
+          <br />
+          XÚC TIẾN TM
+        </span>
+      );
+    }
+    if (role.key === "thanh_vien_ban_thanh_vien") {
+      return (
+        <span className="text-center">
+          THÀNH VIÊN
+          <br />
+          BAN THÀNH VIÊN
+        </span>
+      );
+    }
+    if (role.key === "thanh_vien_ban_truyen_thong") {
+      return (
+        <span className="text-center">
+          THÀNH VIÊN
+          <br />
+          TRUYỀN THÔNG
+        </span>
+      );
+    }
+    if (role.key === "thanh_vien_ban_tai_chinh") {
+      return (
+        <span className="text-center">
+          THÀNH VIÊN
+          <br />
+          BAN TÀI CHÍNH
+        </span>
+      );
+    }
+    if (role.key === "thanh_vien_ban_thien_nguyen") {
+      return (
+        <span className="text-center">
+          THÀNH VIÊN
+          <br />
+          THIỆN NGUYỆN
+        </span>
+      );
+    }
+    if (role.key === "member") {
+      return (
+        <span className="text-center">
+          HỘI VIÊN
+          <br />
+          APP CEO 1983
         </span>
       );
     }

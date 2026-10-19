@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BÁO CÁO GIẢI PHÁP SỐ HÓA TOÀN DIỆN · CLB DOANH NHÂN CEO 1983</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* RESET & CORE BASE */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0A1128;
+      color: #1E293B;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :root {
+      --navy-primary: #003B95;
+      --navy-deep: #0A1E3F;
+      --navy-light: #EFF6FF;
+      --gold-primary: #D97706;
+      --gold-warm: #F59E0B;
+      --gold-bg: #FEF3C7;
+      --emerald: #10B981;
+      --slate-dark: #0F172A;
+      --slate-muted: #64748B;
+      --card-white: #FFFFFF;
+      --card-border: #E2E8F0;
+      --shadow-premium: 0 10px 30px rgba(0, 59, 149, 0.08);
+    }
+
+    #viewport {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: radial-gradient(circle at 50% 50%, #172554 0%, #0A1128 100%);
+    }
+
+    .slide {
+      width: 1600px;
+      height: 900px;
+      background: #FFFFFF;
+      border-radius: 14px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.96);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      padding: 34px 48px 28px 48px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+      z-index: 10;
+    }
+
+    /* HEADER */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #EFF6FF;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .badge-unit {
+      background: #003B95;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .header-title-box h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy-deep);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .header-title-box p {
+      font-size: 12px;
+      color: var(--slate-muted);
+      font-weight: 600;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .phase-pill {
+      background: #FEF3C7;
+      border: 1px solid #FDE68A;
+      color: #B45309;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+    .slide-num-pill {
+      background: #F1F5F9;
+      color: var(--slate-dark);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* FOOTER */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid #F1F5F9;
+      margin-top: auto;
+      font-size: 12px;
+      color: var(--slate-muted);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .footer-highlight {
+      color: var(--navy-primary);
+      font-weight: 800;
+    }
+
+    /* COMMON LAYOUTS */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .main-heading {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--navy-deep);
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+    .sub-heading {
+      font-size: 14.5px;
+      color: var(--slate-muted);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    /* DUAL COMPARISON GRID (APP VS CRM) */
+    .dual-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+    .col-card {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-premium);
+    }
+    .col-app {
+      border-top: 4px solid #003B95;
+      background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+    }
+    .col-crm {
+      border-top: 4px solid #D97706;
+      background: linear-gradient(180deg, #FFFDF8 0%, #FFFFFF 100%);
+    }
+    .col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #E2E8F0;
+    }
+    .col-title {
+      font-size: 17px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .title-app { color: #003B95; }
+    .title-crm { color: #D97706; }
+    .tag-target {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .tag-app { background: #EFF6FF; color: #1D4ED8; }
+    .tag-crm { background: #FEF3C7; color: #B45309; }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .bullet-list li {
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: #334155;
+      padding-left: 24px;
+      position: relative;
+    }
+    .bullet-list li strong { color: #0F172A; }
+    .bullet-app li::before {
+      content: "📱";
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 13px;
+    }
+    .bullet-crm li::before {
+      content: "💻";
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 13px;
+    }
+
+    .box-callout {
+      margin-top: auto;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .callout-app { background: #EFF6FF; border-left: 3px solid #003B95; color: #1E3A8A; }
+    .callout-crm { background: #FEF3C7; border-left: 3px solid #D97706; color: #92400E; }
+
+    /* THREE CARDS GRID */
+    .three-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      flex: 1;
+      margin-bottom: 16px;
+    }
+    .card-item {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-premium);
+    }
+    .card-item-featured {
+      border: 2px solid #F59E0B;
+      background: #FFFDF8;
+    }
+    .item-icon {
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      background: #EFF6FF;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .item-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy-deep);
+      margin-bottom: 10px;
+    }
+    .item-desc {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .pain-block {
+      background: #FEF2F2;
+      border-left: 3px solid #EF4444;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #991B1B;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .sol-block {
+      background: #F0FDF4;
+      border-left: 3px solid #10B981;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #166534;
+      line-height: 1.4;
+    }
+
+    /* HERO COVER */
+    .hero-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: radial-gradient(circle at center, #F0F7FF 0%, #FFFFFF 70%);
+      border-radius: 12px;
+      padding: 40px;
+      border: 1px solid #DBEAFE;
+    }
+    .hero-badge-top {
+      background: #003B95;
+      color: #FFFFFF;
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 6px 18px;
+      border-radius: 999px;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+    .hero-main-title {
+      font-size: 38px;
+      font-weight: 900;
+      color: #0A1E3F;
+      line-height: 1.25;
+      margin-bottom: 16px;
+      max-width: 1200px;
+    }
+    .hero-subtitle {
+      font-size: 18px;
+      color: #475569;
+      margin-bottom: 28px;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+    .hero-greeting {
+      background: #FEF3C7;
+      border: 2px solid #F59E0B;
+      color: #B45309;
+      font-size: 22px;
+      font-weight: 900;
+      padding: 10px 28px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+    }
+    .hero-meta-row {
+      display: flex;
+      gap: 36px;
+      font-size: 14px;
+      color: #334155;
+      font-weight: 700;
+    }
+    .hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* HUD CONTROLS */
+    #hud {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 1000;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .hud-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .hud-counter {
+      color: #93C5FD;
+      font-size: 13px;
+      font-weight: 800;
+      min-width: 90px;
+      text-align: center;
+    }
+    .hud-clock {
+      color: #6EE7B7;
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 800;
+      background: rgba(16, 185, 129, 0.2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    /* TABLE STYLES */
+    .table-clean {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .table-clean th {
+      background: #003B95;
+      color: #FFFFFF;
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 800;
+    }
+    .table-clean td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #E2E8F0;
+      color: #334155;
+    }
+    .table-clean tr:nth-child(even) {
+      background: #F8FAFC;
+    }
+    .badge-p0 { background: #FEE2E2; color: #991B1B; font-weight: 800; padding: 3px 8px; border-radius: 4px; }
+    .badge-p1 { background: #FEF3C7; color: #92400E; font-weight: 800; padding: 3px 8px; border-radius: 4px; }
+    .badge-pass { background: #DCFCE7; color: #166534; font-weight: 800; padding: 3px 8px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <div id="viewport">
+
+    <!-- SLIDE 1: BÌA HỘI NGHỊ -->
+    <div class="slide active" data-slide="1">
+      <div class="hero-container">
+        <div class="hero-badge-top">HANOIBA × VICONNECT · CHÍNH THỨC THẨM ĐỊNH & LIVE DEMO</div>
+        <div class="hero-greeting">“Em chào tất cả mọi người”</div>
+        <h1 class="hero-main-title">BÁO CÁO GIẢI PHÁP SỐ HÓA TOÀN DIỆN<br>CLB DOANH NHÂN CEO 1983</h1>
+        <p class="hero-subtitle">Hội nghị Trình diễn Thực tế Song song (Mobile App & Web CRM), Lắng nghe Ý kiến Phản biện và Chốt Ma trận Nghiệm thu Phạm vi Hệ thống</p>
+        <div class="hero-meta-row">
+          <div class="hero-meta-item">📅 <strong>Thứ Tư Tuần Sau</strong></div>
+          <div class="hero-meta-item">⏰ <strong>09:00 – 12:00 (Tròn 180 Phút)</strong></div>
+          <div class="hero-meta-item">🏢 <strong>CLB Doanh Nhân CEO 1983 (HanoiBA)</strong></div>
+          <div class="hero-meta-item">🚀 <strong>Đơn vị phát triển: ViConnect & ViOne</strong></div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Hệ sinh thái số hóa điều hành & giao thương độc quyền CEO 1983</span>
+        <span class="footer-highlight">Slide 1 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: THÀNH PHẦN & KHUNG THỜI GIAN -->
+    <div class="slide" data-slide="2">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">PHẦN 1</span>
+          <div class="header-title-box">
+            <h3>KHỞI ĐỘNG HỘI NGHỊ & GIỚI THIỆU THÀNH PHẦN THAM DỰ</h3>
+            <p>09:00 – 09:10 · Định hình tâm thế làm việc chuyên nghiệp, chuẩn mực</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">09:00 - 12:00</span>
+          <span class="slide-num-pill">Slide 2 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Thành Phần Đoàn Làm Việc & Phân Bổ 4 Giai Đoạn Trọng Tâm</h2>
+        <p class="sub-heading">Tôn trọng tuyệt đối quỹ thời gian của các CEO với tiến trình 3 tiếng được chuẩn hóa khoa học</p>
+        
+        <div class="dual-grid" style="margin-bottom: 16px;">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">👥 ĐOÀN CÔNG TÁC VICONNECT & VIONE</span>
+              <span class="tag-target tag-app">Đơn vị phát triển</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Đại diện Ban Lãnh đạo:</strong> Lãnh đạo cấp cao ViConnect & ViOne.</li>
+              <li><strong>Giám đốc Giải pháp Công nghệ:</strong> Phụ trách kiến trúc giải pháp số hóa.</li>
+              <li><strong>Kỹ sư trưởng Hệ thống:</strong> Trực tiếp giải trình và demo kỹ thuật.</li>
+              <li><strong>Trưởng đại diện Đội ngũ Triển khai:</strong> Diễn giả điều phối hội nghị.</li>
+            </ul>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">🏢 ĐẠI DIỆN CLB DOANH NHÂN CEO 1983</span>
+              <span class="tag-target tag-crm">Đối tác chủ quản (HanoiBA)</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Ban Thường Trực & Ban Điều Hành:</strong> Chủ tịch, Phó Chủ tịch, Tổng Thư Ký.</li>
+              <li><strong>6 Trưởng Ban Chuyên Môn:</strong> Ban Sự Kiện, Ban Thành Viên, Ban Xúc Tiến TM, Ban Tài Chính, Ban Truyền Thông, Ban Thiện Nguyện.</li>
+              <li><strong>Ban Kiểm Tra & Đại biểu:</strong> Giám sát quy chuẩn và an toàn thông tin.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
+          <div><strong style="color: #003B95;">09:00 - 09:10</strong><br><span style="font-size: 12px; color: #475569;">1. Giới thiệu & Khởi động</span></div>
+          <div><strong style="color: #003B95;">09:10 - 09:45 (35p)</strong><br><span style="font-size: 12px; color: #475569;">2. Báo cáo & Live Demo</span></div>
+          <div><strong style="color: #D97706;">09:45 - 10:45 (60p)</strong><br><span style="font-size: 12px; color: #475569;">3. Nhận xét & Phản biện</span></div>
+          <div><strong style="color: #10B981;">10:45 - 12:00</strong><br><span style="font-size: 12px; color: #475569;">4. Tổng kết & Cam kết</span></div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Lời mời trang trọng: Mời đại diện Ban Thường Trực phát biểu và giới thiệu thành viên tham dự</span>
+        <span class="footer-highlight">Slide 2 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: 2.1 MỞ ĐẦU BÀI BÁO CÁO -->
+    <div class="slide" data-slide="3">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">PHẦN 2</span>
+          <div class="header-title-box">
+            <h3>2.1 MỞ ĐẦU BÁO CÁO GIẢI PHÁP SẢN PHẨM</h3>
+            <p>09:10 – 09:15 · Khẳng định mục tiêu và tầm nhìn chuyển đổi số CEO 1983</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Báo Cáo Sản Phẩm</span>
+          <span class="slide-num-pill">Slide 3 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">“Hôm Nay Em Sẽ Trình Bày Với Anh Chị...”</h2>
+        <p class="sub-heading">Bức tranh toàn cảnh về Hệ sinh thái số hóa điều hành và giao thương độc quyền dành riêng cho các doanh nhân sinh năm 1983</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📱 VŨ KHÍ KẾT NỐI GIAO THƯƠNG (MOBILE APP)</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Đẳng cấp nhận diện số:</strong> Trao vào tay từng doanh nhân tấm Thẻ VIP và Danh thiếp thông minh QR vCard khẳng định vị thế đối ngoại.</li>
+              <li><strong>Giao dịch không biên giới:</strong> Sàn B2B nội khối và Bảng Deal Cung - Cầu mang dòng tiền thực sự về cho doanh nghiệp hội viên.</li>
+              <li><strong>Trải nghiệm chạm 1 giây:</strong> Đăng ký sự kiện, soát vé vé điện tử E-Ticket mượt mà ngay cả khi không có mạng 4G.</li>
+            </ul>
+            <div class="box-callout callout-app">Tạo niềm tự hào và giá trị kinh tế trực tiếp cho từng thành viên CLB.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">💻 THÁP CHỈ HUY ĐIỀU HÀNH TẬP TRUNG (WEB CRM)</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Giải phóng sức lao động:</strong> Xóa bỏ hoàn toàn tình trạng quản lý thủ công qua file Excel phân tán và nhóm chat Zalo trôi tin.</li>
+              <li><strong>Minh bạch hóa tài chính:</strong> Cổng VietQR gạch nợ tự động, chu trình tạm ứng - hoàn ứng khép kín, xuất Sổ Quỹ chuẩn Thông tư 200.</li>
+              <li><strong>Bảo mật phân quyền 6 Ban:</strong> Đúng người, đúng việc, kiểm soát quyền hạn nghiêm ngặt ở tầng CSDL PostgreSQL.</li>
+            </ul>
+            <div class="box-callout callout-crm">Công cụ điều hành đắc lực bảo vệ và phát triển ngân quỹ bền vững.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Cam kết: 100% dữ liệu thực từ máy chủ PostgreSQL, không sử dụng dữ liệu ảo (mock data)</span>
+        <span class="footer-highlight">Slide 3 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: 2.2 BA BÀI TOÁN GỐC & GIẢI PHÁP -->
+    <div class="slide" data-slide="4">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">PHẦN 2</span>
+          <div class="header-title-box">
+            <h3>2.2 LIST VẤN ĐỀ CỦA ĐỐI TÁC & 3 YÊU CẦU BAN ĐẦU TỪ CEO 1983</h3>
+            <p>09:15 – 09:18 · Đối chiếu bài toán thực tế và lời giải công nghệ từ ViOne x ViConnect</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Bài Toán & Giải Pháp</span>
+          <span class="slide-num-pill">Slide 4 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Ba Yêu Cầu Gốc Của CLB & Sự Ra Đời Của Hệ Sinh Thái Kép</h2>
+        <p class="sub-heading">Dựa trên chính yêu cầu của anh chị kết hợp giải pháp sẵn có của ViOne & ViConnect để kiến tạo Web CRM & Mobile App</p>
+
+        <div class="three-grid">
+          <div class="card-item">
+            <div class="item-icon">👥</div>
+            <h4 class="item-title">1. QUẢN TRỊ THÀNH VIÊN</h4>
+            <div class="pain-block"><strong>Vấn đề:</strong> Hơn 500 hồ sơ phân tán rải rác trên Excel/Zalo, thẩm định thủ công, thiếu thẻ số và danh thiếp số chuyên nghiệp.</div>
+            <div class="sol-block"><strong>Giải pháp:</strong> Số hóa CSDL 11 ngành nghề, cấp mã định danh M1983 tự động, Thẻ VIP mạ vàng & Danh thiếp QR vCard 1 chạm.</div>
+          </div>
+          <div class="card-item">
+            <div class="item-icon">🎟️</div>
+            <h4 class="item-title">2. QUẢN LÝ SỰ KIỆN</h4>
+            <div class="pain-block"><strong>Vấn đề:</strong> Gala/hội nghị hàng trăm khách tốn nhân lực soát vé, dễ ùn tắc cửa đón tiếp, khó kiểm soát chỗ ngồi và check-in đại biểu.</div>
+            <div class="sol-block"><strong>Giải pháp:</strong> Vé điện tử E-Ticket kèm mã QR cá nhân, camera soát vé dưới 1 giây, sơ đồ bàn tiệc & quay số may mắn thời gian thực.</div>
+          </div>
+          <div class="card-item card-item-featured">
+            <div class="item-icon" style="background: #FEF3C7;">🤝</div>
+            <h4 class="item-title" style="color: #B45309;">3. XÚC TIẾN THƯƠNG MẠI</h4>
+            <div class="pain-block"><strong>Vấn đề:</strong> Bài đăng mua bán bị trôi trên nhóm Zalo sau vài giờ; thiếu sàn giao thương B2B tập trung và công cụ đo lường giá trị deal.</div>
+            <div class="sol-block"><strong>Giải pháp:</strong> Sàn B2B nội khối độc quyền, Bảng Deal Cung - Cầu trực tiếp, Đặt lịch hẹn 1-on-1 và tháp đo lường dòng tiền giao thương.</div>
+          </div>
+        </div>
+
+        <div style="background: #003B95; color: #FFFFFF; border-radius: 8px; padding: 12px 20px; font-size: 13.5px; font-weight: 700; text-align: center;">
+          ⚡ Tuyên bố: ViConnect & ViOne đồng hành cùng CEO 1983 tạo nên Hệ thống Web CRM và Mobile App đồng bộ 100% thời gian thực.
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Quy trình trình bày song song: Đăng ký, Đăng nhập, Hội viên, Sự kiện, Sản phẩm, Cơ hội, Kết nối</span>
+        <span class="footer-highlight">Slide 4 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: TỔNG QUAN KIẾN TRÚC SONG SONG -->
+    <div class="slide" data-slide="5">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">PHẦN 2</span>
+          <div class="header-title-box">
+            <h3>TỔNG QUAN LUỒNG TRẢI NGHIỆM SONG SONG APP & HỆ THỐNG QUẢN TRỊ</h3>
+            <p>09:18 – 09:20 · Kiến trúc tương tác hai chiều thời gian thực giữa Hội viên và Ban Điều Hành</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Quy Trình Song Song</span>
+          <span class="slide-num-pill">Slide 5 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Mô Hình Vận Hành Kép: Người Dùng Thao Tác - Quản Trị Kiểm Soát</h2>
+        <p class="sub-heading">Mọi tác vụ của hội viên trên điện thoại lập tức phản hồi và đối soát trên Web CRM máy tính</p>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
+          <div style="display: grid; grid-template-columns: 1fr 60px 1fr; align-items: center; gap: 16px;">
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 16px; border-radius: 10px;">
+              <h4 style="color: #003B95; font-size: 15px; font-weight: 800; margin-bottom: 6px;">📱 PHÍA HỘI VIÊN (MOBILE APP)</h4>
+              <p style="font-size: 13px; color: #334155;">Đăng ký gia nhập ➔ Kích hoạt thẻ số VIP ➔ Mua vé sự kiện ➔ Đăng bán sản phẩm ➔ Tạo deal Cung/Cầu ➔ Đặt lịch hẹn 1-on-1</p>
+            </div>
+            <div style="text-align: center; font-size: 24px; color: #F59E0B; font-weight: 900;">⇄</div>
+            <div style="background: #FFFDF8; border: 1px solid #FDE68A; padding: 16px; border-radius: 10px;">
+              <h4 style="color: #D97706; font-size: 15px; font-weight: 800; margin-bottom: 6px;">💻 PHÍA BAN ĐIỀU HÀNH (WEB CRM)</h4>
+              <p style="font-size: 13px; color: #334155;">Thẩm định hồ sơ ➔ Quản lý danh bạ 11 ngành ➔ Soát vé QR 1 giây ➔ Duyệt gian hàng ➔ Đo lường giao thương ➔ Thu Chi TT200</p>
+            </div>
+          </div>
+
+          <div style="background: #0F172A; color: #FFFFFF; border-radius: 10px; padding: 16px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
+            <div><span style="color: #93C5FD; font-size: 11.5px; font-weight: 700;">HẠ TẦNG CƠ SỞ</span><br><strong style="font-size: 14px;">PostgreSQL Máy Chủ Thật</strong></div>
+            <div><span style="color: #93C5FD; font-size: 11.5px; font-weight: 700;">ĐỒNG BỘ DỮ LIỆU</span><br><strong style="font-size: 14px;">Realtime Websocket / REST</strong></div>
+            <div><span style="color: #93C5FD; font-size: 11.5px; font-weight: 700;">CHUẨN NHẬN DIỆN</span><br><strong style="font-size: 14px;">Cobalt Navy & Warm Gold</strong></div>
+            <div><span style="color: #93C5FD; font-size: 11.5px; font-weight: 700;">AN TOÀN BẢO MẬT</span><br><strong style="font-size: 14px;">RBAC Matrix 4 Cấp Độ</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Bắt đầu trình bày chi tiết từng cặp chức năng tương ứng</span>
+        <span class="footer-highlight">Slide 5 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: SONG SONG 1 - ĐĂNG KÝ, ĐĂNG NHẬP & THẨM ĐỊNH -->
+    <div class="slide" data-slide="6">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">SONG SONG 1</span>
+          <div class="header-title-box">
+            <h3>ĐĂNG KÝ, ĐĂNG NHẬP & QUY TRÌNH THẨM ĐỊNH HỘI VIÊN</h3>
+            <p>09:20 – 09:23 · Trải nghiệm mượt mà từ form đăng ký đến bước cấp mã thẻ M1983</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Hội Viên Số</span>
+          <span class="slide-num-pill">Slide 6 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Luồng Gia Nhập Hội Viên Nhanh Chóng & Kiểm Soát Chặt Chẽ</h2>
+        <p class="sub-heading">Tối ưu thao tác trên bàn phím điện thoại và quản lý thẩm định tập trung tại Web CRM</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📱 MOBILE APP (HỘI VIÊN MỚI)</span>
+              <span class="tag-target tag-app">Giao diện di động</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Tự động mask ngày sinh DD/MM/YYYY:</strong> Gõ phím số trên điện thoại tự động chèn dấu <code>/</code>, không bị lỗi kẹt phím.</li>
+              <li><strong>Native Date Picker:</strong> Chạm icon lịch mở ngay bánh xe chọn ngày chuẩn của iOS Safari / Android WebView.</li>
+              <li><strong>Đổi mật khẩu lần đầu:</strong> Tự động kích hoạt khi đăng nhập tài khoản cấp mới, tích hợp nút ẩn/hiện mật khẩu trực quan.</li>
+            </ul>
+            <div class="box-callout callout-app">Thao tác đăng ký hoàn tất trong vòng chưa đầy 1 phút.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">💻 WEB CRM (BAN THÀNH VIÊN)</span>
+              <span class="tag-target tag-crm">Tháp chỉ huy quản trị</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Tiếp nhận hồ sơ thời gian thực:</strong> Đơn đăng ký xuất hiện ngay tại <code>/accounts</code> với trạng thái Chờ thẩm định.</li>
+              <li><strong>Cấp mã M1983 tự động:</strong> Khi bấm [Phê duyệt], hệ thống tự động sinh mã định danh duy nhất (M1983-xxx).</li>
+              <li><strong>Phân bổ ban chuyên môn:</strong> Gán thành viên vào đúng Ban Chuyên Môn và tự động gửi email thông báo kích hoạt.</li>
+            </ul>
+            <div class="box-callout callout-crm">Chuẩn hóa 100% quy trình xét duyệt kết nạp của HanoiBA.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Đã khắc phục hoàn toàn lỗi định dạng ngày sinh và lỗi đổi mật khẩu lần đầu</span>
+        <span class="footer-highlight">Slide 6 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: SONG SONG 2 - ĐỊNH DANH HỘI VIÊN & DANH BẠ -->
+    <div class="slide" data-slide="7">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">SONG SONG 2</span>
+          <div class="header-title-box">
+            <h3>ĐỊNH DANH HỘI VIÊN VIP & QUẢN TRỊ DANH BẠ 11 NGÀNH NGHỀ</h3>
+            <p>09:23 – 09:26 · Tấm danh thiếp số sang trọng và cơ sở dữ liệu số hóa toàn diện</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Hội Viên Số</span>
+          <span class="slide-num-pill">Slide 7 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Thẻ Hội Viên VIP, Danh Thiếp vCard 1 Chạm & CSDL Tập Trung</h2>
+        <p class="sub-heading">Khẳng định đẳng cấp doanh nhân 1983 khi giao lưu đối ngoại và tra cứu đối tác nhanh chóng</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📱 MOBILE APP (THẺ SỐ & PROFILE)</span>
+              <span class="tag-target tag-app">Niềm tự hào doanh nhân</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Thẻ Hội Viên VIP mạ vàng:</strong> Nền Obsidian & Cobalt Navy sang trọng, mã số M1983, mã QR cá nhân, hợp đồng số hóa.</li>
+              <li><strong>Danh thiếp thông minh QR vCard:</strong> Đối tác chỉ cần mở camera điện thoại quét là lưu thẳng vào danh bạ — <strong>HOÀN TOÀN KHÔNG CẦN CÀI APP</strong>!</li>
+              <li><strong>Company Profile 2 trang:</strong> Nền trắng thanh lịch, 2 khối ảnh hình học độc đáo, thể hiện 8 trường năng lực cốt lõi.</li>
+            </ul>
+            <div class="box-callout callout-app">Nâng tầm hình ảnh doanh nghiệp ngay trong lần đầu gặp gỡ.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">💻 WEB CRM (QUẢN TRỊ DANH BẠ)</span>
+              <span class="tag-target tag-crm">Dữ liệu tài sản số</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Bộ lọc 11 ngành nghề thông minh:</strong> Bất động sản, Xây dựng, Tài chính, F&B, CNTT, Logistics... tra cứu trong 1 giây.</li>
+              <li><strong>Bộ lọc theo 6 Ban chuyên môn:</strong> Quản lý số lượng và trạng thái đóng niên liễm của từng thành viên.</li>
+              <li><strong>Xuất Excel chuẩn hóa:</strong> 1 click tải về danh bạ toàn bộ CLB để in ấn kỷ yếu hoặc nộp báo cáo HanoiBA.</li>
+            </ul>
+            <div class="box-callout callout-crm">Chấm dứt hoàn toàn việc thất lạc thông tin trên các file rời rạc.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Đáp ứng trọn vẹn yêu cầu cốt lõi thứ nhất của Ban Điều Hành CLB</span>
+        <span class="footer-highlight">Slide 7 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: SONG SONG 3 - QUẢN LÝ SỰ KIỆN & VÉ E-TICKET -->
+    <div class="slide" data-slide="8">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">SONG SONG 3</span>
+          <div class="header-title-box">
+            <h3>QUẢN LÝ SỰ KIỆN, VÉ ĐIỆN TỬ E-TICKET & SOÁT VÉ CHECK-IN 1 GIÂY</h3>
+            <p>09:26 – 09:29 · Giải pháp tổ chức Gala và hội nghị hàng trăm khách không ùn tắc</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Quản Lý Sự Kiện</span>
+          <span class="slide-num-pill">Slide 8 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Từ Thiết Lập Sự Kiện Đến Đón Tiếp Soát Vé Siêu Tốc</h2>
+        <p class="sub-heading">Quy trình bán vé, thanh toán VietQR và điểm danh tự động phục vụ quay thưởng Lucky Draw</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📱 MOBILE APP (HỘI VIÊN & ĐẠI BIỂU)</span>
+              <span class="tag-target tag-app">Trải nghiệm tham dự</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Đăng ký vé tham dự:</strong> Tách bạch vé miễn phí cho hội viên và vé có phí cho khách mời VIP.</li>
+              <li><strong>Thanh toán VietQR động:</strong> Hiển thị mã chuyển khoản có sẵn số tiền và cú pháp đối soát tự động.</li>
+              <li><strong>Ví vé điện tử E-Ticket:</strong> Mã QR vé sắc nét, hiển thị vị trí bàn ngồi tiệc và số may mắn Lucky Draw.</li>
+              <li><strong>Hỗ trợ Offline Cache:</strong> Mất sóng mạng 4G trong hội trường vẫn mở vé check-in bình thường!</li>
+            </ul>
+            <div class="box-callout callout-app">Chỉ gửi email vé QR chính thức sau khi xác nhận thanh toán thành công.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">💻 WEB CRM (BAN TỔ CHỨC & SOÁT VÉ)</span>
+              <span class="tag-target tag-crm">Điều hành cửa đón tiếp</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Tạo sự kiện trực quan:</strong> Điền Tagline thông điệp banner, bản đồ kéo thả điểm ghim vị trí Leaflet OSM.</li>
+              <li><strong>Soát vé camera dưới 1 giây:</strong> Quét mã QR trên điện thoại khách, nhảy thông báo xanh lá tức thì.</li>
+              <li><strong>Bảng đối soát vé mở rộng:</strong> Nút [✓ Đã thanh toán] duyệt nhanh vé có phí chuyển khoản ngân hàng.</li>
+              <li><strong>Vòng quay may mắn (Lucky Draw):</strong> Tự động đồng bộ 100% danh sách đại biểu đã check-in thực tế.</li>
+            </ul>
+            <div class="box-callout callout-crm">Minh bạch tuyệt đối, xóa bỏ ùn tắc tại cửa hội trường.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Đáp ứng trọn vẹn yêu cầu cốt lõi thứ hai của Ban Điều Hành CLB</span>
+        <span class="footer-highlight">Slide 8 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: SONG SONG 4 - SÀN MARKETPLACE B2B -->
+    <div class="slide" data-slide="9">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">SONG SONG 4</span>
+          <div class="header-title-box">
+            <h3>SÀN GIAO THƯƠNG MARKETPLACE B2B & GÓI TÀI TRỢ DOANH NGHIỆP</h3>
+            <p>09:29 – 09:32 · Kênh quảng bá sản phẩm độc quyền dành riêng cho các thành viên</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Xúc Tiến Thương Mại</span>
+          <span class="slide-num-pill">Slide 9 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Sàn Thương Mại Nội Khối Đẳng Cấp Thay Thế Nhóm Chat Zalo</h2>
+        <p class="sub-heading">Triệt tiêu màu cam Shopee bình dân, tôn vinh nhận diện Deep Cobalt Navy và các nhà tài trợ lớn</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📱 MOBILE APP (SÀN GIAO THƯƠNG B2B)</span>
+              <span class="tag-target tag-app">Giao dịch nội khối</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Băng chuyền Nhà tài trợ Obsidian & Amber:</strong> Tôn vinh các gói tài trợ Kim Cương, Vàng, Bạc của CLB.</li>
+              <li><strong>Danh mục sản phẩm động:</strong> Tự động trích xuất các ngành hàng mới nhất trực tiếp từ cơ sở dữ liệu.</li>
+              <li><strong>Chi tiết sản phẩm Deep Cobalt Navy:</strong> Đánh giá review thực lưu PostgreSQL, ảnh độ nét cao.</li>
+              <li><strong>Kết nối 1 chạm:</strong> Nút nhắn tin và gọi điện trực tiếp tới chính vị CEO cung ứng sản phẩm.</li>
+            </ul>
+            <div class="box-callout callout-app">Hội viên tự bấm [+ Đăng sản phẩm mới] nhanh chóng từ điện thoại.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">💻 WEB CRM (BAN XÚC TIẾN THƯƠNG MẠI)</span>
+              <span class="tag-target tag-crm">Kiểm duyệt chất lượng</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Kiểm duyệt sản phẩm:</strong> Đảm bảo nguồn gốc xuất xứ và chính sách ưu đãi thực chất cho hội viên.</li>
+              <li><strong>Quản trị gói tài trợ thương hiệu:</strong> Tải 100% từ bảng <code>sponsor_packages</code>, không mock data.</li>
+              <li><strong>Thống kê lượt quan tâm:</strong> Đo lường số lượt click và liên hệ của từng sản phẩm trên sàn.</li>
+            </ul>
+            <div class="box-callout callout-crm">Bảo vệ quyền lợi người mua và uy tín của các nhà cung cấp 1983.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Phần 1 của yêu cầu cốt lõi thứ ba: Xúc tiến thương mại thực chiến</span>
+        <span class="footer-highlight">Slide 9 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: SONG SONG 5 - CƠ HỘI KINH DOANH -->
+    <div class="slide" data-slide="10">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">SONG SONG 5</span>
+          <div class="header-title-box">
+            <h3>CƠ HỘI KINH DOANH & GHÉP NỐI DEAL CUNG - CẦU THỜI GIAN THỰC</h3>
+            <p>09:32 – 09:35 · Nơi dòng tiền thực sự luân chuyển và tạo ra doanh thu cho hội viên</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Xúc Tiến Thương Mại</span>
+          <span class="slide-num-pill">Slide 10 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Bảng Nhu Cầu Cung - Cầu & Tháp Đo Lường Giá Trị Giao Thương</h2>
+        <p class="sub-heading">Minh bạch giá trị thương vụ và số lượng deal đã khớp lệnh thành công trong toàn CLB</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📱 MOBILE APP (BẢNG DEAL THỜI GIAN THỰC)</span>
+              <span class="tag-target tag-app">Khớp lệnh thương vụ</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Phân loại thẻ Deal rõ ràng:</strong> [CẦN MUA] - [CẦN BÁN] - [HỢP TÁC ĐẦU TƯ] gắn liền giá trị dòng tiền.</li>
+              <li><strong>Thanh màu Warm Amber Gold:</strong> Nổi bật giá trị deal (từ hàng trăm triệu đến hàng chục tỷ đồng).</li>
+              <li><strong>Đăng deal thần tốc:</strong> Nhập tiêu đề, giá trị ước tính, hạn chót và yêu cầu năng lực đối tác.</li>
+              <li><strong>Nút [Quan tâm deal]:</strong> Gửi tín hiệu ghép nối trực tiếp tới tác giả để mở phiên đàm phán riêng.</li>
+            </ul>
+            <div class="box-callout callout-app">Cơ hội kinh doanh không bao giờ bị trôi mất như trên nhóm chat.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">💻 WEB CRM (THÁP GIÁM SÁT GIAO THƯƠNG)</span>
+              <span class="tag-target tag-crm">Báo cáo chỉ số kinh tế</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Tổng hợp giá trị giao thương:</strong> Đo lường chính xác tổng số tỷ đồng các deal đang chào trên hệ thống.</li>
+              <li><strong>Thống kê thương vụ thành công:</strong> Ghi nhận số lượng deal đã chốt giữa các doanh nhân 1983.</li>
+              <li><strong>Bảng vinh danh kết nối:</strong> Tôn vinh các CEO có đóng góp giao thương xuất sắc tại kỳ sinh hoạt.</li>
+            </ul>
+            <div class="box-callout callout-crm">Dữ liệu biết nói chứng minh giá trị thực tế của CLB trước Đại hội.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Đáp ứng trọn vẹn yêu cầu cốt lõi thứ ba của Ban Điều Hành CLB</span>
+        <span class="footer-highlight">Slide 10 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 11: SONG SONG 6 - MẠNG LƯỚI KẾT NỐI B2B -->
+    <div class="slide" data-slide="11">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">SONG SONG 6</span>
+          <div class="header-title-box">
+            <h3>MẠNG LƯỚI KẾT NỐI B2B & ĐẶT LỊCH HẸN 1-ON-1 THÔNG MINH</h3>
+            <p>09:35 – 09:38 · Văn hóa kết nối doanh nhân văn minh, đúng mục đích hợp tác</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Kết Nối Chiến Lược</span>
+          <span class="slide-num-pill">Slide 11 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Cơ Chế Kết Nối Chờ Đồng Ý & Đặt Lịch Hẹn B2B Chuẩn Mực</h2>
+        <p class="sub-heading">Đồng bộ lịch Google/Apple Calendar và phòng trao đổi dự án bảo mật không rào cản</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📱 MOBILE APP (ĐẶT LỊCH HẸN 1-ON-1)</span>
+              <span class="tag-target tag-app">Gặp gỡ hợp tác</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Cơ chế kết bạn chờ duyệt:</strong> Bấm [Kết nối] hiển thị trạng thái Đang chờ đồng ý văn minh, không spam.</li>
+              <li><strong>Ngăn kéo Đặt lịch hẹn 1-on-1:</strong> Chọn mục đích kinh doanh, địa điểm, thời gian cuộc gặp.</li>
+              <li><strong>Thẻ mời họp tương tác trong Tin nhắn:</strong> Nhận tin nhắn kèm thẻ mời <code>[B2B_CONNECT_INVITE]</code>, bấm Chấp nhận đồng bộ ngay vào Google/Apple Calendar.</li>
+              <li><strong>Phòng chat dự án:</strong> Gửi file tài liệu hợp đồng, ảnh công trình độ nét cao, gọi điện VoIP bảo mật.</li>
+            </ul>
+            <div class="box-callout callout-app">Hai CEO không bao giờ bị quên lịch hẹn hợp tác kinh doanh.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">💻 WEB CRM (QUẢN TRỊ CUỘC HỌP & BĐH)</span>
+              <span class="tag-target tag-crm">Điều phối sinh hoạt</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Chỉ số gắn kết (Networking Index):</strong> Theo dõi mức độ tương tác và số cuộc gặp giữa các ban.</li>
+              <li><strong>Quản lý cuộc họp BĐH định kỳ:</strong> Tạo phiên họp, đính kèm văn bản nghị quyết số hóa.</li>
+              <li><strong>Điểm danh QR động (Sapphire Hub):</strong> Mã QR đổi sau mỗi 30 giây chống chụp ảnh điểm danh hộ.</li>
+            </ul>
+            <div class="box-callout callout-crm">Chuẩn hóa tác phong sinh hoạt chuyên nghiệp của Ban Điều Hành.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Đã khắc phục hoàn toàn lỗi tự động kết bạn và lỗi hiển thị cuộc gặp</span>
+        <span class="footer-highlight">Slide 11 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 12: ĐỘT PHÁ CÔNG NGHỆ VICONNECT - THU CHI TT200 -->
+    <div class="slide" data-slide="12">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit" style="background: #D97706;">ĐỘT PHÁ VICONNECT</span>
+          <div class="header-title-box">
+            <h3>PHÂN HỆ QUẢN LÝ THU - CHI TỰ ĐỘNG & SỔ QUỸ THÔNG TƯ 200</h3>
+            <p>09:38 – 09:42 · Tính năng xuất phát từ sự nhìn nhận thực tiễn của Đội ngũ Kỹ thuật ViConnect</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill" style="background: #FEE2E2; color: #991B1B; border-color: #FECACA;">Giá Trị Gia Tăng Vượt Trội</span>
+          <span class="slide-num-pill">Slide 12 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Sự Kiện & Hội Viên Không Thể Tách Rời Khỏi Bài Toán Quản Trị Dòng Tiền!</h2>
+        <p class="sub-heading">Yêu cầu ban đầu của CLB <strong>HOÀN TOÀN KHÔNG CÓ</strong> phân hệ này — ViConnect chủ động đề xuất để giải phóng sức lao động cho BĐH</p>
+
+        <div class="dual-grid" style="margin-bottom: 14px;">
+          <div class="col-card" style="border-top: 4px solid #EF4444; background: #FFFDFD;">
+            <h4 style="color: #991B1B; font-size: 15px; font-weight: 800; margin-bottom: 10px;">⚠️ LỖ HỔNG VẬN HÀNH NẾU KHÔNG CÓ THU CHI</h4>
+            <ul class="bullet-list" style="gap: 10px;">
+              <li style="color: #7F1D1D;">Sau mỗi kỳ Gala, Ban Sự kiện và Ban Tài chính rơi vào ma trận hóa đơn chứng từ, tạm ứng, hoàn ứng tiền mặt vô cùng áp lực.</li>
+              <li style="color: #7F1D1D;">Ghi chép sổ tay, đối soát sao kê thủ công dễ xảy ra nhầm lẫn, sai sót và rủi ro thất thoát ngân quỹ CLB.</li>
+              <li style="color: #7F1D1D;">Cuối quý, cuối năm không có số liệu tức thì để lập Báo cáo tài chính minh bạch giải trình nộp lên Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).</li>
+            </ul>
+          </div>
+          <div class="col-card" style="border-top: 4px solid #10B981; background: #F0FDF4;">
+            <h4 style="color: #166534; font-size: 15px; font-weight: 800; margin-bottom: 10px;">✅ GIẢI PHÁP ĐỘNG KHÉP KÍN CỦA VICONNECT</h4>
+            <ul class="bullet-list" style="gap: 10px;">
+              <li style="color: #14532D;"><strong>Cổng thanh toán VietQR Napas 24/7:</strong> Gạch nợ tự động sau 1 giây, đối soát chuẩn từng đồng.</li>
+              <li style="color: #14532D;"><strong>Chu trình dòng tiền 4 bước:</strong> Dự toán ➔ Thu tiền vé & tài trợ ➔ Tạm ứng kinh phí cho Ban Sự kiện ➔ Hoàn ứng tiền thừa & Quyết toán.</li>
+              <li style="color: #14532D;"><strong>Sổ Quỹ chuẩn Thông tư 200/2014/TT-BTC:</strong> Bấm 1 click xuất Excel Sổ Quỹ Tiền Mặt (Mẫu S07-DN) & Sổ Tiền Gửi (S03a-DNN) có công thức tự động.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 10px 18px; font-size: 13px; font-weight: 700; color: #92400E; text-align: center;">
+          💡 Khẳng định: ViConnect không làm theo đơn hàng bề nổi, mà là Người Bạn Đồng Hành Công Nghệ Chiến Lược cùng CEO 1983!
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Đã hoàn thành module xuất Excel/PDF có công thức tính Tồn đầu kỳ, Thu, Chi, Tồn cuối kỳ</span>
+        <span class="footer-highlight">Slide 12 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 13: DASHBOARD & PHÂN QUYỀN 6 BAN -->
+    <div class="slide" data-slide="13">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit">QUẢN TRỊ CAO CẤP</span>
+          <div class="header-title-box">
+            <h3>EXECUTIVE DASHBOARD 360 ĐỘ & MA TRẬN PHÂN QUYỀN 6 BAN</h3>
+            <p>09:42 – 09:45 · Tháp chỉ huy điều hành tối cao và hệ thống bảo mật 3 phân hệ</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill">Tháp Chỉ Huy</span>
+          <span class="slide-num-pill">Slide 13 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Kiểm Soát Toàn Diện Nhịp Đập CLB & Bảo Mật Tuyệt Đối</h2>
+        <p class="sub-heading">Chủ tịch và Tổng thư ký theo dõi thời gian thực; phân quyền theo vai trò, theo ban và override từng tài khoản</p>
+
+        <div class="dual-grid">
+          <div class="col-card col-app">
+            <div class="col-header">
+              <span class="col-title title-app">📊 EXECUTIVE DASHBOARD 360 ĐỘ</span>
+              <span class="tag-target tag-app">Nhịp đập CLB realtime</span>
+            </div>
+            <ul class="bullet-list bullet-app">
+              <li><strong>Chỉ số Hội viên:</strong> Tổng hội viên kích hoạt, hội viên mới gia nhập, tỷ lệ hoàn thiện hồ sơ.</li>
+              <li><strong>Chỉ số Sự kiện:</strong> Số lượng đăng ký, tỷ lệ check-in thực tế, sức chứa hội trường.</li>
+              <li><strong>Chỉ số Tài chính:</strong> Dòng tiền thu chi, tồn quỹ tiền mặt và tài khoản ngân hàng CLB.</li>
+              <li><strong>Chỉ số Giao thương:</strong> Tổng giá trị deal đang mở và số thương vụ đã kết nối.</li>
+            </ul>
+            <div class="box-callout callout-app">Nắm bắt toàn bộ sức khỏe hiệp hội chỉ trong 1 màn hình duy nhất.</div>
+          </div>
+          <div class="col-card col-crm">
+            <div class="col-header">
+              <span class="col-title title-crm">🔒 HỆ THỐNG 3 PHÂN HỆ PHÂN QUYỀN RBAC</span>
+              <span class="tag-target tag-crm">Bảo mật tầng CSDL</span>
+            </div>
+            <ul class="bullet-list bullet-crm">
+              <li><strong>Phân hệ 1: Ma trận phân quyền vai trò:</strong> Cấu hình quyền hệ thống theo chức danh lãnh đạo.</li>
+              <li><strong>Phân hệ 2: Phân quyền theo 6 Ban chuyên môn:</strong> Thiết lập quyền mặc định cho từng ban.</li>
+              <li><strong>Phân hệ 3: Phân quyền tài khoản theo ban:</strong> Kế thừa quyền Thêm - Sửa - Xóa - Duyệt và cho phép Quản trị viên tùy biến Override riêng cho từng cá nhân.</li>
+            </ul>
+            <div class="box-callout callout-crm">Đúng người, đúng việc, bảo vệ an toàn dữ liệu nhạy cảm.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Kết thúc Phần 2 báo cáo sản phẩm đúng 09:45, chuẩn bị bước sang Phần 3 Nhận xét đối tác</span>
+        <span class="footer-highlight">Slide 13 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 14: PHẦN 3 (SLIDE 1) - PHIÊN NHẬN XÉT -->
+    <div class="slide" data-slide="14">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit" style="background: #D97706;">PHẦN 3 (1/2)</span>
+          <div class="header-title-box">
+            <h3>PHIÊN NHẬN XÉT, CHẤT VẤN KỸ THUẬT & PHẢN BIỆN CHUYÊN SÂU</h3>
+            <p>09:45 – 10:45 · Tròn 60 phút lắng nghe ý kiến phản biện từ phía đối tác</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill" style="background: #FEF3C7; color: #B45309;">Thời Lượng: 60 Phút</span>
+          <span class="slide-num-pill">Slide 14 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Cầu Thị Lắng Nghe - Tiếp Nhận Trực Tiếp & Phân Loại Xử Lý</h2>
+        <p class="sub-heading">Đội ngũ kỹ thuật ViConnect giải trình trực tiếp tại hội nghị và thống nhất phân loại theo 3 cấp độ ưu tiên</p>
+
+        <div class="three-grid" style="margin-bottom: 20px;">
+          <div class="card-item" style="border-top: 4px solid #EF4444;">
+            <div style="font-size: 20px; font-weight: 900; color: #EF4444; margin-bottom: 6px;">MỨC P0: BẮT BUỘC</div>
+            <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 12px;">Các tính năng cốt tử ảnh hưởng đến luồng vận hành, dữ liệu thật và an toàn thông tin.</p>
+            <div class="box-callout" style="background: #FEE2E2; color: #991B1B;">Bắt buộc hoàn thiện và nghiệm thu 100% trước khi phát hành.</div>
+          </div>
+          <div class="card-item" style="border-top: 4px solid #F59E0B;">
+            <div style="font-size: 20px; font-weight: 900; color: #D97706; margin-bottom: 6px;">MỨC P1: ƯU TIÊN CAO</div>
+            <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 12px;">Các tinh chỉnh tối ưu giao diện UI/UX, thêm trường lọc hoặc tiện ích thao tác.</p>
+            <div class="box-callout" style="background: #FEF3C7; color: #92400E;">Cam kết hoàn tất xử lý và kiểm thử trong vòng 48 giờ.</div>
+          </div>
+          <div class="card-item" style="border-top: 4px solid #3B82F6;">
+            <div style="font-size: 20px; font-weight: 900; color: #2563EB; margin-bottom: 6px;">MỨC P2: ĐỀ XUẤT CẢI TIẾN</div>
+            <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 12px;">Các ý tưởng mở rộng hệ thống nằm ngoài phạm vi phát triển ban đầu.</p>
+            <div class="box-callout" style="background: #EFF6FF; color: #1D4ED8;">Ghi nhận đưa vào lộ trình nâng cấp phiên bản Giai đoạn 2.</div>
+          </div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 8px; padding: 14px 20px; text-align: center; font-size: 13.5px; color: #334155; font-weight: 700;">
+          🎙️ Trân trọng kính mời Anh Chủ tịch, Chị Tổng Thư Ký và 6 Trưởng Ban chuyên môn phát biểu ý kiến nhận xét và chất vấn kỹ thuật!
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Thư ký mở trực tiếp Biểu Mẫu Tiếp Nhận Ý Kiến trên màn hình lớn để ghi nhận</span>
+        <span class="footer-highlight">Slide 14 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 15: PHẦN 3 (SLIDE 2) - BIỂU MẪU TIẾP NHẬN -->
+    <div class="slide" data-slide="15">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit" style="background: #D97706;">PHẦN 3 (2/2)</span>
+          <div class="header-title-box">
+            <h3>BIỂU MẪU TIẾP NHẬN & XỬ LÝ Ý KIẾN THEO THỜI GIAN THỰC</h3>
+            <p>09:45 – 10:45 · Ghi chép trung thực, minh bạch trước toàn thể hội nghị</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill" style="background: #FEF3C7; color: #B45309;">Live Recording Table</span>
+          <span class="slide-num-pill">Slide 15 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Bảng Tiếp Nhận & Phản Hồi Kỹ Thuật ViConnect</h2>
+        <p class="sub-heading">Trích xuất từ file biểu mẫu chính thức <code>document/BIEU_MAU_GHI_NHAN_Y_KIEN_TRAO_DOI_THU_4_CEO1983.xlsx</code></p>
+
+        <table class="table-clean">
+          <thead>
+            <tr>
+              <th style="width: 50px;">STT</th>
+              <th style="width: 180px;">Người góp ý / Ban</th>
+              <th style="width: 140px;">Phân hệ</th>
+              <th>Nội dung góp ý / Chất vấn</th>
+              <th style="width: 110px;">Ưu tiên</th>
+              <th style="width: 180px;">Kết luận xử lý</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>Lê Hoàng Long</strong> (Trưởng Ban SK)</td>
+              <td>Check-in QR sự kiện</td>
+              <td>Camera soát vé phải dưới 1s, hoạt động tốt cả khi hội trường mạng 4G yếu.</td>
+              <td><span class="badge-p0">P0 - Bắt buộc</span></td>
+              <td><strong style="color: #166534;">Duyệt áp dụng ngay</strong> (Cache offline)</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>Nguyễn Văn Cường</strong> (Trưởng Ban TV)</td>
+              <td>Danh bạ & Thẻ số</td>
+              <td>Hồ sơ hội viên và ảnh bìa hiển thị sắc nét, đồng bộ tên doanh nghiệp, chức vụ thật.</td>
+              <td><span class="badge-p0">P0 - Bắt buộc</span></td>
+              <td><strong style="color: #166534;">Đã hoàn thành 100%</strong></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>Phạm Quang Huy</strong> (Trưởng Ban TC)</td>
+              <td>Sổ quỹ TT200</td>
+              <td>Xuất file Excel Sổ quỹ tiền mặt và Sổ tiền gửi ngân hàng chuẩn Thông tư 200 có công thức.</td>
+              <td><span class="badge-p0">P0 - Bắt buộc</span></td>
+              <td><strong style="color: #166534;">Đã sẵn sàng nghiệm thu</strong></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><strong>Hoàng Minh Tuấn</strong> (Trưởng Ban XTTM)</td>
+              <td>Gian hàng & Deal B2B</td>
+              <td>Cho phép hội viên tự chụp ảnh sản phẩm từ camera, tạo cơ hội hợp tác và ưu đãi nội bộ.</td>
+              <td><span class="badge-p1">P1 - Ưu tiên cao</span></td>
+              <td><strong style="color: #2563EB;">Duyệt triển khai 48h</strong></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><strong>Đại diện Ban Kiểm Tra</strong></td>
+              <td>Phân quyền & Bảo mật</td>
+              <td>Bảo đảm dữ liệu số điện thoại, doanh thu chỉ hội viên chính thức được xem; khách chỉ xem public.</td>
+              <td><span class="badge-p0">P0 - Bắt buộc</span></td>
+              <td><strong style="color: #166534;">Đã kiểm thử Pass</strong> (JWT RBAC)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: auto; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 10px 18px; font-size: 12.5px; color: #1E3A8A; font-weight: 600;">
+          ℹ️ Thư ký tiếp tục nhập liệu trực tiếp các dòng tiếp theo trong suốt phiên thảo luận.
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Ghi nhận đầy đủ - Không bỏ sót bất kỳ ý kiến nào của Ban Điều Hành</span>
+        <span class="footer-highlight">Slide 15 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 16: PHẦN 4 (SLIDE 1) - TỔNG KẾT: CÁI GÌ CHỐT, CÁI GÌ SỬA -->
+    <div class="slide" data-slide="16">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit" style="background: #10B981;">PHẦN 4 (1/2)</span>
+          <div class="header-title-box">
+            <h3>BẢN ĐÁNH GIÁ TỔNG KẾT CUỘC HỌP: “CÁI GÌ CHỐT - CÁI GÌ SỬA”</h3>
+            <p>10:45 – 11:15 · Đóng băng phạm vi phát triển (Scope Freeze Matrix)</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill" style="background: #DCFCE7; color: #166534;">Nghiệm Thu 100% Pass</span>
+          <span class="slide-num-pill">Slide 16 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Thống Nhất Nghiệm Thu Chức Năng & Cam Kết Tinh Chỉnh</h2>
+        <p class="sub-heading">Hai bên chính thức ký kết thông qua phạm vi hệ sinh thái để chuẩn bị công bố Go-Live</p>
+
+        <div class="dual-grid">
+          <div class="col-card" style="border-top: 4px solid #10B981; background: #F0FDF4;">
+            <div class="col-header">
+              <span class="col-title" style="color: #166534;">✅ CÁI GÌ CHỐT (SCOPE FREEZE)</span>
+              <span class="badge-pass">100% ĐẠT CHUẨN</span>
+            </div>
+            <ul class="bullet-list" style="gap: 10px;">
+              <li><strong style="color: #14532D;">Chốt 30 chức năng cốt lõi:</strong> Toàn bộ các module Mobile App và Web CRM đã hoạt động ổn định.</li>
+              <li><strong style="color: #14532D;">Chốt 100% dữ liệu thực:</strong> Cơ sở dữ liệu PostgreSQL máy chủ thật, xóa bỏ hoàn toàn mock data.</li>
+              <li><strong style="color: #14532D;">Chốt nhận diện thương hiệu:</strong> Deep Cobalt Navy <code>#003B95</code>, Warm Amber Gold và không dùng màu cam Shopee.</li>
+              <li><strong style="color: #14532D;">Chốt phân hệ Thu Chi TT200:</strong> Cổng VietQR Napas và Sổ quỹ tự động nộp HanoiBA.</li>
+            </ul>
+            <div class="box-callout" style="background: #DCFCE7; color: #14532D;">Chính thức đóng băng phạm vi phát triển hệ thống.</div>
+          </div>
+          <div class="col-card" style="border-top: 4px solid #D97706; background: #FFFDF8;">
+            <div class="col-header">
+              <span class="col-title" style="color: #D97706;">🔧 CÁI GÌ SỬA (TINH CHỈNH MINOR)</span>
+              <span class="badge-p1">HOÀN TẤT TRONG 48H</span>
+            </div>
+            <ul class="bullet-list" style="gap: 10px;">
+              <li><strong style="color: #92400E;">Tiếp thu toàn bộ ý kiến P0 & P1:</strong> Tinh chỉnh camera quét QR vé, tối ưu hiển thị danh bạ A-Z trên màn hình nhỏ.</li>
+              <li><strong style="color: #92400E;">Kiểm thử tự động toàn diện:</strong> Chạy lại Type-Check (<code>tsc --noEmit</code>) và Unit Test đạt 0 lỗi.</li>
+              <li><strong style="color: #92400E;">Đóng gói bản cài đặt chính thức:</strong> Xuất file APK cho Android và TestFlight cho iOS.</li>
+            </ul>
+            <div class="box-callout" style="background: #FEF3C7; color: #92400E;">Cam kết bàn giao phiên bản hoàn hảo sau đúng 48 giờ.</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Biên bản cuộc họp được lập ngay tại chỗ và gửi văn bản chính thức sau hội nghị</span>
+        <span class="footer-highlight">Slide 16 / 17</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 17: PHẦN 4 (SLIDE 2) - CAM KẾT VĂN BẢN & LỘ TRÌNH 7 NGÀY -->
+    <div class="slide" data-slide="17">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="badge-unit" style="background: #10B981;">PHẦN 4 (2/2)</span>
+          <div class="header-title-box">
+            <h3>CAM KẾT VĂN BẢN CHÍNH THỨC & LỘ TRÌNH 7 NGÀY GO-LIVE</h3>
+            <p>11:15 – 12:00 · Kế hoạch hành động cụ thể tiến tới ngày phát hành toàn CLB</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <span class="phase-pill" style="background: #DCFCE7; color: #166534;">Bế Mạc Đúng 12:00</span>
+          <span class="slide-num-pill">Slide 17 / 17</span>
+        </div>
+      </div>
+      <div class="slide-body">
+        <h2 class="main-heading">Cam Kết Bằng Văn Bản & Kế Hoạch Triển Khai Chuyển Giao</h2>
+        <p class="sub-heading">ViConnect chịu trách nhiệm toàn diện về kỹ thuật, đào tạo và bảo hành vận hành 24/7</p>
+
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; flex: 1;">
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 20px; display: flex; flex-direction: column;">
+            <h4 style="color: #003B95; font-size: 16px; font-weight: 800; margin-bottom: 12px;">📑 CAM KẾT VĂN BẢN SAU BUỔI HỌP</h4>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="background: #FFFFFF; border-radius: 8px; padding: 12px 16px; border-left: 4px solid #003B95;">
+                <strong style="color: #003B95;">TRONG VÒNG 24 GIỜ:</strong>
+                <p style="font-size: 13px; color: #334155; margin-top: 4px;">Gửi Biên bản cuộc họp chính thức ghi nhận toàn bộ nội dung chốt và chữ ký đại diện hai bên.</p>
+              </div>
+              <div style="background: #FFFFFF; border-radius: 8px; padding: 12px 16px; border-left: 4px solid #D97706;">
+                <strong style="color: #D97706;">TRONG VÒNG 48 GIỜ:</strong>
+                <p style="font-size: 13px; color: #334155; margin-top: 4px;">Gửi Văn bản Kế hoạch hành động chi tiết giải trình kết quả xử lý toàn bộ các điểm chỉnh sửa P0/P1.</p>
+              </div>
+            </div>
+            <div style="margin-top: auto; font-size: 12.5px; color: #1E3A8A; font-weight: 700;">
+              🛡️ Cam kết bảo mật, Uptime 99.9% và hỗ trợ kỹ thuật thường trực 24/7.
+            </div>
+          </div>
+
+          <div style="background: #FFFDF8; border: 1px solid #FDE68A; border-radius: 12px; padding: 20px;">
+            <h4 style="color: #D97706; font-size: 16px; font-weight: 800; margin-bottom: 12px;">🚀 LỘ TRÌNH 7 NGÀY TIẾN TỚI GO-LIVE</h4>
+            <ul class="bullet-list bullet-crm" style="gap: 8px; font-size: 12.5px;">
+              <li><strong>T+1 (Thứ Năm):</strong> Hoàn tất toàn bộ tinh chỉnh UI/UX minor.</li>
+              <li><strong>T+2 (Thứ Sáu):</strong> UAT nội bộ trên thiết bị thật cùng các Trưởng Ban.</li>
+              <li><strong>T+3 (Thứ Bảy):</strong> Đóng gói bộ cài APK Android & TestFlight iOS.</li>
+              <li><strong>T+4 (Chủ Nhật):</strong> Kiểm thử bảo mật & an toàn dữ liệu.</li>
+              <li><strong>T+5 (Thứ Hai):</strong> Tập huấn quản trị Web CRM cho Ban Thư ký & Kế toán.</li>
+              <li><strong>T+6 (Thứ Ba):</strong> Phát động kích hoạt thẻ số cho 100+ CEO tiên phong.</li>
+              <li><strong>T+7 (Thứ Tư):</strong> <strong>CHÍNH THỨC CÔNG BỐ GO-LIVE TOÀN CLB!</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="background: #003B95; color: #FFFFFF; border-radius: 8px; padding: 12px 20px; font-size: 14px; font-weight: 800; text-align: center; margin-top: 14px;">
+          🎉 Kính chúc CLB Doanh Nhân CEO 1983 Đoàn Kết – Thịnh Vượng – Tiên Phong Công Nghệ!
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Bế mạc hội nghị đúng 12:00 trưa · Xin trân trọng cảm ơn tất cả các anh chị!</span>
+        <span class="footer-highlight">Slide 17 / 17</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HUD NAVIGATION -->
+  <div id="hud">
+    <button class="hud-btn" id="prev-btn">◀ Trước</button>
+    <div class="hud-counter" id="hud-counter">Slide 1 / 17</div>
+    <button class="hud-btn" id="next-btn">Sau ▶</button>
+    <div class="hud-clock" id="hud-clock">09:00:00</div>
+    <button class="hud-btn" id="fs-btn">⛶ Toàn màn hình</button>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const hudCounter = document.getElementById('hud-counter');
+    const fsBtn = document.getElementById('fs-btn');
+    const hudClock = document.getElementById('hud-clock');
+    let currentIndex = 0;
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= slides.length) index = slides.length - 1;
+      currentIndex = index;
+
+      slides.forEach((slide, idx) => {
+        slide.classList.toggle('active', idx === currentIndex);
+      });
+
+      hudCounter.textContent = `Slide ${currentIndex + 1} / ${slides.length}`;
+    }
+
+    prevBtn.addEventListener('click', () => showSlide(currentIndex - 1));
+    nextBtn.addEventListener('click', () => showSlide(currentIndex + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        showSlide(currentIndex + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        showSlide(currentIndex - 1);
+      } else if (e.key === 'Home') {
+        showSlide(0);
+      } else if (e.key === 'End') {
+        showSlide(slides.length - 1);
+      }
+    });
+
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => alert(err.message));
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Clock
+    setInterval(() => {
+      const now = new Date();
+      hudClock.textContent = now.toTimeString().split(' ')[0];
+    }, 1000);
+  </script>
+</body>
+</html>

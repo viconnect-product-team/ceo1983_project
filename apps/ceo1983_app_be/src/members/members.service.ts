@@ -286,16 +286,45 @@ export class MembersService {
       mappedType = 'company';
     }
 
+    // Resolve person vs company name and metadata cleanly
+    let personName = r.contact || r.person_name || r.name || '';
+    let compName = r.company_name || r.company || '';
+    let staffSizeStr = r.company_size || '';
+
+    if (r.about && typeof r.about === 'string' && r.about.trim().startsWith('{')) {
+      try {
+        const meta = JSON.parse(r.about);
+        if (meta.representative) {
+          personName = meta.representative;
+        }
+        if (meta.staffSize && !staffSizeStr) {
+          staffSizeStr = meta.staffSize;
+        }
+      } catch {}
+    }
+
+    if (!compName) {
+      if (r.type === 'company' && r.name && r.name !== personName) {
+        compName = r.name;
+      } else {
+        compName = 'CLB Doanh Nhân CEO 1983';
+      }
+    }
+
+    const displayName = personName || r.name;
+
     return {
       id: r.id,
       memberId: r.id,
       member_id: r.id,
       code: r.code ?? '',
-      name: r.name,
-      contact: r.contact ?? '',
-      personName: r.contact || r.name,
-      company: (r.type === 'company' ? r.name : '') || r.company_name || 'CLB Doanh Nhân CEO 1983',
-      companyName: (r.type === 'company' ? r.name : '') || r.company_name || 'CLB Doanh Nhân CEO 1983',
+      name: displayName,
+      contact: personName || r.contact || '',
+      personName: personName || r.contact || displayName,
+      company: compName,
+      companyName: compName,
+      companySize: staffSizeStr,
+      company_size: staffSizeStr,
       email: r.email ?? '',
       phone: r.phone ?? '',
       type: mappedType,
@@ -2506,7 +2535,7 @@ export class MembersService {
         ) VALUES (
           ${id},
           '',
-          ${companyName},
+          ${fullName},
           ${fullName},
           ${email.trim().toLowerCase()},
           ${phone.trim()},
@@ -2543,7 +2572,7 @@ export class MembersService {
           ) VALUES (
             ${id},
             '',
-            ${companyName},
+            ${fullName},
             ${fullName},
             ${email.trim().toLowerCase()},
             ${phone.trim()},

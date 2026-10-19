@@ -1858,29 +1858,62 @@ function FeedCard({
           </button>
         )}
 
-        {/* Media Preview (Images) */}
+        {/* Media Preview (Facebook-style Images) */}
         {item.images && item.images.length > 0 && (
           <div className="mb-3">
             {item.images.length === 1 ? (
-              <div className="relative aspect-video max-h-60 w-full rounded-xl overflow-hidden border border-border bg-muted/30">
+              <div className="relative aspect-video max-h-72 w-full rounded-xl overflow-hidden border border-border bg-muted/30">
                 <img
                   src={resolveMediaUrl(item.images[0]) || item.images[0]}
                   alt={item.title}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 />
               </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {item.images.slice(0, 3).map((url, idx) => (
-                  <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-border bg-muted/30">
+            ) : item.images.length === 2 ? (
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl overflow-hidden border border-border">
+                {item.images.map((url, idx) => (
+                  <div key={idx} className="relative aspect-square overflow-hidden bg-muted/30">
                     <img
                       src={resolveMediaUrl(url) || url}
                       alt={`${item.title} ${idx + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
-                    {idx === 2 && item.images.length > 3 && (
-                      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center font-bold text-white text-xs">
-                        +{item.images.length - 3} ảnh
+                  </div>
+                ))}
+              </div>
+            ) : item.images.length === 3 ? (
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl overflow-hidden border border-border">
+                <div className="relative row-span-2 overflow-hidden bg-muted/30 min-h-[160px]">
+                  <img
+                    src={resolveMediaUrl(item.images[0]) || item.images[0]}
+                    alt={`${item.title} 1`}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {item.images.slice(1, 3).map((url, idx) => (
+                    <div key={idx} className="relative aspect-video overflow-hidden bg-muted/30">
+                      <img
+                        src={resolveMediaUrl(url) || url}
+                        alt={`${item.title} ${idx + 2}`}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl overflow-hidden border border-border">
+                {item.images.slice(0, 4).map((url, idx) => (
+                  <div key={idx} className="relative aspect-square overflow-hidden bg-muted/30">
+                    <img
+                      src={resolveMediaUrl(url) || url}
+                      alt={`${item.title} ${idx + 1}`}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                    {idx === 3 && item.images.length > 4 && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center font-bold text-white text-lg">
+                        +{item.images.length - 4}
                       </div>
                     )}
                   </div>

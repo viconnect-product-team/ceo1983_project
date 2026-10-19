@@ -278,12 +278,18 @@ function GlobalVoiceNavAssistant() {
     (typeof window !== "undefined" ? window.location.pathname : "");
 
   const [aiEnabled, setAiEnabled] = useState(() => {
-    if (typeof window === "undefined") return true;
+    if (typeof window === "undefined") return false;
+    if (localStorage.getItem("ceo1983_ai_disabled_permanently") === "true") return false;
     return localStorage.getItem("ceo1983_ai_assistant_enabled") !== "false";
   });
 
   useEffect(() => {
     const handleToggle = () => {
+      const isPermanentlyDisabled = localStorage.getItem("ceo1983_ai_disabled_permanently") === "true";
+      if (isPermanentlyDisabled) {
+        setAiEnabled(false);
+        return;
+      }
       setAiEnabled(localStorage.getItem("ceo1983_ai_assistant_enabled") !== "false");
     };
     window.addEventListener("ceo1983_ai_toggle", handleToggle);

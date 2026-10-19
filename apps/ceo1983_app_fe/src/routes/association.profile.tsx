@@ -359,15 +359,24 @@ export default function ProfileScreen() {
     (member as any)?.address ||
     (member as any)?.officeAddress ||
     "Tòa nhà CEO 1983 Tower, Cầu Giấy, TP. Hà Nội";
+  let rawBio = (member as any)?.bio || (member as any)?.about || "";
+  let extractedStaffSize = (member as any)?.companySize || (member as any)?.company_size || (member as any)?.staffSize || "";
+  if (typeof rawBio === "string" && rawBio.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(rawBio);
+      rawBio = parsed.notes || parsed.intro || "";
+      if (parsed.staffSize && !extractedStaffSize) {
+        extractedStaffSize = parsed.staffSize;
+      }
+    } catch {}
+  }
+
   const displayBio =
-    (member as any)?.bio ||
-    (member as any)?.about ||
+    rawBio ||
     "Hội viên tích cực CLB Doanh Nhân CEO 1983 (HanoiBA). Sẵn sàng giao lưu kết nối, hợp tác kinh doanh và mở rộng chuỗi cung ứng B2B bền vững.";
 
   const displayCompanySize =
-    (member as any)?.companySize ||
-    (member as any)?.company_size ||
-    (member as any)?.staffSize ||
+    extractedStaffSize ||
     "20 - 50 nhân sự";
 
   const displayIndustry =

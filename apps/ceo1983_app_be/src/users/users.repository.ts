@@ -182,14 +182,16 @@ export class UsersRepository {
   }
 
   async getUserProfile(userId: string): Promise<any> {
-    return this.prisma.user_profiles.findUnique({
-      where: { user_id: userId },
-    }).catch(() => null);
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.user_profiles WHERE user_id = $1::uuid LIMIT 1`,
+      userId,
+    ).catch(() => []);
+    return rows?.[0] || null;
   }
 
   async getMemberInfo(userId: string, email?: string | null): Promise<any | null> {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, code, executive_role, department, association_id FROM public.members 
+      SELECT id, code, executive_role, department, association_id, about, notes, name, contact, phone FROM public.members 
       WHERE user_id = ${userId}::uuid OR LOWER(email) = LOWER(${email || ''})
       LIMIT 1
     `.catch(() => []);
@@ -197,14 +199,38 @@ export class UsersRepository {
   }
 
   async upsertProfile(userId: string, createData: any, updateData: any): Promise<any> {
-    return this.prisma.user_profiles.upsert({
-      where: { user_id: userId },
-      create: createData,
-      update: updateData,
-    });
+    try {
+      const displayName = createData?.display_name || updateData?.display_name || null;
+      const compName = createData?.company_name || updateData?.company_name || null;
+      const title = createData?.professional_title || updateData?.professional_title || null;
+      const ind = createData?.industry || updateData?.industry || null;
+      const reg = createData?.region || updateData?.region || null;
+      const bio = createData?.bio || updateData?.bio || null;
+
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.user_profiles (user_id, display_name, company_name, professional_title, industry, region, bio, updated_at)
+         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, NOW())
+         ON CONFLICT (user_id) DO UPDATE SET
+           display_name = COALESCE(EXCLUDED.display_name, public.user_profiles.display_name),
+           company_name = COALESCE(EXCLUDED.company_name, public.user_profiles.company_name),
+           professional_title = COALESCE(EXCLUDED.professional_title, public.user_profiles.professional_title),
+           industry = COALESCE(EXCLUDED.industry, public.user_profiles.industry),
+           region = COALESCE(EXCLUDED.region, public.user_profiles.region),
+           bio = COALESCE(EXCLUDED.bio, public.user_profiles.bio),
+           updated_at = NOW()`,
+        userId,
+        displayName,
+        compName,
+        title,
+        ind,
+        reg,
+        bio,
+      ).catch(() => {});
+    } catch {}
+    return this.getUserProfile(userId);
   }
 
-  async syncMemberDetails(userId: string, data: { name?: string | null; avatar?: string | null; email?: string | null; industry?: string | null; region?: string | null }): Promise<void> {
+  async syncMemberDetails(userId: string, data: { name?: string | null; avatar?: string | null; email?: string | null; industry?: string | null; region?: string | null; phone?: string | null }): Promise<void> {
     await this.prisma.$executeRawUnsafe(
       `UPDATE public.members 
        SET name = COALESCE($1, name),
@@ -213,13 +239,15 @@ export class UsersRepository {
            email = COALESCE($3, email),
            industry = COALESCE($4, industry),
            region = COALESCE($5, region),
+           phone = COALESCE($6, phone),
            updated_at = NOW()
-       WHERE user_id = $6::uuid OR id = $6::text`,
+       WHERE user_id = $7::uuid OR id = $7::text`,
       data.name || null,
       data.avatar || null,
       data.email || null,
       data.industry || null,
       data.region || null,
+      data.phone || null,
       userId,
     ).catch(() => {});
   }
@@ -344,9 +372,11 @@ export class UsersRepository {
   }
 
   async findProfilesByUserIds(userIds: string[]): Promise<any[]> {
-    return this.prisma.user_profiles.findMany({
-      where: { user_id: { in: userIds } },
-    }).catch(() => []);
+    if (!userIds || userIds.length === 0) return [];
+    return this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT * FROM public.user_profiles WHERE user_id = ANY($1::uuid[])`,
+      userIds,
+    ).catch(() => []);
   }
 
   async findRolesByUserIds(userIds: string[]): Promise<any[]> {
@@ -356,9 +386,9 @@ export class UsersRepository {
   }
 
   async getAllProfileStatuses(): Promise<{ account_status: any }[]> {
-    return this.prisma.user_profiles.findMany({
-      select: { account_status: true },
-    }).catch(() => []);
+    return this.prisma.$queryRawUnsafe<{ account_status: any }[]>(
+      `SELECT account_status FROM public.user_profiles`,
+    ).catch(() => []);
   }
 
   async getAllRoles(): Promise<{ role: any }[]> {
@@ -383,9 +413,10 @@ export class UsersRepository {
   }
 
   async deleteUserProfile(userId: string): Promise<void> {
-    await this.prisma.user_profiles.delete({
-      where: { user_id: userId },
-    }).catch(() => {});
+    await this.prisma.$executeRawUnsafe(
+      `DELETE FROM public.user_profiles WHERE user_id = $1::uuid`,
+      userId,
+    ).catch(() => {});
   }
 
   async deleteUser(id: string): Promise<void> {

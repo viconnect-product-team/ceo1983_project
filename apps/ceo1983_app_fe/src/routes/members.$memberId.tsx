@@ -714,7 +714,85 @@ function MemberDetailPage() {
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <div className="space-y-5 lg:col-span-2">
             <Section title={t("detail.about")}>
-              <p className="py-2 text-sm leading-relaxed text-foreground">{member.about}</p>
+              {(() => {
+                const raw = (member.about || "").trim();
+                let parsed: any = null;
+                if (raw.startsWith("{") && raw.endsWith("}")) {
+                  try {
+                    parsed = JSON.parse(raw);
+                  } catch {
+                    parsed = null;
+                  }
+                }
+
+                if (parsed) {
+                  const rep = parsed.representative || member.contact || member.name;
+                  const pos = parsed.position || "";
+                  const birth = parsed.birthYear || "";
+                  const staff = (member as any).companySize || (member as any).company_size || parsed.staffSize || "";
+                  return (
+                    <div className="py-2 space-y-3">
+                      {parsed.notes ? (
+                        <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">
+                          {parsed.notes}
+                        </p>
+                      ) : (
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          Hội viên chính thức Hiệp hội Doanh nhân CEO 1983 (HanoiBA). Sẵn sàng kết nối giao thương, hợp tác kinh doanh và phát triển chuỗi cung ứng bền vững.
+                        </p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-border/60">
+                        {rep && (
+                          <div className="text-xs">
+                            <span className="text-muted-foreground">Người đại diện: </span>
+                            <span className="font-semibold text-foreground">{rep}</span>
+                          </div>
+                        )}
+                        {pos && (
+                          <div className="text-xs">
+                            <span className="text-muted-foreground">Chức vụ: </span>
+                            <span className="font-semibold text-foreground">{pos}</span>
+                          </div>
+                        )}
+                        {birth && (
+                          <div className="text-xs">
+                            <span className="text-muted-foreground">Năm sinh: </span>
+                            <span className="font-semibold text-foreground">{birth}</span>
+                          </div>
+                        )}
+                        {staff && (
+                          <div className="text-xs">
+                            <span className="text-muted-foreground">Quy mô nhân sự: </span>
+                            <span className="font-semibold text-foreground">{staff}</span>
+                          </div>
+                        )}
+                      </div>
+                      {(parsed.needs || parsed.offers) && (
+                        <div className="space-y-1.5 pt-2 border-t border-border/60 text-xs">
+                          {parsed.needs && (
+                            <div>
+                              <span className="font-medium text-amber-600 dark:text-amber-400">Nhu cầu kết nối: </span>
+                              <span className="text-foreground">{parsed.needs}</span>
+                            </div>
+                          )}
+                          {parsed.offers && (
+                            <div>
+                              <span className="font-medium text-emerald-600 dark:text-emerald-400">Năng lực cung ứng: </span>
+                              <span className="text-foreground">{parsed.offers}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <p className="py-2 text-sm leading-relaxed text-foreground whitespace-pre-line">
+                    {raw || "Chưa có thông tin giới thiệu chi tiết."}
+                  </p>
+                );
+              })()}
             </Section>
 
             <Section title={t("detail.companyInfo")}>
@@ -739,13 +817,23 @@ function MemberDetailPage() {
                   }
                 />
               )}
-              {member.employees != null && (
-                <InfoRow
-                  icon={Users}
-                  label={t("detail.employees")}
-                  value={`${member.employees.toLocaleString("vi-VN")}`}
-                />
-              )}
+              {(() => {
+                let staffStr = (member as any).companySize || (member as any).company_size || "";
+                if (!staffStr && member.about && member.about.trim().startsWith("{")) {
+                  try {
+                    const parsed = JSON.parse(member.about);
+                    if (parsed.staffSize) staffStr = parsed.staffSize;
+                  } catch {}
+                }
+                const displayVal = staffStr || (member.employees && member.employees > 0 ? `${member.employees.toLocaleString("vi-VN")} nhân sự` : "10 - 50 nhân sự");
+                return (
+                  <InfoRow
+                    icon={Users}
+                    label={t("detail.employees")}
+                    value={displayVal}
+                  />
+                );
+              })()}
               <InfoRow
                 icon={Calendar}
                 label={t("detail.joined")}

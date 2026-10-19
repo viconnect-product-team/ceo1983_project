@@ -2450,3 +2450,49 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ## 8. PHỤ LỤC: DANH MỤC 138 MINH CHỨNG HÌNH ẢNH CHỤP THỰC TẾ
 
 Toàn bộ 138 hình ảnh minh chứng thực tế trên hệ thống được lưu trữ trong thư mục tài liệu `document/images/evidence/` và được tích hợp trực tiếp dưới từng bảng Use Case chi tiết ở Mục 5 của tài liệu này.
+
+---
+
+## 9. QUY CHUẨN ĐẶC TẢ VẬN HÀNH & KIẾN TRÚC MỚI BỔ SUNG (10/2026)
+
+### 9.1. Quy chuẩn Xác thực, Đăng nhập & Đổi Mật Khẩu Lần Đầu
+* **Xử lý Bảng Hồ Sơ Độc Lập:** Để tránh lỗi sập dịch vụ 500 khi bảng `user_profiles` không có trong Prisma Client schema, toàn bộ thao tác đọc/ghi hồ sơ tài khoản được thực thi qua Raw SQL an toàn (`$queryRawUnsafe` / `$executeRawUnsafe`).
+* **Làm Sạch Ký Tự Vô Hình & Đăng Nhập:** Tự động loại bỏ ký tự ẩn/khoảng trắng thừa (`[\u200B-\u200D\uFEFF\u00A0\r\n\t]`) trước khi xác thực mật khẩu. Hỗ trợ đối soát mật khẩu khởi tạo hệ thống từ ghi chú hội viên.
+* **Điều Hướng Đổi Mật Khẩu Bắt Buộc:** Tại màn hình `/association/settings?required=true`, cung cấp nút điều hướng "Quay lại màn hình đăng nhập" và thanh điều hướng `MemberHeader` cho phép hủy phiên làm việc hiện tại, xóa session an toàn và quay về `/association/login`.
+
+### 9.2. Chuẩn Hóa Danh Xưng Hội Viên & Doanh Nghiệp (CRM & Mobile)
+* **Tách Bạch Trường Dữ Liệu:** 
+  - `name` / `contact`: Bắt buộc lưu họ và tên thật của hội viên lãnh đạo (Ví dụ: "Phạm An Nam").
+  - `company_name`: Lưu tên doanh nghiệp/công ty đại diện (Ví dụ: "Vione").
+  - `company_size`: Lưu quy mô nhân sự được chọn khi đăng ký (Ví dụ: "10 - 50 nhân sự").
+* **Phân Giải Hồ Sơ JSON (`about`):** Khi hiển thị chi tiết hồ sơ hội viên tại CRM (`/members/:id`) hoặc Mobile (`/association/profile`), trường `about` được phân giải sang các mục thông tin rõ ràng (Người đại diện, Chức vụ, Năm sinh, Quy mô nhân sự, Nhu cầu kết nối, Năng lực cung ứng). Tuyệt đối không hiển thị chuỗi JSON thô dạng `{"representative":"...", "staffSize":"..."}`.
+
+### 9.3. Tối Ưu Mẫu Email Cảm Ơn Đăng Ký Hội Viên
+* **Việt Hóa Ngành Nghề:** Tự động chuyển đổi mã ngành nghề kỹ thuật (`ind.trade` -> "Thương mại & Bán lẻ", `ind.it` -> "Công nghệ thông tin & Viễn thông", `ind.fnb` -> "Ẩm thực & Nhà hàng F&B", v.v.) sang tiếng Việt trang trọng trong email gửi tới hội viên.
+* **Loại Bỏ Mục Không Phù Hợp:** Xóa bỏ trường "Ban nguyện vọng" khỏi nội dung thư cảm ơn xác nhận đăng ký.
+
+### 9.4. Tinh Gọn Ma Trận Phân Quyền CRM (Sub-system 1 RBAC Only)
+* **Loại Bỏ Phân Hệ Phụ:** CRM Quản trị phân quyền (`/permissions`) loại bỏ các tab con rườm rà (Phân hệ 2 & Phân hệ 3), chỉ giữ lại duy nhất Phân hệ 1: Ma trận phân quyền hệ thống (`RbacPermissionMatrix`).
+* **Đặc Tả 6 Vai Trò Ban Chuyên Trách:**
+  1. `thanh_vien_ban_su_kien` (Ban Sự kiện & Hội thảo)
+  2. `thanh_vien_ban_xuc_tien` (Ban Xúc tiến Thương mại & Đầu tư)
+  3. `thanh_vien_ban_thanh_vien` (Ban Phát triển Hội viên)
+  4. `thanh_vien_ban_truyen_thong` (Ban Truyền thông & Thương hiệu)
+  5. `thanh_vien_ban_tai_chinh` (Ban Tài chính & Pháp lý)
+  6. `thanh_vien_ban_thien_nguyen` (Ban Thiện nguyện & Trách nhiệm Xã hội)
+  7. `member` (Hội viên chính thức App CEO 1983)
+* **Tích Hợp Quyền Ứng Dụng Di Động (`cat_mobile_app`):** Quản trị toàn diện 10 quyền di động: xem bảng tin, đăng bài, nhắn tin trực tiếp, setup cuộc gặp 1-1, đăng ký sự kiện, xem ưu đãi, biểu quyết, chia sẻ danh thiếp, đọc thư viện tài liệu, tạo gia hạn hội viên.
+
+### 9.5. Đặc Tả Bảng Tin B2B Network Feed Chuẩn Doanh Nhân
+* **Bố Cục Ảnh Ghép Chuẩn Facebook:** Trình bày hình ảnh bài viết theo cấu trúc:
+  - 1 ảnh: Hiển thị tràn khung tỷ lệ 16:9 với lớp phủ sang trọng.
+  - 2 ảnh: Chia đôi 50/50 theo chiều dọc.
+  - 3 ảnh: 1 ảnh lớn bên trái, 2 ảnh nhỏ xếp dọc bên phải.
+  - 4 ảnh trở lên: Lưới 2x2 cân xứng, ảnh thứ 4 hiển thị huy hiệu `+N` khi có thêm ảnh ẩn.
+* **Quy Chuẩn Tương Tác Nghiệp Vụ:** 
+  - Tuyệt đối KHÔNG có tính năng bình luận công khai hoặc thả biểu cảm (Like/Love/Haha/Reaction) nhằm duy trì tính nghiêm túc, chuẩn mực lãnh đạo.
+  - Hỗ trợ duy nhất 2 hành động tương tác: "💬 Nhắn tin" trực tiếp vào hộp thư đối tác và "🤝 Setup cuộc gặp 1-1" mở form đề xuất lịch hẹn kết nối B2B.
+
+### 9.6. Cơ Chế Tắt Vĩnh Viễn Trợ Lý AI (Permanent AI Disablement)
+* **Quy Trình Tắt:** Khi người dùng bấm biểu tượng (X) trên widget trợ lý AI, hệ thống lập tức tắt hoàn toàn trợ lý (`setVoiceAiEnabled(false)`, ghi nhớ cờ vĩnh viễn `ceo1983_ai_disabled_permanently = true`), xóa bỏ nút thu gọn mini dock và chặn tuyệt đối không cho xuất hiện trên toàn bộ các trang CRM quản trị.
+* **Cơ Chế Bật Lại:** Trợ lý chỉ được phép hiển thị trở lại khi người dùng chủ động truy cập trang Cài đặt & Bảo mật (`/association/settings`) và gạt bật lại công tắc Trợ lý AI.

@@ -1,25 +1,17 @@
 import { useState, useRef } from "react";
 import { createFileRoute, useBlocker } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldCheck,
   Lock,
   AlertTriangle,
   Save,
   LogOut,
-  Users,
-  Building2,
-  SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
-import { Card } from "@/components/dashboard/PageKit";
 import { useRole } from "@/hooks/use-role";
 import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
-import { CommitteesPermissionManager } from "@/components/dashboard/CommitteesPermissionManager";
-import { MemberPermissionsByCommittee } from "@/components/dashboard/MemberPermissionsByCommittee";
 import { dispatchPermissionSyncEvent } from "@/lib/rbac-permission-helpers";
-import { fetchNestApi } from "@/lib/api-client";
 
 export const Route = createFileRoute("/permissions")({
   component: PermissionsPage,
@@ -45,7 +37,13 @@ export const ROLE_OPTIONS = [
   { value: "truong_ban_xuc_tien", label: "Trưởng ban Xúc tiến", desc: "Quản lý giao thương" },
   { value: "truong_ban_tai_chinh", label: "Trưởng ban Tài chính", desc: "Quản lý tài chính" },
   { value: "truong_ban_thien_nguyen", label: "Trưởng ban Thiện nguyện", desc: "Quản trị thiện nguyện" },
-  { value: "member", label: "Thành viên", desc: "Hội viên chính thức" },
+  { value: "thanh_vien_ban_su_kien", label: "Thành viên Ban Sự Kiện", desc: "Thành viên chuyên môn Ban Sự Kiện" },
+  { value: "thanh_vien_ban_xuc_tien", label: "Thành viên Ban Xúc Tiến Thương Mại", desc: "Thành viên chuyên môn Ban Xúc Tiến TM" },
+  { value: "thanh_vien_ban_thanh_vien", label: "Thành viên Ban Thành Viên", desc: "Thành viên chuyên môn Ban Thành Viên" },
+  { value: "thanh_vien_ban_truyen_thong", label: "Thành viên Ban Truyền Thông", desc: "Thành viên chuyên môn Ban Truyền Thông" },
+  { value: "thanh_vien_ban_tai_chinh", label: "Thành viên Ban Tài Chính", desc: "Thành viên chuyên môn Ban Tài Chính" },
+  { value: "thanh_vien_ban_thien_nguyen", label: "Thành viên Ban Thiện Nguyện", desc: "Thành viên chuyên môn Ban Thiện Nguyện" },
+  { value: "member", label: "Hội viên (App CEO 1983)", desc: "Hội viên chính thức App CEO 1983" },
 ];
 
 export function getDynamicRoleOptions(): { value: string; label: string; desc?: string }[] {
@@ -55,7 +53,13 @@ export function getDynamicRoleOptions(): { value: string; label: string; desc?: 
 export function normalizeRole(r?: string): string {
   if (!r) return "member";
   const s = r.toLowerCase().trim();
-  if (s.startsWith("truong_ban_")) return s;
+  if (s.startsWith("thanh_vien_ban_") || s.startsWith("truong_ban_")) return s;
+  if (s.includes("thành viên ban sự kiện") || s.includes("ban sự kiện")) return "thanh_vien_ban_su_kien";
+  if (s.includes("thành viên ban xúc tiến") || s.includes("xúc tiến thương mại")) return "thanh_vien_ban_xuc_tien";
+  if (s.includes("thành viên ban thành viên")) return "thanh_vien_ban_thanh_vien";
+  if (s.includes("thành viên ban truyền thông")) return "thanh_vien_ban_truyen_thong";
+  if (s.includes("thành viên ban tài chính")) return "thanh_vien_ban_tai_chinh";
+  if (s.includes("thành viên ban thiện nguyện")) return "thanh_vien_ban_thien_nguyen";
   if (s.includes("chủ tịch") || s === "chu_tich" || s === "president") return "chu_tich";
   if (
     s === "quan_tri" ||
@@ -128,7 +132,6 @@ export function normalizeDept(d?: string): string {
 
 function PermissionsPage() {
   const { isPlatformAdmin, isBQT, isAdmin, srsRole, loading } = useRole();
-  const qc = useQueryClient();
   const hasAccess =
     isPlatformAdmin ||
     isBQT ||
@@ -139,46 +142,11 @@ function PermissionsPage() {
     srsRole === "quan_tri" ||
     srsRole === "ban_dieu_hanh";
 
-  const [activeTab, setActiveTab] = useState<"matrix" | "committees" | "accounts_by_committee">("matrix");
-
-  // Fetch Members List for Committee Permissions
-  const {
-    data: members = [],
-    isLoading: membersLoading,
-    refetch: refetchMembers,
-  } = useQuery({
-    queryKey: ["permissions-members"],
-    queryFn: async () => {
-      const res = await fetchNestApi<any[]>("/members");
-      return Array.isArray(res) ? res : [];
-    },
-  });
-
-  // API update role & department for a member
-  const handleUpdateRoleDept = async (p: {
-    memberId: string;
-    executiveRole: string;
-    department: string;
-    associationId?: string;
-  }) => {
-    const res = await fetchNestApi(`/members/${p.memberId}/role-dept`, {
-      method: "PATCH",
-      body: JSON.stringify(p),
-    });
-    await qc.invalidateQueries({ queryKey: ["permissions-members"] });
-    await qc.invalidateQueries({ queryKey: ["members"] });
-    refetchMembers();
-    return res;
-  };
-
   const [matrixDirty, setMatrixDirty] = useState(false);
-  const [committeeDirty, setCommitteeDirty] = useState(false);
-  const isDirty = matrixDirty || committeeDirty;
+  const isDirty = matrixDirty;
 
   const matrixSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const matrixDiscardRef = useRef<(() => void) | null>(null);
-  const committeeSaveRef = useRef<(() => Promise<boolean>) | null>(null);
-  const committeeDiscardRef = useRef<(() => void) | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const blocker = useBlocker({
@@ -195,11 +163,7 @@ function PermissionsPage() {
       if (matrixDirty && matrixSaveRef.current) {
         await matrixSaveRef.current();
       }
-      if (committeeDirty && committeeSaveRef.current) {
-        await committeeSaveRef.current();
-      }
       setMatrixDirty(false);
-      setCommitteeDirty(false);
       dispatchPermissionSyncEvent();
       toast.success("Đã lưu các thay đổi phân quyền!");
       blocker.proceed?.();
@@ -214,11 +178,7 @@ function PermissionsPage() {
     if (matrixDiscardRef.current) {
       matrixDiscardRef.current();
     }
-    if (committeeDiscardRef.current) {
-      committeeDiscardRef.current();
-    }
     setMatrixDirty(false);
-    setCommitteeDirty(false);
     toast.info("Đã hủy các thay đổi chưa lưu.");
     blocker.proceed?.();
   };
@@ -231,11 +191,11 @@ function PermissionsPage() {
     return (
       <AppShell>
         <div className="p-8">
-          <Card className="p-10 text-center text-sm text-muted-foreground">
+          <div className="p-10 text-center text-sm text-muted-foreground rounded-2xl border border-border bg-card shadow-sm">
             <Lock className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <h3 className="text-base font-bold text-foreground mb-1">Không có quyền truy cập</h3>
             <p>Bạn không có quyền quản trị để xem hoặc cấu hình phân quyền hệ thống.</p>
-          </Card>
+          </div>
         </div>
       </AppShell>
     );
@@ -264,81 +224,15 @@ function PermissionsPage() {
                 Phân Quyền & Quản Trị Vai Trò CEO 1983
               </h1>
             </div>
-
-            {/* Navigation Tabs (3 Phân Hệ Phân Quyền) */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-muted/70 border border-border/60">
-              <button
-                type="button"
-                onClick={() => setActiveTab("matrix")}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "matrix"
-                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-                }`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span>Phân Hệ 1: Ma Trận Phân Quyền</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("committees")}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "committees"
-                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-                }`}
-              >
-                <Building2 className="w-4 h-4" />
-                <span>Phân Hệ 2: Ban Chuyên Môn</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("accounts_by_committee")}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "accounts_by_committee"
-                    ? "bg-card text-foreground shadow-xs border border-border/50 text-[#003B95] dark:text-blue-400"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>Phân Hệ 3: Phân Quyền Tài Khoản Theo Từng Ban</span>
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Phân Hệ 1: Ma Trận Phân Quyền Hệ Thống & App Mobile */}
-        <div className={activeTab === "matrix" ? "block" : "hidden"}>
+        {/* Phân Hệ 1: Ma Trận Phân Quyền Hệ Thống & App Mobile CEO 1983 */}
+        <div>
           <RbacPermissionMatrix
             onDirtyChange={setMatrixDirty}
             saveTriggerRef={matrixSaveRef}
             discardTriggerRef={matrixDiscardRef}
-          />
-        </div>
-
-        {/* Phân Hệ 2: Phân Quyền Ban Chuyên Môn */}
-        <div className={activeTab === "committees" ? "block" : "hidden"}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <CommitteesPermissionManager
-              onMatrixChanged={() => {
-                qc.invalidateQueries({ queryKey: ["permissions-members"] });
-                refetchMembers();
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Phân Hệ 3: Phân Quyền Tài Khoản Theo Từng Ban */}
-        <div className={activeTab === "accounts_by_committee" ? "block" : "hidden"}>
-          <MemberPermissionsByCommittee
-            members={members}
-            loading={membersLoading}
-            onUpdateRoleDept={handleUpdateRoleDept}
-            onDirtyChange={setCommitteeDirty}
-            saveTriggerRef={committeeSaveRef}
-            discardTriggerRef={committeeDiscardRef}
           />
         </div>
       </div>

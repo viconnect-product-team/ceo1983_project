@@ -43,6 +43,7 @@ const OPENROUTER_FREE_MODELS = [
 
 export function isVoiceAiEnabled(): boolean {
   if (typeof window === "undefined") return true;
+  if (localStorage.getItem("ceo1983_ai_disabled_permanently") === "true") return false;
   const val1 = localStorage.getItem(VOICE_AI_STORAGE_KEY);
   const val2 = localStorage.getItem("ceo1983_ai_assistant_enabled");
   if (val1 === "false" || val2 === "false") return false;
@@ -52,6 +53,12 @@ export function isVoiceAiEnabled(): boolean {
 export function setVoiceAiEnabled(enabled: boolean): void {
   if (typeof window === "undefined") return;
   const str = enabled ? "true" : "false";
+  if (enabled) {
+    localStorage.removeItem("ceo1983_ai_disabled_permanently");
+    sessionStorage.removeItem("ceo1983_ai_dismissed");
+  } else {
+    localStorage.setItem("ceo1983_ai_disabled_permanently", "true");
+  }
   localStorage.setItem(VOICE_AI_STORAGE_KEY, str);
   localStorage.setItem("ceo1983_ai_assistant_enabled", str);
   window.dispatchEvent(new Event(VOICE_AI_EVENT_NAME));
@@ -1057,17 +1064,18 @@ HƯỚNG DẪN TRẢ LỜI:
           }
         >
           <div className="relative group">
-            {/* Quick close button */}
+            {/* Permanent disable / close button */}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setIsDismissed(true);
-                sessionStorage.setItem("ceo1983_ai_dismissed", "true");
-                toast.info("Đã thu gọn trợ lý AI. Chạm vào mép màn hình để mở lại.");
+                setVoiceAiEnabled(false);
+                setAiActive(false);
+                setIsDismissed(false);
+                toast.info("Đã tắt Trợ lý AI CEO 1983. Quý hội viên có thể bật lại bất cứ lúc nào trong Cài đặt & Bảo mật.");
               }}
-              aria-label="Thu gọn trợ lý AI"
-              title="Thu gọn trợ lý AI"
+              aria-label="Tắt Trợ lý AI"
+              title="Tắt Trợ lý AI"
               className="absolute -top-1.5 -left-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900/90 text-white hover:bg-rose-600 hover:text-white border border-amber-400/80 shadow-md cursor-pointer transition active:scale-90"
             >
               <X className="h-3 w-3 stroke-[2.5]" />
@@ -1109,7 +1117,7 @@ HƯỚNG DẪN TRẢ LỜI:
       )}
 
       {/* ── 1.1 MINI DOCK BUTTON (WHEN DISMISSED) ── */}
-      {!isOpen && isDismissed && (
+      {!isOpen && isDismissed && isVoiceAiEnabled() && (
         <button
           type="button"
           onClick={() => {

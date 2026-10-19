@@ -27,6 +27,7 @@ import {
   Download,
   ExternalLink,
   Smartphone,
+  ArrowLeft,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -335,6 +336,12 @@ function AssociationSettingsScreen() {
     }
   };
 
+  const handleBackToLogin = async () => {
+    await signOutSession();
+    authLogout?.();
+    navigate({ to: "/association/login" as any, replace: true });
+  };
+
   const handleLogout = async () => {
     if (!passwordChangedInSession) {
       toast.warning("Vui lòng đổi mật khẩu thành công ít nhất một lần để đảm bảo an toàn trước khi đăng xuất.");
@@ -350,7 +357,8 @@ function AssociationSettingsScreen() {
       <MemberHeader
         title="Bảo mật & Cài đặt"
         subtitle="Hiệp hội Doanh nhân CEO 1983"
-        back={required !== "true"}
+        back={true}
+        onBack={required === "true" ? handleBackToLogin : undefined}
       />
 
       <div className="mx-4 mt-4 space-y-4">
@@ -540,6 +548,17 @@ function AssociationSettingsScreen() {
               )}
               <span className="text-white font-bold">Xác nhận cập nhật tài khoản & Đổi mật khẩu</span>
             </button>
+
+            {required === "true" && (
+              <button
+                type="button"
+                onClick={handleBackToLogin}
+                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-98"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                <span>Quay lại màn hình đăng nhập</span>
+              </button>
+            )}
           </form>
         </section>
 

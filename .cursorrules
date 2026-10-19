@@ -24,6 +24,11 @@
 # - Đồng Bộ Dữ Liệu CSDL & Ứng Dụng (Database-First Synchronization): Các danh mục tin tức và biểu quyết phải luôn đồng bộ giữa Web CRM và App qua PostgreSQL `public.news`, `public.polls`. Sử dụng cơ chế nạp tự động (Seed on Read) khi bảng trống để đảm bảo cả hệ thống quản trị và ứng dụng di động hiển thị đồng nhất 100% các bài viết và phiên biểu quyết chuẩn Điều lệ Hiệp hội.
 
 
+# - Quy Chuẩn Phân Quyền CRM Đơn Phân Hệ & 6 Ban Chuyên Môn (CRM Unified RBAC Matrix): Trang quản trị phân quyền (/permissions) chỉ duy trì duy nhất Ma trận phân quyền hệ thống (RbacPermissionMatrix). Mở rộng 6 vai trò thành viên ban chuyên môn (thanh_vien_ban_su_kien, thanh_vien_ban_xuc_tien, thanh_vien_ban_thanh_vien, thanh_vien_ban_truyen_thong, thanh_vien_ban_tai_chinh, thanh_vien_ban_thien_nguyen) và tích hợp nhóm quyền App Mobile (cat_mobile_app) quản lý 10 quyền ứng dụng di động.
+# - Quy Chuẩn Bảng Tin B2B Network Feed (No Comments / No Reactions): Bảng tin giao thương doanh nghiệp hiển thị ảnh bài viết kiểu Facebook (1, 2, 3, 4+ ảnh kèm huy hiệu +N). TUYỆT ĐỐI KHÔNG có tính năng bình luận hay thả cảm xúc (like/reaction). Chỉ hỗ trợ 2 hành động: "Nhắn tin" trực tiếp và "Setup cuộc gặp 1-1".
+# - Quy Chuẩn Đổi Mật Khẩu Bắt Buộc & Tắt Vĩnh Viễn Trợ Lý AI: Màn hình đổi mật khẩu bắt buộc (/association/settings?required=true) phải cung cấp nút quay lại màn hình đăng nhập, xóa session và điều hướng về /association/login. Khi người dùng bấm X trên trợ lý AI, phải tắt hoàn toàn AI (setVoiceAiEnabled(false) và ceo1983_ai_disabled_permanently = true), triệt tiêu nút thu gọn mini dock và cấm xuất hiện trên giao diện CRM.
+# - Quy Chuẩn Lưu Trữ Danh Xưng Hội Viên & Phân Giải Hồ Sơ JSON: Trường `name` và `contact` bắt buộc lưu họ và tên thật cá nhân, trường `company_name` lưu tên doanh nghiệp. Khi hiển thị hồ sơ chi tiết, trường `about` phải được phân giải thành các mục thông tin lãnh đạo rõ ràng (Người đại diện, Chức vụ, Năm sinh, Quy mô nhân sự, Nhu cầu kết nối, Năng lực cung ứng), tuyệt đối không để lộ chuỗi raw JSON.
+
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)
 # ------------------------------------------------------------------------------

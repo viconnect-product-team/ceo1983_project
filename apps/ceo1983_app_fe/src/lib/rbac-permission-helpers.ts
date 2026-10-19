@@ -16,6 +16,12 @@ export type SystemRoleKey =
   | "truong_ban_xuc_tien"
   | "truong_ban_tai_chinh"
   | "truong_ban_thien_nguyen"
+  | "thanh_vien_ban_su_kien"
+  | "thanh_vien_ban_xuc_tien"
+  | "thanh_vien_ban_thanh_vien"
+  | "thanh_vien_ban_truyen_thong"
+  | "thanh_vien_ban_tai_chinh"
+  | "thanh_vien_ban_thien_nguyen"
   | "member";
 
 export interface SystemRoleDef {
@@ -98,11 +104,53 @@ export const SYSTEM_5_ROLES: SystemRoleDef[] = [
     desc: "Quản lý hoạt động từ thiện & an sinh xã hội",
   },
   {
+    key: "thanh_vien_ban_su_kien",
+    name: "Thành viên Ban Sự Kiện",
+    shortName: "TV Sự Kiện",
+    color: "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800",
+    desc: "Thành viên chuyên trách Ban Sự Kiện",
+  },
+  {
+    key: "thanh_vien_ban_xuc_tien",
+    name: "Thành viên Ban Xúc Tiến TM",
+    shortName: "TV Xúc Tiến TM",
+    color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
+    desc: "Thành viên chuyên trách Ban Xúc Tiến Thương Mại",
+  },
+  {
+    key: "thanh_vien_ban_thanh_vien",
+    name: "Thành viên Ban Thành Viên",
+    shortName: "TV Thành Viên",
+    color: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800",
+    desc: "Thành viên chuyên trách Ban Thành Viên",
+  },
+  {
+    key: "thanh_vien_ban_truyen_thong",
+    name: "Thành viên Ban Truyền Thông",
+    shortName: "TV Truyền Thông",
+    color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800",
+    desc: "Thành viên chuyên trách Ban Truyền Thông",
+  },
+  {
+    key: "thanh_vien_ban_tai_chinh",
+    name: "Thành viên Ban Tài Chính",
+    shortName: "TV Tài Chính",
+    color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800",
+    desc: "Thành viên chuyên trách Ban Tài Chính",
+  },
+  {
+    key: "thanh_vien_ban_thien_nguyen",
+    name: "Thành viên Ban Thiện Nguyện",
+    shortName: "TV Thiện Nguyện",
+    color: "text-teal-600 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800",
+    desc: "Thành viên chuyên trách Ban Thiện Nguyện",
+  },
+  {
     key: "member",
-    name: "Thành viên",
-    shortName: "Thành viên",
+    name: "Hội viên (App CEO 1983)",
+    shortName: "Hội viên App",
     color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800",
-    desc: "Hội viên chính thức tham gia sinh hoạt & giao thương",
+    desc: "Hội viên chính thức tham gia sinh hoạt & giao thương trên App",
   },
 ];
 
@@ -117,7 +165,13 @@ export const ROLE_OPTIONS = [
   { value: "truong_ban_xuc_tien", label: "Trưởng ban Xúc tiến thương mại" },
   { value: "truong_ban_tai_chinh", label: "Trưởng ban Tài chính" },
   { value: "truong_ban_thien_nguyen", label: "Trưởng ban Thiện nguyện" },
-  { value: "member", label: "Thành viên" },
+  { value: "thanh_vien_ban_su_kien", label: "Thành viên Ban Sự Kiện" },
+  { value: "thanh_vien_ban_xuc_tien", label: "Thành viên Ban Xúc Tiến Thương Mại" },
+  { value: "thanh_vien_ban_thanh_vien", label: "Thành viên Ban Thành Viên" },
+  { value: "thanh_vien_ban_truyen_thong", label: "Thành viên Ban Truyền Thông" },
+  { value: "thanh_vien_ban_tai_chinh", label: "Thành viên Ban Tài Chính" },
+  { value: "thanh_vien_ban_thien_nguyen", label: "Thành viên Ban Thiện Nguyện" },
+  { value: "member", label: "Hội viên (App CEO 1983)" },
 ];
 
 export interface DepartmentItem {

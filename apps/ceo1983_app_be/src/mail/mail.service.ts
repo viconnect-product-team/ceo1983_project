@@ -1408,12 +1408,28 @@ export class MailService {
           <span class="info-label">Email tiếp nhận:</span>
           <span class="info-value" style="font-family: monospace;">${cleanTo}</span>
         </div>
-        ${industry ? `
-        <div class="info-row">
-          <span class="info-label">Lĩnh vực hoạt động:</span>
-          <span class="info-value">${industry}</span>
-        </div>
-        ` : ''}
+        ${(() => {
+          const INDUSTRY_LABELS: Record<string, string> = {
+            'ind.trade': 'Thương mại & Bán lẻ',
+            'ind.it': 'Công nghệ thông tin & Viễn thông',
+            'ind.manufacturing': 'Sản xuất & Chế tạo',
+            'ind.realestate': 'Bất động sản & Xây dựng',
+            'ind.finance': 'Tài chính & Đầu tư',
+            'ind.fnb': 'Ẩm thực & Dịch vụ F&B',
+            'ind.logistics': 'Vận tải & Logistics',
+            'ind.health': 'Y tế, Dược phẩm & Chăm sóc sức khỏe',
+            'ind.education': 'Giáo dục & Đào tạo',
+            'ind.service': 'Thương mại - Dịch vụ',
+            'ind.other': 'Ngành nghề khác',
+          };
+          const resolvedIndustry = (industry && INDUSTRY_LABELS[industry]) ? INDUSTRY_LABELS[industry] : (industry || 'Thương mại - Dịch vụ');
+          return `
+          <div class="info-row">
+            <span class="info-label">Lĩnh vực hoạt động:</span>
+            <span class="info-value" style="font-weight: 700; color: #0f172a;">${resolvedIndustry}</span>
+          </div>
+          `;
+        })()}
         ${memberId ? `
         <div class="info-row">
           <span class="info-label">Mã tham chiếu hồ sơ:</span>
