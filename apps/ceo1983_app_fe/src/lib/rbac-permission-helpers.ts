@@ -232,17 +232,38 @@ export const DEPARTMENT_OPTIONS = [
 export function normalizeRole(r?: string): SystemRoleKey {
   if (!r) return "member";
   const s = r.toLowerCase().trim();
+
+  // 1. Exact system/admin keys
   if (s === "quan_tri" || s === "platform_admin" || s === "superadmin" || s.includes("hệ thống") || s === "quản trị") return "quan_tri";
-  if (s.includes("chủ tịch") || s === "chu_tich" || s === "president") return "chu_tich";
+  if (s === "chu_tich" || s === "president" || s.includes("chủ tịch")) return "chu_tich";
   if (s === "admin" || s === "adm") return "admin";
-  if (s.includes("tổng thư ký") || s.includes("tong_thu_ky") || s === "ttk") return "tong_thu_ky";
-  if (s.includes("ban_thu_ky") || s === "thu_ky" || s === "btk" || (s.includes("thư ký") && !s.includes("tổng"))) return "tong_thu_ky";
-  if (s.includes("tbdh") || s === "truong_ban_dieu_hanh" || s.includes("điều hành") || s.includes("tbqt") || s === "truong_ban_quan_tri") return "truong_ban_dieu_hanh";
-  if (s.includes("truyền thông") || s.includes("btt") || s === "truong_ban_truyen_thong") return "truong_ban_truyen_thong";
-  if (s.includes("thành viên") || s.includes("btv") || s === "truong_ban_thanh_vien") return "truong_ban_thanh_vien";
-  if (s.includes("xúc tiến") || s.includes("bxt") || s.includes("thương mại") || s === "truong_ban_xuc_tien") return "truong_ban_xuc_tien";
-  if (s.includes("tài chính") || s.includes("btc") || s === "truong_ban_tai_chinh") return "truong_ban_tai_chinh";
-  if (s.includes("thiện nguyện") || s.includes("btn") || s === "truong_ban_thien_nguyen") return "truong_ban_thien_nguyen";
+  if (s === "tong_thu_ky" || s === "ttk" || s.includes("tổng thư ký")) return "tong_thu_ky";
+  if (s === "ban_thu_ky" || s === "thu_ky" || s === "btk") return "tong_thu_ky";
+
+  // 2. Specific committee members (BEFORE Trưởng ban to prevent false match)
+  if (s === "thanh_vien_ban_su_kien" || s.includes("thành viên ban sự kiện") || s.includes("tv sự kiện")) return "thanh_vien_ban_su_kien";
+  if (s === "thanh_vien_ban_xuc_tien" || s.includes("thành viên ban xúc tiến") || s.includes("tv xúc tiến")) return "thanh_vien_ban_xuc_tien";
+  if (s === "thanh_vien_ban_thanh_vien" || s.includes("thành viên ban thành viên") || s.includes("tv thành viên")) return "thanh_vien_ban_thanh_vien";
+  if (s === "thanh_vien_ban_truyen_thong" || s.includes("thành viên ban truyền thông") || s.includes("tv truyền thông")) return "thanh_vien_ban_truyen_thong";
+  if (s === "thanh_vien_ban_tai_chinh" || s.includes("thành viên ban tài chính") || s.includes("tv tài chính")) return "thanh_vien_ban_tai_chinh";
+  if (s === "thanh_vien_ban_thien_nguyen" || s.includes("thành viên ban thiện nguyện") || s.includes("tv thiện nguyện")) return "thanh_vien_ban_thien_nguyen";
+
+  // 3. Committee Heads (Trưởng ban)
+  if (s === "truong_ban_dieu_hanh" || s.includes("tbdh") || (s.includes("điều hành") && (s.includes("trưởng") || s.includes("truong") || s.includes("tb")))) return "truong_ban_dieu_hanh";
+  if (s === "truong_ban_truyen_thong" || s.includes("btt") || (s.includes("truyền thông") && (s.includes("trưởng") || s.includes("truong") || s.includes("tb")))) return "truong_ban_truyen_thong";
+  if (s === "truong_ban_thanh_vien" || s.includes("btv") || (s.includes("thành viên") && (s.includes("trưởng") || s.includes("truong") || s.includes("tb")))) return "truong_ban_thanh_vien";
+  if (s === "truong_ban_xuc_tien" || s.includes("bxt") || ((s.includes("xúc tiến") || s.includes("thương mại")) && (s.includes("trưởng") || s.includes("truong") || s.includes("tb")))) return "truong_ban_xuc_tien";
+  if (s === "truong_ban_tai_chinh" || s.includes("btc") || (s.includes("tài chính") && (s.includes("trưởng") || s.includes("truong") || s.includes("tb")))) return "truong_ban_tai_chinh";
+  if (s === "truong_ban_thien_nguyen" || s.includes("btn") || (s.includes("thiện nguyện") && (s.includes("trưởng") || s.includes("truong") || s.includes("tb")))) return "truong_ban_thien_nguyen";
+
+  // 4. Fallback for general committee keywords
+  if (s.includes("sự kiện")) return "thanh_vien_ban_su_kien";
+  if (s.includes("xúc tiến") || s.includes("thương mại")) return "thanh_vien_ban_xuc_tien";
+  if (s.includes("truyền thông")) return "thanh_vien_ban_truyen_thong";
+  if (s.includes("tài chính")) return "thanh_vien_ban_tai_chinh";
+  if (s.includes("thiện nguyện")) return "thanh_vien_ban_thien_nguyen";
+  if (s.includes("thành viên ban")) return "thanh_vien_ban_thanh_vien";
+
   return "member";
 }
 
@@ -278,7 +299,8 @@ export function getAllDynamicRoleOptions(customDepts?: DepartmentItem[]): { valu
 
 export function getRolesForDepartment(
   deptName: string,
-  customDepts?: DepartmentItem[]
+  customDepts?: DepartmentItem[],
+  currentRole?: string
 ): { value: string; label: string; desc?: string }[] {
   const norm = normalizeDept(deptName);
   const depts = customDepts || (typeof window !== "undefined" ? getCustomDepartments() : INITIAL_DEPARTMENTS);
@@ -289,8 +311,10 @@ export function getRolesForDepartment(
       deptName.toLowerCase().includes(d.name.toLowerCase())
   );
 
+  let roles: { value: string; label: string; desc?: string }[] = [];
+
   if (norm === "Ban Điều Hành" || deptName.toLowerCase().includes("điều hành")) {
-    return [
+    roles = [
       { value: "chu_tich", label: "Chủ tịch", desc: "Chủ tịch Hiệp hội" },
       { value: "quan_tri", label: "Quản trị", desc: "Toàn quyền quản trị hệ thống" },
       { value: "admin", label: "Admin", desc: "Quản trị viên" },
@@ -298,62 +322,66 @@ export function getRolesForDepartment(
       { value: "tong_thu_ky", label: "Tổng thư ký", desc: "Điều phối thư ký" },
       { value: "member", label: "Thành viên", desc: "Hội viên Ban điều hành" },
     ];
-  }
-
-  if (norm === "Ban Thư Ký" || deptName.toLowerCase().includes("thư ký")) {
-    return [
+  } else if (norm === "Ban Thư Ký" || deptName.toLowerCase().includes("thư ký")) {
+    roles = [
       { value: "tong_thu_ky", label: "Tổng thư ký", desc: "Điều phối thư ký & văn phòng" },
+      { value: "thanh_vien_ban_su_kien", label: "Thành viên Ban Sự Kiện", desc: "Phụ trách sự kiện & thư ký" },
       { value: "member", label: "Thành viên", desc: "Thành viên Ban thư ký" },
     ];
-  }
-
-  if (norm === "Ban Thành viên" || deptName.toLowerCase().includes("thành viên")) {
-    return [
-      { value: "truong_ban_thanh_vien", label: "Trưởng ban Thành viên", desc: "Phát triển hội viên" },
+  } else if (norm === "Ban Thành viên" || deptName.toLowerCase().includes("thành viên")) {
+    roles = [
+      { value: "truong_ban_thanh_vien", label: "Trưởng ban Thành viên", desc: "Lãnh đạo Ban phát triển hội viên" },
+      { value: "thanh_vien_ban_thanh_vien", label: "Thành viên Ban Thành Viên", desc: "Chuyên trách thẩm định & chăm sóc hội viên" },
       { value: "member", label: "Thành viên", desc: "Hội viên" },
     ];
-  }
-
-  if (norm === "Ban Xúc tiến" || deptName.toLowerCase().includes("xúc tiến")) {
-    return [
-      { value: "truong_ban_xuc_tien", label: "Trưởng ban Xúc tiến", desc: "Xúc tiến thương mại" },
+  } else if (norm === "Ban Xúc tiến" || deptName.toLowerCase().includes("xúc tiến")) {
+    roles = [
+      { value: "truong_ban_xuc_tien", label: "Trưởng ban Xúc tiến", desc: "Lãnh đạo Ban Xúc tiến thương mại" },
+      { value: "thanh_vien_ban_xuc_tien", label: "Thành viên Ban Xúc Tiến TM", desc: "Chuyên trách kết nối giao thương B2B" },
       { value: "member", label: "Thành viên", desc: "Hội viên" },
     ];
-  }
-
-  if (norm === "Ban Truyền thông" || deptName.toLowerCase().includes("truyền thông")) {
-    return [
-      { value: "truong_ban_truyen_thong", label: "Trưởng ban Truyền thông", desc: "Truyền thông & thương hiệu" },
+  } else if (norm === "Ban Truyền thông" || deptName.toLowerCase().includes("truyền thông")) {
+    roles = [
+      { value: "truong_ban_truyen_thong", label: "Trưởng ban Truyền thông", desc: "Lãnh đạo Ban Truyền thông & thương hiệu" },
+      { value: "thanh_vien_ban_truyen_thong", label: "Thành viên Ban Truyền Thông", desc: "Chuyên trách tin tức & hình ảnh sự kiện" },
       { value: "member", label: "Thành viên", desc: "Hội viên" },
     ];
-  }
-
-  if (norm === "Ban Tài chính" || deptName.toLowerCase().includes("tài chính")) {
-    return [
-      { value: "truong_ban_tai_chinh", label: "Trưởng ban Tài chính", desc: "Tài chính & ngân sách" },
+  } else if (norm === "Ban Tài chính" || deptName.toLowerCase().includes("tài chính")) {
+    roles = [
+      { value: "truong_ban_tai_chinh", label: "Trưởng ban Tài chính", desc: "Lãnh đạo Ban Tài chính & ngân sách" },
+      { value: "thanh_vien_ban_tai_chinh", label: "Thành viên Ban Tài Chính", desc: "Chuyên trách thu chi & kế toán quỹ" },
       { value: "member", label: "Thành viên", desc: "Hội viên" },
     ];
-  }
-
-  if (norm === "Ban Thiện nguyện" || deptName.toLowerCase().includes("thiện nguyện")) {
-    return [
-      { value: "truong_ban_thien_nguyen", label: "Trưởng ban Thiện nguyện", desc: "Hoạt động thiện nguyện" },
+  } else if (norm === "Ban Thiện nguyện" || deptName.toLowerCase().includes("thiện nguyện")) {
+    roles = [
+      { value: "truong_ban_thien_nguyen", label: "Trưởng ban Thiện nguyện", desc: "Lãnh đạo Ban Hoạt động thiện nguyện" },
+      { value: "thanh_vien_ban_thien_nguyen", label: "Thành viên Ban Thiện Nguyện", desc: "Chuyên trách hoạt động an sinh xã hội" },
       { value: "member", label: "Thành viên", desc: "Hội viên" },
     ];
-  }
-
-  if (matchedCustom) {
+  } else if (matchedCustom) {
     const leaderKey = `truong_ban_${matchedCustom.code.toLowerCase().replace(/[^a-z0-9_]/g, "_")}`;
     const leaderTitle = matchedCustom.headTitle || `Trưởng ${matchedCustom.name}`;
-    return [
+    roles = [
       { value: leaderKey, label: leaderTitle, desc: `Lãnh đạo ban ${matchedCustom.name}` },
       { value: "member", label: "Thành viên", desc: `Hội viên ban ${matchedCustom.name}` },
     ];
+  } else {
+    roles = [
+      { value: "member", label: "Hội viên", desc: "Hội viên chính thức (App CEO 1983)" },
+    ];
   }
 
-  return [
-    { value: "member", label: "Thành viên", desc: "Hội viên chính thức" },
-  ];
+  // Ensure currentRole is preserved if already set
+  if (currentRole && !roles.some((r) => r.value === currentRole)) {
+    const matchingRoleDef = ROLE_OPTIONS.find((r) => r.value === currentRole);
+    roles.unshift({
+      value: currentRole,
+      label: matchingRoleDef?.label || currentRole,
+      desc: "Vai trò hiện tại của tài khoản",
+    });
+  }
+
+  return roles;
 }
 
 export function handleUnauthorizedAction(featureName?: string, actionName?: string, redirectTarget?: string) {

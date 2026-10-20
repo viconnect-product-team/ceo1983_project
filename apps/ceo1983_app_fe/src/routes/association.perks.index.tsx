@@ -25,11 +25,10 @@ import {
   CheckCircle2,
   PartyPopper,
 } from "lucide-react";
-import { useState, useMemo } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { MemberHeader } from "@/components/member/MemberShell";
-import { useServerData } from "@/hooks/use-server-data";
-import { listPerks, type Perk } from "@/lib/member-app.functions";
+import { fetchNestApi } from "@/lib/api-client";
+import { type Perk } from "@/lib/member-app.functions";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/association/perks/")({
@@ -54,6 +53,69 @@ export const PERK_ICONS: Record<string, typeof Gift> = {
   hotel: Hotel,
   trophy: Trophy,
 };
+
+const DEFAULT_PERKS_SEED: Perk[] = [
+  {
+    id: "perk-001",
+    title: "VIP Lounge & Golf Long Biên",
+    category: "Golf & Nghỉ dưỡng",
+    partner: "Sân Golf Long Biên",
+    discount: "Giảm 25%",
+    summary: "Đặc quyền phòng chờ VIP và ưu đãi giá green fee dành riêng cho hội viên CEO 1983",
+    description: "Hội viên xuất trình thẻ doanh nhân CEO 1983 điện tử để nhận đặc quyền phòng chờ VIP, giảm 25% phí green fee tất cả các ngày trong tuần.",
+    icon: "hotel",
+    link: "https://longbiengolf.vn",
+    validUntil: "31/12/2026",
+  },
+  {
+    id: "perk-002",
+    title: "Nghỉ dưỡng 5 sao Vinpearl & InterContinental",
+    category: "Golf & Nghỉ dưỡng",
+    partner: "Hệ thống Vinpearl & InterContinental",
+    discount: "Ưu đãi 30%",
+    summary: "Ưu đãi đặt phòng và dịch vụ ẩm thực tại hệ thống resort 5 sao trên toàn quốc",
+    description: "Giảm 30% giá phòng công bố và 15% dịch vụ ẩm thực F&B tại tất cả các cơ sở Vinpearl và InterContinental tại Phú Quốc, Nha Trang, Đà Nẵng.",
+    icon: "hotel",
+    link: "https://vinpearl.com",
+    validUntil: "31/12/2026",
+  },
+  {
+    id: "perk-003",
+    title: "Gói Pháp lý Doanh nghiệp & M&A",
+    category: "Dịch vụ Doanh nghiệp",
+    partner: "Công ty Luật Trí Minh",
+    discount: "Tặng 100% tư vấn",
+    summary: "Tư vấn rà soát hợp đồng kinh tế và tái cấu trúc doanh nghiệp miễn phí lần đầu",
+    description: "Miễn phí 01 buổi tư vấn chuyên sâu về tái cấu trúc vốn và M&A; giảm 20% phí luật sư cho các vụ việc phát sinh tiếp theo.",
+    icon: "legal",
+    link: "https://luattriminh.vn",
+    validUntil: "31/12/2026",
+  },
+  {
+    id: "perk-004",
+    title: "Dịch vụ Kế toán & Kiểm toán Độc lập",
+    category: "Dịch vụ Doanh nghiệp",
+    partner: "Vaco Auditing",
+    discount: "Chiết khấu 20%",
+    summary: "Kiểm toán báo cáo tài chính và thẩm định định giá doanh nghiệp hội viên",
+    description: "Chiết khấu trực tiếp 20% phí dịch vụ kiểm toán báo cáo tài chính năm và soát xét hệ thống kiểm soát nội bộ cho doanh nghiệp hội viên.",
+    icon: "finance",
+    link: "https://vaco.com.vn",
+    validUntil: "31/12/2026",
+  },
+  {
+    id: "perk-005",
+    title: "Hạ tầng Cloud & Chuyển đổi số VNPT",
+    category: "Dịch vụ Doanh nghiệp",
+    partner: "VNPT Cloud",
+    discount: "Tài trợ 15 triệu",
+    summary: "Gói tài trợ giải pháp đám mây Smart Cloud và chữ ký số từ xa SmartCA",
+    description: "Tặng 15.000.000đ cước sử dụng Cloud Server trong 6 tháng đầu tiên kèm gói chữ ký số cá nhân SmartCA dành cho CEO.",
+    icon: "briefcase",
+    link: "https://cloud.vnpt.vn",
+    validUntil: "31/12/2026",
+  },
+];
 
 const LUCKY_DRAW_PRIZES = [
   {
@@ -104,8 +166,42 @@ const LUCKY_DRAW_PRIZES = [
 
 function PerksScreen() {
   const t = useT();
-  const fetchPerks = useServerFn(listPerks);
-  const { data: serverPerks, loading } = useServerData<Perk[]>(() => fetchPerks(), []);
+  const [serverPerks, setServerPerks] = useState<Perk[]>(DEFAULT_PERKS_SEED);
+  const [loading, setLoading] = useState(false);
+
+  const fetchLivePerks = useCallback(async () => {
+    setLoading(true);
+    try {
+      let res = await fetchNestApi<any[]>("/content/perks").catch(() => null);
+      if (!Array.isArray(res) || res.length === 0) {
+        res = await fetchNestApi<any[]>("/content/admin/perks").catch(() => null);
+      }
+      if (Array.isArray(res) && res.length > 0) {
+        setServerPerks(
+          res.map((p) => ({
+            id: String(p.id),
+            title: p.title || "",
+            category: p.category || "",
+            partner: p.partner || "",
+            summary: p.summary || "",
+            description: p.description || "",
+            discount: p.discount || "",
+            icon: String(p.icon || "gift").toLowerCase(),
+            link: p.link || "",
+            validUntil: p.validUntil || p.valid_until || "",
+          })),
+        );
+      }
+    } catch (err) {
+      console.warn("[PerksScreen] Error loading perks:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLivePerks();
+  }, [fetchLivePerks]);
   const [giftModalOpen, setGiftModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
   const [activePrize, setActivePrize] = useState<(typeof LUCKY_DRAW_PRIZES)[0] | null>(null);

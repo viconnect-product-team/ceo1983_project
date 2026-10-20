@@ -220,6 +220,8 @@ export class EventsService implements OnModuleInit {
       sponsors: parseJsonArraySafe(r.sponsors),
       photoGalleryUrl: sanitizeGalleryUrl(r.photo_gallery_url || r.photoGalleryUrl),
       tagline: r.tagline ?? '',
+      ticketPrice: r.ticket_price !== undefined && r.ticket_price !== null ? Number(r.ticket_price) : (r.fee !== undefined && r.fee !== null ? Number(r.fee) : 0),
+      fee: r.ticket_price !== undefined && r.ticket_price !== null ? Number(r.ticket_price) : (r.fee !== undefined && r.fee !== null ? Number(r.fee) : 0),
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       associationId: r.association_id,
@@ -247,6 +249,9 @@ export class EventsService implements OnModuleInit {
     return {
       id: r.id,
       eventId: r.event_id,
+      eventName: r.event_name ?? '',
+      eventDate: r.event_date ? (r.event_date instanceof Date ? r.event_date.toISOString().slice(0, 10) : String(r.event_date).slice(0, 10)) : '',
+      eventLocation: r.event_location ?? '',
       memberCode: r.member_code,
       memberName: r.member_name ?? '',
       email: r.email ?? '',
@@ -403,22 +408,36 @@ export class EventsService implements OnModuleInit {
     let rows: any[];
     if (eventId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.event_registrations 
-        WHERE event_id = ${eventId} AND status != 'cancelled'
-        ORDER BY registered_at DESC
+        SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location, e.ticket_price as event_ticket_price
+        FROM public.event_registrations r
+        LEFT JOIN public.events e ON r.event_id = e.id
+        WHERE r.event_id = ${eventId} AND r.status != 'cancelled'
+        ORDER BY r.registered_at DESC
       `.catch(() => []);
     } else if (isPlatformAdmin && !associationId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.event_registrations WHERE status != 'cancelled' ORDER BY registered_at DESC
+        SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location, e.ticket_price as event_ticket_price
+        FROM public.event_registrations r
+        LEFT JOIN public.events e ON r.event_id = e.id
+        WHERE r.status != 'cancelled'
+        ORDER BY r.registered_at DESC
       `.catch(() => []);
     } else if (assocId) {
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.event_registrations WHERE association_id = ${assocId}::uuid AND status != 'cancelled' ORDER BY registered_at DESC
+        SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location, e.ticket_price as event_ticket_price
+        FROM public.event_registrations r
+        LEFT JOIN public.events e ON r.event_id = e.id
+        WHERE r.association_id = ${assocId}::uuid AND r.status != 'cancelled'
+        ORDER BY r.registered_at DESC
       `.catch(() => []);
     } else {
       // Fallback: lấy tất cả chưa bị hủy
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.event_registrations WHERE status != 'cancelled' ORDER BY registered_at DESC
+        SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location, e.ticket_price as event_ticket_price
+        FROM public.event_registrations r
+        LEFT JOIN public.events e ON r.event_id = e.id
+        WHERE r.status != 'cancelled'
+        ORDER BY r.registered_at DESC
       `.catch(() => []);
     }
 

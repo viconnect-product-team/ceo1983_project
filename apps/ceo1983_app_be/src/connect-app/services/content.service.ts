@@ -155,7 +155,99 @@ export class ConnectContentService {
     });
   }
 
+  private async ensureSeedPerks() {
+    try {
+      const existing = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.perks LIMIT 1
+      `.catch(() => []);
+      if (existing.length > 0) return;
+
+      const seedData = [
+        {
+          title: "Voucher Nghỉ Dưỡng Vinpearl 5 Sao Trị Giá 10.000.000đ",
+          category: "Golf & Nghỉ dưỡng",
+          partner: "Vinpearl Resort & Spa",
+          summary: "Áp dụng nghỉ dưỡng tại toàn bộ hệ thống resort và villa Vinpearl trên toàn quốc dành cho Hội viên chính thức.",
+          description: "Voucher bao gồm phòng hướng biển, buffet sáng cho 2 người lớn và 2 trẻ em, miễn phí vé vui chơi VinWonders và Safari.",
+          discount: "10.000.000đ",
+          icon: "hotel",
+          link: "https://vinpearl.com",
+          sort_order: 1,
+        },
+        {
+          title: "Ưu đãi 30% Đặt Sân Golf BRG Kings Island & FLC Quy Nhơn",
+          category: "Golf & Nghỉ dưỡng",
+          partner: "BRG Golf & FLC Group",
+          summary: "Đặc quyền đặt tee-time ưu tiên kèm giảm giá green fee 30% tại các sân golf hàng đầu Việt Nam.",
+          description: "Áp dụng vào cả các ngày trong tuần và cuối tuần cho hội viên CLB Doanh Nhân CEO 1983.",
+          discount: "30%",
+          icon: "trophy",
+          link: "https://brggolf.vn",
+          sort_order: 2,
+        },
+        {
+          title: "Gói Tư Vấn Luật Doanh Nghiệp & M&A Miễn Phí 6 Tháng",
+          category: "Dịch vụ Doanh nghiệp",
+          partner: "Hãng Luật Quốc Tế & Ban Pháp Chế CEO 1983",
+          summary: "Hỗ trợ rà soát hợp đồng thương mại, tư vấn pháp lý quản trị công ty và hỗ trợ xúc tiến M&A.",
+          description: "Được hỗ trợ trực tiếp bởi đội ngũ luật sư cao cấp và chuyên gia thẩm định pháp lý thành viên CLB.",
+          discount: "Miễn phí 100%",
+          icon: "scale",
+          link: "/association/documents",
+          sort_order: 3,
+        },
+        {
+          title: "Gói Kiểm Toán Báo Cáo Tài Chính & Tối Ưu Thuế Doanh Nghiệp",
+          category: "Dịch vụ Doanh nghiệp",
+          partner: "Ban Tài Chính & Đối Tác Kiểm Toán",
+          summary: "Hỗ trợ soát xét sổ sách kế toán, lập kế hoạch thuế và bảo vệ số liệu trước cơ quan kiểm toán.",
+          description: "Áp dụng cho doanh nghiệp của hội viên CEO 1983 có quy mô doanh thu từ 10 tỷ đến 500 tỷ.",
+          discount: "-25%",
+          icon: "calculator",
+          link: "/finance-report",
+          sort_order: 4,
+        },
+        {
+          title: "Thẻ Danh Thiếp Điện Tử Thông Minh CEO 1983 Smart NFC Mạ Vàng",
+          category: "Đặc quyền Hội viên",
+          partner: "Ban Chuyển Đổi Số CEO 1983",
+          summary: "Thẻ NFC kim loại đen bóng viền mạ vàng sang trọng tích hợp công nghệ chạm danh thiếp 1 chạm.",
+          description: "Mỗi hội viên chính thức được cấp phát 01 thẻ danh thiếp thông minh đồng bộ hồ sơ kết nối giao thương.",
+          discount: "Miễn Phí 100%",
+          icon: "gift",
+          link: "/association/card",
+          sort_order: 5,
+        },
+        {
+          title: "Ưu đãi Đặt Tiệc Chiêu Đãi & Hội Nghị Khách Sạn Daewoo Hà Nội",
+          category: "Ẩm thực & Tiếp khách",
+          partner: "Khách Sạn Daewoo Hà Nội",
+          summary: "Giảm 20% toàn bộ dịch vụ phòng tiệc, hội thảo và thực đơn tiệc chiêu đãi đối tác B2B.",
+          description: "Miễn phí âm thanh ánh sáng tiêu chuẩn và màn hình LED cho các sự kiện từ 50 khách trở lên.",
+          discount: "20%",
+          icon: "coffee",
+          link: "https://daewoohotel.com",
+          sort_order: 6,
+        },
+      ];
+
+      for (const item of seedData) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.perks (
+            id, title, category, partner, summary, description, discount, icon, link, valid_until, sort_order, status, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), ${item.title}, ${item.category}, ${item.partner}, ${item.summary}, ${item.description},
+            ${item.discount}, ${item.icon}, ${item.link}, (NOW() + INTERVAL '180 days')::timestamp, ${item.sort_order}, 'active', NOW(), NOW()
+          )
+        `.catch(() => {});
+      }
+    } catch (err: any) {
+      console.warn("Failed to seed perks:", err?.message);
+    }
+  }
+
   async listActivePerks() {
+    await this.ensureSeedPerks();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.perks
       WHERE status = 'active'
@@ -201,6 +293,7 @@ export class ConnectContentService {
   }
 
   async listAllPerksAdmin() {
+    await this.ensureSeedPerks();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.perks
       ORDER BY sort_order ASC, created_at DESC

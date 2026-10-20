@@ -177,6 +177,11 @@ function EventsPage() {
       ),
     },
     {
+      name: "ticketPrice",
+      label: "Giá vé / Phí tham dự (VNĐ - Điền 0 nếu Miễn phí)",
+      type: "number",
+    },
+    {
       name: "type",
       label: t("events.col.type"),
       type: "select",
@@ -229,6 +234,7 @@ function EventsPage() {
       const payload = {
         ...v,
         capacity: v.capacity ? Number(v.capacity) : 0,
+        ticketPrice: v.ticketPrice ? Number(v.ticketPrice) : 0,
         qrStaff: v.qrStaff || [],
         qrScanners: v.qrStaff || [],
       };
@@ -694,6 +700,7 @@ function EventsPage() {
                   <th className="px-4 py-3 border-b border-border">Thời gian</th>
                   <th className="px-4 py-3 border-b border-border">Địa điểm</th>
                   <th className="px-4 py-3 border-b border-border">Phân loại</th>
+                  <th className="px-4 py-3 border-b border-border">Giá vé / Phí</th>
                   <th className="px-4 py-3 border-b border-border">Đăng ký / Sức chứa</th>
                   <th className="px-4 py-3 border-b border-border">Trạng thái</th>
                   <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
@@ -743,6 +750,17 @@ function EventsPage() {
                         <span className="inline-flex rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
                           {t(TYPE_KEY[e.type as EventItem["type"]] ?? "events.type.forum")}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                        {e.ticketPrice && Number(e.ticketPrice) > 0 ? (
+                          <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+                            {fmt.money(Number(e.ticketPrice))}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                            Miễn phí
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 border-b border-border whitespace-nowrap">
                         <div className="text-xs font-semibold text-foreground">
@@ -1008,9 +1026,20 @@ function EventCard({
         <div className="absolute left-3 top-3">
           <StatusPill status={getEffectiveStatus(e)} />
         </div>
-        <span className="absolute right-3 top-3 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground backdrop-blur">
-          {t(TYPE_KEY[e.type] ?? "events.type.forum")}
-        </span>
+        <div className="absolute right-3 top-3 flex items-center gap-1.5">
+          {e.ticketPrice && Number(e.ticketPrice) > 0 ? (
+            <span className="rounded-full bg-amber-500 text-slate-950 font-black px-2.5 py-1 text-[11px] shadow-sm backdrop-blur">
+              {fmt.money(Number(e.ticketPrice))}
+            </span>
+          ) : (
+            <span className="rounded-full bg-emerald-600 text-white font-bold px-2.5 py-1 text-[11px] shadow-sm backdrop-blur">
+              Miễn phí
+            </span>
+          )}
+          <span className="rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground backdrop-blur">
+            {t(TYPE_KEY[e.type] ?? "events.type.forum")}
+          </span>
+        </div>
       </div>
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-3 flex items-start justify-between gap-2">

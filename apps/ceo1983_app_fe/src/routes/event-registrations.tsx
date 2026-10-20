@@ -118,6 +118,40 @@ function RegPage() {
   const [status, setStatus] = useState<Registration["status"] | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending">("all");
 
+  // Excel-like resizable columns state & handler
+  const [colWidths, setColWidths] = useState<Record<string, number>>({
+    stt: 56,
+    code: 96,
+    member: 220,
+    event: 240,
+    seat: 180,
+    ticket: 120,
+    payment: 190,
+    checkin: 130,
+    status: 110,
+    actions: 360,
+  });
+
+  const handleMouseDownResize = (colKey: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = colWidths[colKey] || 150;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const diff = moveEvent.clientX - startX;
+      const newWidth = Math.max(50, startWidth + diff);
+      setColWidths((prev) => ({ ...prev, [colKey]: newWidth }));
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
   // Add Attendee / QR Checkin Modal state
   const [addAttendeeModalOpen, setAddAttendeeModalOpen] = useState(false);
   const [attendeeMode, setAttendeeMode] = useState<"qr" | "manual">("qr");
@@ -691,18 +725,119 @@ function RegPage() {
       {/* Main Table */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[1450px] border-separate border-spacing-0 text-sm">
+          <table className="w-full min-w-[1550px] border-separate border-spacing-0 text-sm">
             <thead>
-              <tr className="border-b border-border bg-secondary text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                <th className="sticky left-0 z-20 w-14 min-w-[56px] bg-secondary px-3 py-3 text-center text-xs font-bold border-b border-border whitespace-nowrap">STT</th>
-                <th className="sticky left-[56px] z-20 w-24 min-w-[96px] bg-secondary px-4 py-3 text-xs font-bold border-b border-border whitespace-nowrap">Mã ĐK</th>
-                <th className="min-w-[220px] px-4 py-3 border-b border-border whitespace-nowrap">Người tham gia</th>
-                <th className="min-w-[180px] px-4 py-3 border-b border-border whitespace-nowrap">Chỗ ngồi / Bàn VIP</th>
-                <th className="min-w-[120px] px-4 py-3 border-b border-border whitespace-nowrap">Hạng vé</th>
-                <th className="min-w-[190px] px-4 py-3 border-b border-border whitespace-nowrap">Thanh toán & Phí</th>
-                <th className="min-w-[130px] px-4 py-3 border-b border-border whitespace-nowrap">Check-in</th>
-                <th className="min-w-[110px] px-4 py-3 border-b border-border whitespace-nowrap">Trạng thái</th>
-                <th className="sticky right-0 z-20 min-w-[440px] bg-secondary px-4 py-3 text-right text-xs font-bold border-b border-border shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap">Thao tác quản trị</th>
+              <tr className="border-b border-border bg-secondary text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                <th
+                  style={{ width: colWidths.stt, minWidth: colWidths.stt, maxWidth: colWidths.stt }}
+                  className="sticky left-0 z-20 bg-secondary px-3 py-3 text-center text-xs font-bold border-b border-border whitespace-nowrap relative group/th"
+                >
+                  STT
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("stt", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.code, minWidth: colWidths.code, maxWidth: colWidths.code, left: colWidths.stt }}
+                  className="sticky z-20 bg-secondary px-4 py-3 text-xs font-bold border-b border-border whitespace-nowrap relative group/th"
+                >
+                  Mã ĐK
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("code", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.member, minWidth: colWidths.member }}
+                  className="px-4 py-3 border-b border-border whitespace-nowrap relative group/th"
+                >
+                  Người tham gia
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("member", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.event, minWidth: colWidths.event }}
+                  className="px-4 py-3 border-b border-border whitespace-nowrap relative group/th text-primary"
+                >
+                  Sự kiện đăng ký
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("event", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.seat, minWidth: colWidths.seat }}
+                  className="px-4 py-3 border-b border-border whitespace-nowrap relative group/th"
+                >
+                  Chỗ ngồi / Bàn VIP
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("seat", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.ticket, minWidth: colWidths.ticket }}
+                  className="px-4 py-3 border-b border-border whitespace-nowrap relative group/th"
+                >
+                  Hạng vé
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("ticket", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.payment, minWidth: colWidths.payment }}
+                  className="px-4 py-3 border-b border-border whitespace-nowrap relative group/th"
+                >
+                  Thanh toán & Phí
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("payment", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.checkin, minWidth: colWidths.checkin }}
+                  className="px-4 py-3 border-b border-border whitespace-nowrap relative group/th"
+                >
+                  Check-in
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("checkin", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.status, minWidth: colWidths.status }}
+                  className="px-4 py-3 border-b border-border whitespace-nowrap relative group/th"
+                >
+                  Trạng thái
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("status", e)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
+                <th
+                  style={{ width: colWidths.actions, minWidth: colWidths.actions }}
+                  className="sticky right-0 z-20 bg-secondary px-4 py-3 text-right text-xs font-bold border-b border-border shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap relative group/th"
+                >
+                  Thao tác quản trị
+                  <div
+                    onMouseDown={(e) => handleMouseDownResize("actions", e)}
+                    className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-30 transition-colors"
+                    title="Kéo sang trái/phải để co dãn cột"
+                  />
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -711,21 +846,78 @@ function RegPage() {
                 const isCancelled = r.status === "cancelled";
                 const reminderCount = Number(r.reminderCount || 0);
 
+                const matchedEvt = EVENTS.find((e: any) => String(e.id) === String(r.eventId));
+                const evName = r.eventName || matchedEvt?.name || `Sự kiện #${r.eventId}`;
+                const evDate = r.eventDate || matchedEvt?.date;
+                const evLocation = r.eventLocation || matchedEvt?.location;
+                const isMember = Boolean(r.memberCode && r.memberCode.trim().length > 0);
+
                 return (
                   <tr key={r.id} className="group border-b border-border/50 transition hover:bg-secondary/40">
-                    <td className="sticky left-0 z-10 w-14 min-w-[56px] bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted border-b border-border/50 whitespace-nowrap">
+                    <td
+                      style={{ width: colWidths.stt, minWidth: colWidths.stt, maxWidth: colWidths.stt }}
+                      className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted border-b border-border/50 whitespace-nowrap"
+                    >
                       {(tc.page - 1) * tc.pageSize + idx + 1}
                     </td>
-                    <td className="sticky left-[56px] z-10 w-24 min-w-[96px] bg-card px-4 py-3 font-mono text-[12px] font-bold text-primary group-hover:bg-muted border-b border-border/50 whitespace-nowrap">
+                    <td
+                      style={{ width: colWidths.code, minWidth: colWidths.code, maxWidth: colWidths.code, left: colWidths.stt }}
+                      className="sticky z-10 bg-card px-4 py-3 font-mono text-[12px] font-bold text-primary group-hover:bg-muted border-b border-border/50 whitespace-nowrap"
+                    >
                       {r.id}
                     </td>
-                    <td className="min-w-[220px] px-4 py-3 border-b border-border/50">
-                      <div className="font-semibold text-foreground">{r.memberName}</div>
-                      <div className="text-[11px] text-muted-foreground">{r.email} · {r.memberCode}</div>
+                    <td
+                      style={{ width: colWidths.member, minWidth: colWidths.member }}
+                      className="px-4 py-3 border-b border-border/50"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-foreground text-xs">{r.memberName}</span>
+                        {isMember ? (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                            Hội viên
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            Khách ngoài
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate max-w-[200px]">
+                        {r.email} {r.memberCode ? `· ${r.memberCode}` : ""}
+                      </div>
+                    </td>
+
+                    {/* Cột Sự kiện đăng ký (Có Call API & Join) */}
+                    <td
+                      style={{ width: colWidths.event, minWidth: colWidths.event }}
+                      className="px-4 py-3 border-b border-border/50"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-xs text-foreground line-clamp-2" title={evName}>
+                          {evName}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                          {evDate && (
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-amber-500 shrink-0" />
+                              {evDate}
+                            </span>
+                          )}
+                          {evLocation && (
+                            <span className="inline-flex items-center gap-1 truncate max-w-[130px]">
+                              <MapPin className="h-3 w-3 text-primary shrink-0" />
+                              {evLocation}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
 
                     {/* Chỗ ngồi / Bàn VIP */}
-                    <td className="min-w-[180px] px-4 py-3 border-b border-border/50">
+                    <td
+                      style={{ width: colWidths.seat, minWidth: colWidths.seat }}
+                      className="px-4 py-3 border-b border-border/50"
+                    >
                       {r.seatAssignment ? (
                         <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
                           <MapPin className="h-3.5 w-3.5" />
@@ -753,7 +945,10 @@ function RegPage() {
                       )}
                     </td>
 
-                    <td className="min-w-[120px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
+                    <td
+                      style={{ width: colWidths.ticket, minWidth: colWidths.ticket }}
+                      className="px-4 py-3 border-b border-border/50 whitespace-nowrap"
+                    >
                       <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
                         <Tag className="h-3 w-3" />
                         {r.ticketType || "VIP Pass"}
@@ -761,7 +956,10 @@ function RegPage() {
                     </td>
 
                     {/* Thanh toán & Phí */}
-                    <td className="min-w-[190px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
+                    <td
+                      style={{ width: colWidths.payment, minWidth: colWidths.payment }}
+                      className="px-4 py-3 border-b border-border/50 whitespace-nowrap"
+                    >
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
                           <span
@@ -786,7 +984,10 @@ function RegPage() {
                     </td>
 
                     {/* Checkin status */}
-                    <td className="min-w-[130px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
+                    <td
+                      style={{ width: colWidths.checkin, minWidth: colWidths.checkin }}
+                      className="px-4 py-3 border-b border-border/50 whitespace-nowrap"
+                    >
                       {r.checkedInAt ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -797,19 +998,25 @@ function RegPage() {
                       )}
                     </td>
 
-                    <td className="min-w-[110px] px-4 py-3 border-b border-border/50 whitespace-nowrap">
+                    <td
+                      style={{ width: colWidths.status, minWidth: colWidths.status }}
+                      className="px-4 py-3 border-b border-border/50 whitespace-nowrap"
+                    >
                       <Pill color={isPaid ? "success" : isCancelled ? "danger" : "warning"}>
                         {isCancelled ? "Đã hủy" : isPaid ? "Hợp lệ" : "Chờ phí"}
                       </Pill>
                     </td>
 
-                    {/* Action Buttons */}
-                    <td className="sticky right-0 z-10 min-w-[440px] bg-card px-4 py-3 group-hover:bg-card border-b border-border/50 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                    {/* Action Buttons - Khay trượt ngang mượt mà */}
+                    <td
+                      style={{ width: colWidths.actions, minWidth: colWidths.actions }}
+                      className="sticky right-0 z-10 bg-card px-3 py-2.5 group-hover:bg-card border-b border-border/50 shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-end gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 px-0.5">
                         {/* Xem QR checkin */}
                         <button
                           onClick={() => handleOpenQr(r)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-secondary cursor-pointer"
+                          className="inline-flex items-center shrink-0 gap-1 rounded-lg border border-border bg-card px-2 py-1 text-xs font-medium text-foreground hover:bg-secondary cursor-pointer transition-colors"
                           title="Xem mã QR Check-in"
                         >
                           <QrCode className="h-3.5 w-3.5" />
@@ -819,7 +1026,7 @@ function RegPage() {
                         {/* Xem khảo sát Google Form */}
                         <button
                           onClick={() => handleOpenFormSurvey(r)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:text-purple-300 cursor-pointer"
+                          className="inline-flex items-center shrink-0 gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 dark:text-purple-300 cursor-pointer transition-colors"
                           title="Xem phiếu thông tin & khảo sát Google Form"
                         >
                           <FileText className="h-3.5 w-3.5" />
@@ -830,7 +1037,7 @@ function RegPage() {
                         {!isPaid && !isCancelled && (
                           <button
                             onClick={() => handleConfirmBankPayment(r)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer"
+                            className="inline-flex items-center shrink-0 gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer transition-colors"
                             title="Xác nhận đã thanh toán chuyển khoản và tự động gửi email vé kèm mã QR check-in"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -842,7 +1049,7 @@ function RegPage() {
                         {!isPaid && !isCancelled && (
                           <button
                             onClick={() => handleReconcilePayment(r)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:text-blue-300 cursor-pointer"
+                            className="inline-flex items-center shrink-0 gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:text-blue-300 cursor-pointer transition-colors"
                             title="Kiểm tra đối soát dòng tiền VietQR MB Bank tự động"
                           >
                             <RefreshCw className="h-3.5 w-3.5" />
@@ -854,7 +1061,7 @@ function RegPage() {
                         {!isPaid && !isCancelled && (
                           <button
                             onClick={() => handleWalkInCashPayment(r)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-slate-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-slate-800 cursor-pointer"
+                            className="inline-flex items-center shrink-0 gap-1 rounded-lg bg-slate-700 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-slate-800 cursor-pointer transition-colors"
                             title="Thu tiền mặt tại bàn tiếp đón và tự động lưu Quản lý thu"
                           >
                             <Coins className="h-3.5 w-3.5" />
@@ -866,7 +1073,7 @@ function RegPage() {
                         {!isPaid && !isCancelled && (
                           <button
                             onClick={() => handleSendReminder(r)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-400 cursor-pointer"
+                            className="inline-flex items-center shrink-0 gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-400 cursor-pointer transition-colors"
                             title="Gửi thông báo nhắc nhở thanh toán theo luồng đếm ngược"
                           >
                             <Bell className="h-3.5 w-3.5" />
@@ -877,7 +1084,7 @@ function RegPage() {
                         {/* Xóa người đăng ký sự kiện */}
                         <button
                           onClick={() => handleDeleteRegistration(r)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 cursor-pointer"
+                          className="inline-flex items-center shrink-0 gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 cursor-pointer transition-colors"
                           title="Xóa người đăng ký tham dự này khỏi sự kiện"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -890,7 +1097,7 @@ function RegPage() {
               })}
               {tc.total === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     Không tìm thấy đăng ký nào.
                   </td>
                 </tr>

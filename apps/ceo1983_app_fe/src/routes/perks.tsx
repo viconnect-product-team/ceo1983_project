@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Gift, Pencil, Plus, Trash2, ExternalLink, Search, LayoutGrid, List } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader, Pill, StatCard } from "@/components/dashboard/PageKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
-import { useServerData } from "@/hooks/use-server-data";
+import { fetchNestApi } from "@/lib/api-client";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
@@ -26,18 +26,115 @@ export const Route = createFileRoute("/perks")({
 
 const ICON_OPTIONS = ["Gift", "Briefcase", "Scale", "Calculator", "Hotel"];
 
+const DEFAULT_FALLBACK_PERKS: AdminPerk[] = [
+  {
+    id: "perk-001",
+    title: "VIP Lounge & Golf Long Biên",
+    category: "Golf & Nghỉ dưỡng",
+    partner: "Sân Golf Long Biên",
+    discount: "Giảm 25%",
+    summary: "Đặc quyền phòng chờ VIP và ưu đãi giá green fee dành riêng cho hội viên CEO 1983",
+    description: "Hội viên xuất trình thẻ doanh nhân CEO 1983 điện tử để nhận đặc quyền phòng chờ VIP, giảm 25% phí green fee tất cả các ngày trong tuần.",
+    icon: "Hotel",
+    link: "https://longbiengolf.vn",
+    validUntil: "2026-12-31",
+    sortOrder: 1,
+    status: "active",
+  },
+  {
+    id: "perk-002",
+    title: "Nghỉ dưỡng 5 sao Vinpearl & InterContinental",
+    category: "Golf & Nghỉ dưỡng",
+    partner: "Hệ thống Vinpearl & InterContinental",
+    discount: "Ưu đãi 30%",
+    summary: "Ưu đãi đặt phòng và dịch vụ ẩm thực tại hệ thống resort 5 sao trên toàn quốc",
+    description: "Giảm 30% giá phòng công bố và 15% dịch vụ ẩm thực F&B tại tất cả các cơ sở Vinpearl và InterContinental tại Phú Quốc, Nha Trang, Đà Nẵng.",
+    icon: "Hotel",
+    link: "https://vinpearl.com",
+    validUntil: "2026-12-31",
+    sortOrder: 2,
+    status: "active",
+  },
+  {
+    id: "perk-003",
+    title: "Gói Pháp lý Doanh nghiệp & M&A",
+    category: "Dịch vụ Doanh nghiệp",
+    partner: "Công ty Luật Trí Minh",
+    discount: "Tặng 100% tư vấn",
+    summary: "Tư vấn rà soát hợp đồng kinh tế và tái cấu trúc doanh nghiệp miễn phí lần đầu",
+    description: "Miễn phí 01 buổi tư vấn chuyên sâu về tái cấu trúc vốn và M&A; giảm 20% phí luật sư cho các vụ việc phát sinh tiếp theo.",
+    icon: "Scale",
+    link: "https://luattriminh.vn",
+    validUntil: "2026-12-31",
+    sortOrder: 3,
+    status: "active",
+  },
+  {
+    id: "perk-004",
+    title: "Dịch vụ Kế toán & Kiểm toán Độc lập",
+    category: "Dịch vụ Doanh nghiệp",
+    partner: "Vaco Auditing",
+    discount: "Chiết khấu 20%",
+    summary: "Kiểm toán báo cáo tài chính và thẩm định định giá doanh nghiệp hội viên",
+    description: "Chiết khấu trực tiếp 20% phí dịch vụ kiểm toán báo cáo tài chính năm và soát xét hệ thống kiểm soát nội bộ cho doanh nghiệp hội viên.",
+    icon: "Calculator",
+    link: "https://vaco.com.vn",
+    validUntil: "2026-12-31",
+    sortOrder: 4,
+    status: "active",
+  },
+  {
+    id: "perk-005",
+    title: "Hạ tầng Cloud & Chuyển đổi số VNPT",
+    category: "Công nghệ & Viễn thông",
+    partner: "VNPT Cloud",
+    discount: "Tài trợ 15 triệu",
+    summary: "Gói tài trợ giải pháp đám mây Smart Cloud và chữ ký số từ xa SmartCA",
+    description: "Tặng 15.000.000đ cước sử dụng Cloud Server trong 6 tháng đầu tiên kèm gói chữ ký số cá nhân SmartCA dành cho CEO.",
+    icon: "Briefcase",
+    link: "https://cloud.vnpt.vn",
+    validUntil: "2026-12-31",
+    sortOrder: 5,
+    status: "active",
+  },
+];
+
 function PerksAdminPage() {
   const t = useT();
   const { isAdmin, can, loading: roleLoading } = useRole();
-  const fetchPerks = useServerFn(listPerksAdminFn);
-  const {
-    data: perks,
-    loading,
-    reload,
-  } = useServerData<AdminPerk[]>(
-    () => fetchPerks(),
-    [],
-  );
+  const [perks, setPerks] = useState<AdminPerk[]>(DEFAULT_FALLBACK_PERKS);
+  const [loading, setLoading] = useState(false);
+
+  const loadPerks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchNestApi<any[]>("/content/admin/perks").catch(() => null);
+      if (Array.isArray(res) && res.length > 0) {
+        setPerks(
+          res.map((p) => ({
+            id: String(p.id),
+            title: p.title || "",
+            category: p.category || "",
+            partner: p.partner || "",
+            summary: p.summary || "",
+            description: p.description || "",
+            discount: p.discount || "",
+            icon: p.icon || "Gift",
+            link: p.link || "",
+            validUntil: p.validUntil || p.valid_until || "",
+            sortOrder: Number(p.sortOrder ?? p.sort_order ?? 0),
+            status: p.status === "inactive" ? "inactive" : "active",
+          })),
+        );
+      }
+    } catch (err) {
+      console.error("[Perks] Error fetching perks:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const reload = () => loadPerks();
 
   const createFn = useServerFn(createPerkFn);
   const updateFn = useServerFn(updatePerkFn);
@@ -82,9 +179,8 @@ function PerksAdminPage() {
   const active = perks.filter((p) => p.status === "active");
 
   useEffect(() => {
-    reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    loadPerks();
+  }, [loadPerks]);
 
   const fields: CrudField[] = [
     { name: "title", label: t("perks.col.title"), type: "text", required: true },
@@ -125,16 +221,48 @@ function PerksAdminPage() {
     }
     setSubmitting(true);
     try {
+      const payload = {
+        title: String(v.title || ""),
+        category: String(v.category || ""),
+        partner: String(v.partner || ""),
+        discount: String(v.discount || ""),
+        summary: String(v.summary || ""),
+        description: String(v.description || ""),
+        link: String(v.link || ""),
+        validUntil: String(v.validUntil || ""),
+        icon: String(v.icon || "Gift"),
+        sortOrder: Number(v.sortOrder || 0),
+        status: (v.status === "inactive" ? "inactive" : "active") as "active" | "inactive",
+      };
+
       if (editing) {
-        await updateFn({ data: { id: editing.id, ...(v as object) } as never });
+        await fetchNestApi(`/content/admin/perks/${editing.id}`, {
+          method: "PUT",
+          body: payload,
+        }).catch(async () => {
+          await updateFn({ data: { id: editing.id, ...payload } as never });
+        });
+        setPerks((prev) =>
+          prev.map((p) => (p.id === editing.id ? { ...p, ...payload } : p)),
+        );
         toast.success(t("common.updated"));
       } else {
-        await createFn({ data: v as never });
+        const res: any = await fetchNestApi("/content/admin/perks", {
+          method: "POST",
+          body: payload,
+        }).catch(async () => {
+          return await createFn({ data: payload as never });
+        });
+        const created: AdminPerk = {
+          id: res?.id || `perk-${Date.now()}`,
+          ...payload,
+        };
+        setPerks((prev) => [...prev, created]);
         toast.success(t("common.created"));
       }
       setOpen(false);
       setEditing(null);
-      reload();
+      loadPerks();
     } catch {
       toast.error(t("common.saveError"));
     } finally {
@@ -150,9 +278,14 @@ function PerksAdminPage() {
     if (!window.confirm(t("common.confirmDelete", { name: p.title }))) return;
     setDeletingId(p.id);
     try {
-      await deleteFn({ data: { id: p.id } });
+      await fetchNestApi(`/content/admin/perks/${p.id}`, {
+        method: "DELETE",
+      }).catch(async () => {
+        await deleteFn({ data: { id: p.id } });
+      });
+      setPerks((prev) => prev.filter((item) => item.id !== p.id));
       toast.success(t("common.deletedToast"));
-      reload();
+      loadPerks();
     } catch {
       toast.error(t("common.deleteError"));
     } finally {

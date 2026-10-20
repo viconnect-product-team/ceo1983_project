@@ -598,7 +598,7 @@ export class ConnectAppService implements OnModuleInit {
   // 4. Notifications & Push Messages (Core Service)
   // ==========================================
   async listNotifications(userId: string, limit: number = 30, unreadOnly: boolean = false) {
-    const [rows, pendingConnections] = await Promise.all([
+    const [rows, pendingConnections]: [any[], any[]] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
         SELECT id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
                title_key, body_key, safe_display_data, action_kind, action_label_key, action_target,
@@ -1216,7 +1216,7 @@ export class ConnectAppService implements OnModuleInit {
         LIMIT 30
       `.catch(() => []);
 
-    const [broadcast, personal, business] = await Promise.all([
+    const [broadcast, personal, business]: [any[], any[], any[]] = await Promise.all([
       broadcastPromise,
       this.prisma.$queryRaw<any[]>`
         SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id

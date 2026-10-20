@@ -1,6 +1,34 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện 7 Yêu Cầu Trọng Điểm CRM Hiệp Hội: Đăng Ký Sự Kiện Co Dãn Excel & Trượt Ngang, Lưu Quyền Tài Khoản & Đúng Role Ban, Sự Kiện Có Phí/Miễn Phí, Khoản Thu Chờ Thanh Toán, Khoản Chi Tự Động Trừ Quỹ, Báo Cáo Tài Chính Ngày/Tuần/Tháng/Năm Tự Động Update, Call API Danh Sách Ưu Đãi)**:
+  1. **Đăng ký sự kiện (`/event-registrations`)**:
+     - *Bổ sung trường sự kiện đăng ký*: Backend `events.service.ts` JOIN bảng `events` để lấy `eventName`, `eventDate`, `eventLocation`, `eventTicketPrice`. Bảng hiển thị cột "Sự kiện đăng ký" với tên sự kiện, ngày tổ chức (calendar), địa điểm (pin) và badge Hội viên / Khách ngoài.
+     - *Co dãn cột như Excel*: Bổ sung state `colWidths` kèm thanh kéo co dãn `resizer` tại từng tiêu đề cột (`th`), hỗ trợ rê chuột điều chỉnh bề rộng cột tự do như Excel.
+     - *Thao tác trượt ngang*: Gom cụm các nút thao tác thành thanh trượt ngang `overflow-x-auto no-scrollbar` cuộn mượt mà không làm vỡ giao diện bảng.
+  2. **Quản lý tài khoản & phân quyền (`/accounts`)**:
+     - *Lưu quyền mới vào CSDL*: Mở rộng `updateMemberRoleDept` tại backend nhận thêm `email`, `code`, `name` để tự động liên kết hoặc tạo bản ghi `members` khi tài khoản chưa có ID thành viên.
+     - *Hiển thị đúng Role tại từng Ban*: Hiệu chỉnh `normalizeRole` và `getRolesForDepartment` trong `rbac-permission-helpers.ts` để hiển thị đầy đủ cả Trưởng ban (`truong_ban_*`) và Thành viên ban (`thanh_vien_ban_*`), sửa lỗi chọn ban không hiện đúng role.
+  3. **Sự kiện có phí / Miễn phí (`/events`)**:
+     - CSDL và Backend hỗ trợ `ticket_price`/`fee`.
+     - Trên bảng CRM: Cột "Giá vé / Phí" phân biệt rõ "Miễn phí" (badge xanh emerald) và giá tiền VNĐ định dạng chuẩn (badge vàng amber).
+     - Trên giao diện thẻ `EventCard`: Hiển thị badge Giá vé / Miễn phí nổi bật.
+     - Modal thêm/sửa sự kiện: Bổ sung ô nhập "Giá vé / Phí tham gia (VNĐ)" với hướng dẫn "Để trống hoặc nhập 0 nếu miễn phí".
+  4. **Khoản thu & Chờ thanh toán (`/income`)**:
+     - Khắc phục lỗi cập nhật số tiền mới bằng client-side `fetchNestApi<Transaction[]>("/admin/transactions?type=income")` kèm listener đồng bộ sự kiện `finance-updated` và `vba_transactions_changed`.
+     - Bổ sung tab trạng thái "Chờ thanh toán", thẻ KPI hiển thị số lượng giao dịch chờ thu, và nút hành động nhanh "Xác nhận đã thu" chuyển trạng thái sang `completed`.
+  5. **Khoản chi & Trừ tiền tự động (`/expenses`)**:
+     - Tự động nạp dữ liệu chi tiêu qua `fetchNestApi<Transaction[]>("/admin/transactions")` kết hợp tự động seed dữ liệu mẫu nếu CSDL trống.
+     - Đảm bảo khi tạo/sửa phiếu chi hoặc hoàn ứng, hệ thống ghi nhận vào database và cập nhật thẻ "QUỸ CÒN LẠI (DÒNG TIỀN)" = `Tổng thu quỹ - Tổng chi thực tế`, trừ tiền trực tiếp trên dòng tiền khả dụng.
+  6. **Báo cáo tài chính Ngày / Tuần / Tháng / Năm (`/finance-report`)**:
+     - Bổ sung bộ lọc kỳ: "Theo ngày" (24h/hôm nay), "Theo tuần" (7 ngày qua), "Theo tháng" (tháng hiện tại), "Theo năm" (năm 2026), "Tất cả kỳ".
+     - Tự động liên kết bộ lọc kỳ vào tính toán `totalIn`, `totalOut`, `netBalance` và danh sách giao dịch.
+     - Tự động cập nhật số liệu thời gian thực (`txQuery.refetch()`) khi có biến động dòng tiền từ bất kỳ phân hệ nào.
+     - Xuất file Excel chuẩn TT200/2014/TT-BTC mang tên kỳ báo cáo đã chọn (`bao-cao-tai-chinh-${period}-ceo1983.xlsx`).
+  7. **Quyền lợi ưu đãi (`/perks` & `/association/perks`)**:
+     - Backend `content.service.ts`: Bổ sung cơ chế tự động nạp hạt giống (`ensureSeedPerks`) các ưu đãi doanh nhân giá trị cao (Golf Long Biên, Vinpearl, Tư vấn Pháp lý, Kế toán Kiểm toán, VNPT Cloud).
+     - Mở quyền truy cập `OptionalJwtAuthGuard` và bổ sung handler `PUT /content/admin/perks/:id`.
+     - Frontend `perks.tsx` và `association.perks.index.tsx`: Chuyển hoàn toàn sang `fetchNestApi` gọi API trực tiếp thay thế server function không tương thích Vite SPA.
 - **Bản nâng cấp ngày 20/10/2026 (Khắc Phục Triệt Để Lỗi Phân Quyền Tài Khoản Không Lưu & Mất Khi Reload Trang Tại Quản Lý Tài Khoản `/accounts`)**:
   1. **Nguyên nhân cốt lõi khiến quyền bị mất khi reload (F5)**:
      - *Phía Frontend (`accounts.tsx`)*: Nút "Lưu thay đổi" (`handleSaveAll`) trước đây chỉ ghi dữ liệu vào `localStorage` (`vba_managed_accounts_v2`) mà không hề gửi bất kỳ HTTP API request nào lên backend NestJS để cập nhật PostgreSQL. Đồng thời, khi reload trang, hàm `useEffect` nạp dữ liệu từ `/members` lại lọc bỏ các tài khoản đã có mã trong `DEFAULT_ACCOUNTS` (`if (!existingCodes.has(m.code)) return`), khiến dữ liệu CSDL thực tế bị bỏ qua và giao diện bị reset về giá trị mặc định tĩnh.

@@ -158,3 +158,30 @@ Cơ cấu tổ chức hiệp hội được chuẩn hóa thành 7 cấp bậc th
 - **Hiệu năng phản hồi thần tốc**: Toàn bộ API nghiệp vụ (Sự kiện, Danh bạ hội viên, Sổ quỹ hóa đơn) phản hồi tức thì dưới 100ms (đo kiểm thực tế 40ms - 59ms), cam kết trải nghiệm điều hành mượt mà cho Ban Lãnh Đạo.
 - **Định danh Ngữ cảnh Hiệp hội Chuẩn hóa**: Mọi giao dịch và dữ liệu sự kiện, hội viên, kế toán đều được gán nhãn ngữ cảnh chuẩn hóa (`c1983000-0000-4000-8000-000000001983`), tự động phòng vệ truy vấn và sẵn sàng cho kiến trúc liên kết mở rộng.
 - **Sao lưu & Tự phục hồi**: Cơ sở dữ liệu lưu trữ bền vững trên volume độc lập, kiểm tra trạng thái tự động và sẵn sàng khôi phục thảm họa 24/7.
+
+---
+
+### CHƯƠNG 12: QUY CHUẨN ĐIỀU HÀNH 7 TÍNH NĂNG CRM NÂNG CẤP (BẢN CẬP NHẬT 20/10/2026)
+1. **Quản lý Đăng ký Sự kiện (`/event-registrations`)**:
+   - **Liên kết Sự kiện trực quan**: Cột "Sự kiện đăng ký" hiển thị đầy đủ tiêu đề sự kiện, ngày tổ chức, địa điểm và huy hiệu phân loại Hội viên / Khách mời bên ngoài qua liên kết API với bảng `events`.
+   - **Co dãn cột kiểu Excel**: Header của mỗi cột tích hợp thanh kéo co dãn `resizer`, cho phép người điều hành rê chuột kéo thả mở rộng hoặc thu hẹp độ rộng cột tùy ý như phần mềm Excel.
+   - **Cụm thao tác trượt ngang**: Nhóm nút hành động trên mỗi hàng (Xem chi tiết, Check-in, Duyệt thanh toán, Gửi vé, Xóa) được đóng gói trong container trượt ngang `overflow-x-auto no-scrollbar`, trượt mượt mà bằng chuột hoặc cảm ứng mà không làm vỡ bố cục bảng.
+2. **Quản lý Tài khoản & Phân quyền Ban chuyên môn (`/accounts`)**:
+   - **Lưu quyền mới vào CSDL**: Khi chọn role mới và cập nhật, hệ thống ghi nhận trực tiếp vào bảng `members` và `user_roles` trong CSDL PostgreSQL.
+   - **Hiển thị đúng Role tại từng Ban**: Khi chọn ban (Ban Điều Hành, Ban Thư Ký, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện), danh sách chức vụ hiển thị đúng cả Trưởng ban (`truong_ban_*`) và Thành viên ban (`thanh_vien_ban_*`), đảm bảo tính nhất quán giữa danh sách và modal phân quyền.
+3. **Phân biệt Sự kiện Có Phí & Miễn Phí (`/events`)**:
+   - **Hiển thị trên bảng CRM**: Cột "Giá vé / Phí" phân biệt rõ ràng: sự kiện không thu phí gắn huy hiệu "Miễn phí" (xanh ngọc Emerald); sự kiện có phí hiển thị số tiền định dạng tiền tệ VNĐ chuẩn (vàng hổ phách Amber).
+   - **Thẻ sự kiện & Biểu mẫu**: Thẻ sự kiện gắn badge giá vé nổi bật; form tạo sự kiện hỗ trợ ô nhập giá vé trực quan.
+4. **Quản trị Khoản Thu & Tab Chờ Thanh Toán (`/income`)**:
+   - **Cập nhật số tiền tức thời**: Nạp dữ liệu qua API client `fetchNestApi`, đồng bộ ngay lập tức khi phát sinh khoản thu mới.
+   - **Tab Chờ thanh toán**: Phân loại rõ ràng các khoản đã thu và khoản chờ thanh toán; bổ sung thẻ chỉ số KPI "Chờ thanh toán" và nút hành động nhanh "Xác nhận đã thu" chuyển trạng thái sang Đã hoàn thành.
+5. **Quản trị Khoản Chi & Khấu trừ Quỹ tự động (`/expenses`)**:
+   - **Nạp dữ liệu ổn định**: Tự động nạp danh sách chi tiêu từ CSDL và tự động nạp dữ liệu mẫu (Seed on Read) khi hệ thống khởi tạo.
+   - **Tự động trừ tiền**: Mỗi khi tạo phiếu chi hoặc cập nhật hoàn ứng, thẻ "QUỸ CÒN LẠI (DÒNG TIỀN)" tính toán theo công thức `Tổng thu quỹ - Tổng chi thực tế`, khấu trừ trực tiếp giá trị vào số dư quỹ khả dụng.
+6. **Báo cáo Tài chính Đa kỳ & Live Auto-Update (`/finance-report`)**:
+   - **Bộ lọc đa kỳ**: Báo cáo theo Ngày (hôm nay/24h), theo Tuần (7 ngày gần nhất), theo Tháng (tháng hạch toán), theo Năm (năm tài chính 2026), và Tất cả kỳ.
+   - **Cập nhật dòng tiền thời gian thực**: Lắng nghe sự kiện `vba_transactions_changed` và `finance-updated` để tự động tính toán lại Tổng thu, Tổng chi và Tồn quỹ ròng ngay khi có bất kỳ giao dịch mới nào.
+   - **Xuất Excel đa kỳ**: Xuất báo cáo kế toán kiểm toán chuẩn Thông tư 200/2014/TT-BTC với tên kỳ báo cáo tương ứng (`bao-cao-tai-chinh-${period}-ceo1983.xlsx`).
+7. **Đặc quyền Ưu đãi Doanh nhân (`/perks`, `/association/perks`)**:
+   - **Kết nối API trực tiếp**: Sử dụng `fetchNestApi` gọi các endpoint `/content/admin/perks` và `/content/perks`.
+   - **Hệ thống ưu đãi cao cấp**: Tự động kích hoạt các ưu đãi VIP (Golf Long Biên, Vinpearl 5 sao, Pháp lý M&A, Kế toán Kiểm toán Vaco, VNPT Cloud) phục vụ hội viên trên cả CRM Web và Mobile App.

@@ -148,14 +148,14 @@ function AccountsPage() {
 
   // Cascading role options for current selected department in form
   const availableRolesForForm = useMemo(() => {
-    return getRolesForDepartment(formDepartment, customDepts);
-  }, [formDepartment, customDepts]);
+    return getRolesForDepartment(formDepartment, customDepts, formRole);
+  }, [formDepartment, customDepts, formRole]);
 
   const handleDepartmentChange = (newDept: string) => {
     setFormDepartment(newDept);
     const roles = getRolesForDepartment(newDept, customDepts);
     if (roles.length > 0 && !roles.some((r) => r.value === formRole)) {
-      setFormRole(roles[roles.length - 1].value);
+      setFormRole(roles[0].value);
     }
   };
 
@@ -295,22 +295,23 @@ function AccountsPage() {
       // 2. Ghi trực tiếp vào Backend PostgreSQL API
       const savePromises = targetsToSave.map(async (acc) => {
         const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
+        const payload = {
+          executiveRole: acc.role,
+          department: acc.department,
+          email: acc.email,
+          code: acc.code,
+          name: acc.name,
+        };
         try {
           await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
             method: "PATCH",
-            body: JSON.stringify({
-              executiveRole: acc.role,
-              department: acc.department,
-            }),
+            body: JSON.stringify(payload),
           });
         } catch {
           try {
             await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
               method: "POST",
-              body: JSON.stringify({
-                executiveRole: acc.role,
-                department: acc.department,
-              }),
+              body: JSON.stringify(payload),
             });
           } catch (e2) {
             console.warn(`Lưu phân quyền cho ${acc.name} thất bại:`, e2);
@@ -438,20 +439,22 @@ function AccountsPage() {
       (selectedAccount.id ? selectedAccount.id.replace(/^acc_/, "") : selectedAccount.code);
 
     if (targetId) {
+      const payload = {
+        executiveRole: formRole,
+        department: formDepartment,
+        email: formEmail,
+        code: formCode,
+        name: formName,
+      };
+
       fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
         method: "PATCH",
-        body: JSON.stringify({
-          executiveRole: formRole,
-          department: formDepartment,
-        }),
+        body: JSON.stringify(payload),
       })
         .catch(() =>
           fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
             method: "POST",
-            body: JSON.stringify({
-              executiveRole: formRole,
-              department: formDepartment,
-            }),
+            body: JSON.stringify(payload),
           })
         )
         .then(() => {

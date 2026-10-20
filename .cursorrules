@@ -34,7 +34,12 @@
 #   + Đồng bộ 2 chiều CSDL: Cập nhật đồng thời cột `executive_role` trong bảng `public.members` và bảng `public.user_roles`/`public.memberships`.
 #   + Khi tải trang / reload (F5): Dữ liệu từ API `/members` BẮT BUỘC ghi đè và đồng bộ vào danh sách tài khoản hiển thị; tuyệt đối không dùng danh sách tĩnh mặc định để ghi đè làm mất dữ liệu mới lưu.
 #   + Không hardcode vai trò theo email: Tại cả Backend (`getAccountDetails`) và Frontend (`use-role.ts`), vai trò thực tế lấy từ database luôn có độ ưu tiên cao nhất; tài khoản admin/chủ tịch nếu đã được gán vai trò khác thì phải áp dụng đúng vai trò đó, email `admin@connect.vn` chỉ dùng làm fallback khi CSDL chưa có bất kỳ vai trò nào.
-
+# - Quy Chuẩn Bảng CRM Co Dãn Cột Kiểu Excel & Thao Tác Trượt Ngang (CRM Table Excel Resizing & Horizontal Slide): Mọi bảng danh sách đăng ký sự kiện (/event-registrations) phải hỗ trợ thanh kéo `resizer` trên header để người dùng co dãn độ rộng cột như Excel; cột thao tác nhiều nút phải được bọc trong khung trượt ngang `overflow-x-auto no-scrollbar` cuộn mượt mà.
+# - Quy Chuẩn Quản Lý Tài Chính & Tự Động Khấu Trừ Quỹ (/income, /expenses, /finance-report):
+#   + Quản lý thu: Bổ sung bộ lọc tab "Chờ thanh toán", KPI theo dõi, và nút hành động nhanh "Xác nhận đã thu" đồng bộ CSDL tức thời.
+#   + Quản lý chi: Khi xuất/tạo phiếu chi hoặc cập nhật hoàn ứng, CSDL lưu lại và số tiền chi phải tự động trừ vào "QUỸ CÒN LẠI (DÒNG TIỀN)" = `Tổng thu quỹ - Tổng chi thực tế`.
+#   + Báo cáo tài chính: BẮT BUỘC hỗ trợ xuất Excel và lọc theo 4 kỳ: Ngày, Tuần, Tháng, Năm; tự động lắng nghe sự kiện `vba_transactions_changed` và `finance-updated` để cập nhật số liệu thời gian thực khi có biến động dòng tiền.
+# - Quy Chuẩn Ưu Đãi & Đặc Quyền Doanh Nhân (/perks, /association/perks): BẮT BUỘC gọi trực tiếp NestJS REST API (/content/admin/perks, /content/perks) qua fetchNestApi thay vì server function SSR; tích hợp cơ chế nạp tự động (Seed on Read) các ưu đãi giá trị cao (Golf, Resort 5 sao, Pháp lý, Kiểm toán, Viễn thông Cloud) để cả CRM và Mobile App luôn hiển thị danh sách ưu đãi.
 
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)

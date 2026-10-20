@@ -295,7 +295,7 @@ export class MembersController {
   async updateMemberRoleDept(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { executiveRole: string; department: string; associationId?: string },
+    @Body() body: { executiveRole: string; department: string; associationId?: string; email?: string; code?: string; name?: string },
   ) {
     return this.membersService.updateMemberRoleDept(req.user?.id, id, body);
   }
@@ -305,7 +305,7 @@ export class MembersController {
   async updateMemberRoleDeptPost(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { executiveRole: string; department: string; associationId?: string },
+    @Body() body: { executiveRole: string; department: string; associationId?: string; email?: string; code?: string; name?: string },
   ) {
     return this.membersService.updateMemberRoleDept(req.user?.id, id, body);
   }

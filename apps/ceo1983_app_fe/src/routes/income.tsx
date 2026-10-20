@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowUpCircle,
   Download,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { fetchNestApi } from "@/lib/api-client";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { Card } from "@/components/ui/card";
@@ -133,8 +134,37 @@ function IncomePage() {
   const router = useRouter();
   const rawLoaderData = Route.useLoaderData();
   const loadedTransactions = Array.isArray(rawLoaderData) ? (rawLoaderData as Transaction[]) : [];
-  const TRANSACTIONS = loadedTransactions;
 
+  const [transactionsList, setTransactionsList] = useState<Transaction[]>(
+    loadedTransactions.length > 0 ? loadedTransactions : DEFAULT_INCOME_TRANSACTIONS,
+  );
+
+  const fetchLiveIncome = async () => {
+    try {
+      const res = await fetchNestApi<Transaction[]>("/admin/transactions?type=income");
+      if (Array.isArray(res) && res.length > 0) {
+        setTransactionsList(res);
+      }
+    } catch (err) {
+      console.warn("[income] fetchLiveIncome error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveIncome();
+    const handleUpdate = () => fetchLiveIncome();
+    window.addEventListener("vba_transactions_changed", handleUpdate);
+    window.addEventListener("finance-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("vba_transactions_changed", handleUpdate);
+      window.removeEventListener("finance-updated", handleUpdate);
+    };
+  }, []);
+
+  const TRANSACTIONS = transactionsList;
+
+  // Status filter: all | completed | pending
+  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "pending">("all");
   // Method filter: all | cash (Tiền mặt) | bank (Chuyển khoản)
   const [methodFilter, setMethodFilter] = useState<"all" | "cash" | "bank">("all");
   // Category filter: all | membership_fee | event_ticket | event_walkin | sponsor | other
@@ -160,7 +190,7 @@ function IncomePage() {
   const [formStatus, setFormStatus] = useState<"completed" | "pending">("completed");
   const [formRecipient, setFormRecipient] = useState("");
 
-  const openCreate = (defaultCategory?: string, defaultMethod?: "cash" | "bank") => {
+  const openCreate = (defaultCategory?: string, defaultMethod?: "cash" | "bank", defaultStatus?: "completed" | "pending") => {
     setEditing(null);
     setFormDate(new Date().toISOString().slice(0, 10));
     setFormCategory(defaultCategory || "membership_fee");
@@ -173,7 +203,7 @@ function IncomePage() {
     );
     setFormAmount(0);
     setFormMethod(defaultMethod || "bank");
-    setFormStatus("completed");
+    setFormStatus(defaultStatus || "completed");
     setFormRecipient("");
     setModalOpen(true);
   };
@@ -209,12 +239,32 @@ function IncomePage() {
       };
 
       if (editing) {
-        await updateFn({ data: { id: editing.id, ...payload } });
+        await fetchNestApi(`/admin/transactions/${editing.id}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        }).catch(async () => {
+          await updateFn({ data: { id: editing.id, ...payload } });
+        });
+        setTransactionsList((prev) =>
+          prev.map((item) => (item.id === editing.id ? { ...item, ...payload } : item)),
+        );
         toast.success(t("common.updated"));
       } else {
-        await createFn({ data: payload });
+        const res: any = await fetchNestApi("/admin/transactions", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }).catch(async () => {
+          return await createFn({ data: payload });
+        });
+        const createdItem = res?.data || {
+          ...payload,
+          id: res?.id || `PT-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+        };
+        setTransactionsList((prev) => [createdItem, ...prev]);
         toast.success(t("common.created"));
       }
+      window.dispatchEvent(new Event("vba_transactions_changed"));
+      window.dispatchEvent(new Event("finance-updated"));
       setModalOpen(false);
       setEditing(null);
       await router.invalidate();
@@ -225,12 +275,37 @@ function IncomePage() {
     }
   };
 
+  const handleConfirmPayment = async (tx: Transaction) => {
+    try {
+      await fetchNestApi(`/admin/transactions/${tx.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...tx, status: "completed" }),
+      }).catch(async () => {
+        await updateFn({ data: { id: tx.id, status: "completed" } });
+      });
+      setTransactionsList((prev) =>
+        prev.map((item) => (item.id === tx.id ? { ...item, status: "completed" } : item)),
+      );
+      toast.success(`Đã xác nhận đã thu số tiền: ${fmt.money(tx.amount)}`);
+      window.dispatchEvent(new Event("vba_transactions_changed"));
+      window.dispatchEvent(new Event("finance-updated"));
+      await router.invalidate();
+    } catch {
+      toast.error("Lỗi khi xác nhận thanh toán");
+    }
+  };
+
   const onDelete = async (tx: Transaction) => {
     if (!window.confirm(t("common.confirmDelete", { name: tx.description || tx.id }))) return;
     setDeletingId(tx.id);
     try {
-      await deleteFn({ data: { id: tx.id } });
+      await fetchNestApi(`/admin/transactions/${tx.id}`, { method: "DELETE" }).catch(async () => {
+        await deleteFn({ data: { id: tx.id } });
+      });
+      setTransactionsList((prev) => prev.filter((item) => item.id !== tx.id));
       toast.success(t("common.deletedToast"));
+      window.dispatchEvent(new Event("vba_transactions_changed"));
+      window.dispatchEvent(new Event("finance-updated"));
       await router.invalidate();
     } catch {
       toast.error(t("common.deleteError"));
@@ -259,6 +334,22 @@ function IncomePage() {
 
   const totalIncome = incomeCash + incomeBank;
 
+  const completedIncome = useMemo(() => {
+    return incomeList
+      .filter((tx) => tx.status === "completed")
+      .reduce((s, tx) => s + tx.amount, 0);
+  }, [incomeList]);
+
+  const pendingIncome = useMemo(() => {
+    return incomeList
+      .filter((tx) => tx.status === "pending")
+      .reduce((s, tx) => s + tx.amount, 0);
+  }, [incomeList]);
+
+  const pendingCount = useMemo(() => {
+    return incomeList.filter((tx) => tx.status === "pending").length;
+  }, [incomeList]);
+
   const walkinIncome = useMemo(() => {
     return incomeList
       .filter((tx) => tx.category === "event_walkin" || tx.description.toLowerCase().includes("trực tiếp"))
@@ -269,6 +360,10 @@ function IncomePage() {
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     return incomeList
+      .filter((tx) => {
+        if (statusFilter === "all") return true;
+        return tx.status === statusFilter;
+      })
       .filter((tx) => {
         if (methodFilter === "all") return true;
         if (methodFilter === "cash") return tx.method === "cash";
@@ -450,7 +545,45 @@ function IncomePage() {
           </div>
         </div>
 
-        {/* Card 2: Thu Tiền Mặt (Violet gradient - Indigo) */}
+        {/* Card 2: Đã Thu Thực Tế (Emerald gradient - Green) */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
+          className={`h-32 p-4 bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${
+            statusFilter === "completed" ? "ring-2 ring-emerald-500" : ""
+          }`}
+        >
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ THU THỰC TẾ</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {fmt.money(completedIncome)}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            Đã thanh toán &amp; vào quỹ an toàn
+          </div>
+        </div>
+
+        {/* Card 3: Chờ Thanh Toán (Amber / Orange gradient) */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+          className={`h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${
+            statusFilter === "pending" ? "ring-2 ring-amber-500" : ""
+          }`}
+        >
+          <div className="h-8 flex items-center gap-2">
+            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHỜ THANH TOÁN</div>
+          </div>
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+            {fmt.money(pendingIncome)}
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+            {pendingCount} khoản đang chờ xác nhận
+          </div>
+        </div>
+
+        {/* Card 4: Thu Tiền Mặt (Violet gradient - Indigo) */}
         <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
           <div className="h-8 flex items-center gap-2">
             <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
@@ -461,34 +594,6 @@ function IncomePage() {
           </div>
           <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
             Thu trực tiếp tại quầy &amp; sự kiện
-          </div>
-        </div>
-
-        {/* Card 3: Thu Chuyển Khoản (Orange gradient - Orange) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">THU CHUYỂN KHOẢN</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(incomeBank)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            VietQR &amp; chuyển khoản ngân hàng
-          </div>
-        </div>
-
-        {/* Card 4: Thu Đột Xuất Tại Sự Kiện (Green gradient - Emerald) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">THU ĐỘT XUẤT SỰ KIỆN</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(walkinIncome)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Khách vãng lai &amp; hội viên đột xuất
           </div>
         </div>
       </div>
@@ -506,6 +611,39 @@ function IncomePage() {
       {/* Filter Toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Status Filter: Tất cả | Đã thu | Chờ thanh toán */}
+          <div className="flex items-center rounded-xl bg-muted/60 p-1">
+            <button
+              onClick={() => setStatusFilter("all")}
+              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                statusFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Tất cả ({incomeList.length})
+            </button>
+            <button
+              onClick={() => setStatusFilter("completed")}
+              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                statusFilter === "completed" ? "bg-emerald-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Đã thu
+            </button>
+            <button
+              onClick={() => setStatusFilter("pending")}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                statusFilter === "pending" ? "bg-amber-500 text-slate-950 font-bold shadow-sm" : "text-amber-600 hover:text-amber-700"
+              }`}
+            >
+              <span>Chờ thanh toán</span>
+              {pendingCount > 0 && (
+                <span className="rounded-full bg-amber-200 dark:bg-amber-900/60 px-1.5 py-0.2 text-[10px] font-black text-amber-900 dark:text-amber-200">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* Method Filter */}
           <div className="flex items-center rounded-xl bg-muted/60 p-1">
             <button
@@ -687,6 +825,17 @@ function IncomePage() {
                   {/* Actions */}
                   <td className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
                     <div className="flex items-center justify-end gap-1.5">
+                      {tx.status === "pending" && (
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmPayment(tx)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer transition-colors"
+                          title="Xác nhận đã nhận đủ số tiền khoản thu này"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>Đã thu</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => openEdit(tx)}

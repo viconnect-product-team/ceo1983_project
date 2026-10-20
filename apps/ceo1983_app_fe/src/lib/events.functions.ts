@@ -51,6 +51,10 @@ export type TicketType = {
 export type Registration = {
   id: string;
   eventId: string;
+  eventName?: string;
+  eventDate?: string;
+  eventLocation?: string;
+  eventTicketPrice?: number | null;
   memberCode: string;
   memberName: string;
   email: string;
@@ -111,6 +115,10 @@ function mapReg(r: Row): Registration {
   return {
     id: r.id as string,
     eventId: (r.event_id as string) || (r.eventId as string) || "",
+    eventName: (r.event_name as string) || (r.eventName as string) || "",
+    eventDate: (r.event_date as string) || (r.eventDate as string) || "",
+    eventLocation: (r.event_location as string) || (r.eventLocation as string) || "",
+    eventTicketPrice: r.event_ticket_price !== undefined && r.event_ticket_price !== null ? Number(r.event_ticket_price) : undefined,
     memberCode: (r.member_code as string) || (r.memberCode as string) || "",
     memberName: (r.member_name as string) || (r.memberName as string) || "",
     email: (r.email as string) || "",

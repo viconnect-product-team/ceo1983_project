@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Download,
@@ -161,7 +161,7 @@ export const Route = createFileRoute("/finance-report")({
   component: FinanceReport,
 });
 
-type PeriodFilter = "all" | "month" | "quarter" | "year";
+type PeriodFilter = "all" | "day" | "week" | "month" | "year";
 
 function FinanceReport() {
   const t = useT();
@@ -188,10 +188,27 @@ function FinanceReport() {
     initialData: rawTransactions,
   });
 
+  // Auto-update when cashflow changes (Requirement 6)
+  useEffect(() => {
+    const handleUpdate = () => {
+      txQuery.refetch();
+    };
+    window.addEventListener("vba_transactions_changed", handleUpdate);
+    window.addEventListener("finance-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("vba_transactions_changed", handleUpdate);
+      window.removeEventListener("finance-updated", handleUpdate);
+    };
+  }, [txQuery]);
+
   const activeRawTransactions = txQuery.data || rawTransactions;
 
-  // Filtered by search, type & status
+  // Filtered by search, type, status & period (ngày, tuần, tháng, năm)
   const transactions = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const hasToday = activeRawTransactions.some((t) => t.date && t.date.slice(0, 10) === todayStr);
+
     return activeRawTransactions.filter((tx) => {
       if (typeFilter !== "all" && tx.type !== typeFilter) return false;
       if (statusFilter !== "all") {
@@ -202,16 +219,72 @@ function FinanceReport() {
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        return (
+        const matches = (
           tx.id.toLowerCase().includes(q) ||
           tx.description.toLowerCase().includes(q) ||
           tx.category.toLowerCase().includes(q) ||
           (tx.recipient && tx.recipient.toLowerCase().includes(q))
         );
+        if (!matches) return false;
       }
+
+      // Period filter: day, week, month, year, all
+      if (period !== "all") {
+        if (!tx.date) return false;
+        const txDate = new Date(tx.date);
+        if (isNaN(txDate.getTime())) return true;
+
+        if (period === "day") {
+          if (hasToday) {
+            return tx.date.slice(0, 10) === todayStr;
+          }
+          const latestDate = activeRawTransactions
+            .map((t) => t.date)
+            .filter(Boolean)
+            .sort()
+            .reverse()[0];
+          return latestDate ? tx.date.slice(0, 10) === latestDate.slice(0, 10) : true;
+        }
+
+        if (period === "week") {
+          const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (diffDays >= -1 && diffDays <= 7) return true;
+          const latestDateStr = activeRawTransactions
+            .map((t) => t.date)
+            .filter(Boolean)
+            .sort()
+            .reverse()[0];
+          if (latestDateStr) {
+            const latestDate = new Date(latestDateStr);
+            const diffFromLatest = (latestDate.getTime() - txDate.getTime()) / (1000 * 60 * 60 * 24);
+            return diffFromLatest >= -1 && diffFromLatest <= 7;
+          }
+          return true;
+        }
+
+        if (period === "month") {
+          const isThisMonth = txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth();
+          if (isThisMonth) return true;
+          const latestDateStr = activeRawTransactions
+            .map((t) => t.date)
+            .filter(Boolean)
+            .sort()
+            .reverse()[0];
+          if (latestDateStr) {
+            const latestDate = new Date(latestDateStr);
+            return txDate.getFullYear() === latestDate.getFullYear() && txDate.getMonth() === latestDate.getMonth();
+          }
+          return false;
+        }
+
+        if (period === "year") {
+          return txDate.getFullYear() === now.getFullYear();
+        }
+      }
+
       return true;
     });
-  }, [activeRawTransactions, typeFilter, statusFilter, searchQuery]);
+  }, [activeRawTransactions, typeFilter, statusFilter, searchQuery, period]);
 
   const tc = useTableControls<Transaction>(
     transactions,
@@ -252,15 +325,23 @@ function FinanceReport() {
   const bankOut = expense.filter((tx) => tx.method === "bank").reduce((s, tx) => s + tx.amount, 0);
   const cashOut = expense.filter((tx) => tx.method === "cash").reduce((s, tx) => s + tx.amount, 0);
 
+  const periodLabels: Record<PeriodFilter, string> = {
+    all: "Toàn bộ các kỳ hạch toán",
+    day: "Kỳ báo cáo: Theo Ngày",
+    week: "Kỳ báo cáo: Theo Tuần (7 Ngày)",
+    month: "Kỳ báo cáo: Theo Tháng",
+    year: "Kỳ báo cáo: Theo Năm",
+  };
+
   const handleExportCsv = () => {
     const totalIn = income.reduce((s, tx) => s + tx.amount, 0);
     const totalOut = expense.reduce((s, tx) => s + tx.amount, 0);
     const net = totalIn - totalOut;
 
     exportToExcel<Transaction>({
-      title: "BÁO CÁO TỔNG HỢP KIỂM TOÁN TÀI CHÍNH & SỔ QUỸ THU CHI",
-      subtitle: `Kỳ báo cáo: ${period === "all" ? "Toàn bộ các kỳ hạch toán" : period === "month" ? "Tháng 03/2026" : period === "quarter" ? "Quý 1/2026" : "Năm tài chính 2026"} | Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983`,
-      filename: "bao-cao-tai-chinh-kiem-toan-ceo1983",
+      title: `BÁO CÁO TỔNG HỢP KIỂM TOÁN TÀI CHÍNH (${periodLabels[period].toUpperCase()})`,
+      subtitle: `${periodLabels[period]} | Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983`,
+      filename: `bao-cao-tai-chinh-${period}-ceo1983`,
       sheetName: "Nhat_Ky_Thu_Chi",
       organization: "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
       address: "Tòa nhà HanoiBA, TP. Hà Nội",
@@ -289,7 +370,7 @@ function FinanceReport() {
       amountInWords: numberToVietnameseWords(net >= 0 ? net : totalIn),
       signerTitles: ["NGƯỜI LẬP BÁO CÁO", "TRƯỞNG BAN TÀI CHÍNH", "CHỦ TỊCH CLB CEO 1983"],
     });
-    toast.success("Đã xuất báo cáo tài chính chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
+    toast.success(`Đã xuất báo cáo tài chính (${periodLabels[period]}) chuẩn doanh nghiệp CEO 1983 (.xlsx)!`);
   };
 
   const handleExportPdf = () => {
@@ -338,9 +419,10 @@ function FinanceReport() {
           <span className="text-xs font-bold text-muted-foreground mr-1">Kỳ báo cáo:</span>
           {[
             { id: "all", label: "Tất cả kỳ" },
-            { id: "month", label: "Tháng 03/2026" },
-            { id: "quarter", label: "Quý 1/2026" },
-            { id: "year", label: "Năm tài chính 2026" },
+            { id: "day", label: "Theo ngày" },
+            { id: "week", label: "Theo tuần" },
+            { id: "month", label: "Theo tháng" },
+            { id: "year", label: "Theo năm" },
           ].map((p) => (
             <button
               key={p.id}
@@ -701,7 +783,7 @@ function FinanceReport() {
                     Xuất Báo Cáo & Quyết Toán Tài Chính
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Hiệp hội Doanh nhân CEO 1983 · {period === "all" ? "Toàn thời gian" : period === "month" ? "Tháng 03/2026" : period === "quarter" ? "Quý 1/2026" : "Năm tài chính 2026"} · Tổng {transactions.length} giao dịch
+                    Hiệp hội Doanh nhân CEO 1983 · {periodLabels[period]} · Tổng {transactions.length} giao dịch
                   </p>
                 </div>
               </div>

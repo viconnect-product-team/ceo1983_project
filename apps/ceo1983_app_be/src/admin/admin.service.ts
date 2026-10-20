@@ -1322,8 +1322,145 @@ export class AdminService implements OnModuleInit {
 
   // ── TRANSACTIONS / FINANCE ──────────────────────────────────────────
 
+  private async ensureSeedTransactions() {
+    try {
+      const existing = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.transactions LIMIT 1
+      `.catch(() => []);
+      if (existing.length > 0) return;
+
+      const seedTxs = [
+        {
+          code: 'PT-2026-001',
+          date: '2026-03-10',
+          type: 'income',
+          category: 'membership_fee',
+          description: 'Thu hội phí hội viên Kim Cương 2026',
+          amount: 50000000,
+          method: 'bank',
+          status: 'completed',
+          recipient: 'Công ty CP Tập đoàn Hòa Bình',
+        },
+        {
+          code: 'PT-2026-002',
+          date: '2026-03-09',
+          type: 'income',
+          category: 'event_ticket',
+          description: 'Thu vé tham dự Diễn đàn Kết nối Giao thương B2B',
+          amount: 1500000,
+          method: 'bank',
+          status: 'completed',
+          recipient: 'Bà Trần Mai Anh',
+        },
+        {
+          code: 'PT-2026-003',
+          date: '2026-03-08',
+          type: 'income',
+          category: 'event_walkin',
+          description: 'Thu tiền mặt trực tiếp tại bàn đón tiếp sự kiện',
+          amount: 500000,
+          method: 'cash',
+          status: 'completed',
+          recipient: 'Ông Nguyễn Hoàng Long',
+        },
+        {
+          code: 'PT-2026-004',
+          date: '2026-03-05',
+          type: 'income',
+          category: 'sponsor',
+          description: 'Thu gói Tài trợ Kim Cương Tech Expo 2026',
+          amount: 150000000,
+          method: 'bank',
+          status: 'completed',
+          recipient: 'Techcombank',
+        },
+        {
+          code: 'PT-2026-005',
+          date: '2026-03-02',
+          type: 'income',
+          category: 'membership_fee',
+          description: 'Thu phí gia nhập hội viên mới Khối Sản Xuất & Bán Lẻ',
+          amount: 15000000,
+          method: 'bank',
+          status: 'pending',
+          recipient: 'Công ty TNHH Smart Logistics',
+        },
+        {
+          code: 'PC-2026-001',
+          date: '2026-03-10',
+          type: 'expense',
+          category: 'event',
+          description: 'Chi phí thuê trung tâm hội nghị Gem Center & teabreak',
+          amount: 35000000,
+          method: 'bank',
+          status: 'completed',
+          recipient: 'Gem Center Saigon',
+        },
+        {
+          code: 'PC-2026-002',
+          date: '2026-03-08',
+          type: 'expense',
+          category: 'operation',
+          description: 'Chi phí hạ tầng máy chủ Cloud & bảo mật hệ thống CRM',
+          amount: 12000000,
+          method: 'bank',
+          status: 'completed',
+          recipient: 'VNPT Cloud / AWS',
+        },
+        {
+          code: 'PC-2026-003',
+          date: '2026-03-06',
+          type: 'expense',
+          category: 'marketing',
+          description: 'In ấn backdrop, tài liệu & kỷ yếu hội viên mạ vàng',
+          amount: 8500000,
+          method: 'cash',
+          status: 'completed',
+          recipient: 'Công ty In ấn Tiến Phát',
+        },
+        {
+          code: 'PC-2026-004',
+          date: '2026-03-03',
+          type: 'expense',
+          category: 'admin',
+          description: 'Văn phòng phẩm và bưu chính gửi giấy mời đại hội',
+          amount: 3200000,
+          method: 'cash',
+          status: 'completed',
+          recipient: 'Bưu chính Viettel Post',
+        },
+        {
+          code: 'PC-2026-005',
+          date: '2026-02-27',
+          type: 'expense',
+          category: 'event',
+          description: 'Tạm ứng chi phí đón tiếp đoàn đại biểu quốc tế',
+          amount: 15000000,
+          method: 'bank',
+          status: 'completed',
+          recipient: 'Ban Đối ngoại Hiệp hội',
+        },
+      ];
+
+      for (const t of seedTxs) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.transactions (
+            id, code, date, type, category, description, amount, method, status,
+            advance_amount, refund_amount, invoice_url, recipient, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), ${t.code}, ${t.date}::date, ${t.type}, ${t.category}, ${t.description},
+            ${t.amount}::bigint, ${t.method}, ${t.status}, 0, 0, '', ${t.recipient}, now(), now()
+          )
+        `.catch(() => {});
+      }
+    } catch (err: any) {
+      console.warn('ensureSeedTransactions error:', err?.message);
+    }
+  }
+
   async listTransactions(type?: string) {
     try {
+      await this.ensureSeedTransactions();
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.transactions
         ORDER BY date DESC, created_at DESC
