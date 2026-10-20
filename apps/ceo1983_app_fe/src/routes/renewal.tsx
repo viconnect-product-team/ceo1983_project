@@ -49,7 +49,7 @@ export const Route = createFileRoute("/renewal")({
     try {
       const serverRes = await listRenewalsFn().catch(() => []);
       if (Array.isArray(serverRes) && serverRes.length > 0) {
-        return serverRes.filter((r) => isApprovedMember(r.member as any));
+        return serverRes.map((r: any) => (r.member ? r : toRecord(r as Row)));
       }
     } catch {}
     return [];
@@ -203,13 +203,24 @@ function RenewalPage() {
   const { data: records = loaderRecords, refetch } = useQuery({
     queryKey: ["renewals"],
     queryFn: async () => {
-      const res = await fetchNestApi<any[]>("/members");
-      if (Array.isArray(res)) {
-        return res.filter(isApprovedMember).map((r) => toRecord(r as Row));
+      try {
+        const res = await fetchNestApi<any[]>("/members");
+        if (Array.isArray(res) && res.length > 0) {
+          return res.filter(isApprovedMember).map((r) => toRecord(r as Row));
+        }
+      } catch (err) {
+        console.warn("[Renewal] fetchNestApi failed, trying listRenewalsFn fallback:", err);
       }
+      try {
+        const serverRes = await listRenewalsFn().catch(() => []);
+        if (Array.isArray(serverRes) && serverRes.length > 0) {
+          return serverRes.map((r: any) => (r.member ? r : toRecord(r as Row)));
+        }
+      } catch {}
       return loaderRecords;
     },
-    initialData: loaderRecords,
+    placeholderData: loaderRecords,
+    staleTime: 0,
     refetchInterval: 8000,
   });
 
@@ -230,12 +241,13 @@ function RenewalPage() {
       .filter((r) => (tab === "all" ? true : r.status === tab))
       .filter((r) => {
         if (!ql) return true;
-        const m = r.member;
-        return (
-          m.name.toLowerCase().includes(ql) ||
-          m.code.toLowerCase().includes(ql) ||
-          m.email.toLowerCase().includes(ql)
-        );
+        const m = r?.member;
+        if (!m) return false;
+        const name = String(m.name || "").toLowerCase();
+        const code = String(m.code || "").toLowerCase();
+        const email = String(m.email || "").toLowerCase();
+        const contact = String(m.contact || "").toLowerCase();
+        return name.includes(ql) || code.includes(ql) || email.includes(ql) || contact.includes(ql);
       });
   }, [q, tab, records]);
 
@@ -601,26 +613,29 @@ function RenewalPage() {
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-primary-foreground"
                         style={{ background: "var(--gradient-primary)" }}
                       >
-                        {r.member.name
-                          .split(" ")
+                        {(r.member?.name || "HV")
+                          .trim()
+                          .split(/\s+/)
                           .slice(-2)
-                          .map((p: string) => p[0])
+                          .map((p: string) => p[0] || "")
                           .join("")
-                          .toUpperCase()}
+                          .toUpperCase() || "HV"}
                       </div>
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-foreground">
-                          {r.member.name}
+                          {r.member?.name || "Hội viên"}
                         </div>
                         <div className="truncate text-[11px] text-muted-foreground">
-                          {r.member.email}
+                          {r.member?.email || r.member?.phone || "—"}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-foreground border-b border-border">{t(r.member.level)}</td>
                   <td className="px-4 py-3 text-foreground border-b border-border">
-                    {new Date(r.currentTermEnd).toLocaleDateString("vi-VN")}
+                    {r.member?.level ? t(r.member.level) : "Tiêu chuẩn"}
+                  </td>
+                  <td className="px-4 py-3 text-foreground border-b border-border">
+                    {formatDisplayDate(r.currentTermEnd)}
                   </td>
                   <td className="px-4 py-3 border-b border-border">
                     <DaysCell rec={r} />
@@ -629,7 +644,7 @@ function RenewalPage() {
                     <div className="text-sm font-semibold text-foreground">{r.reminderCount}</div>
                     <div className="text-[11px] text-muted-foreground">
                       {r.lastReminder
-                        ? `${t("renewal.lastReminder")}: ${new Date(r.lastReminder).toLocaleDateString("vi-VN")}`
+                        ? `${t("renewal.lastReminder")}: ${formatDisplayDate(r.lastReminder)}`
                         : t("renewal.never")}
                     </div>
                   </td>

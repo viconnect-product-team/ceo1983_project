@@ -163,8 +163,9 @@ jobs:
               rm -f dist-images/backend-images.tar.gz
             fi
 
-            echo ">>> [2/5] Đảm bảo mạng nội bộ ceo1983-network..."
+            echo ">>> [2/5] Đảm bảo mạng nội bộ ceo1983-network & vione-network..."
             docker network create ceo1983-network 2>/dev/null || true
+            docker network create vione-network 2>/dev/null || true
 
             echo ">>> [3/5] Đồng bộ và khởi động Mobile CEO 1983 (https://ceo1983.viconnect.vn)..."
             mkdir -p /root/association

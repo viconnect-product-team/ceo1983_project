@@ -2172,6 +2172,21 @@
     * Danh sách liên hệ (`contact-list`): Website, Hotline, Địa chỉ văn phòng / trụ sở.
   + TUYỆT ĐỐI KHÔNG chứa text linh tinh, hardtext, các tiêu đề số thứ tự cứng nhắc (`1. Logo`, `2. Tên`, `3. Giới thiệu`, `(Hình ảnh biểu trưng kiến trúc...)`). Toàn bộ nội dung hiển thị đều là dữ liệu thực tế do hội viên quản trị và chỉnh sửa được.
 
+# [BẮT BUỘC 120] Quy Chuẩn Thống Nhất Role Chung, Soát Vé Check-in Ban Truyền Thông & Quản Lý Gia Hạn Hội Viên
+- Quy Chuẩn 1: Thống Nhất Role Chung Toàn Hệ Thống (Unified Single Role & Modular Permissions):
+  + Không chia tách role CRM riêng hay role App CEO 1983 riêng. Một tài khoản dùng chung một vai trò duy nhất (`quan_tri`, `chu_tich`, `admin`, `truong_ban_*`, `thanh_vien_ban_*`, `member`).
+  + Các chức năng đặc thù của App Mobile (quét QR hội viên, tạo cuộc gặp 1-1, biểu quyết, marketplace...) được quản lý thông qua ma trận phân quyền các modules và nhóm quyền App (`cat_mobile_app`).
+- Quy Chuẩn 2: Kiểm Soát Quyền Quét Mã Check-in Sự Kiện (`canScanEventQr`, `checkin-gatekeeper-auth.ts`):
+  + Đối với chức năng quét mã QR check-in sự kiện trên cả CRM Web và App Mobile:
+    * Luôn hiển thị và cấp quyền cho các tài khoản có vai trò Quản trị (`quan_tri`), Chủ tịch (`chu_tich`), Admin (`admin`), Superadmin, Platform Admin.
+    * Các tài khoản khác BẮT BUỘC phải thỏa mãn đồng thời 2 điều kiện: (1) Thuộc Ban Truyền Thông (role `thanh_vien_ban_truyen_thong` / `truong_ban_truyen_thong` hoặc `department === 'Ban Truyền Thông'`) VÀ (2) Được tick chọn trong danh sách nhân sự soát vé (`qrStaff` / `qrScanners`) tại popup tạo/sửa sự kiện trên CRM.
+    * Bất kỳ tài khoản nào không thỏa mãn 2 điều kiện trên tuyệt đối KHÔNG được hiển thị nút/màn hình quét mã check-in sự kiện, hoặc chặn hiển thị thông báo phân quyền (`ShieldAlert`).
+- Quy Chuẩn 3: Quản Lý Gia Hạn Hội Viên & Niên Độ Tự Động (`renewals-calc.ts`, `renewal.tsx`):
+  + Khi trường hạn niên độ `term_end` trong CSDL là `null`, hệ thống BẮT BUỘC tự động fallback tính hạn niên độ 1 năm (`addOneYear`) từ ngày gia nhập `joined_at` hoặc ngày tạo tài khoản `created_at`.
+  + Phải cung cấp đầy đủ giá trị fallback cho họ tên, mã hội viên, số điện thoại, công ty để không làm rỗng hoặc crash giao diện bảng gia hạn.
+  + Không dùng `initialData` cố định gây kẹt cache rỗng; sử dụng TanStack Query linh hoạt và định dạng ngày tháng tiếng Việt chuẩn (`DD/MM/YYYY`).
+
+
 
 
 

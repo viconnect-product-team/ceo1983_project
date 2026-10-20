@@ -14,6 +14,7 @@ import { IncomingConnectionModal } from "@/components/member/IncomingConnectionM
 import { sendExternalNotification } from "@/lib/notification-permissions";
 import { useAuth } from "@/context/AuthContext";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
+import { canScanEventQr, isPrivilegedAdminOrPresident } from "@/lib/checkin-gatekeeper-auth";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { toast } from "sonner";
 
@@ -531,12 +532,7 @@ function MemberTabBar() {
 
   // Check if current user is authorized as event QR scanner / check-in staff
   const [canScanQr, setCanScanQr] = useState<boolean>(() => {
-    return Boolean(
-      user?.isAdmin ||
-        user?.isPresident ||
-        user?.permissions?.includes('event:scan_qr') ||
-        user?.permissions?.includes('admin:full_access'),
-    );
+    return isPrivilegedAdminOrPresident(user);
   });
 
   useEffect(() => {
@@ -544,12 +540,7 @@ function MemberTabBar() {
       setCanScanQr(false);
       return;
     }
-    if (
-      user.isAdmin ||
-      user.isPresident ||
-      user.permissions?.includes('event:scan_qr') ||
-      user.permissions?.includes('admin:full_access')
-    ) {
+    if (isPrivilegedAdminOrPresident(user)) {
       setCanScanQr(true);
       return;
     }
@@ -560,42 +551,7 @@ function MemberTabBar() {
           setCanScanQr(false);
           return;
         }
-        const userIdentifiers = [
-          user.id,
-          (user as any).memberCode,
-          (user as any).email,
-          (user as any).phone,
-          (user as any).name,
-        ]
-          .filter(Boolean)
-          .map((s) => String(s).toLowerCase().trim());
-
-        const isAuthorized = events.some((ev) => {
-          let scanners = ev.qr_scanners || ev.qrScanners || ev.qrStaff || ev.qr_staff_ids || [];
-          if (typeof scanners === "string") {
-            try {
-              scanners = JSON.parse(scanners);
-            } catch {
-              scanners = [];
-            }
-          }
-          if (!Array.isArray(scanners) || scanners.length === 0) return false;
-          return scanners.some((s: any) => {
-            if (typeof s === "string") {
-              const lower = s.toLowerCase().trim();
-              return userIdentifiers.some((id) => lower === id || lower.includes(id));
-            }
-            if (typeof s === "object" && s !== null) {
-              const objVals = [s.id, s.code, s.userId, s.memberCode, s.phone, s.email, s.name]
-                .filter(Boolean)
-                .map((x) => String(x).toLowerCase().trim());
-              return userIdentifiers.some((id) => objVals.includes(id));
-            }
-            return false;
-          });
-        });
-
-        setCanScanQr(isAuthorized);
+        setCanScanQr(canScanEventQr(user, events));
       })
       .catch(() => {});
   }, [user]);

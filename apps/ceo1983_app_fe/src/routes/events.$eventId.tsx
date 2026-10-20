@@ -49,6 +49,8 @@ import {
 } from "@/lib/events.functions";
 import { fetchNestApi } from "@/lib/api-client";
 import { useRole } from "@/hooks/use-role";
+import { useAuth } from "@/context/AuthContext";
+import { canScanEventQr } from "@/lib/checkin-gatekeeper-auth";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/events/$eventId")({
@@ -157,7 +159,11 @@ function EventDetailPage() {
   const fmt = useFmt();
   const router = useRouter();
   const { isAdmin, isPlatformAdmin } = useRole();
+  const { user } = useAuth();
   const canManage = isAdmin || isPlatformAdmin;
+  const canScanThisEvent = useMemo(() => {
+    return canScanEventQr(user, event);
+  }, [user, event]);
 
   const [editOpen, setEditOpen] = useState(false);
   const [gatekeeperOpen, setGatekeeperOpen] = useState(false);
@@ -473,12 +479,12 @@ function EventDetailPage() {
                 </a>
               );
             })()}
-            {canManage && (
+            {canScanThisEvent && (
               <>
                 <button
                   type="button"
                   onClick={() => setGatekeeperOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20 transition"
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-500/20 transition cursor-pointer"
                 >
                   <QrCode className="h-4 w-4" aria-hidden="true" />
                   Quản lý QR Gatekeeper
@@ -490,6 +496,10 @@ function EventDetailPage() {
                   <QrCode className="h-4 w-4 text-muted-foreground" aria-hidden="true" />{" "}
                   {t("edetail.cta.checkin")}
                 </Link>
+              </>
+            )}
+            {canManage && (
+              <>
                 <Link
                   to="/event-registrations"
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"

@@ -97,7 +97,7 @@ export const SYSTEM_ROLES: SystemRole[] = [
   { key: "thanh_vien_ban_truyen_thong", name: "Thành viên ban truyền thông", shortName: "Thành viên Ban Truyền Thông", color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800", desc: "Thành viên chuyên trách Ban Truyền Thông" },
   { key: "thanh_vien_ban_tai_chinh", name: "Thành viên ban tài chính", shortName: "Thành viên Ban Tài Chính", color: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800", desc: "Thành viên chuyên trách Ban Tài Chính" },
   { key: "thanh_vien_ban_thien_nguyen", name: "Thành viên ban thiện nguyện", shortName: "Thành viên Ban Thiện Nguyện", color: "text-teal-600 bg-teal-50 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800", desc: "Thành viên chuyên trách Ban Thiện Nguyện" },
-  { key: "member", name: "Hội viên (App CEO 1983)", shortName: "Hội viên CEO 1983", color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800", desc: "Hội viên sinh hoạt chính thức qua ứng dụng CEO 1983 Mobile" },
+  { key: "member", name: "Hội viên", shortName: "Hội viên", color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800", desc: "Hội viên sinh hoạt chính thức của hiệp hội" },
 ];
 
 export function getDynamicSystemRoles(): SystemRole[] {
@@ -1545,8 +1545,6 @@ export function RbacPermissionMatrix({
       return (
         <span className="text-center">
           HỘI VIÊN
-          <br />
-          APP CEO 1983
         </span>
       );
     }

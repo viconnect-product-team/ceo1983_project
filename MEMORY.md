@@ -1,6 +1,24 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 21/10/2026 (Khắc Phục Bộ 3 Bug Trọng Điểm: Gia Hạn Hội Viên Bị Thiếu Dữ Liệu, Đồng Bộ Role Chung & Phân Quyền Quét QR Check-in Sự Kiện Chặt Chẽ, Sửa Lỗi Deploy GitHub Actions #35)**:
+  1. **Lỗi Gia Hạn Hội Viên Bị Thiếu Dữ Liệu Không Hiện Được Dữ Liệu (`renewals-calc.ts`, `renewal.tsx`)**:
+     - *Nguyên nhân*: Trong CSDL PostgreSQL thực tế, nhiều hội viên có trường `term_end` mang giá trị `null` và `status = 'active'`. Hàm `toRecord` cũ không có cơ chế tính niên độ tự động khi `term_end` rỗng, đồng thời `isApprovedMember` lọc quá ngặt loại bỏ các trạng thái hợp lệ. Ngoài ra, `initialData: loaderRecords` trong TanStack Query gây kẹt cache rỗng và avatar initials bị lỗi cú pháp `undefined.split`.
+     - *Giải pháp*:
+       * `renewals-calc.ts`: Cập nhật `toRecord` tự động tính hạn niên độ 1 năm (`addOneYear`) từ ngày gia nhập `joined_at` hoặc ngày tạo `created_at` khi `term_end` trong CSDL là `null`. Sửa `mapMember` bảo đảm luôn có fallback đầy đủ cho tên, mã hội viên, email, số điện thoại, công ty. Sửa `isApprovedMember` chỉ loại bỏ hội viên thực sự bị xóa (`deleted`, `rejected`, `archived`, `inactive`).
+       * `renewal.tsx`: Chuyển `initialData` sang `placeholderData` kèm `staleTime: 0`; query trực tiếp từ API `/members` với fallback sang `listRenewalsFn()`; bọc avatar initials an toàn và áp dụng `formatDisplayDate(...)` chuẩn tiếng Việt.
+  2. **Role Dùng Chung Cả CRM & App và Phân Quyền Soát Vé Check-in Sự Kiện (`checkin-gatekeeper-auth.ts`, `permissions.tsx`, `RbacPermissionMatrix.tsx`, `events.index.tsx`, `events.$eventId.tsx`, `Sidebar.tsx`, `association.index.tsx`, `MemberShell.tsx`, `association.checkin.tsx`, `checkin.tsx`, `checkin-qr.tsx`)**:
+     - *Thống nhất Role chung*: Không chia riêng "Role CRM" và "Role App CEO 1983", chỉ sử dụng 1 danh mục role đồng nhất toàn hệ thống (`SYSTEM_5_ROLES` / `SystemRoleKey`). Nhóm chức năng của App được tách riêng thành một nhánh chức năng riêng biệt ("Chức năng Mobile App CEO 1983") trong cây ma trận phân quyền để cấu hình linh hoạt. Đổi tên role `member` từ "Hội viên (App CEO 1983)" thành "Hội viên".
+     - *Quy chuẩn cổng quét mã QR check-in sự kiện (Strict Gatekeeper Constraint)*:
+       * Tạo module xác thực dùng chung: `@/lib/checkin-gatekeeper-auth.ts`.
+       * Các tài khoản có role `quan_tri`, `chu_tich`, `admin` (hoặc `platform_admin`, `superadmin`): LUÔN LUÔN hiển thị và có toàn quyền quét mã check-in tất cả các sự kiện.
+       * Các tài khoản khác: BẮT BUỘC phải là thành viên Ban Truyền Thông (role `thanh_vien_ban_truyen_thong`, `truong_ban_truyen_thong` hoặc thuộc `department` Ban Truyền Thông) VÀ BẮT BUỘC phải được tick chọn ở popup tạo/sửa sự kiện trên CRM (nằm trong danh sách `qrStaff` / `qrScanners`).
+       * Áp dụng đồng bộ tại mọi vị trí: Nút `QR Gate` trong bảng và thẻ sự kiện CRM (`events.index.tsx`), nút `Quản lý QR Gatekeeper` & `Check-in` trong chi tiết sự kiện CRM (`events.$eventId.tsx`), menu Check-in trên thanh điều hướng CRM (`Sidebar.tsx`), khối `Quét mã QR Check-in sự kiện` trên trang chủ App Mobile (`association.index.tsx`), nút quét tại thanh tab đáy (`MemberShell.tsx`), và bọc bảo vệ truy cập an toàn tại các route `/checkin`, `/checkin-qr` và `/association/checkin`.
+  3. **Khắc Phục Lỗi Deploy GitHub Actions #35 (Ảnh 1) & Nâng Cấp Kịch Bản Triển Khai (`.github/workflows/auto-deploy-subdomains.yml`, `setup-ssl.sh`)**:
+     - *Nguyên nhân*: Cả `deploy/ceo1983/docker-compose.yml` và `deploy/crm/docker-compose.yml` đều khai báo mạng ngoài `vione-network: external: true`. Khi Step 13 của workflow chỉ tạo mạng `ceo1983-network` mà thiếu mạng `vione-network`, lệnh `docker compose up -d` bị lỗi `network vione-network declared as external, but could not be found` và làm ngắt tiến trình do `set -e`.
+     - *Giải pháp*:
+       * Bổ sung `docker network create vione-network 2>/dev/null || true` vào Step 13 của `.github/workflows/auto-deploy-subdomains.yml` và mục [4] trong `deploy/ssl/setup-ssl.sh`.
+       * Đặt `set +e` trước các lệnh kiểm thử `curl` nội bộ trong `setup-ssl.sh` để các kiểm tra mạng không làm fail quy trình triển khai tự động.
 - **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện Bộ 4 Yêu Cầu Trọng Điểm: Vòng Quay Giải Thưởng & Đẩy Ưu Đãi Email/App, Giao Việc Kèm Người Giao & Xem File Đính Kèm, Sửa Lỗi Gán Role Tài Khoản CRM, và Bộ Slide Thuyết Trình Master Chuẩn Phong Cách Thư Mời Ảnh 1)**:
   1. **Lỗi Vòng Quay Giải Thưởng & Cấu Hình Sự Kiện (`LuckyDrawLandingBanner.tsx`, `voting.tsx`, `voting.service.ts`, `mail.service.ts`, `admin.service.ts`)**:
      - *Hiển thị tức thì khi tạo giải*: Sửa `handleAddPrize` và `handleRemovePrize` trên `LuckyDrawLandingBanner.tsx` gọi hàm `onSave(updatedConfig)` ngay lập tức, giải thưởng mới tạo hiển thị lập tức lên màn hình sự kiện mà không cần tải lại trang.

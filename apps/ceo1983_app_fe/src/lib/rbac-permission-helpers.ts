@@ -155,10 +155,10 @@ export const SYSTEM_5_ROLES: SystemRoleDef[] = [
   },
   {
     key: "member",
-    name: "Hội viên (App CEO 1983)",
-    shortName: "Hội viên App",
+    name: "Hội viên",
+    shortName: "Hội viên",
     color: "text-slate-700 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800",
-    desc: "Hội viên chính thức tham gia sinh hoạt & giao thương trên App",
+    desc: "Hội viên chính thức tham gia sinh hoạt & giao thương của hiệp hội",
   },
 ];
 
@@ -180,7 +180,7 @@ export const ROLE_OPTIONS = [
   { value: "thanh_vien_ban_truyen_thong", label: "Thành viên Ban Truyền Thông" },
   { value: "thanh_vien_ban_tai_chinh", label: "Thành viên Ban Tài Chính" },
   { value: "thanh_vien_ban_thien_nguyen", label: "Thành viên Ban Thiện Nguyện" },
-  { value: "member", label: "Hội viên (App CEO 1983)" },
+  { value: "member", label: "Hội viên" },
 ];
 
 export interface DepartmentItem {

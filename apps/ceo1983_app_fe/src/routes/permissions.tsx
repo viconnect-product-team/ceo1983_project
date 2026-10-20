@@ -43,7 +43,7 @@ export const ROLE_OPTIONS = [
   { value: "thanh_vien_ban_truyen_thong", label: "Thành viên Ban Truyền Thông", desc: "Thành viên chuyên môn Ban Truyền Thông" },
   { value: "thanh_vien_ban_tai_chinh", label: "Thành viên Ban Tài Chính", desc: "Thành viên chuyên môn Ban Tài Chính" },
   { value: "thanh_vien_ban_thien_nguyen", label: "Thành viên Ban Thiện Nguyện", desc: "Thành viên chuyên môn Ban Thiện Nguyện" },
-  { value: "member", label: "Hội viên (App CEO 1983)", desc: "Hội viên chính thức App CEO 1983" },
+  { value: "member", label: "Hội viên", desc: "Hội viên chính thức hiệp hội" },
 ];
 
 export function getDynamicRoleOptions(): { value: string; label: string; desc?: string }[] {

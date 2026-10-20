@@ -27,6 +27,8 @@ import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGat
 import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
 import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
+import { useAuth } from "@/context/AuthContext";
+import { canScanEventQr } from "@/lib/checkin-gatekeeper-auth";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
@@ -122,6 +124,7 @@ function EventsPage() {
   const createNotif = useServerFn(createNotificationFn);
   const events = Route.useLoaderData() as EventItem[];
   const { can } = useRole();
+  const { user } = useAuth();
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<EventItem["status"] | "all">("all");
@@ -791,7 +794,7 @@ function EventsPage() {
                       </td>
                       <td className="sticky right-0 z-10 min-w-[170px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                         <div className="inline-flex items-center gap-1">
-                          {(can(PERMISSIONS.EVENT_CHECKIN_MANAGE) || can("CHK_SCAN")) && (
+                          {canScanEventQr(user, e) && (
                             <button
                               type="button"
                               title="Quản lý Check-in & QR Gatekeeper"
@@ -987,6 +990,7 @@ function EventCard({
   const t = useT();
   const fmt = useFmt();
   const { can } = useRole();
+  const { user } = useAuth();
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow)]">
       <div
@@ -1051,7 +1055,7 @@ function EventCard({
             {e.name}
           </Link>
           <div className="flex shrink-0 items-center gap-1">
-            {can(PERMISSIONS.EVENT_CHECKIN_MANAGE) && (
+            {canScanEventQr(user, e) && (
               <button
                 type="button"
                 onClick={onQrGatekeeper}

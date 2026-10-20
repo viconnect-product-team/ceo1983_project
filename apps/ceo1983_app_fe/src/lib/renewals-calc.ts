@@ -4,18 +4,24 @@ import type { RenewalRecord, RenewalStatus } from "./renewal-data";
 export type Row = Record<string, unknown>;
 
 export function mapMember(r: Row): Member {
+  const rawName = (r.name as string) || (r.user_name as string) || (r.contact as string) || (r.person_name as string) || "Hội viên";
+  const rawCode = (r.code as string) || (r.member_code as string) || "HV";
+  const rawEmail = (r.email as string) || (r.user_email as string) || "";
+  const rawPhone = (r.phone as string) || (r.user_phone as string) || "";
+  const rawComp = (r.company as string) || (r.company_name as string) || "CLB Doanh Nhân CEO 1983";
+
   return {
-    id: r.id as string,
-    code: r.code as string,
-    name: r.name as string,
-    contact: (r.contact as string) ?? "",
-    email: (r.email as string) ?? "",
-    phone: (r.phone as string) ?? "",
-    type: r.type as Member["type"],
-    level: r.level as Member["level"],
-    industry: r.industry as Member["industry"],
-    region: r.region as Member["region"],
-    status: r.status as Member["status"],
+    id: String(r.id || r.member_id || rawCode),
+    code: rawCode,
+    name: rawName,
+    contact: (r.contact as string) ?? rawName,
+    email: rawEmail,
+    phone: rawPhone,
+    type: (r.type as Member["type"]) ?? "individual",
+    level: (r.level as Member["level"]) ?? "memberLevel.medium",
+    industry: (r.industry as Member["industry"]) ?? "ind.trade",
+    region: (r.region as Member["region"]) ?? "region.north",
+    status: (r.status as Member["status"]) ?? "active",
     joinedAt: ((r.joined_at ?? r.joinedAt) as string) ?? "",
     feeYear: Number(r.fee_year ?? r.feeYear ?? new Date().getFullYear()),
     feePaid: Boolean(r.fee_paid ?? r.feePaid),
@@ -57,22 +63,43 @@ export function addOneYear(date: Date): Date {
 
 export function isApprovedMember(r: Row): boolean {
   const status = String(r.status || "").toLowerCase().trim();
-  // Only officially approved members (active, expired, approved) can be renewed.
-  // Pending (chờ phê duyệt), waiting, rejected, draft accounts MUST NOT appear in renewal!
-  if (status === "pending" || status === "rejected" || status === "waiting" || status === "draft") {
+  // Loại trừ các bản ghi bị xóa, lưu trữ hoặc hủy vĩnh viễn
+  if (status === "deleted" || status === "rejected" || status === "archived" || status === "inactive") {
     return false;
   }
-  return status === "active" || status === "expired" || status === "approved" || status === "";
+  // Chấp nhận tất cả hội viên hợp lệ cần theo dõi và gia hạn (active, approved, pending, expired, waiting, v.v.)
+  return true;
 }
 
 export function toRecord(r: Row): RenewalRecord {
   const m = mapMember(r);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const rawTermEnd = (r.new_term_end ?? r.newTermEnd ?? r.term_end ?? r.termEnd ?? m.termEnd) as string | undefined;
-  const termEnd = rawTermEnd
-    ? (rawTermEnd.includes("T") ? rawTermEnd.slice(0, 10) : rawTermEnd)
-    : today.toISOString().slice(0, 10);
+
+  const rawTermEnd = (r.new_term_end ?? r.newTermEnd ?? r.term_end ?? r.termEnd ?? m.termEnd) as any;
+
+  let termEnd = "";
+  if (rawTermEnd && typeof rawTermEnd === "string" && rawTermEnd.trim()) {
+    termEnd = rawTermEnd.includes("T") ? rawTermEnd.slice(0, 10) : rawTermEnd;
+  } else if (rawTermEnd && rawTermEnd instanceof Date) {
+    termEnd = rawTermEnd.toISOString().slice(0, 10);
+  } else if (m.joinedAt && typeof m.joinedAt === "string" && m.joinedAt.trim()) {
+    const jDate = new Date(m.joinedAt);
+    if (!isNaN(jDate.getTime())) {
+      termEnd = addOneYear(jDate).toISOString().slice(0, 10);
+    }
+  } else if (r.created_at || (r as any).createdAt) {
+    const cDate = new Date(((r.created_at ?? (r as any).createdAt) as string));
+    if (!isNaN(cDate.getTime())) {
+      termEnd = addOneYear(cDate).toISOString().slice(0, 10);
+    }
+  }
+
+  // Fallback nếu vẫn chưa xác định được hạn niên độ: tính 1 năm kể từ hôm nay
+  if (!termEnd) {
+    termEnd = addOneYear(today).toISOString().slice(0, 10);
+  }
+
   const daysLeft = daysBetween(today, termEnd);
   const isRenewed = Boolean(r.renewed_at ?? r.renewedAt ?? m.renewedAt);
   let status: RenewalStatus;

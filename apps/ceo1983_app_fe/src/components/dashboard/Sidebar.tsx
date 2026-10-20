@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { isRouteAllowedByMatrix, type SystemRoleKey } from "@/lib/rbac-permission-helpers";
+import { useAuth } from "@/context/AuthContext";
+import { isPrivilegedAdminOrPresident, isMediaDepartmentMember } from "@/lib/checkin-gatekeeper-auth";
 import { useT } from "@/lib/i18n";
 import { useRole } from "@/hooks/use-role";
 import { useSidebarLabels } from "@/hooks/use-sidebar-labels";
@@ -302,6 +304,7 @@ export function Sidebar({
   onNavigate,
 }: { mobile?: boolean; onNavigate?: () => void } = {}) {
   const t = useT();
+  const { user } = useAuth();
   const roleState = useRole();
   const {
     isPlatformAdmin,
@@ -529,7 +532,11 @@ export function Sidebar({
   const filteredEvents = events.filter((it) => {
     if (!isAllowed(it.to)) return false;
     if (it.to === "/checkin" || it.to === "/checkin-qr") {
-      return canScanQR || isBQT || isBTT || isBTK;
+      // 1. Quản trị, Chủ tịch, Admin luôn hiển thị
+      if (isPrivilegedAdminOrPresident(user)) return true;
+      // 2. Ngoài các role trên, BẮT BUỘC phải là Ban Truyền Thông
+      if (!isMediaDepartmentMember(user)) return false;
+      return canScanQR;
     }
     if (it.to === "/event-registrations") {
       return canManageEvents || isBQT || isBTT || isBTK;

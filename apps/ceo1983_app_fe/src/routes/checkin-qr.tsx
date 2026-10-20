@@ -1,6 +1,8 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Copy, Check, Printer, Nfc, CalendarDays, MapPin, Users, RefreshCw } from "lucide-react";
+import { Copy, Check, Printer, Nfc, CalendarDays, MapPin, Users, RefreshCw, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { isPrivilegedAdminOrPresident, isMediaDepartmentMember } from "@/lib/checkin-gatekeeper-auth";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { getCheckinQrEventsFn, type CheckinQrEvent } from "@/lib/checkin-qr.functions";
@@ -242,6 +244,31 @@ function CheckinQrPage() {
       setRefreshing(false);
     }
   };
+
+  const { user } = useAuth();
+  const isAuthorized = isPrivilegedAdminOrPresident(user) || isMediaDepartmentMember(user);
+
+  if (!isAuthorized) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 text-center mt-12 space-y-3 shadow-md">
+          <ShieldAlert className="h-10 w-10 text-amber-500 mx-auto" />
+          <h2 className="text-lg font-bold text-foreground">Không có quyền truy cập</h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Chức năng quản lý Mã QR Check-in chỉ dành cho Quản trị viên, Chủ tịch hoặc Nhân sự thuộc Ban Truyền Thông được phân công.
+          </p>
+          <div className="pt-2">
+            <Link
+              to="/events"
+              className="inline-block px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-xs shadow-sm hover:opacity-90 transition"
+            >
+              Về danh sách sự kiện
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>

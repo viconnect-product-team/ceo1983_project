@@ -56,6 +56,11 @@ import {
   ScannedTicketDetailModal,
   type ScannedTicketData,
 } from "@/components/events/ScannedTicketDetailModal";
+import {
+  isPrivilegedAdminOrPresident,
+  isMediaDepartmentMember,
+  isUserAssignedToEvent,
+} from "@/lib/checkin-gatekeeper-auth";
 
 export const Route = createFileRoute("/association/checkin")({
   component: CheckinScreen,
@@ -174,63 +179,25 @@ function CheckinScreen() {
   // Media Department override (for testing only)
   const [mediaOverride, setMediaOverride] = useState<boolean>(false);
 
-  // Events where current user is specifically assigned as QR scanner in qr_scanners
-  // Riêng Quản trị, Chủ tịch, Admin luôn có toàn quyền quét mã check-in ở tất cả các sự kiện
+  // Events where current user is specifically assigned as QR scanner in qrStaff / qrScanners
+  // Nghiệp vụ: Quản trị, Chủ tịch, Admin có toàn quyền tất cả sự kiện.
+  // Các tài khoản khác BẮT BUỘC phải là Thành viên Ban Truyền Thông VÀ được tick chọn trong danh sách qrStaff của sự kiện đó.
   const assignedEvents = useMemo(() => {
     if (!serverEventsData || serverEventsData.length === 0) return [];
     if (mediaOverride) return serverEventsData;
 
-    const role = (user?.role || member?.role || "").toLowerCase().trim();
-    const isSuperOrAdmin =
-      Boolean((user as any)?.isAdmin) ||
-      Boolean((user as any)?.isPresident) ||
-      user?.permissions?.includes("admin:full_access") ||
-      user?.permissions?.includes("event:scan_qr") ||
-      role === "quan_tri" ||
-      role === "admin" ||
-      role === "chu_tich" ||
-      role === "platform_admin" ||
-      role.includes("quản trị") ||
-      role.includes("chủ tịch") ||
-      role.includes("admin");
+    // 1. Quản trị, Chủ tịch, Admin: luôn có full quyền quét tất cả sự kiện
+    if (isPrivilegedAdminOrPresident(user, member)) {
+      return serverEventsData;
+    }
 
-    if (isSuperOrAdmin) return serverEventsData;
+    // 2. Không phải Quản trị/Chủ tịch/Admin: BẮT BUỘC phải là Thành viên Ban Truyền Thông
+    if (!isMediaDepartmentMember(user, member)) {
+      return [];
+    }
 
-    const myIds = [
-      user?.id,
-      member?.id,
-      member?.code,
-      member?.phone,
-      member?.email,
-      (user as any)?.email,
-    ]
-      .filter(Boolean)
-      .map((x) => String(x).toLowerCase().trim());
-
-    return serverEventsData.filter((ev: any) => {
-      let scanners = ev.qrScanners || ev.qrStaff || ev.qr_scanners || ev.qr_staff_ids || [];
-      if (typeof scanners === "string") {
-        try {
-          scanners = JSON.parse(scanners);
-        } catch {
-          scanners = [];
-        }
-      }
-      if (!Array.isArray(scanners) || scanners.length === 0) return false;
-      return scanners.some((s: any) => {
-        if (typeof s === "string") {
-          const lower = s.toLowerCase().trim();
-          return myIds.some((id) => lower === id || lower.includes(id));
-        }
-        if (typeof s === "object" && s !== null) {
-          const objVals = [s.id, s.code, s.userId, s.memberCode, s.phone, s.email, s.name]
-            .filter(Boolean)
-            .map((x) => String(x).toLowerCase().trim());
-          return myIds.some((id) => objVals.includes(id));
-        }
-        return false;
-      });
-    });
+    // 3. VÀ BẮT BUỘC phải được tick chọn ở popup tạo/sửa sự kiện trên CRM (nằm trong qrStaff)
+    return serverEventsData.filter((ev: any) => isUserAssignedToEvent(user, ev, member));
   }, [serverEventsData, member, user, mediaOverride]);
 
   const [selectedScannerEventId, setSelectedScannerEventId] = useState<string>("");

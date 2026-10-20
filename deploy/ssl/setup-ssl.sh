@@ -25,8 +25,9 @@ iptables -I INPUT -p tcp --dport 5445 -j ACCEPT 2>/dev/null || true
 sed -i 's/\r$//' nginx.conf docker-compose.ssl.yml 2>/dev/null || true
 
 # 4. Khởi động lại container Nginx Proxy
-echo "[Docker] Đảm bảo mạng ceo1983-network và khởi tạo container ceo1983-ssl-proxy..."
+echo "[Docker] Đảm bảo mạng ceo1983-network & vione-network và khởi tạo container ceo1983-ssl-proxy..."
 docker network create ceo1983-network 2>/dev/null || true
+docker network create vione-network 2>/dev/null || true
 docker compose -f docker-compose.ssl.yml down --remove-orphans 2>/dev/null || true
 docker rm -f ceo1983-ssl-proxy vione-ssl-proxy 2>/dev/null || true
 docker compose -f docker-compose.ssl.yml up -d --force-recreate
@@ -40,6 +41,9 @@ docker ps -a --filter name=ceo1983-ssl-proxy --format 'table {{.Names}}\t{{.Stat
 
 echo "--- NHẬT KÝ NGINX (LOGS) ---"
 docker logs --tail 15 ceo1983-ssl-proxy 2>&1 || true
+
+# Tạm ngắt exit on error để các lệnh kiểm thử curl không làm fail script deploy
+set +e
 
 echo "--- TEST NỘI BỘ HTTPS 443 (SUBDOMAINS) ---"
 curl -k -s -I -H "Host: ceo1983.viconnect.vn" https://127.0.0.1:443/ 2>&1 | head -n 5 || echo "Lỗi kết nối https 443 ceo1983 nội bộ"

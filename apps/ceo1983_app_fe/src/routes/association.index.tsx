@@ -47,6 +47,7 @@ import { useAuth } from "@/context/AuthContext";
 import { SeasonalEventHeader, getEffectiveThemeOption, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
 import { useTheme } from "@/lib/theme";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
+import { canScanEventQr as checkCanScanEventQr } from "@/lib/checkin-gatekeeper-auth";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { BirthdayCelebrationModal } from "@/components/member/BirthdayCelebrationModal";
@@ -414,66 +415,12 @@ function Home() {
   const { data: directoryMembers = [] } = useServerData<DirectoryMember[]>(() => fetchDirectory(), [], "vba_directory_members");
   const { data: newsItems = [] } = useServerData<NewsItem[]>(() => fetchNews(), [], "vba_news");
 
-  // Check quyền quét mã sự kiện trên mobile CEO 1983:
-  // Riêng quản trị, chủ tịch, admin luôn có full quyền quét mã check-in mọi sự kiện.
-  // Các tài khoản khác chỉ được quét khi được BQT tích chọn phân công trong danh sách qrScanners của sự kiện trên CRM hiệp hội
+  // Check quyền quét mã sự kiện trên mobile CEO 1983 theo đúng nghiệp vụ:
+  // Quản trị, Chủ tịch, Admin luôn có quyền.
+  // Các tài khoản khác chỉ được quét khi là Thành viên Ban Truyền Thông VÀ được tick chọn trong danh sách qrStaff của sự kiện
   const canScanEventQr = useMemo(() => {
-    const role = (user?.role || (member as any)?.role || "").toLowerCase().trim();
-    const isSuperOrAdmin =
-      Boolean((user as any)?.isAdmin) ||
-      Boolean((user as any)?.isPresident) ||
-      user?.permissions?.includes("admin:full_access") ||
-      user?.permissions?.includes("event:scan_qr") ||
-      role === "quan_tri" ||
-      role === "admin" ||
-      role === "chu_tich" ||
-      role === "platform_admin" ||
-      role.includes("quản trị") ||
-      role.includes("chủ tịch") ||
-      role.includes("admin");
-
-    if (isSuperOrAdmin) return true;
-
-    if (!serverEvents || !Array.isArray(serverEvents) || serverEvents.length === 0) {
-      return false;
-    }
-
-    const myIds = [
-      user?.id,
-      member?.id,
-      member?.code,
-      member?.phone,
-      member?.email,
-      (user as any)?.email,
-    ]
-      .filter(Boolean)
-      .map((x) => String(x).toLowerCase().trim());
-
-    return serverEvents.some((ev: any) => {
-      let scanners = ev.qrScanners || ev.qrStaff || ev.qr_scanners || ev.qr_staff_ids || [];
-      if (typeof scanners === "string") {
-        try {
-          scanners = JSON.parse(scanners);
-        } catch {
-          scanners = [];
-        }
-      }
-      if (!Array.isArray(scanners) || scanners.length === 0) return false;
-      return scanners.some((s: any) => {
-        if (typeof s === "string") {
-          const lower = s.toLowerCase().trim();
-          return myIds.some((id) => lower === id || lower.includes(id));
-        }
-        if (typeof s === "object" && s !== null) {
-          const objVals = [s.id, s.code, s.userId, s.memberCode, s.phone, s.email, s.name]
-            .filter(Boolean)
-            .map((x) => String(x).toLowerCase().trim());
-          return myIds.some((id) => objVals.includes(id));
-        }
-        return false;
-      });
-    });
-  }, [member, user, serverEvents]);
+    return checkCanScanEventQr(user, serverEvents, member);
+  }, [user, serverEvents, member]);
 
   const [readNewsIds, setReadNewsIds] = useState<string[]>(() => getReadNewsIds());
 
