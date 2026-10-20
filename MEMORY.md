@@ -1,6 +1,24 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 21/10/2026 (Khôi Phục Toàn Diện Cài Đặt Hệ Thống, Bảo Mật Cá Nhân, Các Trường Liên Hệ, Bật Tắt AI & Chọn Ngôn Ngữ - `association.profile.tsx`, `association.settings.tsx`)**:
+  1. **Khôi Phục Đầy Đủ Khối "Cài Đặt Hệ Thống" (System Settings)**:
+     - *Chọn ngôn ngữ hiển thị*: Tích hợp bộ chọn 2 ngôn ngữ trực quan Tiếng Việt 🇻🇳 (`vi`) và English 🇬🇧 (`en`) bằng hook `useLang`, chuyển đổi tức thì kèm toast thông báo và cập nhật toàn bộ nhãn giao diện.
+     - *Bật / Tắt Trợ lý AI CEO 1983*: Tích hợp Switch toggle mượt mà điều khiển hiển thị Robot Trợ lý Giọng nói & Trò chuyện AI (`voiceAiEnabled`, `setVoiceAiEnabled`, sự kiện `VOICE_AI_EVENT_NAME`). Khi bật, robot AI nổi trên màn hình; khi tắt, robot AI được ẩn gọn gàng.
+     - *Giao diện hiển thị (Theme)*: Tích hợp 2 nút chuyển đổi chế độ Sáng (`light` - Sun) và Tối (`dark` - Moon) sử dụng `useTheme`, hỗ trợ dark mode toàn diện với độ tương phản cao.
+     - *Thông báo đẩy & Tin nhắn nền*: Switch toggle bật/tắt quyền nhận chuông và tin nhắn nền (`isNotificationEnabled`, `handleToggleNotification`) qua Web Push Notification API.
+     - *Cài đặt ứng dụng PWA / Mobile App*: Nút hành động nhanh kích hoạt hộp thoại cài đặt PWA trình duyệt, tự động tải file APK Android gốc hoặc hướng dẫn ghim lên Home Screen trên iOS Safari.
+  2. **Khôi Phục Khối "Các Trường Liên Hệ & Hỗ Trợ Ban Thư Ký" (Contact & Support)**:
+     - *Các trường liên hệ trực tiếp*: Hotline Ban Thư Ký (`098.333.1983` / `098.1983.888` kèm nút gọi `tel:`), Email hỗ trợ (`banthuky@ceo1983.vn` kèm nút gửi thư `mailto:`), Địa chỉ trụ sở văn phòng CLB tại Hiệp Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).
+     - *Nút mở popup hỗ trợ chuyên sâu*: Tích hợp nút mở `ContactSupportModal` (danh bạ hotline 6 ban chuyên môn, form gửi phản ánh ý kiến) và nút mở `UserGuideModal` (cẩm nang tour màn hình, tải tài liệu PDF cẩm nang).
+     - *Phân quyền Ban Quản Trị*: Nút điều hướng đến ma trận phân quyền `/association/permissions` (chỉ hiển thị khi người dùng có quyền quản trị `hasAdminPrivilege`).
+  3. **Tích Hợp Khối "Bảo Mật Tài Khoản & Đổi Mật Khẩu"**:
+     - Nhúng `<AccountSecuritySettingsForm />` cho phép đổi Email đăng nhập, Số điện thoại liên kết và Mật khẩu mới an toàn, có gửi email xác nhận kích hoạt tài khoản.
+  4. **Nút Đăng Xuất An Toàn**:
+     - Nút "Đăng xuất khỏi ứng dụng" dọn dẹp sạch sẽ phiên đăng nhập (`signOutSession()`, `authLogout()`) và chuyển hướng an toàn về `/association/login`.
+  5. **Đồng Bộ Hóa Cả 2 Vị Trí**:
+     - Áp dụng đầy đủ tại **Tab 3 của Màn cá nhân** (`apps/ceo1983_app_fe/src/routes/association.profile.tsx`).
+     - Áp dụng đầy đủ tại **Màn hình Cài đặt độc lập** (`apps/ceo1983_app_fe/src/routes/association.settings.tsx`).
 - **Bản nâng cấp ngày 21/10/2026 (Khắc Phục Bộ 3 Bug Trọng Điểm: Gia Hạn Hội Viên Bị Thiếu Dữ Liệu, Đồng Bộ Role Chung & Phân Quyền Quét QR Check-in Sự Kiện Chặt Chẽ, Sửa Lỗi Deploy GitHub Actions #35)**:
   1. **Lỗi Gia Hạn Hội Viên Bị Thiếu Dữ Liệu Không Hiện Được Dữ Liệu (`renewals-calc.ts`, `renewal.tsx`)**:
      - *Nguyên nhân*: Trong CSDL PostgreSQL thực tế, nhiều hội viên có trường `term_end` mang giá trị `null` và `status = 'active'`. Hàm `toRecord` cũ không có cơ chế tính niên độ tự động khi `term_end` rỗng, đồng thời `isApprovedMember` lọc quá ngặt loại bỏ các trạng thái hợp lệ. Ngoài ra, `initialData: loaderRecords` trong TanStack Query gây kẹt cache rỗng và avatar initials bị lỗi cú pháp `undefined.split`.
@@ -14,11 +32,19 @@
        * Các tài khoản có role `quan_tri`, `chu_tich`, `admin` (hoặc `platform_admin`, `superadmin`): LUÔN LUÔN hiển thị và có toàn quyền quét mã check-in tất cả các sự kiện.
        * Các tài khoản khác: BẮT BUỘC phải là thành viên Ban Truyền Thông (role `thanh_vien_ban_truyen_thong`, `truong_ban_truyen_thong` hoặc thuộc `department` Ban Truyền Thông) VÀ BẮT BUỘC phải được tick chọn ở popup tạo/sửa sự kiện trên CRM (nằm trong danh sách `qrStaff` / `qrScanners`).
        * Áp dụng đồng bộ tại mọi vị trí: Nút `QR Gate` trong bảng và thẻ sự kiện CRM (`events.index.tsx`), nút `Quản lý QR Gatekeeper` & `Check-in` trong chi tiết sự kiện CRM (`events.$eventId.tsx`), menu Check-in trên thanh điều hướng CRM (`Sidebar.tsx`), khối `Quét mã QR Check-in sự kiện` trên trang chủ App Mobile (`association.index.tsx`), nút quét tại thanh tab đáy (`MemberShell.tsx`), và bọc bảo vệ truy cập an toàn tại các route `/checkin`, `/checkin-qr` và `/association/checkin`.
-  3. **Khắc Phục Lỗi Deploy GitHub Actions #35 (Ảnh 1) & Nâng Cấp Kịch Bản Triển Khai (`.github/workflows/auto-deploy-subdomains.yml`, `setup-ssl.sh`)**:
-     - *Nguyên nhân*: Cả `deploy/ceo1983/docker-compose.yml` và `deploy/crm/docker-compose.yml` đều khai báo mạng ngoài `vione-network: external: true`. Khi Step 13 của workflow chỉ tạo mạng `ceo1983-network` mà thiếu mạng `vione-network`, lệnh `docker compose up -d` bị lỗi `network vione-network declared as external, but could not be found` và làm ngắt tiến trình do `set -e`.
-     - *Giải pháp*:
-       * Bổ sung `docker network create vione-network 2>/dev/null || true` vào Step 13 của `.github/workflows/auto-deploy-subdomains.yml` và mục [4] trong `deploy/ssl/setup-ssl.sh`.
-       * Đặt `set +e` trước các lệnh kiểm thử `curl` nội bộ trong `setup-ssl.sh` để các kiểm tra mạng không làm fail quy trình triển khai tự động.
+  3. **Khắc Phục Lỗi Deploy GitHub Actions #35 & #36 (Ảnh 1) & Nâng Cấp Kịch Bản Triển Khai Triệt Để (`.github/workflows/auto-deploy-subdomains.yml`, `docker-compose.ssl.yml`, `setup-ssl.sh`, `git-auto-deploy.sh`)**:
+     - *Nguyên nhân 1 (Xung đột cổng Host Nginx & Container SSL Proxy)*:
+       * Trên VPS `14.225.217.232`, Nginx dịch vụ hệ điều hành (`systemctl status nginx`) đang chạy thường trực trên cổng `80` và `443` để phục vụ toàn bộ các hệ sinh thái trên máy chủ (`viconnect.vn`, `kho-bqp`, `qlcdt`,...) và reverse proxy vào cổng `5002-5005` của CEO 1983 & CRM với chứng chỉ Let's Encrypt chính thức.
+       * Tệp `deploy/ssl/docker-compose.ssl.yml` lại khai báo map thêm cổng `80:80` và `443:443`. Khi container `ceo1983-ssl-proxy` khởi động, Docker báo lỗi xung đột: `failed to bind host port 0.0.0.0:80/tcp: address already in use` khiến lệnh `docker compose up -d` bị lỗi và làm ngắt tiến trình do `set -e`.
+     - *Nguyên nhân 2 (Mất ngữ cảnh thư mục CWD khi copy cấu hình trên VPS)*:
+       * Tại Step 13 của workflow `auto-deploy-subdomains.yml`, lệnh `cd /root/association` làm thay đổi thư mục làm việc. Các lệnh tiếp theo dùng đường dẫn tương đối `cp -rf deploy/crm/* /root/crm/` và `cp -rf deploy/ssl/* /root/ssl-proxy/` không tìm thấy thư mục `deploy/` nên không cập nhật được cấu hình mới, khiến `/root/ssl-proxy` vẫn giữ file cũ.
+       * Cú pháp `cp -rf .../*` trong bash bỏ sót các file ẩn (`.env.association`, `.env.crm`, `.env.production`).
+     - *Giải pháp triệt để đã triển khai*:
+       * `deploy/ssl/docker-compose.ssl.yml`: Loại bỏ hoàn toàn map cổng `80:80` và `443:443`, chỉ map các cổng test dev `5443:5443`, `5444:5444`, `5445:5445`. Cổng 80 & 443 do Nginx host đảm nhiệm mượt mà với SSL thật.
+       * `deploy/ssl/setup-ssl.sh`: Thêm lệnh nạp lại host nginx `systemctl reload nginx 2>/dev/null || true` và duy trì `set +e` trước các lệnh kiểm thử curl.
+       * Step 13 trong `.github/workflows/auto-deploy-subdomains.yml`: Sử dụng đường dẫn tuyệt đối chuẩn xác `cp -a /root/deploy-cache/deploy/<module>/. /root/<target>/`, đảm bảo sao chép toàn bộ cả file cấu hình lẫn tệp môi trường ẩn `.env.*` mà không bị ảnh hưởng bởi `cd`.
+       * `deploy/git-auto-deploy.sh`: Đảm bảo khởi tạo cả mạng `ceo1983-network` và `vione-network`.
+       * Đã kiểm thử trực tiếp trên VPS: Toàn bộ 4 container `crm-frontend-prod`, `crm-backend-prod`, `ceo1983-frontend-prod`, `ceo1983-backend-prod` và `ceo1983-ssl-proxy` đều hoạt động ổn định `Up`, tất cả 4 endpoint (`https://ceo1983.viconnect.vn`, `https://crm.ceo1983.viconnect.vn`, `https://14.225.217.232:5443`, `https://14.225.217.232:5444`) đều trả về `HTTP 200 OK`.
 - **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện Bộ 4 Yêu Cầu Trọng Điểm: Vòng Quay Giải Thưởng & Đẩy Ưu Đãi Email/App, Giao Việc Kèm Người Giao & Xem File Đính Kèm, Sửa Lỗi Gán Role Tài Khoản CRM, và Bộ Slide Thuyết Trình Master Chuẩn Phong Cách Thư Mời Ảnh 1)**:
   1. **Lỗi Vòng Quay Giải Thưởng & Cấu Hình Sự Kiện (`LuckyDrawLandingBanner.tsx`, `voting.tsx`, `voting.service.ts`, `mail.service.ts`, `admin.service.ts`)**:
      - *Hiển thị tức thì khi tạo giải*: Sửa `handleAddPrize` và `handleRemovePrize` trên `LuckyDrawLandingBanner.tsx` gọi hàm `onSave(updatedConfig)` ngay lập tức, giải thưởng mới tạo hiển thị lập tức lên màn hình sự kiện mà không cần tải lại trang.

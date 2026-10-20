@@ -4,8 +4,6 @@ services:
     container_name: ceo1983-ssl-proxy
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
       - "5443:5443"
       - "5444:5444"
       - "5445:5445"

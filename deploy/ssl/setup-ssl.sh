@@ -45,6 +45,12 @@ docker logs --tail 15 ceo1983-ssl-proxy 2>&1 || true
 # Tạm ngắt exit on error để các lệnh kiểm thử curl không làm fail script deploy
 set +e
 
+# Reload host nginx nếu đang chạy trên VPS để cập nhật cấu hình nếu có
+if systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "[Host Nginx] Tải lại Nginx chính trên máy chủ chủ..."
+    systemctl reload nginx 2>/dev/null || true
+fi
+
 echo "--- TEST NỘI BỘ HTTPS 443 (SUBDOMAINS) ---"
 curl -k -s -I -H "Host: ceo1983.viconnect.vn" https://127.0.0.1:443/ 2>&1 | head -n 5 || echo "Lỗi kết nối https 443 ceo1983 nội bộ"
 curl -k -s -I -H "Host: crm.ceo1983.viconnect.vn" https://127.0.0.1:443/ 2>&1 | head -n 5 || echo "Lỗi kết nối https 443 crm nội bộ"

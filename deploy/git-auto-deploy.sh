@@ -22,8 +22,9 @@ else
     echo "Thư mục $REPO_DIR chưa có git repo. Đang sử dụng các thư mục deploy hiện có."
 fi
 
-echo ">>> [2/5] Đảm bảo mạng nội bộ ceo1983-network..."
+echo ">>> [2/5] Đảm bảo mạng nội bộ ceo1983-network & vione-network..."
 docker network create ceo1983-network 2>/dev/null || true
+docker network create vione-network 2>/dev/null || true
 
 echo ">>> [3/5] Khởi động lại container Mobile CEO 1983 (https://ceo1983.viconnect.vn)..."
 cd /root/association

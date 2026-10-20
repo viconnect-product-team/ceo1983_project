@@ -169,25 +169,25 @@ jobs:
 
             echo ">>> [3/5] Đồng bộ và khởi động Mobile CEO 1983 (https://ceo1983.viconnect.vn)..."
             mkdir -p /root/association
-            cp -rf deploy/ceo1983/* /root/association/ 2>/dev/null || true
+            cp -a /root/deploy-cache/deploy/ceo1983/. /root/association/
             cd /root/association
-            sed -i 's/\r$//' docker-compose.yml .env.association 2>/dev/null || true
+            sed -i 's/\r$//' docker-compose.yml .env.association .env.production 2>/dev/null || true
             docker compose -f docker-compose.yml stop 2>/dev/null || true
             docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true
             docker compose -f docker-compose.yml up -d --force-recreate
 
             echo ">>> [4/5] Đồng bộ và khởi động CRM Hiệp Hội (https://crm.ceo1983.viconnect.vn)..."
             mkdir -p /root/crm
-            cp -rf deploy/crm/* /root/crm/ 2>/dev/null || true
+            cp -a /root/deploy-cache/deploy/crm/. /root/crm/
             cd /root/crm
-            sed -i 's/\r$//' docker-compose.yml .env.crm 2>/dev/null || true
+            sed -i 's/\r$//' docker-compose.yml .env.crm .env.production 2>/dev/null || true
             docker compose -f docker-compose.yml stop 2>/dev/null || true
             docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true
             docker compose -f docker-compose.yml up -d --force-recreate
 
             echo ">>> [5/5] Cập nhật Nginx Reverse Proxy SSL..."
             mkdir -p /root/ssl-proxy
-            cp -rf deploy/ssl/* /root/ssl-proxy/ 2>/dev/null || true
+            cp -a /root/deploy-cache/deploy/ssl/. /root/ssl-proxy/
             cd /root/ssl-proxy
             sed -i 's/\r$//' nginx.conf docker-compose.ssl.yml setup-ssl.sh 2>/dev/null || true
             bash setup-ssl.sh
