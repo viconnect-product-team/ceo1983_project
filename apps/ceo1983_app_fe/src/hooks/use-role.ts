@@ -127,20 +127,131 @@ export function useRole(): RoleState {
       rList.includes("president") ||
       (execRole.includes("chủ tịch") && !execRole.includes("phó")) ||
       (execRole.includes("president") && !execRole.includes("vice")) ||
-      userEmail.includes("chutich")
+      (userEmail.includes("chutich") && (!primaryRole || primaryRole === "member"))
     ) {
       return "chu_tich";
     }
 
-    // 2. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
+    // 2. BAN ĐIỀU HÀNH (Cấp điều hành hiệp hội)
     if (
-      userEmail === "admin@connect.vn" ||
-      userEmail === "admin1@connect.vn" ||
-      userEmail.startsWith("admin") ||
+      primaryRole === "ban_dieu_hanh" ||
+      primaryRole === "truong_ban_dieu_hanh" ||
+      execRole === "ban_dieu_hanh" ||
+      execRole === "truong_ban_dieu_hanh" ||
+      execRole === "bqt" ||
+      execRole === "pho_chu_tich" ||
+      execRole === "vice_president" ||
+      execRole.includes("phó chủ tịch") ||
+      (execRole.includes("điều hành") && !execRole.includes("hội viên")) ||
+      (dept.includes("điều hành") && (execRole.includes("trưởng") || execRole.includes("phó") || !execRole)) ||
+      rList.includes("ban_dieu_hanh") ||
+      rList.includes("bqt")
+    ) {
+      return "ban_dieu_hanh";
+    }
+
+    // 3. TỔNG THƯ KÝ (tong_thu_ky)
+    if (
+      primaryRole === "tong_thu_ky" ||
+      execRole === "tong_thu_ky" ||
+      rList.includes("tong_thu_ky") ||
+      execRole.includes("tổng thư ký") ||
+      (userEmail.includes("tongthuky") && (!primaryRole || primaryRole === "member"))
+    ) {
+      return "tong_thu_ky";
+    }
+
+    // 4. TRƯỞNG BAN CÁC BAN CHUYÊN MÔN
+    if (
+      rList.includes("truong_ban_truyen_thong") ||
+      rList.includes("btt") ||
+      primaryRole === "truong_ban_truyen_thong" ||
+      execRole === "truong_ban_truyen_thong" ||
+      (execRole.includes("trưởng ban") && dept.includes("truyền thông")) ||
+      (execRole.includes("truyền thông") && (execRole.includes("trưởng") || execRole.includes("phó")))
+    ) {
+      return "truong_ban_truyen_thong";
+    }
+
+    if (
+      rList.includes("truong_ban_thanh_vien") ||
+      rList.includes("btv") ||
+      rList.includes("ban_thanh_vien") ||
+      rList.includes("phat_trien_hoi_vien") ||
+      primaryRole === "truong_ban_thanh_vien" ||
+      execRole === "truong_ban_thanh_vien" ||
+      (execRole.includes("trưởng ban") && dept.includes("thành viên")) ||
+      (execRole.includes("thành viên") && (execRole.includes("trưởng") || execRole.includes("phó")) && !execRole.includes("hội viên"))
+    ) {
+      return "truong_ban_thanh_vien";
+    }
+
+    if (
+      rList.includes("truong_ban_xuc_tien") ||
+      rList.includes("bxt") ||
+      rList.includes("xuc_tien") ||
+      rList.includes("thuong_mai") ||
+      primaryRole === "truong_ban_xuc_tien" ||
+      execRole === "truong_ban_xuc_tien" ||
+      (execRole.includes("trưởng ban") && dept.includes("xúc tiến")) ||
+      (execRole.includes("xúc tiến") && (execRole.includes("trưởng") || execRole.includes("phó")))
+    ) {
+      return "truong_ban_xuc_tien";
+    }
+
+    if (
+      rList.includes("truong_ban_tai_chinh") ||
+      rList.includes("btc") ||
+      rList.includes("tai_chinh") ||
+      primaryRole === "truong_ban_tai_chinh" ||
+      execRole === "truong_ban_tai_chinh" ||
+      (execRole.includes("trưởng ban") && dept.includes("tài chính")) ||
+      (execRole.includes("tài chính") && (execRole.includes("trưởng") || execRole.includes("phó")))
+    ) {
+      return "truong_ban_tai_chinh";
+    }
+
+    if (
+      rList.includes("truong_ban_thien_nguyen") ||
+      rList.includes("btn") ||
+      rList.includes("thien_nguyen") ||
+      rList.includes("an_sinh") ||
+      primaryRole === "truong_ban_thien_nguyen" ||
+      execRole === "truong_ban_thien_nguyen" ||
+      (execRole.includes("trưởng ban") && dept.includes("thiện nguyện")) ||
+      (execRole.includes("thiện nguyện") && (execRole.includes("trưởng") || execRole.includes("phó")))
+    ) {
+      return "truong_ban_thien_nguyen";
+    }
+
+    // 5. BAN THƯ KÝ (BTK / ban_thu_ky)
+    if (
+      rList.includes("ban_thu_ky") ||
+      rList.includes("btk") ||
+      primaryRole === "ban_thu_ky" ||
+      execRole === "ban_thu_ky" ||
+      (execRole.includes("thư ký") && !execRole.includes("phó")) ||
+      (dept.includes("thư ký") && !execRole.includes("hội viên"))
+    ) {
+      return "ban_thu_ky";
+    }
+
+    // 6. THÀNH VIÊN BAN CHUYÊN MÔN
+    if (execRole.startsWith("thanh_vien_ban_") || primaryRole.startsWith("thanh_vien_ban_")) {
+      return (execRole.startsWith("thanh_vien_ban_") ? execRole : primaryRole) as SrsRole;
+    }
+
+    // 7. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
+    if (
       primaryRole === "admin" ||
       primaryRole === "quan_tri" ||
       primaryRole === "platform_admin" ||
       primaryRole === "superadmin" ||
+      execRole === "admin" ||
+      execRole === "quan_tri" ||
+      execRole === "platform_admin" ||
+      execRole === "superadmin" ||
+      execRole.includes("quản trị") ||
       rList.includes("admin") ||
       rList.includes("platform_admin") ||
       rList.includes("quan_tri") ||
@@ -149,119 +260,18 @@ export function useRole(): RoleState {
       return "admin";
     }
 
-    // 3. BAN ĐIỀU HÀNH (Thay thế Ban Quản Trị cũ, cấp điều hành hiệp hội)
-    if (
-      primaryRole === "ban_dieu_hanh" ||
-      execRole === "ban_dieu_hanh" ||
-      execRole === "bqt" ||
-      execRole === "pho_chu_tich" ||
-      execRole === "vice_president" ||
-      execRole.includes("phó chủ tịch") ||
-      execRole.includes("điều hành") ||
-      dept.includes("điều hành") ||
-      dept.includes("quản trị") ||
-      rList.includes("ban_dieu_hanh") ||
-      rList.includes("bqt")
-    ) {
-      return "ban_dieu_hanh";
+    // 8. Nếu là hội viên chính thức hoặc thường
+    if (execRole === "member" || execRole === "hoi_vien" || primaryRole === "member") {
+      return "HVT";
     }
 
-    // 4. Trưởng Ban Truyền Thông (BTT / truong_ban_truyen_thong)
+    // 9. Fallback mặc định cho tài khoản admin root/seed khi chưa cấu hình vai trò cụ thể
     if (
-      rList.includes("truong_ban_truyen_thong") ||
-      rList.includes("btt") ||
-      primaryRole === "truong_ban_truyen_thong" ||
-      execRole === "truong_ban_truyen_thong" ||
-      userEmail.includes("truyenthong") ||
-      (execRole.includes("trưởng ban") && dept.includes("truyền thông")) ||
-      (execRole.includes("truyền thông") && !execRole.includes("thành viên"))
+      userEmail === "admin@connect.vn" ||
+      userEmail === "admin1@connect.vn" ||
+      userEmail.startsWith("admin")
     ) {
-      return "truong_ban_truyen_thong";
-    }
-
-    // 5. Trưởng Ban Thành Viên (BTV / truong_ban_thanh_vien)
-    if (
-      rList.includes("truong_ban_thanh_vien") ||
-      rList.includes("btv") ||
-      rList.includes("ban_thanh_vien") ||
-      rList.includes("phat_trien_hoi_vien") ||
-      primaryRole === "truong_ban_thanh_vien" ||
-      execRole === "truong_ban_thanh_vien" ||
-      userEmail.includes("thanhvien") ||
-      (execRole.includes("trưởng ban") && dept.includes("thành viên")) ||
-      (dept.includes("thành viên") && !dept.includes("hội viên") && !dept.includes("ceo 1983")) ||
-      execRole.includes("ban thành viên")
-    ) {
-      return "truong_ban_thanh_vien";
-    }
-
-    // 6. Trưởng Ban Xúc Tiến Thương Mại (BXT / truong_ban_xuc_tien)
-    if (
-      rList.includes("truong_ban_xuc_tien") ||
-      rList.includes("bxt") ||
-      rList.includes("xuc_tien") ||
-      rList.includes("thuong_mai") ||
-      primaryRole === "truong_ban_xuc_tien" ||
-      execRole === "truong_ban_xuc_tien" ||
-      userEmail.includes("xuctien") ||
-      (execRole.includes("trưởng ban") && dept.includes("xúc tiến")) ||
-      execRole.includes("xúc tiến")
-    ) {
-      return "truong_ban_xuc_tien";
-    }
-
-    // 7. Trưởng Ban Tài Chính (BTC / truong_ban_tai_chinh)
-    if (
-      rList.includes("truong_ban_tai_chinh") ||
-      rList.includes("btc") ||
-      rList.includes("tai_chinh") ||
-      primaryRole === "truong_ban_tai_chinh" ||
-      execRole === "truong_ban_tai_chinh" ||
-      userEmail.includes("taichinh") ||
-      (execRole.includes("trưởng ban") && dept.includes("tài chính")) ||
-      execRole.includes("tài chính")
-    ) {
-      return "truong_ban_tai_chinh";
-    }
-
-    // 8. Trưởng Ban Thiện Nguyện (BTN / truong_ban_thien_nguyen)
-    if (
-      rList.includes("truong_ban_thien_nguyen") ||
-      rList.includes("btn") ||
-      rList.includes("thien_nguyen") ||
-      rList.includes("an_sinh") ||
-      primaryRole === "truong_ban_thien_nguyen" ||
-      execRole === "truong_ban_thien_nguyen" ||
-      userEmail.includes("thiennguyen") ||
-      (execRole.includes("trưởng ban") && dept.includes("thiện nguyện")) ||
-      execRole.includes("thiện nguyện")
-    ) {
-      return "truong_ban_thien_nguyen";
-    }
-
-    // 9. Tổng Thư Ký (tong_thu_ky)
-    if (
-      rList.includes("tong_thu_ky") ||
-      primaryRole === "tong_thu_ky" ||
-      execRole === "tong_thu_ky" ||
-      userEmail.includes("tongthuky") ||
-      execRole.includes("tổng thư ký")
-    ) {
-      return "tong_thu_ky";
-    }
-
-    // 10. Ban Thư Ký (BTK / ban_thu_ky)
-    if (
-      rList.includes("ban_thu_ky") ||
-      rList.includes("btk") ||
-      rList.includes("thu_ky") ||
-      primaryRole === "ban_thu_ky" ||
-      execRole === "ban_thu_ky" ||
-      userEmail.includes("thuky") ||
-      execRole.includes("thư ký") ||
-      dept.includes("thư ký")
-    ) {
-      return "ban_thu_ky";
+      return "admin";
     }
 
     // Mặc định: HVT (Hội Viên Thường)
@@ -507,10 +517,7 @@ export function useRole(): RoleState {
       // 0. Toàn quyền tối cao cho Quản trị viên (quan_tri / admin / platform_admin) và Chủ tịch (chu_tich / president)
       const userEmail = String(user?.email || "").toLowerCase();
       const roleStr = String(srsRole || "");
-      if (
-        userEmail === "admin@connect.vn" ||
-        userEmail === "admin1@connect.vn" ||
-        userEmail.startsWith("admin") ||
+      const isRoleAdmin =
         isPlatformAdmin ||
         isAdmin ||
         isPresident ||
@@ -524,7 +531,12 @@ export function useRole(): RoleState {
         roles.includes("admin") ||
         roles.includes("platform_admin") ||
         user?.permissions?.includes("*") ||
-        user?.permissions?.includes("admin:full_access")
+        user?.permissions?.includes("admin:full_access");
+
+      if (
+        isRoleAdmin ||
+        ((userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") &&
+          (!roleStr || roleStr === "admin" || roleStr === "quan_tri" || roleStr === "ADM"))
       ) {
         return true;
       }

@@ -54,6 +54,12 @@ Cơ cấu tổ chức hiệp hội được chuẩn hóa thành 7 cấp bậc th
 2. **Chuẩn hóa màn hình đăng nhập**:
    - Góc trái: Biểu tượng logo thương hiệu chính thức của CEO 1983 đồng bộ với tab trình duyệt.
    - Khối đăng nhập trung tâm: Loại bỏ hoàn toàn dòng chữ phụ đề thừa để giao diện tập trung và sang trọng.
+3. **Quy chuẩn Lưu trữ & Đồng bộ Phân quyền Tài khoản CSDL PostgreSQL (`/accounts`)**:
+   - Mọi thao tác gán vai trò (`chu_tich`, `ban_dieu_hanh`, `truong_ban_*`, `admin`, `member`) và gán ban chuyên môn (`Ban Điều Hành`, `Ban Thư Ký`, `Ban Thành Viên`, `Ban Xúc Tiến Thương Mại`, `Ban Truyền Thông`, `Ban Tài Chính`, `Ban Thiện Nguyện`) phải được ghi nhận tức thời vào cơ sở dữ liệu PostgreSQL thông qua API `PATCH /api/members/:id/role-dept`.
+   - Cơ sở dữ liệu đồng bộ song song cả 2 bảng `public.members` (cột `executive_role`, `department`) và `public.user_roles`/`public.memberships`.
+   - Cơ chế Database-First khi tải trang: Khi tải lại trang (`F5`), hệ thống nạp dữ liệu từ backend và ghi đè toàn bộ danh sách tài khoản quản lý, chấm dứt hoàn toàn tình trạng mất cấu hình phân quyền hoặc bị đè bởi danh sách mặc định cục bộ.
+   - Ưu tiên vai trò thực tế: Hệ thống phân quyền xác định quyền hạn của người dùng dựa trên vai trò thực tế lưu trong CSDL; loại bỏ cơ chế gán cứng quyền admin theo địa chỉ email nhằm đảm bảo tính linh hoạt khi phân công nhiệm vụ.
+
 
 ---
 

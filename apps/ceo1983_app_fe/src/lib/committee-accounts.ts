@@ -19,6 +19,7 @@ export interface UserAccountItem {
   avatar?: string;
   status: "active" | "inactive" | "locked";
   createdAt?: string;
+  dbMemberId?: string;
 }
 
 export const MANAGED_ACCOUNTS_STORAGE_KEY = "vba_managed_accounts_v2";

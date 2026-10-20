@@ -1,7 +1,25 @@
 # System Memory & Architecture
 
 ## 1. Current State
-- **Bản nâng cấp ngày 20/10/2026 (Bổ Sung Hệ Thống Biểu Đồ Trực Quan Nhóm Tài Chính CRM: Khoản Thu, Khoản Chi, Cơ Cấu Tài Trợ & Dòng Tiền Thặng Dư)**:
+- **Bản nâng cấp ngày 20/10/2026 (Khắc Phục Triệt Để Lỗi Phân Quyền Tài Khoản Không Lưu & Mất Khi Reload Trang Tại Quản Lý Tài Khoản `/accounts`)**:
+  1. **Nguyên nhân cốt lõi khiến quyền bị mất khi reload (F5)**:
+     - *Phía Frontend (`accounts.tsx`)*: Nút "Lưu thay đổi" (`handleSaveAll`) trước đây chỉ ghi dữ liệu vào `localStorage` (`vba_managed_accounts_v2`) mà không hề gửi bất kỳ HTTP API request nào lên backend NestJS để cập nhật PostgreSQL. Đồng thời, khi reload trang, hàm `useEffect` nạp dữ liệu từ `/members` lại lọc bỏ các tài khoản đã có mã trong `DEFAULT_ACCOUNTS` (`if (!existingCodes.has(m.code)) return`), khiến dữ liệu CSDL thực tế bị bỏ qua và giao diện bị reset về giá trị mặc định tĩnh.
+     - *Phía Backend (`users.service.ts`)*: Hàm `getAccountDetails(userId)` đặt logic kiểm tra `isSystemAdminUser` lên đầu tiên, luôn ép vai trò chính `primaryRole = 'admin'` cho tài khoản `admin@connect.vn` bất kể cơ sở dữ liệu (cột `executive_role` bảng `members` hay bảng `user_roles`) đã được lưu thành vai trò nào khác (`chu_tich`, `ban_dieu_hanh`,...).
+     - *Phía Backend (`members.service.ts`)*: Hàm `updateMemberRoleDept` có bộ lọc chuỗi (`sanitizedDept`, `sanitizedRole`) quá hạn chế, không nhận diện được `Ban Điều Hành`, `Ban Thư Ký` (bị fallback về `Hội viên ceo1983`) và không nhận diện được `chu_tich`, `ban_dieu_hanh` (bị fallback về `member`). Ngoài ra, lookup hội viên chỉ tìm theo `id` duy nhất, nếu frontend gửi `code`, `user_id` hay mã `acc_...` thì không tìm thấy bản ghi.
+     - *Phía Frontend Hook (`use-role.ts`)*: Hàm `resolveSrsRole` có điều kiện hardcode `if (userEmail === 'admin@connect.vn') return 'admin'`, lập tức ghi đè vai trò thật được trả về từ hồ sơ/CSDL.
+  2. **Các giải pháp kỹ thuật đã triển khai đồng bộ 100%**:
+     - *Tự động lưu CSDL tức thời (`accounts.tsx`)*:
+       * Trong `handleUpdateAccount`: Ngay khi bấm "Cập nhật tài khoản" trên Modal, hệ thống gọi API `PATCH /members/:id/role-dept` (với fallback `POST`) để cập nhật trực tiếp vai trò (`executive_role`) và ban chuyên môn (`department`) vào database.
+       * Trong `handleSaveAll`: Tự động lọc ra toàn bộ các tài khoản có sự thay đổi quyền hoặc ban chuyên môn, chạy đồng bộ lưu lên `PATCH /members/:id/role-dept`, sau đó xóa cache `clearMeCache()`, phát các sự kiện hệ thống `role-changed`, `crm_permissions_updated`, `vba_auth_changed`.
+       * Trong `useEffect` nạp dữ liệu: Luôn ưu tiên cập nhật đè dữ liệu thực tế từ database (`/members`) lên các tài khoản trong state (`department`, `role`, `name`, `email`, `phone`, `companyName`, `avatar`, `dbMemberId`), đảm bảo khi reload (F5) dữ liệu luôn hiển thị đúng 100% theo CSDL PostgreSQL.
+     - *Xử lý triệt để vai trò tài khoản tại Backend (`users.service.ts`, `members.service.ts`)*:
+       * Trong `users.service.ts`: Viết lại hàm `getAccountDetails` ưu tiên hàng đầu vai trò thực tế được gán trong `memberRow.executive_role` hoặc `user_roles`. Logic `isSystemAdminUser` chỉ còn đóng vai trò fallback khi tài khoản hoàn toàn chưa được cấu hình bất kỳ vai trò nào trong CSDL.
+       * Trong `adminUpdateUser`: Bổ sung câu lệnh cập nhật đồng bộ `UPDATE public.members SET executive_role = $1, updated_at = NOW() WHERE user_id = $2::uuid OR id = $2::uuid` để giữ nhất quán tuyệt đối giữa `user_roles` và `members`.
+       * Trong `members.service.ts`: Mở rộng tìm kiếm `OR: [{ id: cleanId }, { code: cleanId }, { user_id: cleanId }]`; mở rộng đầy đủ danh mục `sanitizedDept` (Ban Điều Hành, Ban Thư Ký, Ban Thành Viên,...) và `sanitizedRole` (`chu_tich`, `ban_dieu_hanh`, `truong_ban_dieu_hanh`, `pho_chu_tich`, `thanh_vien_ban_*`, `admin`, `quan_tri`, `member`); đồng bộ sạch sẽ vào cả `public.user_roles` và `public.memberships`.
+     - *Bỏ hardcode tại `use-role.ts`*: Loại bỏ việc ép quyền admin theo email, chỉ sử dụng email admin làm phương án dự phòng khi tài khoản không có vai trò nào trong CSDL.
+  3. **Kiểm tra & Nghiệm thu chất lượng (AGENTS.md Rule 3)**:
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt 0 errors (Exit code 0).
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt 0 errors (Exit code 0).
   1. **Thiết kế & Đóng gói Component Biểu đồ Tài chính Cao cấp (`FinanceChartsSection.tsx`)**:
      - *Thực hiện theo chỉ đạo*: "bạn sửa lại giúp tôi bổ sung crm phần nhóm tài chính có dạng biểu đồ nữa cho người ta dễ nhìn ( khoản thu, khoản chi, tài trợ,.._)".
      - *Biểu đồ hỗn hợp Dòng tiền Thu - Chi - Thặng Dư (`ComposedChart`)*: Kết hợp 2 cột đối soát Khoản Thu (xanh Emerald `#10B981`) và Khoản Chi (đỏ hồng Rose `#F43F5E`) cùng đường xu hướng Thặng Dư Tích Lũy (vàng Warm Amber Gold `#F59E0B`), hiển thị rõ ràng trên trục tiền tệ VNĐ và tooltip tùy biến tương thích hoàn hảo cả theme sáng và theme tối.

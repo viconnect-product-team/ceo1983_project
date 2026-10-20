@@ -105,4 +105,14 @@
 4. **Tải Lên Nhiều Tài Liệu Cùng Lúc (`/documents`)**:
    - Input chọn tệp hỗ trợ chế độ đa tệp (`multiple`), cho phép Ban Thư Ký tải lên đồng thời nhiều văn bản, quy chế, biểu mẫu chỉ với một lần chọn tệp.
 
+### BÀI 10: QUẢN TRỊ TÀI KHOẢN VÀ ĐỒNG BỘ PHÂN QUYỀN TRUY CẬP (`/accounts`)
+1. **Quản trị Tài Khoản & Vai Trò Trực Quan**:
+   - Danh sách toàn bộ tài khoản hệ thống hiển thị kèm Chức vụ, Vai trò hệ thống (`chu_tich`, `ban_dieu_hanh`, `truong_ban_*`, `admin`, `member`), Ban chuyên môn trực thuộc và Trạng thái hoạt động.
+   - Hỗ trợ đổi vai trò và ban chuyên môn trực tiếp trên từng tài khoản thông qua modal chỉnh sửa.
+2. **Cơ Chế Lưu CSDL Tức Thời & Đồng Bộ Hai Chiều**:
+   - Khi chỉnh sửa tài khoản trong modal hoặc nhấn nút **[Lưu thay đổi]**, hệ thống tự động gọi API `PATCH /api/members/:id/role-dept` để cập nhật trực tiếp vào cơ sở dữ liệu PostgreSQL (`public.members`, `public.user_roles`, `public.memberships`).
+   - Tuyệt đối không chỉ lưu tạm ở bộ nhớ trình duyệt (`localStorage`); khi tải lại trang (`F5`) hoặc đăng nhập từ thiết bị khác, dữ liệu phân quyền luôn được nạp đầy đủ và chính xác từ cơ sở dữ liệu.
+   - Tự động làm mới cache hồ sơ người dùng (`clearMeCache`), phát thông báo thay đổi quyền hạn `role-changed` giúp thanh điều hướng và menu chức năng cập nhật thẩm quyền mới ngay tức thì mà không cần đăng xuất.
+
+
 

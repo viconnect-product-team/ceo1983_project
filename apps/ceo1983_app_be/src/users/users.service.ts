@@ -418,32 +418,101 @@ export class UsersService {
       const dept = normalizedDept.toLowerCase();
       const userEmail = (user.email || user.username || '').toLowerCase();
 
-      // 0. ADMIN / QUẢN TRỊ VIÊN KỸ THUẬT HỆ THỐNG & CRM
-      const isSystemAdminUser =
-        user.id === '00000000-0000-0000-0000-000000000000' ||
-        user.id === '00000000-0000-4000-8000-000000000002' ||
-        user.username === 'admin@connect.vn' ||
-        user.email === 'admin@connect.vn' ||
-        userEmail === 'admin@connect.vn' ||
-        userEmail === 'admin1@connect.vn';
+      // Check if user has an explicit role assigned in memberRow or in roleList
+      const isExplicitPresident =
+        exec.includes('chủ tịch') ||
+        exec.includes('president') ||
+        exec === 'chu_tich' ||
+        roleList.includes('chu_tich') ||
+        roleList.includes('president');
 
-      if (isSystemAdminUser) {
-        primaryRole = 'admin';
-        if (!roleList.includes('admin')) roleList.push('admin');
-        if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
-        if (!roleList.includes('bqt')) roleList.push('bqt');
-        if (!roleList.includes('moderator')) roleList.push('moderator');
+      const isExplicitGeneralSecretary =
+        !isExplicitPresident &&
+        (exec === 'tong_thu_ky' ||
+          (exec.includes('thư ký') && exec.includes('tổng')) ||
+          roleList.includes('tong_thu_ky'));
+
+      const isExplicitExecutive =
+        !isExplicitPresident &&
+        !isExplicitGeneralSecretary &&
+        (exec === 'ban_dieu_hanh' ||
+          exec === 'truong_ban_dieu_hanh' ||
+          exec === 'pho_chu_tich' ||
+          exec === 'vice_president' ||
+          exec.includes('phó chủ tịch') ||
+          (exec.includes('điều hành') && !exec.includes('hội viên')) ||
+          roleList.includes('ban_dieu_hanh'));
+
+      const isExplicitAdmin =
+        !isExplicitPresident &&
+        !isExplicitGeneralSecretary &&
+        !isExplicitExecutive &&
+        (exec === 'admin' ||
+          exec === 'quan_tri' ||
+          exec === 'platform_admin' ||
+          exec === 'superadmin' ||
+          exec.includes('quản trị') ||
+          roleList.includes('admin') ||
+          roleList.includes('quan_tri') ||
+          roleList.includes('platform_admin') ||
+          roleList.includes('superadmin') ||
+          isAssocAdmin);
+
+      let isExplicitDeptLeader = false;
+      let matchedDeptLeaderRole = '';
+      if (!isExplicitPresident && !isExplicitGeneralSecretary && !isExplicitExecutive && !isExplicitAdmin) {
+        if (exec.includes('truyền thông') || dept.includes('truyền thông')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_truyen_thong')) {
+            matchedDeptLeaderRole = 'truong_ban_truyen_thong';
+            isExplicitDeptLeader = true;
+          }
+        } else if (exec.includes('thành viên') || (dept.includes('thành viên') && !dept.includes('hội viên'))) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_thanh_vien')) {
+            matchedDeptLeaderRole = 'truong_ban_thanh_vien';
+            isExplicitDeptLeader = true;
+          }
+        } else if (exec.includes('xúc tiến') || dept.includes('xúc tiến')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_xuc_tien')) {
+            matchedDeptLeaderRole = 'truong_ban_xuc_tien';
+            isExplicitDeptLeader = true;
+          }
+        } else if (exec.includes('tài chính') || dept.includes('tài chính')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_tai_chinh')) {
+            matchedDeptLeaderRole = 'truong_ban_tai_chinh';
+            isExplicitDeptLeader = true;
+          }
+        } else if (exec.includes('thiện nguyện') || dept.includes('thiện nguyện')) {
+          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_thien_nguyen')) {
+            matchedDeptLeaderRole = 'truong_ban_thien_nguyen';
+            isExplicitDeptLeader = true;
+          }
+        } else if (exec.startsWith('truong_ban_')) {
+          matchedDeptLeaderRole = exec;
+          isExplicitDeptLeader = true;
+        }
       }
 
-      // 1. CHỦ TỊCH (Cấp cao nhất của Hiệp hội)
-      const isPresidentUser =
-        !isSystemAdminUser &&
-        (exec.includes('chủ tịch') ||
-          exec.includes('president') ||
-          exec === 'chu_tich' ||
-          userEmail.includes('chutich'));
+      const isExplicitSecretary =
+        !isExplicitPresident &&
+        !isExplicitGeneralSecretary &&
+        !isExplicitExecutive &&
+        !isExplicitAdmin &&
+        !isExplicitDeptLeader &&
+        (exec === 'ban_thu_ky' ||
+          exec.includes('thư ký') ||
+          roleList.includes('ban_thu_ky') ||
+          roleList.includes('btk'));
 
-      if (isPresidentUser) {
+      const isExplicitMemberSpecialist =
+        !isExplicitPresident &&
+        !isExplicitGeneralSecretary &&
+        !isExplicitExecutive &&
+        !isExplicitAdmin &&
+        !isExplicitDeptLeader &&
+        !isExplicitSecretary &&
+        exec.startsWith('thanh_vien_ban_');
+
+      if (isExplicitPresident) {
         primaryRole = 'chu_tich';
         if (!roleList.includes('chu_tich')) roleList.push('chu_tich');
         if (!roleList.includes('president')) roleList.push('president');
@@ -451,135 +520,58 @@ export class UsersService {
         if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
         if (!roleList.includes('ban_dieu_hanh')) roleList.push('ban_dieu_hanh');
         if (!roleList.includes('bqt')) roleList.push('bqt');
-      }
-
-      // 2. TỔNG THƯ KÝ
-      const isGeneralSecretary =
-        !isSystemAdminUser &&
-        !isPresidentUser &&
-        (exec === 'tong_thu_ky' ||
-          (exec.includes('thư ký') && exec.includes('tổng')) ||
-          userEmail.includes('tongthuky'));
-
-      if (isGeneralSecretary) {
+      } else if (isExplicitGeneralSecretary) {
         primaryRole = 'tong_thu_ky';
         if (!roleList.includes('tong_thu_ky')) roleList.push('tong_thu_ky');
         if (!roleList.includes('ban_thu_ky')) roleList.push('ban_thu_ky');
         if (!roleList.includes('btk')) roleList.push('btk');
         if (!roleList.includes('moderator')) roleList.push('moderator');
         if (!roleList.includes('admin')) roleList.push('admin');
-      }
-
-      // 3. BAN ĐIỀU HÀNH (Cấp lãnh đạo điều hành hiệp hội)
-      const isExecutiveUser =
-        !isSystemAdminUser &&
-        !isPresidentUser &&
-        !isGeneralSecretary &&
-        (exec === 'ban_dieu_hanh' ||
-          exec === 'truong_ban_dieu_hanh' ||
-          exec === 'pho_chu_tich' ||
-          exec === 'vice_president' ||
-          exec.includes('phó chủ tịch') ||
-          exec.includes('điều hành') ||
-          dept.includes('điều hành') ||
-          userEmail.includes('dieuhanh'));
-
-      if (isExecutiveUser) {
+      } else if (isExplicitExecutive) {
         primaryRole = 'ban_dieu_hanh';
         if (!roleList.includes('ban_dieu_hanh')) roleList.push('ban_dieu_hanh');
         if (!roleList.includes('moderator')) roleList.push('moderator');
         if (!roleList.includes('admin')) roleList.push('admin');
-      }
-
-      // 4. TRƯỞNG BAN CÁC BAN CHUYÊN MÔN
-      let isDepartmentLeader = false;
-      if (!isSystemAdminUser && !isPresidentUser && !isGeneralSecretary && !isExecutiveUser) {
-        if (exec.includes('truyền thông') || dept.includes('truyền thông') || userEmail.includes('truyenthong')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('truyenthong')) {
-            primaryRole = 'truong_ban_truyen_thong';
-            isDepartmentLeader = true;
-            if (!roleList.includes('truong_ban_truyen_thong')) roleList.push('truong_ban_truyen_thong');
-            if (!roleList.includes('btt')) roleList.push('btt');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-            if (!roleList.includes('admin')) roleList.push('admin');
-          } else {
-            if (!roleList.includes('btt')) roleList.push('btt');
-          }
-        } else if (exec.includes('thành viên') || (dept.includes('thành viên') && !dept.includes('hội viên')) || userEmail.includes('thanhvien')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('thanhvien')) {
-            primaryRole = 'truong_ban_thanh_vien';
-            isDepartmentLeader = true;
-            if (!roleList.includes('truong_ban_thanh_vien')) roleList.push('truong_ban_thanh_vien');
-            if (!roleList.includes('btv')) roleList.push('btv');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-            if (!roleList.includes('admin')) roleList.push('admin');
-          } else {
-            if (!roleList.includes('btv')) roleList.push('btv');
-          }
-        } else if (exec.includes('xúc tiến') || dept.includes('xúc tiến') || userEmail.includes('xuctien')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('xuctien')) {
-            primaryRole = 'truong_ban_xuc_tien';
-            isDepartmentLeader = true;
-            if (!roleList.includes('truong_ban_xuc_tien')) roleList.push('truong_ban_xuc_tien');
-            if (!roleList.includes('bxt')) roleList.push('bxt');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-            if (!roleList.includes('admin')) roleList.push('admin');
-          } else {
-            if (!roleList.includes('bxt')) roleList.push('bxt');
-          }
-        } else if (exec.includes('tài chính') || dept.includes('tài chính') || userEmail.includes('taichinh')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('taichinh')) {
-            primaryRole = 'truong_ban_tai_chinh';
-            isDepartmentLeader = true;
-            if (!roleList.includes('truong_ban_tai_chinh')) roleList.push('truong_ban_tai_chinh');
-            if (!roleList.includes('btc')) roleList.push('btc');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-            if (!roleList.includes('admin')) roleList.push('admin');
-          } else {
-            if (!roleList.includes('btc')) roleList.push('btc');
-          }
-        } else if (exec.includes('thiện nguyện') || dept.includes('thiện nguyện') || userEmail.includes('thiennguyen')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || userEmail.includes('thiennguyen')) {
-            primaryRole = 'truong_ban_thien_nguyen';
-            isDepartmentLeader = true;
-            if (!roleList.includes('truong_ban_thien_nguyen')) roleList.push('truong_ban_thien_nguyen');
-            if (!roleList.includes('btn')) roleList.push('btn');
-            if (!roleList.includes('moderator')) roleList.push('moderator');
-            if (!roleList.includes('admin')) roleList.push('admin');
-          } else {
-            if (!roleList.includes('btn')) roleList.push('btn');
-          }
-        } else if (exec.includes('thư ký') || dept.includes('thư ký') || userEmail.includes('thuky')) {
-          primaryRole = 'ban_thu_ky';
-          if (!roleList.includes('ban_thu_ky')) roleList.push('ban_thu_ky');
-          if (!roleList.includes('btk')) roleList.push('btk');
-        }
-      }
-
-      // 5. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
-      const isAdminUser =
-        !isSystemAdminUser &&
-        !isPresidentUser &&
-        !isGeneralSecretary &&
-        !isExecutiveUser &&
-        !isDepartmentLeader &&
-        (user.id === '00000000-0000-0000-0000-000000000000' ||
+      } else if (isExplicitAdmin) {
+        primaryRole = (exec === 'quan_tri' || exec.includes('quản trị')) ? 'quan_tri' : 'admin';
+        if (!roleList.includes('admin')) roleList.push('admin');
+        if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
+      } else if (isExplicitDeptLeader) {
+        primaryRole = matchedDeptLeaderRole;
+        if (!roleList.includes(matchedDeptLeaderRole)) roleList.push(matchedDeptLeaderRole);
+        if (!roleList.includes('moderator')) roleList.push('moderator');
+        if (!roleList.includes('admin')) roleList.push('admin');
+      } else if (isExplicitSecretary) {
+        primaryRole = 'ban_thu_ky';
+        if (!roleList.includes('ban_thu_ky')) roleList.push('ban_thu_ky');
+        if (!roleList.includes('btk')) roleList.push('btk');
+        if (!roleList.includes('moderator')) roleList.push('moderator');
+      } else if (isExplicitMemberSpecialist) {
+        primaryRole = exec;
+        if (!roleList.includes(exec)) roleList.push(exec);
+        if (!roleList.includes('member')) roleList.push('member');
+      } else if (exec === 'member' || exec === 'hoi_vien') {
+        primaryRole = 'member';
+        if (!roleList.includes('member')) roleList.push('member');
+      } else {
+        // Fallback default for system root/seed accounts when no explicit member/role is assigned yet
+        const isSystemAdminUser =
+          user.id === '00000000-0000-0000-0000-000000000000' ||
           user.id === '00000000-0000-4000-8000-000000000002' ||
           user.username === 'admin@connect.vn' ||
           user.email === 'admin@connect.vn' ||
-          userEmail.startsWith('admin') ||
-          exec === 'admin' ||
-          exec === 'quan_tri' ||
-          exec === 'platform_admin' ||
-          exec === 'superadmin' ||
-          roleList.includes('admin') ||
-          roleList.includes('platform_admin') ||
-          isAssocAdmin);
+          userEmail === 'admin@connect.vn' ||
+          userEmail === 'admin1@connect.vn';
 
-      if (isAdminUser) {
-        primaryRole = 'admin';
-        if (!roleList.includes('admin')) roleList.push('admin');
-        if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
+        if (isSystemAdminUser) {
+          primaryRole = 'admin';
+          if (!roleList.includes('admin')) roleList.push('admin');
+          if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
+          if (!roleList.includes('bqt')) roleList.push('bqt');
+          if (!roleList.includes('moderator')) roleList.push('moderator');
+        } else {
+          primaryRole = 'member';
+        }
       }
 
       if (roleList.length === 0) {
@@ -1231,6 +1223,11 @@ export class UsersService {
     if (data.role) {
       await this.usersRepo.deleteUserRoles(id);
       await this.usersRepo.createUserRole(id, data.role);
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE public.members
+        SET executive_role = $1, updated_at = NOW()
+        WHERE user_id = $2::uuid OR id = $2::uuid
+      `, data.role, id).catch(() => {});
     }
 
     return this.getAccountDetails(id);

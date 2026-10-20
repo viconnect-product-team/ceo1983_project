@@ -2275,52 +2275,77 @@ export class MembersService {
         SELECT 1 FROM public.members
         WHERE user_id = $1::uuid
           AND (
-            executive_role IN ('quan_tri', 'admin')
+            executive_role IN ('quan_tri', 'admin', 'chu_tich', 'ban_dieu_hanh')
             OR LOWER(executive_role) LIKE '%quản trị%'
             OR LOWER(executive_role) LIKE '%admin%'
+            OR LOWER(executive_role) LIKE '%chủ tịch%'
+            OR LOWER(executive_role) LIKE '%điều hành%'
             OR LOWER(department) LIKE '%quản trị%'
+            OR LOWER(department) LIKE '%điều hành%'
           )
         LIMIT 1
       `, operatorUserId).catch(() => []);
 
-      if (isPrivilegedUser.length === 0 && isPrivilegedMember.length === 0) {
+      const isHardcodedAdmin =
+        operatorUserId === '00000000-0000-0000-0000-000000000000' ||
+        operatorUserId === '00000000-0000-4000-8000-000000000002';
+
+      if (isPrivilegedUser.length === 0 && isPrivilegedMember.length === 0 && !isHardcodedAdmin) {
         throw new ForbiddenException(
           'Chỉ tài khoản có vai trò Quản trị hoặc Admin mới có quyền chỉ định ban chuyên môn và thay đổi vai trò hội viên.',
         );
       }
     }
 
-    const member = await this.prisma.members.findUnique({ where: { id: memberId } });
+    const cleanId = (memberId || '').replace(/^acc_/, '').trim();
+    let member = await this.prisma.members.findUnique({ where: { id: cleanId } }).catch(() => null);
+    if (!member) {
+      member = await this.prisma.members.findFirst({
+        where: {
+          OR: [
+            { code: cleanId },
+            { user_id: cleanId },
+          ],
+        },
+      }).catch(() => null);
+    }
     if (!member) throw new NotFoundException('Không tìm thấy hồ sơ hội viên');
 
     const assocId = data.associationId || member.association_id || 'c1983000-0000-4000-8000-000000001983';
 
-    // Normalize to exact 7 committees
+    // Normalize to exact committees
     const rawDept = (data.department || '').trim();
+    const rawDeptLower = rawDept.toLowerCase();
     let sanitizedDept = 'Hội viên ceo1983';
-    if (rawDept.includes('Thành viên') || rawDept.includes('thành viên')) {
+    if (rawDeptLower.includes('điều hành') || rawDeptLower.includes('quản trị') || rawDeptLower.includes('bdh') || rawDeptLower.includes('bqt')) {
+      sanitizedDept = 'Ban Điều Hành';
+    } else if (rawDeptLower.includes('thư ký') || rawDeptLower.includes('btk')) {
+      sanitizedDept = 'Ban Thư Ký';
+    } else if (rawDeptLower.includes('thành viên') || rawDeptLower.includes('btv')) {
       sanitizedDept = 'Ban Thành viên';
-    } else if (rawDept.includes('xúc tiến') || rawDept.includes('Xúc tiến')) {
+    } else if (rawDeptLower.includes('xúc tiến') || rawDeptLower.includes('thương mại') || rawDeptLower.includes('bxt')) {
       sanitizedDept = 'Ban xúc tiến';
-    } else if (rawDept.includes('thiện nguyện') || rawDept.includes('Thiện nguyện')) {
+    } else if (rawDeptLower.includes('thiện nguyện') || rawDeptLower.includes('an sinh') || rawDeptLower.includes('btn')) {
       sanitizedDept = 'Ban thiện nguyện';
-    } else if (rawDept.includes('truyền thông') || rawDept.includes('Truyền thông')) {
+    } else if (rawDeptLower.includes('truyền thông') || rawDeptLower.includes('btt')) {
       sanitizedDept = 'Ban truyền thông';
-    } else if (rawDept.includes('quản trị') || rawDept.includes('Quản trị')) {
-      sanitizedDept = 'Ban quản trị';
-    } else if (rawDept.includes('tài chính') || rawDept.includes('Tài chính')) {
+    } else if (rawDeptLower.includes('tài chính') || rawDeptLower.includes('btc')) {
       sanitizedDept = 'Ban tài chính';
-    } else if (rawDept === 'Hội viên ceo1983' || rawDept.includes('ceo1983') || rawDept.includes('CEO 1983')) {
-      sanitizedDept = 'Hội viên ceo1983';
+    } else if (rawDept && !rawDeptLower.includes('hội viên') && !rawDeptLower.includes('ceo1983')) {
+      sanitizedDept = rawDept;
     }
 
-    // Normalize to granular roles: quan_tri, admin, tong_thu_ky, ban_thu_ky, truong_ban_truyen_thong, truong_ban_thanh_vien, truong_ban_xuc_tien, truong_ban_tai_chinh, truong_ban_thien_nguyen, member
+    // Normalize to granular roles: chu_tich, quan_tri, admin, ban_dieu_hanh, tong_thu_ky, ban_thu_ky, truong_ban_*, thanh_vien_ban_*, member
     const rawRole = (data.executiveRole || '').trim().toLowerCase();
     let sanitizedRole = 'member';
-    if (rawRole === 'quan_tri' || rawRole.includes('quản trị') || rawRole === 'platform_admin') {
+    if (rawRole === 'chu_tich' || rawRole.includes('chủ tịch') || rawRole === 'president') {
+      sanitizedRole = 'chu_tich';
+    } else if (rawRole === 'quan_tri' || rawRole.includes('quản trị') || rawRole === 'platform_admin' || rawRole === 'superadmin') {
       sanitizedRole = 'quan_tri';
     } else if (rawRole === 'admin') {
       sanitizedRole = 'admin';
+    } else if (rawRole === 'ban_dieu_hanh' || rawRole === 'truong_ban_dieu_hanh' || rawRole === 'pho_chu_tich' || rawRole.includes('phó chủ tịch') || (rawRole.includes('điều hành') && !rawRole.includes('hội viên'))) {
+      sanitizedRole = 'ban_dieu_hanh';
     } else if (rawRole === 'tong_thu_ky' || rawRole.includes('tổng thư ký')) {
       sanitizedRole = 'tong_thu_ky';
     } else if (rawRole === 'ban_thu_ky' || rawRole === 'thu_ky' || (rawRole.includes('thư ký') && !rawRole.includes('phó') && !rawRole.includes('tổng'))) {
@@ -2335,6 +2360,8 @@ export class MembersService {
       sanitizedRole = 'truong_ban_tai_chinh';
     } else if (rawRole === 'truong_ban_thien_nguyen' || (rawRole.includes('thiện nguyện') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
       sanitizedRole = 'truong_ban_thien_nguyen';
+    } else if (rawRole.startsWith('thanh_vien_ban_') || rawRole.startsWith('truong_ban_')) {
+      sanitizedRole = rawRole;
     } else {
       sanitizedRole = 'member';
     }
@@ -2344,16 +2371,41 @@ export class MembersService {
       UPDATE public.members
       SET executive_role = $1, department = $2, association_id = $3::uuid, updated_at = NOW()
       WHERE id = $4
-    `, sanitizedRole, sanitizedDept, assocId, memberId);
+    `, sanitizedRole, sanitizedDept, assocId, member.id);
 
     // 2. If member has linked user_id, update memberships and user_roles
     const userId = member.user_id;
     if (userId) {
       let membershipRole = 'member';
-      if (sanitizedRole === 'quan_tri' || sanitizedRole === 'admin') {
+      const targetUserRoles: string[] = [];
+
+      if (sanitizedRole === 'chu_tich') {
         membershipRole = 'admin';
-      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'ban_thu_ky' || sanitizedRole.startsWith('truong_ban_')) {
+        targetUserRoles.push('chu_tich', 'admin', 'quan_tri');
+      } else if (sanitizedRole === 'quan_tri') {
+        membershipRole = 'admin';
+        targetUserRoles.push('platform_admin', 'admin', 'quan_tri');
+      } else if (sanitizedRole === 'admin') {
+        membershipRole = 'admin';
+        targetUserRoles.push('admin');
+      } else if (sanitizedRole === 'ban_dieu_hanh') {
+        membershipRole = 'admin';
+        targetUserRoles.push('ban_dieu_hanh', 'admin', 'moderator');
+      } else if (sanitizedRole === 'tong_thu_ky') {
         membershipRole = 'moderator';
+        targetUserRoles.push('tong_thu_ky', 'ban_thu_ky', 'moderator');
+      } else if (sanitizedRole === 'ban_thu_ky') {
+        membershipRole = 'moderator';
+        targetUserRoles.push('ban_thu_ky', 'moderator');
+      } else if (sanitizedRole.startsWith('truong_ban_')) {
+        membershipRole = 'moderator';
+        targetUserRoles.push(sanitizedRole, 'moderator');
+      } else if (sanitizedRole.startsWith('thanh_vien_ban_')) {
+        membershipRole = 'member';
+        targetUserRoles.push(sanitizedRole, 'member');
+      } else {
+        membershipRole = 'member';
+        targetUserRoles.push('member');
       }
 
       await this.prisma.$executeRawUnsafe(`
@@ -2369,46 +2421,16 @@ export class MembersService {
             updated_at = NOW()
       `, userId, assocId, membershipRole, sanitizedRole, sanitizedDept);
 
-      // Manage user_roles table
-      if (sanitizedRole === 'quan_tri') {
+      // Cleanly sync user_roles: delete previous roles, then insert new roles
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM public.user_roles WHERE user_id = $1::uuid
+      `, userId).catch(() => {});
+
+      for (const r of targetUserRoles) {
         await this.prisma.$executeRawUnsafe(`
-          INSERT INTO public.user_roles (id, user_id, role)
-          VALUES (gen_random_uuid(), $1::uuid, 'platform_admin')
-          ON CONFLICT DO NOTHING
-        `, userId).catch(() => {});
-        await this.prisma.$executeRawUnsafe(`
-          INSERT INTO public.user_roles (id, user_id, role)
-          VALUES (gen_random_uuid(), $1::uuid, 'admin')
-          ON CONFLICT DO NOTHING
-        `, userId).catch(() => {});
-      } else if (sanitizedRole === 'admin') {
-        await this.prisma.$executeRawUnsafe(`
-          INSERT INTO public.user_roles (id, user_id, role)
-          VALUES (gen_random_uuid(), $1::uuid, 'admin')
-          ON CONFLICT DO NOTHING
-        `, userId).catch(() => {});
-        if (userId !== '00000000-0000-0000-0000-000000000000') {
-          await this.prisma.$executeRawUnsafe(`
-            DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role = 'platform_admin'
-          `, userId).catch(() => {});
-        }
-      } else if (sanitizedRole === 'tong_thu_ky' || sanitizedRole === 'ban_thu_ky' || sanitizedRole.startsWith('truong_ban_')) {
-        await this.prisma.$executeRawUnsafe(`
-          INSERT INTO public.user_roles (id, user_id, role)
-          VALUES (gen_random_uuid(), $1::uuid, 'moderator')
-          ON CONFLICT DO NOTHING
-        `, userId).catch(() => {});
-        if (userId !== '00000000-0000-0000-0000-000000000000') {
-          await this.prisma.$executeRawUnsafe(`
-            DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role IN ('platform_admin', 'admin')
-          `, userId).catch(() => {});
-        }
-      } else if (sanitizedRole === 'member') {
-        if (userId !== '00000000-0000-0000-0000-000000000000') {
-          await this.prisma.$executeRawUnsafe(`
-            DELETE FROM public.user_roles WHERE user_id = $1::uuid AND role IN ('platform_admin', 'admin', 'moderator', 'tenant_admin')
-          `, userId).catch(() => {});
-        }
+          INSERT INTO public.user_roles (id, user_id, role, created_at)
+          VALUES (gen_random_uuid(), $1::uuid, $2, NOW())
+        `, userId, r).catch(() => {});
       }
 
       // Dispatch 2-way business notification

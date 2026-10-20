@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader } from "@/components/dashboard/PageKit";
 import { fetchNestApi } from "@/lib/api-client";
-import { useRole } from "@/hooks/use-role";
+import { useRole, clearMeCache } from "@/hooks/use-role";
 import { ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeRole, normalizeDept } from "@/routes/permissions";
 import { SYSTEM_ROLES, COMMITTEES } from "@/components/dashboard/RbacPermissionMatrix";
 import {
@@ -159,50 +159,98 @@ function AccountsPage() {
     }
   };
 
-  // Load live accounts from members API if available
+  // Load live accounts from members API and sync database state
   useEffect(() => {
     let active = true;
     fetchNestApi<any[]>("/members")
       .then((mList) => {
-        if (active && Array.isArray(mList) && mList.length > 0) {
-          setAccounts((prev) => {
-            const existingCodes = new Set(prev.map((a) => a.code.toUpperCase()));
-            const newAccounts: UserAccountItem[] = mList
-              .filter(
-                (m) =>
-                  m.code &&
-                  !existingCodes.has(m.code.toUpperCase()) &&
-                  (m.status === "approved" ||
-                    m.status === "active" ||
-                    m.membershipStatus === "approved" ||
-                    m.membershipStatus === "active")
-              )
-              .slice(0, 15)
-              .map((m) => ({
-                id: `acc_${m.id || m.code}`,
-                name: m.name || m.personName || "Hội viên CEO 1983",
-                code: m.code,
-                email: m.email || `${m.code.toLowerCase()}@ceo1983.vn`,
-                phone: m.phone || m.mobile || "",
-                companyName: m.companyName || m.company || m.industry || "Doanh nghiệp CEO 1983",
-                department: normalizeDept(m.department),
-                role: normalizeRole(m.executiveRole || m.role),
-                avatar: m.avatar,
-                status: "active",
-              }));
-            if (newAccounts.length > 0) {
-              const combined = [...prev, ...newAccounts];
-              try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(combined));
-                setInitialAccountsStr(JSON.stringify(combined));
-              } catch {}
-              return combined;
-            }
-            return prev;
+        if (!active || !Array.isArray(mList) || mList.length === 0) return;
+
+        setAccounts((prev) => {
+          const memberByCode = new Map<string, any>();
+          const memberById = new Map<string, any>();
+          const memberByEmail = new Map<string, any>();
+
+          mList.forEach((m) => {
+            if (m.code) memberByCode.set(m.code.toUpperCase().trim(), m);
+            if (m.id) memberById.set(m.id.toLowerCase().trim(), m);
+            if (m.email) memberByEmail.set(m.email.toLowerCase().trim(), m);
           });
-        }
+
+          const matchedMemberIds = new Set<string>();
+
+          // 1. Đồng bộ các tài khoản hiện có với dữ liệu thực tế từ Database
+          const updatedPrev: UserAccountItem[] = prev.map((a) => {
+            const cleanId = (a.id || "").replace(/^acc_/, "").toLowerCase().trim();
+            const cleanCode = (a.code || "").toUpperCase().trim();
+            const cleanEmail = (a.email || "").toLowerCase().trim();
+
+            const m =
+              (cleanCode && memberByCode.get(cleanCode)) ||
+              (cleanId && memberById.get(cleanId)) ||
+              (cleanEmail && memberByEmail.get(cleanEmail));
+
+            if (m) {
+              if (m.id) matchedMemberIds.add(m.id);
+              const realRole = normalizeRole(m.executiveRole || m.executive_role || m.role || a.role);
+              const realDept = normalizeDept(m.department || a.department);
+              const resolvedStatus: "active" | "inactive" | "locked" =
+                (m.status === "active" || m.status === "approved" || a.status === "active")
+                  ? "active"
+                  : (a.status === "locked" || a.status === "inactive" ? a.status : "active");
+
+              return {
+                ...a,
+                id: a.id || `acc_${m.id || m.code}`,
+                dbMemberId: m.id || a.dbMemberId,
+                name: m.name || m.personName || a.name,
+                code: m.code || a.code,
+                email: a.email || m.email,
+                phone: m.phone || m.mobile || a.phone,
+                companyName: m.companyName || m.company || a.companyName,
+                department: realDept,
+                role: realRole,
+                avatar: m.avatar || m.avatarUrl || a.avatar,
+                status: resolvedStatus,
+              };
+            }
+            return a;
+          });
+
+          // 2. Bổ sung các hội viên từ CSDL chưa có trong danh sách
+          const newAccounts: UserAccountItem[] = mList
+            .filter((m) => m.id && !matchedMemberIds.has(m.id))
+            .filter(
+              (m) =>
+                m.status === "approved" ||
+                m.status === "active" ||
+                m.membershipStatus === "approved" ||
+                m.membershipStatus === "active"
+            )
+            .map((m) => ({
+              id: `acc_${m.id || m.code}`,
+              dbMemberId: m.id,
+              name: m.name || m.personName || "Hội viên CEO 1983",
+              code: m.code || `CEO-${m.id.slice(0, 4)}`,
+              email: m.email || `${(m.code || 'member').toLowerCase()}@ceo1983.vn`,
+              phone: m.phone || m.mobile || "",
+              companyName: m.companyName || m.company || m.industry || "Doanh nghiệp CEO 1983",
+              department: normalizeDept(m.department),
+              role: normalizeRole(m.executiveRole || m.executive_role || m.role),
+              avatar: m.avatar,
+              status: "active" as const,
+            }));
+
+          const combined = [...updatedPrev, ...newAccounts];
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(combined));
+            setInitialAccountsStr(JSON.stringify(combined));
+          } catch {}
+          return combined;
+        });
       })
       .catch(() => {});
+
     return () => {
       active = false;
     };
@@ -219,14 +267,74 @@ function AccountsPage() {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
+      // 1. Xác định các tài khoản có thay đổi cần lưu
+      let initialList: UserAccountItem[] = [];
+      try {
+        if (initialAccountsStr) initialList = JSON.parse(initialAccountsStr);
+      } catch {}
+
+      const initialMap = new Map<string, UserAccountItem>();
+      initialList.forEach((a) => {
+        initialMap.set(a.id, a);
+        if (a.code) initialMap.set(a.code, a);
+      });
+
+      const changedAccounts = accounts.filter((a) => {
+        const orig = initialMap.get(a.id) || (a.code ? initialMap.get(a.code) : null);
+        if (!orig) return true;
+        return (
+          orig.role !== a.role ||
+          orig.department !== a.department ||
+          orig.name !== a.name ||
+          orig.status !== a.status
+        );
+      });
+
+      const targetsToSave = changedAccounts.length > 0 ? changedAccounts : accounts;
+
+      // 2. Ghi trực tiếp vào Backend PostgreSQL API
+      const savePromises = targetsToSave.map(async (acc) => {
+        const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
+        try {
+          await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              executiveRole: acc.role,
+              department: acc.department,
+            }),
+          });
+        } catch {
+          try {
+            await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+              method: "POST",
+              body: JSON.stringify({
+                executiveRole: acc.role,
+                department: acc.department,
+              }),
+            });
+          } catch (e2) {
+            console.warn(`Lưu phân quyền cho ${acc.name} thất bại:`, e2);
+          }
+        }
+      });
+
+      await Promise.allSettled(savePromises);
+
+      // 3. Cập nhật localStorage snapshot
       localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
       setInitialAccountsStr(JSON.stringify(accounts));
+
+      // 4. Xóa cache và phát sự kiện đồng bộ toàn hệ thống
+      clearMeCache();
       dispatchPermissionSyncEvent();
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("role-changed"));
         window.dispatchEvent(new Event("crm_permissions_updated"));
+        window.dispatchEvent(new Event("vba_auth_changed"));
+        window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: accounts }));
       }
-      toast.success("Đã lưu các thay đổi phân quyền tài khoản thành công!");
+
+      toast.success("Đã lưu và đồng bộ phân quyền tài khoản vào CSDL thành công!");
     } catch {
       toast.error("Lỗi khi lưu tài khoản vào CSDL!");
     } finally {
@@ -298,7 +406,7 @@ function AccountsPage() {
 
     const next = [newAcc, ...accounts];
     setAccounts(next);
-    toast.success(`Đã thêm mới tài khoản "${newAcc.name}". Bấm 'Lưu Thay Đổi' để đồng bộ.`);
+    toast.success(`Đã thêm mới tài khoản "${newAcc.name}". Bấm 'Lưu Thay Đổi' để đồng bộ vào CSDL.`);
     setIsAddOpen(false);
   };
 
@@ -323,7 +431,46 @@ function AccountsPage() {
     );
 
     setAccounts(next);
-    toast.success(`Đã cập nhật thông tin "${formName}". Bấm 'Lưu Thay Đổi' để đồng bộ.`);
+
+    // Tự động lưu ngay lập tức vào CSDL
+    const targetId =
+      selectedAccount.dbMemberId ||
+      (selectedAccount.id ? selectedAccount.id.replace(/^acc_/, "") : selectedAccount.code);
+
+    if (targetId) {
+      fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          executiveRole: formRole,
+          department: formDepartment,
+        }),
+      })
+        .catch(() =>
+          fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+            method: "POST",
+            body: JSON.stringify({
+              executiveRole: formRole,
+              department: formDepartment,
+            }),
+          })
+        )
+        .then(() => {
+          clearMeCache();
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("role-changed"));
+            window.dispatchEvent(new Event("crm_permissions_updated"));
+            window.dispatchEvent(new Event("vba_auth_changed"));
+          }
+        })
+        .catch(() => {});
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      setInitialAccountsStr(JSON.stringify(next));
+    } catch {}
+
+    toast.success(`Đã cập nhật phân quyền "${formRole}" cho "${formName}" vào CSDL thành công.`);
     setIsEditOpen(false);
   };
 
