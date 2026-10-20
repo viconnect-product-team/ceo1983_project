@@ -1353,7 +1353,7 @@ function Home() {
           >
             <img className="w-full h-24 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300" src="/images/ceo1983/Rectangle 6-1.png" alt="Cơ hội & Kết nối" />
             <div className="self-stretch flex flex-col justify-start items-start gap-1">
-              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">🤝 {opportunities.length || 6} cơ hội mới</span>
+              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">🤝 {opportunities.length} cơ hội mới</span>
               <div className="self-stretch inline-flex justify-between items-center">
                 <span className="text-slate-900 dark:text-white text-xs font-bold leading-5">CƠ HỘI &amp; KẾT NỐI</span>
                 <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3.5 opacity-60" />
@@ -1362,7 +1362,7 @@ function Home() {
             <div className="self-stretch h-px bg-Backgrounds-Secondary dark:bg-slate-800" />
             <div className="self-stretch inline-flex justify-between items-center text-xs">
               <span className="text-slate-400">Tổng giá trị:</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalOpportunitiesValue || "4.2 Tỷ"}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalOpportunitiesValue || "0 đ"}</span>
             </div>
           </Link>
 
@@ -1373,7 +1373,7 @@ function Home() {
           >
             <img className="w-full h-24 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300" src="/images/ceo1983/marketplace-banner.jpg" alt="Sàn thương mại" />
             <div className="self-stretch flex flex-col justify-start items-start gap-1">
-              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">📦 {products.length || 3} sản phẩm mới</span>
+              <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold leading-4">📦 {products.length} sản phẩm mới</span>
               <div className="self-stretch inline-flex justify-between items-center">
                 <span className="text-slate-900 dark:text-white text-xs font-bold leading-5">SÀN THƯƠNG MẠI</span>
                 <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3.5 opacity-60" />
@@ -1382,7 +1382,7 @@ function Home() {
             <div className="self-stretch h-px bg-Backgrounds-Secondary dark:bg-slate-800" />
             <div className="self-stretch inline-flex justify-between items-center text-xs">
               <span className="text-slate-400">Tổng giá trị:</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalProductsValue || "2.4 Tỷ"}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">{totalProductsValue || "0 đ"}</span>
             </div>
           </Link>
         </div>

@@ -34,6 +34,9 @@ export type Member = {
   taxCode?: string;
   employees?: number;
   about: string;
+  company?: string;
+  companyName?: string;
+  company_name?: string;
   // Renewal fields (populated when loaded from the database)
   termEnd?: string;
   reminderCount?: number;

@@ -45,34 +45,73 @@ export class MembersService {
     if (userId === 'mock-admin-id' || userId === '00000000-0000-0000-0000-000000000000') {
       return true;
     }
+    const adminRoles = [
+      'platform_admin', 'tenant_admin', 'admin', 'superadmin',
+      'quan_tri', 'chu_tich', 'truong_ban_dieu_hanh', 'thanh_vien_ban_dieu_hanh',
+      'ban_dieu_hanh', 'bqt', 'adm'
+    ];
     const roles = await this.prisma.$queryRaw<any[]>`
       SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
     `.catch(() => [] as any[]);
-    return roles.some(
-      (r: any) => r.role === 'platform_admin' || r.role === 'tenant_admin' || r.role === 'admin',
-    );
+    if (roles.some((r: any) => adminRoles.includes((r.role || '').toLowerCase()))) {
+      return true;
+    }
+    const userRole = await this.prisma.$queryRaw<any[]>`
+      SELECT role FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
+    `.catch(() => []);
+    if (userRole.length && adminRoles.includes((userRole[0].role || '').toLowerCase())) {
+      return true;
+    }
+    return false;
   }
 
   async checkIsAdmin(userId: string, assocId?: string): Promise<boolean> {
     if (await this.checkIsPlatformAdmin(userId)) return true;
 
     try {
+      const executiveRoles = [
+        'admin', 'association_admin', 'owner', 'platform_admin', 'tenant_admin', 'superadmin',
+        'quan_tri', 'chu_tich', 'truong_ban_dieu_hanh', 'thanh_vien_ban_dieu_hanh',
+        'ban_dieu_hanh', 'bqt', 'adm'
+      ];
+
+      // Check memberships
       let mems: any[] = [];
       if (assocId) {
         mems = await this.prisma.$queryRaw<any[]>`
           SELECT role FROM public.memberships 
           WHERE user_id = ${userId}::uuid AND association_id = ${assocId}::uuid
-        `;
+        `.catch(() => []);
       } else {
         mems = await this.prisma.$queryRaw<any[]>`
           SELECT role FROM public.memberships 
           WHERE user_id = ${userId}::uuid
-        `;
+        `.catch(() => []);
       }
 
-      return mems.some(
-        (m: any) => m.role === 'admin' || m.role === 'association_admin' || m.role === 'owner',
-      );
+      if (mems.some((m: any) => executiveRoles.includes((m.role || '').toLowerCase()))) {
+        return true;
+      }
+
+      // Check member's executive_role and department
+      const memRows = await this.prisma.$queryRaw<any[]>`
+        SELECT executive_role, department FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+      `.catch(() => []);
+      if (memRows.length > 0) {
+        const er = (memRows[0].executive_role || '').toLowerCase();
+        const dept = (memRows[0].department || '').toLowerCase();
+        if (
+          executiveRoles.includes(er) ||
+          dept.includes('điều hành') ||
+          dept.includes('quản trị') ||
+          er.includes('trưởng ban') ||
+          er.includes('chủ tịch')
+        ) {
+          return true;
+        }
+      }
+
+      return false;
     } catch {
       return false;
     }
@@ -86,10 +125,7 @@ export class MembersService {
   async checkActionPermission(userId: string, actionCode: string, assocId?: string): Promise<boolean> {
     try {
       // 1. Platform Admin / Superadmin luôn có quyền tối thượng
-      const roles = await this.prisma.$queryRaw<any[]>`
-        SELECT role FROM public.user_roles WHERE user_id = ${userId}::uuid
-      `.catch(() => [] as any[]);
-      if (roles.some((r: any) => r.role === 'platform_admin' || r.role === 'superadmin')) {
+      if (await this.checkIsPlatformAdmin(userId)) {
         return true;
       }
 
@@ -122,6 +158,11 @@ export class MembersService {
             return true;
           }
         }
+      }
+
+      // Nếu là Admin hoặc Ban Điều Hành và không bị explicitly denied -> Cho phép thực hiện
+      if (await this.checkIsAdmin(userId, assocId)) {
+        return true;
       }
 
       // 4. Kiểm tra cấu hình trong ma trận app_settings.crm_permission_matrix
@@ -311,7 +352,7 @@ export class MembersService {
       }
     }
 
-    const displayName = personName || r.name;
+    const displayName = r.user_name || personName || r.name;
 
     return {
       id: r.id,
@@ -325,8 +366,8 @@ export class MembersService {
       companyName: compName,
       companySize: staffSizeStr,
       company_size: staffSizeStr,
-      email: r.email ?? '',
-      phone: r.phone ?? '',
+      email: r.user_email || r.email || '',
+      phone: r.user_phone || r.phone || '',
       type: mappedType,
       level: mappedLevel,
       industry: mappedIndustry,
@@ -335,8 +376,8 @@ export class MembersService {
       joinedAt: joinedStr,
       feeYear: r.fee_year ?? new Date().getFullYear(),
       feePaid: Boolean(r.fee_paid),
-      termEnd: r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null,
-      term_end: r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null,
+      termEnd: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : (r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null),
+      term_end: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : (r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null),
       renewedAt: r.renewed_at ? new Date(r.renewed_at).toISOString().slice(0, 10) : null,
       renewed_at: r.renewed_at ? new Date(r.renewed_at).toISOString().slice(0, 10) : null,
       newTermEnd: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : null,
@@ -387,17 +428,42 @@ export class MembersService {
     if (isPlatformAdmin && !filters?.associationId) {
       // Platform admin không chỉ định assoc → thấy tất cả
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.members ORDER BY created_at DESC
+        SELECT m.*,
+               u.name AS user_name,
+               u.email AS user_email,
+               u.phone AS user_phone,
+               u.status AS user_status,
+               u.role AS user_role
+        FROM public.members m
+        LEFT JOIN public.vione_users u ON m.user_id = u.id
+        ORDER BY m.updated_at DESC, m.created_at DESC
       `.catch(() => []);
     } else if (assocId) {
       // User có association → lấy theo assoc
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.members WHERE association_id = ${assocId}::uuid ORDER BY created_at DESC
+        SELECT m.*,
+               u.name AS user_name,
+               u.email AS user_email,
+               u.phone AS user_phone,
+               u.status AS user_status,
+               u.role AS user_role
+        FROM public.members m
+        LEFT JOIN public.vione_users u ON m.user_id = u.id
+        WHERE m.association_id = ${assocId}::uuid 
+        ORDER BY m.updated_at DESC, m.created_at DESC
       `.catch(() => []);
     } else {
       // Không có association nào → lấy tất cả (fallback cho môi trường dev)
       rows = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.members ORDER BY created_at DESC
+        SELECT m.*,
+               u.name AS user_name,
+               u.email AS user_email,
+               u.phone AS user_phone,
+               u.status AS user_status,
+               u.role AS user_role
+        FROM public.members m
+        LEFT JOIN public.vione_users u ON m.user_id = u.id
+        ORDER BY m.updated_at DESC, m.created_at DESC
       `.catch(() => []);
     }
 
@@ -1052,8 +1118,9 @@ export class MembersService {
   }
 
   async updateMember(userId: string, id: string, data: UpdateMemberDto) {
+    const cleanId = String(id || '').replace(/^RNW-/, '');
     const existing = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} LIMIT 1
+      SELECT * FROM public.members WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} LIMIT 1
     `.catch(() => []);
 
     if (existing.length === 0) {
@@ -1116,8 +1183,27 @@ export class MembersService {
         fee_year = ${feeYear},
         payment_status = ${paymentStatus},
         updated_at = now()
-      WHERE id = ${id}
+      WHERE id = ${current.id}
     `;
+
+    // Sync corresponding user and user_profiles record if exists
+    if (current.user_id) {
+      await this.prisma.$executeRaw`
+        UPDATE public.vione_users SET
+          name = ${name},
+          email = ${email},
+          phone = ${phone},
+          updated_at = now()
+        WHERE id = ${current.user_id}::uuid
+      `.catch(() => {});
+
+      await this.prisma.$executeRaw`
+        UPDATE public.user_profiles SET
+          display_name = ${name},
+          updated_at = now()
+        WHERE user_id = ${current.user_id}::uuid
+      `.catch(() => {});
+    }
 
     // Activity log
     await this.logActivity(
@@ -1311,9 +1397,10 @@ export class MembersService {
     return this.getMemberById(userId, id);
   }
 
-  async deleteMember(userId: string, id: string) {
+  async deleteMember(userId: string, id: string, mode?: 'company_only' | 'all') {
+    const cleanId = String(id || '').replace(/^RNW-/, '');
     const existing = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} LIMIT 1
+      SELECT * FROM public.members WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} LIMIT 1
     `.catch(() => []);
 
     if (existing.length === 0) {
@@ -1323,11 +1410,11 @@ export class MembersService {
     const current = existing[0];
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
     if (!isAdmin) {
-      throw new ForbiddenException('Chỉ quản trị viên mới có quyền xóa hội viên');
+      throw new ForbiddenException('Chỉ quản trị viên mới có quyền xóa');
     }
     const canDelete = await this.checkActionPermission(userId, 'MEM_DELETE', current.association_id);
     if (!canDelete) {
-      throw new ForbiddenException('Hành động xóa hội viên (MEM_DELETE) đã bị thu hồi trong cấu hình phân quyền hệ thống');
+      throw new ForbiddenException('Hành động xóa (MEM_DELETE) đã bị thu hồi trong cấu hình phân quyền hệ thống');
     }
 
     const memberEmail = (current.email || '').trim().toLowerCase();
@@ -1348,6 +1435,58 @@ export class MembersService {
       }
     }
 
+    // CASE 1: Xóa chỉ dữ liệu doanh nghiệp liên kết
+    if (mode === 'company_only') {
+      if (companyName) {
+        await this.prisma.$executeRaw`
+          DELETE FROM public.companies
+          WHERE LOWER(name) = LOWER(${companyName})
+             OR (owner_id IS NOT NULL AND ${memberUserId ? memberUserId : '00000000-0000-0000-0000-000000000000'}::uuid = owner_id)
+        `.catch(() => {});
+
+        await this.prisma.$executeRaw`
+          DELETE FROM public.vione_companies
+          WHERE LOWER(name) = LOWER(${companyName})
+             OR (user_id IS NOT NULL AND ${memberUserId ? memberUserId : '00000000-0000-0000-0000-000000000000'}::uuid = user_id)
+        `.catch(() => {});
+      }
+      if (taxCode) {
+        await this.prisma.$executeRaw`
+          DELETE FROM public.companies WHERE tax_code = ${taxCode}
+        `.catch(() => {});
+      }
+      // Xóa bản ghi độc lập của công ty trong bảng members nếu có
+      await this.prisma.$executeRaw`
+        DELETE FROM public.members 
+        WHERE (type = 'company' OR type = 'enterprise') 
+          AND (LOWER(name) = LOWER(${companyName}) OR (code = ${current.code} AND id != ${current.id}))
+      `.catch(() => {});
+
+      // Xóa các trường doanh nghiệp khỏi hồ sơ hội viên cá nhân
+      await this.prisma.$executeRaw`
+        UPDATE public.members SET
+          company_name = NULL,
+          company_size = NULL,
+          company_logo_url = NULL,
+          tax_code = NULL,
+          website = NULL,
+          employees = NULL,
+          updated_at = now()
+        WHERE id = ${current.id}
+      `.catch(() => {});
+
+      await this.logActivity(
+        'Xóa doanh nghiệp liên kết',
+        `${companyName || current.name} (${current.code || cleanId})`,
+        'company',
+        'admin@connect.vn',
+        current.association_id,
+      );
+
+      return { ok: true, mode: 'company_only', message: 'Đã xóa dữ liệu doanh nghiệp liên kết thành công' };
+    }
+
+    // CASE 2: Xóa toàn diện cả hội viên và doanh nghiệp liên kết (mode === 'all')
     // 1. Xóa doanh nghiệp liên quan (bảng companies và vione_companies)
     if (companyName) {
       await this.prisma.$executeRaw`
@@ -1372,7 +1511,7 @@ export class MembersService {
     if (memberUserId) {
       await this.prisma.$executeRaw`
         DELETE FROM public.member_business_cards
-        WHERE owner_user_id = ${memberUserId}::uuid OR member_id = ${id}
+        WHERE owner_user_id = ${memberUserId}::uuid OR member_id = ${current.id}
       `.catch(() => {});
 
       await this.prisma.$executeRaw`
@@ -1402,7 +1541,7 @@ export class MembersService {
 
       await this.prisma.$executeRaw`
         DELETE FROM public.vba_member_permissions
-        WHERE user_id::text = ${memberUserId}::text OR member_id = ${id}
+        WHERE user_id::text = ${memberUserId}::text OR member_id = ${current.id}
       `.catch(() => {});
 
       await this.prisma.$executeRaw`
@@ -1445,9 +1584,13 @@ export class MembersService {
       `.catch(() => {});
     }
 
-    // 4. Xóa hồ sơ hội viên trong bảng members
+    // 4. Xóa hồ sơ hội viên và các bản ghi công ty liên quan trong bảng members
     await this.prisma.$executeRaw`
-      DELETE FROM public.members WHERE id = ${id} OR id::text = ${id} OR code = ${current.code || id}
+      DELETE FROM public.members 
+      WHERE id = ${current.id} 
+         OR id::text = ${cleanId} 
+         OR code = ${current.code || cleanId}
+         OR (company_name IS NOT NULL AND LOWER(company_name) = LOWER(${companyName}))
     `;
 
     // 5. Ghi nhật ký hoạt động
@@ -1456,7 +1599,7 @@ export class MembersService {
         id, code, "user", action, target, category, at, ip, association_id, created_at, updated_at
       ) VALUES (
         gen_random_uuid(),
-        ${id},
+        ${current.id},
         ${userId},
         'Xóa hội viên, tài khoản & doanh nghiệp liên quan',
         ${current.name || companyName},
@@ -1469,12 +1612,15 @@ export class MembersService {
       )
     `.catch(() => null);
 
-    return { ok: true, message: 'Đã xóa hội viên, doanh nghiệp và tài khoản liên quan thành công' };
+    return { ok: true, mode: 'all', message: 'Đã xóa hội viên, doanh nghiệp và tài khoản liên quan thành công' };
   }
 
   async renewMember(userId: string, id: string) {
+    const cleanId = String(id || '').replace(/^RNW-/, '');
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} OR code = ${id} LIMIT 1
+      SELECT * FROM public.members 
+      WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} 
+      LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
@@ -1483,7 +1629,9 @@ export class MembersService {
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
     if (!isAdmin) throw new ForbiddenException('Chỉ quản trị viên mới có quyền gia hạn');
 
-    const base = current.term_end ? new Date(current.term_end as string) : new Date();
+    const base = current.new_term_end
+      ? new Date(current.new_term_end)
+      : (current.term_end ? new Date(current.term_end) : new Date());
     const newEnd = new Date(base);
     newEnd.setFullYear(newEnd.getFullYear() + 1);
     const newEndStr = newEnd.toISOString().slice(0, 10);
@@ -1492,16 +1640,16 @@ export class MembersService {
     await this.prisma.$executeRaw`
       UPDATE public.members SET
         fee_paid   = true,
-        renewed_at = ${today},
+        renewed_at = ${today}::date,
         term_end   = ${newEndStr}::date,
-        new_term_end = ${newEndStr},
+        new_term_end = ${newEndStr}::date,
         payment_status = 'paid',
         updated_at = now()
       WHERE id = ${current.id}
     `;
 
     // Activity log
-    await this.logActivity('Gia hạn hội phí', `${current.name} (${current.code || id})`, 'fee', 'admin@connect.vn', current.association_id);
+    await this.logActivity('Gia hạn hội phí', `${current.name} (${current.code || cleanId})`, 'fee', 'admin@connect.vn', current.association_id);
 
     // Dispatch 2-way notification
     if (current.user_id) {
@@ -1547,8 +1695,11 @@ export class MembersService {
     id: string,
     body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
   ) {
+    const cleanId = String(id || '').replace(/^RNW-/, '');
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} OR code = ${id} LIMIT 1
+      SELECT * FROM public.members 
+      WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} 
+      LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
@@ -1582,8 +1733,11 @@ export class MembersService {
   }
 
   async sendRenewalReminder(userId: string, id: string, isAuto = false) {
+    const cleanId = String(id || '').replace(/^RNW-/, '');
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id = ${id} OR code = ${id} LIMIT 1
+      SELECT * FROM public.members 
+      WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} 
+      LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
@@ -1599,7 +1753,7 @@ export class MembersService {
     await this.prisma.$executeRaw`
       UPDATE public.members SET
         reminder_count = ${newCount},
-        last_reminder  = ${today},
+        last_reminder  = ${today}::date,
         updated_at     = now()
       WHERE id = ${current.id}
     `;
@@ -2653,21 +2807,32 @@ export class MembersService {
     }
 
     // Thông báo cho Ban Quản Trị & Ban Thành Viên
+    // Thông báo cho Ban Quản Trị & Ban Thành Viên
+    const notifCode = `NOTIF-MBR-${Date.now().toString().slice(-6)}`;
+    const notifTitle = `Hồ sơ đăng ký mới: ${companyName}`;
+    const notifBody = `Hội viên ${fullName} (${companyName}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983. Vui lòng kiểm tra và phê duyệt.`;
+
     await this.prisma.$executeRaw`
       INSERT INTO public.notifications (
-        id, tenant_id, kind, title, description, occurred_at, created_at, app_scope, target_app, target_channel, pushed_to_messages
+        id, code, title, body, description, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
       ) VALUES (
         gen_random_uuid(),
+        ${notifCode},
+        ${notifTitle},
+        ${notifBody},
+        ${notifBody},
+        'all',
+        'inapp',
+        'sent',
+        NOW(),
+        1,
         ${assocId}::uuid,
-        'member_registration',
-        ${`Hồ sơ đăng ký mới: ${companyName}`},
-        ${`Hội viên ${fullName} (${companyName}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983. Vui lòng kiểm tra và phê duyệt.`},
-        NOW(),
-        NOW(),
-        'ceo1983',
-        'ceo1983',
+        'all',
+        'all',
         'admins',
-        true
+        true,
+        NOW(),
+        NOW()
       )
     `.catch((notifErr: any) => {
       this.logger.warn(`Lỗi ghi notification: ${notifErr?.message}`);

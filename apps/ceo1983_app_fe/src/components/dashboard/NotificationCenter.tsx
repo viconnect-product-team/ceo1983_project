@@ -47,7 +47,8 @@ export function NotificationCenter() {
   const t = useT();
   const rel = useRelativeTime();
   const navigate = useNavigate();
-  const { isAdmin } = useRole();
+  const { isAdmin, isBanDieuHanh, isChuTich, isSuperAdmin, isBQT, isBTV } = useRole();
+  const canViewStaffNotifs = isAdmin || isBanDieuHanh || isChuTich || isSuperAdmin || isBQT || isBTV;
   const list = useServerFn(listNotificationsFn);
   const deleteFn = useServerFn(deleteNotificationFn);
   const [items, setItems] = useState<Notification[]>([]);
@@ -63,7 +64,7 @@ export function NotificationCenter() {
       for (const r of rows) {
         if (r.status !== "sent") continue;
         // Hide staff-only and member approval notifications from non-admin accounts
-        if (!isAdmin) {
+        if (!canViewStaffNotifs) {
           if (r.audience === "staff") continue;
           const tLower = (r.title || "").toLowerCase();
           const bLower = (r.body || "").toLowerCase();
@@ -87,7 +88,7 @@ export function NotificationCenter() {
     } finally {
       setLoading(false);
     }
-  }, [list, isAdmin]);
+  }, [list, canViewStaffNotifs]);
 
   useEffect(() => {
     void refresh();
@@ -96,6 +97,9 @@ export function NotificationCenter() {
     window.addEventListener("connect-app:notification", refresh);
 
     const socket = getConnectAppSocket();
+    if (!socket.connected) {
+      socket.connect();
+    }
     const onSocketNotif = () => {
       void refresh();
     };
@@ -103,14 +107,21 @@ export function NotificationCenter() {
     socket.on("notification:count", onSocketNotif);
     socket.on("notification:unread_count", onSocketNotif);
     socket.on("notification", onSocketNotif);
+    socket.on("member:notification_new", onSocketNotif);
+
+    const interval = setInterval(() => {
+      void refresh();
+    }, 20000);
 
     return () => {
+      clearInterval(interval);
       window.removeEventListener("notifications-seen", onSeen);
       window.removeEventListener("connect-app:notification", refresh);
       socket.off("notification:new", onSocketNotif);
       socket.off("notification:count", onSocketNotif);
       socket.off("notification:unread_count", onSocketNotif);
       socket.off("notification", onSocketNotif);
+      socket.off("member:notification_new", onSocketNotif);
     };
   }, [refresh]);
 

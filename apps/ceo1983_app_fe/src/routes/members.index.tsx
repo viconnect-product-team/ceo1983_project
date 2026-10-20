@@ -3,6 +3,7 @@ import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   Building2,
   CheckCircle2,
   ChevronDown,
@@ -363,20 +364,13 @@ function MembersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [accountFor, setAccountFor] = useState<Member | null>(null);
 
+  const [deleteMode, setDeleteMode] = useState<"choose" | "confirm_member_only">("choose");
+
   const fields: CrudField[] = [
     { name: "name", label: t("members.f.name"), type: "text", required: true },
-    { name: "contact", label: t("members.f.contact"), type: "text" },
-    { name: "email", label: t("members.f.email"), type: "text" },
     { name: "phone", label: t("members.f.phone"), type: "text" },
-    {
-      name: "type",
-      label: t("members.f.type"),
-      type: "select",
-      options: [
-        { value: "company", label: t("type.company") },
-        { value: "individual", label: t("type.individual") },
-      ],
-    },
+    { name: "email", label: t("members.f.email"), type: "text" },
+    { name: "contact", label: "Chức vụ / Chức danh", type: "text" },
     {
       name: "level",
       label: t("members.f.level"),
@@ -386,18 +380,6 @@ function MembersPage() {
         { value: "memberLevel.medium", label: t("memberLevel.medium") },
         { value: "memberLevel.small", label: t("memberLevel.small") },
         { value: "memberLevel.individual", label: t("memberLevel.individual") },
-      ],
-    },
-    {
-      name: "industry",
-      label: t("members.f.industry"),
-      type: "select",
-      options: [
-        { value: "ind.trade", label: t("ind.trade") },
-        { value: "ind.it", label: t("ind.it") },
-        { value: "ind.manufacturing", label: t("ind.manufacturing") },
-        { value: "ind.realestate", label: t("ind.realestate") },
-        { value: "ind.finance", label: t("ind.finance") },
       ],
     },
     {
@@ -431,10 +413,7 @@ function MembersPage() {
       ],
     },
     { name: "address", label: t("members.f.address"), type: "text" },
-    { name: "website", label: t("members.f.website"), type: "text" },
-    { name: "taxCode", label: t("members.f.taxCode"), type: "text" },
-    { name: "employees", label: t("members.f.employees"), type: "number" },
-    { name: "about", label: t("members.f.about"), type: "textarea" },
+    { name: "about", label: "Giới thiệu / Ghi chú", type: "textarea" },
   ];
 
   const onSubmit = async (v: CrudValues) => {
@@ -446,17 +425,12 @@ function MembersPage() {
         contact: v.contact ? String(v.contact).trim() : undefined,
         email: v.email ? String(v.email).trim() : undefined,
         phone: v.phone ? String(v.phone).trim() : undefined,
-        type: (v.type as any) || "individual",
-        level: (v.level as any) || "memberLevel.medium",
-        industry: (v.industry as any) || "ind.trade",
+        level: (v.level as any) || "memberLevel.individual",
         region: (v.region as any) || "region.north",
-        status: (v.status as any) || "pending",
+        status: (v.status as any) || "active",
         paymentStatus: pStatus,
         feePaid: pStatus === "paid" || pStatus === "cash",
         address: v.address ? String(v.address).trim() : undefined,
-        website: v.website ? String(v.website).trim() : undefined,
-        taxCode: v.taxCode ? String(v.taxCode).trim() : undefined,
-        employees: v.employees ? Number(v.employees) || 0 : undefined,
         about: v.about ? String(v.about).trim() : undefined,
       };
 
@@ -469,7 +443,7 @@ function MembersPage() {
           method: "PUT",
           body: JSON.stringify(payload),
         });
-        toast.success(t("members.updated"));
+        toast.success(t("members.updated") || "Cập nhật thông tin hội viên thành công");
         setEditing(null);
       }
       await qc.invalidateQueries({ queryKey: ["members"] });
@@ -483,7 +457,7 @@ function MembersPage() {
     }
   };
 
-  const onConfirmDelete = async () => {
+  const onConfirmDeleteAll = async () => {
     if (!deleting) return;
     const targetId = String(deleting.id);
     const targetCode = String(deleting.code || "");
@@ -493,11 +467,58 @@ function MembersPage() {
       if (targetCode) next.add(targetCode);
       return next;
     });
-    setDeleting(null);
     setSubmitting(true);
     try {
-      await fetchNestApi(`/members/${targetId}`, { method: "DELETE" });
-      toast.success(t("members.deleted"));
+      await fetchNestApi(`/members/${targetId}?mode=all`, { method: "DELETE" });
+      toast.success(`Đã xóa vĩnh viễn hội viên "${deleting.name}", doanh nghiệp và tài khoản.`);
+      setDeleting(null);
+      setDeleteMode("choose");
+      qc.setQueryData(["members"], (old: Member[] | undefined) =>
+        old ? old.filter((item) => String(item.id) !== targetId && (!targetCode || String(item.code) !== targetCode)) : [],
+      );
+      await qc.invalidateQueries({ queryKey: ["members"] });
+      await qc.invalidateQueries({ queryKey: ["renewals"] });
+      await refetch();
+    } catch (err: any) {
+      toast.error(err?.message || t("common.deleteError"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onConfirmDeleteCompanyFirst = async () => {
+    if (!deleting) return;
+    const targetId = String(deleting.id);
+    setSubmitting(true);
+    try {
+      await fetchNestApi(`/members/${targetId}?mode=company_only`, { method: "DELETE" });
+      toast.success(`Đã xóa thông tin doanh nghiệp của hội viên "${deleting.name}".`);
+      setDeleteMode("confirm_member_only");
+      await qc.invalidateQueries({ queryKey: ["members"] });
+      await refetch();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể xóa doanh nghiệp");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onConfirmDeleteMemberOnly = async () => {
+    if (!deleting) return;
+    const targetId = String(deleting.id);
+    const targetCode = String(deleting.code || "");
+    setDeletedIds((prev) => {
+      const next = new Set(prev);
+      if (targetId) next.add(targetId);
+      if (targetCode) next.add(targetCode);
+      return next;
+    });
+    setSubmitting(true);
+    try {
+      await fetchNestApi(`/members/${targetId}?mode=all`, { method: "DELETE" });
+      toast.success(`Đã xóa hồ sơ hội viên và tài khoản "${deleting.name}" thành công.`);
+      setDeleting(null);
+      setDeleteMode("choose");
       qc.setQueryData(["members"], (old: Member[] | undefined) =>
         old ? old.filter((item) => String(item.id) !== targetId && (!targetCode || String(item.code) !== targetCode)) : [],
       );
@@ -587,16 +608,11 @@ function MembersPage() {
     contact: m.contact,
     email: m.email,
     phone: m.phone,
-    type: m.type,
     level: m.level,
-    industry: m.industry,
     region: m.region,
     status: m.status,
     paymentStatus: (m as any).payment_status || (m as any).paymentStatus || (m.feePaid ? "paid" : "unpaid"),
     address: m.address,
-    website: m.website ?? "",
-    taxCode: m.taxCode ?? "",
-    employees: m.employees ?? 0,
     about: m.about,
   });
 
@@ -1504,29 +1520,111 @@ function MembersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
-            onClick={() => setDeleting(null)}
+            onClick={() => {
+              if (!submitting) {
+                setDeleting(null);
+                setDeleteMode("choose");
+              }
+            }}
           />
-          <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-glow)]">
-            <h3 className="text-base font-semibold text-foreground">{t("common.delete")}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("common.confirmDelete").replace("{name}", deleting.name)}
-            </p>
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setDeleting(null)}
-                disabled={submitting}
-                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                onClick={onConfirmDelete}
-                disabled={submitting}
-                className="rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
-              >
-                {t("common.delete")}
-              </button>
-            </div>
+          <div className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-glow)] animate-in fade-in zoom-in-95">
+            {deleteMode === "choose" ? (
+              <>
+                <div className="flex items-center gap-3 text-destructive">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Xác nhận xóa hội viên</h3>
+                    <p className="text-xs text-muted-foreground">Lựa chọn phương án xóa hồ sơ và dữ liệu liên kết</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Hội viên:</span>
+                    <strong className="text-foreground font-semibold">{deleting.name} ({deleting.code})</strong>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Doanh nghiệp liên kết:</span>
+                    <span className="text-foreground font-medium">{deleting.companyName || deleting.company || deleting.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Tài khoản đăng nhập:</span>
+                    <span className="text-foreground font-medium">{deleting.email || deleting.phone || "Có tài khoản liên kết"}</span>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                  Hội viên này đang gắn liền với dữ liệu doanh nghiệp và tài khoản quản trị/thành viên.
+                  Bạn có thể chọn <strong>xóa riêng doanh nghiệp trước</strong> (sau đó quay lại xóa hội viên) hoặc <strong>xóa toàn diện cả hội viên và doanh nghiệp</strong> ở cả 2 bảng.
+                </p>
+
+                <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    onClick={() => {
+                      setDeleting(null);
+                      setDeleteMode("choose");
+                    }}
+                    disabled={submitting}
+                    className="order-3 sm:order-1 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    onClick={onConfirmDeleteCompanyFirst}
+                    disabled={submitting}
+                    className="order-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 cursor-pointer transition-colors"
+                  >
+                    1. Xóa doanh nghiệp trước
+                  </button>
+                  <button
+                    onClick={onConfirmDeleteAll}
+                    disabled={submitting}
+                    className="order-1 sm:order-3 rounded-xl bg-destructive px-3.5 py-2 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 cursor-pointer shadow-sm transition-colors"
+                  >
+                    2. Xóa cả hội viên và doanh nghiệp
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 text-emerald-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Đã xóa doanh nghiệp liên kết</h3>
+                    <p className="text-xs text-muted-foreground">Tiến hành xóa hồ sơ hội viên và tài khoản</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 p-3.5 text-xs text-emerald-800 dark:text-emerald-200">
+                  Dữ liệu doanh nghiệp của hội viên <strong>{deleting.name}</strong> đã được gỡ bỏ khỏi bảng doanh nghiệp.
+                  Bạn có muốn tiếp tục xóa vĩnh viễn hồ sơ hội viên và tài khoản đăng nhập không?
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setDeleting(null);
+                      setDeleteMode("choose");
+                    }}
+                    disabled={submitting}
+                    className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 cursor-pointer"
+                  >
+                    Giữ lại hồ sơ hội viên
+                  </button>
+                  <button
+                    onClick={onConfirmDeleteMemberOnly}
+                    disabled={submitting}
+                    className="rounded-xl bg-destructive px-4 py-2 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 cursor-pointer shadow-sm"
+                  >
+                    Xác nhận xóa hội viên &amp; tài khoản
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

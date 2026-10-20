@@ -50,6 +50,7 @@ export interface MailTemplateItem {
   channels: ("email" | "in_app" | "push" | "sms")[];
   updatedAt: string;
   isCustom?: boolean;
+  visualContent?: VisualBlockContent;
 }
 
 export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
@@ -256,7 +257,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
   </div>
   <div style="padding: 28px 24px; color: #1e293b;">
     <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
-      Trân trọng kính mời: <strong>Anh/Chị {{full_name}}</strong> ({{member_code}}),
+      Trân trọng kính mời: <strong>Anh/Chị {{full_name}}</strong>,
     </p>
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 22px;">
       <table style="width: 100%; font-size: 13.5px; border-collapse: collapse;">
@@ -294,6 +295,9 @@ interface VisualBlockContent {
 }
 
 function extractVisualContentFromTemplate(t: MailTemplateItem): VisualBlockContent {
+  if (t.visualContent) {
+    return JSON.parse(JSON.stringify(t.visualContent));
+  }
   const isFee = t.category === "fee";
   const isWelcome = t.category === "welcome";
   const isEvent = t.category === "event";
@@ -315,7 +319,7 @@ function extractVisualContentFromTemplate(t: MailTemplateItem): VisualBlockConte
     ];
   } else if (isWelcome) {
     highlightRows = [
-      { label: "Mã định danh HV:", value: "{{member_code}}" },
+      { label: "Mã hội viên:", value: "{{member_code}}" },
       { label: "Vai trò hiệp hội:", value: "{{executive_role}}" },
       { label: "Ban sinh hoạt:", value: "{{department}}" },
       { label: "Ngày kết nạp:", value: "{{joined_date}}" },
@@ -340,7 +344,7 @@ function extractVisualContentFromTemplate(t: MailTemplateItem): VisualBlockConte
     headerBadge,
     headerTitle: t.name,
     headerSubtitle: "CLB Doanh Nhân CEO 1983 - Hiệp Hội Doanh Nghiệp Trẻ Hà Nội",
-    greeting: "Kính gửi: Anh/Chị {{full_name}} (Mã HV: {{member_code}}), Đại diện: {{company_name}},",
+    greeting: "Kính gửi: Anh/Chị {{full_name}}, Đại diện: {{company_name}},",
     introMessage: t.description || "Ban Chấp Hành CLB Doanh Nhân CEO 1983 trân trọng thông báo đến Quý Doanh nghiệp.",
     showHighlightBox: true,
     highlightBoxTitle: isFee ? "Thông Tin Đóng Phí Niên Liễm Năm {{fee_year}}" : isEvent ? "Thông Tin Sự Kiện & Vị Trí Ngồi" : "Chi Tiết Thông Tin",
@@ -411,7 +415,7 @@ function buildHtmlFromVisualContent(c: VisualBlockContent): string {
 </div>`;
 }
 
-const LOCAL_STORAGE_KEY = "ceo1983_mail_templates_v2";
+const LOCAL_STORAGE_KEY = "ceo1983_mail_templates_v3";
 
 export function MailTemplateManager() {
   const [templates, setTemplates] = useState<MailTemplateItem[]>(() => {
@@ -466,12 +470,51 @@ export function MailTemplateManager() {
     let appBody = activeTemplate.inAppBody || "";
     let html = activeTemplate.htmlBody || "";
 
-    Object.entries(sampleValues).forEach(([k, val]) => {
-      const regex = new RegExp(`{{\\s*${k}\\s*}}`, "g");
-      sub = sub.replace(regex, val);
-      appTitle = appTitle.replace(regex, val);
-      appBody = appBody.replace(regex, val);
-      html = html.replace(regex, val);
+    // Replace standard {{key}}, {key}, [key], and [label]
+    if (activeTemplate.variables) {
+      activeTemplate.variables.forEach((v) => {
+        const val = sampleValues[v.key] || v.example || "";
+        const patterns = [
+          new RegExp(`{{\\s*${v.key}\\s*}}`, "gi"),
+          new RegExp(`{\\s*${v.key}\\s*}`, "gi"),
+          new RegExp(`\\[\\s*${v.key}\\s*\\]`, "gi"),
+          new RegExp(`\\[\\s*${v.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\]`, "gi"),
+        ];
+        patterns.forEach((pattern) => {
+          sub = sub.replace(pattern, val);
+          appTitle = appTitle.replace(pattern, val);
+          appBody = appBody.replace(pattern, val);
+          html = html.replace(pattern, val);
+        });
+      });
+    }
+
+    // Common synonyms like [Họ và tên hội viên], [Mã hội viên], [Tên doanh nghiệp]
+    const commonLabels: Record<string, string> = {
+      "Họ và tên hội viên": sampleValues["full_name"] || "Trần Anh Đức",
+      "Họ tên": sampleValues["full_name"] || "Trần Anh Đức",
+      "Mã hội viên": sampleValues["member_code"] || "M1983-025",
+      "Tên doanh nghiệp": sampleValues["company_name"] || "Công ty Cổ phần Giải pháp Năng lượng Xanh",
+      "Mức phí": sampleValues["fee_amount"] || "10.000.000",
+      "Hạn nộp": sampleValues["due_date"] || "31/12/2026",
+      "Chủ tài khoản": sampleValues["bank_owner"] || "CLB CEO 1983",
+      "Số tài khoản": sampleValues["bank_account"] || "1983888888",
+      "Ngân hàng": sampleValues["bank_name"] || "MB Bank",
+      "Nội dung chuyển khoản": sampleValues["transfer_content"] || "CEO1983 M001 HOIPHI",
+      "Thời gian sự kiện": sampleValues["event_date"] || "18:00 25/12/2026",
+      "Địa điểm sự kiện": sampleValues["event_location"] || "Khách sạn Melia Hà Nội",
+      "Hạng vé": sampleValues["ticket_type"] || "VIP",
+      "Vị trí bàn/ghế": sampleValues["seat_assignment"] || "Bàn VIP 01",
+      "Ban chuyên môn": sampleValues["department"] || "Ban Xúc tiến thương mại",
+      "Chức danh": sampleValues["executive_role"] || "Hội viên chính thức",
+      "Ngày gia nhập": sampleValues["joined_date"] || "19/08/2024",
+    };
+    Object.entries(commonLabels).forEach(([lbl, val]) => {
+      const reg = new RegExp(`\\[\\s*${lbl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\]`, "gi");
+      sub = sub.replace(reg, val);
+      appTitle = appTitle.replace(reg, val);
+      appBody = appBody.replace(reg, val);
+      html = html.replace(reg, val);
     });
 
     return { subject: sub, inAppTitle: appTitle, inAppBody: appBody, html };
@@ -523,6 +566,7 @@ export function MailTemplateManager() {
     };
     const initialVisual = extractVisualContentFromTemplate(newTmpl);
     newTmpl.htmlBody = buildHtmlFromVisualContent(initialVisual);
+    newTmpl.visualContent = initialVisual;
     setVisualContent(initialVisual);
     setEditingTemplate(newTmpl);
     setModalEditorMode("visual");
@@ -531,8 +575,10 @@ export function MailTemplateManager() {
 
   // Open Edit Modal
   const handleOpenEdit = (t: MailTemplateItem) => {
-    const cloned = JSON.parse(JSON.stringify(t));
-    const initialVisual = extractVisualContentFromTemplate(cloned);
+    const cloned: MailTemplateItem = JSON.parse(JSON.stringify(t));
+    const initialVisual = t.visualContent
+      ? JSON.parse(JSON.stringify(t.visualContent))
+      : extractVisualContentFromTemplate(cloned);
     setVisualContent(initialVisual);
     setEditingTemplate(cloned);
     setModalEditorMode("visual");
@@ -546,6 +592,7 @@ export function MailTemplateManager() {
     if (editingTemplate) {
       setEditingTemplate({
         ...editingTemplate,
+        visualContent: nextVisual,
         htmlBody: buildHtmlFromVisualContent(nextVisual),
       });
     }
@@ -558,6 +605,7 @@ export function MailTemplateManager() {
     if (editingTemplate) {
       setEditingTemplate({
         ...editingTemplate,
+        visualContent: nextVisual,
         htmlBody: buildHtmlFromVisualContent(nextVisual),
       });
     }
@@ -572,6 +620,7 @@ export function MailTemplateManager() {
     if (editingTemplate) {
       setEditingTemplate({
         ...editingTemplate,
+        visualContent: nextVisual,
         htmlBody: buildHtmlFromVisualContent(nextVisual),
       });
     }
@@ -584,18 +633,19 @@ export function MailTemplateManager() {
     if (editingTemplate) {
       setEditingTemplate({
         ...editingTemplate,
+        visualContent: nextVisual,
         htmlBody: buildHtmlFromVisualContent(nextVisual),
       });
     }
   };
 
   const handleInsertVariableIntoVisual = (variableKey: string, variableLabel?: string) => {
-    const token = `{{${variableKey}}}`;
+    const token = `[${variableLabel || variableKey}]`;
     const updatedIntro = visualContent.introMessage
       ? `${visualContent.introMessage} ${token}`
       : token;
     handleUpdateVisualField("introMessage", updatedIntro);
-    toast.success(`Đã chèn trường thông tin "[${variableLabel || variableKey}]" vào nội dung thư!`);
+    toast.success(`Đã chèn trường thông tin "${token}" vào nội dung thư!`);
   };
 
   // Delete Template
@@ -613,17 +663,26 @@ export function MailTemplateManager() {
   const handleSaveModal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTemplate) return;
-    const exists = templates.some((t) => t.id === editingTemplate.id);
+    const compiledHtml = modalEditorMode === "visual"
+      ? buildHtmlFromVisualContent(visualContent)
+      : editingTemplate.htmlBody;
+    const templateToSave: MailTemplateItem = {
+      ...editingTemplate,
+      visualContent: JSON.parse(JSON.stringify(visualContent)),
+      htmlBody: compiledHtml,
+      updatedAt: new Date().toISOString().slice(0, 10),
+    };
+    const exists = templates.some((t) => t.id === templateToSave.id);
     let next: MailTemplateItem[];
     if (exists) {
-      next = templates.map((t) => (t.id === editingTemplate.id ? { ...editingTemplate, updatedAt: new Date().toISOString().slice(0, 10) } : t));
-      toast.success(`Đã cập nhật template "${editingTemplate.name}"`);
+      next = templates.map((t) => (t.id === templateToSave.id ? templateToSave : t));
+      toast.success(`Đã cập nhật template "${templateToSave.name}"`);
     } else {
-      next = [editingTemplate, ...templates];
-      toast.success(`Đã tạo mới template "${editingTemplate.name}"`);
+      next = [templateToSave, ...templates];
+      toast.success(`Đã tạo mới template "${templateToSave.name}"`);
     }
     saveTemplates(next);
-    setSelectedTemplateId(editingTemplate.id);
+    setSelectedTemplateId(templateToSave.id);
     setIsEditModalOpen(false);
   };
 

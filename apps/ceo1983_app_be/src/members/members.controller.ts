@@ -356,8 +356,8 @@ export class MembersController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async deleteMember(@Request() req: any, @Param('id') id: string) {
-    return this.membersService.deleteMember(req.user.id, id);
+  async deleteMember(@Request() req: any, @Param('id') id: string, @Query('mode') mode?: 'company_only' | 'all') {
+    return this.membersService.deleteMember(req.user.id, id, mode);
   }
 }
 

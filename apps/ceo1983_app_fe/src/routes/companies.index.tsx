@@ -126,23 +126,11 @@ function CompaniesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const fields: CrudField[] = [
-    { name: "name", label: t("members.f.name"), type: "text", required: true },
-    { name: "contact", label: t("members.f.contact"), type: "text" },
-    { name: "email", label: t("members.f.email"), type: "text" },
-    { name: "phone", label: t("members.f.phone"), type: "text" },
-    {
-      name: "level",
-      label: t("members.f.level"),
-      type: "select",
-      options: [
-        { value: "memberLevel.large", label: t("memberLevel.large") },
-        { value: "memberLevel.medium", label: t("memberLevel.medium") },
-        { value: "memberLevel.small", label: t("memberLevel.small") },
-      ],
-    },
+    { name: "name", label: "Tên doanh nghiệp", type: "text", required: true },
+    { name: "taxCode", label: "Mã số thuế", type: "text" },
     {
       name: "industry",
-      label: t("members.f.industry"),
+      label: "Ngành nghề / Lĩnh vực hoạt động",
       type: "select",
       options: [
         { value: "ind.trade", label: t("ind.trade") },
@@ -152,9 +140,20 @@ function CompaniesPage() {
         { value: "ind.finance", label: t("ind.finance") },
       ],
     },
+    { name: "employees", label: "Quy mô nhân sự (lao động)", type: "number" },
+    {
+      name: "level",
+      label: "Phân khúc quy mô doanh nghiệp",
+      type: "select",
+      options: [
+        { value: "memberLevel.large", label: t("memberLevel.large") },
+        { value: "memberLevel.medium", label: t("memberLevel.medium") },
+        { value: "memberLevel.small", label: t("memberLevel.small") },
+      ],
+    },
     {
       name: "region",
-      label: t("members.f.region"),
+      label: "Khu vực kinh doanh",
       type: "select",
       options: [
         { value: "region.north", label: t("region.north") },
@@ -162,16 +161,10 @@ function CompaniesPage() {
         { value: "region.south", label: t("region.south") },
       ],
     },
-    {
-      name: "status",
-      label: t("members.f.status"),
-      type: "select",
-      options: [
-        { value: "pending", label: t("status.pending") },
-        { value: "active", label: t("status.active") },
-        { value: "expired", label: t("status.expired") },
-      ],
-    },
+    { name: "address", label: "Địa chỉ trụ sở / Văn phòng", type: "text" },
+    { name: "website", label: "Website doanh nghiệp", type: "text" },
+    { name: "email", label: "Email liên hệ doanh nghiệp", type: "text" },
+    { name: "phone", label: "Hotline / Số điện thoại", type: "text" },
     {
       name: "feePaid",
       label: "Trạng thái hội phí",
@@ -182,22 +175,16 @@ function CompaniesPage() {
       ],
     },
     { name: "feeYear", label: "Năm hội phí", type: "number" },
-    { name: "address", label: t("members.f.address"), type: "text" },
-    { name: "website", label: t("members.f.website"), type: "text" },
-    { name: "taxCode", label: t("members.f.taxCode"), type: "text" },
-    { name: "employees", label: t("members.f.employees"), type: "number" },
-    { name: "about", label: t("members.f.about"), type: "textarea" },
+    { name: "about", label: "Giới thiệu doanh nghiệp", type: "textarea" },
   ];
 
   const editInitial = (m: Member): CrudValues => ({
-    name: m.name,
-    contact: m.contact,
-    email: m.email,
-    phone: m.phone,
+    name: m.companyName || m.company || m.name,
+    email: m.email ?? "",
+    phone: m.phone ?? "",
     level: m.level,
     industry: m.industry,
     region: m.region,
-    status: m.status,
     feePaid: m.feePaid ? "paid" : "unpaid",
     feeYear: m.feeYear ?? new Date().getFullYear(),
     address: m.address,
@@ -870,7 +857,7 @@ function CompanyTable({
               <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
               <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">Mã DN</th>
               <SortHeader
-                label={t("tbl.name")}
+                label="Tên doanh nghiệp"
                 columnKey="name"
                 sortKey={tc.sortKey}
                 sortDir={tc.sortDir}
@@ -923,6 +910,7 @@ function CompanyTable({
           <tbody>
             {rows.map((m, idx) => {
               const s = statusStyle[m.status];
+              const compName = m.companyName || m.company || m.name;
               return (
                 <tr key={m.id} className="group border-b border-border/50 transition hover:bg-muted/30">
                   <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
@@ -937,11 +925,11 @@ function CompanyTable({
                         className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-bold text-primary-foreground shrink-0"
                         style={{ background: "var(--gradient-primary)" }}
                       >
-                        {initials(m.name).toUpperCase()}
+                        {initials(compName).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <TruncatedText
-                          text={m.name}
+                          text={compName}
                           maxWidth="max-w-[300px]"
                           className="font-semibold text-foreground"
                         />

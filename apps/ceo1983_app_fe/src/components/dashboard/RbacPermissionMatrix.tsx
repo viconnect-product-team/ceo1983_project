@@ -45,6 +45,8 @@ import {
   Palette,
   FolderOpen,
   IdCard,
+  Monitor,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -81,8 +83,9 @@ export const SYSTEM_ROLES: SystemRole[] = [
   { key: "quan_tri", name: "Quản trị", shortName: "Quản trị", color: "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800", desc: "Toàn quyền hệ thống & phân quyền cao nhất" },
   { key: "chu_tich", name: "Chủ tịch", shortName: "Chủ tịch", color: "text-amber-800 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700", desc: "Chủ tịch Hiệp hội, quyền phê duyệt tối cao toàn hệ thống" },
   { key: "admin", name: "Admin", shortName: "Admin", color: "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800", desc: "Quản trị viên vận hành nghiệp vụ CRM" },
-  { key: "tong_thu_ky", name: "Tổng thư ký", shortName: "Tổng thư ký", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800", desc: "Điều phối thư ký, sự kiện, cuộc họp & công văn" },
   { key: "truong_ban_dieu_hanh", name: "Trưởng ban điều hành", shortName: "Trưởng ban Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800", desc: "Điều hành quản lý nội bộ, quy chế & điều phối các ban" },
+  { key: "thanh_vien_ban_dieu_hanh", name: "Thành viên ban điều hành", shortName: "TV Ban Điều Hành", color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800", desc: "Thành viên Ban Điều Hành Hiệp Hội" },
+  { key: "tong_thu_ky", name: "Tổng thư ký", shortName: "Tổng thư ký", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800", desc: "Điều phối thư ký, sự kiện, cuộc họp & công văn" },
   { key: "truong_ban_truyen_thong", name: "Trưởng ban truyền thông", shortName: "Trưởng ban Truyền Thông", color: "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800", desc: "Quản lý truyền thông, tin tức, hình ảnh & thương hiệu" },
   { key: "truong_ban_thanh_vien", name: "Trưởng ban thành viên", shortName: "Trưởng ban Thành Viên", color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800", desc: "Phát triển hội viên, kết nạp & chăm sóc hội viên mới" },
   { key: "truong_ban_xuc_tien", name: "Trưởng ban xúc tiến TM", shortName: "Trưởng ban Xúc Tiến TM", color: "text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800", desc: "Điều phối cơ hội giao thương, kết nối B2B & kinh doanh" },
@@ -1396,14 +1399,15 @@ export function RbacPermissionMatrix({
     };
   }, []);
 
-  // Sắp xếp thứ tự vai trò chuẩn Figma: QUẢN TRỊ, CHỦ TỊCH, ADMIN, TỔNG THƯ KÝ, TRƯỞNG BAN ĐIỀU HÀNH, TRƯỞNG BAN TRUYỀN THÔNG...
+  // Sắp xếp thứ tự vai trò chuẩn Figma: QUẢN TRỊ, CHỦ TỊCH, TRƯỞNG BAN ĐIỀU HÀNH, ADMIN, THÀNH VIÊN BAN ĐIỀU HÀNH...
   const orderedRoles = useMemo(() => {
     const primaryKeys = [
       "quan_tri",
       "chu_tich",
-      "admin",
-      "tong_thu_ky",
       "truong_ban_dieu_hanh",
+      "admin",
+      "thanh_vien_ban_dieu_hanh",
+      "tong_thu_ky",
       "truong_ban_truyen_thong",
     ];
     const result: SystemRole[] = [];
@@ -1426,6 +1430,15 @@ export function RbacPermissionMatrix({
           TRƯỞNG BAN
           <br />
           ĐIỀU HÀNH
+        </span>
+      );
+    }
+    if (role.key === "thanh_vien_ban_dieu_hanh") {
+      return (
+        <span className="text-center">
+          THÀNH VIÊN
+          <br />
+          BAN ĐIỀU HÀNH
         </span>
       );
     }
@@ -1547,16 +1560,33 @@ export function RbacPermissionMatrix({
     return "w-28 min-w-[112px]";
   };
 
-  // Flat danh sách tất cả các chức năng theo đúng thứ tự Sidebar CRM (bỏ hàng nhóm)
+  // ── PHÂN CHIA 2 TAB: PHÂN QUYỀN CRM RIÊNG & PHÂN QUYỀN APP CEO 1983 RIÊNG ──
+  const [matrixTab, setMatrixTab] = useState<"crm" | "app">("crm");
+
+  const crmCategories = useMemo(() => {
+    return filteredCategories.filter(
+      (c) => c.id !== "cat_mobile_app" && !c.name.toLowerCase().includes("ứng dụng di động")
+    );
+  }, [filteredCategories]);
+
+  const appCategories = useMemo(() => {
+    return filteredCategories.filter(
+      (c) => c.id === "cat_mobile_app" || c.name.toLowerCase().includes("ứng dụng di động") || c.name.toLowerCase().includes("app ceo 1983")
+    );
+  }, [filteredCategories]);
+
+  const currentTabCategories = matrixTab === "crm" ? crmCategories : appCategories;
+
+  // Flat danh sách tất cả các chức năng theo tab được chọn
   const flatFeatures = useMemo(() => {
-    return filteredCategories.flatMap((cat) =>
+    return currentTabCategories.flatMap((cat) =>
       cat.features.map((feat) => ({
         feat,
         catId: cat.id,
         catName: cat.name,
       }))
     );
-  }, [filteredCategories]);
+  }, [currentTabCategories]);
 
   return (
     <div className="self-stretch min-h-[739px] pl-4 sm:pl-10 lg:pl-14 pr-4 sm:pr-8 lg:pr-12 pt-8 sm:pt-10 flex flex-col justify-start items-start gap-4">
@@ -1626,6 +1656,45 @@ export function RbacPermissionMatrix({
             <img src="/icons/ceo1983_icon_1/rotate-ccw.svg" className="size-4" alt="reset" />
           </button>
         </div>
+      </div>
+
+      {/* ── 2 TAB PHÂN QUYỀN CHUYÊN BIỆT: CRM RIÊNG & APP CEO 1983 RIÊNG ── */}
+      <div className="self-stretch flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <button
+          type="button"
+          onClick={() => setMatrixTab("crm")}
+          className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer ${
+            matrixTab === "crm"
+              ? "bg-[#003B95] text-white shadow-md shadow-blue-900/20"
+              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700"
+          }`}
+        >
+          <Monitor className="size-4" />
+          <span>PHÂN QUYỀN HỆ THỐNG CRM</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+            matrixTab === "crm" ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+          }`}>
+            {crmCategories.reduce((acc, c) => acc + c.features.length, 0)} phân hệ
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMatrixTab("app")}
+          className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer ${
+            matrixTab === "app"
+              ? "bg-amber-600 text-white shadow-md shadow-amber-900/20"
+              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700"
+          }`}
+        >
+          <Smartphone className="size-4" />
+          <span>PHÂN QUYỀN APP CEO 1983</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+            matrixTab === "app" ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+          }`}>
+            {appCategories.reduce((acc, c) => acc + c.features.length, 0)} chức năng
+          </span>
+        </button>
       </div>
 
       {/* ── CẢNH BÁO CHƯA LƯU QUYỀN TRÊN MA TRẬN ── */}

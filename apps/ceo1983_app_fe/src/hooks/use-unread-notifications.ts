@@ -65,6 +65,9 @@ export function useUnreadNotifications() {
     window.addEventListener("connect-app:notification", refresh);
 
     const socket = getConnectAppSocket();
+    if (!socket.connected) {
+      socket.connect();
+    }
     const onSocketEvent = () => {
       void refresh();
     };
@@ -72,14 +75,21 @@ export function useUnreadNotifications() {
     socket.on("notification:count", onSocketEvent);
     socket.on("notification:unread_count", onSocketEvent);
     socket.on("notification", onSocketEvent);
+    socket.on("member:notification_new", onSocketEvent);
+
+    const interval = setInterval(() => {
+      void refresh();
+    }, 20000);
 
     return () => {
+      clearInterval(interval);
       window.removeEventListener("notifications-seen", onSeen);
       window.removeEventListener("connect-app:notification", refresh);
       socket.off("notification:new", onSocketEvent);
       socket.off("notification:count", onSocketEvent);
       socket.off("notification:unread_count", onSocketEvent);
       socket.off("notification", onSocketEvent);
+      socket.off("member:notification_new", onSocketEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

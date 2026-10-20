@@ -152,10 +152,13 @@ function AccountsPage() {
   }, [formDepartment, customDepts, formRole]);
 
   const handleDepartmentChange = (newDept: string) => {
-    setFormDepartment(newDept);
-    const roles = getRolesForDepartment(newDept, customDepts);
-    if (roles.length > 0 && !roles.some((r) => r.value === formRole)) {
-      setFormRole(roles[0].value);
+    const cleanDept = normalizeDept(newDept);
+    setFormDepartment(cleanDept);
+    const roles = getRolesForDepartment(cleanDept, customDepts);
+    if (roles.length > 0) {
+      if (!roles.some((r) => r.value === formRole)) {
+        setFormRole(roles[0].value);
+      }
     }
   };
 
@@ -375,8 +378,11 @@ function AccountsPage() {
     setFormEmail(acc.email);
     setFormPhone(acc.phone || "");
     setFormCompany(acc.companyName || "");
-    setFormDepartment(acc.department || departmentList[0] || "Ban Điều Hành");
-    setFormRole(acc.role || "member");
+    const cleanDept = normalizeDept(acc.department || "Ban Điều Hành");
+    setFormDepartment(cleanDept);
+    const validRoles = getRolesForDepartment(cleanDept, customDepts);
+    const hasRole = validRoles.some((r) => r.value === acc.role);
+    setFormRole(hasRole ? (acc.role || validRoles[0].value) : (validRoles[0]?.value || "member"));
     setFormStatus(acc.status || "active");
     setIsEditOpen(true);
   };

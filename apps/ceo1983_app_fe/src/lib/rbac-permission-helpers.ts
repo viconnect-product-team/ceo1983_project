@@ -11,6 +11,7 @@ export type SystemRoleKey =
   | "admin"
   | "tong_thu_ky"
   | "truong_ban_dieu_hanh"
+  | "thanh_vien_ban_dieu_hanh"
   | "truong_ban_truyen_thong"
   | "truong_ban_thanh_vien"
   | "truong_ban_xuc_tien"
@@ -67,6 +68,13 @@ export const SYSTEM_5_ROLES: SystemRoleDef[] = [
     shortName: "TB Điều Hành",
     color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800",
     desc: "Điều hành quản lý nội bộ, quy chế & điều phối các ban",
+  },
+  {
+    key: "thanh_vien_ban_dieu_hanh",
+    name: "Thành viên Ban Điều Hành",
+    shortName: "TV Ban Điều Hành",
+    color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800",
+    desc: "Thành viên trực thuộc Ban Điều Hành Hiệp Hội",
   },
   {
     key: "truong_ban_truyen_thong",
@@ -157,9 +165,10 @@ export const SYSTEM_5_ROLES: SystemRoleDef[] = [
 export const ROLE_OPTIONS = [
   { value: "quan_tri", label: "Quản trị" },
   { value: "chu_tich", label: "Chủ tịch" },
-  { value: "admin", label: "Admin" },
-  { value: "tong_thu_ky", label: "Tổng thư ký" },
   { value: "truong_ban_dieu_hanh", label: "Trưởng ban Điều hành" },
+  { value: "admin", label: "Admin" },
+  { value: "thanh_vien_ban_dieu_hanh", label: "Thành viên ban điều hành" },
+  { value: "tong_thu_ky", label: "Tổng thư ký" },
   { value: "truong_ban_truyen_thong", label: "Trưởng ban Truyền thông" },
   { value: "truong_ban_thanh_vien", label: "Trưởng ban Thành viên" },
   { value: "truong_ban_xuc_tien", label: "Trưởng ban Xúc tiến thương mại" },
@@ -241,6 +250,7 @@ export function normalizeRole(r?: string): SystemRoleKey {
   if (s === "ban_thu_ky" || s === "thu_ky" || s === "btk") return "tong_thu_ky";
 
   // 2. Specific committee members (BEFORE Trưởng ban to prevent false match)
+  if (s === "thanh_vien_ban_dieu_hanh" || s.includes("thành viên ban điều hành") || s.includes("tv điều hành") || s.includes("thành viên bđh")) return "thanh_vien_ban_dieu_hanh";
   if (s === "thanh_vien_ban_su_kien" || s.includes("thành viên ban sự kiện") || s.includes("tv sự kiện")) return "thanh_vien_ban_su_kien";
   if (s === "thanh_vien_ban_xuc_tien" || s.includes("thành viên ban xúc tiến") || s.includes("tv xúc tiến")) return "thanh_vien_ban_xuc_tien";
   if (s === "thanh_vien_ban_thanh_vien" || s.includes("thành viên ban thành viên") || s.includes("tv thành viên")) return "thanh_vien_ban_thanh_vien";
@@ -313,14 +323,13 @@ export function getRolesForDepartment(
 
   let roles: { value: string; label: string; desc?: string }[] = [];
 
-  if (norm === "Ban Điều Hành" || deptName.toLowerCase().includes("điều hành")) {
+  if (norm === "Ban Điều Hành" || deptName.toLowerCase().includes("điều hành") || deptName.toLowerCase().includes("quản trị")) {
     roles = [
-      { value: "chu_tich", label: "Chủ tịch", desc: "Chủ tịch Hiệp hội" },
       { value: "quan_tri", label: "Quản trị", desc: "Toàn quyền quản trị hệ thống" },
-      { value: "admin", label: "Admin", desc: "Quản trị viên" },
+      { value: "chu_tich", label: "Chủ tịch", desc: "Chủ tịch Hiệp hội" },
       { value: "truong_ban_dieu_hanh", label: "Trưởng ban Điều hành", desc: "Điều hành quản lý nội bộ" },
-      { value: "tong_thu_ky", label: "Tổng thư ký", desc: "Điều phối thư ký" },
-      { value: "member", label: "Thành viên", desc: "Hội viên Ban điều hành" },
+      { value: "admin", label: "Admin", desc: "Quản trị viên kỹ thuật & dữ liệu" },
+      { value: "thanh_vien_ban_dieu_hanh", label: "Thành viên ban điều hành", desc: "Thành viên Ban Điều Hành" },
     ];
   } else if (norm === "Ban Thư Ký" || deptName.toLowerCase().includes("thư ký")) {
     roles = [

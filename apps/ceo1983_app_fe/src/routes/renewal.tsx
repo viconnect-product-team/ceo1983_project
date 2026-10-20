@@ -268,27 +268,56 @@ function RenewalPage() {
 
   const handleRenew = async (rec: RenewalRecord) => {
     if (!confirm(t("renewal.confirmRenew"))) return;
-    await renewFn({ data: { id: rec.id } });
-    toast.success(t("renewal.toast.renewed"));
+    const cleanId = rec.member.id || rec.member.code || rec.id.replace(/^RNW-/, "");
+    try {
+      await fetchNestApi(`/members/${cleanId}/renew`, { method: "POST" });
+      toast.success(t("renewal.toast.renewed"));
+    } catch (e: any) {
+      await renewFn({ data: { id: cleanId } });
+      toast.success(t("renewal.toast.renewed"));
+    }
     await invalidateAll();
   };
 
   const handleRemind = async (rec: RenewalRecord) => {
-    await remindFn({ data: { id: rec.id, isAuto: false } });
-    toast.success(`${t("renewal.toast.reminded")} (Đã gửi email đến ${rec.member.email})`);
+    const cleanId = rec.member.id || rec.member.code || rec.id.replace(/^RNW-/, "");
+    try {
+      await fetchNestApi(`/members/${cleanId}/remind`, {
+        method: "POST",
+        body: JSON.stringify({ isAuto: false }),
+      });
+      toast.success(`${t("renewal.toast.reminded")} (Đã gửi email đến ${rec.member.email})`);
+    } catch (e: any) {
+      await remindFn({ data: { id: cleanId, isAuto: false } });
+      toast.success(`${t("renewal.toast.reminded")} (Đã gửi email đến ${rec.member.email})`);
+    }
     await invalidateAll();
   };
 
   const handleCancel = async (rec: RenewalRecord) => {
     if (!confirm(t("renewal.confirmCancel"))) return;
-    await cancelFn({ data: { id: rec.id } });
-    toast.success(t("renewal.toast.cancelled"));
+    const cleanId = rec.member.id || rec.member.code || rec.id.replace(/^RNW-/, "");
+    try {
+      await cancelFn({ data: { id: cleanId } });
+      toast.success(t("renewal.toast.cancelled"));
+    } catch (e: any) {
+      toast.error(e?.message || "Không thể hủy gia hạn");
+    }
     await invalidateAll();
   };
 
   const handlePayment = async (rec: RenewalRecord, status: PaymentStatus) => {
-    await paymentFn({ data: { id: rec.id, status } });
-    toast.success(t("renewal.toast.payment"));
+    const cleanId = rec.member.id || rec.member.code || rec.id.replace(/^RNW-/, "");
+    try {
+      await fetchNestApi(`/members/${cleanId}/payment-status`, {
+        method: "POST",
+        body: JSON.stringify({ paymentStatus: status, feePaid: status === "paid" || status === "cash" }),
+      });
+      toast.success(t("renewal.toast.payment"));
+    } catch (e: any) {
+      await paymentFn({ data: { id: cleanId, status } });
+      toast.success(t("renewal.toast.payment"));
+    }
     await invalidateAll();
   };
 
@@ -657,16 +686,18 @@ function RenewalPage() {
             </tbody>
           </table>
         </div>
-        <Pagination
-          page={tc.page}
-          pageCount={tc.pageCount}
-          pageSize={tc.pageSize}
-          total={tc.total}
-          from={tc.from}
-          to={tc.to}
-          onPage={tc.setPage}
-          onPageSize={tc.setPageSize}
-        />
+        <div className="w-full self-stretch border-t border-slate-200 dark:border-slate-800 bg-card">
+          <Pagination
+            page={tc.page}
+            pageCount={tc.pageCount}
+            pageSize={tc.pageSize}
+            total={tc.total}
+            from={tc.from}
+            to={tc.to}
+            onPage={tc.setPage}
+            onPageSize={tc.setPageSize}
+          />
+        </div>
       </div>
     </AppShell>
   );

@@ -40,6 +40,39 @@ import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
+import { useResizableColumns, ResizableTh } from "@/components/dashboard/ResizableTableHeaders";
+import { TruncatedText } from "@/components/dashboard/TruncatedText";
+
+type ExpenseColKey =
+  | "stt"
+  | "id"
+  | "date"
+  | "category"
+  | "description"
+  | "recipient"
+  | "amount"
+  | "advanceRefund"
+  | "netExpense"
+  | "method"
+  | "status"
+  | "invoice"
+  | "actions";
+
+const initialExpenseColWidths: Record<ExpenseColKey, number> = {
+  stt: 60,
+  id: 130,
+  date: 110,
+  category: 130,
+  description: 240,
+  recipient: 180,
+  amount: 130,
+  advanceRefund: 150,
+  netExpense: 140,
+  method: 120,
+  status: 130,
+  invoice: 100,
+  actions: 110,
+};
 
 const DEFAULT_EXPENSES_TRANSACTIONS: Transaction[] = [
   {
@@ -122,6 +155,7 @@ export const Route = createFileRoute("/expenses")({
 function ExpensesPage() {
   const t = useT();
   const fmt = useFmt();
+  const { widths: colWidths, startResize } = useResizableColumns<ExpenseColKey>(initialExpenseColWidths);
   const router = useRouter();
   const rawLoaderData = Route.useLoaderData();
   const loadedTransactions = Array.isArray(rawLoaderData) ? (rawLoaderData as Transaction[]) : [];
@@ -776,22 +810,48 @@ function ExpensesPage() {
       {/* Main Expense Table */}
       <Card className="overflow-hidden">
         <div className="relative overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-left text-sm">
+          <table className="w-full border-separate border-spacing-0 text-left text-sm table-fixed">
           <thead className="border-b border-border bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="sticky left-0 z-20 w-14 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">STT</th>
-              <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">Mã phiếu chi</th>
-              <th className="px-4 py-3 border-b border-border">Ngày chi</th>
-              <th className="px-4 py-3 border-b border-border">Danh mục</th>
-              <th className="px-4 py-3 border-b border-border">Nội dung chi</th>
-              <th className="px-4 py-3 border-b border-border">Người nhận / Đơn vị</th>
-              <th className="px-4 py-3 text-right border-b border-border">Số tiền</th>
-              <th className="px-4 py-3 text-center border-b border-border">Tạm ứng & Hoàn ứng</th>
-              <th className="px-4 py-3 text-right font-bold text-rose-600 border-b border-border">Chi thực tế</th>
-              <th className="px-4 py-3 border-b border-border">Hình thức</th>
-              <th className="px-4 py-3 border-b border-border">Trạng thái</th>
-              <th className="px-4 py-3 text-center border-b border-border">Tải hóa đơn</th>
-              <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">Thao tác</th>
+              <ResizableTh colKey="stt" width={colWidths.stt} onResize={startResize} className="sticky left-0 z-20 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">
+                STT
+              </ResizableTh>
+              <ResizableTh colKey="id" width={colWidths.id} onResize={startResize} style={{ left: `${colWidths.stt}px` }} className="sticky z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">
+                Mã phiếu chi
+              </ResizableTh>
+              <ResizableTh colKey="date" width={colWidths.date} onResize={startResize} className="px-4 py-3 border-b border-border">
+                Ngày chi
+              </ResizableTh>
+              <ResizableTh colKey="category" width={colWidths.category} onResize={startResize} className="px-4 py-3 border-b border-border">
+                Danh mục
+              </ResizableTh>
+              <ResizableTh colKey="description" width={colWidths.description} onResize={startResize} className="px-4 py-3 border-b border-border">
+                Nội dung chi
+              </ResizableTh>
+              <ResizableTh colKey="recipient" width={colWidths.recipient} onResize={startResize} className="px-4 py-3 border-b border-border">
+                Người nhận / Đơn vị
+              </ResizableTh>
+              <ResizableTh colKey="amount" width={colWidths.amount} onResize={startResize} className="px-4 py-3 text-right border-b border-border">
+                Số tiền
+              </ResizableTh>
+              <ResizableTh colKey="advanceRefund" width={colWidths.advanceRefund} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
+                Tạm ứng & Hoàn ứng
+              </ResizableTh>
+              <ResizableTh colKey="netExpense" width={colWidths.netExpense} onResize={startResize} className="px-4 py-3 text-right font-bold text-rose-600 border-b border-border">
+                Chi thực tế
+              </ResizableTh>
+              <ResizableTh colKey="method" width={colWidths.method} onResize={startResize} className="px-4 py-3 border-b border-border">
+                Hình thức
+              </ResizableTh>
+              <ResizableTh colKey="status" width={colWidths.status} onResize={startResize} className="px-4 py-3 border-b border-border">
+                Trạng thái
+              </ResizableTh>
+              <ResizableTh colKey="invoice" width={colWidths.invoice} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
+                Tải hóa đơn
+              </ResizableTh>
+              <ResizableTh colKey="actions" width={colWidths.actions} onResize={startResize} className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">
+                Thao tác
+              </ResizableTh>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -810,32 +870,32 @@ function ExpensesPage() {
 
                 return (
                   <tr key={tx.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
-                    <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                    <td style={{ width: `${colWidths.stt}px`, maxWidth: `${colWidths.stt}px` }} className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
                       {(tc.page - 1) * tc.pageSize + idx + 1}
                     </td>
-                    <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
-                      {tx.id}
+                    <td style={{ width: `${colWidths.id}px`, maxWidth: `${colWidths.id}px`, left: `${colWidths.stt}px` }} className="sticky z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
+                      <TruncatedText text={tx.id} maxWidth="w-full" />
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap border-b border-border/50">
+                    <td style={{ width: `${colWidths.date}px`, maxWidth: `${colWidths.date}px` }} className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap border-b border-border/50">
                       {tx.date}
                     </td>
-                    <td className="px-4 py-3 text-xs border-b border-border/50">
+                    <td style={{ width: `${colWidths.category}px`, maxWidth: `${colWidths.category}px` }} className="px-4 py-3 text-xs border-b border-border/50">
                       {isAdvance ? (
                         <Pill tone="warn">Tạm ứng</Pill>
                       ) : (
-                        <span className="capitalize">{tx.category}</span>
+                        <TruncatedText text={getCategoryLabel(tx.category)} maxWidth="w-full" />
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-medium max-w-xs truncate border-b border-border/50">
-                      {tx.description || "—"}
+                    <td style={{ width: `${colWidths.description}px`, maxWidth: `${colWidths.description}px` }} className="px-4 py-3 text-xs font-medium border-b border-border/50">
+                      <TruncatedText text={tx.description || "—"} maxWidth="w-full" />
                     </td>
-                    <td className="px-4 py-3 text-xs font-semibold text-foreground border-b border-border/50">
-                      {tx.recipient || "—"}
+                    <td style={{ width: `${colWidths.recipient}px`, maxWidth: `${colWidths.recipient}px` }} className="px-4 py-3 text-xs font-semibold text-foreground border-b border-border/50">
+                      <TruncatedText text={tx.recipient || "—"} maxWidth="w-full" />
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap border-b border-border/50">
+                    <td style={{ width: `${colWidths.amount}px`, maxWidth: `${colWidths.amount}px` }} className="px-4 py-3 text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap border-b border-border/50">
                       {fmt.money(tx.amount)}
                     </td>
-                    <td className="px-4 py-3 text-center text-xs whitespace-nowrap border-b border-border/50">
+                    <td style={{ width: `${colWidths.advanceRefund}px`, maxWidth: `${colWidths.advanceRefund}px` }} className="px-4 py-3 text-center text-xs whitespace-nowrap border-b border-border/50">
                       {isAdvance ? (
                         <div className="inline-flex flex-col items-center">
                           <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
@@ -859,32 +919,32 @@ function ExpensesPage() {
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap border-b border-border/50">
+                    <td style={{ width: `${colWidths.netExpense}px`, maxWidth: `${colWidths.netExpense}px` }} className="px-4 py-3 text-right font-mono text-xs font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap border-b border-border/50">
                       -{fmt.money(netExpense)}
                     </td>
-                    <td className="px-4 py-3 text-xs border-b border-border/50">
+                    <td style={{ width: `${colWidths.method}px`, maxWidth: `${colWidths.method}px` }} className="px-4 py-3 text-xs border-b border-border/50">
                       {tx.method === "cash" ? (
                         <Pill tone="success">Tiền mặt</Pill>
                       ) : (
                         <Pill tone="info">Chuyển khoản</Pill>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs border-b border-border/50">
+                    <td style={{ width: `${colWidths.status}px`, maxWidth: `${colWidths.status}px` }} className="px-4 py-3 text-xs border-b border-border/50">
                       {tx.status === "completed" ? (
                         <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Đã duyệt
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">Đã duyệt</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
-                          <Clock className="h-3.5 w-3.5" />
-                          Chờ duyệt
+                          <Clock className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">Chờ duyệt</span>
                         </span>
                       )}
                     </td>
 
                     {/* Column Tải Hóa Đơn on every row (User requirement) */}
-                    <td className="px-4 py-3 text-center border-b border-border/50">
+                    <td style={{ width: `${colWidths.invoice}px`, maxWidth: `${colWidths.invoice}px` }} className="px-4 py-3 text-center border-b border-border/50">
                       <button
                         type="button"
                         onClick={() =>
@@ -905,13 +965,13 @@ function ExpensesPage() {
                         title="Tải hóa đơn / Phiếu chi PDF"
                         className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-xs hover:bg-muted cursor-pointer transition-colors"
                       >
-                        <FileDown className="h-3.5 w-3.5 text-primary" />
+                        <FileDown className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span>Tải HĐ</span>
                       </button>
                     </td>
 
                     {/* Actions */}
-                    <td className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
+                    <td style={{ width: `${colWidths.actions}px`, maxWidth: `${colWidths.actions}px` }} className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
                       <div className="flex items-center justify-end gap-1.5">
                         {isAdvance && (
                           <button

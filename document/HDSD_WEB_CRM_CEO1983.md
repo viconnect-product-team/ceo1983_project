@@ -114,5 +114,22 @@
    - Tuyệt đối không chỉ lưu tạm ở bộ nhớ trình duyệt (`localStorage`); khi tải lại trang (`F5`) hoặc đăng nhập từ thiết bị khác, dữ liệu phân quyền luôn được nạp đầy đủ và chính xác từ cơ sở dữ liệu.
    - Tự động làm mới cache hồ sơ người dùng (`clearMeCache`), phát thông báo thay đổi quyền hạn `role-changed` giúp thanh điều hướng và menu chức năng cập nhật thẩm quyền mới ngay tức thì mà không cần đăng xuất.
 
+### BÀI 11: QUY CHUẨN BẢNG DASHBOARD CO DÃN CỘT EXCEL, CHỈNH SỬA HỘI VIÊN - DOANH NGHIỆP & GIA HẠN HỘI VIÊN
+1. **Co dãn cột Dashboard như Excel & Rút gọn Ellipsis Tooltip**:
+   - Mọi bảng dashboard (Quản lý Thu `/income`, Quản lý Chi `/expenses`, Đăng ký sự kiện `/event-registrations`): Hỗ trợ thanh kéo `resizer` ở từng tiêu đề cột, người dùng rê chuột kéo giãn co hẹp độ rộng cột tự do như bảng tính Excel.
+   - Các trường nội dung dài (Nội dung thu/chi, Người nộp/nhận, Danh mục,...) tự động cắt rút gọn `...` và hiển thị Tooltip sắc nét phong cách Ant Design (nền đen #1f1f1f, chữ trắng, mũi tên định hướng) khi rê chuột vào, tuyệt đối không làm tràn vỡ dòng hay lệch cấu trúc bảng.
+2. **Tách biệt Chỉnh sửa Hội viên & Doanh nghiệp**:
+   - **Chỉnh sửa Doanh nghiệp (`/companies`)**: Cột 3 bảng Doanh nghiệp hiển thị Tên doanh nghiệp; Modal chỉnh sửa chỉ hiển thị các trường liên quan đến doanh nghiệp (Tên DN, Mã số thuế, Ngành nghề, Quy mô, Website, Địa chỉ, Hội phí).
+   - **Chỉnh sửa Hội viên (`/members`)**: Modal chỉnh sửa chỉ hiển thị thông tin cá nhân của hội viên (Họ tên, SĐT, Email, Chức vụ, Hạng, Vùng, Trạng thái, Địa chỉ, Giới thiệu).
+   - **Xóa Hội viên với 2 Lựa chọn minh bạch**:
+     * Lựa chọn 1: *Xóa doanh nghiệp trước* (`company_only`): Hủy liên kết doanh nghiệp, xóa thông tin doanh nghiệp nhưng vẫn giữ lại hồ sơ hội viên và tài khoản. Sau đó có thể tiếp tục thao tác xóa hội viên nếu muốn.
+     * Lựa chọn 2: *Xóa cả hội viên và doanh nghiệp* (`all`): Cascade xóa sạch toàn bộ hồ sơ hội viên, doanh nghiệp, thẻ điện tử, tư cách hội viên và tài khoản đăng nhập `vione_users`/`auth.users`.
+3. **Quản lý Gia Hạn Hội Viên (`/renewal`)**:
+   - Khắc phục triệt để lỗi CSDL ép kiểu UUID khi xử lý mã hội viên; dữ liệu gia hạn luôn liên kết với bản ghi tài khoản `vione_users` mới nhất.
+   - Thao tác "Gia hạn hội viên" và "Gửi nhắc nhở" hoạt động ổn định và chính xác; chân trang phân trang được bao phủ toàn màn hình chuyên nghiệp.
+4. **Phân Quyền Ma Trận 2 Tab & Chọn Ban Điều Hành Nhanh**:
+   - Ma trận phân quyền (`/permissions`) chia làm 2 tab: Tab CRM Web và Tab App CEO 1983 Mobile.
+   - Khi chọn Ban Điều Hành tại Quản lý tài khoản (`/accounts`), hệ thống hiển thị đầy đủ 5 vai trò cốt lõi ngay từ lần click đầu tiên mà không cần chọn ban khác rồi quay lại.
+
 
 

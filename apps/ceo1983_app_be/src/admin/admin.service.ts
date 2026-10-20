@@ -617,7 +617,7 @@ export class AdminService implements OnModuleInit {
             SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
             FROM public.notifications
             WHERE (association_id = ${validAssocId}::uuid OR association_id IS NULL)
-              AND (app_scope = ${filterScope} OR target_app = ${filterScope})
+              AND (app_scope = ${filterScope} OR target_app = ${filterScope} OR app_scope = 'all' OR target_app = 'all' OR app_scope IS NULL)
             ORDER BY created_at DESC
             LIMIT 60
           `.catch(() => []);
@@ -625,7 +625,7 @@ export class AdminService implements OnModuleInit {
           rows = await this.prisma.$queryRaw<any[]>`
             SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at
             FROM public.notifications
-            WHERE (app_scope = ${filterScope} OR target_app = ${filterScope})
+            WHERE (app_scope = ${filterScope} OR target_app = ${filterScope} OR app_scope = 'all' OR target_app = 'all' OR app_scope IS NULL)
             ORDER BY created_at DESC
             LIMIT 60
           `.catch(() => []);

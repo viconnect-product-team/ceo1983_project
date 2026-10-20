@@ -34,12 +34,22 @@
 #   + Đồng bộ 2 chiều CSDL: Cập nhật đồng thời cột `executive_role` trong bảng `public.members` và bảng `public.user_roles`/`public.memberships`.
 #   + Khi tải trang / reload (F5): Dữ liệu từ API `/members` BẮT BUỘC ghi đè và đồng bộ vào danh sách tài khoản hiển thị; tuyệt đối không dùng danh sách tĩnh mặc định để ghi đè làm mất dữ liệu mới lưu.
 #   + Không hardcode vai trò theo email: Tại cả Backend (`getAccountDetails`) và Frontend (`use-role.ts`), vai trò thực tế lấy từ database luôn có độ ưu tiên cao nhất; tài khoản admin/chủ tịch nếu đã được gán vai trò khác thì phải áp dụng đúng vai trò đó, email `admin@connect.vn` chỉ dùng làm fallback khi CSDL chưa có bất kỳ vai trò nào.
-# - Quy Chuẩn Bảng CRM Co Dãn Cột Kiểu Excel & Thao Tác Trượt Ngang (CRM Table Excel Resizing & Horizontal Slide): Mọi bảng danh sách đăng ký sự kiện (/event-registrations) phải hỗ trợ thanh kéo `resizer` trên header để người dùng co dãn độ rộng cột như Excel; cột thao tác nhiều nút phải được bọc trong khung trượt ngang `overflow-x-auto no-scrollbar` cuộn mượt mà.
-# - Quy Chuẩn Quản Lý Tài Chính & Tự Động Khấu Trừ Quỹ (/income, /expenses, /finance-report):
-#   + Quản lý thu: Bổ sung bộ lọc tab "Chờ thanh toán", KPI theo dõi, và nút hành động nhanh "Xác nhận đã thu" đồng bộ CSDL tức thời.
-#   + Quản lý chi: Khi xuất/tạo phiếu chi hoặc cập nhật hoàn ứng, CSDL lưu lại và số tiền chi phải tự động trừ vào "QUỸ CÒN LẠI (DÒNG TIỀN)" = `Tổng thu quỹ - Tổng chi thực tế`.
-#   + Báo cáo tài chính: BẮT BUỘC hỗ trợ xuất Excel và lọc theo 4 kỳ: Ngày, Tuần, Tháng, Năm; tự động lắng nghe sự kiện `vba_transactions_changed` và `finance-updated` để cập nhật số liệu thời gian thực khi có biến động dòng tiền.
-# - Quy Chuẩn Ưu Đãi & Đặc Quyền Doanh Nhân (/perks, /association/perks): BẮT BUỘC gọi trực tiếp NestJS REST API (/content/admin/perks, /content/perks) qua fetchNestApi thay vì server function SSR; tích hợp cơ chế nạp tự động (Seed on Read) các ưu đãi giá trị cao (Golf, Resort 5 sao, Pháp lý, Kiểm toán, Viễn thông Cloud) để cả CRM và Mobile App luôn hiển thị danh sách ưu đãi.
+# - Quy Chuẩn Bảng Điều Khiển Dashboard Co Dãn Cột Kiểu Excel & Tooltip Rút Gọn (CRM Table Excel Resizing & Ellipsis Tooltips): Mọi bảng dashboard quản trị tài chính (/income, /expenses,...) BẮT BUỘC hỗ trợ co dãn cột kéo rê bằng chuột như Excel (ResizableTh, useResizableColumns), bảng sử dụng `table-fixed`, các ô dữ liệu quá dài tự động cắt rút gọn (`truncate`) và hiển thị Tooltip chuẩn phong cách Ant Design (nền đen #1f1f1f, chữ trắng, mũi tên định hướng, animate zoom) qua component `TruncatedText`.
+# - Quy Chuẩn Tách Biệt Chỉnh Sửa Hội Viên & Doanh Nghiệp Cùng Thao Tác Xóa Cascade 2 Lựa Chọn:
+#   + Chỉnh sửa hội viên (/members): Chỉ hiển thị và sửa các trường cá nhân (Họ tên, SĐT, Email, Chức vụ liên hệ, Hạng, Vùng, Trạng thái, Địa chỉ, Giới thiệu).
+#   + Chỉnh sửa doanh nghiệp (/companies): Chỉ hiển thị và sửa các trường doanh nghiệp (Tên doanh nghiệp, Mã số thuế, Ngành nghề, Quy mô nhân sự, Website, Địa chỉ, Hội phí). Cột 3 bảng Doanh nghiệp BẮT BUỘC hiển thị Tên doanh nghiệp.
+#   + Xóa hội viên: Cung cấp Modal xác nhận với 2 lựa chọn rõ ràng: (1) "Xóa doanh nghiệp trước" (chế độ company_only - unbind thông tin công ty và chuyển sang xác nhận xóa hội viên) và (2) "Xóa cả hội viên và doanh nghiệp" (chế độ all - cascade xóa sạch hội viên, doanh nghiệp, thẻ hội viên và tài khoản đăng nhập vione_users/auth users).
+# - Quy Chuẩn Ma Trận Phân Quyền 2 Tab Độc Lập (CRM & App CEO 1983) & Chọn Ban Điều Hành Tức Thời:
+#   + Ma trận phân quyền (/permissions - RbacPermissionMatrix): Tách thành 2 Tab riêng biệt: Tab 1 "Phân Quyền CRM Web" và Tab 2 "Phân Quyền App CEO 1983 Mobile".
+#   + Chọn Ban Điều Hành tại Quản lý tài khoản (/accounts): Hệ thống thiết lập đầy đủ 5 vai trò cốt lõi (Quản trị `quan_tri`, Chủ tịch `chu_tich`, Trưởng ban điều hành `truong_ban_dieu_hanh`, Admin `admin`, Thành viên ban điều hành `thanh_vien_ban_dieu_hanh`), hiển thị ngay lập tức từ lần click đầu tiên mà không cần chọn ban khác rồi quay lại.
+# - Quy Chuẩn Gia Hạn Hội Viên & Khử Lỗi Cast UUID CSDL (/renewal):
+#   + Luồng gia hạn hội viên và nhắc nhở gia hạn BẮT BUỘC khử prefix `RNW-`, truy vấn linh hoạt `WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId}`, tuyệt đối không ép kiểu trực tiếp `id = ${id}::uuid` gây lỗi sập CSDL PostgreSQL khi ID là mã chuỗi ký tự.
+#   + Dữ liệu gia hạn luôn LEFT JOIN tài khoản `vione_users` mới nhất để phản ánh chính xác trạng thái tài khoản.
+#   + Giao diện phân trang gia hạn bao phủ toàn chiều rộng container, cố định chân trang hiển thị sắc nét.
+# - Quy Chuẩn Số Liệu Thật Trang Chủ Mobile CEO 1983 (/association): Các chỉ số cơ hội giao thương và sản phẩm kết nối trên trang chủ BẮT BUỘC tính toán trực tiếp từ dữ liệu thực tế API; tuyệt đối không dùng số fallback ảo (6, 3, 4.2 Tỷ, 2.4 Tỷ) khi danh sách trống.
+# - Quy Chuẩn Trình Soạn Thảo Mẫu Email & Thông Báo Thời Gian Thực:
+#   + Mẫu email (/documents - MailTemplateManager): Hỗ trợ lưu trữ bền vững v3 (localStorage + CSDL), thay thế toàn bộ ký tự raw `{member_code}`, `{member_name}` bằng thẻ hiển thị thân thiện `[Mã hội viên]`, `[Tên hội viên]` để người dùng dễ hiểu.
+#   + Thông báo CRM (NotificationCenter): Kết nối Socket và Polling thời gian thực, tự động bật badge chuông báo động khi có hội viên đăng ký mới, cuộc họp mới, hoặc đăng ký sự kiện mới.
 
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)

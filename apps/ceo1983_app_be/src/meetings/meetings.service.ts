@@ -275,6 +275,20 @@ export class MeetingsService {
         )
       `, recipientCode, notifTitle, notifBody, meetingId).catch(() => {});
 
+      // 5b2. Bắn thông báo lên CRM Notification Center (public.notifications)
+      const crmMeetingCode = `NOTIF-MTG-${Date.now().toString().slice(-6)}`;
+      await this.prisma.$executeRaw`
+        INSERT INTO public.notifications (
+          id, code, title, body, description, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), ${crmMeetingCode},
+          ${`Cuộc họp mới được tạo: ${title}`},
+          ${notifBody},
+          ${notifBody},
+          'all', 'inapp', 'sent', NOW(), 1, null, 'all', 'all', 'admins', true, NOW(), NOW()
+        )
+      `.catch(() => {});
+
       // 5c. Phát tín hiệu Push Notification tức thì qua Socket Gateway tới thiết bị Mobile
       if (this.gateway) {
         this.gateway.emitToAll('notification:new', {

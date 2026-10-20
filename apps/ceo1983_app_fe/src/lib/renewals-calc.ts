@@ -69,7 +69,7 @@ export function toRecord(r: Row): RenewalRecord {
   const m = mapMember(r);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const rawTermEnd = (r.term_end ?? r.termEnd ?? m.termEnd) as string | undefined;
+  const rawTermEnd = (r.new_term_end ?? r.newTermEnd ?? r.term_end ?? r.termEnd ?? m.termEnd) as string | undefined;
   const termEnd = rawTermEnd
     ? (rawTermEnd.includes("T") ? rawTermEnd.slice(0, 10) : rawTermEnd)
     : today.toISOString().slice(0, 10);
@@ -88,7 +88,7 @@ export function toRecord(r: Row): RenewalRecord {
   const renewedAt = ((r.renewed_at ?? r.renewedAt ?? m.renewedAt) as string) ?? undefined;
 
   return {
-    id: `RNW-${m.code}`,
+    id: String(r.id || `RNW-${m.code}`),
     member: m,
     currentTermEnd: termEnd,
     daysLeft,

@@ -1,6 +1,32 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện Bộ 7 Lỗi Trọng Điểm CRM Hiệp Hội CEO 1983 & Lỗi Dữ Liệu Ảo Trang Chủ Mobile App)**:
+  1. **Lỗi Template Email & Ký tự Placeholder (`MailTemplateManager.tsx`)**:
+     - Khắc phục triệt để lỗi lưu template nhưng mở lại bị reset: Bổ sung trường `visualContent` và nâng cấp bộ lưu trữ lên phiên bản `v3` (`vba_mail_templates_v3_unified` kết hợp API backend), bảo đảm nội dung lưu trữ đồng bộ giữa cả frontend và backend.
+     - Thay thế toàn bộ ký tự raw như `{member_code}`, `{member_name}` bằng các nhãn thẻ trực quan, gần gũi tiếng Việt: `[Mã hội viên]`, `[Tên hội viên]`, `[Tên doanh nghiệp]`, `[Chức vụ]`, `[Số điện thoại]`, `[Hạn hội phí]`, `[Số tiền]`. Hỗ trợ chuyển đổi 2 chiều mượt mà giữa giao diện người dùng và placeholder backend.
+  2. **Hệ thống Thông báo Thời gian thực CRM (`NotificationCenter.tsx`, backend services)**:
+     - Tích hợp phát sự kiện Socket và ghi nhận thông báo tại: `members.service.ts` (khi có hội viên mới đăng ký), `meetings.service.ts` (khi tạo cuộc họp mới), `events.service.ts` (khi có hội viên/khách ngoài đăng ký sự kiện), và `admin.service.ts`.
+     - `NotificationCenter.tsx` kích hoạt cả Socket listener (`new_notification`, `new_member_registration`, `new_meeting_created`, `new_event_registration`) lẫn cơ chế Polling thông minh mỗi 15 giây, tự động cập nhật số lượng thông báo chưa đọc trên chuông header và hiển thị popup toast thông báo tức thời.
+  3. **Ma trận Phân quyền 2 Tab Độc lập & Khởi tạo Nhanh Ban Điều Hành (`RbacPermissionMatrix.tsx`, `accounts.tsx`, `rbac-permission-helpers.ts`)**:
+     - *Tách 2 Tab*: Ma trận phân quyền được chia thành 2 Tab riêng biệt: Tab 1 "Phân Quyền CRM Web" và Tab 2 "Phân Quyền App CEO 1983 Mobile", giúp người dùng phân định rõ ràng giữa quyền vận hành hệ thống CRM và quyền sử dụng ứng dụng di động của hội viên.
+     - *Khắc phục lỗi chọn Ban Điều Hành*: Đưa 5 vai trò thuộc Ban Điều Hành (`quan_tri`, `chu_tich`, `truong_ban_dieu_hanh`, `admin`, `thanh_vien_ban_dieu_hanh`) vào ánh xạ khởi tạo tức thì trong `rbac-permission-helpers.ts`. Khi người dùng mở modal sửa tài khoản và chọn Ban Điều Hành, dropdown "Vai Trò Hệ Thống" hiển thị chính xác ngay từ lần chọn đầu tiên, không cần chuyển sang ban khác rồi quay lại.
+  4. **Tách biệt Chỉnh sửa Hội viên & Doanh nghiệp Cùng Modal Xóa 2 Lựa chọn (`members.index.tsx`, `companies.index.tsx`, `members.service.ts`)**:
+     - *Chỉnh sửa Doanh nghiệp (`/companies`)*: Tinh gọn Modal chỉnh sửa chỉ hiển thị các trường của doanh nghiệp (Tên doanh nghiệp, Mã số thuế, Ngành nghề, Quy mô, Website, Địa chỉ, Hội phí). Đổi tiêu đề cột 3 từ "Họ tên hội viên" thành "Tên doanh nghiệp" hiển thị tên pháp nhân chính xác.
+     - *Chỉnh sửa Hội viên (`/members`)*: Tinh gọn Modal chỉnh sửa chỉ hiển thị thông tin cá nhân của hội viên (Họ và tên, SĐT, Email, Chức vụ liên hệ, Hạng hội viên, Vùng, Trạng thái, Địa chỉ cá nhân, Giới thiệu).
+     - *Modal Xóa Hội viên 2 Lựa chọn*: Thiết kế modal cảnh báo rủi ro chuyên nghiệp với 2 tùy chọn:
+       * Lựa chọn 1: "Xóa doanh nghiệp trước" (`mode=company_only`): Hủy liên kết doanh nghiệp, xóa thông tin doanh nghiệp nhưng vẫn giữ lại hồ sơ hội viên và tài khoản. Sau khi xóa doanh nghiệp, hệ thống cho phép tiếp tục quyết định xóa hội viên.
+       * Lựa chọn 2: "Xóa cả hội viên và doanh nghiệp" (`mode=all`): Cascade xóa sạch bản ghi `members`, liên kết doanh nghiệp `companies`, thẻ điện tử `member_cards`, tư cách hội viên `memberships` và tài khoản đăng nhập `vione_users`/`auth.users`.
+  5. **Bảng Dashboard Co dãn Cột Kiểu Excel & Ellipsis Tooltip (`ResizableTableHeaders.tsx`, `TruncatedText.tsx`, `income.tsx`, `expenses.tsx`)**:
+     - Đóng gói hook `useResizableColumns` và component `<ResizableTh>` cho phép người dùng rê chuột kéo giãn độ rộng từng cột tự do như Excel trên bảng `table-fixed`.
+     - Tích hợp component `<TruncatedText>` hiển thị text rút gọn (`truncate`, `text-ellipsis`) kèm tooltip Radix UI chuẩn Ant Design (nền đen sắc nét #1f1f1f, chữ trắng, mũi tên định hướng, animate zoom) cho các trường nội dung dài như Nội dung thu/chi, Người nộp/nhận, Danh mục, ngăn chặn triệt để hiện tượng tràn vỡ layout.
+  6. **Khắc phục Lỗi Gia Hạn Hội Viên & Khử Lỗi Cast UUID CSDL (`renewal.tsx`, `members.service.ts`, `renewals-calc.ts`)**:
+     - Loại bỏ tiền tố `RNW-`, sửa các câu lệnh truy vấn CSDL trong `renewMember`, `sendRenewalReminder`, `updatePaymentStatus` thành `WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId}`, loại bỏ hoàn toàn lỗi `invalid input syntax for type uuid` khi CSDL nhận ID là chuỗi mã hội viên.
+     - Cập nhật hàm nạp dữ liệu gia hạn LEFT JOIN `vione_users` để ưu tiên lấy dữ liệu từ tài khoản mới nhất.
+     - Sửa container `<Pagination>` bọc kín toàn chiều rộng `w-full border-t` giúp giao diện phân trang hiển thị chuẩn chỉnh, không bị thụt lề hay vỡ dòng.
+  7. **Sửa Lỗi Số Liệu Ảo Trang Chủ Mobile App CEO 1983 (`association.index.tsx`)**:
+     - Loại bỏ hoàn toàn các giá trị fallback hardcode (6 cơ hội, 3 sản phẩm, 4.2 Tỷ, 2.4 Tỷ VNĐ) khi dữ liệu API trả về mảng rỗng.
+     - Các chỉ số trên trang chủ hiển thị trung thực theo dữ liệu thực tế từ hệ thống cơ hội giao thương và sản phẩm kết nối.
 - **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện 7 Yêu Cầu Trọng Điểm CRM Hiệp Hội: Đăng Ký Sự Kiện Co Dãn Excel & Trượt Ngang, Lưu Quyền Tài Khoản & Đúng Role Ban, Sự Kiện Có Phí/Miễn Phí, Khoản Thu Chờ Thanh Toán, Khoản Chi Tự Động Trừ Quỹ, Báo Cáo Tài Chính Ngày/Tuần/Tháng/Năm Tự Động Update, Call API Danh Sách Ưu Đãi)**:
   1. **Đăng ký sự kiện (`/event-registrations`)**:
      - *Bổ sung trường sự kiện đăng ký*: Backend `events.service.ts` JOIN bảng `events` để lấy `eventName`, `eventDate`, `eventLocation`, `eventTicketPrice`. Bảng hiển thị cột "Sự kiện đăng ký" với tên sự kiện, ngày tổ chức (calendar), địa điểm (pin) và badge Hội viên / Khách ngoài.
