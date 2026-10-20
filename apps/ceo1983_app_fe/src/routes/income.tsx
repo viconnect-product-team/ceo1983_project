@@ -24,6 +24,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { Card } from "@/components/ui/card";
 import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
+import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
 import {
   createTransactionFn,
   deleteTransactionFn,
@@ -491,6 +492,16 @@ function IncomePage() {
           </div>
         </div>
       </div>
+
+      {/* Biểu Đồ Trực Quan Cơ Cấu Nguồn Thu & Nhà Tài Trợ */}
+      <FinanceChartsSection
+        transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_INCOME_TRANSACTIONS}
+        defaultTab="income_sponsor"
+        hideTabs={false}
+        title="Biểu Đồ Phân Tích Cơ Cấu Nguồn Thu & Tài Trợ"
+        subtitle="Trực quan hóa tỷ trọng Hội phí, Nhà tài trợ sự kiện, Vé tham gia và các nguồn thu khác"
+        className="mb-6"
+      />
 
       {/* Filter Toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">

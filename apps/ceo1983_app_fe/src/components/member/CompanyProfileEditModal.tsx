@@ -10,8 +10,7 @@ import {
   Globe,
   Upload,
   Briefcase,
-  Triangle,
-  Diamond,
+  ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -36,105 +35,71 @@ export function CompanyProfileEditModal({
   if (!open) return null;
 
   const [saving, setSaving] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingTriangle, setUploadingTriangle] = useState(false);
-  const [uploadingHalfDiamond, setUploadingHalfDiamond] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const triangleInputRef = useRef<HTMLInputElement>(null);
-  const halfDiamondInputRef = useRef<HTMLInputElement>(null);
-
-  // ── 8 TRƯỜNG THÔNG TIN THEO YÊU CẦU ──
-  const [logoUrl, setLogoUrl] = useState(initialData.logoUrl || DEFAULT_COMPANY_PROFILE.logoUrl || "");
+  // Form states
   const [companyName, setCompanyName] = useState(
     initialData.companyName || DEFAULT_COMPANY_PROFILE.companyName
   );
+
+  const [geoImageUrl, setGeoImageUrl] = useState(
+    initialData.geoImageUrl ||
+      initialData.triangleImageUrl ||
+      initialData.coverUrl ||
+      DEFAULT_COMPANY_PROFILE.geoImageUrl ||
+      ""
+  );
+
+  const [metric1Val, setMetric1Val] = useState(
+    initialData.metric1Val ||
+      (initialData.personnelCompetence && initialData.personnelCompetence.length <= 15
+        ? initialData.personnelCompetence
+        : DEFAULT_COMPANY_PROFILE.metric1Val || "50+")
+  );
+  const [metric1Label, setMetric1Label] = useState(
+    initialData.metric1Label || DEFAULT_COMPANY_PROFILE.metric1Label || "Nhân sự Chuyên gia"
+  );
+
+  const [metric2Val, setMetric2Val] = useState(
+    initialData.metric2Val ||
+      (initialData.industry && initialData.industry.length <= 15
+        ? initialData.industry
+        : DEFAULT_COMPANY_PROFILE.metric2Val || "10+ Năm")
+  );
+  const [metric2Label, setMetric2Label] = useState(
+    initialData.metric2Label || DEFAULT_COMPANY_PROFILE.metric2Label || "Kinh nghiệm Thực chiến"
+  );
+
   const [aboutUs, setAboutUs] = useState(
-    initialData.aboutUs || DEFAULT_COMPANY_PROFILE.aboutUs
+    initialData.aboutUs || DEFAULT_COMPANY_PROFILE.aboutUs || ""
   );
-  const [industry, setIndustry] = useState(
-    initialData.industry ||
-      (initialData.keyServices && initialData.keyServices.length > 0
-        ? initialData.keyServices.map((s) => s.title).join(", ")
-        : DEFAULT_COMPANY_PROFILE.industry)
-  );
-  const [personnelCompetence, setPersonnelCompetence] = useState(
-    initialData.personnelCompetence || DEFAULT_COMPANY_PROFILE.personnelCompetence
-  );
+
   const [website, setWebsite] = useState(
-    initialData.website || DEFAULT_COMPANY_PROFILE.website
+    initialData.website || DEFAULT_COMPANY_PROFILE.website || ""
   );
   const [hotline, setHotline] = useState(
-    initialData.hotline || DEFAULT_COMPANY_PROFILE.hotline
+    initialData.hotline || DEFAULT_COMPANY_PROFILE.hotline || ""
   );
   const [officeAddress, setOfficeAddress] = useState(
-    initialData.officeAddress || DEFAULT_COMPANY_PROFILE.officeAddress
+    initialData.officeAddress || DEFAULT_COMPANY_PROFILE.officeAddress || ""
   );
 
-  // ── 2 ẢNH HÌNH HỌC TRÊN NỀN TRẮNG ──
-  const [triangleImageUrl, setTriangleImageUrl] = useState(
-    initialData.triangleImageUrl ||
-      initialData.coverUrl ||
-      DEFAULT_COMPANY_PROFILE.triangleImageUrl ||
-      ""
-  );
-  const [halfDiamondImageUrl, setHalfDiamondImageUrl] = useState(
-    initialData.halfDiamondImageUrl ||
-      DEFAULT_COMPANY_PROFILE.halfDiamondImageUrl ||
-      ""
-  );
-
-  // Handlers for Upload
-  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload geometric photo
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingLogo(true);
+    setUploadingImage(true);
     try {
       const url = await uploadFileToNest(file, file.name);
       if (url) {
-        setLogoUrl(url);
-        toast.success("Tải logo công ty thành công!");
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Không thể tải logo");
-    } finally {
-      setUploadingLogo(false);
-      if (e.target) e.target.value = "";
-    }
-  };
-
-  const handleUploadTriangle = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingTriangle(true);
-    try {
-      const url = await uploadFileToNest(file, file.name);
-      if (url) {
-        setTriangleImageUrl(url);
-        toast.success("Tải ảnh hình tam giác thành công!");
+        setGeoImageUrl(url);
+        toast.success("Tải ảnh biểu trưng thành công!");
       }
     } catch (err: any) {
       toast.error(err?.message || "Không thể tải ảnh");
     } finally {
-      setUploadingTriangle(false);
-      if (e.target) e.target.value = "";
-    }
-  };
-
-  const handleUploadHalfDiamond = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingHalfDiamond(true);
-    try {
-      const url = await uploadFileToNest(file, file.name);
-      if (url) {
-        setHalfDiamondImageUrl(url);
-        toast.success("Tải ảnh nửa hình thoi thành công!");
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Không thể tải ảnh");
-    } finally {
-      setUploadingHalfDiamond(false);
+      setUploadingImage(false);
       if (e.target) e.target.value = "";
     }
   };
@@ -151,19 +116,19 @@ export function CompanyProfileEditModal({
     try {
       const updatedProfile: CompanyProfile2PageData = {
         ...initialData,
-        // 8 TRƯỜNG CHÍNH
-        logoUrl: logoUrl.trim() || null,
         companyName: companyName.trim(),
+        geoImageUrl: geoImageUrl.trim() || null,
+        triangleImageUrl: geoImageUrl.trim() || null, // Sync backward compatibility
+        metric1Val: metric1Val.trim(),
+        metric1Label: metric1Label.trim(),
+        metric2Val: metric2Val.trim(),
+        metric2Label: metric2Label.trim(),
+        personnelCompetence: metric1Val.trim(),
+        industry: metric2Val.trim(),
         aboutUs: aboutUs.trim(),
-        industry: industry.trim(),
-        personnelCompetence: personnelCompetence.trim(),
         website: website.trim(),
         hotline: hotline.trim(),
         officeAddress: officeAddress.trim(),
-
-        // 2 ẢNH HÌNH HỌC
-        triangleImageUrl: triangleImageUrl.trim() || null,
-        halfDiamondImageUrl: halfDiamondImageUrl.trim() || null,
       };
 
       // 1. Lưu vào localStorage
@@ -184,13 +149,8 @@ export function CompanyProfileEditModal({
           phone: updatedProfile.hotline,
           address: updatedProfile.officeAddress,
           website: updatedProfile.website,
-          industry: updatedProfile.industry,
           about: updatedProfile.aboutUs,
         };
-        if (logoUrl) {
-          mergedCustom.companyLogo = logoUrl;
-          localStorage.setItem("vba_member_company_logo", logoUrl);
-        }
         localStorage.setItem("vba_custom_profile", JSON.stringify(mergedCustom));
       } catch {}
 
@@ -220,282 +180,219 @@ export function CompanyProfileEditModal({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white text-slate-900 shadow-2xl border border-slate-200">
+      <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-slate-800">
         {/* Modal Header */}
-        <div className="sticky top-0 z-20 flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-white/95 backdrop-blur-md">
+        <div className="sticky top-0 z-20 flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-blue-50 text-[#003B95] border border-blue-200">
+            <span className="grid size-9 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
               <Sparkles className="size-4" />
             </span>
             <div>
-              <h3 className="text-sm sm:text-base font-black uppercase text-[#003B95]">
-                Cập nhật Hồ Sơ Năng Lực
+              <h3 className="text-sm sm:text-base font-extrabold uppercase text-[#003B95] dark:text-amber-400">
+                Chỉnh Sửa Hồ Sơ Doanh Nghiệp
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Chuẩn 8 trường thông tin &amp; 2 hình ảnh khối nghệ thuật
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Cập nhật thông tin hiển thị trên thẻ hồ sơ CEO 1983
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="size-5" />
           </button>
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-5">
-          {/* 1. Logo & Tên doanh nghiệp */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
-            <div className="sm:col-span-4 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Building2 className="size-3.5 text-[#003B95]" />
-                <span>1. Logo Doanh Nghiệp</span>
-              </label>
-              <div className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-slate-200 bg-slate-50 text-center">
-                <div className="size-16 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
-                  {logoUrl ? (
-                    <img src={logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" />
-                  ) : (
-                    <Building2 className="size-8 text-slate-300" />
-                  )}
-                </div>
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUploadLogo}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  disabled={uploadingLogo}
-                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 text-[11px] font-bold hover:bg-slate-100 transition cursor-pointer flex items-center gap-1"
-                >
-                  <Upload className="size-3 text-[#003B95]" />
-                  <span>{uploadingLogo ? "Đang tải..." : "Đổi Logo"}</span>
-                </button>
-              </div>
-            </div>
+        <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4">
+          {/* Tên doanh nghiệp */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Building2 className="size-3.5 text-[#003B95] dark:text-amber-400" />
+              <span>Tên Doanh Nghiệp *</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="VD: CÔNG TY CỔ PHẦN CÔNG NGHỆ VICONNECT"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:border-[#003B95] dark:focus:border-amber-400 outline-none"
+            />
+          </div>
 
-            <div className="sm:col-span-8 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Building2 className="size-3.5 text-[#003B95]" />
-                <span>2. Tên Doanh Nghiệp *</span>
-              </label>
+          {/* Ảnh biểu trưng hình học */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <ImageIcon className="size-3.5 text-[#003B95] dark:text-amber-400" />
+                <span>Ảnh Biểu Trưng Kiến Trúc &amp; Năng Lực (Cắt Ngũ Giác)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <Upload className="size-3" />
+                <span>{uploadingImage ? "Đang tải..." : "Tải ảnh từ máy"}</span>
+              </button>
+            </label>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleUploadImage}
+              className="hidden"
+            />
+            <div className="flex items-center gap-3">
+              <div
+                className="size-16 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700"
+                style={{
+                  clipPath: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)",
+                }}
+              >
+                {geoImageUrl ? (
+                  <img src={geoImageUrl} alt="Biểu trưng" className="size-full object-cover" />
+                ) : null}
+              </div>
               <input
                 type="text"
-                required
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="VD: CÔNG TY CỔ PHẦN CÔNG NGHỆ VICONNECT"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 focus:border-[#003B95] outline-none"
+                value={geoImageUrl}
+                onChange={(e) => setGeoImageUrl(e.target.value)}
+                placeholder="Nhập hoặc dán link ảnh biểu trưng..."
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-[#003B95] dark:focus:border-amber-400"
               />
-              <p className="text-[11px] text-slate-400">
-                Tên đầy đủ của doanh nghiệp theo đăng ký kinh doanh.
-              </p>
             </div>
           </div>
 
-          {/* 3. Giới thiệu doanh nghiệp */}
+          {/* 2 Khối Chỉ Số / Điểm Nổi Bật */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+            {/* Metric 1 */}
+            <div className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-2">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Users className="size-3.5 text-amber-500" />
+                <span>Chỉ số 1 (Quy mô nhân sự)</span>
+              </span>
+              <div className="space-y-1.5">
+                <input
+                  type="text"
+                  value={metric1Val}
+                  onChange={(e) => setMetric1Val(e.target.value)}
+                  placeholder="Giá trị (VD: 50+)"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                />
+                <input
+                  type="text"
+                  value={metric1Label}
+                  onChange={(e) => setMetric1Label(e.target.value)}
+                  placeholder="Nhãn (VD: Nhân sự Chuyên gia)"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-[11px] text-slate-600 dark:text-slate-300 outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            {/* Metric 2 */}
+            <div className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-2">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Briefcase className="size-3.5 text-amber-500" />
+                <span>Chỉ số 2 (Kinh nghiệm thực chiến)</span>
+              </span>
+              <div className="space-y-1.5">
+                <input
+                  type="text"
+                  value={metric2Val}
+                  onChange={(e) => setMetric2Val(e.target.value)}
+                  placeholder="Giá trị (VD: 10+ Năm)"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                />
+                <input
+                  type="text"
+                  value={metric2Label}
+                  onChange={(e) => setMetric2Label(e.target.value)}
+                  placeholder="Nhãn (VD: Kinh nghiệm Thực chiến)"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-[11px] text-slate-600 dark:text-slate-300 outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Giới thiệu & Điểm nổi bật */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">
-              3. Giới thiệu doanh nghiệp
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+              Giải Pháp &amp; Năng Lực Nổi Bật (Mỗi dòng là một mục đánh dấu)
             </label>
             <textarea
               rows={3}
               value={aboutUs}
               onChange={(e) => setAboutUs(e.target.value)}
-              placeholder="Giới thiệu khái quát về lịch sử, sứ mệnh và năng lực nổi bật..."
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-[#003B95] outline-none"
+              placeholder="Giải pháp Công nghệ B2B & Chuyển đổi số doanh nghiệp.&#10;Xúc tiến thương mại & Tối ưu chi phí vận hành."
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 p-3 text-xs sm:text-sm text-slate-900 dark:text-white focus:border-[#003B95] dark:focus:border-amber-400 outline-none"
             />
           </div>
 
-          {/* 4. Lĩnh vực hoạt động */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <Briefcase className="size-3.5 text-[#003B95]" />
-              <span>4. Lĩnh vực hoạt động</span>
-            </label>
-            <input
-              type="text"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              placeholder="VD: Sản xuất & Phân phối máy móc, Giải pháp chuyển đổi số..."
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#003B95] outline-none"
-            />
-          </div>
-
-          {/* 5. Nhân sự */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <Users className="size-3.5 text-[#003B95]" />
-              <span>5. Quy mô &amp; Năng lực nhân sự</span>
-            </label>
-            <textarea
-              rows={2}
-              value={personnelCompetence}
-              onChange={(e) => setPersonnelCompetence(e.target.value)}
-              placeholder="VD: Hơn 50+ nhân sự chất lượng cao, các kỹ sư lành nghề và cố vấn cấp cao..."
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-[#003B95] outline-none"
-            />
-          </div>
-
-          {/* 6, 7, 8: Website, Hotline, Địa chỉ */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Website, Hotline, Địa chỉ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Globe className="size-3.5 text-[#003B95]" />
-                <span>6. Website</span>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Globe className="size-3.5 text-[#003B95] dark:text-amber-400" />
+                <span>Website</span>
               </label>
               <input
                 type="text"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#003B95] outline-none"
+                placeholder="https://ceo1983club.com"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white focus:border-[#003B95] dark:focus:border-amber-400 outline-none"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Phone className="size-3.5 text-amber-600" />
-                <span>7. Hotline</span>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Phone className="size-3.5 text-amber-500" />
+                <span>Hotline</span>
               </label>
               <input
                 type="text"
                 value={hotline}
                 onChange={(e) => setHotline(e.target.value)}
-                placeholder="0983 xxx xxx"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#003B95] outline-none"
+                placeholder="0983 1983 83"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white focus:border-[#003B95] dark:focus:border-amber-400 outline-none"
               />
             </div>
 
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <MapPin className="size-3.5 text-rose-600" />
-                <span>8. Địa chỉ văn phòng / trụ sở</span>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-rose-500" />
+                <span>Địa chỉ trụ sở / văn phòng</span>
               </label>
               <input
                 type="text"
                 value={officeAddress}
                 onChange={(e) => setOfficeAddress(e.target.value)}
-                placeholder="VD: Tòa nhà CEO 1983 Tower, Cầu Giấy, TP. Hà Nội"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 focus:border-[#003B95] outline-none"
+                placeholder="Tòa nhà CEO 1983 Tower, Cầu Giấy, Hà Nội"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 px-3 py-2 text-xs text-slate-900 dark:text-white focus:border-[#003B95] dark:focus:border-amber-400 outline-none"
               />
             </div>
           </div>
 
-          {/* ── 2 ẢNH HÌNH HỌC (TAM GIÁC VÀ NỬA HÌNH THOI) ── */}
-          <div className="pt-3 border-t border-slate-100">
-            <h4 className="text-xs font-black uppercase text-slate-600 tracking-wider mb-3">
-              2 Hình ảnh biểu trưng (Cắt theo hình học chuẩn)
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Ảnh 1: Hình tam giác */}
-              <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Triangle className="size-3.5 text-[#003B95]" />
-                    Ảnh hình tam giác
-                  </span>
-                  <input
-                    ref={triangleInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleUploadTriangle}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => triangleInputRef.current?.click()}
-                    disabled={uploadingTriangle}
-                    className="text-[11px] font-bold text-[#003B95] hover:underline cursor-pointer"
-                  >
-                    {uploadingTriangle ? "Đang tải..." : "Tải ảnh mới"}
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="size-16 overflow-hidden bg-slate-200 shrink-0"
-                    style={{ clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)" }}
-                  >
-                    {triangleImageUrl ? (
-                      <img src={triangleImageUrl} alt="Tam giác" className="size-full object-cover" />
-                    ) : null}
-                  </div>
-                  <input
-                    type="text"
-                    value={triangleImageUrl}
-                    onChange={(e) => setTriangleImageUrl(e.target.value)}
-                    placeholder="URL ảnh hình tam giác..."
-                    className="flex-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Ảnh 2: Nửa hình thoi */}
-              <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Diamond className="size-3.5 text-amber-600" />
-                    Ảnh nửa hình thoi (ở dưới)
-                  </span>
-                  <input
-                    ref={halfDiamondInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleUploadHalfDiamond}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => halfDiamondInputRef.current?.click()}
-                    disabled={uploadingHalfDiamond}
-                    className="text-[11px] font-bold text-amber-600 hover:underline cursor-pointer"
-                  >
-                    {uploadingHalfDiamond ? "Đang tải..." : "Tải ảnh mới"}
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-16 h-12 overflow-hidden bg-slate-200 shrink-0"
-                    style={{ clipPath: "polygon(0% 0%, 100% 0%, 50% 100%)" }}
-                  >
-                    {halfDiamondImageUrl ? (
-                      <img src={halfDiamondImageUrl} alt="Nửa hình thoi" className="size-full object-cover" />
-                    ) : null}
-                  </div>
-                  <input
-                    type="text"
-                    value={halfDiamondImageUrl}
-                    onChange={(e) => setHalfDiamondImageUrl(e.target.value)}
-                    placeholder="URL ảnh nửa hình thoi..."
-                    className="flex-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Footer */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold transition shadow-sm cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#003B95] to-[#001D4A] hover:brightness-110 text-white text-xs font-bold shadow-md shadow-blue-900/20 active:scale-95 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <Save className="size-4" />
+              <Save className="size-3.5" />
               <span>{saving ? "Đang lưu..." : "Lưu hồ sơ"}</span>
             </button>
           </div>

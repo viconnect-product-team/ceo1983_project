@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
+import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
 
 const FALLBACK_TRANSACTIONS: Transaction[] = [
   {
@@ -481,55 +482,9 @@ function FinanceReport() {
         </div>
       </div>
 
-      {/* Cash Flow Visual Comparison Bar Chart */}
-      <div className="mb-6 p-5 rounded-2xl border border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <div>
-            <h3 className="text-sm font-bold text-foreground">
-              So Sánh Dòng Tiền Thu & Chi Thực Tế
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Biểu diễn trực quan cán cân ngân sách và thặng dư dòng tiền
-            </p>
-          </div>
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span>Khoản Thu (+{fmt.money(totalIn)})</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-rose-500" />
-              <span>Khoản Chi (-{fmt.money(totalOut)})</span>
-            </div>
-          </div>
-        </div>
+      {/* Khối Biểu Đồ Tài Chính Trực Quan (Thu, Chi, Tài Trợ & Dòng Tiền) */}
+      <FinanceChartsSection transactions={transactions} className="mb-6" />
 
-        {/* Flow visual bars */}
-        <div className="space-y-3">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold mb-1">
-              <span className="text-emerald-700 dark:text-emerald-400">Dòng Tiền Thu Vào (100%)</span>
-              <span className="font-mono text-emerald-600">+{fmt.money(totalIn)}</span>
-            </div>
-            <div className="h-3.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 w-full" />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold mb-1">
-              <span className="text-rose-700 dark:text-rose-400">Dòng Tiền Chi Ra ({expenseRatio}%)</span>
-              <span className="font-mono text-rose-600">-{fmt.money(totalOut)}</span>
-            </div>
-            <div className="h-3.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-500"
-                style={{ width: `${Math.min(100, expenseRatio)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Categorized Breakdown Grid */}
       <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-2">

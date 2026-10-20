@@ -40,6 +40,7 @@ import {
   Cake,
   Share2,
   Download,
+  BookOpen,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/context/AuthContext";
@@ -1051,11 +1052,12 @@ function Home() {
           />
           <Link
             to="/association/notifications"
-            className="size-9 relative bg-amber-50 dark:bg-amber-950/40 rounded-full outline outline-1 outline-offset-[-1px] outline-orange-300 dark:outline-amber-600 flex justify-center items-center hover:scale-105 active:scale-95 transition-transform"
+            className="size-9 relative bg-amber-50 dark:bg-slate-800 rounded-full border border-amber-300/80 dark:border-amber-500/40 flex justify-center items-center hover:scale-105 active:scale-95 transition-transform shadow-2xs"
+            aria-label="Thông báo"
           >
-            <img src="/icons/ceo1983/bell.svg" alt="Bell" className="size-5 object-contain" />
+            <Bell className="size-5 text-[#003B95] dark:text-amber-400" />
             {unreadNotifCount > 0 && (
-              <div className="size-4 -right-1 -top-1 absolute bg-rose-500 rounded-full flex justify-center items-center overflow-hidden shadow-xs">
+              <div className="size-4 -right-1 -top-1 absolute bg-rose-500 rounded-full flex justify-center items-center overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
                 <span className="text-white text-[9.5px] font-bold font-sans leading-3">{unreadNotifCount > 9 ? "9+" : unreadNotifCount}</span>
               </div>
             )}
@@ -1136,22 +1138,22 @@ function Home() {
           {/* Hàng 1 */}
           <div className="self-stretch h-20 inline-flex justify-between items-start gap-1">
             <Link to="/association/business-cards" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/id-card.svg" alt="Danh thiếp số" className="size-7" />
+              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <IdCard className="size-6 text-[#003B95] dark:text-amber-300" />
               </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Danh thiếp số</div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Danh thiếp số</div>
             </Link>
 
             <Link to="/association/members" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/users.svg" alt="Danh bạ CEO" className="size-7" />
-                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
+              <div className="size-14 relative rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <Users className="size-6 text-[#003B95] dark:text-amber-300" />
+                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
                   <span className="text-white text-[10px] font-bold font-sans leading-3">
                     {directoryMembers.length > 0 ? directoryMembers.length : (member ? "12" : "10")}
                   </span>
                 </div>
               </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Danh bạ CEO</div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Danh bạ CEO</div>
             </Link>
 
             <button
@@ -1159,56 +1161,56 @@ function Home() {
               onClick={() => setUserGuideOpen(true)}
               className="flex-1 inline-flex flex-col justify-start items-center gap-1 group cursor-pointer"
             >
-              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/book-open.svg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/icons/ceo1983/id-card.svg"; }} alt="Hướng dẫn sử dụng" className="size-7" />
-                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-amber-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
+              <div className="size-14 relative rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <BookOpen className="size-6 text-[#003B95] dark:text-amber-300" />
+                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-amber-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
                   <span className="text-white text-[10px] font-bold font-sans leading-3">Audio</span>
                 </div>
               </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Hướng dẫn</div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Hướng dẫn</div>
             </button>
 
             <Link to="/association/benefits" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/crown.svg" alt="Đặc quyền VIP" className="size-7" />
+              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <Crown className="size-6 text-[#003B95] dark:text-amber-300" />
               </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Đặc quyền VIP</div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Đặc quyền VIP</div>
             </Link>
           </div>
 
           {/* Hàng 2 */}
           <div className="self-stretch inline-flex justify-between items-start gap-1">
             <Link to="/association/voting" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 relative bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/vote.svg" alt="Biểu quyết số" className="size-7" />
-                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs">
+              <div className="size-14 relative rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <Vote className="size-6 text-[#003B95] dark:text-amber-300" />
+                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
                   <span className="text-white text-[10px] font-bold font-sans leading-3">
                     {activePollsCount > 0 ? activePollsCount : "1"}
                   </span>
                 </div>
               </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Biểu quyết số</div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Biểu quyết số</div>
             </Link>
 
             <Link to="/association/history" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/history.svg" alt="Lịch sử" className="size-7" />
+              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <History className="size-6 text-[#003B95] dark:text-amber-300" />
               </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Lịch sử</div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Lịch sử</div>
             </Link>
 
             <Link to="/association/library" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/folder-open.svg" alt="Kho tài liệu" className="size-7" />
+              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <FolderOpen className="size-6 text-[#003B95] dark:text-amber-300" />
               </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Kho tài liệu</div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Kho tài liệu</div>
             </Link>
 
             <Link to="/association/renew" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 bg-sky-100/50 dark:bg-sky-950/50 rounded-xl inline-flex justify-center items-center group-hover:scale-105 transition-transform shadow-xs">
-                <img src="/icons/ceo1983/credit-card.svg" alt="Hội phí" className="size-7" />
+              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                <CreditCard className="size-6 text-[#003B95] dark:text-amber-300" />
               </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-sans leading-4 tracking-tight">Hội phí</div>
+              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Hội phí</div>
             </Link>
           </div>
         </div>
@@ -1489,9 +1491,12 @@ function Home() {
                     {item.title}
                   </span>
                   <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-1" />
-                  <div className="self-stretch inline-flex justify-between items-center text-[10px] text-slate-400">
-                    <span>{item.author || "Ban Thư Ký"}</span>
-                    <span>{formatNewsDate(item.time)}</span>
+                  <div className="self-stretch inline-flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">{item.author || "Ban Thư Ký"}</span>
+                    <span className="inline-flex items-center gap-1 text-slate-600 dark:text-amber-300 font-semibold font-mono">
+                      <Clock className="size-3 text-amber-500 shrink-0" />
+                      {formatNewsDate(item.time)}
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -1503,23 +1508,23 @@ function Home() {
         {canScanEventQr && (
           <div className="self-stretch p-4 bg-gradient-to-r from-sky-950 via-blue-900 to-sky-950 rounded-[19px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-md border border-white/10 mt-1">
             <div className="size-11 bg-cyan-800/80 rounded-2xl outline outline-1 outline-slate-500 flex justify-center items-center shrink-0">
-              <img src="/icons/ceo1983/qr-code.svg" alt="QR" className="size-6 invert" />
+              <QrCode className="size-6 text-white" />
             </div>
             <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 overflow-hidden min-w-0">
               <span className="text-white text-xs font-bold leading-4">
                 Quét mã QR Check-in<br />sự kiện
               </span>
               <div className="px-2 py-0.5 bg-yellow-500 rounded-3xl inline-flex justify-start items-center gap-1">
-                <img src="/icons/ceo1983/shield-check.svg" alt="Shield" className="size-3" />
+                <ShieldCheck className="size-3 text-sky-950" />
                 <span className="text-sky-950 text-[9.5px] font-bold">BAN SOÁT VÉ SỰ KIỆN</span>
               </div>
             </div>
             <Link
               to="/association/checkin"
-              className="px-3.5 py-2 bg-white rounded-full inline-flex justify-center items-center gap-1 shrink-0 shadow-sm active:scale-95 transition"
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md active:scale-95 transition"
             >
-              <span className="text-blue-800 text-xs font-bold">Quét ngay</span>
-              <img src="/icons/ceo1983/chevron-right.svg" alt="Go" className="size-3" />
+              <span className="text-slate-950 text-xs font-black">Quét ngay</span>
+              <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
             </Link>
           </div>
         )}

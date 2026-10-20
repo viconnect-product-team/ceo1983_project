@@ -28,6 +28,7 @@
 # - Quy Chuẩn Bảng Tin B2B Network Feed (No Comments / No Reactions): Bảng tin giao thương doanh nghiệp hiển thị ảnh bài viết kiểu Facebook (1, 2, 3, 4+ ảnh kèm huy hiệu +N). TUYỆT ĐỐI KHÔNG có tính năng bình luận hay thả cảm xúc (like/reaction). Chỉ hỗ trợ 2 hành động: "Nhắn tin" trực tiếp và "Setup cuộc gặp 1-1".
 # - Quy Chuẩn Đổi Mật Khẩu Bắt Buộc & Tắt Vĩnh Viễn Trợ Lý AI: Màn hình đổi mật khẩu bắt buộc (/association/settings?required=true) phải cung cấp nút quay lại màn hình đăng nhập, xóa session và điều hướng về /association/login. Khi người dùng bấm X trên trợ lý AI, phải tắt hoàn toàn AI (setVoiceAiEnabled(false) và ceo1983_ai_disabled_permanently = true), triệt tiêu nút thu gọn mini dock và cấm xuất hiện trên giao diện CRM.
 # - Quy Chuẩn Lưu Trữ Danh Xưng Hội Viên & Phân Giải Hồ Sơ JSON: Trường `name` và `contact` bắt buộc lưu họ và tên thật cá nhân, trường `company_name` lưu tên doanh nghiệp. Khi hiển thị hồ sơ chi tiết, trường `about` phải được phân giải thành các mục thông tin lãnh đạo rõ ràng (Người đại diện, Chức vụ, Năm sinh, Quy mô nhân sự, Nhu cầu kết nối, Năng lực cung ứng), tuyệt đối không để lộ chuỗi raw JSON.
+# - Quy Chuẩn Biểu Đồ Trực Quan Nhóm Tài Chính CRM (CRM Finance Visual Analytics): Các màn hình quản trị tài chính (/finance-report, /income, /expenses) BẮT BUỘC tích hợp hệ thống biểu đồ trực quan Recharts (`FinanceChartsSection`) bao gồm: Biểu đồ hỗn hợp Dòng tiền Thu - Chi - Thặng Dư tích lũy (`ComposedChart` với Bar Emerald, Bar Rose, Line Warm Amber Gold), Biểu đồ tròn cơ cấu Nguồn Thu & Nhà Tài Trợ (`PieChart` Donut), Biểu đồ tròn phân bổ Chi phí nghiệp vụ thực tế, và Lưới phân tích 4 hạng tài trợ (Diamond, Gold, Silver, Bronze). Toàn bộ tooltip và nhãn màu phải hỗ trợ dark theme tương phản cao, định dạng tiền tệ VNĐ và nhúng linh hoạt qua prop `defaultTab`.
 
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)
@@ -2115,6 +2116,28 @@
 - Quy Chuẩn 3: Xóa Tài Khoản Cascade Toàn Diện (`users.service.ts`, `accounts.tsx`):
   + Khi xóa tài khoản tại `/accounts`, backend thực hiện xóa dọn dẹp theo thứ tự khóa ngoại (Cascade FK Cleanup) trên 12 bảng liên kết: `vba_member_permissions`, `memberships`, `business_relationship_moment_media`, `business_relationship_moments`, `meeting_participants`, `business_appointments`, `event_registrations`, `member_business_cards`, `card_settings`, `user_connections`, `direct_messages`, và `members` trước khi xóa `vione_users`/`auth.users`.
   + Đảm bảo không xảy ra lỗi 500 ForeignKeyViolation của PostgreSQL và tài khoản bị xóa triệt để khỏi hệ thống và đồng bộ ngay trên giao diện.
+
+# [BẮT BUỘC 119] Quy Chuẩn Dark Theme Mobile CEO 1983, Cài Đặt & Bảo Mật Tinh Gọn, và Hồ Sơ Doanh Nghiệp Pentagon
+- Quy Chuẩn 1: Tương Thích Tuyệt Đối Theme Tối (Dark Mode Compliance & CEO 1983 Palette):
+  + Mọi icon và badge trên App Mobile BẮT BUỘC dùng hệ màu Deep Cobalt Navy (`#003B95`) và Warm Amber Gold (`#F59E0B`/`#D97706`).
+  + TUYỆT ĐỐI KHÔNG dùng SVG tĩnh có stroke màu tím tối cố định (`#3635A2`) vì sẽ biến thành màu đen khó đọc trên nền tối. Sử dụng Lucide React vector icons với class tương thích `text-[#003B95] dark:text-amber-300` / `dark:text-amber-400`.
+  + Nút đếm ngược sự kiện (`EventCountdownTimer.tsx`) sử dụng nền Deep Cobalt Navy thượng hạng viền vàng hổ phách, chữ số đếm ngược phát sáng `text-amber-300`, biểu tượng đồng hồ `text-amber-400`.
+  + Thanh điều hướng chân trang (`MemberShell.tsx`) chuẩn hóa icon và nhãn active sang `text-[#003B95] dark:text-amber-400`, chấm chỉ báo phát sáng `bg-[#003B95] dark:bg-amber-400`.
+- Quy Chuẩn 2: Tinh Gọn Cài Đặt & Bảo Mật (`association.profile.tsx`, `association.settings.tsx`, `AccountSecuritySettingsForm.tsx`):
+  + Màn hình Cài đặt & Bảo mật của Hội viên CHỈ DUY TRÌ DUY NHẤT:
+    * Đổi thông tin tên tài khoản (Tên đăng nhập Email, Số điện thoại liên kết).
+    * Đổi mật khẩu tài khoản (Mật khẩu hiện tại, Mật khẩu mới, Xác nhận mật khẩu mới) có nút ẩn/hiện con mắt và popup tóm tắt tài khoản mới.
+  + LOẠI BỎ TOÀN BỘ các mục rườm rà khác: Cấu hình theme sáng/tối, Thông báo nền & test chuông, Trợ lý AI, Sổ tay hướng dẫn & tải PDF, Vô hiệu hóa tài khoản, Đăng xuất có điều kiện.
+- Quy Chuẩn 3: Hồ Sơ Doanh Nghiệp Hình Khối Pentagon Không Text Linh Tinh (`CompanyProfileTwoPages.tsx`, `CompanyProfileEditModal.tsx`):
+  + Thẻ hồ sơ doanh nghiệp BẮT BUỘC tuân thủ cấu trúc hình khối nghệ thuật:
+    * Top bar: Huy hiệu `CEO 1983 MEMBER` kèm icon `Award` hổ phách.
+    * Tên doanh nghiệp: H1 chữ in hoa trang trọng.
+    * Khung ảnh hình học ngũ giác: Cắt chuẩn CSS `clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)`.
+    * Lưới 2 chỉ số nổi bật (Quy mô nhân sự & Kinh nghiệm thực chiến).
+    * Khung giới thiệu giải pháp (`intro-box`): Tự động hiển thị các dòng giới thiệu với icon `CheckCircle2` hổ phách.
+    * Danh sách liên hệ (`contact-list`): Website, Hotline, Địa chỉ văn phòng / trụ sở.
+  + TUYỆT ĐỐI KHÔNG chứa text linh tinh, hardtext, các tiêu đề số thứ tự cứng nhắc (`1. Logo`, `2. Tên`, `3. Giới thiệu`, `(Hình ảnh biểu trưng kiến trúc...)`). Toàn bộ nội dung hiển thị đều là dữ liệu thực tế do hội viên quản trị và chỉnh sửa được.
+
 
 
 

@@ -24,6 +24,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { Card } from "@/components/ui/card";
 import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
+import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
 import {
   createTransactionFn,
   deleteTransactionFn,
@@ -605,6 +606,16 @@ function ExpensesPage() {
           </div>
         </div>
       </div>
+
+      {/* Biểu Đồ Phân Bổ Chi Tiêu Thực Tế */}
+      <FinanceChartsSection
+        transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_EXPENSES_TRANSACTIONS}
+        defaultTab="expense"
+        hideTabs={false}
+        title="Biểu Đồ Phân Bổ Chi Tiêu Thực Tế & Cơ Cấu Danh Mục"
+        subtitle="Trực quan hóa chi phí theo từng nhóm nghiệp vụ: Địa điểm, Gala ẩm thực, Quà tặng, Truyền thông và Vận hành"
+        className="mb-6"
+      />
 
       {/* Filter Toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">

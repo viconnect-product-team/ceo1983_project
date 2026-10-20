@@ -1,6 +1,36 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 20/10/2026 (Bổ Sung Hệ Thống Biểu Đồ Trực Quan Nhóm Tài Chính CRM: Khoản Thu, Khoản Chi, Cơ Cấu Tài Trợ & Dòng Tiền Thặng Dư)**:
+  1. **Thiết kế & Đóng gói Component Biểu đồ Tài chính Cao cấp (`FinanceChartsSection.tsx`)**:
+     - *Thực hiện theo chỉ đạo*: "bạn sửa lại giúp tôi bổ sung crm phần nhóm tài chính có dạng biểu đồ nữa cho người ta dễ nhìn ( khoản thu, khoản chi, tài trợ,.._)".
+     - *Biểu đồ hỗn hợp Dòng tiền Thu - Chi - Thặng Dư (`ComposedChart`)*: Kết hợp 2 cột đối soát Khoản Thu (xanh Emerald `#10B981`) và Khoản Chi (đỏ hồng Rose `#F43F5E`) cùng đường xu hướng Thặng Dư Tích Lũy (vàng Warm Amber Gold `#F59E0B`), hiển thị rõ ràng trên trục tiền tệ VNĐ và tooltip tùy biến tương thích hoàn hảo cả theme sáng và theme tối.
+     - *Biểu đồ Donut Cơ cấu Nguồn thu & Tài trợ (`PieChart`)*: Tách bạch rõ ràng 4 dòng doanh thu: Tài trợ sự kiện & Doanh nghiệp (vàng hổ phách), Hội phí hội viên (xanh Cobalt Navy `#003B95`), Vé sự kiện & Triển lãm (xanh ngọc Emerald), và Thu đột xuất/khác (Sky Blue) kèm vòng tròn tâm hiển thị tổng 100% và lưới thẻ phần trăm chi tiết.
+     - *Biểu đồ Donut Phân bổ Chi phí Thực tế (`PieChart`)*: Trực quan hóa tỷ trọng các hạng mục chi: Thuê địa điểm & Hội trường, Tiệc chiêu đãi F&B, Quà tặng & Kỷ yếu, Truyền thông & Báo chí, Hành chính & Vận hành.
+     - *Lưới Đánh giá 4 Hạng Tài trợ Chuyên sâu (`Award` Tier Grid)*: Phân tích 4 cấp tài trợ Kim Cương (Platinum), Vàng (Gold), Bạc (Silver), Đồng (Bronze) với thanh đo lường tỷ trọng tiến độ và số lượng đơn vị tài trợ.
+     - *Bộ lọc Tab linh hoạt*: Cho phép xem "Tất cả biểu đồ", "Thu - Chi - Thặng Dư", "Nguồn Thu & Tài Trợ", "Cơ Cấu Chi Tiêu", có thể cấu hình hiển thị độc lập hoặc nhúng theo ngữ cảnh từng màn hình.
+  2. **Tích hợp đồng bộ trên toàn bộ Phân hệ Quản trị Tài chính CRM**:
+     - *Báo cáo Tài chính (`/finance-report` - `finance-report.tsx`)*: Thay thế các thanh tiến độ đơn điệu cũ bằng `<FinanceChartsSection transactions={transactions} />` hiển thị dashboard biểu đồ đầy đủ, đa chiều.
+     - *Quản lý Thu & Tài trợ (`/income` - `income.tsx`)*: Tích hợp `<FinanceChartsSection defaultTab="income_sponsor" />` làm nổi bật cơ cấu nguồn thu và đóng góp tài trợ.
+     - *Quản lý Chi & Tạm ứng (`/expenses` - `expenses.tsx`)*: Tích hợp `<FinanceChartsSection defaultTab="expense" />` trực quan hóa cơ cấu chi phí thực tế và tạm ứng/hoàn ứng.
+- **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện 3 Điểm Trọng Điểm: Chuẩn Hóa Theme Tối Bảng Màu CEO 1983 Không Bị Đen/Tối Màu, Tinh Gọn Cài Đặt & Bảo Mật Chỉ Giữ Lại Đổi Thông Tin Tài Khoản & Đổi Mật Khẩu, Tái Cấu Trúc Hồ Sơ Doanh Nghiệp Chuẩn Hình Khối Pentagon Không Text Linh Tinh)**:
+  1. **Khắc phục triệt để lỗi màu sắc & Icon không tương thích ở Theme tối (`association.index.tsx`, `EventCountdownTimer.tsx`, `MemberShell.tsx`)**:
+     - *Nút đếm ngược thời gian sự kiện*: Nâng cấp `EventCountdownMiniBadge` và `EventCountdownBanner` từ nền tối đen mù mờ `bg-black/60` sang nền Deep Cobalt Navy thượng hạng (`#002B70`/`#001D4D`) bo viền vàng Warm Amber Gold (`border-amber-400/60`), chữ số đếm ngược phát sáng `text-amber-300` cùng biểu tượng đồng hồ `Clock` hổ phách, hiển thị tương phản sắc nét trên cả theme sáng và theme tối.
+     - *Bộ icon chức năng nhanh*: Loại bỏ toàn bộ các file SVG tĩnh `/icons/ceo1983/*.svg` vốn bị hardcode nét vẽ màu tím tối `#3635A2` biến thành màu đen khi vào theme tối. Thay thế bằng các icon vector Lucide React động (`IdCard`, `Users`, `BookOpen`, `Crown`, `Vote`, `History`, `FolderOpen`, `CreditCard`) với màu sắc thích ứng `text-[#003B95] dark:text-amber-300`, nằm trong khung nền tương phản cao `bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30`.
+     - *Thanh điều hướng dưới đáy (Footer Nav) & Badge thông báo*: Chuẩn hóa trạng thái active của 4 tab sang `text-[#003B95] dark:text-amber-400`, chấm tròn định vị phát sáng `bg-[#003B95] dark:bg-amber-400 shadow-[#003B95]/40 dark:shadow-amber-400/50`. Chuông thông báo header dùng icon Lucide `Bell` với màu thích ứng `text-[#003B95] dark:text-amber-400`.
+  2. **Tinh gọn Giao diện Cài đặt & Bảo mật màn cá nhân và trang settings (`association.profile.tsx`, `association.settings.tsx`, `AccountSecuritySettingsForm.tsx`)**:
+     - *Thực hiện theo chỉ đạo*: "phần giao diện cài đăt & bảo mật ở màn cá nhân thì chỉ để lại phần đổi thông tin tên tài khoản và đổi mật khẩu. còn lại bỏ hết".
+     - *Loại bỏ toàn bộ các phần rườm rà*: Bỏ cấu hình Theme sáng/tối, Bỏ cấu hình thông báo nền & test chuông, Bỏ bật/tắt Trợ lý AI, Bỏ hướng dẫn sử dụng 10 chức năng & tải sổ tay PDF, Bỏ nút vô hiệu hóa tài khoản, Bỏ nút đăng xuất có điều kiện.
+     - *Đóng gói `AccountSecuritySettingsForm` chuẩn mực*: Chỉ duy trì định danh tài khoản (Email, Số điện thoại liên kết) và form Đổi mật khẩu (Mật khẩu hiện tại, Mật khẩu mới, Xác nhận mật khẩu mới) có nút ẩn/hiện con mắt `Eye`/`EyeOff`, modal tóm tắt thông tin tài khoản mới `CheckCircle2` sang trọng.
+  3. **Tái cấu trúc Hồ sơ Doanh nghiệp chuẩn Thiết kế Geometric Pentagon Không Text Linh Tinh (`CompanyProfileTwoPages.tsx`, `CompanyProfileEditModal.tsx`)**:
+     - *Phân tích và chuyển đổi 100% theo mẫu HTML người dùng cung cấp*:
+       * Huy hiệu trên cùng: `CEO 1983 MEMBER` kèm icon `Award` (màu hổ phách `bg-[#F58220]/10 text-[#F58220]`).
+       * Tên doanh nghiệp: H1 chữ in hoa `text-xl sm:text-[22px] font-extrabold text-[#0A2540] dark:text-white`.
+       * Khung ảnh hình học ngũ giác: Container `h-[220px]` với ảnh cắt chuẩn hình học ngũ giác `clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)`.
+       * Lưới 2 chỉ số nổi bật: Khung chỉ số Quy mô nhân sự (`Users` icon, `50+`, `Nhân sự Chuyên gia`) và Khung chỉ số Kinh nghiệm thực chiến (`Briefcase` icon, `10+ Năm`, `Kinh nghiệm Thực chiến`).
+       * Khung giới thiệu giải pháp (`intro-box`): Tự động tách từng dòng trong `aboutUs` thành các mục đánh dấu bullet với icon `CheckCircle2` hổ phách.
+       * Danh sách liên hệ (`contact-list`): Hiển thị Website (`Globe`), Hotline (`Phone`), và Địa chỉ văn phòng / trụ sở (`MapPin`).
+     - *Tuyệt đối không có text linh tinh, hardtext*: Loại bỏ hoàn toàn các tiêu đề số cứng nhắc cũ (`1. Logo`, `2. Tên`, `3. Giới thiệu doanh nghiệp`, `4. Lĩnh vực`, `5. Quy mô`, `(Hình ảnh biểu trưng kiến trúc...)`, `Xác thực chính thức`, v.v.). Toàn bộ thông tin hiển thị trên thẻ đều là dữ liệu thực tế do hội viên quản trị và chỉnh sửa được.
 - **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện 8 Điểm Trọng Điểm: Sửa Lỗi Đổi Mật Khẩu 500 & Đăng Nhập 401, Chuẩn Hóa Họ Tên Cá Nhân Hội Viên vs Tên Công Ty, Mẫu Email Cảm Ơn Đăng Ký Chuẩn Tiếng Việt, Tinh Gọn Quản Trị Phân Quyền CRM Duy Nhất Phân Hệ 1 & 6 Ban Chuyên Môn + Quyền App Mobile, Phân Giải JSON Hồ Sơ Chi Tiết & Quy Mô Nhân Sự, Bảng Tin B2B Ảnh Chuẩn Facebook Không Bình Luận/Cảm Xúc Chỉ Nhắn Tin & Hẹn Gặp 1-1, Nút Quay Lại Đăng Nhập Khi Đổi Mật Khẩu Bắt Buộc, Tắt Vĩnh Viễn Trợ Lý AI Khi Bấm X)**:
   1. **Khắc phục lỗi Đổi mật khẩu HTTP 500 & Đăng nhập HTTP 401 (`users.repository.ts`, `auth.service.ts`)**:
      - *Nguyên nhân sập 500*: Bảng `user_profiles` không có trong Prisma client schema (`@vibe/db`), khi gọi `this.prisma.user_profiles` gây unhandled exception 500.

@@ -167,15 +167,16 @@ export const EventCountdownBanner: React.FC<EventCountdownBannerProps> = ({ even
 
   if (time.isFinished) {
     return (
-      <div className={`inline-flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 border border-white/20 text-[11px] font-bold text-white/90 shadow-sm ${className}`}>
-        <span className="text-white">Đã diễn ra</span>
+      <div className={`inline-flex items-center gap-1.5 rounded-xl bg-slate-800/90 px-3 py-1.5 border border-slate-600/60 text-[11px] font-bold text-slate-200 shadow-sm ${className}`}>
+        <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+        <span className="text-slate-200">Đã diễn ra</span>
       </div>
     );
   }
 
   if (time.isStarted) {
     return (
-      <div className={`inline-flex items-center gap-2 rounded-xl bg-emerald-950/80 px-3 py-1.5 border border-white/40 text-[11px] font-black text-white shadow-md ${className}`}>
+      <div className={`inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-3 py-1.5 border border-emerald-400/60 text-[11px] font-black text-white shadow-md ${className}`}>
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
@@ -187,7 +188,7 @@ export const EventCountdownBanner: React.FC<EventCountdownBannerProps> = ({ even
 
   return (
     <div className={`flex items-center gap-1.5 select-none ${className}`}>
-      <Clock className={`h-3 w-3 shrink-0 ${whiteText ? "text-white opacity-90" : "text-amber-400 opacity-80"}`} />
+      <Clock className={`h-3 w-3 shrink-0 ${whiteText ? "text-amber-300" : "text-amber-400"}`} />
       <div className={`flex items-center gap-1.5 font-mono ${whiteText ? "text-white" : "text-amber-300"}`}>
         {/* Days */}
         <div className="flex items-baseline gap-0.5">
@@ -254,9 +255,18 @@ export const EventCountdownMiniBadge: React.FC<EventCountdownMiniBadgeProps> = (
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
+  if (time.isFinished) {
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-md bg-slate-800/90 border border-slate-700/80 px-2 py-0.5 text-[9px] font-bold text-slate-300 shadow-sm backdrop-blur-md ${className}`}>
+        <Clock className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+        <span>Đã diễn ra</span>
+      </span>
+    );
+  }
+
   if (time.isStarted) {
     return (
-      <span className={`inline-flex items-center gap-1 rounded-md bg-emerald-600/90 backdrop-blur-xs px-1.5 py-0.5 text-[8.5px] font-black text-white shadow-xs ${className}`}>
+      <span className={`inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-emerald-600 to-emerald-700 border border-emerald-400/60 px-2 py-0.5 text-[8.5px] font-black text-white shadow-md backdrop-blur-md ${className}`}>
         <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
         <span>ĐANG DIỄN RA</span>
       </span>
@@ -264,9 +274,9 @@ export const EventCountdownMiniBadge: React.FC<EventCountdownMiniBadgeProps> = (
   }
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-mono font-bold text-amber-300 shadow-xs ${className}`}>
-      <Clock className="h-2.5 w-2.5 text-amber-400 shrink-0" />
-      <span>
+    <span className={`inline-flex items-center gap-1.5 rounded-md bg-[#002B70]/90 dark:bg-[#001D4D]/95 border border-amber-400/60 px-2 py-0.5 text-[9.5px] font-mono font-black text-amber-300 dark:text-amber-300 shadow-[0_2px_10px_rgba(0,34,79,0.4)] backdrop-blur-md ${className}`}>
+      <Clock className="h-2.5 w-2.5 text-amber-400 shrink-0 animate-pulse" />
+      <span className="tracking-wide">
         {time.days > 0 ? `${time.days}d ` : ""}
         {pad(time.hours)}:{pad(time.minutes)}:{pad(time.seconds)}
       </span>
