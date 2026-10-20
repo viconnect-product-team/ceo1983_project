@@ -289,17 +289,27 @@ export class VotingRepository {
   }
 
   async findMemberForLuckyDraw(winnerCode?: string, winnerName?: string): Promise<any[]> {
-    if (winnerCode) {
+    const cleanCode = (winnerCode || '').replace(/^#/, '').trim();
+    if (cleanCode) {
+      const regRes = await this.prisma.$queryRaw<any[]>`
+        SELECT COALESCE(m.user_id::text, er.id) as id, COALESCE(er.member_code, m.code) as code, COALESCE(er.member_name, m.name) as name, COALESCE(er.email, m.email) as email
+        FROM public.event_registrations er
+        LEFT JOIN public.members m ON m.code = er.member_code OR (er.email IS NOT NULL AND er.email != '' AND m.email = er.email)
+        WHERE er.lucky_number = ${cleanCode} OR er.lucky_number = ${'#' + cleanCode} OR er.id = ${cleanCode} OR er.member_code = ${cleanCode}
+        LIMIT 1
+      `.catch(() => []);
+      if (regRes.length > 0) return regRes;
+
       const res = await this.prisma.$queryRaw<any[]>`
-        SELECT user_id as id, code, name FROM public.members 
-        WHERE code = ${winnerCode} OR id = ${winnerCode}
+        SELECT user_id as id, code, name, email FROM public.members 
+        WHERE code = ${cleanCode} OR id = ${cleanCode}
         LIMIT 1
       `.catch(() => []);
       if (res.length > 0) return res;
     }
     if (winnerName) {
       return this.prisma.$queryRaw<any[]>`
-        SELECT user_id as id, code, name FROM public.members 
+        SELECT user_id as id, code, name, email FROM public.members 
         WHERE LOWER(name) LIKE ${'%' + winnerName.toLowerCase() + '%'}
         LIMIT 1
       `.catch(() => []);

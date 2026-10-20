@@ -1,6 +1,29 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện Bộ 4 Yêu Cầu Trọng Điểm: Vòng Quay Giải Thưởng & Đẩy Ưu Đãi Email/App, Giao Việc Kèm Người Giao & Xem File Đính Kèm, Sửa Lỗi Gán Role Tài Khoản CRM, và Bộ Slide Thuyết Trình Master Chuẩn Phong Cách Thư Mời Ảnh 1)**:
+  1. **Lỗi Vòng Quay Giải Thưởng & Cấu Hình Sự Kiện (`LuckyDrawLandingBanner.tsx`, `voting.tsx`, `voting.service.ts`, `mail.service.ts`, `admin.service.ts`)**:
+     - *Hiển thị tức thì khi tạo giải*: Sửa `handleAddPrize` và `handleRemovePrize` trên `LuckyDrawLandingBanner.tsx` gọi hàm `onSave(updatedConfig)` ngay lập tức, giải thưởng mới tạo hiển thị lập tức lên màn hình sự kiện mà không cần tải lại trang.
+     - *Nạp động hạng mục quay thưởng*: Trong `voting.tsx`, thay thế toàn bộ các giải thưởng hardcode tĩnh bằng API backend `GET /admin/lucky-draw-config`, tự động đồng bộ đúng các giải thưởng và hạng mục hiện có của từng sự kiện.
+     - *Loại trừ người đã trúng giải*: Khi quay thưởng thành công, người trúng giải ngay lập tức bị loại trừ khỏi danh sách ứng viên các lượt quay tiếp theo (`setCandidates(prev => prev.filter(c => c.code !== chosen.code))`), ngăn chặn hoàn toàn việc trúng thưởng trùng lặp.
+     - *Trừ số lượng & ẩn giải đã trúng*: Giải thưởng sau khi có người thắng sẽ tự động trừ số lượng còn lại (`quantity - 1`), nếu hết số lượng (`quantity <= 0`) thì chuyển trạng thái sang `won` và ẩn khỏi danh sách quay thưởng. Đồng thời cập nhật trạng thái xuống CSDL `PUT /sponsors/prizes/:id`.
+     - *Bắn thông báo Email và đẩy về Ưu đãi CRM & App Mobile*: Tích hợp `mailService.sendLuckyDrawWinnerEmail` gửi email chúc mừng thiết kế cao cấp cho người trúng giải, đồng thời tự động ghi nhận bản ghi ưu đãi vào `/association/perks` trên cả Web CRM và Mobile App CEO 1983.
+  2. **Luồng Giao Việc Có Tên Người Giao & Xem File Đính Kèm (`TaskFormModal.tsx`, `tasks.service.ts`)**:
+     - *Thông báo nêu rõ người giao việc là ai*: Nâng cấp `dispatchTaskAssignmentNotification` tại `tasks.service.ts`. Tiêu đề thông báo ghi rõ `📋 [Giao việc từ ${creatorDisplayName}] ${task.title}`. Nội dung nêu rõ họ tên và vai trò người giao việc (`${creatorDisplayName} (${creatorDisplayRole}) đã giao việc cho bạn: "${task.title}"...`). Ngay cả khi chưa tìm thấy UUID người nhận, hệ thống vẫn lưu vào `member_notifications` và gửi email đến người được giao việc.
+     - *Xem trước tệp đính kèm trong popup giao việc*: Trong `TaskFormModal.tsx`, bổ sung nút "Xem file" (icon `Eye`) bên cạnh từng tệp đính kèm. Hỗ trợ xem trực tiếp bảng tính Excel (`.xls`, `.xlsx`, `.csv`) bằng `ExcelViewerModal`, xem ảnh trong lightbox chuyên dụng, và mở tài liệu PDF/doc qua iframe modal tương tác cao.
+  3. **Lỗi Chọn Role Tài Khoản Không Có Hiệu Lực Khi Đăng Nhập (`members.service.ts`, `users.service.ts`, `accounts.tsx`)**:
+     - *Khắc phục lỗi tại `updateRoleAndDepartment`*: Khắc phục việc cập nhật bảng `user_roles` bị lỗi Postgres enum `app_role`, chuyển sang map role hợp lệ (`admin`, `member`, `platform_admin`), cập nhật đồng thời cột `executive_role` và `department` trong bảng `members`, đồng thời upsert vào `public.memberships`.
+     - *Khắc phục nạp quyền khi đăng nhập (`users.service.ts`)*: Nạp `executive_role` từ `memberships[0]` khi liên kết hội viên chưa có trong `members`, bảo đảm sau khi đổi role, người dùng đăng nhập vào CRM lập tức nhận đúng quyền hạn và giao diện tương ứng với role mới.
+     - *Thao tác trên `accounts.tsx`*: Inline select gọi trực tiếp API `PATCH /members/:id/role-dept` và cập nhật state tức thì mà không bị revert.
+  4. **Bộ Slide Thuyết Trình Master Chuẩn Phong Cách Thư Mời (Ảnh 1) (`SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.html`, `.pptx`, `.md`)**:
+     - *Thiết kế chuẩn nhận diện Ảnh 1*: Tông màu chủ đạo Deep Cobalt Navy (`#001F54` đến `#003B95`), sóng lượn công nghệ Cyan phát sáng (`#00D2FF`), logo kép ViConnect x CLB CEO 1983, chữ nghệ thuật Thư pháp & H1 viền phát sáng, khối thẻ trắng nổi (floating white cards) và hộp ghi chú ẩm thực màu kem cam (`#FFF5ED`, viền `#FDBA74`).
+     - *Hình nền background đa dạng*: Tích hợp 8 hình nền cao cấp khác nhau cho từng slide (skyline Hà Nội, tháp kính tài chính, phòng điều hành số, sàn giao dịch B2B, trung tâm công nghệ, tháp lãnh đạo).
+     - *Nội dung xoay quanh 2 sản phẩm và 3 yêu cầu ban đầu*:
+       * Bức tranh tổng thể 2 sản phẩm: Web CRM Quản trị tháp chỉ huy & Mobile App Doanh nhân.
+       * Giải quyết triệt để 3 bài toán gốc từ CEO 1983 (Quản trị thành viên, Quản lý sự kiện & check-in QR 1 giây, Xúc tiến thương mại & Sàn B2B).
+       * Các tính năng thực chiến đã xây dựng kèm ảnh chụp màn hình thực tế (Danh bạ hội viên, Sơ đồ ghế rạp chiếu phim, Thẻ VIP số mạ vàng, Gian hàng sản phẩm Marketplace B2B, Bàn giao việc Kanban, Sổ quỹ thu chi TT200).
+       * 5 Tính năng đột phá vượt ngoài yêu cầu ban đầu (Sơ đồ ghế đa tầng, Thu chi VietQR tự động, Danh thiếp vCard không cần app, Báo cáo tài chính TT200 xuất Excel, Vòng quay may mắn thời gian thực đa nền tảng).
+     - *Định dạng xuất bản kép*: File HTML tương tác trình chiếu mượt mà và file PowerPoint `.pptx` chuẩn chỉnh để trình chiếu tại hội nghị.
 - **Bản nâng cấp ngày 20/10/2026 (Hoàn Thiện Bộ 7 Lỗi Trọng Điểm CRM Hiệp Hội CEO 1983 & Lỗi Dữ Liệu Ảo Trang Chủ Mobile App)**:
   1. **Lỗi Template Email & Ký tự Placeholder (`MailTemplateManager.tsx`)**:
      - Khắc phục triệt để lỗi lưu template nhưng mở lại bị reset: Bổ sung trường `visualContent` và nâng cấp bộ lưu trữ lên phiên bản `v3` (`vba_mail_templates_v3_unified` kết hợp API backend), bảo đảm nội dung lưu trữ đồng bộ giữa cả frontend và backend.

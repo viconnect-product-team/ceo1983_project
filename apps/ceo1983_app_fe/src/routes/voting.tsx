@@ -861,9 +861,11 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
 }
 
 function LuckyDrawModal({ onClose }: { onClose: () => void }) {
-  const [prize, setPrize] = useState("🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle");
+  const [selectedEventId, setSelectedEventId] = useState("");
   const [selectedEventName, setSelectedEventName] = useState("DẠ TIỆC GALA KẾT NỐI DOANH NHÂN CEO 1983");
-  const [eventsList, setEventsList] = useState<Array<{ id: string; name: string }>>([]);
+  const [eventsList, setEventsList] = useState<any[]>([]);
+  const [prizesList, setPrizesList] = useState<any[]>([]);
+  const [selectedPrizeId, setSelectedPrizeId] = useState("");
   const [notifying, setNotifying] = useState(false);
 
   const initialCandidates = useMemo(
@@ -884,24 +886,59 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
 
   const [candidates, setCandidates] = useState(initialCandidates);
 
+  // Sync real events, prizes, and attendees from database
   useEffect(() => {
-    fetchNestApi<any[]>("/events")
+    fetchNestApi<any>("/admin/lucky-draw-config")
       .then((res) => {
-        if (Array.isArray(res) && res.length > 0) {
-          setEventsList(res.map((e) => ({ id: e.id, name: e.name })));
-          if (res[0]?.name) setSelectedEventName(res[0].name);
+        const events = res?.events || (Array.isArray(res) ? res : []);
+        if (Array.isArray(events) && events.length > 0) {
+          setEventsList(events);
+          const firstEv = events[0];
+          setSelectedEventId(firstEv.id);
+          setSelectedEventName(firstEv.name);
+
+          if (Array.isArray(firstEv.candidates) && firstEv.candidates.length > 0) {
+            setCandidates(firstEv.candidates);
+          }
+
+          const validPrizes = (firstEv.prizes || []).filter((p: any) => p.quantity === undefined || p.quantity > 0);
+          setPrizesList(validPrizes);
+          if (validPrizes.length > 0) {
+            setSelectedPrizeId(validPrizes[0].id);
+          }
         }
       })
       .catch(() => {});
   }, []);
 
+  const handleSelectEvent = (evId: string) => {
+    setSelectedEventId(evId);
+    const ev = eventsList.find((e) => e.id === evId);
+    if (ev) {
+      setSelectedEventName(ev.name);
+      if (Array.isArray(ev.candidates) && ev.candidates.length > 0) {
+        setCandidates(ev.candidates);
+      }
+      const validPrizes = (ev.prizes || []).filter((p: any) => p.quantity === undefined || p.quantity > 0);
+      setPrizesList(validPrizes);
+      if (validPrizes.length > 0) {
+        setSelectedPrizeId(validPrizes[0].id);
+      } else {
+        setSelectedPrizeId("");
+      }
+    }
+  };
+
+  const currentPrizeObj = prizesList.find((p) => p.id === selectedPrizeId) || prizesList[0] || null;
+  const currentPrizeTitle = currentPrizeObj ? `${currentPrizeObj.rankName || 'Giải'}: ${currentPrizeObj.title}` : "Giải Thưởng Doanh Nhân";
+
   const [spinning, setSpinning] = useState(false);
   const [displayIndex, setDisplayIndex] = useState(0);
-  const [winner, setWinner] = useState<(typeof initialCandidates)[0] | null>(null);
-  const [history, setHistory] = useState<Array<{ prize: string; winner: (typeof initialCandidates)[0]; time: string }>>([]);
+  const [winner, setWinner] = useState<any | null>(null);
+  const [history, setHistory] = useState<Array<{ prize: string; winner: any; time: string }>>([]);
 
   const spin = () => {
-    if (spinning || candidates.length === 0) return;
+    if (spinning || candidates.length === 0 || !currentPrizeObj) return;
     setWinner(null);
     setSpinning(true);
     let counter = 0;
@@ -915,17 +952,69 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
         const chosen = candidates[winIdx];
         setWinner(chosen);
         setSpinning(false);
+
+        // 1. Lưu lịch sử
         setHistory((prev) => [
-          { prize, winner: chosen, time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) },
+          { prize: currentPrizeTitle, winner: chosen, time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) },
           ...prev,
         ]);
-        toast.success(`🎉 Chúc mừng ${chosen.name} (Số may mắn ${chosen.code}) đã trúng ${prize}!`);
+
+        // 2. Loại bỏ hội viên đã trúng giải khỏi danh sách quay thưởng để không thể trúng lần 2
+        setCandidates((prev) => prev.filter((c) => c.code !== chosen.code));
+
+        // 3. Giảm số lượng hoặc ẩn giải thưởng đã trúng nếu đã hết số lượng
+        const nextQty = Math.max(0, (currentPrizeObj.quantity || 1) - 1);
+        if (nextQty <= 0) {
+          setPrizesList((prev) => {
+            const nextList = prev.filter((p) => p.id !== currentPrizeObj.id);
+            if (nextList.length > 0) {
+              setSelectedPrizeId(nextList[0].id);
+            }
+            return nextList;
+          });
+        } else {
+          setPrizesList((prev) =>
+            prev.map((p) => (p.id === currentPrizeObj.id ? { ...p, quantity: nextQty } : p))
+          );
+        }
+
+        // Cập nhật DB
+        if (currentPrizeObj.id) {
+          fetchNestApi(`/sponsors/prizes/${currentPrizeObj.id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+              quantity: nextQty,
+              status: nextQty <= 0 ? "won" : "active",
+            }),
+          }).catch(() => {});
+        }
+
+        // 4. Tự động bắn email trúng thưởng và đẩy về mục Ưu Đãi trên CRM & App mobile
+        fetchNestApi("/voting/lucky-draw/notify", {
+          method: "POST",
+          body: JSON.stringify({
+            winnerName: chosen.name,
+            winnerCompany: chosen.company,
+            luckyNumber: chosen.code,
+            prizeName: currentPrizeTitle,
+            eventName: selectedEventName,
+          }),
+        })
+          .then(() => {
+            toast.success(
+              `🎉 Chúc mừng ${chosen.name} (${chosen.code}) trúng ${currentPrizeObj.title}! Đã gửi email và đẩy giải thưởng về mục Ưu Đãi trên CRM & Mobile App!`,
+              { duration: 6000 },
+            );
+          })
+          .catch(() => {
+            toast.success(`🎉 Chúc mừng ${chosen.name} (${chosen.code}) đã trúng ${currentPrizeObj.title}!`);
+          });
       }
     }, 75);
   };
 
   const handleNotifyWinner = async () => {
-    if (!winner) return;
+    if (!winner || !currentPrizeObj) return;
     setNotifying(true);
     try {
       await fetchNestApi("/voting/lucky-draw/notify", {
@@ -934,11 +1023,11 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
           winnerName: winner.name,
           winnerCompany: winner.company,
           luckyNumber: winner.code,
-          prizeName: prize,
+          prizeName: currentPrizeTitle,
           eventName: selectedEventName,
         }),
       });
-      toast.success(`Đã phát thông báo trúng thưởng ${prize} tới điện thoại và App Hiệp hội của ${winner.name}!`);
+      toast.success(`Đã phát thông báo trúng thưởng ${currentPrizeTitle} tới email và App Hiệp hội của ${winner.name}!`);
     } catch (err: any) {
       toast.error(err?.message || "Không thể gửi thông báo trúng thưởng");
     } finally {
@@ -977,37 +1066,40 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
             <div>
               <label className="block text-xs font-semibold text-foreground">Sự kiện áp dụng</label>
               <select
-                value={selectedEventName}
-                onChange={(e) => setSelectedEventName(e.target.value)}
+                value={selectedEventId}
+                onChange={(e) => handleSelectEvent(e.target.value)}
                 disabled={spinning}
                 className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-medium text-foreground outline-none focus:border-primary"
               >
                 {eventsList.length > 0 ? (
                   eventsList.map((ev) => (
-                    <option key={ev.id} value={ev.name}>
+                    <option key={ev.id} value={ev.id}>
                       {ev.name}
                     </option>
                   ))
                 ) : (
-                  <option value="DẠ TIỆC GALA KẾT NỐI DOANH NHÂN CEO 1983">
-                    DẠ TIỆC GALA KẾT NỐI DOANH NHÂN CEO 1983
-                  </option>
+                  <option value="">{selectedEventName}</option>
                 )}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground">Hạng mục giải thưởng</label>
+              <label className="block text-xs font-semibold text-foreground">Hạng mục giải thưởng hiện có</label>
               <select
-                value={prize}
-                onChange={(e) => setPrize(e.target.value)}
-                disabled={spinning}
+                value={selectedPrizeId}
+                onChange={(e) => setSelectedPrizeId(e.target.value)}
+                disabled={spinning || prizesList.length === 0}
                 className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-amber-600 outline-none focus:border-primary"
               >
-                <option value="🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle">🌟 Giải Đặc Biệt: Xe VinFast VF3 / Apple VIP Bundle</option>
-                <option value="🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm">🥇 Giải Nhất: Bộ Thẻ Thành Viên Titanium & Gói B2B 1 Năm</option>
-                <option value="🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ">🥈 Giải Nhì: Kỷ Niệm Chương Pha Lê & Quà Nhà Tài Trợ</option>
-                <option value="🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp">🎁 Giải May Mắn: Voucher Đào Tạo Quản Trị Doanh Nghiệp</option>
+                {prizesList.length === 0 ? (
+                  <option value="">Tất cả giải thưởng sự kiện đã được trao hết</option>
+                ) : (
+                  prizesList.map((prz) => (
+                    <option key={prz.id} value={prz.id}>
+                      {prz.rankName} — {prz.title} ({prz.value}) {prz.quantity !== undefined ? `[Còn: ${prz.quantity}]` : ""}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
@@ -1055,7 +1147,7 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
                 <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
                   Xác nhận người trúng giải: {winner.name} ({winner.code})
                 </div>
-                <div className="text-[11px] text-muted-foreground">{prize}</div>
+                <div className="text-[11px] text-muted-foreground">{currentPrizeTitle}</div>
               </div>
               <button
                 type="button"

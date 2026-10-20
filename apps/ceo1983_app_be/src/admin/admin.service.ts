@@ -1963,6 +1963,7 @@ export class AdminService implements OnModuleInit {
             targetType: p.target_type || 'PRODUCT',
             targetId: p.target_id || null,
             imageUrl: p.image_url || p.prod_image || null,
+            status: p.status || 'active',
           }));
 
           // Calculate total prize value

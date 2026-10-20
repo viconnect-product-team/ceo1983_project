@@ -1,13 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { VotingRepository } from './voting.repository';
 import { CreatePollDto, CastVoteDto } from './dto';
+import { MailService } from '../mail/mail.service';
 
 export { CreatePollDto, CastVoteDto };
 
 @Injectable()
 export class VotingService {
-  constructor(private readonly votingRepo: VotingRepository) {}
+  constructor(
+    private readonly votingRepo: VotingRepository,
+    @Optional() private readonly mailService?: MailService,
+  ) {}
 
   private computeOptionsWithStats(rawOptions: any[]): any[] {
     const opts = (rawOptions || []).map((o) => ({
@@ -275,7 +279,8 @@ export class VotingService {
     const title = `🎁 [Ưu Đãi Trúng Thưởng] Chúc mừng bạn đã trúng ${data.prize}!`;
     const body = `Ban Tổ chức CLB Doanh Nhân CEO 1983 xin trân trọng chúc mừng Anh/Chị ${data.winnerName} (${data.winnerCompany || 'Hội viên'}, Số may mắn: #${data.luckyNumber || 'LUCKY'}) đã xuất sắc trúng giải thưởng "${data.prize}" tại sự kiện "${data.eventName || 'Sự kiện CEO 1983'}". Phần thưởng đã được đẩy vào mục Ưu Đãi của bạn!`;
 
-    const recipients = await this.votingRepo.findMemberForLuckyDraw(data.winnerCode, data.winnerName);
+    const targetCode = data.winnerCode || data.luckyNumber;
+    const recipients = await this.votingRepo.findMemberForLuckyDraw(targetCode, data.winnerName);
     const safeDisplayData = JSON.stringify({
       winnerName: data.winnerName,
       winnerCompany: data.winnerCompany,
@@ -290,6 +295,7 @@ export class VotingService {
 
     const targetUserId = recipients[0]?.id || userId;
     const targetMemberCode = recipients[0]?.code || data.winnerCode;
+    const recipientEmail = recipients[0]?.email;
 
     await this.votingRepo.sendLuckyDrawNotification(
       targetUserId,
@@ -302,6 +308,28 @@ export class VotingService {
       data.eventName
     );
 
-    return { ok: true, recipient: data.winnerName, prize: data.prize, targetRoute: '/association/perks' };
+    // Bắn email chúc mừng trúng thưởng tới người trúng giải
+    if (this.mailService && recipientEmail) {
+      this.mailService.sendLuckyDrawWinnerEmail({
+        to: recipientEmail,
+        winnerName: data.winnerName,
+        winnerCompany: data.winnerCompany,
+        winnerCode: targetMemberCode,
+        luckyNumber: data.luckyNumber,
+        prizeTitle: data.prize,
+        eventName: data.eventName || 'Sự kiện CLB CEO 1983',
+        perkUrl: 'https://ceo1983.viconnect.vn/association/perks',
+      }).catch((err) => {
+        console.warn('[notifyLuckyDrawWinner] Failed to send winner email:', err?.message);
+      });
+    }
+
+    return {
+      ok: true,
+      recipient: data.winnerName,
+      recipientEmail: recipientEmail || null,
+      prize: data.prize,
+      targetRoute: '/association/perks',
+    };
   }
 }

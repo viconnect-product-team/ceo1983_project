@@ -178,6 +178,19 @@ export interface SendMembershipFeeSuccessEmailOptions {
   portalUrl?: string;
 }
 
+export interface SendLuckyDrawWinnerEmailOptions {
+  to: string;
+  winnerName: string;
+  winnerCompany?: string;
+  winnerCode?: string;
+  luckyNumber?: string;
+  prizeTitle: string;
+  prizeValue?: string;
+  eventName?: string;
+  eventDate?: string;
+  perkUrl?: string;
+}
+
 export interface SendTaskAssignmentEmailOptions {
   to: string;
   assigneeName: string;
@@ -2418,6 +2431,120 @@ export class MailService {
 
   async sendDynamic(templateCode: string, to: string, variables: Record<string, string>) {
     return this.sendTestByTemplateId(templateCode, to, variables);
+  }
+
+  /**
+   * Gửi email chúc mừng đại biểu/hội viên trúng giải bốc thăm may mắn (Lucky Draw)
+   */
+  async sendLuckyDrawWinnerEmail(options: SendLuckyDrawWinnerEmailOptions): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      winnerName,
+      winnerCompany,
+      winnerCode,
+      luckyNumber,
+      prizeTitle,
+      prizeValue,
+      eventName = 'Đại Hội & Gala Vinh Danh CLB CEO 1983',
+      eventDate = new Date().toLocaleDateString('vi-VN'),
+      perkUrl = 'https://ceo1983.viconnect.vn/association/perks',
+    } = options;
+
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(`[sendLuckyDrawWinnerEmail] Bỏ qua vì email không hợp lệ: "${cleanTo}"`);
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const subject = `🎁 [TRÚNG THƯỞNG MAY MẮN] Chúc mừng Anh/Chị ${winnerName} đã trúng ${prizeTitle}!`;
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; }
+    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #001f54 0%, #003b95 60%, #0284c7 100%); padding: 35px 25px; text-align: center; color: #ffffff; }
+    .header-logo { font-size: 24px; font-weight: 900; letter-spacing: 1px; color: #fbbf24; margin-bottom: 5px; }
+    .header-sub { font-size: 13px; color: #93c5fd; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+    .content { padding: 30px 25px; color: #1e293b; line-height: 1.6; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .highlight-card { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px dashed #f59e0b; border-radius: 16px; padding: 20px; text-align: center; margin: 20px 0; }
+    .prize-badge { display: inline-block; background: #d97706; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; }
+    .prize-title { font-size: 20px; font-weight: 900; color: #78350f; margin: 6px 0; }
+    .prize-val { font-size: 14px; font-weight: 700; color: #b45309; }
+    .info-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+    .info-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+    .info-label { color: #64748b; font-weight: 600; width: 38%; }
+    .info-value { color: #0f172a; font-weight: 700; }
+    .btn-wrap { text-align: center; margin-top: 25px; }
+    .btn-primary { display: inline-block; background: linear-gradient(135deg, #003b95 0%, #0284c7 100%); color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+    .footer { background: #0f172a; padding: 25px; text-align: center; color: #94a3b8; font-size: 11px; line-height: 1.6; }
+    .footer a { color: #38bdf8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="header-logo">🏆 CLB DOANH NHÂN CEO 1983</div>
+      <div class="header-sub">HanoiBA · Chương Trình Bốc Thăm Trúng Thưởng</div>
+    </div>
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị: <span style="color: #003b95;">${winnerName}</span>,</div>
+      <p style="margin: 0 0 14px 0; font-size: 14px;">
+        Ban Chấp Hành và Ban Tổ Chức <strong>CLB Doanh Nhân CEO 1983</strong> xin trân trọng chúc mừng Anh/Chị đã là đại biểu may mắn trúng giải thưởng tại sự kiện <strong>${eventName}</strong>!
+      </p>
+
+      <div class="highlight-card">
+        <div class="prize-badge">🎉 PHẦN THƯỞNG MAY MẮN</div>
+        <div class="prize-title">${prizeTitle}</div>
+        ${prizeValue ? `<div class="prize-val">Giá trị: ${prizeValue}</div>` : ''}
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">👤 Đại biểu trúng giải:</td>
+          <td class="info-value">${winnerName}</td>
+        </tr>
+        ${winnerCompany ? `<tr><td class="info-label">🏢 Doanh nghiệp:</td><td class="info-value">${winnerCompany}</td></tr>` : ''}
+        ${winnerCode ? `<tr><td class="info-label">🏷️ Mã hội viên:</td><td class="info-value">${winnerCode}</td></tr>` : ''}
+        ${luckyNumber ? `<tr><td class="info-label">🎟️ Con số may mắn:</td><td class="info-value" style="color: #d97706;">#${luckyNumber}</td></tr>` : ''}
+        <tr>
+          <td class="info-label">🎪 Sự kiện:</td>
+          <td class="info-value">${eventName}</td>
+        </tr>
+        <tr>
+          <td class="info-label">📅 Thời gian:</td>
+          <td class="info-value">${eventDate}</td>
+        </tr>
+      </table>
+
+      <div style="margin-top: 18px; padding: 14px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 12px; color: #475569;">
+        📌 <strong>Lưu ý:</strong> Phần thưởng này đã được tự động lưu vào mục <strong>Ưu Đãi Đặc Quyền</strong> trên hệ thống Web CRM và Mobile App của Anh/Chị. Anh/Chị có thể xuất trình mã ưu đãi hoặc liên hệ Ban Thư Ký để nhận giải trực tiếp.
+      </div>
+
+      <div class="btn-wrap">
+        <a href="${perkUrl}" class="btn-primary" target="_blank">🎁 Xem Phần Thưởng Trong Mục Ưu Đãi</a>
+      </div>
+    </div>
+    <div class="footer">
+      <div><strong>CLB DOANH NHÂN CEO 1983 (HANOIBA)</strong></div>
+      <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
+      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="https://ceo1983.viconnect.vn">ceo1983.viconnect.vn</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[LUCKY_DRAW_WINNER] ${winnerName} (${cleanTo}) - Prize: ${prizeTitle}`,
+    });
   }
 }
 

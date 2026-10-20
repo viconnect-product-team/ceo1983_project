@@ -24,6 +24,7 @@ import {
   Download,
   Image as ImageIcon,
   ExternalLink,
+  Eye,
   Layers,
   ListChecks,
   Check,
@@ -34,6 +35,7 @@ import { TASK_DEPARTMENTS, TASK_PRIORITY_CONFIG, TASK_STATUS_CONFIG, MEETING_PLA
 import { fetchNestApi, uploadFileToNest } from '@/lib/api-client';
 import { useRole } from '@/hooks/use-role';
 import { useAuth } from '@/context/AuthContext';
+import { ExcelViewerModal } from './ExcelViewerModal';
 import { toast } from 'sonner';
 
 export const TASK_CATEGORIES = [
@@ -106,6 +108,14 @@ export function TaskFormModal({
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // File Preview States for Attachments
+  const [excelPreviewOpen, setExcelPreviewOpen] = useState(false);
+  const [excelPreviewFile, setExcelPreviewFile] = useState<{ name: string; url: string }>({ name: '', url: '' });
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [imagePreviewFile, setImagePreviewFile] = useState<{ name: string; url: string }>({ name: '', url: '' });
+  const [docPreviewOpen, setDocPreviewOpen] = useState(false);
+  const [docPreviewFile, setDocPreviewFile] = useState<{ name: string; url: string }>({ name: '', url: '' });
 
   // Subtasks Checklist
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
@@ -494,6 +504,29 @@ export function TaskFormModal({
 
   const handleRemoveAttachment = (attId?: string, attName?: string) => {
     setAttachments((prev) => prev.filter((a) => (attId ? a.id !== attId : a.name !== attName)));
+  };
+
+  const handlePreviewAttachment = (att: TaskAttachment) => {
+    if (!att.url || att.url === '#') {
+      toast.info('Tệp tin chưa có đường dẫn trực tuyến hợp lệ');
+      return;
+    }
+    const isXls = att.name.endsWith('.xls') || att.name.endsWith('.xlsx') || att.type === 'EXCEL';
+    const isImg = att.type === 'IMAGE' || /\.(png|jpe?g|webp|gif|svg)$/i.test(att.name);
+    const isPdf = att.name.endsWith('.pdf') || att.type === 'PDF';
+
+    if (isXls) {
+      setExcelPreviewFile({ name: att.name, url: att.url });
+      setExcelPreviewOpen(true);
+    } else if (isImg) {
+      setImagePreviewFile({ name: att.name, url: att.url });
+      setImagePreviewOpen(true);
+    } else if (isPdf) {
+      setDocPreviewFile({ name: att.name, url: att.url });
+      setDocPreviewOpen(true);
+    } else {
+      window.open(att.url, '_blank');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1156,14 +1189,23 @@ export function TaskFormModal({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handlePreviewAttachment(att)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 text-xs font-bold transition cursor-pointer"
+                          title="Xem trước nội dung tệp tin đã tải lên"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Xem file</span>
+                        </button>
                         {att.url && att.url !== '#' && (
                           <a
                             href={att.url}
                             target="_blank"
                             rel="noreferrer"
                             className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700"
-                            title="Tải xuống / Xem trước"
+                            title="Tải xuống / Mở tab mới"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
@@ -1171,7 +1213,7 @@ export function TaskFormModal({
                         <button
                           type="button"
                           onClick={() => handleRemoveAttachment(att.id, att.name)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
                           title="Xóa tệp"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1311,19 +1353,104 @@ export function TaskFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2.5 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-[#002D73] shadow-md transition disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-[#002D73] shadow-md transition disabled:opacity-50 cursor-pointer"
             >
               {submitting ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Giao việc ngay'}
             </button>
           </div>
         </form>
+
+        {/* 1. Excel In-App Viewer Modal */}
+        <ExcelViewerModal
+          open={excelPreviewOpen}
+          onClose={() => setExcelPreviewOpen(false)}
+          fileName={excelPreviewFile.name}
+          fileUrl={excelPreviewFile.url}
+        />
+
+        {/* 2. Image Lightbox Viewer Modal */}
+        {imagePreviewOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+            onClick={() => setImagePreviewOpen(false)}
+          >
+            <div
+              className="relative max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-2xl flex flex-col items-center animate-in zoom-in-95"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between w-full pb-3 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate max-w-md">
+                  {imagePreviewFile.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setImagePreviewOpen(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="mt-4 flex-1 flex items-center justify-center overflow-auto max-h-[75vh]">
+                <img
+                  src={imagePreviewFile.url}
+                  alt={imagePreviewFile.name}
+                  className="max-h-[70vh] w-auto object-contain rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. PDF / Document Viewer Modal */}
+        {docPreviewOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
+            onClick={() => setDocPreviewOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-4xl h-[85vh] bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-2xl flex flex-col animate-in zoom-in-95"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate max-w-md">
+                  {docPreviewFile.name}
+                </span>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={docPreviewFile.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Mở tab mới</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setDocPreviewOpen(false)}
+                    className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3 flex-1 w-full bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                <iframe
+                  src={docPreviewFile.url}
+                  title={docPreviewFile.name}
+                  className="w-full h-full border-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

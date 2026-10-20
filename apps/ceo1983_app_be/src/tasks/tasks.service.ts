@@ -725,17 +725,13 @@ export class TasksService {
           }
         }
 
-        if (!targetUserId) {
-          this.logger.warn(`Không tìm thấy user_id PostgreSQL cho người nhận việc: ${name} (${email})`);
-          continue;
-        }
-
-        const creatorDisplayName = task.supervisor?.name || (task as any)?.creator?.name || creatorName;
-        const creatorDisplayRole = task.supervisor?.role || (task as any)?.creator?.role || 'Người giao việc';
+        const creatorDisplayName = ((task as any)?.creator?.name || task.supervisor?.name || creatorName || 'Ban Lãnh Đạo').trim();
+        const creatorDisplayRole = ((task as any)?.creator?.role || task.supervisor?.role || 'Người giao việc').trim();
+        const resolvedEmail = (email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
         const notifId = crypto.randomUUID();
-        const notifTitle = `Bạn được giao công việc mới: ${task.title}`;
-        const notifBody = `${creatorDisplayName} (${creatorDisplayRole}) đã giao cho bạn công việc: "${task.title}". Ban phụ trách: ${task.department}. Hạn hoàn thành: ${task.dueDate}.`;
-        const dedupeKey = `task-assign-${task.id}-${targetUserId}-${Date.now()}`;
+        const notifTitle = `📋 [Giao việc từ ${creatorDisplayName}] ${task.title}`;
+        const notifBody = `${creatorDisplayName} (${creatorDisplayRole}) đã giao việc cho bạn: "${task.title}". Hạn hoàn thành: ${task.dueDate}. Ban phụ trách: ${task.department}.`;
+        const dedupeKey = `task-assign-${task.id}-${targetUserId || assigneeId || Date.now()}-${Date.now()}`;
         const safeData = JSON.stringify({
           title: notifTitle,
           body: notifBody,
@@ -746,17 +742,23 @@ export class TasksService {
           dueDate: task.dueDate,
           priority: task.priority,
           targetRoute: '/tasks',
+          assignedBy: creatorDisplayName,
+          assignedByRole: creatorDisplayRole,
         });
 
-        // 1. Ghi vào public.business_notifications
-        await this.tasksRepo.insertBusinessNotification(notifId, targetUserId, task.id, notifTitle, notifBody, safeData, dedupeKey);
+        // 1. Ghi vào public.business_notifications nếu tìm được user_id
+        if (targetUserId) {
+          await this.tasksRepo.insertBusinessNotification(notifId, targetUserId, task.id, notifTitle, notifBody, safeData, dedupeKey);
+        }
 
-        // 2. Ghi vào public.member_notifications
-        await this.tasksRepo.insertMemberNotification(targetMemberId || targetUserId, notifTitle, notifBody, task.id);
+        // 2. Ghi vào public.member_notifications (hiển thị cho Hội viên trên CRM và Mobile App)
+        const memberRecipientId = targetMemberId || targetUserId || assigneeId;
+        if (memberRecipientId) {
+          await this.tasksRepo.insertMemberNotification(memberRecipientId, notifTitle, notifBody, task.id);
+        }
 
         // 3. Bắn email thông báo giao việc đến hộp thư của người được giao việc
         if (this.mailService) {
-          const resolvedEmail = (email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
           this.mailService.sendTaskAssignmentEmail({
             to: resolvedEmail,
             assigneeName: name || 'Cán bộ phụ trách',
@@ -775,7 +777,7 @@ export class TasksService {
           });
         }
 
-        this.logger.log(`Đã gửi thông báo giao việc ${task.code} thành công đến user ${targetUserId}`);
+        this.logger.log(`Đã gửi thông báo giao việc ${task.code} từ ${creatorDisplayName} thành công đến ${name} (${resolvedEmail || targetUserId || memberRecipientId})`);
       }
     } catch (e: any) {
       this.logger.error(`Lỗi trong dispatchTaskAssignmentNotification: ${e?.message}`);

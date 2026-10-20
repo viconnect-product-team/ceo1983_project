@@ -259,11 +259,49 @@ function AccountsPage() {
     };
   }, []);
 
-  // Thay đổi role trực tiếp không reload trang -> bật dirty state
-  const handleInlineRoleChange = (accId: string, newRole: string) => {
-    setAccounts((prev) =>
-      prev.map((a) => (a.id === accId ? { ...a, role: newRole } : a))
-    );
+  // Thay đổi role trực tiếp -> tự động lưu ngay vào CSDL và đồng bộ quyền
+  const handleInlineRoleChange = async (accId: string, newRole: string) => {
+    const acc = accounts.find((a) => a.id === accId);
+    if (!acc) return;
+
+    const next = accounts.map((a) => (a.id === accId ? { ...a, role: newRole } : a));
+    setAccounts(next);
+
+    const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
+    const payload = {
+      executiveRole: newRole,
+      department: acc.department,
+      email: acc.email,
+      code: acc.code,
+      name: acc.name,
+    };
+
+    try {
+      await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }).catch(() =>
+        fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        })
+      );
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        setInitialAccountsStr(JSON.stringify(next));
+      } catch {}
+
+      clearMeCache();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("role-changed"));
+        window.dispatchEvent(new Event("crm_permissions_updated"));
+        window.dispatchEvent(new Event("vba_auth_changed"));
+      }
+      toast.success(`Đã cập nhật vai trò "${getRoleLabel(newRole)}" cho "${acc.name}" vào CSDL thành công.`);
+    } catch {
+      toast.error(`Lỗi khi lưu vai trò cho ${acc.name}`);
+    }
   };
 
   // Lưu toàn bộ danh sách tài khoản & phân quyền vào CSDL
@@ -897,9 +935,18 @@ function AccountsPage() {
 
                     {/* VAI TRÒ */}
                     <td className="px-4 border-r border-slate-200">
-                      <div className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-[5px] outline outline-1 outline-slate-200 inline-block">
-                        <span className="text-slate-900 dark:text-slate-100 text-xs font-semibold">{getRoleLabel(acc.role)}</span>
-                      </div>
+                      <select
+                        value={acc.role}
+                        onChange={(e) => handleInlineRoleChange(acc.id, e.target.value)}
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[6px] outline outline-1 outline-slate-200 dark:outline-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold cursor-pointer transition max-w-[140px] truncate"
+                        title="Thay đổi vai trò tài khoản (tự động lưu vào CSDL)"
+                      >
+                        {allRoleOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     </td>
 
                     {/* THAO TÁC */}

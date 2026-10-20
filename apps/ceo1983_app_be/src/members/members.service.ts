@@ -2517,11 +2517,13 @@ export class MembersService {
     }
 
     if (!member) {
-      // Lookup or link to users table if possible
+      // Lookup or link to vione_users table if possible
       const cleanEmail = (data.email || '').trim().toLowerCase();
+      const isCleanIdUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
       const userRows = await this.prisma.$queryRaw<any[]>`
-        SELECT id, name, email FROM public.users
-        WHERE id::text = ${cleanId} OR email = ${cleanId} OR email = ${cleanEmail}
+        SELECT id, name, email FROM public.vione_users
+        WHERE ( ${isCleanIdUuid} AND id = ${cleanId}::uuid )
+           OR ( ${cleanEmail !== ''} AND (lower(email) = ${cleanEmail} OR lower(username) = ${cleanEmail}) )
         LIMIT 1
       `.catch(() => []);
       const existingUser = userRows.length > 0 ? userRows[0] : null;
@@ -2533,99 +2535,120 @@ export class MembersService {
 
       await this.prisma.$executeRawUnsafe(`
         INSERT INTO public.members (
-          id, code, name, email, user_id, association_id, department, executive_role, status, membership_status, created_at, updated_at
+          id, code, name, email, user_id, association_id, department, executive_role, status, created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5::uuid, $6::uuid, $7, $8, 'active', 'active', NOW(), NOW()
+          $1, $2, $3, $4, $5::uuid, $6::uuid, $7, $8, 'active', NOW(), NOW()
         )
         ON CONFLICT (id) DO UPDATE SET
           department = EXCLUDED.department,
           executive_role = EXCLUDED.executive_role,
+          user_id = COALESCE(EXCLUDED.user_id, public.members.user_id),
           updated_at = NOW()
       `, targetMemberId, targetCode, targetName, targetEmail, existingUser ? existingUser.id : null, assocId, sanitizedDept, sanitizedRole).catch(() => {});
 
       member = await this.prisma.members.findUnique({ where: { id: targetMemberId } }).catch(() => null);
     }
 
+    // Auto-link to vione_users if member exists but user_id is null
+    let userId = member?.user_id;
+    if (!userId) {
+      const cleanEmail = (data.email || member?.email || '').trim().toLowerCase();
+      const cleanCode = (data.code || member?.code || '').trim().toLowerCase();
+      const isCleanIdUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+      const vUsers = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, email FROM public.vione_users
+        WHERE ( ${isCleanIdUuid} AND id = ${cleanId}::uuid )
+           OR ( ${cleanEmail !== ''} AND (lower(email) = ${cleanEmail} OR lower(username) = ${cleanEmail}) )
+           OR ( ${cleanCode !== ''} AND lower(username) = ${cleanCode} )
+        LIMIT 1
+      `.catch(() => []);
+
+      if (vUsers.length > 0 && vUsers[0]?.id) {
+        userId = vUsers[0].id;
+        if (member) {
+          member.user_id = userId ?? null;
+          await this.prisma.$executeRawUnsafe(`
+            UPDATE public.members SET user_id = $1::uuid WHERE id = $2
+          `, userId, member.id).catch(() => {});
+        }
+      }
+    }
+
     if (member) {
       // 1. Update members table
       await this.prisma.$executeRawUnsafe(`
         UPDATE public.members
-        SET executive_role = $1, department = $2, association_id = $3::uuid, updated_at = NOW()
-        WHERE id = $4
-      `, sanitizedRole, sanitizedDept, assocId, member.id);
+        SET executive_role = $1, department = $2, association_id = $3::uuid, user_id = COALESCE(user_id, $4::uuid), updated_at = NOW()
+        WHERE id = $5
+      `, sanitizedRole, sanitizedDept, assocId, userId || null, member.id);
     }
 
-    // 2. If member has linked user_id, update memberships and user_roles
-    const userId = member?.user_id;
+    // 2. If user_id is resolved, update memberships and user_roles in PostgreSQL
     if (userId) {
-      let membershipRole = 'member';
-      const targetUserRoles: string[] = [];
+      let isLeadership = false;
+      let appRoleValue = 'member';
 
-      if (sanitizedRole === 'chu_tich') {
-        membershipRole = 'admin';
-        targetUserRoles.push('chu_tich', 'admin', 'quan_tri');
-      } else if (sanitizedRole === 'quan_tri') {
-        membershipRole = 'admin';
-        targetUserRoles.push('platform_admin', 'admin', 'quan_tri');
-      } else if (sanitizedRole === 'admin') {
-        membershipRole = 'admin';
-        targetUserRoles.push('admin');
-      } else if (sanitizedRole === 'ban_dieu_hanh') {
-        membershipRole = 'admin';
-        targetUserRoles.push('ban_dieu_hanh', 'admin', 'moderator');
-      } else if (sanitizedRole === 'tong_thu_ky') {
-        membershipRole = 'moderator';
-        targetUserRoles.push('tong_thu_ky', 'ban_thu_ky', 'moderator');
-      } else if (sanitizedRole === 'ban_thu_ky') {
-        membershipRole = 'moderator';
-        targetUserRoles.push('ban_thu_ky', 'moderator');
-      } else if (sanitizedRole.startsWith('truong_ban_')) {
-        membershipRole = 'moderator';
-        targetUserRoles.push(sanitizedRole, 'moderator');
-      } else if (sanitizedRole.startsWith('thanh_vien_ban_')) {
-        membershipRole = 'member';
-        targetUserRoles.push(sanitizedRole, 'member');
-      } else {
-        membershipRole = 'member';
-        targetUserRoles.push('member');
+      if (
+        sanitizedRole === 'chu_tich' ||
+        sanitizedRole === 'quan_tri' ||
+        sanitizedRole === 'admin' ||
+        sanitizedRole === 'ban_dieu_hanh' ||
+        sanitizedRole === 'tong_thu_ky' ||
+        sanitizedRole === 'ban_thu_ky' ||
+        sanitizedRole.startsWith('truong_ban_')
+      ) {
+        isLeadership = true;
+        appRoleValue = sanitizedRole === 'quan_tri' ? 'platform_admin' : 'admin';
       }
 
+      // Upsert into memberships table (valid schema columns)
       await this.prisma.$executeRawUnsafe(`
         INSERT INTO public.memberships (
-          id, user_id, association_id, role, executive_role, department, status, joined_at, created_at, updated_at
+          id, user_id, association_id, role, is_default, created_at, updated_at, department, executive_role
         ) VALUES (
-          gen_random_uuid(), $1::uuid, $2::uuid, $3, $4, $5, 'active', NOW(), NOW(), NOW()
+          gen_random_uuid(), $1::uuid, $2::uuid, $3::app_role, true, NOW(), NOW(), $4, $5
         )
         ON CONFLICT (user_id, association_id) DO UPDATE
         SET role = EXCLUDED.role,
             executive_role = EXCLUDED.executive_role,
             department = EXCLUDED.department,
             updated_at = NOW()
-      `, userId, assocId, membershipRole, sanitizedRole, sanitizedDept);
+      `, userId, assocId, appRoleValue, sanitizedDept, sanitizedRole).catch(async (mErr) => {
+        // Fallback without app_role cast if type varies
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.memberships (
+            id, user_id, association_id, is_default, created_at, updated_at, department, executive_role
+          ) VALUES (
+            gen_random_uuid(), $1::uuid, $2::uuid, true, NOW(), NOW(), $3, $4
+          )
+          ON CONFLICT (user_id, association_id) DO UPDATE
+          SET executive_role = EXCLUDED.executive_role,
+              department = EXCLUDED.department,
+              updated_at = NOW()
+        `, userId, assocId, sanitizedDept, sanitizedRole).catch(() => {});
+      });
 
-      // Cleanly sync user_roles: delete previous roles, then insert new roles
+      // Cleanly sync user_roles in public.user_roles (enum app_role: admin, member, platform_admin)
       await this.prisma.$executeRawUnsafe(`
         DELETE FROM public.user_roles WHERE user_id = $1::uuid
       `, userId).catch(() => {});
 
-      for (const r of targetUserRoles) {
-        await this.prisma.$executeRawUnsafe(`
-          INSERT INTO public.user_roles (id, user_id, role, created_at)
-          VALUES (gen_random_uuid(), $1::uuid, $2, NOW())
-        `, userId, r).catch(() => {});
-      }
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.user_roles (id, user_id, role, created_at)
+        VALUES (gen_random_uuid(), $1::uuid, $2::app_role, NOW())
+      `, userId, appRoleValue).catch(() => {});
 
       // Dispatch 2-way business notification
       try {
         const notifTitle = 'Cập nhật phân quyền & phòng ban';
-        const notifBody = `Tài khoản của bạn đã được cập nhật chức danh: "${data.executiveRole}" thuộc phòng ban: "${data.department}".`;
+        const notifBody = `Tài khoản của bạn đã được cập nhật chức danh: "${data.executiveRole || sanitizedRole}" thuộc phòng ban: "${data.department || sanitizedDept}".`;
         const notifId = crypto.randomUUID();
-        const dedupeKey = `role-dept-${memberId}-${Date.now()}`;
+        const dedupeKey = `role-dept-${member?.id || memberId}-${Date.now()}`;
         const safeData = JSON.stringify({
           title: notifTitle,
           body: notifBody,
-          role: data.executiveRole,
-          department: data.department,
+          role: data.executiveRole || sanitizedRole,
+          department: data.department || sanitizedDept,
           targetRoute: '/account-settings',
         });
 
@@ -2637,7 +2660,7 @@ export class MembersService {
             $1::uuid, $2::uuid, 'membership', $3, 'role_assigned', 'role_updated',
             $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
           )
-        `, notifId, userId, memberId, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+        `, notifId, userId, member?.id || memberId, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
 
         await this.prisma.$executeRawUnsafe(`
           INSERT INTO public.member_notifications (
@@ -2645,13 +2668,13 @@ export class MembersService {
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'membership', $4, NOW()
           )
-        `, memberId, notifTitle, notifBody, memberId).catch(() => {});
+        `, member?.id || memberId, notifTitle, notifBody, member?.id || memberId).catch(() => {});
       } catch (e: any) {
         console.warn('Failed to send role update notification:', e?.message);
       }
     }
 
-    return { ok: true, memberId };
+    return { ok: true, memberId: member?.id || memberId, userId };
   }
 
   /**

@@ -50,6 +50,19 @@
 # - Quy Chuẩn Trình Soạn Thảo Mẫu Email & Thông Báo Thời Gian Thực:
 #   + Mẫu email (/documents - MailTemplateManager): Hỗ trợ lưu trữ bền vững v3 (localStorage + CSDL), thay thế toàn bộ ký tự raw `{member_code}`, `{member_name}` bằng thẻ hiển thị thân thiện `[Mã hội viên]`, `[Tên hội viên]` để người dùng dễ hiểu.
 #   + Thông báo CRM (NotificationCenter): Kết nối Socket và Polling thời gian thực, tự động bật badge chuông báo động khi có hội viên đăng ký mới, cuộc họp mới, hoặc đăng ký sự kiện mới.
+# - Quy Chuẩn Vòng Quay May Mắn & Giải Thưởng Sự Kiện (Lucky Draw & Event Prizes Flow):
+#   + Tạo & Xóa giải thưởng: Ngay khi thêm hoặc xóa giải thưởng trên cấu hình sự kiện (`LuckyDrawLandingBanner`), BẮT BUỘC gọi `onSave` để render cập nhật ngay lập tức lên màn hình sự kiện mà không cần F5.
+#   + Nạp động hạng mục quay thưởng: Màn hình quay thưởng (`/voting`) BẮT BUỘC nạp động danh sách giải thưởng từ API backend `GET /admin/lucky-draw-config`, tuyệt đối không dùng danh sách cứng hardcode.
+#   + Loại trừ ứng viên trùng lặp: Ngay khi quay trúng thưởng, người trúng giải BẮT BUỘC bị loại trừ khỏi danh sách ứng viên các lượt quay tiếp theo trong phiên.
+#   + Khấu trừ & Ẩn giải thưởng: Giải thưởng trúng sẽ trừ số lượng (`quantity - 1`), khi hết (`quantity <= 0`) thì chuyển trạng thái sang `won` và ẩn khỏi danh sách quay thưởng, đồng bộ xuống CSDL `PUT /sponsors/prizes/:id`.
+#   + Tự động gửi Email & Đẩy Ưu đãi: Hệ thống tự động dispatch email chúc mừng trúng thưởng (`sendLuckyDrawWinnerEmail`) và ghi nhận vào kho Ưu đãi (`/association/perks`) hiển thị trên cả CRM Web và Mobile App.
+# - Quy Chuẩn Giao Việc Kèm Người Giao & Xem File Đính Kèm (Task Assignment & In-Modal File Preview):
+#   + Thông báo giao việc BẮT BUỘC nêu rõ người giao việc là ai: Tiêu đề `📋 [Giao việc từ ${creatorDisplayName}] ${task.title}`, nội dung nêu rõ họ tên và chức danh người giao việc.
+#   + Xem file trực tiếp trong popup giao việc (`TaskFormModal`): Từng file đính kèm BẮT BUỘC có nút "Xem file" (icon `Eye`), hỗ trợ xem bảng tính Excel bằng `ExcelViewerModal`, xem ảnh trong lightbox chuyên dụng, và xem tài liệu PDF/doc qua modal tương tác.
+# - Quy Chuẩn Slide Thuyết Trình Chuẩn Nhận Diện Thư Mời Ảnh 1 (Master Presentation Standards):
+#   + Tông màu chủ đạo: Deep Cobalt Navy (`#001F54` đến `#003B95`), sóng lượn công nghệ Cyan phát sáng (`#00D2FF`), logo kép ViConnect x CLB CEO 1983, thẻ nổi màu trắng bo góc (`floating white cards`) và hộp ghi chú màu kem cam (`#FFF5ED`, viền `#FDBA74`).
+#   + Hình nền đa dạng: Mỗi slide sử dụng một ảnh nền kiến trúc/skyline/digital cao cấp khác nhau, phủ lớp kính mờ mờ tạo chiều sâu điện ảnh.
+#   + Cấu trúc nội dung: Báo cáo tổng thể 2 sản phẩm (CRM & App), giải quyết 3 bài toán gốc của CEO 1983, hình ảnh chụp thực tế tính năng đã xây dựng, và 5 tính năng đột phá nằm ngoài yêu cầu ban đầu. Hỗ trợ cả định dạng HTML tương tác và file PowerPoint `.pptx`.
 
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)

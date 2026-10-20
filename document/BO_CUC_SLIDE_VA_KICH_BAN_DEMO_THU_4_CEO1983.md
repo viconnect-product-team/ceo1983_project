@@ -4,6 +4,12 @@
 **Đơn vị phát triển:** Liên minh Công nghệ ViConnect & ViOne  
 **Đối tác chủ quản:** Ban Thường Trực & Ban Điều Hành CLB Doanh Nhân CEO 1983 (HanoiBA)  
 
+> [!IMPORTANT]
+> **BỘ SLIDE MASTER CHUẨN PHONG CÁCH THƯ MỜI (ẢNH 1) ĐÃ ĐƯỢC XUẤT BẢN:**
+> - 🖥️ **Bản trình chiếu tương tác cao cấp (HTML):** [SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.html](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.html) (Mở trực tiếp trên mọi trình duyệt, hiệu ứng chuyển trang mượt mà, hỗ trợ phím mũi tên và Fullscreen F11).
+> - 📊 **Bản PowerPoint trình chiếu (.pptx):** [SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pptx](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pptx).
+> - 📝 **Tài liệu thuyết minh slide (.md):** [SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.md](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.md).
+
 ---
 
 # MỤC LỤC TÀI LIỆU

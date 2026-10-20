@@ -408,13 +408,14 @@ export class UsersService {
         roleList.push('admin');
       }
 
-      let normalizedDept = memberRow?.department || 'Hội viên ceo1983';
+      let normalizedDept = memberRow?.department || memberships?.[0]?.department || 'Hội viên ceo1983';
       if (normalizedDept.toLowerCase().includes('quản trị')) {
         normalizedDept = normalizedDept.replace(/ban quản trị/gi, 'Ban Điều Hành').replace(/quản trị/gi, 'Điều Hành');
       }
 
       let primaryRole = 'member';
-      const exec = memberRow?.executive_role ? String(memberRow.executive_role).toLowerCase().trim() : '';
+      const fallbackExec = memberships?.[0]?.executive_role ? String(memberships[0].executive_role).toLowerCase().trim() : '';
+      const exec = (memberRow?.executive_role ? String(memberRow.executive_role).toLowerCase().trim() : '') || fallbackExec;
       const dept = normalizedDept.toLowerCase();
       const userEmail = (user.email || user.username || '').toLowerCase();
 

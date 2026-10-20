@@ -622,10 +622,14 @@ function LuckyDrawSetupModal({
         imageUrl: newImageUrl || null,
       };
 
-      setFormData((prev) => ({
-        ...prev,
-        prizes: [newPrizeItem, ...prev.prizes],
-      }));
+      const updatedPrizes = [newPrizeItem, ...formData.prizes];
+      const updatedConfig: LuckyDrawEventConfig = {
+        ...formData,
+        prizes: updatedPrizes,
+      };
+
+      setFormData(updatedConfig);
+      onSave(updatedConfig);
 
       // Reset form
       setNewTitle("");
@@ -635,7 +639,9 @@ function LuckyDrawSetupModal({
       setNewDesc("");
       setNewTargetId("");
       setNewImageUrl("");
-      toast.success("Đã thêm giải thưởng vào danh sách cấu hình!");
+      toast.success("Đã tạo và hiển thị giải thưởng lên sự kiện!", {
+        description: `Giải thưởng "${newPrizeItem.title}" đã được lưu vào hệ thống và hiển thị trực tiếp.`,
+      });
     } catch (err: any) {
       toast.error("Không thể lưu giải thưởng: " + (err?.message || "Lỗi kết nối"));
     } finally {
@@ -646,11 +652,14 @@ function LuckyDrawSetupModal({
   const handleRemovePrize = async (prizeId: string) => {
     try {
       await fetchNestApi(`/sponsors/prizes/${prizeId}`, { method: "DELETE" }).catch(() => {});
-      setFormData((prev) => ({
-        ...prev,
-        prizes: prev.prizes.filter((p) => p.id !== prizeId),
-      }));
-      toast.success("Đã xóa giải thưởng!");
+      const updatedPrizes = formData.prizes.filter((p) => p.id !== prizeId);
+      const updatedConfig: LuckyDrawEventConfig = {
+        ...formData,
+        prizes: updatedPrizes,
+      };
+      setFormData(updatedConfig);
+      onSave(updatedConfig);
+      toast.success("Đã xóa giải thưởng khỏi sự kiện!");
     } catch {
       toast.error("Lỗi khi xóa giải thưởng");
     }
@@ -1127,18 +1136,24 @@ function InteractiveLuckyDrawModal({
   event: LuckyDrawEventConfig;
   onClose: () => void;
 }) {
-  const [selectedPrizeId, setSelectedPrizeId] = useState(event.prizes[0]?.id || "");
+  const [candidates, setCandidates] = useState<LuckyDrawCandidate[]>(() => (event.candidates ? [...event.candidates] : []));
+  const [availablePrizes, setAvailablePrizes] = useState<LuckyPrize[]>(() => {
+    return (event.prizes || []).filter((p) => p.quantity === undefined || p.quantity > 0);
+  });
+  const [selectedPrizeId, setSelectedPrizeId] = useState<string>(() => {
+    const valid = (event.prizes || []).find((p) => p.quantity === undefined || p.quantity > 0);
+    return valid?.id || event.prizes[0]?.id || "";
+  });
   const [spinning, setSpinning] = useState(false);
   const [displayIndex, setDisplayIndex] = useState(0);
   const [winner, setWinner] = useState<LuckyDrawCandidate | null>(null);
   const [history, setHistory] = useState<Array<{ prizeTitle: string; winner: LuckyDrawCandidate; time: string }>>([]);
   const [notifying, setNotifying] = useState(false);
 
-  const candidates = event.candidates || [];
-  const currentPrize = event.prizes.find((p) => p.id === selectedPrizeId) || event.prizes[0];
+  const currentPrize = availablePrizes.find((p) => p.id === selectedPrizeId) || availablePrizes[0] || event.prizes[0];
 
   const spin = () => {
-    if (spinning || candidates.length === 0) return;
+    if (spinning || candidates.length === 0 || !currentPrize) return;
     setWinner(null);
     setSpinning(true);
     let counter = 0;
@@ -1152,21 +1167,74 @@ function InteractiveLuckyDrawModal({
         const chosen = candidates[winIdx];
         setWinner(chosen);
         setSpinning(false);
+        const prizeTitle = `${currentPrize.rankName}: ${currentPrize.title}`;
+
+        // 1. Ghi nhận lịch sử trao giải
         setHistory((prev) => [
           {
-            prizeTitle: `${currentPrize?.rankName}: ${currentPrize?.title}`,
+            prizeTitle,
             winner: chosen,
             time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
           },
           ...prev,
         ]);
-        toast.success(`Chúc mừng ${chosen.name} (${chosen.code}) đã trúng ${currentPrize?.title}!`);
+
+        // 2. Ẩn / Loại bỏ người đã trúng giải khỏi danh sách quay thưởng để không thể trúng lần 2
+        setCandidates((prev) => prev.filter((c) => c.code !== chosen.code));
+
+        // 3. Giảm số lượng hoặc ẩn giải thưởng đã trúng nếu hết số lượng
+        const nextQty = Math.max(0, (currentPrize.quantity || 1) - 1);
+        if (nextQty <= 0) {
+          setAvailablePrizes((prev) => {
+            const nextList = prev.filter((p) => p.id !== currentPrize.id);
+            if (nextList.length > 0) {
+              setSelectedPrizeId(nextList[0].id);
+            }
+            return nextList;
+          });
+        } else {
+          setAvailablePrizes((prev) =>
+            prev.map((p) => (p.id === currentPrize.id ? { ...p, quantity: nextQty } : p))
+          );
+        }
+
+        // Cập nhật trạng thái giải thưởng trong DB
+        if (currentPrize.id) {
+          fetchNestApi(`/sponsors/prizes/${currentPrize.id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+              quantity: nextQty,
+              status: nextQty <= 0 ? "won" : "active",
+            }),
+          }).catch(() => {});
+        }
+
+        // 4. Tự động bắn thông báo email trúng giải & đẩy về mục Ưu Đãi cả ở CRM và App Mobile
+        fetchNestApi("/voting/lucky-draw/notify", {
+          method: "POST",
+          body: JSON.stringify({
+            winnerName: chosen.name,
+            winnerCompany: chosen.company,
+            luckyNumber: chosen.code,
+            prizeName: prizeTitle,
+            eventName: event.name,
+          }),
+        })
+          .then(() => {
+            toast.success(
+              `🎉 Chúc mừng ${chosen.name} (${chosen.code}) trúng ${currentPrize.title}! Đã gửi email và đẩy giải thưởng về mục Ưu Đãi trên CRM & App mobile!`,
+              { duration: 6000 },
+            );
+          })
+          .catch(() => {
+            toast.success(`🎉 Chúc mừng ${chosen.name} (${chosen.code}) đã trúng ${currentPrize.title}!`);
+          });
       }
     }, 70);
   };
 
   const handleNotifyWinner = async () => {
-    if (!winner) return;
+    if (!winner || !currentPrize) return;
     setNotifying(true);
     try {
       await fetchNestApi("/voting/lucky-draw/notify", {
@@ -1175,10 +1243,10 @@ function InteractiveLuckyDrawModal({
           winnerName: winner.name,
           winnerCompany: winner.company,
           luckyNumber: winner.code,
-          prizeName: currentPrize?.title,
+          prizeName: `${currentPrize.rankName}: ${currentPrize.title}`,
           eventName: event.name,
         }),
-      }).catch(() => {});
+      });
       toast.success(`Đã phát thông báo trúng thưởng và tự động đẩy phần thưởng vào mục Ưu Đãi của đại biểu ${winner.name}!`);
     } catch {
       toast.error("Không thể gửi thông báo");
@@ -1218,14 +1286,18 @@ function InteractiveLuckyDrawModal({
             <select
               value={selectedPrizeId}
               onChange={(e) => setSelectedPrizeId(e.target.value)}
-              disabled={spinning}
+              disabled={spinning || availablePrizes.length === 0}
               className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 outline-none focus:border-amber-500"
             >
-              {event.prizes.map((prz) => (
-                <option key={prz.id} value={prz.id}>
-                  {prz.rankName} — {prz.title} ({prz.value})
-                </option>
-              ))}
+              {availablePrizes.length === 0 ? (
+                <option value="">Tất cả giải thưởng sự kiện đã được trao hết</option>
+              ) : (
+                availablePrizes.map((prz) => (
+                  <option key={prz.id} value={prz.id}>
+                    {prz.rankName} — {prz.title} ({prz.value}) {prz.quantity !== undefined ? `[Còn: ${prz.quantity}]` : ""}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
