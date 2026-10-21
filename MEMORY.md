@@ -1,6 +1,27 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 21/10/2026 (Hoàn Thiện Bộ Slide Thuyết Trình Mới Toàn Diện Không Lỗi Ảnh, Loại Bỏ "Thẻ Mạ Vàng VIP" & Triệt Tiêu Ngôn Ngữ Kỹ Thuật - `SLIDE_CHUYEN_DOI_SO_CLB_CEO1983.html`, `.pptx`, `.md`, `generate_clean_executive_slides.js`, `generate_image1_master_slides.js`)**:
+  1. **Khắc Phục Triệt Để Lỗi Ảnh Trình Chiếu**:
+     - *Nguyên nhân*: Tệp ảnh nền `01_skyline_lake.jpg` trước đây bị lỗi nội dung HTML 404 (29 bytes), đồng thời các tệp HTML cũ tham chiếu đường dẫn tương đối thiếu thư mục cha `images/` (`backgrounds/...` thay vì `images/backgrounds/...`), và thiếu tệp minh chứng `04_crm_members_management.png`.
+     - *Giải pháp*: Khôi phục tệp ảnh nền đêm sắc nét `01_skyline_lake.jpg` (545 KB); chuẩn hóa toàn bộ 17 tệp ảnh nền và ảnh chụp tính năng thực tế từ `images/guide_crm/` và `images/guide_mobile/` vào thư mục tài liệu; tích hợp cơ chế tự động bắt lỗi `onerror="this.style.display='none'"` cùng giao diện mô phỏng thẻ trắng bo góc 20px thanh lịch, bảo đảm không bao giờ xuất hiện biểu tượng ảnh lỗi (broken image).
+  2. **Loại Bỏ Hoàn Toàn Cụm Từ "Thẻ Mạ Vàng VIP" & Nhận Diện Thô**:
+     - *Yêu cầu*: Ban Lãnh Đạo yêu cầu bỏ hoàn toàn các từ "thẻ mạ vàng", "VIP mạ vàng", "mạ vàng hoàng gia", "vàng dập nổi" trong toàn bộ tài liệu và slide thuyết trình.
+     - *Giải pháp*: Thay thế đồng bộ 100% bằng các khái niệm chuẩn mực, uy tín: "Thẻ Hội Viên Điện Tử Thông Minh", "Danh Thiếp Số Doanh Nhân Tích Hợp QR & vCard", "Định Danh Lãnh Đạo Chính Danh 100%", "Chuẩn nhận diện HanoiBA & CLB Doanh Nhân CEO 1983", "Tông màu Cobalt Navy & Hổ Phách Vàng sang trọng, lịch thiệp".
+  3. **Lược Bỏ Hoàn Toàn Thuật Ngữ Kỹ Thuật, Chuyển Dịch Sang Ngôn Ngữ Quản Trị & Giao Thương Thực Chiến**:
+     - *Yêu cầu*: Bỏ toàn bộ các từ ngữ kỹ thuật lập trình gây khó hiểu cho doanh nhân và đại biểu (như RBAC, Sticky Matrix, 10 vai trò, Webhook ngân hàng, gạch nợ 0.1s, VoIP native, Offline-first Local Cache, PWA, PostgreSQL, RESTful API...).
+     - *Giải pháp*: Diễn giải 100% bằng ngôn ngữ quản trị, vận hành và lợi ích thực tiễn cho doanh nghiệp:
+       * Quản lý hội viên: Cổng thông tin trung tâm quản lý hơn 500 hồ sơ doanh nghiệp 360 độ, phân ban và thẩm định xét duyệt minh bạch.
+       * Sự kiện Gala: Sơ đồ bàn tiệc VIP và chỗ ngồi đại biểu khoa học, tiếp đón bằng vé điện tử trên điện thoại chỉ 1 giây, triệt tiêu ùn tắc và nhầm chỗ.
+       * Xúc tiến thương mại: Sàn giao thương B2B nội khối ưu tiên tiêu dùng chéo giữa các hội viên, danh thiếp số lưu danh bạ 1 chạm không cần cài app, đặt lịch hẹn cà phê 1-on-1 tự động đồng bộ lịch làm việc.
+       * Quản trị tài chính: Thu chi và đóng phí tự động qua mã QR ngân hàng, ghi nhận thanh toán tức thời, xuất báo cáo thu chi minh bạch cho Ban Chấp Hành.
+       * Phân công nhiệm vụ: Điều hành công việc theo 6 Ban chuyên môn, giao việc rõ người chịu trách nhiệm, đính kèm văn bản và theo dõi tiến độ.
+       * Kết nối riêng tư: Kênh trao đổi công việc và đàm thoại bảo mật riêng tư giữa các lãnh đạo doanh nghiệp.
+  4. **Xuất Bản Đồng Bộ Trọn Bộ 3 Định Dạng Mới**:
+     - HTML Presentation 16:9 (`document/SLIDE_CHUYEN_DOI_SO_CLB_CEO1983.html`): Tự co giãn theo màn hình máy chiếu, phím tắt tiện lợi (Mũi tên, Phím cách, Phím F toàn màn hình), sóng xanh viền cyan phát sáng chuẩn phong cách thư mời.
+     - PowerPoint Presentation 16:9 (`document/SLIDE_CHUYEN_DOI_SO_CLB_CEO1983.pptx`): Xuất bằng `pptxgenjs` nhúng sẵn hình ảnh chất lượng cao.
+     - Markdown Documentation (`document/SLIDE_CHUYEN_DOI_SO_CLB_CEO1983.md`): Đầy đủ kịch bản, thời lượng và ghi chú cho diễn giả.
+     - Đã đồng bộ sang `docs/` và `apps/ceo1983_app_fe/public/docs/` để truy cập tiện lợi từ mọi phân hệ.
 - **Bản nâng cấp ngày 21/10/2026 (Khắc Phục Toàn Diện 2 Lỗi Console Log, Triệt Tiêu Lỗi Mất Dữ Liệu Hội Viên & Doanh Nghiệp Cả CRM Lẫn Mobile App - `sw.js`, `__root.tsx`, `members.service.ts`, `companies.index.tsx`, `members.index.tsx`, `directory.functions.ts`)**:
   1. **Khắc Phục Lỗi Service Worker Notification Permission (`public/sw.js`)**:
      - *Nguyên nhân*: Lỗi console `Uncaught (in promise) TypeError: Failed to execute 'showNotification' on 'ServiceWorkerRegistration': No notification permission has been granted for this origin at sw.js:167:29`. Do Service Worker thực hiện polling nền kiểm tra cuộc gọi và thông báo khẩn cấp, gọi trực tiếp `self.registration.showNotification` mà chưa kiểm tra cờ cấp quyền `Notification.permission === 'granted'` và thiếu bọc `.catch()` bắt Promise rejection khi trình duyệt chưa được người dùng cấp quyền thông báo.

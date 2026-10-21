@@ -27,7 +27,7 @@
 
 ---
 
-### SLIDE 3: THẺ HỘI VIÊN VIP MẠ VÀNG & DANH THIẾP VCARD
+### SLIDE 3: Thẻ Hội Viên Điện Tử Thông Minh & DANH THIẾP VCARD
 *Tấm danh thiếp số quyền năng định danh đẳng cấp doanh nhân bản lĩnh*
 
 - **Thiết kế hoàng gia Warm Amber Gold:** Tông xanh Cobalt Navy kết hợp vàng ánh kim tinh tế.
