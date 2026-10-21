@@ -101,6 +101,19 @@ let currentToken = null;
 let lastActiveCallId = null;
 const seenNotificationIds = new Set();
 
+// Safe helper to show notification only if permission has been granted
+async function safeShowNotification(title, options = {}) {
+  try {
+    if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+      return null;
+    }
+    return await self.registration.showNotification(title, options);
+  } catch (err) {
+    // Gracefully ignore notification permission error or silent dismiss
+    return null;
+  }
+}
+
 self.addEventListener("message", (event) => {
   if (!event.data) return;
   if (event.data.type === "REGISTER_USER") {
@@ -109,7 +122,7 @@ self.addEventListener("message", (event) => {
   } else if (event.data.type === "SHOW_NOTIFICATION") {
     const { title, options } = event.data;
     if (title) {
-      self.registration.showNotification(title, options || {});
+      safeShowNotification(title, options || {}).catch(() => {});
     }
   }
 });
@@ -134,7 +147,7 @@ setInterval(async () => {
           lastActiveCallId = callId;
           const callerName = call.callerName || "Hội viên CEO 1983";
           const callType = call.callType === "video" ? "Video" : "Thoại";
-          self.registration.showNotification(`📞 Cuộc gọi ${callType} đến từ ${callerName}`, {
+          safeShowNotification(`📞 Cuộc gọi ${callType} đến từ ${callerName}`, {
             body: `${callerName} đang gọi cho bạn... Bấm để trả lời ngay!`,
             icon: call.callerAvatar || "/app-icon.png",
             badge: "/favicon.png",
@@ -148,7 +161,7 @@ setInterval(async () => {
               { action: "accept", title: "📞 Trả lời" },
               { action: "decline", title: "✕ Từ chối" },
             ],
-          });
+          }).catch(() => {});
         }
       } else if (lastActiveCallId) {
         lastActiveCallId = null;
@@ -164,7 +177,7 @@ setInterval(async () => {
         const notifId = item.id || `${item.title}-${item.created_at || Date.now()}`;
         if (!seenNotificationIds.has(notifId) && !item.is_read) {
           seenNotificationIds.add(notifId);
-          self.registration.showNotification(item.title || "CEO 1983", {
+          safeShowNotification(item.title || "CEO 1983", {
             body: item.body || item.message || "Bạn có thông báo mới từ Hiệp hội CEO 1983",
             icon: item.icon || "/app-icon.png",
             badge: "/favicon.png",
@@ -172,7 +185,7 @@ setInterval(async () => {
             data: item.action_url || item.url || "/association",
             vibrate: [200, 100, 200],
             renotify: true,
-          });
+          }).catch(() => {});
         }
       }
     }
@@ -203,14 +216,14 @@ self.addEventListener("push", (event) => {
           ]
         : [],
     };
-    event.waitUntil(self.registration.showNotification(title, options));
+    event.waitUntil(safeShowNotification(title, options).catch(() => {}));
   } catch {
     const text = event.data ? event.data.text() : "";
     event.waitUntil(
-      self.registration.showNotification("CEO 1983", {
+      safeShowNotification("CEO 1983", {
         body: text || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
         icon: "/app-icon.png",
-      })
+      }).catch(() => {})
     );
   }
 });

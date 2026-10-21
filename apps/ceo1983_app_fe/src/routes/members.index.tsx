@@ -308,8 +308,16 @@ function MembersPage() {
   } = useQuery({
     queryKey: ["members"],
     queryFn: async () => {
-      const res = await fetchNestApi<Member[]>("/members");
-      return Array.isArray(res) ? res : [];
+      try {
+        const res = await fetchNestApi<Member[]>("/members");
+        if (Array.isArray(res) && res.length > 0) {
+          return res;
+        }
+      } catch (err) {
+        console.error("[Members] Failed to load members:", err);
+      }
+      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
+      return DEFAULT_MEMBERS;
     },
   });
 

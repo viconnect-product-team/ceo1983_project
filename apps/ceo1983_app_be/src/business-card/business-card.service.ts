@@ -25,7 +25,7 @@ export class BusinessCardService {
     // If the user has 0 cards, auto-provision real Primary and Secondary cards
     if (cards.length === 0) {
       const mems = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT m.*, u.full_name as user_full_name, u.phone as user_phone, u.email as user_email, u.avatar_url as user_avatar
+        `SELECT m.*, u.name as user_full_name, COALESCE(m.phone, '') as user_phone, u.email as user_email, u.avatar_url as user_avatar
          FROM public.members m
          LEFT JOIN public.vione_users u ON m.user_id = u.id
          WHERE m.user_id = $1::uuid OR m.id::text = $1

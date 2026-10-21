@@ -248,7 +248,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
@@ -261,7 +261,12 @@ import { GlobalIncomingCallModal } from "@/components/business-connect/mobile/in
 
 function GlobalRealtimeNotifications() {
   const { status } = useAuth();
-  if (status !== "in") return null;
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || status !== "in") return null;
   return <AuthenticatedRealtimeNotifications />;
 }
 
@@ -273,17 +278,20 @@ function AuthenticatedRealtimeNotifications() {
 function GlobalVoiceNavAssistant() {
   const { status, user } = useAuth();
   const routerState = useRouterState();
+  const [isMounted, setIsMounted] = useState(false);
   const pathname =
     routerState?.location?.pathname ||
     (typeof window !== "undefined" ? window.location.pathname : "");
 
-  const [aiEnabled, setAiEnabled] = useState(() => {
-    if (typeof window === "undefined") return false;
-    if (localStorage.getItem("ceo1983_ai_disabled_permanently") === "true") return false;
-    return localStorage.getItem("ceo1983_ai_assistant_enabled") !== "false";
-  });
+  const [aiEnabled, setAiEnabled] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    const isPermanentlyDisabled = localStorage.getItem("ceo1983_ai_disabled_permanently") === "true";
+    if (!isPermanentlyDisabled) {
+      setAiEnabled(localStorage.getItem("ceo1983_ai_assistant_enabled") !== "false");
+    }
+
     const handleToggle = () => {
       const isPermanentlyDisabled = localStorage.getItem("ceo1983_ai_disabled_permanently") === "true";
       if (isPermanentlyDisabled) {
@@ -300,7 +308,7 @@ function GlobalVoiceNavAssistant() {
     };
   }, []);
 
-  if (status !== "in" || !user) return null;
+  if (!isMounted || status !== "in" || !user) return null;
   if (!aiEnabled) return null;
 
   // Robot chỉ xuất hiện trong mỗi app hiệp hội (/association/* hoặc /m/*), không xuất hiện ở CRM hệ thống hay app ViOne
@@ -323,29 +331,24 @@ function GlobalVoiceNavAssistant() {
 function GlobalViOneVoiceAssistant() {
   const { status, user } = useAuth();
   const routerState = useRouterState();
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const pathname =
     routerState?.location?.pathname ||
     (typeof window !== "undefined" ? window.location.pathname : "");
 
   // Con AI ViOne CHỈ xuất hiện khi ĐÃ ĐĂNG NHẬP ở app ViOne (/connect-app/*), TUYỆT ĐỐI KHÔNG xuất hiện ở bất kỳ chỗ khác
-  if (status !== "in" || !user) return null;
+  if (!isMounted || status !== "in" || !user) return null;
   if (!pathname.startsWith("/connect-app")) return null;
 
   return <ViOneVoiceAssistant />;
 }
 
 function RootComponent() {
-  const [lang, setLangState] = useState<Lang>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(LANG_STORAGE_KEY);
-        if (isLang(saved)) return saved;
-      } catch {
-        /* ignore */
-      }
-    }
-    return "vi";
-  });
+  const [lang, setLangState] = useState<Lang>("vi");
   const [queryClient] = useState(makeQueryClient);
 
   // Register service worker for offline support (guarded: prod only).

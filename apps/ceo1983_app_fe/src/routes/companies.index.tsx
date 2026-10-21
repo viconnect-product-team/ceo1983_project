@@ -98,12 +98,22 @@ function CompaniesPage() {
 
   const loadMembers = async () => {
     try {
-      const res = await fetchNestApi<Member[]>("/members?type=company");
-      if (Array.isArray(res)) {
-        setMembers(res);
+      let res = await fetchNestApi<Member[]>("/members?type=company");
+      if (!Array.isArray(res) || res.length === 0) {
+        res = await fetchNestApi<Member[]>("/members");
       }
+      if (Array.isArray(res) && res.length > 0) {
+        setMembers(res);
+        return;
+      }
+      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
+      setMembers(DEFAULT_MEMBERS.filter((m) => m.type === "company" || Boolean(m.company)));
     } catch (err) {
       console.error("[Companies] Failed to load companies:", err);
+      try {
+        const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
+        setMembers(DEFAULT_MEMBERS.filter((m) => m.type === "company" || Boolean(m.company)));
+      } catch {}
     }
   };
 

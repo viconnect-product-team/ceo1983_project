@@ -57,7 +57,7 @@ export class MembersService {
       return true;
     }
     const userRole = await this.prisma.$queryRaw<any[]>`
-      SELECT role FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
+      SELECT executive_role as role FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
     if (userRole.length && adminRoles.includes((userRole[0].role || '').toLowerCase())) {
       return true;
@@ -431,9 +431,9 @@ export class MembersService {
         SELECT m.*,
                u.name AS user_name,
                u.email AS user_email,
-               u.phone AS user_phone,
-               u.status AS user_status,
-               u.role AS user_role
+               COALESCE(m.phone, '') AS user_phone,
+               COALESCE(m.status, 'active') AS user_status,
+               COALESCE(m.executive_role, 'member') AS user_role
         FROM public.members m
         LEFT JOIN public.vione_users u ON m.user_id = u.id
         ORDER BY m.updated_at DESC, m.created_at DESC
@@ -444,9 +444,9 @@ export class MembersService {
         SELECT m.*,
                u.name AS user_name,
                u.email AS user_email,
-               u.phone AS user_phone,
-               u.status AS user_status,
-               u.role AS user_role
+               COALESCE(m.phone, '') AS user_phone,
+               COALESCE(m.status, 'active') AS user_status,
+               COALESCE(m.executive_role, 'member') AS user_role
         FROM public.members m
         LEFT JOIN public.vione_users u ON m.user_id = u.id
         WHERE m.association_id = ${assocId}::uuid 
@@ -458,9 +458,9 @@ export class MembersService {
         SELECT m.*,
                u.name AS user_name,
                u.email AS user_email,
-               u.phone AS user_phone,
-               u.status AS user_status,
-               u.role AS user_role
+               COALESCE(m.phone, '') AS user_phone,
+               COALESCE(m.status, 'active') AS user_status,
+               COALESCE(m.executive_role, 'member') AS user_role
         FROM public.members m
         LEFT JOIN public.vione_users u ON m.user_id = u.id
         ORDER BY m.updated_at DESC, m.created_at DESC

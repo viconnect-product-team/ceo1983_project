@@ -1217,7 +1217,7 @@ export class MeetingsService {
       // 0. Thông tin thành viên hiện tại
       const safeUserId = isUuid(userId) ? userId : null;
       const userMember = await this.prisma.$queryRawUnsafe<any[]>(`
-        SELECT m.id, m.code, m.user_id, m.phone, m.name, m.executive_role, m.department, u.role as vione_role, mem.role as membership_role
+        SELECT m.id, m.code, m.user_id, m.phone, m.name, m.executive_role, m.department, COALESCE(m.executive_role, 'member') as vione_role, mem.role as membership_role
         FROM public.members m
         LEFT JOIN public.vione_users u ON u.id = m.user_id
         LEFT JOIN public.memberships mem ON mem.user_id = m.user_id
