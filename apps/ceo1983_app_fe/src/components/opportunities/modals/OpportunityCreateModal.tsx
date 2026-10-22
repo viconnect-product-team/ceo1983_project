@@ -99,6 +99,9 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
   resolveMediaUrl,
 }) => {
   const [selectedDept, setSelectedDept] = React.useState<string>("all");
+  const [selectedScope, setSelectedScope] = React.useState<"public" | "specific_members" | "group">("public");
+  const [selectedRecipients, setSelectedRecipients] = React.useState<string[]>([]);
+  const [selectedGroups, setSelectedGroups] = React.useState<string[]>([]);
   const [deptList, setDeptList] = React.useState<any[]>([]);
   const [loadingDepts, setLoadingDepts] = React.useState<boolean>(false);
 
@@ -409,60 +412,186 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
                 {loadingDepts && <Loader2 className="w-3 h-3 animate-spin text-amber-600" />}
               </div>
 
-              {/* Chọn theo Ban chuyên môn (API Call theo ban) */}
-              <div className="rounded-xl bg-white/80 dark:bg-black/30 p-2.5 border border-amber-500/20 space-y-2">
-                <span className="text-[11px] font-bold text-[#003B95] dark:text-amber-300 flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" /> Chọn nhanh hội viên nhận cơ hội theo Ban
+              {/* Chọn Phạm Vi Trao Cơ Hội (Đa đối tượng & Hội nhóm) */}
+              <div className="rounded-xl bg-white/80 dark:bg-black/30 p-2.5 border border-amber-500/20 space-y-2.5">
+                <span className="text-[11px] font-bold text-[#1F3864] dark:text-amber-300 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" /> Phạm vi trao cơ hội kinh doanh
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                      Ban chuyên môn:
-                    </label>
-                    <select
-                      value={selectedDept}
-                      onChange={(e) => setSelectedDept(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
-                    >
-                      <option value="all">Tất cả các ban ({deptList.reduce((acc, d) => acc + (d.count || 0), 0)} hội viên)</option>
-                      {deptList.map((d) => (
-                        <option key={d.department} value={d.department}>
-                          {d.department} ({d.count} người)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScope("public")}
+                    className={`py-1.5 px-2 rounded-lg font-bold text-center border transition cursor-pointer ${
+                      selectedScope === "public"
+                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    Toàn CLB
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScope("specific_members")}
+                    className={`py-1.5 px-2 rounded-lg font-bold text-center border transition cursor-pointer ${
+                      selectedScope === "specific_members"
+                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    Nhiều hội viên
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedScope("group")}
+                    className={`py-1.5 px-2 rounded-lg font-bold text-center border transition cursor-pointer ${
+                      selectedScope === "group"
+                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    Ban / Hội nhóm
+                  </button>
+                </div>
 
-                  <div>
-                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                      Chọn hội viên trong ban:
+                {/* Scope: Specific members multi-select chips */}
+                {selectedScope === "specific_members" && (
+                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                      Thêm hội viên nhận cơ hội:
                     </label>
                     <select
                       onChange={(e) => {
                         const mId = e.target.value;
                         if (!mId) return;
                         const chosen = activeMembersInDept.find((m: any) => String(m.id) === mId);
-                        if (chosen) {
-                          setNewContactName(chosen.name || "");
-                          if (chosen.phone) setNewContactPhone(chosen.phone);
-                          if (chosen.title) setNewContactTitle(chosen.title);
-                          if (chosen.company) setNewCompany(chosen.company);
-                          toast.success(`Đã chọn: ${chosen.name} (${chosen.department})`);
+                        if (chosen && !selectedRecipients.includes(chosen.name)) {
+                          setSelectedRecipients([...selectedRecipients, chosen.name]);
+                          toast.success(`Đã thêm: ${chosen.name}`);
                         }
                       }}
                       defaultValue=""
                       className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
                     >
-                      <option value="" disabled>-- Bấm để chọn hội viên ({activeMembersInDept.length}) --</option>
+                      <option value="" disabled>-- Chọn hội viên để thêm vào danh sách ({activeMembersInDept.length}) --</option>
                       {activeMembersInDept.map((m: any) => (
                         <option key={m.id} value={m.id}>
                           {m.name} - {m.company || m.title}
                         </option>
                       ))}
                     </select>
+
+                    {selectedRecipients.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectedRecipients.map((rec) => (
+                          <span
+                            key={rec}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white"
+                          >
+                            <span>{rec}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRecipients(selectedRecipients.filter((r) => r !== rec))}
+                              className="hover:text-amber-300"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
+
+                {/* Scope: Group / Department multi-select */}
+                {selectedScope === "group" && (
+                  <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                      Chọn các Ban Chuyên Môn / Hội nhóm nhận cơ hội:
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto p-1">
+                      {["Ban Xúc tiến", "Ban Điều Hành", "Ban Thành viên", "Ban Tài chính", "Ban Truyền thông", "Ban Thiện nguyện", "Ban Thư Ký"].map((grp) => {
+                        const checked = selectedGroups.includes(grp);
+                        return (
+                          <label
+                            key={grp}
+                            className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-[11px] font-medium cursor-pointer transition ${
+                              checked
+                                ? "bg-amber-50 dark:bg-amber-950/40 border-[#B8860B] text-[#B8860B] font-bold"
+                                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedGroups([...selectedGroups, grp]);
+                                } else {
+                                  setSelectedGroups(selectedGroups.filter((g) => g !== grp));
+                                }
+                              }}
+                              className="size-3.5 accent-[#1F3864]"
+                            />
+                            <span className="truncate">{grp}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Scope: Public or Fallback individual contact selector */}
+                {selectedScope === "public" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                        Ban chuyên môn:
+                      </label>
+                      <select
+                        value={selectedDept}
+                        onChange={(e) => setSelectedDept(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
+                      >
+                        <option value="all">Tất cả các ban ({deptList.reduce((acc, d) => acc + (d.count || 0), 0)} hội viên)</option>
+                        {deptList.map((d) => (
+                          <option key={d.department} value={d.department}>
+                            {d.department} ({d.count} người)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                        Chọn hội viên mẫu:
+                      </label>
+                      <select
+                        onChange={(e) => {
+                          const mId = e.target.value;
+                          if (!mId) return;
+                          const chosen = activeMembersInDept.find((m: any) => String(m.id) === mId);
+                          if (chosen) {
+                            setNewContactName(chosen.name || "");
+                            if (chosen.phone) setNewContactPhone(chosen.phone);
+                            if (chosen.title) setNewContactTitle(chosen.title);
+                            if (chosen.company) setNewCompany(chosen.company);
+                            toast.success(`Đã chọn: ${chosen.name} (${chosen.department})`);
+                          }
+                        }}
+                        defaultValue=""
+                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
+                      >
+                        <option value="" disabled>-- Bấm để chọn hội viên ({activeMembersInDept.length}) --</option>
+                        {activeMembersInDept.map((m: any) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name} - {m.company || m.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

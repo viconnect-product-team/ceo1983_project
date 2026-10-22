@@ -262,6 +262,29 @@ export class AdminController {
   async saveLuckyDrawConfig(@Request() req: any, @Body() body: any) {
     return this.adminService.saveLuckyDrawConfig(body, req.user?.id);
   }
+
+  // ── AUDIT LOGS / LỊCH SỬ THAO TÁC HỆ THỐNG ────────────────────────────────
+  @Get('audit-logs')
+  @UseGuards(JwtAuthGuard)
+  async listAuditLogs(
+    @Query('action') action?: string,
+    @Query('targetType') targetType?: string,
+    @Query('search') search?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('limit') limit = 50,
+    @Query('offset') offset = 0,
+  ) {
+    return this.adminService.listAuditLogs({
+      action,
+      targetType,
+      search,
+      from,
+      to,
+      limit: Number(limit),
+      offset: Number(offset),
+    });
+  }
 }
 
 

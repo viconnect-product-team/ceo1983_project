@@ -568,7 +568,7 @@ function MemberTabBar() {
     "/association": { vi: "Trang chủ", en: "Home" },
     "/association/events": { vi: "Sự kiện", en: "Events" },
     "/association/card": { vi: "Check-in", en: "Check-in" },
-    "/association/messages": { vi: "Tin nhắn", en: "Messages" },
+    "/association/messages": { vi: "Mạng lưới", en: "Network" },
     "/association/profile": { vi: "Cá nhân", en: "Profile" },
   };
 
@@ -891,10 +891,10 @@ function MemberTabBar() {
           } else if (tab.to === "/association/messages" && unreadMessageCount > 0) {
             notificationBadge = (
               <span
-                className="absolute -top-1.5 -right-2.5 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-1 text-[9px] font-black text-white shadow-xs ring-1 ring-white/80 select-none animate-pulse"
-                title={`${unreadMessageCount} tin nhắn mới`}
+                className="absolute -top-1.5 -right-2.5 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-[#B8860B] px-1 text-[9px] font-black text-white shadow-xs ring-1 ring-white/80 select-none animate-pulse"
+                title={`${unreadMessageCount} cập nhật mạng lưới`}
               >
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-70" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-70" />
                 <span className="relative z-10">
                   {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                 </span>

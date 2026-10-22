@@ -2160,6 +2160,79 @@ export class AdminService implements OnModuleInit {
       updatedAt: new Date().toISOString(),
     };
   }
+
+  async listAuditLogs(params: {
+    action?: string;
+    targetType?: string;
+    search?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    let where = '1=1';
+    if (params.action && params.action !== 'all') {
+      where += ` AND a.action = '${params.action.replace(/'/g, "''")}'`;
+    }
+    if (params.targetType && params.targetType !== 'all') {
+      where += ` AND a.target_type = '${params.targetType.replace(/'/g, "''")}'`;
+    }
+    if (params.from) {
+      where += ` AND a.created_at >= '${params.from}'::timestamptz`;
+    }
+    if (params.to) {
+      where += ` AND a.created_at <= '${params.to}'::timestamptz`;
+    }
+    if (params.search?.trim()) {
+      const s = params.search.trim().replace(/'/g, "''");
+      where += ` AND (m.name ILIKE '%${s}%' OR m.company_name ILIKE '%${s}%' OR a.action ILIKE '%${s}%' OR a.target_id ILIKE '%${s}%')`;
+    }
+
+    const limit = Math.min(params.limit || 50, 200);
+    const offset = params.offset || 0;
+
+    const countRes = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT COUNT(*)::int as total
+      FROM public.audit_logs a
+      LEFT JOIN public.members m ON (m.user_id = a.actor_user_id)
+      WHERE ${where};
+    `).catch(() => [{ total: 0 }]);
+
+    const items = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT 
+        a.id,
+        a.actor_user_id,
+        a.action,
+        a.target_type,
+        a.target_id,
+        a.ip_address,
+        a.user_agent,
+        a.metadata,
+        a.created_at,
+        m.id as member_id,
+        m.name as actor_name,
+        m.company_name as actor_company,
+        m.avatar as actor_avatar,
+        m.department as actor_department,
+        m.executive_role as actor_role
+      FROM public.audit_logs a
+      LEFT JOIN public.members m ON (m.user_id = a.actor_user_id)
+      WHERE ${where}
+      ORDER BY a.created_at DESC
+      LIMIT ${limit} OFFSET ${offset};
+    `).catch(() => []);
+
+    return {
+      success: true,
+      total: countRes[0]?.total || 0,
+      limit,
+      offset,
+      items: items.map(i => ({
+        ...i,
+        metadata: typeof i.metadata === 'string' ? JSON.parse(i.metadata) : (i.metadata || {})
+      }))
+    };
+  }
 }
 
 

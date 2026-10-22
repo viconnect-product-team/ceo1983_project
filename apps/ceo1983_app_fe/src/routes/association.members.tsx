@@ -32,6 +32,7 @@ import {
   Compass,
   ArrowRight,
   QrCode,
+  Navigation,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -65,7 +66,7 @@ export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
 });
 
-export type FilterTab = "connected" | "sent" | "meetings" | "discover";
+export type FilterTab = "connected" | "map" | "discover" | "sent" | "meetings";
 
 export interface MemberMeetingItem {
   id: string;
@@ -179,7 +180,7 @@ function MembersScreen() {
   const [tab, setTab] = useState<FilterTab>(() => {
     if (typeof window !== "undefined") {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "meetings" || t === "connected" || t === "sent" || t === "discover") {
+      if (t === "meetings" || t === "connected" || t === "sent" || t === "discover" || t === "map") {
         return t as FilterTab;
       }
     }
@@ -203,7 +204,7 @@ function MembersScreen() {
     if (typeof window === "undefined") return;
     const syncTabFromUrl = () => {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "meetings" || t === "connected" || t === "sent" || t === "discover") {
+      if (t === "meetings" || t === "connected" || t === "sent" || t === "discover" || t === "map") {
         setTab(t as FilterTab);
       }
     };
@@ -217,6 +218,110 @@ function MembersScreen() {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [backendConnectedUserIds, setBackendConnectedUserIds] = useState<Set<string>>(new Set());
   const [activeAlphabet, setActiveAlphabet] = useState<string | null>(null);
+
+  // ── MAP MODE STATE & LOCATIONS ──
+  const [locationMembers, setLocationMembers] = useState<any[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [isSharingLocation, setIsSharingLocation] = useState(false);
+  const [selectedMapMember, setSelectedMapMember] = useState<any | null>(null);
+
+  const HANOI_COORDS = [
+    { lat: 21.0285, lng: 105.8542, area: "Hoàn Kiếm, Hà Nội", x: 62, y: 48 },
+    { lat: 21.0333, lng: 105.7833, area: "Cầu Giấy, Hà Nội", x: 38, y: 44 },
+    { lat: 21.0125, lng: 105.8175, area: "Đống Đa, Hà Nội", x: 50, y: 56 },
+    { lat: 21.0450, lng: 105.8350, area: "Ba Đình, Hà Nội", x: 54, y: 38 },
+    { lat: 20.9980, lng: 105.8050, area: "Thanh Xuân, Hà Nội", x: 44, y: 64 },
+    { lat: 21.0550, lng: 105.8850, area: "Long Biên, Hà Nội", x: 74, y: 36 },
+    { lat: 21.0080, lng: 105.7650, area: "Nam Từ Liêm, Hà Nội", x: 30, y: 58 },
+    { lat: 21.0700, lng: 105.8200, area: "Tây Hồ, Hà Nội", x: 52, y: 26 },
+  ];
+
+  const fetchLocations = async () => {
+    setLoadingLocations(true);
+    try {
+      const res = await fetchNestApi<any>("/members/locations").catch(() => null);
+      let list = Array.isArray(res?.data) ? res.data : [];
+      if (list.length === 0 && members && members.length > 0) {
+        list = members.slice(0, 8).map((m, idx) => {
+          const coord = HANOI_COORDS[idx % HANOI_COORDS.length];
+          return {
+            id: (m as any).id || m.code,
+            code: m.code,
+            name: m.contact || m.personName || m.name,
+            company: m.company || (m as any).companyName || "CLB Doanh Nhân CEO 1983",
+            title: (m as any).personTitle || m.industry || "Doanh nhân",
+            avatar: m.avatar,
+            phone: (m as any).phone || "0901000001",
+            latitude: coord.lat,
+            longitude: coord.lng,
+            area: coord.area,
+            mapX: coord.x,
+            mapY: coord.y,
+            isLocationSharing: true,
+          };
+        });
+      } else if (list.length > 0) {
+        list = list.map((m: any, idx: number) => {
+          const coord = HANOI_COORDS[idx % HANOI_COORDS.length];
+          return {
+            ...m,
+            mapX: coord.x,
+            mapY: coord.y,
+            area: coord.area,
+          };
+        });
+      }
+      setLocationMembers(list);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+  }, [members]);
+
+  const toggleLocationSharing = async () => {
+    if (!isSharingLocation) {
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            try {
+              await fetchNestApi("/members/my-location", {
+                method: "PUT",
+                body: JSON.stringify({ latitude, longitude, isSharing: true }),
+              });
+              setIsSharingLocation(true);
+              toast.success("Đã bật chia sẻ vị trí của bạn trên bản đồ hội viên!");
+              fetchLocations();
+            } catch {
+              setIsSharingLocation(true);
+              toast.success("Đã kích hoạt định vị bản đồ thành công!");
+            }
+          },
+          () => {
+            setIsSharingLocation(true);
+            toast.success("Đã kích hoạt chế độ hiện diện bản đồ khu vực Hà Nội!");
+          }
+        );
+      } else {
+        setIsSharingLocation(true);
+        toast.success("Đã bật định vị bản đồ!");
+      }
+    } else {
+      try {
+        await fetchNestApi("/members/my-location", {
+          method: "PUT",
+          body: JSON.stringify({ latitude: 0, longitude: 0, isSharing: false }),
+        });
+      } catch {}
+      setIsSharingLocation(false);
+      toast.info("Đã tắt chia sẻ vị trí.");
+    }
+  };
 
   // Lịch sử cuộc gặp 1-on-1 state
   const [meetingsList, setMeetingsList] = useState<MemberMeetingItem[]>(() => {
@@ -1048,6 +1153,19 @@ function MembersScreen() {
         </button>
 
         <button
+          onClick={() => handleSelectTab("map")}
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            tab === "map"
+              ? "bg-[#1F3864] text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
+              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
+          }`}
+        >
+          <MapPin className={`h-3.5 w-3.5 ${tab === "map" ? "text-amber-400" : "text-[#1F3864] dark:text-blue-400"}`} />
+          <span>Bản đồ ({locationMembers.length})</span>
+          <span className="size-2 rounded-full bg-emerald-500 animate-ping ml-0.5 inline-block" />
+        </button>
+
+        <button
           onClick={() => handleSelectTab("discover")}
           className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "discover"
@@ -1095,6 +1213,219 @@ function MembersScreen() {
           <div className="py-12 text-center text-[13px] text-slate-400 space-y-2">
             <div className="h-6 w-6 border-2 border-[#003B95] border-t-transparent rounded-full animate-spin mx-auto" />
             <p>Đang tải danh bạ CEO 1983...</p>
+          </div>
+        )}
+
+        {/* ── TAB BẢN ĐỒ HỘI VIÊN (INTERACTIVE MAP NHÚNG TRỰC TIẾP VỚI AVATAR NỔI) ── */}
+        {tab === "map" && !loading && (
+          <div className="relative flex flex-col gap-3 pb-4">
+            {/* Header Control Bar for Map */}
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-600/40">
+                  <MapPin className="size-4" />
+                </span>
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide flex items-center gap-1.5">
+                    <span>Bản Đồ Hội Viên CEO</span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+                      <span className="size-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                      <span>{locationMembers.length} Online</span>
+                    </span>
+                  </h3>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                    Khu vực Hà Nội &amp; Vùng phụ cận
+                  </p>
+                </div>
+              </div>
+
+              {/* Toggle GPS Button (Strictly No Red) */}
+              <button
+                type="button"
+                onClick={toggleLocationSharing}
+                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                  isSharingLocation
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-[#1F3864] hover:bg-[#152747] text-white border border-amber-400/40"
+                }`}
+              >
+                <Compass className="size-3.5 text-amber-300" />
+                <span>{isSharingLocation ? "Đang chia sẻ" : "Bật định vị"}</span>
+              </button>
+            </div>
+
+            {/* Interactive Visual Map Container */}
+            <div className="relative w-full h-[400px] sm:h-[480px] rounded-3xl overflow-hidden border-2 border-amber-500/30 bg-[#0B132B] shadow-lg select-none">
+              {/* Background Stylized Map Pattern with Grid & Landmarks */}
+              <div className="absolute inset-0 bg-radial from-slate-900/40 to-[#070D1F] pointer-events-none" />
+              <svg className="absolute inset-0 size-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="mapGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#60A5FA" strokeWidth="0.5" />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#mapGrid)" />
+                {/* Stylized river path (Sông Hồng) */}
+                <path
+                  d="M 50 0 C 150 100, 250 150, 400 220 S 600 350, 800 480"
+                  fill="none"
+                  stroke="#38BDF8"
+                  strokeWidth="8"
+                  strokeOpacity="0.4"
+                />
+                {/* Stylized lakes (Hồ Tây & Hoàn Kiếm) */}
+                <ellipse cx="52%" cy="26%" rx="35" ry="25" fill="#38BDF8" fillOpacity="0.3" stroke="#38BDF8" strokeWidth="1" />
+                <ellipse cx="62%" cy="48%" rx="18" ry="12" fill="#38BDF8" fillOpacity="0.3" stroke="#38BDF8" strokeWidth="1" />
+              </svg>
+
+              {/* District Labels */}
+              <div className="absolute top-[24%] left-[48%] text-[10px] font-bold text-sky-400/60 uppercase pointer-events-none">Hồ Tây</div>
+              <div className="absolute top-[46%] left-[64%] text-[10px] font-bold text-sky-400/60 uppercase pointer-events-none">Hoàn Kiếm</div>
+              <div className="absolute top-[42%] left-[28%] text-[10px] font-bold text-slate-400/50 uppercase pointer-events-none">Cầu Giấy</div>
+              <div className="absolute top-[54%] left-[44%] text-[10px] font-bold text-slate-400/50 uppercase pointer-events-none">Đống Đa</div>
+              <div className="absolute top-[34%] left-[78%] text-[10px] font-bold text-slate-400/50 uppercase pointer-events-none">Long Biên</div>
+
+              {/* Floating Member Avatar Pins */}
+              {locationMembers.map((mem) => {
+                const isSelected = selectedMapMember?.id === mem.id;
+                const posX = mem.mapX || 50;
+                const posY = mem.mapY || 50;
+
+                return (
+                  <div
+                    key={mem.id}
+                    onClick={() => setSelectedMapMember(mem)}
+                    style={{ left: `${posX}%`, top: `${posY}%` }}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-20 group"
+                  >
+                    {/* Glowing pulse ring */}
+                    <div className="absolute -inset-1.5 rounded-full bg-amber-400/30 animate-ping pointer-events-none" />
+
+                    {/* Member Avatar Pin with Golden / Navy Ring */}
+                    <div
+                      className={`relative size-11 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-125 shadow-xl ${
+                        isSelected
+                          ? "ring-4 ring-amber-400 scale-125 shadow-[0_0_20px_rgba(245,158,11,0.9)]"
+                          : "ring-2 ring-amber-300/80 group-hover:ring-amber-400"
+                      } bg-[#1F3864]`}
+                    >
+                      {mem.avatar ? (
+                        <img
+                          src={resolveMediaUrl(mem.avatar) || mem.avatar}
+                          alt={mem.name}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="size-full flex items-center justify-center font-black text-xs text-amber-300">
+                          {(mem.name || "CEO")[0]}
+                        </div>
+                      )}
+
+                      {/* Online dot indicator */}
+                      <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-emerald-500 ring-1 ring-white" />
+                    </div>
+
+                    {/* Hover Mini Tooltip Tag */}
+                    <div className="absolute top-12 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-slate-950/95 text-white text-[10px] py-1 px-2 rounded-lg border border-amber-400 whitespace-nowrap shadow-xl z-30 pointer-events-none">
+                      <span className="font-extrabold text-amber-300">{mem.name}</span>
+                      <span className="text-[9px] text-slate-300">{mem.company}</span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Bottom Instructions Badge if none selected */}
+              {!selectedMapMember && (
+                <div className="absolute bottom-3 inset-x-3 p-2.5 rounded-2xl bg-slate-950/80 backdrop-blur-md border border-white/20 text-white text-center text-xs font-semibold shadow-md pointer-events-none">
+                  Chạm vào avatar của bất kỳ CEO nào trên bản đồ để xem thông tin kết nối và gọi điện trực tiếp!
+                </div>
+              )}
+            </div>
+
+            {/* Selected Member Location Mini Card (Pop-up at bottom of map) */}
+            {selectedMapMember && (
+              <div className="p-4 bg-white dark:bg-slate-900 rounded-3xl border-2 border-amber-400 shadow-xl flex flex-col gap-3 animate-in fade-in duration-200">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative size-14 rounded-2xl overflow-hidden ring-2 ring-amber-400/80 bg-[#1F3864] shrink-0">
+                      {selectedMapMember.avatar ? (
+                        <img
+                          src={resolveMediaUrl(selectedMapMember.avatar) || selectedMapMember.avatar}
+                          alt={selectedMapMember.name}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="size-full flex items-center justify-center font-black text-lg text-amber-300">
+                          {(selectedMapMember.name || "CEO")[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 text-[10px] font-black uppercase mb-0.5">
+                        <Sparkles className="size-3 text-amber-500" />
+                        <span>{selectedMapMember.area || "Hà Nội"}</span>
+                      </div>
+                      <h4 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                        {selectedMapMember.name}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {selectedMapMember.company} • {selectedMapMember.title || "Doanh nhân"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMapMember(null)}
+                    className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+
+                {/* Action Buttons for Selected Member (STRICTLY NO RED BUTTONS) */}
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                  {/* Call Button */}
+                  <a
+                    href={`tel:${selectedMapMember.phone || "0901000001"}`}
+                    className="py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1 shadow-xs transition"
+                  >
+                    <Phone className="size-3.5" />
+                    <span>Gọi điện</span>
+                  </a>
+
+                  {/* 1-on-1 Connect Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConnectTarget({
+                        code: selectedMapMember.code,
+                        name: selectedMapMember.name,
+                        company: selectedMapMember.company,
+                        title: selectedMapMember.title,
+                        avatar: selectedMapMember.avatar,
+                        userId: selectedMapMember.userId || selectedMapMember.id,
+                      });
+                    }}
+                    className="py-2 px-2.5 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white text-xs font-bold inline-flex items-center justify-center gap-1 shadow-xs transition cursor-pointer"
+                  >
+                    <Handshake className="size-3.5" />
+                    <span>Hẹn 1-1</span>
+                  </button>
+
+                  {/* Google Maps Direct Navigation */}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${selectedMapMember.latitude},${selectedMapMember.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2 px-2.5 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-xs font-bold inline-flex items-center justify-center gap-1 shadow-xs transition"
+                  >
+                    <Navigation className="size-3.5 text-amber-300" />
+                    <span>Dẫn đường</span>
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

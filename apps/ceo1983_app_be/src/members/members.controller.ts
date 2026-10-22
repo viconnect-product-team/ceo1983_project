@@ -73,6 +73,20 @@ export class MembersController {
     return this.membersService.listDirectory(req.user.id, connectedOnly === 'true');
   }
 
+  @Get('locations')
+  async getMemberLocations() {
+    return this.membersService.getMemberLocations();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('my-location')
+  async updateMyLocation(
+    @Request() req: any,
+    @Body() body: { latitude: number; longitude: number; isSharing?: boolean },
+  ) {
+    return this.membersService.updateMyLocation(req.user.id, body);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMyMember(@Request() req: any) {

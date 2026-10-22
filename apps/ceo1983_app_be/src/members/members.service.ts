@@ -405,6 +405,10 @@ export class MembersService {
       avatar: r.avatar || r.avatar_url || null,
       companyLogo: r.company_logo_url || null,
       companyLogoUrl: r.company_logo_url || null,
+      latitude: r.latitude !== null && r.latitude !== undefined ? Number(r.latitude) : null,
+      longitude: r.longitude !== null && r.longitude !== undefined ? Number(r.longitude) : null,
+      isLocationSharing: r.is_location_sharing ?? true,
+      lastLocationUpdated: r.last_location_updated_at || null,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     };
@@ -3274,6 +3278,49 @@ export class MembersService {
       count: members.length,
       members,
     }));
+  }
+
+  async getMemberLocations() {
+    const list = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT id, code, name, company_name, avatar, avatar_url, phone, email, industry, department, executive_role,
+             latitude, longitude, is_location_sharing, last_location_updated_at
+      FROM public.members
+      WHERE is_location_sharing = true AND latitude IS NOT NULL AND longitude IS NOT NULL
+      ORDER BY last_location_updated_at DESC NULLS LAST;
+    `).catch(() => []);
+
+    return {
+      success: true,
+      data: list.map(m => ({
+        id: m.id,
+        code: m.code,
+        name: m.name,
+        company: m.company_name || 'CLB Doanh Nhân CEO 1983',
+        avatar: m.avatar || m.avatar_url || null,
+        phone: m.phone,
+        email: m.email,
+        industry: m.industry,
+        department: m.department || 'Hội viên',
+        role: m.executive_role || 'member',
+        latitude: Number(m.latitude),
+        longitude: Number(m.longitude),
+        lastUpdated: m.last_location_updated_at,
+      }))
+    };
+  }
+
+  async updateMyLocation(userId: string, body: { latitude: number; longitude: number; isSharing?: boolean }) {
+    if (!userId) throw new BadRequestException('Chưa đăng nhập');
+    const isSharing = body.isSharing !== undefined ? Boolean(body.isSharing) : true;
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.members 
+      SET latitude = ${body.latitude}, 
+          longitude = ${body.longitude}, 
+          is_location_sharing = ${isSharing},
+          last_location_updated_at = now()
+      WHERE user_id = '${userId}'::uuid OR id = '${userId}';
+    `);
+    return { success: true, message: 'Đã cập nhật vị trí bản đồ' };
   }
 }
 

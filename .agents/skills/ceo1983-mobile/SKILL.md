@@ -1,77 +1,55 @@
 ---
 name: ceo1983-mobile
-description: Hướng dẫn kỹ thuật native, cầu nối Android Java, Capacitor, tối ưu WebView và đóng gói ứng dụng di động CEO 1983 Mobile App.
+description: Kỹ năng chuyên sâu về nghiệp vụ, kỹ thuật, giao diện mobile-first, nhận diện 3 màu thương hiệu, an toàn ngày tháng và cầu nối Native Capacitor cho Ứng dụng Di động Hội viên CLB Doanh Nhân CEO 1983 (HanoiBA).
 ---
 
-# KỸ NĂNG ỨNG DỤNG DI ĐỘNG CEO 1983 MOBILE
+# KỸ NĂNG CHUYÊN SÂU PHÂN HỆ MOBILE APP CEO 1983
 
-Kỹ năng này cung cấp các tiêu chuẩn kỹ thuật, cấu hình Capacitor, cầu nối Native Android Java, dịch vụ chạy ngầm và quy trình biên dịch gói APK cho **Ứng Dụng Di Động CLB Doanh Nhân CEO 1983** (`apps/mobile_ceo1983`).
-
----
-
-## 1. Kiến Trúc Native & Cầu Nối Hệ Điều Hành
-
-- **Capacitor Mobile Wrapper**: Đóng gói ứng dụng di động cho Android và iOS với `appId: "vn.ceo1983.app"`, kết nối HTTPS bảo mật với cổng nghiệp vụ hội viên.
-- **Dịch Vụ Thông Báo Nền (`CeoNotificationSyncService.java`)**: 
-  - Khởi tạo Foreground/Background Service chạy độc lập với vòng đời WebView.
-  - Tự động nhận diện cuộc gọi WebRTC và tin nhắn mới ngay cả khi ứng dụng đang đóng hoặc chạy ngầm.
-  - Hiển thị Heads-Up Notification ngoài màn hình khóa với chuông, rung và 2 nút hành động trực tiếp: "Nghe" và "Từ chối".
-- **Cầu Nối Native Android AI (`MainActivity.java`)**:
-  - Nhận diện giọng nói tiếng Việt qua `android.speech.SpeechRecognizer` (`vi-VN`).
-  - Phát âm phản hồi TTS qua `android.speech.tts.TextToSpeech` (`vi-VN`) với độ trễ 0ms.
-- **Tự Động Cắt Khoảng Trắng Thừa (Stream Space / Auto-trim)**:
-  - Toàn bộ các ô nhập liệu trên ứng dụng di động tự động cắt bỏ khoảng trắng thừa đầu cuối khi mất tiêu điểm (`onBlur`).
+Kỹ năng này cung cấp các chỉ dẫn nghiệp vụ, kỹ thuật và quy chuẩn phát triển cho phân hệ **Mobile App Hội Viên CEO 1983** (iOS, Android, PWA, Capacitor Native) dành cho các doanh nhân sinh năm 1983 và lãnh đạo doanh nghiệp trực thuộc HanoiBA.
 
 ---
 
-## 2. Quy Trình Biên Dịch & Đóng Gói APK
-
-Khi có cập nhật mã nguồn Frontend:
-
-```powershell
-# 1. Biên dịch Frontend Web
-cd apps/ceo1983_app_fe
-npm run build
-
-# 2. Đồng bộ sang Android Native
-cd ../../apps/mobile_ceo1983
-npx cap copy android
-
-# 3. Biên dịch APK
-cd android
-.\gradlew.bat assembleDebug
-```
-
-Tệp APK thành phẩm:
-- `apps/mobile_ceo1983/android/app/build/outputs/apk/debug/app-debug.apk`
-- Đồng bộ tự động sang `release_apk/CEO1983-app-latest.apk`.
+## 1. Bản Chất & Phân Biệt Phân Hệ
+- **Không nhầm lẫn với Web CRM**: Mobile App là ứng dụng di động (Mobile-First) dành cho Hội viên doanh nhân. Mọi component và route Mobile đều nằm trong layout `MemberShell` với **Thanh điều hướng chân trang (Bottom Navigation Bar)** gồm 5 biểu tượng chính: Trang chủ, Cơ hội, Danh bạ, Tin nhắn, Cá nhân.
+- **Môi trường hiển thị**: Tối ưu trên màn hình điện thoại từ 320px đến 430px+. Tuyệt đối không dùng Sidebar desktop, không dùng bảng Excel rộng ngang cố định, không dùng các bảng nút chữ cồng kềnh.
 
 ---
 
-## 3. Quy Tắc Bắt Buộc
-
-1. **Tuyệt Đối Không Tự Ý Chạy Git Push / Git Commit**: Mọi tệp chỉ lưu cục bộ.
-2. **Kiểm Tra Type-Check 100% Exit Code 0** (`npx tsc --noEmit`) trước khi xuất bản.
-3. **Không Sử Dụng Thuật Ngữ Kỹ Thuật (Zero Technical Jargon)** trên giao diện người dùng.
+## 2. Danh Mục Các Chức Năng Mobile & Node Traceability
+Khi nhận yêu cầu về Mobile App, Agent tra cứu mã Node tương ứng:
+- **`[NODE-APP-001]` Trang Chủ & 4 Phím Tắt Tùy Biến (`/association`)**: Số liệu thật 100% từ CSDL. Cho phép tự chọn 4 tính năng chính hiển thị ra trang chủ (`CustomHomeShortcutsModal`). Cập nhật nhanh avatar/bìa/logo kiểu Facebook.
+- **`[NODE-APP-002]` Thẻ Hội Viên VIP Số & QR Cá Nhân (`/association/card`)**: Logo công ty hội viên ở góc phải trên. Mã QR cá nhân hóa mở popup phóng to. Công tắc bảo mật SĐT và Email. Tích hợp Quét QR thẻ đối tác.
+- **`[NODE-APP-003]` Trang Xem Thẻ Công Khai (`/card/$code`)**: Xem công khai danh thiếp. Tuân thủ quyền riêng tư: Ẩn SĐT/Email sẽ hiện "🔒 Đã ẩn theo cài đặt riêng tư". Giao diện đồng bộ 100% với thẻ nội bộ.
+- **`[NODE-APP-004]` Danh Bạ Hội Viên & Hẹn Gặp 1-on-1 (`/association/members`)**: Thanh A-Z cuộn ngang trên điện thoại (`sm:hidden overflow-x-auto`). Nút hành động dàn lưới cân đối (5 cột biểu tượng Lucide). Popup hẹn gặp B2B kèm liên kết cơ hội hợp tác.
+- **`[NODE-APP-005]` Cơ Hội Giao Thương Strip 3 Thẻ Ngang (`/association/opportunities`)**: TUYỆT ĐỐI KHÔNG để biểu đồ trong màn này. Dải 3 thẻ ngang: "Tổng chia sẻ", "Deal đã chốt", "Tôi share đi" và nút sang Analytics. Bộ lọc 3 trạng thái: Tất cả, Bên mua, Bên bán.
+- **`[NODE-APP-006]` Trung Tâm Thống Kê & Vinh Danh Top Giver (`/association/analytics`)**: Nơi tập trung 100% biểu đồ cơ hội di động (chuyển đổi 3 chế độ). Vinh danh Top 1 Giver nổi bật kèm số lượng & giá trị deal, bảng Top 5 Givers, danh sách ALL cơ hội live filter.
+- **`[NODE-APP-007]` Sàn Giao Thương B2B Giới Hạn 5 Sản Phẩm (`/association/products`)**: Giới hạn tối đa 5 sản phẩm/DN (chống spam). Huy hiệu `(X/5 sản phẩm)`. Slider tài trợ nền Obsidian Dark viền Amber Gold. Nút nhắn tin trực tiếp người bán.
+- **`[NODE-APP-008]` Lịch Trình Sự Kiện & Soát Vé QR (`/association/events`)**: Bọc `EventsErrorBoundary` chống sập trang. Helper an toàn `safeFormatEventDate` chống `Invalid time value`. Tự động gộp Cuộc họp ban (`[Họp Ban]`). Slider tối đa 3 QR vé.
+- **`[NODE-APP-009]` Biểu Quyết Trực Tuyến Gắn Với Sự Kiện/Họp (`/association/voting`)**: 2 Tab: Biểu quyết đang diễn ra & Lịch sử nghị quyết. Mọi biểu quyết đều gắn liền với Cuộc họp hoặc Sự kiện chính thức. Tính % tỷ lệ tán thành Realtime.
+- **`[NODE-APP-010]` Bảng Tin, Comment & Đánh Dấu Họp (`/association/messages`)**: Nút Icon Bình luận đặt cạnh nút Icon Chia sẻ bên phải thanh tương tác. Nút "Đánh dấu cuộc họp vào hồ sơ cá nhân" tự động ghi nhận vào lịch sử hoạt động hội viên.
+- **`[NODE-APP-011]` Hồ Sơ Cá Nhân & Quản Trị RBAC Nhanh (`/association/profile`)**: Định danh lãnh đạo trang trọng, xem hợp đồng và liên kết thẻ số. Nếu là Admin/BQT thì hiện thêm nút "Phân quyền Hội viên (BQT)" mở sang `/association/permissions`.
+- **`[NODE-APP-012]` Cài Đặt Hệ Thống, Trợ Lý AI & Đổi Mật Khẩu (`/association/settings`)**: Đồng bộ 3 khối: Cài đặt hệ thống, Thông tin hỗ trợ 24/7 (Hotline, Email), Đổi mật khẩu bắt buộc & Bảo mật.
+- **`[NODE-APP-013]` Kho Đặc Quyền & Quà Tặng Sự Kiện (`/association/perks`)**: Nơi lưu giữ các voucher, quà tặng trúng giải từ Vòng quay may mắn Lucky Draw.
+- **`[NODE-APP-014]` Cầu Nối Native Android / iOS & Push Service Worker (`mobile_ceo1983`)**: Trong `sw.js` bọc `Notification.permission === 'granted'` và `.catch()`. Android Java cầu nối Capacitor WebView an toàn, điều hướng mượt mà.
 
 ---
 
-## 4. Chuẩn Hóa Phân Quyền, Ô Nhập Liệu & Trải Nghiệm Mobile (Cập Nhật 10/2026)
+## 3. Hệ Thống 3 Màu Thương Hiệu Phân Cấp Ưu Tiên
+1. **Mức Ưu Tiên 1 - ĐỎ (#DC2626 / #D92525)**: Nhận diện thương hiệu chính, nút CTA quyết định, thông báo khẩn, Top 1 Giver.
+2. **Mức Ưu Tiên 2 - VÀNG / HỔ PHÁCH (#F59E0B / #D97706)**: Điểm nhấn VIP, deal cơ hội, vinh danh Top 2-3, sự kiện mở.
+3. **Mức Ưu Tiên 3 - XANH NAVY (#003B95) & XANH LỤC (#059669)**: Nền tảng hệ thống, Header/Footer, trạng thái deal hoàn thành, vé hợp lệ.
+- **CẤM TUYỆT ĐỐI**: Màu tím, hồng, xanh neon, dải cầu vồng.
 
-1. **Phân Quyền Thao Tác Chặt Chẽ**:
-   - Tin tức câu lạc bộ: Chỉ các vai trò `Quản trị`, `Admin`, `Chủ tịch`, `Trưởng ban` mới có quyền Đăng/Sửa/Xóa. Thành viên chỉ được xem.
-   - Quét mã QR sự kiện: Kiểm soát nghiêm ngặt theo danh sách nhân sự được phân quyền quét mã từ CRM (`qrScanners` / `qrStaff`). Riêng `Quản trị`, `Chủ tịch`, `Admin` luôn có toàn quyền quét mã ở mọi sự kiện.
-2. **Khắc Phục Ô Nhập Tiền Tệ VNĐ**:
-   - Loại bỏ cản trở của `isComposingRef` trên các ô nhập tiền tệ số `inputMode="numeric"`, cho phép người dùng gõ số liền mạch trên bàn phím ảo Android/iOS và bộ gõ tiếng Việt.
-3. **Quản Lý Quyền Thông Báo Chủ Động**:
-   - Tuyệt đối không bật popup xin quyền thông báo khi vừa vào ứng dụng. Chuyển quyền quản lý sang công tắc Bật/Tắt trong màn hình Hồ sơ cá nhân.
-4. **Tối Giản Hóa Giao Diện & Tiết Giảm Màu Vàng**:
-   - Loại bỏ section "Lịch sử hoạt động & giao dịch" trên trang chủ để giao diện thoáng gọn, chuyên nghiệp.
-   - Điều chỉnh bảng màu ưu tiên Deep Cobalt Navy, giảm độ chói của các mảng màu vàng kim.
+---
 
-## iOS PWA Icon & Safe-Area (cập nhật 2026-10-14)
-- Icon PWA phải nền trắng đục (không alpha). Sinh lại: `powershell -File apps/ceo1983_app_fe/scripts/generate-white-app-icons.ps1`.
-- Đổi icon/manifest ⇒ bump `?v=ceo1983_vX` (`__root.tsx`, `association.tsx`, `association.login.tsx`, `IosInstallPrompt.tsx`), `MEMBER_MANIFEST_VERSION`/`BC_MANIFEST_VERSION` (`src/lib/pwa-manifest.ts` + href trong `__root.tsx`), `CACHE_NAME` trong `public/sw.js`.
-- Manifest: `background_color #FFFFFF`, `id /association`, maskable dùng `app-icon-maskable-{192,512}.png`.
-- Header sticky phải né safe-area: dùng `MemberHeader` hoặc class `.ceo-safe-sticky` (styles.css).
-- Không tự xin quyền Notification khi mở app — chỉ ở màn Cá nhân.
+## 4. Chuẩn Nhập Liệu & Thao Tác Di Động
+- **Trường nhập ngày (`StandardDateInput`)**: Tự động mask dấu `/` khi gõ số (`inputMode="numeric"`). Icon lịch dùng Native `<input type="date">` overlay trong suốt (`opacity-0 absolute inset-0`) kích hoạt picker native của iOS/Android mà không bị WebKit chặn.
+- **Tối ưu nút thành biểu tượng**: Dùng biểu tượng Lucide đơn sắc tinh tế (`Phone`, `MessageSquare`, `User`, `Handshake`), dàn lưới 5 cột cân đối.
+- **An toàn ngày tháng**: Tuyệt đối không dùng `new Date(event.date)` thiếu kiểm tra. Dùng `safeFormatEventDate` và `safeGetEventDayMonth` kiểm tra `!isNaN(d.getTime())`.
+
+---
+
+## 5. Quy Trình Kiểm Thử Trước Khi Bàn Giao
+1. Chạy `npm run routes:gen` nếu có tạo hoặc sửa file route.
+2. Chạy `npx tsc --noEmit` xác nhận 0 lỗi (Exit Code 0).
+3. Cập nhật `MEMORY.md` và `.cursorrules`.

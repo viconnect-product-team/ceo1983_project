@@ -253,7 +253,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Xem Bảng Điều Khiển Tổng Quan KPI Phát Triển Hội Viên & Tỷ Lệ Tăng Trưởng Tổ Chức |
 | **Tác Nhân (Actor)** | Ban Quản Trị, Ban Thành Viên, Thường Trực Ban Chấp Hành |
 | **Tiền Điều Kiện (Pre-conditions)** | Cán bộ lãnh đạo đăng nhập vào Cổng Quản trị & Điều hành Ban Chấp Hành. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng truy cập Bảng điều khiển Tổng quan (Dashboard KPI).<br>2. Màn hình hiển thị toàn diện các chỉ số sống còn của tổ chức:<br>   - Tổng số lượng Hội viên chính thức (Active)<br>   - Số lượng hồ sơ mới đang Chờ thẩm định (Pending)<br>   - Tỷ lệ hoàn thành Hội phí thường niên nhiệm kỳ<br>   - Tổng số doanh nghiệp thành viên phân theo quy mô và ngành nghề<br>   - Biểu đồ tăng trưởng hội viên qua các quý và tỷ lệ gắn kết hoạt động.<br>3. Người dùng lọc chỉ số theo khoảng thời gian hoặc theo chuyên ban sinh hoạt để đưa ra chỉ đạo kịp thời. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng truy cập Bảng điều khiển Tổng quan (Dashboard KPI) hoặc Trung Tâm Thống Kê Chuyên Sâu (/analytics).<br>2. Màn hình hiển thị toàn diện các chỉ số sống còn của tổ chức:<br>   - Tổng số lượng Hội viên chính thức (Active) và Doanh nghiệp thành viên<br>   - Số lượng hồ sơ mới đang Chờ thẩm định (Pending)<br>   - Tỷ lệ hoàn thành Hội phí thường niên nhiệm kỳ<br>   - Tổng doanh số giao thương nội bộ B2B và giá trị các thương vụ đã kết nối thành công.<br>3. Tại Trung Tâm Thống Kê (/analytics), hỗ trợ 5 chế độ hiển thị linh hoạt: Dạng Lưới KPI, Dashboard tổng quan, Biểu đồ Treemap phân bố ngành nghề, Biểu đồ tròn Donut cơ cấu ban ngành và Cây đơn vị Org Tree.<br>4. Đặc biệt, hệ thống tích hợp Biểu Đồ Nến Candlestick Thời Gian Thực phản ánh nhịp độ giao thương theo các khung giờ trong ngày (Open, High, Low, Close, Volume), giúp Ban Lãnh đạo nắm bắt chính xác thời điểm tương tác sôi động nhất của cộng đồng doanh nhân.<br>5. Cán bộ quản lý có thể lọc dữ liệu theo thời gian, theo chuyên ban hoặc xuất/nhập báo cáo Excel chuẩn tiếng Việt. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu có biến động đột biến về hồ sơ chờ duyệt: Hệ thống hiển thị huy hiệu cảnh báo màu vàng trên thanh trạng thái. |
 | **Hậu Điều Kiện (Post-conditions)** | Ban Lãnh đạo nắm chắc dữ liệu thời gian thực để hoạch định chiến lược phát triển CLB. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Bảng điều khiển chỉ số KPI phát triển Hội viên và quy mô Doanh nghiệp trên Cổng Quản trị* |
@@ -746,8 +746,8 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Lập Lịch Họp Ban Chấp Hành, Thường Trực & Lên Dự Thảo Chương Trình Nghị Sự |
 | **Tác Nhân (Actor)** | Ban Thư Ký (ceo.tongthuky@ceo1983.com) |
 | **Tiền Điều Kiện (Pre-conditions)** | Ban Thư Ký đăng nhập Cổng Quản trị; có kế hoạch họp định kỳ tháng/quý. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Ban Thư Ký truy cập phân hệ "Cuộc Họp & Nghị Quyết", chọn "Tạo Cuộc Họp Mới".<br>2. Điền thông tin cuộc họp:<br>   - Tiêu đề: "Hội Nghị Ban Chấp Hành CLB Doanh Nhân CEO 1983 Mở Rộng Quý IV"<br>   - Thời gian họp: Ngày, Giờ bắt đầu, Giờ kết thúc<br>   - Hình thức: Họp trực tiếp tại Trụ sở Hội Doanh Nhân Trẻ Hà Nội hoặc Họp kết hợp Trực tuyến<br>   - Thành phần triệu tập: Toàn thể Ủy viên Ban Chấp Hành và Trưởng 6 Ban chuyên môn<br>   - Chương trình nghị sự (Agenda): Đánh giá công tác quý III, Triển khai kế hoạch Gala thường niên, Phê duyệt ngân sách thiện nguyện.<br>3. Đính kèm các tài liệu dự thảo, tờ trình để các Ủy viên nghiên cứu trước.<br>4. Bấm "Phát Hành Thông Tri Mời Họp". |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu cuộc họp có phòng họp trực tuyến: Điền đường dẫn phòng họp bảo mật vào mục liên kết. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Ban Thư Ký hoặc Ban Đào Tạo truy cập phân hệ "Cuộc Họp & Đào Tạo", chọn "Tạo Cuộc Họp Mới" hoặc "Thiết Lập Chuyên Đề Đào Tạo".<br>2. Điền thông tin chương trình:<br>   - Tiêu đề: "Hội Nghị Ban Chấp Hành CLB Doanh Nhân CEO 1983 Mở Rộng" hoặc Chuyên đề "Tái Cấu Trúc Vận Hành Doanh Nghiệp Thời Kỳ Số"<br>   - Thời gian họp/đào tạo: Ngày, Giờ bắt đầu, Giờ kết thúc<br>   - Hình thức: Họp trực tiếp tại Trụ sở CLB hoặc Phòng Họp Trực Tuyến Tích Hợp (Jitsi Meet)<br>   - Giảng viên / Chuyên gia điều phối: Tên diễn giả, học hàm học vị, ảnh đại diện chuyên gia<br>   - Thành phần triệu tập / Đối tượng tham gia: Toàn thể hội viên hoặc các Ủy viên theo chuyên ban<br>   - Chương trình nghị sự (Agenda) và nội dung đào tạo thực chiến.<br>3. Tải lên kho tài liệu giáo trình đính kèm: Slide bài giảng PDF, File tính dòng tiền Excel, Checklist mẫu biểu để người tham gia tải về nghiên cứu.<br>4. Bấm "Phát Hành Thông Tri & Kích Hoạt Phòng Họp".<br>5. Hệ thống tự động khởi tạo phòng họp video trực tuyến bảo mật, cấp mã phòng riêng biệt và phát thông báo đến ứng dụng của hội viên. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Đối với các phiên đào tạo hoặc hội nghị trực tuyến: Cán bộ quản lý có thể mở giao diện video call trực tiếp trong hệ thống với đầy đủ tính năng bật/tắt camera, micro, chia sẻ màn hình và điểm danh đại biểu tức thì. |
 | **Hậu Điều Kiện (Post-conditions)** | Lịch họp được thiết lập trên hệ thống và hiển thị lên lịch công tác của các thành viên. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Lịch công tác và giao diện khởi tạo cuộc họp Ban Chấp Hành trên Cổng Quản trị* |
 
@@ -1409,7 +1409,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Thẩm Định Nhu Cầu Mua Hàng & Khớp Lệnh Giao Thương Nội Bộ B2B Tự Động Giữa Các Hội Viên |
 | **Tác Nhân (Actor)** | Ban Xúc Tiến Thương Mại |
 | **Tiền Điều Kiện (Pre-conditions)** | Có hội viên đăng tải nhu cầu tìm nhà cung cấp hoặc cơ hội hợp tác kinh doanh. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Ban Xúc Tiến mở bảng điều khiển "Khớp Lệnh Cung - Cầu".<br>2. Hệ thống hiển thị các tin đăng: Cần tìm nhà thầu xây dựng văn phòng, Cần nguồn cung cấp thiết bị công nghệ, Cần hợp tác logistics.<br>3. Chuyên viên Ban Xúc Tiến kiểm tra nhu cầu và sử dụng tính năng "Gợi Ý Đối Tác Phù Hợp" dựa trên danh bạ ngành nghề của các hội viên chính thức.<br>4. Bấm nút "Kết Nối Khớp Lệnh 1-1".<br>5. Hệ thống gửi thông điệp kết nối giao thương trực tiếp đến lãnh đạo của hai doanh nghiệp qua tin nhắn ứng dụng. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Ban Xúc Tiến hoặc Hội viên mở bảng điều khiển "Khớp Lệnh Cung - Cầu & Trao Cơ Hội".<br>2. Hệ thống hiển thị các tin đăng và cơ hội kinh doanh: Tìm đối tác thầu phụ, cung cấp trang thiết bị, giải pháp tài chính, hợp tác logistics.<br>3. Ban Xúc Tiến kiểm tra nhu cầu và hỗ trợ điều phối: Cho phép lựa chọn Trao cơ hội tới một đối tác đơn lẻ, hoặc Trao cơ hội đa đối tượng (chọn đồng thời nhiều hội viên cùng ngành), hoặc Trao cơ hội theo Ban chuyên môn để toàn bộ các thành viên trong ban cùng phối hợp nghiên cứu, xúc tiến.<br>4. Bấm nút "Chia Sẻ & Kết Nối Cơ Hội".<br>5. Hệ thống gửi thông điệp kết nối giao thương trực tiếp đến lãnh đạo của các doanh nghiệp được chỉ định qua thông báo ứng dụng.<br>6. Ban Xúc Tiến theo dõi tiến độ thương thảo và ghi nhận kết quả chốt deal thực tế. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Ban Xúc Tiến có thể tổ chức buổi gặp gỡ trực tiếp (Business Matching Offline) tại văn phòng CLB để hỗ trợ hai bên ký kết hợp đồng. |
 | **Hậu Điều Kiện (Post-conditions)** | Cơ hội kinh doanh được kết nối chuẩn xác, gia tăng doanh số thực tế giữa các doanh nghiệp thành viên. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Điều phối cơ hội cung - cầu và hỗ trợ kết nối khớp lệnh giao thương nội bộ* |
@@ -1545,7 +1545,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Sao Lưu Cơ Sở Dữ Liệu Tự Động & Đảm Bảo Tính Toàn Vẹn An Toàn Thông Tin Mạng |
 | **Tác Nhân (Actor)** | Ban Quản Trị Hệ Thống |
 | **Tiền Điều Kiện (Pre-conditions)** | Hệ thống đang hoạt động ổn định trên môi trường sản xuất. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở bảng điều khiển "Bảo Mật & Sao Lưu Dữ Liệu" trên Cổng Quản Trị.<br>2. Kiểm tra lịch sao lưu tự động định kỳ hàng ngày (Snapshot Database lúc 03:00 sáng).<br>3. Kiểm tra tính toàn vẹn của các bản sao lưu lưu trữ phân tán an toàn.<br>4. Thực hiện thử nghiệm tính năng "Tạo Bản Sao Lưu Tức Thì" trước khi tiến hành cập nhật phiên bản phần mềm lớn.<br>5. Xem nhật ký kiểm toán bảo mật (Security Audit Log) để phát hiện các truy cập bất thường.<br>6. Xác nhận hệ thống đạt tiêu chuẩn bảo mật dữ liệu cấp doanh nghiệp. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở bảng điều khiển "Bảo Mật & Nhật Ký Kiểm Toán" (/activity-logs) trên Cổng Quản Trị.<br>2. Kiểm tra lịch sao lưu tự động định kỳ hàng ngày (Snapshot Database lúc 03:00 sáng) và tính toàn vẹn của các bản lưu trữ phân tán.<br>3. Truy cập phân hệ Nhật Ký Lịch Sử Thao Tác Toàn Hệ Thống (Audit Log):<br>   - Chủ tịch CLB, Ban Thường Trực và Quản trị viên theo dõi toàn bộ hành động phát sinh trong CLB theo thời gian thực.<br>   - Báo cáo chi tiết từng sự kiện: Thời gian chính xác, Họ tên & Chức vụ cán bộ thao tác, Hành động thực hiện (Đăng nhập, Phân quyền RBAC, Giao việc, Duyệt chi ngân sách, Phê duyệt cơ hội, Điểm danh họp/sự kiện).<br>   - Bộ lọc chuyên sâu theo phân hệ tác động (Hội viên, Sự kiện, Cuộc họp, Thu chi, Tài khoản) và thanh tìm kiếm từ khóa thông minh.<br>4. Hệ thống kiểm soát tính toàn vẹn, ngăn chặn mọi hành vi can thiệp trái thẩm quyền và đảm bảo sự minh bạch tuyệt đối trong công tác điều hành.<br>5. Xác nhận hệ thống đạt tiêu chuẩn an toàn thông tin và quản trị kiểm toán cấp doanh nghiệp. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Trường hợp xảy ra sự cố phần cứng: Hệ thống hỗ trợ khôi phục dữ liệu nhanh (Disaster Recovery) với thời gian gián đoạn dưới 30 phút. |
 | **Hậu Điều Kiện (Post-conditions)** | Cơ sở dữ liệu hội viên và dữ liệu tài chính của CLB được bảo vệ an toàn tuyệt đối. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Màn hình kiểm soát an toàn thông tin, sao lưu dữ liệu và nhật ký kiểm toán hệ thống của Ban Quản Trị* |
@@ -1664,7 +1664,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Trải Nghiệm Trang Chủ Giao Diện Điện Thoại Thông Minh (Mobile App View) |
 | **Tác Nhân (Actor)** | Hội viên sử dụng điện thoại di động |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên truy cập ứng dụng trên điện thoại thông minh (iPhone / Android). |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Ứng dụng tự động điều chỉnh bố cục sang định dạng Mobile mượt mà, tối ưu thao tác ngón cái.<br>2. Các khối thông tin sắp xếp trực quan:<br>   - Thẻ danh thiếp thu nhỏ với mã QR quét nhanh<br>   - Hàng nút chức năng nhanh (Quick Actions): Quét QR, Danh bạ, Đăng bán B2B, Hẹn gặp 1-1<br>   - Khối sự kiện sắp diễn ra kèm đồng hồ đếm ngược<br>   - Bảng tin khoảnh khắc giao thương mới nhất.<br>3. Thanh điều hướng dưới đáy (Bottom Navigation Bar) cho phép chuyển đổi tức thì giữa các phân hệ. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Ứng dụng tự động điều chỉnh bố cục sang định dạng Mobile mượt mà, tối ưu thao tác một tay cho doanh nhân.<br>2. Các khối thông tin bố trí khoa học, đẳng cấp:<br>   - Thẻ danh thiếp thu nhỏ hiển thị ảnh đại diện, chức vụ, mã hội viên và mã QR cá nhân hóa<br>   - Hàng phím tắt tiện ích nhanh (Quick Actions) cho phép hội viên tự do tùy biến chọn 4 chức năng yêu thích nhất hiển thị trên màn hình chính<br>   - Dải Cơ Hội Kinh Doanh Kéo Chiếm Trọn Chiều Rộng Màn Hình (Full-Width): Tích hợp widget Biểu Đồ Nến Candlestick Thời Gian Thực biểu thị biến động giao thương theo từng khung giờ trong ngày (Open, High, Low, Close, Volume) sinh động, trực quan<br>   - Khối Sàn Giao Thương B2B được bố trí ngăn nắp ngay bên dưới dạng thẻ full-width card dễ quan sát và kết nối<br>   - Khối sự kiện sắp diễn ra kèm đồng hồ đếm ngược và thông tin lịch họp ban.<br>3. Thanh điều hướng dưới đáy (Bottom Navigation Bar) chuẩn hóa nhãn tab thứ 4 thành "Mạng lưới" (Network) giúp kết nối trò chuyện và bảng tin nội bộ tức thì. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Hỗ trợ cài đặt biểu tượng Ứng dụng trực tiếp ra màn hình chính điện thoại (PWA / Add to Home Screen) mà không cần qua chợ ứng dụng phức tạp. |
 | **Hậu Điều Kiện (Post-conditions)** | Trải nghiệm mượt mà như một ứng dụng di động cao cấp, sử dụng mọi lúc mọi nơi. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện Trang chủ Ứng dụng Doanh nhân CEO 1983 trên điện thoại thông minh* |
@@ -1681,7 +1681,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Theo Dõi Bảng Tin Khoảnh Khắc Doanh Nhân (Moments), Thả Tim & Bình Luận Tương Tác |
 | **Tác Nhân (Actor)** | Hội viên trong CLB |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở mục Khoảnh Khắc (Moments) trên ứng dụng. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Hội viên cuộn xem dòng thời gian hoạt động của cộng đồng:<br>   - Các bài đăng chia sẻ niềm vui ký kết hợp đồng của các doanh nghiệp thành viên<br>   - Hình ảnh giao lưu sinh hoạt cuối tuần của các Ban chuyên môn<br>   - Lời chúc mừng sinh nhật tự động gửi tới các hội viên có ngày sinh trong tháng.<br>2. Hội viên nhấn nút "Thả Tim" ủng hộ bài đăng.<br>3. Để lại bình luận chúc mừng, chia sẻ niềm tự hào đồng hành cùng các bạn bè cùng niên khóa 1983.<br>4. Hội viên có thể đăng tải khoảnh khắc hoạt động của công ty mình để lan tỏa năng lượng tích cực. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Hội viên cuộn xem dòng thời gian hoạt động của cộng đồng:<br>   - Các bài đăng chia sẻ niềm vui ký kết hợp đồng của các doanh nghiệp thành viên<br>   - Hình ảnh giao lưu sinh hoạt cuối tuần của các Ban chuyên môn<br>   - Lời chúc mừng sinh nhật tự động gửi tới các hội viên có ngày sinh trong tháng.<br>2. Dưới mỗi bài đăng luôn mở sẵn tối đa 5 bình luận mới nhất cùng ô nhập phản hồi trực tiếp, giúp việc thảo luận và gắn kết diễn ra thuận tiện, tự nhiên không cần bấm mở thêm thao tác.<br>3. Khi bài viết có chia sẻ đường liên kết ngoài (liên kết mạng xã hội Facebook, bài báo kinh tế), hệ thống tự động nhận diện và hiển thị Thẻ Xem Trước Liên Kết (Link Preview Card) chuẩn mực với ảnh đại diện khổ lớn, tiêu đề đậm và đoạn tóm tắt nội dung.<br>4. Hội viên nhấn nút "Thả Tim" tương tác, bình luận chúc mừng hoặc bấm nút "Chia Sẻ" để lan tỏa cơ hội kinh doanh đến các đối tác. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Các bài đăng vi phạm văn hóa ứng xử sẽ được Ban Kiểm Tra gỡ bỏ theo quy chế. |
 | **Hậu Điều Kiện (Post-conditions)** | Tình cảm bằng hữu, tinh thần tương thân tương ái giữa các doanh nhân 1983 ngày càng gắn kết keo sơn. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Bảng tin hoạt động và khoảnh khắc kết nối giao thương giữa các hội viên* |
@@ -1749,7 +1749,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Tra Cứu Danh Bạ Hội Viên Toàn CLB Theo Chuyên Ban, Lĩnh Vực Kinh Doanh & Tên Công Ty |
 | **Tác Nhân (Actor)** | Hội viên cần tìm đối tác trong CLB |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên đăng nhập ứng dụng, mở phân hệ Danh Bạ Hội Viên. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình danh bạ hiển thị đầy đủ danh sách các doanh nhân trong đại gia đình CEO 1983.<br>2. Sử dụng thanh tìm kiếm thông minh: Gõ tên công ty, ngành nghề hoặc tên hội viên.<br>3. Lọc theo chuyên ban sinh hoạt để tìm những bạn bè cùng ban.<br>4. Mỗi thẻ hội viên hiển thị: Ảnh chân dung, Họ tên, Tên công ty, Chức vụ và huy hiệu xác nhận chính thức.<br>5. Nhấp vào thẻ để xem toàn bộ thông tin chi tiết. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình danh bạ hiển thị đầy đủ danh sách các doanh nhân trong đại gia đình CEO 1983.<br>2. Hỗ trợ 2 chế độ hiển thị linh hoạt: Chế độ "Danh Sách" truyền thống và Chế độ "Bản Đồ Định Vị" trực quan.<br>3. Ở chế độ Danh Sách: Tìm kiếm theo tên công ty, ngành nghề, lọc theo ban chuyên môn; thẻ hội viên hiển thị ảnh đại diện, chức vụ, logo doanh nghiệp.<br>4. Ở chế độ Bản Đồ: Bản đồ số tương tác hiển thị vị trí các quận huyện và văn phòng doanh nghiệp; các hội viên bật tính năng chia sẻ vị trí sẽ xuất hiện với Avatar Nổi Bật viền vàng trên bản đồ.<br>5. Hội viên bấm vào Avatar để mở Mini Card xem nhanh tên công ty, ngành nghề, số hotline và nút bấm Gọi điện hoặc Đặt lịch hẹn 1-on-1 ngay tại chỗ. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu danh bạ không có người phù hợp: Ứng dụng hiển thị gợi ý đăng nhu cầu tìm kiếm lên mục Cơ Hội Cung - Cầu. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên dễ dàng tìm thấy đồng đội cùng chí hướng trong mạng lưới doanh nhân tin cậy. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Danh bạ Hội viên CLB CEO 1983 với công cụ tìm kiếm và lọc ngành nghề thông minh* |
@@ -1783,7 +1783,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Gửi Lời Mời Kết Nối Doanh Nhân & Đặt Lịch Hẹn Gặp Kinh Doanh 1-on-1 (Business Matching) |
 | **Tác Nhân (Actor)** | Hội viên khởi xướng cuộc hẹn (Doanh nhân Phạm Văn Vũ) |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên muốn gặp mặt trao đổi cơ hội hợp tác với một hội viên khác. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Bấm nút "Đặt Lịch Hẹn Gặp 1-1" trên hồ sơ của đối tác.<br>2. Chọn hình thức gặp: Gặp trực tiếp tại Văn phòng / Quán cà phê hoặc Gặp trực tuyến.<br>3. Chọn ngày, giờ đề xuất và nhập chủ đề trao đổi (ví dụ: "Bàn về cơ hội hợp tác triển khai phần mềm cho chuỗi cửa hàng").<br>4. Nhấn "Gửi Lời Mời Hẹn Gặp".<br>5. Đối tác nhận được thông báo đẩy trên điện thoại và có thể bấm "Đồng Ý", "Đổi Giờ" hoặc "Từ Chối Kèm Lời Nhắn".<br>6. Khi đối tác đồng ý: Cuộc hẹn tự động được ghi vào Lịch Công Tác của cả hai doanh nhân. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Hội viên mở phân hệ Gặp Gỡ & Kết Nối B2B Độc Lập (/association/connect) trên ứng dụng.<br>2. Giao diện quản lý tập trung với 3 Tab rõ ràng: Cuộc gặp đã xác nhận, Lời mời nhận và Lời mời đã gửi.<br>3. Khởi tạo cuộc hẹn mới: Bấm nút "Đặt Lịch Hẹn Gặp 1-1", chọn đối tác doanh nghiệp trong CLB, chọn ngày giờ, địa điểm gặp mặt trực tiếp hoặc chọn Gặp Trực Tuyến qua phòng họp Jitsi Meet bảo mật tích hợp sẵn.<br>4. Đối tác nhận được thông báo tức thì, có thể bấm "Chấp Nhận Cuộc Gặp", "Đổi Lịch Hẹn" hoặc "Từ Chối Kèm Lời Nhắn".<br>5. Đến giờ hẹn: Với cuộc gặp trực tuyến, hai bên bấm nút "Vào Phòng Họp Video" để trao đổi trực tiếp trên ứng dụng.<br>6. Đặc biệt, sau khi gặp gỡ trao đổi, hai bên có thể sử dụng tính năng "Ghi Nhận Deal Thành Công": Điền giá trị hợp đồng đã chốt (VNĐ), tiêu đề thương vụ và ghi chú; hệ thống tự động cập nhật trạng thái cuộc gặp và tích lũy doanh số vào bảng vàng thành tích giao thương của CLB. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu đối tác bận: Hai bên có thể trao đổi nhắn tin để thống nhất lại khung giờ phù hợp. |
 | **Hậu Điều Kiện (Post-conditions)** | Quy trình kết nối kinh doanh bài bản, hiệu quả, hiện thực hóa tôn chỉ tương trợ thiết thực. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện đặt lịch hẹn gặp kinh doanh 1-on-1 giữa hai doanh nhân trong CLB* |
@@ -1851,7 +1851,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Khám Phá Danh Sách Sự Kiện, Lịch Sinh Hoạt & Diễn Đàn Doanh Nhân Sắp Diễn Ra |
 | **Tác Nhân (Actor)** | Hội viên CLB |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở phân hệ Sự Kiện trên Ứng dụng. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình hiển thị danh sách các sự kiện sắp diễn ra của CLB Doanh Nhân CEO 1983:<br>   - Tên sự kiện: "Gala Thường Niên & Diễn Đàn Kinh Tế 1983", "Giải Golf Hữu Nghị 1983", v.v.<br>   - Ảnh bìa sự kiện ấn tượng<br>   - Thời gian, địa điểm tổ chức<br>   - Trạng thái đăng ký của hội viên (Chưa đăng ký / Đã có vé mời).<br>2. Hội viên có thể lọc xem các sự kiện quá khứ để xem lại phóng sự hình ảnh kỷ niệm. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình phân hệ Sự Kiện (/association/events) được thiết kế chuyên biệt theo chuẩn YBA với 2 Tab độc lập rõ rệt:<br>   - **Tab 1: Sự Kiện CLB**: Hiển thị các sự kiện lớn toàn thể (Đại Hội Thường Niên, Diễn Đàn Kinh Tế CEO 1983, Giải Golf Hữu Nghị, Gala Tôn Vinh). Mỗi sự kiện có ảnh bìa ấn tượng, thời gian, địa điểm, đếm ngược thời gian và nút nhận vé điện tử.<br>   - **Tab 2: Cuộc Họp & Gặp Mặt**: Hiển thị các buổi họp Ban chuyên môn, họp Ban Điều Hành, Cafe Doanh Nhân kết nối, chương trình Caravan Thăm Doanh Nghiệp thành viên. Hiển thị rõ danh sách triệu tập, địa điểm ghim bản đồ hoặc phòng họp video trực tuyến (Jitsi Meet) kèm nút vào phòng họp trực tiếp.<br>2. Hội viên có thể chuyển đổi linh hoạt giữa 2 tab và xem trạng thái tham gia của bản thân (Đã đăng ký / Chưa đăng ký / Khách mời). |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Bấm nút "Thêm vào lịch điện thoại" để hệ thống tự động đồng bộ sự kiện vào ứng dụng Calendar của điện thoại. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên không bao giờ bỏ lỡ các hoạt động sinh hoạt quan trọng của tổ chức. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Danh sách sự kiện, diễn đàn kinh tế và lịch sinh hoạt định kỳ trên Ứng dụng* |
@@ -2055,7 +2055,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Xem Bảng Tin Cơ Hội Kinh Doanh Cung - Cầu Thời Gian Thực Của Cộng Đồng CEO 1983 |
 | **Tác Nhân (Actor)** | Hội viên tìm kiếm cơ hội kinh doanh mới |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở phân hệ Cơ Hội Cung - Cầu trên ứng dụng. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Bảng tin hiển thị luồng thông tin trao đổi Cung - Cầu kinh doanh liên tục:<br>   - Thẻ MÀU XANH LỤC - CƠ HỘI CẦU: Doanh nghiệp cần mua, cần tìm đối tác thầu phụ<br>   - Thẻ MÀU XANH DƯƠNG - CƠ HỘI CUNG: Doanh nghiệp có năng lực cung ứng đặc biệt<br>   - Giá trị thương vụ ước tính (ví dụ: Hợp đồng 500 triệu VNĐ)<br>   - Doanh nghiệp đăng tải và người đại diện liên hệ<br>   - Thời hạn tiếp nhận cơ hội kết nối.<br>2. Lọc cơ hội theo ngành nghề hoặc theo giá trị thương vụ. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Bảng tin hiển thị luồng thông tin trao đổi Cung - Cầu kinh doanh liên tục với thanh 3 thẻ thống kê ngang tinh gọn ("Tổng chia sẻ", "Deal đã chốt", "Tôi share đi") giúp giao diện gọn gàng, giải phóng diện tích cuộn.<br>2. Nhấn nút điều hướng để mở Trung Tâm Thống Kê Chuyên Sâu (/association/analytics) với 2 Tab phân tích so sánh trực quan:<br>   - **Tab Toàn CLB**: Bức tranh tổng thể về tổng số cơ hội, tổng giá trị giao dịch, tỷ lệ chốt đơn theo 10 ngành nghề trọng điểm.<br>   - **Tab Cá Nhân Tôi**: Thống kê chi tiết những cơ hội bản thân đã trao đi, các cơ hội đã nhận về và các deal đã chuyển đổi thành công.<br>3. Đặc biệt, trên đỉnh cao nhất của đường timeline biểu đồ hoạt động được gắn trực tiếp **Avatar tròn viền vàng** vinh danh Doanh nhân Top 1 Giver (Người trao cơ hội nhiều nhất), khích lệ văn hóa cống hiến và phụng sự trong cộng đồng.<br>4. Lọc cơ hội theo trạng thái (Đang mở, Đã nhận, Đã chốt), theo phân loại Bên Mua / Bên Bán hoặc tìm kiếm realtime. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Hội viên có thể cài đặt thông báo: Nhận tin nhắn ngay khi có cơ hội Cầu thuộc ngành của mình. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên luôn đón đầu các cơ hội làm ăn béo bở ngay trong mạng lưới bạn bè thân thiết. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Bảng tin Cơ hội Kinh doanh Cung - Cầu thời gian thực của cộng đồng CEO 1983* |
@@ -2157,7 +2157,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Khám Phá Danh Mục Đặc Quyền & Ưu Đãi VIP Dành Riêng Cho Hội Viên CEO 1983 |
 | **Tác Nhân (Actor)** | Hội viên chính thức |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên đã hoàn thành nghĩa vụ hội phí. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở mục "Đặc Quyền Hội Viên" trên ứng dụng.<br>2. Danh sách các đặc quyền đẳng cấp dành riêng cho doanh nhân thành viên:<br>   - Miễn phí vé tham dự toàn bộ các sự kiện Gala và Diễn đàn kinh tế trong năm<br>   - Miễn phí gian hàng B2B tiêu chuẩn quảng bá doanh nghiệp<br>   - Đặc quyền giảm giá 15% - 30% tại chuỗi khách sạn, resort nghỉ dưỡng của các hội viên trong CLB<br>   - Ưu đãi dịch vụ hàng không, phòng chờ thương gia sân bay<br>   - Tham gia các giải Golf và các câu lạc bộ thể thao nội bộ.<br>3. Bấm vào từng đặc quyền để lấy mã Voucher ưu đãi hoặc xem hướng dẫn sử dụng. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở mục "Kho Đặc Quyền & Ưu Đãi VIP" (/association/perks) trên ứng dụng.<br>2. Danh sách các gói đặc quyền đẳng cấp dành riêng cho doanh nhân thành viên: Dịch vụ khách sạn, resort nghỉ dưỡng, ẩm thực sang trọng, dịch vụ golf và phòng chờ thương gia.<br>3. Mỗi thẻ ưu đãi hiển thị rõ ràng thông tin thực tế: Địa điểm cơ sở áp dụng, mức chiết khấu độc quyền dành cho CEO 1983.<br>4. Thao tác tiện ích thông minh trực tiếp trên thẻ:<br>   - Nút "Mã Ưu Đãi QR": Mở popup hiển thị Mã QR Động kèm chuỗi mã bảo mật để quét tại quầy lễ tân / thanh toán của đối tác<br>   - Nút "Chỉ Đường Google Map": Mở ứng dụng bản đồ dẫn đường trực tiếp đến địa điểm ưu đãi<br>   - Nút "Gọi Hotline": Kết nối điện thoại tức thì với tổng đài chăm sóc khách hàng VIP<br>   - Nút "Ghé Gian Hàng": Xem chi tiết các sản phẩm khác của doanh nghiệp ưu đãi trên Sàn B2B. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Hội viên có thể đề xuất đóng góp thêm gói ưu đãi của công ty mình vào kho đặc quyền chung của CLB. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên cảm nhận sâu sắc giá trị vượt trội khi là một mắt xích trong cộng đồng Doanh nhân CEO 1983. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Danh mục đặc quyền và chính sách ưu đãi VIP dành riêng cho Hội viên CEO 1983* |
@@ -2191,7 +2191,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Tra Cứu Sổ Tay Hướng Dẫn Sử Dụng Hệ Thống Trực Tuyến Tích Hợp Sẵn Trên Ứng Dụng |
 | **Tác Nhân (Actor)** | Hội viên mới cần tìm hiểu cách dùng các tính năng |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở mục Trợ Giúp / Hướng Dẫn Sử Dụng trên menu ứng dụng. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình Sổ Tay Hướng Dẫn mở ra với định dạng lật sách trực quan.<br>2. Danh mục hướng dẫn chi tiết từng bước bằng hình ảnh minh họa thực tế:<br>   - Hướng dẫn thiết lập Danh thiếp điện tử và chạm thẻ NFC<br>   - Hướng dẫn nhận vé mời sự kiện và xuất trình mã QR tại cổng<br>   - Hướng dẫn đăng bài bán hàng lên Gian hàng B2B<br>   - Hướng dẫn đóng hội phí thường niên qua VietQR tự động.<br>3. Hội viên có thể tìm kiếm theo từ khóa hoặc xem video hướng dẫn ngắn 1 phút. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình phân hệ Đào Tạo & Hướng Dẫn (/association/training) mở ra với 3 khối nội dung hữu ích:<br>   - **Chuyên Đề Đào Tạo Doanh Nhân**: Danh sách các khóa đào tạo nâng tầm lãnh đạo, quản trị tài chính, pháp lý và AI chuyển đổi số; hiển thị rõ giảng viên, học hàm học vị, lịch phát sóng và số hội viên đăng ký.<br>   - **Phòng Họp Trực Tuyến Tích Hợp (Jitsi Meet)**: Hội viên chỉ cần nhấn nút "Vào Phòng Họp Video" để tham gia trực tiếp lớp học hoặc buổi tọa đàm, có đầy đủ camera, micro, chat và cơ chế điểm danh tự động mà không cần cài đặt thêm ứng dụng thứ ba.<br>   - **Kho Giáo Trình & Tài Liệu Bài Giảng**: Tải xuống slide bài giảng PDF, bảng tính dòng tiền Excel, biểu mẫu quy trình để áp dụng ngay vào doanh nghiệp.<br>   - **Sổ Tay Hướng Dẫn Sử Dụng Số**: Cẩm nang lật sách trực quan hướng dẫn sử dụng toàn bộ tính năng ứng dụng CEO 1983.<br>2. Hội viên có thể lọc theo chuyên đề hoặc nhấn "Đăng Ký Tham Gia" để nhận thông báo nhắc lịch học. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu đọc hướng dẫn vẫn chưa rõ: Hội viên bấm nút "Chat Với Ban Thư Ký" để được hỗ trợ trực tiếp. |
 | **Hậu Điều Kiện (Post-conditions)** | Bất kỳ hội viên nào, dù không rành công nghệ, cũng sử dụng thành thạo ứng dụng trong 5 phút. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Sổ tay Hướng dẫn sử dụng hệ thống trực tuyến tích hợp trực tiếp trên ứng dụng* |
@@ -2483,78 +2483,36 @@ Toàn bộ 138 hình ảnh minh chứng thực tế trên hệ thống được 
   7. `member` (Hội viên chính thức App CEO 1983)
 * **Tích Hợp Quyền Ứng Dụng Di Động (`cat_mobile_app`):** Quản trị toàn diện 10 quyền di động: xem bảng tin, đăng bài, nhắn tin trực tiếp, setup cuộc gặp 1-1, đăng ký sự kiện, xem ưu đãi, biểu quyết, chia sẻ danh thiếp, đọc thư viện tài liệu, tạo gia hạn hội viên.
 
-### 9.5. Đặc Tả Bảng Tin B2B Network Feed Chuẩn Doanh Nhân
-* **Bố Cục Ảnh Ghép Chuẩn Facebook:** Trình bày hình ảnh bài viết theo cấu trúc:
+### 9.5. Đặc Tả Bảng Tin B2B Network Feed Chuẩn Doanh Nhân & Tương Tác Trực Tiếp
+* **Bố Cục Ảnh Ghép Chuẩn Mực:** Trình bày hình ảnh bài viết theo cấu trúc:
   - 1 ảnh: Hiển thị tràn khung tỷ lệ 16:9 với lớp phủ sang trọng.
   - 2 ảnh: Chia đôi 50/50 theo chiều dọc.
   - 3 ảnh: 1 ảnh lớn bên trái, 2 ảnh nhỏ xếp dọc bên phải.
   - 4 ảnh trở lên: Lưới 2x2 cân xứng, ảnh thứ 4 hiển thị huy hiệu `+N` khi có thêm ảnh ẩn.
-* **Quy Chuẩn Tương Tác Nghiệp Vụ:** 
-  - Tuyệt đối KHÔNG có tính năng bình luận công khai hoặc thả biểu cảm (Like/Love/Haha/Reaction) nhằm duy trì tính nghiêm túc, chuẩn mực lãnh đạo.
-  - Hỗ trợ duy nhất 2 hành động tương tác: "💬 Nhắn tin" trực tiếp vào hộp thư đối tác và "🤝 Setup cuộc gặp 1-1" mở form đề xuất lịch hẹn kết nối B2B.
+* **Tương Tác & Thảo Luận Thời Gian Thực:**
+  - Dưới mỗi bài đăng luôn mở sẵn tối đa 5 bình luận mới nhất cùng ô nhập phản hồi trực tiếp, giúp việc trao đổi, chúc mừng và kết nối giữa các doanh nhân diễn ra nhanh chóng, thuận tiện.
+  - Khi bài viết có chia sẻ đường dẫn liên kết ngoài (bài báo kinh tế, liên kết Facebook), hệ thống tự động nhận diện và hiển thị Thẻ Xem Trước (Link Preview Card) với ảnh đại diện khổ lớn, tiêu đề in đậm và trích đoạn mô tả tóm tắt chuẩn phong cách chuyên nghiệp.
 
 ### 9.6. Cơ Chế Tắt Vĩnh Viễn Trợ Lý AI (Permanent AI Disablement)
 * **Quy Trình Tắt:** Khi người dùng bấm biểu tượng (X) trên widget trợ lý AI, hệ thống lập tức tắt hoàn toàn trợ lý (`setVoiceAiEnabled(false)`, ghi nhớ cờ vĩnh viễn `ceo1983_ai_disabled_permanently = true`), xóa bỏ nút thu gọn mini dock và chặn tuyệt đối không cho xuất hiện trên toàn bộ các trang CRM quản trị.
 * **Cơ Chế Bật Lại:** Trợ lý chỉ được phép hiển thị trở lại khi người dùng chủ động truy cập trang Cài đặt & Bảo mật (`/association/settings`) và gạt bật lại công tắc Trợ lý AI.
 
-### 9.7. Hệ Thống 3 Cấp Độ Màu Sắc Nhận Diện Thương Hiệu Chuẩn CEO 1983
-Chuẩn hóa 3 màu nhận diện thương hiệu tương ứng với 3 cấp độ ưu tiên thể hiện trạng thái trên toàn bộ giao diện Mobile App và Web CRM:
-1. **Ưu Tiên 1 - ĐỎ (Highest Priority / Quan Trọng / Nhận Diện Thương Hiệu)**:
-   - Màu nhận diện: `#D92525`, `#DC2626`, `#B91C1C`.
-   - Ý nghĩa: Trạng thái quan trọng, cảnh báo khẩn cấp, nút hành động chính (Primary CTA), biểu tượng thương hiệu CEO 1983, vinh danh Top 1 xuất sắc nhất.
-2. **Ưu Tiên 2 - VÀNG (Medium Priority / Vừa / Cảnh Báo & Điểm Nhấn VIP)**:
-   - Màu nhận diện: `#F59E0B`, `#D97706`, `#B45309`, `#FEF3C7`.
-   - Ý nghĩa: Trạng thái đang diễn ra / cần lưu ý vừa, viền thẻ VIP, ngôi sao danh dự, giá trị deal CRM, huy hiệu Top 2-3, nút Quan tâm.
-3. **Ưu Tiên 3 - XANH (Normal / Bình Thường / Thông Tin & Nền Tảng)**:
-   - Màu nhận diện: `#003B95`, `#002B70`, `#0284C7` (và Emerald `#059669` cho thành công/đã duyệt).
-   - Ý nghĩa: Thanh điều hướng Header/Sidebar, trạng thái hoàn thành, thông tin bình thường và nền tảng giao diện.
+### 9.7. Quy Chuẩn Màu Sắc Nút Bấm & Nhãn Điều Hướng Chân Trang (Strict UI Rules)
+* **Quy Tắc Tuyệt Đối Không Sử Dụng Nút Đỏ:** Toàn bộ hệ thống (Web CRM và Mobile App) loại bỏ hoàn toàn các nút bấm màu đỏ; thay thế bằng hệ màu thương hiệu chuẩn mực:
+  - Nút hành động chính: Deep Cobalt Navy (`#1F3864`) hoặc Xanh Ngọc Emerald (`bg-emerald-600`).
+  - Nút vinh danh, điểm nhấn, kêu gọi hành động: Vàng Hoàng Gia Amber Gold (`#B8860B`).
+  - Nút đóng, hủy, thao tác phụ: Xám Trung Tính Slate (`bg-slate-100 / bg-slate-800`).
+* **Chuẩn Hóa Nhãn Thanh Điều Hướng Dưới Đáy (Mobile Bottom Nav):** Nút thứ 4 chuyển đổi nhãn từ "Tin nhắn" thành **"Mạng lưới"** (Network), biểu tượng của kết nối kinh doanh và mạng lưới giao thương thân tình giữa các thành viên.
 
-### 9.8. Đặc Tả Bảng Tin Đa Danh Mục Tại Tab Tin Nhắn (Social & B2B Newsfeed)
-* **Vị Trí & Cấu Trúc:** Tích hợp trực tiếp tại màn hình `/association/messages` với thanh chuyển đổi giữa "Bảng tin" và "Tin nhắn".
-* **Danh Mục Phân Loại Header:**
-  - **Tất cả:** Tổng hợp bài đăng từ toàn bộ các nguồn trong hệ sinh thái.
-  - **Tin tức:** Tin hoạt động hiệp hội, kèm bộ lọc phụ (Sub-filter) theo từng ban: "Tất cả ban", "Ban Điều Hành", "Ban Thành Viên", "Ban Xúc Tiến", "Ban Truyền Thông", "Ban Tài Chính", "Ban Thiện Nguyện".
-  - **Cơ hội chia sẻ:** Tổng hợp các cơ hội kết nối giao thương B2B mới nhất.
-  - **Sự kiện & Họp ban:** Các sự kiện đang diễn ra và lịch họp giao ban chuyên môn.
-  - **Sản phẩm B2B:** Các giải pháp/sản phẩm được chia sẻ từ sàn giao thương Marketplace.
-* **Tìm Kiếm:** Thanh tìm kiếm thời gian thực lọc bài đăng chuẩn xác theo danh mục và nội dung hội viên lựa chọn.
-* **Tương Tác Xã Hội:**
-  - Thả tim (Like/Unlike): Lưu DB và nhảy số tương tác realtime.
-  - Bình luận (Comments): Mở ngăn kéo bình luận trao đổi thông tin, phản hồi trực tiếp.
-  - Chia sẻ (Share): Sao chép liên kết hoặc chia sẻ thông qua Web Share API hệ thống.
-* **Đăng Bài & Đa Ảnh (Multi-Image Crop & Pan):**
-  - Cho phép tải lên nhiều ảnh đồng thời.
-  - Tích hợp công cụ chỉnh sửa: Kéo di chuyển ảnh (pan), phóng to thu nhỏ (zoom), và cắt ảnh chuẩn khung (crop) trước khi đăng.
-* **Cam Kết Dữ Liệu:** 100% gọi API thực tế qua NestJS (`/api/feed`), lưu trữ persistent tại PostgreSQL, không mock fake data.
+### 9.8. Phân Hệ Đào Tạo Doanh Nhân & Phòng Họp Video Trực Tuyến (CRM & Mobile App)
+* **Quản Trị Khóa Đào Tạo (Web CRM):** Khởi tạo chương trình đào tạo, chuyên đề quản trị điều hành, cấu hình giảng viên/chuyên gia, tải lên kho tài liệu giáo trình (Slide PDF, file tính toán Excel).
+* **Trải Nghiệm Học Tập & Họp Trực Tuyến (Mobile App):** Hội viên theo dõi danh sách chuyên đề đào tạo sắp diễn ra, tải tài liệu bài giảng về máy và tham gia phòng họp video call bảo mật tích hợp công nghệ Jitsi Meet trực tiếp trong ứng dụng, có tính năng điểm danh đại biểu tự động.
 
-### 9.9. Tùy Biến 4 Tính Năng Nhanh Trên Màn Hình Trang Chủ
-* **Cơ Chế:** Cung cấp nút "Tùy chỉnh" bên cạnh khối 4 phím tắt tại màn hình `/association`.
-* **Trải Nghiệm:** Hội viên được tự do chọn 4 tính năng mong muốn nhất trong danh sách các phân hệ (Sự kiện, Danh bạ hội viên, Cơ hội giao thương, Bảng tin, Gian hàng B2B, Thống kê báo cáo, Biểu quyết, Thư viện tài liệu, Thẻ VIP, Góc hội viên).
-* **Lưu Trữ:** Dữ liệu cấu hình được ghi nhớ trong cấu hình hồ sơ và `vba_user_custom_shortcuts`.
+### 9.9. Phân Hệ Gặp Gỡ & Kết Nối B2B 1-on-1 Độc Lập
+* **Quản Lý Lịch Hẹn Tập Trung:** Tách biệt thành phân hệ độc lập với 3 tab: Cuộc gặp đã xác nhận, Lời mời nhận và Lời mời gửi.
+* **Đa Dạng Hình Thức Gặp:** Hỗ trợ đặt lịch hẹn gặp mặt trực tiếp (Offline) tại trụ sở doanh nghiệp / quán cafe hoặc gặp trực tuyến (Online) qua phòng họp video tích hợp.
+* **Ghi Nhận Deal Thành Công:** Sau buổi gặp, hai bên có thể ghi nhận giá trị hợp đồng đã chốt thành công, tiêu đề thương vụ và ghi chú hợp tác; số liệu tự động được tích lũy vào trung tâm thống kê giao thương của CLB.
 
-### 9.10. Báo Cáo Cơ Hội, Xuất Excel & Chọn Hội Viên Nhận Cơ Hội Theo Ban
-* **Xuất Báo Cáo:** Nút xuất file Excel/CSV tổng hợp danh sách cơ hội giao thương với đầy đủ thuộc tính: Tiêu đề, Loại hình Mua/Bán, Ngành nghề, Giá trị dự kiến, Người đăng, Trạng thái, Deal chốt thành công.
-* **Biểu Đồ Cơ Hội 3 Chiều:** Hiển thị trực quan:
-  1. Số lượng và giá trị cơ hội cá nhân hội viên đã chia sẻ.
-  2. Số lượng cơ hội đã chốt deal thành công.
-  3. Tổng cơ hội giao thương của toàn bộ thành viên trong CLB CEO 1983.
-  - Nút "Xem chi tiết" điều hướng trực tiếp đến Màn hình Thống kê chuyên sâu.
-* **Chia Sẻ Cơ Hội Theo Ban:** Khi tạo/chia sẻ cơ hội và chọn người nhận, hệ thống cung cấp bộ chọn Ban chuyên môn (Ban Điều Hành, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện) và gọi API tải danh sách thành viên thuộc ban đó để người dùng lựa chọn chính xác.
-
-### 9.11. Đặc Tả Hệ Thống Thống Kê Chuyên Sâu (Dedicated Analytics Mobile & CRM)
-* **Mobile App (`/association/analytics`):**
-  - **4 Nhóm Chỉ Số:** Thống kê lượt tương tác, Thống kê giá trị mang lại cho CEO 1983 (VND), Thống kê chia sẻ cơ hội (tổng cơ hội, lượt trao, lượt deal thành công), Mức độ gắn kết hội viên.
-  - **Biểu Đồ Cột & Timeline Biến Động:** Biểu đồ cột kết hợp đường biến động timeline theo ngày (nhảy số theo từng khung giờ trong ngày: 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00).
-  - **Vinh Danh Top 1:** Hiển thị avatar lớn nổi bật của hội viên dẫn đầu, bấm vào hiển thị thông tin và số liệu thực tế chi tiết của hội viên Top 1.
-  - **Dạng Accordion Đóng/Mở Cho Top 3:** Thiết kế khối accordion mở rộng/thu gọn hiển thị chi tiết số liệu của 3 người dẫn đầu.
-  - **Hội Viên Ít Tham Gia Cần Quan Tâm:** Thống kê danh sách hội viên có mức độ tương tác thấp để ban điều hành chủ động quan tâm, gắn kết.
-* **Web CRM Dashboard (`/admin/analytics`):**
-  - **5 Chế Độ Hiển Thị (5 View Modes):**
-    1. Dạng lưới (Grid Cards KPI).
-    2. Dashboard tổng hợp (Biểu đồ cột, đường biến động, chỉ số KPI).
-    3. Biểu đồ cây (Treemap phân bổ giá trị theo ngành nghề).
-    4. Biểu đồ tròn (Donut phân bổ theo 6 Ban và loại giao thương).
-    5. Cây đơn vị / Tổ chức (Org Unit Tree cơ cấu Ban Chấp Hành, Ban Điều Hành và 6 Ban chuyên trách).
-  - **Xuất / Nhập Excel:** Luôn có tính năng Xuất file Excel báo cáo và Nhập file Excel cập nhật dữ liệu cho từng danh mục thống kê.
-  - **Kết Nối Real API:** 100% dữ liệu truy vấn trực tiếp từ PostgreSQL thông qua NestJS endpoints.
-
+### 9.10. Danh Bạ Hội Viên Định Vị Bản Đồ & Kho Đặc Quyền Ưu Đãi QR Động
+* **Bản Đồ Hội Viên Tương Tác:** Cung cấp 2 chế độ xem Danh sách và Bản đồ; ở chế độ Bản đồ, các hội viên kích hoạt chia sẻ vị trí sẽ hiển thị Avatar nổi bật, nhấp vào avatar hiển thị Mini Card tóm tắt doanh nghiệp kèm nút gọi điện thoại hoặc hẹn gặp 1-on-1 nhanh chóng.
+* **Kho Đặc Quyền Ưu Đãi QR Động:** Hỗ trợ hiển thị Mã QR Động (`QrCanvas`) quét tại điểm dịch vụ; hiển thị chi tiết địa chỉ cơ sở, nút bấm dẫn đường Google Maps, nút gọi hotline tư vấn và liên kết ghé thăm gian hàng B2B của chủ ưu đãi.

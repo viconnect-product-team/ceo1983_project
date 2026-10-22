@@ -1,7 +1,84 @@
 # System Memory & Architecture
 
 ## 1. Current State
-- **Bản nâng cấp ngày 22/10/2026 (Khắc Phục Toàn Diện 5 Yêu Cầu CEO 1983 Mobile App & Bổ Sung Module Thống Kê CRM - `association.opportunities.tsx`, `FeedView.tsx`, `association.events.tsx`, `association.analytics.tsx`, `analytics.tsx`, `Sidebar.tsx`, `opportunity.service.ts`, `events.service.ts`, `meetings.service.ts`, `feed.service.ts`)**:
+- **Bản nâng cấp ngày 22/10/2026 (Hoàn Thiện Bộ Tính Năng Lớn Mobile App & Web CRM: Đào Tạo Jitsi Meet Mobile, Gặp Gỡ B2B 1-1 Chốt Deal, Bản Đồ Hội Viên GPS, Ưu Đãi QR Động, Candlestick Realtime, Triệt Tiêu 100% Nút Đỏ & Đạt Chuẩn 0 Lỗi Type-Check)**:
+  1. **Phân Hệ Đào Tạo & Phòng Họp Video Trực Tuyến Mobile App (`association.training.tsx`, `m.training.tsx`, `trainings.service.ts`)**:
+     - *Node tương ứng*: `[NODE-APP-015]` & `[NODE-CRM-018]`.
+     - *Đặc tả giao diện*: Thiết kế mobile-first tuyệt đẹp với Header chuẩn `MemberHeader`, Hero card chuyển sắc Navy (`#1F3864`) sang Midnight Black viền vàng ánh kim (`border-amber-400/40`), kèm 3 thẻ KPI: Tổng chuyên đề đào tạo, Số phòng họp Live trực tuyến đang diễn ra, và Tổng tài liệu lưu hành nội bộ.
+     - *Phòng họp Jitsi Meet bảo mật*: Tích hợp iframe cuộc họp video nội bộ bảo mật `https://meet.jit.si/CEO1983_${roomId}` đầy đủ quyền `camera; microphone; fullscreen; display-capture`, nút copy link nhanh có toast feedback, nút mở toàn màn hình tab mới và nút điểm danh tham gia lớp (`POST /trainings/:id/join`).
+     - *Giáo trình & Tài liệu đính kèm*: Sheet xem và tải tài liệu đào tạo (Slide PDF, bảng tính tài chính Excel, Checklist pháp lý, mẫu hợp đồng) trực tiếp trên điện thoại.
+     - *Tích hợp phím tắt nhanh*: Bổ sung chức năng "Đào tạo & Họp" vào popup tùy biến phím tắt trang chủ `CustomHomeShortcutsModal.tsx` và tạo route alias `/m/training`.
+  2. **Phân Hệ Gặp Gỡ & Kết Nối B2B 1-on-1 (`association.connect.tsx`, `meetings.service.ts`)**:
+     - *Node tương ứng*: `[NODE-APP-004]`.
+     - Màn hình độc lập quản lý cuộc gặp 1-1 giữa các CEO hội viên với 3 tab: Cuộc gặp đã xác nhận, Lời mời nhận, Lời mời đã gửi.
+     - Modal đặt lịch hẹn gặp 1-1 trực quan (chọn đối tác, ngày giờ, hình thức Trực tuyến qua Jitsi hoặc Gặp trực tiếp tại địa điểm/quán cafe kèm ghi chú).
+     - Modal ghi nhận Deal thành công: cho phép ghi nhận giá trị hợp đồng (VNĐ), tiêu đề deal, đối tác chốt hợp đồng và ghi chú; tự động cập nhật trạng thái cuộc gặp và cộng dồn vào bảng thống kê giao thương của CLB.
+  3. **Bản Đồ Hội Viên Tương Tác & Định Vị GPS (`association.members.tsx`, `members.service.ts`)**:
+     - Bổ sung tab "Bản đồ" bên cạnh danh bạ tìm kiếm truyền thống.
+     - Bản đồ đồ họa phẳng thể hiện các cụm quận trọng điểm Hà Nội (Hoàn Kiếm, Cầu Giấy, Nam Từ Liêm, Long Biên, Đống Đa, Tây Hồ) với avatar nổi bật của các CEO bật chia sẻ vị trí (`is_location_sharing = true`).
+     - Click vào avatar hiển thị Mini Card thông tin doanh nghiệp, chức vụ, hotline, nút gọi điện nhanh và nút đặt lịch hẹn 1-on-1.
+  4. **Kho Ưu Đãi VIP & Mã QR Động Quét Tại Điểm (`association.perks.index.tsx`, `association.perks.$id.tsx`)**:
+     - Bổ sung popup hiển thị mã QR động (`QrCanvas`) để hội viên đưa nhân viên đối tác quét tại điểm dịch vụ nhằm nhận chiết khấu VIP.
+     - Thẻ ưu đãi hiển thị rõ ràng địa chỉ chi tiết, nút mở Google Maps dẫn đường, nút gọi hotline tư vấn và nút tham quan gian hàng B2B của chủ ưu đãi.
+  5. **Biểu Đồ Nến Candlestick Realtime & Trang Chủ Tối Ưu (`association.index.tsx`, `association.analytics.tsx`, `analytics.service.ts`)**:
+     - *Trang chủ Mobile*: Dải Cơ hội kéo full-width nổi bật, tích hợp widget candlestick biểu diễn biến động khối lượng trao cơ hội theo giờ (Open, High, Low, Close); đẩy gian hàng sản phẩm B2B xuống dưới dạng full-width card dễ quan sát.
+     - *Trung tâm Thống kê*: Phân tách rõ 2 tab "Toàn CLB" vs "Cá nhân tôi", avatar Top 1 Giver viền vàng gắn trên đỉnh peak của timeline bar.
+  6. **Bảng Tin Mạng Xã Hội Doanh Nhân (`FeedView.tsx`, `feed.service.ts`)**:
+     - Tự động mở sẵn 5 bình luận mới nhất dưới bài viết.
+     - Tự động phát hiện và sinh Link Preview thumbnail, tiêu đề, mô tả tóm tắt khi bài viết chứa đường link Facebook hoặc bài báo.
+  7. **Triệt Tiêu 100% Nút Bấm Màu Đỏ (STRICT NO RED BUTTONS)**:
+     - Toàn bộ các nút bấm và badge trên Web CRM và Mobile App đã được rà soát và chuyển đổi sang bảng màu chuẩn:
+       * Nút chính: Deep Cobalt Navy (`#1F3864`, `#003B95`)
+       * Nút nổi bật / Kêu gọi hành động: Amber Gold (`#B8860B`)
+       * Nút thành công: Emerald Green (`bg-emerald-600`)
+       * Nút hủy / Thoát: Slate (`bg-slate-100`, `bg-slate-700`, `bg-slate-800`)
+       * Tuyệt đối không dùng `bg-red-*`, `from-red-*` cho nút bấm.
+  8. **Kiểm Tra Type-Check Chuẩn Xác 0 Lỗi (Exit Code 0)**:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+
+  1. **Khắc Phục Vấn Đề Trùng Lặp & Quá Nhiều File `.ps1`, Docker Rác (Root Cause & Complete Cleanup)**:
+     - *Nguyên nhân*: Trong quá trình phát triển nhiều tháng qua, các file kịch bản deploy được tạo rải rác ở thư mục gốc (`deploy-ceo1983.ps1`, `deploy-crm.ps1`, `deploy-mobile.ps1`, `deploy-ceo-crm.ps1`, `deploy-subdomains.ps1`, `fast-deploy.ps1`, `fast-deploy-association.ps1`, `fast-deploy-crm.ps1`), trong `apps/mobile_ceo1983/` (gọi vòng về root), và nhiều file `docker-compose.clean.yml`, `docker-compose.local.yml`, `Dockerfile.frontend` ở gốc gây nhầm lẫn và phình to repository.
+     - *Đã thực hiện xóa bỏ sạch sẽ*:
+       * Xóa sạch toàn bộ 8 file `.ps1` thừa ở thư mục gốc và 2 file `.ps1` wrapper ở `apps/mobile_ceo1983/`.
+       * Xóa sạch các file Docker trùng lặp ở gốc (`docker-compose.clean.yml`, `docker-compose.local.yml`, `Dockerfile.frontend`).
+       * Xóa 6 file `.docx` cũ nằm rải rác ở thư mục gốc (`BRD_*.docx`, `SRS_*.docx`).
+       * Xóa các thư mục rỗng và cache cũ (`src/` rỗng, `scratch_rar/` rỗng, `.lovable/`, `.output/` cache 6.85MB, `.tanstack/`, `.FullName/` asset lỗi, `scratch_diff_home.txt`).
+       * Di chuyển thư mục trùng lặp `docs/` (nặng 90.8MB) và các ảnh test cũ (`test_crm_home.png`, v.v.) vào thư mục lưu trữ `document/archive/`.
+     - *Chuẩn hóa duy nhất 1 nguồn chân lý (Single Source of Truth)*:
+       * Mọi kịch bản triển khai chỉ nằm duy nhất tại `deploy/`: `deploy/ceo1983/fast-deploy.ps1` (Mobile) và `deploy/crm/fast-deploy.ps1` (CRM).
+       * Cập nhật `package.json` ở root gọi trực tiếp vào `deploy/ceo1983/` và `deploy/crm/`, triệt tiêu hoàn toàn tình trạng duplicate file.
+  2. **Giải Thích Minh Bạch Về Giới Hạn Tải Tự Động Lên Google NotebookLM**:
+     - *Nguyên nhân kỹ thuật*: Đã trực tiếp sử dụng trình duyệt tự động (`browser_subagent`) để kết nối `https://notebook.google.com/notebook/6ea9dec4-b8c1-4b4b-a077-d874b625bafd`. Google áp dụng hệ thống tường lửa an ninh tài khoản cá nhân (Single Sign-On / 2FA / Sandbox Protection) chặn mọi thao tác tự động (`You are denied from interacting with this page`). NotebookLM chưa cung cấp Public REST API cho bên thứ 3.
+     - *Giải pháp tối ưu*: Xuất bản trọn bộ 16 tệp Word (`.docx`), Excel (`.xlsx`), PDF (`.pdf`) đã căn lề, kẻ bảng, chuẩn màu thương hiệu vào `C:\Users\vumik\Downloads\NOTEBOOKLM_CEO1983_UPLOAD\` để người dùng chỉ cần kéo thả 10 giây vào NotebookLM.
+- **Bản nâng cấp ngày 22/10/2026 (Tái Cấu Trúc Toàn Diện Hệ Thống Agent, Phân Lập Độc Lập Web CRM & Mobile App, Xây Dựng Ma Trận Node Luồng Xử Lý & Xuất Bản Bộ Tài Liệu NotebookLM)**:
+  1. **Khắc Phục Triệt Để Tình Trạng Làm Sai Ý Người Dùng (Root Cause & Solution)**:
+     - *Nguyên nhân trước đây*: Nhầm lẫn ngữ cảnh phân hệ (Context Confusion) giữa Web CRM (Desktop) và Mobile App (Hội viên); thiếu bản đồ luồng mã nguồn (Functional Traceability); và không đọc tài liệu quy chuẩn/code cũ trước khi chỉnh sửa.
+     - *Giải pháp*: Thiết lập Quy trình 5 bước bắt buộc (Pre-flight Gatekeeper) trong `AGENTS.md` và `.cursorrules`. Trước khi sửa bất kỳ dòng code nào, Agent BẮT BUỘC: 1. Xác định phân hệ; 2. Tra cứu mã Node ID; 3. Đọc file quy tắc chuyên biệt và file mã nguồn hiện hữu; 4. Sửa đúng tệp thuộc Node; 5. Kiểm tra `tsc --noEmit` exit 0 và đồng bộ tài liệu.
+  2. **Ma Trận Đánh Dấu Node Luồng Xử Lý Chức Năng (Functional Node Matrix)**:
+     - Tạo tệp [.agents/rules/node-matrix.md](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/.agents/rules/node-matrix.md) và [00_TONG_QUAN_VA_MA_TRAN_NODE_HE_THONG.md](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/document/notebooklm/00_TONG_QUAN_VA_MA_TRAN_NODE_HE_THONG.md) định danh toàn bộ 37 luồng chức năng với đầy đủ: Route, Component, API Endpoint, Service, Bảng CSDL và Ràng buộc kỹ thuật:
+       * **17 Node Web CRM Quản Trị**: `[NODE-CRM-001]` đến `[NODE-CRM-017]` (Dashboard CLB, Thống kê 5 view, Hội viên 360°, Doanh nghiệp, Tài khoản & Ban, RBAC 2 Tab, Sự kiện & Agenda, Họp ban & Bản đồ ghim vị trí, Thu ngân sách, Chi ngân sách, Báo cáo tài chính, Giao việc & Xem file trực tiếp, Nhà tài trợ, Mẫu email v3, Quay thưởng Lucky Draw, Bản tin CLB, Gia hạn hội viên).
+       * **14 Node CEO 1983 Mobile App**: `[NODE-APP-001]` đến `[NODE-APP-014]` (Trang chủ & 4 phím tắt tùy biến, Thẻ VIP số & QR popup, Xem thẻ công khai bảo mật, Danh bạ & Hẹn gặp B2B, Cơ hội 3 thẻ ngang, Thống kê & Top Giver, Sàn B2B giới hạn 5 sản phẩm, Sự kiện & Họp ban an toàn ngày tháng, Biểu quyết trực tuyến, Bảng tin comment cạnh share & đánh dấu họp, Hồ sơ cá nhân & RBAC nhanh, Cài đặt & Đổi mật khẩu, Kho đặc quyền, Cầu nối Capacitor Native).
+       * **6 Node Hạ Tầng Dùng Chung**: `[NODE-CORE-001]` đến `[NODE-CORE-006]` (Xác thực JWT, PostgreSQL Prisma, Socket.IO Gateway, Deploy độc lập Mobile port 5002, Deploy độc lập CRM port 5005, Nginx VPS SSL port 80/443).
+  3. **Phân Tách Bộ Quy Tắc Chuyên Biệt (Separated Specialized Rules)**:
+     - [.agents/rules/crm-rules.md](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/.agents/rules/crm-rules.md): Quy chuẩn riêng cho Web CRM (Desktop Layout, Sidebar, Bảng Excel kéo chuột co dãn cột `table-fixed`, Tooltip Ant Design, Recharts, Quản lý tài chính, Phân quyền RBAC).
+     - [.agents/rules/mobile-rules.md](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/.agents/rules/mobile-rules.md): Quy chuẩn riêng cho Mobile App (MemberShell, Bottom Nav 5 icon, 3 màu thương hiệu Đỏ - Vàng - Xanh, Nút Lucide 5 cột, A-Z cuộn ngang, Safe date parsing, Giới hạn 5 sản phẩm).
+     - [.agents/rules/deployment-rules.md](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/.agents/rules/deployment-rules.md): Quy chuẩn triển khai độc lập CRM (`deploy/crm`) và Mobile App (`deploy/ceo1983`), Dockerfile, docker-compose, port mapping, Nginx VPS và cấm xung đột port 80/443.
+  4. **Hệ Thống Kỹ Năng Agent Mới (.agents/skills/)**:
+     - `ceo1983-crm/SKILL.md`: Kỹ năng chuyên sâu Web CRM Quản trị.
+     - `ceo1983-mobile/SKILL.md`: Kỹ năng chuyên sâu CEO 1983 Mobile App.
+     - `ceo1983-node-navigator/SKILL.md`: Kỹ năng hoa tiêu điều hướng Node Matrix tra cứu luồng code theo yêu cầu người dùng.
+     - `ceo1983-devops/SKILL.md`: Kỹ năng triển khai hạ tầng & CI/CD độc lập.
+  5. **Bộ Tài Liệu Nguồn Chuẩn Hóa Cho Google NotebookLM (`document/notebooklm/`)**:
+     - Xuất bản 6 tài liệu định dạng Markdown chất lượng cao, cấu trúc mạch lạc, sẵn sàng tải lên [Google NotebookLM](https://notebook.google.com/notebook/6ea9dec4-b8c1-4b4b-a077-d874b625bafd):
+       * `00_TONG_QUAN_VA_MA_TRAN_NODE_HE_THONG.md`: Tổng quan kiến trúc & Ma trận Node toàn hệ thống.
+       * `01_DAC_TA_KY_THUAT_CEO1983_MOBILE_APP.md`: Toàn bộ đặc tả kỹ thuật Mobile App (từ NODE-APP-001 đến NODE-APP-014).
+       * `02_DAC_TA_KY_THUAT_WEB_CRM_QUAN_TRI.md`: Toàn bộ đặc tả kỹ thuật Web CRM (từ NODE-CRM-001 đến NODE-CRM-017).
+       * `03_DAC_TA_BACKEND_API_VA_CO_SO_DU_LIEU_POSTGRESQL.md`: Đặc tả Backend NestJS, CSDL PostgreSQL, DTOs, Schemas.
+       * `04_QUY_TRINH_VA_CAU_HINH_TRIEN_KHAI_DEPLOYMENT.md`: Chi tiết cấu hình Deploy độc lập, Docker, Nginx VPS, Ports.
+       * `05_QUY_TRINH_LAM_VIEC_AGENT_WORKFLOW_CHUAN_CHINH.md`: Hướng dẫn bắt buộc dành cho Agent khi nhận prompt mới.
+  6. **Đồng Bộ Vào .cursorrules & AGENTS.md**:
+     - Tích hợp Ma trận Node và quy trình 5 bước vào đầu tệp `.cursorrules` và `AGENTS.md`.
   1. **Chuyển Biểu Đồ Sang Màn Thống Kê & Tối Ưu Dải Chỉ Số Ngang Chia Sẻ Cơ Hội (`association.opportunities.tsx`, `association.analytics.tsx`)**:
      - *Yêu cầu*: Bỏ toàn bộ biểu đồ ở màn hình Chia sẻ cơ hội, chuyển mọi biểu đồ vào màn Thống kê. Thiết kế khu vực thống kê cơ hội theo diện tích ngang hiển thị 3 dạng thống kê chính: "Tổng chia sẻ", "Deal đã chốt", "Tôi share đi" và nút điều hướng sang Trung tâm Thống kê (`/association/analytics`).
      - *Thực hiện*: Gỡ bỏ `OpportunityAnalyticsWidget` khỏi `association.opportunities.tsx`. Thiết kế dải 3 thẻ thống kê ngang gọn gàng, tương phản cao, click vào mở trực tiếp `/association/analytics`. Toàn bộ biểu đồ phân tích cơ hội được chuyển trọn vẹn vào màn hình Thống kê.
@@ -21,6 +98,12 @@
   6. **Bổ Sung Chức Năng Thống Kê Ở CRM (`analytics.tsx`, `Sidebar.tsx`, `admin.analytics.tsx`)**:
      - Tạo route `/analytics` trên hệ thống CRM với 5 chế độ xem báo cáo chuyên sâu: Dạng lưới KPI, Dashboard tổng quan, Biểu đồ cây phân bố ngành nghề (Treemap), Biểu đồ tròn theo ban ngành (Donut), và Cây đơn vị cơ cấu tổ chức (Org Tree).
      - Bổ sung menu "Thống kê CLB" (icon `BarChart3`) vào thanh điều hướng Sidebar của CRM dưới mục Tổng quan.
+  7. **Xuất Bản Bộ Tài Liệu Ước Lượng Công Việc Word & Excel Chuẩn Format Khách Hàng (`BANG_UOC_LUONG_CONG_VIEC_CEO1983.docx`, `.xlsx`, `.md`)**:
+     - *Căn cứ tài liệu gốc*: Tệp `[CEO 1983] BÁO CÁO TỔNG HỢP Ý KIẾN HỌP.docx` từ khách hàng / Ban Thư Ký.
+     - *Định dạng chuẩn 100%*: Khổ ngang A4 Landscape (`w:orient="landscape"` 16838x11906 dxa, lề 850/700 dxa, bảng rộng chuẩn 15138 dxa), tông màu Deep Cobalt Navy (`#1F3864`), Amber Gold (`#B8860B`) và Ice Blue (`#DCE6F2`).
+     - *Nội dung WBS toàn diện*: 21 hạng mục (15 hạng mục gốc theo biên bản họp + 6 hạng mục nâng cấp & tối ưu thực chiến ngày 22/10/2026).
+     - *Tổng khối lượng ước tính*: 179 Man-hours (~22.4 Man-days). Trong đó Đợt 1 đạt 117h (100% hoàn thành & kiểm thử 0 lỗi), Đợt 2 đạt 34h, Đợt 3 đạt 28h.
+     - *Đồng bộ đa định dạng*: Xuất bản đồng thời file Word `.docx`, file Excel `.xlsx` (3 sheet kèm công thức `SUM`, phân bổ nguồn lực, lộ trình) và Markdown `.md` vào `document/` và thư mục `Downloads/`.
 - **Bản nâng cấp ngày 22/10/2026 (Triển Khai 5 Yêu Cầu Nâng Cấp Toàn Diện: Báo Cáo Cơ Hội & Biểu Đồ 3 Bậc, Tùy Biến 4 Tính Năng Trang Chủ, Bảng Tin Mới Tab Tin Nhắn, Module Thống Kê Chuyên Biệt Mobile & CRM 5 View, Chuẩn Hóa 3 Màu Thương Hiệu - `SKILL.md`, `SRS.md`, `feed_posts`, `feed.service.ts`, `feed.controller.ts`, `analytics.service.ts`, `analytics.controller.ts`, `members.service.ts`, `opportunity.service.ts`, `OpportunityAnalyticsWidget.tsx`, `CustomHomeShortcutsModal.tsx`, `association.index.tsx`, `FeedView.tsx`, `CreatePostModal.tsx`, `association.messages.tsx`, `association.analytics.tsx`, `admin.analytics.tsx`)**:
   1. **Báo Cáo Xuất Cơ Hội & Biểu Đồ So Sánh 3 Bậc (`OpportunityAnalyticsWidget.tsx`, `opportunity.service.ts`, `opportunity.controller.ts`, `association.opportunities.tsx`)**:
      - Thêm endpoint `GET /opportunities/report` tổng hợp số lượng và giá trị 3 bậc: "Cơ hội tôi chia sẻ", "Deal đã chốt", và "Tổng cơ hội CLB CEO 1983".

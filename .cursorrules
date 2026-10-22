@@ -2,6 +2,25 @@
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
 # ==============================================================================
+#
+# ------------------------------------------------------------------------------
+# 0. QUY TRÌNH 5 BƯỚC BẮT BUỘC & MA TRẬN NODE (STRICT NODE-DRIVEN WORKFLOW)
+# ------------------------------------------------------------------------------
+# [BẮT BUỘC BƯỚC 1] Xác định phân hệ: Web CRM Quản trị (Desktop PC, Sidebar) vs CEO 1983 Mobile App (Hội viên, Bottom Nav).
+# [BẮT BUỘC BƯỚC 2] Tra cứu Functional Node ID từ file `.agents/rules/node-matrix.md`:
+#   - Nhóm CRM: [NODE-CRM-001] -> [NODE-CRM-018]
+#   - Nhóm Mobile: [NODE-APP-001] -> [NODE-APP-015]
+#   - Nhóm Core / DevOps: [NODE-CORE-001] -> [NODE-CORE-006]
+# [BẮT BUỘC BƯỚC 3] Đọc file quy tắc chuyên biệt và file nguồn trước khi sửa:
+#   - Web CRM: Đọc `.agents/rules/crm-rules.md` & `document/notebooklm/02_DAC_TA_KY_THUAT_WEB_CRM_QUAN_TRI.md`
+#   - Mobile App: Đọc `.agents/rules/mobile-rules.md` & `document/notebooklm/01_DAC_TA_KY_THUAT_CEO1983_MOBILE_APP.md`
+#   - Deploy / DevOps: Đọc `.agents/rules/deployment-rules.md` & `document/notebooklm/04_QUY_TRINH_VA_CAU_HINH_TRIEN_KHAI_DEPLOYMENT.md`
+# [BẮT BUỘC BƯỚC 4] Sửa đúng file được liệt kê trong Node. Tuân thủ 3 màu thương hiệu (Đỏ ưu tiên 1, Vàng ưu tiên 2, Xanh ưu tiên 3).
+#   * QUY TẮC NÚT BẤM (STRICT): TUYỆT ĐỐI KHÔNG DÙNG NÚT BẤM MÀU ĐỎ (bg-red-*, from-red-*). Nút chính dùng Navy (#1F3864), nút nổi bật/kêu gọi hành động dùng Vàng Kim (#B8860B), nút thành công dùng Emerald (emerald-600), nút hủy/thoát dùng Slate (slate-100 / slate-800).
+# [BẮT BUỘC BƯỚC 5] Kiểm tra lỗi: Chạy `npx tsc --noEmit` exit code 0 trên cả BE và FE. Cập nhật `MEMORY.md`, `.cursorrules`, và tài liệu NotebookLM.
+# [QUY TẮC CẬP NHẬT TÀI LIỆU SRS/ĐẶC TẢ]: Khi có yêu cầu mới hoặc nâng cấp chức năng, BẮT BUỘC tra cứu, tìm đúng mục Use Case / Chức năng đã mô tả trong tài liệu để sửa và cập nhật cục bộ theo phong cách giới thiệu tổng quan nghiệp vụ. TUYỆT ĐỐI KHÔNG xóa sạch (clear) file để viết lại từ đầu.
+# TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`.
+#
 
 # ------------------------------------------------------------------------------
 # 1. TECH STACK CHÍNH (CORE TECHNOLOGIES)

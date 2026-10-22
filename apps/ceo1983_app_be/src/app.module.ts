@@ -23,6 +23,7 @@ import { AdvertisementsModule } from './advertisements/advertisements.module';
 import { TasksModule } from './tasks/tasks.module';
 import { FeedModule } from './feed/feed.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { TrainingsModule } from './trainings/trainings.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     TasksModule,
     FeedModule,
     AnalyticsModule,
+    TrainingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

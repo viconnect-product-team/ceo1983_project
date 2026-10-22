@@ -15,6 +15,8 @@ import {
   ShoppingBag,
   RotateCcw,
   Sparkles,
+  GraduationCap,
+  PhoneCall,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,7 +66,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     to: "/association/analytics",
     iconName: "TrendingUp",
     badge: "Hot",
-    badgeColor: "bg-red-500 text-white",
+    badgeColor: "bg-[#B8860B] text-white",
   },
   {
     id: "feed",
@@ -112,6 +114,24 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     to: "/association/library",
     iconName: "FolderOpen",
   },
+  {
+    id: "training",
+    name: "Đào tạo & Họp",
+    desc: "Khóa học, tài liệu & phòng họp video",
+    to: "/association/training",
+    iconName: "GraduationCap",
+    badge: "Mới",
+    badgeColor: "bg-emerald-600 text-white",
+  },
+  {
+    id: "connect",
+    name: "Gặp gỡ 1-1",
+    desc: "Hẹn kết nối & chốt deal B2B",
+    to: "/association/connect",
+    iconName: "PhoneCall",
+    badge: "B2B",
+    badgeColor: "bg-[#1F3864] text-white",
+  },
 ];
 
 export const DEFAULT_SHORTCUT_IDS = ["events", "members", "opportunities", "profile"];
@@ -140,6 +160,10 @@ export function getShortcutIcon(iconName: string, className = "size-6") {
       return <ShoppingBag className={className} />;
     case "FolderOpen":
       return <FolderOpen className={className} />;
+    case "GraduationCap":
+      return <GraduationCap className={className} />;
+    case "PhoneCall":
+      return <PhoneCall className={className} />;
     default:
       return <Sparkles className={className} />;
   }
@@ -304,7 +328,7 @@ export function CustomHomeShortcutsModal({
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 via-amber-600 to-red-600 hover:opacity-95 text-white shadow-md active:scale-95 transition inline-flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl text-xs font-bold bg-[#1F3864] hover:bg-[#152747] text-white shadow-md active:scale-95 transition inline-flex items-center gap-1.5 border border-amber-400/30"
             >
               <Check className="size-4" />
               <span>Áp dụng ({currentSelected.length}/4)</span>

@@ -29,6 +29,11 @@ function safeParseImages(val: any): string[] {
   return [];
 }
 
+function isValidUuid(val: any): boolean {
+  if (!val || typeof val !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+}
+
 @Injectable()
 export class ConnectOpportunityService {
   constructor(
@@ -770,13 +775,18 @@ export class ConnectOpportunityService {
     const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
     const images: string[] = safeParseImages(data.images || (data.image ? [data.image] : []));
     const oppImage = images[0] || data.image || data.thumbnail || null;
+    const targetScope = data.targetScope || 'all';
+    const targetRecipients = JSON.stringify(data.targetRecipients || []);
+    const targetGroups = JSON.stringify(data.targetGroups || []);
 
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
           id, association_id, poster_id, title, description, type,
           budget_min, budget_max, region, industry, deadline, status, views, emoji,
-          image, images, contact_name, contact_phone, contact_title, company, created_at, updated_at
+          image, images, contact_name, contact_phone, contact_title, company,
+          target_scope, target_recipients, target_groups,
+          created_at, updated_at
         ) VALUES (
           ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
           ${data.description || ''}, ${data.type || 'opp.type.partnership'},
@@ -786,6 +796,7 @@ export class ConnectOpportunityService {
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
           'open', 0, ${data.emoji || '💡'},
           ${oppImage}, ${JSON.stringify(images)}::jsonb, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
+          ${targetScope}, ${targetRecipients}::jsonb, ${targetGroups}::jsonb,
           now(), now()
         )
       `;
@@ -794,7 +805,9 @@ export class ConnectOpportunityService {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
           id, association_id, poster_id, title, description, type,
-          budget_min, budget_max, region, industry, deadline, status, views, emoji, images, created_at, updated_at
+          budget_min, budget_max, region, industry, deadline, status, views, emoji, images,
+          target_scope, target_recipients, target_groups,
+          created_at, updated_at
         ) VALUES (
           ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
           ${data.description || ''}, ${data.type || 'opp.type.partnership'},
@@ -802,10 +815,26 @@ export class ConnectOpportunityService {
           ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
           ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
-          'open', 0, ${data.emoji || '💡'}, ${JSON.stringify(images)}::jsonb, now(), now()
+          'open', 0, ${data.emoji || '💡'}, ${JSON.stringify(images)}::jsonb,
+          ${targetScope}, ${targetRecipients}::jsonb, ${targetGroups}::jsonb,
+          now(), now()
         )
       `;
     }
+
+    // Ghi nhận nhật ký audit log
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.audit_logs (actor_user_id, action, target_type, target_id, metadata, created_at)
+      VALUES (
+        ${isValidUuid(userId) ? `'${userId}'::uuid` : 'NULL'},
+        'CREATE_OPPORTUNITY',
+        'OPPORTUNITY',
+        '${oppId}',
+        '${JSON.stringify({ title: data.title, targetScope, contactName, company })}'::jsonb,
+        now()
+      );
+    `).catch(() => null);
+
     return { ok: true, id: oppId };
   }
 

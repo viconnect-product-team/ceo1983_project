@@ -58,6 +58,7 @@ import {
   LayoutTemplate,
   Palette,
   BarChart3,
+  GraduationCap,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -107,6 +108,7 @@ const network: Item[] = [
   { key: "nav.bc.meetings" as TKey, icon: Users2, to: "/business-connect/meetings", label: "Cuộc gặp" },
   { key: "nav.marketplace", icon: Store, to: "/marketplace", label: "Marketplace & Giao thương B2B" },
   { key: "nav.opportunities", icon: Sparkles, to: "/opportunities", label: "Cơ hội hợp tác" },
+  { key: "nav.trainings" as TKey, icon: GraduationCap, to: "/trainings", label: "Đào tạo & Họp trực tuyến" },
 ];
 const system: Item[] = [
   {
@@ -116,7 +118,7 @@ const system: Item[] = [
     label: "Quản lý công việc",
   },
   { key: "nav.settings", icon: Settings, to: "/settings" },
-  { key: "nav.activity", icon: History, to: "/activity" },
+  { key: "nav.activityLogs" as TKey, icon: History, to: "/activity-logs", label: "Nhật ký thao tác (Audit Log)" },
   {
     key: "nav.themeManagement" as TKey,
     icon: Palette,

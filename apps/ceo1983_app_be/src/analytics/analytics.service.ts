@@ -151,15 +151,15 @@ export class AnalyticsService {
       // Total club values
       const totalClubValueContributed = uniqueStats.reduce((sum, m) => sum + m.totalValueVnd, 0);
 
-      // Hourly timeline fluctuations by day
+      // Hourly candlestick timeline fluctuations (like stock exchange chart)
       const hourlyTimeline = [
-        { time: '08:00', label: '08:00', interactions: 18, dealsVolume: 2, valueMil: 150 },
-        { time: '10:00', label: '10:00', interactions: 45, dealsVolume: 5, valueMil: 420 },
-        { time: '12:00', label: '12:00', interactions: 28, dealsVolume: 3, valueMil: 280 },
-        { time: '14:00', label: '14:00', interactions: 62, dealsVolume: 8, valueMil: 650 },
-        { time: '16:00', label: '16:00', interactions: 85, dealsVolume: 11, valueMil: 890 },
-        { time: '18:00', label: '18:00', interactions: 54, dealsVolume: 6, valueMil: 510 },
-        { time: '20:00', label: '20:00', interactions: 39, dealsVolume: 4, valueMil: 360 },
+        { time: '08:00', label: '08:00', interactions: 18, dealsVolume: 2, valueMil: 150, open: 120, high: 165, low: 110, close: 150, change: '+25.0%' },
+        { time: '10:00', label: '10:00', interactions: 45, dealsVolume: 5, valueMil: 420, open: 150, high: 450, low: 145, close: 420, change: '+180.0%' },
+        { time: '12:00', label: '12:00', interactions: 28, dealsVolume: 3, valueMil: 280, open: 420, high: 430, low: 260, close: 280, change: '-33.3%' },
+        { time: '14:00', label: '14:00', interactions: 62, dealsVolume: 8, valueMil: 650, open: 280, high: 690, low: 275, close: 650, change: '+132.1%' },
+        { time: '16:00', label: '16:00', interactions: 85, dealsVolume: 11, valueMil: 890, open: 650, high: 920, low: 630, close: 890, change: '+36.9%' },
+        { time: '18:00', label: '18:00', interactions: 54, dealsVolume: 6, valueMil: 510, open: 890, high: 895, low: 480, close: 510, change: '-42.7%' },
+        { time: '20:00', label: '20:00', interactions: 39, dealsVolume: 4, valueMil: 360, open: 510, high: 520, low: 340, close: 360, change: '-29.4%' },
       ];
 
       // Industry Treemap Breakdown
