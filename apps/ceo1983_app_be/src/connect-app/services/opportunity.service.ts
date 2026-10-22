@@ -1121,6 +1121,37 @@ export class ConnectOpportunityService {
         };
       });
 
+      // Thống kê thành viên trao cơ hội nhiều nhất (Top Givers)
+      const giversMap = new Map<string, {
+        posterId: string;
+        name: string;
+        company: string;
+        department: string;
+        count: number;
+        totalValue: number;
+      }>();
+
+      for (const o of allOpps) {
+        const pId = String(o.poster_id || o.poster_name || 'Hội viên').toLowerCase();
+        const val = Number(o.budget_max) || Number(o.budget_min) || 0;
+        if (!giversMap.has(pId)) {
+          giversMap.set(pId, {
+            posterId: pId,
+            name: o.poster_name || 'Hội viên CLB',
+            company: o.poster_company || 'Doanh nghiệp CLB',
+            department: o.poster_department || 'Hội viên CEO 1983',
+            count: 0,
+            totalValue: 0,
+          });
+        }
+        const g = giversMap.get(pId)!;
+        g.count++;
+        g.totalValue += val;
+      }
+
+      const topGivers = Array.from(giversMap.values()).sort((a, b) => b.count - a.count || b.totalValue - a.totalValue);
+      const topGiver = topGivers[0] || null;
+
       return {
         ok: true,
         summary: {
@@ -1134,6 +1165,8 @@ export class ConnectOpportunityService {
           totalWonValue,
         },
         opportunities: formattedList,
+        topGivers,
+        topGiver,
       };
     } catch (err) {
       console.error('getOpportunityReport error:', err);

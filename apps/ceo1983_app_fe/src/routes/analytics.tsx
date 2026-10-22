@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   LayoutGrid,
   BarChart3,
@@ -8,27 +8,21 @@ import {
   Network,
   Download,
   Upload,
-  Calendar,
-  Filter,
   RefreshCw,
   Coins,
   Handshake,
   TrendingUp,
   Users,
   Building2,
-  CheckCircle2,
-  Clock,
   ArrowUpRight,
-  Loader2,
-  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 
-export const Route = createFileRoute("/admin/analytics")({
-  component: AdminAnalyticsPage,
+export const Route = createFileRoute("/analytics")({
+  component: AnalyticsPage,
   head: () => ({
     meta: [
       { title: "Báo cáo Thống kê & Phân tích CRM | CEO 1983" },
@@ -83,7 +77,7 @@ function formatMoney(num: number): string {
   return `${num.toLocaleString()} đ`;
 }
 
-function AdminAnalyticsPage() {
+function AnalyticsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("GRID");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<AnalyticsOverview | null>(null);
@@ -139,9 +133,6 @@ function AdminAnalyticsPage() {
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
       toast.info("Đang xử lý import dữ liệu Excel...");
@@ -416,7 +407,7 @@ function AdminAnalyticsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[300px]">
-              {INDUSTRIES_TREEMAP.map((ind, i) => (
+              {INDUSTRIES_TREEMAP.map((ind) => (
                 <div
                   key={ind.name}
                   className={`p-4 rounded-2xl text-white ${ind.color} flex flex-col justify-between shadow-sm hover:scale-[1.01] transition-transform`}
@@ -462,7 +453,6 @@ function AdminAnalyticsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              {/* CSS Donut Visual Representation */}
               <div className="flex flex-col items-center justify-center p-6">
                 <div className="relative size-56 rounded-full border-16 border-amber-500 flex items-center justify-center shadow-inner">
                   <div className="text-center">
@@ -473,7 +463,6 @@ function AdminAnalyticsPage() {
                 </div>
               </div>
 
-              {/* Legend List */}
               <div className="space-y-2.5">
                 {COMMITTEES_DATA.map((c) => (
                   <div
@@ -517,7 +506,6 @@ function AdminAnalyticsPage() {
               </button>
             </div>
 
-            {/* Tree root */}
             <div className="flex flex-col items-center">
               <div className="p-4 rounded-2xl bg-gradient-to-r from-red-600 via-amber-600 to-red-600 text-white font-extrabold text-sm shadow-md text-center max-w-sm w-full border-2 border-amber-300">
                 <span>BAN CHỦ TỊCH & BAN ĐIỀU HÀNH CLB CEO 1983</span>
@@ -526,10 +514,8 @@ function AdminAnalyticsPage() {
                 </div>
               </div>
 
-              {/* Trunk line */}
               <div className="w-0.5 h-8 bg-slate-300 dark:bg-slate-700" />
 
-              {/* Children branches */}
               <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 {COMMITTEES_DATA.slice(1).map((c) => (
                   <div

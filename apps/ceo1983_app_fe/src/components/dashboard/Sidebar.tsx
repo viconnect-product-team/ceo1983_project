@@ -57,6 +57,7 @@ import {
   ChevronDown,
   LayoutTemplate,
   Palette,
+  BarChart3,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -65,7 +66,10 @@ import { useTheme } from "@/lib/theme";
 
 type Item = { key: TKey; icon: LucideIcon; to?: string; label?: string };
 
-const overview: Item[] = [{ key: "nav.dashboard", icon: LayoutDashboard, to: "/" }];
+const overview: Item[] = [
+  { key: "nav.dashboard", icon: LayoutDashboard, to: "/" },
+  { key: "nav.analytics" as TKey, icon: BarChart3, to: "/analytics", label: "Thống kê CLB" },
+];
 const members: Item[] = [
   { key: "nav.members", icon: Users, to: "/members" },
   { key: "nav.companies", icon: Building2, to: "/companies" },

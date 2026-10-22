@@ -1,6 +1,26 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 22/10/2026 (Khắc Phục Toàn Diện 5 Yêu Cầu CEO 1983 Mobile App & Bổ Sung Module Thống Kê CRM - `association.opportunities.tsx`, `FeedView.tsx`, `association.events.tsx`, `association.analytics.tsx`, `analytics.tsx`, `Sidebar.tsx`, `opportunity.service.ts`, `events.service.ts`, `meetings.service.ts`, `feed.service.ts`)**:
+  1. **Chuyển Biểu Đồ Sang Màn Thống Kê & Tối Ưu Dải Chỉ Số Ngang Chia Sẻ Cơ Hội (`association.opportunities.tsx`, `association.analytics.tsx`)**:
+     - *Yêu cầu*: Bỏ toàn bộ biểu đồ ở màn hình Chia sẻ cơ hội, chuyển mọi biểu đồ vào màn Thống kê. Thiết kế khu vực thống kê cơ hội theo diện tích ngang hiển thị 3 dạng thống kê chính: "Tổng chia sẻ", "Deal đã chốt", "Tôi share đi" và nút điều hướng sang Trung tâm Thống kê (`/association/analytics`).
+     - *Thực hiện*: Gỡ bỏ `OpportunityAnalyticsWidget` khỏi `association.opportunities.tsx`. Thiết kế dải 3 thẻ thống kê ngang gọn gàng, tương phản cao, click vào mở trực tiếp `/association/analytics`. Toàn bộ biểu đồ phân tích cơ hội được chuyển trọn vẹn vào màn hình Thống kê.
+  2. **Bảng Tin: Nút Bình Luận Cạnh Nút Chia Sẻ & Đánh Dấu Cuộc Họp Vào Hồ Sơ Cá Nhân (`FeedView.tsx`, `feed.service.ts`, `meetings.service.ts`)**:
+     - *Vị trí nút tương tác*: Đặt nút Icon Bình luận nằm ngay cạnh nút Icon Chia sẻ (grouped side-by-side ở góc phải thanh tương tác bài viết), hiển thị số lượng bình luận trực quan.
+     - *Đánh dấu cuộc họp*: Đối với bài đăng cuộc họp ban (`EVENT_MEETING`), bổ sung nút hành động "Đánh dấu cuộc họp vào hồ sơ cá nhân", tự động ghi nhận hoạt động vào nhật ký cá nhân của hội viên (`vba_recent_activities` / `vba.history.changed`).
+  3. **Khắc Phục Triệt Để Lỗi Crash Chi Tiết Sự Kiện (`association.events.tsx`)**:
+     - *Nguyên nhân*: Lỗi `RangeError: Invalid time value` tại `EventPosterCard` và `UpcomingEventsCoverflow` khi gọi `new Date(event.date).toLocaleDateString(...)` với chuỗi ngày rỗng hoặc sai định dạng. Thiếu error boundary cấp route khiến cả trang sự kiện bị văng thông báo "Something went wrong".
+     - *Giải pháp*: Xây dựng `EventsErrorBoundary` bọc quanh trang sự kiện; triển khai 2 helper hàm an toàn `safeFormatEventDate(dateStr, options)` và `safeGetEventDayMonth(dateStr)` với kiểm tra `isNaN(d.getTime())`, phòng vệ mọi trường hợp ngày không hợp lệ và hiển thị giao diện fallback lịch thiệp.
+  4. **Tích Hợp Cuộc Gặp Mặt CLB & Họp Ban Vào App CEO 1983 & Bảng Tin (`events.service.ts`, `meetings.service.ts`, `feed.service.ts`)**:
+     - *Hiển thị trong Sự kiện CEO 1983*: Cập nhật `listMyEvents` tại backend tự động truy vấn từ `public.meetings` (loại trừ `cancelled`) và ánh xạ thành các sự kiện với nhãn `[Họp Ban]`, giúp hội viên theo dõi mọi cuộc gặp mặt và lịch họp ban chuyên môn trực tiếp trên app di động.
+     - *Đẩy lên Bảng tin realtime*: Tự động tạo bài viết trên Bảng tin (`public.feed_posts`) với category `EVENT_MEETING` khi ban điều hành lên lịch cuộc họp mới hoặc khi seed dữ liệu.
+  5. **Nâng Cấp Màn Hình Thống Kê Toàn Diện (`association.analytics.tsx`, `opportunity.service.ts`)**:
+     - *Ai là người trao cơ hội nhiều nhất*: Cập nhật backend `getOpportunityReport` tính toán danh sách `topGivers` và vinh danh `topGiver`. Màn hình Thống kê hiển thị thẻ Top 1 Giver nổi bật với Avatar, họ tên, công ty, huy hiệu vương miện, số lượng cơ hội trao đi và tổng giá trị bằng VNĐ; kèm danh sách Accordion Top 5 Givers mở rộng.
+     - *Biểu đồ cơ cấu tổng giá trị cơ hội*: Tích hợp biểu đồ trực quan hỗ trợ 3 chế độ xem: Theo phân loại (Bên mua / Bên bán), Theo ngành nghề trọng điểm, và Theo trạng thái hợp đồng (Đang mở, Deal đã chốt).
+     - *Danh sách toàn bộ ALL cơ hội*: Hiển thị đầy đủ danh sách cơ hội từ CSDL, tích hợp thanh tìm kiếm realtime và các nút lọc nhanh: Tất cả, Bên mua, Bên bán, Deal đã chốt, Đang mở.
+  6. **Bổ Sung Chức Năng Thống Kê Ở CRM (`analytics.tsx`, `Sidebar.tsx`, `admin.analytics.tsx`)**:
+     - Tạo route `/analytics` trên hệ thống CRM với 5 chế độ xem báo cáo chuyên sâu: Dạng lưới KPI, Dashboard tổng quan, Biểu đồ cây phân bố ngành nghề (Treemap), Biểu đồ tròn theo ban ngành (Donut), và Cây đơn vị cơ cấu tổ chức (Org Tree).
+     - Bổ sung menu "Thống kê CLB" (icon `BarChart3`) vào thanh điều hướng Sidebar của CRM dưới mục Tổng quan.
 - **Bản nâng cấp ngày 22/10/2026 (Triển Khai 5 Yêu Cầu Nâng Cấp Toàn Diện: Báo Cáo Cơ Hội & Biểu Đồ 3 Bậc, Tùy Biến 4 Tính Năng Trang Chủ, Bảng Tin Mới Tab Tin Nhắn, Module Thống Kê Chuyên Biệt Mobile & CRM 5 View, Chuẩn Hóa 3 Màu Thương Hiệu - `SKILL.md`, `SRS.md`, `feed_posts`, `feed.service.ts`, `feed.controller.ts`, `analytics.service.ts`, `analytics.controller.ts`, `members.service.ts`, `opportunity.service.ts`, `OpportunityAnalyticsWidget.tsx`, `CustomHomeShortcutsModal.tsx`, `association.index.tsx`, `FeedView.tsx`, `CreatePostModal.tsx`, `association.messages.tsx`, `association.analytics.tsx`, `admin.analytics.tsx`)**:
   1. **Báo Cáo Xuất Cơ Hội & Biểu Đồ So Sánh 3 Bậc (`OpportunityAnalyticsWidget.tsx`, `opportunity.service.ts`, `opportunity.controller.ts`, `association.opportunities.tsx`)**:
      - Thêm endpoint `GET /opportunities/report` tổng hợp số lượng và giá trị 3 bậc: "Cơ hội tôi chia sẻ", "Deal đã chốt", và "Tổng cơ hội CLB CEO 1983".

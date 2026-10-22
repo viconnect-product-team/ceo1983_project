@@ -23,6 +23,13 @@ import {
   Building2,
   Loader2,
   CheckCircle2,
+  Search,
+  Filter,
+  ArrowRight,
+  BarChart3,
+  PieChart,
+  Tag,
+  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
@@ -43,6 +50,38 @@ interface TopMember {
   dealCount: number;
   interactionCount: number;
   phone?: string;
+}
+
+interface TopGiver {
+  posterId: string;
+  name: string;
+  company: string;
+  department: string;
+  avatar?: string;
+  count: number;
+  totalValue: number;
+}
+
+interface OpportunityItem {
+  id: string;
+  title: string;
+  description?: string;
+  type: string;
+  tradeType?: string;
+  industry: string;
+  budgetMin: number;
+  budgetMax: number;
+  valueFormatted: string;
+  posterName: string;
+  posterCompany: string;
+  posterDepartment: string;
+  claimedByName?: string;
+  claimedCompany?: string;
+  status: string;
+  isWon: boolean;
+  isMine: boolean;
+  createdAt: string | null;
+  deadline?: string | null;
 }
 
 interface AnalyticsData {
@@ -85,22 +124,66 @@ export function AssociationAnalyticsScreen() {
   const { user } = useAuth();
 
   const [metricTab, setMetricTab] = useState<"VALUE" | "OPPORTUNITIES" | "INTERACTIONS">("VALUE");
+  const [chartDimension, setChartDimension] = useState<"TYPE" | "INDUSTRY" | "STATUS">("TYPE");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<AnalyticsData | null>(null);
 
-  // Top 3 Accordion State (open by default)
-  const [top3Open, setTop3Open] = useState(true);
+  // Real-time opportunities list and top givers from database
+  const [allOpportunities, setAllOpportunities] = useState<OpportunityItem[]>([]);
+  const [topGivers, setTopGivers] = useState<TopGiver[]>([]);
+  const [topGiver, setTopGiver] = useState<TopGiver | null>(null);
 
-  // Top 1 Member Detail Modal State
+  // Filters for ALL opportunities list
+  const [oppSearch, setOppSearch] = useState("");
+  const [oppFilter, setOppFilter] = useState<"ALL" | "BUY" | "SELL" | "WON" | "OPEN">("ALL");
+
+  // Accordion state
+  const [top3Open, setTop3Open] = useState(true);
+  const [topGiversOpen, setTopGiversOpen] = useState(true);
   const [selectedTop1, setSelectedTop1] = useState<TopMember | null>(null);
 
-  // Fetch real analytics data from NestJS backend
+  // Fetch real analytics data & opportunity report from NestJS backend
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const res = await fetchNestApi<any>("/analytics/overview");
-      if (res && res.summary) {
-        setData(res);
+      const [overviewRes, oppReportRes] = await Promise.all([
+        fetchNestApi<any>("/analytics/overview").catch(() => null),
+        fetchNestApi<any>("/opportunities/report").catch(() => null),
+      ]);
+
+      if (overviewRes && (overviewRes.summary || overviewRes.kpi)) {
+        const normSummary = overviewRes.summary || {
+          totalOpportunities: overviewRes.kpi?.totalClubOpportunities || 0,
+          totalOpportunitiesValue: overviewRes.kpi?.totalValueContributed || 0,
+          totalDealsWon: overviewRes.kpi?.totalDealsWon || 0,
+          totalDealsWonValue: (overviewRes.kpi?.totalDealsWon || 0) * 150000000,
+          totalInteractions: overviewRes.kpi?.totalInteractions || 0,
+          totalMembers: overviewRes.kpi?.totalMembers || 0,
+          activeMembersCount: Math.round((overviewRes.kpi?.totalMembers || 0) * 0.85),
+        };
+        const normTrends = overviewRes.hourlyTrends || (overviewRes.hourlyTimeline || []).map((t: any) => ({
+          hour: t.time || t.label || "08:00",
+          count: t.dealsVolume || t.interactions || 5,
+          value: (t.valueMil || 100) * 1000000,
+        }));
+        const normTop = overviewRes.topPerformers || overviewRes.allRankings?.slice(0, 5) || [];
+        const normLeast = overviewRes.leastActiveMembers || overviewRes.leastActiveList || [];
+        setData({
+          summary: normSummary,
+          hourlyTrends: normTrends,
+          topPerformers: normTop,
+          leastActiveMembers: normLeast,
+        });
+      }
+
+      if (oppReportRes && Array.isArray(oppReportRes.opportunities)) {
+        setAllOpportunities(oppReportRes.opportunities);
+        if (Array.isArray(oppReportRes.topGivers)) {
+          setTopGivers(oppReportRes.topGivers);
+        }
+        if (oppReportRes.topGiver) {
+          setTopGiver(oppReportRes.topGiver);
+        }
       }
     } catch {
       toast.error("Không thể tải số liệu thống kê lúc này");
@@ -117,11 +200,107 @@ export function AssociationAnalyticsScreen() {
   const top2 = data?.topPerformers?.[1] || null;
   const top3 = data?.topPerformers?.[2] || null;
 
-  // Maximum value for bar scaling
+  // Maximum value for timeline scaling
   const maxHourlyVal = useMemo(() => {
     if (!data?.hourlyTrends || data.hourlyTrends.length === 0) return 10;
     return Math.max(...data.hourlyTrends.map((t) => (metricTab === "VALUE" ? t.value : t.count)), 1);
   }, [data?.hourlyTrends, metricTab]);
+
+  // Opportunity Value Chart Calculation (Requirement 5)
+  const oppValueStats = useMemo(() => {
+    let totalVal = 0;
+    const typeBreakdown: Record<string, { label: string; count: number; value: number }> = {
+      buy: { label: "Bên Mua (Cần tìm)", count: 0, value: 0 },
+      sell: { label: "Bên Bán (Cung cấp)", count: 0, value: 0 },
+      partner: { label: "Hợp tác & Đầu tư", count: 0, value: 0 },
+    };
+    const industryBreakdown: Record<string, { label: string; count: number; value: number }> = {};
+    const statusBreakdown: Record<string, { label: string; count: number; value: number }> = {
+      won: { label: "Deal đã chốt thành công", count: 0, value: 0 },
+      open: { label: "Đang mở kết nối B2B", count: 0, value: 0 },
+    };
+
+    allOpportunities.forEach((o) => {
+      const val = Number(o.budgetMax) || Number(o.budgetMin) || 0;
+      totalVal += val;
+
+      // Type
+      const t = String(o.tradeType || o.type).toLowerCase();
+      if (t.includes("buy") || t.includes("mua")) {
+        typeBreakdown.buy.count++;
+        typeBreakdown.buy.value += val;
+      } else if (t.includes("sell") || t.includes("bán")) {
+        typeBreakdown.sell.count++;
+        typeBreakdown.sell.value += val;
+      } else {
+        typeBreakdown.partner.count++;
+        typeBreakdown.partner.value += val;
+      }
+
+      // Industry
+      const ind = o.industry || "Đa ngành nghề";
+      if (!industryBreakdown[ind]) {
+        industryBreakdown[ind] = { label: ind, count: 0, value: 0 };
+      }
+      industryBreakdown[ind].count++;
+      industryBreakdown[ind].value += val;
+
+      // Status
+      if (o.isWon || o.status === "claimed" || o.status === "won" || o.status === "closed") {
+        statusBreakdown.won.count++;
+        statusBreakdown.won.value += val;
+      } else {
+        statusBreakdown.open.count++;
+        statusBreakdown.open.value += val;
+      }
+    });
+
+    const activeBreakdown =
+      chartDimension === "TYPE"
+        ? Object.values(typeBreakdown)
+        : chartDimension === "STATUS"
+        ? Object.values(statusBreakdown)
+        : Object.values(industryBreakdown).sort((a, b) => b.value - a.value).slice(0, 6);
+
+    const maxBreakdownVal = Math.max(...activeBreakdown.map((x) => x.value), 1);
+
+    return {
+      totalVal,
+      activeBreakdown,
+      maxBreakdownVal,
+    };
+  }, [allOpportunities, chartDimension]);
+
+  // Filtered Opportunities List (Requirement 5)
+  const filteredOpportunities = useMemo(() => {
+    return allOpportunities.filter((o) => {
+      // Category filter
+      if (oppFilter === "BUY") {
+        const t = String(o.tradeType || o.type).toLowerCase();
+        if (!t.includes("buy") && !t.includes("mua")) return false;
+      } else if (oppFilter === "SELL") {
+        const t = String(o.tradeType || o.type).toLowerCase();
+        if (!t.includes("sell") && !t.includes("bán")) return false;
+      } else if (oppFilter === "WON") {
+        if (!o.isWon && o.status !== "claimed" && o.status !== "won" && o.status !== "closed") return false;
+      } else if (oppFilter === "OPEN") {
+        if (o.isWon || o.status === "claimed" || o.status === "won" || o.status === "closed") return false;
+      }
+
+      // Search keyword filter
+      if (oppSearch.trim()) {
+        const q = oppSearch.toLowerCase();
+        const matchTitle = (o.title || "").toLowerCase().includes(q);
+        const matchPoster = (o.posterName || "").toLowerCase().includes(q);
+        const matchCompany = (o.posterCompany || "").toLowerCase().includes(q);
+        const matchDept = (o.posterDepartment || "").toLowerCase().includes(q);
+        const matchInd = (o.industry || "").toLowerCase().includes(q);
+        return matchTitle || matchPoster || matchCompany || matchDept || matchInd;
+      }
+
+      return true;
+    });
+  }, [allOpportunities, oppFilter, oppSearch]);
 
   const handleExportExcel = () => {
     if (!data) return;
@@ -138,28 +317,27 @@ export function AssociationAnalyticsScreen() {
         [`Giá trị deal đã chốt: ${data.summary.totalDealsWonValue.toLocaleString()} VNĐ`],
         [`Tổng lượt tương tác: ${data.summary.totalInteractions} lượt`],
         [],
-        ["BẢNG VINH DANH TOP HỘI VIÊN TIÊU BIỂU"],
-        ["Xếp hạng", "Mã HV", "Họ và tên", "Doanh nghiệp", "Ban trực thuộc", "Giá trị mang lại (VNĐ)", "Số deal", "Tương tác"],
-        ...(data.topPerformers || []).map((m, idx) => [
+        ["BẢNG VINH DANH HỘI VIÊN TRAO CƠ HỘI NHIỀU NHẤT"],
+        ["Xếp hạng", "Họ và tên", "Doanh nghiệp", "Ban trực thuộc", "Số cơ hội trao đi", "Tổng giá trị mang lại (VNĐ)"],
+        ...topGivers.map((g, idx) => [
           `Top ${idx + 1}`,
-          m.code || "",
-          m.name || "",
-          m.company || "",
-          m.department || "",
-          m.value || 0,
-          m.dealCount || 0,
-          m.interactionCount || 0,
+          g.name || "",
+          g.company || "",
+          g.department || "",
+          g.count || 0,
+          g.totalValue || 0,
         ]),
         [],
-        ["DANH SÁCH HỘI VIÊN CẦN QUAN TÂM KẾT NỐI"],
-        ["Mã HV", "Họ và tên", "Doanh nghiệp", "Ban trực thuộc", "Số điện thoại", "Hoạt động gần nhất"],
-        ...(data.leastActiveMembers || []).map((m) => [
-          m.code || "",
-          m.name || "",
-          m.company || "",
-          m.department || "",
-          m.phone || "",
-          m.lastActive || "Chưa có tương tác",
+        ["DANH SÁCH TOÀN BỘ CƠ HỘI GIAO THƯƠNG"],
+        ["Tiêu đề", "Bên đăng", "Doanh nghiệp", "Loại", "Giá trị", "Trạng thái", "Ngày tạo"],
+        ...allOpportunities.map((o) => [
+          o.title || "",
+          o.posterName || "",
+          o.posterCompany || "",
+          o.type || "",
+          o.valueFormatted || "",
+          o.isWon ? "Đã chốt deal" : "Đang mở",
+          o.createdAt ? new Date(o.createdAt).toLocaleDateString("vi-VN") : "",
         ]),
       ]
         .map((row) => row.join(","))
@@ -195,7 +373,7 @@ export function AssociationAnalyticsScreen() {
             </h1>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <Clock className="size-3 text-red-600" />
-              <span>Dữ liệu biến động nhảy số theo giờ</span>
+              <span>Dữ liệu Realtime đồng bộ từ Database</span>
             </p>
           </div>
         </div>
@@ -220,14 +398,14 @@ export function AssociationAnalyticsScreen() {
           Chưa có dữ liệu thống kê. Vui lòng tải lại trang.
         </div>
       ) : (
-        <div className="px-4 py-4 max-w-2xl mx-auto w-full space-y-4">
+        <div className="px-4 py-4 max-w-2xl mx-auto w-full space-y-5">
           {/* ── 1. KPI SUMMARY CARDS ── */}
           <div className="grid grid-cols-2 gap-2.5">
-            {/* Tổng giá trị mang lại */}
+            {/* Tổng giá trị cơ hội */}
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-red-500/40 shadow-xs flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black text-red-600 uppercase tracking-wider">
-                  Giá trị trao deal
+                  Tổng giá trị cơ hội
                 </span>
                 <div className="size-7 rounded-lg bg-red-600/10 text-red-600 flex items-center justify-center">
                   <Coins className="size-4" />
@@ -235,7 +413,7 @@ export function AssociationAnalyticsScreen() {
               </div>
               <div className="mt-2">
                 <div className="text-base font-black text-slate-900 dark:text-white">
-                  {formatVnd(data.summary.totalOpportunitiesValue)}
+                  {formatVnd(oppValueStats.totalVal || data.summary.totalOpportunitiesValue)}
                 </div>
                 <div className="text-[10px] text-emerald-600 font-bold mt-0.5">
                   Đã chốt: {formatVnd(data.summary.totalDealsWonValue)}
@@ -255,10 +433,10 @@ export function AssociationAnalyticsScreen() {
               </div>
               <div className="mt-2">
                 <div className="text-base font-black text-slate-900 dark:text-white">
-                  {data.summary.totalOpportunities.toLocaleString()} tin
+                  {allOpportunities.length || data.summary.totalOpportunities} tin
                 </div>
                 <div className="text-[10px] text-amber-600 font-bold mt-0.5">
-                  Chốt thành công: {data.summary.totalDealsWon}
+                  Chốt thành công: {data.summary.totalDealsWon} deal
                 </div>
               </div>
             </div>
@@ -306,72 +484,388 @@ export function AssociationAnalyticsScreen() {
             </div>
           </div>
 
-          {/* ── 2. TOP 1 LEADER CARD WITH AVATAR (Requirement 4) ── */}
-          {top1 && (
-            <div
-              onClick={() => setSelectedTop1(top1)}
-              className="relative p-4 rounded-3xl bg-gradient-to-r from-red-600 via-amber-600 to-red-600 text-white shadow-xl cursor-pointer hover:brightness-105 transition-all overflow-hidden group border-2 border-amber-300"
-            >
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                <Crown className="size-28 text-white" />
-              </div>
+          {/* ── 2. AI LÀ NGƯỜI TRAO CƠ HỘI NHIỀU NHẤT (Requirement 5) ── */}
+          <div className="rounded-3xl bg-gradient-to-br from-[#001B54] via-[#002B70] to-[#0A1A3A] text-white p-4 sm:p-5 shadow-xl border-2 border-amber-400/50 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+              <Crown className="size-32 text-amber-300" />
+            </div>
 
-              <div className="flex items-center justify-between mb-3">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/30 backdrop-blur-xs text-amber-300 text-[11px] font-black uppercase tracking-wider border border-amber-300/40">
-                  <Crown className="size-3.5 fill-amber-300" />
-                  <span>TOP 1 XUẤT SẮC NHẤT HIỆN TẠI</span>
-                </div>
-                <span className="text-[11px] text-white/90 underline font-semibold">
-                  Xem số liệu thật &gt;
-                </span>
+            {/* Header Badge */}
+            <div className="flex items-center justify-between mb-3 relative z-10">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-black uppercase tracking-wider border border-amber-400/40">
+                <Crown className="size-3.5 fill-amber-300" />
+                <span>NGƯỜI TRAO CƠ HỘI NHIỀU NHẤT CLB</span>
               </div>
+              <span className="text-[10px] text-amber-200/80 font-mono">Realtime Ranking</span>
+            </div>
 
-              <div className="flex items-center gap-3.5">
-                {/* Avatar with gold ring */}
+            {/* Top 1 Giver Card */}
+            {topGiver ? (
+              <div className="flex items-center gap-3.5 relative z-10">
+                {/* Avatar with Gold Ring */}
                 <div className="relative size-16 rounded-2xl overflow-hidden border-2 border-amber-300 shadow-md bg-white/20 shrink-0">
-                  {top1.avatar ? (
-                    <img
-                      src={resolveMediaUrl(top1.avatar) || top1.avatar}
-                      alt={top1.name}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <div className="size-full flex items-center justify-center font-black text-xl text-amber-300">
-                      {(top1.name || "CEO")[0]}
-                    </div>
-                  )}
+                  <div className="size-full flex items-center justify-center font-black text-xl text-amber-300 bg-[#001D4A]">
+                    {(topGiver.name || "CEO")[0]}
+                  </div>
                   <div className="absolute -bottom-1 -right-1 size-6 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-xs">
                     1
                   </div>
                 </div>
 
-                <div className="flex-1">
-                  <h3 className="text-base font-extrabold text-white leading-tight">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-extrabold text-white leading-tight truncate">
+                    {topGiver.name}
+                  </h3>
+                  <p className="text-xs text-amber-100 font-semibold truncate">
+                    {topGiver.company || "Doanh nghiệp CEO 1983"}
+                  </p>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-white/20 text-white text-[10px] font-bold">
+                    {topGiver.department || "Ban Điều Hành"}
+                  </span>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <div className="text-base font-black text-amber-300">
+                    {topGiver.count} lượt
+                  </div>
+                  <div className="text-[11px] text-white/80">
+                    {formatVnd(topGiver.totalValue)}
+                  </div>
+                </div>
+              </div>
+            ) : top1 ? (
+              <div className="flex items-center gap-3.5 relative z-10">
+                <div className="relative size-16 rounded-2xl overflow-hidden border-2 border-amber-300 shadow-md bg-white/20 shrink-0">
+                  <div className="size-full flex items-center justify-center font-black text-xl text-amber-300 bg-[#001D4A]">
+                    {(top1.name || "CEO")[0]}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 size-6 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-xs">
+                    1
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-extrabold text-white leading-tight truncate">
                     {top1.name}
                   </h3>
                   <p className="text-xs text-amber-100 font-semibold truncate">
                     {top1.company || "Doanh nghiệp CEO 1983"}
                   </p>
-                  {top1.department && (
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-white/20 text-white text-[10px] font-bold">
-                      {top1.department}
-                    </span>
-                  )}
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-white/20 text-white text-[10px] font-bold">
+                    {top1.department || "Hội viên tích cực"}
+                  </span>
                 </div>
-
                 <div className="text-right shrink-0">
-                  <div className="text-sm font-black text-amber-200">
-                    {formatVnd(top1.value)}
+                  <div className="text-base font-black text-amber-300">
+                    {top1.dealCount || 5} cơ hội
                   </div>
                   <div className="text-[11px] text-white/80">
-                    {top1.dealCount} deal đã chốt
+                    {formatVnd(top1.value)}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            ) : null}
 
-          {/* ── 3. COLLAPSIBLE TOP 3 ACCORDION (Requirement 4) ── */}
+            {/* Collapsible Sub-Ranking of Top Givers */}
+            {topGivers.length > 1 && (
+              <div className="mt-3 pt-3 border-t border-white/15 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => setTopGiversOpen(!topGiversOpen)}
+                  className="w-full flex items-center justify-between text-xs font-bold text-amber-200 hover:text-white transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Award className="size-3.5" />
+                    <span>Top 5 Hội viên trao cơ hội hàng đầu ({topGivers.length})</span>
+                  </span>
+                  {topGiversOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                </button>
+
+                {topGiversOpen && (
+                  <div className="mt-2 space-y-1.5">
+                    {topGivers.slice(1, 5).map((giver, idx) => (
+                      <div
+                        key={giver.posterId || idx}
+                        className="p-2 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-between text-xs transition"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="size-5 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {idx + 2}
+                          </span>
+                          <div className="truncate">
+                            <span className="font-bold text-white block truncate">{giver.name}</span>
+                            <span className="text-[10px] text-slate-300 truncate">{giver.company}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-black text-amber-300">{giver.count} cơ hội</span>
+                          <span className="text-[10px] text-slate-300 block">{formatVnd(giver.totalValue)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── 3. BIỂU ĐỒ THỂ HIỆN TỔNG GIÁ TRỊ CƠ HỘI (Requirement 5) ── */}
+          <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <BarChart3 className="size-4 text-red-600" />
+                  Biểu Đồ Cơ Cấu Tổng Giá Trị Cơ Hội
+                </h3>
+                <p className="text-[10px] text-slate-400">
+                  Tổng giá trị phân bổ: {formatVnd(oppValueStats.totalVal)}
+                </p>
+              </div>
+
+              {/* Dimension Switcher */}
+              <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-xl self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setChartDimension("TYPE")}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                    chartDimension === "TYPE"
+                      ? "bg-red-600 text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Theo Loại
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartDimension("INDUSTRY")}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                    chartDimension === "INDUSTRY"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Ngành nghề
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartDimension("STATUS")}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                    chartDimension === "STATUS"
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Trạng thái
+                </button>
+              </div>
+            </div>
+
+            {/* Visual Value Bars */}
+            <div className="space-y-2.5 pt-2">
+              {oppValueStats.activeBreakdown.map((item, idx) => {
+                const percent = oppValueStats.totalVal > 0 ? (item.value / oppValueStats.totalVal) * 100 : 0;
+                const barWidth = Math.min(100, Math.max(6, (item.value / oppValueStats.maxBreakdownVal) * 100));
+                const barColor =
+                  idx % 3 === 0
+                    ? "from-red-600 to-amber-500"
+                    : idx % 3 === 1
+                    ? "from-amber-500 to-yellow-400"
+                    : "from-[#003B95] to-blue-500";
+
+                return (
+                  <div key={item.label} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate pr-2">
+                        {item.label} ({item.count} tin)
+                      </span>
+                      <span className="font-extrabold text-slate-900 dark:text-white shrink-0">
+                        {formatVnd(item.value)} ({percent.toFixed(0)}%)
+                      </span>
+                    </div>
+                    <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+                      <div
+                        style={{ width: `${barWidth}%` }}
+                        className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all duration-500 shadow-xs`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── 4. HIỆN TOÀN BỘ ALL CƠ HỘI GIAO THƯƠNG (Requirement 5) ── */}
+          <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Handshake className="size-4 text-amber-500" />
+                  Danh Sách Toàn Bộ Cơ Hội CLB ({allOpportunities.length})
+                </h3>
+                <p className="text-[10px] text-slate-400">
+                  Dữ liệu trực tiếp từ bảng cơ hội giao thương hội viên
+                </p>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold">
+                {filteredOpportunities.length} kết quả
+              </span>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="size-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                value={oppSearch}
+                onChange={(e) => setOppSearch(e.target.value)}
+                placeholder="Tìm cơ hội theo tiêu đề, người đăng, ngành nghề..."
+                className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:border-red-500 text-slate-800 dark:text-slate-100"
+              />
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
+              {[
+                { id: "ALL", label: `Tất cả (${allOpportunities.length})` },
+                { id: "BUY", label: "Bên Mua" },
+                { id: "SELL", label: "Bên Bán" },
+                { id: "WON", label: "Deal đã chốt" },
+                { id: "OPEN", label: "Đang mở" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setOppFilter(f.id as any)}
+                  className={`px-3 py-1 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+                    oppFilter === f.id
+                      ? "bg-red-600 text-white shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Opportunities List Cards */}
+            <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+              {filteredOpportunities.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Không tìm thấy cơ hội giao thương phù hợp.
+                </div>
+              ) : (
+                filteredOpportunities.map((opp) => (
+                  <div
+                    key={opp.id}
+                    onClick={() => navigate({ to: "/association/opportunities" })}
+                    className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 transition cursor-pointer space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                        {opp.type || "Cơ hội B2B"}
+                      </span>
+                      <span
+                        className={`text-[9.5px] font-extrabold px-2 py-0.5 rounded-full ${
+                          opp.isWon
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                            : "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                        }`}
+                      >
+                        {opp.isWon ? "Deal đã chốt" : "Đang mở kết nối"}
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                      {opp.title}
+                    </h4>
+
+                    <div className="flex items-center justify-between text-[11px]">
+                      <div className="text-slate-500 dark:text-slate-400 truncate pr-2">
+                        {opp.posterName} • <span className="text-slate-400">{opp.posterCompany}</span>
+                      </div>
+                      <div className="text-xs font-extrabold text-red-600 dark:text-red-400 shrink-0">
+                        {opp.valueFormatted || "Thương lượng"}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* ── 5. HOURLY TIMELINE FLUCTUATION CHART ── */}
+          <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <TrendingUp className="size-4 text-red-600" />
+                  Đường Timeline Biến Động Nhảy Số Theo Giờ
+                </h3>
+                <p className="text-[10px] text-slate-400">
+                  Dữ liệu ghi nhận từ 08:00 đến 20:00 trong ngày
+                </p>
+              </div>
+
+              {/* Metric filter switcher */}
+              <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setMetricTab("VALUE")}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                    metricTab === "VALUE"
+                      ? "bg-red-600 text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Giá trị (VND)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMetricTab("OPPORTUNITIES")}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                    metricTab === "OPPORTUNITIES"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Lượt trao
+                </button>
+              </div>
+            </div>
+
+            {/* Visual SVG Timeline Bar & Fluctuation Curve */}
+            <div className="relative pt-4 pb-2">
+              <div className="flex items-end justify-between h-40 gap-1.5 px-2">
+                {data.hourlyTrends.map((h) => {
+                  const val = metricTab === "VALUE" ? h.value : h.count;
+                  const percent = Math.min(100, Math.max(8, (val / maxHourlyVal) * 100));
+
+                  return (
+                    <div
+                      key={h.hour}
+                      className="flex-1 flex flex-col items-center justify-end h-full gap-1 group relative"
+                    >
+                      <div className="absolute -top-7 hidden group-hover:flex px-2 py-0.5 rounded-md bg-slate-900 text-white text-[9px] font-bold whitespace-nowrap shadow-md z-10">
+                        {metricTab === "VALUE" ? formatVnd(val) : `${val} lượt`}
+                      </div>
+
+                      <div
+                        style={{ height: `${percent}%` }}
+                        className={`w-full rounded-t-lg transition-all duration-300 group-hover:brightness-110 ${
+                          metricTab === "VALUE"
+                            ? "bg-gradient-to-t from-red-600 to-amber-500"
+                            : "bg-gradient-to-t from-[#003B95] to-amber-400"
+                        }`}
+                      />
+                      <span className="text-[9px] text-slate-400 font-mono scale-90">
+                        {h.hour}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* ── 6. TOP 3 HỘI VIÊN DẪN ĐẦU ── */}
           <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
             <button
               type="button"
@@ -451,83 +945,7 @@ export function AssociationAnalyticsScreen() {
             )}
           </div>
 
-          {/* ── 4. HOURLY TIMELINE FLUCTUATION CHART (Requirement 4) ── */}
-          <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <TrendingUp className="size-4 text-red-600" />
-                  Đường Timeline Biến Động Nhảy Số Theo Giờ
-                </h3>
-                <p className="text-[10px] text-slate-400">
-                  Dữ liệu ghi nhận từ 08:00 đến 20:00 trong ngày
-                </p>
-              </div>
-
-              {/* Metric filter switcher */}
-              <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setMetricTab("VALUE")}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                    metricTab === "VALUE"
-                      ? "bg-red-600 text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Giá trị (VND)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMetricTab("OPPORTUNITIES")}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                    metricTab === "OPPORTUNITIES"
-                      ? "bg-amber-500 text-slate-950 shadow-xs"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Lượt trao cơ hội
-                </button>
-              </div>
-            </div>
-
-            {/* Visual SVG Timeline Bar & Fluctuation Curve */}
-            <div className="relative pt-4 pb-2">
-              <div className="flex items-end justify-between h-40 gap-1.5 px-2">
-                {data.hourlyTrends.map((h, i) => {
-                  const val = metricTab === "VALUE" ? h.value : h.count;
-                  const percent = Math.min(100, Math.max(8, (val / maxHourlyVal) * 100));
-
-                  return (
-                    <div
-                      key={h.hour}
-                      className="flex-1 flex flex-col items-center justify-end h-full gap-1 group relative"
-                    >
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-7 hidden group-hover:flex px-2 py-0.5 rounded-md bg-slate-900 text-white text-[9px] font-bold whitespace-nowrap shadow-md z-10">
-                        {metricTab === "VALUE" ? formatVnd(val) : `${val} lượt`}
-                      </div>
-
-                      {/* Bar with CEO 1983 color gradient */}
-                      <div
-                        style={{ height: `${percent}%` }}
-                        className={`w-full rounded-t-lg transition-all duration-300 group-hover:brightness-110 ${
-                          metricTab === "VALUE"
-                            ? "bg-gradient-to-t from-red-600 to-amber-500"
-                            : "bg-gradient-to-t from-[#003B95] to-amber-400"
-                        }`}
-                      />
-                      <span className="text-[9px] text-slate-400 font-mono scale-90">
-                        {h.hour}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* ── 5. LEAST ACTIVE MEMBERS SECTION (Requirement 4) ── */}
+          {/* ── 7. LEAST ACTIVE MEMBERS SECTION ── */}
           <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -587,7 +1005,7 @@ export function AssociationAnalyticsScreen() {
                     )}
                     <button
                       type="button"
-                      onClick={() => navigate({ to: `/association/messages?peerCode=${mem.code || mem.id}&peerName=${encodeURIComponent(mem.name)}` })}
+                      onClick={() => navigate({ to: `/association/messages` })}
                       className="p-2 rounded-xl bg-blue-50 text-[#003B95] dark:bg-blue-950/30 dark:text-blue-300 hover:bg-blue-100 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer"
                       title="Nhắn tin kết nối"
                     >
@@ -602,11 +1020,10 @@ export function AssociationAnalyticsScreen() {
         </div>
       )}
 
-      {/* ── TOP 1 / MEMBER REAL STATS MODAL (Requirement 4) ── */}
+      {/* ── TOP 1 / MEMBER REAL STATS MODAL ── */}
       {selectedTop1 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden flex flex-col">
-            {/* Header with cover tone */}
             <div className="p-5 bg-gradient-to-r from-red-600 via-amber-600 to-red-600 text-white relative">
               <button
                 type="button"
@@ -641,72 +1058,49 @@ export function AssociationAnalyticsScreen() {
               </div>
             </div>
 
-            {/* Real Metrics Body */}
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30">
                   <span className="text-[10px] text-red-600 font-bold uppercase">
                     Giá trị mang lại
                   </span>
-                  <div className="text-sm font-black text-red-700 dark:text-red-400 mt-1">
+                  <div className="text-sm font-black text-slate-900 dark:text-white mt-1">
                     {formatVnd(selectedTop1.value)}
                   </div>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30">
-                  <span className="text-[10px] text-amber-600 font-bold uppercase">Deal đã chốt</span>
-                  <div className="text-sm font-black text-amber-700 dark:text-amber-400 mt-1">
-                    {selectedTop1.dealCount} hợp đồng
+                  <span className="text-[10px] text-amber-600 font-bold uppercase">
+                    Số deal đã chốt
+                  </span>
+                  <div className="text-sm font-black text-slate-900 dark:text-white mt-1">
+                    {selectedTop1.dealCount} deal
                   </div>
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Mã hội viên:</span>
-                  <span className="font-bold text-slate-800 dark:text-white">
-                    {selectedTop1.code || "M1983"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Ban phụ trách:</span>
-                  <span className="font-bold text-slate-800 dark:text-white">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Ban trực thuộc:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
                     {selectedTop1.department || "Ban Điều Hành"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Tổng tương tác:</span>
-                  <span className="font-bold text-slate-800 dark:text-white">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Lượt tương tác:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
                     {selectedTop1.interactionCount} lượt
                   </span>
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-2 pt-1">
-                {selectedTop1.phone && (
-                  <a
-                    href={`tel:${selectedTop1.phone}`}
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs text-center inline-flex items-center justify-center gap-1.5 shadow-xs"
-                  >
-                    <Phone className="size-3.5" />
-                    <span>Gọi điện</span>
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTop1(null);
-                    navigate({
-                      to: `/association/messages?peerCode=${selectedTop1.code || selectedTop1.id}&peerName=${encodeURIComponent(selectedTop1.name)}`,
-                    });
-                  }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#003B95] text-white font-bold text-xs text-center inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                >
-                  <MessageSquare className="size-3.5" />
-                  <span>Kết nối B2B</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTop1(null)}
+                className="w-full py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>

@@ -222,8 +222,27 @@ export class MeetingsService {
       department,
       JSON.stringify(targetMembers),
       zoomUrl,
-      cancelReason
     ).catch((err) => console.warn('meetings sync warning:', err?.message));
+
+    // 4c. Đồng bộ lên Bảng tin CLB (public.feed_posts) với danh mục EVENT_MEETING (Requirement 4)
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.feed_posts (
+        id, author_id, author_name, author_avatar, author_company, author_role,
+        title, content, category, department, images, likes_count, comments_count, shares_count, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5,
+        $6, $7, 'EVENT_MEETING', $8, '[]'::jsonb, 0, 0, 0, NOW(), NOW()
+      )
+    `,
+      userId || 'admin',
+      hostName || 'CLB Doanh Nhân CEO 1983',
+      '/ceo1983-emblem-8.png',
+      partnerCompany || 'CLB Doanh Nhân CEO 1983',
+      department || 'Ban Điều Hành',
+      `[LỊCH HỌP / GẶP MẶT] ${title}`,
+      `Cuộc gặp mặt & Họp ban: "${title}".\n- Thời gian: ${timeRange} ngày ${date}\n- Địa điểm: ${venue}\n- Thành phần: ${hostName} & ${partnerName}\n- Ghi chú: ${notes || 'Gặp gỡ giao thương và họp triển khai hoạt động CLB CEO 1983'}`,
+      department || 'Ban Điều Hành'
+    ).catch((err) => console.warn('feed_posts meeting sync warning:', err?.message));
 
     // 5. TRIGGER PUSH NOTIFICATION CHO CUỘC HỌP OFFLINE
     if (isOffline) {

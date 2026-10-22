@@ -175,6 +175,40 @@ export class FeedService {
           `.catch(() => {});
         }
       }
+
+      // Đảm bảo các cuộc họp ban / gặp mặt CLB từ public.meetings cũng có bài đăng trong feed_posts (Requirement 4)
+      const meetings = await this.prisma.$queryRaw<any[]>`
+        SELECT id, title, date, time, location, department, status
+        FROM public.meetings
+        WHERE status != 'cancelled'
+        LIMIT 5
+      `.catch(() => []);
+
+      for (const m of meetings) {
+        const titlePost = `[LỊCH HỌP / GẶP MẶT] ${m.title}`;
+        const existing = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.feed_posts WHERE title = ${titlePost} LIMIT 1
+        `.catch(() => []);
+
+        if (existing.length === 0) {
+          const dt = new Date(m.date);
+          const dateStr = !isNaN(dt.getTime()) ? dt.toLocaleDateString('vi-VN') : 'Sắp diễn ra';
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.feed_posts (
+              id, author_id, author_name, author_avatar, author_company, author_role,
+              title, content, category, department, images, likes_count, comments_count, shares_count, created_at, updated_at
+            ) VALUES (
+              gen_random_uuid(), 'meeting_host', $1, '/ceo1983-emblem-8.png', 'CLB Doanh Nhân CEO 1983', 'Ban Điều Hành',
+              $2, $3, 'EVENT_MEETING', $4, '[]'::jsonb, 5, 2, 1, NOW(), NOW()
+            )
+          `,
+            m.department || 'Ban Điều Hành',
+            titlePost,
+            `Cuộc gặp mặt & Họp ban: "${m.title}".\n- Thời gian: ${m.time || '09:30'} ngày ${dateStr}\n- Địa điểm: ${m.location || 'Văn phòng Hiệp hội CEO 1983'}\n- Ban phụ trách: ${m.department || 'Ban Điều Hành'}\n- Trạng thái: ${m.status === 'completed' ? 'Đã hoàn thành' : 'Sắp diễn ra'}`,
+            m.department || 'Ban Điều Hành'
+          ).catch(() => {});
+        }
+      }
     } catch (e: any) {
       console.warn('ensureSeedFeed error:', e?.message);
     }

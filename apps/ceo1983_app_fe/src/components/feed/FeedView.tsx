@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Filter,
   Check,
+  CheckCircle2,
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -463,7 +464,38 @@ export function FeedView() {
                 </div>
               )}
 
-              {/* Actions Footer */}
+              {/* Nút đánh dấu cuộc họp vào hồ sơ cá nhân khi bài viết là EVENT_MEETING (Requirement 4) */}
+              {post.category === "EVENT_MEETING" && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        const existingActs = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
+                        const newAct = {
+                          id: `act-${Date.now()}`,
+                          type: "meeting",
+                          title: post.title || "Cuộc họp / Gặp mặt CLB CEO 1983",
+                          detail: post.content.substring(0, 120),
+                          date: new Date().toISOString(),
+                          category: "Họp ban & Kết nối",
+                        };
+                        localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActs]));
+                        window.dispatchEvent(new Event("vba.history.changed"));
+                        toast.success("Đã ghi nhận cuộc họp này vào hồ sơ cá nhân của bạn!");
+                      } catch {
+                        toast.error("Không thể ghi nhận cuộc họp lúc này");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 px-3 py-1.5 rounded-xl transition active:scale-95 cursor-pointer border border-amber-400/30"
+                  >
+                    <CheckCircle2 className="size-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>Đánh dấu cuộc họp vào hồ sơ cá nhân</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Actions Footer: Like on the left; Comment adjacent to Share on the right (Requirement 2) */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
                 {/* Like */}
                 <button
@@ -483,25 +515,28 @@ export function FeedView() {
                   <span>{post.likesCount || 0}</span>
                 </button>
 
-                {/* Comment */}
-                <button
-                  type="button"
-                  onClick={() => handleOpenComments(post)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  <MessageCircle className="size-4 text-slate-500" />
-                  <span>{post.commentsCount || 0}</span>
-                </button>
+                {/* Group Comment adjacent to Share */}
+                <div className="flex items-center gap-1">
+                  {/* Comment */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenComments(post)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    <MessageCircle className="size-4 text-slate-500" />
+                    <span>{post.commentsCount || 0}</span>
+                  </button>
 
-                {/* Share */}
-                <button
-                  type="button"
-                  onClick={() => handleShare(post)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  <Share2 className="size-4 text-slate-500" />
-                  <span>{post.sharesCount || 0}</span>
-                </button>
+                  {/* Share */}
+                  <button
+                    type="button"
+                    onClick={() => handleShare(post)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    <Share2 className="size-4 text-slate-500" />
+                    <span>{post.sharesCount || 0}</span>
+                  </button>
+                </div>
               </div>
             </article>
           ))

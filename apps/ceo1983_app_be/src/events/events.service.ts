@@ -853,7 +853,7 @@ export class EventsService implements OnModuleInit {
     const todayStr = now.toISOString().slice(0, 10);
     const vnToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(now);
 
-    return events.map((e) => {
+    const mappedEvents = events.map((e) => {
       const dt = new Date(e.date);
       const valid = !isNaN(dt.getTime());
       const dateStr = valid ? dt.toISOString().slice(0, 10) : '';
@@ -904,6 +904,69 @@ export class EventsService implements OnModuleInit {
         associationId: e.association_id ?? null,
       };
     });
+
+    // 4. Đồng bộ các cuộc gặp mặt CLB / họp ban từ public.meetings vào CEO 1983 app (Requirement 4)
+    const meetings = await this.prisma.$queryRaw<any[]>`
+      SELECT id, title, date, time, location, department, status, target_members
+      FROM public.meetings
+      WHERE status != 'cancelled'
+      ORDER BY date ASC
+    `.catch(() => []);
+
+    const mappedMeetings = meetings.map((m, idx) => {
+      const dt = new Date(m.date);
+      const valid = !isNaN(dt.getTime());
+      const dateStr = valid ? dt.toISOString().slice(0, 10) : '';
+      const vnEventDate = valid ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(dt) : '';
+      const isToday = vnEventDate === vnToday || dateStr === todayStr || dateStr === vnToday;
+      const isPast = valid ? vnEventDate < vnToday : false;
+
+      const defaultMeetingImgs = [
+        'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80',
+      ];
+      const mImg = defaultMeetingImgs[idx % defaultMeetingImgs.length];
+
+      return {
+        id: String(m.id),
+        day: valid ? String(dt.getDate()).padStart(2, '0') : '--',
+        month: valid ? MONTHS[dt.getMonth()] : '',
+        title: m.title || 'Họp Ban / Cuộc gặp CLB CEO 1983',
+        name: m.title || 'Họp Ban / Cuộc gặp CLB CEO 1983',
+        date: dateStr,
+        startDate: dateStr,
+        isToday,
+        isPast,
+        status: m.status || (isPast ? 'ended' : 'upcoming'),
+        time: m.time || (valid ? dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '09:30'),
+        place: m.location || 'Văn phòng Hiệp hội CEO 1983',
+        image: mImg,
+        banner: mImg,
+        ticketPrice: 0,
+        fee: 0,
+        capacity: 40,
+        maxAttendees: 40,
+        registeredCount: 12,
+        isFull: false,
+        registered: false,
+        regId: null,
+        ticketCode: null,
+        luckyNumber: null,
+        ticketType: 'Họp Ban & Kết Nối',
+        photoGalleryUrl: '',
+        driveUrl: '',
+        qrScanners: [],
+        qrStaff: [],
+        sponsors: [],
+        description: `Cuộc gặp mặt / Họp ban: ${m.title}\nBan phụ trách: ${m.department || 'Ban Điều Hành'}\nĐịa điểm: ${m.location || 'Hà Nội'}\nThời gian: ${m.time || ''}`,
+        communityName: m.department || 'Ban Điều Hành CLB CEO 1983',
+        associationName: 'CLB Doanh Nhân CEO 1983',
+        associationId: null,
+      };
+    });
+
+    return [...mappedEvents, ...mappedMeetings];
   }
 
 

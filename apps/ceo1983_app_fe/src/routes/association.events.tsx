@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Bookmark,
   Check,
@@ -63,8 +63,110 @@ import {
 } from "@/components/events/modals";
 import { RegisteredEventsQrSlider } from "@/components/events/RegisteredEventsQrSlider";
 
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class EventsErrorBoundary extends React.Component<React.PropsWithChildren<{}>, ErrorBoundaryState> {
+  constructor(props: React.PropsWithChildren<{}>) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("EventsScreen caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
+          <div className="size-16 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 flex items-center justify-center mb-4 shadow-sm">
+            <AlertTriangle className="size-8" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+            Không thể tải giao diện sự kiện
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 max-w-sm">
+            Đã xảy ra sự cố khi tải danh sách sự kiện hoặc chi tiết vé. Vui lòng bấm thử lại để làm mới dữ liệu từ máy chủ.
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+              className="px-4 py-2 rounded-xl bg-sky-950 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+            >
+              Tải lại trang
+            </button>
+            <a
+              href="/association/home"
+              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition active:scale-95"
+            >
+              Về trang chủ
+            </a>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export function safeFormatEventDate(
+  dateVal: any,
+  fallback: string = "27/09/2026",
+  options?: Intl.DateTimeFormatOptions
+): string {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return typeof dateVal === "string" && dateVal.trim() ? dateVal : fallback;
+    return d.toLocaleDateString("vi-VN", options || {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return fallback;
+  }
+}
+
+export function safeGetEventDayMonth(dateVal: any, fallbackDay = 20, fallbackMonth = 10) {
+  if (!dateVal) {
+    return { day: fallbackDay, month: `TH${fallbackMonth}` };
+  }
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) {
+      return { day: fallbackDay, month: `TH${fallbackMonth}` };
+    }
+    return {
+      day: d.getDate(),
+      month: `TH${d.getMonth() + 1}`,
+    };
+  } catch {
+    return { day: fallbackDay, month: `TH${fallbackMonth}` };
+  }
+}
+
+function EventsRouteComponent() {
+  return (
+    <EventsErrorBoundary>
+      <EventsScreen />
+    </EventsErrorBoundary>
+  );
+}
+
 export const Route = createFileRoute("/association/events")({
-  component: EventsScreen,
+  component: EventsRouteComponent,
 });
 
 const defaultEventImages = [
@@ -294,16 +396,16 @@ function EventPosterCard({
   const agenda = getEventAgenda(event, index);
   const isFull = isEventFull(event);
 
-  const eventDateStr = event.date
-    ? new Date(event.date).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-    : `${event.day || 20}/${event.month || 10}/2026`;
+  const eventDateStr = safeFormatEventDate(
+    event.date,
+    `${event.day || 20}/${event.month || 10}/2026`
+  );
 
-  const dayNumber = event.date ? new Date(event.date).getDate() : (event.day || 20);
-  const monthStr = event.date ? `TH${new Date(event.date).getMonth() + 1}` : `TH${event.month || 10}`;
+  const { day: dayNumber, month: monthStr } = safeGetEventDayMonth(
+    event.date,
+    Number(event.day) || 20,
+    Number(event.month) || 10
+  );
 
   return (
     <div
@@ -550,13 +652,10 @@ function UpcomingEventsCoverflow({
           const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
           const agenda = getEventAgenda(evt, idx);
 
-          const eventDateStr = evt.date
-            ? new Date(evt.date).toLocaleDateString("vi-VN", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              })
-            : `${evt.day || 27}/${evt.month || 9}/2026`;
+          const eventDateStr = safeFormatEventDate(
+            evt.date,
+            `${evt.day || 27}/${evt.month || 9}/2026`
+          );
 
           return (
             <div
