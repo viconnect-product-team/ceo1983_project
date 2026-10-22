@@ -234,7 +234,7 @@ export class AuthService {
         username: data.username,
         phone: data.phone,
         companyName: data.company || data.companyName,
-        portalUrl: 'https://14.225.217.232:5444/association/login',
+        portalUrl: process.env.APP_URL ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login` : 'https://ceo1983.viconnect.vn/association/login',
       }).catch((err) => {
         console.warn('Could not send app welcome email:', err?.message);
       });

@@ -21,6 +21,8 @@ import { VotingModule } from './voting/voting.module';
 import { MeetingsModule } from './meetings/meetings.module';
 import { AdvertisementsModule } from './advertisements/advertisements.module';
 import { TasksModule } from './tasks/tasks.module';
+import { FeedModule } from './feed/feed.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { TasksModule } from './tasks/tasks.module';
     VotingModule,
     AdvertisementsModule,
     TasksModule,
+    FeedModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

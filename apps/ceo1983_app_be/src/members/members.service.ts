@@ -1352,7 +1352,7 @@ export class MembersService {
               memberCode: current.code || id,
               associationName: 'CLB Doanh Nhân CEO 1983',
               companyName: current.company || current.organization || name,
-              portalUrl: 'https://14.225.217.232:5444/association/login',
+              portalUrl: process.env.APP_URL ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login` : 'https://ceo1983.viconnect.vn/association/login',
               username: memberEmail,
               passwordRaw: rawPass,
             }).catch((err) => console.warn('Could not send member approval email:', err?.message));
@@ -3153,7 +3153,7 @@ export class MembersService {
     let emailMessage = '';
     const portalUrl = process.env.APP_URL 
       ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login`
-      : 'http://14.225.217.232:5002/association/login';
+      : 'https://ceo1983.viconnect.vn/association/login';
     const compName = member.company_name || member.company || member.organization || member.name;
 
     try {
@@ -3217,7 +3217,66 @@ export class MembersService {
       message: `Đã phê duyệt thành công hội viên ${member.name} (${memberCode}) và gửi email tài khoản!`,
     };
   }
+
+  async getMembersByDepartment() {
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        m.id,
+        m.code,
+        COALESCE(m.contact, m.name) AS name,
+        COALESCE(m.company_name, m.name) AS company,
+        COALESCE(m.executive_role, 'Hội viên') AS title,
+        COALESCE(m.avatar_url, m.avatar) AS avatar,
+        COALESCE(m.department, 'Hội viên ceo1983') AS department,
+        m.phone,
+        m.email
+      FROM public.members m
+      WHERE m.status = 'active'
+      ORDER BY m.department ASC, m.name ASC
+    `.catch(() => []);
+
+    const deptsOrder = [
+      'Ban Điều Hành',
+      'Ban Thành viên',
+      'Ban xúc tiến',
+      'Ban truyền thông',
+      'Ban tài chính',
+      'Ban thiện nguyện',
+      'Ban Thư Ký',
+      'Hội viên ceo1983',
+    ];
+
+    const groupedMap: Record<string, any[]> = {};
+    for (const dept of deptsOrder) {
+      groupedMap[dept] = [];
+    }
+
+    for (const row of rows) {
+      const dept = row.department || 'Hội viên ceo1983';
+      if (!groupedMap[dept]) {
+        groupedMap[dept] = [];
+      }
+      groupedMap[dept].push({
+        id: row.id,
+        code: row.code,
+        name: row.name,
+        company: row.company,
+        title: row.title,
+        avatar: row.avatar,
+        department: dept,
+        phone: row.phone,
+        email: row.email,
+      });
+    }
+
+    return Object.entries(groupedMap).map(([department, members]) => ({
+      department,
+      count: members.length,
+      members,
+    }));
+  }
 }
+
 
 
 

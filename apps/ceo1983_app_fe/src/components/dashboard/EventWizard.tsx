@@ -29,6 +29,8 @@ type Info = {
   name: string;
   tagline?: string;
   date: string;
+  startTime?: string;
+  endTime?: string;
   location: string;
   capacity: string;
   type: EventType;
@@ -91,6 +93,8 @@ function EventWizardDialog({
     name: "",
     tagline: defaultTpl.tagline,
     date: "",
+    startTime: "08:30",
+    endTime: "11:30",
     location: "",
     capacity: "",
     type: "forum",
@@ -109,6 +113,8 @@ function EventWizardDialog({
       name: "",
       tagline: defaultTpl.tagline,
       date: "",
+      startTime: "08:30",
+      endTime: "11:30",
       location: "",
       capacity: "",
       type: "forum",
@@ -212,6 +218,9 @@ function EventWizardDialog({
           name: info.name.trim(),
           tagline: (info.tagline || "").trim(),
           date: info.date,
+          startTime: (info.startTime || "08:30").trim(),
+          endTime: (info.endTime || "11:30").trim(),
+          time: `${(info.startTime || "08:30").trim()} - ${(info.endTime || "11:30").trim()}`,
           location: info.location.trim(),
           address: info.location.trim(),
           capacity: Number(info.capacity) || 0,
@@ -632,6 +641,36 @@ function InfoStep({
               {errors.capacity}
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Thời gian bắt đầu - kết thúc */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelCls} htmlFor="ewz-start-time">
+            Giờ bắt đầu (VD: 08:30)
+          </label>
+          <input
+            id="ewz-start-time"
+            type="text"
+            className={inputCls}
+            placeholder="08:30"
+            value={info.startTime ?? ""}
+            onChange={(e) => setInfo({ ...info, startTime: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="ewz-end-time">
+            Giờ kết thúc (VD: 11:30)
+          </label>
+          <input
+            id="ewz-end-time"
+            type="text"
+            className={inputCls}
+            placeholder="11:30"
+            value={info.endTime ?? ""}
+            onChange={(e) => setInfo({ ...info, endTime: e.target.value })}
+          />
         </div>
       </div>
 

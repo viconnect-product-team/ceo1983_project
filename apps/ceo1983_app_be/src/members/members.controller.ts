@@ -229,6 +229,12 @@ export class MembersController {
   }
 
   @UseGuards(OptionalJwtAuthGuard)
+  @Get('by-department')
+  async getMembersByDepartment() {
+    return this.membersService.getMembersByDepartment();
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
   async listMembers(
     @Request() req: any,

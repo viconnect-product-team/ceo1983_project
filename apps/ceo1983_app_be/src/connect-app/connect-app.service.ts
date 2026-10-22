@@ -1634,6 +1634,7 @@ export class ConnectAppService implements OnModuleInit {
   updateOpportunity(userId: string, id: string, data: any) { return this.opportunityService.updateOpportunity(userId, id, data); }
   toggleOpportunityStatus(userId: string, id: string) { return this.opportunityService.toggleOpportunityStatus(userId, id); }
   listMyOpportunities(userId: string) { return this.opportunityService.listMyOpportunities(userId); }
+  getOpportunityReport(userId: string) { return this.opportunityService.getOpportunityReport(userId); }
   expressOpportunityInterest(userId: string, oppId: string, message?: string) { return this.opportunityService.expressOpportunityInterest(userId, oppId, message); }
   incrementOpportunityView(id: string) { return this.opportunityService.incrementOpportunityView(id); }
   getOpportunityInterestedMembers(id: string) { return this.opportunityService.getOpportunityInterestedMembers(id); }

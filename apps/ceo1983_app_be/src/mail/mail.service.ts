@@ -4,6 +4,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as QRCode from 'qrcode';
 
+const DEFAULT_APP_URL = process.env.APP_URL 
+  ? process.env.APP_URL.replace(/\/$/, '') 
+  : 'https://ceo1983.viconnect.vn';
+
+const DEFAULT_CRM_URL = process.env.CRM_URL 
+  ? process.env.CRM_URL.replace(/\/$/, '') 
+  : 'https://crm.ceo1983.viconnect.vn';
+
 export interface SendAccountEmailOptions {
   to: string;
   fullName: string;
@@ -413,8 +421,8 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
-    const crmUrl = 'https://14.225.217.232:5443/auth';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
+    const crmUrl = `${DEFAULT_CRM_URL}/auth`;
 
     const subject = `[CLB CEO 1983] Chào mừng Gia nhập — Thông tin Tài khoản Đăng nhập của Anh/Chị ${fullName}`;
 
@@ -622,7 +630,7 @@ export class MailService {
       vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vietqr_payment_qr', `vietqr-${registrationId}.png`);
     }
 
-    const appEventsUrl = 'https://14.225.217.232:5444/association/events';
+    const appEventsUrl = `${DEFAULT_APP_URL}/association/events`;
     const qrSrc = qrAttachment
       ? 'cid:event_ticket_qr'
       : (qrCodeUrl || qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`);
@@ -930,7 +938,7 @@ export class MailService {
     <div class="footer">
       <p style="margin: 0 0 6px 0; font-weight: 700; color: #f8fafc;">CLB DOANH NHÂN CEO 1983 (HANOIBA)</p>
       <p style="margin: 0 0 10px 0;">Tầng 6, Tòa nhà VIONE, Số 83 Vũ Trọng Phụng, Thanh Xuân, Hà Nội</p>
-      <p style="margin: 0;">Hotline: 0988 198 300 • Website: <a href="https://ceo1983.vn">ceo1983.vn</a></p>
+      <p style="margin: 0;">Hotline: 0988 198 300 • Cổng thông tin: <a href="${DEFAULT_APP_URL}" style="color: #93c5fd; text-decoration: none;">ceo1983.viconnect.vn</a></p>
     </div>
   </div>
 </body>
@@ -957,7 +965,7 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appLoginUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
+    const appLoginUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
     const subject = `[CLB CEO 1983] Chào Mừng Anh/Chị ${fullName} Gia Nhập Ứng Dụng Doanh Nhân CEO 1983`;
 
     const html = `
@@ -1066,7 +1074,7 @@ export class MailService {
     <div class="footer">
       <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
       <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
-      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="https://14.225.217.232:5444" style="color: #93c5fd; text-decoration: none;">14.225.217.232:5444</a></div>
+      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="${DEFAULT_APP_URL}" style="color: #93c5fd; text-decoration: none;">ceo1983.viconnect.vn</a></div>
     </div>
   </div>
 </body>
@@ -1093,7 +1101,7 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appLoginUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
+    const appLoginUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
     const subject = isEmailUpdated
       ? `[CLB CEO 1983] Cập Nhật Email & Kích Hoạt Tài Khoản Thành Công — Anh/Chị ${fullName}`
       : `[CLB CEO 1983] Kích Hoạt Tài Khoản Thành Công — Anh/Chị ${fullName}`;
@@ -1210,7 +1218,7 @@ export class MailService {
     <div class="footer">
       <div class="footer-brand">CLB DOANH NHÂN CEO 1983 (HanoiBA)</div>
       <div>Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 · Email: btk@ceo1983.com</div>
-      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="https://14.225.217.232:5444" style="color: #93c5fd; text-decoration: none;">14.225.217.232:5444</a></div>
+      <div style="margin-top: 4px;">Cổng thông tin & Ứng dụng: <a href="${DEFAULT_APP_URL}" style="color: #93c5fd; text-decoration: none;">ceo1983.viconnect.vn</a></div>
     </div>
   </div>
 </body>
@@ -1237,7 +1245,7 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/login';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
     const assocTitle = associationName || 'CLB Doanh Nhân CEO 1983';
     const subject = `[${assocTitle}] Chúc Mừng Hồ Sơ Hội Viên Của Anh/Chị ${fullName} Đã Được Phê Duyệt Chính Thức`;
 
@@ -1655,7 +1663,7 @@ export class MailService {
 
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
     const isOnline = meetingType === 'online' || (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/meetings';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/meetings`;
     const subject = `[CLB CEO 1983] Thư Mời Tham Dự ${isOnline ? 'Cuộc Họp Online' : 'Cuộc Họp Trực Tiếp'}: ${meetingTitle} - ${date}`;
 
     const html = `
@@ -1754,7 +1762,7 @@ export class MailService {
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
     const isConfirmed = status === 'confirmed' || status === 'accepted';
     const isOnline = venueType === 'online' || (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/business-connect';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/business-connect`;
 
     const subject = isConfirmed
       ? `[CLB CEO 1983] Xác Nhận Lịch Hẹn Kết Nối 1-1 Thành Công với ${partnerName} - ${date}`
@@ -1859,7 +1867,7 @@ export class MailService {
     } = options;
 
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/events';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/events`;
     const subject = `[CLB CEO 1983] Xác Nhận Thanh Toán Vé Sự Kiện Thành Công — ${eventTitle} (Mã vé: #${registrationId})`;
 
     let qrAttachment: { filename: string; content: Buffer; cid: string; contentType: string } | null = null;
@@ -1990,7 +1998,7 @@ export class MailService {
 
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
     const isReminder = Boolean(reminderCount && reminderCount > 0);
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/profile';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/profile`;
     const vietQrUrlStr = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`HOIPHI ${memberCode || invoiceNo} ${memberName}`)}&accountName=${encodeURIComponent(bankOwner)}`;
     const vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vietqr_fee_qr', `vietqr-fee-${invoiceNo}.png`);
     const qrImg = vietQrAttachment ? 'cid:vietqr_fee_qr' : vietQrUrlStr;
@@ -2104,7 +2112,7 @@ export class MailService {
     } = options;
 
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/profile';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/profile`;
     const subject = `[CLB CEO 1983] Xác Nhận Hoàn Thành Hội Phí Năm ${year} — Hội Viên ${memberName}`;
 
     const html = `
@@ -2205,7 +2213,7 @@ export class MailService {
     } = options;
 
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/tasks';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/tasks`;
     const subject = `[CLB CEO 1983] Bạn Được Phân Công Công Việc Mới: [${taskCode}] ${taskTitle}`;
 
     const html = `
@@ -2302,7 +2310,7 @@ export class MailService {
     } = options;
 
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
-    const appUrl = portalUrl || 'https://14.225.217.232:5444/association/tasks';
+    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/tasks`;
     const subject = `[CLB CEO 1983] Nhắc Nhở Tiến Độ Công Việc: [${taskCode}] ${taskTitle} (Đôn đốc lần ${reminderCount})`;
 
     const html = `

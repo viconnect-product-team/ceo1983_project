@@ -35,6 +35,9 @@ export type MyOpportunity = {
   claimedCompany?: string;
   status?: string;
   deadline?: string;
+  industry?: string;
+  region?: string;
+  tradeType?: "buyer" | "seller" | string;
 };
 
 // ---------- Opportunities ----------

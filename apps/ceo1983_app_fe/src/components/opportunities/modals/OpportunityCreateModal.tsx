@@ -10,9 +10,12 @@ import {
   User,
   Phone,
   Briefcase,
+  Users,
 } from "lucide-react";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { formatDisplayDate } from "@/lib/date-format";
+import { fetchNestApi } from "@/lib/api-client";
+import { toast } from "sonner";
 
 export interface OpportunityCreateModalProps {
   isOpen: boolean;
@@ -95,6 +98,32 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
   creating,
   resolveMediaUrl,
 }) => {
+  const [selectedDept, setSelectedDept] = React.useState<string>("all");
+  const [deptList, setDeptList] = React.useState<any[]>([]);
+  const [loadingDepts, setLoadingDepts] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    setLoadingDepts(true);
+    fetchNestApi<any[]>("/members/by-department")
+      .then((res) => {
+        if (Array.isArray(res)) {
+          setDeptList(res);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDepts(false));
+  }, [isOpen]);
+
+  const activeMembersInDept = React.useMemo(() => {
+    if (!deptList || deptList.length === 0) return [];
+    if (selectedDept === "all") {
+      return deptList.flatMap((d) => d.members || []);
+    }
+    const found = deptList.find((d) => d.department === selectedDept);
+    return found?.members || [];
+  }, [deptList, selectedDept]);
+
   if (typeof document === "undefined" || !isOpen) return null;
 
   return createPortal(
@@ -373,9 +402,69 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
 
             {/* Contact information fields */}
             <div className="rounded-2xl p-3.5 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-500/20 space-y-2.5">
-              <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
-                <User className="h-3.5 w-3.5" /> Thông tin người đại diện kết nối
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-[11.5px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
+                  <User className="h-3.5 w-3.5" /> Thông tin người đại diện / Người nhận cơ hội
+                </p>
+                {loadingDepts && <Loader2 className="w-3 h-3 animate-spin text-amber-600" />}
+              </div>
+
+              {/* Chọn theo Ban chuyên môn (API Call theo ban) */}
+              <div className="rounded-xl bg-white/80 dark:bg-black/30 p-2.5 border border-amber-500/20 space-y-2">
+                <span className="text-[11px] font-bold text-[#003B95] dark:text-amber-300 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" /> Chọn nhanh hội viên nhận cơ hội theo Ban
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                      Ban chuyên môn:
+                    </label>
+                    <select
+                      value={selectedDept}
+                      onChange={(e) => setSelectedDept(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
+                    >
+                      <option value="all">Tất cả các ban ({deptList.reduce((acc, d) => acc + (d.count || 0), 0)} hội viên)</option>
+                      {deptList.map((d) => (
+                        <option key={d.department} value={d.department}>
+                          {d.department} ({d.count} người)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                      Chọn hội viên trong ban:
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        const mId = e.target.value;
+                        if (!mId) return;
+                        const chosen = activeMembersInDept.find((m: any) => String(m.id) === mId);
+                        if (chosen) {
+                          setNewContactName(chosen.name || "");
+                          if (chosen.phone) setNewContactPhone(chosen.phone);
+                          if (chosen.title) setNewContactTitle(chosen.title);
+                          if (chosen.company) setNewCompany(chosen.company);
+                          toast.success(`Đã chọn: ${chosen.name} (${chosen.department})`);
+                        }
+                      }}
+                      defaultValue=""
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
+                    >
+                      <option value="" disabled>-- Bấm để chọn hội viên ({activeMembersInDept.length}) --</option>
+                      {activeMembersInDept.map((m: any) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} - {m.company || m.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">

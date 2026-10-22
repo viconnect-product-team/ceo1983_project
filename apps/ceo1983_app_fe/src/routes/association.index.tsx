@@ -56,6 +56,12 @@ import { isBlackBackgroundLogo } from "@/components/member/Ceo1983BusinessCardVi
 import { GuidedTourModal, type TourStep } from "@/components/common/GuidedTourModal";
 import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { PersonalProfileBottomSheet, type PersonalProfileData } from "@/components/common/PersonalProfileBottomSheet";
+import {
+  CustomHomeShortcutsModal,
+  ALL_SHORTCUT_OPTIONS,
+  DEFAULT_SHORTCUT_IDS,
+  getShortcutIcon,
+} from "@/components/member/CustomHomeShortcutsModal";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import heroImg from "@/assets/vba-hero.jpg";
 import giftImg from "@/assets/vba-gift.png";
@@ -588,6 +594,28 @@ function Home() {
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
+  const [customShortcutsModalOpen, setCustomShortcutsModalOpen] = useState(false);
+  const [activeShortcutIds, setActiveShortcutIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_SHORTCUT_IDS;
+    try {
+      const saved = localStorage.getItem("vba_user_custom_shortcuts");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+      }
+    } catch {}
+    return DEFAULT_SHORTCUT_IDS;
+  });
+
+  const handleSaveShortcuts = (ids: string[]) => {
+    setActiveShortcutIds(ids);
+    try {
+      localStorage.setItem("vba_user_custom_shortcuts", JSON.stringify(ids));
+      if (user?.id) {
+        localStorage.setItem(`vba_user_custom_shortcuts_${user.id}`, JSON.stringify(ids));
+      }
+    } catch {}
+  };
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       const uId = user?.id;
@@ -1080,85 +1108,62 @@ function Home() {
           </div>
         </div>
 
-        {/* ── 8 CHỨC NĂNG CỐT LÕI (2 HÀNG 4 CỘT) ── */}
-        <div className="self-stretch px-3 py-4 flex flex-col justify-start items-start gap-3">
-          {/* Hàng 1 */}
-          <div className="self-stretch h-20 inline-flex justify-between items-start gap-1">
-            <Link to="/association/business-cards" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <IdCard className="size-6 text-[#003B95] dark:text-amber-300" />
-              </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Danh thiếp số</div>
-            </Link>
-
-            <Link to="/association/members" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 relative rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <Users className="size-6 text-[#003B95] dark:text-amber-300" />
-                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
-                  <span className="text-white text-[10px] font-bold font-sans leading-3">
-                    {directoryMembers.length > 0 ? directoryMembers.length : (member ? "12" : "10")}
-                  </span>
-                </div>
-              </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Danh bạ CEO</div>
-            </Link>
-
+        {/* ── 4 TÍNH NĂNG CỐT LÕI (CHO PHÉP HỘI VIÊN TÙY BIẾN THEO MONG MUỐN) ── */}
+        <div id="tour-quick-actions" className="self-stretch px-3 py-3 flex flex-col justify-start items-start gap-2">
+          <div className="w-full flex items-center justify-between px-1">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-['Inter']">
+              Tính năng nhanh
+            </span>
             <button
               type="button"
-              onClick={() => setUserGuideOpen(true)}
-              className="flex-1 inline-flex flex-col justify-start items-center gap-1 group cursor-pointer"
+              onClick={() => setCustomShortcutsModalOpen(true)}
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer border border-amber-500/30"
+              title="Tùy biến 4 tính năng hiển thị"
             >
-              <div className="size-14 relative rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <BookOpen className="size-6 text-[#003B95] dark:text-amber-300" />
-                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-amber-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
-                  <span className="text-white text-[10px] font-bold font-sans leading-3">Audio</span>
-                </div>
-              </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Hướng dẫn</div>
+              <Pencil className="size-3 text-amber-500" />
+              <span>Tùy biến</span>
             </button>
-
-            <Link to="/association/benefits" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <Crown className="size-6 text-[#003B95] dark:text-amber-300" />
-              </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Đặc quyền VIP</div>
-            </Link>
           </div>
+          <div className="self-stretch inline-flex justify-between items-start gap-2">
+            {activeShortcutIds.map((id) => {
+              const def = ALL_SHORTCUT_OPTIONS.find((o) => o.id === id) || ALL_SHORTCUT_OPTIONS[0];
+              let badgeVal: string | number | undefined = def.badge;
+              let badgeColor = def.badgeColor || "bg-amber-500 text-slate-900";
+              if (id === "events" && displayEvents.length > 0) {
+                badgeVal = displayEvents.length;
+                badgeColor = "bg-amber-500 text-slate-950";
+              } else if (id === "members") {
+                badgeVal = directoryMembers.length > 0 ? directoryMembers.length : (member ? "12" : "10");
+                badgeColor = "bg-red-500 text-white";
+              } else if (id === "opportunities" && totalOpportunitiesCount > 0) {
+                badgeVal = totalOpportunitiesCount;
+                badgeColor = "bg-emerald-600 text-white";
+              }
 
-          {/* Hàng 2 */}
-          <div className="self-stretch inline-flex justify-between items-start gap-1">
-            <Link to="/association/voting" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 relative rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <Vote className="size-6 text-[#003B95] dark:text-amber-300" />
-                <div className="px-1.5 py-0.5 right-[-6px] -top-2 absolute bg-rose-500 rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
-                  <span className="text-white text-[10px] font-bold font-sans leading-3">
-                    {activePollsCount > 0 ? activePollsCount : "1"}
-                  </span>
-                </div>
-              </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Biểu quyết số</div>
-            </Link>
-
-            <Link to="/association/history" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <History className="size-6 text-[#003B95] dark:text-amber-300" />
-              </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Lịch sử</div>
-            </Link>
-
-            <Link to="/association/library" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <FolderOpen className="size-6 text-[#003B95] dark:text-amber-300" />
-              </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Kho tài liệu</div>
-            </Link>
-
-            <Link to="/association/renew" className="flex-1 inline-flex flex-col justify-start items-center gap-1 group">
-              <div className="size-14 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-blue-100 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                <CreditCard className="size-6 text-[#003B95] dark:text-amber-300" />
-              </div>
-              <div className="w-20 text-center text-slate-800 dark:text-slate-200 text-xs font-semibold font-sans leading-4 tracking-tight">Hội phí</div>
-            </Link>
+              return (
+                <Link
+                  key={id}
+                  to={def.to}
+                  className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group"
+                >
+                  <div className="size-14 relative rounded-2xl bg-gradient-to-br from-amber-50 to-blue-50 dark:bg-slate-800/90 border border-amber-200/60 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                    <span className="text-[#003B95] dark:text-amber-300">
+                      {getShortcutIcon(def.iconName, "size-6")}
+                    </span>
+                    {badgeVal && (
+                      <div className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900 ${badgeColor}`}>
+                        <span className="text-[10px] font-black font-sans leading-3">
+                          {badgeVal}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-bold font-sans leading-4 tracking-tight truncate max-w-full">
+                    {def.name}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1627,6 +1632,14 @@ function Home() {
 
       {/* ── POPUP CHÚC MỪNG SINH NHẬT & TẶNG ƯU ĐÃI VIP (Req 4) ── */}
       <BirthdayCelebrationModal member={member} />
+
+      {/* ── MODAL TÙY BIẾN 4 TÍNH NĂNG CHÍNH ── */}
+      <CustomHomeShortcutsModal
+        isOpen={customShortcutsModalOpen}
+        onClose={() => setCustomShortcutsModalOpen(false)}
+        selectedIds={activeShortcutIds}
+        onSave={handleSaveShortcuts}
+      />
     </div>
   );
 }

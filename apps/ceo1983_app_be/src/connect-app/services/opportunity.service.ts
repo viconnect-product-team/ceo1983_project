@@ -971,8 +971,17 @@ export class ConnectOpportunityService {
           claimedByName: o.claimed_by_name || undefined,
           claimedAt: o.claimed_at ? new Date(o.claimed_at).toISOString() : undefined,
           claimedPhone: o.claimed_phone || undefined,
-          claimedCompany: o.claimed_company || undefined,
           status: o.status || 'open',
+          industry: o.industry || 'Đa ngành',
+          region: o.region || 'Toàn quốc',
+          tradeType: o.trade_type || (
+            (o.title + ' ' + (o.description || '')).toLowerCase().includes('tìm') ||
+            (o.title + ' ' + (o.description || '')).toLowerCase().includes('cần mua') ||
+            (o.title + ' ' + (o.description || '')).toLowerCase().includes('nhập') ||
+            (o.title + ' ' + (o.description || '')).toLowerCase().includes('kêu gọi')
+              ? 'buyer'
+              : 'seller'
+          ),
           isOwner: myIds.has(String(o.poster_id || '').toLowerCase()) || (Boolean(o.poster_code) && myIds.has(String(o.poster_code).toLowerCase())),
         };
       });
@@ -1035,4 +1044,114 @@ export class ConnectOpportunityService {
     }
   }
 
+  async getOpportunityReport(userId: string) {
+    try {
+      const allOpps = await this.prisma.$queryRaw<any[]>`
+        SELECT o.*,
+               COALESCE(m.contact, m.name, o.contact_name, 'Hội viên') as poster_name,
+               COALESCE(m.company_name, o.company, 'Doanh nghiệp CLB') as poster_company,
+               COALESCE(m.department, 'Ban kết nối') as poster_department
+        FROM public.opportunities o
+        LEFT JOIN public.members m ON m.user_id::text = o.poster_id OR m.id = o.poster_id OR m.code = o.poster_id
+        ORDER BY o.created_at DESC
+      `.catch(() => [] as any[]);
+
+      const myMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, user_id FROM public.members
+        WHERE user_id::text = ${userId} OR id = ${userId}
+      `.catch(() => [] as any[]);
+      const myIds = new Set<string>([
+        String(userId).toLowerCase(),
+        ...(myMembers[0]?.id ? [String(myMembers[0].id).toLowerCase()] : []),
+        ...(myMembers[0]?.code ? [String(myMembers[0].code).toLowerCase()] : []),
+        ...(myMembers[0]?.user_id ? [String(myMembers[0].user_id).toLowerCase()] : []),
+      ]);
+
+      let totalClubCount = allOpps.length;
+      let totalClubValue = 0;
+      let mySharedCount = 0;
+      let mySharedValue = 0;
+      let myWonCount = 0;
+      let myWonValue = 0;
+      let totalWonCount = 0;
+      let totalWonValue = 0;
+
+      const formattedList = allOpps.map((o) => {
+        const valMax = Number(o.budget_max) || Number(o.budget_min) || 0;
+        totalClubValue += valMax;
+
+        const isMine = myIds.has(String(o.poster_id || '').toLowerCase());
+        const isWon = o.status === 'claimed' || o.status === 'won' || o.status === 'closed' || !!o.claimed_by_id;
+
+        if (isMine) {
+          mySharedCount++;
+          mySharedValue += valMax;
+        }
+
+        if (isWon) {
+          totalWonCount++;
+          totalWonValue += valMax;
+          const isMyWon = myIds.has(String(o.claimed_by_id || '').toLowerCase());
+          if (isMyWon) {
+            myWonCount++;
+            myWonValue += valMax;
+          }
+        }
+
+        return {
+          id: o.id,
+          title: o.title,
+          description: o.description,
+          type: o.type === 'buy' ? 'Bên mua' : (o.type === 'sell' ? 'Bên bán' : (o.type || 'Hợp tác B2B')),
+          tradeType: o.type,
+          industry: o.industry || 'Đa ngành',
+          budgetMin: Number(o.budget_min) || 0,
+          budgetMax: Number(o.budget_max) || 0,
+          valueFormatted: valMax ? `${(valMax / 1000000).toLocaleString('vi-VN')} triệu VNĐ` : 'Thương lượng',
+          posterName: o.poster_name,
+          posterCompany: o.poster_company,
+          posterDepartment: o.poster_department,
+          claimedByName: o.claimed_by_name || null,
+          claimedCompany: o.claimed_company || null,
+          status: o.status,
+          isWon,
+          isMine,
+          createdAt: o.created_at ? new Date(o.created_at).toISOString() : null,
+          deadline: o.deadline ? new Date(o.deadline).toISOString() : null,
+        };
+      });
+
+      return {
+        ok: true,
+        summary: {
+          totalClubCount,
+          totalClubValue,
+          mySharedCount,
+          mySharedValue,
+          myWonCount,
+          myWonValue,
+          totalWonCount,
+          totalWonValue,
+        },
+        opportunities: formattedList,
+      };
+    } catch (err) {
+      console.error('getOpportunityReport error:', err);
+      return {
+        ok: false,
+        summary: {
+          totalClubCount: 0,
+          totalClubValue: 0,
+          mySharedCount: 0,
+          mySharedValue: 0,
+          myWonCount: 0,
+          myWonValue: 0,
+          totalWonCount: 0,
+          totalWonValue: 0,
+        },
+        opportunities: [],
+      };
+    }
+  }
 }
+

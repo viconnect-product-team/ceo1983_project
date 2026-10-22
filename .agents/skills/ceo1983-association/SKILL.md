@@ -62,14 +62,21 @@ apps/ceo1983_app_fe/
 
 ---
 
-## 3. Tiêu Chuẩn Giao Diện & Màu Sắc (CHỈ ĐÚNG 3 NHÓM MÀU CHUẨN CEO 1983)
+## 3. Tiêu Chuẩn Giao Diện & Hệ Màu 3 Cấp Độ Ưu Tiên Chuẩn CEO 1983
 
-Luôn luôn tuân thủ nghiêm ngặt bảng màu nhận diện chính thức của CEO 1983:
-1. **Màu Chủ Đạo Deep Cobalt Navy**: `#003B95`, `#002B70`, `#0A1A3A` (Thanh điều hướng Header, nút hành động chính CTA, huy hiệu chính thức).
-2. **Màu Nhấn Warm Amber Gold**: `#F59E0B`, `#D97706`, `#B45309`, `#FEF3C7` (Viền thẻ VIP, ngôi sao danh dự, giá trị deal CRM, nút Quan tâm).
-3. **Màu Tương Phản Trung Tính**: `#FFFFFF` (Nền trắng sáng thanh lịch) và `#0F172A` (Nền thẻ đen Obsidian sang trọng).
-- **CẤM TUYỆT ĐỐI**: Màu tím (purple), hồng (pink), xanh lá chuối (lime), xanh neon, dải màu cầu vồng.
-- **CẤM TUYỆT ĐỐI HARD DỮ LIỆU / MOCK DATA**: 100% dữ liệu phải nạp từ CSDL qua NestJS API (`fetchNestApi`).
+Luôn luôn tuân thủ nghiêm ngặt bảng màu nhận diện chính thức của CEO 1983 theo đúng 3 cấp độ ưu tiên thể hiện trạng thái:
+1. **Ưu Tiên 1 - ĐỎ (Highest Priority / Quan Trọng / Nhận Diện Thương Hiệu)**:
+   - Mã màu: `#D92525`, `#DC2626`, `#B91C1C`, `#991B1B`.
+   - Ứng dụng: Nhận diện thương hiệu chính CEO 1983, nút kêu gọi hành động quyết định (CTA then chốt), trạng thái khẩn cấp/quan trọng, huy hiệu Top 1 dẫn đầu, thông báo nổi bật.
+2. **Ưu Tiên 2 - VÀNG (Medium Priority / Vừa / Cảnh Báo & Điểm Nhấn VIP)**:
+   - Mã màu: `#F59E0B`, `#D97706`, `#B45309`, `#FEF3C7`.
+   - Ứng dụng: Trạng thái đang tiến hành, cảnh báo/nhắc nhở vừa, viền thẻ VIP, ngôi sao danh dự, giá trị deal CRM, huy hiệu Top 2-3, nút quan tâm.
+3. **Ưu Tiên 3 - XANH (Normal / Bình Thường / Thông Tin & Nền Tảng)**:
+   - Mã màu: `#003B95`, `#002B70`, `#0A1A3A`, `#0284C7` (và Emerald `#059669` cho trạng thái thành công/đã duyệt).
+   - Ứng dụng: Thanh điều hướng Header/Sidebar, thông tin bình thường, nền tảng hệ thống, trạng thái ổn định/hoàn thành.
+- **Màu Tương Phản Trung Tính**: `#FFFFFF` (Nền sáng thanh lịch) và `#0F172A` (Nền thẻ đen Obsidian sang trọng).
+- **CẤM TUYỆT ĐỐI**: Màu tím (purple), hồng (pink), xanh chuối (lime), xanh neon, dải màu cầu vồng.
+- **CẤM TUYỆT ĐỐI HARD DỮ LIỆU / MOCK DATA**: 100% dữ liệu phải nạp từ CSDL qua NestJS API (`fetchNestApi`), không làm dạng mock fake dữ liệu.
 - **KHÔNG SỬ DỤNG TỪ NGỮ KỸ THUẬT**: Không để lộ các từ như "SQL", "PostgreSQL", "public.<bảng>", "RESTful API", "Cấp bậc" trên giao diện người dùng.
 
 ### Tối Ưu Nút Bấm Thành Biểu Tượng (Button-to-Icon)
@@ -107,6 +114,7 @@ Không làm rối màn hình bằng các nút chữ cồng kềnh. Sử dụng b
 - `vba_member_company_logo`: URL logo doanh nghiệp của hội viên.
 - `vba_member_avatar_photo`: Ảnh đại diện cá nhân của hội viên.
 - `vba_member_cover_photo`: Ảnh bìa trang chủ của hội viên.
+- `vba_user_custom_shortcuts`: Lưu trữ danh sách 4 tính năng chính do hội viên tùy chọn hiển thị trên trang chủ.
 - `vba_member_permissions`: Bản đồ phân quyền tài khoản (`memberCode` -> `MemberPermissionProfile`).
 - `vba_meeting_votes`: Dữ liệu phiên biểu quyết và phiếu bầu cử.
 - Sự kiện tùy biến (Custom Events):
@@ -119,50 +127,34 @@ Không làm rối màn hình bằng các nút chữ cồng kềnh. Sử dụng b
 
 ---
 
-## 6. Quy Chuẩn Phân Quyền, AI & Vận Hành Mới (Cập Nhật 10/2026)
+## 6. Quy Chuẩn Phân Quyền, Bảng Tin, Thống Kê & Vận Hành Mới (Cập Nhật 10/2026)
 
 1. **Tách Biệt Hồ Sơ Quản Trị CRM & App Mobile**:
    - Sử dụng khóa `crm_admin_profile` và `crm_admin_avatar` cho tài khoản quản trị CRM, tuyệt đối không can thiệp hay ghi đè vào `vba_custom_profile` hay avatar hội viên mobile.
 2. **Phân Quyền Thao Tác Chi Tiết**:
    - **Tin tức CLB**: Chỉ `quan_tri`, `admin`, `chu_tich`, `truong_ban_*` mới có quyền tạo/sửa/xóa tin bài. Thành viên thông thường chỉ có quyền xem.
    - **Soát Vé / Quét Mã Check-in**: Căn cứ danh sách nhân sự soát vé trong `qrScanners` / `qrStaff` từ CRM. Riêng `quan_tri`, `chu_tich`, `admin` luôn có toàn quyền soát vé ở mọi sự kiện.
-3. **Trợ Lý AI Động (Dynamic Context Assistant)**:
-   - Tự động nạp dữ liệu tài khoản đang đăng nhập (sự kiện đã đăng ký, cơ hội quan tâm, bạn bè, cuộc hẹn B2B, hóa đơn cần thanh toán).
-   - Tự động chuyển đổi sang mô hình miễn phí thông minh (`google/gemini-2.0-flash-exp:free`, `meta-llama/llama-3.3-70b-instruct:free`) hoặc trả lời cục bộ nếu OpenRouter lỗi.
-4. **Phân Hệ Trao Đổi B2B (/network)**:
-   - Bỏ rào cản kết nối: Nhắn tin trực tiếp giữa các hội viên không cần chờ duyệt.
-   - Hỗ trợ gửi/tải tệp tin đa định dạng, ghim tin nhắn, và loại bỏ lỗi trùng lặp chức danh.
-5. **Cấu Hình Thương Hiệu Sidebar Header**:
-   - Hỗ trợ thay đổi Tên hiệp hội và Logo tại màn hình `/settings`, phát sự kiện `crm_system_branding_updated` đồng bộ ngay lập tức.
-6. **Không Mock Dữ Liệu Gói Tài Trợ**:
-   - Tải 100% dữ liệu thực từ bảng `public.sponsor_packages` và `public.sponsors`.
-7. **Đồng Bộ Danh Mục Động Marketplace (Mobile & CRM)**:
-   - Dùng `getDynamicMarketplaceCategories(products)` trích xuất phân loại mới từ sản phẩm thực tế, tự động hiển thị trên thanh danh mục lọc của cả App và CRM.
-   - Modal đăng/sửa sản phẩm hỗ trợ "+ Thêm phân loại mới..." cho phép người dùng tự điền tên phân loại.
-8. **Đại Tu Chi Tiết Sản Phẩm & Triệt Tiêu Màu Cam Shopee (#EE4D2D)**:
-   - Thay thế toàn bộ màu cam chói gắt bằng Deep Cobalt Navy `#003B95` sang trọng và Neutral Slate/White; chỉ giữ màu hổ phách vàng (`fill-amber-400`) cho icon sao đánh giá.
-9. **Đánh Giá Sản Phẩm Real Lưu CSDL PostgreSQL**:
-   - Kết nối API NestJS `GET /reviews?productId=...` và `POST /reviews` lưu trực tiếp vào bảng `public.reviews`. Cấm mock dữ liệu hay lưu local.
-10. **Bảo Mật Phân Quyền Bằng `permissions: string[]`**:
-   - Cấm lưu trữ các trường nhạy cảm hoặc cờ vai trò (`vba_is_admin`, `vba_user_role`, `vba_current_role`, `vba_user_department`, `vba_is_event_qr_scanner`, v.v.) vào `localStorage`.
-   - Kiểm soát quyền hạn hội viên và ban điều hành qua trường `permissions: string[]` được cấp từ token JWT và backend session.
-11. **Đăng Ký & Tách Bạch Danh Xưng Hội Viên vs Tên Doanh Nghiệp**:
-    - Mọi quy trình đăng ký (công khai & nội bộ) lưu name = fullName, contact = fullName, company_name = companyName, company_size = staffSize.
-    - Cột about lưu trữ JSON an toàn và phải được phân giải khi hiển thị hồ sơ chi tiết (Người đại diện, Chức vụ, Năm sinh, Quy mô nhân sự, Nhu cầu kết nối, Năng lực cung ứng). Không bao giờ hiển thị raw JSON string cho người dùng.
-12. **Mẫu Thư Cảm Ơn Đăng Ký Hội Viên**:
-    - Tự động chuyển đổi các mã định danh ngành nghề (e.g. `ind.trade` -> `Thương mại & Bán lẻ`, `ind.it` -> `Công nghệ thông tin & Viễn thông`) sang tiếng Việt rõ ràng.
-    - Không hiển thị mục "Ban nguyện vọng".
-13. **Tinh Gọn Quản Trị Phân Quyền CRM (Sub-system 1 RBAC Only)**:
-    - Loại bỏ hoàn toàn các tab con rườm rà (Phân hệ 2 & 3). Giữ duy nhất Ma trận phân quyền hệ thống (`RbacPermissionMatrix`).
-    - Phân rã vai trò thành viên thành 6 ban chuyên môn cụ thể (`thanh_vien_ban_su_kien`, `thanh_vien_ban_xuc_tien`, `thanh_vien_ban_thanh_vien`, `thanh_vien_ban_truyen_thong`, `thanh_vien_ban_tai_chinh`, `thanh_vien_ban_thien_nguyen`) và `member` (App CEO 1983).
-    - Tích hợp đầy đủ nhóm quyền ứng dụng di động (`cat_mobile_app`) lên ma trận phân quyền.
-14. **Bảng Tin Mạng Xã Hội B2B Chuẩn Doanh Nhân**:
-    - Trình bày ảnh bài viết kiểu Facebook (1 ảnh hero, 2 ảnh tỉ lệ 50/50, 3 ảnh 1 trái 2 phải, 4+ ảnh lưới 2x2 kèm huy hiệu +N).
-    - TUYỆT ĐỐI KHÔNG có tính năng bình luận hay thả cảm xúc (like, haha, tim).
-    - Chỉ phục vụ 2 hành động giao thương thực chiến: "Nhắn tin" trực tiếp và "Setup cuộc gặp 1-1".
-15. **Điều Hướng Màn Hình Đổi Mật Khẩu Bắt Buộc**:
-    - Khi `required === "true"`, cho phép hội viên bấm nút "Quay lại màn hình đăng nhập" hoặc mũi tên quay lại để hủy phiên hiện tại và trở về màn hình đăng nhập an toàn.
-16. **Tắt Vĩnh Viễn Trợ Lý AI**:
-    - Khi người dùng bấm biểu tượng tắt (X) trên widget trợ lý AI, hệ thống tắt hoàn toàn AI (`setVoiceAiEnabled(false)` và `ceo1983_ai_disabled_permanently = true`), triệt tiêu nút thu gọn mini dock, và cấm xuất hiện trên giao diện CRM. Chỉ được kích hoạt lại khi người dùng chủ động bật trong mục Cài đặt.
-17. **Truy Vấn Bảng Hệ Thống Không Có Trong Prisma Schema**:
-    - Khi truy vấn các bảng hệ thống độc lập như `user_profiles`, bắt buộc dùng raw SQL an toàn (`$executeRawUnsafe` / `$queryRawUnsafe`) để tránh lỗi crash HTTP 500.
+3. **Bảng Tin Đa Danh Mục Tại Tab Tin Nhắn (Social Newsfeed & B2B Feed)**:
+   - Tích hợp tại tab `/association/messages` với thanh chuyển đổi "Bảng tin" và "Tin nhắn".
+   - Danh mục thanh tiêu đề: Tất cả, Tin tức (kèm chọn phân lọc theo từng ban), Cơ hội chia sẻ, Sự kiện & Họp ban, Sản phẩm sàn Marketplace.
+   - Tìm kiếm chuẩn xác theo danh mục hội viên đang chọn.
+   - Tương tác mạng xã hội đầy đủ: Bình luận (Comment), Thả tim (Like/Unlike), Chia sẻ (Share).
+   - Đăng bài đa ảnh: Hỗ trợ chọn/tải nhiều ảnh cùng lúc, tích hợp công cụ kéo/di chuyển/cắt ảnh (Crop/Pan/Zoom) trước khi xuất bản.
+4. **Tùy Chỉnh 4 Tính Năng Chính Trên Trang Chủ**:
+   - Cho phép hội viên tự chọn 4 tính năng mong muốn nhất được hiển thị trên Trang chủ thông qua modal tùy chọn, lưu vào cấu hình hội viên.
+5. **Cơ Hội Chia Sẻ, Chọn Theo Ban & Báo Cáo**:
+   - Báo cáo và xuất báo cáo cơ hội (Excel/CSV).
+   - Biểu đồ trực quan so sánh: Cơ hội đã chia sẻ, Cơ hội deal được và Tổng cơ hội toàn CLB. Bấm xem chi tiết chuyển sang màn Thống kê chuyên sâu.
+   - Chia sẻ cơ hội: Chọn người nhận thông qua API lọc danh sách thành viên theo từng Ban chuyên trách.
+6. **Hệ Thống Thống Kê Chuyên Sâu (Dedicated Analytics)**:
+   - **Mobile App**:
+     - Thống kê lượt tương tác, giá trị mang lại cho CEO 1983 (VND), thống kê cơ hội (tổng cơ hội, lượt trao, lượt deal thành công).
+     - Biểu đồ cột kết hợp đường timeline biến động theo ngày (nhảy số theo từng khung giờ).
+     - Vinh danh Top 1: Hiện avatar lớn nổi bật của người dẫn đầu, bấm vào hiển thị thông tin và số liệu thực tế.
+     - Dạng Accordion đóng mở cho Top 3 người dẫn đầu.
+     - Thống kê hội viên ít tham gia nhất cần ban điều hành quan tâm, hỗ trợ gắn kết.
+   - **CRM Dashboard**:
+     - 5 chế độ hiển thị chuyên nghiệp: 1. Lưới (Grid/Cards), 2. Dashboard KPI, 3. Biểu đồ cây (Treemap), 4. Biểu đồ tròn (Donut), 5. Cây đơn vị / Tổ chức (Org Unit Tree).
+     - Luôn có tính năng Xuất file Excel và Nhập (Import) file Excel cho từng danh mục.
+7. **Truy Vấn Bảng Hệ Thống Không Có Trong Prisma Schema**:
+   - Khi truy vấn các bảng hệ thống độc lập như `user_profiles`, `feed_posts`, `feed_comments`, bắt buộc dùng raw SQL an toàn (`$executeRawUnsafe` / `$queryRawUnsafe`) để tránh lỗi crash HTTP 500.

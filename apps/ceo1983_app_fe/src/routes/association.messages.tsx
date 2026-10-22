@@ -7,14 +7,17 @@ import { useServerData } from "@/hooks/use-server-data";
 import { listMembers } from "@/lib/member-app.functions";
 import { ConversationList } from "@/components/messages/ConversationList";
 import { ChatThread } from "@/components/messages/ChatThread";
+import { FeedView } from "@/components/feed/FeedView";
 import type { MyConversation, DirectoryMember } from "@/components/messages/types";
-import { AlertTriangle, RotateCcw, MessageSquare } from "lucide-react";
+import { AlertTriangle, RotateCcw, MessageSquare, Newspaper } from "lucide-react";
 
 export { isSelfUser } from "@/components/messages/message-utils";
 
 const messagesSearchSchema = z.object({
   peerCode: z.string().optional(),
   peerName: z.string().optional(),
+  tab: z.enum(["feed", "messages"]).optional(),
+  postId: z.string().optional(),
 });
 
 export const Route = createFileRoute("/association/messages")({
@@ -88,6 +91,12 @@ function MessagesScreen() {
     "vba_directory_members",
   );
 
+  const [mainTab, setMainTab] = useState<"feed" | "messages">(() => {
+    if (search.peerCode) return "messages";
+    if (search.tab === "messages") return "messages";
+    return "feed";
+  });
+
   const [active, setActive] = useState<MyConversation | null>(() => {
     if (search.peerCode) {
       return {
@@ -110,6 +119,7 @@ function MessagesScreen() {
         time: "Vừa xong",
         unread: 0,
       });
+      setMainTab("messages");
     }
   }, [search.peerCode, search.peerName]);
 
@@ -145,7 +155,43 @@ function MessagesScreen() {
       {active ? (
         <ChatThread peer={active} onBack={() => setActive(null)} members={members || []} />
       ) : (
-        <ConversationList onOpen={handleOpenConversation} members={members || []} />
+        <div className="w-full min-h-screen bg-stone-50 dark:bg-slate-950 flex flex-col pb-24 font-sans">
+          {/* ── SEGMENTED TOP BAR: BẢNG TIN vs TIN NHẮN ── */}
+          <div className="ceo-safe-sticky sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2.5 shadow-xs">
+            <div className="w-full max-w-sm mx-auto grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setMainTab("feed")}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mainTab === "feed"
+                    ? "bg-white dark:bg-slate-700 text-red-600 dark:text-red-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <Newspaper className="size-4" />
+                <span>Bảng tin CLB</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMainTab("messages")}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mainTab === "messages"
+                    ? "bg-white dark:bg-slate-700 text-[#003B95] dark:text-amber-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <MessageSquare className="size-4" />
+                <span>Tin nhắn</span>
+              </button>
+            </div>
+          </div>
+
+          {mainTab === "feed" ? (
+            <FeedView />
+          ) : (
+            <ConversationList onOpen={handleOpenConversation} members={members || []} />
+          )}
+        </div>
       )}
     </MessagesErrorBoundary>
   );

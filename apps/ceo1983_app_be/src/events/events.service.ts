@@ -220,6 +220,11 @@ export class EventsService implements OnModuleInit {
       sponsors: parseJsonArraySafe(r.sponsors),
       photoGalleryUrl: sanitizeGalleryUrl(r.photo_gallery_url || r.photoGalleryUrl),
       tagline: r.tagline ?? '',
+      startTime: r.start_time ?? (r.time ? String(r.time).slice(0, 5) : '08:30'),
+      endTime: r.end_time ?? '11:30',
+      time: r.start_time && r.end_time ? `${r.start_time} - ${r.end_time}` : (r.start_time || '08:30 - 11:30'),
+      agenda: parseJsonArraySafe(r.agenda),
+      checkinQr: r.checkin_qr ?? null,
       ticketPrice: r.ticket_price !== undefined && r.ticket_price !== null ? Number(r.ticket_price) : (r.fee !== undefined && r.fee !== null ? Number(r.fee) : 0),
       fee: r.ticket_price !== undefined && r.ticket_price !== null ? Number(r.ticket_price) : (r.fee !== undefined && r.fee !== null ? Number(r.fee) : 0),
       createdAt: r.created_at,
@@ -530,10 +535,16 @@ export class EventsService implements OnModuleInit {
     // Validate địa điểm trùng khung giờ
     await this.validateEventLocationConflict(safeDate, data.location ?? '');
 
+    const startTime = data.startTime ? String(data.startTime).trim() : (data.time ? String(data.time).split('-')[0]?.trim() : '08:30');
+    const endTime = data.endTime ? String(data.endTime).trim() : (data.time ? String(data.time).split('-')[1]?.trim() : '11:30');
+    const rawAgenda = data.agenda !== undefined ? data.agenda : [];
+    const agendaJson = JSON.stringify(Array.isArray(rawAgenda) ? rawAgenda : []);
+    const checkinQr = data.checkinQr ? String(data.checkinQr).trim() : null;
+
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.events (
-          id, name, tagline, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, created_at, updated_at
+          id, name, tagline, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, start_time, end_time, agenda, checkin_qr, created_at, updated_at
         ) VALUES (
           ${eventId},
           ${data.name},
@@ -554,6 +565,10 @@ export class EventsService implements OnModuleInit {
           ${photoGallery},
           ${scannersJson}::jsonb,
           ${sponsorsJson}::jsonb,
+          ${startTime},
+          ${endTime},
+          ${agendaJson}::jsonb,
+          ${checkinQr},
           now(),
           now()
         )
@@ -561,7 +576,7 @@ export class EventsService implements OnModuleInit {
     } catch {
       await this.prisma.$executeRaw`
         INSERT INTO public.events (
-          id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, created_at, updated_at
+          id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, start_time, end_time, agenda, checkin_qr, created_at, updated_at
         ) VALUES (
           ${eventId},
           ${data.name},
@@ -581,6 +596,10 @@ export class EventsService implements OnModuleInit {
           ${photoGallery},
           ${scannersJson}::jsonb,
           ${sponsorsJson}::jsonb,
+          ${startTime},
+          ${endTime},
+          ${agendaJson}::jsonb,
+          ${checkinQr},
           now(),
           now()
         )
@@ -686,6 +705,12 @@ export class EventsService implements OnModuleInit {
     // Validate địa điểm trùng khung giờ khi cập nhật
     await this.validateEventLocationConflict(safeDate, location ?? '', id);
 
+    const startTime = data.startTime !== undefined ? (data.startTime ? String(data.startTime).trim() : null) : current.start_time;
+    const endTime = data.endTime !== undefined ? (data.endTime ? String(data.endTime).trim() : null) : current.end_time;
+    const rawAgenda = data.agenda !== undefined ? data.agenda : current.agenda;
+    const agendaJson = JSON.stringify(Array.isArray(rawAgenda) ? rawAgenda : (rawAgenda ? [rawAgenda] : []));
+    const checkinQr = data.checkinQr !== undefined ? (data.checkinQr ? String(data.checkinQr).trim() : null) : current.checkin_qr;
+
     try {
       await this.prisma.$executeRaw`
         UPDATE public.events SET
@@ -704,6 +729,10 @@ export class EventsService implements OnModuleInit {
           photo_gallery_url = ${photoGallery},
           qr_scanners = ${scannersJson}::jsonb,
           sponsors = ${sponsorsJson}::jsonb,
+          start_time = ${startTime},
+          end_time = ${endTime},
+          agenda = ${agendaJson}::jsonb,
+          checkin_qr = ${checkinQr},
           updated_at = now()
         WHERE id = ${id}
       `;
@@ -724,6 +753,10 @@ export class EventsService implements OnModuleInit {
           photo_gallery_url = ${photoGallery},
           qr_scanners = ${scannersJson}::jsonb,
           sponsors = ${sponsorsJson}::jsonb,
+          start_time = ${startTime},
+          end_time = ${endTime},
+          agenda = ${agendaJson}::jsonb,
+          checkin_qr = ${checkinQr},
           updated_at = now()
         WHERE id = ${id}
       `;

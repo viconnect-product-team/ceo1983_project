@@ -2496,3 +2496,65 @@ Toàn bộ 138 hình ảnh minh chứng thực tế trên hệ thống được 
 ### 9.6. Cơ Chế Tắt Vĩnh Viễn Trợ Lý AI (Permanent AI Disablement)
 * **Quy Trình Tắt:** Khi người dùng bấm biểu tượng (X) trên widget trợ lý AI, hệ thống lập tức tắt hoàn toàn trợ lý (`setVoiceAiEnabled(false)`, ghi nhớ cờ vĩnh viễn `ceo1983_ai_disabled_permanently = true`), xóa bỏ nút thu gọn mini dock và chặn tuyệt đối không cho xuất hiện trên toàn bộ các trang CRM quản trị.
 * **Cơ Chế Bật Lại:** Trợ lý chỉ được phép hiển thị trở lại khi người dùng chủ động truy cập trang Cài đặt & Bảo mật (`/association/settings`) và gạt bật lại công tắc Trợ lý AI.
+
+### 9.7. Hệ Thống 3 Cấp Độ Màu Sắc Nhận Diện Thương Hiệu Chuẩn CEO 1983
+Chuẩn hóa 3 màu nhận diện thương hiệu tương ứng với 3 cấp độ ưu tiên thể hiện trạng thái trên toàn bộ giao diện Mobile App và Web CRM:
+1. **Ưu Tiên 1 - ĐỎ (Highest Priority / Quan Trọng / Nhận Diện Thương Hiệu)**:
+   - Màu nhận diện: `#D92525`, `#DC2626`, `#B91C1C`.
+   - Ý nghĩa: Trạng thái quan trọng, cảnh báo khẩn cấp, nút hành động chính (Primary CTA), biểu tượng thương hiệu CEO 1983, vinh danh Top 1 xuất sắc nhất.
+2. **Ưu Tiên 2 - VÀNG (Medium Priority / Vừa / Cảnh Báo & Điểm Nhấn VIP)**:
+   - Màu nhận diện: `#F59E0B`, `#D97706`, `#B45309`, `#FEF3C7`.
+   - Ý nghĩa: Trạng thái đang diễn ra / cần lưu ý vừa, viền thẻ VIP, ngôi sao danh dự, giá trị deal CRM, huy hiệu Top 2-3, nút Quan tâm.
+3. **Ưu Tiên 3 - XANH (Normal / Bình Thường / Thông Tin & Nền Tảng)**:
+   - Màu nhận diện: `#003B95`, `#002B70`, `#0284C7` (và Emerald `#059669` cho thành công/đã duyệt).
+   - Ý nghĩa: Thanh điều hướng Header/Sidebar, trạng thái hoàn thành, thông tin bình thường và nền tảng giao diện.
+
+### 9.8. Đặc Tả Bảng Tin Đa Danh Mục Tại Tab Tin Nhắn (Social & B2B Newsfeed)
+* **Vị Trí & Cấu Trúc:** Tích hợp trực tiếp tại màn hình `/association/messages` với thanh chuyển đổi giữa "Bảng tin" và "Tin nhắn".
+* **Danh Mục Phân Loại Header:**
+  - **Tất cả:** Tổng hợp bài đăng từ toàn bộ các nguồn trong hệ sinh thái.
+  - **Tin tức:** Tin hoạt động hiệp hội, kèm bộ lọc phụ (Sub-filter) theo từng ban: "Tất cả ban", "Ban Điều Hành", "Ban Thành Viên", "Ban Xúc Tiến", "Ban Truyền Thông", "Ban Tài Chính", "Ban Thiện Nguyện".
+  - **Cơ hội chia sẻ:** Tổng hợp các cơ hội kết nối giao thương B2B mới nhất.
+  - **Sự kiện & Họp ban:** Các sự kiện đang diễn ra và lịch họp giao ban chuyên môn.
+  - **Sản phẩm B2B:** Các giải pháp/sản phẩm được chia sẻ từ sàn giao thương Marketplace.
+* **Tìm Kiếm:** Thanh tìm kiếm thời gian thực lọc bài đăng chuẩn xác theo danh mục và nội dung hội viên lựa chọn.
+* **Tương Tác Xã Hội:**
+  - Thả tim (Like/Unlike): Lưu DB và nhảy số tương tác realtime.
+  - Bình luận (Comments): Mở ngăn kéo bình luận trao đổi thông tin, phản hồi trực tiếp.
+  - Chia sẻ (Share): Sao chép liên kết hoặc chia sẻ thông qua Web Share API hệ thống.
+* **Đăng Bài & Đa Ảnh (Multi-Image Crop & Pan):**
+  - Cho phép tải lên nhiều ảnh đồng thời.
+  - Tích hợp công cụ chỉnh sửa: Kéo di chuyển ảnh (pan), phóng to thu nhỏ (zoom), và cắt ảnh chuẩn khung (crop) trước khi đăng.
+* **Cam Kết Dữ Liệu:** 100% gọi API thực tế qua NestJS (`/api/feed`), lưu trữ persistent tại PostgreSQL, không mock fake data.
+
+### 9.9. Tùy Biến 4 Tính Năng Nhanh Trên Màn Hình Trang Chủ
+* **Cơ Chế:** Cung cấp nút "Tùy chỉnh" bên cạnh khối 4 phím tắt tại màn hình `/association`.
+* **Trải Nghiệm:** Hội viên được tự do chọn 4 tính năng mong muốn nhất trong danh sách các phân hệ (Sự kiện, Danh bạ hội viên, Cơ hội giao thương, Bảng tin, Gian hàng B2B, Thống kê báo cáo, Biểu quyết, Thư viện tài liệu, Thẻ VIP, Góc hội viên).
+* **Lưu Trữ:** Dữ liệu cấu hình được ghi nhớ trong cấu hình hồ sơ và `vba_user_custom_shortcuts`.
+
+### 9.10. Báo Cáo Cơ Hội, Xuất Excel & Chọn Hội Viên Nhận Cơ Hội Theo Ban
+* **Xuất Báo Cáo:** Nút xuất file Excel/CSV tổng hợp danh sách cơ hội giao thương với đầy đủ thuộc tính: Tiêu đề, Loại hình Mua/Bán, Ngành nghề, Giá trị dự kiến, Người đăng, Trạng thái, Deal chốt thành công.
+* **Biểu Đồ Cơ Hội 3 Chiều:** Hiển thị trực quan:
+  1. Số lượng và giá trị cơ hội cá nhân hội viên đã chia sẻ.
+  2. Số lượng cơ hội đã chốt deal thành công.
+  3. Tổng cơ hội giao thương của toàn bộ thành viên trong CLB CEO 1983.
+  - Nút "Xem chi tiết" điều hướng trực tiếp đến Màn hình Thống kê chuyên sâu.
+* **Chia Sẻ Cơ Hội Theo Ban:** Khi tạo/chia sẻ cơ hội và chọn người nhận, hệ thống cung cấp bộ chọn Ban chuyên môn (Ban Điều Hành, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện) và gọi API tải danh sách thành viên thuộc ban đó để người dùng lựa chọn chính xác.
+
+### 9.11. Đặc Tả Hệ Thống Thống Kê Chuyên Sâu (Dedicated Analytics Mobile & CRM)
+* **Mobile App (`/association/analytics`):**
+  - **4 Nhóm Chỉ Số:** Thống kê lượt tương tác, Thống kê giá trị mang lại cho CEO 1983 (VND), Thống kê chia sẻ cơ hội (tổng cơ hội, lượt trao, lượt deal thành công), Mức độ gắn kết hội viên.
+  - **Biểu Đồ Cột & Timeline Biến Động:** Biểu đồ cột kết hợp đường biến động timeline theo ngày (nhảy số theo từng khung giờ trong ngày: 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00).
+  - **Vinh Danh Top 1:** Hiển thị avatar lớn nổi bật của hội viên dẫn đầu, bấm vào hiển thị thông tin và số liệu thực tế chi tiết của hội viên Top 1.
+  - **Dạng Accordion Đóng/Mở Cho Top 3:** Thiết kế khối accordion mở rộng/thu gọn hiển thị chi tiết số liệu của 3 người dẫn đầu.
+  - **Hội Viên Ít Tham Gia Cần Quan Tâm:** Thống kê danh sách hội viên có mức độ tương tác thấp để ban điều hành chủ động quan tâm, gắn kết.
+* **Web CRM Dashboard (`/admin/analytics`):**
+  - **5 Chế Độ Hiển Thị (5 View Modes):**
+    1. Dạng lưới (Grid Cards KPI).
+    2. Dashboard tổng hợp (Biểu đồ cột, đường biến động, chỉ số KPI).
+    3. Biểu đồ cây (Treemap phân bổ giá trị theo ngành nghề).
+    4. Biểu đồ tròn (Donut phân bổ theo 6 Ban và loại giao thương).
+    5. Cây đơn vị / Tổ chức (Org Unit Tree cơ cấu Ban Chấp Hành, Ban Điều Hành và 6 Ban chuyên trách).
+  - **Xuất / Nhập Excel:** Luôn có tính năng Xuất file Excel báo cáo và Nhập file Excel cập nhật dữ liệu cho từng danh mục thống kê.
+  - **Kết Nối Real API:** 100% dữ liệu truy vấn trực tiếp từ PostgreSQL thông qua NestJS endpoints.
+

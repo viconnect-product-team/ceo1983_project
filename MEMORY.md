@@ -1,6 +1,55 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 22/10/2026 (Triển Khai 5 Yêu Cầu Nâng Cấp Toàn Diện: Báo Cáo Cơ Hội & Biểu Đồ 3 Bậc, Tùy Biến 4 Tính Năng Trang Chủ, Bảng Tin Mới Tab Tin Nhắn, Module Thống Kê Chuyên Biệt Mobile & CRM 5 View, Chuẩn Hóa 3 Màu Thương Hiệu - `SKILL.md`, `SRS.md`, `feed_posts`, `feed.service.ts`, `feed.controller.ts`, `analytics.service.ts`, `analytics.controller.ts`, `members.service.ts`, `opportunity.service.ts`, `OpportunityAnalyticsWidget.tsx`, `CustomHomeShortcutsModal.tsx`, `association.index.tsx`, `FeedView.tsx`, `CreatePostModal.tsx`, `association.messages.tsx`, `association.analytics.tsx`, `admin.analytics.tsx`)**:
+  1. **Báo Cáo Xuất Cơ Hội & Biểu Đồ So Sánh 3 Bậc (`OpportunityAnalyticsWidget.tsx`, `opportunity.service.ts`, `opportunity.controller.ts`, `association.opportunities.tsx`)**:
+     - Thêm endpoint `GET /opportunities/report` tổng hợp số lượng và giá trị 3 bậc: "Cơ hội tôi chia sẻ", "Deal đã chốt", và "Tổng cơ hội CLB CEO 1983".
+     - Thiết kế widget biểu đồ tương tác 3 cột so sánh trực quan, hiển thị tỉ lệ chốt deal thành công (%).
+     - Tích hợp nút "Xuất báo cáo" (Excel / CSV với UTF-8 BOM chuẩn tiếng Việt có dấu).
+     - Nút "Xem chi tiết" điều hướng trực tiếp sang màn hình Trung tâm Thống kê (`/association/analytics`).
+     - Tích hợp API chọn hội viên theo Ban chuyên môn (`GET /members/by-department`) trong popup tạo và chỉnh sửa cơ hội (`OpportunityCreateModal.tsx`, `OpportunityEditModal.tsx`).
+  2. **Tùy Biến 4 Tính Năng Chính Trang Chủ (`CustomHomeShortcutsModal.tsx`, `association.index.tsx`)**:
+     - Cho phép hội viên tự chọn 4 chức năng cốt lõi mong muốn hiển thị trên trang chủ (Sự kiện, Danh bạ, Cơ hội, Góc hội viên, Thống kê CLB, Bảng tin, Danh thiếp số, Đặc quyền VIP, Biểu quyết, Sàn B2B, Kho tài liệu).
+     - Lưu trữ cá nhân hóa theo từng tài khoản hội viên qua `vba_user_custom_shortcuts_${userId}` và fallback `localStorage`.
+     - Thêm nút "Tùy biến" mở popup chọn lựa trực quan, có bộ đếm và giới hạn chọn đúng 4 tính năng.
+  3. **Bảng Tin Mới Ở Tab Tin Nhắn (`FeedView.tsx`, `CreatePostModal.tsx`, `association.messages.tsx`, `feed.service.ts`, `feed.controller.ts`)**:
+     - Tạo CSDL PostgreSQL: `feed_posts`, `feed_comments`, `feed_likes`.
+     - Thêm thanh chuyển đổi 2 chế độ `[Bảng tin CLB]` | `[Tin nhắn]` tại route `/association/messages`.
+     - Danh mục phân loại: "Tất cả", "Tin tức" (kèm bộ lọc phụ theo Ban chuyên môn), "Cơ hội chia sẻ", "Sự kiện & Họp ban", "Sàn B2B".
+     - Tìm kiếm thời gian thực theo từ khóa và danh mục.
+     - Tương tác mạng xã hội doanh nhân: Like realtime (lưu DB), Comment realtime (lưu DB), Share (sao chép liên kết hoặc Web Share API).
+     - Đăng bài đa ảnh kèm công cụ kéo di chuyển và cắt ảnh (Crop & Pan visual editor).
+  4. **Trung Tâm Thống Kê Chuyên Biệt Mobile & CRM 5 View (`association.analytics.tsx`, `admin.analytics.tsx`, `analytics.service.ts`, `analytics.controller.ts`)**:
+     - **Mobile App (`/association/analytics`)**:
+       * Biểu đồ cọc kết hợp đường timeline biến động nhảy số theo giờ (08:00 - 20:00).
+       * Thẻ vinh danh Top 1 nổi bật với avatar, vương miện vàng; bấm vào mở popup xem chi tiết số liệu thật.
+       * Danh sách Top 3 thiết kế dạng đóng ra mở vào (Accordion collapsible).
+       * Khối "Hội viên ít tham gia cần quan tâm nhất" liệt kê thành viên ít tương tác kèm nút gọi điện / nhắn tin thăm hỏi kết nối.
+     - **CRM Web (`/admin/analytics`)**:
+       * 5 chế độ hiển thị linh hoạt: 1. Dạng Lưới KPI, 2. Dashboard tổng quan, 3. Biểu đồ cây phân bố (Treemap ngành nghề), 4. Biểu đồ tròn (Donut ban ngành), 5. Cây đơn vị (Org Tree cơ cấu tổ chức).
+       * Nút xuất file Excel và nhập file Excel cho từng danh mục.
+  5. **Chuẩn Hóa Hệ Thống 3 Màu Thương Hiệu CEO 1983 & Kiểm Thử 0 Lỗi**:
+     - Phân cấp 3 mức ưu tiên: Đỏ (`#DC2626` / `#D92525` - Ưu tiên cao nhất, Quan trọng, Top 1), Vàng/Hổ phách (`#F59E0B` / `#D97706` - Ưu tiên vừa, Đang xử lý, Top 2-3), Xanh Navy/Lục (`#003B95` / `#059669` - Bình thường, Ổn định, Đã hoàn thành).
+     - Kiểm thử `tsc --noEmit` đạt 0 lỗi trên cả backend và frontend.
+- **Bản nâng cấp ngày 22/10/2026 (Khắc Phục URL Email Trỏ Về Mobile App Subdomain, Thiết Kế Lại Poster Sự Kiện Sang Trọng & Triển Khai 5 Yêu Cầu Cốt Lõi Từ Báo Cáo Cuộc Họp - `mail.service.ts`, `EventPoster.tsx`, `EventPosterModal.tsx`, `EventWizard.tsx`, `events.$eventId.tsx`, `EventDetailModal.tsx`, `association.index.tsx`, `association.card.tsx`, `card.$code.tsx`, `marketplace.service.ts`, `association.products.tsx`, `ProductPostModal.tsx`, `opportunity.service.ts`, `association.opportunities.tsx`, `association.profile.tsx`)**:
+  1. **Khắc Phục URL Email Phê Duyệt Hội Viên Trỏ Về Đúng Subdomain Mobile App (`mail.service.ts`, `.env`)**:
+     - *Nguyên nhân*: Khi hội viên mới đăng ký và được duyệt, email chào mừng chứa đường link đăng nhập bị trỏ sai về địa chỉ IP thô cũ `14.225.217.232:5444` hoặc `14.225.217.232:5002`.
+     - *Giải pháp*: Cập nhật `.env` backend khai báo `APP_URL="https://ceo1983.viconnect.vn"` và `CRM_URL="https://crm.ceo1983.viconnect.vn"`. Cập nhật `mail.service.ts` thiết lập `DEFAULT_APP_URL` và `DEFAULT_CRM_URL`, thanh lọc triệt để toàn bộ các chuỗi IP cứng trong tất cả các mẫu email phê duyệt hội viên (`sendMemberApprovalEmail`), liên kết trực tiếp đến `https://ceo1983.viconnect.vn/association/login`.
+  2. **Thiết Kế Lại Toàn Diện Poster Sự Kiện Đẳng Cấp & Đầy Đủ Tính Năng (`EventPoster.tsx`, `EventPosterModal.tsx`, `events.$eventId.tsx`, `EventWizard.tsx`, `EventDetailModal.tsx`)**:
+     - *CSDL PostgreSQL*: Bổ sung 4 cột `start_time` (text), `end_time` (text), `agenda` (jsonb), và `checkin_qr` (text) vào bảng `public.events`.
+     - *Header Banner linh hoạt*: Cho phép ban tổ chức tải ảnh nền sự kiện tùy biến hoặc sử dụng màu nhận diện sang trọng, tiêu đề sự kiện to rõ, hiển thị chính xác khung giờ bắt đầu và kết thúc (`08:30 - 11:30`).
+     - *Lịch trình Agenda theo giờ ("Giờ này nội dung gì, giờ tiếp theo nội dung gì")*: Chia mốc thời gian chi tiết từng hoạt động từ đón tiếp, khai mạc, kết nối giao thương đến tiệc Gala.
+     - *Bộ đếm số lượng người tham dự Realtime*: Tự động tăng hoặc giảm số lượng người tham dự đồng bộ theo số người đăng ký/hủy thực tế, hiển thị tỷ lệ lấp đầy chỗ ngồi trực quan.
+     - *Footer Nhà tài trợ & Mã QR Điểm Danh*: Bố trí danh vị Nhà đồng hành / Nhà tài trợ trang trọng cùng Mã QR Điểm Danh (`checkin_qr`) in sắc nét trực tiếp trên poster, cho phép quét vé soát vé siêu tốc tại cổng sự kiện.
+     - *Tích hợp đầy đủ vào mọi luồng*: Nhúng nút "Xem Poster & QR Điểm Danh" trên cả desktop preview và mobile sticky bar của chi tiết sự kiện (`events.$eventId.tsx`), cửa sổ tạo sự kiện (`EventWizard.tsx`), và modal sự kiện (`EventDetailModal.tsx`), hỗ trợ tải file ảnh poster chất lượng cao và sao chép mã QR.
+  3. **Phân Tích Báo Cáo Ý Kiến Cuộc Họp & Tự Động Nâng Cấp Hệ Thống Cho CRM & Mobile App**:
+     - *Tối ưu 4 lối tắt trang chủ Mobile (`association.index.tsx`)*: Tinh gọn bảng nút thao tác nhanh về đúng 4 trụ cột cốt lõi: 1. Sự kiện, 2. Tìm hội viên, 3. Cơ hội, 4. Góc hội viên, loại bỏ các nút phụ rườm rà.
+     - *Bật/Tắt Riêng Tư SĐT & Email trên Danh thiếp số (`association.card.tsx`, `card.$code.tsx`)*: Thêm 2 công tắc chuyển đổi hiển thị/ẩn Số điện thoại và Email trên thẻ doanh nhân số, bảo vệ thông tin cá nhân của hội viên theo mong muốn.
+     - *Quy chuẩn giới hạn tối đa 5 sản phẩm/doanh nghiệp trên sàn B2B (`marketplace.service.ts`, `association.products.tsx`, `ProductPostModal.tsx`)*: Kiểm tra số lượng sản phẩm cả ở backend lẫn frontend, chặn đăng quá 5 sản phẩm/doanh nghiệp tiêu biểu, bổ sung huy hiệu cảnh báo và banner quy định chống spam để bảo đảm chất lượng sàn giao thương B2B.
+     - *Bộ lọc Ngành nghề & Nút phân loại Bên mua/Bên bán trong Cơ hội kinh doanh (`opportunity.service.ts`, `opportunities.functions.ts`, `association.opportunities.tsx`)*: Thêm thanh chuyển đổi 3 trạng thái "Tất cả", "🛒 Bên mua", "📦 Bên bán", bổ sung danh mục lọc 10 ngành nghề trọng điểm, và gắn huy hiệu nhận diện rõ ràng trên từng thẻ cơ hội.
+     - *Lịch sử hoạt động hội viên trên Trang cá nhân Profile (`association.profile.tsx`)*: Bổ sung thống kê và hiển thị danh sách các sự kiện đã tham gia và cơ hội kinh doanh đã kết nối/bày tỏ quan tâm, có nút điều hướng xem chi tiết tức thì.
+  4. **Kiểm Thử Type Check 0 Lỗi**:
+     - Cả hai dự án `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều chạy `npx tsc --noEmit` đạt exit code 0 (0 errors).
 - **Bản nâng cấp ngày 21/10/2026 (Hoàn Thiện Bộ Slide Thuyết Trình Mới Toàn Diện Không Lỗi Ảnh, Loại Bỏ "Thẻ Mạ Vàng VIP" & Triệt Tiêu Ngôn Ngữ Kỹ Thuật - `SLIDE_CHUYEN_DOI_SO_CLB_CEO1983.html`, `.pptx`, `.md`, `generate_clean_executive_slides.js`, `generate_image1_master_slides.js`)**:
   1. **Khắc Phục Triệt Để Lỗi Ảnh Trình Chiếu**:
      - *Nguyên nhân*: Tệp ảnh nền `01_skyline_lake.jpg` trước đây bị lỗi nội dung HTML 404 (29 bytes), đồng thời các tệp HTML cũ tham chiếu đường dẫn tương đối thiếu thư mục cha `images/` (`backgrounds/...` thay vì `images/backgrounds/...`), và thiếu tệp minh chứng `04_crm_members_management.png`.

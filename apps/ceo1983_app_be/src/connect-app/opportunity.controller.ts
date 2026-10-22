@@ -17,6 +17,11 @@ export class OpportunityController {
     return this.connectAppService.listMyOpportunities(req.user.id);
   }
 
+  @Get('report')
+  async getOpportunityReport(@Request() req: any) {
+    return this.connectAppService.getOpportunityReport(req.user.id);
+  }
+
   @Get(':id')
   async getById(@Param('id') id: string) {
     return this.connectAppService.getOpportunityById(id);

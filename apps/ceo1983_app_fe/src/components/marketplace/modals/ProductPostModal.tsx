@@ -147,6 +147,12 @@ export const ProductPostModal: React.FC<ProductPostModalProps> = ({
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-4 [scrollbar-width:thin]" data-modal-body>
+            {/* Quy chuẩn sàn B2B CEO 1983: Tối đa 5 sản phẩm tiêu biểu */}
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-blue-50/90 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800/50 text-[11px] text-blue-900 dark:text-blue-200 shadow-2xs">
+              <span className="text-base shrink-0">📌</span>
+              <span className="leading-snug"><strong>Quy định Sàn B2B:</strong> Mỗi doanh nghiệp được đăng tối đa <strong>5 sản phẩm/dịch vụ tiêu biểu</strong> để đảm bảo chất lượng và uy tín kết nối giao thương.</span>
+            </div>
+
             {/* ── PHẦN 1: THÔNG TIN DOANH NGHIỆP & GIAN HÀNG ── */}
             <div className="rounded-2xl border border-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10 p-3.5 space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold text-[#003B95] dark:text-amber-400">

@@ -956,6 +956,23 @@ function ProductsScreen() {
     return mineProducts.slice(start, start + myStorePageSize);
   }, [mineProducts, myStorePage, myStorePageSize]);
 
+  // Giới hạn tối đa 5 sản phẩm/doanh nghiệp trên sàn B2B CEO 1983 (Ý kiến cuộc họp)
+  const handleOpenPostModal = (targetCompany?: string) => {
+    if (mineProducts.length >= 5) {
+      toast.warning(
+        isEn
+          ? "Your enterprise has reached the maximum 5 products limit on the CEO 1983 B2B marketplace. Please remove an existing product to post a new one."
+          : `Doanh nghiệp của bạn đã đăng tối đa 5/5 sản phẩm tiêu biểu trên sàn B2B CEO 1983. Vui lòng quản lý hoặc xóa sản phẩm cũ để đăng mới!`
+      );
+      setMarketplaceTab("my_store");
+      return;
+    }
+    if (targetCompany) {
+      setFormCompany(targetCompany);
+    }
+    setPostModalOpen(true);
+  };
+
   // Section 1: Sản phẩm mới đăng & Pagination for View All
   const [pageNew, setPageNew] = useState(1);
   const [allNewPageSize, setAllNewPageSize] = useState(8);
@@ -1145,6 +1162,14 @@ function ProductsScreen() {
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mineProducts.length >= 5) {
+      toast.error(
+        isEn
+          ? "Limit reached: Each enterprise can only post up to 5 featured products/services on CEO 1983 B2B marketplace!"
+          : "Mỗi doanh nghiệp chỉ được đăng tối đa 5 sản phẩm/dịch vụ tiêu biểu trên sàn B2B CEO 1983 (chống spam & đảm bảo chất lượng sàn)!"
+      );
+      return;
+    }
     if (!formName.trim()) {
       toast.error(isEn ? "Please enter product name!" : "Vui lòng nhập tên sản phẩm!");
       return;
@@ -1596,10 +1621,7 @@ function ProductsScreen() {
 
                     <button
                       type="button"
-                      onClick={() => {
-                        setFormCompany(viewingCompany.name);
-                        setPostModalOpen(true);
-                      }}
+                      onClick={() => handleOpenPostModal(viewingCompany.name)}
                       className="h-9 px-3.5 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                     >
                       <Plus className="h-4 w-4 text-white" />
@@ -1699,10 +1721,7 @@ function ProductsScreen() {
               {isCompanyOwner && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setFormCompany(viewingCompany.name);
-                    setPostModalOpen(true);
-                  }}
+                  onClick={() => handleOpenPostModal(viewingCompany.name)}
                   className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs border border-amber-400/40 transition cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
@@ -1950,11 +1969,15 @@ function ProductsScreen() {
                 <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/15">
                   <button
                     type="button"
-                    onClick={() => setPostModalOpen(true)}
-                    className="py-2.5 px-3 bg-white text-[#003B95] hover:bg-blue-50 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                    onClick={() => handleOpenPostModal()}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 ${
+                      mineProducts.length >= 5
+                        ? "bg-white/90 text-amber-900 border border-amber-300"
+                        : "bg-white text-[#003B95] hover:bg-blue-50"
+                    }`}
                   >
                     <Plus className="size-4" />
-                    <span>Đăng sản phẩm mới</span>
+                    <span>{mineProducts.length >= 5 ? "Tối đa (5/5 sp)" : "Đăng sản phẩm mới"}</span>
                   </button>
                   <button
                     type="button"
@@ -1969,9 +1992,20 @@ function ProductsScreen() {
 
               {/* Excel and Quick tools */}
               <div className="w-full flex items-center justify-between gap-2 px-1">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  Sản phẩm đã đăng ({myProductsCount})
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Sản phẩm của tôi
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10.5px] font-extrabold ${
+                      mineProducts.length >= 5
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300"
+                        : "bg-blue-100 text-[#003B95] dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200"
+                    }`}
+                  >
+                    {myProductsCount}/5 sản phẩm
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -2009,7 +2043,7 @@ function ProductsScreen() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPostModalOpen(true)}
+                    onClick={() => handleOpenPostModal()}
                     className="mt-2 px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/20 active:scale-95"
                   >
                     <Plus className="size-4 text-slate-950" />

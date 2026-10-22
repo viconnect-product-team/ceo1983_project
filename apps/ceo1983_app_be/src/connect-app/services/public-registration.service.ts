@@ -370,7 +370,7 @@ export class ConnectPublicRegistrationService {
           passwordRaw: rawPassword,
           companyName: company,
           memberCode: memberId,
-          portalUrl: 'https://ceo1983.vn/association/login',
+          portalUrl: process.env.APP_URL ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login` : 'https://ceo1983.viconnect.vn/association/login',
         });
       }
 

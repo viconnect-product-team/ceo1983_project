@@ -17,6 +17,11 @@ export class CreateEventDto {
   sponsors?: any;
   description?: string;
   photoGalleryUrl?: string;
+  startTime?: string;
+  endTime?: string;
+  time?: string;
+  agenda?: any;
+  checkinQr?: string;
   tickets?: {
     name: string;
     price?: number;
@@ -42,6 +47,11 @@ export class UpdateEventDto {
   sponsors?: any;
   description?: string;
   photoGalleryUrl?: string;
+  startTime?: string;
+  endTime?: string;
+  time?: string;
+  agenda?: any;
+  checkinQr?: string;
 }
 
 export class RegisterEventDto {

@@ -135,6 +135,26 @@ export class ConnectMarketplaceService {
     const status = data.status || 'active';
     const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
 
+    // B2B Marketplace Policy: Giới hạn tối đa 5 sản phẩm/doanh nghiệp tiêu biểu
+    try {
+      const countRes = await this.prisma.$queryRaw<any[]>`
+        SELECT count(*)::int as cnt
+        FROM public.products
+        WHERE status != 'archived'
+          AND (
+            seller_id = ${sellerId}
+            OR (NULLIF(${company}, '') IS NOT NULL AND company = ${company} AND company != 'CLB Doanh Nhân CEO 1983')
+          )
+      `;
+      const currentCount = Number(countRes?.[0]?.cnt || 0);
+      if (currentCount >= 5) {
+        throw new BadRequestException('Mỗi doanh nghiệp chỉ được đăng tối đa 5 sản phẩm/dịch vụ tiêu biểu trên sàn B2B CEO 1983 (tránh spam, đảm bảo chất lượng sàn).');
+      }
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+      // non-blocking fallback if query error
+    }
+
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.products (

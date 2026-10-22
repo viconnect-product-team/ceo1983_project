@@ -67,6 +67,7 @@ import {
   OpportunityCreateModal,
   OpportunityEditModal,
 } from "@/components/opportunities/modals";
+import { OpportunityAnalyticsWidget } from "@/components/opportunities/OpportunityAnalyticsWidget";
 
 function formatCurrencyInput(val: string | number): string {
   if (val === undefined || val === null) return "";
@@ -95,6 +96,19 @@ const defaultOppImages = [
   "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80",
+];
+
+const OPPORTUNITY_INDUSTRIES = [
+  { id: "all", label: "Tất cả ngành nghề" },
+  { id: "tech", label: "Công nghệ & Chuyển đổi số" },
+  { id: "construction", label: "Xây dựng & Bất động sản" },
+  { id: "finance", label: "Tài chính & Đầu tư" },
+  { id: "manufacturing", label: "Sản xuất & Cơ khí" },
+  { id: "agriculture", label: "Nông nghiệp & Thực phẩm" },
+  { id: "health", label: "Y tế & Sức khỏe" },
+  { id: "media", label: "Truyền thông & Sự kiện" },
+  { id: "logistics", label: "Logistics & Vận tải" },
+  { id: "service", label: "Dịch vụ & Đào tạo" },
 ];
 
 function normalizeTag(tag: string): string {
@@ -195,6 +209,46 @@ function OpportunitiesScreen() {
   const [loadingInterests, setLoadingInterests] = useState(false);
   const [negotiateTarget, setNegotiateTarget] = useState<BusinessConnectTarget | null>(null);
   const [negotiateOpp, setNegotiateOpp] = useState<any>(null);
+
+  const [oppReport, setOppReport] = useState<{
+    summary: {
+      totalClubCount: number;
+      totalClubValue: number;
+      mySharedCount: number;
+      mySharedValue: number;
+      myWonCount: number;
+      myWonValue: number;
+      totalWonCount: number;
+      totalWonValue: number;
+    };
+    opportunities: any[];
+  }>({
+    summary: {
+      totalClubCount: 0,
+      totalClubValue: 0,
+      mySharedCount: 0,
+      mySharedValue: 0,
+      myWonCount: 0,
+      myWonValue: 0,
+      totalWonCount: 0,
+      totalWonValue: 0,
+    },
+    opportunities: [],
+  });
+
+  const loadReport = () => {
+    fetchNestApi<any>("/opportunities/report")
+      .then((res) => {
+        if (res?.ok && res.summary) {
+          setOppReport(res);
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadReport();
+  }, []);
 
   const handleNegotiate = (opp: any) => {
     const target: BusinessConnectTarget = {
@@ -478,6 +532,9 @@ function OpportunitiesScreen() {
   }, [allOpportunities]);
   const [tab, setTab] = useState(allTab);
 
+  const [tradeTypeFilter, setTradeTypeFilter] = useState<"all" | "buyer" | "seller">("all");
+  const [industryFilter, setIndustryFilter] = useState<string>("all");
+
   const list = useMemo(() => {
     return allOpportunities.filter((o) => {
       const tagVi = normalizeTag(o.tag);
@@ -501,10 +558,44 @@ function OpportunitiesScreen() {
         matchTab = tagVi === tab;
       }
 
-      const matchQ = !q || (o.title + o.company + tagVi).toLowerCase().includes(q.toLowerCase());
-      return matchTab && matchQ;
+      if (!matchTab) return false;
+
+      // 1. Phân loại Bên mua / Bên bán (Yêu cầu cuộc họp)
+      if (tradeTypeFilter === "buyer") {
+        const isBuyer = o.tradeType === "buyer" ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("tìm") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("cần mua") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("nhập") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("kêu gọi") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("cần đối tác");
+        if (!isBuyer) return false;
+      } else if (tradeTypeFilter === "seller") {
+        const isSeller = o.tradeType === "seller" ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("cung cấp") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("bán") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("phân phối") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("sản xuất") ||
+          (o.title + " " + (o.description || "")).toLowerCase().includes("dịch vụ");
+        if (!isSeller) return false;
+      }
+
+      // 2. Bộ lọc Ngành nghề (Yêu cầu cuộc họp)
+      if (industryFilter !== "all") {
+        const indTarget = OPPORTUNITY_INDUSTRIES.find((x) => x.id === industryFilter)?.label || industryFilter;
+        const normIndTarget = indTarget.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const oppInd = (o.industry || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const fullText = (o.title + " " + (o.description || "") + " " + (o.company || "")).toLowerCase();
+        const matchesInd =
+          oppInd.includes(normIndTarget) ||
+          normIndTarget.includes(oppInd) ||
+          indTarget.split("&").some((part) => fullText.includes(part.trim().toLowerCase()));
+        if (!matchesInd) return false;
+      }
+
+      const matchQ = !q || (o.title + o.company + tagVi + (o.industry || "")).toLowerCase().includes(q.toLowerCase());
+      return matchQ;
     });
-  }, [allOpportunities, tab, q, member]);
+  }, [allOpportunities, tab, q, member, tradeTypeFilter, industryFilter]);
 
   const [pageOpps, setPageOpps] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -523,7 +614,7 @@ function OpportunitiesScreen() {
 
   useEffect(() => {
     setPageOpps(1);
-  }, [q, tab]);
+  }, [q, tab, tradeTypeFilter, industryFilter]);
 
   async function interest(id: string, targetOpp?: any) {
     const opp = targetOpp || (opportunities || []).find((x) => x.id === id);
@@ -765,31 +856,18 @@ function OpportunitiesScreen() {
 
       {/* ── SCROLLABLE CONTENT (ẢNH 2 FIGMA SPEC) ── */}
       <div className="self-stretch px-4 pt-4 pb-28 flex flex-col justify-start items-start gap-5">
-        {/* 1. STATS CARD: CƠ HỘI KẾT NỐI (1,248 tin) | TỔNG GIÁ TRỊ (428.5 Tỷ đ) */}
-        <div id="tour-opps-stats" className="self-stretch p-4 bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-slate-200 inline-flex justify-start items-start gap-4 shadow-xs">
-          <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
-            <div className="justify-start text-slate-500 text-[10px] font-bold font-['Inter']">
-              CƠ HỘI KẾT NỐI
-            </div>
-            <div className="justify-start text-sky-950 text-lg font-extrabold font-['Inter']">
-              {totalOppCount > 0 ? `${totalOppCount.toLocaleString()} tin` : "0 tin"}
-            </div>
-          </div>
-          <div className="w-10 h-0 origin-top-left rotate-90 border border-slate-200 self-center"></div>
-          <div className="flex-1 inline-flex flex-col justify-start items-start gap-1">
-            <div className="justify-start text-slate-500 text-[10px] font-bold font-['Inter']">
-              TỔNG GIÁ TRỊ
-            </div>
-            <div className="justify-start text-amber-600 text-lg font-extrabold font-['Inter']">
-              {totalOpportunitiesValue > 0
-                ? formatSmartPrice(totalOpportunitiesValue)
-                : "0 đ"}
-            </div>
-          </div>
-        </div>
+        {/* 1. INTERACTIVE COMPARATIVE STATS & REPORT WIDGET */}
+        <OpportunityAnalyticsWidget
+          summary={{
+            ...oppReport.summary,
+            totalClubCount: oppReport.summary.totalClubCount || totalOppCount,
+            totalClubValue: oppReport.summary.totalClubValue || totalOpportunitiesValue,
+          }}
+          opportunities={oppReport.opportunities.length > 0 ? oppReport.opportunities : allOpportunities}
+        />
 
 
-        {/* 3. SEARCH & CHIPS */}
+        {/* 3. SEARCH & CHIPS & BỘ LỌC BÊN MUA / BÊN BÁN & NGÀNH NGHỀ */}
         <div className="self-stretch flex flex-col gap-2.5">
           <div className="self-stretch px-3 py-2 bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex justify-start items-center gap-2 shadow-2xs">
             <Search className="size-4 text-slate-400 shrink-0" />
@@ -804,6 +882,65 @@ function OpportunitiesScreen() {
                 <X className="size-3.5" />
               </button>
             )}
+          </div>
+
+          {/* Phân loại Bên mua / Bên bán (Yêu cầu cuộc họp) */}
+          <div className="self-stretch grid grid-cols-3 gap-1.5 p-1 bg-slate-200/70 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setTradeTypeFilter("all")}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
+                tradeTypeFilter === "all"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Tất cả ({allOpportunities.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTradeTypeFilter("buyer")}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+                tradeTypeFilter === "buyer"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "text-blue-800 hover:bg-white/50"
+              }`}
+            >
+              <span>🛒 Bên mua</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTradeTypeFilter("seller")}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+                tradeTypeFilter === "seller"
+                  ? "bg-emerald-600 text-white shadow-2xs"
+                  : "text-emerald-800 hover:bg-white/50"
+              }`}
+            >
+              <span>📦 Bên bán</span>
+            </button>
+          </div>
+
+          {/* Bộ lọc Ngành nghề (Yêu cầu cuộc họp) */}
+          <div className="self-stretch inline-flex justify-start items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            <span className="text-[11px] font-bold text-slate-500 shrink-0 ml-1">Ngành nghề:</span>
+            {OPPORTUNITY_INDUSTRIES.map((ind) => {
+              const isActive = industryFilter === ind.id;
+              return (
+                <button
+                  key={ind.id}
+                  type="button"
+                  onClick={() => setIndustryFilter(ind.id)}
+                  className={`shrink-0 px-3 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                    isActive
+                      ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
+                      : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  {ind.label}
+                </button>
+              );
+            })}
           </div>
 
           <div id="tour-opps-type-filter" className="self-stretch inline-flex justify-start items-start gap-2 overflow-x-auto no-scrollbar pb-0.5">
@@ -967,18 +1104,29 @@ function OpportunitiesScreen() {
                           />
                           <div className="flex-1 min-w-0 inline-flex flex-col justify-start items-start gap-1.5">
                             <div className="self-stretch inline-flex justify-between items-center">
-                              <div
-                                className={`px-1.5 py-0.5 ${
-                                  isLogistics ? "bg-indigo-100" : "bg-amber-100"
-                                } rounded-sm flex justify-start items-start`}
-                              >
+                              <div className="flex items-center gap-1">
                                 <div
-                                  className={`justify-start ${
-                                    isLogistics ? "text-blue-900" : "text-amber-600"
-                                  } text-[9px] font-extrabold font-['Inter']`}
+                                  className={`px-1.5 py-0.5 ${
+                                    isLogistics ? "bg-indigo-100" : "bg-amber-100"
+                                  } rounded-sm flex justify-start items-start`}
                                 >
-                                  {isLogistics ? "LOGISTICS" : "HỢP TÁC B2B"}
+                                  <div
+                                    className={`justify-start ${
+                                      isLogistics ? "text-blue-900" : "text-amber-600"
+                                    } text-[9px] font-extrabold font-['Inter']`}
+                                  >
+                                    {isLogistics ? "LOGISTICS" : (o.tag || "HỢP TÁC B2B").toUpperCase()}
+                                  </div>
                                 </div>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-sm text-[9px] font-bold ${
+                                    o.tradeType === "buyer"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-emerald-100 text-emerald-700"
+                                  }`}
+                                >
+                                  {o.tradeType === "buyer" ? "BÊN MUA" : "BÊN BÁN"}
+                                </span>
                               </div>
                               <div className="justify-start text-zinc-600 text-[10px] font-normal font-['Inter']">
                                 {o.time

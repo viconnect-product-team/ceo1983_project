@@ -895,6 +895,81 @@ function CardScreen() {
           </div>
         </div>
 
+        {/* ── BẢO MẬT & QUYỀN RIÊNG TƯ: CÔNG TẮC BẬT/TẮT ẨN HIỆN SĐT & EMAIL (Ý KIẾN CUỘC HỌP) ── */}
+        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/30 p-3.5 shadow-sm space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-amber-500" />
+              <span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                Quyền riêng tư thẻ hội viên
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Ẩn / Hiện khi quét QR
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* Toggle SĐT */}
+            <button
+              type="button"
+              onClick={() => {
+                const updated = { ...cardPrivacy, showPhone: !cardPrivacy.showPhone };
+                setCardPrivacy(updated);
+                try {
+                  localStorage.setItem("vba_member_privacy_settings", JSON.stringify(updated));
+                  window.dispatchEvent(new CustomEvent("privacy-updated"));
+                } catch {}
+                toast.success(updated.showPhone ? "Đã BẬT hiển thị SĐT trên thẻ hội viên" : "Đã ẨN SĐT trên thẻ hội viên");
+              }}
+              className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${
+                cardPrivacy.showPhone
+                  ? "bg-white dark:bg-slate-800 border-emerald-400/60 shadow-2xs"
+                  : "bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700 opacity-80"
+              }`}
+            >
+              <div className="flex items-center gap-1.5 text-left">
+                <Phone className={`h-3.5 w-3.5 ${cardPrivacy.showPhone ? "text-emerald-600" : "text-slate-400"}`} />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Số ĐT</span>
+              </div>
+              <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                cardPrivacy.showPhone ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              }`}>
+                {cardPrivacy.showPhone ? "Hiện" : "Ẩn"}
+              </span>
+            </button>
+
+            {/* Toggle Email */}
+            <button
+              type="button"
+              onClick={() => {
+                const updated = { ...cardPrivacy, showEmail: !cardPrivacy.showEmail };
+                setCardPrivacy(updated);
+                try {
+                  localStorage.setItem("vba_member_privacy_settings", JSON.stringify(updated));
+                  window.dispatchEvent(new CustomEvent("privacy-updated"));
+                } catch {}
+                toast.success(updated.showEmail ? "Đã BẬT hiển thị Email trên thẻ hội viên" : "Đã ẨN Email trên thẻ hội viên");
+              }}
+              className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${
+                cardPrivacy.showEmail
+                  ? "bg-white dark:bg-slate-800 border-emerald-400/60 shadow-2xs"
+                  : "bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700 opacity-80"
+              }`}
+            >
+              <div className="flex items-center gap-1.5 text-left">
+                <Mail className={`h-3.5 w-3.5 ${cardPrivacy.showEmail ? "text-emerald-600" : "text-slate-400"}`} />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Email</span>
+              </div>
+              <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                cardPrivacy.showEmail ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              }`}>
+                {cardPrivacy.showEmail ? "Hiện" : "Ẩn"}
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* ── HỒ SƠ HỘI VIÊN & DOANH NGHIỆP (PROFILE) ── */}
         <div className="mt-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-4 shadow-sm">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -929,16 +1004,38 @@ function CardScreen() {
               <span className="font-semibold text-slate-500 dark:text-slate-400">Chức vụ:</span>
               <span className="font-bold text-[#003B95] dark:text-blue-400">{customProfile?.title || effectiveMember?.title || (effectiveMember as any)?.position || "Doanh nhân CEO 1983"}</span>
             </div>
-            {/* Đã bỏ trường Hotline / Số điện thoại liên hệ theo yêu cầu */}
 
-            {cardPrivacy.showEmail && (customProfile?.email || effectiveMember?.email) && (
-              <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
-                <span className="font-semibold text-slate-500 flex items-center gap-1">
-                  <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Email:
+            {/* Hàng SĐT có toggle ẩn/hiện */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
+              <span className="font-semibold text-slate-500 flex items-center gap-1">
+                <Phone className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> SĐT / Hotline:
+              </span>
+              {cardPrivacy.showPhone ? (
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {customProfile?.phone || effectiveMember?.phone || (user as any)?.phone || "Chưa cập nhật"}
                 </span>
-                <span className="text-slate-800 dark:text-slate-200">{customProfile?.email || effectiveMember?.email}</span>
-              </div>
-            )}
+              ) : (
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic flex items-center gap-1">
+                  <Lock className="h-3 w-3 text-amber-500" /> Ẩn theo cài đặt riêng tư
+                </span>
+              )}
+            </div>
+
+            {/* Hàng Email có toggle ẩn/hiện */}
+            <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
+              <span className="font-semibold text-slate-500 flex items-center gap-1">
+                <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Email:
+              </span>
+              {cardPrivacy.showEmail ? (
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {customProfile?.email || effectiveMember?.email || (user as any)?.email || "Chưa cập nhật"}
+                </span>
+              ) : (
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic flex items-center gap-1">
+                  <Lock className="h-3 w-3 text-amber-500" /> Ẩn theo cài đặt riêng tư
+                </span>
+              )}
+            </div>
 
             {(customProfile?.industry || effectiveMember?.industry) && (
               <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">

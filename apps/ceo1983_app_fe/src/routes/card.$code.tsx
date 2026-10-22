@@ -298,14 +298,14 @@ function PublicCardView() {
     {
       icon: Phone,
       label: t("phone"),
-      value: member.phone || "Đã ẩn theo cài đặt riêng tư",
+      value: hasPhone ? member.phone : "🔒 Đã ẩn theo cài đặt riêng tư",
       isLink: hasPhone,
       href: hasPhone ? `tel:${cleanPhone}` : undefined,
     },
     {
       icon: Mail,
       label: t("email"),
-      value: member.email || "Đã ẩn theo cài đặt riêng tư",
+      value: hasEmail ? member.email : "🔒 Đã ẩn theo cài đặt riêng tư",
       isLink: hasEmail,
       href: hasEmail ? `mailto:${member.email}` : undefined,
     },
