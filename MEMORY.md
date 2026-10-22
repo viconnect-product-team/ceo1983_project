@@ -1,7 +1,57 @@
 # System Memory & Architecture
 
 ## 1. Current State
-- **Bản nâng cấp ngày 22/10/2026 (Hoàn Thiện Bộ Tính Năng Lớn Mobile App & Web CRM: Đào Tạo Jitsi Meet Mobile, Gặp Gỡ B2B 1-1 Chốt Deal, Bản Đồ Hội Viên GPS, Ưu Đãi QR Động, Candlestick Realtime, Triệt Tiêu 100% Nút Đỏ & Đạt Chuẩn 0 Lỗi Type-Check)**:
+- **Bản nâng cấp ngày 22/10/2026 (Hoàn Thiện Bộ Nâng Cấp Mobile App CEO 1983 & Module Dashboard Thống Kê CRM Chuẩn UI/UX)**:
+  1. **Mobile App: Tối Ưu Hàng Trao Đổi Cơ Hội Trang Chủ (`HomeOpportunityRowWidget.tsx`, `association.index.tsx`)**:
+     - Tối ưu diện tích hiển thị thành 1 hàng duy nhất gồm: Ảnh đại diện B2B (tỷ lệ 16:9 bo góc 2xl) kết hợp cùng 3 biểu đồ tròn (Donut Charts):
+       * Biểu đồ 1: Số lượng cơ hội (🟢 Mới / 🟡 Đang deal / 🔴 Đã chốt).
+       * Biểu đồ 2: Tổng giá trị cơ hội thị trường.
+       * Biểu đồ 3: Giá trị đã deal thành công.
+     - Khi bấm vào từng biểu đồ, mở Popup tương ứng với dải 3 màu nhận diện (🟢 Mới, 🟡 Đang deal, 🔴 Đã hết/đóng), cho phép bấm lọc xem danh sách chi tiết ngay lập tức.
+  2. **Mobile App: Chuẩn Hóa Toàn Diện Danh Mục Màn Danh Sách Cơ Hội (`association.opportunities.tsx`, `OpportunityDetailModal.tsx`)**:
+     - Dải danh mục (Tabs) đầy đủ theo yêu cầu:
+       * "Tất cả cơ hội"
+       * "Cơ hội của tôi"
+       * "Ai đang deal cơ hội của tôi"
+       * "Mình đang quan tâm"
+       * "Mình đã deal"
+       * "Mình đã trượt"
+       * "Cơ hội đã đóng"
+     - Popup chi tiết cơ hội (`OpportunityDetailModal.tsx`): Hiển thị rõ ràng cả 2 nhóm: Hội viên quan tâm cơ hội của mình & Hội viên đang deal cơ hội của mình (kèm đối tác deal, giá trị đàm phán, nút gọi điện và hẹn 1-1).
+  3. **Mobile App: Mạng Lưới - Icon Mạng Xã Hội & Header Đa Năng (`MemberShell.tsx`, `association.messages.tsx`)**:
+     - *Bottom Navigation*: Thay thế icon tin nhắn bằng `FooterSocialNetworkIcon` (biểu tượng mạng xã hội / các node kết nối cộng đồng doanh nhân).
+     - *Header Mạng Lưới*:
+       * Logo số 8 CEO 1983 (`/ceo1983-emblem-8.png`) góc trái dẫn về Trang Chủ.
+       * Ô tìm kiếm đa năng: Tìm cơ hội, bài viết, sự kiện, cuộc gặp; có popup phân loại danh mục tức thì khi gõ từ khóa.
+       * Icon Menu: Bấm vào show dropdown 4 danh mục: Tin tức, Cơ hội public, Sự kiện, Check-in cuộc họp.
+       * Icon Tin nhắn: Nằm cạnh Menu, bấm vào chuyển ngay sang màn hội thoại tin nhắn cá nhân.
+  4. **Mobile App: Bản Đồ Số & Tối Giản Danh Bạ (`association.members.tsx`, `CeoInteractiveMapModal.tsx`)**:
+     - Bỏ tab Google Map trong màn Danh bạ hội viên để danh bạ nhẹ gọn, tập trung tra cứu A-Z.
+     - Đưa "Bản đồ CEO" vào màn Trang chủ thuộc Tính năng nhanh (`#map`):
+       * Tích hợp điều khiển Zoom In (+), Zoom Out (-), nút Recenter về GPS người dùng.
+       * Định vị đúng vị trí hội viên (nếu bật chia sẻ vị trí), sự kiện sắp diễn ra nổi bật tại đúng địa điểm khai báo, cuộc gặp 1-on-1 đã set up, cuộc họp ban / BCH.
+  5. **Mobile App: Lịch & Cài Đặt Nhắc Lịch Báo Thức (`CeoCalendarAlarmModal.tsx`, `association.index.tsx`)**:
+     - Tích hợp chức năng Lịch & Báo thức vào tính năng nhanh (`#alarm`): Lịch tháng, danh sách sự kiện/cuộc hẹn, tùy chỉnh báo trước (0m, 15m, 30m, 1h, 1d), âm thanh chuông báo thức sinh động qua Web Audio API.
+  6. **CRM CEO 1983: Làm Lại Module Dashboard Thống Kê Hoàn Chỉnh (`analytics.tsx`)**:
+     - *Phần 1 - Cơ hội kinh doanh trong hiệp hội*:
+       * 2 Tab tùy chọn: "Số lượng" vs "Giá trị (VNĐ)".
+       * 3 Thẻ Metrics Cards: Tổng số cơ hội toàn thị trường, Số cơ hội đã trao đi (Givers), Số cơ hội đã Deal thành công (Chốt sales).
+       * Leaderboard vinh danh Top 3 hội viên trao nhiều cơ hội nhất (Top Givers) với cúp & huy hiệu 🥇, 🥈, 🥉.
+     - *Phần 2 - Thống kê tương tác cá nhân (Tài khoản của chính mình)*:
+       * 4 Thẻ chỉ số: Lượt share (chia sẻ), Lượt tham gia hoạt động/event, Tổng thời gian active trong app (giờ), Lượt comment/tương tác bài viết.
+     - *UI/UX & 5 Dạng biểu đồ trực quan*:
+       * Phong cách Minimalism, hiện đại, phối chuẩn 3 màu thương hiệu: Đỏ Ruby (`#DC2626`), Vàng Gold (`#F59E0B`), Xanh Navy (`#002855`).
+       * Biểu đồ 1: Cây đơn vị (Treemap Hierarchy Chart) theo nhóm ngành nghề.
+       * Biểu đồ 2: Tròn (Donut/Pie Chart) theo tỷ lệ Deal thành công / Đang đàm phán / Chưa khớp.
+       * Biểu đồ 3: Cột (Bar Chart) so sánh giữa các ban chuyên môn.
+       * Biểu đồ 4: Đường (Line Chart) tăng trưởng biến động theo thời gian.
+       * Biểu đồ 5: Bố cục Tổng Metrics Cards sắp xếp khoa học.
+     - *Bộ lọc thời gian & Real-time Animation*:
+       * Time filter: [Giờ] [Ngày] [Tháng] [Quý] [Năm] cập nhật dữ liệu tức thì.
+       * Real-time streaming ticker 3.5s: Các con số tự động nhảy (counter animation) và biểu đồ nhích động không reload trang.
+  7. **Kiểm Tra Type-Check Toàn Bộ Hệ Thống (Strict Zero-Error Policy)**:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
   1. **Phân Hệ Đào Tạo & Phòng Họp Video Trực Tuyến Mobile App (`association.training.tsx`, `m.training.tsx`, `trainings.service.ts`)**:
      - *Node tương ứng*: `[NODE-APP-015]` & `[NODE-CRM-018]`.
      - *Đặc tả giao diện*: Thiết kế mobile-first tuyệt đẹp với Header chuẩn `MemberHeader`, Hero card chuyển sắc Navy (`#1F3864`) sang Midnight Black viền vàng ánh kim (`border-amber-400/40`), kèm 3 thẻ KPI: Tổng chuyên đề đào tạo, Số phòng họp Live trực tuyến đang diễn ra, và Tổng tài liệu lưu hành nội bộ.

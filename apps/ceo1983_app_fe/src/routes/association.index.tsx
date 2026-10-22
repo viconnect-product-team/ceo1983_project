@@ -42,7 +42,11 @@ import {
   Share2,
   Download,
   BookOpen,
+  BellRing,
 } from "lucide-react";
+import { HomeOpportunityRowWidget } from "@/components/opportunities/HomeOpportunityRowWidget";
+import { CeoInteractiveMapModal } from "@/components/member/CeoInteractiveMapModal";
+import { CeoCalendarAlarmModal } from "@/components/member/CeoCalendarAlarmModal";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/context/AuthContext";
 import { SeasonalEventHeader, getEffectiveThemeOption, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
@@ -218,6 +222,28 @@ const quickActionDefs = [
     badgeText: "2026",
     badgeTextEn: "2026",
   },
+  {
+    key: "m.index.qaMap",
+    iconKey: "map",
+    icon: MapPin,
+    to: "#map",
+    customLabel: "Bản đồ CEO",
+    enLabel: "CEO Map",
+    badgeId: "map",
+    badgeText: "GPS",
+    badgeTextEn: "GPS",
+  },
+  {
+    key: "m.index.qaAlarm",
+    iconKey: "alarm",
+    icon: BellRing,
+    to: "#alarm",
+    customLabel: "Lịch báo thức",
+    enLabel: "Alarm Schedule",
+    badgeId: "alarm",
+    badgeText: "Nhắc",
+    badgeTextEn: "Alarm",
+  },
 ] as const;
 
 // Fallback high-res business event photos with CEO 1983 blue lighting tone
@@ -281,6 +307,8 @@ function Home() {
   const [contactOpen, setContactOpen] = useState(false);
   const [memberQrModalOpen, setMemberQrModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [alarmModalOpen, setAlarmModalOpen] = useState(false);
   const [effectiveTheme, setEffectiveTheme] = useState(() => getEffectiveThemeOption());
 
   const { theme } = useTheme();
@@ -1153,24 +1181,48 @@ function Home() {
                 badgeColor = "bg-emerald-600 text-white";
               }
 
+              const isHash = def.to.startsWith("#");
+              const iconAndBadge = (
+                <div className="size-14 relative rounded-2xl bg-gradient-to-br from-amber-50 to-blue-50 dark:bg-slate-800/90 border border-amber-200/60 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
+                  <span className="text-[#003B95] dark:text-amber-300">
+                    {getShortcutIcon(def.iconName, "size-6")}
+                  </span>
+                  {badgeVal && (
+                    <div className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900 ${badgeColor}`}>
+                      <span className="text-[10px] font-black font-sans leading-3">
+                        {badgeVal}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+
+              if (isHash) {
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      if (def.to === "#map") setMapModalOpen(true);
+                      else if (def.to === "#alarm") setAlarmModalOpen(true);
+                    }}
+                    className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
+                  >
+                    {iconAndBadge}
+                    <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-bold font-sans leading-4 tracking-tight truncate max-w-full">
+                      {def.name}
+                    </div>
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={id}
                   to={def.to}
                   className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group"
                 >
-                  <div className="size-14 relative rounded-2xl bg-gradient-to-br from-amber-50 to-blue-50 dark:bg-slate-800/90 border border-amber-200/60 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                    <span className="text-[#003B95] dark:text-amber-300">
-                      {getShortcutIcon(def.iconName, "size-6")}
-                    </span>
-                    {badgeVal && (
-                      <div className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900 ${badgeColor}`}>
-                        <span className="text-[10px] font-black font-sans leading-3">
-                          {badgeVal}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {iconAndBadge}
                   <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-bold font-sans leading-4 tracking-tight truncate max-w-full">
                     {def.name}
                   </div>
@@ -1309,150 +1361,18 @@ function Home() {
           </Link>
         </div>
 
-        {/* ── 2. CƠ HỘI GIAO THƯƠNG NỘI KHỐI (CHIẾM TRỌN ĐỘ RỘNG VỚI REALTIME TICKER BIỂU ĐỒ NẾN) ── */}
+        {/* ── 2. CƠ HỘI GIAO THƯƠNG NỘI KHỐI (1 HÀNG TỐI ƯU GỌN GÀNG VỚI 3 BIỂU ĐỒ TRÒN & POPUP) ── */}
         <div className="w-full flex flex-col gap-3">
-          <div className="w-full p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-[0px_4px_20px_0px_rgba(184,134,11,0.12)] border border-amber-500/30 dark:border-amber-500/20 flex flex-col gap-3.5">
-            {/* Header with Live Ticker Badge */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-600/40">
-                  <Handshake className="size-5" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide flex items-center gap-1.5">
-                    <span>Cơ Hội &amp; Giao Thương</span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-600/40 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                      <span className="size-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
-                      <span>REALTIME</span>
-                    </span>
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Bảng biến động khớp lệnh &amp; luồng giao dịch B2B
-                  </p>
-                </div>
-              </div>
-              <Link
-                to="/association/opportunities"
-                className="text-xs font-bold text-[#1F3864] dark:text-amber-400 hover:underline inline-flex items-center gap-1"
-              >
-                <span>Xem tất cả</span>
-                <ChevronRight className="size-3.5" />
-              </Link>
-            </div>
-
-            {/* Top Metric Bar: Count & Value */}
-            <div className="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-gradient-to-r from-slate-50 via-amber-50/40 to-slate-50 dark:from-slate-800/60 dark:via-slate-800/40 dark:to-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-              <div>
-                <div className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                  Tổng quy mô cơ hội
-                </div>
-                <div className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight mt-0.5">
-                  {totalOpportunitiesValue || "12.5 Tỷ đ"}
-                </div>
-                <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
-                  <TrendingUp className="size-3" />
-                  <span>+18.4% so với phiên trước</span>
-                </div>
-              </div>
-              <div className="border-l border-slate-200 dark:border-slate-700 pl-3">
-                <div className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                  Số tin mở kết nối
-                </div>
-                <div className="text-base font-black text-[#1F3864] dark:text-amber-400 font-mono tracking-tight mt-0.5">
-                  {totalOpportunitiesCount || 18} cơ hội
-                </div>
-                <div className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5">
-                  Khớp nối 6 ban chuyên môn
-                </div>
-              </div>
-            </div>
-
-            {/* Mini Realtime Candlestick Chart (Biểu đồ nến theo giờ như chứng khoán) */}
-            <div className="p-3 rounded-2xl bg-slate-900 text-white border border-slate-800 flex flex-col gap-2">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300">
-                <span className="flex items-center gap-1.5 text-amber-300 font-bold">
-                  <Clock className="size-3.5 text-amber-400" />
-                  <span>Biến động dòng tiền theo giờ (VNĐ)</span>
-                </span>
-                <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                  INDEX: 1,983.83 (+2.4%)
-                </span>
-              </div>
-
-              {/* Candlestick bars simulation with real timeline data */}
-              <div className="grid grid-cols-7 gap-1.5 pt-3 pb-1 items-end h-28 border-b border-slate-800">
-                {(analyticsOverview?.hourlyTimeline || [
-                  { time: '08:00', open: 120, high: 165, low: 110, close: 150, change: '+25%' },
-                  { time: '10:00', open: 150, high: 450, low: 145, close: 420, change: '+180%' },
-                  { time: '12:00', open: 420, high: 430, low: 260, close: 280, change: '-33%' },
-                  { time: '14:00', open: 280, high: 690, low: 275, close: 650, change: '+132%' },
-                  { time: '16:00', open: 650, high: 920, low: 630, close: 890, change: '+36%' },
-                  { time: '18:00', open: 890, high: 895, low: 480, close: 510, change: '-42%' },
-                  { time: '20:00', open: 510, high: 520, low: 340, close: 360, change: '-29%' },
-                ]).map((candle: any, cIdx: number) => {
-                  const isUp = candle.close >= candle.open;
-                  const maxVal = 950;
-                  const highPct = Math.min(100, Math.round((candle.high / maxVal) * 100));
-                  const lowPct = Math.max(5, Math.round((candle.low / maxVal) * 100));
-                  const bodyTop = Math.min(100, Math.round((Math.max(candle.open, candle.close) / maxVal) * 100));
-                  const bodyBottom = Math.max(5, Math.round((Math.min(candle.open, candle.close) / maxVal) * 100));
-                  const bodyHeight = Math.max(8, bodyTop - bodyBottom);
-
-                  return (
-                    <div key={cIdx} className="flex flex-col items-center justify-end h-full group relative cursor-pointer">
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-slate-950 text-white text-[9.5px] p-1.5 rounded-lg border border-amber-400 z-30 pointer-events-none whitespace-nowrap shadow-lg">
-                        <span className="font-bold text-amber-300">{candle.time}: {candle.close} Tr đ</span>
-                        <span className={isUp ? "text-emerald-400" : "text-rose-400"}>{candle.change}</span>
-                      </div>
-
-                      {/* Wick (High-Low) */}
-                      <div
-                        className="w-[1.5px] bg-slate-500 absolute"
-                        style={{ bottom: `${lowPct}%`, height: `${highPct - lowPct}%` }}
-                      />
-
-                      {/* Body (Open-Close) */}
-                      <div
-                        className={`w-full rounded-xs z-10 transition-all group-hover:scale-110 ${
-                          isUp
-                            ? "bg-emerald-500 border border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                            : "bg-amber-600 border border-amber-500"
-                        }`}
-                        style={{ height: `${bodyHeight}%` }}
-                      />
-
-                      {/* Time label */}
-                      <span className="text-[9px] font-mono text-slate-400 mt-1.5">{candle.time}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Ticker footer info */}
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 font-mono">
-                <span>Khối lượng: {totalOpportunitiesCount || 18} lệnh</span>
-                <span className="text-emerald-400 font-bold">Thanh khoản: Cao</span>
-              </div>
-            </div>
-
-            {/* Quick Actions Buttons */}
-            <div className="flex items-center gap-2 pt-1">
-              <Link
-                to="/association/opportunities"
-                className="flex-1 py-2.5 px-3 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-xs font-bold text-center transition shadow-xs flex items-center justify-center gap-1.5"
-              >
-                <Handshake className="size-4 text-amber-400" />
-                <span>Khám phá cơ hội</span>
-              </Link>
-              <Link
-                to="/association/opportunities"
-                className="py-2.5 px-4 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white text-xs font-bold text-center transition shadow-xs flex items-center justify-center gap-1"
-              >
-                <span>+ Đăng tin</span>
-              </Link>
-            </div>
-          </div>
+          <HomeOpportunityRowWidget
+            opportunities={opportunities || []}
+            totalOpportunitiesCount={totalOpportunitiesCount}
+            totalOpportunitiesValue={totalOpportunitiesValue}
+            totalDealsWonValue={
+              analyticsOverview?.summary?.totalDealsWonValue
+                ? `${(analyticsOverview.summary.totalDealsWonValue / 1000000000).toFixed(1)} Tỷ đ`
+                : "12.8 Tỷ đ"
+            }
+          />
         </div>
 
         {/* ── 3. SÀN THƯƠNG MẠI DOANH NGHIỆP HỘI VIÊN (ĐẨY XUỐNG DƯỚI TOÀN ĐỘ RỘNG) ── */}
@@ -1806,6 +1726,24 @@ function Home() {
         onClose={() => setCustomShortcutsModalOpen(false)}
         selectedIds={activeShortcutIds}
         onSave={handleSaveShortcuts}
+      />
+
+      {/* ── BẢN ĐỒ SỐ TƯƠNG TÁC CEO 1983 (TÍNH NĂNG NHANH) ── */}
+      <CeoInteractiveMapModal
+        isOpen={mapModalOpen}
+        onClose={() => setMapModalOpen(false)}
+        members={directoryMembers}
+        events={displayEvents}
+        meetings={serverEvents}
+        myMember={member}
+      />
+
+      {/* ── LỊCH & BÁO THỨC HỘI VIÊN ── */}
+      <CeoCalendarAlarmModal
+        isOpen={alarmModalOpen}
+        onClose={() => setAlarmModalOpen(false)}
+        events={displayEvents}
+        meetings={serverEvents}
       />
     </div>
   );

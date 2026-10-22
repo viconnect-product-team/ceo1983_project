@@ -17,6 +17,8 @@ import {
   Sparkles,
   GraduationCap,
   PhoneCall,
+  MapPin,
+  BellRing,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -132,6 +134,24 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     badge: "B2B",
     badgeColor: "bg-[#1F3864] text-white",
   },
+  {
+    id: "map",
+    name: "Bản đồ CEO",
+    desc: "Bản đồ định vị hội viên, sự kiện & cuộc gặp",
+    to: "#map",
+    iconName: "MapPin",
+    badge: "GPS",
+    badgeColor: "bg-emerald-600 text-white",
+  },
+  {
+    id: "calendar-alarm",
+    name: "Lịch & Báo thức",
+    desc: "Nhắc lịch hẹn, sự kiện & cuộc họp",
+    to: "#alarm",
+    iconName: "BellRing",
+    badge: "Nhắc",
+    badgeColor: "bg-amber-500 text-slate-900",
+  },
 ];
 
 export const DEFAULT_SHORTCUT_IDS = ["events", "members", "opportunities", "profile"];
@@ -164,6 +184,10 @@ export function getShortcutIcon(iconName: string, className = "size-6") {
       return <GraduationCap className={className} />;
     case "PhoneCall":
       return <PhoneCall className={className} />;
+    case "MapPin":
+      return <MapPin className={className} />;
+    case "BellRing":
+      return <BellRing className={className} />;
     default:
       return <Sparkles className={className} />;
   }

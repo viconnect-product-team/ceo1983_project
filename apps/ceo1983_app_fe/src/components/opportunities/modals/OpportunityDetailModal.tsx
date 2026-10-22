@@ -317,6 +317,61 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             </div>
           )}
 
+          {/* Danh mục: Ai đang deal cơ hội của mình */}
+          {Boolean(
+            checkCanManageOpp(selectedOpp) &&
+            ((selectedOpp as any).claimedByName ||
+              (selectedOpp as any).claimed_by_name ||
+              (selectedOpp as any).status === "negotiating" ||
+              (selectedOpp as any).status === "claimed")
+          ) && (
+            <div className="rounded-2xl border border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-[13px] text-emerald-800 dark:text-emerald-300">
+                  <Handshake className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Hội viên đang deal cơ hội này</span>
+                </div>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-xs">
+                  Đang thương thảo
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs shrink-0">
+                    {((selectedOpp as any).claimedByName || (selectedOpp as any).claimed_by_name || "D").charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                      {(selectedOpp as any).claimedByName || (selectedOpp as any).claimed_by_name || "Đối tác B2B"}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      {(selectedOpp as any).claimedCompany || (selectedOpp as any).claimed_company || "Doanh nghiệp thành viên"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  <button
+                    type="button"
+                    onClick={() => onNegotiate(selectedOpp)}
+                    className="px-2.5 py-1 rounded-lg bg-[#003B95] hover:bg-blue-900 text-white text-[11px] font-bold shadow-xs cursor-pointer flex items-center gap-1"
+                  >
+                    <Handshake className="size-3.5" />
+                    <span>Lịch hẹn 1-1</span>
+                  </button>
+                  {Boolean((selectedOpp as any).claimedPhone || (selectedOpp as any).claimed_phone) && (
+                    <a
+                      href={`tel:${(selectedOpp as any).claimedPhone || (selectedOpp as any).claimed_phone}`}
+                      className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                      title="Gọi điện trực tiếp"
+                    >
+                      <Phone className="size-3.5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Highlighted Key Points (Image 4 Style) */}
           <div className="space-y-2 text-[12.5px] bg-amber-50/40 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-500/20">
             <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">

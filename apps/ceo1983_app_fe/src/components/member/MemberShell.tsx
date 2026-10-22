@@ -421,16 +421,14 @@ function FooterCalendarIcon({ active }: { active: boolean }) {
   );
 }
 
-function FooterMessageIcon({ active }: { active: boolean }) {
+function FooterSocialNetworkIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={`transition-transform duration-200 ${active ? "scale-105" : ""}`}>
-      <path
-        d="M15.6417 27.3731C22.1208 27.3731 27.3731 22.1208 27.3731 15.6417C27.3731 9.1627 22.1208 3.9104 15.6417 3.9104C9.1627 3.9104 3.9104 9.1627 3.9104 15.6417C3.9104 17.2022 4.21507 18.6915 4.76817 20.0534C4.87403 20.314 4.92696 20.4444 4.95057 20.5497C4.97367 20.6528 4.98212 20.729 4.98213 20.8346C4.98215 20.9426 4.96255 21.0602 4.92335 21.2954L4.15041 25.933C4.06946 26.4187 4.02899 26.6615 4.10431 26.8371C4.17022 26.9908 4.29269 27.1133 4.44637 27.1792C4.62196 27.2545 4.86479 27.214 5.35044 27.1331L9.98808 26.3601C10.2233 26.3209 10.3409 26.3013 10.4488 26.3014C10.5545 26.3014 10.6307 26.3098 10.7338 26.3329C10.8391 26.3565 10.9694 26.4095 11.2301 26.5153C12.592 27.0684 14.0813 27.3731 15.6417 27.3731Z"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={active ? "stroke-[#003B95] dark:stroke-amber-400" : "stroke-slate-500 dark:stroke-slate-400"}
-      />
+      {/* Biểu tượng mạng xã hội: Kết nối các node cộng đồng doanh nhân */}
+      <circle cx="9" cy="16" r="3.6" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
+      <circle cx="23" cy="8.5" r="3.6" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
+      <circle cx="23" cy="23.5" r="3.6" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
+      <path d="M12.2 14.3L19.8 9.7M12.2 17.7L19.8 22.3" strokeWidth="2.2" strokeLinecap="round" className={active ? "stroke-[#003B95] dark:stroke-amber-400" : "stroke-slate-500 dark:stroke-slate-400"} />
     </svg>
   );
 }
@@ -453,7 +451,7 @@ const tabs = [
   { to: "/association", label: "m.shell.tab_home", icon: FooterHomeIcon, exact: true },
   { to: "/association/events", label: "m.events.title", icon: FooterCalendarIcon },
   { to: "/association/card", label: "m.shell.tab_qr", icon: null, center: true },
-  { to: "/association/messages", label: "m.shell.tab_messages", icon: FooterMessageIcon },
+  { to: "/association/messages", label: "m.shell.tab_messages", icon: FooterSocialNetworkIcon },
   { to: "/association/profile", label: "m.shell.tab_profile", icon: FooterUserIcon },
 ] satisfies { to: string; label: TKey; icon: any; exact?: boolean; center?: boolean }[];
 

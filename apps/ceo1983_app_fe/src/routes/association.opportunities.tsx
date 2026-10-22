@@ -374,9 +374,13 @@ function OpportunitiesScreen() {
     }
   }, [member, user]);
 
-  const allTab = "Tất cả";
-  const interestsTab = "Quan tâm nhận được";
+  const allTab = "Tất cả cơ hội";
   const myOppsTab = "Cơ hội của tôi";
+  const whoDealingMyOppTab = "Ai đang deal cơ hội của tôi";
+  const interestedTab = "Mình đang quan tâm";
+  const myDealingTab = "Mình đã deal";
+  const myLostTab = "Mình đã trượt";
+  const closedTab = "Cơ hội đã đóng";
   const publishedTab = "Đã xuất bản";
   const statsTab = "Thống kê";
 
@@ -523,7 +527,16 @@ function OpportunitiesScreen() {
   }, [isCarouselHovered, featuredList.length]);
 
   const tabs = useMemo(() => {
-    const defaultTabs = [allTab, interestsTab, myOppsTab, publishedTab, statsTab];
+    const defaultTabs = [
+      allTab,
+      myOppsTab,
+      whoDealingMyOppTab,
+      interestedTab,
+      myDealingTab,
+      myLostTab,
+      closedTab,
+      statsTab,
+    ];
     allOpportunities.forEach((o) => {
       const tag = normalizeTag(o.tag);
       if (!defaultTabs.includes(tag)) {
@@ -538,20 +551,60 @@ function OpportunitiesScreen() {
   const [industryFilter, setIndustryFilter] = useState<string>("all");
 
   const list = useMemo(() => {
+    const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
+    const currentMemberCode = member?.code;
+
     return allOpportunities.filter((o) => {
       const tagVi = normalizeTag(o.tag);
       const isMine = checkIsMine(o);
 
       let matchTab = true;
-      if (tab === myOppsTab) {
+      if (tab === allTab) {
+        matchTab = true;
+      } else if (tab === myOppsTab) {
         matchTab = Boolean(isMine);
-      } else if (tab === interestsTab) {
-        const hasInterests =
+      } else if (tab === whoDealingMyOppTab) {
+        const hasDealer =
+          Boolean((o as any).claimedById) ||
+          Boolean((o as any).claimedByName) ||
+          (o as any).status === "claimed" ||
+          (o as any).status === "negotiating" ||
+          Number((o as any).dealCount) > 0 ||
           Number((o as any).interestedCount) > 0 ||
+          Boolean((o as any).interested);
+        matchTab = Boolean(isMine && hasDealer);
+      } else if (tab === interestedTab) {
+        const isInterested =
+          interestedIds.includes(o.id) ||
           Boolean((o as any).interested) ||
-          (Array.isArray((o as any).interests) && (o as any).interests.length > 0) ||
-          (Array.isArray((o as any).interestedMembers) && (o as any).interestedMembers.length > 0);
-        matchTab = Boolean((isMine && hasInterests) || hasInterests || (!isMine && ((o as any).views > 0 || (o as any).interestedCount > 0)));
+          (Array.isArray((o as any).interests) &&
+            (o as any).interests.some(
+              (i: any) =>
+                (currentUserId && String(i.userId || i.memberId) === String(currentUserId)) ||
+                (currentMemberCode && String(i.memberCode) === String(currentMemberCode)),
+            ));
+        matchTab = Boolean(isInterested);
+      } else if (tab === myDealingTab) {
+        const isMyDeal =
+          !isMine &&
+          ((currentUserId && String((o as any).claimedById) === String(currentUserId)) ||
+            (currentMemberCode && String((o as any).claimedByCode) === String(currentMemberCode)) ||
+            (o as any).myDealStatus === "dealing" ||
+            (o as any).myDealStatus === "negotiating" ||
+            (o as any).status === "claimed");
+        matchTab = Boolean(isMyDeal);
+      } else if (tab === myLostTab) {
+        const isLost =
+          (o as any).status === "lost" ||
+          (o as any).myDealStatus === "lost" ||
+          (o as any).myDealStatus === "rejected";
+        matchTab = Boolean(isLost);
+      } else if (tab === closedTab) {
+        matchTab =
+          o.status === "won" ||
+          o.status === "closed" ||
+          o.status === "expired" ||
+          o.status === "completed";
       } else if (tab === publishedTab) {
         matchTab = o.status !== "draft" && o.status !== "archived";
       } else if (tab === statsTab) {
