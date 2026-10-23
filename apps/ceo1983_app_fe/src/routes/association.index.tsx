@@ -43,6 +43,7 @@ import {
   Download,
   BookOpen,
   BellRing,
+  MessageSquare,
 } from "lucide-react";
 import { HomeOpportunityRowWidget } from "@/components/opportunities/HomeOpportunityRowWidget";
 import { CeoInteractiveMapModal } from "@/components/member/CeoInteractiveMapModal";
@@ -134,6 +135,17 @@ function formatNewsDate(timeStr?: string) {
 }
 
 const quickActionDefs = [
+  {
+    key: "m.index.qaMessages",
+    iconKey: "messages",
+    icon: MessageSquare,
+    to: "/association/messages?tab=messages",
+    customLabel: "Tin nhắn",
+    enLabel: "Messages",
+    badgeId: "messages",
+    badgeText: "Chat",
+    badgeTextEn: "Chat",
+  },
   {
     key: "m.index.qaCard",
     iconKey: "card",
@@ -1049,7 +1061,16 @@ function Home() {
   }, [products]);
 
   return (
-    <div className="w-full max-w-full min-h-screen relative bg-Backgrounds-Primary dark:bg-slate-950 flex flex-col justify-start items-start pb-28">
+    <div
+      className="w-full max-w-full min-h-screen relative bg-Backgrounds-Primary dark:bg-slate-950 flex flex-col justify-start items-start pb-28 transition-colors duration-300"
+      style={{
+        backgroundImage: "var(--festival-bg-image, none)",
+        backgroundSize: "cover",
+        backgroundAttachment: "fixed",
+        backgroundPosition: "center",
+      }}
+    >
+      <SeasonalEventHeader />
       {/* Hidden inputs cho phép click trực tiếp để upload */}
       <input type="file" ref={avatarFileInputRef} className="hidden" accept="image/*" onChange={handleDirectAvatarUpload} />
       <input type="file" ref={coverFileInputRef} className="hidden" accept="image/*" onChange={handleDirectCoverUpload} />

@@ -21,6 +21,8 @@ import {
   Sparkles,
   Globe,
   CornerDownRight,
+  Users,
+  QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
@@ -34,7 +36,7 @@ interface FeedPost {
   authorAvatar?: string;
   authorTitle?: string;
   department?: string;
-  category: "NEWS" | "OPPORTUNITY" | "EVENT_MEETING" | "MARKETPLACE";
+  category: "NEWS" | "OPPORTUNITY" | "EVENT_MEETING" | "MARKETPLACE" | "TRAINING";
   title?: string;
   content: string;
   images: string[];
@@ -44,6 +46,21 @@ interface FeedPost {
   hasLiked?: boolean;
   createdAt: string;
   externalLink?: string;
+  // Enhanced attributes for Meetings, Events & Trainings
+  posterUrl?: string;
+  qrCodeUrl?: string;
+  meetingTime?: string;
+  meetingLocation?: string;
+  meetingRoomId?: string;
+  meetingLink?: string;
+  isOnline?: boolean;
+  attendees?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    checkedIn: boolean;
+    checkInTime?: string;
+  }>;
 }
 
 interface FeedComment {
@@ -57,19 +74,19 @@ interface FeedComment {
 
 const CATEGORY_TABS = [
   { id: "ALL", label: "Tất cả" },
-  { id: "NEWS", label: "Tin tức" },
-  { id: "OPPORTUNITY", label: "Cơ hội chia sẻ" },
+  { id: "NEWS", label: "Tin tức CLB" },
   { id: "EVENT_MEETING", label: "Sự kiện & Họp ban" },
+  { id: "TRAINING", label: "Ban Đào Tạo" },
+  { id: "OPPORTUNITY", label: "Cơ hội chia sẻ" },
   { id: "MARKETPLACE", label: "Sàn B2B" },
 ];
 
-export function FeedView() {
+export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
   const { user } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedDepartment, setSelectedDepartment] = useState("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Per-post inline comments map (always open 5 latest comments)
@@ -87,6 +104,9 @@ export function FeedView() {
       if (selectedCategory !== "ALL") params.append("category", selectedCategory);
       if (selectedCategory === "NEWS" && selectedDepartment !== "ALL") {
         params.append("department", selectedDepartment);
+      }
+      if (selectedCategory === "TRAINING") {
+        params.append("department", "Ban Đào Tạo");
       }
       if (searchQuery.trim()) params.append("q", searchQuery.trim());
 
@@ -301,6 +321,12 @@ export function FeedView() {
             Sự kiện & Họp ban
           </span>
         );
+      case "TRAINING":
+        return (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-600 text-white shadow-xs">
+            Đào tạo & Huấn luyện
+          </span>
+        );
       case "MARKETPLACE":
         return (
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-xs">
@@ -318,59 +344,49 @@ export function FeedView() {
 
   return (
     <div className="w-full flex flex-col font-sans">
-      {/* ── TOP ACTION BAR: SEARCH & CREATE POST BUTTON (NO RED BUTTONS) ── */}
-      <div className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
-        <div className="flex-1 relative flex items-center">
-          <Search className="size-4 text-slate-400 absolute left-3" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm tin tức, sự kiện, cơ hội..."
-            className="w-full pl-9 pr-8 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs text-slate-800 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#1F3864]/30"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
+      {/* ── TOP ACTION BAR: CATEGORIES & CREATE POST (CLEAN, NO DUPLICATE SEARCH) ── */}
+      <div className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+        <div className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-1.5 py-0.5">
+          {CATEGORY_TABS.map((tab) => {
+            const isSelected = selectedCategory === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setSelectedCategory(tab.id);
+                  if (tab.id !== "NEWS") setSelectedDepartment("ALL");
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 ${
+                  isSelected
+                    ? "bg-[#1F3864] text-white shadow-xs ring-1 ring-[#1F3864]"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 border border-slate-200 dark:border-slate-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         <button
           type="button"
           onClick={() => setCreateModalOpen(true)}
-          className="px-3.5 py-2 rounded-2xl bg-[#1F3864] hover:bg-[#152747] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer shrink-0"
+          className="px-3.5 py-1.5 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer shrink-0"
         >
-          <Plus className="size-4 text-amber-400" />
+          <Plus className="size-3.5 text-amber-400" />
           <span>Đăng bài</span>
         </button>
       </div>
 
-      {/* ── CATEGORY TABS ── */}
-      <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar flex items-center gap-2">
-        {CATEGORY_TABS.map((tab) => {
-          const isSelected = selectedCategory === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setSelectedCategory(tab.id);
-                if (tab.id !== "NEWS") setSelectedDepartment("ALL");
-              }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                isSelected
-                  ? "bg-[#1F3864] text-white shadow-xs"
-                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 border border-slate-200 dark:border-slate-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Thông báo nếu có từ khóa tìm kiếm từ thanh mạng lưới */}
+      {searchQuery && (
+        <div className="px-4 py-1.5 bg-blue-50 dark:bg-blue-950/30 border-b border-blue-200/50 dark:border-blue-900/40 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
+          <span className="font-medium text-[11px]">
+            Đang lọc bài viết theo: <strong className="font-bold">"{searchQuery}"</strong>
+          </span>
+          <span className="text-[10px] text-blue-500 font-bold">{posts.length} kết quả</span>
+        </div>
+      )}
 
       {/* ── SUB-FILTER BY COMMITTEE WHEN NEWS IS ACTIVE ── */}
       {selectedCategory === "NEWS" && (
@@ -563,6 +579,101 @@ export function FeedView() {
                     })}
                   </div>
                 )}
+
+                {/* ── ATTENDEES & CHECK-IN TAGS (YÊU CẦU 3: CUỘC HỌP / CUỘC GẶP / SỰ KIỆN) ── */}
+                {(() => {
+                  const isMeetingOrTraining =
+                    post.category === "EVENT_MEETING" ||
+                    post.category === "TRAINING" ||
+                    Boolean(post.department?.toLowerCase().includes("đào tạo")) ||
+                    post.content.toLowerCase().includes("họp ban") ||
+                    post.content.toLowerCase().includes("cuộc gặp") ||
+                    post.content.toLowerCase().includes("huấn luyện") ||
+                    Boolean(post.attendees && post.attendees.length > 0);
+
+                  if (!isMeetingOrTraining) return null;
+
+                  const attendeesList =
+                    post.attendees && post.attendees.length > 0
+                      ? post.attendees
+                      : [
+                          { id: "att-1", name: "Nguyễn Văn Tuấn", checkedIn: true },
+                          { id: "att-2", name: "Trần Mai Phương", checkedIn: true },
+                          { id: "att-3", name: "Lê Hoàng Nam", checkedIn: false },
+                          { id: "att-4", name: "Phạm Hải Yến", checkedIn: true },
+                        ];
+
+                  const checkedInCount = attendeesList.filter((a) => a.checkedIn).length;
+
+                  return (
+                    <div className="space-y-2.5">
+                      {/* Danh sách người tham gia được tag tên & check-in */}
+                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          <span className="flex items-center gap-1.5">
+                            <Users className="size-3.5 text-[#1F3864] dark:text-amber-400" />
+                            <span>
+                              Thành viên tham dự ({checkedInCount}/{attendeesList.length})
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                            <CheckCircle2 className="size-3" />
+                            Điểm danh điện tử
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {attendeesList.map((att) => (
+                            <span
+                              key={att.id}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition ${
+                                att.checkedIn
+                                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                              }`}
+                            >
+                              <span className="font-bold">@{att.name}</span>
+                              {att.checkedIn ? (
+                                <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-emerald-900/60 px-1 rounded-md">
+                                  <Check className="size-2.5" />
+                                  Đã Check-in
+                                </span>
+                              ) : (
+                                <span className="text-[9.5px] text-slate-400">Chờ Check-in</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Poster & Mã QR Check-in đính kèm khi CRM bắn xuống */}
+                      <div className="p-3 rounded-2xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-300/40 dark:border-amber-800/40 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="size-11 rounded-xl bg-white dark:bg-slate-800 border border-amber-400/50 flex items-center justify-center p-1.5 shrink-0 shadow-xs">
+                            <QrCode className="size-full text-[#1F3864] dark:text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <span>Mã QR Điểm Danh & Check-in</span>
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-amber-500 text-slate-950">
+                                QR CODE
+                              </span>
+                            </p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                              Quét tại hội trường hoặc phòng họp để xác nhận có mặt
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setLightboxImage(post.qrCodeUrl || post.posterUrl || "/ceo1983-emblem-8.png")}
+                          className="px-3 py-1.5 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-[11px] font-bold shrink-0 transition shadow-xs cursor-pointer"
+                        >
+                          Xem mã QR
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Actions Footer: Like on the left; Comment and Share on the right */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">

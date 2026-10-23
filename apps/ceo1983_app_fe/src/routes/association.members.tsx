@@ -61,6 +61,7 @@ import {
   BusinessConnectBottomSheet,
   type BusinessConnectTarget,
 } from "@/components/common/BusinessConnectBottomSheet";
+import { CeoInteractiveMapModal } from "@/components/member/CeoInteractiveMapModal";
 
 export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
@@ -220,6 +221,7 @@ function MembersScreen() {
   const [activeAlphabet, setActiveAlphabet] = useState<string | null>(null);
 
   // ── MAP MODE STATE & LOCATIONS ──
+  const [mapModalOpen, setMapModalOpen] = useState(false);
   const [locationMembers, setLocationMembers] = useState<any[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [isSharingLocation, setIsSharingLocation] = useState(false);
@@ -1133,9 +1135,20 @@ function MembersScreen() {
           <UserPlus className="h-4 w-4 text-white shrink-0" />
           <span className="hidden sm:inline">Thêm CEO</span>
         </button>
+
+        {/* Nút Mở Bản đồ Google 2D CEO 1983 */}
+        <button
+          type="button"
+          onClick={() => setMapModalOpen(true)}
+          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2.5 text-[12px] font-black text-white shadow-md shadow-emerald-900/25 active:scale-95 transition cursor-pointer whitespace-nowrap"
+          title="Mở bản đồ định vị Google 2D"
+        >
+          <Compass className="h-4 w-4 text-white shrink-0" />
+          <span>Bản đồ</span>
+        </button>
       </div>
 
-      {/* 4 Tabs Điều Hướng Danh Bạ */}
+      {/* 4 Tabs Điều Hướng Danh Bạ + Nút Bản đồ */}
       <div
         id="tour-members-filter"
         className="flex gap-2 px-3 sm:px-4 pt-3 overflow-x-auto no-scrollbar select-none"
@@ -1152,6 +1165,14 @@ function MembersScreen() {
           <span>Danh bạ ({connectedMembers.length})</span>
         </button>
 
+        <button
+          onClick={() => setMapModalOpen(true)}
+          className="shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+          title="Bản đồ Google 2D Tổng thể & Cá nhân"
+        >
+          <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Bản đồ CEO (GPS)</span>
+        </button>
 
         <button
           onClick={() => handleSelectTab("discover")}
@@ -2008,6 +2029,16 @@ function MembersScreen() {
         target={connectTarget}
         onClose={() => setConnectTarget(null)}
         onSuccess={() => void reloadMembers()}
+      />
+
+      {/* Bản Đồ Định Vị Google 2D CEO 1983 */}
+      <CeoInteractiveMapModal
+        isOpen={mapModalOpen}
+        onClose={() => setMapModalOpen(false)}
+        members={members || []}
+        events={[]}
+        meetings={meetingsList || []}
+        myMember={myMember}
       />
     </div>
   );

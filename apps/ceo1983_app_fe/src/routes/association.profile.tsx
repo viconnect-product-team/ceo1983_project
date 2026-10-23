@@ -38,6 +38,7 @@ import {
   BadgeCheck,
   Calendar,
   Handshake,
+  RotateCcw,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -47,6 +48,12 @@ import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
 import { AccountSecuritySettingsForm } from "@/components/member/AccountSecuritySettingsForm";
+import {
+  getEffectiveThemeOption,
+  syncThemeFromBackend,
+  isEventThemeEnabled,
+  type FestivalThemeOption,
+} from "@/components/member/SeasonalEventHeader";
 import {
   isVoiceAiEnabled,
   setVoiceAiEnabled,
@@ -138,6 +145,24 @@ export default function ProfileScreen() {
 
   // AI Assistant Toggle state
   const [voiceAiEnabled, setVoiceAiState] = useState(() => isVoiceAiEnabled());
+
+  // Active CRM theme state & listener (Yêu cầu 4)
+  const [activeTheme, setActiveTheme] = useState<FestivalThemeOption>(() => getEffectiveThemeOption());
+  const [themeSyncing, setThemeSyncing] = useState(false);
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setActiveTheme(getEffectiveThemeOption());
+    };
+    window.addEventListener("vba-event-theme-changed", handleThemeChange);
+    window.addEventListener("ceo1983-theme-changed", handleThemeChange);
+    window.addEventListener("storage", handleThemeChange);
+    return () => {
+      window.removeEventListener("vba-event-theme-changed", handleThemeChange);
+      window.removeEventListener("ceo1983-theme-changed", handleThemeChange);
+      window.removeEventListener("storage", handleThemeChange);
+    };
+  }, []);
 
   useEffect(() => {
     const handleSyncAi = () => {
@@ -483,53 +508,11 @@ export default function ProfileScreen() {
 
   return (
     <div className="w-full min-h-screen pb-24 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center font-sans transition-colors duration-300">
-      {/* ── 1. HEADER CHUẨN DI ĐỘNG CEO 1983 ── */}
+      {/* ── 1. HEADER CHUẨN DI ĐỘNG CEO 1983 (BỎ CÁC ICON CHỨC NĂNG THEO YÊU CẦU 4) ── */}
       <MemberHeader
         title={isEn ? "Profile" : "Trang cá nhân"}
         back
-        right={
-          <div className="flex items-center gap-1">
-            {/* Nút Hướng dẫn sử dụng App CEO 1983 */}
-            <button
-              type="button"
-              onClick={() => setUserGuideOpen(true)}
-              aria-label="Hướng dẫn sử dụng App CEO 1983"
-              className="p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-800 transition text-amber-500 hover:text-amber-600 cursor-pointer"
-              title="Hướng dẫn sử dụng App CEO 1983"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </button>
-            {/* Nút Cài đặt & Bảo mật */}
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/association/settings" })}
-              aria-label="Cài đặt & Bảo mật"
-              className="p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-800 transition text-[#003B95] dark:text-blue-400 cursor-pointer"
-              title="Cài đặt & Bảo mật"
-            >
-              <Settings className="h-4 w-4" />
-            </button>
-            {/* Nút chuyển chế độ Sáng / Tối */}
-            <button
-              type="button"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label="Đổi giao diện Sáng / Tối"
-              className="p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-800 transition text-slate-600 dark:text-slate-300 cursor-pointer"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-            {/* Nút Đăng xuất */}
-            <button
-              type="button"
-              onClick={logout}
-              aria-label="Đăng xuất"
-              className="p-1.5 rounded-full hover:bg-rose-100 dark:hover:bg-rose-950/50 transition text-rose-500 cursor-pointer"
-              title="Đăng xuất"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        }
+        right={null}
       />
 
       <div className="w-full max-w-lg flex flex-col justify-start items-stretch gap-3 px-3 sm:px-4 pt-1">
@@ -679,6 +662,76 @@ export default function ProfileScreen() {
                 <QrCode className="size-4.5 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
                 <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Mã QR</span>
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── CARD CHỦ ĐỀ GIAO DIỆN CLB (ĐỒNG BỘ TỪ CRM - YÊU CẦU 4) ── */}
+        <div className="w-full rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="size-9 rounded-xl bg-amber-500/10 text-amber-500 grid place-items-center shrink-0 border border-amber-500/20">
+                <Sparkles className="size-4.5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>Chủ đề giao diện CLB</span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    ĐỒNG BỘ CRM
+                  </span>
+                </h4>
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                  Tự động hiển thị và đồng bộ theo cấu hình Ban Điều Hành
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={themeSyncing}
+              onClick={async () => {
+                setThemeSyncing(true);
+                try {
+                  await syncThemeFromBackend();
+                  setActiveTheme(getEffectiveThemeOption());
+                  toast.success("Đã đồng bộ chủ đề giao diện mới nhất từ CRM!");
+                } catch {
+                  toast.error("Không thể đồng bộ chủ đề lúc này");
+                } finally {
+                  setThemeSyncing(false);
+                }
+              }}
+              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-[#003B95] dark:hover:text-amber-400 transition cursor-pointer disabled:opacity-50"
+              title="Đồng bộ lại chủ đề từ CRM"
+            >
+              <RotateCcw className={`size-4 ${themeSyncing ? "animate-spin text-amber-500" : ""}`} />
+            </button>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-amber-500/5 dark:from-slate-800/40 dark:to-amber-950/20 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="size-8 rounded-lg flex items-center justify-center text-lg bg-white dark:bg-slate-900 shadow-2xs border border-slate-200 dark:border-slate-700 shrink-0">
+                {activeTheme.iconEmoji || "👑"}
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
+                  {activeTheme.name}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                  {activeTheme.tagline}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span
+                className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
+                style={{ backgroundColor: activeTheme.primaryColor }}
+                title={`Màu chủ đạo: ${activeTheme.primaryColor}`}
+              />
+              <span
+                className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
+                style={{ backgroundColor: activeTheme.accentColor }}
+                title={`Màu điểm nhấn: ${activeTheme.accentColor}`}
+              />
             </div>
           </div>
         </div>

@@ -33,6 +33,8 @@ export interface FestivalThemeOption {
   primaryColor: string;
   accentColor: string;
   iconEmoji: string;
+  backgroundImageUrl?: string;
+  appBackgroundStyle?: "default" | "gradient" | "custom-image";
   layoutGrid?: LayoutGridCols;
   borderRadius?: BorderRadiusStyle;
   iconStyle?: IconStyleType;
@@ -51,6 +53,11 @@ export interface FestivalThemeOption {
     opportunities?: string;
     marketplace?: string;
     connect?: string;
+    news?: string;
+    messages?: string;
+    analytics?: string;
+    settings?: string;
+    [key: string]: string | undefined;
   };
 }
 
@@ -549,6 +556,11 @@ export function applyThemeAttributes(theme: EventThemeType) {
   root.style.setProperty("--festival-primary", found.primaryColor);
   root.style.setProperty("--festival-accent", found.accentColor);
   root.style.setProperty("--festival-gradient", found.bannerGradient);
+  if (isEnabled && found.backgroundImageUrl) {
+    root.style.setProperty("--festival-bg-image", `url('${found.backgroundImageUrl}')`);
+  } else {
+    root.style.removeProperty("--festival-bg-image");
+  }
 }
 
 /**

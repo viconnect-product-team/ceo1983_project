@@ -1,6 +1,52 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản nâng cấp ngày 23/10/2026: Nâng Cấp Toàn Diện Hệ Thống CEO 1983 Mobile App & Web CRM Quản Trị**:
+  1. **Mobile App: Làm Lại Màn Hình Thống Kê Chuẩn Giao Diện (`association.analytics.tsx`, `association.events.tsx`, `MemberShell.tsx`)**:
+     - Thay thế hoàn toàn màn Sự kiện bằng màn Thống kê trên thanh Footer Navigation (Tab 2 labeled "Thống kê", route `/association/analytics`, icon `FooterAnalyticsIcon`).
+     - Bỏ giao diện cũ; chuyển thành 4 thẻ chỉ số KPI chính đặt trên cùng.
+     - Biểu đồ Bar + Line kết hợp (Composed Chart) thể hiện tăng/giảm biến động; đường xanh thể hiện xu hướng tăng, đường đỏ thể hiện xu hướng giảm; avatar của hội viên đứng Top được định vị chính xác tại đỉnh cột / mút đường kẻ.
+     - Bục vinh danh giải thưởng Top 3 người đứng đầu thiết kế chung 1 hàng ngang (Single-row 3-column podium: Top 2 bên trái nhì, Top 1 ở giữa cao nhất có vương miện, Top 3 bên phải ba).
+     - Phân chia rõ ràng 5 danh mục thống kê: Cơ hội B2B, Giao dịch chi tiêu, Lượt tương tác & tần suất trong app, Tổng thể sự kiện đang diễn ra, Hội viên tương tác mạnh nhất (dựa trên bình luận & đăng cơ hội).
+     - Tích hợp tính năng Xuất Báo Cáo chuẩn doanh nghiệp (A4 Bản in & Excel `.xlsx`).
+  2. **Mobile App: Sửa Triệt Để Màn Hình Bản Đồ Hội Viên (`CeoInteractiveMapModal.tsx`, `association.members.tsx`)**:
+     - Thay thế toàn bộ faux canvas đen bằng bản đồ tương tác Leaflet 2D với Tile Layer vệ tinh Google Maps (`mt0-mt3.google.com/vt/lyrs=m`).
+     - Phân chia rõ ràng 2 phạm vi:
+       * "Tổng thể": Xem toàn bộ hội viên đang dùng app, các sự kiện sắp diễn ra, các cuộc họp ban chuyên môn.
+       * "Cá nhân": Chỉ hiển thị những người đã kết nối, sự kiện đã đăng ký và cuộc họp/cuộc gặp 1-1 liên quan đến ID tài khoản của hội viên.
+     - Tích hợp định vị GPS người dùng, điều hướng Google Maps dẫn đường, gọi điện / nhắn tin trực tiếp từ Mini Card chi tiết ghim.
+  3. **Mobile App: Tối Ưu Mạng Lưới & Header Mạng Xã Hội (`FeedView.tsx`, `association.messages.tsx`, `MemberShell.tsx`)**:
+     - Loại bỏ thanh tìm kiếm thừa bên trong `FeedView.tsx`, hợp nhất luồng tìm kiếm duy nhất từ header Mạng lưới truyền prop `searchQuery`.
+     - Thay icon Mạng lưới dưới footer thành icon chuẩn mạng lưới kết nối cộng đồng doanh nhân (`FooterSocialNetworkIcon`).
+     - Các bài đăng về cuộc họp / cuộc gặp / đào tạo hiển thị danh sách người tham gia, gắn tag tên người tham gia kèm badge xanh `[✓ Đã Check-in]`.
+     - Bảng tin Mạng lưới là nơi nhận tất cả các tin tức, cuộc họp và chuyên đề từ Ban Đào tạo và Ban Điều hành CRM bắn xuống, kèm Poster và mã QR Check-in.
+  4. **Mobile App: Màn Cá Nhân & Đồng Bộ Chủ Đề CRM (`association.profile.tsx`)**:
+     - Bỏ các icon chức năng thừa trên header màn Cá nhân (`MemberHeader right={null}`).
+     - Bổ sung Card trạng thái "Chủ Đề Giao Diện CRM Áp Dụng", tự động đồng bộ theo thời gian thực với CRM khi có thay đổi.
+  5. **Mobile App: Tính Năng Nhanh Tin Nhắn Tại Trang Chủ (`CustomHomeShortcutsModal.tsx`, `association.index.tsx`)**:
+     - Bổ sung phím tắt nhanh "Tin nhắn" (`/association/messages?tab=messages`) tại màn Trang chủ, thay thế phím tắt Thống kê cũ.
+  6. **Mobile App: Popup Chào Mừng Hội Viên Mới Đăng Nhập (`WelcomeMemberModal.tsx`, `MemberShell.tsx`)**:
+     - Tạo popup chào mừng sang trọng với logo số 8 CEO 1983, thông điệp cá nhân hóa chào đón hội viên mới tham gia Hiệp hội.
+     - Hỗ trợ hoàn hảo 2 chế độ Sáng & Tối (Light & Dark theme).
+  7. **CRM Quản Trị: Đồng Bộ Màn Thống Kê Chuẩn Bảng Biểu & Bục Vinh Danh (`analytics.tsx`)**:
+     - Làm lại giao diện module Thống kê tại CRM tương tự như mobile app nhưng tối ưu cho màn hình Desktop: 5 danh mục độc lập, 4 thẻ KPI, biểu đồ cột & đường tăng (xanh) / giảm (đỏ), avatar đỉnh chóp Top 1, bục vinh danh 3 cột 1 hàng, xuất báo cáo Excel & In ấn chuẩn format.
+  8. **CRM Quản Trị: Chuyên Đề Đào Tạo Trực Tuyến / Trực Tiếp & Mở Form Đăng Ký (`trainings.tsx`)**:
+     - Cấu hình chuyên đề đào tạo: Trực tuyến (phòng Jitsi Meet/Zoom kèm mật khẩu), Trực tiếp (địa điểm, hội trường), hoặc Hybrid kết hợp.
+     - Modal tạo Form đăng ký tham gia đào tạo mở rộng: link đăng ký công khai (`/register-training?id=...`) kèm mã QR động tải về để gửi cho hội viên mới.
+     - Nút "Bắn xuống App CEO 1983" đẩy bài viết đào tạo kèm poster và mã QR xuống Bảng tin Mạng lưới.
+  9. **CRM Quản Trị: Bắn Chi Tiết Sự Kiện Xuống Mạng Lưới Kèm Poster & QR Code (`events.index.tsx`)**:
+     - Bổ sung nút thao tác "Bắn Mạng Lưới" trong bảng sự kiện và thẻ sự kiện (`EventCard`).
+     - Tự động tạo bài viết trên Bảng tin Mạng lưới (`POST /feed`) với đầy đủ chi tiết: Tên sự kiện, thời gian, địa điểm, giá vé, mô tả, ảnh Poster và mã QR Check-in điện tử.
+  10. **CRM Quản Trị: Bộ Studio Thiết Kế Chủ Đề Đa Dạng & Tải Ảnh Nền Tùy Chỉnh (`admin.landing-templates.tsx`, `SeasonalEventHeader.tsx`)**:
+     - Cung cấp tính năng tải ảnh nền tùy chỉnh từ máy tính hoặc dán URL, kèm 5 mẫu ảnh nền doanh nhân VIP sẵn có.
+     - Cung cấp bộ tùy chỉnh chi tiết từng biểu tượng cho toàn bộ 14 tính năng trên app (`card`, `members`, `checkin`, `perks`, `voting`, `history`, `library`, `fees`, `connect`, `events`, `opportunities`, `messages`, `analytics`, `news`).
+     - Cho phép chọn nhanh emoji từ bảng gợi ý hoặc nhập biểu tượng riêng.
+     - Live Preview Mockup khung điện thoại phản ánh trực quan ảnh nền, bố cục và icon.
+     - Đồng bộ qua biến CSS `--festival-bg-image` giúp cả màn Trang chủ (`association.index.tsx`) và màn Mạng lưới (`association.messages.tsx`) tự động đổi ảnh nền và giao diện tức thì khi áp dụng chủ đề.
+  11. **Kiểm Tra Type-Check Chuẩn Xác 0 Lỗi (Strict Zero-Error Policy)**:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+
 - **Bản nâng cấp ngày 22/10/2026 (Hoàn Thiện Bộ Nâng Cấp Mobile App CEO 1983 & Module Dashboard Thống Kê CRM Chuẩn UI/UX)**:
   1. **Mobile App: Tối Ưu Hàng Trao Đổi Cơ Hội Trang Chủ (`HomeOpportunityRowWidget.tsx`, `association.index.tsx`)**:
      - Tối ưu diện tích hiển thị thành 1 hàng duy nhất gồm: Ảnh đại diện B2B (tỷ lệ 16:9 bo góc 2xl) kết hợp cùng 3 biểu đồ tròn (Donut Charts):

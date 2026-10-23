@@ -15,6 +15,7 @@ import {
   Trash2,
   Users,
   X,
+  Send,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -435,6 +436,41 @@ function EventsPage() {
     toast.success("Đã xuất danh sách sự kiện chuẩn doanh nghiệp CEO 1983 (.xlsx)!");
   };
 
+  const handleBroadcastEventToFeed = async (e: EventItem) => {
+    try {
+      const poster = (e as any).imageUrl || (e as any).coverUrl || (e as any).bannerUrl || "/ceo1983-emblem-8.png";
+      const checkinQr = `/checkin-qr?eventId=${e.id}`;
+
+      await fetchNestApi("/feed", {
+        method: "POST",
+        body: JSON.stringify({
+          title: `[SỰ KIỆN CLB] ${e.name}`,
+          content: `🎉 SỰ KIỆN TRỌNG ĐẠI CLB CEO 1983:
+${e.name}
+
+⏰ Thời gian: ${new Date(e.date).toLocaleString("vi-VN")}
+📍 Địa điểm: ${e.location || "Trụ sở CLB CEO 1983"}
+🎟️ Vé tham dự: ${e.ticketPrice && Number(e.ticketPrice) > 0 ? Number(e.ticketPrice).toLocaleString("vi-VN") + " VNĐ" : "Miễn phí dành cho Hội viên"}
+
+${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""}👉 Quý Doanh nhân quét mã QR đính kèm để xem chi tiết và hoàn tất thủ tục Check-in điện tử!`,
+          category: "EVENT_MEETING",
+          department: "Ban Sự Kiện",
+          images: [poster],
+          posterUrl: poster,
+          qrCodeUrl: checkinQr,
+        }),
+      }).catch((err) => {
+        console.warn("Feed event broadcast fallback:", err);
+      });
+
+      toast.success(
+        "Đã bắn chi tiết sự kiện kèm Poster & Mã QR xuống Mạng lưới CEO 1983 thành công!"
+      );
+    } catch {
+      toast.error("Không thể bắn sự kiện xuống Bảng tin");
+    }
+  };
+
   const buckets: { key: Bucket; label: TKey }[] = [
     { key: "all", label: "events.bucket.all" },
     { key: "today", label: "events.bucket.today" },
@@ -794,6 +830,18 @@ function EventsPage() {
                       </td>
                       <td className="sticky right-0 z-10 min-w-[170px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                         <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            title="Bắn chi tiết sự kiện kèm Poster & QR xuống Mạng lưới"
+                            onClick={(evt) => {
+                              evt.stopPropagation();
+                              handleBroadcastEventToFeed(e);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-blue-500/40 bg-blue-500/10 px-2 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-500/20 transition"
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                            <span className="hidden xl:inline text-[11px]">Bắn Mạng Lưới</span>
+                          </button>
                           {canScanEventQr(user, e) && (
                             <button
                               type="button"
@@ -868,6 +916,7 @@ function EventsPage() {
                 }}
                 onDelete={() => onDelete(e)}
                 onQrGatekeeper={() => setQrGatekeeperEvent(e)}
+                onBroadcastToFeed={() => handleBroadcastEventToFeed(e)}
               />
             ))}
           </div>
@@ -980,12 +1029,14 @@ function EventCard({
   onEdit,
   onDelete,
   onQrGatekeeper,
+  onBroadcastToFeed,
 }: {
   event: EventItem;
   deleting: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onQrGatekeeper?: () => void;
+  onBroadcastToFeed?: () => void;
 }) {
   const t = useT();
   const fmt = useFmt();
@@ -1055,6 +1106,17 @@ function EventCard({
             {e.name}
           </Link>
           <div className="flex shrink-0 items-center gap-1">
+            {onBroadcastToFeed && (
+              <button
+                type="button"
+                onClick={onBroadcastToFeed}
+                aria-label="Bắn chi tiết sự kiện xuống Mạng lưới"
+                title="Bắn chi tiết sự kiện kèm Poster & QR xuống Mạng lưới"
+                className="rounded-lg p-1.5 text-blue-600 transition hover:bg-blue-500/15 hover:text-blue-700"
+              >
+                <Send className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
             {canScanEventQr(user, e) && (
               <button
                 type="button"

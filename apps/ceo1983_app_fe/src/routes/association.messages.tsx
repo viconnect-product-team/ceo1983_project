@@ -8,6 +8,7 @@ import { listMembers } from "@/lib/member-app.functions";
 import { ConversationList } from "@/components/messages/ConversationList";
 import { ChatThread } from "@/components/messages/ChatThread";
 import { FeedView } from "@/components/feed/FeedView";
+import { SeasonalEventHeader } from "@/components/member/SeasonalEventHeader";
 import type { MyConversation, DirectoryMember } from "@/components/messages/types";
 import {
   AlertTriangle,
@@ -194,7 +195,16 @@ function MessagesScreen() {
       {active ? (
         <ChatThread peer={active} onBack={() => setActive(null)} members={members || []} />
       ) : (
-        <div className="w-full min-h-screen bg-stone-50 dark:bg-slate-950 flex flex-col pb-24 font-sans">
+        <div
+          className="w-full min-h-screen bg-stone-50 dark:bg-slate-950 flex flex-col pb-24 font-sans relative transition-colors duration-300"
+          style={{
+            backgroundImage: "var(--festival-bg-image, none)",
+            backgroundSize: "cover",
+            backgroundAttachment: "fixed",
+            backgroundPosition: "center",
+          }}
+        >
+          <SeasonalEventHeader />
           {/* ── HEADER MẠNG LƯỚI CEO 1983 (YÊU CẦU 2) ── */}
           <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-3 py-2 shadow-xs transition-all">
             <div className="w-full flex items-center justify-between gap-2">
@@ -459,7 +469,7 @@ function MessagesScreen() {
 
           {/* Nội dung chính: Feed hoặc ConversationList */}
           {mainTab === "feed" ? (
-            <FeedView />
+            <FeedView searchQuery={searchQuery} />
           ) : (
             <ConversationList onOpen={handleOpenConversation} members={members || []} />
           )}

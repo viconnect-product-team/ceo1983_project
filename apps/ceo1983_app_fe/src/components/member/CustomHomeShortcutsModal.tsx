@@ -62,13 +62,13 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     iconName: "IdCard",
   },
   {
-    id: "analytics",
-    name: "Thống kê CLB",
-    desc: "Biểu đồ giá trị & tương tác",
-    to: "/association/analytics",
-    iconName: "TrendingUp",
-    badge: "Hot",
-    badgeColor: "bg-[#B8860B] text-white",
+    id: "messages",
+    name: "Tin nhắn",
+    desc: "Trò chuyện & nhắn tin kết nối nhanh",
+    to: "/association/messages?tab=messages",
+    iconName: "MessageSquare",
+    badge: "Chat",
+    badgeColor: "bg-[#003B95] text-white",
   },
   {
     id: "feed",
@@ -154,7 +154,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
 ];
 
-export const DEFAULT_SHORTCUT_IDS = ["events", "members", "opportunities", "profile"];
+export const DEFAULT_SHORTCUT_IDS = ["messages", "members", "opportunities", "profile"];
 
 export function getShortcutIcon(iconName: string, className = "size-6") {
   switch (iconName) {

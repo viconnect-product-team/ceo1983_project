@@ -11,6 +11,7 @@ const emblem83 = "/ceo1983-emblem-8.png";
 
 import { PullToRefresh } from "@/components/member/PullToRefresh";
 import { IncomingConnectionModal } from "@/components/member/IncomingConnectionModal";
+import { WelcomeMemberModal } from "@/components/member/WelcomeMemberModal";
 import { sendExternalNotification } from "@/lib/notification-permissions";
 import { useAuth } from "@/context/AuthContext";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
@@ -291,6 +292,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         </PullToRefresh>
         <MemberTabBar />
         <IncomingConnectionModal />
+        <WelcomeMemberModal />
       </div>
     </div>
   );
@@ -407,16 +409,15 @@ function FooterHomeIcon({ active }: { active: boolean }) {
   );
 }
 
-function FooterCalendarIcon({ active }: { active: boolean }) {
+function FooterAnalyticsIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={`transition-transform duration-200 ${active ? "scale-105" : ""}`}>
-      <path
-        d="M27.3731 13.0348H3.9104M20.8557 2.60693V7.82086M10.4278 2.60693V7.82086M10.1671 28.6766H21.1164C23.3064 28.6766 24.4015 28.6766 25.2379 28.2504C25.9737 27.8755 26.572 27.2772 26.9469 26.5414C27.3731 25.705 27.3731 24.6099 27.3731 22.4199V11.4706C27.3731 9.28056 27.3731 8.18553 26.9469 7.34904C26.572 6.61324 25.9737 6.01502 25.2379 5.64011C24.4015 5.2139 23.3064 5.2139 21.1164 5.2139H10.1671C7.97706 5.2139 6.88203 5.2139 6.04554 5.64011C5.30974 6.01502 4.71152 6.61324 4.33661 7.34904C3.9104 8.18553 3.9104 9.28056 3.9104 11.4706V22.4199C3.9104 24.6099 3.9104 25.705 4.33661 26.5414C4.71152 27.2772 5.30974 27.8755 6.04554 28.2504C6.88203 28.6766 7.97706 28.6766 10.1671 28.6766Z"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={active ? "stroke-[#003B95] dark:stroke-amber-400" : "stroke-slate-500 dark:stroke-slate-400"}
-      />
+      {/* 3 cột thống kê & đường xu hướng biến động */}
+      <rect x="5" y="16" width="5" height="12" rx="1.5" className={active ? "fill-[#E9F2FF] dark:fill-amber-400/20 stroke-[#003B95] dark:stroke-amber-400" : "fill-none stroke-slate-500 dark:stroke-slate-400"} strokeWidth="2.2" />
+      <rect x="13.5" y="10" width="5" height="18" rx="1.5" className={active ? "fill-[#E9F2FF] dark:fill-amber-400/20 stroke-[#003B95] dark:stroke-amber-400" : "fill-none stroke-slate-500 dark:stroke-slate-400"} strokeWidth="2.2" />
+      <rect x="22" y="5" width="5" height="23" rx="1.5" className={active ? "fill-[#E9F2FF] dark:fill-amber-400/20 stroke-[#003B95] dark:stroke-amber-400" : "fill-none stroke-slate-500 dark:stroke-slate-400"} strokeWidth="2.2" />
+      {/* Đường xu hướng tăng vọt */}
+      <path d="M5 12L12 7L18 10L27 3M27 3H22M27 3V8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={active ? "stroke-[#003B95] dark:stroke-amber-400" : "stroke-slate-500 dark:stroke-slate-400"} />
     </svg>
   );
 }
@@ -424,11 +425,12 @@ function FooterCalendarIcon({ active }: { active: boolean }) {
 function FooterSocialNetworkIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={`transition-transform duration-200 ${active ? "scale-105" : ""}`}>
-      {/* Biểu tượng mạng xã hội: Kết nối các node cộng đồng doanh nhân */}
-      <circle cx="9" cy="16" r="3.6" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
-      <circle cx="23" cy="8.5" r="3.6" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
-      <circle cx="23" cy="23.5" r="3.6" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
-      <path d="M12.2 14.3L19.8 9.7M12.2 17.7L19.8 22.3" strokeWidth="2.2" strokeLinecap="round" className={active ? "stroke-[#003B95] dark:stroke-amber-400" : "stroke-slate-500 dark:stroke-slate-400"} />
+      {/* Biểu tượng mạng lưới kết nối cộng đồng doanh nhân chuẩn */}
+      <circle cx="16" cy="7" r="3.5" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
+      <circle cx="7" cy="23" r="3.5" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
+      <circle cx="25" cy="23" r="3.5" strokeWidth="2.2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#E9F2FF] dark:fill-amber-400/20" : "stroke-slate-500 dark:stroke-slate-400 fill-none"} />
+      <circle cx="16" cy="17" r="2.5" strokeWidth="2" className={active ? "stroke-[#003B95] dark:stroke-amber-400 fill-[#003B95] dark:fill-amber-400" : "stroke-slate-500 dark:stroke-slate-400 fill-slate-500 dark:fill-slate-400"} />
+      <path d="M14 9.5L8.8 20M18 9.5L23.2 20M10.5 23H21.5" strokeWidth="2.2" strokeLinecap="round" className={active ? "stroke-[#003B95] dark:stroke-amber-400" : "stroke-slate-500 dark:stroke-slate-400"} />
     </svg>
   );
 }
@@ -449,7 +451,7 @@ function FooterUserIcon({ active }: { active: boolean }) {
 
 const tabs = [
   { to: "/association", label: "m.shell.tab_home", icon: FooterHomeIcon, exact: true },
-  { to: "/association/events", label: "m.events.title", icon: FooterCalendarIcon },
+  { to: "/association/analytics", label: "m.shell.tab_analytics" as any, icon: FooterAnalyticsIcon },
   { to: "/association/card", label: "m.shell.tab_qr", icon: null, center: true },
   { to: "/association/messages", label: "m.shell.tab_messages", icon: FooterSocialNetworkIcon },
   { to: "/association/profile", label: "m.shell.tab_profile", icon: FooterUserIcon },
@@ -564,7 +566,8 @@ function MemberTabBar() {
 
   const tabLabels: Record<string, { vi: string; en: string }> = {
     "/association": { vi: "Trang chủ", en: "Home" },
-    "/association/events": { vi: "Sự kiện", en: "Events" },
+    "/association/analytics": { vi: "Thống kê", en: "Analytics" },
+    "/association/events": { vi: "Thống kê", en: "Analytics" },
     "/association/card": { vi: "Check-in", en: "Check-in" },
     "/association/messages": { vi: "Mạng lưới", en: "Network" },
     "/association/profile": { vi: "Cá nhân", en: "Profile" },

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Palette,
   Check,
@@ -21,6 +21,10 @@ import {
   Save,
   CheckSquare,
   Wand2,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -42,7 +46,7 @@ import {
   type EffectType,
   type EventThemeType,
 } from "@/components/member/SeasonalEventHeader";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 
 export const Route = createFileRoute("/admin/landing-templates")({
   component: AdminThemeManagementPage,
@@ -155,6 +159,36 @@ const ICON_PRESET_SETS: Record<string, Record<string, string>> = {
   },
 };
 
+export const PRESET_BACKGROUND_IMAGES = [
+  { name: "Luxury Black Silk", url: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80" },
+  { name: "Royal Blue Gradient", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80" },
+  { name: "Golden Sparkle Gala", url: "https://images.unsplash.com/photo-1519751138087-5bf79df62d5b?auto=format&fit=crop&w=1200&q=80" },
+  { name: "Red Tet Festival", url: "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=80" },
+  { name: "Geometric Obsidian", url: "https://images.unsplash.com/photo-1604076913837-52ab5629fba9?auto=format&fit=crop&w=1200&q=80" },
+];
+
+export const ALL_ACTION_ITEMS: { key: string; name: string; defaultIcon: string; category: string }[] = [
+  { key: "card", name: "Danh thiếp", defaultIcon: "💳", category: "Cá nhân" },
+  { key: "members", name: "Danh bạ", defaultIcon: "👥", category: "Kết nối" },
+  { key: "checkin", name: "Check-in QR", defaultIcon: "⚡", category: "Sự kiện" },
+  { key: "perks", name: "Đặc quyền", defaultIcon: "👑", category: "Quyền lợi" },
+  { key: "voting", name: "Biểu quyết", defaultIcon: "🗳️", category: "Nghiệp vụ" },
+  { key: "history", name: "Lịch sử", defaultIcon: "📜", category: "Nghiệp vụ" },
+  { key: "library", name: "Kho tài liệu", defaultIcon: "📁", category: "Nghiệp vụ" },
+  { key: "fees", name: "Hội phí", defaultIcon: "💎", category: "Tài chính" },
+  { key: "connect", name: "Mạng lưới", defaultIcon: "🤝", category: "Kết nối" },
+  { key: "events", name: "Sự kiện", defaultIcon: "📅", category: "Sự kiện" },
+  { key: "opportunities", name: "Cơ hội B2B", defaultIcon: "💼", category: "Kinh doanh" },
+  { key: "messages", name: "Tin nhắn", defaultIcon: "💬", category: "Kết nối" },
+  { key: "analytics", name: "Thống kê", defaultIcon: "📊", category: "Báo cáo" },
+  { key: "news", name: "Bảng tin", defaultIcon: "📰", category: "Truyền thông" },
+];
+
+export const POPULAR_EMOJI_SUGGESTIONS = [
+  "👑", "💎", "⭐", "⚡", "💳", "👥", "🤝", "📅", "💼", "💬", "📊", "📰",
+  "🏆", "🎖️", "🌟", "🏮", "🌸", "❄️", "🎁", "🎉", "🔥", "🚀", "🎯", "🛡️"
+];
+
 export function AdminThemeManagementPage() {
   const [activeTab, setActiveTab] = useState<"catalog" | "studio">("catalog");
   const [activeThemeId, setActiveThemeIdState] = useState<string>("none");
@@ -170,6 +204,12 @@ export function AdminThemeManagementPage() {
   const [customBorderRadius, setCustomBorderRadius] = useState<BorderRadiusStyle>("rounded-2xl");
   const [customIconStyle, setCustomIconStyle] = useState<IconStyleType>("3d-emoji");
   const [customEffectType, setCustomEffectType] = useState<EffectType>("sparkles");
+  const [customBackgroundUrl, setCustomBackgroundUrl] = useState("");
+  const [customAppBackgroundStyle, setCustomAppBackgroundStyle] = useState<"default" | "gradient" | "custom-image">("default");
+  const [isUploadingBg, setIsUploadingBg] = useState(false);
+  const [editingIconKey, setEditingIconKey] = useState<string | null>(null);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
+
   const [customIcons, setCustomIcons] = useState<Record<string, string>>({
     card: "💳",
     members: "👥",
@@ -179,7 +219,32 @@ export function AdminThemeManagementPage() {
     history: "📜",
     library: "📁",
     fees: "💎",
+    connect: "🤝",
+    events: "📅",
+    opportunities: "💼",
+    messages: "💬",
+    analytics: "📊",
+    news: "📰",
   });
+
+  const handleUploadBg = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingBg(true);
+    try {
+      const url = await uploadFileToNest(file, `theme_bg_${Date.now()}_${file.name}`);
+      if (url) {
+        setCustomBackgroundUrl(url);
+        setCustomAppBackgroundStyle("custom-image");
+        toast.success("Tải ảnh nền thành công!");
+      }
+    } catch {
+      toast.error("Không thể tải ảnh nền");
+    } finally {
+      setIsUploadingBg(false);
+      if (e.target) e.target.value = "";
+    }
+  };
 
   useEffect(() => {
     const current = isEventThemeEnabled() ? getActiveAppThemeId() : "none";
@@ -196,8 +261,14 @@ export function AdminThemeManagementPage() {
       if (savedConfig.borderRadius) setCustomBorderRadius(savedConfig.borderRadius);
       if (savedConfig.iconStyle) setCustomIconStyle(savedConfig.iconStyle);
       if (savedConfig.effectType) setCustomEffectType(savedConfig.effectType);
+      if (savedConfig.backgroundImageUrl) setCustomBackgroundUrl(savedConfig.backgroundImageUrl);
+      if (savedConfig.appBackgroundStyle) setCustomAppBackgroundStyle(savedConfig.appBackgroundStyle);
       if (savedConfig.actionIcons) {
-        setCustomIcons((prev) => ({ ...prev, ...savedConfig.actionIcons }));
+        const cleanIcons: Record<string, string> = {};
+        for (const [k, v] of Object.entries(savedConfig.actionIcons)) {
+          if (v) cleanIcons[k] = v;
+        }
+        setCustomIcons((prev) => ({ ...prev, ...cleanIcons }));
       }
     }
 
@@ -272,8 +343,19 @@ export function AdminThemeManagementPage() {
     setCustomBorderRadius(preset.borderRadius || "rounded-2xl");
     setCustomIconStyle(preset.iconStyle || "3d-emoji");
     setCustomEffectType(preset.effectType || "none");
+    if (preset.backgroundImageUrl) {
+      setCustomBackgroundUrl(preset.backgroundImageUrl);
+      setCustomAppBackgroundStyle(preset.appBackgroundStyle || "custom-image");
+    } else {
+      setCustomBackgroundUrl("");
+      setCustomAppBackgroundStyle("default");
+    }
     if (preset.actionIcons) {
-      setCustomIcons((prev) => ({ ...prev, ...preset.actionIcons }));
+      const cleanIcons: Record<string, string> = {};
+      for (const [k, v] of Object.entries(preset.actionIcons)) {
+        if (v) cleanIcons[k] = v;
+      }
+      setCustomIcons((prev) => ({ ...prev, ...cleanIcons }));
     }
     setActiveTab("studio");
     toast.info(`Đã nạp thông số chủ đề "${preset.name}" vào Bộ Studio để bạn tùy chỉnh tự do!`);
@@ -290,6 +372,8 @@ export function AdminThemeManagementPage() {
       primaryColor: customPrimaryColor,
       accentColor: customAccentColor,
       iconEmoji: customBadge.slice(0, 2) || "🎨",
+      backgroundImageUrl: customBackgroundUrl.trim() || undefined,
+      appBackgroundStyle: customAppBackgroundStyle,
       layoutGrid: customLayoutGrid,
       borderRadius: customBorderRadius,
       iconStyle: customIconStyle,
@@ -764,11 +848,209 @@ export function AdminThemeManagementPage() {
                 </div>
               </div>
 
-              {/* 4. Phong Cách Icon & Hiệu Ứng Lễ Hội */}
+              {/* 4. Ảnh Nền & Không Gian Chủ Đề (Custom Background Image) */}
+              <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <ImageIcon className="w-4.5 h-4.5 text-amber-500" />
+                    <span>4. Ảnh Nền & Không Gian Chủ Đề (Background Image & Style)</span>
+                  </div>
+                  {customBackgroundUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomBackgroundUrl("");
+                        setCustomAppBackgroundStyle("default");
+                        toast.info("Đã xóa ảnh nền tùy chỉnh.");
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] text-destructive hover:underline cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Xóa ảnh nền</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={bgFileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleUploadBg}
+                    />
+                    <button
+                      type="button"
+                      disabled={isUploadingBg}
+                      onClick={() => bgFileInputRef.current?.click()}
+                      className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold inline-flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingBg ? "Đang tải ảnh..." : "Tải Ảnh Lên Từ Máy Tính"}</span>
+                    </button>
+                    <span className="text-xs text-muted-foreground">hoặc nhập trực tiếp URL:</span>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={customBackgroundUrl}
+                    onChange={(e) => {
+                      setCustomBackgroundUrl(e.target.value);
+                      if (e.target.value.trim()) {
+                        setCustomAppBackgroundStyle("custom-image");
+                      }
+                    }}
+                    placeholder="https://... dán link ảnh nền phong cách doanh nhân"
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+
+                  {/* Preset Background Images */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Mẫu Ảnh Nền Doanh Nhân VIP Sẵn Có:</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {PRESET_BACKGROUND_IMAGES.map((bg) => (
+                        <button
+                          key={bg.name}
+                          type="button"
+                          onClick={() => {
+                            setCustomBackgroundUrl(bg.url);
+                            setCustomAppBackgroundStyle("custom-image");
+                            toast.success(`Đã chọn mẫu nền "${bg.name}"!`);
+                          }}
+                          className={`relative h-14 rounded-xl overflow-hidden border text-left p-1.5 transition hover:scale-102 cursor-pointer ${
+                            customBackgroundUrl === bg.url ? "border-amber-500 ring-2 ring-amber-500/40" : "border-border"
+                          }`}
+                        >
+                          <img src={bg.url} alt={bg.name} className="absolute inset-0 h-full w-full object-cover" />
+                          <div className="absolute inset-0 bg-black/50 hover:bg-black/30 transition" />
+                          <span className="relative z-10 text-[10px] font-bold text-white drop-shadow-sm leading-tight block">
+                            {bg.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Tùy Chỉnh Toàn Bộ Biểu Tượng 14 Tính Năng (Dynamic Icon Customizer) */}
+              <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <Sparkles className="w-4.5 h-4.5 text-amber-500" />
+                    <span>5. Tùy Chỉnh Chi Tiết Icon Từng Tính Năng (14 Tính Năng)</span>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">Bấm vào ô để đổi icon/emoji</span>
+                </div>
+
+                {/* Quick Preset Sets */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">Nạp Nhanh Bộ Icon Mẫu:</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: "3d-festival", label: "Bộ Tiêu Chuẩn 3D" },
+                      { key: "mid-autumn", label: "Bộ Trung Thu" },
+                      { key: "tet", label: "Bộ Tết Xuân" },
+                      { key: "christmas", label: "Bộ Giáng Sinh" },
+                      { key: "national", label: "Bộ Quốc Khánh" },
+                      { key: "ceo1983-birthday", label: "Bộ Sinh Nhật 1983" },
+                    ].map((ps) => (
+                      <button
+                        key={ps.key}
+                        type="button"
+                        onClick={() => {
+                          setCustomIcons((prev) => ({ ...prev, ...ICON_PRESET_SETS[ps.key] }));
+                          toast.success(`Đã nạp bộ icon "${ps.label}"!`);
+                        }}
+                        className="px-2.5 py-1 rounded-lg border border-border bg-muted/60 hover:bg-muted text-[11px] font-semibold transition cursor-pointer"
+                      >
+                        {ps.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 14 Individual Features Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 pt-2">
+                  {ALL_ACTION_ITEMS.map((item) => {
+                    const currentIcon = customIcons[item.key] || item.defaultIcon;
+                    const isEditing = editingIconKey === item.key;
+                    return (
+                      <div
+                        key={item.key}
+                        className={`p-2.5 rounded-xl border transition ${
+                          isEditing
+                            ? "border-amber-500 bg-amber-500/10 shadow-xs"
+                            : "border-border bg-background hover:bg-muted/40"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-bold text-foreground truncate">{item.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{item.category}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingIconKey(isEditing ? null : item.key)}
+                            className="size-9 rounded-lg border border-amber-500/30 bg-amber-500/15 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition cursor-pointer shrink-0"
+                            title="Bấm để đổi icon"
+                          >
+                            <span>{currentIcon}</span>
+                          </button>
+                          <input
+                            type="text"
+                            value={currentIcon}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCustomIcons((prev) => ({ ...prev, [item.key]: val }));
+                            }}
+                            className="w-full px-2 py-1 rounded-lg border border-border bg-background text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                            placeholder="Emoji/Icon"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Quick Emoji Picker Strip */}
+                {editingIconKey && (
+                  <div className="p-3 rounded-xl bg-muted/60 border border-border space-y-2 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                      <span>Chọn nhanh biểu tượng cho: <strong className="text-amber-600">{ALL_ACTION_ITEMS.find((i) => i.key === editingIconKey)?.name}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => setEditingIconKey(null)}
+                        className="text-muted-foreground hover:text-foreground text-[11px]"
+                      >
+                        Đóng
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {POPULAR_EMOJI_SUGGESTIONS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            setCustomIcons((prev) => ({ ...prev, [editingIconKey]: emoji }));
+                            toast.success(`Đã chọn "${emoji}" cho ${ALL_ACTION_ITEMS.find((i) => i.key === editingIconKey)?.name}!`);
+                          }}
+                          className="size-8 rounded-lg bg-background hover:bg-amber-500/20 hover:scale-115 active:scale-95 border border-border text-base flex items-center justify-center transition cursor-pointer shadow-2xs"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 6. Phong Cách Biểu Tượng & Hiệu Ứng Không Gian */}
               <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-4">
                 <div className="flex items-center gap-2 text-sm font-bold text-foreground">
                   <Sparkles className="w-4.5 h-4.5 text-amber-500" />
-                  <span>4. Phong Cách Biểu Tượng & Hiệu Ứng Không Gian (Icon & Effects)</span>
+                  <span>6. Phong Cách Biểu Tượng & Hiệu Ứng Không Gian (Style & Effects)</span>
                 </div>
 
                 <div className="space-y-2">
@@ -824,32 +1106,6 @@ export function AdminThemeManagementPage() {
                     ))}
                   </div>
                 </div>
-
-                {/* Nạp bộ icon nhanh */}
-                <div className="space-y-2 pt-2 border-t border-border">
-                  <label className="text-xs font-semibold text-muted-foreground">Nạp Nhanh Bộ Icon Mẫu</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { key: "3d-festival", label: "Bộ Tiêu Chuẩn 3D" },
-                      { key: "mid-autumn", label: "Bộ Trung Thu" },
-                      { key: "tet", label: "Bộ Tết Xuân" },
-                      { key: "christmas", label: "Bộ Giáng Sinh" },
-                      { key: "national", label: "Bộ Quốc Khánh" },
-                    ].map((ps) => (
-                      <button
-                        key={ps.key}
-                        type="button"
-                        onClick={() => {
-                          setCustomIcons({ ...ICON_PRESET_SETS[ps.key] });
-                          toast.success(`Đã nạp bộ icon "${ps.label}"!`);
-                        }}
-                        className="px-2.5 py-1 rounded-lg border border-border bg-muted/60 hover:bg-muted text-[11px] font-medium transition cursor-pointer"
-                      >
-                        {ps.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               {/* Nút Hành Động */}
@@ -875,13 +1131,25 @@ export function AdminThemeManagementPage() {
                 <span className="text-[11px] font-semibold text-emerald-500">Live Preview</span>
               </div>
 
-              {/* Mobile Mockup Frame */}
-              <div className="relative mx-auto w-full max-w-[340px] rounded-[36px] border-4 border-slate-800 bg-[#070D1A] text-white shadow-2xl overflow-hidden p-3 min-h-[580px] flex flex-col justify-between select-none">
+              {/* Mobile Mockup Frame with dynamic background image */}
+              <div
+                className="relative mx-auto w-full max-w-[340px] rounded-[36px] border-4 border-slate-800 bg-[#070D1A] text-white shadow-2xl overflow-hidden p-3 min-h-[580px] flex flex-col justify-between select-none"
+                style={{
+                  backgroundImage: customBackgroundUrl ? `url('${customBackgroundUrl}')` : undefined,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
+                {/* Backdrop overlay if custom background is active */}
+                {customBackgroundUrl && (
+                  <div className="absolute inset-0 bg-[#070D1A]/80 backdrop-blur-[2px] pointer-events-none" />
+                )}
+
                 {/* Simulated Notch */}
                 <div className="absolute top-2 inset-x-0 mx-auto w-24 h-4 rounded-full bg-slate-800 z-30" />
 
                 {/* Simulated Header with dynamic gradient */}
-                <div className="space-y-3 pt-5">
+                <div className="relative z-10 space-y-3 pt-5">
                   <div
                     className="rounded-2xl p-4 transition-all duration-300 relative overflow-hidden"
                     style={{
@@ -916,16 +1184,7 @@ export function AdminThemeManagementPage() {
                     </div>
 
                     <div className={`grid ${customLayoutGrid === "3" ? "grid-cols-3" : "grid-cols-4"} gap-2`}>
-                      {[
-                        { name: "Danh thiếp", key: "card" },
-                        { name: "Danh bạ", key: "members" },
-                        { name: "Check-in", key: "checkin" },
-                        { name: "Đặc quyền", key: "perks" },
-                        { name: "Biểu quyết", key: "voting" },
-                        { name: "Lịch sử", key: "history" },
-                        { name: "Kho tài liệu", key: "library" },
-                        { name: "Hội phí", key: "fees" },
-                      ].map((item) => (
+                      {ALL_ACTION_ITEMS.slice(0, customLayoutGrid === "3" ? 9 : 8).map((item) => (
                         <div key={item.key} className="flex flex-col items-center gap-1 p-1">
                           <div
                             className={`h-10 w-10 flex items-center justify-center text-lg transition-all duration-200 ${
@@ -945,7 +1204,7 @@ export function AdminThemeManagementPage() {
                                   : undefined,
                             }}
                           >
-                            <span>{customIcons[item.key] || "✨"}</span>
+                            <span>{customIcons[item.key] || item.defaultIcon}</span>
                           </div>
                           <span className="text-[9px] text-center text-slate-300 font-semibold line-clamp-1">
                             {item.name}
@@ -957,22 +1216,22 @@ export function AdminThemeManagementPage() {
                 </div>
 
                 {/* Simulated Tab Bar */}
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-around text-slate-400 text-xs">
+                <div className="relative z-10 pt-2 border-t border-slate-800 flex items-center justify-around text-slate-400 text-xs">
                   <div className="text-amber-400 font-bold flex flex-col items-center">
                     <span className="text-xs">🏠</span>
                     <span className="text-[9px]">Trang chủ</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-xs">📅</span>
-                    <span className="text-[9px]">Sự kiện</span>
+                    <span className="text-xs">📊</span>
+                    <span className="text-[9px]">Thống kê</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-xs">💳</span>
-                    <span className="text-[9px]">Thẻ số</span>
+                    <span className="text-xs">🌐</span>
+                    <span className="text-[9px]">Mạng lưới</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-xs">💬</span>
-                    <span className="text-[9px]">Tin nhắn</span>
+                    <span className="text-xs">👤</span>
+                    <span className="text-[9px]">Cá nhân</span>
                   </div>
                 </div>
               </div>

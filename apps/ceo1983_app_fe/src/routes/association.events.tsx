@@ -157,10 +157,12 @@ export function safeGetEventDayMonth(dateVal: any, fallbackDay = 20, fallbackMon
   }
 }
 
+import { AssociationAnalyticsScreen } from "./association.analytics";
+
 function EventsRouteComponent() {
   return (
     <EventsErrorBoundary>
-      <EventsScreen />
+      <AssociationAnalyticsScreen />
     </EventsErrorBoundary>
   );
 }
