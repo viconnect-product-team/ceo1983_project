@@ -29,20 +29,18 @@
   - Lịch sự kiện & cuộc họp toàn CLB trực quan theo tháng.
   - Cảnh báo nhanh các trường hợp sắp đến hạn đóng phí hoặc nợ hội phí.
 
-### `[NODE-CRM-002]` Trung Tâm Thống Kê Chuyên Sâu 5 Chế Độ & Biểu Đồ Nến Candlestick
+### `[NODE-CRM-002]` Trung Tâm Thống Kê Chuyên Sâu 5 Danh Mục, Biểu Đồ Cột Đường Đỉnh Top Avatar & Bục Top 3 Một Hàng
 - **Route Frontend**: `/analytics` (`src/routes/analytics.tsx`).
 - **Menu Sidebar**: `Sidebar.tsx` (Menu "Thống kê CLB", Icon `BarChart3` nằm ngay dưới mục Tổng quan).
 - **API Backend**: `GET /admin/analytics-summary`, `GET /admin/analytics/industry-breakdown`, `GET /analytics/overview` (`analytics.service.ts`, `opportunity.service.ts`).
-- **Bảng CSDL**: `members`, `opportunities`, `departments`, `events`.
+- **Bảng CSDL**: `members`, `opportunities`, `departments`, `events`, `feed_posts`.
 - **Luồng xử lý**:
-  - Tích hợp **Biểu đồ nến Candlestick thời gian thực**: Mô phỏng biến động giao dịch B2B theo từng khung giờ trong ngày (Open, High, Low, Close, Volume) như bảng giá chứng khoán chuyên nghiệp.
-  - Cung cấp thanh chuyển đổi 5 chế độ hiển thị chuyên sâu:
-    1. **Dạng Lưới KPI**: Thẻ số liệu lớn kèm % so sánh tăng trưởng.
-    2. **Dashboard Tổng Quan**: Biểu đồ kết hợp cột - đường toàn diện hoạt động.
-    3. **Biểu Đồ Cây Phân Bố Ngành Nghề (Treemap)**: Tỷ trọng 10 ngành nghề thành viên.
-    4. **Biểu Đồ Tròn Ban Ngành (Donut Chart)**: Cơ cấu phân bổ nhân sự theo 6 ban.
-    5. **Cây Đơn Vị Cơ Cấu Tổ Chức (Org Tree)**: Sơ đồ phả hệ từ Chủ tịch -> BĐH -> 6 Ban -> Hội viên.
-  - Nút Xuất file Excel và Nhập file Excel số liệu thống kê.
+  - **4 ô Thẻ KPI cốt lõi trên đầu**: Tổng cơ hội kết nối, Tổng chi tiêu/Doanh số giao dịch, Lượt tương tác app, Sự kiện & Hoạt động đang diễn ra. Bỏ toàn bộ chi tiết thừa phía trên biểu đồ.
+  - **Biểu đồ biến động Composed Bar + Line**: Tông 3 màu xanh - trắng - đen; đường Line xanh lá (`#10B981`) thể hiện xu hướng tăng, đường đỏ (`#EF4444`) thể hiện xu hướng giảm.
+  - **Avatar Ghim Đỉnh Cột / Đường**: Tại đỉnh cao nhất của cột số liệu hoặc mốc cuối của đường, ghim **Avatar tròn viền vàng** vinh danh Doanh nhân Top 1.
+  - **Bục Vinh Danh Top 3 Nằm Chung 1 Hàng**: Top 1 ở giữa cao nhất (Vương miện vàng), Top 2 bên trái (Huy hiệu Bạc), Top 3 bên phải (Huy hiệu Đồng).
+  - **5 Danh Mục Nghiệp Vụ Rõ Ràng**: 1. Cơ hội, 2. Chi tiêu giao dịch, 3. Tần suất tương tác app, 4. Sự kiện hoạt động, 5. Hội viên tích cực nhất (Bình luận + Đăng cơ hội).
+  - **Xuất Báo Cáo Chuẩn Hóa**: In ấn khổ giấy A4 tiêu chuẩn (`window.print`) và Xuất file Excel `.xlsx`.
 
 ### `[NODE-CRM-003]` Quản Trị Danh Bạ Hội Viên 360°
 - **Route Frontend**: `/members` (`src/routes/members.tsx`).
@@ -87,15 +85,16 @@
     - Tab 2: **"Phân Quyền App Mobile CEO 1983"** (Quản lý 10 quyền ứng dụng di động).
   - Hỗ trợ đầy đủ 6 vai trò thành viên ban chuyên môn (`thanh_vien_ban_*`).
 
-### `[NODE-CRM-007]` Quản Trị Sự Kiện, Vé Check-in & Lucky Draw
+### `[NODE-CRM-007]` Quản Trị Sự Kiện, Vé Check-in, Bắn Mạng Lưới & Lucky Draw
 - **Route Frontend**: `/events` (`src/routes/events.tsx`).
 - **Thành phần**: `EventPosterModal.tsx`, `LuckyDrawConfig.tsx`, `EventTable.tsx`.
-- **API Backend**: `GET /events`, `POST /events`, `PUT /events/:id` (`events.service.ts`).
-- **Bảng CSDL**: `events`, `event_registrations`, `sponsors_prizes`.
+- **API Backend**: `GET /events`, `POST /events`, `PUT /events/:id`, `POST /feed` (`events.service.ts`, `feed.service.ts`).
+- **Bảng CSDL**: `events`, `event_registrations`, `sponsors_prizes`, `feed_posts`.
 - **Luồng xử lý**:
   - Hỗ trợ poster sự kiện tùy biến tải ảnh nền, hiển thị chính xác khung giờ (`startTime - endTime`), lịch trình Agenda theo giờ chi tiết ("giờ này làm gì, giờ sau làm gì").
   - Đếm realtime số người đăng ký/hủy thực tế.
   - Chân trang Poster in sẵn mã QR Điểm Danh (`checkin_qr`) để lễ tân quét soát vé nhanh tại cổng.
+  - **Tính Năng Bắn Mạng Lưới (Broadcast To Feed)**: Nút "Bắn Mạng Lưới" (Icon `Send`) phát hành trực tiếp thông tin sự kiện lên Bảng tin Mạng lưới App Mobile (`POST /feed`), tự động gắn kèm Poster sắc nét và Mã QR Điểm Danh.
 
 ### `[NODE-CRM-008]` Quản Lý Cuộc Họp Ban & Gặp Gỡ CLB
 - **Route Frontend**: `/meetings` (`src/routes/meetings.tsx`).
@@ -189,14 +188,17 @@
   - Khử prefix `RNW-`, truy vấn linh hoạt `WHERE id::text = ${cleanId} OR code = ${cleanId}` tránh lỗi ép kiểu UUID PostgreSQL.
   - LEFT JOIN tài khoản `vione_users` mới nhất và hiển thị thanh tiến độ gia hạn toàn màn hình.
 
-### `[NODE-CRM-018]` Phân Hệ Đào Tạo Doanh Nhân & Phòng Họp Video Call
+### `[NODE-CRM-018]` Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid) & Bắn Xuống Feed App
 - **Route Frontend**: `/trainings` (`src/routes/trainings.tsx`).
 - **Menu Sidebar**: `Sidebar.tsx` (Menu "Đào tạo & Video Call", Icon `GraduationCap`).
-- **API Backend**: `GET /trainings`, `POST /trainings`, `PUT /trainings/:id`, `DELETE /trainings/:id` (`trainings.service.ts`).
-- **Bảng CSDL**: `trainings`, `training_attendees`.
+- **Thành phần**: `TrainingManager.tsx`, Open Registration Form Modal, MeetingRoomModal.
+- **API Backend**: `GET /trainings`, `POST /trainings`, `PUT /trainings/:id`, `DELETE /trainings/:id`, `POST /feed` (`trainings.service.ts`, `feed.service.ts`).
+- **Bảng CSDL**: `trainings`, `training_attendees`, `feed_posts`.
 - **Luồng xử lý**:
   - Quản lý danh sách các khóa học đào tạo điều hành, nâng cao năng lực doanh nhân.
-  - Thiết lập thông tin chuyên gia, học vị, ngày giờ phát sóng và tài liệu giáo trình đính kèm.
+  - **Đa thức đào tạo linh hoạt**: Hỗ trợ thiết lập Trực tuyến (Online: link, room ID, password), Trực tiếp (Offline: địa điểm, địa chỉ, sức chứa), hoặc Kết hợp (Hybrid).
+  - **Biểu mẫu đăng ký mở & Mã QR động**: Hệ thống sinh đường link mở kèm mã QR động phóng to, chia sẻ thuận tiện cho ứng viên/khách ngoài.
+  - **Nút "Bắn Xuống App CEO 1983"**: Phát hành trực tiếp khóa đào tạo lên Bảng tin Mạng lưới Mobile kèm ảnh Poster và Mã QR Điểm Danh.
   - Tích hợp phòng họp trực tuyến Jitsi Meet trực tiếp trên giao diện quản trị với đầy đủ tính năng bật/tắt camera, micro, chia sẻ màn hình và điểm danh đại biểu.
 
 ### `[NODE-CRM-019]` Phân Hệ Nhật Ký Lịch Sử Thao Tác Toàn Hệ Thống (Audit Log)
@@ -207,3 +209,17 @@
 - **Luồng xử lý**:
   - Ghi nhận và hiển thị toàn bộ hành động phát sinh trong hệ thống theo thời gian thực (Đăng nhập, Phân quyền RBAC, Giao việc, Duyệt chi ngân sách, Phê duyệt cơ hội, Điểm danh).
   - Bộ lọc chuyên sâu theo phân hệ tác động (Hội viên, Sự kiện, Cuộc họp, Thu chi, Tài khoản) và công cụ tìm kiếm từ khóa thông minh.
+
+### `[NODE-CRM-021]` Theme Studio Quản Lý Giao Diện, 5 VIP Presets & Đồng Bộ CSS Mùa Lễ Hội
+- **Route Frontend**: `/admin/landing-templates` (`src/routes/admin.landing-templates.tsx`).
+- **Menu Sidebar**: `Sidebar.tsx` (Menu "Quản lý giao diện / Theme Studio", Icon `Palette` / `LayoutTemplate`).
+- **Thành phần**: `ThemeStudioEditor`, `IconPickerModal`, `LiveMobilePreviewMockup`.
+- **API Backend**: `GET /admin/landing-templates`, `PUT /admin/landing-templates/active` (`content.service.ts`, `settings.service.ts`).
+- **Bảng CSDL**: `system_settings`, `landing_templates`.
+- **Luồng xử lý**:
+  - **Tùy biến hình nền sự kiện**: Tải lên tệp ảnh hoặc nhập đường dẫn ảnh nền chất lượng cao.
+  - **5 VIP Presets Mùa Lễ Hội**: Tết Nguyên Đán, Hội Nghị Thường Niên, Dạ Tiệc Gala, Caravan Giao Thương, Thể Thao & Golf.
+  - **Bộ chọn biểu tượng 14 tính năng di động (Icon Picker)**: Tùy biến icon cho Trang chủ, Thẻ số, Danh bạ, Cơ hội, Thống kê, Gian hàng B2B, Sự kiện, Biểu quyết, Mạng lưới, Tin nhắn, Cá nhân, Cài đặt, Đặc quyền, Đào tạo.
+  - **Live Mobile Preview**: Khung mô phỏng điện thoại thông minh hiển thị trực tiếp các thay đổi về giao diện theo thời gian thực.
+  - **Phát hành đồng bộ toàn hệ thống**: Kích hoạt biến CSS toàn cục `--festival-bg-image` đồng bộ xuống cả Trang Chủ và Mạng Lưới Feed của Mobile App.
+

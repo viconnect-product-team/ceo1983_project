@@ -1,0 +1,277 @@
+[
+  {
+    "rowIndex": 0,
+    "cellCount": 9,
+    "cells": [
+      "STT",
+      "Hạng mục",
+      "Vấn đề cần sửa (CLB)",
+      "Mục đích",
+      "Đề xuất giải pháp (CLB)",
+      "Người góp ý",
+      "Ưu tiên · Ghi chú",
+      "Ý Tưởng &amp; Giải Pháp Công Nghệ Đề Xuất\n(ViOne / ViConnect)",
+      "Trạng Thái &amp; Kế Hoạch Triển Khai\n(Đợt 1: Trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 1,
+    "cellCount": 1,
+    "cells": [
+      "A. GIAO DIỆN &amp; THẺ HỘI VIÊN"
+    ]
+  },
+  {
+    "rowIndex": 2,
+    "cellCount": 9,
+    "cells": [
+      "1",
+      "Trang chủ ứng dụng",
+      "Trang chủ có 8 ô tính năng nhanh, dàn trải; có cả Đặc quyền VIP, Biểu quyết số, Hội phí.",
+      "Đơn giản hóa để hội viên dùng thường xuyên, tập trung vào giá trị cốt lõi.",
+      "Rút gọn quanh 4 chức năng: Sự kiện, Tìm hội viên, Cơ hội, Góc hội viên; thông tin CLB đặt sau. Bỏ Đặc quyền VIP, Biểu quyết số, Hội phí khỏi khu tính năng nhanh. Giữ Danh bạ hội viên làm chức năng nền tảng.",
+      "Anh Tuấn\nAnh Thành",
+      "Cao · Đợt 1",
+      "• Giải pháp kiến trúc giao diện tinh giản: Định hướng thiết kế trang chủ hội tụ quanh 4 luồng nghiệp vụ cốt lõi: Lịch sự kiện, Danh bạ hội viên, Sàn giao thương và Mạng lưới kết nối; chuyển các tính năng chuyên biệt về phân hệ riêng.\n• Ý tưởng cá nhân hóa màn hình): ViOne cung cấp cơ chế cho phép từng doanh nhân tự do tùy biến chọn 4 phím tắt theo sở thích và thói quen sinh hoạt tại CLB.\n• Ý tưởng Dải Ticker cơ hội &amp; Sàn B2B thời gian thực: Ứng dụng dải biến động cơ hội theo thời gian thực (Realtime Ticker) đặt nổi bật dưới Thẻ hội viên nhằm tạo nhịp đập giao thương và kích thích hội viên truy cập thường xuyên.",
+      "🟢 ĐÃ SẴN SÀNG\n(Nền tảng sẵn có - Đợt 1)"
+    ]
+  },
+  {
+    "rowIndex": 3,
+    "cellCount": 9,
+    "cells": [
+      "2",
+      "Thẻ hội viên",
+      "Chưa có tùy chọn ẩn/hiện email và số điện thoại trên thẻ.",
+      "Bảo vệ quyền riêng tư của hội viên.",
+      "Thêm công tắc ẩn/hiện email, số điện thoại. Tinh giản, tối giản giao diện thẻ.",
+      "Ban Thư ký / BĐH",
+      "Cao · Đợt 1\n(Cần chốt: trường ẩn, mặc định)",
+      "• Giải pháp bảo mật danh tính hội viên): Thiết lập bộ công tắc độc lập cho phép hội viên chủ động quản lý việc Ẩn/Hiện Số điện thoại và Email trên Thẻ điện tử mọi lúc.\n• Ý tưởng định danh khi chia sẻ đối ngoại: Khi chia sẻ thẻ ra bên ngoài, hệ thống tự động hiển thị huy hiệu xác thực: &quot;🔒 Đã bảo mật theo thiết lập của hội viên&quot;, vừa bảo vệ dữ liệu cá nhân vừa tôn vinh sự chuyên nghiệp.\n• Thiết kế Thẻ Doanh Nhân Obsidian Gold: Ứng dụng nhận diện thương hiệu sang trọng (Đen Huyền Bí &amp; Vàng Hoàng Kim), tích hợp mã QR Code chạm mở phóng to tức thì giúp kết nối siêu tốc tại các sự kiện giao lưu.",
+      "🟢 ĐÃ SẴN SÀNG\n(Nền tảng sẵn có - Đợt 1)"
+    ]
+  },
+  {
+    "rowIndex": 4,
+    "cellCount": 9,
+    "cells": [
+      "3",
+      "Đặc quyền hội viên",
+      "Đang nằm trong khu tính năng nhanh, chưa là tính năng riêng.",
+      "Tạo kênh quyền lợi riêng; mở hướng hội viên là gian hàng/gian thương.",
+      "Tách thành tính năng riêng. Nghiên cứu mô hình hội viên là gian hàng, gian thương theo kiểu triển lãm.",
+      "Anh Tuấn",
+      "Trung bình · Đợt 1\n(Cần chốt quy mô triển lãm)",
+      "• Phân hệ Đặc Quyền chuyên biệt (Dedicated Perks Hub): Tách riêng thành trung tâm quản trị ưu đãi độc lập, phân loại theo ngành nghề kèm bản đồ chỉ đường Google Maps tới điểm ưu đãi và QR Voucher tự sinh.\n• Ý tưởng Đột phá - Triển Lãm Số Doanh Nghiệp: Thay vì danh sách đơn thuần, ViConnect đề xuất mô hình &quot;Gian Hàng Doanh Nghiệp Số&quot; độc quyền cho từng hội viên. Mỗi doanh nghiệp sở hữu 1 gian hàng trưng bày hồ sơ năng lực, catalogue 5 sản phẩm tiêu biểu và chính sách chiết khấu riêng cho cộng đồng CEO 1983.\n• Kiểm soát định danh: Mỗi doanh nghiệp liên kết với một Mã số thuế duy nhất, bảo đảm tính minh bạch và tránh hiện tượng trùng lặp gian hàng.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 5,
+    "cellCount": 1,
+    "cells": [
+      "B. XÚC TIẾN THƯƠNG MẠI"
+    ]
+  },
+  {
+    "rowIndex": 6,
+    "cellCount": 9,
+    "cells": [
+      "4",
+      "Sàn thương mại (B2B)",
+      "Mỗi sản phẩm tối đa 5 ảnh, nhưng chưa giới hạn số sản phẩm của mỗi doanh nghiệp. Hạ tầng chưa đủ hiển thị toàn bộ sản phẩm của mọi hội viên.",
+      "Giữ sàn gọn, đủ tải; CLB không đi sâu quản trị thông tin sản phẩm.",
+      "Giới hạn tối đa 5 sản phẩm cần bán cho mỗi doanh nghiệp.",
+      "Anh Thành",
+      "Cao · Đợt 1",
+      "• Giải pháp Hạn mức thông minh: Áp dụng thuật toán giới hạn tối đa 5 sản phẩm/dịch vụ tiêu biểu cho mỗi doanh nghiệp. Giúp hội viên chọn lọc tinh hoa kinh doanh, loại bỏ thông tin rác và tối ưu 80% hạ tầng lưu trữ của CLB.\n• Cơ chế đo lường &amp; chuẩn hóa đăng tải: Cung cấp thanh tiến trình trực quan (X/5 sản phẩm) và biểu mẫu đăng tải tiêu chuẩn hóa hình ảnh.\n• Công nghệ tối ưu đa phương tiện (ViOne Media Engine): Cơ chế nén ảnh tự động chuẩn WebP siêu nhẹ, đảm bảo tốc độ tải trang siêu tốc ngay cả khi hàng nghìn người cùng truy cập.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 7,
+    "cellCount": 9,
+    "cells": [
+      "5",
+      "Cơ hội hợp tác",
+      "Cần tra cứu được theo ngành nghề; thông tin cơ hội cần thu gọn.",
+      "Doanh nghiệp tìm đúng đối tượng cần; các ban quản trị làm việc thuận lợi.",
+      "Bổ sung tra cứu, lọc theo ngành nghề. Giữ ở mức cơ bản: tìm bên mua, bên bán.",
+      "Anh Thành\nAnh Tuấn",
+      "Cao · Đợt 1",
+      "• Giải pháp Phân luồng giao thương 2 chiều: Thiết lập bộ lọc trực quan phân tách rõ ràng: &quot;🛒 Bên Mua (Cần mua / Tìm đối tác)&quot; và &quot;📦 Bên Bán (Cung cấp / Bán hàng)&quot; giúp hội viên tìm kiếm chính xác nhu cầu.\n• Hệ thống phân loại ngành nghề chuẩn HanoiBA: Tích hợp thanh chọn 10 lĩnh vực kinh doanh trọng điểm giúp kết nối đúng đối tác chỉ trong 1 thao tác.\n• Ý tưởng Tinh giản &amp; Chuyển giao số liệu: Đưa toàn bộ các biểu đồ phức tạp sang Trung tâm Thống Kê; trang Cơ hội chỉ giữ giao diện danh sách tinh gọn kèm nút bấm trực tiếp &quot;Gọi điện&quot; hoặc &quot;Đặt lịch hẹn 1-on-1&quot;.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 8,
+    "cellCount": 9,
+    "cells": [
+      "6",
+      "Giới thiệu hội viên",
+      "Chưa có cơ chế giới thiệu và voucher; mục “Quản lý quảng cáo” trên menu quản trị chưa có mô tả trong tài liệu.",
+      "Khuyến khích hội viên giới thiệu, mở rộng mạng lưới.",
+      "Xây dựng cơ chế giới thiệu theo mô hình người giới thiệu nhận voucher. Nhưng không làm theo mô hình affiliate.",
+      "Anh Thành",
+      "Trung bình · Đợt 1\n(Cần chốt: voucher, giá trị)",
+      "• Giải pháp Tối ưu hóa Menu CRM: Thu hồi mục &quot;Quản lý quảng cáo&quot; không phù hợp khỏi menu quản trị CRM để tập trung vào các chức năng cốt lõi.\n• Ý tưởng Lan Tỏa Doanh Nhân: Xây dựng cơ chế &quot;Hội Viên Giới Thiệu Hội Viên&quot; dựa trên uy tín và niềm tự hào CLB. Mỗi hội viên được cấp mã mời cá nhân và mã QR định danh riêng.\n• Cơ chế Tri Ân Quyền Lợi Thực Chất: Khi hội viên mới hoàn tất thủ tục và đóng phí, hệ thống tự động gửi tặng người giới thiệu 01 &quot;Voucher Đặc Quyền VIP&quot; (ưu đãi sự kiện lớn, tài trợ truyền thông). Tuyệt đối không áp dụng mô hình chi trả hoa hồng tiền mặt (affiliate) nhằm bảo toàn nét đẹp văn hóa doanh nhân.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 9,
+    "cellCount": 9,
+    "cells": [
+      "7",
+      "Cơ hội &amp; Kết nối",
+      "Chưa phân biệt “Cơ hội” (chưa phát sinh doanh thu) với “Kết nối” (đã phát sinh doanh thu); chưa ghi nhận giao dịch.",
+      "Đo được hiệu quả giao thương thực tế của CLB.",
+      "Tách hai trạng thái: Cơ hội và Kết nối. Ghi nhận giao dịch, báo cáo số liệu giao thương.",
+      "Chị Phương",
+      "Cao · Đợt 1\n(Cần chốt: ai xác nhận)",
+      "• Giải pháp Phân định 2 giai đoạn giao thương : Phân lập rành mạch &quot;Cơ hội&quot; (Nhu cầu ban đầu chưa phát sinh tiền tệ) với &quot;Kết nối B2B 1-on-1&quot; (Đã gặp gỡ, xúc tiến đàm phán hợp đồng).\n• Cơ chế Xác Thực Hợp Đồng Chéo (Cross-Confirmation): Một bên nhập giá trị hợp đồng thành công (VNĐ) -&gt; Hệ thống gửi yêu cầu xác nhận sang đối tác -&gt; Con số chỉ được ghi nhận vào tổng doanh số giao thương của CLB khi cả hai bên cùng bấm xác nhận.\n• Ý tưởng Báo cáo Hiệu quả Thực tế: Cung cấp công cụ đo lường minh bạch giúp Ban Điều Hành nắm bắt chính xác dòng tiền và giá trị thực tế mà CLB mang lại cho các doanh nghiệp.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 10,
+    "cellCount": 1,
+    "cells": [
+      "C. SỰ KIỆN &amp; SINH HOẠT"
+    ]
+  },
+  {
+    "rowIndex": 11,
+    "cellCount": 9,
+    "cells": [
+      "8",
+      "Đăng ký, mua vé &amp; thanh toán",
+      "E-Ticket hiện chỉ gửi qua email; chưa có Zalo OA và VNPAY.",
+      "Thuận tiện thanh toán; hội viên nhận thông tin kịp thời trên kênh quen thuộc.",
+      "Sau khi mua vé: xác nhận thông tin và thông báo về Zalo. Gửi thông báo đồng thời trên app và Zalo. Tích hợp VNPAY vào Zalo OA để thanh toán.",
+      "BĐH / Ban Thư ký",
+      "Cao · Đợt 1\n(Cần chốt: pháp nhân VNPAY)",
+      "• Giải pháp Vé Điện Tử Chống Rơi Vào Spam: Cấu hình hệ thống gửi vé QR qua Email với kỹ thuật Inline CID Attachment, đảm bảo vé hiển thị ảnh đẹp mắt ngay lập tức, không bị chặn ảnh hay rơi vào hộp thư rác.\n• Giải pháp Tích hợp Đa Kênh Zalo Notification Service (ZNS): Đề xuất tự động bắn thông báo xác nhận vé và mã QR Check-in trực tiếp vào Zalo cá nhân của hội viên ngay khi có biến động thanh toán.\n• Cổng thanh toán tự động VNPAY-QR: Sẵn sàng kiến trúc cổng thanh toán trực tuyến bảo mật, hỗ trợ quét mã VietQR tự động khớp tiền và nội dung chuyển khoản, tích hợp VNPAY Merchant ngay khi CLB bàn giao thông tin pháp nhân.",
+      "🔵 KẾ HOẠCH TIẾP THEO\n(Đợt 1: Phối hợp kết nối trước 10/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 12,
+    "cellCount": 9,
+    "cells": [
+      "9",
+      "Check-in",
+      "Check-in chưa gắn với lợi ích cụ thể cho hội viên.",
+      "Khuyến khích hội viên tham gia, có dữ liệu tham dự.",
+      "Phát triển hai dòng tính năng check-in gắn với lợi ích hội viên.",
+      "BĐH",
+      "Cần làm rõ\n(Cần chốt: 2 dòng lợi ích)",
+      "• Ý tưởng Kiến Tạo 2 Dòng Giá Trị Đột Phá Cho Check-in:\n- Dòng 1 (Live Event Networking): Quét QR Check-in lập tức hiển thị huy hiệu xanh [✓ Đã Check-in] trên Mạng lưới và mở khóa Danh bạ đại biểu đang có mặt, cho phép các doanh nhân tìm thấy nhau và gửi lời mời kết nối tức thì.\n- Dòng 2 (Điểm Chuyên Cần &amp; Gamification): Tự động cộng điểm hoạt động vào hồ sơ cá nhân để tích lũy chiết khấu niên liễm, đồng thời mã check-in trở thành mã số may mắn tham gia Vòng quay may mắn (Lucky Draw) trúng quà tặng tài trợ từ các hội viên trong sự kiện.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 13,
+    "cellCount": 9,
+    "cells": [
+      "10",
+      "Lịch họp &amp; điều kiện gia nhập",
+      "Lịch họp chưa kèm thống kê, thông báo. Chưa có tiêu chí gia nhập gắn với buổi họp mở đầu.",
+      "Đánh giá mức độ gặp gỡ giữa hội viên; đặt điều kiện gia nhập rõ ràng.",
+      "Lịch họp kèm thống kê tham dự và thông báo. Hội viên mới phải tham gia buổi họp mở đầu (ví dụ buổi training) mới đủ điều kiện vào CLB.",
+      "Chị Phương",
+      "Trung bình · Đợt 1",
+      "• Giải pháp Số hóa Lịch họp &amp; Đào tạo chuyên sâu: Tích hợp phân hệ quản trị lịch họp các ban chuyên môn và chương trình đào tạo doanh nghiệp, tự động phát sinh link đăng ký công khai và mã QR điểm danh buổi họp.\n• Ý tưởng Chuẩn Hóa Phễu Onboarding Tự Động: Ứng viên gia nhập CLB nộp hồ sơ sẽ ở trạng thái &quot;Chờ Onboarding&quot;. Hệ thống đặt điều kiện bắt buộc ứng viên phải tham gia và quét QR check-in tại ít nhất 01 buổi đào tạo định hướng (Orientation Meeting) thì hồ sơ mới tự động chuyển sang trạng thái &quot;Đủ điều kiện xét duyệt chính thức&quot; để Ban Thư Ký trình Ban Điều Hành phê duyệt.\n• Báo cáo chuyên cần theo ban: Thống kê tỷ lệ tham dự định kỳ của từng ban để Ban Điều Hành kịp thời chấn chỉnh.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 14,
+    "cellCount": 1,
+    "cells": [
+      "D. QUẢN TRỊ HỘI VIÊN &amp; BÁO CÁO (CỔNG QUẢN TRỊ CRM)"
+    ]
+  },
+  {
+    "rowIndex": 15,
+    "cellCount": 9,
+    "cells": [
+      "11",
+      "Dữ liệu hội viên",
+      "Thông tin trong file thành viên cần chính xác; ngày sinh chưa cập nhật đầy đủ.",
+      "Làm nền cho chăm sóc hội viên và các báo cáo.",
+      "Rà soát, chuẩn hóa hồ sơ hội viên. Cập nhật đầy đủ ngày sinh.",
+      "Chị Phương",
+      "Cao · Trước khi triển khai rộng\n(Ban Thư ký thực hiện)",
+      "• Bộ công cụ Chuẩn Hóa &amp; Nhập Liệu Thông Minh: Cung cấp tính năng nạp dữ liệu Excel linh hoạt, tự động nhận diện và đối soát lỗi sai các trường thông tin: Ngày sinh, Ban chuyên môn, Chức vụ, Mã số thuế doanh nghiệp.\n• Cơ chế Chăm sóc &amp; Nhắc nhở tự động: Ứng dụng tự động gửi thông báo dịu dàng nhắc hội viên cập nhật ngày sinh để nhận lời chúc và quà tặng tri ân đặc biệt từ Chủ Tịch và CLB.\n• Cam kết đồng hành kỹ thuật: ViConnect bố trí nhân sự kỹ thuật chuyên trách phối hợp trực tiếp cùng Ban Thư Ký để rà soát, làm sạch và nạp toàn bộ danh sách hội viên hoàn tất trong vòng 24h kể từ khi tiếp nhận file.",
+      "🔵 KẾ HOẠCH TIẾP THEO\n(Đợt 1: Hỗ trợ nạp CSDL trước 10/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 16,
+    "cellCount": 9,
+    "cells": [
+      "12",
+      "Mức độ tích cực của hội viên",
+      "Dashboard chủ yếu là số đếm; chưa có chỉ số tích cực theo hội viên, theo ban; chưa cảnh báo hội viên ít hoạt động.",
+      "Biến dữ liệu hoạt động thành công cụ quản trị; kịp thời chăm sóc hội viên ít tham gia.",
+      "Chỉ số tham gia sự kiện, họp, giao thương theo từng hội viên và từng ban. Cảnh báo hội viên hoạt động ít để chăm sóc.",
+      "Chị Phương\nAnh Tuấn",
+      "Cao · Đợt 1\n(Cần chốt ngưỡng ít hoạt động)",
+      "• Hệ thống Đo lường mức độ hoạt động của Hội Viên trong app: Xây dựng thuật toán nhận diện đa chiều dựa trên: Tần suất tham gia sự kiện, Số lượt kết nối B2B, Giao dịch thành công, Điểm danh họp ban và Đóng góp nội dung.\n• Biểu đồ Trực quan hóa Xu hướng (Visual Composed Analytics): Thiết kế đồ thị kết hợp Bar &amp; Line với 2 màu trực quan: Đường xanh thể hiện xu hướng tăng trưởng tích cực, Đường đỏ cảnh báo độ suy giảm. Đặt vinh danh Top 1 Giver trên đỉnh biểu đồ và bục vinh danh Top 3 nằm gọn trên 1 hàng ngang.\n• Ý tưởng Cảnh Báo Sớm Hội Viên Trầm Lắng (Early Inactivity Alert): Hệ thống tự động lọc và gắn cờ các hội viên không phát sinh tương tác trong 30-60 ngày, cung cấp nút bấm nhanh (Gọi điện / Gửi Email chăm sóc) để Ban Hội Viên và Ban Thư Ký chủ động liên hệ hỗ trợ kịp thời.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 17,
+    "cellCount": 9,
+    "cells": [
+      "13",
+      "Quản lý phí",
+      "Chưa có báo cáo phí và nhắc phí theo từng lần.",
+      "Theo dõi, thu phí đúng hạn.",
+      "Báo cáo tình hình đóng phí. Nhắc phí theo từng lần qua Zalo OA, SMS, email.",
+      "Chị Phương",
+      "Cao · Đợt 1",
+      "• Quản lý Niên độ &amp; Trạng thái phí thông minh: Tự động theo dõi vòng đời hội phí 365 ngày của từng hội viên, phân loại trực quan 3 nhóm: &quot;Đang hiệu lực&quot;, &quot;Sắp đến hạn (còn 30 ngày)&quot; và &quot;Quá hạn nợ phí&quot;.\n• Thông báo gia hạn chuyên nghiệp tích hợp mã QR: Hệ thống phát hành mẫu thông báo gia hạn lịch sự, tự động chèn mã QR động với đầy đủ số tiền niên liễm và cú pháp chuyển khoản chính xác, giúp kế toán đối soát công nợ tự động.\n• Giải pháp mở rộng nhắc nợ đa kênh: Sẵn sàng kiến trúc gửi tin nhắn tự động nhắc phí qua Zalo OA (ZNS) và SMS Brandname khi kết nối Zalo OA, giúp tăng tỷ lệ thu phí đúng hạn lên trên 95%.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 18,
+    "cellCount": 9,
+    "cells": [
+      "14",
+      "Báo cáo tháng/quý",
+      "Chưa có mẫu báo cáo định kỳ.",
+      "Ban điều hành nắm tình hình CLB theo từng kỳ.",
+      "Thiết kế mẫu báo cáo tháng/quý: tài chính, mức độ tích cực, giao thương và các chỉ tiêu khác.",
+      "Chị Phương",
+      "Trung bình · Đợt 1",
+      "• Bộ Báo Cáo Chuẩn Hóa Điều Hành: Thiết kế mẫu báo cáo chuẩn hóa theo kỳ Tháng/Quý/Năm tích hợp đầy đủ 4 trụ cột: Biến động tài chính hội phí, Chỉ số tích cực &amp; chuyên cần, Tổng giá trị giao thương B2B, và Tốc độ phát triển hội viên mới.\n• Công nghệ Xuất Bản Đa Định Dạng Tức Thì (Instant Multi-Format Export): Hỗ trợ nút xuất bản Báo cáo in ấn định dạng A4 chuyên nghiệp (đầy đủ phân tích biểu đồ và vị trí phê duyệt của Ban Tài Chính, Ban Hội Viên, Chủ Tịch) và xuất dữ liệu thô Excel (.xlsx) phục vụ lưu trữ kế toán.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  },
+  {
+    "rowIndex": 19,
+    "cellCount": 1,
+    "cells": [
+      "E. TRANG CÁ NHÂN"
+    ]
+  },
+  {
+    "rowIndex": 20,
+    "cellCount": 9,
+    "cells": [
+      "15",
+      "Trang cá nhân hội viên",
+      "Mới có mục Lịch sử trên trang chủ; chưa có trang tổng hợp sự kiện và cơ hội đã tham gia.",
+      "Hội viên xem lại quá trình tham gia; có dữ liệu phục vụ đánh giá.",
+      "Tổng hợp trên trang cá nhân: sự kiện, hoạt động đã tham gia; cơ hội giao thương đã tham gia; lịch sử hoạt động.",
+      "Chị Dung",
+      "Trung bình · Đợt 1",
+      "• Tái cấu trúc Hồ Sơ Số Toàn Diện: Tinh giản toàn bộ giao diện hồ sơ, định danh rõ nét vị trí doanh nghiệp, chức vụ trong CLB và tích hợp nút chia sẻ danh thiếp số 1 chạm.\n• Ý tưởng Dòng Thời Gian Hoạt Động (Member Journey Timeline): Tổng hợp trực quan và đầy đủ toàn bộ hành trình gắn bó của hội viên: Lịch sử các sự kiện đã tham gia, các cơ hội hợp tác đã đăng tải, các hợp đồng giao thương đã khớp lệnh, và các cuộc hẹn kết nối 1-on-1.\n• Đồng bộ Nhận diện Sự Kiện: Tự động hiển thị huy hiệu và chủ đề sự kiện/lễ hội đang diễn ra tại CLB để tạo sự gắn kết cộng đồng mạnh mẽ.",
+      "🟡 ĐANG TRIỂN KHAI\n(Hoàn thiện Đợt 1 - trước 05/11/2026)"
+    ]
+  }
+]

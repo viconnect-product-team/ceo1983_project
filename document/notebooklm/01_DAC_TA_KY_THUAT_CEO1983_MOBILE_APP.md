@@ -7,11 +7,11 @@
 ## 1. TỔNG QUAN PHÂN HỆ MOBILE APP
 - **Tên phân hệ**: Ứng dụng Di Động Hội Viên CLB Doanh Nhân CEO 1983 (`@ceo1983/app_fe`).
 - **Đối tượng sử dụng**: Hội viên chính thức CLB CEO 1983 (Chủ tịch HĐQT, CEO, Tổng giám đốc, Nhà sáng lập) và các đối tác B2B.
-- **Khung giao diện (Layout)**: `MemberShell.tsx` với **Bottom Navigation Bar** 5 mục:
+- **Khung giao diện (Layout)**: `MemberShell.tsx` với **Bottom Navigation Bar** 5 mục chuẩn hóa:
   1. Trang chủ (`/association`)
-  2. Cơ hội (`/association/opportunities`)
+  2. Thống kê (`/association/analytics`) - Biểu tượng `FooterAnalyticsIcon`
   3. Danh bạ (`/association/members`)
-  4. Mạng lưới (`/association/messages`)
+  4. Mạng lưới (`/association/messages`) - Biểu tượng mạng lưới cộng đồng `FooterSocialNetworkIcon`
   5. Cá nhân (`/association/profile`)
 - **Hệ thống màu thương hiệu & Quy chuẩn nút bấm (Strict UI Rules)**:
   - **Màu sắc thương hiệu**: Deep Cobalt Navy (`#1F3864`), Vàng Hoàng Gia Amber Gold (`#B8860B`), Xanh Ngọc Emerald (`#059669`).
@@ -21,17 +21,19 @@
 
 ## 2. ĐẶC TẢ CHI TIẾT THEO TỪNG NODE CHỨC NĂNG
 
-### `[NODE-APP-001]` Trang Chủ Hội Viên, Dải Nến Candlestick & 4 Phím Tắt Tùy Biến
+### `[NODE-APP-001]` Trang Chủ Hội Viên, Lối Tắt Tin Nhắn, Welcome Modal & Theme Sync
 - **Route Frontend**: `/association` (`src/routes/association.index.tsx`).
-- **Thành phần**: `CustomHomeShortcutsModal.tsx`, `FeedSummaryWidget.tsx`, `UpcomingEventsWidget.tsx`.
+- **Thành phần**: `CustomHomeShortcutsModal.tsx`, `WelcomeMemberModal.tsx`, `SeasonalEventHeader.tsx`, `OpportunityCandleWidget.tsx`.
 - **API Backend**: `GET /association/home-feed`, `GET /association/home-stats` (`feed.service.ts`, `opportunity.service.ts`).
 - **Bảng CSDL**: `feed_posts`, `events`, `opportunities`, `products`.
 - **Luồng xử lý**:
   - Dải Cơ Hội Kinh Doanh Kéo Full-Width: Tích hợp widget Biểu đồ nến Candlestick thời gian thực biểu thị biến động giao thương theo từng khung giờ trong ngày (Open, High, Low, Close, Volume).
   - Khối Sàn Giao Thương B2B được đẩy xuống ngay bên dưới dạng thẻ full-width card dễ quan sát.
   - Tải số liệu thống kê thật 100% từ CSDL (tổng số deal, tổng giá trị, sản phẩm). Tuyệt đối không dùng số fallback giả.
-  - Cho phép hội viên mở modal tùy biến chọn 4 phím tắt thường dùng nhất trong số 10 tính năng. Lưu vào `localStorage` theo key `vba_user_custom_shortcuts_${userId}` và hiển thị badge số lượng.
-  - Cho phép đổi nhanh Avatar, Cover photo, Logo công ty kiểu Facebook ngay tại trang chủ và phát sự kiện đồng bộ.
+  - **Lối Tắt Nhanh Tiện Ích**: Modal tùy biến phím tắt (`CustomHomeShortcutsModal.tsx`) chuẩn hóa thay thế lối tắt Thống kê cũ bằng lối tắt **"Tin nhắn"** (`/association/messages?tab=messages`) giúp hội viên mở nhanh hộp thư đàm phán B2B.
+  - **Cửa Sổ Chào Mừng Hội Viên (Onboarding Welcome Modal)**: Gắn trực tiếp tại `MemberShell.tsx`, tự động chào mừng khi mở app, hỗ trợ mượt mà cả chế độ Sáng (Light) và Tối (Dark).
+  - **Đồng Bộ Hình Nền Chủ Đề Lễ Hội**: Tự động áp dụng lớp nền sự kiện rực rỡ từ biến CSS toàn cục `--festival-bg-image` do Theme Studio CRM phát hành.
+
 
 ### `[NODE-APP-002]` Thẻ Hội Viên VIP Số & QR Cá Nhân
 - **Route Frontend**: `/association/card` (`src/routes/association.card.tsx`).
@@ -53,16 +55,19 @@
   - Nếu hội viên bật chế độ ẩn Số điện thoại hoặc Email, giao diện hiển thị thông báo "🔒 Đã ẩn theo cài đặt riêng tư" thay vì số thật.
   - Thiết kế đồng bộ 100% về kích thước, màu sắc và kiểu dáng thẻ với Thẻ hội viên nội bộ.
 
-### `[NODE-APP-004]` Danh Bạ Hội Viên & Chế Độ Bản Đồ Định Vị
+### `[NODE-APP-004]` Danh Bạ Hội Viên & Bản Đồ Số 2D Google Maps Đa Phạm Vi
 - **Route Frontend**: `/association/members` (`src/routes/association.members.tsx`).
-- **Thành phần**: `BusinessConnectBottomSheet.tsx`, `MemberCardGrid.tsx`.
+- **Thành phần**: `CeoInteractiveMapModal.tsx`, `BusinessConnectBottomSheet.tsx`, `MemberCardGrid.tsx`.
 - **API Backend**: `GET /association/members`, `GET /members/locations`, `PUT /members/my-location` (`members.service.ts`).
 - **Bảng CSDL**: `members`, `companies`, `b2b_connections`.
 - **Luồng xử lý**:
-  - Hỗ trợ 2 chế độ: Chế độ Danh Sách và Chế độ Bản Đồ Hội Viên tương tác trực tiếp.
-  - Chế độ Bản Đồ hiển thị tọa độ các quận trọng điểm và ghim Avatar nổi bật của các hội viên kích hoạt chia sẻ vị trí (`is_location_sharing = true`).
-  - Nhấp vào Avatar mở Mini Card tóm tắt doanh nghiệp kèm nút Gọi điện thoại hoặc Đặt lịch hẹn 1-on-1.
-  - Dải chữ cái A-Z cuộn ngang trên điện thoại, nút hành động gọi điện, nhắn tin, đặt lịch kết nối.
+  - Hỗ trợ chuyển đổi nhanh giữa Chế độ Danh Sách và nút bấm "Bản Đồ" (Icon `MapPin` / `Compass`).
+  - **Bản Đồ 2D Google Maps (`CeoInteractiveMapModal.tsx`)**: Ứng dụng lớp bản đồ 2D Google Maps (`mt0-mt3.google.com/vt/lyrs=m`), khắc phục triệt để lỗi màn hình đen.
+  - **Phân tách 2 phạm vi hiển thị độc lập**:
+    + *Phạm vi "Tổng thể"*: Toàn bộ hội viên trực tuyến/dùng app, sự kiện sắp tới, cuộc họp Ban.
+    + *Phạm vi "Cá nhân"*: Hội viên đã kết nối giao thương với tôi, sự kiện tôi đã đăng ký, cuộc họp 1-on-1/Ban liên quan đến user ID.
+  - Tích hợp công cụ định vị GPS thời gian thực và nút dẫn đường Google Maps trực tiếp.
+  - Chạm Avatar mở Mini Card tóm tắt doanh nghiệp kèm nút Gọi điện thoại hoặc Đặt lịch hẹn 1-on-1.
 
 ### `[NODE-APP-005]` Cơ Hội Giao Thương B2B Strip 3 Thẻ Ngang
 - **Route Frontend**: `/association/opportunities` (`src/routes/association.opportunities.tsx`).
@@ -73,14 +78,18 @@
   - Dải 3 thẻ thống kê ngang nhỏ gọn trên đầu: "Tổng chia sẻ", "Deal đã chốt", "Tôi share đi", kèm nút điều hướng nhanh sang Trung tâm Thống kê.
   - Bộ lọc 3 trạng thái rõ ràng: "Tất cả", "🛒 Bên mua (Cần mua / Tìm đối tác)", "📦 Bên bán (Cung cấp / Bán hàng)", kết hợp bộ lọc 10 ngành nghề trọng điểm.
 
-### `[NODE-APP-006]` Trung Tâm Thống Kê (Toàn CLB vs Cá Nhân Tôi)
+### `[NODE-APP-006]` Trung Tâm Thống Kê 5 Phân Loại, Biểu Đồ Cột Đường Đỉnh Top Avatar & Bục Top 3 Một Hàng
 - **Route Frontend**: `/association/analytics` (`src/routes/association.analytics.tsx`).
+- **Thành phần**: `AssociationAnalyticsScreen`, Recharts `ComposedChart` (`Bar`, `Line`), Export Report Modal.
 - **API Backend**: `GET /association/opportunities/report`, `GET /analytics/overview` (`opportunity.service.ts`, `analytics.service.ts`).
-- **Bảng CSDL**: `opportunities`, `members`.
+- **Bảng CSDL**: `opportunities`, `members`, `feed_posts`, `events`.
 - **Luồng xử lý**:
-  - Thiết kế 2 Tab phân tích so sánh: "Tab Toàn CLB" (bức tranh tổng thể, cơ cấu ngành nghề) vs "Tab Cá Nhân Tôi" (cơ hội đã trao, cơ hội đã nhận, deal đã chốt).
-  - Trên đỉnh cao nhất của timeline biểu đồ gắn trực tiếp **Avatar tròn viền vàng** vinh danh Doanh nhân Top 1 Giver.
-  - Bảng xếp hạng Top Givers có thể mở rộng/thu gọn và danh sách cơ hội thời gian thực.
+  - **4 ô Thẻ KPI cốt lõi trên đầu**: Tổng cơ hội kết nối, Tổng chi tiêu/Doanh số giao dịch, Lượt tương tác app, Sự kiện & Hoạt động đang diễn ra. Bỏ toàn bộ chi tiết thừa phía trên biểu đồ.
+  - **Biểu đồ biến động Composed Bar + Line**: Tông 3 màu xanh - trắng - đen; đường Line xanh lá (`#10B981`) thể hiện xu hướng tăng, đường đỏ (`#EF4444`) thể hiện xu hướng giảm.
+  - **Avatar Ghim Đỉnh Cột / Đường**: Tại đỉnh cao nhất của cột số liệu hoặc mốc cuối của đường, ghim **Avatar tròn viền vàng** vinh danh Doanh nhân Top 1.
+  - **Bục Vinh Danh Top 3 Nằm Chung 1 Hàng**: Top 1 ở giữa cao nhất (Vương miện vàng), Top 2 bên trái (Huy hiệu Bạc), Top 3 bên phải (Huy hiệu Đồng).
+  - **5 Danh Mục Nghiệp Vụ Rõ Ràng**: 1. Cơ hội, 2. Chi tiêu giao dịch, 3. Tần suất tương tác app, 4. Sự kiện hoạt động, 5. Hội viên tích cực nhất (Bình luận + Đăng cơ hội).
+  - **Xuất Báo Cáo Chuẩn Hóa**: In ấn khổ giấy A4 tiêu chuẩn (`window.print`) và Xuất file Excel `.xlsx`.
 
 ### `[NODE-APP-007]` Sàn Giao Thương B2B Giới Hạn 5 Sản Phẩm
 - **Route Frontend**: `/association/products` (`src/routes/association.products.tsx`).
@@ -111,22 +120,26 @@
   - Tab 1 - Biểu quyết đang diễn ra: Các phiên gắn với sự kiện/cuộc họp đang mở, hiển thị các lựa chọn (Tán thành, Không tán thành, Ý kiến khác) và tỷ lệ % realtime.
   - Tab 2 - Lịch sử biểu quyết: Lưu trữ các nghị quyết đã biểu quyết thành công.
 
-### `[NODE-APP-010]` Bảng Tin Mạng Lưới, 5 Comment Mở Sẵn & Link Preview Facebook
+### `[NODE-APP-010]` Bảng Tin Mạng Lưới Feed B2B, Thẻ Attendee & Bắn Đào Tạo/Sự Kiện Từ CRM
 - **Route Frontend**: `/association/messages` (`src/routes/association.messages.tsx`).
-- **Thành phần**: `FeedView.tsx`, `PostItem.tsx`, `CommentSection.tsx`.
+- **Thành phần**: `FeedView.tsx`, `PostItem.tsx`, `CommentSection.tsx`, `SeasonalEventHeader.tsx`.
 - **API Backend**: `GET /association/feed`, `POST /association/feed/posts`, `POST /association/feed/comments` (`feed.service.ts`).
 - **Bảng CSDL**: `feed_posts`, `feed_comments`, `feed_likes`.
 - **Luồng xử lý**:
-  - Mở sẵn 5 bình luận mới nhất dưới mỗi bài đăng kèm ô nhập bình luận trực tiếp giúp thảo luận tự nhiên, thuận tiện.
-  - Tự động trích xuất metadata và hiển thị Thẻ xem trước liên kết (Link Preview Card) dạng Facebook chuẩn mực khi bài viết chia sẻ link bài báo hoặc mạng xã hội.
-  - Tích hợp cuộc họp ban vào Bảng tin có nút đánh dấu cuộc họp vào hồ sơ cá nhân.
+  - **Loại bỏ ô search trùng lặp trong Feed**: Đồng bộ thống nhất từ khóa tìm kiếm qua Header `searchQuery`.
+  - **Gắn thẻ đại biểu tham dự cuộc họp/sự kiện**: Hiển thị danh sách hội viên tham dự dưới dạng thẻ `@HọTên [✓ Đã Check-in]`.
+  - **Tiếp nhận sự kiện & đào tạo bắn từ CRM**: Hiển thị ảnh Poster sự kiện/đào tạo khổ lớn kèm **Mã QR Điểm Danh (Check-in QR)** và thông tin khung giờ để quét soát vé nhanh tại cổng.
+  - Mở sẵn 5 bình luận mới nhất dưới mỗi bài đăng kèm ô nhập trực tiếp.
+  - Thẻ xem trước liên kết (Link Preview Card) dạng Facebook chuẩn mực khi chia sẻ bài báo kinh tế hoặc link ngoài.
 
-### `[NODE-APP-011]` Hồ Sơ Cá Nhân & Quản Trị RBAC Nhanh
+### `[NODE-APP-011]` Hồ Sơ Cá Nhân Tối Giản Header & Đồng Bộ Theme CRM
 - **Route Frontend**: `/association/profile` (`src/routes/association.profile.tsx`).
 - **Thành phần**: `QuickProfileEditModal.tsx`.
 - **API Backend**: `GET /association/profile`, `PUT /association/profile` (`members.service.ts`).
 - **Bảng CSDL**: `members`, `vione_users`.
 - **Luồng xử lý**:
+  - **Tối giản hóa Header**: Loại bỏ hoàn toàn các icon chức năng thừa ở góc phải Header (`right={null}`), giúp giao diện thanh thoát, sang trọng.
+  - **Thẻ trạng thái đồng bộ Theme CRM thời gian thực**: Hiển thị thẻ viền vàng thông báo tên chủ đề lễ hội đang kích hoạt và trạng thái đồng bộ với Theme Studio CRM.
   - Xem thông tin lãnh đạo, công ty, điều lệ và hợp đồng hội viên.
   - Nếu tài khoản có quyền Admin/BQT (`isAdmin`), hiển thị nút "Phân quyền Hội viên (BQT)" dẫn tới `/association/permissions`.
 

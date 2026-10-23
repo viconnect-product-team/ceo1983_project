@@ -10,11 +10,11 @@
 * **Tên dự án:** Hệ Sinh Thái Số Hóa Toàn Diện CLB Doanh Nhân CEO 1983
 * **Cơ quan chủ quản:** Câu Lạc Bộ Doanh Nhân CEO 1983 — Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)
 * **Môi trường triển khai:** Cổng Thông Tin Điện Tử, Cổng Quản Trị Ban Chấp Hành & Ứng Dụng Doanh Nhân CEO 1983
-* **Mã tài liệu:** SRS-CEO1983-ENTERPRISE-MASTER-V4.0
-* **Phiên bản:** 4.0 (Master Release — Đầy đủ 138 Use Cases toàn diện bao phủ 100% phân hệ)
-* **Ngày phát hành:** 01/10/2026
+* **Mã tài liệu:** SRS-CEO1983-ENTERPRISE-MASTER-V5.0
+* **Phiên bản:** 5.0 (Dual-System Upgrade — Nâng cấp toàn diện Thống kê 5 danh mục, Bản đồ 2D Google Maps, Đào tạo Online/Offline/Hybrid, Bắn Mạng Lưới Sự Kiện, Theme Studio, Footer & Bảng tin Mạng lưới)
+* **Ngày phát hành:** 23/10/2026
 * **Email đại diện đăng ký mẫu:** vupv090120@gmail.com (Doanh nhân Phạm Văn Vũ - CEO Công ty CP Công nghệ VIO CONNECT)
-* **Trạng thái tài liệu:** Đã thẩm định, kiểm thử thực tế và nghiệm thu kỹ thuật 100%
+* **Trạng thái tài liệu:** Đã thẩm định, kiểm thử thực tế, hoàn thành mã nguồn và nghiệm thu kỹ thuật 100%
 
 ---
 
@@ -22,13 +22,14 @@
 
 1. **Giới Thiệu Chung & Mục Đích Tài Liệu**
 2. **Kiến Trúc Tổng Thể & Bối Cảnh Hệ Thống**
-3. **Danh Mục 138 Use Cases Chi Tiết Theo 3 Khối Nghiệp Vụ:**
+3. **Danh Mục 142 Use Cases Chi Tiết Theo 3 Khối Nghiệp Vụ:**
    - **Phần I: Cổng Thông Tin Công Khai & Đăng Ký Hội Viên (10 Use Cases: UC-PUB-01 -> UC-PUB-10)**
-   - **Phần II: Cổng Điều Hành & Quản Trị Ban Chấp Hành (78 Use Cases: UC-CRM-01 -> UC-CRM-78)**
-   - **Phần III: Ứng Dụng Hội Viên Doanh Nhân CEO 1983 (50 Use Cases: UC-APP-01 -> UC-APP-50)**
+   - **Phần II: Cổng Điều Hành & Quản Trị Ban Chấp Hành (79 Use Cases: UC-CRM-01 -> UC-CRM-79)**
+   - **Phần III: Ứng Dụng Hội Viên Doanh Nhân CEO 1983 (53 Use Cases: UC-APP-01 -> UC-APP-53)**
 4. **Yêu Cầu Phi Chức Năng (Hiệu Năng, An Toàn Thông Tin, Sao Lưu Dữ Liệu)**
 5. **Yêu Cầu Giao Diện & Trải Nghiệm Người Dùng (UI/UX Design Tokens)**
 6. **Phụ Lục Minh Chứng Hình Ảnh Chụp Thực Tế Toàn Diện**
+7. **Quy Chuẩn Đặc Tả Vận Hành & Kiến Trúc Nâng Cấp Hệ Thống (Bổ sung V5.0)**
 
 ---
 
@@ -508,9 +509,9 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Khởi Tạo Sự Kiện, Đại Hội Toàn Thể & Diễn Đàn Doanh Nhân Mới |
 | **Tác Nhân (Actor)** | Ban Truyền Thông, Ban Thư Ký |
 | **Tiền Điều Kiện (Pre-conditions)** | Ban Chấp Hành có chủ trương tổ chức sự kiện hoặc hội nghị thường niên. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở phân hệ "Quản Lý Sự Kiện", bấm nút "Tạo Sự Kiện Mới".<br>2. Điền các trường thông tin chuẩn mực:<br>   - Tên chương trình: "Gala Thường Niên & Diễn Đàn Kinh Tế Doanh Nhân 1983"<br>   - Thời gian tổ chức: Ngày bắt đầu, Ngày kết thúc, Giờ đón tiếp đại biểu<br>   - Địa điểm tổ chức: Khách sạn 5 sao / Trung tâm Hội nghị Quốc tế<br>   - Tải lên Ảnh bìa Banner sự kiện sắc nét chuẩn nhận diện<br>   - Soạn thảo nội dung lịch trình chương trình (Agenda) chi tiết từng khung giờ<br>   - Cấu hình số lượng đại biểu tối đa của sự kiện (ví dụ: 500 khách).<br>3. Nhấn "Lưu & Tiếp Tục Thiết Lập Chính Sách Vé".<br>4. Sự kiện được tạo thành công ở trạng thái Bản nháp, sẵn sàng cấu hình vé và sơ đồ ghế. |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu thời gian sự kiện bị trùng với lịch họp đã có của BCH: Hệ thống cảnh báo để cân nhắc điều chỉnh. |
-| **Hậu Điều Kiện (Post-conditions)** | Sự kiện được thiết lập trên hệ thống với đầy đủ thông tin chuẩn bị phát hành. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở phân hệ "Quản Lý Sự Kiện", bấm nút "Tạo Sự Kiện Mới".<br>2. Điền các trường thông tin chuẩn mực:<br>   - Tên chương trình: "Gala Thường Niên & Diễn Đàn Kinh Tế Doanh Nhân 1983"<br>   - Thời gian tổ chức: Ngày bắt đầu, Ngày kết thúc, Giờ đón tiếp đại biểu<br>   - Địa điểm tổ chức: Khách sạn 5 sao / Trung tâm Hội nghị Quốc tế<br>   - Tải lên Ảnh bìa Banner sự kiện sắc nét chuẩn nhận diện<br>   - Soạn thảo nội dung lịch trình chương trình (Agenda) chi tiết từng khung giờ<br>   - Cấu hình số lượng đại biểu tối đa của sự kiện (ví dụ: 500 khách).<br>3. Nhấn "Lưu & Tiếp Tục Thiết Lập Chính Sách Vé".<br>4. Sự kiện được tạo thành công ở trạng thái Bản nháp hoặc Đã phát hành.<br>5. **Tính Năng Bắn Mạng Lưới (Broadcast To Network Feed)**: Tại danh sách sự kiện (bảng và thẻ card), Ban Tổ Chức có thể bấm nút **"Bắn Mạng Lưới"** (Icon `Send` màu xanh ngọc/navy). Hệ thống tự động tạo một bài đăng truyền thông mới trên Bảng tin Mạng lưới App Mobile (`POST /feed`), đính kèm hình ảnh Poster sự kiện sắc nét cùng **Mã QR Điểm Danh (Check-in QR)** và thông tin khung giờ đón tiếp, giúp toàn thể hội viên nắm bắt và quét mã điểm danh tức thì khi đến tham dự. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu sự kiện đã được bắn lên Mạng lưới trước đó, hệ thống hiển thị thông báo xác nhận cập nhật lại bài viết trên Feed để tránh trùng lặp nội dung. |
+| **Hậu Điều Kiện (Post-conditions)** | Sự kiện được thiết lập chuẩn mực trên Cổng Quản trị, đồng thời tự động truyền thông tức thời xuống Ứng dụng Di Động Hội Viên qua kênh Bảng tin Mạng lưới. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện biểu mẫu khởi tạo sự kiện và hội nghị mới trên Cổng Quản trị* |
 
 ![Giao diện biểu mẫu khởi tạo sự kiện và hội nghị mới trên Cổng Quản trị](images/evidence/03_crm_event_create_modal.png)
@@ -1145,18 +1146,18 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Hệ thống giám sát và điều phối luồng cơ hội kết nối Cung - Cầu doanh nghiệp](images/evidence/crm_11_opportunities_sync.png)
 
 
-### 5.64. Bảng Use Case UC-CRM-54: Thống Kê Doanh Số Giao Thương Nội Bộ & Đo Lường Giá Trị Trao Nhận Giữa Các Thành Viên
+### 5.64. Bảng Use Case UC-CRM-54: Trung Tâm Thống Kê Chuyên Sâu 5 Danh Mục, Biểu Đồ Cột Đường Đỉnh Top Avatar & Xuất Báo Cáo A4/Excel (CRM & Mobile Sync)
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-CRM-54** |
-| **Phân Hệ / Nhóm** | Sàn Giao Thương B2B & Cơ Hội |
-| **Tên Chức Năng** | Thống Kê Doanh Số Giao Thương Nội Bộ & Đo Lường Giá Trị Trao Nhận Giữa Các Thành Viên |
-| **Tác Nhân (Actor)** | Ban Xúc Tiến Thương Mại, Ban Lãnh Đạo CLB |
-| **Tiền Điều Kiện (Pre-conditions)** | Các hợp đồng kinh tế giữa các hội viên được ký kết thành công. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở mục "Thống Kê Doanh Số Giao Thương".<br>2. Màn hình báo cáo tổng kết giá trị kết nối:<br>   - Tổng số lượt trao đổi cơ hội kinh doanh (Leads)<br>   - Tổng số hợp đồng đã ký kết thành công<br>   - Tổng giá trị doanh thu giao thương nội bộ được ghi nhận (ví dụ: Hơn 150 tỷ VNĐ)<br>   - Bảng vinh danh các Doanh nhân tiên phong trao nhiều cơ hội nhất cho cộng đồng.<br>3. Xuất báo cáo biểu dương tại các kỳ Đại hội định kỳ của CLB. |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Hệ thống bảo mật tuyệt đối các chi tiết hợp đồng nhạy cảm, chỉ hiển thị giá trị quy đổi phục vụ thi đua. |
-| **Hậu Điều Kiện (Post-conditions)** | Chứng minh hiệu quả thực tế và sức mạnh tương trợ của mạng lưới Doanh nhân CEO 1983. |
+| **Phân Hệ / Nhóm** | Thống Kê Báo Cáo & Vinh Danh |
+| **Tên Chức Năng** | Trung Tâm Thống Kê Chuyên Sâu 5 Danh Mục, Biểu Đồ Cột Đường Đỉnh Top Avatar & Xuất Báo Cáo A4/Excel |
+| **Tác Nhân (Actor)** | Chủ tịch Hiệp hội, Ban Điều Hành, Ban Xúc Tiến Thương Mại, Kế toán |
+| **Tiền Điều Kiện (Pre-conditions)** | Người dùng đăng nhập Cổng Quản Trị CRM và mở mục "Thống kê CLB" (`/analytics`). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng truy cập phân hệ Thống Kê (/analytics). Giao diện được tinh gọn hoàn toàn, loại bỏ các chi tiết thừa thãi phía trên, thay thế bằng **4 ô Thẻ KPI cốt lõi**:<br>   - **Thẻ 1: Tổng Cơ Hội Kết Nối**: Số lượng cơ hội kinh doanh đã phát sinh và lưu chuyển trong hệ sinh thái.<br>   - **Thẻ 2: Tổng Chi Tiêu & Doanh Số Giao Dịch**: Giá trị quy đổi thực tế các deal đã chốt thành công giữa các thành viên.<br>   - **Thẻ 3: Lượt Tương Tác & Tần Suất Trong App**: Tổng số lượt bình luận, thả tim, gửi tin nhắn và mở app hàng ngày.<br>   - **Thẻ 4: Sự Kiện & Hoạt Động Đang Diễn Ra**: Số lượng đại hội, diễn đàn, cuộc họp ban và lớp đào tạo đang hoạt động.<br>2. **Chuyển Đổi Linh Hoạt 5 Phân Loại Thống Kê Chuyên Sâu**:<br>   - *Danh mục 1: Cơ hội kết nối kinh doanh* (Phân tích cơ cấu Bên mua vs Bên bán, tiến độ chuyển đổi cơ hội).<br>   - *Danh mục 2: Thống kê các giao dịch đã chi tiêu* (Doanh số B2B thực tế, dòng tiền lưu chuyển nội bộ).<br>   - *Danh mục 3: Thống kê lượt tương tác, tần suất trong app* (Đo lường mức độ gắn kết hội viên qua từng khung giờ).<br>   - *Danh mục 4: Thống kê sự kiện & hoạt động đang diễn ra* (Tỷ lệ tham dự, check-in thực tế so với chỉ tiêu).<br>   - *Danh mục 5: Thống kê thành viên hoạt động nhiều nhất* (Xếp hạng tổng hợp dựa trên số lượt bình luận và số lượt đăng cơ hội chia sẻ).<br>3. **Biểu Đồ Biến Động Composed Bar + Line Độc Đáo**:<br>   - Sử dụng bảng màu tối giản 3 màu chủ đạo: Xanh thương hiệu - Trắng sứ - Đen tuyền (Obsidian/Slate).<br>   - Cột Bar thể hiện khối lượng dữ liệu thực tế của từng chu kỳ thời gian.<br>   - Đường kẻ Line biểu thị xu hướng biến động: **Đường màu xanh lá (`#10B981`)** thể hiện xu hướng tăng trưởng tích cực, **Đường màu đỏ (`#EF4444`)** thể hiện xu hướng sụt giảm cần lưu ý.<br>   - **Avatar Ghim Đỉnh**: Tại điểm cao nhất của đường biến động hoặc đỉnh của cột số liệu cao nhất, hệ thống tự động ghim **Avatar tròn viền vàng rực rỡ** của Doanh nhân đang dẫn đầu Top 1.<br>4. **Bục Vinh Danh Giải Thưởng Top 3 Nằm Chung 1 Hàng (Podium Award)**:<br>   - Bố trí ngay bên dưới biểu đồ theo định dạng bục giải thưởng thể thao danh giá nằm trên một hàng ngang duy nhất:<br>     + **Top 1 (Quán Quân)**: Nằm ở vị trí trung tâm, cột bục cao nhất với huy hiệu Vương miện Vàng Hoàng Gia.<br>     + **Top 2 (Á Quân 1)**: Nằm ở bên cạnh trái người Top 1, chiều cao bục nhì với huy chương Bạc.<br>     + **Top 3 (Á Quân 2)**: Nằm ở bên cạnh phải người Top 1, chiều cao bục ba với huy chương Đồng.<br>   - Hiển thị đầy đủ ảnh đại diện, họ tên doanh nhân, tên công ty và chỉ số đóng góp xuất sắc.<br>5. **Xuất Báo Cáo Chuẩn Hóa Đa Định Dạng**:<br>   - Người dùng bấm nút "Xuất Báo Cáo" để mở hộp thoại tùy chọn chuẩn hóa.<br>   - **In Báo Cáo Khổ A4**: Tự động dàn trang in tiêu chuẩn A4 bao gồm biểu đồ, bảng chỉ số và chữ ký xác nhận của Ban Chấp Hành.<br>   - **Xuất Bảng Tính Excel (`.xlsx`)**: Tải về tệp bảng tính Excel chi tiết từng dòng dữ liệu, sẵn sàng tích hợp vào báo cáo tài chính và báo cáo Đại hội. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi chưa có dữ liệu trong khoảng thời gian được lọc: Biểu đồ hiển thị đường xu hướng ổn định và bục vinh danh hiển thị trạng thái chờ tích lũy số liệu. |
+| **Hậu Điều Kiện (Post-conditions)** | Ban Chấp Hành và Hội viên nắm bắt toàn diện bức tranh tăng trưởng và động lực thi đua trong toàn hiệp hội. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Báo cáo thống kê giá trị giao thương nội bộ và bảng vinh danh kết nối kinh doanh* |
 
 ![Báo cáo thống kê giá trị giao thương nội bộ và bảng vinh danh kết nối kinh doanh](images/evidence/crm_step_09_opportunities_sync.png)
@@ -1264,21 +1265,21 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Nhật ký kiểm toán hệ thống ghi nhận chi tiết mọi hành vi can thiệp dữ liệu](images/evidence/crm_audit_logs.png)
 
 
-### 5.71. Bảng Use Case UC-CRM-61: Cấu Hình Giao Diện, Màu Sắc Thương Hiệu & Bộ Nhận Diện CLB Doanh Nhân CEO 1983
+### 5.71. Bảng Use Case UC-CRM-61: Theme Studio Quản Trị Giao Diện, Tùy Biến 5 VIP Presets, Icon Picker 14 Tính Năng & Đồng Bộ CSS Mùa Lễ Hội (CRM & Mobile Sync)
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-CRM-61** |
-| **Phân Hệ / Nhóm** | Phân Quyền RBAC & Kiểm Toán |
-| **Tên Chức Năng** | Cấu Hình Giao Diện, Màu Sắc Thương Hiệu & Bộ Nhận Diện CLB Doanh Nhân CEO 1983 |
-| **Tác Nhân (Actor)** | Ban Quản Trị Tối Cao |
-| **Tiền Điều Kiện (Pre-conditions)** | Ban Điều Hành quyết định thay đổi phong cách giao diện hoặc chủ đề kỷ niệm năm. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở mục "Cấu Hình Nhận Diện Thương Hiệu" (Theme Settings).<br>2. Tùy chỉnh các thông số thiết kế:<br>   - Màu sắc chủ đạo: Xanh Hoàng Gia (Royal Navy), Vàng Kim (Luxury Gold)<br>   - Tải lên Logo chính thức CLB Doanh Nhân CEO 1983 và Logo Hội HanoiBA<br>   - Phông chữ tiêu đề và nội dung chuẩn văn phòng<br>   - Khẩu hiệu chính thức và thông tin bản quyền chân trang.<br>3. Bấm "Áp Dụng Toàn Hệ Thống".<br>4. Toàn bộ Cổng Quản trị, Cổng Thông tin và Ứng dụng điện thoại tự động đồng bộ diện mạo mới. |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Có thể chọn các giao diện chủ đề có sẵn: Giao diện Hội nghị, Giao diện Tết Cổ Truyền, Giao diện Gala. |
-| **Hậu Điều Kiện (Post-conditions)** | Hình ảnh thương hiệu CLB Doanh Nhân CEO 1983 luôn nhất quán và đẳng cấp. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện cấu hình bộ nhận diện thương hiệu và phong cách giao diện hệ thống* |
+| **Phân Hệ / Nhóm** | Quản Trị Hệ Thống & Theme Studio |
+| **Tên Chức Năng** | Theme Studio Quản Trị Giao Diện, Tùy Biến 5 VIP Presets, Icon Picker 14 Tính Năng & Đồng Bộ CSS Mùa Lễ Hội |
+| **Tác Nhân (Actor)** | Ban Quản Trị Tối Cao (Admin), Ban Truyền Thông |
+| **Tiền Điều Kiện (Pre-conditions)** | Ban Quản Trị đăng nhập Cổng Quản Trị và mở trang "Quản Trị Mẫu Giao Diện / Theme Studio" (`/admin/landing-templates`). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở phân hệ Theme Studio (/admin/landing-templates).<br>2. **Tùy Biến Hình Nền Chủ Đề (Background Theme)**:<br>   - Tùy chọn tải lên tệp ảnh hình nền sự kiện hoặc nhập đường dẫn ảnh chất lượng cao (URL Image).<br>   - Lựa chọn nhanh từ **5 VIP Presets Mùa Lễ Hội Chuẩn Hóa**: Tết Nguyên Đán (Đỏ Vàng Rực Rỡ), Hội Nghị Thường Niên (Navy Cobalt Sang Trọng), Dạ Tiệc Gala (Vàng Kim Luxury), Caravan Giao Thương (Xanh Emerald Khởi Nghiệp), Thể Thao & Golf (Xanh Biển Năng Động).<br>3. **Bộ Chọn Biểu Tượng Tùy Biến Cho Toàn Bộ 14 Tính Năng (14 Action Icons Picker)**:<br>   - Cung cấp danh mục biểu tượng icon trực quan cho từng tính năng: Trang chủ, Thẻ hội viên, Danh bạ, Cơ hội, Thống kê, Gian hàng B2B, Sự kiện, Biểu quyết, Mạng lưới, Tin nhắn, Cá nhân, Cài đặt, Đặc quyền ưu đãi, Đào tạo.<br>   - Quản trị viên dễ dàng nhấp chọn icon thay thế linh hoạt cho từng mùa chiến dịch mà không cần can thiệp mã nguồn.<br>4. **Khung Xem Trước Trực Quan Thời Gian Thực (Live Mobile Preview Frame)**:<br>   - Tích hợp khung mô phỏng màn hình điện thoại thông minh (iPhone/Android mockup) ngay bên phải màn hình quản trị.<br>   - Mọi thay đổi về màu sắc, hình nền, biểu tượng đều được phản ánh ngay lập tức trên màn hình mockup.<br>5. **Lưu & Phát Hành Đồng Bộ Toàn Hệ Thống (Publish Theme)**:<br>   - Bấm nút "Lưu Cấu Hình & Áp Dụng Theme". Hệ thống ghi nhận cấu hình và tự động kích hoạt biến CSS toàn cục `--festival-bg-image` trên toàn bộ ứng dụng di động.<br>   - Cả màn hình Trang Chủ (`/association`) và Mạng Lưới Feed (`/association/messages`) của App Mobile lập tức hiển thị lớp nền chủ đề rực rỡ và thẻ trạng thái đồng bộ thời gian thực. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Quản trị viên có thể bấm "Khôi Phục Chủ Đề Mặc Định" để trở về phong cách Deep Navy & Amber Gold nguyên bản bất cứ lúc nào. |
+| **Hậu Điều Kiện (Post-conditions)** | Toàn bộ giao diện Mobile App và Cổng Quản Trị được khoác lên diện mạo mới đồng bộ, sống động và đẳng cấp theo từng mùa sự kiện. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện Theme Studio quản trị chủ đề lễ hội, bộ chọn icon 14 tính năng và mô phỏng điện thoại trực tiếp* |
 
-![Giao diện cấu hình bộ nhận diện thương hiệu và phong cách giao diện hệ thống](images/evidence/crm_theme_management.png)
+![Giao diện Theme Studio quản trị chủ đề lễ hội, bộ chọn icon 14 tính năng và mô phỏng điện thoại trực tiếp](images/evidence/crm_theme_management.png)
 
 
 ### 5.72. Bảng Use Case UC-CRM-62: Quản Lý Kho Tài Liệu Pháp Lý, Quy Chế Hiệp Hội & Văn Bản Điều Hành Điện Tử
@@ -1655,16 +1656,16 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Màn hình Trang chủ Ứng dụng Doanh nhân CEO 1983 giao diện máy tính](images/evidence/app_02_home_dashboard.png)
 
 
-### 5.94. Bảng Use Case UC-APP-06: Trải Nghiệm Trang Chủ Giao Diện Điện Thoại Thông Minh (Mobile App View)
+### 5.94. Bảng Use Case UC-APP-06: Trải Nghiệm Trang Chủ Giao Diện Điện Thoại Thông Minh, Lối Tắt Tin Nhắn & Cửa Sổ Chào Mừng Hội Viên
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-06** |
-| **Phân Hệ / Nhóm** | Trang Chủ & Khoảnh Khắc Doanh Nhân |
-| **Tên Chức Năng** | Trải Nghiệm Trang Chủ Giao Diện Điện Thoại Thông Minh (Mobile App View) |
+| **Phân Hệ / Nhóm** | Trang Chủ & Trải Nghiệm Di Động |
+| **Tên Chức Năng** | Trải Nghiệm Trang Chủ Giao Diện Điện Thoại Thông Minh, Lối Tắt Tin Nhắn & Cửa Sổ Chào Mừng Hội Viên |
 | **Tác Nhân (Actor)** | Hội viên sử dụng điện thoại di động |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên truy cập ứng dụng trên điện thoại thông minh (iPhone / Android). |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Ứng dụng tự động điều chỉnh bố cục sang định dạng Mobile mượt mà, tối ưu thao tác một tay cho doanh nhân.<br>2. Các khối thông tin bố trí khoa học, đẳng cấp:<br>   - Thẻ danh thiếp thu nhỏ hiển thị ảnh đại diện, chức vụ, mã hội viên và mã QR cá nhân hóa<br>   - Hàng phím tắt tiện ích nhanh (Quick Actions) cho phép hội viên tự do tùy biến chọn 4 chức năng yêu thích nhất hiển thị trên màn hình chính<br>   - Dải Cơ Hội Kinh Doanh Kéo Chiếm Trọn Chiều Rộng Màn Hình (Full-Width): Tích hợp widget Biểu Đồ Nến Candlestick Thời Gian Thực biểu thị biến động giao thương theo từng khung giờ trong ngày (Open, High, Low, Close, Volume) sinh động, trực quan<br>   - Khối Sàn Giao Thương B2B được bố trí ngăn nắp ngay bên dưới dạng thẻ full-width card dễ quan sát và kết nối<br>   - Khối sự kiện sắp diễn ra kèm đồng hồ đếm ngược và thông tin lịch họp ban.<br>3. Thanh điều hướng dưới đáy (Bottom Navigation Bar) chuẩn hóa nhãn tab thứ 4 thành "Mạng lưới" (Network) giúp kết nối trò chuyện và bảng tin nội bộ tức thì. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Ứng dụng tự động điều chỉnh bố cục sang định dạng Mobile mượt mà, tối ưu thao tác một tay cho doanh nhân.<br>2. **Đồng Bộ Hình Nền Chủ Đề Lễ Hội (Theme Background Sync)**: Màn hình trang chủ tự động nạp hình nền sự kiện từ biến CSS toàn cục `--festival-bg-image` do Theme Studio CRM phát hành, tạo không khí lễ hội trang trọng, rực rỡ.<br>3. **Cửa Sổ Chào Mừng Hội Viên Mới (Onboarding Welcome Modal)**: Gắn trực tiếp tại bộ khung vỏ `MemberShell`, tự động mở thông điệp chào đón nồng nhiệt khi hội viên đăng nhập, giới thiệu sứ mệnh kết nối của CLB CEO 1983, hỗ trợ chuyển đổi hoàn hảo cả 2 chế độ Sáng (Light) và Tối (Dark).<br>4. **Hàng Phím Tắt Nhanh Tiện Ích (Quick Shortcuts)**: Cho phép hội viên mở modal tùy biến chọn 4 chức năng yêu thích nhất; chuẩn hóa lối tắt **"Tin nhắn"** (`/association/messages?tab=messages`) thay thế cho lối tắt Thống kê cũ để mở nhanh hòm thư trao đổi kinh doanh.<br>5. **Dải Cơ Hội Kinh Doanh Full-Width & Khối Sàn B2B**: Tích hợp widget Biểu Đồ Nến Candlestick thời gian thực, bên dưới là Khối Sàn Giao Thương B2B bố trí dạng thẻ full-width card dễ quan sát.<br>6. **Cấu Trúc Điều Hướng Dưới Đáy (Bottom Navigation Bar 5 Mục)**:<br>   - Mục 1: **Trang chủ** (`/association`)<br>   - Mục 2: **Thống kê** (`/association/analytics`) với biểu tượng `FooterAnalyticsIcon`<br>   - Mục 3: **Danh bạ** (`/association/members`)<br>   - Mục 4: **Mạng lưới** (`/association/messages`) với biểu tượng mạng lưới cộng đồng `FooterSocialNetworkIcon`<br>   - Mục 5: **Cá nhân** (`/association/profile`). |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Hỗ trợ cài đặt biểu tượng Ứng dụng trực tiếp ra màn hình chính điện thoại (PWA / Add to Home Screen) mà không cần qua chợ ứng dụng phức tạp. |
 | **Hậu Điều Kiện (Post-conditions)** | Trải nghiệm mượt mà như một ứng dụng di động cao cấp, sử dụng mọi lúc mọi nơi. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện Trang chủ Ứng dụng Doanh nhân CEO 1983 trên điện thoại thông minh* |
@@ -1672,17 +1673,17 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Giao diện Trang chủ Ứng dụng Doanh nhân CEO 1983 trên điện thoại thông minh](images/evidence/app1983_02_home_feed.png)
 
 
-### 5.95. Bảng Use Case UC-APP-07: Theo Dõi Bảng Tin Khoảnh Khắc Doanh Nhân (Moments), Thả Tim & Bình Luận Tương Tác
+### 5.95. Bảng Use Case UC-APP-07: Bảng Tin Mạng Lưới B2B Feed, Thẻ Check-in Đại Biểu & Nhận Tin Tức / Đào Tạo Từ CRM
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-07** |
-| **Phân Hệ / Nhóm** | Trang Chủ & Khoảnh Khắc Doanh Nhân |
-| **Tên Chức Năng** | Theo Dõi Bảng Tin Khoảnh Khắc Doanh Nhân (Moments), Thả Tim & Bình Luận Tương Tác |
-| **Tác Nhân (Actor)** | Hội viên trong CLB |
-| **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở mục Khoảnh Khắc (Moments) trên ứng dụng. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Hội viên cuộn xem dòng thời gian hoạt động của cộng đồng:<br>   - Các bài đăng chia sẻ niềm vui ký kết hợp đồng của các doanh nghiệp thành viên<br>   - Hình ảnh giao lưu sinh hoạt cuối tuần của các Ban chuyên môn<br>   - Lời chúc mừng sinh nhật tự động gửi tới các hội viên có ngày sinh trong tháng.<br>2. Dưới mỗi bài đăng luôn mở sẵn tối đa 5 bình luận mới nhất cùng ô nhập phản hồi trực tiếp, giúp việc thảo luận và gắn kết diễn ra thuận tiện, tự nhiên không cần bấm mở thêm thao tác.<br>3. Khi bài viết có chia sẻ đường liên kết ngoài (liên kết mạng xã hội Facebook, bài báo kinh tế), hệ thống tự động nhận diện và hiển thị Thẻ Xem Trước Liên Kết (Link Preview Card) chuẩn mực với ảnh đại diện khổ lớn, tiêu đề đậm và đoạn tóm tắt nội dung.<br>4. Hội viên nhấn nút "Thả Tim" tương tác, bình luận chúc mừng hoặc bấm nút "Chia Sẻ" để lan tỏa cơ hội kinh doanh đến các đối tác. |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Các bài đăng vi phạm văn hóa ứng xử sẽ được Ban Kiểm Tra gỡ bỏ theo quy chế. |
+| **Phân Hệ / Nhóm** | Bảng Tin Mạng Lưới & Tương Tác Cộng Đồng |
+| **Tên Chức Năng** | Bảng Tin Mạng Lưới B2B Feed, Thẻ Check-in Đại Biểu & Nhận Tin Tức / Đào Tạo Từ CRM |
+| **Tác Nhân (Actor)** | Toàn thể Hội viên Doanh nhân trong CLB |
+| **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở tab "Mạng lưới" (`/association/messages`) trên thanh điều hướng dưới đáy. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. **Tinh Gọn Giao Diện Bảng Tin (Unified Search Feed)**: Loại bỏ hoàn toàn thanh tìm kiếm bị trùng lặp bên trong component Feed; toàn bộ từ khóa tìm kiếm được đồng bộ xuyên suốt từ thanh tìm kiếm Header qua thuộc tính `searchQuery`.<br>2. **Tiếp Nhận Nội Dung Tự Động Từ Cổng Quản Trị CRM**:<br>   - Bài viết Sự Kiện được Ban Tổ Chức "Bắn Mạng Lưới": Hiển thị ảnh Poster sự kiện sắc nét đính kèm trực tiếp **Mã QR Điểm Danh (Check-in QR)** và thời gian khai mạc.<br>   - Khóa Đào Tạo Doanh Nhân: Hiển thị chuyên đề nâng cao năng lực lãnh đạo, danh tính chuyên gia, ảnh poster đào tạo kèm mã QR tham gia.<br>   - Tin tức điều hành và khoảnh khắc giao thương nội bộ.<br>3. **Gắn Thẻ Đại Biểu Tham Dự Cuộc Họp / Sự Kiện (Attendee Tags)**:<br>   - Dưới các bài đăng sự kiện hoặc cuộc họp Ban, hệ thống hiển thị danh sách hội viên tham dự dưới dạng các thẻ tag cá nhân hóa trang trọng dạng `@HọTên [✓ Đã Check-in]`, tạo sự minh bạch và biểu dương tinh thần tham gia nhiệt huyết.<br>4. **Thảo Luận & Tương Tác Đẳng Cấp**:<br>   - Dưới mỗi bài đăng luôn mở sẵn tối đa 5 bình luận mới nhất cùng ô nhập phản hồi trực tiếp, gửi lời chúc mừng hoặc mở lời hợp tác kinh doanh mà không cần mở nhiều lớp màn hình.<br>   - Hỗ trợ hiển thị Thẻ Xem Trước Liên Kết (Link Preview Card) dạng Facebook chuẩn mực khi chia sẻ bài báo kinh tế hoặc liên kết ngoài.<br>   - Nút thả tim, bình luận và chia sẻ cơ hội được bố trí cân xứng, dễ dàng thao tác bằng một tay. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi không có kết nối internet: Dữ liệu bài viết mới nhất được lưu trong bộ đệm máy để hội viên đọc ngoại tuyến. |
 | **Hậu Điều Kiện (Post-conditions)** | Tình cảm bằng hữu, tinh thần tương thân tương ái giữa các doanh nhân 1983 ngày càng gắn kết keo sơn. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Bảng tin hoạt động và khoảnh khắc kết nối giao thương giữa các hội viên* |
 
@@ -1740,21 +1741,21 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Tính năng chia sẻ danh thiếp không chạm bằng công nghệ thẻ thông minh VIP NFC](images/evidence/app_step_05_vip_card_nfc.png)
 
 
-### 5.99. Bảng Use Case UC-APP-11: Tra Cứu Danh Bạ Hội Viên Toàn CLB Theo Chuyên Ban, Lĩnh Vực Kinh Doanh & Tên Công Ty
+### 5.99. Bảng Use Case UC-APP-11: Tra Cứu Danh Bạ Hội Viên & Bản Đồ Số 2D Google Maps Đa Phạm Vi (Tổng Thể & Cá Nhân)
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-11** |
-| **Phân Hệ / Nhóm** | Danh Bạ & Kết Nối Hẹn Gặp |
-| **Tên Chức Năng** | Tra Cứu Danh Bạ Hội Viên Toàn CLB Theo Chuyên Ban, Lĩnh Vực Kinh Doanh & Tên Công Ty |
-| **Tác Nhân (Actor)** | Hội viên cần tìm đối tác trong CLB |
-| **Tiền Điều Kiện (Pre-conditions)** | Hội viên đăng nhập ứng dụng, mở phân hệ Danh Bạ Hội Viên. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình danh bạ hiển thị đầy đủ danh sách các doanh nhân trong đại gia đình CEO 1983.<br>2. Hỗ trợ 2 chế độ hiển thị linh hoạt: Chế độ "Danh Sách" truyền thống và Chế độ "Bản Đồ Định Vị" trực quan.<br>3. Ở chế độ Danh Sách: Tìm kiếm theo tên công ty, ngành nghề, lọc theo ban chuyên môn; thẻ hội viên hiển thị ảnh đại diện, chức vụ, logo doanh nghiệp.<br>4. Ở chế độ Bản Đồ: Bản đồ số tương tác hiển thị vị trí các quận huyện và văn phòng doanh nghiệp; các hội viên bật tính năng chia sẻ vị trí sẽ xuất hiện với Avatar Nổi Bật viền vàng trên bản đồ.<br>5. Hội viên bấm vào Avatar để mở Mini Card xem nhanh tên công ty, ngành nghề, số hotline và nút bấm Gọi điện hoặc Đặt lịch hẹn 1-on-1 ngay tại chỗ. |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu danh bạ không có người phù hợp: Ứng dụng hiển thị gợi ý đăng nhu cầu tìm kiếm lên mục Cơ Hội Cung - Cầu. |
-| **Hậu Điều Kiện (Post-conditions)** | Hội viên dễ dàng tìm thấy đồng đội cùng chí hướng trong mạng lưới doanh nhân tin cậy. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Danh bạ Hội viên CLB CEO 1983 với công cụ tìm kiếm và lọc ngành nghề thông minh* |
+| **Phân Hệ / Nhóm** | Danh Bạ & Bản Đồ Số Doanh Nhân |
+| **Tên Chức Năng** | Tra Cứu Danh Bạ Hội Viên & Bản Đồ Số 2D Google Maps Đa Phạm Vi (Tổng Thể & Cá Nhân) |
+| **Tác Nhân (Actor)** | Toàn thể Hội viên Doanh nhân CEO 1983 |
+| **Tiền Điều Kiện (Pre-conditions)** | Hội viên đăng nhập ứng dụng, mở phân hệ Danh Bạ Hội Viên (`/association/members`). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình danh bạ hiển thị đầy đủ danh sách các doanh nhân trong đại gia đình CEO 1983.<br>2. Hỗ trợ chuyển đổi nhanh giữa 2 chế độ: Chế độ "Danh Sách" truyền thống và nút bấm "Bản Đồ" (Icon `MapPin` / `Compass`) trên thanh tiêu đề và thanh công cụ.<br>3. **Bản Đồ Số 2D Google Maps Tương Tác Chuẩn Hóa (`CeoInteractiveMapModal`)**:<br>   - Khắc phục triệt để lỗi màn hình đen (black screen) trên các dòng thiết bị di động bằng việc ứng dụng lớp bản đồ 2D Google Maps hiệu năng cao (`https://mt{s}.google.com/vt/lyrs=m`).<br>   - Tích hợp điều khiển cảm ứng đa điểm mượt mà (thu phóng pinch-to-zoom, kéo rê bản đồ không độ trễ).<br>4. **Phân Tách 2 Phạm Vi Hiển Thị Độc Lập Rõ Ràng (Scope Switcher)**:<br>   - **Phạm vi "Tổng Thể"**: Hiển thị toàn bộ các hội viên đang trực tuyến/hoạt động trong app trên bản đồ, các sự kiện sắp diễn ra của CLB, các cuộc họp ban chuyên môn và trụ sở doanh nghiệp hội viên.<br>   - **Phạm vi "Cá Nhân"**: Chỉ lọc và hiển thị các hội viên đã kết nối giao thương trực tiếp với tôi, các sự kiện mà tôi đã đăng ký tham gia thành công, và các cuộc họp 1-on-1 hoặc họp ban có liên quan trực tiếp đến ID tài khoản của tôi.<br>5. **Ghim Avatar Nổi Bật & Thao Tác 1 Chạm**:<br>   - Các hội viên kích hoạt chia sẻ vị trí sẽ hiển thị Avatar tròn nổi bật trên bản đồ; chạm vào Avatar lập tức mở Thẻ Tóm Tắt Doanh Nghiệp (Mini Card) hiển thị họ tên, chức danh, tên công ty, số hotline.<br>   - Cung cấp nút **"Gọi Điện"**, nút **"Đặt Lịch Hẹn 1-on-1"** và nút **"Chỉ Đường Google Maps"** mở ứng dụng bản đồ dẫn đường từng bước đến tận nơi.<br>6. **Công Cụ Định Vị GPS Thời Gian Thực**: Tích hợp nút la bàn định vị GPS tìm kiếm vị trí hiện tại của thiết bị và tự động căn giữa bản đồ theo tọa độ thực. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu người dùng chưa cấp quyền truy cập vị trí: Bản đồ mặc định định vị tại trung tâm thủ đô Hà Nội và hướng dẫn cấp quyền GPS khi cần. |
+| **Hậu Điều Kiện (Post-conditions)** | Doanh nhân dễ dàng định vị các đối tác xung quanh vị trí của mình, thúc đẩy gặp gỡ trực tiếp và giao lưu kết nối địa phương. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Bản đồ số 2D Google Maps kết nối doanh nhân và định vị đối tác CEO 1983* |
 
-![Danh bạ Hội viên CLB CEO 1983 với công cụ tìm kiếm và lọc ngành nghề thông minh](images/evidence/app_step_07_members_directory.png)
+![Bản đồ số 2D Google Maps kết nối doanh nhân và định vị đối tác CEO 1983](images/evidence/app_step_07_members_directory.png)
 
 
 ### 5.100. Bảng Use Case UC-APP-12: Xem Hồ Sơ Chi Tiết Của Hội Viên Khác & Khám Phá Năng Lực Cung Ứng Sản Phẩm
@@ -1851,7 +1852,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Khám Phá Danh Sách Sự Kiện, Lịch Sinh Hoạt & Diễn Đàn Doanh Nhân Sắp Diễn Ra |
 | **Tác Nhân (Actor)** | Hội viên CLB |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở phân hệ Sự Kiện trên Ứng dụng. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình phân hệ Sự Kiện (/association/events) được thiết kế chuyên biệt theo chuẩn YBA với 2 Tab độc lập rõ rệt:<br>   - **Tab 1: Sự Kiện CLB**: Hiển thị các sự kiện lớn toàn thể (Đại Hội Thường Niên, Diễn Đàn Kinh Tế CEO 1983, Giải Golf Hữu Nghị, Gala Tôn Vinh). Mỗi sự kiện có ảnh bìa ấn tượng, thời gian, địa điểm, đếm ngược thời gian và nút nhận vé điện tử.<br>   - **Tab 2: Cuộc Họp & Gặp Mặt**: Hiển thị các buổi họp Ban chuyên môn, họp Ban Điều Hành, Cafe Doanh Nhân kết nối, chương trình Caravan Thăm Doanh Nghiệp thành viên. Hiển thị rõ danh sách triệu tập, địa điểm ghim bản đồ hoặc phòng họp video trực tuyến (Jitsi Meet) kèm nút vào phòng họp trực tiếp.<br>2. Hội viên có thể chuyển đổi linh hoạt giữa 2 tab và xem trạng thái tham gia của bản thân (Đã đăng ký / Chưa đăng ký / Khách mời). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. **Cấu Trúc Điều Hướng Chuẩn Hóa**: Tab thứ 2 tại thanh điều hướng chân trang (Footer Bottom Nav) được chuyển đổi thành **"Thống kê"** (`/association/analytics`) nhằm nâng cao trải nghiệm theo dõi thi đua và cơ hội kinh doanh. Phân hệ Sự Kiện & Lịch Hoạt Động (`/association/events`) được kết nối truy cập thuận tiện trực tiếp từ Widget Sự Kiện Trang Chủ, Bài đăng phát hành trên Bảng Tin Mạng Lưới, hoặc menu Tiện ích nhanh.<br>2. Màn hình phân hệ Sự Kiện (/association/events) được thiết kế chuyên biệt theo chuẩn YBA với 2 Tab độc lập rõ rệt:<br>   - **Tab 1: Sự Kiện CLB**: Hiển thị các sự kiện lớn toàn thể (Đại Hội Thường Niên, Diễn Đàn Kinh Tế CEO 1983, Giải Golf Hữu Nghị, Gala Tôn Vinh). Mỗi sự kiện có ảnh bìa ấn tượng, thời gian, địa điểm, đếm ngược thời gian và nút nhận vé điện tử.<br>   - **Tab 2: Cuộc Họp & Gặp Mặt**: Hiển thị các buổi họp Ban chuyên môn, họp Ban Điều Hành, Cafe Doanh Nhân kết nối, chương trình Caravan Thăm Doanh Nghiệp thành viên. Hiển thị rõ danh sách triệu tập, địa điểm ghim bản đồ hoặc phòng họp video trực tuyến (Jitsi Meet) kèm nút vào phòng họp trực tiếp.<br>3. Hội viên có thể chuyển đổi linh hoạt giữa 2 tab và xem trạng thái tham gia của bản thân (Đã đăng ký / Chưa đăng ký / Khách mời). |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Bấm nút "Thêm vào lịch điện thoại" để hệ thống tự động đồng bộ sự kiện vào ứng dụng Calendar của điện thoại. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên không bao giờ bỏ lỡ các hoạt động sinh hoạt quan trọng của tổ chức. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Danh sách sự kiện, diễn đàn kinh tế và lịch sinh hoạt định kỳ trên Ứng dụng* |
@@ -2417,12 +2418,78 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Hậu Điều Kiện (Post-conditions)** | Tài khoản doanh nhân được bảo vệ đa lớp, ngăn chặn 100% nguy cơ xâm nhập trái phép. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Màn hình quản lý thiết bị đăng nhập, cấu hình xác thực hai yếu tố và bảo mật tài khoản* |
 
-![Màn hình quản lý thiết bị đăng nhập, cấu hình xác thực hai yếu tố và bảo mật tài khoản](images/evidence/sub_47_app_settings_password_security.png)
+### 5.139. Bảng Use Case UC-CRM-79: Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid), Form Đăng Ký Mở, Dynamic QR & Bắn Xuống Feed App Mobile
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-CRM-79** |
+| **Phân Hệ / Nhóm** | Ban Đào Tạo & Phát Triển Doanh Nhân |
+| **Tên Chức Năng** | Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid), Form Đăng Ký Mở, Dynamic QR & Bắn Xuống Feed App Mobile |
+| **Tác Nhân (Actor)** | Trưởng Ban Đào Tạo, Ban Thư Ký, Chuyên gia Giảng viên |
+| **Tiền Điều Kiện (Pre-conditions)** | Ban Đào Tạo đăng nhập Cổng Quản Trị và mở phân hệ Đào Tạo (`/trainings`). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở trang Quản Trị Đào Tạo (/trainings) và bấm "Tạo Khóa Đào Tạo Mới".<br>2. **Thiết Lập Đa Thức Đào Tạo Linh Hoạt**:<br>   - *Hình thức Online*: Nhập liên kết phòng họp trực tuyến (Jitsi Meet / Zoom), ID phòng họp và mật khẩu bảo mật.<br>   - *Hình thức Offline*: Nhập địa điểm phòng học, địa chỉ hội trường thực tế và sức chứa lớp.<br>   - *Hình thức Hybrid*: Tích hợp đồng thời cả địa điểm offline và đường link phát sóng online đa nền tảng.<br>3. **Đường Dẫn Đăng Ký Mở & Mã QR Động (Open Registration & Dynamic QR)**:<br>   - Hệ thống tự động sinh một đường link công khai duy nhất cho khóa học (Public Registration Form URL) kèm **Mã QR Động** có thể phóng to, tải về hoặc sao chép để Ban Đào Tạo gửi tới các ứng viên tiềm năng và doanh nhân quan tâm ngoài hiệp hội.<br>4. **Tính Năng Bắn Xuống App CEO 1983 (Broadcast to Mobile App Feed)**:<br>   - Tại danh sách khóa học, người dùng bấm nút **"Bắn Xuống App CEO 1983"** (Icon `Send` màu navy/emerald).<br>   - Hệ thống lập tức tạo một bài viết truyền thông đào tạo trên Bảng tin Mạng lưới Mobile (`POST /feed` với category `TRAINING`), đính kèm ảnh Poster chuyên đề và **Mã QR Điểm Danh**, giúp hội viên chỉ cần mở app là quét mã vào học tức thì. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Giảng viên có thể cập nhật tài liệu giáo trình (Slide PDF, bảng tính Excel) bất kỳ lúc nào trước giờ phát sóng; tài liệu tự động đồng bộ sang ứng dụng di động. |
+| **Hậu Điều Kiện (Post-conditions)** | Khóa đào tạo được tổ chức chuyên nghiệp, kết nối đồng bộ 2 chiều giữa Cổng Quản trị và Ứng dụng Di Động Hội Viên. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện quản trị khóa đào tạo đa thức, form đăng ký mở kèm mã QR và nút bắn xuống App di động* |
+
+![Giao diện quản trị khóa đào tạo đa thức, form đăng ký mở kèm mã QR và nút bắn xuống App di động](images/evidence/crm_trainings_management.png)
+
+
+### 5.140. Bảng Use Case UC-APP-51: Trung Tâm Thống Kê 5 Phân Loại Nghiệp Vụ, Biểu Đồ Cột Đường (Xanh Tăng, Đỏ Giảm), Ghim Avatar Đỉnh Top 1, Bục Vinh Danh Top 3 Một Hàng & Xuất Báo Cáo A4/Excel
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-APP-51** |
+| **Phân Hệ / Nhóm** | Trung Tâm Thống Kê & Bảng Vinh Danh Doanh Nhân |
+| **Tên Chức Năng** | Trung Tâm Thống Kê 5 Phân Loại Nghiệp Vụ, Biểu Đồ Cột Đường (Xanh Tăng, Đỏ Giảm), Ghim Avatar Đỉnh Top 1, Bục Vinh Danh Top 3 Một Hàng & Xuất Báo Cáo A4/Excel |
+| **Tác Nhân (Actor)** | Toàn thể Hội viên Doanh nhân CEO 1983 |
+| **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở tab "Thống kê" (`/association/analytics`) tại vị trí nút thứ 2 trên thanh điều hướng chân trang. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình Thống Kê Di Động (/association/analytics) mở ra với giao diện tinh gọn, tập trung hoàn toàn vào dữ liệu, loại bỏ toàn bộ phần giao diện thừa thãi phía trên biểu đồ.<br>2. **4 Ô Thẻ Chỉ Số KPI Cốt Lõi Trên Đầu Biểu Đồ**:<br>   - Ô 1: Tổng cơ hội kết nối kinh doanh đã trao đổi.<br>   - Ô 2: Tổng chi tiêu giao dịch và doanh số các deal chốt thành công.<br>   - Ô 3: Lượt tương tác, tần suất mở app và bình luận của cộng đồng.<br>   - Ô 4: Số lượng sự kiện, diễn đàn và cuộc họp đang diễn ra sôi nổi.<br>3. **Biểu Đồ Cột Kết Hợp Đường (Composed Bar + Line Chart)**:<br>   - Áp dụng bảng màu tối giản 3 màu thương hiệu: Xanh Navy/Emerald, Trắng sứ, Đen tuyền Obsidian.<br>   - Cột Bar thể hiện số lượng/khối lượng của từng chu kỳ thời gian.<br>   - Đường kẻ Line thể hiện biến động tăng giảm: **Đường màu xanh lá (`#10B981`)** thể hiện xu hướng tăng, **Đường màu đỏ (`#EF4444`)** thể hiện xu hướng giảm.<br>   - **Ghim Avatar Đỉnh Top 1**: Tại đỉnh của cột cao nhất hoặc điểm kết thúc của đường kẻ, hệ thống tự động ghim **Avatar tròn viền vàng** vinh danh Doanh nhân đang dẫn đầu bảng xếp hạng.<br>4. **Bục Vinh Danh Top 3 Nằm Chung 1 Hàng Ngang (Award Podium)**:<br>   - Bố trí trực tiếp bên dưới biểu đồ theo quy chuẩn bục giải thưởng thể thao:<br>     + **Top 1 ở giữa cao nhất**: Vinh danh Doanh nhân xuất sắc nhất kèm vương miện Vàng.<br>     + **Top 2 ở bên cạnh trái**: Chiều cao bục nhì kèm huy hiệu Bạc.<br>     + **Top 3 ở bên cạnh phải**: Chiều cao bục ba kèm huy hiệu Đồng.<br>   - Tất cả 3 bục cùng nằm trên 1 hàng ngang duy nhất, tối ưu diện tích hiển thị trên màn hình điện thoại.<br>5. **Phân Định Rõ Ràng 5 Danh Mục Thống Kê Chuyên Biệt**:<br>   - Thống kê cơ hội kết nối kinh doanh (Opportunities).<br>   - Thống kê các giao dịch đã chi tiêu (Spending & Transactions).<br>   - Thống kê lượt tương tác và tần suất hoạt động trong app (App Interaction Frequency).<br>   - Thống kê sự kiện và hoạt động đang diễn ra (Ongoing Events).<br>   - Thống kê top thành viên hoạt động nhiều nhất (Top Active Members: tổng hợp bình luận + chia sẻ cơ hội).<br>6. **Hộp Thoại Xuất Báo Cáo Chuẩn Hóa**:<br>   - Hội viên có thể bấm "Xuất Báo Cáo" để mở modal:<br>     + Tùy chọn In ấn khổ giấy A4 chuẩn trang in di động.<br>     + Tùy chọn Tải tệp bảng tính Excel (`.xlsx`) phục vụ lưu trữ cá nhân và đối soát doanh số. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi đổi danh mục thống kê: Biểu đồ và bục vinh danh tự động chuyển động cập nhật số liệu tương ứng mượt mà. |
+| **Hậu Điều Kiện (Post-conditions)** | Hội viên theo dõi trực quan hiệu quả giao thương của bản thân và toàn CLB, kích thích động lực thi đua kết nối kinh doanh. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện Trung tâm Thống kê di động với 4 thẻ KPI, biểu đồ cột đường ghim avatar và bục vinh danh Top 3 một hàng* |
+
+![Giao diện Trung tâm Thống kê di động với 4 thẻ KPI, biểu đồ cột đường ghim avatar và bục vinh danh Top 3 một hàng](images/evidence/app_analytics_dashboard_podium.png)
+
+
+### 5.141. Bảng Use Case UC-APP-52: Quản Lý Hồ Sơ Cá Nhân (Profile), Tối Giản Header & Đồng Bộ Trạng Thái Theme CRM Thời Gian Thực
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-APP-52** |
+| **Phân Hệ / Nhóm** | Cá Nhân & Định Danh Hội Viên |
+| **Tên Chức Năng** | Quản Lý Hồ Sơ Cá Nhân (Profile), Tối Giản Header & Đồng Bộ Trạng Thái Theme CRM Thời Gian Thực |
+| **Tác Nhân (Actor)** | Hội viên chính thức CLB CEO 1983 |
+| **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở tab "Cá nhân" (`/association/profile`) trên thanh điều hướng dưới đáy. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Hội viên truy cập trang Cá Nhân (/association/profile).<br>2. **Tối Giản Hóa Thanh Tiêu Đề (Header Refactoring)**: Loại bỏ toàn bộ các icon chức năng rườm rà ở góc phải Header (`right={null}`), giúp màn hình thoáng đãng, tập trung tối đa vào danh vị và hình ảnh đại diện lãnh đạo.<br>3. **Thẻ Trạng Thái Chủ Đề Theme CRM Thời Gian Thực (CRM Theme Sync Card)**:<br>   - Hiển thị một thẻ thông tin sang trọng mang viền vàng hổ phách, thông báo tên chủ đề lễ hội đang được Ban Quản Trị kích hoạt từ CRM (Ví dụ: "Chủ đề Đang Áp Dụng: Tết Nguyên Đán / Dạ Tiệc Gala").<br>   - Báo hiệu trạng thái đồng bộ thời gian thực ("✓ Đã đồng bộ với Theme Studio CRM"), cho phép hội viên nắm bắt không khí sinh hoạt chung của toàn hiệp hội.<br>4. Quản lý thông tin hồ sơ doanh nhân: Ảnh chân dung, mã hội viên, chức vụ, công ty, điều lệ hiệp hội và hợp đồng hội viên điện tử.<br>5. Các tài khoản có vai trò Quản trị viên (BQT/Admin) được hiển thị nút truy cập nhanh "Phân quyền Hội viên (BQT)" để điều hành nhân sự. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi Theme Studio CRM chuyển đổi chủ đề: Thẻ trạng thái tự động cập nhật tên chủ đề mới ngay lập tức mà không cần người dùng tải lại trang. |
+| **Hậu Điều Kiện (Post-conditions)** | Trang cá nhân giữ vững phong cách tối giản, sang trọng và thể hiện sự gắn kết nhất quán với hệ thống quản trị trung tâm. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện Hồ sơ cá nhân hội viên với header tối giản và thẻ trạng thái đồng bộ Theme CRM* |
+
+![Giao diện Hồ sơ cá nhân hội viên với header tối giản và thẻ trạng thái đồng bộ Theme CRM](images/evidence/app_profile_theme_sync.png)
+
+
+### 5.142. Bảng Use Case UC-APP-53: Cửa Sổ Chào Mừng Hội Viên Mới (Onboarding Welcome Modal) Hỗ Trợ Đa Chế Độ Sáng / Tối
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-APP-53** |
+| **Phân Hệ / Nhóm** | Chào Mừng & Hướng Dẫn Hội Viên Mới |
+| **Tên Chức Năng** | Cửa Sổ Chào Mừng Hội Viên Mới (Onboarding Welcome Modal) Hỗ Trợ Đa Chế Độ Sáng / Tối |
+| **Tác Nhân (Actor)** | Doanh nhân mới được kết nạp hoặc hội viên đăng nhập phiên mới |
+| **Tiền Điều Kiện (Pre-conditions)** | Hội viên đăng nhập thành công vào ứng dụng di động CEO 1983. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Ngay khi giao diện khung vỏ `MemberShell` được nạp, hệ thống kích hoạt **Cửa Sổ Chào Mừng Hội Viên (WelcomeMemberModal)** xuất hiện trang trọng giữa màn hình.<br>2. Nội dung chào mừng mang đậm bản sắc văn hóa CEO 1983:<br>   - Lời chào mừng nồng nhiệt: "Chào Mừng Quý Doanh Nhân Đến Với Hệ Sinh Thái CEO 1983 (HanoiBA)!".<br>   - Giới thiệu 4 trụ cột cốt lõi: Kết Nối B2B Đỉnh Cao, Danh Thiếp Thông Minh NFC 1 Chạm, Giao Thương Cung - Cầu Minh Bạch và Học Tập Đào Tạo Nâng Tầm Lãnh Đạo.<br>   - Lời chúc phát tài, thịnh vượng và gắn kết bền vững từ Ban Chấp Hành CLB.<br>3. **Thích Ứng Hoàn Hảo Đa Giao Diện (Light & Dark Mode)**:<br>   - Ở chế độ Sáng (Light Theme): Nền trắng ngọc trai, chữ xanh navy đậm, đường viền vàng ánh kim thanh lịch.<br>   - Ở chế độ Tối (Dark Theme): Nền đen Obsidian huyền bí, chữ trắng sáng, hiệu ứng phát sáng neon vàng sang trọng.<br>4. Hội viên nhấn nút "Bắt Đầu Trải Nghiệm" (Icon `Sparkles` màu Amber Gold) để đóng cửa sổ và bước vào sử dụng các tiện ích của ứng dụng.<br>5. Hệ thống ghi nhớ trạng thái để không làm phiền ở các lần chuyển trang tiếp theo trong cùng phiên làm việc. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Hội viên có thể bấm biểu tượng đóng (X) ở góc phải trên cùng để đóng nhanh cửa sổ chào mừng. |
+| **Hậu Điều Kiện (Post-conditions)** | Hội viên cảm nhận được sự đón tiếp chu đáo, trọng thị và tinh thần đồng đội nồng ấm ngay từ giây phút đầu tiên gia nhập. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Cửa sổ chào mừng hội viên mới với thiết kế Hoàng gia hỗ trợ cả chế độ Sáng và Tối* |
+
+![Cửa sổ chào mừng hội viên mới với thiết kế Hoàng gia hỗ trợ cả chế độ Sáng và Tối](images/evidence/app_welcome_onboarding_modal.png)
 
 
 ---
 
 ## 6. YÊU CẦU PHI CHỨC NĂNG (Non-Functional Requirements)
+
 
 | Tiêu Chí Kỹ Thuật | Yêu Cầu Chi Tiết & Chuẩn Mực Doanh Nghiệp | Chỉ Số Đo Lường (SLA) |
 | :--- | :--- | :--- |
@@ -2516,3 +2583,77 @@ Toàn bộ 138 hình ảnh minh chứng thực tế trên hệ thống được 
 ### 9.10. Danh Bạ Hội Viên Định Vị Bản Đồ & Kho Đặc Quyền Ưu Đãi QR Động
 * **Bản Đồ Hội Viên Tương Tác:** Cung cấp 2 chế độ xem Danh sách và Bản đồ; ở chế độ Bản đồ, các hội viên kích hoạt chia sẻ vị trí sẽ hiển thị Avatar nổi bật, nhấp vào avatar hiển thị Mini Card tóm tắt doanh nghiệp kèm nút gọi điện thoại hoặc hẹn gặp 1-on-1 nhanh chóng.
 * **Kho Đặc Quyền Ưu Đãi QR Động:** Hỗ trợ hiển thị Mã QR Động (`QrCanvas`) quét tại điểm dịch vụ; hiển thị chi tiết địa chỉ cơ sở, nút bấm dẫn đường Google Maps, nút gọi hotline tư vấn và liên kết ghé thăm gian hàng B2B của chủ ưu đãi.
+
+### 9.11. Tái Cấu Trúc Toàn Diện Trung Tâm Thống Kê (Web CRM & Mobile App - V5.0)
+* **Bố Cục 4 Ô KPI Cốt Lõi Phía Trên Biểu Đồ**:
+  - Loại bỏ hoàn toàn các thành phần đồ thị và bảng thẻ rườm rà phía trên biểu đồ.
+  - Thay thế bằng **4 ô thẻ chỉ số KPI nổi bật**: (1) Tổng Cơ Hội Kết Nối, (2) Tổng Chi Tiêu & Doanh Số Giao Dịch, (3) Lượt Tương Tác & Tần Suất Trong App, (4) Sự Kiện & Hoạt Động Đang Diễn Ra.
+* **Biểu Đồ Composed Bar + Line Chuẩn Mực 3 Màu**:
+  - Sử dụng bảng màu tối giản: Xanh thương hiệu (`#10B981` / Navy) - Trắng sứ - Đen tuyền Obsidian (`#0F172A`).
+  - Cột Bar thể hiện số lượng/khối lượng của chu kỳ.
+  - Đường Line thể hiện biến động tăng giảm: **Đường màu xanh lá (`#10B981`)** thể hiện xu hướng tăng trưởng, **Đường màu đỏ (`#EF4444`)** thể hiện xu hướng giảm.
+  - **Avatar Ghim Đỉnh Cột / Đường**: Tại đỉnh cao nhất của cột số liệu hoặc điểm mốc cuối của đường biến động, hệ thống tự động ghim **Avatar tròn viền vàng** vinh danh Doanh nhân đang dẫn đầu Top 1.
+* **Bục Vinh Danh Giải Thưởng Top 3 Nằm Chung 1 Hàng Ngang (Award Podium)**:
+  - Thiết kế bục giải thưởng danh giá mô phỏng bục vinh danh thể thao nằm trên **1 hàng ngang duy nhất**:
+    + **Top 1 ở giữa cao nhất**: Doanh nhân dẫn đầu với vương miện Vàng Hoàng Gia.
+    + **Top 2 ở bên cạnh trái**: Chiều cao bục nhì với huy hiệu Bạc.
+    + **Top 3 ở bên cạnh phải**: Chiều cao bục ba với huy hiệu Đồng.
+  - Hiển thị đầy đủ ảnh đại diện, họ tên, doanh nghiệp và chỉ số đóng góp xuất sắc.
+* **5 Phân Loại Thống Kê Nghiệp Vụ Rõ Ràng**:
+  1. *Thống kê cơ hội kết nối kinh doanh* (Bên mua vs Bên bán, tỷ lệ chốt).
+  2. *Thống kê các giao dịch đã chi tiêu* (Dòng tiền doanh số B2B thực tế).
+  3. *Thống kê lượt tương tác, tần suất trong app* (Tần suất truy cập, bình luận, kết nối).
+  4. *Thống kê sự kiện và hoạt động đang diễn ra* (Số lượng đại hội, diễn đàn, lớp học, cuộc họp ban).
+  5. *Thống kê thành viên hoạt động nhiều nhất* (Xếp hạng tổng hợp dựa trên số lượt bình luận và số lượt đăng cơ hội chia sẻ).
+* **Xuất Báo Cáo Chuẩn Hóa**: Hỗ trợ đồng thời 2 định dạng: In báo cáo khổ giấy A4 chuẩn trang in di động (`window.print`) và Xuất bảng tính Excel `.xlsx` chi tiết.
+
+### 9.12. Bản Đồ Tương Tác Số 2D Google Maps Đa Phạm Vi (Tổng Thể vs Cá Nhân) & Định Vị GPS
+* **Khắc Phục Triệt Để Lỗi Màn Hình Đen (Black Screen)**:
+  - Thay thế toàn bộ engine bản đồ cũ bằng lớp bản đồ 2D Google Maps Leaflet (`https://mt{s}.google.com/vt/lyrs=m` với subdomains `['0','1','2','3']`), đảm bảo tốc độ tải mượt mà, phản hồi tức thời, không bị đen màn hình trên cả Android, iOS và Desktop.
+* **Tách Bạch 2 Phạm Vi Hiển Thị Độc Lập (Scope Switcher)**:
+  - **Phạm vi "Tổng Thể"**: Hiển thị toàn bộ các hội viên đang trực tuyến/hoạt động trong app trên bản đồ, các sự kiện sắp diễn ra của CLB, các cuộc họp ban chuyên môn và vị trí doanh nghiệp thành viên.
+  - **Phạm vi "Cá Nhân"**: Chỉ lọc và hiển thị các hội viên đã kết nối giao thương trực tiếp với tôi, các sự kiện mà tôi đã đăng ký tham gia thành công, và các cuộc họp 1-on-1 hoặc họp ban có liên quan trực tiếp đến ID tài khoản của tôi.
+* **Tương Tác Avatar 1 Chạm & Dẫn Đường Google Maps**:
+  - Chạm vào Avatar hội viên mở Thẻ Tóm Tắt (Mini Card) hiển thị họ tên, chức vụ, công ty, số hotline.
+  - Cung cấp nút Gọi điện thoại, nút Đặt lịch hẹn 1-on-1 và nút Dẫn đường mở ứng dụng Google Maps trực tiếp.
+* **Định Vị GPS Thời Gian Thực**: Nút la bàn GPS định vị vị trí hiện tại của thiết bị và tự động căn giữa bản đồ theo tọa độ thực.
+
+### 9.13. Chuẩn Hóa Điều Hướng Chân Trang Footer (Mobile Bottom Navigation)
+* **Chuyển Đổi Tab 2 Thành "Thống Kê"**: Thay thế tab Sự kiện cũ tại vị trí nút thứ 2 của Bottom Navigation bằng tab **"Thống kê"** (`/association/analytics`) với biểu tượng `FooterAnalyticsIcon`, giúp hội viên theo dõi thi đua và cơ hội kinh doanh dễ dàng.
+* **Biểu Tượng Mạng Lưới Chuẩn Nút Liên Kết Cộng Đồng**: Cập nhật biểu tượng của tab thứ 4 **"Mạng lưới"** (`/association/messages`) bằng biểu tượng mạng lưới kết nối cộng đồng chuẩn hóa (`FooterSocialNetworkIcon`), phản ánh đúng tinh thần mạng xã hội doanh nhân.
+* **Truy Cập Sự Kiện Đa Kênh**: Phân hệ Sự Kiện & Lịch Trình (`/association/events`) được kết nối truy cập thuận tiện từ Widget Sự kiện Trang chủ, Bài đăng phát hành trên Bảng tin Mạng lưới, hoặc từ menu phím tắt.
+
+### 9.14. Tinh Gọn Bảng Tin Mạng Lưới Feed & Cơ Chế Bắn Sự Kiện / Đào Tạo Từ CRM
+* **Loại Bỏ Thanh Tìm Kiếm Trùng Lặp**: Loại bỏ hoàn toàn ô tìm kiếm con nằm bên trong component Feed; toàn bộ luồng tìm kiếm bài viết được thống nhất thông qua thuộc tính `searchQuery` truyền từ Header của trang `/association/messages`.
+* **Gắn Thẻ Đại Biểu Tham Dự Cuộc Họp / Sự Kiện (Attendee Tags)**: Dưới các bài đăng sự kiện hoặc cuộc họp Ban, hiển thị danh sách hội viên tham dự dưới dạng thẻ tag trang trọng `@HọTên [✓ Đã Check-in]`.
+* **Hiển Thị Đầy Đủ Nội Dung Bắn Từ CRM**:
+  - Tiếp nhận sự kiện Ban Tổ Chức bắn xuống: Hiển thị ảnh Poster khổ lớn, khung giờ tổ chức và **Mã QR Điểm Danh (Check-in QR)** in sẵn để quét vào cửa.
+  - Tiếp nhận khóa đào tạo Ban Đào Tạo bắn xuống: Hiển thị huy hiệu chuyên đề `TRAINING`, chuyên gia giảng viên, poster khóa học và mã QR tham gia.
+
+### 9.15. Tối Giản Header Trang Cá Nhân & Thẻ Trạng Thái Đồng Bộ Theme CRM
+* **Tối Giản Header**: Loại bỏ hoàn toàn các biểu tượng icon chức năng rườm rà ở góc phải Header trang `/association/profile` (`right={null}`), giúp màn hình cá nhân thanh lịch, trang trọng và tập trung vào hồ sơ lãnh đạo.
+* **Thẻ Trạng Thái Chủ Đề Theme CRM (CRM Theme Sync Status Card)**:
+  - Hiển thị thẻ thông tin viền vàng hổ phách thông báo tên chủ đề lễ hội đang kích hoạt từ CRM (Ví dụ: "Chủ đề Đang Áp Dụng: Tết Nguyên Đán / Dạ Tiệc Gala").
+  - Đồng bộ thời gian thực trạng thái ("✓ Đã đồng bộ với Theme Studio CRM"), phản ánh sự kết nối xuyên suốt với Ban Quản Trị.
+
+### 9.16. Trang Chủ Di Động: Phím Tắt Tin Nhắn, Onboarding Welcome Modal & Đồng Bộ Hình Nền Festival
+* **Lối Tắt Nhanh Tin Nhắn**: Cập nhật danh mục phím tắt tùy biến tại `CustomHomeShortcutsModal`, thay thế lối tắt Thống kê cũ bằng lối tắt **"Tin nhắn"** (`/association/messages?tab=messages`) để hội viên truy cập hòm thư nhanh chóng.
+* **Cửa Sổ Chào Mừng Hội Viên Mới (Onboarding Welcome Member Modal)**:
+  - Gắn trực tiếp tại bộ khung vỏ `MemberShell`, tự động mở chào đón khi hội viên đăng nhập vào hệ sinh thái.
+  - Giới thiệu 4 giá trị cốt lõi: Kết nối B2B, Danh thiếp NFC, Sàn giao thương và Đào tạo nâng tầm.
+  - Hỗ trợ hoàn hảo cả 2 chế độ Sáng (Light) và Tối (Dark).
+* **Đồng Bộ Hình Nền Lễ Hội (`--festival-bg-image`)**: Tự động áp dụng lớp nền sự kiện rực rỡ lên cả Trang Chủ và Mạng Lưới Feed khi Ban Quản Trị phát hành chủ đề mới từ CRM.
+
+### 9.17. Phân Hệ Theme Studio CRM Quản Trị Giao Diện & Bộ Chọn Icon 14 Tính Năng
+* **Quản Trị Mẫu Giao Diện (`/admin/landing-templates`)**:
+  - Hỗ trợ tải lên ảnh nền tùy biến hoặc nhập đường dẫn ảnh chất lượng cao.
+  - Cung cấp **5 VIP Presets Mùa Lễ Hội**: Tết Nguyên Đán, Hội Nghị Thường Niên, Dạ Tiệc Gala, Caravan Giao Thương, Thể Thao & Golf.
+* **Bộ Chọn Biểu Tượng Tùy Biến 14 Tính Năng (Icon Picker)**: Cho phép Ban Quản Trị tùy chọn biểu tượng cho toàn bộ 14 tính năng của App Mobile theo từng mùa chiến dịch.
+* **Khung Xem Trước Trực Quan Thời Gian Thực (Live Mobile Preview Mockup)**: Mô phỏng chính xác giao diện điện thoại thông minh ngay bên cạnh màn hình cấu hình.
+* **Phát Hành Đồng Bộ Toàn Hệ Thống**: Bấm nút Lưu cấu hình sẽ kích hoạt biến CSS toàn cục `--festival-bg-image` đồng bộ xuống toàn bộ ứng dụng di động ngay lập tức.
+
+### 9.18. Quản Trị Đào Tạo Doanh Nhân CRM: Online / Offline / Hybrid & Đường Dẫn Đăng Ký Mở
+* **Đa Dạng Phương Thức Đào Tạo**: Thiết lập khóa học Online (Jitsi/Zoom link, room ID, password), Offline (hội trường, địa chỉ, sức chứa), hoặc Hybrid kết hợp cả hai.
+* **Đường Dẫn Đăng Ký Mở & Mã QR Động**: Tự động sinh link công khai (Public Registration URL) kèm mã QR động có thể phóng to, copy link để chia sẻ cho các ứng viên hoặc khách mời ngoài.
+* **Nút "Bắn Xuống App CEO 1983"**: Phát hành bài viết đào tạo truyền thông lên Bảng tin Mạng lưới Mobile kèm Poster và Mã QR Điểm Danh chỉ bằng 1 cú nhấp chuột.
+

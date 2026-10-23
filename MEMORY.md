@@ -46,6 +46,82 @@
   11. **Kiểm Tra Type-Check Chuẩn Xác 0 Lỗi (Strict Zero-Error Policy)**:
      - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
      - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+  12. **Báo Cáo Đối Soát 15 Ý Kiến Họp & Mẫu Tin Nhắn Phản Hồi (`document/BANG_TONG_HOP_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.md`)**:
+     - Đọc và trích xuất nguyên vẹn 100% dữ liệu gốc từ tài liệu Word của CLB `[CEO 1983] BÁO CÁO TỔNG HỢP Ý KIẾN HỌP (1).docx` (15 hạng mục / 5 nhóm nghiệp vụ).
+     - Bổ sung 2 cột mới: "Giải Pháp Kỹ Thuật & Ý Tưởng Cải Tiến Chi Tiết Từ Viconnect" và "Thời Gian Hoàn Thành & Trạng Thái Triển Khai".
+     - Xác định rõ toàn bộ 15 hạng mục thuộc phạm vi ĐỢT 1 (chưa phải Đợt 2), dự kiến hoàn thành toàn diện trước ngày 10/11/2026 căn cứ buổi họp ngày 21/10/2026.
+     - Soạn thảo mẫu tin nhắn phản hồi chuẩn mực, chu đáo gửi Ban Điều Hành và Chị Thùy Dung.
+     - **Khắc Phục Hoàn Toàn Lỗi Bảng & Xuất Word Chuẩn OpenXML**:
+       * Khắc phục lỗi thư viện docx sinh thẻ tblGrid sai khiến MS Word tự động loại bỏ bảng Mục II khi mở.
+       * Tái tạo bảng OpenXML chuẩn với 9 cột chính xác (15.138 dxa), span 9 cột tiêu đề nhóm, hàng lặp tblHeader và chống gãy dòng cantSplit.
+       * Chuẩn hóa cột tiến độ theo Mô hình 3 Trạng Thái (🟢 ĐÃ SẴN SÀNG, 🟡 ĐANG TRIỂN KHAI, 🔵 KẾ HOẠCH TIẾP THEO), loại bỏ triệt để tỷ lệ phần trăm (100%, 80%).
+       * Chuyển đổi toàn bộ cột Giải pháp từ phong cách liệt kê "đã làm" sang phong cách "Nêu ra ý tưởng, giải pháp mà ViOne nói chung, ViConnect nói riêng sở hữu và đề xuất đưa ra" (Kiến trúc công nghệ, định danh số, thuật toán tối ưu, chính sách hạn mức).
+       * Đảm bảo hiển thị trọn vẹn cả Mục I, Mục II (15 mục/5 nhóm), Mục III (Khung tin nhắn phản hồi) và chữ ký đại diện ViOne & ViConnect.
+   13. **Chuẩn Hóa Màu Trạng Thái Cột Tiến Độ & Tối Giản Phần Tin Nhắn 1 Dòng (`generate_perfect_docx.cjs`, `document/[CEO 1983] BÁO CÁO TỔNG HỢP Ý KIẾN VÀ PHƯƠNG ÁN XỬ LÝ - VICONNECT (1).docx`, `document/BANG_TONG_HOP_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.md`)**:
+       - Tiếp thu và chuẩn hóa chính xác tiến độ theo bản chỉnh sửa mới nhất từ người dùng:
+         * 🟢 **ĐÃ SẴN SÀNG (02 hạng mục)**: STT 1 (Trang chủ), STT 2 (Thẻ hội viên) -> Nền xanh mint pastel (`#D1FAE5`), chữ xanh đậm (`#065F46`).
+         * 🟡 **ĐANG TRIỂN KHAI (11 hạng mục)**: STT 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15 -> Nền vàng ấm pastel (`#FEF3C7`), chữ vàng nâu tương phản cao (`#92400E`), thời hạn cam kết Đợt 1 trước **05/11/2026**.
+         * 🔵 **KẾ HOẠCH TIẾP THEO (02 hạng mục)**: STT 8 (Vé & Thanh toán Zalo OA/VNPAY), STT 11 (Dữ liệu hội viên) -> Nền xanh dương dịu (`#DBEAFE`), chữ xanh đậm (`#1E40AF`), thời hạn hỗ trợ trước 10/11/2026.
+       - Cho phép sửa màu dễ dàng trong Word & WPS Office: Toàn bộ màu nền ô trạng thái được gắn chuẩn xác tại thẻ `<w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="..."/></w:tcPr>`, loại bỏ hoàn toàn các lớp shading đè ở `<w:pPr>` và `<w:rPr>`. Người dùng có thể quét chọn ô/cột và đổi màu tùy ý trong Microsoft Word/WPS chỉ với 1 click tại menu `Table Design -> Shading` hoặc `Home -> Font Color`.
+       - Rút gọn phần tin nhắn phản hồi ở cuối tài liệu thành đúng 1 dòng / 1 đoạn văn chuẩn mực theo yêu cầu:
+         `"Kính mời các Anh/Chị trong Ban Điều Hành xem xét Bảng đề xuất giải pháp chi tiết đính kèm và cho ý kiến chỉ đạo để ViConnect phối hợp triển khai đạt hiệu quả cao nhất phục vụ Hiệp hội. Trân trọng cảm ơn và kính chúc các Anh/Chị trong Ban Điều Hành luôn dồi dào sức khỏe, chúc CLB Doanh Nhân CEO 1983 ngày càng phát triển vững mạnh!"` kèm ngày lập và chữ ký góc phải.
+       - Tự động xuất đồng bộ ra toàn bộ 5 tệp Word trong thư mục `document/` kèm tệp Markdown đối soát.
+
+   14. **Xuất Bản Bộ Tài Liệu Slide Hóa, Khắc Phục Lỗi Format & Xuất Bản PDF Vector Cho Ban Điều Hành (`document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.pdf`, `document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT_BAN_CHUAN.pptx`, `document/notebooklm/06_BAO_CAO_TINH_GON_SLIDE_HOA_Y_KIEN_VA_GIAI_PHAP_VICONNECT.md`, `document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.html`)**:
+       - *Tiếp thu phản hồi & Sửa lỗi format*:
+         * Khắc phục triệt để lỗi tràn viền (overflow/cut-off) trong PowerPoint: Chuyển toàn bộ bố cục PPTX từ `LAYOUT_16x9` (10" x 5.625") sang `LAYOUT_WIDE` chuẩn màn ảnh rộng 16:9 hiện đại (13.333" x 7.5"). Tinh chỉnh lại toàn bộ tọa độ và khoảng cách (margins) trên tất cả 8 slide, đảm bảo thẻ KPI, hộp ý kiến góp ý của lãnh đạo và các giải pháp không bao giờ bị cắt mất chữ hay lọt khỏi đáy slide.
+         * Xuất bản tệp PDF Vector nguyên bản (`document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.pdf`): Chuẩn khổ 16:9 (1152x648 px), gồm 8 trang sắc nét không lỗi font, mở trên mọi thiết bị di động / máy tính để gửi ngay cho Ban Điều Hành.
+       - *Khôi phục trọn vẹn Ảnh Bìa & Poster Thư Mời*:
+         * Bổ sung ảnh nền Skyline Hà Nội - Hồ Tây đêm (`images/backgrounds/01_skyline_lake.jpg`) với lớp phủ gradient Deep Cobalt Navy và viền cyan phát sáng cho Slide 1 (Bìa) và Slide 8 (Kết luận).
+         * Nhúng ảnh Poster chính thức của sự kiện (`images/image1_invitation_poster.png`) trên khung thẻ nổi bên phải của Slide 1, kết hợp cùng Thẻ trắng sang trọng bên trái chứa tiêu đề, thông điệp điều hành và thông tin cuộc họp ngày 21/10/2026.
+         * Áp dụng đồng bộ trên cả tệp PowerPoint (`.pptx`), tệp PDF Vector 16:9 (`.pdf`) và trình chiếu HTML (`.html`).
+
+   15. **Tích Hợp Nhận Diện Logo Kép: CLB CEO 1983 & ViConnect (https://viconnect.vn) Toàn Diện Trên Bộ Slide & Báo Cáo**:
+       - *Khai thác tài nguyên thương hiệu*:
+         * Tải logo vector/PNG chất lượng cao chính thức từ trang chủ https://viconnect.vn (1920x635 px) lưu tại document/images/viconnect-logo.png và apps/ceo1983_app_fe/public/viconnect-logo.png.
+         * Kết hợp cùng Logo chính thức CLB Doanh Nhân CEO 1983 (document/images/ceo1983-official-logo.png, 1205x641 px).
+       - *Bố cục nhận diện trên Slide PowerPoint (.pptx), PDF Vector (.pdf) và Trình chiếu Web (.html)*:
+         * Slide 1 (Trang bìa): Đặt cụm logo kép nằm trong Thẻ trắng sang trọng bên trái ([Logo CEO 1983] | [Logo ViConnect - https://viconnect.vn] kèm badge HỢP TÁC CÔNG NGHỆ).
+         * Slide 2 (Dashboard Mục tiêu): Cụm logo kép đặt góc trên bên phải trong khung bo viền xám trang nhã.
+         * Slides 3 đến 7 (5 Phân hệ nghiệp vụ A-E): Cụm logo kép hiện diện trang trọng tại header góc phải của từng nhóm chuyên đề.
+         * Slide 8 (Cam kết & Lời kết): Cụm logo kép nằm tại chân trang bên cạnh dòng định danh ĐƠN VỊ CÔNG NGHỆ: VICONNECT (https://viconnect.vn) · HÀ NỘI, 23/10/2026.
+       - *Xuất bản tệp hoàn tất*:
+         * Slide PowerPoint mới nhất: document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT_BAN_MOI_NHAT.pptx (2.7 MB).
+         * Slide PDF Vector nguyên bản: document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.pdf (1.6 MB).
+         * Slide HTML trình chiếu tương tác: document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.html (31 KB).
+         * Word tinh gọn ít chữ: document/[CEO 1983] BÁO CÁO TỔNG HỢP Ý KIẾN VÀ PHƯƠNG ÁN XỬ LÝ - VICONNECT (BẢN TINH GỌN).docx (18.4 KB).
+
+   16. **Tối Ưu Bố Cục Thẻ Đối Sánh 2 Cột (Problem vs Solution), Loại Bỏ Dải Băng Kéo Dãn & Xử Lý Nền Hoàng Gia Slide 8 Chống Trắng Print/PDF (`scripts/build_executive_slide_and_notebooklm.cjs`, `document/SLIDE_BAO_CAO_TIEP_THU_Y_KIEN_VA_GIAI_PHAP_VICONNECT.pdf`)**:
+       - *Khắc phục triệt để hiện tượng kéo dãn dẹt (Ribbon Stretch) & khoảng trắng đáy*:
+         * Chuyển đổi toàn bộ các item card trong Slide 3, 4, 5, 6 thành cấu trúc 2 cột đối sánh (Dual-column Grid): Cột trái (42%) là ⚠️ Vấn đề CLB (nền đỏ nhạt `#FEF2F2`), cột phải (58%) là 💡 Giải pháp ViConnect (nền xanh lá nhạt `#F0FDF4`).
+         * Cấu hình `flex: 1` cho các thẻ mục tự động phân bổ chiều cao tràn đều theo chiều dọc, loại bỏ hoàn toàn khoảng trống 40-50% ở đáy slide và ép văn bản hiển thị cô đọng 2-3 dòng dễ đọc.
+         * Tinh chỉnh Slide 2 với 4 thẻ phản ánh lãnh đạo (Anh Thành, Anh Tuấn, Chị Phương, Chị Dung) thành bố cục 2x2 chuyên nghiệp kèm tag tiến độ riêng biệt.
+         * Tinh chỉnh Slide 7 (Nhóm E) thành 1 thẻ đối sánh 2 cột cho Mục 15 kết hợp cùng 3 cột tính năng (Nhật ký sự kiện, Giao thương & deal flow, Đặc quyền & gian hàng số) chứa 4 tiểu mục có icon và viền riêng biệt.
+       - *Khắc phục triệt để lỗi mất màu nền trang kết thúc Slide 8*:
+         * Cấu hình riêng class `.slide.slide-dark` trong `@media print` với `background-color: #001F54 !important` và `background: linear-gradient(135deg, #001F54 0%, #0A192F 100%) !important`, kết hợp `-webkit-print-color-adjust: exact !important` cho toàn bộ các phần tử con.
+         * Giữ vững sắc xanh hoàng gia thâm trầm trên bản in/PDF, hiển thị nổi bật 3 thẻ giai đoạn có viền phân màu, dải 3 trụ cột chiến lược (Bảo mật, Trải nghiệm 1 chạm, Dữ liệu điều hành) và cam kết đồng hành từ ViConnect.
+       - *Kiểm thử trực quan & Biên dịch thành phẩm*:
+         * Chụp màn hình tự động Playwright Edge kiểm tra toàn bộ 8 slide đạt chuẩn thẩm mỹ cao cấp 16:9.
+         * Xuất bản tệp PDF vector 3.09 MB sắc nét, tệp PowerPoint `.pptx` và HTML viewer tương tác.
+
+    17. **Chuẩn Hóa Bộ 4 Tài Liệu Đăng Ký Bản Quyền Tác Giả Theo 02 Live Subdomains & Trích Xuất Ảnh Trực Tiếp (`https://crm.ceo1983.viconnect.vn` & `https://ceo1983.viconnect.vn`)**:
+        - Tiếp thu chỉ đạo: Đi vào 02 subdomain chính thức đang hoạt động trực tuyến để tái thiết lập toàn bộ luồng nghiệp vụ thực tế và chụp ảnh màn hình sống (Live Captures) thay thế toàn bộ ảnh cũ/luồng cũ:
+          * Subdomain 1 (CRM Quản trị): `https://crm.ceo1983.viconnect.vn`
+          * Subdomain 2 (Mobile App Hội viên): `https://ceo1983.viconnect.vn`
+        - Chụp 23 ảnh màn hình thực tế có độ phân giải cao trực tiếp từ 2 Subdomain bằng Edge Playwright tự động đăng nhập tài khoản thực (`ceo.tongthuky@ceo1983.com`), lưu trữ tại `scripts/live_subdomain_captures/`.
+        - Tái tạo thành công 4 bản tài liệu tương tự chuẩn mực cho sản phẩm **Hệ thống phần mềm quản trị kết nối doanh nghiệp và Ứng dụng di động CEO 1983 (CEO 1983 Platform & Mobile App)**:
+          * `[CEO1983] 01. Tờ khai.docx` (142 KB): Cập nhật rõ môi trường vận hành thực tế trên 02 subdomain; mô tả chi tiết 8 phân hệ cốt lõi gồm: Module Thống kê mới (4 KPI, Composed Bar/Line Chart, bục vinh danh 3 cột 1 hàng), Quản trị Sự kiện & Đào tạo có tính năng Bắn Mạng Lưới (kèm poster & QR), Bản đồ tương tác Leaflet 2D vệ tinh 2 phạm vi (Tổng thể & Cá nhân), Theme Studio tải ảnh nền tùy chỉnh đồng bộ biến CSS `--festival-bg-image` theo thời gian thực; các trường tác giả, chủ sở hữu để định dạng tự khai báo.
+          * `[CEO1983] 02. Cam đoan.docx` (100 KB): Giấy cam đoan của tác giả về việc trực tiếp sáng tạo tác phẩm, không sao chép và tự chịu trách nhiệm trước pháp luật.
+          * `[CEO1983] 03. Quyết định.docx` (101 KB): Quyết định của tổ chức/doanh nghiệp giao nhiệm vụ sáng tạo phần mềm cho tác giả.
+          * `[CEO1983] 06. Trình bày tác phẩm.Bản cop đĩa.docx` (8.52 MB): Tài liệu thuyết minh kỹ thuật và in đĩa/bản in đăng ký bản quyền:
+            - Bìa và mục lục chuyên nghiệp nêu bật 02 subdomain chính thức.
+            - Chương 1: Giới thiệu hệ thống, mục đích, phạm vi 2 subdomain, kiến trúc 4 tầng, danh mục công nghệ (React 18, Vite, Tailwind CSS, NestJS, TypeORM, PostgreSQL 16, Leaflet 2D, Socket.IO, Recharts, Docker...).
+            - Chương 2: Mô tả kiến trúc và luồng xử lý của 17 Node CRM Quản trị và 14 Node Mobile App CEO 1983.
+            - Phụ lục I: Bảng tổng hợp 22 thông số kỹ thuật chuẩn hóa.
+            - Phụ lục II: Hướng dẫn sử dụng & Giao diện CRM Quản trị (12 mục quy trình kèm 12 ảnh chụp màn hình UI sắc nét từ `https://crm.ceo1983.viconnect.vn`).
+            - Phụ lục III: Hướng dẫn sử dụng & Giao diện Mobile App (11 mục quy trình kèm 11 ảnh chụp màn hình UI di động thực tế từ `https://ceo1983.viconnect.vn`).
+            - Phụ lục IV: Trích xuất mã nguồn thực tế đại diện in nộp bản quyền (`main.ts`, `app.module.ts`, `auth.service.ts`, `business-card.service.ts`, `router.tsx`).
+        - Xuất đồng bộ sang cả `document/` (8.52 MB) và `C:\Users\vumik\Downloads\` (`[CEO1983] 06. Trình bày tác phẩm.Bản cop đĩa (Mới).docx`).
 
 - **Bản nâng cấp ngày 22/10/2026 (Hoàn Thiện Bộ Nâng Cấp Mobile App CEO 1983 & Module Dashboard Thống Kê CRM Chuẩn UI/UX)**:
   1. **Mobile App: Tối Ưu Hàng Trao Đổi Cơ Hội Trang Chủ (`HomeOpportunityRowWidget.tsx`, `association.index.tsx`)**:

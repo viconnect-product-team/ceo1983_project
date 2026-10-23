@@ -1,0 +1,289 @@
+Mẫu số 03. Tờ khai đề nghị cấp Giấy chứng nhận đăng ký quyền tác giả đối với chương trình máy tính
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+
+Độc lập - Tự do - Hạnh phúc
+
+-------***-------
+
+TỜ KHAI ĐỀ NGHỊ CẤP GIẤY CHỨNG NHẬN ĐĂNG KÝ QUYỀN TÁC GIẢ ĐỐI VỚI CHƯƠNG TRÌNH MÁY TÍNH
+
+Kính gửi: Cục Bản quyền tác giả, Bộ Văn hóa, Thể thao và Du lịch
+
+* Nộp Tờ khai đề nghị cấp Giấy chứng nhận đăng ký quyền tác giả cho (1):
+
+ Tác giả
+
+ Đồng tác giả
+
+X Chủ sở hữu quyền tác giả
+
+ Đồng chủ sở hữu quyền tác giả
+
+ Tác giả đồng thời là chủ sở hữu quyền tác giả
+
+ Tác giả đồng thời là đồng chủ sở hữu quyền tác giả
+
+ Đồng tác giả đồng thời là chủ sở hữu quyền tác giả
+
+ Đồng tác giả đồng thời là đồng chủ sở hữu quyền tác giả
+
+1. Thông tin về chương trình máy tính:
+
+Tên chương trình máy tính: PHẦN MỀM ĐIỀU HÀNH CÔNG VIỆC VÀ QUẢN LÝ CUỘC SỐNG CÁ NHÂN (UNIWORK FOR PESONAL) 
+
+Ngày, tháng, năm hoàn thành: 12/10/2026.
+
+Công bố tác phẩm:
+
+☒  Chưa công bố
+
+☐  Đã công bố
+
+- Ngày, tháng, năm công bố: .............................................
+
+- Hình thức công bố (2): .............................................
+
+- Nơi công bố: Tỉnh/Thành phố ............ Quốc gia ....................
+
+Đường link địa chỉ trên trang thông tin điện tử, ứng dụng (trong trường hợp công bố trên mạng Internet): ..................................................
+
+Nêu tóm tắt về tác phẩm:
+
+- Chức năng, thành phần, cấu tạo:
+
+Về chức năng:
+
+Phần mềm điều hành công việc và quản lý cuộc sống cá nhân (UniWork for Personal) là bộ phần mềm máy tính cung cấp môi trường làm việc thống nhất cho người dùng cá nhân và tổ chức nhỏ (cửa hàng, giáo viên, chuyên gia tư vấn…). Phần mềm cho phép soạn thảo và trình bày tài liệu văn phòng, vận hành công việc và quản lý cuộc sống hằng ngày trên bàn làm việc (Workbench), đồng thời được hỗ trợ bởi trợ lý ngôn ngữ tự nhiên My AI. Phần mềm được phát triển dưới dạng ứng dụng desktop (Windows, macOS) kết nối với hệ thống UniWork Cloud Hub phục vụ quản lý tài khoản, kích hoạt bản quyền, Credit AI và tích hợp thương mại. Phần mềm được tổ chức thành 8 phân hệ chức năng chính sau:
+
+1. Phân hệ bộ công cụ văn phòng (uniOffice):
+
+Cung cấp các công cụ uniDocs (soạn thảo văn bản), uniSheets (bảng tính, công thức, chế độ xem), uniSlides (trình chiếu, thư viện mẫu theo lĩnh vực, tạo bài trình chiếu từ mẫu), cùng công cụ xem và thao tác tài liệu PDF, Markdown, HTML. Các công cụ hỗ trợ tạo, mở, lưu tài liệu, xuất và nhập tương thích với tệp văn phòng thông dụng. Giao diện thống nhất, hỗ trợ chế độ sáng, tối hoặc theo hệ thống; nội dung tài liệu của người dùng không bị thay đổi bởi giao diện khi xuất hoặc in.
+
+2. Phân hệ trợ lý My AI:
+
+Cho phép người dùng đặt câu hỏi, đính kèm tệp hoặc hình ảnh, giới hạn ngữ cảnh theo Projects / My Space và lựa chọn mô hình trả lời. My AI nhận diện ý định của người dùng để mở module, tạo việc hoặc lịch và trả lời ngay trên máy từ dữ liệu Workbench mà không cần Token; khi cần, hệ thống gọi mô hình AI trên nền tảng đám mây theo số Credit còn lại. Các thao tác ghi dữ liệu vào Workbench chỉ được thực hiện sau khi người dùng xác nhận (consent) theo chính sách, và mọi hành động đều được lưu trong nhật ký hoạt động để người dùng kiểm tra.
+
+3. Phân hệ quản lý công việc trên Workbench:
+
+Cho phép quản lý công việc, lịch làm việc, dự án, quan hệ khách hàng (CRM nhẹ), quỹ thu chi và biểu mẫu trên cùng một bàn làm việc. Người dùng ghim, bỏ ghim, kéo đổi thứ tự các pane hoặc thêm pane mới qua hộp “Thêm vào bàn làm việc”. Khung Workbench gồm thanh bên với Trợ lý của bạn, mục Gần đây, mục Đã gắn sao, Bàn làm việc và Dự án, đồng thời hiển thị Credit AI còn lại hoặc đã dùng và cho phép chuyển ngôn ngữ giao diện Tiếng Việt / English ngay tại chỗ. Ngoài ra, phần mềm còn các module chuyên biệt như thói quen, hồ sơ pháp lý, học phí, sức khỏe, soạn bài giảng cho giáo viên, email, tự động hóa và tổng kết tuần.
+
+4. Phân hệ đơn hàng, tồn kho và tích hợp Pancake:
+
+Cho phép quản lý đơn hàng trên máy theo nhiều kênh bán (Facebook, Zalo, Pancake, Shopee, TikTok, mua trực tiếp…), lọc theo trạng thái và kênh, thống kê số đơn đang mở và giá trị đơn. Phân hệ quản lý tồn kho theo mã hàng (SKU); khi xác nhận đơn, hệ thống có thể trừ tồn kho một lần. Người dùng có thể đăng nhập Cloud Hub ngay trong pane Đơn hàng, kết nối Pancake POS bằng Shop ID và API key, đồng bộ đơn về máy, ngắt kết nối khi không còn sử dụng. Việc đồng bộ không tạo trùng đơn, được phân trang và giới hạn khoảng thời gian lấy lại để tránh tải quá mức. Dữ liệu đơn hàng và danh sách liên quan có thể xuất hoặc nhập qua CSV, Excel.
+
+5. Phân hệ vai trò làm việc theo đối tượng khách hàng:
+
+Cho phép người dùng chọn “Vai trò làm việc” ngay trên Workbench. Các vai trò được phân theo lĩnh vực: Giáo dục (giáo viên, gia sư, hiệu trưởng, phụ huynh, học sinh cấp 3, sinh viên đại học); Chuyên môn (luật sư / pháp chế, thiết kế dự án và giám sát thi công, tư vấn, đầu tư / mua sắm, công chức / hành chính); Y tế; Kinh doanh (cửa hàng nhỏ / hộ kinh doanh, bán hàng, chăm sóc khách hàng, doanh nhân, lao động tự do, marketing, bất động sản); Sáng tạo và công nghệ; Vận hành (nhân sự, kế toán). Mỗi vai trò có mô tả trọng tâm và tự bật sẵn bộ pane phù hợp, ví dụ cửa hàng nhỏ được bật sẵn Đơn hàng, Quỹ, Quan hệ, Công việc và Lịch. Khi đổi vai trò, bố cục Workbench thay đổi ngay và dữ liệu vẫn dùng chung trong một không gian làm việc.
+
+6. Phân hệ quản lý cuộc sống cá nhân:
+
+Cung cấp nhóm module Đời sống gồm: Cá nhân (hồ sơ, ghi chú riêng), Sự kiện (sinh nhật, kỳ hạn cá nhân), Sức khỏe (sổ sức khỏe, nhắc uống thuốc, lịch khám và tái khám), Phát triển bản thân (mục tiêu, thói quen với chuỗi duy trì và thống kê tuần, tháng), Gia đình tôi, Bạn bè, Thú cưng và Du lịch (kế hoạch chuyến đi). Dữ liệu Đời sống được tách biệt với dữ liệu công việc, lưu trên máy theo nguyên tắc ưu tiên cục bộ (local-first) và chỉ đồng bộ lên Cloud Hub khi người dùng bật đồng bộ. Chức năng tổng kết tuần cá nhân tổng hợp việc đã hoàn thành, thói quen và sức khỏe; My AI gợi ý kế hoạch tuần tới và xin xác nhận trước khi ghi dữ liệu.
+
+7. Phân hệ tài khoản, kích hoạt và Credit (Cloud Hub):
+
+Cho phép người dùng đăng ký và đăng nhập UniWork Cloud Hub bằng email, mật khẩu hoặc tài khoản Google, theo dõi gói dịch vụ và Credit AI trên cổng web song ngữ Việt – Anh. Phần mềm hỗ trợ kích hoạt dùng thử hoặc theo gói bằng mã kích hoạt, gắn với số thiết bị theo chính sách và kiểm tra quyền sử dụng định kỳ khi mở ứng dụng. Khi đăng nhập từ ứng dụng desktop, hệ thống dùng mã dùng một lần kèm định danh thiết bị và đường dẫn liên kết (deep link) để quay về ứng dụng, không lưu mật khẩu trong ứng dụng. Khi hết Credit AI, người dùng vẫn sử dụng được chế độ My AI trên máy cho các tác vụ cục bộ.
+
+8. Phân hệ quản trị vận hành Hub:
+
+Dành cho tài khoản quản trị được chỉ định, hỗ trợ xem tổng quan hệ thống, quản lý các gói dịch vụ, tạo và quản lý lô mã kích hoạt, thu hồi mã, gỡ gắn thiết bị, cấp quyền cho người dùng và theo dõi thanh toán (khi được bật). Hệ thống có điểm kiểm tra tình trạng hoạt động công khai phục vụ giám sát dịch vụ. Việc mã hóa khóa API tích hợp, lưu trữ mã kích hoạt dưới dạng băm và giới hạn tốc độ kèm mã lỗi rõ ràng khi kích hoạt (không hợp lệ, bị thu hồi, hết số thiết bị, quá giới hạn) bảo đảm an toàn cho quá trình vận hành.
+
+Về thành phần: 
+
+Phần mềm điều hành công việc và quản lý cuộc sống cá nhân (Uniwork for personal) gồm các thành phần chính sau:
+
+1. Ứng dụng desktop UNIWORK FOR PERSONAL (Shell)
+
+Ứng dụng dành cho người dùng cá nhân và tổ chức nhỏ, phát triển bằng Electron, electron-vite, React và TypeScript, chạy trên Windows 10/11 và macOS. Thành phần này cung cấp cửa sổ Home và Workbench, điều phối việc mở các module, giao tiếp liên tiến trình (IPC) và tiếp nhận đường dẫn liên kết (deep link) giao thức uniwork://.
+
+2. Bộ công cụ văn phòng uniOffice
+
+Gồm uniDocs (soạn thảo văn bản), uniSheets (bảng tính), uniSlides (trình chiếu) và các công cụ xem, thao tác PDF, Markdown, HTML. Mỗi công cụ có bộ hiển thị riêng, sử dụng các engine docx-engine, xlsx-gateway kết hợp Univer, pptx-engine và PDFium. Thành phần này xử lý việc tạo, mở, lưu, xuất và nhập tài liệu tương thích với tệp văn phòng thông dụng.
+
+3. Workbench (bàn làm việc)
+
+Gồm các pane quản lý công việc (Tasks), lịch (Calendar), dự án (Projects), khách hàng (Clients), đơn hàng (Orders), tồn kho (Inventory), quỹ thu chi và biểu mẫu. Thành phần còn bao gồm các module chuyên biệt (thói quen, hồ sơ pháp lý, học phí, sức khỏe, soạn bài giảng cho giáo viên, email, tự động hóa, tổng kết tuần), nhóm module Đời sống (cá nhân, sự kiện, sức khỏe, phát triển bản thân, gia đình, bạn bè, thú cưng, du lịch) và cơ chế chọn “Vai trò làm việc” để bật sẵn bộ pane theo từng đối tượng sử dụng.
+
+4. Trợ lý My AI
+
+Gồm bộ định tuyến ý định (router), cơ chế xác nhận thao tác (consent), bộ trả lời cục bộ từ ngữ cảnh Workbench, bộ hội thoại ngôn ngữ tự nhiên, mẫu biểu và nhật ký hoạt động (audit). Khi cần mô hình ngôn ngữ lớn, thành phần này gọi nhà cung cấp AI qua giao diện tương thích OpenAI-style, theo số Credit còn lại, đồng thời hiển thị trạng thái streaming và cho phép dừng.
+
+5. Lớp dữ liệu local-first và tích hợp runtime
+
+Lưu trữ dữ liệu Workbench và dữ liệu cuộc sống cá nhân ngay trong thư mục dữ liệu của ứng dụng trên máy người dùng. Thành phần này gồm bộ xuất và nhập CSV, Excel và Pancake Hub client để kéo đơn hàng về máy. Dữ liệu chỉ được đồng bộ lên Cloud Hub khi người dùng bật đồng bộ.
+
+6. Thành phần Main/Preload và bảo mật phía máy khách
+
+Đảm nhiệm kho lưu token an toàn, thao tác vào ra tệp, kích hoạt dùng thử hoặc gói dịch vụ và giao tiếp IPC với Cloud Hub. Lớp Preload giới hạn bề mặt API phơi ra giao diện, tiến trình giao diện (renderer) không truy cập trực tiếp các API Node nguy hiểm. Deep link chỉ chấp nhận các tham số dự kiến (code, device).
+
+7. Cổng web UniWork Cloud Hub (Web Portal)
+
+Cổng web truy cập qua trình duyệt tại uniworkos.com, phát triển bằng TanStack Start, hỗ trợ giao diện song ngữ Việt – Anh. Thành phần này cung cấp các trang giới thiệu, đăng ký, đăng nhập (email, mật khẩu, Google, liên kết đăng nhập), quản lý tài khoản, gói dịch vụ, Credit AI và hướng dẫn tải bản cài.
+
+8. Hệ thống API /v1 của Cloud Hub
+
+Gồm các điểm kết nối: kích hoạt (activate), kiểm tra quyền sử dụng (entitlement), xác thực desktop (desktop auth: phiên, đổi mã, làm mới) và tích hợp Pancake (kết nối, ngắt kết nối, đồng bộ, đơn chờ về máy), cùng các API quản trị và điểm kiểm tra tình trạng GET /health. Hệ thống gồm hai thành phần con là Licensing và Integrations. Licensing quản lý gói, mã kích hoạt, số thiết bị và hạn dùng, trong đó mã kích hoạt chỉ được lưu dạng băm SHA-256. Integrations lưu kết nối Pancake, mã hóa khóa API bằng AES-GCM (secret-box, Web Crypto) và đồng bộ đơn hàng không trùng lặp theo externalId.
+
+9. Cơ sở dữ liệu và xác thực của Cloud Hub
+
+Sử dụng Supabase Auth để xác thực người dùng và Supabase PostgreSQL để lưu người dùng, quyền sử dụng, thiết bị kích hoạt, kết nối Pancake và đơn hàng chờ đồng bộ. Cấu trúc dữ liệu được quản lý bằng Drizzle migrations, việc sao lưu do nền tảng Supabase quản lý.
+
+10. Hệ thống giao diện, đa ngôn ngữ, đóng gói và kiểm thử
+
+Giao diện dùng bộ thành phần @genoffice/ui, CSS custom properties (semantic tokens) hỗ trợ chủ đề sáng, tối, theo hệ thống và cơ chế đa ngôn ngữ i18n. Ứng dụng được đóng gói bằng electron-builder thành bản cài cho Windows (NSIS/EXE) và macOS (DMG/ZIP), kiểm thử bằng Vitest, phía Hub triển khai tự động qua GitHub Actions.
+
+Về cấu tạo:
+
+Phần mềm UNIWORK FOR PERSONAL được xây dựng theo kiến trúc phân lớp, gồm ứng dụng desktop hoạt động theo nguyên tắc ưu tiên dữ liệu cục bộ (local-first) trên máy người dùng và hệ thống UniWork Cloud Hub trên nền tảng đám mây. Hai miền này kết nối với nhau qua giao thức HTTPS/TLS. Miền desktop xử lý các chức năng văn phòng, Workbench và My AI, kể cả khi không có mạng. Miền Cloud Hub đảm nhiệm xác thực, kích hoạt bản quyền, Credit AI và tích hợp thương mại. Các lớp chính gồm:
+
+1. Lớp ứng dụng desktop (Desktop Application Layer)
+
+Được xây dựng trên nền tảng Electron, sử dụng React và TypeScript/JavaScript. Lớp này bao gồm Container Shell với cửa sổ Home/Workbench, cơ chế giao tiếp IPC và giao thức Deep Link uniwork://. Đây là thành phần nền tảng của ứng dụng desktop, tổ chức các thành phần giao diện và kết nối với các tiến trình xử lý bên trong hệ thống.
+
+2. Lớp ứng dụng văn phòng (Office Applications Layer)
+
+Bao gồm các ứng dụng Docs, Sheets, Slides, PDF, Markdown và HTML, được tổ chức thành các ứng dụng thành phần riêng, mỗi ứng dụng có môi trường kết xuất giao diện (Renderer) tương ứng. Lớp này sử dụng các bộ xử lý tài liệu và thư viện chuyên biệt, gồm docx-engine, xlsx-gateway/Univer, pptx-engine và PDFium, cùng các thành phần xử lý nội dung Markdown và HTML.
+
+3. Lớp thành phần Workbench (Workbench Component Layer)
+
+Được cấu thành từ các mô-đun Tasks, Calendar, CRM/Clients, Orders, Inventory và các giao diện chuyên biệt (Specialized Panes). Các mô-đun được tổ chức thành những thành phần giao diện và xử lý dữ liệu riêng theo từng nhóm nghiệp vụ, sử dụng lớp dữ liệu cục bộ của ứng dụng.
+
+4. Lớp thành phần trợ lý My AI (My AI Component Layer)
+
+Bao gồm các thành phần định tuyến ý định (Intent Router), cơ chế xác nhận đồng ý thực hiện thao tác (Consent), xử lý câu trả lời cục bộ (Local Answer), xử lý hội thoại ngôn ngữ tự nhiên và các mẫu biểu (Templates). Thành phần này được tích hợp với Workbench và các bộ kết nối nhà cung cấp mô hình trí tuệ nhân tạo (AI Provider).
+
+5. Lớp xử lý tiến trình chính và cầu nối hệ thống (Main/Preload Layer)
+
+Bao gồm tiến trình chính của Electron (Main Process), lớp Preload và các thành phần giao tiếp với hệ thống bên ngoài. Lớp này cung cấp cơ chế giao tiếp giữa Renderer và Main Process, xử lý thao tác đọc/ghi tệp (File I/O), quản lý mã thông báo xác thực (Token), kích hoạt dùng thử (Trial Activation) và kết nối IPC với UniWork Cloud Hub. Lớp Preload giới hạn các giao diện được cung cấp cho Renderer, góp phần tách biệt thành phần giao diện với các thao tác hệ thống.
+
+6. Lớp dữ liệu cục bộ và tích hợp runtime (Local Data and Runtime Integration Layer)
+
+Bao gồm lớp dữ liệu theo mô hình ưu tiên lưu trữ cục bộ (Local-first Data Layer) và các thành phần tích hợp được khởi tạo hoặc sử dụng trong quá trình chạy ứng dụng. Các thành phần tích hợp chính gồm bộ kết nối nhà cung cấp AI (AI Provider), bộ kết nối Pancake Hub (Pancake Hub Client) và thành phần trao đổi dữ liệu Excel. Lớp này được kết nối với các mô-đun nghiệp vụ và các thành phần giao diện tương ứng trong ứng dụng desktop.
+
+7. Lớp cổng web UniWork Cloud Hub (Web Portal Layer)
+
+Được cấu thành từ các thành phần giao diện web phục vụ đăng ký, đăng nhập song ngữ Việt – Anh, quản lý tài khoản, gói dịch vụ và Credit. Cổng web được xây dựng trên nền tảng TanStack Start, tổ chức các thành phần giao diện và các tuyến xử lý phía máy chủ phục vụ hoạt động của Cloud Hub.
+
+8. Lớp API và xử lý dịch vụ Cloud Hub (API and Service Layer)
+
+Bao gồm hệ thống API có tiền tố /v1, các thành phần xử lý kích hoạt (Activate), kiểm tra quyền sử dụng (Entitlement), xác thực ứng dụng desktop (Desktop Auth) và tích hợp Pancake. Lớp này được tổ chức cùng các thành phần nghiệp vụ Licensing và Integrations; trong đó, thành phần Integrations sử dụng cơ chế mã hóa AES-GCM để bảo vệ khóa API của dịch vụ tích hợp.
+
+9. Lớp cơ sở dữ liệu và lưu trữ phía Cloud Hub (Database Layer)
+
+Sử dụng Supabase PostgreSQL để lưu trữ và quản lý dữ liệu phía máy chủ, bao gồm thông tin người dùng, thông tin kết nối Pancake và dữ liệu đơn hàng thương mại (Commerce Orders). Lớp dữ liệu được kết nối với các thành phần API và xử lý dịch vụ của Cloud Hub để phục vụ việc truy xuất, cập nhật và quản lý dữ liệu tương ứng.
+
+10. Luồng xử lý tổng quát
+
+Người dùng khởi chạy hệ thống trên máy tính cá nhân để truy cập các mô-đun văn phòng, Workbench và My AI. Các thao tác tạo, chỉnh sửa và quản lý dữ liệu được xử lý thông qua các mô-đun tương ứng, với dữ liệu ưu tiên lưu trữ trên máy người dùng. Khi cần sử dụng chức năng xác thực, kích hoạt quyền, dịch vụ AI trên đám mây hoặc đồng bộ Pancake POS, ứng dụng kết nối với UniWork Cloud Hub và các dịch vụ liên quan thông qua giao thức mạng bảo mật. Dữ liệu được trao đổi theo chức năng tích hợp và cơ chế kiểm soát truy cập tương ứng, tạo thành một hệ thống thống nhất phục vụ quản lý tài liệu, công việc và cuộc sống cá nhân.
+
+- Ngôn ngữ lập trình: TypeScript, JavaScript (ESNext), SQL; sử dụng HTML5 và CSS3 để xây dựng giao diện.
+
+- Sử dụng mã nguồn mở để sáng tạo chương trình máy tính:
+
+□ Không sử dụng
+
+X Có sử dụng, liệt kê tên mã nguồn mở, đường link mã nguồn mở: 
+
+Electron: https://github.com/electron/electronelectron-vite: https://github.com/alex8088/electron-viteelectron-builder: https://github.com/electron-userland/electron-builderReact: https://github.com/facebook/reactTypeScript: https://github.com/microsoft/TypeScriptNode.js: https://github.com/nodejs/nodeUniver (bảng tính uniSheets): https://github.com/dream-num/univerPDFium (xem PDF): https://pdfium.googlesource.com/pdfiumTanStack Start / TanStack Router: https://github.com/TanStack/routerSupabase: https://github.com/supabase/supabasePostgreSQL: https://github.com/postgres/postgresDrizzle ORM: https://github.com/drizzle-team/drizzle-ormVitest: https://github.com/vitest-dev/vitest
+
+Sử dụng hệ thống trí tuệ nhân tạo trong quá trình sáng tạo tác phẩm:
+
+X  Không sử dụng    
+
+☐  Có sử dụng    
+
+- Cam đoan về việc sáng tạo tác phẩm (3): 
+
+Nội dung chương trình máy tính (code, giao diện) do tác giả tự sáng tạo, không sao chép từ tác phẩm của người khác, không vi phạm các quy định của pháp luật Việt Nam.
+
+Nội dung chương trình máy tính không có nội dung, hình ảnh vi phạm, không xuyên tạc, không gây ảnh hưởng tới các vấn đề chủ quyền, lãnh thổ, biên giới quốc gia, lịch sử, tôn giáo, tín ngưỡng, thuần phong mỹ tục, sức khỏe, danh dự, uy tín, quyền và lợi ích hợp pháp của tổ chức, cá nhân khác; lợi ích của Nhà nước, lợi ích công cộng.
+
+2. Thông tin về tác giả (4):
+
+Họ và tên: NGUYỄN TUẤN TRƯỜNG</w:r><w:r w:rsidRPr="00F31375"><w:rPr><w:rFonts w:eastAsia="Calibri"/><w:noProof/><w:color w:val="000000"/><w:kern w:val="2"/><w14:ligatures w14:val="standardContextual"/></w:rPr><w:tab/><w:t xml:space="preserve"> </w:r><w:r w:rsidRPr="00F31375"><w:rPr><w:rFonts w:eastAsia="Calibri"/><w:noProof/><w:color w:val="000000"/><w:kern w:val="2"/><w14:ligatures w14:val="standardContextual"/></w:rPr><w:tab/><w:t>Quốc tịch: Việt Nam
+
+Bút danh thể hiện trên tác phẩm (nếu có): 
+
+Sinh ngày: Ngày 27 tháng 11 năm 1983
+
+Số Thẻ căn cước của công dân: 031083015033 
+
+Ngày cấp: 26/6/2025, tại: Bộ Công An 
+
+Địa chỉ: Tổ 25 phường Định Công, Thành phố Hà Nội
+
+Số điện thoại: 0966 688 600
+
+Email: nguyentuantruong@gmail.com
+
+3. Thông tin về chủ sở hữu quyền tác giả (5):
+
+Chủ sở hữu quyền tác giả là:
+
+☐  Cá nhân
+
+☒  Tổ chức
+
+Tên tổ chức: CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM 
+
+Số đăng ký doanh nghiệp/Quyết định/Giấy phép thành lập: 0110397654
+
+Ngày cấp: 23/06/2023 tại: Phòng Đăng ký kinh doanh và Tài chính doanh nghiệp – Sở Tài chính Thành phố Hà Nội
+
+Địa chỉ: Tầng 4, Số 39 HDI Homes ngõ 29 Mạc Thái Tông, Phường Yên Hòa, Thành phố Hà Nội
+
+Số điện thoại: 0915.200.914
+
+Email: nhungnguyen.hou@gmail.com
+
+Cơ sở phát sinh quyền sở hữu:
+
+ Tự sáng tạo
+
+ Theo hợp đồng thuê sáng tạo
+
+ Theo hợp đồng chuyển nhượng
+
+X Theo quyết định giao việc
+
+ Theo thừa kế
+
+ Theo cuộc thi
+
+ Khác, nêu rõ: ………………………………………………………………………….
+
+4. Trường hợp tác phẩm đăng ký là tác phẩm phái sinh:
+
+Tên tác phẩm dùng làm tác phẩm phái sinh: ........................................
+
+Tác giả của tác phẩm dùng làm tác phẩm phái sinh (6): ........................................
+
+Quốc tịch: ............................................................
+
+Chủ sở hữu quyền tác giả đối với tác phẩm dùng làm tác phẩm phái sinh (7): .................
+
+(Nếu tác phẩm gốc hết thời hạn bảo hộ, ghi "tác phẩm hết thời hạn bảo hộ" và nguồn thông tin: ...................................)
+
+5. Bên được ủy quyền nộp hồ sơ đăng ký (nếu có):
+
+Họ và tên/Tên tổ chức: ............................................................
+
+Số Căn cước/ Căn cước công dân/ Hộ chiếu (hoặc Mã số doanh nghiệp/ Quyết định/ Giấy phép thành lập nếu là tổ chức): ........................................
+
+Ngày cấp: .............. tại: .............................................
+
+Địa chỉ: .................................................................
+
+Số điện thoại: .................... Email: ..............................
+
+Tôi/Chúng tôi cam đoan những lời khai trên là đúng sự thật, nếu sai tôi/chúng tôi xin chịu trách nhiệm trước pháp luật./.
+
+Hà Nội, ngày .... tháng .... năm 2026
+
+Chủ sở hữu quyền tác giả
+
+CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM 
+
+GIÁM ĐỐC
+
+                      NGUYỄN THỊ HỒNG NHUNG

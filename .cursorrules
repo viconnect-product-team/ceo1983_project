@@ -8,8 +8,8 @@
 # ------------------------------------------------------------------------------
 # [BẮT BUỘC BƯỚC 1] Xác định phân hệ: Web CRM Quản trị (Desktop PC, Sidebar) vs CEO 1983 Mobile App (Hội viên, Bottom Nav).
 # [BẮT BUỘC BƯỚC 2] Tra cứu Functional Node ID từ file `.agents/rules/node-matrix.md`:
-#   - Nhóm CRM: [NODE-CRM-001] -> [NODE-CRM-018]
-#   - Nhóm Mobile: [NODE-APP-001] -> [NODE-APP-015]
+#   - Nhóm CRM: [NODE-CRM-001] -> [NODE-CRM-021]
+#   - Nhóm Mobile: [NODE-APP-001] -> [NODE-APP-016]
 #   - Nhóm Core / DevOps: [NODE-CORE-001] -> [NODE-CORE-006]
 # [BẮT BUỘC BƯỚC 3] Đọc file quy tắc chuyên biệt và file nguồn trước khi sửa:
 #   - Web CRM: Đọc `.agents/rules/crm-rules.md` & `document/notebooklm/02_DAC_TA_KY_THUAT_WEB_CRM_QUAN_TRI.md`
@@ -2226,6 +2226,38 @@
   + Khi trường hạn niên độ `term_end` trong CSDL là `null`, hệ thống BẮT BUỘC tự động fallback tính hạn niên độ 1 năm (`addOneYear`) từ ngày gia nhập `joined_at` hoặc ngày tạo tài khoản `created_at`.
   + Phải cung cấp đầy đủ giá trị fallback cho họ tên, mã hội viên, số điện thoại, công ty để không làm rỗng hoặc crash giao diện bảng gia hạn.
   + Không dùng `initialData` cố định gây kẹt cache rỗng; sử dụng TanStack Query linh hoạt và định dạng ngày tháng tiếng Việt chuẩn (`DD/MM/YYYY`).
+
+# [BẮT BUỘC 121] Quy Chuẩn Bản Đồ 2D Google Maps Dẫn Đường, Triệt Tiêu Lỗi Màn Hình Đen 3D Three.js & Đơn Giản Hóa Header Profile
+- Quy Chuẩn 1: Bản Đồ Tương Tác 2D Google Maps Dẫn Đường (`CeoInteractiveMapModal.tsx`, `MemberDirectoryMap.tsx`):
+  + Sử dụng nền tảng Leaflet 2D với tile Google Maps chính thức (`https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}`), 2 phạm vi xem linh hoạt ("Toàn bộ CLB" vs "Chỉ tôi & lân cận").
+  + Hỗ trợ định vị GPS trực tiếp qua HTML5 Geolocation (`navigator.geolocation.getCurrentPosition`), tính toán khoảng cách và mở điều hướng dẫn đường Google Maps ngoài ứng dụng (`https://www.google.com/maps/dir/?api=1&destination={lat},{lng}`).
+  + TUYỆT ĐỐI KHÔNG dùng thư viện 3D Three.js canvas hay WebGL phức tạp trên di động để triệt tiêu hoàn toàn lỗi màn hình đen, tràn RAM WebKit trên iOS Safari và Android WebView.
+- Quy Chuẩn 2: Đơn Giản Hóa Header Hồ Sơ Cá Nhân (`association.profile.tsx`):
+  + Lược bỏ các khối banner quảng bá cồng kềnh, chỉ giữ định danh lãnh đạo trang trọng với avatar tròn viền vàng, họ tên, chức vụ, nút chia sẻ danh thiếp số.
+  + Bổ sung Thẻ trạng thái đồng bộ Theme CRM thời gian thực (`LandingTemplateManager.tsx`, biến CSS `--festival-bg-image`), hiển thị trạng thái theme lễ hội đang áp dụng từ CRM.
+
+# [BẮT BUỘC 122] Quy Chuẩn Trung Tâm Thống Kê 5 Phân Loại Nghiệp Vụ, Top 3 Podium 1 Hàng & Bắn Mạng Lưới Từ CRM
+- Quy Chuẩn 1: Trung Tâm Thống Kê Chuyên Sâu 5 Danh Mục (`association.analytics.tsx`, `analytics.tsx`):
+  + 5 Phân loại nghiệp vụ chuẩn: 1. Doanh thu B2B, 2. Hội viên mới, 3. Kết nối B2B, 4. Điểm danh sự kiện/họp, 5. Đào tạo doanh nhân.
+  + 4 Thẻ KPI động: Tổng chỉ số, Kỳ trước, Tăng trưởng (%), Top dẫn đầu.
+  + Biểu đồ ComposedChart (Recharts): Cột giá trị thực hiện, đường xu hướng đa màu (Xanh lá `#10b981` cho tăng trưởng dương, Đỏ `#ef4444` cho suy giảm âm).
+  + Ghim Avatar Top 1 Giver tròn viền vàng trực tiếp trên đỉnh cao nhất của đường timeline biểu đồ.
+  + Bục vinh danh Top 3 (1st Vàng, 2nd Bạc, 3rd Đồng) BẮT BUỘC nằm gọn trên một hàng ngang duy nhất (`grid-cols-3` hoặc `flex-row`), không được rớt dòng gây vỡ bố cục màn hình di động.
+  + Hỗ trợ xuất báo cáo chuẩn khổ giấy A4 in ấn và file bảng tính Excel.
+- Quy Chuẩn 2: Theme Studio, Icon Picker 14 Tính Năng & Đồng Bộ Giao Diện (`admin.landing-templates.tsx`, `LandingTemplateManager.tsx`):
+  + 5 Preset màu VIP: Hoàng Gia (Royal Gold), Dạ Hội (Gala Black), Thép Titan (Titan Blue), Sen Vàng (Lotus Gold), Mùa Lễ Hội (Festival Season).
+  + Icon Picker 14 tính năng: Cho phép quản trị viên chọn icon Lucide đại diện cho từng phân hệ trong CLB.
+  + Khung xem trước trực tiếp (Live Mobile Preview Frame) trên giao diện desktop.
+  + Đồng bộ biến CSS `--festival-bg-image` xuống toàn bộ App Mobile qua API `landing_templates`.
+- Quy Chuẩn 3: Nút "Bắn Mạng Lưới" (Broadcast to Feed) Từ CRM (`events.tsx`, `trainings.tsx`):
+  + Cung cấp nút phát thanh trực tiếp từ CRM sang Bảng tin Mạng lưới Mobile (`POST /feed`), tự động tạo bài viết đính kèm Poster sự kiện/khóa đào tạo và mã QR điểm danh check-in.
+  + Bảng tin Mạng lưới Mobile (`association.messages.tsx`, `FeedView.tsx`): Hủy thanh tìm kiếm trùng lặp, hiển thị thẻ người tham gia `@HọTên [✓ Đã Check-in]`.
+- Quy Chuẩn 4: Thanh Điều Hướng Chân Trang (Bottom Nav 5 Icon Chuẩn):
+  + Tab 1: Trang chủ (`/association`, icon `Home`)
+  + Tab 2: Thống kê (`/association/analytics`, icon `BarChart3` / `FooterAnalyticsIcon`)
+  + Tab 3: B2B Connect (`/association/connect`, icon `Handshake`)
+  + Tab 4: Mạng lưới (`/association/messages`, icon `Users` / `FooterSocialNetworkIcon`)
+  + Tab 5: Cá nhân (`/association/profile`, icon `User`)
 
 
 
