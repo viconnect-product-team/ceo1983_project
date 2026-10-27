@@ -69,7 +69,6 @@ type Item = { key: TKey; icon: LucideIcon; to?: string; label?: string };
 
 const overview: Item[] = [
   { key: "nav.dashboard", icon: LayoutDashboard, to: "/" },
-  { key: "nav.analytics" as TKey, icon: BarChart3, to: "/analytics", label: "Thống kê CLB" },
 ];
 const members: Item[] = [
   { key: "nav.members", icon: Users, to: "/members" },
@@ -91,6 +90,7 @@ const sponsors: Item[] = [
   { key: "nav.sponsorReport", icon: FileBarChart, to: "/sponsor-report" },
 ];
 const finance: Item[] = [
+  { key: "nav.analytics" as TKey, icon: BarChart3, to: "/analytics", label: "Thống kê CLB & Hội viên" },
   { key: "nav.fee", icon: Wallet, to: "/fees" },
   { key: "nav.income", icon: ArrowDownCircle, to: "/income" },
   { key: "nav.expenses" as TKey, icon: ArrowUpCircle, to: "/expenses" },

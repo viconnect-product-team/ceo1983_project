@@ -189,11 +189,7 @@ export function CalendarScreen() {
       const stored = localStorage.getItem("vba_calendar_reminders");
       if (stored) return JSON.parse(stored);
     } catch {}
-    return {
-      "app-1": { itemId: "app-1", enabled: true, timing: "1hour" },
-      "cm-1": { itemId: "cm-1", enabled: true, timing: "1day" },
-      "ev-1": { itemId: "ev-1", enabled: true, timing: "1day" },
-    };
+    return {};
   });
 
   // Calendar items master list
@@ -207,13 +203,13 @@ export function CalendarScreen() {
     } catch {}
   }, [reminders]);
 
-  // Load registered events, meetings and 1on1 appointments
+  // Load ONLY registered events, confirmed committee meetings, and 1on1 appointments of logged-in user
   const loadCalendarData = async () => {
     setLoading(true);
     try {
       let combined: CalendarItem[] = [];
 
-      // 1. Fetch registered events from server or fallback
+      // 1. Fetch registered events from server or localStorage
       try {
         const res = await fetchNestApi<any>("/events/my-events").catch(() => null);
         if (Array.isArray(res) && res.length > 0) {
@@ -233,32 +229,29 @@ export function CalendarScreen() {
           }));
           combined.push(...mappedEvents);
         } else {
-          // Fallback registered events in localStorage
+          // Check registered events in localStorage (user actually clicked "Đăng ký tham gia")
           const localEventsRaw = localStorage.getItem("vba_registered_events");
           if (localEventsRaw) {
             const list = JSON.parse(localEventsRaw);
             if (Array.isArray(list) && list.length > 0) {
               combined.push(...list.map((e: any) => ({
-                id: e.id || `ev-${Math.random()}`,
+                id: String(e.id || `ev-${Math.random()}`),
                 type: "event" as const,
                 title: e.title || "Sự kiện đã đăng ký",
                 categoryLabel: "Sự kiện CLB",
-                date: e.date || new Date(Date.now() + 86400000 * 4).toISOString().split("T")[0],
+                date: e.date || new Date().toISOString().split("T")[0],
                 time: e.time || "18:00 - 21:00",
                 location: e.location || e.place || "Trung tâm Hội nghị Quốc gia NCC",
                 status: "registered" as const,
-                ticketCode: e.ticketCode || "VIP-1983",
+                ticketCode: e.ticketCode || `VIP-${e.id || "1983"}`,
+                description: e.description,
               })));
             }
           }
         }
       } catch {}
 
-      if (combined.filter(i => i.type === "event").length === 0) {
-        combined.push(...DEFAULT_EVENTS);
-      }
-
-      // 2. Load 1-on-1 appointments from localStorage
+      // 2. Load 1-on-1 appointments that the user actually scheduled
       try {
         const stored1on1 = localStorage.getItem("vba_connection_appointments");
         if (stored1on1) {
@@ -286,12 +279,29 @@ export function CalendarScreen() {
         }
       } catch {}
 
-      if (combined.filter(i => i.type === "meeting_1on1").length === 0) {
-        combined.push(...DEFAULT_1ON1_APPOINTMENTS);
-      }
-
-      // 3. Load Committee meetings
-      combined.push(...DEFAULT_COMMITTEE_MEETINGS);
+      // 3. Load Committee meetings user actually registered for
+      try {
+        const storedMeetings = localStorage.getItem("vba_registered_committee_meetings");
+        if (storedMeetings) {
+          const list = JSON.parse(storedMeetings);
+          if (Array.isArray(list) && list.length > 0) {
+            const mappedMeetings: CalendarItem[] = list.map((m: any, idx: number) => ({
+              id: m.id || `cm-${idx}`,
+              type: "meeting_committee",
+              title: m.title || "Họp Ban chuyên môn",
+              categoryLabel: m.categoryLabel || "Họp Ban",
+              date: m.date || new Date().toISOString().split("T")[0],
+              time: m.time || "09:00 - 11:30",
+              location: m.location || "Văn phòng Hiệp hội CEO 1983",
+              isOnline: Boolean(m.isOnline),
+              onlineLink: m.onlineLink,
+              status: "confirmed",
+              description: m.description,
+            }));
+            combined.push(...mappedMeetings);
+          }
+        }
+      } catch {}
 
       // Sort by date ascending
       combined.sort((a, b) => new Date(`${a.date} ${a.time.slice(0, 5)}`).getTime() - new Date(`${b.date} ${b.time.slice(0, 5)}`).getTime());
@@ -754,24 +764,35 @@ export function CalendarScreen() {
               Đang tải lịch trình của bạn...
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-2">
-              <CalendarCheck className="size-8 mx-auto text-slate-300 dark:text-slate-600" />
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Không có lịch trình nào phù hợp
-              </p>
-              <p className="text-[11px] text-slate-400">
-                {selectedDate
-                  ? `Không có sự kiện hay cuộc hẹn nào vào ngày ${formatDisplayDate(selectedDate)}`
-                  : "Bạn chưa có sự kiện hay cuộc hẹn nào trong danh mục này"}
-              </p>
-              <button
-                type="button"
-                onClick={() => setCreateConnectModalOpen(true)}
-                className="mt-2 px-3 py-1.5 rounded-xl bg-[#003B95] text-white text-xs font-bold inline-flex items-center gap-1"
-              >
-                <Plus className="size-3.5" />
-                <span>Đặt lịch kết nối ngay</span>
-              </button>
+            <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+              <CalendarCheck className="size-10 mx-auto text-[#003B95] dark:text-cyan-400 opacity-60" />
+              <div>
+                <p className="text-sm font-black text-slate-800 dark:text-white">
+                  Chưa có lịch trình sự kiện hoặc cuộc hẹn nào
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
+                  {selectedDate
+                    ? `Không có sự kiện hay cuộc hẹn nào bạn đã tham gia vào ngày ${formatDisplayDate(selectedDate)}.`
+                    : "Lịch cá nhân chỉ hiển thị các sự kiện CLB, cuộc họp ban và cuộc gặp 1-on-1 mà bạn đã đăng ký hoặc tham gia."}
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                <Link
+                  to="/association/events"
+                  className="px-3 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition"
+                >
+                  <Ticket className="size-3.5" />
+                  <span>Khám phá sự kiện CLB</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setCreateConnectModalOpen(true)}
+                  className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                >
+                  <Plus className="size-3.5" />
+                  <span>Đặt lịch hẹn 1-on-1</span>
+                </button>
+              </div>
             </div>
           ) : (
             filteredItems.map((item) => {

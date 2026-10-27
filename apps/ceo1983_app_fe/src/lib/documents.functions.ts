@@ -10,13 +10,16 @@ export type Document = {
   size: string;
   uploadedAt: string;
   uploadedBy: string;
-  type: "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "txt" | "csv" | "zip" | "rar" | "png" | "jpg" | "jpeg" | "other";
+  type: "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "txt" | "csv" | "zip" | "rar" | "png" | "jpg" | "jpeg" | "folder" | "other";
   docScope?: "association" | "enterprise";
   enterpriseName?: string;
   enterpriseId?: string;
   filePath?: string;
   url?: string;
   fileUrl?: string;
+  folderId?: string | null;
+  driveUrl?: string | null;
+  isFolder?: boolean;
 };
 
 export const listDocumentsFn = createServerFn({ method: "GET" })
@@ -47,12 +50,16 @@ const docInput = z.object({
     "png",
     "jpg",
     "jpeg",
+    "folder",
     "other",
   ]),
   filePath: z.string().max(500).default(""),
   docScope: z.enum(["association", "enterprise"]).default("association").optional(),
   enterpriseName: z.string().max(255).optional(),
   enterpriseId: z.string().max(128).optional(),
+  folderId: z.string().max(128).optional().nullable(),
+  driveUrl: z.string().max(1000).optional().nullable(),
+  isFolder: z.boolean().optional(),
 });
 
 export const createDocumentFn = createServerFn({ method: "POST" })

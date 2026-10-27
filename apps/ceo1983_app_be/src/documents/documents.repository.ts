@@ -23,27 +23,39 @@ export class DocumentsRepository {
   async listDocuments(associationId?: string | null): Promise<any[]> {
     if (associationId) {
       return this.prisma.$queryRaw<any[]>`
-        SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, association_id
+        SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, association_id, folder_id, drive_url, is_folder
         FROM public.documents
         WHERE association_id = ${associationId}::uuid
-        ORDER BY uploaded_at DESC
+        ORDER BY is_folder DESC, uploaded_at DESC
       `.catch(() => []);
     }
     return this.prisma.$queryRaw<any[]>`
-      SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, association_id
+      SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, association_id, folder_id, drive_url, is_folder
       FROM public.documents
-      ORDER BY uploaded_at DESC
+      ORDER BY is_folder DESC, uploaded_at DESC
     `.catch(() => []);
   }
 
-  async insertDocument(code: string, name: string, category: string, size: string, uploadedBy: string, type: string, filePath: string | null, associationId: string | null): Promise<any> {
+  async insertDocument(
+    code: string,
+    name: string,
+    category: string,
+    size: string,
+    uploadedBy: string,
+    type: string,
+    filePath: string | null,
+    associationId: string | null,
+    folderId?: string | null,
+    driveUrl?: string | null,
+    isFolder: boolean = false,
+  ): Promise<any> {
     await this.prisma.$executeRaw`
-      INSERT INTO public.documents (code, name, category, size, uploaded_by, type, file_path, association_id, uploaded_at)
-      VALUES (${code}, ${name}, ${category}, ${size}, ${uploadedBy}, ${type}, ${filePath}, ${associationId ? associationId : null}::uuid, NOW())
+      INSERT INTO public.documents (code, name, category, size, uploaded_by, type, file_path, association_id, folder_id, drive_url, is_folder, uploaded_at)
+      VALUES (${code}, ${name}, ${category}, ${size}, ${uploadedBy}, ${type}, ${filePath}, ${associationId ? associationId : null}::uuid, ${folderId || null}, ${driveUrl || null}, ${isFolder}, NOW())
     `;
 
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path
+      SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, folder_id, drive_url, is_folder
       FROM public.documents
       WHERE code = ${code}
       LIMIT 1
@@ -52,7 +64,18 @@ export class DocumentsRepository {
     return rows[0] || null;
   }
 
-  async updateDocument(id: string, name: string, category: string, size: string, uploadedBy: string, type: string, filePath: string | null): Promise<any> {
+  async updateDocument(
+    id: string,
+    name: string,
+    category: string,
+    size: string,
+    uploadedBy: string,
+    type: string,
+    filePath: string | null,
+    folderId?: string | null,
+    driveUrl?: string | null,
+    isFolder?: boolean,
+  ): Promise<any> {
     await this.prisma.$executeRaw`
       UPDATE public.documents
       SET name = ${name},
@@ -60,12 +83,15 @@ export class DocumentsRepository {
           size = ${size},
           uploaded_by = ${uploadedBy},
           type = ${type},
-          file_path = COALESCE(${filePath}, file_path)
+          file_path = COALESCE(${filePath}, file_path),
+          folder_id = COALESCE(${folderId !== undefined ? folderId : null}, folder_id),
+          drive_url = COALESCE(${driveUrl !== undefined ? driveUrl : null}, drive_url),
+          is_folder = COALESCE(${isFolder !== undefined ? isFolder : null}, is_folder)
       WHERE code = ${id}
     `;
 
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path
+      SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, folder_id, drive_url, is_folder
       FROM public.documents
       WHERE code = ${id}
       LIMIT 1

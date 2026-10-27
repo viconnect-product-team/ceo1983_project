@@ -4,6 +4,8 @@ import {
   Download,
   FileText,
   FolderOpen,
+  FolderPlus,
+  Folder,
   LayoutGrid,
   List as ListIcon,
   Pencil,
@@ -19,6 +21,9 @@ import {
   Building,
   ShieldCheck,
   Lock,
+  ExternalLink,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -56,6 +61,7 @@ export const Route = createFileRoute("/documents/")({
 });
 
 const TYPE_COLOR: Record<Document["type"], string> = {
+  folder: "oklch(0.68 0.18 80)",
   pdf: "oklch(0.62 0.18 25)",
   doc: "oklch(0.55 0.16 240)",
   docx: "oklch(0.55 0.16 240)",
@@ -191,15 +197,28 @@ function DocsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Quản lý thư mục phong cách Google Drive
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderCat, setNewFolderCat] = useState("Biểu mẫu chung");
+  const [newFolderScope, setNewFolderScope] = useState<"association" | "enterprise">("association");
+  const [creatingFolder, setCreatingFolder] = useState(false);
+
   const fields: CrudField[] = [
+    { name: "name", label: t("doc.col.name"), type: "text", required: true, placeholder: "Nhập tên tài liệu..." },
+    {
+      name: "driveUrl",
+      label: "Đường dẫn Google Drive (Link Driver - Tùy chọn)",
+      type: "text",
+      placeholder: "https://drive.google.com/file/d/... hoặc link thư mục Drive",
+    },
     {
       name: "filePath",
-      label: "Tệp tài liệu đính kèm",
+      label: "Tệp tài liệu đính kèm từ máy (Tối đa 500MB)",
       type: "file",
-      required: true,
       placeholder: "Chọn hoặc dán đường dẫn tệp tài liệu...",
     },
-    { name: "name", label: t("doc.col.name"), type: "text", required: true, placeholder: "Nhập tên tài liệu..." },
     {
       name: "docScope",
       label: "Phân loại tài liệu",
@@ -268,11 +287,15 @@ function DocsPage() {
     }
     setSubmitting(true);
     try {
+      const payload = {
+        ...v,
+        folderId: currentFolderId,
+      };
       if (editing) {
-        await updateFn({ data: { id: editing.id, ...(v as object) } as never });
+        await updateFn({ data: { id: editing.id, ...(payload as object) } as never });
         toast.success(t("common.updated"));
       } else {
-        await createFn({ data: v as never });
+        await createFn({ data: payload as never });
         toast.success(t("common.created"));
       }
       setOpen(false);
@@ -282,6 +305,38 @@ function DocsPage() {
       toast.error(t("common.saveError"));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onCreateFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFolderName.trim()) {
+      toast.error("Vui lòng nhập tên thư mục!");
+      return;
+    }
+    setCreatingFolder(true);
+    try {
+      await createFn({
+        data: {
+          name: newFolderName.trim(),
+          category: newFolderCat,
+          type: "folder",
+          isFolder: true,
+          folderId: currentFolderId,
+          docScope: newFolderScope,
+          size: "Thư mục",
+          uploadedBy: "Quản trị CLB",
+          filePath: "",
+        } as never,
+      });
+      toast.success(`Đã tạo thư mục "${newFolderName}" thành công!`);
+      setCreateFolderModalOpen(false);
+      setNewFolderName("");
+      await router.invalidate();
+    } catch (err: any) {
+      toast.error("Không thể tạo thư mục lúc này: " + (err.message || ""));
+    } finally {
+      setCreatingFolder(false);
     }
   };
 
@@ -310,6 +365,11 @@ function DocsPage() {
 
   const onDownload = async (d: Document) => {
     try {
+      // Nếu có liên kết Google Drive, mở trực tiếp liên kết
+      if (d.driveUrl) {
+        window.open(d.driveUrl, "_blank", "noopener");
+        return;
+      }
       let rawUrl: string | null | undefined = d.filePath || d.url || d.fileUrl;
       if (!rawUrl) {
         rawUrl = await urlFn({ data: { id: d.id } });
@@ -357,6 +417,16 @@ function DocsPage() {
 
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
+      // Kiểm tra dung lượng tối đa 500MB trực tiếp từ client để tránh sập web
+      if (f.size > 500 * 1024 * 1024) {
+        toast.error(
+          `Tệp "${f.name}" (${(f.size / (1024 * 1024)).toFixed(1)} MB) vượt quá dung lượng cho phép (tối đa 500MB). Vui lòng chọn tệp nhỏ hơn hoặc dán link Google Drive!`,
+          { duration: 6000 }
+        );
+        failCount++;
+        continue;
+      }
+
       toast.loading(`Đang tải lên (${i + 1}/${files.length}): ${f.name}...`, { id: toastId });
       try {
         const formData = new FormData();
@@ -389,6 +459,8 @@ function DocsPage() {
             uploadedBy: "",
             type,
             filePath: path,
+            folderId: currentFolderId,
+            isFolder: false,
           } as never,
         });
         successCount++;
@@ -400,7 +472,7 @@ function DocsPage() {
 
     setUploading(false);
     if (successCount > 0) {
-      toast.success(`Đã tải lên thành công ${successCount} tài liệu!${failCount > 0 ? ` (${failCount} lỗi)` : ""}`, {
+      toast.success(`Đã tải lên thành công ${successCount} tài liệu!${failCount > 0 ? ` (${failCount} tệp lỗi hoặc >500MB)` : ""}`, {
         id: toastId,
       });
       await router.invalidate();
@@ -412,6 +484,34 @@ function DocsPage() {
   const pinnedActive = pinnedOnly === "1";
   const hasFilters =
     q.trim() !== "" || cat !== "all" || typeF !== "all" || owner !== "all" || pinnedActive;
+
+  const currentFolder = useMemo(() => {
+    return currentFolderId ? DOCUMENTS.find((d) => d.id === currentFolderId) || null : null;
+  }, [DOCUMENTS, currentFolderId]);
+
+  const currentFolders = useMemo(() => {
+    if (q.trim()) return [];
+    return DOCUMENTS.filter(
+      (d) => (d.isFolder || d.type === "folder") && (currentFolderId ? d.folderId === currentFolderId : !d.folderId),
+    );
+  }, [DOCUMENTS, currentFolderId, q]);
+
+  const breadcrumbs = useMemo(() => {
+    const trail: { id: string | null; name: string }[] = [{ id: null, name: "Thư mục gốc" }];
+    if (!currentFolderId) return trail;
+
+    const visited = new Set<string>();
+    const currTrail: { id: string; name: string }[] = [];
+    let curr: Document | undefined = DOCUMENTS.find((d) => d.id === currentFolderId);
+    while (curr && !visited.has(curr.id)) {
+      visited.add(curr.id);
+      currTrail.unshift({ id: curr.id, name: curr.name });
+      const parentId: string | null = curr.folderId || null;
+      if (!parentId) break;
+      curr = DOCUMENTS.find((d) => d.id === parentId);
+    }
+    return [...trail, ...currTrail];
+  }, [DOCUMENTS, currentFolderId]);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -425,6 +525,15 @@ function DocsPage() {
       .filter((d) => (typeF === "all" ? true : d.type === typeF))
       .filter((d) => (owner === "all" ? true : d.uploadedBy === owner))
       .filter((d) => (pinnedActive ? pins.has(d.id) : true))
+      .filter((d) => {
+        // Nếu tìm kiếm từ khóa thì tìm trong toàn bộ hệ thống
+        if (ql) return true;
+        // Nếu không tìm kiếm thì chỉ hiện tệp thuộc thư mục đang mở
+        if (currentFolderId) {
+          return d.folderId === currentFolderId;
+        }
+        return !d.folderId;
+      })
       .filter(
         (d) =>
           !ql ||
@@ -434,6 +543,11 @@ function DocsPage() {
       );
 
     const sorted = [...list].sort((a, b) => {
+      // Ưu tiên hiển thị thư mục lên trước các tệp
+      const aIsFolder = a.isFolder || a.type === "folder" ? 1 : 0;
+      const bIsFolder = b.isFolder || b.type === "folder" ? 1 : 0;
+      if (aIsFolder !== bIsFolder) return bIsFolder - aIsFolder;
+
       switch (sort) {
         case "oldest":
           return a.uploadedAt.localeCompare(b.uploadedAt);
@@ -447,7 +561,7 @@ function DocsPage() {
       }
     });
     return sorted;
-  }, [q, cat, typeF, owner, sort, pinnedActive, pins, DOCUMENTS, scopeTab]);
+  }, [q, cat, typeF, owner, sort, pinnedActive, pins, DOCUMENTS, scopeTab, currentFolderId]);
 
   // Pinned section only in the default (unfiltered, ungrouped) view.
   const pinnedDocs = useMemo(
@@ -499,10 +613,21 @@ function DocsPage() {
 
   function TypeGlyph({ d, size = "md" }: { d: Document; size?: "sm" | "md" }) {
     const dim = size === "sm" ? "h-9 w-9 text-[10px]" : "h-11 w-11 text-[11px]";
+    const isFolder = d.isFolder || d.type === "folder";
+    if (isFolder) {
+      return (
+        <div
+          className={`flex ${dim} shrink-0 items-center justify-center rounded-xl font-bold uppercase bg-amber-500 text-white shadow-xs`}
+          aria-hidden="true"
+        >
+          <Folder className={size === "sm" ? "h-4 w-4 fill-white/30" : "h-5 w-5 fill-white/30"} />
+        </div>
+      );
+    }
     return (
       <div
         className={`flex ${dim} shrink-0 items-center justify-center rounded-xl font-bold uppercase text-primary-foreground`}
-        style={{ background: TYPE_COLOR[d.type] }}
+        style={{ background: TYPE_COLOR[d.type] || "oklch(0.50 0.02 240)" }}
         aria-hidden="true"
       >
         {d.type}
@@ -533,34 +658,66 @@ function DocsPage() {
   }
 
   function DocCard({ d }: { d: Document }) {
+    const isFolder = d.isFolder || d.type === "folder";
     return (
-      <div className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-md)]">
+      <div
+        onClick={() => {
+          if (isFolder) setCurrentFolderId(d.id);
+        }}
+        className={`group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-md)] ${
+          isFolder ? "cursor-pointer hover:border-amber-500/50 hover:bg-amber-500/5" : ""
+        }`}
+      >
         <div className="flex items-start gap-3">
           <TypeGlyph d={d} />
           <div className="min-w-0 flex-1">
-            <Link
-              to="/documents/$docId"
-              params={{ docId: d.id }}
-              className="block truncate text-sm font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              title={d.name}
-            >
-              {d.name}
-            </Link>
+            {isFolder ? (
+              <span
+                className="block truncate text-sm font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400"
+                title={d.name}
+              >
+                📁 {d.name}
+              </span>
+            ) : (
+              <Link
+                to="/documents/$docId"
+                params={{ docId: d.id }}
+                className="block truncate text-sm font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                title={d.name}
+              >
+                {d.name}
+              </Link>
+            )}
             <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
-              <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold ${
-                (d.docScope || "association") === "association"
-                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                  : "bg-blue-500/15 text-blue-700 dark:text-blue-400"
-              }`}>
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold ${
+                  (d.docScope || "association") === "association"
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                    : "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                }`}
+              >
                 {(d.docScope || "association") === "association" ? "🏛️ Hiệp hội" : "🏢 Doanh nghiệp"}
               </span>
+              {d.driveUrl && (
+                <a
+                  href={d.driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:underline"
+                  title="Mở Google Drive"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Google Drive
+                </a>
+              )}
               {d.enterpriseName ? (
                 <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[140px]">
                   {d.enterpriseName}
                 </span>
               ) : null}
               <span className="text-muted-foreground">
-                {[d.category, d.type?.toUpperCase(), d.size].filter(Boolean).join(" · ")}
+                {[d.category, isFolder ? "THƯ MỤC" : d.type?.toUpperCase(), d.size].filter(Boolean).join(" · ")}
               </span>
             </div>
           </div>
@@ -571,13 +728,35 @@ function DocsPage() {
           <span className="shrink-0">{fmt.date(d.uploadedAt)}</span>
         </div>
         <div className="flex items-center gap-1.5 border-t border-border pt-3">
-          <button
-            onClick={() => void onDownload(d)}
-            className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            {t("common.download")}
-          </button>
+          {isFolder ? (
+            <button
+              onClick={() => setCurrentFolderId(d.id)}
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 text-xs font-bold hover:bg-amber-500/20 cursor-pointer"
+            >
+              <FolderOpen className="h-3.5 w-3.5" />
+              Mở thư mục
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                void onDownload(d);
+              }}
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+            >
+              {d.driveUrl ? (
+                <>
+                  <ExternalLink className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Mở Google Drive</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{t("common.download")}</span>
+                </>
+              )}
+            </button>
+          )}
           {(() => {
             const isAssoc = d.docScope === "association" || !d.docScope;
             const canManageThis = isAssoc ? canWriteAssociation : true;
@@ -585,20 +764,24 @@ function DocsPage() {
             return (
               <>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditing(d);
                     setOpen(true);
                   }}
                   aria-label={t("doc.edit")}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
                 >
                   <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
                 <button
-                  onClick={() => onDelete(d)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(d);
+                  }}
                   disabled={deletingId === d.id}
                   aria-label={t("doc.delete")}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -654,6 +837,17 @@ function DocsPage() {
             </div>
             {canWrite && (
               <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewFolderName("");
+                    setCreateFolderModalOpen(true);
+                  }}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 text-sm font-semibold text-amber-700 dark:text-amber-300 shadow-[var(--shadow-card)] hover:bg-amber-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                >
+                  <FolderPlus className="h-4 w-4" aria-hidden="true" />
+                  <span>Tạo thư mục</span>
+                </button>
                 <input
                   ref={fileRef}
                   type="file"
@@ -996,7 +1190,100 @@ function DocsPage() {
       {!isLoading && noResults && !pinnedActive && <NoSearchResult />}
 
       {!isLoading && !noDocs && !noResults && (
-        <div className="space-y-8">
+        <div className="space-y-6">
+          {/* Breadcrumb Navigation - Chuẩn Google Drive */}
+          {!q.trim() && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card/70 px-4 py-2.5 shadow-xs">
+              <nav className="flex items-center gap-1.5 text-sm overflow-x-auto py-1">
+                {breadcrumbs.map((crumb, idx) => {
+                  const isLast = idx === breadcrumbs.length - 1;
+                  return (
+                    <div key={crumb.id || "root"} className="flex items-center gap-1.5 shrink-0">
+                      {idx > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentFolderId(crumb.id)}
+                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                          isLast
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        }`}
+                      >
+                        {idx === 0 ? <Folder className="h-3.5 w-3.5 text-amber-500" /> : <FolderOpen className="h-3.5 w-3.5 text-amber-600" />}
+                        <span>{crumb.name}</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </nav>
+              <div className="flex items-center gap-2">
+                {currentFolderId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const parentId = currentFolder?.folderId || null;
+                      setCurrentFolderId(parentId);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <span>Lên thư mục cha</span>
+                  </button>
+                )}
+                {canWrite && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewFolderName("");
+                      setCreateFolderModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 cursor-pointer"
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    <span>Thư mục mới</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Danh sách Thư mục con (Folders Grid) */}
+          {!q.trim() && currentFolders.length > 0 && (
+            <section>
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
+                <Folder className="h-4 w-4 text-amber-500" />
+                <span>Thư mục con ({currentFolders.length})</span>
+              </h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {currentFolders.map((f) => {
+                  const childCount = DOCUMENTS.filter((d) => d.folderId === f.id).length;
+                  return (
+                    <div
+                      key={`f-${f.id}`}
+                      onClick={() => setCurrentFolderId(f.id)}
+                      className="group flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3.5 transition-all hover:border-amber-500/50 hover:bg-amber-500/10 hover:shadow-md cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs group-hover:scale-105 transition-transform">
+                          <Folder className="h-5 w-5 fill-white/20" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                            {f.name}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {childCount} mục · {f.category}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* Recent (only when no active filters) */}
           {recentDocs.length > 0 && (
             <section>
@@ -1200,6 +1487,102 @@ function DocsPage() {
           setEditing(null);
         }}
       />
+
+      {/* Modal Tạo Thư Mục Mới Chuẩn Google Drive */}
+      {createFolderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
+                  <FolderPlus className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Tạo thư mục mới</h3>
+                  <p className="text-xs text-muted-foreground">Tạo phân cấp lưu trữ tài liệu</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreateFolderModalOpen(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={onCreateFolder} className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Tên thư mục <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder="Ví dụ: Đại hội Hội viên 2026, Biểu mẫu ban Xúc tiến..."
+                  className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Phân loại thư mục
+                </label>
+                <select
+                  value={newFolderScope}
+                  onChange={(e) => setNewFolderScope(e.target.value as "association" | "enterprise")}
+                  className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:border-amber-500 focus:outline-none"
+                >
+                  <option value="association">🏛️ Thư mục Hiệp Hội (Chỉ Quản trị / Trưởng ban)</option>
+                  <option value="enterprise">🏢 Thư mục Doanh Nghiệp (Dành cho thành viên)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Ban phụ trách / Danh mục
+                </label>
+                <select
+                  value={newFolderCat}
+                  onChange={(e) => setNewFolderCat(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:border-amber-500 focus:outline-none"
+                >
+                  {CRM_COMMITTEE_LIST.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground flex items-center gap-2">
+                <Folder className="h-4 w-4 text-amber-500 shrink-0" />
+                <span>
+                  Vị trí lưu: <strong className="text-foreground">{currentFolder ? currentFolder.name : "Thư mục gốc"}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setCreateFolderModalOpen(false)}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingFolder || !newFolderName.trim()}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 px-5 py-2 text-sm font-bold text-white shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {creatingFolder ? "Đang tạo..." : "Tạo thư mục"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

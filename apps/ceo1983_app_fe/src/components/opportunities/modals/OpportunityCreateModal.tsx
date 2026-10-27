@@ -98,8 +98,9 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
   creating,
   resolveMediaUrl,
 }) => {
+  const [recipientType, setRecipientType] = React.useState<"all" | "by_department" | "friends">("all");
+  const [visibilityScope, setVisibilityScope] = React.useState<"public" | "friends" | "custom">("public");
   const [selectedDept, setSelectedDept] = React.useState<string>("all");
-  const [selectedScope, setSelectedScope] = React.useState<"public" | "specific_members" | "group">("public");
   const [selectedRecipients, setSelectedRecipients] = React.useState<string[]>([]);
   const [selectedGroups, setSelectedGroups] = React.useState<string[]>([]);
   const [deptList, setDeptList] = React.useState<any[]>([]);
@@ -412,102 +413,53 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
                 {loadingDepts && <Loader2 className="w-3 h-3 animate-spin text-amber-600" />}
               </div>
 
-              {/* Chọn Phạm Vi Trao Cơ Hội (Đa đối tượng & Hội nhóm) */}
+              {/* 1. Chọn Người Nhận Cơ Hội (Yêu cầu 6: Tất cả hội viên đều thấy, Theo từng ban, Bạn bè đã kết nối) */}
               <div className="rounded-xl bg-white/80 dark:bg-black/30 p-2.5 border border-amber-500/20 space-y-2.5">
                 <span className="text-[11px] font-bold text-[#1F3864] dark:text-amber-300 flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" /> Phạm vi trao cơ hội kinh doanh
+                  <Users className="w-3.5 h-3.5 text-amber-500" /> Người nhận cơ hội
                 </span>
 
                 <div className="grid grid-cols-3 gap-1.5 text-[11px]">
                   <button
                     type="button"
-                    onClick={() => setSelectedScope("public")}
-                    className={`py-1.5 px-2 rounded-lg font-bold text-center border transition cursor-pointer ${
-                      selectedScope === "public"
-                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                    onClick={() => setRecipientType("all")}
+                    className={`py-1.5 px-1.5 rounded-lg font-bold text-center border transition cursor-pointer text-[10.5px] leading-tight ${
+                      recipientType === "all"
+                        ? "bg-[#1F3864] text-white border-[#1F3864] shadow-xs"
                         : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                     }`}
                   >
-                    Toàn CLB
+                    Tất cả hội viên
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelectedScope("specific_members")}
-                    className={`py-1.5 px-2 rounded-lg font-bold text-center border transition cursor-pointer ${
-                      selectedScope === "specific_members"
-                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                    onClick={() => setRecipientType("by_department")}
+                    className={`py-1.5 px-1.5 rounded-lg font-bold text-center border transition cursor-pointer text-[10.5px] leading-tight ${
+                      recipientType === "by_department"
+                        ? "bg-[#1F3864] text-white border-[#1F3864] shadow-xs"
                         : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                     }`}
                   >
-                    Nhiều hội viên
+                    Theo từng ban
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelectedScope("group")}
-                    className={`py-1.5 px-2 rounded-lg font-bold text-center border transition cursor-pointer ${
-                      selectedScope === "group"
-                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                    onClick={() => setRecipientType("friends")}
+                    className={`py-1.5 px-1.5 rounded-lg font-bold text-center border transition cursor-pointer text-[10.5px] leading-tight ${
+                      recipientType === "friends"
+                        ? "bg-[#1F3864] text-white border-[#1F3864] shadow-xs"
                         : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                     }`}
                   >
-                    Ban / Hội nhóm
+                    Bạn bè đã kết nối
                   </button>
                 </div>
 
-                {/* Scope: Specific members multi-select chips */}
-                {selectedScope === "specific_members" && (
-                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
-                      Thêm hội viên nhận cơ hội:
-                    </label>
-                    <select
-                      onChange={(e) => {
-                        const mId = e.target.value;
-                        if (!mId) return;
-                        const chosen = activeMembersInDept.find((m: any) => String(m.id) === mId);
-                        if (chosen && !selectedRecipients.includes(chosen.name)) {
-                          setSelectedRecipients([...selectedRecipients, chosen.name]);
-                          toast.success(`Đã thêm: ${chosen.name}`);
-                        }
-                      }}
-                      defaultValue=""
-                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
-                    >
-                      <option value="" disabled>-- Chọn hội viên để thêm vào danh sách ({activeMembersInDept.length}) --</option>
-                      {activeMembersInDept.map((m: any) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name} - {m.company || m.title}
-                        </option>
-                      ))}
-                    </select>
-
-                    {selectedRecipients.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {selectedRecipients.map((rec) => (
-                          <span
-                            key={rec}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white"
-                          >
-                            <span>{rec}</span>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedRecipients(selectedRecipients.filter((r) => r !== rec))}
-                              className="hover:text-amber-300"
-                            >
-                              <X className="size-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Scope: Group / Department multi-select */}
-                {selectedScope === "group" && (
+                {/* Recipient Type: Theo từng ban */}
+                {recipientType === "by_department" && (
                   <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
-                      Chọn các Ban Chuyên Môn / Hội nhóm nhận cơ hội:
+                      Chọn các ban nhận cơ hội:
                     </label>
                     <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto p-1">
                       {["Ban Xúc tiến", "Ban Điều Hành", "Ban Thành viên", "Ban Tài chính", "Ban Truyền thông", "Ban Thiện nguyện", "Ban Thư Ký"].map((grp) => {
@@ -541,55 +493,102 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
                   </div>
                 )}
 
-                {/* Scope: Public or Fallback individual contact selector */}
-                {selectedScope === "public" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <div>
-                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Ban chuyên môn:
-                      </label>
-                      <select
-                        value={selectedDept}
-                        onChange={(e) => setSelectedDept(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
-                      >
-                        <option value="all">Tất cả các ban ({deptList.reduce((acc, d) => acc + (d.count || 0), 0)} hội viên)</option>
-                        {deptList.map((d) => (
-                          <option key={d.department} value={d.department}>
-                            {d.department} ({d.count} người)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                {/* Recipient Type: Bạn bè đã kết nối */}
+                {recipientType === "friends" && (
+                  <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300">
+                    Cơ hội này sẽ được gửi tới danh bạ tất cả các CEO và bạn bè đã kết nối với bạn.
+                  </div>
+                )}
+              </div>
 
-                    <div>
-                      <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
-                        Chọn hội viên mẫu:
-                      </label>
-                      <select
-                        onChange={(e) => {
-                          const mId = e.target.value;
-                          if (!mId) return;
-                          const chosen = activeMembersInDept.find((m: any) => String(m.id) === mId);
-                          if (chosen) {
-                            setNewContactName(chosen.name || "");
-                            if (chosen.phone) setNewContactPhone(chosen.phone);
-                            if (chosen.title) setNewContactTitle(chosen.title);
-                            if (chosen.company) setNewCompany(chosen.company);
-                            toast.success(`Đã chọn: ${chosen.name} (${chosen.department})`);
-                          }
-                        }}
-                        defaultValue=""
-                        className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
-                      >
-                        <option value="" disabled>-- Bấm để chọn hội viên ({activeMembersInDept.length}) --</option>
-                        {activeMembersInDept.map((m: any) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name} - {m.company || m.title}
-                          </option>
+              {/* 2. Chọn Phạm Vi Hiển Thị (Yêu cầu 6: Công khai, Hiện với bạn bè, Hiện với người muốn hiện) */}
+              <div className="rounded-xl bg-white/80 dark:bg-black/30 p-2.5 border border-amber-500/20 space-y-2.5">
+                <span className="text-[11px] font-bold text-[#1F3864] dark:text-amber-300 flex items-center gap-1">
+                  <Briefcase className="w-3.5 h-3.5 text-amber-500" /> Phạm vi hiển thị cơ hội
+                </span>
+
+                <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setVisibilityScope("public")}
+                    className={`py-1.5 px-1.5 rounded-lg font-bold text-center border transition cursor-pointer text-[10.5px] leading-tight ${
+                      visibilityScope === "public"
+                        ? "bg-[#1F3864] text-white border-[#1F3864] shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    Công khai
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibilityScope("friends")}
+                    className={`py-1.5 px-1.5 rounded-lg font-bold text-center border transition cursor-pointer text-[10.5px] leading-tight ${
+                      visibilityScope === "friends"
+                        ? "bg-[#1F3864] text-white border-[#1F3864] shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    Hiện với bạn bè
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibilityScope("custom")}
+                    className={`py-1.5 px-1.5 rounded-lg font-bold text-center border transition cursor-pointer text-[10.5px] leading-tight ${
+                      visibilityScope === "custom"
+                        ? "bg-[#1F3864] text-white border-[#1F3864] shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    Người muốn hiện
+                  </button>
+                </div>
+
+                {/* Scope: Custom members */}
+                {visibilityScope === "custom" && (
+                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block">
+                      Chọn người muốn hiện cơ hội:
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        const mId = e.target.value;
+                        if (!mId) return;
+                        const chosen = activeMembersInDept.find((m: any) => String(m.id) === mId);
+                        if (chosen && !selectedRecipients.includes(chosen.name)) {
+                          setSelectedRecipients([...selectedRecipients, chosen.name]);
+                          toast.success(`Đã thêm: ${chosen.name}`);
+                        }
+                      }}
+                      defaultValue=""
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[12px] text-slate-900 dark:text-white outline-none cursor-pointer"
+                    >
+                      <option value="" disabled>-- Chọn hội viên muốn hiện cơ hội ({activeMembersInDept.length}) --</option>
+                      {activeMembersInDept.map((m: any) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} - {m.company || m.title}
+                        </option>
+                      ))}
+                    </select>
+
+                    {selectedRecipients.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectedRecipients.map((rec) => (
+                          <span
+                            key={rec}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white"
+                          >
+                            <span>{rec}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRecipients(selectedRecipients.filter((r) => r !== rec))}
+                              className="hover:text-amber-300"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </span>
                         ))}
-                      </select>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

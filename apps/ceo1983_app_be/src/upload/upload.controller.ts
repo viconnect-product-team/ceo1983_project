@@ -143,6 +143,10 @@ export class UploadController {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
+    // Giới hạn tối đa 500MB với mỗi file tải lên để bảo vệ server
+    if (file.size && file.size > 500 * 1024 * 1024) {
+      throw new BadRequestException('Tệp tải lên vượt quá giới hạn tối đa cho phép (500MB)');
+    }
     const userId = req.user?.id || req.user?.sub;
     if (!userId) {
       throw new BadRequestException('User ID not identified in auth session');

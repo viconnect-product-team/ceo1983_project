@@ -191,13 +191,39 @@ export function ChatThread({
       const raw = localStorage.getItem("vba_pending_chat_inquiry");
       if (raw) {
         const item = JSON.parse(raw);
-        if (item && (!item.targetCode || String(item.targetCode).toLowerCase() === String(peer.peerCode).toLowerCase())) {
-          return item;
+        if (item) {
+          const t = String(item.targetCode || "").toLowerCase().replace(/^u:/, "").trim();
+          const p = String(peer.peerCode || "").toLowerCase().replace(/^u:/, "").trim();
+          if (!t || !p || t === p || t.includes(p) || p.includes(t)) {
+            return item;
+          }
         }
       }
     } catch {}
     return null;
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncInquiry = () => {
+      try {
+        const raw = localStorage.getItem("vba_pending_chat_inquiry");
+        if (raw) {
+          const item = JSON.parse(raw);
+          if (item) {
+            const t = String(item.targetCode || "").toLowerCase().replace(/^u:/, "").trim();
+            const p = String(peer.peerCode || "").toLowerCase().replace(/^u:/, "").trim();
+            if (!t || !p || t === p || t.includes(p) || p.includes(t)) {
+              setPendingInquiry(item);
+            }
+          }
+        }
+      } catch {}
+    };
+    syncInquiry();
+    window.addEventListener("storage", syncInquiry);
+    return () => window.removeEventListener("storage", syncInquiry);
+  }, [peer.peerCode]);
 
   const handleSendPendingInquiry = useCallback(async (inquiryToSend?: any) => {
     const item = inquiryToSend || pendingInquiry;

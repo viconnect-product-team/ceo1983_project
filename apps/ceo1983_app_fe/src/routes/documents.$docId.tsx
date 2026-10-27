@@ -61,6 +61,7 @@ const TYPE_COLOR: Record<Document["type"], string> = {
   png: "oklch(0.60 0.18 310)",
   jpg: "oklch(0.60 0.18 310)",
   jpeg: "oklch(0.60 0.18 310)",
+  folder: "oklch(0.75 0.16 75)",
   other: "oklch(0.50 0.02 240)",
 };
 

@@ -115,21 +115,21 @@ export function InviteMemberModal({
 
         {/* Modal Body */}
         <div className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
-          {/* QR Code & Referral Code Card */}
-          <div className="flex items-center gap-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-3.5 border border-slate-200/80 dark:border-white/10">
-            <div className="shrink-0 rounded-xl bg-white p-2 shadow-sm border border-slate-200">
-              <QrCanvas value={inviteUrl} size={76} />
-            </div>
+          {/* Referral Code Card (Bỏ quét mã QR trong phần giới thiệu) */}
+          <div className="flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-3.5 border border-slate-200/80 dark:border-white/10">
             <div className="min-w-0 flex-1">
               <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
-                Mã hội viên
+                Mã hội viên giới thiệu
               </div>
-              <div className="text-[16px] font-black text-[#003B95] dark:text-amber-400 tracking-wider">
+              <div className="text-[18px] font-black text-[#003B95] dark:text-amber-400 tracking-wider">
                 {memberCode}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
-                Quét mã QR để mở trang kết nối hội viên CEO 1983.
+              <p className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Người được giới thiệu nhập mã này để được ưu tiên duyệt và kết nối.
               </p>
+            </div>
+            <div className="shrink-0 p-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-400/20">
+              <Sparkles className="size-5" />
             </div>
           </div>
 

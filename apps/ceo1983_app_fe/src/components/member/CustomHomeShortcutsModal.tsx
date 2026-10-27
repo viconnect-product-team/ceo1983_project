@@ -153,15 +153,6 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     badgeColor: "bg-[#1F3864] text-white",
   },
   {
-    id: "map",
-    name: "Bản đồ CEO",
-    desc: "Bản đồ định vị hội viên, sự kiện & cuộc gặp",
-    to: "#map",
-    iconName: "MapPin",
-    badge: "GPS",
-    badgeColor: "bg-emerald-600 text-white",
-  },
-  {
     id: "calendar-alarm",
     name: "Lịch & Báo thức",
     desc: "Nhắc lịch hẹn, sự kiện & cuộc họp",

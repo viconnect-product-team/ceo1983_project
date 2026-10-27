@@ -1,6 +1,97 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản cập nhật ngày 27/10/2026 (v9.5): Nâng Cấp Toàn Diện Mobile App CEO 1983 & Web CRM Quản Trị Theo Chuẩn Yêu Cầu Người Dùng**:
+  1. **Mobile App CEO 1983**:
+     - *Banner Sự Kiện*: Trang chủ hiển thị 1 sự kiện nổi bật với banner to sắc nét, kèm bộ điều khiển chuyển slide trực quan giữa các sự kiện khác (`association.index.tsx`).
+     - *Slide Ưu Đãi Hiệu Ứng Từ Dưới Lên*: Hiệu ứng chuyển động dọc (`translateY`), phân loại rõ ràng từng danh mục (Nhà tài trợ - Giảm 10%, Ưu đãi Sinh nhật, Thành viên Vàng). Bấm vào xem chi tiết có mã QR động theo tài khoản/ưu đãi. Riêng slide Thành viên Vàng có layout chuyên biệt chỉ hiển thị thông tin hồ sơ và không có mã QR (`MemberPerksCarousel.tsx`).
+     - *Đồng Bộ 4 Phím Tắt Trang Chủ*: Cài đặt 4 tính năng nhanh tại màn hình cá nhân được liên kết hai chiều, cập nhật ngay lập tức ngoài trang chủ (`CustomHomeShortcutsModal.tsx`, `association.profile.tsx`, `association.index.tsx`).
+     - *Danh Bạ 3 Tab & Bỏ Quét QR Giới Thiệu*: Tinh gọn chuẩn chỉ 3 tab: "Tất cả hội viên", "Bạn bè", "Lịch hẹn". Footer cố định có nút "Giới thiệu hội viên" trang trọng, đã loại bỏ nút quét mã QR trong modal giới thiệu (`association.members.tsx`).
+     - *Loại Bỏ Hoàn Toàn Bản Đồ GPS*: Gỡ bỏ toàn bộ phím bấm, bộ lọc bán kính GPS và modal bản đồ vị trí theo yêu cầu.
+     - *Sàn Giao Thương B2B & Tạo Cơ Hội*: Nút "Quan tâm" tại danh sách cơ hội hỗ trợ mở tin nhắn trực tiếp với người đăng và tự động đính kèm thông tin sản phẩm/deal vào nội dung chat. Màn hình tạo cơ hội bổ sung đầy đủ phân loại người nhận (Tất cả hội viên, Theo ban, Bạn bè) và phạm vi hiển thị (Công khai, Bạn bè, Người muốn hiện) (`association.opportunities.tsx`, `OpportunityCreateModal.tsx`).
+     - *Thống Kê Mobile App 3 Danh Mục & Bục Vinh Danh*: Bộ lọc chuẩn chỉ có Tháng, Quý, Năm. 3 danh mục chuẩn: "3 thành viên kết nối nhiều nhất", "Hội viên chia sẻ cơ hội nhiều nhất (Chỉ tính cơ hội public)", "3 thành viên tham gia nhiều sự kiện, cuộc họp nhất và tương tác nhiều nhất". Bục vinh danh chuẩn cấp bậc: Kim Cương 💎 (Quán Quân), Bạch Kim 🪙 (Á Quân 1), Vàng 🥇 (Á Quân 2) (`association.analytics.tsx`).
+     - *Lịch Hoạt Động Cá Nhân Hóa Thuần Khiết*: Màn hình lịch chỉ hiển thị các sự kiện, cuộc họp và cuộc gặp 1-on-1 mà tài khoản đang đăng nhập đã đăng ký hoặc tham gia, loại bỏ dữ liệu mẫu mặc định (`association.calendar.tsx`).
+  2. **Web CRM Quản Trị CEO 1983**:
+     - *Quản Lý Tài Liệu Chuẩn Google Drive*: Bổ sung phân cấp thư mục hoàn chỉnh (Tạo thư mục con, điều hướng Breadcrumb nhiều tầng `Thư mục gốc > ...`, di chuyển lên thư mục cha). Tải tệp trực tiếp từ máy với giới hạn bảo vệ 500MB cả phía Frontend lẫn Backend NestJS tránh sập server. Thêm trường chèn liên kết ngoài Google Drive ("Link Driver") trực tiếp vào tài liệu (`documents.index.tsx`, `documents.$docId.tsx`, `documents.functions.ts`, `upload.controller.ts`).
+     - *Thống Kê CRM Thuộc Nhóm Tài Chính & Phân Loại Tích Cực / Tiêu Cực*: Chuyển menu Thống kê vào nhóm Tài chính (`finance`) trong Sidebar CRM. Bộ lọc thời gian chuẩn chỉ gồm Tháng, Quý, Năm.
+     - *Biểu Đồ Cột Đỏ & Chiều Đi Xuống Cùng Card Chăm Sóc*: Danh mục "Thành viên tích cực cùng tiêu cực" hiển thị ComposedChart với cột màu đỏ (#DC2626) cho thành viên tiêu cực/ít tương tác, cột màu xanh cho tích cực và đường ngang nét đứt màu đỏ (#DC2626) thể hiện chiều đi xuống. Thẻ cảnh báo "Top 3 hội viên ít tương tác nhất để nhân viên CEO 1983 chăm sóc" cung cấp tên, công ty, lý do cảnh báo, số điện thoại (`tel:`) và email (`mailto:`) gọi điện chăm sóc ngay (`analytics.tsx`, `Sidebar.tsx`, `analytics.service.ts`).
+     - *Đạt Chuẩn TypeScript Exit Code 0*: Cả Frontend và Backend biên dịch sạch 100% không còn bất kỳ lỗi nào.
+
+- **Bản cập nhật ngày 27/10/2026 (v9.4): Khôi Phục Slide Deck Chuẩn V8.5 Monumental Wave (Bản 1h30pm), Nạp 100% Bộ Ảnh Live Mới Từ Subdomain & Nâng Cấp Hệ Thống Background Chân Thực Sáng Rõ Rệt**:
+  1. **Khôi phục hoàn toàn cấu trúc & phong cách thiết kế V8.5 Monumental Wave (Bản 1h30pm)**:
+     - Header Wave nở rộng, cụm logo kép chuẩn ViConnect x CEO 1983 trên bục kính trắng sang trọng (`<img src="${LOGO_CEO1983}" />` & `<img src="${LOGO_VICONNECT}" />`).
+     - Vạch sóng Header uốn lượn đa dải màu neon drop-shadow (`#00d4ff` -> `#0055ff` -> `#00f5d4` -> `#ffb703`).
+     - Khung kính mờ Stage Container (`stage-container backdrop-blur-xl`) bo góc 36px, viền sáng Neon Cyan, bảo vệ nội dung hài hòa, không dãn rời rạc.
+     - Cột tính năng bên trái, khung mockup màn hình lớn sắc nét ở giữa, các thẻ bảo chứng hoặc KPI bên phải.
+     - Khung Smartphone chuẩn tỷ lệ iPhone bo góc 46px với Dynamic Island viền kim loại sang trọng cho Mobile App.
+     - Khung Desktop macOS rộng lớn cho Web CRM.
+     - Footer Wave 3 lớp đại dương bề thế, đỉnh sóng Neon Crest mạ dải màu Cyan - Gold - Sapphire, và dòng text Đúc kết chiến lược hiển thị đầy đủ, trang trọng không bị cắt chữ.
+     - Slide 15 Tri ân "XIN TRÂN TRỌNG CẢM ƠN!" bề thế, có cụm logo trung tâm phát quang và 4 khối cam kết chất lượng dài lâu.
+  2. **Nạp 100% bộ ảnh chụp thực tế mới nhất từ Live Subdomain (`https://crm.ceo1983.viconnect.vn` & `https://ceo1983.viconnect.vn`)**:
+     - *Slide 1 (Bức tranh tổng thể)*: CRM Thống kê Recharts (`crm_02_thongke_baocao_bi.png`) kết hợp 2 điện thoại Trang chủ Doanh nhân & Thẻ VIP số.
+     - *Slide 3 (CRM Dashboard 360°)*: `crm_01_dashboard_tongquan.png` (8 thẻ chỉ số KPI, biểu đồ tăng trưởng, tỷ lệ thu phí 45 triệu, tài khoản Lê Hoàng Long).
+     - *Slide 4 (CRM Thống kê Recharts)*: `crm_02_thongke_baocao_bi.png` (Biểu đồ cột kết hợp đường Recharts, avatar Top 1, bục vinh danh).
+     - *Slide 5 (CRM Sự kiện & Bàn tiệc Gala)*: `crm_04_quanly_sukien_gala.png` (Quản lý sự kiện Gala, số lượng đăng ký 60/450, Đại hội thường niên).
+     - *Slide 6 (CRM Hội phí VietQR & Sổ quỹ)*: `crm_07_quanly_hoiphi_vietqr.png` (Mã VietQR động Napas, gạch nợ tức thì).
+     - *Slide 7 (CRM Đào tạo Doanh nhân)*: `crm_05_chuongtrinh_daotao.png` (Khóa học doanh nhân, kho tri thức số).
+     - *Slide 8 (CRM Kanban & RBAC 6 Ban)*: `crm_08_giaoviec_ban_dieuhanh.png` (Bảng Kanban giao việc 6 ban chuyên môn).
+     - *Slide 9 (App Trang chủ Doanh nhân)*: `app_01_trangchu_doanhnhan.png` (Sạch bóng, không popup chào mừng, 4 phím tắt, banner ưu đãi).
+     - *Slide 10 (App Thẻ hội viên VIP số)*: `app_02_the_hoivien_so_vip.png` (Thẻ VIP số, QR động, quyền riêng tư Ẩn/Hiện SĐT/Email).
+     - *Slide 11 (App Sàn giao thương B2B)*: `app_04_san_giaothuong_b2b.png` (Đăng tin cơ hội, kết nối mua bán chéo nội khối).
+     - *Slide 12 (App Vé sự kiện & QR Check-in)*: `app_05_sukien_ve_dien_tu.png` (Ví vé sự kiện, số bàn tiệc Gala, mã QR điểm danh 1s).
+     - *Slide 13 (App Đào tạo số)*: `app_06_chuongtrinh_daotao.png` (Học tập số, video bài giảng, tài liệu).
+  3. **Nâng cấp hệ thống Background chân thực sáng rõ rệt hơn bản cũ**:
+     - Loại bỏ hoàn toàn `mix-blend-mode: multiply;` và các lớp phủ đen sẫm làm tối mịt ảnh nền.
+     - Tăng độ phủ `opacity: 0.72`, bổ sung bộ lọc `saturate(1.15) brightness(0.96) contrast(1.06)` và lớp phủ chuyển sắc Deep Navy trong suốt nhẹ nhàng.
+     - Gán ảnh nền chuyên biệt tương ứng ngữ cảnh cho từng slide: Skyline đêm (`08_skyline_night.jpg`), Dạ tiệc Gala (`07_banquet_gala.jpg`), Phòng họp Ban điều hành (`02_boardroom.jpg`), Trung tâm vận hành (`04_operations.jpg`), Thành phố thông minh (`03_smartcity.jpg`), Skyline Hồ Tây (`01_skyline_lake.jpg`), Đổi mới sáng tạo (`06_innovation.jpg`).
+     - Từng ảnh nền hiện lên sống động, rõ nét, mang chiều sâu điện ảnh và không gian thực tế lộng lẫy.
+  4. **Xuất bản & Đồng bộ hóa toàn diện**:
+     - Xuất bản: `document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf` (61.6 MB, 15 trang vector 1920x1080px nét căng), `.html` (21.8 MB), `.pptx`.
+     - Đồng bộ song song 100% sang `apps/ceo1983_app_fe/public/docs/`.
+
+- **Bản cập nhật ngày 27/10/2026 (v9.3): Thiết Kế Bộ Slide 16:9 Nền Nửa Xanh Nửa Trắng Phủ Background Chân Thực & Bộ 3 Poster Panorama Showcase Theo Chuẩn Yêu Cầu**:
+  1. **Thiết kế Poster Panorama Showcase mới chuẩn theo 2 ảnh mẫu của User**:
+     - **Poster Showcase Mobile App (`POSTER_SHOWCASE_APP_PANORAMA`)**:
+       * Tệp: `document/POSTER_SHOWCASE_APP_PANORAMA.pdf` (2.37 MB), `.png` (3.6 MB, 2560x1440px / 16:9), `.html` (2.66 MB).
+       * Chuẩn bố cục theo Ảnh mẫu 1: Dàn 4 điện thoại iPhone viền mỏng nằm ngang song song, thể hiện luồng chức năng quan trọng nhất: (1) Trang chủ doanh nhân & Tin tức hiệp hội, (2) Thẻ hội viên VIP tích hợp QR NameDrop NFC kết nối 1 giây, (3) Sàn giao thương B2B kết nối Deal 11 ngành nghề, (4) Soát vé sự kiện điện tử & Quét mã QR Gatekeeper 1 giây. Nền chia nửa xanh nửa trắng sang trọng.
+     - **Poster Showcase Web CRM (`POSTER_SHOWCASE_CRM_PANORAMA`)**:
+       * Tệp: `document/POSTER_SHOWCASE_CRM_PANORAMA.pdf` (1.61 MB), `.png` (2.93 MB, 2560x1440px / 16:9), `.html` (2.48 MB).
+       * Chuẩn bố cục theo Ảnh mẫu 2: Dàn 3 màn hình Desktop macOS CRM nằm ngang song song, thể hiện luồng quản trị điều hành trung tâm: (1) Executive Dashboard BI 360° với 8 thẻ KPI, biểu đồ tài chính Recharts và bộ lọc 6 Ban, (2) Quản trị 500+ Doanh nghiệp hội viên & Phân quyền RBAC 6 Ban, (3) Sơ đồ xếp bàn tiệc Gala VIP khách sạn 5 sao & Tài chính doanh thu thu phí VietQR tự động.
+     - **Poster Master Khổ Lớn Hệ Sinh Thái (`POSTER_MASTER_HE_SINH_THAI_CEO1983`)**:
+       * Tệp: `document/POSTER_MASTER_HE_SINH_THAI_CEO1983.pdf` (2.49 MB), `.png` (3.24 MB, 1400x1980px, chuẩn in ấn A3/A2), `.html` (4.41 MB).
+       * Bố cục tích hợp độc đáo: Nửa trên nền Xanh Navy với dàn 3 màn hình CRM; Nửa dưới nền Trắng ngọc trai với dàn 4 iPhone Mobile App; dải phân cách trung tâm đồng bộ real-time.
+  2. **Nâng cấp Toàn Diện Bộ Slide 15 Trang 16:9 (`SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf`)**:
+       * Tệp: `document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf` (26.36 MB, 15 trang vector 1920x1080px), `.html` (12.56 MB).
+       * Bố cục Dual-Tone Split Layout (Nền nửa xanh nửa trắng):
+         - Nửa trái (40%): Nền Xanh Navy Doanh nhân phủ chìm ảnh chụp thực tế có chiều sâu (Skyline Hồ Gươm Landmark 72 về đêm, Phòng họp Ban điều hành cao cấp, Dạ tiệc Gala trang trọng, Trung tâm vận hành số), chứa tiêu đề, thông điệp cốt lõi và 3 thẻ tóm tắt tính năng.
+         - Nửa phải (60%): Sân khấu nền trắng sáng bừng (`#FFFFFF` / `#F8FAFC`), chứa khung mockup trình duyệt macOS hoặc điện thoại iPhone cỡ lớn (`1150px × 700px`).
+       * Hiển thị to rõ, trọn vẹn toàn bộ các màn hình CRM quan trọng nhất:
+         - Slide 7: Dashboard Executive BI 360° với 8 chỉ số, biểu đồ thu phí và phân tách 6 ban.
+         - Slide 8: Quản trị 500+ Doanh nghiệp & Thẩm định hồ sơ hội viên.
+         - Slide 9: Sơ đồ bàn tiệc thông minh dạ tiệc Gala kết nối doanh nhân.
+         - Slide 10: Báo cáo tài chính thu chi, sổ quỹ & gạch nợ VietQR tự động.
+         - Slide 11: Bảng Kanban giao việc Ban điều hành & Ma trận phân quyền RBAC 6 Ban.
+         - Slide 12 - 14: Mobile App Thẻ VIP 1 chạm, Sàn B2B, Vé sự kiện QR Check-in.
+         - Slide 3 - 6: Trình chiếu các poster showcase mới nhất.
+  3. **Đồng bộ hóa toàn bộ sang thư mục Web**:
+       - Tất cả tài liệu PDF, PNG, HTML được copy đồng bộ song song tại `apps/ceo1983_app_fe/public/docs/`.
+       - Đảm bảo kiểm tra TypeScript (`tsc --noEmit`) đạt chuẩn 0 errors.
+
+- **Bản cập nhật ngày 27/10/2026 (v9.2): Tách Rời 4 Poster Độc Lập Siêu Nét & Tái Tạo Toàn Bộ Slide Deck PDF Hệ Sinh Thái CEO 1983 Chuẩn Vector 16:9**:
+  1. **Tách và hoàn thiện 4 Poster riêng biệt độc lập độ phân giải cực cao (300 DPI, 3500x4950px, chuẩn in ấn & zoom to không vỡ)**:
+     - **Poster 1**: `POSTER_01_APP_TONG_QUAN.pdf` / `.png` / `.html` - *ỨNG DỤNG QUẢN LÝ HIỆP HỘI CEO1983 - Nền tảng thẻ thông minh dành cho doanh nhân*: Khung cảnh 3D bục phát sáng với 3 điện thoại iPhone viền kim loại hiển thị Trang chủ doanh nhân, Thẻ hội viên VIP mặt trước sạch đẹp, và Màn hình Sự kiện Gala kết nối; 4 huy hiệu tính năng nổi và chân sóng ViOne chuẩn màu.
+     - **Poster 2**: `POSTER_02_APP_DAC_QUYEN.pdf` / `.png` / `.html` - *TOÀN BỘ ĐẶC QUYỀN CỦA DOANH NHÂN TRONG TẦM TAY*: Bố cục lưới 2x2 gồm Thẻ thông minh VIP, Chạm điện thoại trao đổi danh thiếp NFC NameDrop, Check-in sự kiện bằng vé điện tử mã QR sắc nét, và Chia sẻ cơ hội hợp tác B2B.
+     - **Poster 3**: `POSTER_03_CRM_TONG_QUAN.pdf` / `.png` / `.html` - *NỀN TẢNG QUẢN TRỊ HIỆP HỘI CEO1983 - Quản trị cơ hội và điều hành tổ chức chuyên nghiệp, bền vững*: Màn hình Desktop iMac hiển thị giao diện trung tâm Web CRM Dashboard với 8 thẻ số liệu KPI, biểu đồ tài chính và 4 chức năng điều hành cốt lõi.
+     - **Poster 4**: `POSTER_04_CRM_DIEU_HANH.pdf` / `.png` / `.html` - *NỀN TẢNG HỖ TRỢ QUẢN LÝ VÀ ĐIỀU HÀNH DÀNH RIÊNG CHO HIỆP HỘI*: 4 màn hình máy tính trực quan tương ứng 4 phân hệ: Quản lý & phân quyền hội viên, Cập nhật theo dõi sự kiện tiệc Gala, Báo cáo tài chính doanh thu thu phí VietQR tự động, Kết nối kinh doanh hẹn gặp đối tác 1-on-1.
+     - **Poster 4-in-1 Composite**: `POSTER_4IN1_HE_SINH_THAI_CEO1983.pdf` / `.png` (2800x3960px) ghép hoàn hảo 4 poster như ảnh mẫu nhưng sắc nét ở mọi chi tiết.
+     - **Bộ 4 Poster tập sách**: `BO_4_POSTER_HE_SINH_THAI_CEO1983.pdf` (4 trang độc lập).
+  2. **Tái tạo Bộ Slide Trình Chiếu Hệ Sinh Thái CEO 1983 (15 Trang 16:9 Vector Siêu Nét)**:
+     - Tệp xuất bản: `SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf` (22.8 MB, 15 trang vector 1920x1080px), `.html`, `.md`, `.pptx`.
+     - Triệt tiêu hoàn toàn hiện tượng vỡ ảnh, nhòe text hay lệch giao diện nhờ chuẩn hóa `@page { size: 1920px 1080px; margin: 0; }`, áp dụng typography Google Fonts vector (`Plus Jakarta Sans`), container mockup lớn 580px và tích hợp trực tiếp ảnh poster sắc nét vào slide showcase (Slide 3 - Slide 6).
+  3. **Đồng bộ hóa toàn diện**:
+     - Toàn bộ 18 tệp tài liệu đã được tự động lưu trữ và đồng bộ hóa song song tại cả `document/` và `apps/ceo1983_app_fe/public/docs/`.
+     - Đã xác nhận TypeScript Type-check (`tsc --noEmit`) đạt chuẩn 0 errors ở cả Backend NestJS và Frontend Next.js.
+
 - **Bản cập nhật ngày 27/10/2026 (v9.1): Phát Triển Mới Chức Năng Lịch Hoạt Động & Hệ Thống Nhắc Hẹn Thời Gian Thực (`association.calendar.tsx`, `routeTree.gen.ts`, `AllFeaturesModal.tsx`, `CustomHomeShortcutsModal.tsx`, `association.profile.tsx`, `association.events.tsx`)**:
   1. **Chức năng Lịch Hoạt Động Cá Nhân Hóa Toàn Diện (`apps/ceo1983_app_fe/src/routes/association.calendar.tsx`)**:
      - Định tuyến chuẩn: `/association/calendar`, kết nối trực tiếp với TanStack Router và đồng bộ vào `routeTree.gen.ts`.

@@ -172,7 +172,9 @@ export default function ProfileScreen() {
     setSelectedShortcuts(ids);
     try {
       localStorage.setItem("ceo1983_home_shortcuts", JSON.stringify(ids));
+      localStorage.setItem("vba_user_custom_shortcuts", JSON.stringify(ids));
       window.dispatchEvent(new Event("ceo1983_shortcuts_changed"));
+      window.dispatchEvent(new Event("storage"));
     } catch {}
     setCustomShortcutsOpen(false);
     toast.success("Đã lưu thiết lập 4 tính năng nhanh trang chủ!");

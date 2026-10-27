@@ -66,7 +66,7 @@ export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
 });
 
-export type FilterTab = "connected" | "discover" | "sent" | "meetings";
+export type FilterTab = "all" | "friends" | "meetings";
 
 export interface MemberMeetingItem {
   id: string;
@@ -176,22 +176,24 @@ function MembersScreen() {
     return "";
   });
 
-  // Mặc định tab "connected" (Danh bạ CEO đã kết nối chuẩn điện thoại)
+  // 3 Danh mục chuẩn: Tất cả hội viên | Bạn bè | Lịch hẹn (Yêu cầu 4)
   const [tab, setTab] = useState<FilterTab>(() => {
     if (typeof window !== "undefined") {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "meetings" || t === "connected" || t === "sent" || t === "discover" || t === "map") {
+      if (t === "all" || t === "friends" || t === "meetings") {
         return t as FilterTab;
       }
+      if (t === "connected") return "friends";
+      if (t === "discover" || t === "sent") return "all";
     }
-    return "connected";
+    return "all";
   });
 
   const handleSelectTab = (newTab: FilterTab) => {
     setTab(newTab);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      if (newTab === "connected") {
+      if (newTab === "all") {
         url.searchParams.delete("tab");
       } else {
         url.searchParams.set("tab", newTab);
@@ -204,8 +206,12 @@ function MembersScreen() {
     if (typeof window === "undefined") return;
     const syncTabFromUrl = () => {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "meetings" || t === "connected" || t === "sent" || t === "discover" || t === "map") {
+      if (t === "all" || t === "friends" || t === "meetings") {
         setTab(t as FilterTab);
+      } else if (t === "connected") {
+        setTab("friends");
+      } else if (t === "discover" || t === "sent") {
+        setTab("all");
       }
     };
     window.addEventListener("popstate", syncTabFromUrl);
@@ -514,6 +520,46 @@ function MembersScreen() {
     if (mUserId && backendConnectedUserIds.has(mUserId)) return true;
     return Boolean(m.userId && connectedMap.has(mUserId));
   };
+
+  // 0. Tất cả hội viên (Danh mục Tất cả hội viên - Yêu cầu 4)
+  const allMembers = useMemo(() => {
+    return members.filter((m) => {
+      if (myMember?.code && m.code.toLowerCase() === myMember.code.toLowerCase()) return false;
+      return true;
+    });
+  }, [members, myMember]);
+
+  const filteredAllMembers = useMemo(() => {
+    const normTerm = normalizeSearchText(q);
+    const list = allMembers.filter((m) => {
+      if (!normTerm) return true;
+      const searchable = normalizeSearchText(
+        [
+          m.name,
+          m.contact,
+          (m as any).personName,
+          (m as any).companyName,
+          (m as any).company,
+          m.industry,
+          m.region,
+          m.code,
+          (m as any).personTitle,
+          (m as any).phone,
+          (m as any).email,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
+      return searchable.includes(normTerm);
+    });
+
+    return list.sort((a, b) =>
+      compareVietnameseNames(
+        a.contact || a.personName || a.name || "",
+        b.contact || b.personName || b.name || "",
+      ),
+    );
+  }, [allMembers, q]);
 
   // 1. Danh sách những người ĐÃ KẾT NỐI (Chỉ xuất hiện trong Danh bạ chính thức)
   const connectedMembers = useMemo(() => {
@@ -1003,8 +1049,8 @@ function MembersScreen() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={
-              tab === "connected"
-                ? "Tìm theo tên CEO, công ty, SĐT trong danh bạ..."
+              tab === "friends"
+                ? "Tìm theo tên CEO, công ty, SĐT trong danh bạ bạn bè..."
                 : "Tìm kiếm hội viên, ngành nghề..."
             }
             className="w-full min-w-0 bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 placeholder:text-slate-400 truncate"
@@ -1031,48 +1077,39 @@ function MembersScreen() {
         </button>
       </div>
 
-      {/* Tabs Điều Hướng Danh Bạ */}
+      {/* Tabs Điều Hướng Danh Bạ: 3 danh mục Tất cả hội viên | Bạn bè | Lịch hẹn (Yêu cầu 4) */}
       <div
         id="tour-members-filter"
         className="flex gap-2 px-3 sm:px-4 pt-3 overflow-x-auto no-scrollbar select-none"
       >
         <button
-          onClick={() => handleSelectTab("connected")}
+          type="button"
+          onClick={() => handleSelectTab("all")}
           className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-            tab === "connected"
+            tab === "all"
               ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <UserCheck className={`h-3.5 w-3.5 ${tab === "connected" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
-          <span>Danh bạ ({connectedMembers.length})</span>
+          <Users className={`h-3.5 w-3.5 ${tab === "all" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
+          <span>Tất cả hội viên ({allMembers.length})</span>
         </button>
 
         <button
-          onClick={() => handleSelectTab("discover")}
+          type="button"
+          onClick={() => handleSelectTab("friends")}
           className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-            tab === "discover"
+            tab === "friends"
               ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
-          <Compass className={`h-3.5 w-3.5 ${tab === "discover" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
-          <span>Khám phá ({discoverMembers.length})</span>
+          <UserCheck className={`h-3.5 w-3.5 ${tab === "friends" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
+          <span>Bạn bè ({connectedMembers.length})</span>
         </button>
 
         <button
-          onClick={() => handleSelectTab("sent")}
-          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-            tab === "sent"
-              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
-              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
-          }`}
-        >
-          <Clock className={`h-3.5 w-3.5 ${tab === "sent" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
-          <span>Lời mời ({sentList.length})</span>
-        </button>
-
-        <button
+          type="button"
           onClick={() => handleSelectTab("meetings")}
           className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "meetings"
@@ -1101,8 +1138,179 @@ function MembersScreen() {
 
 
 
-        {/* ── TAB 1: DANH BẠ ĐIỆN THOẠI CEO (CHỈ HIỆN NGƯỜI ĐÃ KẾT NỐI, NHÓM A-Z) ── */}
-        {tab === "connected" && !loading && (
+        {/* ── TAB 1: TẤT CẢ HỘI VIÊN CEO 1983 (Yêu cầu 4) ── */}
+        {tab === "all" && !loading && (
+          <div className="space-y-3">
+            {filteredAllMembers.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">
+                <Users className="h-10 w-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                <p className="text-[13px] font-medium text-slate-500">
+                  {q
+                    ? "Không tìm thấy hội viên phù hợp với từ khóa."
+                    : "Chưa có dữ liệu hội viên."}
+                </p>
+              </div>
+            ) : (
+              filteredAllMembers.map((m) => {
+                const avatarResolved = m.avatar ? resolveMediaUrl(m.avatar) : null;
+                const personDisplayName =
+                  m.contact ||
+                  m.personName ||
+                  (m.type === "individual" ? m.name : "Đại diện Doanh nghiệp");
+                const companyDisplayName = m.type === "company" ? m.name : (m as any).companyName || m.company || "";
+                const targetId = (m.userId || m.code).toLowerCase();
+                const isFriend = checkIsFriend(m);
+                const isOutgoing = Boolean(
+                  (m.userId && outgoingMap.has(m.userId.toLowerCase())) ||
+                  localPending.has(targetId),
+                );
+
+                return (
+                  <div
+                    key={m.code}
+                    className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#003B95]/40 transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMember(m)}
+                        className="relative shrink-0 block cursor-pointer"
+                      >
+                        {avatarResolved ? (
+                          <img
+                            src={avatarResolved}
+                            alt={personDisplayName}
+                            className="h-12 w-12 rounded-full object-cover ring-2 ring-[#003B95]/20"
+                            onError={(e) => {
+                              e.currentTarget.src = "/ceo1983-logo.png";
+                            }}
+                          />
+                        ) : (
+                          <span className="grid h-12 w-12 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 ring-2 ring-[#003B95]/20 font-bold text-sm">
+                            {personDisplayName.slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </button>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMember(m)}
+                            className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
+                          >
+                            {personDisplayName}
+                          </button>
+                          <span className="rounded-md bg-[#003B95] px-1.5 py-0.2 text-[9px] font-black text-white shadow-2xs">
+                            {m.code}
+                          </span>
+                          {isFriend && (
+                            <span className="rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 text-[9px] font-bold">
+                              Bạn bè
+                            </span>
+                          )}
+                        </div>
+                        {companyDisplayName && (
+                          <p className="truncate text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
+                            {companyDisplayName}
+                          </p>
+                        )}
+                        <p className="truncate text-[11px] text-slate-400 mt-0.5">
+                          {m.personTitle || m.industry || "Hội viên CEO 1983"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Các nút thao tác */}
+                    <div className="shrink-0 w-full sm:w-auto flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                      {isFriend ? (
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleCallPhone(m.phone, personDisplayName)}
+                            className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center justify-center hover:bg-[#003B95] hover:text-white transition cursor-pointer"
+                            title="Gọi điện"
+                          >
+                            <PhoneCall className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenChat(m.code, personDisplayName)}
+                            className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-600 dark:border-blue-400 flex items-center justify-center hover:bg-blue-600 hover:text-white transition cursor-pointer"
+                            title="Nhắn tin"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMember(m)}
+                            className="h-8 w-8 rounded-full bg-sky-50 dark:bg-sky-950/50 text-[#003B95] dark:text-sky-300 border border-sky-300 dark:border-sky-800 flex items-center justify-center hover:bg-[#003B95] hover:text-white transition cursor-pointer"
+                            title="Xem Thẻ 83"
+                          >
+                            <CreditCard className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setConnectTarget({
+                                code: m.code,
+                                name: personDisplayName,
+                                company: (companyDisplayName || m.company) ?? undefined,
+                                title: (m.personTitle || m.industry) ?? undefined,
+                                avatar: m.avatar ?? undefined,
+                                industry: m.industry ?? undefined,
+                                userId: m.userId ?? undefined,
+                              })
+                            }
+                            className="h-8 w-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center hover:bg-[#003B95] hover:text-white transition cursor-pointer"
+                            title="Hẹn gặp 1-1"
+                          >
+                            <Handshake className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : isOutgoing ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-[#003B95] dark:text-blue-300 text-[11px] font-bold">
+                            <Clock className="h-3 w-3" />
+                            <span>Đã gửi</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMember(m)}
+                            className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-100 transition cursor-pointer"
+                          >
+                            Xem thẻ
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMember(m)}
+                            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                          >
+                            Xem thẻ
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleConnect(m)}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white px-3.5 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer"
+                          >
+                            <UserPlus className="h-3.5 w-3.5 text-white" />
+                            <span>Kết nối</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* ── TAB 2: BẠN BÈ CEO (CHỈ HIỆN NGƯỜI ĐÃ KẾT NỐI, NHÓM A-Z) ── */}
+        {tab === "friends" && !loading && (
           <div className="relative">
             {/* Thanh Chọn Nhanh Chữ Cái A-Z Dành Cho Điện Thoại Di Động (Mobile-friendly, không đè thẻ, không che khuất thao tác) */}
             {connectedMembers.length > 0 && existingLetters.length > 0 && (
@@ -1144,10 +1352,10 @@ function MembersScreen() {
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
                   <button
                     type="button"
-                    onClick={() => handleSelectTab("discover")}
+                    onClick={() => handleSelectTab("all")}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white font-black px-4 py-2.5 text-[12px] shadow-md shadow-blue-900/25 transition active:scale-95 cursor-pointer"
                   >
-                    <Compass className="h-4 w-4 text-white" />
+                    <Users className="h-4 w-4 text-white" />
                     <span>Tìm CEO để kết nối ngay</span>
                   </button>
                   <button
@@ -1155,8 +1363,8 @@ function MembersScreen() {
                     onClick={() => setInviteModalOpen(true)}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-800 text-[#003B95] dark:text-blue-300 px-4 py-2.5 text-[12px] font-bold transition active:scale-95 cursor-pointer hover:bg-blue-100/60"
                   >
-                    <QrCode className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
-                    <span>Mời & Quét mã</span>
+                    <UserPlus className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+                    <span>Giới thiệu hội viên</span>
                   </button>
                 </div>
               </div>
@@ -1381,184 +1589,7 @@ function MembersScreen() {
           </div>
         )}
 
-        {/* ── TAB 2: KHÁM PHÁ HỘI VIÊN CHƯA KẾT NỐI (ĐỂ GỬI LỜI MỜI) ── */}
-        {tab === "discover" && !loading && (
-          <div className="space-y-3">
-            <div className="p-3 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 flex items-start gap-2.5">
-              <Compass className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                Khám phá các CEO trong CLB Doanh Nhân CEO 1983. Khi bạn gửi lời mời và đối tác đồng
-                ý, liên hệ sẽ tự động lưu vào <strong>Danh bạ CEO</strong> chính thức của bạn.
-              </p>
-            </div>
-
-            {filteredDiscover.length === 0 ? (
-              <div className="py-12 text-center text-slate-400">
-                <Users className="h-10 w-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                <p className="text-[13px] font-medium text-slate-500">
-                  {q
-                    ? "Không tìm thấy hội viên phù hợp với từ khóa."
-                    : "Bạn đã kết nối với tất cả các hội viên trong câu lạc bộ!"}
-                </p>
-              </div>
-            ) : (
-              filteredDiscover.map((m) => {
-                const avatarResolved = m.avatar ? resolveMediaUrl(m.avatar) : null;
-                const personDisplayName =
-                  m.contact ||
-                  m.personName ||
-                  (m.type === "individual" ? m.name : "Đại diện Doanh nghiệp");
-                const companyDisplayName = m.type === "company" ? m.name : "";
-                const targetId = (m.userId || m.code).toLowerCase();
-                const isOutgoing = Boolean(
-                  (m.userId && outgoingMap.has(m.userId.toLowerCase())) ||
-                  localPending.has(targetId),
-                );
-
-                return (
-                  <div
-                    key={m.code}
-                    className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#003B95]/40 transition"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMember(m)}
-                        className="relative shrink-0 block cursor-pointer"
-                      >
-                        {avatarResolved ? (
-                          <img
-                            src={avatarResolved}
-                            alt={personDisplayName}
-                            className="h-12 w-12 rounded-full object-cover ring-2 ring-[#003B95]/20"
-                            onError={(e) => {
-                              e.currentTarget.src = "/ceo1983-logo.png";
-                            }}
-                          />
-                        ) : (
-                          <span className="grid h-12 w-12 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 ring-2 ring-[#003B95]/20 font-bold text-sm">
-                            {personDisplayName.slice(0, 2).toUpperCase()}
-                          </span>
-                        )}
-                      </button>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedMember(m)}
-                            className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
-                          >
-                            {personDisplayName}
-                          </button>
-                          <span className="rounded-md bg-[#003B95] px-1.5 py-0.2 text-[9px] font-black text-white shadow-2xs">
-                            {m.code}
-                          </span>
-                        </div>
-                        {companyDisplayName && (
-                          <p className="truncate text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
-                            {companyDisplayName}
-                          </p>
-                        )}
-                        <p className="truncate text-[11px] text-slate-400 mt-0.5">
-                          {m.personTitle || m.industry || "Hội viên CEO 1983"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 w-full sm:w-auto flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
-                      {checkIsFriend(m) ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>Đã kết nối</span>
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleDisconnect(m)}
-                            className="px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[11px] font-bold hover:bg-rose-600 hover:text-white transition active:scale-95 cursor-pointer"
-                            title="Hủy kết nối"
-                          >
-                            Hủy kết nối
-                          </button>
-                        </div>
-                      ) : isOutgoing ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-[#003B95] dark:text-blue-300 text-[11px] font-bold">
-                          <Clock className="h-3 w-3" />
-                          <span>Đã gửi</span>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleConnect(m)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white px-3.5 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer w-full sm:w-auto"
-                        >
-                          <UserPlus className="h-3.5 w-3.5 text-white" />
-                          <span>Kết nối</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* ── TAB 3: LỜI MỜI KẾT NỐI ĐÃ GỬI ── */}
-        {tab === "sent" && !loading && (
-          <div className="space-y-3">
-            {sentList.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 space-y-2">
-                <Clock className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
-                <p className="text-[13px] font-medium text-slate-500 dark:text-slate-400">
-                  Bạn chưa có lời mời kết nối nào đang chờ.
-                </p>
-              </div>
-            ) : (
-              sentList.map((item) => (
-                <div
-                  key={item.id || item.code}
-                  className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
-                    <div className="h-11 w-11 shrink-0 rounded-full bg-blue-50 dark:bg-blue-950/40 grid place-items-center text-[#003B95] font-bold text-sm">
-                      {item.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-[13.5px] font-bold text-slate-900 dark:text-white truncate">
-                        {item.name}
-                      </h4>
-                      <p className="text-[11.5px] text-slate-500 truncate">{item.company}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        Gửi lúc: {new Date(item.createdAt).toLocaleDateString("vi-VN")}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 w-full sm:w-auto flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
-                    {item.status === "pending" && (
-                      <button
-                        type="button"
-                        onClick={() => handleCancelSentRequest(item)}
-                        className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition active:scale-95 cursor-pointer w-full sm:w-auto text-center"
-                      >
-                        Thu hồi
-                      </button>
-                    )}
-                    {item.status === "accepted" && (
-                      <span className="px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-500/15 text-emerald-600">
-                        Đã đồng ý
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ── TAB 4: LỊCH HẸN GẶP GỠ 1-ON-1 ── */}
+        {/* ── TAB 3: LỊCH HẸN GẶP GỠ 1-ON-1 (Yêu cầu 4) ── */}
         {tab === "meetings" && !loading && (
           <div className="space-y-3">
             {/* Phân loại lịch hẹn: Đã chốt (chỉ hiện khi đối tác đồng ý) vs Chờ duyệt vs Tất cả */}
@@ -1866,6 +1897,26 @@ function MembersScreen() {
           </div>
         </div>
       )}
+
+      {/* Footer Cố Định: Nút Giới Thiệu Hội Viên (Yêu cầu 4) */}
+      <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-[#001B54]/95 backdrop-blur-md border-t border-slate-200 dark:border-white/10 px-4 py-3 shadow-lg flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-bold text-slate-800 dark:text-white truncate">
+            CLB Doanh Nhân CEO 1983
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+            Mời bạn bè và đối tác doanh nhân gia nhập
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setInviteModalOpen(true)}
+          className="shrink-0 flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-4 py-2 text-xs shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer"
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>Giới thiệu hội viên</span>
+        </button>
+      </div>
 
       {/* Member Profile Modal */}
       <MemberProfileModal

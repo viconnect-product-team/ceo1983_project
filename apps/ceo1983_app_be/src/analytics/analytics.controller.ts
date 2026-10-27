@@ -9,9 +9,9 @@ export class AnalyticsController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('overview')
-  async getOverview(@Request() req: any) {
+  async getOverview(@Request() req: any, @Query('period') period?: 'month' | 'quarter' | 'year') {
     const userId = req.user?.id || req.user?.sub;
-    return this.analyticsService.getOverview(userId);
+    return this.analyticsService.getOverview(userId, period);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

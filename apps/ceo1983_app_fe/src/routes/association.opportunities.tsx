@@ -276,6 +276,43 @@ function OpportunitiesScreen() {
     setNegotiateOpp(opp);
   };
 
+  const handleMessagePoster = (opp: any) => {
+    const targetCode = opp.posterCode || opp.contactPhone || opp.posterId || (opp.creator ? opp.creator.code : "admin");
+    const targetName = opp.posterName || opp.contactName || opp.company || "Người đăng cơ hội";
+    const rawOppImg = opp.image;
+    const oppImg = (rawOppImg && (rawOppImg.startsWith("data:") || rawOppImg.startsWith("http") || rawOppImg.startsWith("/")))
+      ? (rawOppImg.startsWith("data:") ? rawOppImg : resolveMediaUrl(rawOppImg) || rawOppImg)
+      : defaultOppImages[0];
+
+    const inquiry = {
+      itemType: "opportunity",
+      id: opp.id,
+      title: opp.title,
+      price: formatSmartPrice(opp.value),
+      originalPrice: opp.value ? String(opp.value) : undefined,
+      image: oppImg,
+      company: opp.company || targetName,
+      category: opp.tag || "Cơ hội B2B",
+      sellerName: targetName,
+      targetCode: targetCode,
+      autoSend: true,
+      note: `Tôi quan tâm tới cơ hội giao thương: "${opp.title}". Rất mong được kết nối và trao đổi chi tiết!`,
+    };
+
+    try {
+      localStorage.setItem("vba_pending_chat_inquiry", JSON.stringify(inquiry));
+      window.dispatchEvent(new Event("storage"));
+    } catch {}
+
+    void navigate({
+      to: "/association/messages",
+      search: {
+        peerCode: targetCode,
+        peerName: targetName,
+      },
+    });
+  };
+
   const handleOpenOppDetail = async (o: MyOpportunity & { description?: string }) => {
     setSelectedOpp(o);
     try {
@@ -1330,10 +1367,21 @@ function OpportunitiesScreen() {
                                 Của bạn
                               </div>
                             ) : o.interested || interestedIds.includes(o.id) ? (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap justify-end">
                                 <div className="px-2 py-1 bg-emerald-100 rounded-md text-[10.5px] font-bold text-emerald-700 flex items-center gap-1">
                                   <Check className="size-3" /> Đã quan tâm
                                 </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMessagePoster(o);
+                                  }}
+                                  className="px-2.5 py-1 bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white rounded-md text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95 shadow-xs"
+                                  title="Nhắn tin trao đổi gửi kèm thông tin cơ hội này"
+                                >
+                                  <MessageSquare className="size-3" /> Nhắn tin
+                                </button>
                                 <button
                                   type="button"
                                   onClick={(e) => {

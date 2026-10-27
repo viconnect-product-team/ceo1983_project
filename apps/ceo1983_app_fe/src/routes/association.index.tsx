@@ -15,6 +15,8 @@ import {
   Crown,
   Bookmark,
   ChevronRight,
+  ChevronLeft,
+  CalendarCheck,
   BadgeCheck,
   Copy,
   Clock,
@@ -238,15 +240,15 @@ const quickActionDefs = [
     badgeTextEn: "2026",
   },
   {
-    key: "m.index.qaMap",
-    iconKey: "map",
-    icon: MapPin,
-    to: "#map",
-    customLabel: "Bản đồ CEO",
-    enLabel: "CEO Map",
-    badgeId: "map",
-    badgeText: "GPS",
-    badgeTextEn: "GPS",
+    key: "m.index.qaDocuments",
+    iconKey: "documents",
+    icon: CalendarCheck,
+    to: "/association/calendar",
+    customLabel: "Lịch hoạt động",
+    enLabel: "Activity Calendar",
+    badgeId: "calendar",
+    badgeText: "Lịch",
+    badgeTextEn: "Calendar",
   },
   {
     key: "m.index.qaAlarm",
@@ -656,24 +658,57 @@ function Home() {
   const [activeShortcutIds, setActiveShortcutIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return DEFAULT_SHORTCUT_IDS;
     try {
-      const saved = localStorage.getItem("vba_user_custom_shortcuts");
+      const saved =
+        localStorage.getItem("ceo1983_home_shortcuts") ||
+        localStorage.getItem("vba_user_custom_shortcuts");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {}
     return DEFAULT_SHORTCUT_IDS;
   });
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncShortcuts = () => {
+      try {
+        const saved =
+          localStorage.getItem("ceo1983_home_shortcuts") ||
+          localStorage.getItem("vba_user_custom_shortcuts");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setActiveShortcutIds(parsed);
+          }
+        }
+      } catch {}
+    };
+    window.addEventListener("ceo1983_shortcuts_changed", syncShortcuts);
+    window.addEventListener("storage", syncShortcuts);
+    return () => {
+      window.removeEventListener("ceo1983_shortcuts_changed", syncShortcuts);
+      window.removeEventListener("storage", syncShortcuts);
+    };
+  }, []);
+
   const handleSaveShortcuts = (ids: string[]) => {
     setActiveShortcutIds(ids);
     try {
+      localStorage.setItem("ceo1983_home_shortcuts", JSON.stringify(ids));
       localStorage.setItem("vba_user_custom_shortcuts", JSON.stringify(ids));
       if (user?.id) {
         localStorage.setItem(`vba_user_custom_shortcuts_${user.id}`, JSON.stringify(ids));
       }
+      window.dispatchEvent(new Event("ceo1983_shortcuts_changed"));
+      window.dispatchEvent(new Event("storage"));
     } catch {}
   };
+
+  // Event banner carousel slide state (Yêu cầu 1: 1 sự kiện banner to kèm slide chuyển)
+  const [eventSlideIndex, setEventSlideIndex] = useState(0);
+  const [isEventHovered, setIsEventHovered] = useState(false);
+  const eventTouchStartXRef = useRef<number | null>(null);
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       const uId = user?.id;
@@ -1010,6 +1045,15 @@ function Home() {
   // Real events from server
   const displayEvents: MyEvent[] = serverEvents || [];
 
+  // Auto-play timer cho Slide sự kiện nổi bật (Yêu cầu 1: 1 sự kiện banner to kèm slide)
+  useEffect(() => {
+    if (isEventHovered || displayEvents.length <= 1) return;
+    const timer = setInterval(() => {
+      setEventSlideIndex((prev) => (prev + 1) % displayEvents.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [isEventHovered, displayEvents.length]);
+
   const totalOpportunitiesCount = opportunities.length;
   const totalProductsCount = products.length;
 
@@ -1309,52 +1353,131 @@ function Home() {
               </p>
             </div>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar snap-x snap-mandatory overscroll-x-contain smooth-scroll-touch">
-              {displayEvents.slice(0, 5).map((ev, pIdx) => {
-                const realTitle = ev.title;
-                const rawImg = (ev as any).image;
-                const fallbackImg = defaultEventImages[pIdx % defaultEventImages.length];
+            <div
+              className="relative w-full overflow-hidden rounded-3xl group select-none"
+              onMouseEnter={() => setIsEventHovered(true)}
+              onMouseLeave={() => setIsEventHovered(false)}
+              onTouchStart={(e) => {
+                eventTouchStartXRef.current = e.touches[0].clientX;
+              }}
+              onTouchEnd={(e) => {
+                if (eventTouchStartXRef.current === null) return;
+                const diff = eventTouchStartXRef.current - e.changedTouches[0].clientX;
+                if (diff > 45) {
+                  setEventSlideIndex((prev) => (prev + 1) % displayEvents.length);
+                } else if (diff < -45) {
+                  setEventSlideIndex((prev) => (prev === 0 ? displayEvents.length - 1 : prev - 1));
+                }
+                eventTouchStartXRef.current = null;
+              }}
+            >
+              {(() => {
+                const currentEv = displayEvents[eventSlideIndex % displayEvents.length] || displayEvents[0];
+                const realTitle = currentEv.title;
+                const rawImg = (currentEv as any).image;
+                const fallbackImg = defaultEventImages[eventSlideIndex % defaultEventImages.length];
                 const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : fallbackImg;
-                const isSingle = displayEvents.length === 1;
 
                 return (
                   <Link
-                    key={ev.id || pIdx}
                     to="/association/events"
-                    className={`group flex flex-col transition active:scale-95 shrink-0 snap-start touch-press ${
-                      isSingle ? "w-full" : "w-[245px] max-w-[78%] min-w-[215px]"
-                    }`}
+                    search={{ eventId: currentEv.id }}
+                    className="relative block w-full h-[185px] sm:h-[210px] rounded-3xl overflow-hidden shadow-lg border border-amber-500/40 bg-slate-900 group"
                   >
-                    {/* Poster Box with Amber Gold Border */}
-                    <div className="relative h-[115px] w-full overflow-hidden rounded-2xl border border-amber-500/30 group-hover:border-amber-400/80 bg-slate-900 shadow-sm group-hover:shadow-[0_4px_20px_rgba(245,158,11,0.25)] transition-all">
-                      <img
-                        src={realImg}
-                        alt={realTitle}
-                        loading="lazy"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          if (target.src !== fallbackImg) {
-                            target.src = fallbackImg;
-                          }
-                        }}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      {/* Dark gradient overlay on photo */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 pointer-events-none" />
+                    <img
+                      src={realImg}
+                      alt={realTitle}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = fallbackImg;
+                      }}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/20 pointer-events-none" />
 
-                      {/* Chỉ để mỗi tên sự kiện với thời gian đếm ngược */}
-                      <div className="absolute inset-x-0 bottom-0 p-2.5 z-10 flex flex-col gap-1">
-                        <div className="flex items-center">
-                          <EventCountdownMiniBadge event={ev} index={pIdx} />
+                    {/* Top badging: Countdown + Slide Index */}
+                    <div className="absolute top-3 inset-x-3.5 flex items-center justify-between z-10">
+                      <div className="flex items-center gap-1.5">
+                        <EventCountdownMiniBadge event={currentEv} index={eventSlideIndex} />
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono font-bold text-white border border-white/20">
+                        {(eventSlideIndex % displayEvents.length) + 1} / {displayEvents.length}
+                      </span>
+                    </div>
+
+                    {/* Bottom information */}
+                    <div className="absolute inset-x-3.5 bottom-3.5 z-10 flex flex-col gap-1.5">
+                      <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] line-clamp-2 group-hover:text-amber-300 transition-colors">
+                        {realTitle}
+                      </h3>
+                      <div className="flex items-center justify-between text-xs text-slate-200">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 font-medium text-amber-300">
+                            <Clock className="size-3.5 text-amber-400 shrink-0" />
+                            {currentEv.time || "08:30 - 11:30"}
+                          </span>
+                          <span className="truncate max-w-[150px] text-slate-300 text-[11px]">
+                            {(currentEv as any).location || (currentEv as any).place || (currentEv as any).venue || "Hà Nội"}
+                          </span>
                         </div>
-                        <h3 className="line-clamp-1 text-[12px] font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] group-hover:text-amber-300 transition-colors">
-                          {realTitle}
-                        </h3>
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black text-[11px] shadow-sm">
+                          <span>Chi tiết</span>
+                          <ChevronRight className="size-3 stroke-[3]" />
+                        </span>
                       </div>
                     </div>
                   </Link>
                 );
-              })}
+              })()}
+
+              {/* Prev / Next buttons if multiple events */}
+              {displayEvents.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEventSlideIndex((prev) => (prev === 0 ? displayEvents.length - 1 : prev - 1));
+                    }}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 size-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-md cursor-pointer transition active:scale-95"
+                    title="Sự kiện trước"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEventSlideIndex((prev) => (prev + 1) % displayEvents.length);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 size-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-md cursor-pointer transition active:scale-95"
+                    title="Sự kiện sau"
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </>
+              )}
+
+              {/* Dots indicator */}
+              {displayEvents.length > 1 && (
+                <div className="flex items-center justify-center gap-1.5 mt-2.5">
+                  {displayEvents.slice(0, 8).map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setEventSlideIndex(idx)}
+                      className={`transition-all duration-300 rounded-full cursor-pointer ${
+                        eventSlideIndex % displayEvents.length === idx
+                          ? "w-6 h-1.5 bg-[#003B95] dark:bg-amber-500"
+                          : "w-1.5 h-1.5 bg-slate-300 dark:bg-slate-700"
+                      }`}
+                      title={`Sự kiện ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -56,9 +56,14 @@
 #   + Tuyệt đối không gọi trực tiếp `new Date(event.date).toLocaleDateString(...)` mà không kiểm tra tính hợp lệ của ngày. BẮT BUỘC dùng hàm helper an toàn `safeFormatEventDate` và `safeGetEventDayMonth` kiểm tra `!isNaN(d.getTime())`, phòng vệ triệt để lỗi `RangeError: Invalid time value`.
 #   + Trang sự kiện (/association/events) BẮT BUỘC bọc quanh bởi `EventsErrorBoundary` cấp route để tránh văng crash toàn trang khi có dữ liệu sự kiện bất thường.
 #   + Lịch họp ban & Cuộc gặp CLB (`public.meetings`) BẮT BUỘC tự động hiển thị trong danh sách Sự kiện của App CEO 1983 (với nhãn `[Họp Ban]`) để hội viên nắm bắt toàn bộ hoạt động.
-# - Quy chuẩn Thống Kê CRM Web (/analytics):
-#   + Bổ sung chức năng Thống kê vào CRM với route `/analytics` và menu "Thống kê CLB" (icon `BarChart3`) trên Sidebar CRM dưới mục Tổng quan.
-#   + Hỗ trợ 5 chế độ hiển thị chuyên sâu: 1. Dạng Lưới KPI, 2. Dashboard tổng quan, 3. Biểu đồ cây phân bố ngành nghề (Treemap), 4. Biểu đồ tròn theo ban ngành (Donut), 5. Cây đơn vị cơ cấu tổ chức (Org Tree), cùng nút Xuất/Nhập file Excel cho từng danh mục.
+# - Quy chuẩn Quản Lý Tài Liệu CRM Chuẩn Google Drive & Giới Hạn 500MB (/documents):
+#   + Quản lý tài liệu theo cấu trúc thư mục dạng Google Drive: Hỗ trợ tạo thư mục phân cấp, điều hướng Breadcrumb nhiều tầng và di chuyển lên thư mục cha.
+#   + Tải tệp trực tiếp từ máy có cơ chế bảo vệ nghiêm ngặt: Giới hạn tối đa 500MB mỗi tệp tải lên ở cả Frontend và Backend NestJS (UploadController) nhằm phòng tránh nghẽn mạng và sập server.
+#   + Hỗ trợ trường liên kết ngoài Google Drive ("Link Driver") đối với các tài liệu, hồ sơ năng lực dung lượng lớn lưu trên đám mây.
+# - Quy chuẩn Thống Kê CRM Web Thuộc Nhóm Tài Chính (/analytics):
+#   + Menu Thống kê được gom vào nhóm Tài chính (`finance`) trên Sidebar CRM. Bộ lọc thời gian chuẩn chỉ gồm: Quý, Tháng, Năm (`quarter`, `month`, `year`).
+#   + Phân hệ "Thành viên tích cực cùng tiêu cực": Biểu đồ ComposedChart thể hiện cột màu đỏ (#DC2626) cho thành viên tiêu cực/ít tương tác, cột màu xanh cho tích cực và đường ngang nét đứt màu đỏ (#DC2626) thể hiện chiều đi xuống. Thẻ cảnh báo "Top 3 hội viên ít tương tác nhất" cung cấp đầy đủ thông tin liên hệ (SĐT gọi điện chăm sóc `tel:`, email) để nhân viên CEO 1983 chủ động chăm sóc kịp thời.
+#   + Các phân hệ xếp hạng: Bục vinh danh chuẩn cấp bậc Kim Cương 💎 (Top 1), Bạch Kim 🪙 (Top 2), Vàng 🥇 (Top 3) cho các hạng mục Kết nối nhiều nhất, Chia sẻ cơ hội public nhiều nhất, Tham gia sự kiện & tương tác nhiều nhất.
 # - Quy chuẩn Tùy Biến 4 Tính Năng Chính Trang Chủ (Customizable 4 Home Shortcuts Standards): Trang chủ Mobile (/association) BẮT BUỘC cho phép hội viên tự chọn 4 chức năng cốt lõi thường dùng nhất thông qua modal CustomHomeShortcutsModal. Dữ liệu được lưu trữ cá nhân hóa bền vững theo từng tài khoản (vba_user_custom_shortcuts_${userId}) và hiển thị huy hiệu số đếm tương ứng (Sự kiện, Danh bạ, Cơ hội, Thống kê, Bảng tin, Danh thiếp, Đặc quyền, Biểu quyết, Sàn B2B, Tài liệu).
 # - Quy Chuẩn Triển Khai Hạ Tầng & Tránh Xung Đột Cổng Nginx VPS (VPS Reverse Proxy & Deployment Standards): Cổng 80 và 443 trên máy chủ VPS do Nginx hệ điều hành (systemd nginx.service) phụ trách với chứng chỉ Let's Encrypt chính thức, reverse proxy trực tiếp vào các container 5002-5005. Mọi docker-compose của container phụ trợ (ceo1983-ssl-proxy) TUYỆT ĐỐI KHÔNG bind cổng 80:80 hoặc 443:443 (gây lỗi sập "address already in use"). Chỉ bind các cổng test dev độc lập 5443, 5444, 5445. Mọi lệnh copy thư mục deploy trên runner/server phải dùng đường dẫn tuyệt đối chuẩn (cp -a /root/deploy-cache/deploy/.../.) để bảo toàn CWD và giữ đầy đủ các file ẩn .env.*.
 
@@ -100,10 +105,14 @@
 # - Quy Chuẩn Giao Việc Kèm Người Giao & Xem File Đính Kèm (Task Assignment & In-Modal File Preview):
 #   + Thông báo giao việc BẮT BUỘC nêu rõ người giao việc là ai: Tiêu đề `📋 [Giao việc từ ${creatorDisplayName}] ${task.title}`, nội dung nêu rõ họ tên và chức danh người giao việc.
 #   + Xem file trực tiếp trong popup giao việc (`TaskFormModal`): Từng file đính kèm BẮT BUỘC có nút "Xem file" (icon `Eye`), hỗ trợ xem bảng tính Excel bằng `ExcelViewerModal`, xem ảnh trong lightbox chuyên dụng, và xem tài liệu PDF/doc qua modal tương tác.
-# - Quy Chuẩn Slide Thuyết Trình Chuẩn Nhận Diện Thư Mời Ảnh 1 (Master Presentation Standards):
-#   + Tông màu chủ đạo: Deep Cobalt Navy (`#001F54` đến `#003B95`), sóng lượn công nghệ Cyan phát sáng (`#00D2FF`), logo kép ViConnect x CLB CEO 1983, thẻ nổi màu trắng bo góc (`floating white cards`) và hộp ghi chú màu kem cam (`#FFF5ED`, viền `#FDBA74`).
-#   + Hình nền đa dạng: Mỗi slide sử dụng một ảnh nền kiến trúc/skyline/digital cao cấp khác nhau, phủ lớp kính mờ mờ tạo chiều sâu điện ảnh.
-#   + Cấu trúc nội dung: Báo cáo tổng thể 2 sản phẩm (CRM & App), giải quyết 3 bài toán gốc của CEO 1983, hình ảnh chụp thực tế tính năng đã xây dựng, và 5 tính năng đột phá nằm ngoài yêu cầu ban đầu. Hỗ trợ cả định dạng HTML tương tác và file PowerPoint `.pptx`.
+# - Quy Chuẩn Slide Thuyết Trình Chuẩn Nhận Diện & Dual-Tone Nửa Xanh Nửa Trắng (Master Presentation Standards):
+#   + Bố cục Dual-Tone Corporate Split: Nửa trái (40%) là dải Xanh Navy Doanh nhân lịch lãm (`#001F54` đến `#002B7F`) phủ chìm ảnh nền background chân thực (Skyline Hà Nội ban đêm, Phòng họp Ban điều hành, Dạ tiệc Gala sang trọng, Trung tâm giám sát vận hành); Nửa phải (60%) là sân khấu nền trắng ngọc trai tinh khiết (`#FFFFFF` / `#F8FAFC`) chứa khung mockup trình duyệt macOS hoặc điện thoại iPhone cực lớn (`1150px × 700px`).
+#   + Hiển thị giao diện CRM to rõ toàn cảnh: Đảm bảo người xem đọc được 100% từng cột dữ liệu, nút bấm, số liệu KPI, sơ đồ xếp bàn tiệc Gala, sổ quỹ tài chính VietQR mà không bị che khuất hay vỡ nét.
+#   + Xuất bản đồng bộ: Định dạng PDF Vector 1920x1080px (`SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf`), HTML tương tác (`.html`), tài liệu tóm tắt (`.md`) và PowerPoint (`.pptx`).
+# - Quy Chuẩn Poster Showcase Panorama & Khổ Lớn Hệ Sinh Thái (Panorama Showcase Poster Standards):
+#   + Poster App Panorama (`POSTER_SHOWCASE_APP_PANORAMA`): Bố cục dàn 4 điện thoại iPhone nằm ngang song song, thể hiện 4 luồng quan trọng nhất (Trang chủ doanh nhân, Thẻ hội viên VIP QR/NFC NameDrop kết nối 1s, Sàn B2B kết nối Deal 11 ngành nghề, Soát vé sự kiện QR Gatekeeper).
+#   + Poster CRM Panorama (`POSTER_SHOWCASE_CRM_PANORAMA`): Bố cục dàn 3 màn hình Desktop macOS CRM nằm ngang song song, thể hiện 3 phân hệ cốt lõi (Executive Dashboard BI 360°, Quản trị 500+ Doanh nghiệp & Phân quyền RBAC 6 Ban, Sơ đồ xếp bàn tiệc Gala VIP & Tài chính VietQR tự động).
+#   + Poster Master A3/A2 (`POSTER_MASTER_HE_SINH_THAI_CEO1983`): Nửa trên nền Xanh Navy với dàn 3 màn hình CRM; Nửa dưới nền Trắng ngọc trai với dàn 4 iPhone Mobile App; đồng bộ dữ liệu thời gian thực. Xuất bản đầy đủ PDF vector, PNG 300 DPI, và HTML nguồn tại cả `document/` và `apps/ceo1983_app_fe/public/docs/`.
 
 # ------------------------------------------------------------------------------
 # 2. KIẾN TRÚC VÀ CẤU TRÚC THƯ MỤC (PROJECT STRUCTURE & LAYERS)

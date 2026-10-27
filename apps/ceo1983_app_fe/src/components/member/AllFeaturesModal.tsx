@@ -186,20 +186,6 @@ export function AllFeaturesModal({
       icon: History,
     },
     {
-      id: "map",
-      name: "Bản đồ CEO GPS",
-      category: "Tiện ích số",
-      desc: "Định vị vị trí doanh nghiệp hội viên trên bản đồ",
-      action: () => {
-        onClose();
-        if (onOpenMapModal) onOpenMapModal();
-        else navigate({ to: "/association/members" as any });
-      },
-      icon: MapPin,
-      badge: "GPS",
-      badgeColor: "bg-emerald-600 text-white",
-    },
-    {
       id: "calendar",
       name: "Lịch hoạt động & Nhắc hẹn",
       category: "Hoạt động & Sự kiện",

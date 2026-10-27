@@ -48,12 +48,15 @@ function getBase64Image(filePath) {
 const LOGO_CEO1983 = getBase64Image(path.join(DOC_DIR, 'images/ceo1983-official-logo.png'));
 const LOGO_VICONNECT = getBase64Image(path.join(DOC_DIR, 'images/viconnect-logo.png'));
 
-// Backgrounds
+// Backgrounds chân thực sắc nét
 const BG_SKYLINE_NIGHT = getBase64Image(path.join(BG_DIR, '08_skyline_night.jpg'));
-const BG_OPERATIONS = getBase64Image(path.join(BG_DIR, '04_operations.jpg'));
-const BG_BANQUET_GALA = getBase64Image(path.join(BG_DIR, '07_banquet_gala.jpg'));
+const BG_SKYLINE_LAKE = getBase64Image(path.join(BG_DIR, '01_skyline_lake.jpg'));
 const BG_BOARDROOM = getBase64Image(path.join(BG_DIR, '02_boardroom.jpg'));
 const BG_SMARTCITY = getBase64Image(path.join(BG_DIR, '03_smartcity.jpg'));
+const BG_OPERATIONS = getBase64Image(path.join(BG_DIR, '04_operations.jpg'));
+const BG_MOBILE_NETWORK = getBase64Image(path.join(BG_DIR, '05_mobile_network.jpg'));
+const BG_INNOVATION = getBase64Image(path.join(BG_DIR, '06_innovation.jpg'));
+const BG_BANQUET_GALA = getBase64Image(path.join(BG_DIR, '07_banquet_gala.jpg'));
 
 // Ảnh CRM thực tế đã xác thực sạch
 const CRM_01 = getBase64Image(path.join(LIVE_IMG_DIR, 'crm_01_dashboard_tongquan.png'));
@@ -83,6 +86,7 @@ console.log('✓ Đã nạp đầy đủ logo, backgrounds và ảnh live sạch
 const SLIDES_V8 = [
   {
     id: 1,
+    bgImg: BG_SKYLINE_NIGHT,
     type: 'dual_overview',
     tag: 'BỨC TRANH TỔNG THỂ TOÀN CẢNH',
     title: 'HỆ SINH THÁI SỐ TOÀN DIỆN CLB DOANH NHÂN CEO 1983',
@@ -97,6 +101,7 @@ const SLIDES_V8 = [
   },
   {
     id: 2,
+    bgImg: BG_SMARTCITY,
     type: 'two_products_detail',
     tag: 'KIẾN TRÚC TƯƠNG HỖ KHÉP KÍN',
     title: 'HAI CÔNG CỤ ĐỘT PHÁ TƯƠNG TÁC ĐỒNG BỘ HAI CHIỀU',
@@ -129,6 +134,7 @@ const SLIDES_V8 = [
   },
   {
     id: 3,
+    bgImg: BG_OPERATIONS,
     type: 'crm_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 01 - CRM',
     title: 'DASHBOARD TỔNG QUAN & HỒ SƠ HỘI VIÊN 360° TRÊN CRM',
@@ -144,6 +150,7 @@ const SLIDES_V8 = [
   },
   {
     id: 4,
+    bgImg: BG_BOARDROOM,
     type: 'crm_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 02 - CRM',
     title: 'THỐNG KÊ & BÁO CÁO BI TOÀN DIỆN (BAR + LINE RECHARTS)',
@@ -159,6 +166,7 @@ const SLIDES_V8 = [
   },
   {
     id: 5,
+    bgImg: BG_BANQUET_GALA,
     type: 'crm_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 03 - CRM',
     title: 'TỔ CHỨC SỰ KIỆN GALA & SƠ ĐỒ BÀN TIỆC ĐỘNG THÔNG MINH',
@@ -174,6 +182,7 @@ const SLIDES_V8 = [
   },
   {
     id: 6,
+    bgImg: BG_SKYLINE_LAKE,
     type: 'crm_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 04 - CRM',
     title: 'QUẢN LÝ HỘI PHÍ TỰ ĐỘNG VIETQR & SỔ QUỸ THU CHI MINH BẠCH',
@@ -189,6 +198,7 @@ const SLIDES_V8 = [
   },
   {
     id: 7,
+    bgImg: BG_INNOVATION,
     type: 'crm_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 05 - CRM',
     title: 'CHƯƠNG TRÌNH ĐÀO TẠO DOANH NHÂN & KHO TRI THỨC SỐ',
@@ -204,6 +214,7 @@ const SLIDES_V8 = [
   },
   {
     id: 8,
+    bgImg: BG_BOARDROOM,
     type: 'crm_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 06 - CRM',
     title: 'ĐIỀU HÀNH GIAO VIỆC KANBAN & THEO DÕI TIẾN ĐỘ 6 BAN CHUYÊN MÔN',
@@ -219,6 +230,7 @@ const SLIDES_V8 = [
   },
   {
     id: 9,
+    bgImg: BG_SKYLINE_NIGHT,
     type: 'app_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 07 - MOBILE APP',
     title: 'TRANG CHỦ DOANH NHÂN & 14 PHÍM TẮT TÁC NGHIỆP TỨC THÌ',
@@ -235,6 +247,7 @@ const SLIDES_V8 = [
   },
   {
     id: 10,
+    bgImg: BG_SKYLINE_LAKE,
     type: 'app_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 08 - MOBILE APP',
     title: 'THẺ HỘI VIÊN SỐ & DANH THIẾP ĐIỆN TỬ 1 CHẠM CÁ NHÂN HÓA',
@@ -251,6 +264,7 @@ const SLIDES_V8 = [
   },
   {
     id: 11,
+    bgImg: BG_MOBILE_NETWORK,
     type: 'app_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 09 - MOBILE APP',
     title: 'SÀN GIAO THƯƠNG B2B & KẾT NỐI NHU CẦU MUA BÁN NỘI KHỐI',
@@ -267,6 +281,7 @@ const SLIDES_V8 = [
   },
   {
     id: 12,
+    bgImg: BG_BANQUET_GALA,
     type: 'app_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 10 - MOBILE APP',
     title: 'VÉ SỰ KIỆN GALA ĐIỆN TỬ & CHECK-IN QR TỰ ĐỘNG 1 GIÂY',
@@ -283,6 +298,7 @@ const SLIDES_V8 = [
   },
   {
     id: 13,
+    bgImg: BG_INNOVATION,
     type: 'app_feature',
     tag: 'PHÂN HỆ TRỌNG YẾU 11 - MOBILE APP',
     title: 'CHƯƠNG TRÌNH ĐÀO TẠO HYBRID & KHO BÀI GIẢNG SỐ DÀNH CHO CEO',
@@ -299,6 +315,7 @@ const SLIDES_V8 = [
   },
   {
     id: 14,
+    bgImg: BG_OPERATIONS,
     type: 'conclusion',
     tag: 'CAM KẾT ĐỒNG HÀNH & KẾ HOẠCH BÀN GIAO',
     title: 'LỘ TRÌNH TRIỂN KHAI & CAM KẾT ĐỒNG HÀNH TOÀN DIỆN',
@@ -325,6 +342,7 @@ const SLIDES_V8 = [
   },
   {
     id: 15,
+    bgImg: BG_SKYLINE_NIGHT,
     type: 'closing_thankyou',
     tag: 'TRI ÂN & HỢP TÁC BỀN VỮNG',
     title: 'XIN TRÂN TRỌNG CẢM ƠN!',
@@ -396,53 +414,29 @@ function generateSlideDeckHtml() {
       background: radial-gradient(120% 90% at 50% 20%, #082463 0%, #031138 40%, #01081f 75%, #00040f 100%);
     }
 
-    /* 3 Ảnh nền đan xen mờ tinh tế */
-    .bg-blend-slide {
+    /* Hệ thống ảnh nền chân thực sắc nét, sáng rõ từng bối cảnh */
+    .slide-bg-wrapper {
       position: absolute;
       inset: 0;
       z-index: 0;
       overflow: hidden;
       pointer-events: none;
     }
-    .bg-slide-l {
-      position: absolute;
-      inset-y: 0;
-      left: 0;
-      width: 55%;
-      background-image: url('${BG_SKYLINE_NIGHT}');
-      background-size: cover;
-      background-position: center left;
-      mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      opacity: 0.60;
-    }
-    .bg-slide-c {
+    .slide-bg-photo {
       position: absolute;
       inset: 0;
-      background-image: url('${BG_OPERATIONS}');
-      background-size: cover;
-      background-position: center;
-      mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 65%, rgba(0,0,0,0) 100%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 65%, rgba(0,0,0,0) 100%);
-      opacity: 0.55;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0.72;
+      transform: scale(1.05);
+      filter: saturate(1.15) brightness(0.96) contrast(1.06);
     }
-    .bg-slide-r {
-      position: absolute;
-      inset-y: 0;
-      right: 0;
-      width: 55%;
-      background-image: url('${BG_BANQUET_GALA}');
-      background-size: cover;
-      background-position: center right;
-      mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      opacity: 0.60;
-    }
-    .bg-slide-mask {
+    .slide-bg-overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(130% 90% at 50% 30%, rgba(8, 36, 99, 0.4) 0%, rgba(2, 10, 30, 0.75) 60%, rgba(1, 6, 20, 0.95) 100%);
-      mix-blend-mode: multiply;
+      background: radial-gradient(130% 90% at 50% 30%, rgba(2, 10, 32, 0.35) 0%, rgba(3, 17, 56, 0.52) 55%, rgba(0, 4, 15, 0.80) 100%);
     }
 
     /* Khung Smartphone chuẩn tỷ lệ không crop xén */
@@ -702,11 +696,9 @@ function generateSlideDeckHtml() {
       if (s.type === 'dual_overview') {
         html = \`
           <div class="w-full h-full deep-navy-bg relative overflow-hidden flex flex-col justify-between">
-            <div class="bg-blend-slide">
-              <div class="bg-slide-l"></div>
-              <div class="bg-slide-c"></div>
-              <div class="bg-slide-r"></div>
-              <div class="bg-slide-mask"></div>
+            <div class="slide-bg-wrapper">
+              <img src="\${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+              <div class="slide-bg-overlay"></div>
             </div>
             \${commonHeader}
 
@@ -799,7 +791,10 @@ function generateSlideDeckHtml() {
       else if (s.type === 'two_products_detail') {
         html = \`
           <div class="w-full h-full deep-navy-bg relative overflow-hidden flex flex-col justify-between">
-            <img src="${BG_BOARDROOM}" class="absolute inset-0 w-full h-full object-cover opacity-20" alt="Boardroom" />
+            <div class="slide-bg-wrapper">
+              <img src="\${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+              <div class="slide-bg-overlay"></div>
+            </div>
             \${commonHeader}
 
             <div class="stage-container my-auto">
@@ -870,7 +865,10 @@ function generateSlideDeckHtml() {
       else if (s.type === 'crm_feature') {
         html = \`
           <div class="w-full h-full deep-navy-bg relative overflow-hidden flex flex-col justify-between">
-            <img src="${BG_SMARTCITY}" class="absolute inset-0 w-full h-full object-cover opacity-15" alt="SmartCity" />
+            <div class="slide-bg-wrapper">
+              <img src="\${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+              <div class="slide-bg-overlay"></div>
+            </div>
             \${commonHeader}
 
             <div class="stage-container my-auto">
@@ -930,7 +928,10 @@ function generateSlideDeckHtml() {
       else if (s.type === 'app_feature') {
         html = \`
           <div class="w-full h-full deep-navy-bg relative overflow-hidden flex flex-col justify-between">
-            <img src="${BG_SKYLINE_NIGHT}" class="absolute inset-0 w-full h-full object-cover opacity-20" alt="Skyline" />
+            <div class="slide-bg-wrapper">
+              <img src="\${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+              <div class="slide-bg-overlay"></div>
+            </div>
             \${commonHeader}
 
             <div class="stage-container my-auto">
@@ -1019,11 +1020,9 @@ function generateSlideDeckHtml() {
       else if (s.type === 'conclusion') {
         html = \`
           <div class="w-full h-full deep-navy-bg relative overflow-hidden flex flex-col justify-between">
-            <div class="bg-blend-slide">
-              <div class="bg-slide-l"></div>
-              <div class="bg-slide-c"></div>
-              <div class="bg-slide-r"></div>
-              <div class="bg-slide-mask"></div>
+            <div class="slide-bg-wrapper">
+              <img src="\${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+              <div class="slide-bg-overlay"></div>
             </div>
             \${commonHeader}
 
@@ -1069,11 +1068,9 @@ function generateSlideDeckHtml() {
       else if (s.type === 'closing_thankyou') {
         html = \`
           <div class="w-full h-full deep-navy-bg relative overflow-hidden flex flex-col justify-between">
-            <div class="bg-blend-slide">
-              <div class="bg-slide-l"></div>
-              <div class="bg-slide-c"></div>
-              <div class="bg-slide-r"></div>
-              <div class="bg-slide-mask"></div>
+            <div class="slide-bg-wrapper">
+              <img src="\${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+              <div class="slide-bg-overlay"></div>
             </div>
             \${commonHeader}
 
@@ -1268,11 +1265,9 @@ function generatePrintAllSlidesHtml() {
     if (s.type === 'dual_overview') {
       slideBody = `
         <div class="slide-page-print deep-navy-bg justify-between">
-          <div class="bg-blend-slide">
-            <div class="bg-slide-l"></div>
-            <div class="bg-slide-c"></div>
-            <div class="bg-slide-r"></div>
-            <div class="bg-slide-mask"></div>
+          <div class="slide-bg-wrapper">
+            <img src="${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+            <div class="slide-bg-overlay"></div>
           </div>
           ${commonHeader}
           <div class="stage-container my-auto">
@@ -1344,7 +1339,10 @@ function generatePrintAllSlidesHtml() {
     } else if (s.type === 'two_products_detail') {
       slideBody = `
         <div class="slide-page-print deep-navy-bg justify-between">
-          <img src="${BG_BOARDROOM}" class="absolute inset-0 w-full h-full object-cover opacity-20" alt="Boardroom" />
+          <div class="slide-bg-wrapper">
+            <img src="${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+            <div class="slide-bg-overlay"></div>
+          </div>
           ${commonHeader}
           <div class="stage-container my-auto">
             <div class="grid grid-cols-2 gap-8 items-stretch">
@@ -1401,7 +1399,10 @@ function generatePrintAllSlidesHtml() {
     } else if (s.type === 'crm_feature') {
       slideBody = `
         <div class="slide-page-print deep-navy-bg justify-between">
-          <img src="${BG_SMARTCITY}" class="absolute inset-0 w-full h-full object-cover opacity-15" alt="SmartCity" />
+          <div class="slide-bg-wrapper">
+            <img src="${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+            <div class="slide-bg-overlay"></div>
+          </div>
           ${commonHeader}
           <div class="stage-container my-auto">
             <div class="grid grid-cols-12 gap-8 items-center">
@@ -1443,7 +1444,10 @@ function generatePrintAllSlidesHtml() {
     } else if (s.type === 'app_feature') {
       slideBody = `
         <div class="slide-page-print deep-navy-bg justify-between">
-          <img src="${BG_SKYLINE_NIGHT}" class="absolute inset-0 w-full h-full object-cover opacity-20" alt="Skyline" />
+          <div class="slide-bg-wrapper">
+            <img src="${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+            <div class="slide-bg-overlay"></div>
+          </div>
           ${commonHeader}
           <div class="stage-container my-auto">
             <div class="grid grid-cols-12 gap-8 items-center">
@@ -1500,11 +1504,9 @@ function generatePrintAllSlidesHtml() {
     } else if (s.type === 'conclusion') {
       slideBody = `
         <div class="slide-page-print deep-navy-bg justify-between">
-          <div class="bg-blend-slide">
-            <div class="bg-slide-l"></div>
-            <div class="bg-slide-c"></div>
-            <div class="bg-slide-r"></div>
-            <div class="bg-slide-mask"></div>
+          <div class="slide-bg-wrapper">
+            <img src="${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+            <div class="slide-bg-overlay"></div>
           </div>
           ${commonHeader}
           <div class="stage-container my-auto max-w-6xl">
@@ -1534,11 +1536,9 @@ function generatePrintAllSlidesHtml() {
     } else if (s.type === 'closing_thankyou') {
       slideBody = `
         <div class="slide-page-print deep-navy-bg justify-between">
-          <div class="bg-blend-slide">
-            <div class="bg-slide-l"></div>
-            <div class="bg-slide-c"></div>
-            <div class="bg-slide-r"></div>
-            <div class="bg-slide-mask"></div>
+          <div class="slide-bg-wrapper">
+            <img src="${s.bgImg}" class="slide-bg-photo" alt="Background Scene" />
+            <div class="slide-bg-overlay"></div>
           </div>
           ${commonHeader}
           <div class="stage-container my-auto max-w-6xl text-center space-y-6">
@@ -1609,52 +1609,29 @@ function generatePrintAllSlidesHtml() {
     .deep-navy-bg {
       background: radial-gradient(120% 90% at 50% 20%, #082463 0%, #031138 40%, #01081f 75%, #00040f 100%);
     }
-    .bg-blend-slide {
+    /* Hệ thống ảnh nền chân thực sắc nét, sáng rõ từng bối cảnh */
+    .slide-bg-wrapper {
       position: absolute;
       inset: 0;
       z-index: 0;
       overflow: hidden;
       pointer-events: none;
     }
-    .bg-slide-l {
-      position: absolute;
-      inset-y: 0;
-      left: 0;
-      width: 55%;
-      background-image: url('${BG_SKYLINE_NIGHT}');
-      background-size: cover;
-      background-position: center left;
-      mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      opacity: 0.60;
-    }
-    .bg-slide-c {
+    .slide-bg-photo {
       position: absolute;
       inset: 0;
-      background-image: url('${BG_OPERATIONS}');
-      background-size: cover;
-      background-position: center;
-      mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 65%, rgba(0,0,0,0) 100%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 65%, rgba(0,0,0,0) 100%);
-      opacity: 0.55;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0.72;
+      transform: scale(1.05);
+      filter: saturate(1.15) brightness(0.96) contrast(1.06);
     }
-    .bg-slide-r {
-      position: absolute;
-      inset-y: 0;
-      right: 0;
-      width: 55%;
-      background-image: url('${BG_BANQUET_GALA}');
-      background-size: cover;
-      background-position: center right;
-      mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0) 100%);
-      opacity: 0.60;
-    }
-    .bg-slide-mask {
+    .slide-bg-overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(130% 90% at 50% 30%, rgba(8, 36, 99, 0.4) 0%, rgba(2, 10, 30, 0.75) 60%, rgba(1, 6, 20, 0.95) 100%);
-      mix-blend-mode: multiply;
+      background: radial-gradient(130% 90% at 50% 30%, rgba(2, 10, 32, 0.35) 0%, rgba(3, 17, 56, 0.52) 55%, rgba(0, 4, 15, 0.80) 100%);
     }
     .phone-mockup-v8 {
       position: relative;
