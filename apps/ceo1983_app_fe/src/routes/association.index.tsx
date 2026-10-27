@@ -68,6 +68,9 @@ import {
   DEFAULT_SHORTCUT_IDS,
   getShortcutIcon,
 } from "@/components/member/CustomHomeShortcutsModal";
+import { AllFeaturesModal } from "@/components/member/AllFeaturesModal";
+import { CreateConnectionModal } from "@/components/member/CreateConnectionModal";
+import { MemberPerksCarousel } from "@/components/member/MemberPerksCarousel";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import heroImg from "@/assets/vba-hero.jpg";
 import giftImg from "@/assets/vba-gift.png";
@@ -648,6 +651,8 @@ function Home() {
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [customShortcutsModalOpen, setCustomShortcutsModalOpen] = useState(false);
+  const [allFeaturesModalOpen, setAllFeaturesModalOpen] = useState(false);
+  const [createConnectionModalOpen, setCreateConnectionModalOpen] = useState(false);
   const [activeShortcutIds, setActiveShortcutIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return DEFAULT_SHORTCUT_IDS;
     try {
@@ -1178,12 +1183,12 @@ function Home() {
             </span>
             <button
               type="button"
-              onClick={() => setCustomShortcutsModalOpen(true)}
+              onClick={() => setAllFeaturesModalOpen(true)}
               className="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer border border-amber-500/30"
-              title="Tùy biến 4 tính năng hiển thị"
+              title="Xem tất cả tính năng"
             >
-              <Pencil className="size-3 text-amber-500" />
-              <span>Tùy biến</span>
+              <Sparkles className="size-3 text-amber-500" />
+              <span>Xem tất cả tính năng</span>
             </button>
           </div>
           <div className="self-stretch inline-flex justify-between items-start gap-2">
@@ -1218,7 +1223,7 @@ function Home() {
                 </div>
               );
 
-              if (isHash) {
+              if (isHash || id === "connect" || def.to === "#connect") {
                 return (
                   <button
                     key={id}
@@ -1226,6 +1231,8 @@ function Home() {
                     onClick={() => {
                       if (def.to === "#map") setMapModalOpen(true);
                       else if (def.to === "#alarm") setAlarmModalOpen(true);
+                      else if (def.to === "#connect" || id === "connect") setCreateConnectionModalOpen(true);
+                      else setAllFeaturesModalOpen(true);
                     }}
                     className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
                   >
@@ -1352,34 +1359,9 @@ function Home() {
           )}
         </div>
 
-        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC BANNER (NÚT KHÁM PHÁ NẰM TRỰC TIẾP TRONG ẢNH) ── */}
+        {/* ── ƯU ĐÃI RIÊNG HỘI VIÊN & ĐỐI TÁC: CAROUSEL SLIDER (3 ƯU ĐÃI + SINH NHẬT + BIỂU DƯƠNG NĂM) ── */}
         <div className="self-stretch">
-          <Link
-            to="/association/perks"
-            className="w-full relative rounded-[22px] overflow-hidden shadow-xl border border-amber-400/30 dark:border-amber-400/20 block cursor-pointer group active:scale-[0.99] transition duration-200 bg-slate-950"
-          >
-            {/* Ảnh banner ưu đãi */}
-            <img
-              src="/uu_dai_event.jpg"
-              alt="Ưu đãi riêng Hội viên & Đối tác"
-              className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-500 rounded-[22px] block"
-            />
-
-            {/* Gradient mờ bảo vệ độ tương phản ở đáy ảnh */}
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/30 to-transparent pointer-events-none" />
-
-            {/* Badge đặc quyền bên góc trái dưới trong ảnh */}
-            <div className="absolute bottom-2.5 left-2.5 sm:bottom-3.5 sm:left-3.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-[10.5px] sm:text-xs font-bold shadow-md pointer-events-none">
-              <Sparkles className="size-3 text-amber-400" />
-              <span>Đặc quyền Hội viên</span>
-            </div>
-
-            {/* Nút Khám phá ngay nằm trực tiếp bên trong ảnh ở góc phải dưới */}
-            <div className="absolute bottom-2.5 right-2.5 sm:bottom-3.5 sm:right-3.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-amber-300 group-hover:scale-105 active:scale-95 transition-all">
-              <span>Khám phá ngay</span>
-              <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
-            </div>
-          </Link>
+          <MemberPerksCarousel />
         </div>
 
         {/* ── 2. CƠ HỘI GIAO THƯƠNG NỘI KHỐI (1 HÀNG TỐI ƯU GỌN GÀNG VỚI 3 BIỂU ĐỒ TRÒN & POPUP) ── */}
@@ -1765,6 +1747,21 @@ function Home() {
         onClose={() => setAlarmModalOpen(false)}
         events={displayEvents}
         meetings={serverEvents}
+      />
+
+      {/* ── TẤT CẢ TÍNH NĂNG CEO 1983 MODAL ── */}
+      <AllFeaturesModal
+        isOpen={allFeaturesModalOpen}
+        onClose={() => setAllFeaturesModalOpen(false)}
+        onOpenConnectModal={() => setCreateConnectionModalOpen(true)}
+        onOpenMapModal={() => setMapModalOpen(true)}
+        onOpenAlarmModal={() => setAlarmModalOpen(true)}
+      />
+
+      {/* ── TẠO KẾT NỐI B2B MODAL ── */}
+      <CreateConnectionModal
+        isOpen={createConnectionModalOpen}
+        onClose={() => setCreateConnectionModalOpen(false)}
       />
     </div>
   );

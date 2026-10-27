@@ -63,6 +63,7 @@ Môi trường: Mobile-First View (`MemberShell`), Bottom Navigation Bar (5 Tab:
 | **`[NODE-APP-014]`** | **Cầu Nối Native Android / iOS & Push SW** | `mobile_ceo1983` | `MainActivity.java`, `sw.js` | Web Push API, FCM Gateway | `notifications.service.ts` | `user_push_tokens`, `notifications` | SW an toàn, Native Capacitor cầu nối mượt mà. |
 | **`[NODE-APP-015]`** | **Phân Hệ Gặp Gỡ Kết Nối B2B Độc Lập** | `/association/connect` | `src/routes/association.connect.tsx` | `GET /association/b2b-connect/my-meetings` | `members.service.ts` | `public.b2b_connections` | Tách riêng hoàn toàn phân hệ kết nối B2B 1-on-1: Đặt lịch hẹn, lời mời đã nhận/đã gửi, lịch sử cuộc gặp và ghi nhận deal. |
 | **`[NODE-APP-016]`** | **Đào Tạo Di Động & Phòng Họp Call Trực Tuyến** | `/association/training` | `src/routes/association.training.tsx` | `GET /association/trainings` | `training.service.ts` | `public.trainings` | Danh sách khóa đào tạo, tài liệu bài giảng và nút tham gia phòng họp video call trao đổi trực tiếp trên ứng dụng. |
+| **`[NODE-APP-017]`** | **Lịch Hoạt Động & Nhắc Hẹn Thời Gian Thực** | `/association/calendar` | `src/routes/association.calendar.tsx` | `GET /meetings`, `listMyEvents`, `b2b-connect` | `meetings.service.ts`, `events.service.ts` | `events`, `meetings`, `b2b_connections` | Lịch sự kiện, họp ban, cuộc gặp 1-on-1 đã đăng ký/tham gia của tài khoản đăng nhập. Cài đặt nhắc hẹn độc lập từng mục (15m, 1h, 1 ngày, 3 ngày). Active Reminder Engine thông báo đẩy & toast khi đến hạn. |
 
 ---
 

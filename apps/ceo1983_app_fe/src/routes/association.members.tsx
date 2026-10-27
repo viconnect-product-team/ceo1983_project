@@ -61,7 +61,6 @@ import {
   BusinessConnectBottomSheet,
   type BusinessConnectTarget,
 } from "@/components/common/BusinessConnectBottomSheet";
-import { CeoInteractiveMapModal } from "@/components/member/CeoInteractiveMapModal";
 
 export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
@@ -219,111 +218,6 @@ function MembersScreen() {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [backendConnectedUserIds, setBackendConnectedUserIds] = useState<Set<string>>(new Set());
   const [activeAlphabet, setActiveAlphabet] = useState<string | null>(null);
-
-  // ── MAP MODE STATE & LOCATIONS ──
-  const [mapModalOpen, setMapModalOpen] = useState(false);
-  const [locationMembers, setLocationMembers] = useState<any[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
-  const [isSharingLocation, setIsSharingLocation] = useState(false);
-  const [selectedMapMember, setSelectedMapMember] = useState<any | null>(null);
-
-  const HANOI_COORDS = [
-    { lat: 21.0285, lng: 105.8542, area: "Hoàn Kiếm, Hà Nội", x: 62, y: 48 },
-    { lat: 21.0333, lng: 105.7833, area: "Cầu Giấy, Hà Nội", x: 38, y: 44 },
-    { lat: 21.0125, lng: 105.8175, area: "Đống Đa, Hà Nội", x: 50, y: 56 },
-    { lat: 21.0450, lng: 105.8350, area: "Ba Đình, Hà Nội", x: 54, y: 38 },
-    { lat: 20.9980, lng: 105.8050, area: "Thanh Xuân, Hà Nội", x: 44, y: 64 },
-    { lat: 21.0550, lng: 105.8850, area: "Long Biên, Hà Nội", x: 74, y: 36 },
-    { lat: 21.0080, lng: 105.7650, area: "Nam Từ Liêm, Hà Nội", x: 30, y: 58 },
-    { lat: 21.0700, lng: 105.8200, area: "Tây Hồ, Hà Nội", x: 52, y: 26 },
-  ];
-
-  const fetchLocations = async () => {
-    setLoadingLocations(true);
-    try {
-      const res = await fetchNestApi<any>("/members/locations").catch(() => null);
-      let list = Array.isArray(res?.data) ? res.data : [];
-      if (list.length === 0 && members && members.length > 0) {
-        list = members.slice(0, 8).map((m, idx) => {
-          const coord = HANOI_COORDS[idx % HANOI_COORDS.length];
-          return {
-            id: (m as any).id || m.code,
-            code: m.code,
-            name: m.contact || m.personName || m.name,
-            company: m.company || (m as any).companyName || "CLB Doanh Nhân CEO 1983",
-            title: (m as any).personTitle || m.industry || "Doanh nhân",
-            avatar: m.avatar,
-            phone: (m as any).phone || "0901000001",
-            latitude: coord.lat,
-            longitude: coord.lng,
-            area: coord.area,
-            mapX: coord.x,
-            mapY: coord.y,
-            isLocationSharing: true,
-          };
-        });
-      } else if (list.length > 0) {
-        list = list.map((m: any, idx: number) => {
-          const coord = HANOI_COORDS[idx % HANOI_COORDS.length];
-          return {
-            ...m,
-            mapX: coord.x,
-            mapY: coord.y,
-            area: coord.area,
-          };
-        });
-      }
-      setLocationMembers(list);
-    } catch {
-      /* ignore */
-    } finally {
-      setLoadingLocations(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLocations();
-  }, [members]);
-
-  const toggleLocationSharing = async () => {
-    if (!isSharingLocation) {
-      if (typeof navigator !== "undefined" && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            try {
-              await fetchNestApi("/members/my-location", {
-                method: "PUT",
-                body: JSON.stringify({ latitude, longitude, isSharing: true }),
-              });
-              setIsSharingLocation(true);
-              toast.success("Đã bật chia sẻ vị trí của bạn trên bản đồ hội viên!");
-              fetchLocations();
-            } catch {
-              setIsSharingLocation(true);
-              toast.success("Đã kích hoạt định vị bản đồ thành công!");
-            }
-          },
-          () => {
-            setIsSharingLocation(true);
-            toast.success("Đã kích hoạt chế độ hiện diện bản đồ khu vực Hà Nội!");
-          }
-        );
-      } else {
-        setIsSharingLocation(true);
-        toast.success("Đã bật định vị bản đồ!");
-      }
-    } else {
-      try {
-        await fetchNestApi("/members/my-location", {
-          method: "PUT",
-          body: JSON.stringify({ latitude: 0, longitude: 0, isSharing: false }),
-        });
-      } catch {}
-      setIsSharingLocation(false);
-      toast.info("Đã tắt chia sẻ vị trí.");
-    }
-  };
 
   // Lịch sử cuộc gặp 1-on-1 state
   const [meetingsList, setMeetingsList] = useState<MemberMeetingItem[]>(() => {
@@ -1135,20 +1029,9 @@ function MembersScreen() {
           <UserPlus className="h-4 w-4 text-white shrink-0" />
           <span className="hidden sm:inline">Thêm CEO</span>
         </button>
-
-        {/* Nút Mở Bản đồ Google 2D CEO 1983 */}
-        <button
-          type="button"
-          onClick={() => setMapModalOpen(true)}
-          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2.5 text-[12px] font-black text-white shadow-md shadow-emerald-900/25 active:scale-95 transition cursor-pointer whitespace-nowrap"
-          title="Mở bản đồ định vị Google 2D"
-        >
-          <Compass className="h-4 w-4 text-white shrink-0" />
-          <span>Bản đồ</span>
-        </button>
       </div>
 
-      {/* 4 Tabs Điều Hướng Danh Bạ + Nút Bản đồ */}
+      {/* Tabs Điều Hướng Danh Bạ */}
       <div
         id="tour-members-filter"
         className="flex gap-2 px-3 sm:px-4 pt-3 overflow-x-auto no-scrollbar select-none"
@@ -1163,15 +1046,6 @@ function MembersScreen() {
         >
           <UserCheck className={`h-3.5 w-3.5 ${tab === "connected" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
           <span>Danh bạ ({connectedMembers.length})</span>
-        </button>
-
-        <button
-          onClick={() => setMapModalOpen(true)}
-          className="shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-          title="Bản đồ Google 2D Tổng thể & Cá nhân"
-        >
-          <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>Bản đồ CEO (GPS)</span>
         </button>
 
         <button
@@ -2029,16 +1903,6 @@ function MembersScreen() {
         target={connectTarget}
         onClose={() => setConnectTarget(null)}
         onSuccess={() => void reloadMembers()}
-      />
-
-      {/* Bản Đồ Định Vị Google 2D CEO 1983 */}
-      <CeoInteractiveMapModal
-        isOpen={mapModalOpen}
-        onClose={() => setMapModalOpen(false)}
-        members={members || []}
-        events={[]}
-        meetings={meetingsList || []}
-        myMember={myMember}
       />
     </div>
   );

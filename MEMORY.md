@@ -1,6 +1,122 @@
 # System Memory & Architecture
 
 ## 1. Current State
+- **Bản cập nhật ngày 27/10/2026 (v9.1): Phát Triển Mới Chức Năng Lịch Hoạt Động & Hệ Thống Nhắc Hẹn Thời Gian Thực (`association.calendar.tsx`, `routeTree.gen.ts`, `AllFeaturesModal.tsx`, `CustomHomeShortcutsModal.tsx`, `association.profile.tsx`, `association.events.tsx`)**:
+  1. **Chức năng Lịch Hoạt Động Cá Nhân Hóa Toàn Diện (`apps/ceo1983_app_fe/src/routes/association.calendar.tsx`)**:
+     - Định tuyến chuẩn: `/association/calendar`, kết nối trực tiếp với TanStack Router và đồng bộ vào `routeTree.gen.ts`.
+     - Phân hệ mục tiêu: CEO 1983 Mobile App (Hội viên doanh nhân), thiết kế Mobile-first với `MemberHeader`, nhận diện 3 màu sắc (Đỏ #DC2626, Vàng kim #F59E0B, Xanh Navy #003B95).
+     - **Hiển thị danh sách 3 nhóm hoạt động đã đăng ký/tham gia của tài khoản đang đăng nhập**:
+       * *Sự kiện CLB (`sự kiện`)*: Lấy từ sự kiện đã đăng ký (`vba_registered_event_records`, `listMyEvents`), hiển thị mã vé QR, loại vé, địa điểm, thời gian.
+       * *Cuộc họp ban chuyên môn (`cuộc họp`)*: Lấy từ `vba_registered_meetings` và API `/meetings`, hiển thị thông tin người triệu tập, tài liệu họp, link phòng họp trực tuyến (Jitsi/Zoom/Uiwork).
+       * *Cuộc gặp 1-on-1 & Giao lưu kết nối (`cuộc gặp`)*: Lấy từ `vba_confirmed_1on1_meetings`, `vba_connections` và lịch hẹn B2B đã xác nhận, hiển thị đối tác hẹn, số điện thoại, địa điểm gặp offline hoặc link online.
+  2. **Banner Cảnh Báo Hôm Nay & Bộ Lọc Nhanh (Urgent Today Banner & Date Strip)**:
+     - Banner khẩn cấp xuất hiện trên cùng nếu có lịch trình diễn ra trong ngày hôm nay, cung cấp nút hành động nhanh: "Vào họp Online" hoặc "Chỉ đường Google Maps".
+     - Thanh chọn ngày 14 ngày tới (`dateStrip`) cho phép chạm chọn xem lịch trình từng ngày trực quan, có chấm màu biểu thị loại hoạt động (Đỏ: Sự kiện, Vàng: Cuộc họp ban, Xanh dương: Gặp 1-on-1).
+     - Thanh tìm kiếm từ khóa và 4 bộ lọc phân loại: "Tất cả", "Sự kiện", "Họp ban", "Gặp 1-on-1".
+  3. **Cơ Chế Cài Đặt Nhắc Hẹn Độc Lập Cho Từng Mục (Individual Reminder Settings)**:
+     - Mỗi sự kiện, cuộc họp, cuộc gặp đều có nút chuông cài đặt nhắc hẹn riêng biệt (`BellRing`).
+     - Modal cài đặt nhắc hẹn popup: Cho phép người dùng tùy chọn mốc thời gian nhắc:
+       * *Đúng giờ diễn ra*
+       * *Trước 15 phút*
+       * *Trước 1 giờ*
+       * *Trước 1 ngày (Mặc định)*
+       * *Trước 3 ngày*
+       * *Tắt nhắc hẹn*
+     - Lưu trữ trạng thái cấu hình nhắc hẹn bền vững theo từng tài khoản (`vba_calendar_reminders`).
+  4. **Bộ Máy Thông Báo Nhắc Lịch Thời Gian Thực (Active Reminder Engine)**:
+     - Tự động chạy quét lịch trình khi mở màn hình và định kỳ theo timer.
+     - So khớp thời gian hiện tại với thời gian diễn ra trừ đi khoảng thời gian cài đặt nhắc hẹn.
+     - Khi đến hạn nhắc:
+       * Hiển thị thông báo Toast cảnh báo nổi bật (`toast.info`) kèm âm báo rung (`navigator.vibrate`).
+       * Đẩy thông báo ra màn hình Native của thiết bị qua Web Notification API (`sendExternalNotification` / `Notification.requestPermission()`).
+       * Lưu lịch sử thông báo vào `vba_notifications` để hiển thị trên chuông thông báo toàn app.
+       * Đánh dấu đã nhắc (`notified: true`) để không bị lặp lại phiền toái.
+  5. **Tích Hợp Điểm Truy Cập Đa Kênh Trong Toàn Bộ Ứng Dụng**:
+     - *Xem tất cả tính năng (`AllFeaturesModal.tsx`)*: Đặt tại vị trí đầu bảng nhóm Hoạt động & Sự kiện với huy hiệu nổi bật "Nhắc hẹn".
+     - *Tính năng nhanh Trang chủ (`CustomHomeShortcutsModal.tsx`)*: Tùy biến ghim icon "Lịch & Nhắc hẹn" lên 4 tính năng chính của Trang chủ.
+     - *Góc hội viên / Cá nhân (`association.profile.tsx`)*: Thẻ tiện ích "Lịch hoạt động & Nhắc hẹn" tại Tab 2 (Giao thương).
+     - *Màn hình Sự kiện CLB (`association.events.tsx`)*: Nút "Lịch của tôi" ngay tại thanh tiêu đề Header giúp chuyển đổi tức thì.
+
+- **Bản cập nhật ngày 27/10/2026 (v9.0): Hoàn Thiện Toàn Diện 8 Yêu Cầu Giao Diện & Tính Năng CEO 1983 Mobile App**:
+  1. **Yêu cầu 1: Trang chủ - Tính năng nhanh & Modal Kết nối B2B (`association.index.tsx`, `AllFeaturesModal.tsx`, `CreateConnectionModal.tsx`)**:
+     - Đổi nút "Tùy biến" thành "Xem tất cả tính năng", mở modal hiển thị đầy đủ 14 tính năng của CLB (`AllFeaturesModal.tsx`). Bấm vào tính năng nào điều hướng ngay đến giao diện tính năng đó.
+     - Đổi tên "Tìm CEO" thành "Danh bạ CEO".
+     - Đổi "Góc hội viên" thành "Kết nối" mở modal tạo kết nối giao thương B2B (`CreateConnectionModal.tsx`).
+     - Modal kết nối có đầy đủ trường: Người tạo kết nối (tự động lấy tài khoản đăng nhập), Người muốn kết nối (dropdown call API danh bạ bạn bè hội viên), Tiêu đề (tự nhập hoặc chọn cơ hội B2B từ API), Upload media tối đa 5 ảnh/video, Địa chỉ tự nhập hoặc định vị GPS, Số điện thoại với link sang Zalo trực tiếp (`https://zalo.me/...`), 2 hình thức Online (link Zoom/Uiwork) và Offline (địa chỉ thực tế).
+  2. **Yêu cầu 2: Màn hình Cá nhân (`association.profile.tsx`) - Tinh gọn & Accordion**:
+     - Bỏ toàn bộ thẻ thông tin liên hệ và thẻ kết nối trực tiếp thừa.
+     - Dưới avatar hiển thị 4 icon tính năng nhanh: Danh thiếp, Chia sẻ, Quét mã, Sửa hồ sơ.
+     - Cấu hình 4 tính năng nhanh trang chủ được đưa vào tab Cài đặt & Bảo mật (`CustomHomeShortcutsModal.tsx`).
+     - Chức năng Chủ đề giao diện CLB chuyển vào tab Cài đặt & Bảo mật.
+     - Toàn bộ các chức năng ở cả 3 tab đóng theo dạng Accordion, bấm vào tiêu đề mới mở ra.
+  3. **Yêu cầu 3: Tab Giao thương tại màn Cá nhân (`association.profile.tsx`)**:
+     - Hiển thị đầy đủ tất cả sự kiện đã tham gia (không giới hạn 3).
+     - Bổ sung danh sách "Cuộc họp ban", "Cuộc gặp 1-on-1".
+     - Dưới cùng có phần "Lịch sử thao tác" (Audit log).
+     - Xóa bỏ khối thẻ "Danh thiếp số NFC & QR".
+  4. **Yêu cầu 4: Sửa lỗi "Xem tất cả sự kiện" (`association.events.tsx`)**:
+     - Khắc phục lỗi link nhầm sang màn Thống kê (`AssociationAnalyticsScreen`), khôi phục hiển thị màn Sự kiện chuẩn (`EventsScreen`).
+  5. **Yêu cầu 5: Slide Ưu đãi hội viên (`MemberPerksCarousel.tsx`, `association.index.tsx`)**:
+     - Hiển thị carousel/slider mượt mà: tối thiểu 3 ưu đãi hội viên hấp dẫn.
+     - Slide sinh nhật chuyên nghiệp hiển thị tên người sắp có sinh nhật kèm lời chúc mừng từ CLB.
+     - Slide biểu dương thành viên tiêu biểu của năm với chứng nhận vinh danh.
+  6. **Yêu cầu 6: Mạng lưới - Bình luận 3 cấp & Thu gọn (`FeedView.tsx`)**:
+     - Bấm vào icon bình luận (`MessageCircle`) để mở/thu gọn xem toàn bộ bình luận của bài viết.
+     - Hệ thống bình luận lồng nhau 3 cấp chuẩn mực (`Cấp 1`, `Cấp 2`, `Cấp 3`), có badge cấp độ và gắn thẻ `@TênNgườiĐượcReply`.
+     - Cho phép bấm "Thu gọn phản hồi" / "Xem X phản hồi" cho từng bình luận và "Thu gọn bình luận" cho cả bài viết.
+  7. **Yêu cầu 7: Tin nhắn - Xóa kênh các ban (`ConversationList.tsx`)**:
+     - Xóa bỏ toàn bộ các kênh tin nhắn thuộc các ban (`channel_media`, `channel_membership`...) vì CLB đã chuyển sang dùng Zalo OA.
+     - Xóa tab "Kênh Hiệp Hội".
+  8. **Yêu cầu 8: Hồ sơ hội viên & Bản đồ (`MemberProfileModal.tsx` & `association.members.tsx`)**:
+     - Khi bấm vào avatar hội viên: hiển thị ảnh bìa (cover photo), avatar kích thước lớn xếp đè lên ảnh bìa, thông tin liên hệ đầy đủ (kèm nút nhắn Zalo nhanh).
+     - Dưới cùng hiển thị hẳn bản đồ tương tác Leaflet Google Maps 2D định vị vị trí trụ sở công ty của hội viên (kèm marker pin đỏ, popup thông tin và nút mở Google Maps chỉ đường).
+     - Bỏ hẳn chế độ bản đồ trong danh bạ hội viên (`association.members.tsx`), loại bỏ nút Bản đồ, tab GPS và `CeoInteractiveMapModal`.
+  9. **Kiểm tra chất lượng mã nguồn (Strict Zero-Error)**:
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit code 0 (0 errors).
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit code 0 (0 errors).
+
+- **Bản cập nhật ngày 27/10/2026 (v8.5): Master Slide Deck V8.5 Monumental Wave (Mở Rộng Bề Thế Header & Footer, Triệt Tiêu Bố Cục Dãn Nhau Bằng Stage Container, Bổ Sung Slide 15 Kết Thúc Tráng Lệ)**:
+  1. **Khắc Phục Triệt Để Bố Cục Dãn Nhau (Stage Container & Phân Bổ Tỷ Lệ Cân Đối)**:
+     - Toàn bộ nội dung các Slide được bảo vệ trong khối kính mờ trung tâm (`stage-container`: `backdrop-blur-xl`, viền phát quang, tối đa 1720px, bo góc 36px).
+     - Loại bỏ hoàn toàn tình trạng trôi dạt ra 2 biên màn hình để lại khoảng trống đen ở giữa:
+       * *Slide 1*: Laptop CRM, trục Real-time Sync, 2 điện thoại App và 4 KPI cards được gắn kết liền mạch, vững chãi.
+       * *Slide 2*: Bổ sung 6 điểm tính năng nổi bật + 2 badge bảo chứng công nghệ cho cả 2 sản phẩm (CRM và Mobile App), lấp đầy chiều cao cân đối.
+       * *Slide 3-8*: Nạp 100% ảnh chụp thực tế màn hình CRM đã xác thực sạch (Dashboard BI thật, không còn màn hình đăng nhập auth).
+       * *Slide 9-13 (Mobile App)*: Thiết kế bố cục 3 cột chặt chẽ: Cột trái (4 điểm tính năng) — Cột giữa (Smartphone 3D dọc 540px) — Cột phải (3 Thẻ bảo chứng công nghệ: Tốc độ Real-time < 1s Socket.IO, Bảo mật SSL/TLS, Đồng bộ 100% Web CRM) khớp chính xác chiều cao smartphone.
+  2. **Mở Rộng Bề Thế Header & Footer (Không Còn Hẹp, Sóng Nổi 3 Lớp Uy Nghi)**:
+     - **Monumental Wave Header**: Chiều cao nở rộng (`pt-7 pb-2.5 px-14`), cụm logo kép CEO 1983 & ViConnect đặt trong bục kính trắng sang trọng (`h-16 px-7`), logo to rõ sắc nét (`h-11` & `h-10`). Vạch sóng uốn lượn đa màu kép cao 48px với stroke 4px neon phát quang.
+     - **Monumental Wave Footer**: Chiều cao rộng mở (`min-h-[115px] py-6 px-14`), hệ sóng nổi 3 lớp uốn lượn đại dương đa dải màu (Midnight Navy -> Electric Cyan/Sapphire -> Lớp tiền cảnh pha lê sẫm) kết hợp đường đỉnh sóng Neon Crest đa dải màu (Cyan - Gold - Sapphire) phát quang 3D.
+     - **Triệt tiêu cắt chữ (No Truncation)**: Bỏ thuộc tính `truncate`, text đúc kết chiến lược được hiển thị đầy đủ, rõ ràng và trang trọng trên mọi slide.
+  3. **Bổ Sung Trang Kết Thúc Tráng Lệ (Slide 15 - Closing Thank You Slide)**:
+     - Tiêu đề cảm ơn lớn trang trọng *"XIN TRÂN TRỌNG CẢM ƠN!"* phối gradient vàng kim - trắng - cyan drop shadow.
+     - Cụm logo kép trung tâm trên bục phát quang kết nối.
+     - Lời tri ân và chúc phúc: *"KÍNH CHÚC CLB DOANH NHÂN CEO 1983 NGÀY CÀNG PHÁT TRIỂN THỊNH VƯỢNG, BỀN VỮNG VÀ VƯƠN TẦM CAO MỚI"*.
+     - 4 Trụ cột cam kết chất lượng dài lâu: Hạ tầng ổn định 99.9%, Bảo mật dữ liệu tuyệt đối, Đồng hành phát triển liên tục, Chuyển giao & Hỗ trợ tận tâm.
+     - Dải thông tin liên hệ chính thức của ViConnect Technology: Hotline, Email và cổng Portal Web CRM & Web App.
+  4. **Đồng Bộ Hoàn Tất 15 Slides Trên Toàn Bộ Định Dạng**:
+     - `document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf` (15 trang 16:9 Vector siêu nét)
+     - `document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.html` (Bản trình chiếu interactive 15 slide có phím điều khiển)
+     - `document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pptx` (Bản PowerPoint 15 slide chuẩn đồng bộ)
+     - `document/SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.md` (Tài liệu đặc tả chi tiết 15 slide)
+     - Đồng bộ sang thư mục công khai: `apps/ceo1983_app_fe/public/docs/`.
+
+- **Bản cập nhật ngày 27/10/2026 (v7.0): Đột Phá 3 Ảnh Nền Đan Xen Mờ (Triple Background Blend) & Bục 3D Acrylic Sân Khấu Cho Profile CRM, Poster App & Slide**:
+  1. **Profile 3D Web CRM - 3 Ảnh Nền Đan Xen Mờ & Showroom Bục Acrylic 3D (`PROFILE_CRM_QUAN_TRI_CEO1983.png`, `.pdf`, `.html`)**:
+     - Áp dụng kỹ thuật đan xen mờ 3 ảnh nền nổi bật bằng `mask-image: linear-gradient` và `radial-gradient` kết hợp blend modes:
+       * Bên trái: Toàn cảnh Skyline thành phố đêm rực rỡ (`08_skyline_night.jpg`)
+       * Ở giữa: Trung tâm điều hành công nghệ số tác nghiệp (`04_operations.jpg`)
+       * Bên phải: Không gian đại tiệc Gala doanh nhân sang trọng (`07_banquet_gala.jpg`)
+     - Bục sân khấu 3D Acrylic hình elip phát quang viền neon Cyan/Gold rực rỡ, phản chiếu bóng gương (Mirror Reflection) chân thực cho màn hình MacBook Pro 16" 3D.
+     - 5 Cửa sổ phụ macOS 3D lơ lửng phối cảnh perspective hướng tâm sắc nét, nổi bật rõ trên nền đa tầng.
+     - Logo CEO 1983 & ViConnect chuẩn xịn 100%.
+  2. **Poster 3D App CEO 1983 - 3 Ảnh Nền Mạng Lưới Số & Bục Kính Phát Sáng (`POSTER_APP_CEO1983_3D.png`, `.pdf`, `.html`)**:
+     - 3 Ảnh nền đan xen mờ: Thành phố đêm phía trên trái, Mạng lưới kết nối số trung tâm, Thành phố thông minh phía dưới phải.
+     - Bục Acrylic 3D phát sáng ánh xanh neon đỡ lấy 3 điện thoại iPhone 16 Pro Max 3D.
+     - Độ tương phản cao, màu sắc rực rỡ, sắc nét từng chi tiết thẻ VIP, sàn B2B và vé Gala.
+  3. **Bộ Slide Tổng Thể Hệ Sinh Thái (10 Slide 16:9) (`SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf`, `.html`, `.pptx`, `.md`)**:
+     - Slide 1: Đồng bộ nền 3 ảnh đan xen mờ, màn tổng quan song hành giữa Web CRM và Mobile App.
+     - Footer toàn bộ 10 slide: Dải màu gradient neon rực rỡ và text đúc kết giá trị cốt lõi đắt giá cho từng slide.
+     - Logo chính thức 100% của CLB CEO 1983 và ViConnect.
 - **Bản nâng cấp ngày 23/10/2026: Nâng Cấp Toàn Diện Hệ Thống CEO 1983 Mobile App & Web CRM Quản Trị**:
   1. **Mobile App: Làm Lại Màn Hình Thống Kê Chuẩn Giao Diện (`association.analytics.tsx`, `association.events.tsx`, `MemberShell.tsx`)**:
      - Thay thế hoàn toàn màn Sự kiện bằng màn Thống kê trên thanh Footer Navigation (Tab 2 labeled "Thống kê", route `/association/analytics`, icon `FooterAnalyticsIcon`).

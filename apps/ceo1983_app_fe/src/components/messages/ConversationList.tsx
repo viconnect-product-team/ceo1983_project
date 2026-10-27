@@ -666,97 +666,8 @@ export function ConversationList({
         }
       } catch {}
 
-      // CÁC KÊNH THÔNG TIN CHÍNH THỨC HIỆP HỘI (Thời gian lịch sử để tin nhắn hội viên mới luôn lên đầu)
-      const officialChannels: MyConversation[] = [
-        {
-          peerCode: "channel_media",
-          name: "📢 Ban Truyền Thông (Sự kiện & Tin tức)",
-          last: "Bản tin hoạt động, thông cáo báo chí, sự kiện & link kho ảnh Google Drive",
-          time: "3 ngày trước",
-          rawTime: new Date(Date.now() - 259200000).toISOString(),
-          unread: 0,
-          isSystem: true,
-          avatarUrl: null,
-        },
-        {
-          peerCode: "channel_membership",
-          name: "👥 Ban Thành Viên (Hội viên & Hồ sơ)",
-          last: "Xét duyệt kết nạp, gia hạn hội viên, xác thực hồ sơ & sinh nhật hội viên",
-          time: "3 ngày trước",
-          rawTime: new Date(Date.now() - 259200000).toISOString(),
-          unread: 0,
-          isSystem: true,
-          avatarUrl: null,
-        },
-        {
-          peerCode: "channel_promotion",
-          name: "🤝 Ban Xúc Tiến Thương Mại (Marketplace & B2B)",
-          last: "Cơ hội giao thương B2B, đơn hàng, gian hàng Marketplace & hợp tác kinh doanh",
-          time: "3 ngày trước",
-          rawTime: new Date(Date.now() - 259200000).toISOString(),
-          unread: 0,
-          isSystem: true,
-          avatarUrl: null,
-        },
-        {
-          peerCode: "channel_secretariat",
-          name: "🏛️ Ban Thư Ký & Ban Điều Hành (Lịch họp & Hành chính)",
-          last: "Lịch họp BCH, nghị quyết, văn bản điều hành, thông báo hội phí & biểu quyết",
-          time: "4 ngày trước",
-          rawTime: new Date(Date.now() - 345600000).toISOString(),
-          unread: 0,
-          isSystem: true,
-          avatarUrl: null,
-        },
-        {
-          peerCode: "channel_deals",
-          name: "🎯 Kênh Cơ Hội & Deal B2B",
-          last: "Đơn hàng B2B độc quyền, chào mua cung ứng vật tư & dịch vụ",
-          time: "4 ngày trước",
-          rawTime: new Date(Date.now() - 345600000).toISOString(),
-          unread: 0,
-          isSystem: true,
-          avatarUrl: null,
-        },
-        {
-          peerCode: "channel_events",
-          name: "🌟 Kênh Sự Kiện & Hội Nghị",
-          last: "Lễ hội giao thương, Gala thường niên & các giải đấu thể thao CLB",
-          time: "5 ngày trước",
-          rawTime: new Date(Date.now() - 432000000).toISOString(),
-          unread: 0,
-          isSystem: true,
-          avatarUrl: null,
-        },
-      ];
-
-      for (const chan of officialChannels) {
-        const chanPeer = String(chan.peerCode || "");
-        const key = chanPeer.toLowerCase();
-        try {
-          const chanHistory = localStorage.getItem(`vba.chat.${chan.peerCode}`);
-          if (chanHistory) {
-            const parsed = JSON.parse(chanHistory);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const lastMsg = parsed[parsed.length - 1];
-              chan.last = lastMsg.text || lastMsg.body || chan.last;
-              chan.time = lastMsg.time || chan.time;
-              chan.rawTime = lastMsg.createdAt || chan.rawTime;
-            }
-          }
-        } catch {}
-        if (!map.has(key)) {
-          map.set(key, chan);
-        } else {
-          const existing = map.get(key)!;
-          map.set(key, {
-            ...chan,
-            last: existing.last || chan.last,
-            time: existing.time || chan.time,
-            rawTime: existing.rawTime || chan.rawTime,
-          });
-        }
-      }
+      // Các kênh thông tin thuộc các ban đã được chuyển giao sang Zalo OA theo quy định mới
+      // Không còn tự động tiêm channel_ vào danh sách trò chuyện cục bộ
 
       // Kiểm tra nếu có tin nhắn bị thu hồi gần đây trong local storage
       for (const [k, c] of map.entries()) {
@@ -783,13 +694,14 @@ export function ConversationList({
         if (!pCode) return false;
         // 1. Loại bỏ chính tài khoản của mình khỏi danh sách tin nhắn
         if (isSelfUser(c, user, myMember)) return false;
+        // 2. Loại bỏ các kênh ban chuyển sang Zalo OA
+        if (pCode.startsWith("channel_")) return false;
         if (
           c.isSystem ||
           pCode === "admin" ||
           pCode === "system" ||
           c.isGroup ||
-          pCode.startsWith("group_") ||
-          pCode.startsWith("channel_")
+          pCode.startsWith("group_")
         )
           return true;
         if (c.isConnected) return true;
@@ -1160,19 +1072,6 @@ export function ConversationList({
           <span className="text-[11px] opacity-80">({allCount})</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("channels")}
-          className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-            activeTab === "channels"
-              ? "bg-[#003B95] text-white font-bold shadow-xs"
-              : "border-0 bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white"
-          }`}
-        >
-          <Megaphone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-          <span>Kênh Hiệp Hội</span>
-          {channelsCount > 0 && <span className="text-[11px] opacity-80">({channelsCount})</span>}
-        </button>
 
         <button
           type="button"

@@ -23,6 +23,8 @@ import {
   CornerDownRight,
   Users,
   QrCode,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
@@ -70,6 +72,163 @@ interface FeedComment {
   authorAvatar?: string;
   content: string;
   createdAt: string;
+  parentId?: string | null;
+  level?: 1 | 2 | 3;
+  replyToAuthorName?: string;
+}
+
+interface CommentNode extends FeedComment {
+  children: CommentNode[];
+}
+
+function organizeComments(rawComments: FeedComment[]): CommentNode[] {
+  const nodeMap = new Map<string, CommentNode>();
+  const rootNodes: CommentNode[] = [];
+
+  rawComments.forEach((c) => {
+    nodeMap.set(c.id, { ...c, children: [] });
+  });
+
+  rawComments.forEach((c) => {
+    const node = nodeMap.get(c.id)!;
+    if (c.parentId && nodeMap.has(c.parentId)) {
+      const parentNode = nodeMap.get(c.parentId)!;
+      node.level = Math.min(3, ((parentNode.level || 1) + 1)) as 1 | 2 | 3;
+      parentNode.children.push(node);
+    } else {
+      node.level = (c.level || 1) as 1 | 2 | 3;
+      rootNodes.push(node);
+    }
+  });
+
+  return rootNodes;
+}
+
+function RenderCommentNode({
+  node,
+  postId,
+  collapsedMap,
+  onToggleCollapse,
+  onReply,
+  formatTime,
+}: {
+  node: CommentNode;
+  postId: string;
+  collapsedMap: Record<string, boolean>;
+  onToggleCollapse: (id: string) => void;
+  onReply: (postId: string, commentId: string, authorName: string, level: 1 | 2 | 3) => void;
+  formatTime: (t?: string) => string;
+}) {
+  const isCollapsed = collapsedMap[node.id];
+  const hasChildren = node.children && node.children.length > 0;
+  const level = node.level || 1;
+
+  const levelIndent =
+    level === 1
+      ? ""
+      : level === 2
+      ? "ml-3 sm:ml-5 pl-2.5 border-l-2 border-amber-400/70 dark:border-amber-500/50"
+      : "ml-6 sm:ml-9 pl-2.5 border-l-2 border-blue-400/70 dark:border-blue-500/50";
+
+  return (
+    <div className={`space-y-1.5 ${levelIndent}`}>
+      <div className="flex items-start gap-2 text-xs">
+        <img
+          src={node.authorAvatar || "/ceo1983-emblem-8.png"}
+          alt={node.authorName}
+          className={`rounded-full object-cover shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700 ${
+            level === 1 ? "size-6" : level === 2 ? "size-5" : "size-4.5"
+          }`}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
+          }}
+        />
+        <div className="flex-1 bg-slate-100 dark:bg-slate-800/80 px-3 py-2 rounded-2xl">
+          <div className="flex items-center justify-between gap-1 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold text-[11px] text-slate-900 dark:text-white">
+                {node.authorName || "Hội viên"}
+              </span>
+              {level > 1 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-md text-[8.5px] font-extrabold uppercase ${
+                    level === 2
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/40"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300/40"
+                  }`}
+                >
+                  Cấp {level}
+                </span>
+              )}
+              {node.replyToAuthorName && (
+                <span className="text-[10px] text-blue-600 dark:text-amber-400 font-medium">
+                  @{node.replyToAuthorName}
+                </span>
+              )}
+            </div>
+            <span className="text-[9px] text-slate-400 font-mono">
+              {formatTime(node.createdAt)}
+            </span>
+          </div>
+
+          <p className="text-slate-700 dark:text-slate-300 text-[11.5px] mt-0.5">
+            {node.content}
+          </p>
+
+          {/* Comment actions: Reply button & Collapse button */}
+          <div className="flex items-center gap-3 mt-1.5 text-[10px] font-semibold text-slate-500">
+            <button
+              type="button"
+              onClick={() =>
+                onReply(postId, node.id, node.authorName || "Hội viên", (node.level || 1) as 1 | 2 | 3)
+              }
+              className="hover:text-[#1F3864] dark:hover:text-amber-400 flex items-center gap-1 cursor-pointer transition text-[#1F3864] dark:text-amber-400"
+            >
+              <CornerDownRight className="size-2.5" />
+              <span>Trả lời (Cấp {Math.min(3, (node.level || 1) + 1)})</span>
+            </button>
+
+            {hasChildren && (
+              <button
+                type="button"
+                onClick={() => onToggleCollapse(node.id)}
+                className="hover:text-slate-700 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer transition text-slate-500"
+              >
+                {isCollapsed ? (
+                  <>
+                    <ChevronDown className="size-2.5" />
+                    <span>Xem {node.children.length} phản hồi</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="size-2.5" />
+                    <span>Thu gọn phản hồi</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Render children comments if not collapsed */}
+      {!isCollapsed && hasChildren && (
+        <div className="space-y-1.5 pt-0.5">
+          {node.children.map((child) => (
+            <RenderCommentNode
+              key={child.id}
+              node={child}
+              postId={postId}
+              collapsedMap={collapsedMap}
+              onToggleCollapse={onToggleCollapse}
+              onReply={onReply}
+              formatTime={formatTime}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const CATEGORY_TABS = [
@@ -89,13 +248,41 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
   const [selectedDepartment, setSelectedDepartment] = useState("ALL");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  // Per-post inline comments map (always open 5 latest comments)
+  // Per-post comments map
   const [postCommentsMap, setPostCommentsMap] = useState<Record<string, FeedComment[]>>({});
   const [inlineInputText, setInlineInputText] = useState<Record<string, string>>({});
   const [submittingCommentFor, setSubmittingCommentFor] = useState<string | null>(null);
 
+  // Toggle comments visibility per post (click MessageCircle icon to open/collapse all comments)
+  const [openCommentsMap, setOpenCommentsMap] = useState<Record<string, boolean>>({});
+
+  // Collapsed state for specific comments/threads
+  const [collapsedCommentsMap, setCollapsedCommentsMap] = useState<Record<string, boolean>>({});
+
+  // Active reply target: postId, target commentId, target authorName, and comment nesting level
+  const [replyingTo, setReplyingTo] = useState<{
+    postId: string;
+    commentId: string;
+    authorName: string;
+    level: 1 | 2 | 3;
+  } | null>(null);
+
   // Lightbox state for image preview
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  const toggleCommentsVisibility = (postId: string) => {
+    setOpenCommentsMap((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
+  };
+
+  const toggleCommentCollapse = (commentId: string) => {
+    setCollapsedCommentsMap((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+  };
 
   const fetchFeed = async () => {
     setLoading(true);
@@ -120,7 +307,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
       }
       setPosts(feedItems);
 
-      // Auto-load up to 5 latest comments for each post
+      // Auto-load comments for each post
       feedItems.forEach((p) => {
         fetchCommentsForPost(p.id);
       });
@@ -141,7 +328,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
         list = res;
       }
 
-      // If DB has comments, take latest 5; otherwise generate 2 friendly contextual comments
+      // If DB has comments, use them; otherwise generate realistic 3-level comments
       if (list.length === 0) {
         list = [
           {
@@ -149,8 +336,31 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
             authorId: "member-1",
             authorName: "Đinh Xuân Hải",
             authorAvatar: "/ceo1983-emblem-8.png",
-            content: "Chúc mừng hoạt động giao thương của CLB CEO 1983!",
+            content: "Chúc mừng hoạt động giao thương sôi nổi của CLB CEO 1983!",
             createdAt: new Date(Date.now() - 3600000).toISOString(),
+            level: 1,
+          },
+          {
+            id: `c1-1-${postId}`,
+            parentId: `c1-${postId}`,
+            authorId: "member-secretary",
+            authorName: "Ban Thư Ký CLB",
+            authorAvatar: "/ceo1983-emblem-8.png",
+            content: "Cảm ơn anh Hải, Ban Thư ký đã ghi nhận và lên lịch trình kết nối cụ thể cho các thành viên!",
+            createdAt: new Date(Date.now() - 2800000).toISOString(),
+            level: 2,
+            replyToAuthorName: "Đinh Xuân Hải",
+          },
+          {
+            id: `c1-1-1-${postId}`,
+            parentId: `c1-1-${postId}`,
+            authorId: "member-3",
+            authorName: "Vũ Minh Khôi",
+            authorAvatar: "/ceo1983-emblem-8.png",
+            content: "Rất mong được kết nối trực tiếp với Ban Thư ký và anh Hải tại sự kiện tuần này!",
+            createdAt: new Date(Date.now() - 2000000).toISOString(),
+            level: 3,
+            replyToAuthorName: "Ban Thư Ký CLB",
           },
           {
             id: `c2-${postId}`,
@@ -159,12 +369,24 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
             authorAvatar: "/ceo1983-emblem-8.png",
             content: "Doanh nghiệp tôi rất quan tâm, xin phép inbox trao đổi chi tiết.",
             createdAt: new Date(Date.now() - 1800000).toISOString(),
+            level: 1,
+          },
+          {
+            id: `c2-1-${postId}`,
+            parentId: `c2-${postId}`,
+            authorId: "member-author",
+            authorName: "Đại diện Doanh Nghiệp",
+            authorAvatar: "/ceo1983-emblem-8.png",
+            content: "Chào chị Hà, mình đã gửi kết nối B2B trực tiếp cho chị qua Zalo rồi nhé!",
+            createdAt: new Date(Date.now() - 900000).toISOString(),
+            level: 2,
+            replyToAuthorName: "Nguyễn Thu Hà",
           },
         ];
       }
       setPostCommentsMap((prev) => ({
         ...prev,
-        [postId]: list.slice(0, 5),
+        [postId]: list,
       }));
     } catch {
       // Fallback default comments if network fails
@@ -178,6 +400,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
             authorAvatar: "/ceo1983-emblem-8.png",
             content: "Thông tin rất hữu ích, chúc mừng sự kiện giao thương!",
             createdAt: new Date().toISOString(),
+            level: 1,
           },
         ],
       }));
@@ -235,9 +458,19 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
 
     setSubmittingCommentFor(postId);
     try {
+      const activeReply = replyingTo?.postId === postId ? replyingTo : null;
+      const targetParentId = activeReply ? activeReply.commentId : null;
+      const targetLevel = activeReply ? ((Math.min(3, (activeReply.level || 1) + 1)) as 1 | 2 | 3) : 1;
+      const targetReplyToAuthor = activeReply ? activeReply.authorName : undefined;
+
       const res = await fetchNestApi<any>(`/feed/${postId}/comments`, {
         method: "POST",
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({
+          content: text,
+          parentId: targetParentId,
+          level: targetLevel,
+          replyToAuthorName: targetReplyToAuthor,
+        }),
       });
 
       const newC: FeedComment = {
@@ -247,13 +480,16 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
         authorAvatar: user?.avatar || "/ceo1983-emblem-8.png",
         content: text,
         createdAt: new Date().toISOString(),
+        parentId: targetParentId,
+        level: targetLevel,
+        replyToAuthorName: targetReplyToAuthor,
       };
 
       setPostCommentsMap((prev) => {
         const current = prev[postId] || [];
         return {
           ...prev,
-          [postId]: [newC, ...current].slice(0, 5),
+          [postId]: [...current, newC],
         };
       });
 
@@ -262,7 +498,10 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
       );
 
       setInlineInputText((prev) => ({ ...prev, [postId]: "" }));
-      toast.success("Đã đăng bình luận!");
+      setReplyingTo(null);
+      // Auto-open comments section so the user sees their reply immediately
+      setOpenCommentsMap((prev) => ({ ...prev, [postId]: true }));
+      toast.success(targetParentId ? `Đã phản hồi cấp ${targetLevel}!` : "Đã đăng bình luận!");
     } catch {
       toast.error("Không thể gửi bình luận lúc này");
     } finally {
@@ -456,7 +695,10 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
               post.content.toLowerCase().includes("cơ hội") ||
               post.content.toLowerCase().includes("hợp tác") ||
               Boolean(post.externalLink);
-            const latest5Comments = postCommentsMap[post.id] || [];
+            const postComments = postCommentsMap[post.id] || [];
+            const commentTrees = organizeComments(postComments);
+            const isCommentsOpen = openCommentsMap[post.id] !== false;
+            const totalCommentsCount = Math.max(postComments.length, post.commentsCount || 0);
 
             return (
               <article
@@ -696,10 +938,20 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                   </button>
 
                   <div className="flex items-center gap-1">
-                    <span className="flex items-center gap-1 px-2 py-1 text-slate-500 text-[11px] font-semibold">
-                      <MessageCircle className="size-3.5 text-slate-400" />
-                      <span>{Math.max(latest5Comments.length, post.commentsCount || 0)}</span>
-                    </span>
+                    {/* Bấm vào icon bình luận để mở/thu gọn xem tất cả bình luận */}
+                    <button
+                      type="button"
+                      onClick={() => toggleCommentsVisibility(post.id)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition cursor-pointer text-xs font-semibold ${
+                        isCommentsOpen
+                          ? "text-[#1F3864] dark:text-amber-400 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300/40"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                      title="Bấm để xem tất cả bình luận"
+                    >
+                      <MessageCircle className="size-3.5" />
+                      <span>{totalCommentsCount}</span>
+                    </button>
 
                     <button
                       type="button"
@@ -712,68 +964,104 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                   </div>
                 </div>
 
-                {/* ── ALWAYS EXPAND 5 LATEST COMMENTS INLINE UNDER EACH POST ── */}
-                <div className="pt-2 mt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold px-1">
-                    <span>5 bình luận mới nhất</span>
-                    <span>{latest5Comments.length} thảo luận</span>
-                  </div>
+                {/* ── COMMENTS SECTION: 3-LEVEL NESTED REPLIES & THREAD COLLAPSE ── */}
+                {isCommentsOpen && (
+                  <div className="pt-2 mt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1">
+                      <span className="flex items-center gap-1.5">
+                        <MessageCircle className="size-3.5 text-[#1F3864] dark:text-amber-400" />
+                        <span>Tất cả bình luận ({totalCommentsCount})</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleCommentsVisibility(post.id)}
+                        className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <ChevronUp className="size-3" />
+                        Thu gọn bình luận
+                      </button>
+                    </div>
 
-                  <div className="space-y-2">
-                    {latest5Comments.map((c) => (
-                      <div key={c.id} className="flex items-start gap-2 text-xs">
-                        <img
-                          src={c.authorAvatar || "/ceo1983-emblem-8.png"}
-                          alt={c.authorName}
-                          className="size-6 rounded-full object-cover shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
-                          }}
-                        />
-                        <div className="flex-1 bg-slate-100 dark:bg-slate-800/80 px-3 py-2 rounded-2xl">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-[11px] text-slate-900 dark:text-white">
-                              {c.authorName || "Hội viên"}
-                            </span>
-                            <span className="text-[9px] text-slate-400 font-mono">
-                              {formatRelativeTime(c.createdAt)}
-                            </span>
-                          </div>
-                          <p className="text-slate-700 dark:text-slate-300 text-[11.5px] mt-0.5">
-                            {c.content}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Inline quick comment input */}
-                  <div className="flex items-center gap-2 pt-1.5">
-                    <input
-                      type="text"
-                      placeholder="Viết bình luận công khai..."
-                      value={inlineInputText[post.id] || ""}
-                      onChange={(e) =>
-                        setInlineInputText({ ...inlineInputText, [post.id]: e.target.value })
-                      }
-                      onKeyDown={(e) => e.key === "Enter" && handleSendInlineComment(post.id)}
-                      className="flex-1 px-3 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#1F3864]"
-                    />
-                    <button
-                      type="button"
-                      disabled={submittingCommentFor === post.id}
-                      onClick={() => handleSendInlineComment(post.id)}
-                      className="p-2 rounded-2xl bg-[#1F3864] hover:bg-[#152747] text-white transition cursor-pointer disabled:opacity-50"
-                      title="Gửi bình luận"
-                    >
-                      {submittingCommentFor === post.id ? (
-                        <Loader2 className="size-3.5 animate-spin" />
+                    {/* Comment Tree */}
+                    <div className="space-y-2">
+                      {commentTrees.length > 0 ? (
+                        commentTrees.map((rootNode) => (
+                          <RenderCommentNode
+                            key={rootNode.id}
+                            node={rootNode}
+                            postId={post.id}
+                            collapsedMap={collapsedCommentsMap}
+                            onToggleCollapse={toggleCommentCollapse}
+                            onReply={(pId, cId, aName, lvl) =>
+                              setReplyingTo({
+                                postId: pId,
+                                commentId: cId,
+                                authorName: aName,
+                                level: lvl,
+                              })
+                            }
+                            formatTime={formatRelativeTime}
+                          />
+                        ))
                       ) : (
-                        <Send className="size-3.5" />
+                        <p className="text-[11px] text-slate-400 italic py-1 px-1">
+                          Chưa có bình luận nào. Hãy là người đầu tiên kết nối thảo luận!
+                        </p>
                       )}
-                    </button>
+                    </div>
+
+                    {/* Active Reply Banner */}
+                    {replyingTo?.postId === post.id && (
+                      <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 text-[11px]">
+                        <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
+                          <CornerDownRight className="size-3 text-amber-600 dark:text-amber-400" />
+                          <span>
+                            Đang trả lời <b>@{replyingTo.authorName}</b> (Cấp {Math.min(3, (replyingTo.level || 1) + 1)})
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo(null)}
+                          className="p-1 hover:bg-amber-200/50 dark:hover:bg-amber-800/40 rounded-full text-slate-500"
+                          title="Huỷ trả lời"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Inline quick comment input */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="text"
+                        placeholder={
+                          replyingTo?.postId === post.id
+                            ? `Trả lời @${replyingTo.authorName}...`
+                            : "Viết bình luận công khai..."
+                        }
+                        value={inlineInputText[post.id] || ""}
+                        onChange={(e) =>
+                          setInlineInputText({ ...inlineInputText, [post.id]: e.target.value })
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && handleSendInlineComment(post.id)}
+                        className="flex-1 px-3 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#1F3864]"
+                      />
+                      <button
+                        type="button"
+                        disabled={submittingCommentFor === post.id}
+                        onClick={() => handleSendInlineComment(post.id)}
+                        className="p-2 rounded-2xl bg-[#1F3864] hover:bg-[#152747] text-white transition cursor-pointer disabled:opacity-50"
+                        title="Gửi bình luận"
+                      >
+                        {submittingCommentFor === post.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Send className="size-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </article>
             );
           })

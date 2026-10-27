@@ -20,6 +20,7 @@ import {
   Check,
   ShieldCheck,
   LayoutDashboard,
+  TrendingUp,
   Camera,
   MapPin,
   Mail,
@@ -39,6 +40,10 @@ import {
   Calendar,
   Handshake,
   RotateCcw,
+  ChevronDown,
+  Clock,
+  Video,
+  History,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -48,6 +53,12 @@ import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
 import { AccountSecuritySettingsForm } from "@/components/member/AccountSecuritySettingsForm";
+import {
+  CustomHomeShortcutsModal,
+  DEFAULT_SHORTCUT_IDS,
+  ALL_SHORTCUT_OPTIONS,
+  getShortcutIcon,
+} from "@/components/member/CustomHomeShortcutsModal";
 import {
   getEffectiveThemeOption,
   syncThemeFromBackend,
@@ -142,6 +153,136 @@ export default function ProfileScreen() {
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+
+  // Setup 4 tính năng nhanh trang chủ (Yêu cầu 2)
+  const [customShortcutsOpen, setCustomShortcutsOpen] = useState(false);
+  const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_SHORTCUT_IDS;
+    try {
+      const saved = localStorage.getItem("ceo1983_home_shortcuts");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_SHORTCUT_IDS;
+  });
+
+  const handleSaveShortcuts = (ids: string[]) => {
+    setSelectedShortcuts(ids);
+    try {
+      localStorage.setItem("ceo1983_home_shortcuts", JSON.stringify(ids));
+      window.dispatchEvent(new Event("ceo1983_shortcuts_changed"));
+    } catch {}
+    setCustomShortcutsOpen(false);
+    toast.success("Đã lưu thiết lập 4 tính năng nhanh trang chủ!");
+  };
+
+  // Trạng thái thu gọn/mở rộng từng đầu mục chức năng (Yêu cầu 2: bấm vào mới mở ra)
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const toggleSection = (id: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // Cuộc họp ban (Ban Điều Hành, Ban Thư Ký, Ban Xúc Tiến, Ban Truyền Thông...)
+  const committeeMeetings = useMemo(() => [
+    {
+      id: "meet_btk_01",
+      title: "Họp Ban Thư Ký & Ban Điều Hành Quý IV",
+      department: "Ban Thư Ký",
+      date: "28/10/2026",
+      time: "14:00 - 16:30",
+      location: "Văn phòng HanoiBA & Trực tuyến Zoom",
+      zoomUrl: "https://zoom.us/j/8831983001",
+      type: "Ban chuyên môn",
+      status: "Sắp diễn ra",
+    },
+    {
+      id: "meet_xttm_02",
+      title: "Phiên giao ban Xúc Tiến Thương Mại & Deal B2B",
+      department: "Ban Xúc Tiến Thương Mại",
+      date: "05/11/2026",
+      time: "09:00 - 11:30",
+      location: "Zoom Meeting ID: 883-1983-002",
+      zoomUrl: "https://zoom.us/j/8831983002",
+      type: "Giao ban định kỳ",
+      status: "Chuẩn bị",
+    },
+    {
+      id: "meet_tt_03",
+      title: "Họp triển khai chiến dịch Caravan Doanh Nhân 1983",
+      department: "Ban Truyền Thông",
+      date: "12/11/2026",
+      time: "15:00 - 17:00",
+      location: "Google Meet",
+      zoomUrl: "https://meet.google.com/ceo-1983-meet",
+      type: "Họp dự án",
+      status: "Sắp tới",
+    },
+  ], []);
+
+  // Cuộc gặp 1-on-1 (Giao lưu, hợp tác kinh doanh)
+  const meetings1on1 = useMemo(() => [
+    {
+      id: "meet_1on1_01",
+      title: "Gặp gỡ 1-on-1: Trao đổi cung ứng vật tư & công nghệ sản xuất",
+      partnerName: "CEO Lê Văn Hùng",
+      partnerCompany: "Tập đoàn Xây dựng & Cơ điện Thăng Long",
+      date: "29/10/2026",
+      time: "10:00",
+      location: "Cafe Trung Nguyên Legend, Cầu Giấy, Hà Nội",
+      status: "Đã xác nhận",
+      phone: "0988111222",
+    },
+    {
+      id: "meet_1on1_02",
+      title: "Gặp gỡ 1-on-1: Thảo luận giải pháp Chuyển đổi số Doanh nghiệp",
+      partnerName: "CEO Đỗ Thị Mai",
+      partnerCompany: "Công ty Cổ phần Giải pháp Công nghệ ViOne",
+      date: "02/11/2026",
+      time: "15:30",
+      location: "Trực tuyến Google Meet",
+      status: "Đang chờ",
+      phone: "0988333444",
+    },
+  ], []);
+
+  // Lịch sử thao tác hội viên (Audit Log - Yêu cầu 3)
+  const auditHistory = useMemo(() => [
+    {
+      id: "act_1",
+      title: "Cập nhật hồ sơ & Quy mô nhân sự doanh nghiệp",
+      time: "Hôm nay, 14:15",
+      badge: "Hồ sơ",
+    },
+    {
+      id: "act_2",
+      title: "Đăng ký tham gia Gala Doanh Nhân CEO 1983",
+      time: "Hôm qua, 16:30",
+      badge: "Sự kiện",
+    },
+    {
+      id: "act_3",
+      title: "Gửi lời mời kết nối hợp tác giao thương 1-on-1",
+      time: "24/10/2026",
+      badge: "Giao thương",
+    },
+    {
+      id: "act_4",
+      title: "Quét mã QR danh thiếp số hội viên CLB",
+      time: "22/10/2026",
+      badge: "Mạng lưới",
+    },
+    {
+      id: "act_5",
+      title: "Chia sẻ danh thiếp số doanh nhân lên Zalo",
+      time: "20/10/2026",
+      badge: "Chia sẻ",
+    },
+  ], []);
 
   // AI Assistant Toggle state
   const [voiceAiEnabled, setVoiceAiState] = useState(() => isVoiceAiEnabled());
@@ -618,6 +759,7 @@ export default function ProfileScreen() {
             {/* (ĐÃ BỎ HOÀN TOÀN TEXT & BADGE HỘI VIÊN CHÍNH THỨC PER YÊU CẦU NGƯỜI DÙNG: "ĐÃ ĐĂNG NHẬP RỒI THÌ LÀ HỘI VIÊN RỒI") */}
 
             {/* ── 4 NÚT HÀNH ĐỘNG TINH GỌN (LÀM NHỎ LẠI, KHÔNG ĐỂ BACKGROUND) ── */}
+            {/* ── 4 NÚT HÀNH ĐỘNG TINH GỌN DƯỚI AVATAR (YÊU CẦU 2): DANH THIẾP, CHIA SẺ, QUÉT MÃ, SỬA HỒ SƠ ── */}
             <div className="grid grid-cols-4 gap-1 w-full mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
               {/* Nút 1: Danh thiếp */}
               <button
@@ -626,112 +768,42 @@ export default function ProfileScreen() {
                 className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
                 title="Xem danh thiếp số"
               >
-                <CreditCard className="size-4.5 text-[#003B95] dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                <CreditCard className="size-5 text-[#003B95] dark:text-blue-400 group-hover:scale-110 transition-transform" />
                 <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Danh thiếp</span>
               </button>
 
-              {/* Nút 2: Sửa hồ sơ */}
-              <button
-                type="button"
-                onClick={() => setEditProfileOpen(true)}
-                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
-                title="Chỉnh sửa hồ sơ"
-              >
-                <Pencil className="size-4.5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Sửa hồ sơ</span>
-              </button>
-
-              {/* Nút 3: Chia sẻ */}
+              {/* Nút 2: Chia sẻ */}
               <button
                 type="button"
                 onClick={handleShare}
                 className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
                 title="Chia sẻ hồ sơ"
               >
-                <Share2 className="size-4.5 text-sky-500 dark:text-sky-400 group-hover:scale-110 transition-transform" />
+                <Share2 className="size-5 text-sky-500 dark:text-sky-400 group-hover:scale-110 transition-transform" />
                 <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Chia sẻ</span>
               </button>
 
-              {/* Nút 4: Mã QR */}
+              {/* Nút 3: Quét mã */}
               <button
                 type="button"
                 onClick={() => setQrModalOpen(true)}
                 className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
                 title="Mã QR hội viên"
               >
-                <QrCode className="size-4.5 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Mã QR</span>
+                <QrCode className="size-5 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Quét mã</span>
               </button>
-            </div>
-          </div>
-        </div>
 
-        {/* ── CARD CHỦ ĐỀ GIAO DIỆN CLB (ĐỒNG BỘ TỪ CRM - YÊU CẦU 4) ── */}
-        <div className="w-full rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="size-9 rounded-xl bg-amber-500/10 text-amber-500 grid place-items-center shrink-0 border border-amber-500/20">
-                <Sparkles className="size-4.5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <span>Chủ đề giao diện CLB</span>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                    ĐỒNG BỘ CRM
-                  </span>
-                </h4>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                  Tự động hiển thị và đồng bộ theo cấu hình Ban Điều Hành
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              disabled={themeSyncing}
-              onClick={async () => {
-                setThemeSyncing(true);
-                try {
-                  await syncThemeFromBackend();
-                  setActiveTheme(getEffectiveThemeOption());
-                  toast.success("Đã đồng bộ chủ đề giao diện mới nhất từ CRM!");
-                } catch {
-                  toast.error("Không thể đồng bộ chủ đề lúc này");
-                } finally {
-                  setThemeSyncing(false);
-                }
-              }}
-              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-[#003B95] dark:hover:text-amber-400 transition cursor-pointer disabled:opacity-50"
-              title="Đồng bộ lại chủ đề từ CRM"
-            >
-              <RotateCcw className={`size-4 ${themeSyncing ? "animate-spin text-amber-500" : ""}`} />
-            </button>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-amber-500/5 dark:from-slate-800/40 dark:to-amber-950/20 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="size-8 rounded-lg flex items-center justify-center text-lg bg-white dark:bg-slate-900 shadow-2xs border border-slate-200 dark:border-slate-700 shrink-0">
-                {activeTheme.iconEmoji || "👑"}
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                  {activeTheme.name}
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                  {activeTheme.tagline}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span
-                className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
-                style={{ backgroundColor: activeTheme.primaryColor }}
-                title={`Màu chủ đạo: ${activeTheme.primaryColor}`}
-              />
-              <span
-                className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
-                style={{ backgroundColor: activeTheme.accentColor }}
-                title={`Màu điểm nhấn: ${activeTheme.accentColor}`}
-              />
+              {/* Nút 4: Sửa hồ sơ */}
+              <button
+                type="button"
+                onClick={() => setEditProfileOpen(true)}
+                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
+                title="Chỉnh sửa hồ sơ"
+              >
+                <Pencil className="size-5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Sửa hồ sơ</span>
+              </button>
             </div>
           </div>
         </div>
@@ -778,794 +850,1164 @@ export default function ProfileScreen() {
           </div>
         </div>
 
-        {/* ── 4. NỘI DUNG THEO TỪNG TAB ── */}
+        {/* ── 4. NỘI DUNG THEO TỪNG TAB (TẤT CẢ DẠNG ĐẦU MỤC THU GỌN - BẤM VÀO MỚI MỞ RA) ── */}
 
-        {/* ── TAB 1: HỒ SƠ & THÔNG TIN KẾT NỐI TRỰC TIẾP ── */}
+        {/* ── TAB 1: HỒ SƠ DOANH NHÂN (ĐÃ BỎ CARD LIÊN HỆ & KẾT NỐI TRỰC TIẾP PER YÊU CẦU 2) ── */}
         {activeTab === "about" && (
-          <div className="w-full space-y-3 animate-in fade-in duration-200">
-            {/* Card Thông tin liên hệ trực tiếp */}
-            <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                <Phone className="h-4 w-4" />
-                <span>Thông tin liên hệ &amp; kết nối trực tiếp</span>
-              </h3>
-
-              <div className="space-y-2.5 text-xs">
-                {/* SĐT / Hotline */}
-                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
-                      <Phone className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Hotline / SĐT</span>
-                      <span className="font-bold text-slate-800 dark:text-white block truncate">{displayPhone}</span>
-                    </div>
+          <div className="w-full space-y-2.5 animate-in fade-in duration-200">
+            {/* 1.1. Đầu mục: Giới thiệu doanh nhân & năng lực */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("bio")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                    <FileText className="size-4" />
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {cleanPhone && (
-                      <a
-                        href={`tel:${cleanPhone}`}
-                        className="px-3 py-1 rounded-xl bg-[#00A86B] hover:bg-[#00925d] text-white font-bold text-xs shadow-xs transition cursor-pointer"
-                      >
-                        Gọi
-                      </a>
-                    )}
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Giới thiệu doanh nhân &amp; năng lực
+                    </h3>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Tiểu sử, định hướng hợp tác và tầm nhìn phát triển
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["bio"] ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["bio"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
+                    {displayBio}
+                  </p>
+                  <div className="flex justify-end">
                     <button
                       type="button"
-                      onClick={handleCopyPhone}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
-                      title="Sao chép số điện thoại"
+                      onClick={() => setEditProfileOpen(true)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-bold transition hover:bg-amber-100 cursor-pointer"
                     >
-                      {copiedPhone ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+                      <Pencil className="size-3" />
+                      <span>Chỉnh sửa phần giới thiệu</span>
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
 
-                {/* Email */}
-                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 grid place-items-center shrink-0">
-                      <Mail className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Email</span>
-                      <span className="font-bold text-slate-800 dark:text-white block truncate">{displayEmail}</span>
-                    </div>
+            {/* 1.2. Đầu mục: Quy mô & Lĩnh vực kinh doanh */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("business")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+                    <Sparkles className="size-4" />
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {displayEmail && (
-                      <a
-                        href={`mailto:${displayEmail}`}
-                        className="px-2.5 py-1 rounded-xl border border-blue-600 text-[#003B95] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 font-bold text-xs transition cursor-pointer"
-                      >
-                        Gửi thư
-                      </a>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleCopyEmail}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
-                      title="Sao chép Email"
-                    >
-                      {copiedEmail ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-                    </button>
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Quy mô &amp; Lĩnh vực kinh doanh
+                    </h3>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      {displayCompanySize} • {displayIndustry}
+                    </p>
                   </div>
                 </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["business"] ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
+                  }`}
+                />
+              </button>
 
-                {/* Địa chỉ trụ sở */}
-                <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                  <div className="size-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
-                    <MapPin className="size-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Địa chỉ / Trụ sở</span>
-                    <span className="font-semibold text-slate-800 dark:text-white block line-clamp-1">{displayAddress}</span>
-                  </div>
-                </div>
-
-                {/* Website chính thức */}
-                {displayWebsite && (
-                  <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 grid place-items-center shrink-0">
-                        <Globe className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-bold text-slate-400 block uppercase">Website</span>
-                        <span className="font-bold text-slate-800 dark:text-white block truncate">{displayWebsite}</span>
+              {expandedSections["business"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Quy mô nhân sự</div>
+                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
+                        {displayCompanySize}
                       </div>
                     </div>
-                    <a
-                      href={displayWebsite.startsWith("http") ? displayWebsite : `https://${displayWebsite}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-1 rounded-xl border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold hover:bg-purple-50 dark:hover:bg-purple-950 transition inline-flex items-center gap-1 cursor-pointer"
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Lĩnh vực</div>
+                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5 truncate">
+                        {displayIndustry}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Công ty trực thuộc</div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">{displayCompany}</div>
+                    </div>
+                    <Building2 className="size-4 text-slate-400" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 1.3. Đầu mục: Hoạt động & Thống kê kết nối CLB */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("activity")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
+                    <BadgeCheck className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Hoạt động &amp; Thống kê kết nối CLB
+                    </h3>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      {participatedEvents.length} sự kiện • {connectedOpportunities.length} cơ hội giao thương
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["activity"] ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["activity"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      onClick={() => setActiveTab("friends")}
+                      className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 cursor-pointer hover:bg-blue-100/60 transition"
                     >
-                      <span>Mở web</span>
-                      <ExternalLink className="size-3" />
-                    </a>
+                      <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">
+                        Sự kiện đã tham gia
+                      </div>
+                      <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
+                        {participatedEvents.length} sự kiện
+                      </div>
+                    </div>
+                    <div
+                      onClick={() => setActiveTab("friends")}
+                      className="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 cursor-pointer hover:bg-amber-100/60 transition"
+                    >
+                      <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">
+                        Cơ hội đã kết nối
+                      </div>
+                      <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
+                        {connectedOpportunities.length} cơ hội
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Card Giới thiệu doanh nhân / Bio */}
-            <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                  <FileText className="h-4 w-4" />
-                  <span>Giới thiệu doanh nhân &amp; năng lực</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setEditProfileOpen(true)}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
-                >
-                  <Pencil className="size-3" />
-                  <span>Sửa</span>
-                </button>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
-                {displayBio}
-              </p>
-            </div>
-
-            {/* Card Thông số quy mô & lĩnh vực */}
-            <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-2.5">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4" />
-                <span>Quy mô &amp; Lĩnh vực kinh doanh</span>
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Quy mô nhân sự</div>
-                  <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5">{displayCompanySize}</div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("friends")}
+                    className="w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-[#003B95] dark:text-blue-400 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <span>Xem toàn bộ lịch trình &amp; giao thương chi tiết</span>
+                    <ChevronRight className="size-3.5" />
+                  </button>
                 </div>
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Lĩnh vực</div>
-                  <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5 truncate">{displayIndustry}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card Thống kê hoạt động & kết nối giao thương (Ý kiến cuộc họp - Item 15) */}
-            <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-2.5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                  <BadgeCheck className="h-4 w-4 text-emerald-500" />
-                  <span>Hoạt động &amp; Kết nối giao thương</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("friends")}
-                  className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer"
-                >
-                  <span>Chi tiết</span>
-                  <ChevronRight className="size-3" />
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div
-                  onClick={() => setActiveTab("friends")}
-                  className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 cursor-pointer hover:bg-blue-100/60 transition"
-                >
-                  <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">Sự kiện đã tham gia</div>
-                  <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">{participatedEvents.length} sự kiện</div>
-                </div>
-                <div
-                  onClick={() => setActiveTab("friends")}
-                  className="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 cursor-pointer hover:bg-amber-100/60 transition"
-                >
-                  <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">Cơ hội đã kết nối</div>
-                  <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">{connectedOpportunities.length} cơ hội</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card Kênh kết nối số & mạng xã hội */}
-            <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-2.5">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                <Share2 className="h-4 w-4" />
-                <span>Kênh kết nối số &amp; mạng xã hội</span>
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={`https://zalo.me/${cleanPhone}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/60 hover:bg-blue-100/60 transition cursor-pointer"
-                >
-                  <div className="size-7 rounded-lg bg-[#0068FF] text-white font-black text-xs grid place-items-center">
-                    Z
-                  </div>
-                  <span className="text-xs font-bold text-blue-900 dark:text-blue-300">Nhắn Zalo</span>
-                </a>
-
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/60 hover:bg-amber-100/60 transition cursor-pointer"
-                >
-                  <div className="size-7 rounded-lg bg-amber-500 text-white grid place-items-center">
-                    <Share2 className="size-3.5" />
-                  </div>
-                  <span className="text-xs font-bold text-amber-900 dark:text-amber-300">Chia sẻ hồ sơ</span>
-                </button>
-              </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* ── TAB 2: HOẠT ĐỘNG & GIAO THƯƠNG B2B ── */}
+        {/* ── TAB 2: GIAO THƯƠNG B2B (YÊU CẦU 3: HIỆN HẾT SỰ KIỆN, HỌP BAN, CUỘC GẶP & LỊCH SỬ THAO TÁC, XÓA NFC QR) ── */}
         {activeTab === "friends" && (
-          <div className="w-full space-y-3 animate-in fade-in duration-200">
-            {/* ── LỊCH SỬ HOẠT ĐỘNG: SỰ KIỆN ĐÃ THAM GIA (Ý KIẾN CUỘC HỌP - ITEM 15) ── */}
-            <div className="w-full p-4 bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center">
+          <div className="w-full space-y-2.5 animate-in fade-in duration-200">
+            {/* 2.1. Đầu mục: Sự kiện đã tham gia (Hiện hết tất cả - Yêu cầu 3) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("events")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                     <Calendar className="size-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Sự kiện đã tham gia ({participatedEvents.length})
-                    </h4>
-                    <span className="text-[10px] text-slate-400">Lịch sử sinh hoạt &amp; kết nối CLB</span>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Sự kiện đã tham gia
+                      </h4>
+                      <span className="px-2 py-0.2 rounded-full bg-blue-100 dark:bg-blue-950 text-[#003B95] dark:text-blue-300 text-[10px] font-black">
+                        {participatedEvents.length}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Lịch sử toàn bộ sự kiện đã đăng ký trong năm
+                    </p>
                   </div>
                 </div>
-                <Link
-                  to="/events"
-                  className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
-                >
-                  <span>Tất cả</span>
-                  <ChevronRight className="size-3" />
-                </Link>
-              </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["events"] ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
+                  }`}
+                />
+              </button>
 
-              {participatedEvents.length === 0 ? (
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-center">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Bạn chưa đăng ký tham gia sự kiện nào sắp tới.
-                  </p>
-                  <Link
-                    to="/events"
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline"
-                  >
-                    <span>Khám phá lịch sự kiện CLB</span>
-                    <ChevronRight className="size-3.5" />
-                  </Link>
+              {expandedSections["events"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
+                  {participatedEvents.length === 0 ? (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-center">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Bạn chưa đăng ký tham gia sự kiện nào.
+                      </p>
+                      <Link
+                        to="/association/events"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline"
+                      >
+                        <span>Khám phá lịch sự kiện CLB</span>
+                        <ChevronRight className="size-3.5" />
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* HIỆN TOÀN BỘ SỰ KIỆN THEO ĐÚNG YÊU CẦU 3 (BỎ SLICE) */}
+                      {participatedEvents.map((ev) => (
+                        <Link
+                          key={ev.id}
+                          to="/events/$eventId"
+                          params={{ eventId: ev.id }}
+                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="size-10 rounded-xl bg-[#003B95] text-white flex flex-col items-center justify-center shrink-0 leading-tight">
+                              <span className="text-[10px] font-black">{ev.day || "EV"}</span>
+                              <span className="text-[8px] font-bold uppercase">{ev.month || "CEO"}</span>
+                            </div>
+                            <div className="min-w-0">
+                              <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">
+                                {ev.title}
+                              </h5>
+                              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
+                                {ev.time || "Theo lịch"} • {ev.place || "Hà Nội"}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold shrink-0 border border-emerald-200">
+                            Đã đăng ký
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {participatedEvents.slice(0, 3).map((ev) => (
-                    <Link
-                      key={ev.id}
-                      to="/events/$eventId"
-                      params={{ eventId: ev.id }}
-                      className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-10 rounded-xl bg-blue-600 text-white flex flex-col items-center justify-center shrink-0 leading-tight">
-                          <span className="text-[10px] font-black">{ev.day || "EV"}</span>
-                          <span className="text-[8px] font-bold uppercase">{ev.month || "CEO"}</span>
-                        </div>
-                        <div className="min-w-0">
-                          <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">
-                            {ev.title}
-                          </h5>
-                          <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                            {ev.time || "Theo lịch"} • {ev.place || "Hà Nội"}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold shrink-0 border border-emerald-200">
-                        Đã đăng ký
+              )}
+            </div>
+
+            {/* 2.2. Đầu mục: Cuộc họp ban (Yêu cầu 3) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("committee_meetings")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 grid place-items-center shrink-0">
+                    <Building2 className="size-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Cuộc họp ban
+                      </h4>
+                      <span className="px-2 py-0.2 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-black">
+                        {committeeMeetings.length}
                       </span>
-                    </Link>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Ban Thư Ký, Xúc Tiến Thương Mại, Truyền Thông &amp; Điều Hành
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["committee_meetings"] ? "rotate-180 text-purple-600 dark:text-purple-400" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["committee_meetings"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                  {committeeMeetings.map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[9.5px] font-extrabold uppercase">
+                          {m.department}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9.5px] font-extrabold">
+                          {m.status}
+                        </span>
+                      </div>
+                      <h5 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                        {m.title}
+                      </h5>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-slate-500 dark:text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3 text-slate-400" />
+                          <span>{m.time}, {m.date}</span>
+                        </span>
+                        <span className="flex items-center gap-1 truncate max-w-full">
+                          <MapPin className="size-3 text-slate-400 shrink-0" />
+                          <span className="truncate">{m.location}</span>
+                        </span>
+                      </div>
+                      {m.zoomUrl && (
+                        <div className="pt-1 flex items-center justify-between">
+                          <a
+                            href={m.zoomUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#003B95] text-white text-[11px] font-bold shadow-2xs hover:bg-[#002d73] transition cursor-pointer"
+                          >
+                            <Video className="size-3 text-amber-300" />
+                            <span>Vào phòng họp</span>
+                          </a>
+                          <span className="text-[10px] text-slate-400 italic">Được cấp bởi Ban Thư Ký</span>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* ── LỊCH SỬ HOẠT ĐỘNG: CƠ HỘI KINH DOANH ĐÃ KẾT NỐI (Ý KIẾN CUỘC HỌP - ITEM 15) ── */}
-            <div className="w-full p-4 bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="size-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 grid place-items-center">
+            {/* 2.3. Đầu mục: Cuộc gặp giao thương 1-on-1 (Yêu cầu 3) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("meetings_1on1")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
                     <Handshake className="size-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Cơ hội đã kết nối ({connectedOpportunities.length})
-                    </h4>
-                    <span className="text-[10px] text-slate-400">Giao thương &amp; đối tác quan tâm</span>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Cuộc gặp giao thương 1-on-1
+                      </h4>
+                      <span className="px-2 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-black">
+                        {meetings1on1.length}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Lịch hẹn cafe, trao đổi cung ứng và gặp gỡ đối tác
+                    </p>
                   </div>
                 </div>
-                <Link
-                  to="/association/opportunities"
-                  className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
-                >
-                  <span>Tất cả</span>
-                  <ChevronRight className="size-3" />
-                </Link>
-              </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["meetings_1on1"] ? "rotate-180 text-amber-600 dark:text-amber-400" : ""
+                  }`}
+                />
+              </button>
 
-              {connectedOpportunities.length === 0 ? (
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-center">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Bạn chưa gửi quan tâm hoặc kết nối cơ hội giao thương nào.
-                  </p>
-                  <Link
-                    to="/association/opportunities"
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
-                  >
-                    <span>Khám phá cơ hội hợp tác B2B</span>
-                    <ChevronRight className="size-3.5" />
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {connectedOpportunities.slice(0, 3).map((opp) => (
-                    <Link
-                      key={opp.id}
-                      to="/association/opportunities"
-                      className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
+              {expandedSections["meetings_1on1"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                  {meetings1on1.map((meet) => (
+                    <div
+                      key={meet.id}
+                      className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
                     >
-                      <div className="min-w-0">
-                        <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-amber-600 transition">
-                          {opp.title}
-                        </h5>
-                        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                          {opp.company || "Hội viên CLB"} • {opp.value || "Thỏa thuận B2B"}
-                        </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-xs text-[#003B95] dark:text-blue-400">
+                          {meet.partnerName}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[9.5px] font-extrabold">
+                          {meet.status}
+                        </span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-extrabold shrink-0 border border-blue-200">
-                        {opp.interested ? "Đã quan tâm" : "Đã đăng"}
-                      </span>
-                    </Link>
+                      <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">
+                        {meet.title}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Doanh nghiệp: {meet.partnerCompany}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 dark:text-slate-400 pt-1">
+                        <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                          <Clock className="size-3 text-amber-500" />
+                          <span>{meet.time} ngày {meet.date}</span>
+                        </span>
+                        <span className="flex items-center gap-1 truncate max-w-full">
+                          <MapPin className="size-3 text-slate-400 shrink-0" />
+                          <span className="truncate">{meet.location}</span>
+                        </span>
+                      </div>
+                      <div className="pt-1 flex items-center justify-between">
+                        <a
+                          href={`https://zalo.me/${meet.phone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-[#003B95] dark:text-blue-300 text-[10.5px] font-bold hover:bg-blue-100 transition cursor-pointer"
+                        >
+                          <span>Nhắn Zalo đối tác</span>
+                        </a>
+                        <a
+                          href={`tel:${meet.phone}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10.5px] font-bold hover:bg-emerald-100 transition cursor-pointer"
+                        >
+                          <Phone className="size-3 text-emerald-600" />
+                          <span>Gọi điện</span>
+                        </a>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Mục 1: Quản lý danh thiếp số */}
-            <button
-              type="button"
-              onClick={() => setCardPreviewOpen(true)}
-              className="w-full p-4 bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between hover:border-amber-400 transition cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="size-11 rounded-2xl bg-sky-50 dark:bg-sky-950 text-[#003B95] dark:text-sky-400 grid place-items-center border border-sky-100 dark:border-sky-900/50 shrink-0">
-                  <CreditCard className="size-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Danh thiếp số NFC &amp; QR</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Xem trước thẻ doanh nhân và hồ sơ 2 trang</p>
-                </div>
-              </div>
-              <ChevronRight className="size-5 text-slate-400 shrink-0" />
-            </button>
-
-            {/* Mục 2: Cơ hội giao thương B2B */}
-            <Link
-              to="/association/opportunities"
-              className="p-4 bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="size-11 rounded-2xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 grid place-items-center border border-amber-100 dark:border-amber-900/50 shrink-0">
-                  <Sparkles className="size-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Cơ hội giao thương B2B</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Đăng và tìm kiếm cơ hội hợp tác kinh doanh</p>
-                </div>
-              </div>
-              <ChevronRight className="size-5 text-slate-400 shrink-0" />
-            </Link>
-
-            {/* Mục 3: Gian hàng sản phẩm & dịch vụ */}
-            <Link
-              to="/association/products"
-              search={{}}
-              className="p-4 bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="size-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center border border-emerald-100 dark:border-emerald-900/50 shrink-0">
-                  <Package className="size-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Gian hàng sản phẩm &amp; dịch vụ</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Showcase sản phẩm ưu đãi dành riêng cho hội viên</p>
-                </div>
-              </div>
-              <ChevronRight className="size-5 text-slate-400 shrink-0" />
-            </Link>
-
-            {/* Mục 4: Danh bạ hội viên CLB CEO 1983 */}
-            <Link
-              to="/association/members"
-              className="p-4 bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="size-11 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 grid place-items-center border border-indigo-100 dark:border-indigo-900/50 shrink-0">
-                  <Users className="size-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Danh bạ hội viên CLB CEO 1983</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Tra cứu &amp; kết nối 500+ doanh nhân</p>
-                </div>
-              </div>
-              <ChevronRight className="size-5 text-slate-400 shrink-0" />
-            </Link>
-          </div>
-        )}
-
-        {/* ── TAB 3: CÀI ĐẶT HỆ THỐNG & BẢO MẬT TÀI KHOẢN ── */}
-        {activeTab === "posts" && (
-          <div className="w-full space-y-4 animate-in fade-in duration-200">
-            {/* 1. KHỐI CÀI ĐẶT HỆ THỐNG (SYSTEM SETTINGS) */}
-            <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3.5">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                  <Cog className="h-4 w-4 text-amber-500" />
-                  <span>{isEn ? "System Settings" : "Cài đặt hệ thống"}</span>
-                </h3>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  CEO 1983 App
-                </span>
-              </div>
-
-              {/* Mục 1: Chọn ngôn ngữ (Language Selector) */}
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
-                      <Globe className="size-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 dark:text-white block">
-                        {isEn ? "Display Language" : "Ngôn ngữ hiển thị"}
-                      </span>
-                      <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block">
-                        {lang === "vi" ? "Đang chọn Tiếng Việt" : "Selected English"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLang("vi");
-                      toast.success("Đã chuyển sang Tiếng Việt");
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      lang === "vi"
-                        ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <span className="text-sm">🇻🇳</span>
-                    <span>Tiếng Việt</span>
-                    {lang === "vi" && <Check className="size-3.5 text-[#003B95] dark:text-amber-400 ml-auto" />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLang("en");
-                      toast.success("Switched to English");
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      lang === "en"
-                        ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <span className="text-sm">🇬🇧</span>
-                    <span>English</span>
-                    {lang === "en" && <Check className="size-3.5 text-[#003B95] dark:text-amber-400 ml-auto" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Mục 2: Bật/Tắt Trợ lý AI CEO 1983 */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-                <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                  <div className="size-9 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 grid place-items-center shrink-0">
-                    <Bot className="size-4.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                      {isEn ? "AI Voice & Chat Assistant" : "Trợ lý điều khiển & Trò chuyện AI"}
-                    </span>
-                    <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block line-clamp-1">
-                      {voiceAiEnabled
-                        ? (isEn ? "Floating AI bot is visible on screen" : "Đang hiển thị trợ lý AI nổi trên màn hình")
-                        : (isEn ? "AI bot is currently hidden" : "Đang tắt / ẩn trợ lý AI")}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={voiceAiEnabled}
-                  onClick={handleToggleVoiceAi}
-                  className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                    voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-                  }`}
-                  title="Bật/tắt Trợ lý AI"
-                >
-                  <div
-                    className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                      voiceAiEnabled ? "translate-x-5.5" : "translate-x-0.5"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Mục 3: Giao diện hiển thị (Theme sáng / tối) */}
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
-                      <Sparkles className="size-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 dark:text-white block">
-                        {isEn ? "Appearance Mode" : "Giao diện hiển thị"}
-                      </span>
-                      <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block">
-                        {theme === "dark" ? "Chế độ ban đêm (Dark Mode)" : "Chế độ ban ngày (Light Mode)"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTheme("light");
-                      toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      theme === "light"
-                        ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-extrabold"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    <Sun className="size-4 text-amber-500" />
-                    <span>{isEn ? "Light" : "Giao diện sáng"}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTheme("dark");
-                      toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      theme === "dark"
-                        ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-extrabold"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    <Moon className="size-4 text-sky-400" />
-                    <span>{isEn ? "Dark" : "Giao diện tối"}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Mục 4: Thông báo đẩy & Tin nhắn nền */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-                <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                  <div className="size-9 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 grid place-items-center shrink-0">
-                    <Bell className="size-4.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                      {isEn ? "Push Notifications" : "Thông báo đẩy & Tin tức CLB"}
-                    </span>
-                    <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block line-clamp-1">
-                      {isNotificationEnabled
-                        ? (isEn ? "Enabled notifications" : "Đang bật nhận chuông và tin nhắn")
-                        : (isEn ? "Notifications are disabled" : "Đang tắt thông báo")}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={isNotificationEnabled}
-                  onClick={handleToggleNotification}
-                  className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                    isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-                  }`}
-                  title="Bật/tắt Thông báo"
-                >
-                  <div
-                    className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                      isNotificationEnabled ? "translate-x-5.5" : "translate-x-0.5"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Mục 5: Cài đặt ứng dụng PWA / Mobile App */}
+            {/* 2.4. Đầu mục: Cơ hội giao thương B2B */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
               <button
                 type="button"
-                onClick={handleFastInstallApp}
-                className="w-full p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between hover:brightness-105 transition cursor-pointer text-left"
+                onClick={() => toggleSection("opportunities")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-9 rounded-xl bg-[#003B95] text-white grid place-items-center shrink-0 shadow-xs">
-                    <Smartphone className="size-4.5" />
+                  <div className="size-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
+                    <TrendingUp className="size-4" />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-xs font-bold text-blue-950 dark:text-blue-200 block truncate">
-                      Cài đặt ứng dụng lên màn hình chính
-                    </span>
-                    <span className="text-[10.5px] text-blue-700 dark:text-blue-300/80 block line-clamp-1">
-                      Tải file APK Android hoặc ghim Icon App lên iOS Safari
-                    </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Cơ hội giao thương B2B
+                      </h4>
+                      <span className="px-2 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-black">
+                        {connectedOpportunities.length}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Các gói deal, chào mua và hợp tác chuỗi cung ứng
+                    </p>
                   </div>
                 </div>
-                <ChevronRight className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["opportunities"] ? "rotate-180 text-emerald-600 dark:text-emerald-400" : ""
+                  }`}
+                />
               </button>
-            </div>
 
-            {/* 2. KHỐI CÁC TRƯỜNG LIÊN HỆ & HỖ TRỢ BAN THƯ KÝ */}
-            <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                  <Headphones className="h-4 w-4 text-rose-500" />
-                  <span>Các trường liên hệ &amp; Hỗ trợ Ban Thư Ký</span>
-                </h3>
-              </div>
-
-              {/* Thông tin liên hệ nhanh: Hotline + Email Ban Thư Ký */}
-              <div className="space-y-2 text-xs">
-                {/* Hotline Ban Thư Ký */}
-                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
-                      <Phone className="size-4" />
+              {expandedSections["opportunities"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
+                  {connectedOpportunities.length === 0 ? (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-center">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Bạn chưa gửi quan tâm hoặc kết nối cơ hội giao thương nào.
+                      </p>
+                      <Link
+                        to="/association/opportunities"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        <span>Khám phá cơ hội hợp tác B2B</span>
+                        <ChevronRight className="size-3.5" />
+                      </Link>
                     </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Hotline Ban Thư Ký</span>
-                      <span className="font-bold text-slate-800 dark:text-white block truncate">098.333.1983 / 098.1983.888</span>
+                  ) : (
+                    <div className="space-y-2">
+                      {connectedOpportunities.map((opp) => (
+                        <Link
+                          key={opp.id}
+                          to="/association/opportunities"
+                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
+                        >
+                          <div className="min-w-0">
+                            <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-amber-600 transition">
+                              {opp.title}
+                            </h5>
+                            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
+                              {opp.company || "Hội viên CLB"} • {opp.value || "Thỏa thuận B2B"}
+                            </p>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-extrabold shrink-0 border border-blue-200">
+                            {opp.interested ? "Đã quan tâm" : "Đã đăng"}
+                          </span>
+                        </Link>
+                      ))}
                     </div>
-                  </div>
-                  <a
-                    href="tel:0983331983"
-                    className="px-3 py-1 rounded-xl bg-[#00A86B] hover:bg-[#00925d] text-white font-bold text-xs shadow-xs transition shrink-0 cursor-pointer"
-                  >
-                    Gọi ngay
-                  </a>
+                  )}
                 </div>
-
-                {/* Email Ban Thư Ký */}
-                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 grid place-items-center shrink-0">
-                      <Mail className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-400 block uppercase">Email tiếp nhận &amp; hỗ trợ</span>
-                      <span className="font-bold text-slate-800 dark:text-white block truncate">banthuky@ceo1983.vn</span>
-                    </div>
-                  </div>
-                  <a
-                    href="mailto:banthuky@ceo1983.vn"
-                    className="px-2.5 py-1 rounded-xl border border-blue-600 text-[#003B95] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 font-bold text-xs transition shrink-0 cursor-pointer"
-                  >
-                    Gửi thư
-                  </a>
-                </div>
-
-                {/* Địa chỉ trụ sở văn phòng CLB */}
-                <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                  <div className="size-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
-                    <MapPin className="size-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Trụ sở CLB Doanh Nhân CEO 1983</span>
-                    <span className="font-semibold text-slate-800 dark:text-white block text-[11px] leading-snug">
-                      Hiệp Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA) - TP. Hà Nội
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2 Nút mở popup tương tác trực tiếp */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setContactSupportOpen(true)}
-                  className="p-3 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100/80 transition flex items-center justify-between cursor-pointer text-left"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-8.5 rounded-xl bg-rose-600 text-white grid place-items-center shrink-0 shadow-xs">
-                      <Headphones className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-rose-950 dark:text-rose-200 block truncate">
-                        Liên hệ Ban Thư Ký CLB
-                      </span>
-                      <span className="text-[10px] text-rose-700 dark:text-rose-400 block truncate">
-                        Gửi phản ánh, góp ý &amp; hỗ trợ
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="size-4 text-rose-500 shrink-0" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setUserGuideOpen(true)}
-                  className="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 hover:bg-amber-100/80 transition flex items-center justify-between cursor-pointer text-left"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-8.5 rounded-xl bg-amber-500 text-slate-950 grid place-items-center shrink-0 shadow-xs">
-                      <BookOpen className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-amber-950 dark:text-amber-200 block truncate">
-                        Hướng dẫn sử dụng App
-                      </span>
-                      <span className="text-[10px] text-amber-700 dark:text-amber-400 block truncate">
-                        Cẩm nang &amp; tour tính năng
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="size-4 text-amber-600 shrink-0" />
-                </button>
-              </div>
-
-              {/* Nếu có quyền quản trị */}
-              {hasAdminPrivilege && (
-                <Link
-                  to="/association/permissions"
-                  className="p-3 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 hover:bg-indigo-100/80 transition flex items-center justify-between cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-8.5 rounded-xl bg-indigo-600 text-white grid place-items-center shrink-0 shadow-xs">
-                      <ShieldCheck className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-indigo-950 dark:text-indigo-200 block truncate">
-                        Phân quyền Ban Quản Trị &amp; Ban Chuyên Môn
-                      </span>
-                      <span className="text-[10px] text-indigo-700 dark:text-indigo-400 block truncate">
-                        Quản lý ma trận vai trò RBAC hệ thống
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="size-4 text-indigo-600 shrink-0" />
-                </Link>
               )}
             </div>
 
-            {/* 3. KHỐI CÀI ĐẶT & BẢO MẬT TÀI KHOẢN (ĐỔI EMAIL/SĐT VÀ ĐỔI MẬT KHẨU) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-amber-500" />
-                  <span>Bảo mật tài khoản &amp; Đổi mật khẩu</span>
-                </h3>
-              </div>
-              <AccountSecuritySettingsForm />
+            {/* 2.5. Đầu mục: Khám phá Marketplace & Danh bạ CEO */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("marketplace")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 grid place-items-center shrink-0">
+                    <Package className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Khám phá Marketplace &amp; Danh bạ CEO
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Gian hàng sản phẩm, dịch vụ và danh bạ 500+ doanh nhân
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["marketplace"] ? "rotate-180 text-indigo-600 dark:text-indigo-400" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["marketplace"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
+                  <Link
+                    to="/association/products"
+                    search={{}}
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8.5 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
+                        <Package className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="text-xs font-bold text-slate-900 dark:text-white">Gian hàng sản phẩm &amp; dịch vụ</h5>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Ưu đãi độc quyền giữa các doanh nghiệp CLB</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-slate-400 shrink-0" />
+                  </Link>
+
+                  <Link
+                    to="/association/members"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8.5 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 grid place-items-center shrink-0">
+                        <Users className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="text-xs font-bold text-slate-900 dark:text-white">Danh bạ CEO 1983</h5>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Tra cứu thông tin và kết nối lãnh đạo</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-slate-400 shrink-0" />
+                  </Link>
+
+                  <Link
+                    to="/association/calendar"
+                    className="p-3 bg-gradient-to-r from-red-500/10 via-amber-500/10 to-blue-500/10 dark:from-red-950/30 dark:via-amber-950/30 dark:to-blue-950/30 rounded-2xl border border-amber-400/40 flex items-center justify-between hover:border-amber-500 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8.5 rounded-xl bg-amber-500 text-slate-950 grid place-items-center shrink-0 shadow-xs">
+                        <Calendar className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h5 className="text-xs font-black text-slate-900 dark:text-white">Lịch hoạt động &amp; Nhắc hẹn</h5>
+                          <span className="px-1.5 py-0.2 rounded-md bg-red-600 text-white text-[8.5px] font-black uppercase">
+                            Nhắc lịch
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Xem sự kiện, họp ban, cuộc gặp &amp; cài thông báo nhắc</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-amber-500 shrink-0" />
+                  </Link>
+                </div>
+              )}
             </div>
 
-            {/* 4. NÚT ĐĂNG XUẤT TÀI KHOẢN */}
+            {/* 2.6. Đầu mục: Lịch sử thao tác gần đây (DƯỚI CÙNG TAB GIAO THƯƠNG PER YÊU CẦU 3) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("audit_history")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 grid place-items-center shrink-0">
+                    <History className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Lịch sử thao tác
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Nhật ký hoạt động, đăng ký sự kiện &amp; tương tác gần đây
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["audit_history"] ? "rotate-180 text-slate-900 dark:text-white" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["audit_history"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
+                  {auditHistory.map((act) => (
+                    <div
+                      key={act.id}
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="text-slate-800 dark:text-slate-200 font-medium truncate">
+                          {act.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="px-1.5 py-0.2 rounded-md bg-slate-200/70 dark:bg-slate-700 text-[9.5px] font-bold text-slate-600 dark:text-slate-300">
+                          {act.badge}
+                        </span>
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                          {act.time}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 3: CÀI ĐẶT & BẢO MẬT (CHỦ ĐỀ & 4 TÍNH NĂNG NHANH ĐƯỢC ĐƯA VÀO ĐÂY PER YÊU CẦU 2) ── */}
+        {activeTab === "posts" && (
+          <div className="w-full space-y-2.5 animate-in fade-in duration-200">
+            {/* 3.1. Đầu mục: Chủ đề giao diện CLB (Đồng bộ CRM - Yêu cầu 2) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("theme_crm")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-500 grid place-items-center shrink-0 border border-amber-500/20">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Chủ đề giao diện CLB
+                      </h4>
+                      <span className="px-2 py-0.2 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                        ĐỒNG BỘ CRM
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Cấu hình nhận diện thương hiệu bởi Ban Điều Hành
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["theme_crm"] ? "rotate-180 text-amber-500" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["theme_crm"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-amber-500/5 dark:from-slate-800/40 dark:to-amber-950/20 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-9 rounded-lg flex items-center justify-center text-xl bg-white dark:bg-slate-900 shadow-2xs border border-slate-200 dark:border-slate-700 shrink-0">
+                        {activeTheme.iconEmoji || "👑"}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
+                          {activeTheme.name}
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                          {activeTheme.tagline}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
+                        style={{ backgroundColor: activeTheme.primaryColor }}
+                        title={`Màu chủ đạo: ${activeTheme.primaryColor}`}
+                      />
+                      <span
+                        className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
+                        style={{ backgroundColor: activeTheme.accentColor }}
+                        title={`Màu điểm nhấn: ${activeTheme.accentColor}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                      Tự động tải bảng màu theo mùa lễ hội CLB
+                    </span>
+                    <button
+                      type="button"
+                      disabled={themeSyncing}
+                      onClick={async () => {
+                        setThemeSyncing(true);
+                        try {
+                          await syncThemeFromBackend();
+                          setActiveTheme(getEffectiveThemeOption());
+                          toast.success("Đã đồng bộ chủ đề giao diện mới nhất từ CRM!");
+                        } catch {
+                          toast.error("Không thể đồng bộ chủ đề lúc này");
+                        } finally {
+                          setThemeSyncing(false);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-2xs transition cursor-pointer disabled:opacity-50"
+                    >
+                      <RotateCcw className={`size-3.5 ${themeSyncing ? "animate-spin" : ""}`} />
+                      <span>{themeSyncing ? "Đang đồng bộ..." : "Đồng bộ lại"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3.2. Đầu mục: Cài đặt hiển thị 4 tính năng nhanh trang chủ (Yêu cầu 2) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("home_shortcuts")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                    <LayoutDashboard className="size-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Cài đặt 4 tính năng nhanh trang chủ
+                      </h4>
+                      <span className="px-2 py-0.2 rounded-full text-[9px] font-black bg-blue-500/15 text-[#003B95] dark:text-blue-300">
+                        {selectedShortcuts.length}/4 CHỌN
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Tùy biến các lối tắt tiện ích hiển thị ở màn hình chính
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["home_shortcuts"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["home_shortcuts"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                    4 tính năng nhanh được hiển thị trên Trang chủ của bạn:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedShortcuts.map((id) => {
+                      const item = ALL_SHORTCUT_OPTIONS.find((s) => s.id === id);
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={id}
+                          className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700"
+                        >
+                          <div className="size-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-[#003B95] dark:text-blue-300 grid place-items-center shrink-0">
+                            {getShortcutIcon(item.iconName, "size-4")}
+                          </div>
+                          <span className="text-xs font-bold text-slate-800 dark:text-white truncate">
+                            {item.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCustomShortcutsOpen(true)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <LayoutDashboard className="size-4 text-amber-300" />
+                    <span>Tùy biến lại 4 tính năng hiển thị</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 3.3. Đầu mục: Cài đặt hệ thống (Ngôn ngữ, Giao diện, AI Bot, Thông báo) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("system_settings")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 grid place-items-center shrink-0">
+                    <Cog className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Cài đặt hệ thống
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Ngôn ngữ, Giao diện sáng/tối, Trợ lý AI và Thông báo đẩy
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["system_settings"] ? "rotate-180 text-slate-900 dark:text-white" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["system_settings"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
+                  {/* Ngôn ngữ */}
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                      <Globe className="size-3.5 text-[#003B95] dark:text-blue-400" />
+                      <span>{isEn ? "Display Language" : "Ngôn ngữ hiển thị"}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLang("vi");
+                          toast.success("Đã chuyển sang Tiếng Việt");
+                        }}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                          lang === "vi"
+                            ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        <span>🇻🇳 Tiếng Việt</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLang("en");
+                          toast.success("Switched to English");
+                        }}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                          lang === "en"
+                            ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        <span>🇬🇧 English</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Trợ lý AI */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
+                    <div className="flex items-center gap-2 min-w-0 pr-2">
+                      <Bot className="size-4 text-sky-500" />
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-800 dark:text-white block">
+                          Trợ lý AI CEO 1983
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                          {voiceAiEnabled ? "Đang bật nút trợ lý nổi" : "Đang tắt"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={voiceAiEnabled}
+                      onClick={handleToggleVoiceAi}
+                      className={`w-11 h-6 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                        voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
+                      }`}
+                    >
+                      <div
+                        className={`size-5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                          voiceAiEnabled ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Chế độ Sáng / Tối */}
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                      <Sparkles className="size-3.5 text-amber-500" />
+                      <span>{isEn ? "Appearance Mode" : "Giao diện hiển thị"}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTheme("light");
+                          toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
+                        }}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                          theme === "light"
+                            ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-extrabold"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        <Sun className="size-3.5 text-amber-500" />
+                        <span>Sáng</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTheme("dark");
+                          toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
+                        }}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                          theme === "dark"
+                            ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-extrabold"
+                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        <Moon className="size-3.5 text-sky-400" />
+                        <span>Tối</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Thông báo đẩy */}
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
+                    <div className="flex items-center gap-2 min-w-0 pr-2">
+                      <Bell className="size-4 text-rose-500" />
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-800 dark:text-white block">
+                          Thông báo đẩy &amp; Tin tức
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                          {isNotificationEnabled ? "Đang bật nhận chuông" : "Đang tắt"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isNotificationEnabled}
+                      onClick={handleToggleNotification}
+                      className={`w-11 h-6 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                        isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
+                      }`}
+                    >
+                      <div
+                        className={`size-5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                          isNotificationEnabled ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3.4. Đầu mục: Cài đặt ứng dụng PWA / Mobile App */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("install_app")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                    <Smartphone className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Cài đặt ứng dụng PWA / Mobile App
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Cài ứng dụng lên màn hình chính điện thoại
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["install_app"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["install_app"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                  <button
+                    type="button"
+                    onClick={handleFastInstallApp}
+                    className="w-full p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between hover:brightness-105 transition cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8 rounded-xl bg-[#003B95] text-white grid place-items-center shrink-0 shadow-xs">
+                        <Smartphone className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-blue-950 dark:text-blue-200 block truncate">
+                          Cài đặt ứng dụng lên màn hình chính
+                        </span>
+                        <span className="text-[10.5px] text-blue-700 dark:text-blue-300/80 block line-clamp-1">
+                          Tải file APK Android hoặc ghim Icon App lên iOS Safari
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 3.5. Đầu mục: Hỗ trợ Ban Thư Ký & Hướng dẫn sử dụng App */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("support_guide")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-500 grid place-items-center shrink-0">
+                    <Headphones className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Hỗ trợ Ban Thư Ký &amp; Cẩm nang App
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Hotline: 098.333.1983 • banthuky@ceo1983.vn
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["support_guide"] ? "rotate-180 text-rose-500" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["support_guide"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                  <div className="space-y-2 text-xs">
+                    {/* Hotline Ban Thư Ký */}
+                    <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Phone className="size-4 text-emerald-600 shrink-0" />
+                        <span className="font-bold text-slate-800 dark:text-white text-xs truncate">098.333.1983</span>
+                      </div>
+                      <a
+                        href="tel:0983331983"
+                        className="px-2.5 py-1 rounded-xl bg-[#00A86B] text-white font-bold text-xs"
+                      >
+                        Gọi ngay
+                      </a>
+                    </div>
+                    {/* Email */}
+                    <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Mail className="size-4 text-blue-600 shrink-0" />
+                        <span className="font-bold text-slate-800 dark:text-white text-xs truncate">banthuky@ceo1983.vn</span>
+                      </div>
+                      <a
+                        href="mailto:banthuky@ceo1983.vn"
+                        className="px-2.5 py-1 rounded-xl border border-blue-600 text-[#003B95] dark:text-blue-400 font-bold text-xs"
+                      >
+                        Gửi thư
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setContactSupportOpen(true)}
+                      className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Headphones className="size-3.5" />
+                      <span>Gửi phản ánh</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserGuideOpen(true)}
+                      className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <BookOpen className="size-3.5" />
+                      <span>Xem cẩm nang</span>
+                    </button>
+                  </div>
+
+                  {hasAdminPrivilege && (
+                    <Link
+                      to="/association/permissions"
+                      className="w-full p-2.5 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="size-4 text-indigo-600" />
+                        <span>Phân quyền Ban Quản Trị &amp; RBAC</span>
+                      </div>
+                      <ChevronRight className="size-3.5 text-indigo-500" />
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 3.6. Đầu mục: Bảo mật tài khoản & Đổi mật khẩu */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleSection("account_security")}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
+                    <ShieldCheck className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Bảo mật tài khoản &amp; Đổi mật khẩu
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Quản lý mật khẩu, email và an toàn thông tin
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                    expandedSections["account_security"] ? "rotate-180 text-emerald-500" : ""
+                  }`}
+                />
+              </button>
+
+              {expandedSections["account_security"] && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
+                  <AccountSecuritySettingsForm />
+                </div>
+              )}
+            </div>
+
+            {/* Nút Đăng xuất tài khoản */}
             <div className="pt-2">
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full py-3.5 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100/80 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-xs"
+                className="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100/80 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-xs"
               >
                 <LogOut className="size-4 text-rose-500" />
                 <span>Đăng xuất khỏi ứng dụng</span>
@@ -1574,6 +2016,14 @@ export default function ProfileScreen() {
           </div>
         )}
       </div>
+
+      {/* Modal Cài đặt 4 tính năng nhanh trang chủ (Yêu cầu 2) */}
+      <CustomHomeShortcutsModal
+        isOpen={customShortcutsOpen}
+        onClose={() => setCustomShortcutsOpen(false)}
+        selectedIds={selectedShortcuts}
+        onSave={handleSaveShortcuts}
+      />
 
       {/* ── 5. MODALS (DANH THIẾP, SỬA HỒ SƠ, QR CODE, HƯỚNG DẪN SỬ DỤNG) ── */}
 

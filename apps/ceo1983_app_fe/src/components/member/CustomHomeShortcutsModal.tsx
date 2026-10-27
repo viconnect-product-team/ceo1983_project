@@ -34,6 +34,15 @@ export interface ShortcutItem {
 
 export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   {
+    id: "calendar",
+    name: "Lịch & Nhắc hẹn",
+    desc: "Lịch sự kiện, họp ban, cuộc gặp & cài nhắc",
+    to: "/association/calendar",
+    iconName: "Calendar",
+    badge: "Lịch",
+    badgeColor: "bg-red-600 text-white",
+  },
+  {
     id: "events",
     name: "Sự kiện",
     desc: "Lịch sinh hoạt & sự kiện CLB",
@@ -42,7 +51,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "members",
-    name: "Tìm hội viên",
+    name: "Danh bạ CEO",
     desc: "Danh bạ 200+ CEO doanh nhân",
     to: "/association/members",
     iconName: "Users",
@@ -52,7 +61,16 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     name: "Cơ hội",
     desc: "Sàn kết nối cơ hội kinh doanh B2B",
     to: "/association/opportunities",
+    iconName: "TrendingUp",
+  },
+  {
+    id: "connect",
+    name: "Kết nối",
+    desc: "Tạo kết nối 1-on-1 & hợp tác B2B",
+    to: "#connect",
     iconName: "Handshake",
+    badge: "B2B",
+    badgeColor: "bg-[#003B95] text-white",
   },
   {
     id: "profile",
@@ -154,7 +172,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
 ];
 
-export const DEFAULT_SHORTCUT_IDS = ["messages", "members", "opportunities", "profile"];
+export const DEFAULT_SHORTCUT_IDS = ["messages", "members", "opportunities", "connect"];
 
 export function getShortcutIcon(iconName: string, className = "size-6") {
   switch (iconName) {

@@ -157,12 +157,10 @@ export function safeGetEventDayMonth(dateVal: any, fallbackDay = 20, fallbackMon
   }
 }
 
-import { AssociationAnalyticsScreen } from "./association.analytics";
-
 function EventsRouteComponent() {
   return (
     <EventsErrorBoundary>
-      <AssociationAnalyticsScreen />
+      <EventsScreen />
     </EventsErrorBoundary>
   );
 }
@@ -1359,6 +1357,16 @@ function EventsScreen() {
       <MemberHeader
         title={isEn ? "Club Events" : t("m.events.title")}
         back
+        right={
+          <Link
+            to="/association/calendar"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-600/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 text-[11px] font-bold hover:scale-105 active:scale-95 transition"
+            title="Lịch của tôi & Cài đặt nhắc hẹn"
+          >
+            <Calendar className="size-3.5 text-red-600 dark:text-red-400" />
+            <span>Lịch của tôi</span>
+          </Link>
+        }
       />
 
       {/* ── 2 PRIMARY STYLES (CHUẨN YBA SÀI GÒN): 1. SỰ KIỆN CLB - 2. CUỘC HỌP GẶP MẶT ── */}
