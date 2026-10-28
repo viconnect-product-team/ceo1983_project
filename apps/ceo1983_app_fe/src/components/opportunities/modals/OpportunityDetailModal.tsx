@@ -20,9 +20,11 @@ import {
   Flame,
 } from "lucide-react";
 import type { MyOpportunity } from "@/lib/member-app.functions";
+import { OpportunityMultiMetricChart } from "../OpportunityMultiMetricChart";
 
 export interface OpportunityDetailModalProps {
   selectedOpp: (MyOpportunity & { description?: string; interests?: any[]; interestedMembers?: any[] }) | null;
+  allOpportunities?: any[];
   onClose: () => void;
   defaultOppImages: string[];
   resolveMediaUrl: (url?: string | null) => string | null;
@@ -52,6 +54,7 @@ export interface OpportunityDetailModalProps {
 
 export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
   selectedOpp,
+  allOpportunities,
   onClose,
   defaultOppImages,
   resolveMediaUrl,
@@ -218,6 +221,15 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
               Xác thực CRM
             </span>
+          </div>
+
+          {/* Biểu đồ 3 chỉ số biến động đa khung thời gian (Req 4) */}
+          <div className="w-full">
+            <OpportunityMultiMetricChart
+              opportunities={allOpportunities && allOpportunities.length > 0 ? allOpportunities : [selectedOpp]}
+              compact
+              title="Biểu Đồ 3 Chỉ Số Biến Động Giao Thương"
+            />
           </div>
 
           {/* Danh sách người quan tâm dành riêng cho người đăng cơ hội hoặc ban quản trị */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   Plus,
@@ -25,11 +25,39 @@ import {
   QrCode,
   ChevronDown,
   ChevronUp,
+  Image as ImageIcon,
+  Video,
+  Smile,
+  Film,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { CreatePostModal, COMMITTEES } from "./CreatePostModal";
+
+export const COMMENT_EMOTIONS = [
+  { id: "like", emoji: "👍", label: "Tuyệt vời" },
+  { id: "love", emoji: "❤️", label: "Yêu thích" },
+  { id: "handshake", emoji: "🤝", label: "Hợp tác" },
+  { id: "clap", emoji: "👏", label: "Hoan hô" },
+  { id: "fire", emoji: "🔥", label: "Bùng nổ" },
+  { id: "celebrate", emoji: "🎉", label: "Chúc mừng" },
+  { id: "hundred", emoji: "💯", label: "Đỉnh cao" },
+  { id: "idea", emoji: "💡", label: "Sáng tạo" },
+  { id: "wealth", emoji: "💰", label: "Phát tài" },
+  { id: "strong", emoji: "💪", label: "Quyết tâm" },
+  { id: "target", emoji: "🎯", label: "Mục tiêu" },
+  { id: "trophy", emoji: "🏆", label: "Thành công" },
+];
+
+export const BUSINESS_GIFS = [
+  { id: "g1", title: "Bắt tay hợp tác", url: "https://media.giphy.com/media/xT9DPIlGnuHpr2yObu/giphy.gif" },
+  { id: "g2", title: "Chúc mừng thành công", url: "https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif" },
+  { id: "g3", title: "Vỗ tay tán thưởng", url: "https://media.giphy.com/media/nbvFVPiEiJH6JOGIok/giphy.gif" },
+  { id: "g4", title: "Tuyệt vời xuất sắc", url: "https://media.giphy.com/media/diUKszNTUghVe/giphy.gif" },
+  { id: "g5", title: "Đồng ý chốt deal", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif" },
+  { id: "g6", title: "Quyết tâm bứt phá", url: "https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" },
+];
 
 interface FeedPost {
   id: string;
@@ -75,6 +103,9 @@ interface FeedComment {
   parentId?: string | null;
   level?: 1 | 2 | 3;
   replyToAuthorName?: string;
+  mediaUrl?: string;
+  mediaType?: "image" | "video" | "gif";
+  reaction?: string;
 }
 
 interface CommentNode extends FeedComment {
@@ -111,6 +142,10 @@ function RenderCommentNode({
   onToggleCollapse,
   onReply,
   formatTime,
+  onLightbox,
+  onReact,
+  activeReactionCommentId,
+  setActiveReactionCommentId,
 }: {
   node: CommentNode;
   postId: string;
@@ -118,10 +153,16 @@ function RenderCommentNode({
   onToggleCollapse: (id: string) => void;
   onReply: (postId: string, commentId: string, authorName: string, level: 1 | 2 | 3) => void;
   formatTime: (t?: string) => string;
+  onLightbox: (url: string) => void;
+  onReact: (postId: string, commentId: string, reaction: string) => void;
+  activeReactionCommentId: string | null;
+  setActiveReactionCommentId: (id: string | null) => void;
 }) {
   const isCollapsed = collapsedMap[node.id];
   const hasChildren = node.children && node.children.length > 0;
   const level = node.level || 1;
+  const isReactionPickerOpen = activeReactionCommentId === node.id;
+  const matchedEmotion = COMMENT_EMOTIONS.find((e) => e.id === node.reaction);
 
   const levelIndent =
     level === 1
@@ -133,21 +174,31 @@ function RenderCommentNode({
   return (
     <div className={`space-y-1.5 ${levelIndent}`}>
       <div className="flex items-start gap-2 text-xs">
-        <img
-          src={node.authorAvatar || "/ceo1983-emblem-8.png"}
-          alt={node.authorName}
-          className={`rounded-full object-cover shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700 ${
-            level === 1 ? "size-6" : level === 2 ? "size-5" : "size-4.5"
-          }`}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
-          }}
-        />
-        <div className="flex-1 bg-slate-100 dark:bg-slate-800/80 px-3 py-2 rounded-2xl">
+        {node.authorAvatar ? (
+          <img
+            src={resolveMediaUrl(node.authorAvatar) || node.authorAvatar}
+            alt={node.authorName || "Hội viên"}
+            className={`rounded-full object-cover shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700 shadow-xs ${
+              level === 1 ? "size-7" : level === 2 ? "size-6" : "size-5"
+            }`}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
+            }}
+          />
+        ) : (
+          <div
+            className={`rounded-full shrink-0 mt-0.5 bg-gradient-to-br from-[#1F3864] to-[#B8860B] text-white font-bold flex items-center justify-center text-[10px] shadow-xs ${
+              level === 1 ? "size-7" : level === 2 ? "size-6" : "size-5"
+            }`}
+          >
+            {((node.authorName || "H").trim()[0] || "H").toUpperCase()}
+          </div>
+        )}
+        <div className="flex-1 bg-slate-100 dark:bg-slate-800/80 px-3 py-2 rounded-2xl relative">
           <div className="flex items-center justify-between gap-1 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-bold text-[11px] text-slate-900 dark:text-white">
-                {node.authorName || "Hội viên"}
+                {node.authorName || "Hội viên Doanh nhân"}
               </span>
               {level > 1 && (
                 <span
@@ -171,11 +222,69 @@ function RenderCommentNode({
             </span>
           </div>
 
-          <p className="text-slate-700 dark:text-slate-300 text-[11.5px] mt-0.5">
-            {node.content}
-          </p>
+          {node.content && (
+            <p className="text-slate-700 dark:text-slate-300 text-[11.5px] mt-0.5 whitespace-normal break-words break-all leading-relaxed select-text">
+              {node.content}
+            </p>
+          )}
 
-          {/* Comment actions: Reply button & Collapse button */}
+          {/* Attached Media (Image / Video / GIF) */}
+          {node.mediaUrl && (node.mediaType === "image" || node.mediaType === "gif") && (
+            <div className="mt-2 rounded-xl overflow-hidden max-w-xs border border-slate-200 dark:border-slate-700 shadow-xs">
+              <img
+                src={resolveMediaUrl(node.mediaUrl) || node.mediaUrl}
+                alt="Đính kèm"
+                onClick={() => onLightbox(node.mediaUrl!)}
+                className="w-full max-h-48 object-cover cursor-pointer hover:opacity-95 transition"
+              />
+            </div>
+          )}
+
+          {node.mediaUrl && node.mediaType === "video" && (
+            <div className="mt-2 rounded-xl overflow-hidden max-w-xs border border-slate-200 dark:border-slate-700 shadow-xs">
+              <video
+                src={resolveMediaUrl(node.mediaUrl) || node.mediaUrl}
+                controls
+                className="w-full max-h-48 rounded-xl bg-black"
+              />
+            </div>
+          )}
+
+          {/* Emotion Badge if reacted */}
+          {matchedEmotion && (
+            <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300/50 text-[11px] shadow-xs">
+              <span>{matchedEmotion.emoji}</span>
+              <span className="font-semibold text-amber-900 dark:text-amber-200 text-[10px]">
+                {matchedEmotion.label}
+              </span>
+            </div>
+          )}
+
+          {/* Emotion Picker Popover Row */}
+          {isReactionPickerOpen && (
+            <div className="mt-2 p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center gap-1.5 overflow-x-auto no-scrollbar animate-in zoom-in-95 duration-100 z-10">
+              {COMMENT_EMOTIONS.map((emo) => (
+                <button
+                  key={emo.id}
+                  type="button"
+                  onClick={() => onReact(postId, node.id, emo.id)}
+                  className="p-1 rounded-xl hover:bg-amber-100 dark:hover:bg-slate-800 text-base transition hover:scale-125 cursor-pointer shrink-0"
+                  title={emo.label}
+                >
+                  {emo.emoji}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setActiveReactionCommentId(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer ml-1"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          )}
+
+          {/* Comment actions: Reply button, Emotion button & Collapse button */}
           <div className="flex items-center gap-3 mt-1.5 text-[10px] font-semibold text-slate-500">
             <button
               type="button"
@@ -186,6 +295,17 @@ function RenderCommentNode({
             >
               <CornerDownRight className="size-2.5" />
               <span>Trả lời (Cấp {Math.min(3, (node.level || 1) + 1)})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setActiveReactionCommentId(isReactionPickerOpen ? null : node.id)
+              }
+              className="hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1 cursor-pointer transition text-amber-600 dark:text-amber-400"
+            >
+              <Smile className="size-2.5" />
+              <span>Thả emotion</span>
             </button>
 
             {hasChildren && (
@@ -223,6 +343,10 @@ function RenderCommentNode({
               onToggleCollapse={onToggleCollapse}
               onReply={onReply}
               formatTime={formatTime}
+              onLightbox={onLightbox}
+              onReact={onReact}
+              activeReactionCommentId={activeReactionCommentId}
+              setActiveReactionCommentId={setActiveReactionCommentId}
             />
           ))}
         </div>
@@ -270,6 +394,22 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
   // Lightbox state for image preview
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  // Media & Emotion states for inline comments
+  const [commentMediaMap, setCommentMediaMap] = useState<
+    Record<string, { url: string; type: "image" | "video" | "gif" } | null>
+  >({});
+  const [commentEmotionMap, setCommentEmotionMap] = useState<Record<string, string | null>>({});
+  const [activeMediaPickerFor, setActiveMediaPickerFor] = useState<{
+    postId: string;
+    type: "emotion" | "gif";
+  } | null>(null);
+  const [uploadingMediaFor, setUploadingMediaFor] = useState<string | null>(null);
+  const [activeReactionCommentId, setActiveReactionCommentId] = useState<string | null>(null);
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [activeUploadPostId, setActiveUploadPostId] = useState<string | null>(null);
+
   const toggleCommentsVisibility = (postId: string) => {
     setOpenCommentsMap((prev) => ({
       ...prev,
@@ -282,6 +422,46 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
       ...prev,
       [commentId]: !prev[commentId],
     }));
+  };
+
+  const handleMediaUpload = async (postId: string, file: File, type: "image" | "video") => {
+    try {
+      setUploadingMediaFor(postId);
+      const url = await uploadFileToNest(file, `feed_comments`);
+      setCommentMediaMap((prev) => ({
+        ...prev,
+        [postId]: { url, type },
+      }));
+      toast.success(type === "image" ? "Đã đính kèm ảnh vào bình luận!" : "Đã đính kèm video vào bình luận!");
+    } catch {
+      toast.error("Không thể tải lên tập tin lúc này");
+    } finally {
+      setUploadingMediaFor(null);
+    }
+  };
+
+  const handleReactToComment = async (postId: string, commentId: string, reactionId: string) => {
+    setPostCommentsMap((prev) => {
+      const list = prev[postId] || [];
+      return {
+        ...prev,
+        [postId]: list.map((c) =>
+          c.id === commentId
+            ? { ...c, reaction: c.reaction === reactionId ? undefined : reactionId }
+            : c
+        ),
+      };
+    });
+    setActiveReactionCommentId(null);
+
+    try {
+      await fetchNestApi(`/feed/comments/${commentId}/reaction`, {
+        method: "POST",
+        body: JSON.stringify({ reaction: reactionId }),
+      });
+    } catch {
+      /* ignore */
+    }
   };
 
   const fetchFeed = async () => {
@@ -328,81 +508,15 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
         list = res;
       }
 
-      // If DB has comments, use them; otherwise generate realistic 3-level comments
-      if (list.length === 0) {
-        list = [
-          {
-            id: `c1-${postId}`,
-            authorId: "member-1",
-            authorName: "Đinh Xuân Hải",
-            authorAvatar: "/ceo1983-emblem-8.png",
-            content: "Chúc mừng hoạt động giao thương sôi nổi của CLB CEO 1983!",
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            level: 1,
-          },
-          {
-            id: `c1-1-${postId}`,
-            parentId: `c1-${postId}`,
-            authorId: "member-secretary",
-            authorName: "Ban Thư Ký CLB",
-            authorAvatar: "/ceo1983-emblem-8.png",
-            content: "Cảm ơn anh Hải, Ban Thư ký đã ghi nhận và lên lịch trình kết nối cụ thể cho các thành viên!",
-            createdAt: new Date(Date.now() - 2800000).toISOString(),
-            level: 2,
-            replyToAuthorName: "Đinh Xuân Hải",
-          },
-          {
-            id: `c1-1-1-${postId}`,
-            parentId: `c1-1-${postId}`,
-            authorId: "member-3",
-            authorName: "Vũ Minh Khôi",
-            authorAvatar: "/ceo1983-emblem-8.png",
-            content: "Rất mong được kết nối trực tiếp với Ban Thư ký và anh Hải tại sự kiện tuần này!",
-            createdAt: new Date(Date.now() - 2000000).toISOString(),
-            level: 3,
-            replyToAuthorName: "Ban Thư Ký CLB",
-          },
-          {
-            id: `c2-${postId}`,
-            authorId: "member-2",
-            authorName: "Nguyễn Thu Hà",
-            authorAvatar: "/ceo1983-emblem-8.png",
-            content: "Doanh nghiệp tôi rất quan tâm, xin phép inbox trao đổi chi tiết.",
-            createdAt: new Date(Date.now() - 1800000).toISOString(),
-            level: 1,
-          },
-          {
-            id: `c2-1-${postId}`,
-            parentId: `c2-${postId}`,
-            authorId: "member-author",
-            authorName: "Đại diện Doanh Nghiệp",
-            authorAvatar: "/ceo1983-emblem-8.png",
-            content: "Chào chị Hà, mình đã gửi kết nối B2B trực tiếp cho chị qua Zalo rồi nhé!",
-            createdAt: new Date(Date.now() - 900000).toISOString(),
-            level: 2,
-            replyToAuthorName: "Nguyễn Thu Hà",
-          },
-        ];
-      }
+      // STRICT ZERO FAKE MOCK: Real database comments only
       setPostCommentsMap((prev) => ({
         ...prev,
         [postId]: list,
       }));
     } catch {
-      // Fallback default comments if network fails
       setPostCommentsMap((prev) => ({
         ...prev,
-        [postId]: [
-          {
-            id: `fallback-${postId}`,
-            authorId: "member-default",
-            authorName: "Hội viên CEO 1983",
-            authorAvatar: "/ceo1983-emblem-8.png",
-            content: "Thông tin rất hữu ích, chúc mừng sự kiện giao thương!",
-            createdAt: new Date().toISOString(),
-            level: 1,
-          },
-        ],
+        [postId]: [],
       }));
     }
   };
@@ -454,7 +568,10 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
 
   const handleSendInlineComment = async (postId: string) => {
     const text = (inlineInputText[postId] || "").trim();
-    if (!text) return;
+    const media = commentMediaMap[postId];
+    const emotion = commentEmotionMap[postId];
+
+    if (!text && !media && !emotion) return;
 
     setSubmittingCommentFor(postId);
     try {
@@ -463,6 +580,10 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
       const targetLevel = activeReply ? ((Math.min(3, (activeReply.level || 1) + 1)) as 1 | 2 | 3) : 1;
       const targetReplyToAuthor = activeReply ? activeReply.authorName : undefined;
 
+      // Real user avatar & name from session
+      const realAuthorName = user?.name || (user as any)?.contact || "Hội viên Doanh nhân";
+      const realAuthorAvatar = user?.avatar || (user as any)?.avatarUrl || "";
+
       const res = await fetchNestApi<any>(`/feed/${postId}/comments`, {
         method: "POST",
         body: JSON.stringify({
@@ -470,19 +591,27 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
           parentId: targetParentId,
           level: targetLevel,
           replyToAuthorName: targetReplyToAuthor,
+          mediaUrl: media?.url,
+          mediaType: media?.type,
+          reaction: emotion || undefined,
+          authorName: realAuthorName,
+          authorAvatar: realAuthorAvatar,
         }),
       });
 
       const newC: FeedComment = {
-        id: res?.id || `c-${Date.now()}`,
+        id: res?.comment?.id || res?.id || `c-${Date.now()}`,
         authorId: user?.id || "me",
-        authorName: user?.name || "Tôi (Hội viên)",
-        authorAvatar: user?.avatar || "/ceo1983-emblem-8.png",
+        authorName: realAuthorName,
+        authorAvatar: realAuthorAvatar || "/ceo1983-emblem-8.png",
         content: text,
         createdAt: new Date().toISOString(),
         parentId: targetParentId,
         level: targetLevel,
         replyToAuthorName: targetReplyToAuthor,
+        mediaUrl: media?.url,
+        mediaType: media?.type,
+        reaction: emotion || undefined,
       };
 
       setPostCommentsMap((prev) => {
@@ -498,6 +627,9 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
       );
 
       setInlineInputText((prev) => ({ ...prev, [postId]: "" }));
+      setCommentMediaMap((prev) => ({ ...prev, [postId]: null }));
+      setCommentEmotionMap((prev) => ({ ...prev, [postId]: null }));
+      setActiveMediaPickerFor(null);
       setReplyingTo(null);
       // Auto-open comments section so the user sees their reply immediately
       setOpenCommentsMap((prev) => ({ ...prev, [postId]: true }));
@@ -1001,6 +1133,10 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                               })
                             }
                             formatTime={formatRelativeTime}
+                            onLightbox={(url) => setLightboxImage(url)}
+                            onReact={handleReactToComment}
+                            activeReactionCommentId={activeReactionCommentId}
+                            setActiveReactionCommentId={setActiveReactionCommentId}
                           />
                         ))
                       ) : (
@@ -1022,7 +1158,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                         <button
                           type="button"
                           onClick={() => setReplyingTo(null)}
-                          className="p-1 hover:bg-amber-200/50 dark:hover:bg-amber-800/40 rounded-full text-slate-500"
+                          className="p-1 hover:bg-amber-200/50 dark:hover:bg-amber-800/40 rounded-full text-slate-500 cursor-pointer"
                           title="Huỷ trả lời"
                         >
                           <X className="size-3" />
@@ -1030,35 +1166,240 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                       </div>
                     )}
 
-                    {/* Inline quick comment input */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="text"
-                        placeholder={
-                          replyingTo?.postId === post.id
-                            ? `Trả lời @${replyingTo.authorName}...`
-                            : "Viết bình luận công khai..."
-                        }
-                        value={inlineInputText[post.id] || ""}
-                        onChange={(e) =>
-                          setInlineInputText({ ...inlineInputText, [post.id]: e.target.value })
-                        }
-                        onKeyDown={(e) => e.key === "Enter" && handleSendInlineComment(post.id)}
-                        className="flex-1 px-3 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#1F3864]"
-                      />
-                      <button
-                        type="button"
-                        disabled={submittingCommentFor === post.id}
-                        onClick={() => handleSendInlineComment(post.id)}
-                        className="p-2 rounded-2xl bg-[#1F3864] hover:bg-[#152747] text-white transition cursor-pointer disabled:opacity-50"
-                        title="Gửi bình luận"
-                      >
-                        {submittingCommentFor === post.id ? (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        ) : (
-                          <Send className="size-3.5" />
+                    {/* Attached Media / Emotion Preview */}
+                    {(commentMediaMap[post.id] || commentEmotionMap[post.id]) && (
+                      <div className="flex items-center gap-2 p-2 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300/50 text-xs">
+                        {commentMediaMap[post.id] && (
+                          <div className="flex items-center gap-2">
+                            {commentMediaMap[post.id]!.type === "video" ? (
+                              <div className="size-10 rounded-lg bg-black flex items-center justify-center text-white">
+                                <Video className="size-4" />
+                              </div>
+                            ) : (
+                              <img
+                                src={resolveMediaUrl(commentMediaMap[post.id]!.url) || commentMediaMap[post.id]!.url}
+                                alt="Đính kèm"
+                                className="size-10 rounded-lg object-cover border border-amber-300"
+                              />
+                            )}
+                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                              {commentMediaMap[post.id]!.type === "video"
+                                ? "Video đính kèm"
+                                : commentMediaMap[post.id]!.type === "gif"
+                                ? "GIF đính kèm"
+                                : "Hình ảnh đính kèm"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setCommentMediaMap((prev) => ({ ...prev, [post.id]: null }))}
+                              className="p-1 text-slate-400 hover:text-rose-500 rounded-full cursor-pointer"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          </div>
                         )}
-                      </button>
+
+                        {commentEmotionMap[post.id] && (
+                          <div className="flex items-center gap-1.5 ml-auto px-2 py-1 rounded-full bg-white dark:bg-slate-900 border border-amber-300 text-xs">
+                            <span>{COMMENT_EMOTIONS.find((e) => e.id === commentEmotionMap[post.id])?.emoji}</span>
+                            <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-300">
+                              {COMMENT_EMOTIONS.find((e) => e.id === commentEmotionMap[post.id])?.label}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setCommentEmotionMap((prev) => ({ ...prev, [post.id]: null }))}
+                              className="p-0.5 text-slate-400 hover:text-rose-500 rounded-full cursor-pointer"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Inline quick comment input with allowClear & media buttons */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            placeholder={
+                              replyingTo?.postId === post.id
+                                ? `Trả lời @${replyingTo.authorName}...`
+                                : "Viết bình luận công khai..."
+                            }
+                            value={inlineInputText[post.id] || ""}
+                            onChange={(e) =>
+                              setInlineInputText({ ...inlineInputText, [post.id]: e.target.value })
+                            }
+                            onKeyDown={(e) => e.key === "Enter" && handleSendInlineComment(post.id)}
+                            className="w-full pl-3 pr-8 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#1F3864]"
+                          />
+                          {inlineInputText[post.id] && (
+                            <button
+                              type="button"
+                              onClick={() => setInlineInputText({ ...inlineInputText, [post.id]: "" })}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              title="Xóa trắng"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Media Actions Toolbar */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {/* Upload Image */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveUploadPostId(post.id);
+                              imageInputRef.current?.click();
+                            }}
+                            disabled={uploadingMediaFor === post.id}
+                            className="p-2 rounded-xl text-slate-500 hover:text-[#1F3864] dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                            title="Đính kèm ảnh"
+                          >
+                            <ImageIcon className="size-4" />
+                          </button>
+
+                          {/* Upload Video */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveUploadPostId(post.id);
+                              videoInputRef.current?.click();
+                            }}
+                            disabled={uploadingMediaFor === post.id}
+                            className="p-2 rounded-xl text-slate-500 hover:text-[#1F3864] dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                            title="Đính kèm video"
+                          >
+                            <Video className="size-4" />
+                          </button>
+
+                          {/* GIF Picker */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveMediaPickerFor((cur) =>
+                                cur?.postId === post.id && cur?.type === "gif" ? null : { postId: post.id, type: "gif" }
+                              )
+                            }
+                            className={`px-2 py-1 rounded-xl text-[11px] font-black tracking-wider transition cursor-pointer ${
+                              activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "gif"
+                                ? "bg-amber-500 text-white"
+                                : "text-slate-500 hover:text-[#1F3864] dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            }`}
+                            title="Chọn GIF"
+                          >
+                            GIF
+                          </button>
+
+                          {/* Emotion Picker */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveMediaPickerFor((cur) =>
+                                cur?.postId === post.id && cur?.type === "emotion" ? null : { postId: post.id, type: "emotion" }
+                              )
+                            }
+                            className={`p-2 rounded-xl transition cursor-pointer ${
+                              activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "emotion"
+                                ? "bg-amber-500 text-white"
+                                : "text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            }`}
+                            title="Thả Emotion"
+                          >
+                            <Smile className="size-4" />
+                          </button>
+
+                          {/* Send Button */}
+                          <button
+                            type="button"
+                            disabled={submittingCommentFor === post.id || uploadingMediaFor === post.id}
+                            onClick={() => handleSendInlineComment(post.id)}
+                            className="p-2 rounded-2xl bg-[#1F3864] hover:bg-[#152747] text-white transition cursor-pointer disabled:opacity-50"
+                            title="Gửi bình luận"
+                          >
+                            {submittingCommentFor === post.id || uploadingMediaFor === post.id ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Send className="size-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Active Media Picker Popups */}
+                      {activeMediaPickerFor?.postId === post.id && (
+                        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl space-y-2 animate-in zoom-in-95 duration-100">
+                          {activeMediaPickerFor.type === "emotion" ? (
+                            <div>
+                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">
+                                <span>Bộ Emotion Doanh Nhân CEO 1983</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveMediaPickerFor(null)}
+                                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                                >
+                                  <X className="size-3.5" />
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                {COMMENT_EMOTIONS.map((emo) => (
+                                  <button
+                                    key={emo.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setCommentEmotionMap((prev) => ({ ...prev, [post.id]: emo.id }));
+                                      setActiveMediaPickerFor(null);
+                                    }}
+                                    className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-slate-800 border border-transparent hover:border-amber-300 transition cursor-pointer"
+                                  >
+                                    <span className="text-xl">{emo.emoji}</span>
+                                    <span className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 text-center truncate max-w-full">
+                                      {emo.label}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">
+                                <span>Chọn GIF Doanh nghiệp &amp; Chúc mừng</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveMediaPickerFor(null)}
+                                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                                >
+                                  <X className="size-3.5" />
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                {BUSINESS_GIFS.map((gif) => (
+                                  <div
+                                    key={gif.id}
+                                    onClick={() => {
+                                      setCommentMediaMap((prev) => ({
+                                        ...prev,
+                                        [post.id]: { url: gif.url, type: "gif" },
+                                      }));
+                                      setActiveMediaPickerFor(null);
+                                    }}
+                                    className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-amber-400 cursor-pointer transition aspect-4/3 relative group"
+                                  >
+                                    <img src={gif.url} alt={gif.title} className="w-full h-full object-cover" />
+                                    <span className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] font-semibold px-1 py-0.5 truncate text-center opacity-0 group-hover:opacity-100 transition">
+                                      {gif.title}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1074,6 +1415,34 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
         onClose={() => setCreateModalOpen(false)}
         onSuccess={(newPost) => {
           setPosts((prev) => [newPost, ...prev]);
+        }}
+      />
+
+      {/* Hidden file inputs for comment media upload */}
+      <input
+        type="file"
+        ref={imageInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file && activeUploadPostId) {
+            await handleMediaUpload(activeUploadPostId, file, "image");
+          }
+          e.target.value = "";
+        }}
+      />
+      <input
+        type="file"
+        ref={videoInputRef}
+        accept="video/*"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file && activeUploadPostId) {
+            await handleMediaUpload(activeUploadPostId, file, "video");
+          }
+          e.target.value = "";
         }}
       />
 

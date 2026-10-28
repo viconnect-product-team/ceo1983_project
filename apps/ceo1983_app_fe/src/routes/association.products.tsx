@@ -1905,48 +1905,48 @@ function ProductsScreen() {
         renderCompanyStorefront()
       ) : (
         <>
-          {/* ── TOP HEADER (Chợ Marketplace) ── */}
-          <div className="ceo-safe-sticky sticky top-0 z-30 self-stretch px-5 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-xs">
+          {/* ── TOP HEADER (Chợ Marketplace & Icon Gian Hàng Góc Phải) ── */}
+          <div className="ceo-safe-sticky sticky top-0 z-30 self-stretch px-4 py-3.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-xs">
             <div className="flex justify-start items-center gap-2.5">
               <button 
                 type="button" 
-                onClick={() => window.history.back()}
+                onClick={() => {
+                  if (marketplaceTab === "my_store") {
+                    setMarketplaceTab("market");
+                  } else {
+                    window.history.back();
+                  }
+                }}
                 className="p-1 -ml-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition cursor-pointer"
                 aria-label="Quay lại"
               >
                 <ChevronLeft className="size-5 text-sky-950 dark:text-white" />
               </button>
-              <div className="justify-start text-sky-950 dark:text-white text-lg font-bold font-['Inter']">
-                Chợ Giao Thương B2B
+              <div className="justify-start text-sky-950 dark:text-white text-base font-bold font-['Inter']">
+                {marketplaceTab === "my_store" ? "Gian Hàng Của Tôi" : "Chợ Giao Thương B2B"}
               </div>
             </div>
-          </div>
 
-          {/* ── SUB-HEADER TABS: Chợ Giao Thương B2B vs Gian Hàng Của Tôi ── */}
-          <div id="tour-market-tabs" className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+            {/* Icon Góc Phải: Gian Hàng Của Tôi (Chỉ hiện trong Sàn Thương Mại) */}
             <button
               type="button"
-              onClick={() => setMarketplaceTab("market")}
-              className={`flex-1 py-2.5 px-3 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                marketplaceTab === "market"
-                  ? "bg-[#003B95] text-white shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              id="tour-market-tabs"
+              onClick={() => setMarketplaceTab(marketplaceTab === "my_store" ? "market" : "my_store")}
+              className={`relative px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                marketplaceTab === "my_store"
+                  ? "bg-amber-500 text-white border-amber-600 shadow-sm"
+                  : "bg-slate-50 dark:bg-slate-800 text-[#003B95] dark:text-amber-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
+              title={marketplaceTab === "my_store" ? "Quay lại Chợ B2B" : "Gian hàng của tôi"}
+              aria-label="Gian hàng của tôi"
             >
               <Store className="size-4" />
-              <span>Chợ Giao Thương B2B</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMarketplaceTab("my_store")}
-              className={`flex-1 py-2.5 px-3 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                marketplaceTab === "my_store"
-                  ? "bg-[#003B95] text-white shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-              }`}
-            >
-              <Package className="size-4" />
-              <span>Gian Hàng Của Tôi ({myProductsCount})</span>
+              <span className="hidden xs:inline">{marketplaceTab === "my_store" ? "Chợ B2B" : "Gian hàng"}</span>
+              {myProductsCount > 0 && (
+                <span className="size-4.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center ring-1.5 ring-white dark:ring-slate-900">
+                  {myProductsCount}
+                </span>
+              )}
             </button>
           </div>
 

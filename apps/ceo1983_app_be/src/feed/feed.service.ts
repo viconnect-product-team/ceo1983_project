@@ -65,6 +65,30 @@ export class FeedService {
 
   private async ensureSeedFeed() {
     try {
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.feed_comments (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          post_id UUID NOT NULL,
+          author_id TEXT,
+          author_name TEXT,
+          author_avatar TEXT,
+          content TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          parent_id TEXT,
+          level INT DEFAULT 1,
+          reply_to_author_name TEXT,
+          media_url TEXT,
+          media_type TEXT,
+          reaction TEXT
+        );
+        ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS parent_id TEXT;
+        ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS level INT DEFAULT 1;
+        ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS reply_to_author_name TEXT;
+        ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS media_url TEXT;
+        ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS media_type TEXT;
+        ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS reaction TEXT;
+      `).catch(() => {});
+
       const check = await this.prisma.$queryRaw<any[]>`
         SELECT COUNT(*)::int as cnt FROM public.feed_posts
       `.catch(() => [{ cnt: 0 }]);
@@ -411,27 +435,56 @@ export class FeedService {
     return comments.map((c) => ({
       id: c.id,
       postId: c.post_id,
+      authorId: c.author_id,
+      authorName: c.author_name || 'Hội viên',
+      authorAvatar: c.author_avatar || '/ceo1983-emblem-8.png',
       author: {
         id: c.author_id,
         name: c.author_name || 'Hội viên',
         avatar: c.author_avatar || '/ceo1983-emblem-8.png',
       },
-      content: c.content,
+      content: c.content || '',
+      parentId: c.parent_id || null,
+      level: Number(c.level || 1),
+      replyToAuthorName: c.reply_to_author_name || null,
+      mediaUrl: c.media_url || null,
+      mediaType: c.media_type || null,
+      reaction: c.reaction || null,
       createdAt: c.created_at ? new Date(c.created_at).toISOString() : new Date().toISOString(),
     }));
   }
 
-  async addComment(userId: string, postId: string, content: string) {
-    if (!content || !content.trim()) {
-      throw new BadRequestException('Nội dung bình luận không được để trống.');
+  async addComment(userId: string, postId: string, payload: any) {
+    const rawContent = typeof payload === 'string' ? payload : payload?.content;
+    const text = (rawContent || '').trim();
+    const parentId = payload?.parentId || null;
+    const level = payload?.level ? Number(payload.level) : 1;
+    const replyToAuthorName = payload?.replyToAuthorName || null;
+    const mediaUrl = payload?.mediaUrl || null;
+    const mediaType = payload?.mediaType || null;
+    const reaction = payload?.reaction || null;
+
+    if (!text && !mediaUrl && !reaction) {
+      throw new BadRequestException('Nội dung hoặc tập tin đính kèm bình luận không được để trống.');
     }
 
     const author = await this.getAuthorInfo(userId);
-    const text = content.trim();
+    const finalAuthorName = (author.name && author.name !== 'Lãnh đạo CEO 1983' && author.name !== 'Hội viên CEO 1983')
+      ? author.name
+      : (payload?.authorName || author.name || 'Hội viên');
+    const finalAuthorAvatar = (author.avatar && author.avatar !== '/ceo1983-emblem-8.png')
+      ? author.avatar
+      : (payload?.authorAvatar || author.avatar || '/ceo1983-emblem-8.png');
 
     const inserted = await this.prisma.$queryRaw<any[]>`
-      INSERT INTO public.feed_comments (post_id, author_id, author_name, author_avatar, content, created_at)
-      VALUES (${postId}::uuid, ${author.id}, ${author.name}, ${author.avatar}, ${text}, NOW())
+      INSERT INTO public.feed_comments (
+        post_id, author_id, author_name, author_avatar, content,
+        parent_id, level, reply_to_author_name, media_url, media_type, reaction, created_at
+      )
+      VALUES (
+        ${postId}::uuid, ${author.id}, ${finalAuthorName}, ${finalAuthorAvatar}, ${text},
+        ${parentId}, ${level}, ${replyToAuthorName}, ${mediaUrl}, ${mediaType}, ${reaction}, NOW()
+      )
       RETURNING *
     `;
 
@@ -447,14 +500,39 @@ export class FeedService {
       comment: {
         id: c.id,
         postId: c.post_id,
+        authorId: c.author_id,
+        authorName: c.author_name,
+        authorAvatar: c.author_avatar,
         author: {
-          id: author.id,
-          name: author.name,
-          avatar: author.avatar,
+          id: c.author_id,
+          name: c.author_name,
+          avatar: c.author_avatar,
         },
-        content: c.content,
+        content: c.content || '',
+        parentId: c.parent_id,
+        level: c.level,
+        replyToAuthorName: c.reply_to_author_name,
+        mediaUrl: c.media_url,
+        mediaType: c.media_type,
+        reaction: c.reaction,
         createdAt: new Date().toISOString(),
       },
+    };
+  }
+
+  async reactToComment(userId: string, commentId: string, reaction: string) {
+    if (!commentId) return { ok: false };
+    const safeReaction = reaction || null;
+    await this.prisma.$executeRaw`
+      UPDATE public.feed_comments
+      SET reaction = ${safeReaction}
+      WHERE id = ${commentId}::uuid
+    `.catch(() => {});
+
+    return {
+      ok: true,
+      commentId,
+      reaction: safeReaction,
     };
   }
 

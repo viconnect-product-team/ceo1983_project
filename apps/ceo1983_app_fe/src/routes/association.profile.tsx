@@ -498,9 +498,21 @@ export default function ProfileScreen() {
       setCoverPhoto(uploadUrl);
       try {
         localStorage.setItem("vba_member_cover_photo", uploadUrl);
+        if (user?.id) {
+          localStorage.setItem(`vba_member_cover_photo_${user.id}`, uploadUrl);
+          const cp = JSON.parse(localStorage.getItem(`vba_custom_profile_${user.id}`) || "{}");
+          cp.cover = uploadUrl;
+          cp.userId = user.id;
+          localStorage.setItem(`vba_custom_profile_${user.id}`, JSON.stringify(cp));
+        }
+        const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
+        mem.coverUrl = uploadUrl;
+        localStorage.setItem("vba_my_member", JSON.stringify(mem));
       } catch {}
 
       window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: uploadUrl }));
+      window.dispatchEvent(new CustomEvent("profile-updated", { detail: { cover: uploadUrl } }));
+      window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: { cover: uploadUrl } }));
 
       await fetchNestApi("/members/me/cover", {
         method: "PATCH",
@@ -536,8 +548,28 @@ export default function ProfileScreen() {
       setAvatarError(false);
       try {
         localStorage.setItem("vba_member_avatar_photo", uploadUrl);
-        window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: uploadUrl }));
+        if (user?.id) {
+          localStorage.setItem(`vba_member_avatar_photo_${user.id}`, uploadUrl);
+          const cp = JSON.parse(localStorage.getItem(`vba_custom_profile_${user.id}`) || "{}");
+          cp.avatar = uploadUrl;
+          cp.userId = user.id;
+          localStorage.setItem(`vba_custom_profile_${user.id}`, JSON.stringify(cp));
+        }
+        const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
+        mem.avatar = uploadUrl;
+        localStorage.setItem("vba_my_member", JSON.stringify(mem));
       } catch {}
+
+      window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: uploadUrl }));
+      window.dispatchEvent(new CustomEvent("profile-updated", { detail: { avatar: uploadUrl } }));
+      window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: { avatar: uploadUrl } }));
+
+      await fetchNestApi("/members/me", {
+        method: "PATCH",
+        body: JSON.stringify({ avatar: uploadUrl }),
+      }).catch((apiErr) => {
+        console.warn("API /members/me avatar PATCH error:", apiErr);
+      });
 
       toast.success(isEn ? "Avatar updated successfully!" : "Cập nhật ảnh đại diện thành công!", { id: tid });
     } catch (err: any) {

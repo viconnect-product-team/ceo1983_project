@@ -572,7 +572,8 @@ export class ConnectOpportunityService {
                COALESCE(up.display_name, m.contact, m.name, u.name, o.contact_name, 'Hội viên CLB') as poster_name,
                COALESCE(up.avatar_url, m.cover_url, u.avatar_url, '') as poster_avatar,
                COALESCE(m.phone, o.contact_phone, '') as poster_phone,
-               COALESCE(m.name, bi.company_name, o.company, 'CLB Doanh Nhân CEO 1983') as poster_company
+               COALESCE(m.name, bi.company_name, o.company, 'CLB Doanh Nhân CEO 1983') as poster_company,
+               o.referrer, o.commission_percent
         FROM public.opportunities o
         LEFT JOIN public.members m ON (o.poster_id = m.user_id::text OR o.poster_id = m.id OR o.poster_id = m.code)
         LEFT JOIN public.user_profiles up ON (o.poster_id = up.user_id::text)
@@ -636,6 +637,8 @@ export class ConnectOpportunityService {
             image: firstImg,
             thumbnail: firstImg,
             images: imgList,
+            referrer: r.referrer || undefined,
+            commissionPercent: r.commission_percent != null ? Number(r.commission_percent) : undefined,
           };
         }),
         interests: interests.map(it => ({
@@ -779,13 +782,16 @@ export class ConnectOpportunityService {
     const targetRecipients = JSON.stringify(data.targetRecipients || []);
     const targetGroups = JSON.stringify(data.targetGroups || []);
 
+    const referrer = data.referrer ? String(data.referrer).trim() : null;
+    const commissionPercent = data.commissionPercent != null ? Number(data.commissionPercent) : null;
+
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
           id, association_id, poster_id, title, description, type,
           budget_min, budget_max, region, industry, deadline, status, views, emoji,
           image, images, contact_name, contact_phone, contact_title, company,
-          target_scope, target_recipients, target_groups,
+          target_scope, target_recipients, target_groups, referrer, commission_percent,
           created_at, updated_at
         ) VALUES (
           ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
@@ -796,7 +802,7 @@ export class ConnectOpportunityService {
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
           'open', 0, ${data.emoji || '💡'},
           ${oppImage}, ${JSON.stringify(images)}::jsonb, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
-          ${targetScope}, ${targetRecipients}::jsonb, ${targetGroups}::jsonb,
+          ${targetScope}, ${targetRecipients}::jsonb, ${targetGroups}::jsonb, ${referrer}, ${commissionPercent},
           now(), now()
         )
       `;
@@ -867,6 +873,8 @@ export class ConnectOpportunityService {
         contact_phone = COALESCE(${data.contactPhone}, contact_phone),
         contact_title = COALESCE(${data.contactTitle}, contact_title),
         company = COALESCE(${data.company}, company),
+        referrer = COALESCE(${data.referrer !== undefined ? data.referrer : null}, referrer),
+        commission_percent = COALESCE(${data.commissionPercent !== undefined ? data.commissionPercent : null}, commission_percent),
         image = COALESCE(${oppImage}, image),
         images = CASE WHEN ${images ? true : false} THEN ${JSON.stringify(images || [])}::jsonb ELSE images END,
         updated_at = now()

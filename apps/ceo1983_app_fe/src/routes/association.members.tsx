@@ -30,9 +30,9 @@ import {
   Sparkles,
   ChevronRight,
   Compass,
-  ArrowRight,
   QrCode,
   Navigation,
+  Trash2,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -57,6 +57,7 @@ import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import { MemberProfileModal } from "@/components/member/MemberProfileModal";
 import { InviteMemberModal } from "@/components/member/InviteMemberModal";
+import { AssociationQrScanModal } from "@/components/member/AssociationQrScanModal";
 import {
   BusinessConnectBottomSheet,
   type BusinessConnectTarget,
@@ -66,7 +67,7 @@ export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
 });
 
-export type FilterTab = "all" | "friends" | "meetings";
+export type FilterTab = "all" | "friends" | "meetings" | "scanned_cards";
 
 export interface MemberMeetingItem {
   id: string;
@@ -176,14 +177,15 @@ function MembersScreen() {
     return "";
   });
 
-  // 3 Danh mục chuẩn: Tất cả hội viên | Bạn bè | Lịch hẹn (Yêu cầu 4)
+  // 4 Danh mục chuẩn: Tất cả hội viên | Bạn bè | Lịch hẹn | Danh thiếp đã quét (Yêu cầu 10)
   const [tab, setTab] = useState<FilterTab>(() => {
     if (typeof window !== "undefined") {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "all" || t === "friends" || t === "meetings") {
+      if (t === "all" || t === "friends" || t === "meetings" || t === "scanned_cards") {
         return t as FilterTab;
       }
       if (t === "connected") return "friends";
+      if (t === "scanned" || t === "cards") return "scanned_cards";
       if (t === "discover" || t === "sent") return "all";
     }
     return "all";
@@ -206,10 +208,12 @@ function MembersScreen() {
     if (typeof window === "undefined") return;
     const syncTabFromUrl = () => {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "all" || t === "friends" || t === "meetings") {
+      if (t === "all" || t === "friends" || t === "meetings" || t === "scanned_cards") {
         setTab(t as FilterTab);
       } else if (t === "connected") {
         setTab("friends");
+      } else if (t === "scanned" || t === "cards") {
+        setTab("scanned_cards");
       } else if (t === "discover" || t === "sent") {
         setTab("all");
       }
@@ -239,6 +243,50 @@ function MembersScreen() {
       return [];
     }
   });
+  // Danh thiếp đã quét state (Req 10)
+  const [scannedCards, setScannedCards] = useState<any[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("ceo1983_scanned_business_cards");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [scanModalOpen, setScanModalOpen] = useState(false);
+
+  const reloadScannedCards = () => {
+    try {
+      const raw = localStorage.getItem("ceo1983_scanned_business_cards");
+      setScannedCards(raw ? JSON.parse(raw) : []);
+    } catch {
+      setScannedCards([]);
+    }
+  };
+
+  const handleRemoveScannedCard = (code: string, name: string) => {
+    try {
+      const raw = localStorage.getItem("ceo1983_scanned_business_cards");
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.filter((item: any) => item.code !== code);
+      localStorage.setItem("ceo1983_scanned_business_cards", JSON.stringify(updated));
+      setScannedCards(updated);
+      toast.success(`Đã xóa danh thiếp của ${name} khỏi danh mục đã quét`);
+    } catch (err) {
+      toast.error("Không thể xóa danh thiếp");
+    }
+  };
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "ceo1983_scanned_business_cards") {
+        reloadScannedCards();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const [loadingMeetings, setLoadingMeetings] = useState(false);
   const [meetingSubTab, setMeetingSubTab] = useState<"confirmed" | "pending" | "all">("confirmed");
 
@@ -693,6 +741,20 @@ function MembersScreen() {
     });
   }, [meetingsList, meetingSubTab, q]);
 
+  // Lọc danh thiếp đã quét theo từ khóa tìm kiếm (Req 10)
+  const filteredScannedCards = useMemo(() => {
+    if (!q.trim()) return scannedCards;
+    const normTerm = normalizeSearchText(q);
+    return scannedCards.filter((c: any) => {
+      const searchable = normalizeSearchText(
+        [c.name, c.company, c.title, c.phone, c.email, c.industry, c.code]
+          .filter(Boolean)
+          .join(" "),
+      );
+      return searchable.includes(normTerm);
+    });
+  }, [scannedCards, q]);
+
   type SentRequestItem = {
     id: string;
     member: DirectoryMember | null;
@@ -1051,29 +1113,32 @@ function MembersScreen() {
             placeholder={
               tab === "friends"
                 ? "Tìm theo tên CEO, công ty, SĐT trong danh bạ bạn bè..."
-                : "Tìm kiếm hội viên, ngành nghề..."
+                : tab === "scanned_cards"
+                  ? "Tìm danh thiếp CEO đã quét theo tên, công ty, SĐT..."
+                  : "Tìm kiếm hội viên, ngành nghề..."
             }
-            className="w-full min-w-0 bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 placeholder:text-slate-400 truncate"
+            className="w-full min-w-0 bg-transparent text-[13px] text-slate-900 dark:text-white border-0 outline-none ring-0 placeholder:text-slate-400 whitespace-normal break-words"
           />
           {q && (
             <button
               onClick={() => setQ("")}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-white shrink-0 p-0.5 cursor-pointer"
+              title="Xóa tìm kiếm"
             >
               <X className="h-4 w-4" />
             </button>
           )}
         </div>
 
-        {/* Nút Mời hội viên / Thêm kết nối */}
+        {/* Nút Quét Danh Thiếp QR (Req 10 - Đã bỏ nút Thêm CEO theo quy chuẩn) */}
         <button
           type="button"
-          onClick={() => setInviteModalOpen(true)}
+          onClick={() => setScanModalOpen(true)}
           className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 px-3.5 py-2.5 text-[12px] font-black text-white shadow-md shadow-blue-900/25 active:scale-95 transition cursor-pointer whitespace-nowrap"
-          title="Mời hội viên tham gia danh bạ CEO"
+          title="Quét danh thiếp QR hội viên CEO 1983"
         >
-          <UserPlus className="h-4 w-4 text-white shrink-0" />
-          <span className="hidden sm:inline">Thêm CEO</span>
+          <QrCode className="h-4 w-4 text-white shrink-0" />
+          <span className="hidden sm:inline">Quét QR</span>
         </button>
       </div>
 
@@ -1124,6 +1189,20 @@ function MembersScreen() {
               {pendingInvitesCount}
             </span>
           )}
+        </button>
+
+        {/* Tab 4: Danh thiếp đã quét (Req 10) */}
+        <button
+          type="button"
+          onClick={() => handleSelectTab("scanned_cards")}
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            tab === "scanned_cards"
+              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
+              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
+          }`}
+        >
+          <QrCode className={`h-3.5 w-3.5 ${tab === "scanned_cards" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
+          <span>Danh thiếp đã quét ({scannedCards.length})</span>
         </button>
       </div>
 
@@ -1197,7 +1276,7 @@ function MembersScreen() {
                           <button
                             type="button"
                             onClick={() => setSelectedMember(m)}
-                            className="truncate text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
+                            className="whitespace-normal break-words text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
                           >
                             {personDisplayName}
                           </button>
@@ -1211,11 +1290,11 @@ function MembersScreen() {
                           )}
                         </div>
                         {companyDisplayName && (
-                          <p className="truncate text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
+                          <p className="whitespace-normal break-words text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
                             {companyDisplayName}
                           </p>
                         )}
-                        <p className="truncate text-[11px] text-slate-400 mt-0.5">
+                        <p className="whitespace-normal break-words text-[11px] text-slate-400 mt-0.5">
                           {m.personTitle || m.industry || "Hội viên CEO 1983"}
                         </p>
                       </div>
@@ -1445,7 +1524,7 @@ function MembersScreen() {
                                     <button
                                       type="button"
                                       onClick={() => setSelectedMember(m)}
-                                      className="truncate max-w-[170px] sm:max-w-none text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
+                                      className="whitespace-normal break-words max-w-[170px] sm:max-w-none text-[14px] font-bold text-slate-900 dark:text-white hover:text-[#003B95] dark:hover:text-amber-400 transition-colors text-left cursor-pointer"
                                     >
                                       {personDisplayName}
                                     </button>
@@ -1459,14 +1538,14 @@ function MembersScreen() {
                                   </div>
 
                                   {companyDisplayName ? (
-                                    <p className="truncate text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1 mt-0.5">
+                                    <p className="whitespace-normal break-words text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1 mt-0.5">
                                       <Building2 className="h-3 w-3 text-[#003B95] dark:text-amber-400 shrink-0" />
                                       <span>{companyDisplayName}</span>
                                     </p>
                                   ) : null}
 
                                   <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
-                                    <span className="truncate">
+                                    <span className="whitespace-normal break-words">
                                       {m.personTitle || m.industry || "Hội viên CEO 1983"}
                                     </span>
                                     {m.phone && (
@@ -1730,7 +1809,7 @@ function MembersScreen() {
                             <span>Trực tiếp</span>
                           </span>
                         )}
-                        <span className="text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 truncate">
+                        <span className="text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 whitespace-normal break-words">
                           {meet.title}
                         </span>
                       </div>
@@ -1739,7 +1818,7 @@ function MembersScreen() {
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[12px] gap-2.5">
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 whitespace-normal break-words">
                           {meet.isUserHost ? "Đối tác:" : "Người mời:"} {partnerDisplayName}
                           {partnerDisplayCompany ? ` (${partnerDisplayCompany})` : ""}
                         </p>
@@ -1762,7 +1841,7 @@ function MembersScreen() {
                           </div>
                         ) : (
                           <div className="mt-0.5">
-                            <p className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1 truncate">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1 whitespace-normal break-words">
                               <MapPin className="h-3 w-3 shrink-0 text-amber-500" />
                               <span>{meet.venue || "Văn phòng Hiệp hội CEO 1983"}</span>
                             </p>
@@ -1778,7 +1857,7 @@ function MembersScreen() {
                           </div>
                         )}
                         {meet.notes && (
-                          <p className="text-[11px] text-slate-400 italic mt-0.5 truncate">
+                          <p className="text-[11px] text-slate-400 italic mt-0.5 whitespace-normal break-words">
                             Ghi chú: {meet.notes}
                           </p>
                         )}
@@ -1834,6 +1913,194 @@ function MembersScreen() {
                   </div>
                 );
               })
+            )}
+          </div>
+        )}
+
+        {/* ── TAB 4: DANH THIẾP ĐÃ QUÉT (Yêu cầu 10) ── */}
+        {tab === "scanned_cards" && !loading && (
+          <div className="space-y-3">
+            {/* Thanh công cụ và thống kê danh thiếp đã quét */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-sky-900/10 via-[#003B95]/10 to-amber-500/10 border border-[#003B95]/20 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-xl bg-[#003B95] text-white flex items-center justify-center shadow-xs">
+                  <QrCode className="size-4" />
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-bold text-slate-900 dark:text-white leading-tight">
+                    Danh thiếp CEO 1983 đã quét
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {filteredScannedCards.length} danh thiếp được xác thực chính thức
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setScanModalOpen(true)}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-xs active:scale-95 transition cursor-pointer"
+              >
+                <QrCode className="size-3.5" />
+                <span>Quét mới</span>
+              </button>
+            </div>
+
+            {filteredScannedCards.length === 0 ? (
+              <div className="py-12 px-4 text-center rounded-3xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+                <div className="size-14 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-400 flex items-center justify-center mx-auto mb-3 ring-8 ring-blue-500/10">
+                  <QrCode className="size-7" />
+                </div>
+                <h4 className="text-[14px] font-bold text-slate-900 dark:text-white">
+                  {q ? "Không tìm thấy danh thiếp phù hợp" : "Chưa có danh thiếp đã quét"}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto mt-1 mb-4 leading-relaxed whitespace-normal break-words">
+                  {q
+                    ? `Không tìm thấy danh thiếp nào khớp với từ khóa "${q}".`
+                    : "Quét mã QR Thẻ 83 của các hội viên CEO 1983 để tự động lưu vào danh mục này. Danh thiếp không thuộc CEO 1983 sẽ được gợi ý lưu vào danh bạ thiết bị hoặc kết nối Zalo."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setScanModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white font-bold text-xs shadow-md shadow-blue-900/25 active:scale-95 transition cursor-pointer"
+                >
+                  <QrCode className="size-4" />
+                  <span>Quét danh thiếp ngay</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {filteredScannedCards.map((card: any) => {
+                  const avatarResolved = card.avatar ? resolveMediaUrl(card.avatar) : null;
+                  const formattedDate = card.scannedAt
+                    ? new Date(card.scannedAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "";
+
+                  return (
+                    <div
+                      key={card.code}
+                      className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#003B95]/40 transition"
+                    >
+                      <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                        <div className="relative shrink-0">
+                          {avatarResolved ? (
+                            <img
+                              src={avatarResolved}
+                              alt={card.name}
+                              className="size-12 rounded-full object-cover ring-2 ring-[#003B95]/20"
+                              onError={(e) => {
+                                e.currentTarget.src = "/ceo1983-logo.png";
+                              }}
+                            />
+                          ) : (
+                            <span className="grid size-12 place-items-center rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 ring-2 ring-[#003B95]/20 font-bold text-sm">
+                              {(card.name || "CEO").slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[14px] font-bold text-slate-900 dark:text-white whitespace-normal break-words">
+                              {card.name}
+                            </span>
+                            <span className="rounded-md bg-[#003B95] px-1.5 py-0.2 text-[9px] font-black text-white shadow-2xs">
+                              {card.code}
+                            </span>
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                              <BadgeCheck className="size-2.5" />
+                              <span>Hội viên CEO 1983</span>
+                            </span>
+                          </div>
+
+                          {card.company && (
+                            <p className="text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1 mt-0.5 whitespace-normal break-words">
+                              <Building2 className="size-3 text-[#003B95] dark:text-amber-400 shrink-0" />
+                              <span>{card.company}</span>
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 flex-wrap">
+                            <span className="whitespace-normal break-words">
+                              {card.title || card.industry || "Doanh nhân CEO 1983"}
+                            </span>
+                            {card.phone && (
+                              <>
+                                <span>•</span>
+                                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                                  {card.phone}
+                                </span>
+                              </>
+                            )}
+                            {formattedDate && (
+                              <>
+                                <span>•</span>
+                                <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                                  <Clock className="size-2.5" />
+                                  <span>Quét lúc: {formattedDate}</span>
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Các nút hành động */}
+                      <div className="shrink-0 flex items-center gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5 flex-wrap justify-end">
+                        {/* Xem thẻ điện tử */}
+                        <Link
+                          to="/card/$code"
+                          params={{ code: card.code }}
+                          className="px-2.5 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-[#003B95] dark:text-sky-300 border border-sky-300 dark:border-sky-800 hover:bg-[#003B95] hover:text-white text-[11px] font-bold transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs"
+                          title="Xem Thẻ 83 điện tử"
+                        >
+                          <CreditCard className="size-3.5" />
+                          <span>Xem Thẻ 83</span>
+                        </Link>
+
+                        {/* Nhắn tin */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenChat(card.code, card.name)}
+                          className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer flex items-center gap-1"
+                          title="Nhắn tin trực tiếp"
+                        >
+                          <MessageSquare className="size-3.5 text-slate-950" />
+                          <span>Nhắn tin</span>
+                        </button>
+
+                        {/* Gọi điện */}
+                        {card.phone && (
+                          <button
+                            type="button"
+                            onClick={() => handleCallPhone(card.phone, card.name)}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-600 hover:text-white text-[11px] font-bold transition active:scale-95 cursor-pointer flex items-center gap-1"
+                            title="Gọi điện thoại"
+                          >
+                            <PhoneCall className="size-3.5" />
+                            <span>Gọi điện</span>
+                          </button>
+                        )}
+
+                        {/* Xóa danh thiếp */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveScannedCard(card.code, card.name)}
+                          className="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition cursor-pointer"
+                          title="Xóa khỏi danh bạ đã quét"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
@@ -1954,6 +2221,15 @@ function MembersScreen() {
         target={connectTarget}
         onClose={() => setConnectTarget(null)}
         onSuccess={() => void reloadMembers()}
+      />
+
+      {/* Association QR Code Scanner Modal (Req 10) */}
+      <AssociationQrScanModal
+        open={scanModalOpen}
+        onClose={() => {
+          setScanModalOpen(false);
+          reloadScannedCards();
+        }}
       />
     </div>
   );

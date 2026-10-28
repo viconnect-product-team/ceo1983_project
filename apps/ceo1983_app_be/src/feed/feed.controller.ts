@@ -72,10 +72,21 @@ export class FeedController {
   async addComment(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { content: string },
+    @Body() body: any,
   ) {
     const userId = req.user?.id || req.user?.sub || 'anonymous';
-    return this.feedService.addComment(userId, id, body?.content);
+    return this.feedService.addComment(userId, id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('comments/:commentId/reaction')
+  async reactToComment(
+    @Request() req: any,
+    @Param('commentId') commentId: string,
+    @Body() body: { reaction: string },
+  ) {
+    const userId = req.user?.id || req.user?.sub || 'anonymous';
+    return this.feedService.reactToComment(userId, commentId, body?.reaction);
   }
 
   @Post(':id/share')

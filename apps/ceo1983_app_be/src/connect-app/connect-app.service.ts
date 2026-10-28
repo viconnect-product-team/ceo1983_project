@@ -92,6 +92,8 @@ export class ConnectAppService implements OnModuleInit {
         ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_phone TEXT;
         ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_title TEXT;
         ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS company TEXT;
+        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS referrer TEXT;
+        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS commission_percent NUMERIC;
         ALTER TABLE public.products ADD COLUMN IF NOT EXISTS company TEXT;
         ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT;
         ALTER TABLE public.products ADD COLUMN IF NOT EXISTS original_price NUMERIC;

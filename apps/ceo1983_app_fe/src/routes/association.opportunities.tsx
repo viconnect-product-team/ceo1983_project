@@ -35,10 +35,13 @@ import {
   List,
   Package,
   Share2,
-  BarChart3,
   CheckCircle2,
   ArrowRight,
+  Percent,
+  ArrowUpDown,
+  BarChart3,
 } from "lucide-react";
+import { OpportunityMultiMetricChart } from "@/components/opportunities/OpportunityMultiMetricChart";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -360,6 +363,9 @@ function OpportunitiesScreen() {
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactTitle, setNewContactTitle] = useState("");
+  const [newReferrer, setNewReferrer] = useState("");
+  const [newCommissionPercent, setNewCommissionPercent] = useState("");
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
   const [newErrors, setNewErrors] = useState<Record<string, string>>({});
   const [uploadingImage, setUploadingImage] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -411,14 +417,14 @@ function OpportunitiesScreen() {
     }
   }, [member, user]);
 
+  const [benefitSort, setBenefitSort] = useState<"highest_benefit" | "highest_value" | "newest">("highest_benefit");
+
   const allTab = "Tất cả cơ hội";
   const myOppsTab = "Cơ hội của tôi";
-  const whoDealingMyOppTab = "Ai đang deal cơ hội của tôi";
-  const interestedTab = "Mình đang quan tâm";
-  const myDealingTab = "Mình đã deal";
-  const myLostTab = "Mình đã trượt";
-  const closedTab = "Cơ hội đã đóng";
-  const publishedTab = "Đã xuất bản";
+  const myWonTab = "Cơ hội tôi đã chốt được";
+  const myDealingTab = "Cơ hội đang deal";
+  const myClosedTab = "Cơ hội đã đóng của tôi";
+  const whoDealingMyOppTab = "Ai đang quan tâm deal cơ hội của tôi";
   const statsTab = "Thống kê";
 
   // Check if an opportunity was posted by current user
@@ -564,34 +570,25 @@ function OpportunitiesScreen() {
   }, [isCarouselHovered, featuredList.length]);
 
   const tabs = useMemo(() => {
-    const defaultTabs = [
+    return [
       allTab,
       myOppsTab,
-      whoDealingMyOppTab,
-      interestedTab,
+      myWonTab,
       myDealingTab,
-      myLostTab,
-      closedTab,
+      myClosedTab,
+      whoDealingMyOppTab,
       statsTab,
     ];
-    allOpportunities.forEach((o) => {
-      const tag = normalizeTag(o.tag);
-      if (!defaultTabs.includes(tag)) {
-        defaultTabs.push(tag);
-      }
-    });
-    return defaultTabs;
-  }, [allOpportunities]);
+  }, []);
   const [tab, setTab] = useState(allTab);
 
-  const [tradeTypeFilter, setTradeTypeFilter] = useState<"all" | "buyer" | "seller">("all");
   const [industryFilter, setIndustryFilter] = useState<string>("all");
 
   const list = useMemo(() => {
     const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
     const currentMemberCode = member?.code;
 
-    return allOpportunities.filter((o) => {
+    const filtered = allOpportunities.filter((o) => {
       const tagVi = normalizeTag(o.tag);
       const isMine = checkIsMine(o);
 
@@ -600,78 +597,62 @@ function OpportunitiesScreen() {
         matchTab = true;
       } else if (tab === myOppsTab) {
         matchTab = Boolean(isMine);
-      } else if (tab === whoDealingMyOppTab) {
-        const hasDealer =
-          Boolean((o as any).claimedById) ||
-          Boolean((o as any).claimedByName) ||
-          (o as any).status === "claimed" ||
-          (o as any).status === "negotiating" ||
-          Number((o as any).dealCount) > 0 ||
-          Number((o as any).interestedCount) > 0 ||
-          Boolean((o as any).interested);
-        matchTab = Boolean(isMine && hasDealer);
-      } else if (tab === interestedTab) {
-        const isInterested =
-          interestedIds.includes(o.id) ||
-          Boolean((o as any).interested) ||
-          (Array.isArray((o as any).interests) &&
-            (o as any).interests.some(
-              (i: any) =>
-                (currentUserId && String(i.userId || i.memberId) === String(currentUserId)) ||
-                (currentMemberCode && String(i.memberCode) === String(currentMemberCode)),
-            ));
-        matchTab = Boolean(isInterested);
+      } else if (tab === myWonTab) {
+        // Cơ hội tôi đã chốt được (Req 3)
+        const isWon =
+          isMine &&
+          (o.status === "won" ||
+            o.status === "claimed" ||
+            (o as any).isWon ||
+            (o as any).dealStatus === "won" ||
+            (o as any).dealWon);
+        matchTab = Boolean(isWon);
       } else if (tab === myDealingTab) {
-        const isMyDeal =
-          !isMine &&
-          ((currentUserId && String((o as any).claimedById) === String(currentUserId)) ||
-            (currentMemberCode && String((o as any).claimedByCode) === String(currentMemberCode)) ||
-            (o as any).myDealStatus === "dealing" ||
-            (o as any).myDealStatus === "negotiating" ||
-            (o as any).status === "claimed");
-        matchTab = Boolean(isMyDeal);
-      } else if (tab === myLostTab) {
-        const isLost =
-          (o as any).status === "lost" ||
-          (o as any).myDealStatus === "lost" ||
-          (o as any).myDealStatus === "rejected";
-        matchTab = Boolean(isLost);
-      } else if (tab === closedTab) {
-        matchTab =
-          o.status === "won" ||
-          o.status === "closed" ||
-          o.status === "expired" ||
-          o.status === "completed";
-      } else if (tab === publishedTab) {
-        matchTab = o.status !== "draft" && o.status !== "archived";
+        // Cơ hội đang deal (Req 3)
+        const isDealing =
+          (isMine &&
+            (o.status === "negotiating" ||
+              o.status === "claimed" ||
+              (o as any).status === "dealing" ||
+              Number((o as any).dealCount) > 0 ||
+              Number((o as any).interestedCount) > 0)) ||
+          (!isMine &&
+            ((o as any).myDealStatus === "dealing" ||
+              (o as any).myDealStatus === "negotiating" ||
+              (currentUserId && String((o as any).claimedById) === String(currentUserId))));
+        matchTab = Boolean(isDealing);
+      } else if (tab === myClosedTab) {
+        // Cơ hội đã đóng của tôi (Req 3)
+        const isClosed =
+          isMine &&
+          (o.status === "closed" ||
+            o.status === "expired" ||
+            o.status === "cancelled" ||
+            o.status === "lost" ||
+            (o as any).status === "archived");
+        matchTab = Boolean(isClosed);
+      } else if (tab === whoDealingMyOppTab) {
+        // Ai đang quan tâm deal cơ hội của tôi (Req 3)
+        const hasDealer =
+          isMine &&
+          (Boolean((o as any).claimedById) ||
+            Boolean((o as any).claimedByName) ||
+            (o as any).status === "claimed" ||
+            (o as any).status === "negotiating" ||
+            Number((o as any).dealCount) > 0 ||
+            Number((o as any).interestedCount) > 0 ||
+            Boolean((o as any).interested) ||
+            (Array.isArray((o as any).interests) && (o as any).interests.length > 0));
+        matchTab = Boolean(hasDealer);
       } else if (tab === statsTab) {
         matchTab = true;
-      } else if (tab !== allTab) {
+      } else {
         matchTab = tagVi === tab;
       }
 
       if (!matchTab) return false;
 
-      // 1. Phân loại Bên mua / Bên bán (Yêu cầu cuộc họp)
-      if (tradeTypeFilter === "buyer") {
-        const isBuyer = o.tradeType === "buyer" ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("tìm") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("cần mua") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("nhập") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("kêu gọi") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("cần đối tác");
-        if (!isBuyer) return false;
-      } else if (tradeTypeFilter === "seller") {
-        const isSeller = o.tradeType === "seller" ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("cung cấp") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("bán") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("phân phối") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("sản xuất") ||
-          (o.title + " " + (o.description || "")).toLowerCase().includes("dịch vụ");
-        if (!isSeller) return false;
-      }
-
-      // 2. Bộ lọc Ngành nghề (Yêu cầu cuộc họp)
+      // Bộ lọc Ngành nghề
       if (industryFilter !== "all") {
         const indTarget = OPPORTUNITY_INDUSTRIES.find((x) => x.id === industryFilter)?.label || industryFilter;
         const normIndTarget = indTarget.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -687,7 +668,28 @@ function OpportunitiesScreen() {
       const matchQ = !q || (o.title + o.company + tagVi + (o.industry || "")).toLowerCase().includes(q.toLowerCase());
       return matchQ;
     });
-  }, [allOpportunities, tab, q, member, tradeTypeFilter, industryFilter]);
+
+    // Nếu ở tab "Ai đang quan tâm deal cơ hội của tôi", áp dụng bộ lọc % có lợi nhất cho tôi (Req 3)
+    if (tab === whoDealingMyOppTab) {
+      return [...filtered].sort((a, b) => {
+        if (benefitSort === "highest_benefit") {
+          const benefitA = (a as any).commissionPercent || (a as any).commissionRate || (a as any).marginPercent || (a.budgetMax ? a.budgetMax / 1000000 : 0);
+          const benefitB = (b as any).commissionPercent || (b as any).commissionRate || (b as any).marginPercent || (b.budgetMax ? b.budgetMax / 1000000 : 0);
+          return Number(benefitB) - Number(benefitA);
+        }
+        if (benefitSort === "highest_value") {
+          const valA = a.estimatedValue || a.budgetMax || 0;
+          const valB = b.estimatedValue || b.budgetMax || 0;
+          return Number(valB) - Number(valA);
+        }
+        const timeA = (a as any).createdAt || a.time ? new Date((a as any).createdAt || a.time).getTime() : 0;
+        const timeB = (b as any).createdAt || b.time ? new Date((b as any).createdAt || b.time).getTime() : 0;
+        return timeB - timeA;
+      });
+    }
+
+    return filtered;
+  }, [allOpportunities, tab, q, member, industryFilter, benefitSort, user?.id]);
 
   const [pageOpps, setPageOpps] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -706,7 +708,7 @@ function OpportunitiesScreen() {
 
   useEffect(() => {
     setPageOpps(1);
-  }, [q, tab, tradeTypeFilter, industryFilter]);
+  }, [q, tab, industryFilter]);
 
   async function interest(id: string, targetOpp?: any) {
     const opp = targetOpp || (opportunities || []).find((x) => x.id === id);
@@ -903,6 +905,9 @@ function OpportunitiesScreen() {
           company: finalCompany,
           image: finalImgs[0] || null,
           images: finalImgs,
+          referrer: newReferrer.trim() || undefined,
+          commissionPercent: newCommissionPercent ? Number(newCommissionPercent.replace(/\D/g, "")) : undefined,
+          targetRecipients: selectedRecipientIds.length > 0 ? selectedRecipientIds : undefined,
         }),
       });
       toast.success("Đã đăng cơ hội thành công lên hệ thống!");
@@ -912,6 +917,9 @@ function OpportunitiesScreen() {
       setNewBudgetMin("");
       setNewBudgetMax("");
       setNewDeadline("");
+      setNewReferrer("");
+      setNewCommissionPercent("");
+      setSelectedRecipientIds([]);
       setNewImage(null);
       setNewImages([]);
       reload();
@@ -1059,7 +1067,12 @@ function OpportunitiesScreen() {
         </div>
 
 
-        {/* 3. SEARCH & CHIPS & BỘ LỌC BÊN MUA / BÊN BÁN & NGÀNH NGHỀ */}
+        {/* 2.5 BIỂU ĐỒ 3 CHỈ SỐ BIẾN ĐỘNG TRÊN THANH TÌM KIẾM (Req 4) */}
+        <div className="w-full">
+          <OpportunityMultiMetricChart opportunities={allOpportunities} />
+        </div>
+
+        {/* 3. SEARCH & CHIPS & BỘ LỌC NGÀNH NGHỀ & % CÓ LỢI NHẤT */}
         <div className="self-stretch flex flex-col gap-2.5">
           <div className="self-stretch px-3 py-2 bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex justify-start items-center gap-2 shadow-2xs">
             <Search className="size-4 text-slate-400 shrink-0" />
@@ -1067,51 +1080,67 @@ function OpportunitiesScreen() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm kiếm cơ hội, đối tác, dự án..."
-              className="flex-1 bg-transparent border-none outline-none text-xs text-slate-800 placeholder:text-slate-400 font-['Inter']"
+              className="flex-1 bg-transparent border-none outline-none text-xs text-slate-800 placeholder:text-slate-400 font-['Inter'] whitespace-normal break-words"
             />
             {q && (
-              <button onClick={() => setQ("")} className="text-slate-400 hover:text-slate-600">
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="size-5 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition cursor-pointer"
+                title="Xóa nội dung"
+                aria-label="Xóa nội dung"
+              >
                 <X className="size-3.5" />
               </button>
             )}
           </div>
 
-          {/* Phân loại Bên mua / Bên bán (Yêu cầu cuộc họp) */}
-          <div className="self-stretch grid grid-cols-3 gap-1.5 p-1 bg-slate-200/70 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setTradeTypeFilter("all")}
-              className={`py-1.5 px-2 rounded-lg text-xs font-bold text-center transition cursor-pointer ${
-                tradeTypeFilter === "all"
-                  ? "bg-white text-slate-900 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Tất cả ({allOpportunities.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setTradeTypeFilter("buyer")}
-              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-                tradeTypeFilter === "buyer"
-                  ? "bg-blue-600 text-white shadow-2xs"
-                  : "text-blue-800 hover:bg-white/50"
-              }`}
-            >
-              <span>🛒 Bên mua</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTradeTypeFilter("seller")}
-              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-                tradeTypeFilter === "seller"
-                  ? "bg-emerald-600 text-white shadow-2xs"
-                  : "text-emerald-800 hover:bg-white/50"
-              }`}
-            >
-              <span>📦 Bên bán</span>
-            </button>
-          </div>
+          {/* Bộ lọc % có lợi nhất cho tôi (Req 3 - Hiển thị trong tab Ai đang quan tâm deal cơ hội của tôi) */}
+          {tab === whoDealingMyOppTab && (
+            <div className="self-stretch p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col gap-2 shadow-xs">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-300">
+                <span className="flex items-center gap-1.5">
+                  <Percent className="size-4 text-amber-600 dark:text-amber-400" />
+                  Sắp xếp ưu tiên quyền lợi cho Quý CEO:
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setBenefitSort("highest_benefit")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
+                    benefitSort === "highest_benefit"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  <span>🏆 % Có lợi nhất cho tôi</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBenefitSort("highest_value")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
+                    benefitSort === "highest_value"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  <span>💎 Giá trị deal cao nhất</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBenefitSort("newest")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
+                    benefitSort === "newest"
+                      ? "bg-amber-500 text-slate-950 shadow-xs"
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  <span>🕒 Mới nhất</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Bộ lọc Ngành nghề (Yêu cầu cuộc họp) */}
           <div className="self-stretch inline-flex justify-start items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
@@ -1443,6 +1472,7 @@ function OpportunitiesScreen() {
             {/* Modals extracted to @/components/opportunities/modals */}
       <OpportunityDetailModal
         selectedOpp={selectedOpp}
+        allOpportunities={allOpportunities}
         onClose={() => setSelectedOpp(null)}
         defaultOppImages={defaultOppImages}
         resolveMediaUrl={resolveMediaUrl}
@@ -1501,6 +1531,12 @@ function OpportunitiesScreen() {
         setNewDesc={setNewDesc}
         creating={creating}
         resolveMediaUrl={resolveMediaUrl}
+        newReferrer={newReferrer}
+        setNewReferrer={setNewReferrer}
+        newCommissionPercent={newCommissionPercent}
+        setNewCommissionPercent={setNewCommissionPercent}
+        selectedRecipientIds={selectedRecipientIds}
+        setSelectedRecipientIds={setSelectedRecipientIds}
       />
 
       <OpportunityEditModal

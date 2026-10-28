@@ -630,6 +630,12 @@ function Home() {
   }, [user?.id]);
 
   const [coverPhoto, setCoverPhoto] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const uId = user?.id;
+      const userCover = uId ? localStorage.getItem(`vba_member_cover_photo_${uId}`) : null;
+      const genCover = localStorage.getItem("vba_member_cover_photo");
+      if (userCover || genCover) return userCover || genCover;
+    }
     return effectiveMember?.coverUrl || (effectiveMember as any)?.cover_url || null;
   });
   const [coverError, setCoverError] = useState(false);
@@ -640,11 +646,18 @@ function Home() {
       setCoverPhoto(rawCover);
     } else if (user?.id) {
       const userCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
-      if (userCover) setCoverPhoto(userCover);
+      const genCover = localStorage.getItem("vba_member_cover_photo");
+      if (userCover || genCover) setCoverPhoto(userCover || genCover);
     }
   }, [effectiveMember?.coverUrl, (effectiveMember as any)?.cover_url, user?.id]);
 
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const uId = user?.id;
+      const userAvatar = uId ? localStorage.getItem(`vba_member_avatar_photo_${uId}`) : null;
+      const genAvatar = localStorage.getItem("vba_member_avatar_photo");
+      if (userAvatar || genAvatar) return userAvatar || genAvatar;
+    }
     return effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || user?.avatar_url || (user as any)?.user_metadata?.avatar_url || null;
   });
   const [avatarError, setAvatarError] = useState(false);
@@ -954,9 +967,13 @@ function Home() {
         const detailUrl = e?.detail;
         if (detailUrl && typeof detailUrl === "string") {
           setCoverPhoto(detailUrl);
-        } else if (user?.id) {
-          const userCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
-          if (userCover) setCoverPhoto(userCover);
+        } else {
+          const userCover = user?.id ? localStorage.getItem(`vba_member_cover_photo_${user.id}`) : null;
+          const genCover = localStorage.getItem("vba_member_cover_photo");
+          if (userCover || genCover) setCoverPhoto(userCover || genCover);
+        }
+        if (user?.id) {
+          fetchNestApi<any>("/members/me").then((live) => { if (live) setDirectMember(live); }).catch(() => {});
         }
       } catch {}
     };
@@ -965,9 +982,13 @@ function Home() {
         const detailUrl = e?.detail;
         if (detailUrl && typeof detailUrl === "string") {
           setAvatarPhoto(detailUrl);
-        } else if (user?.id) {
-          const userAvatar = localStorage.getItem(`vba_member_avatar_photo_${user.id}`);
-          if (userAvatar) setAvatarPhoto(userAvatar);
+        } else {
+          const userAvatar = user?.id ? localStorage.getItem(`vba_member_avatar_photo_${user.id}`) : null;
+          const genAvatar = localStorage.getItem("vba_member_avatar_photo");
+          if (userAvatar || genAvatar) setAvatarPhoto(userAvatar || genAvatar);
+        }
+        if (user?.id) {
+          fetchNestApi<any>("/members/me").then((live) => { if (live) setDirectMember(live); }).catch(() => {});
         }
       } catch {}
     };
@@ -1193,11 +1214,11 @@ function Home() {
                   e.stopPropagation();
                   setQuickEditOpen(true);
                 }}
-                className="px-2.5 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold inline-flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs border border-amber-500/25"
+                className="size-7 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 inline-flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs border border-amber-500/25"
                 title="Chỉnh sửa thông tin"
+                aria-label="Chỉnh sửa thông tin"
               >
-                <Pencil className="size-3 text-amber-500" />
-                <span>Chỉnh sửa</span>
+                <Pencil className="size-3.5 text-amber-500" />
               </button>
             </div>
           </div>

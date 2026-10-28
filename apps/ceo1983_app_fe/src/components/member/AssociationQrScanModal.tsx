@@ -26,6 +26,9 @@ import {
   FileText,
   Download,
   Briefcase,
+  AlertTriangle,
+  AlertCircle,
+  BookOpen,
 } from "lucide-react";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
@@ -56,6 +59,70 @@ export interface ScannedPartner {
   raw?: any;
 }
 
+export interface NonCeoPartner {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  company?: string | null;
+  title?: string | null;
+  rawText?: string;
+}
+
+export function saveScannedCeo1983Card(partner: ScannedPartner) {
+  try {
+    const raw = localStorage.getItem("ceo1983_scanned_business_cards");
+    const list = raw ? JSON.parse(raw) : [];
+    const filtered = list.filter((item: any) => item.code !== partner.code);
+    filtered.unshift({
+      code: partner.code,
+      name: partner.name,
+      company: partner.company,
+      title: partner.title,
+      avatar: partner.avatar,
+      phone: partner.phone,
+      email: partner.email,
+      address: partner.address,
+      industry: partner.industry,
+      scannedAt: new Date().toISOString(),
+    });
+    localStorage.setItem("ceo1983_scanned_business_cards", JSON.stringify(filtered.slice(0, 100)));
+  } catch (err) {
+    console.warn("Failed to save scanned card to localStorage:", err);
+  }
+}
+
+export function downloadVCard(partner: {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  company?: string | null;
+  title?: string | null;
+}) {
+  const vcardText = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${partner.name || "Liên hệ mới"}`,
+    partner.company ? `ORG:${partner.company}` : "",
+    partner.title ? `TITLE:${partner.title}` : "",
+    partner.phone ? `TEL;TYPE=CELL:${partner.phone}` : "",
+    partner.email ? `EMAIL;TYPE=INTERNET:${partner.email}` : "",
+    "END:VCARD",
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+
+  const blob = new Blob([vcardText], { type: "text/vcard;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${partner.name || "lien_he"}.vcf`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  toast.success("Đã tải tệp danh bạ (.vcf). Hãy mở để thêm vào danh bạ thiết bị!");
+}
+
 interface AssociationQrScanModalProps {
   open: boolean;
   onClose: () => void;
@@ -71,6 +138,7 @@ export function AssociationQrScanModal({
   const [torch, setTorch] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [scannedPartner, setScannedPartner] = useState<ScannedPartner | null>(null);
+  const [nonCeoPartner, setNonCeoPartner] = useState<NonCeoPartner | null>(null);
   const [isDecodingFile, setIsDecodingFile] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -81,7 +149,7 @@ export function AssociationQrScanModal({
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { videoRef, status, hasTorch, scanImageFile } = useQrScanner({
-    active: open && !scannedPartner,
+    active: open && !scannedPartner && !nonCeoPartner,
     torch,
     facingMode,
     onDetect: (value) => {
@@ -92,6 +160,7 @@ export function AssociationQrScanModal({
   useEffect(() => {
     if (!open) {
       setScannedPartner(null);
+      setNonCeoPartner(null);
       setConnected(false);
       setErrorMsg(null);
       setTorch(false);
@@ -100,7 +169,7 @@ export function AssociationQrScanModal({
 
   // Support Web NFC Tap detection on devices with NFC support
   useEffect(() => {
-    if (!open || scannedPartner) return;
+    if (!open || scannedPartner || nonCeoPartner) return;
 
     let abortController: AbortController | null = null;
     if (typeof window !== "undefined" && "NDEFReader" in window) {
@@ -135,7 +204,7 @@ export function AssociationQrScanModal({
     return () => {
       if (abortController) abortController.abort();
     };
-  }, [open, scannedPartner]);
+  }, [open, scannedPartner, nonCeoPartner]);
 
 
   // Handle parsing QR code string
@@ -143,7 +212,48 @@ export function AssociationQrScanModal({
     if (!raw) return;
     setErrorMsg(null);
 
-    // 1. Try match member code from CEO1983-MEMBER:code or URL /card/code
+    // 1. If it's a vCard text:
+    if (raw.includes("BEGIN:VCARD")) {
+      const nameMatch = raw.match(/FN:(.*)/i);
+      const orgMatch = raw.match(/ORG:(.*)/i);
+      const telMatch = raw.match(/TEL:(.*)/i);
+      const emailMatch = raw.match(/EMAIL:(.*)/i);
+      const noteMatch = raw.match(/NOTE:.*?(M1983-[0-9A-Za-z-]+)/i);
+
+      // Check if this vcard is explicitly a CEO 1983 member card
+      if (noteMatch || (orgMatch && orgMatch[1].includes("1983")) || raw.includes("CEO1983")) {
+        const parsedPartner: ScannedPartner = {
+          code: noteMatch ? noteMatch[1] : `M1983-${Date.now().toString().slice(-4)}`,
+          name: nameMatch ? nameMatch[1].trim() : "Hội viên Doanh nhân",
+          company: orgMatch ? orgMatch[1].trim() : "CLB Doanh Nhân CEO 1983",
+          title: "Hội viên CLB Doanh Nhân CEO 1983",
+          avatar: null,
+          phone: telMatch ? telMatch[1].trim() : null,
+          email: emailMatch ? emailMatch[1].trim() : null,
+        };
+
+        setScannedPartner(parsedPartner);
+        setNonCeoPartner(null);
+        saveScannedCeo1983Card(parsedPartner);
+        onSuccess?.(parsedPartner);
+        return;
+      }
+
+      // Non-CEO 1983 card! Cannot save to CEO 1983 scanned cards, only save to device contacts or link to Zalo
+      const nonCeo: NonCeoPartner = {
+        name: nameMatch ? nameMatch[1].trim() : "Đối tác ngoài CLB",
+        company: orgMatch ? orgMatch[1].trim() : undefined,
+        phone: telMatch ? telMatch[1].trim() : undefined,
+        email: emailMatch ? emailMatch[1].trim() : undefined,
+        title: "Danh thiếp đối tác ngoài CLB",
+        rawText: raw,
+      };
+      setScannedPartner(null);
+      setNonCeoPartner(nonCeo);
+      return;
+    }
+
+    // 2. Try match member code from CEO1983-MEMBER:code or URL /card/code
     let code: string | null = null;
     if (raw.includes("CEO1983-MEMBER:")) {
       code = raw.replace("CEO1983-MEMBER:", "").trim();
@@ -157,70 +267,62 @@ export function AssociationQrScanModal({
       code = raw.trim();
     }
 
-    // 2. If it's a vCard text:
-    if (raw.includes("BEGIN:VCARD")) {
-      const nameMatch = raw.match(/FN:(.*)/i);
-      const orgMatch = raw.match(/ORG:(.*)/i);
-      const telMatch = raw.match(/TEL:(.*)/i);
-      const emailMatch = raw.match(/EMAIL:(.*)/i);
-      const noteMatch = raw.match(/NOTE:.*?(M1983-[0-9A-Za-z-]+)/i);
+    if (code) {
+      try {
+        // Fetch public card info from Nest backend
+        const res = await fetchNestApi<any>(`/business-cards/public-card/${encodeURIComponent(code)}`);
+        if (res && (res.found !== false || res.name || res.code)) {
+          const partner: ScannedPartner = {
+            code: res.code || code,
+            name: res.name || res.contact || "Hội viên CEO 1983",
+            company: res.company || "CLB Doanh Nhân CEO 1983",
+            title: res.title || "Ban Thường Trực • Hội viên CEO 1983",
+            avatar: res.photoUrl || res.avatar || null,
+            phone: res.phone || null,
+            email: res.email || null,
+            address: res.address || null,
+            industry: res.industry || null,
+            userId: res.userId || null,
+            privacySettings: res.privacySettings || null,
+            raw: res,
+          };
+          setScannedPartner(partner);
+          setNonCeoPartner(null);
+          saveScannedCeo1983Card(partner);
+          onSuccess?.(partner);
+          return;
+        }
+      } catch {
+        /* ignore */
+      }
 
-      const parsedPartner: ScannedPartner = {
-        code: noteMatch ? noteMatch[1] : `VCARD-${Date.now().toString().slice(-4)}`,
-        name: nameMatch ? nameMatch[1].trim() : "Hội viên Doanh nhân",
-        company: orgMatch ? orgMatch[1].trim() : "CLB Doanh Nhân CEO 1983",
-        title: "Hội viên CLB Doanh Nhân CEO 1983",
-        avatar: null,
-        phone: telMatch ? telMatch[1].trim() : null,
-        email: emailMatch ? emailMatch[1].trim() : null,
-      };
-
-      setScannedPartner(parsedPartner);
-      onSuccess?.(parsedPartner);
-      return;
-    }
-
-    if (!code) {
-      setErrorMsg("Mã QR không đúng định dạng hội viên CLB CEO 1983.");
-      return;
-    }
-
-    try {
-      // Fetch public card info from Nest backend
-      const res = await fetchNestApi<any>(`/business-cards/public-card/${encodeURIComponent(code)}`);
-      if (res && (res.found !== false || res.name || res.code)) {
-        const partner: ScannedPartner = {
-          code: res.code || code,
-          name: res.name || res.contact || "Hội viên CEO 1983",
-          company: res.company || "CLB Doanh Nhân CEO 1983",
-          title: res.title || "Ban Thường Trực • Hội viên CEO 1983",
-          avatar: res.photoUrl || res.avatar || null,
-          phone: res.phone || null,
-          email: res.email || null,
-          address: res.address || null,
-          industry: res.industry || null,
-          userId: res.userId || null,
-          privacySettings: res.privacySettings || null,
-          raw: res,
+      // If code starts with M1983 or CEO1983, it's an offline/fallback CEO 1983 member card
+      if (code.startsWith("M1983") || code.startsWith("CEO1983")) {
+        const fallbackPartner: ScannedPartner = {
+          code,
+          name: `Hội viên CEO 1983 (${code})`,
+          company: "CLB Doanh Nhân CEO 1983",
+          title: "Hội viên Chính thức CLB CEO 1983",
+          avatar: null,
         };
-        setScannedPartner(partner);
-        onSuccess?.(partner);
+        setScannedPartner(fallbackPartner);
+        setNonCeoPartner(null);
+        saveScannedCeo1983Card(fallbackPartner);
+        onSuccess?.(fallbackPartner);
         return;
       }
-    } catch {
-      /* Fallback mock if offline or test code */
     }
 
-    // Fallback if public-card endpoint 404 or custom code
-    const fallbackPartner: ScannedPartner = {
-      code,
-      name: code.startsWith("M1983") ? `Hội viên CEO 1983 (${code})` : code,
-      company: "CLB Doanh Nhân CEO 1983",
-      title: "Hội viên Chính thức CLB CEO 1983",
-      avatar: null,
+    // 3. Fallback: Non-CEO 1983 QR Code!
+    const phoneMatch = raw.match(/(0\d{9,10}|\+84\d{9,10})/);
+    const nonCeo: NonCeoPartner = {
+      name: "Đối tác ngoài CLB",
+      phone: phoneMatch ? phoneMatch[1] : undefined,
+      rawText: raw,
+      title: "Liên hệ bên ngoài",
     };
-    setScannedPartner(fallbackPartner);
-    onSuccess?.(fallbackPartner);
+    setScannedPartner(null);
+    setNonCeoPartner(nonCeo);
   };
 
   const handleSelectImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -281,7 +383,7 @@ export function AssociationQrScanModal({
             </span>
             <div>
               <h3 className="text-[13.5px] font-black text-slate-900 dark:text-white leading-tight">
-                {scannedPartner ? "Thông Tin Đối Tác" : "Quét Mã QR Kết Nối"}
+                {scannedPartner ? "Thông Tin Đối Tác" : nonCeoPartner ? "Danh Thiếp Ngoài CLB" : "Quét Mã QR Kết Nối"}
               </h3>
               <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 CLB Doanh Nhân CEO 1983
@@ -298,7 +400,7 @@ export function AssociationQrScanModal({
         </div>
 
         {/* VIEW 1: CAMERA SCANNER VIEWPORT */}
-        {!scannedPartner && (
+        {!scannedPartner && !nonCeoPartner && (
           <div className="p-4 space-y-3.5">
             {/* Camera Frame */}
             <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-black flex items-center justify-center border-2 border-amber-400/40 shadow-inner">
@@ -677,6 +779,116 @@ export function AssociationQrScanModal({
                   <span>Quét người khác</span>
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 3: NON-CEO1983 EXTERNAL BUSINESS CARD (Requirement 10) */}
+        {nonCeoPartner && (
+          <div className="p-4 space-y-3.5 text-center select-none animate-scale-in">
+            <div className="mx-auto size-14 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center">
+              <AlertTriangle className="size-7 text-amber-500" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                Danh Thiếp Bên Ngoài CLB
+              </h3>
+              <div className="mt-2 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-left space-y-1">
+                <p className="text-[12px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                  <AlertCircle className="size-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                  <span>Không thể lưu vào danh mục danh thiếp đã quét</span>
+                </p>
+                <p className="text-[11px] text-rose-600/90 dark:text-rose-400 leading-relaxed whitespace-normal break-words">
+                  Mã QR này không thuộc danh bạ hội viên chính thức CLB CEO 1983 (HanoiBA). Bạn chỉ có thể lưu liên hệ này vào danh bạ thiết bị hoặc kết nối qua Zalo.
+                </p>
+              </div>
+            </div>
+
+            {/* Scanned Contact Info */}
+            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-3 text-left space-y-2">
+              <div className="flex items-center gap-2">
+                <User className="size-4 text-slate-400 shrink-0" />
+                <span className="text-[11px] text-slate-500 shrink-0">Họ tên:</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  {nonCeoPartner.name || "Đối tác ngoài CLB"}
+                </span>
+              </div>
+
+              {nonCeoPartner.company && (
+                <div className="flex items-center gap-2">
+                  <Building2 className="size-4 text-slate-400 shrink-0" />
+                  <span className="text-[11px] text-slate-500 shrink-0">Công ty:</span>
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                    {nonCeoPartner.company}
+                  </span>
+                </div>
+              )}
+
+              {nonCeoPartner.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="size-4 text-emerald-600 shrink-0" />
+                  <span className="text-[11px] text-slate-500 shrink-0">Hotline:</span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    {nonCeoPartner.phone}
+                  </span>
+                </div>
+              )}
+
+              {nonCeoPartner.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="size-4 text-blue-600 shrink-0" />
+                  <span className="text-[11px] text-slate-500 shrink-0">Email:</span>
+                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">
+                    {nonCeoPartner.email}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons: Lưu vào danh bạ máy (.vcf) & Mở Zalo */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => downloadVCard(nonCeoPartner)}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-800 via-[#003B95] to-blue-700 text-white py-3 text-xs font-bold shadow-md shadow-blue-900/20 active:scale-98 transition cursor-pointer"
+              >
+                <BookOpen className="size-4" />
+                <span>Lưu vào danh bạ điện thoại (.vcf)</span>
+              </button>
+
+              {nonCeoPartner.phone ? (
+                <a
+                  href={`https://zalo.me/${nonCeoPartner.phone.replace(/[^0-9]/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0068FF] hover:bg-[#0052cc] text-white py-3 text-xs font-bold shadow-md shadow-blue-500/20 active:scale-98 transition cursor-pointer"
+                >
+                  <ExternalLink className="size-4" />
+                  <span>Mở liên kết Zalo ({nonCeoPartner.phone})</span>
+                </a>
+              ) : (
+                <a
+                  href="https://zalo.me"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0068FF] hover:bg-[#0052cc] text-white py-3 text-xs font-bold shadow-md shadow-blue-500/20 active:scale-98 transition cursor-pointer"
+                >
+                  <ExternalLink className="size-4" />
+                  <span>Mở Zalo kết nối</span>
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setNonCeoPartner(null);
+                  setScannedPartner(null);
+                }}
+                className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Quét mã khác
+              </button>
             </div>
           </div>
         )}
