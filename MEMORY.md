@@ -1,5 +1,22 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 29/10/2026 (v9.7): Nâng Cấp Toàn Diện Hệ Thống Quản Lý Tài Liệu Chuẩn Google Drive & Bản Đồ Định Vị Địa Chỉ Doanh Nghiệp Màn Cá Nhân Mobile App ([NODE-CRM-014] & [NODE-APP-011])**:
+  1. *Quản Lý Tài Liệu Chuẩn Google Drive ([NODE-CRM-014])*:
+     - **Tạo thư mục đa cấp & Bảng màu Drive**: Hỗ trợ tạo thư mục với bảng 6 mã màu nhận diện chuẩn Google Drive (#F59E0B, #DC2626, #003B95, #059669, #7C3AED, #475569), di chuyển cây thư mục phân cấp cha-con (`folder_id`), xóa thư mục đệ quy cascade an toàn.
+     - **Tải lên tệp vào chính thư mục đang đứng & Kéo thả (Drag & Drop)**: Hỗ trợ kéo thả trực tiếp tệp từ máy tính vào bất kỳ vị trí nào trên màn hình với visual overlay chỉ dẫn thư mục đích hiện tại, tự động gán `folder_id` của thư mục đang mở, bảo vệ giới hạn dung lượng tải lên 500MB cả Frontend và Backend.
+     - **Tải xuống tệp với đúng tên gốc**: Hàm `onDownload` tối ưu sử dụng Fetch Blob kèm HTML5 `a.download={name}` giúp tải tệp về máy tính người dùng giữ nguyên vẹn 100% tên tệp và phần mở rộng gốc.
+     - **Phạm vi chia sẻ & Phân quyền chuẩn Drive (`DriveShareModal.tsx`)**: Tích hợp hộp thoại chia sẻ chuyên nghiệp gồm: (1) Thêm người dùng hoặc Ban chuyên môn với quyền riêng (Người xem `VIEWER`, Người tải `DOWNLOADER`, Người chỉnh sửa `EDITOR`); (2) Cấu hình quyền truy cập chung 4 cấp độ: Bị hạn chế (`PRIVATE`), Bất kỳ ai trong CLB có liên kết (`INTERNAL`), Công khai bất kỳ ai có liên kết (`PUBLIC`), Chỉ nhóm cụ thể (`SPECIFIC`); (3) Nút "Sao chép đường liên kết" chia sẻ 1 chạm.
+     - **Di chuyển tệp và thư mục (`DriveMoveModal.tsx`)**: Cho phép chuyển tệp hoặc thư mục con sang thư mục khác trong cây thư mục CLB.
+     - **Đánh dấu có sao (Starred)**: Đánh dấu yêu thích/quan trọng tệp và thư mục nhanh chóng (`PATCH :id/star`).
+     - **Cơ sở dữ liệu PostgreSQL**: Đã bổ sung các cột `share_scope`, `share_role`, `shared_with` (jsonb), `is_starred`, `color_tag`, `description` vào bảng `public.documents`.
+  2. *Trường Địa Chỉ Doanh Nghiệp & Bản Đồ Định Vị Tương Tác Mobile App ([NODE-APP-011])*:
+     - **Trường nhập địa chỉ trụ sở doanh nghiệp**: Tích hợp trường `address` trực tiếp trên Màn cá nhân (`/association/profile`) và trong `QuickProfileEditModal.tsx`, đồng bộ vào `public.members`, `vba_my_member`, `vba_custom_profile`, phát sự kiện `profile-updated` và gọi API `PATCH /members/me` & `PUT /members/my-location`.
+     - **Bản đồ định vị tương tác `CeoBusinessLocationPicker.tsx`**:
+       * Hiển thị khung bản đồ Leaflet tương tác đặt ngay dưới trường địa chỉ doanh nghiệp.
+       * Hỗ trợ 3 phương thức chọn vị trí: (1) Chạm/click bất kỳ đâu trên bản đồ để di chuyển ghim đỏ; (2) Kéo thả ghim đỏ (`draggable marker`); (3) Nút "Định vị hiện tại" (GPS Geolocation độ chính xác cao).
+       * Tích hợp tự động tra cứu địa danh và đảo ngược địa chỉ (Reverse Geocoding OpenStreetMap Nominatim) khi đổi vị trí ghim để điền ngược lại vào ô địa chỉ doanh nghiệp.
+       * Nút "Lưu vị trí & địa chỉ" gọi đồng thời API backend lưu `latitude`, `longitude`, `address` vào CSDL `public.members` và cập nhật localStorage tức thời.
+
 - **Bản cập nhật ngày 28/10/2026 (v9.6): Hoàn Thiện Toàn Diện 10 Yêu Cầu Nâng Cấp Kiến Trúc & UI/UX Mobile App CEO 1983 (Chuẩn SRS & 100% Zero-Mock)**:
   1. *Thẻ Hội Viên Trang Chủ*: Nút chỉnh sửa thu gọn thành icon bút chì (`Pencil`), loại bỏ nhãn text. Tự động đồng bộ ảnh đại diện và ảnh bìa ngay lập tức từ Màn cá nhân sang Thẻ hội viên ở Trang chủ thông qua API PATCH và cơ chế phát sự kiện `vba.member.profile_updated`.
   2. *Gian Hàng Của Tôi Sàn Thương Mại*: Bổ sung nút icon `Store` chuyên biệt ở góc phải thanh tìm kiếm sàn thương mại (`association.products.tsx`), chỉ hiển thị duy nhất trong phân hệ Sàn thương mại, cho phép hội viên chuyển đổi 1 chạm giữa chế độ duyệt toàn sàn và chế độ xem/quản lý gian hàng của chính mình.

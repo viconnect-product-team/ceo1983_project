@@ -5,8 +5,17 @@ export class UpdateDocumentDto {
   uploadedBy?: string;
   type?: string;
   filePath?: string;
-  folderId?: string;
-  driveUrl?: string;
+  folderId?: string | null;
+  driveUrl?: string | null;
   isFolder?: boolean;
-  parentId?: string;
+  parentId?: string | null;
+  docScope?: string;
+  enterpriseName?: string;
+  enterpriseId?: string;
+  shareScope?: 'public' | 'internal' | 'specific' | 'private';
+  shareRole?: 'viewer' | 'downloader' | 'editor';
+  sharedWith?: any;
+  isStarred?: boolean;
+  colorTag?: string;
+  description?: string;
 }

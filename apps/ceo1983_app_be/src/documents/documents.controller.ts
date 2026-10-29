@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -36,10 +37,36 @@ export class DocumentsController {
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() data: UpdateDocumentDto) {
-    if (!data.name || !data.category || !data.type) {
-      throw new BadRequestException('Missing required fields: name, category, or type');
-    }
     return this.documentsService.update(id, data);
+  }
+
+  @Patch(':id/star')
+  async toggleStar(@Param('id') id: string) {
+    return this.documentsService.toggleStar(id);
+  }
+
+  @Patch(':id/share')
+  async updateShare(
+    @Param('id') id: string,
+    @Body() body: { shareScope: string; shareRole: string; sharedWith?: any },
+  ) {
+    if (!body.shareScope) {
+      throw new BadRequestException('shareScope is required');
+    }
+    return this.documentsService.updateShare(
+      id,
+      body.shareScope,
+      body.shareRole || 'viewer',
+      body.sharedWith || [],
+    );
+  }
+
+  @Post('move')
+  async move(@Body() body: { id: string; targetFolderId: string | null }) {
+    if (!body.id) {
+      throw new BadRequestException('id is required');
+    }
+    return this.documentsService.move(body.id, body.targetFolderId || null);
   }
 
   @Delete(':id')
@@ -49,7 +76,6 @@ export class DocumentsController {
 
   @Get(':id/url')
   async getUrl(@Param('id') id: string) {
-    const url = await this.documentsService.getUrl(id);
-    return { url };
+    return this.documentsService.getUrl(id);
   }
 }

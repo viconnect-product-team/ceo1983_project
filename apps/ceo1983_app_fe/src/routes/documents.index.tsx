@@ -24,6 +24,12 @@ import {
   ExternalLink,
   ChevronRight,
   ChevronLeft,
+  Share2,
+  Move,
+  Check,
+  Globe,
+  Users,
+  Palette,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -33,6 +39,8 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, TableShell } from "@/components/dashboard/PageKit";
 import { EmptyState, ListSkeleton, NoSearchResult } from "@/components/dashboard/StateKit";
 import { MailTemplateManager } from "@/components/documents/MailTemplateManager";
+import { DriveShareModal } from "@/components/documents/DriveShareModal";
+import { DriveMoveModal } from "@/components/documents/DriveMoveModal";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
@@ -45,6 +53,9 @@ import {
   getDocumentUrlFn,
   listDocumentsFn,
   updateDocumentFn,
+  updateShareDocumentFn,
+  moveDocumentFn,
+  toggleStarDocumentFn,
   type Document,
 } from "@/lib/documents.functions";
 import { useFmt, useT } from "@/lib/i18n";
@@ -192,18 +203,28 @@ function DocsPage() {
   const createFn = useServerFn(createDocumentFn);
   const updateFn = useServerFn(updateDocumentFn);
   const deleteFn = useServerFn(deleteDocumentFn);
+  const updateShareFn = useServerFn(updateShareDocumentFn);
+  const moveFn = useServerFn(moveDocumentFn);
+  const toggleStarFn = useServerFn(toggleStarDocumentFn);
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Document | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Quản lý thư mục phong cách Google Drive
+  // Quản lý thư mục và chia sẻ phong cách Google Drive
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderCat, setNewFolderCat] = useState("Biểu mẫu chung");
   const [newFolderScope, setNewFolderScope] = useState<"association" | "enterprise">("association");
+  const [newFolderColor, setNewFolderColor] = useState<string>("#F59E0B");
   const [creatingFolder, setCreatingFolder] = useState(false);
+
+  // Modals phong cách Google Drive
+  const [shareModalDoc, setShareModalDoc] = useState<Document | null>(null);
+  const [moveModalDoc, setMoveModalDoc] = useState<Document | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const fields: CrudField[] = [
     { name: "name", label: t("doc.col.name"), type: "text", required: true, placeholder: "Nhập tên tài liệu..." },
@@ -324,6 +345,7 @@ function DocsPage() {
           isFolder: true,
           folderId: currentFolderId,
           docScope: newFolderScope,
+          colorTag: newFolderColor,
           size: "Thư mục",
           uploadedBy: "Quản trị CLB",
           filePath: "",
@@ -332,12 +354,36 @@ function DocsPage() {
       toast.success(`Đã tạo thư mục "${newFolderName}" thành công!`);
       setCreateFolderModalOpen(false);
       setNewFolderName("");
+      setNewFolderColor("#F59E0B");
       await router.invalidate();
     } catch (err: any) {
       toast.error("Không thể tạo thư mục lúc này: " + (err.message || ""));
     } finally {
       setCreatingFolder(false);
     }
+  };
+
+  const onSaveShare = async (
+    id: string,
+    shareScope: "public" | "internal" | "specific" | "private",
+    shareRole: "viewer" | "downloader" | "editor",
+    sharedWith: any[]
+  ) => {
+    await updateShareFn({ data: { id, shareScope, shareRole, sharedWith } });
+    await router.invalidate();
+  };
+
+  const onMoveDoc = async (id: string, targetFolderId: string | null) => {
+    await moveFn({ data: { id, targetFolderId } });
+    await router.invalidate();
+  };
+
+  const onToggleStar = async (d: Document) => {
+    toggle(d.id);
+    try {
+      await toggleStarFn({ data: { id: d.id } });
+      await router.invalidate();
+    } catch {}
   };
 
   const onDelete = async (d: Document) => {
@@ -371,15 +417,49 @@ function DocsPage() {
         return;
       }
       let rawUrl: string | null | undefined = d.filePath || d.url || d.fileUrl;
+      let docName = d.name;
       if (!rawUrl) {
-        rawUrl = await urlFn({ data: { id: d.id } });
+        const urlRes = await urlFn({ data: { id: d.id } });
+        if (typeof urlRes === "string") {
+          rawUrl = urlRes;
+        } else if (urlRes && typeof urlRes === "object") {
+          rawUrl = (urlRes as any).url;
+          if ((urlRes as any).name) docName = (urlRes as any).name;
+        }
       }
       if (!rawUrl) {
         toast.error(t("doc.noFile"));
         return;
       }
       const finalUrl = resolveMediaUrl(rawUrl) || rawUrl;
-      window.open(finalUrl, "_blank", "noopener");
+
+      // Tải file về máy với đúng tên của tài liệu
+      toast.loading(`Đang tải xuống "${docName}"...`, { id: "doc-download" });
+      try {
+        const res = await fetch(finalUrl);
+        if (!res.ok) throw new Error("Fetch failed");
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = docName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        toast.success(`Đã tải xuống "${docName}" thành công!`, { id: "doc-download" });
+      } catch {
+        // Fallback mở trực tiếp kèm download attribute
+        const link = document.createElement("a");
+        link.href = finalUrl;
+        link.download = docName;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(`Đang mở tệp "${docName}"`, { id: "doc-download" });
+      }
     } catch (e) {
       toast.error(String((e as Error).message ?? e));
     }
@@ -681,7 +761,7 @@ function DocsPage() {
             ) : (
               <Link
                 to="/documents/$docId"
-                params={{ docId: d.id }}
+                params={{ docId: d.id } as any}
                 className="block truncate text-sm font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 title={d.name}
               >
@@ -697,6 +777,22 @@ function DocsPage() {
                 }`}
               >
                 {(d.docScope || "association") === "association" ? "🏛️ Hiệp hội" : "🏢 Doanh nghiệp"}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                  d.shareScope === "public"
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                    : d.shareScope === "internal"
+                    ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                    : d.shareScope === "specific"
+                    ? "bg-purple-500/15 text-purple-700 dark:text-purple-400"
+                    : "bg-slate-500/15 text-slate-700 dark:text-slate-400"
+                }`}
+              >
+                {d.shareScope === "public" && "🌐 Công khai"}
+                {d.shareScope === "internal" && "🏛️ Nội bộ"}
+                {d.shareScope === "specific" && "👥 Chỉ định"}
+                {(!d.shareScope || d.shareScope === "private") && "🔒 Riêng tư"}
               </span>
               {d.driveUrl && (
                 <a
@@ -766,6 +862,28 @@ function DocsPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    setShareModalDoc(d);
+                  }}
+                  title="Chia sẻ (như Google Drive)"
+                  aria-label="Chia sẻ"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 focus-visible:outline-none cursor-pointer"
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMoveModalDoc(d);
+                  }}
+                  title="Di chuyển vào thư mục khác"
+                  aria-label="Di chuyển"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 focus-visible:outline-none cursor-pointer"
+                >
+                  <Move className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditing(d);
                     setOpen(true);
                   }}
@@ -799,6 +917,26 @@ function DocsPage() {
 
   return (
     <AppShell>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(false);
+          const files = Array.from(e.dataTransfer.files || []);
+          if (files.length > 0) void onUploadFiles(files);
+        }}
+        className="relative min-h-[calc(100vh-120px)]"
+      >
       <PageHeader
         title={docTab === "mail_templates" ? "Quản lý Template Mail & Thông báo" : t("doc.title")}
         subtitle={docTab === "mail_templates" ? "Thiết lập mẫu email tự động CRM: hội phí, cảm ơn hội viên, vé sự kiện, nhắc nợ..." : t("doc.subtitle")}
@@ -1261,22 +1399,40 @@ function DocsPage() {
                     <div
                       key={`f-${f.id}`}
                       onClick={() => setCurrentFolderId(f.id)}
-                      className="group flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3.5 transition-all hover:border-amber-500/50 hover:bg-amber-500/10 hover:shadow-md cursor-pointer"
+                      className="group flex items-center justify-between gap-2.5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3.5 transition-all hover:border-amber-500/50 hover:bg-amber-500/10 hover:shadow-md cursor-pointer"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs group-hover:scale-105 transition-transform">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-xs group-hover:scale-105 transition-transform"
+                          style={{ backgroundColor: f.colorTag || "#F59E0B" }}
+                        >
                           <Folder className="h-5 w-5 fill-white/20" />
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
                             {f.name}
                           </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {childCount} mục · {f.category}
-                          </p>
+                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <span>{childCount} mục</span>
+                            <span>•</span>
+                            <span className="truncate max-w-[80px]">{f.category}</span>
+                          </div>
                         </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShareModalDoc(f);
+                          }}
+                          title="Chia sẻ thư mục"
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-blue-500/10 hover:text-blue-600 cursor-pointer transition-colors"
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                        </button>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
+                      </div>
                     </div>
                   );
                 })}
@@ -1396,7 +1552,7 @@ function DocsPage() {
                               <TypeGlyph d={d} size="sm" />
                               <Link
                                 to="/documents/$docId"
-                                params={{ docId: d.id }}
+                                params={{ docId: d.id } as any}
                                 className="font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
                                 <TruncatedText text={d.name} maxWidth="max-w-[260px]" className="font-semibold text-foreground" />
@@ -1417,9 +1573,26 @@ function DocsPage() {
                           <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
                             <div className="flex items-center justify-end gap-1">
                               <PinButton d={d} />
-                              <button className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                              <button
+                                onClick={() => void onDownload(d)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                              >
                                 <Download className="h-3.5 w-3.5" aria-hidden="true" />
                                 {t("common.download")}
+                              </button>
+                              <button
+                                onClick={() => setShareModalDoc(d)}
+                                title="Chia sẻ (Google Drive)"
+                                className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+                              >
+                                <Share2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setMoveModalDoc(d)}
+                                title="Di chuyển vào thư mục khác"
+                                className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
+                              >
+                                <Move className="h-3.5 w-3.5" />
                               </button>
                               {(() => {
                                 const isAssoc = d.docScope === "association" || !d.docScope;
@@ -1556,6 +1729,33 @@ function DocsPage() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Màu sắc thư mục (Google Drive)
+                </label>
+                <div className="flex items-center gap-2">
+                  {[
+                    { color: "#F59E0B", name: "Vàng Hổ Phách" },
+                    { color: "#DC2626", name: "Đỏ CEO 1983" },
+                    { color: "#003B95", name: "Xanh Navy" },
+                    { color: "#059669", name: "Xanh Emerald" },
+                    { color: "#7C3AED", name: "Tím Hoàng Gia" },
+                    { color: "#475569", name: "Xám Titan" },
+                  ].map((c) => (
+                    <button
+                      key={c.color}
+                      type="button"
+                      onClick={() => setNewFolderColor(c.color)}
+                      style={{ backgroundColor: c.color }}
+                      className={`h-7 w-7 rounded-full transition-transform cursor-pointer ${
+                        newFolderColor === c.color ? "scale-125 ring-2 ring-foreground ring-offset-2" : "hover:scale-110"
+                      }`}
+                      title={c.name}
+                    />
+                  ))}
+                </div>
+              </div>
+
               <div className="rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground flex items-center gap-2">
                 <Folder className="h-4 w-4 text-amber-500 shrink-0" />
                 <span>
@@ -1583,6 +1783,39 @@ function DocsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Chia sẻ chuẩn Google Drive */}
+      <DriveShareModal
+        isOpen={Boolean(shareModalDoc)}
+        onClose={() => setShareModalDoc(null)}
+        document={shareModalDoc}
+        onSaveShare={onSaveShare}
+      />
+
+      {/* Modal Di chuyển vào thư mục */}
+      <DriveMoveModal
+        isOpen={Boolean(moveModalDoc)}
+        onClose={() => setMoveModalDoc(null)}
+        document={moveModalDoc}
+        allDocuments={DOCUMENTS}
+        onMove={onMoveDoc}
+      />
+
+      {/* Drag & Drop Visual Indicator Overlay */}
+      {isDraggingOver && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xs pointer-events-none animate-in fade-in duration-150">
+          <div className="rounded-3xl border-2 border-dashed border-amber-500 bg-card/95 p-8 shadow-2xl flex flex-col items-center gap-3 max-w-md text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-500">
+              <Upload className="h-8 w-8 animate-bounce" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground">Thả tệp vào đây để tải lên</h3>
+            <p className="text-xs text-muted-foreground">
+              Tệp sẽ được lưu trực tiếp vào: <strong className="text-foreground">{currentFolder ? currentFolder.name : "Thư mục gốc"}</strong>
+            </p>
+          </div>
+        </div>
+      )}
+      </div>
     </AppShell>
   );
 }

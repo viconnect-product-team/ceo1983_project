@@ -82,7 +82,25 @@ export class MembersController {
   @Put('my-location')
   async updateMyLocation(
     @Request() req: any,
-    @Body() body: { latitude: number; longitude: number; isSharing?: boolean },
+    @Body() body: { latitude: number; longitude: number; isSharing?: boolean; address?: string },
+  ) {
+    return this.membersService.updateMyLocation(req.user.id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('my-location')
+  async updateMyLocationPost(
+    @Request() req: any,
+    @Body() body: { latitude: number; longitude: number; isSharing?: boolean; address?: string },
+  ) {
+    return this.membersService.updateMyLocation(req.user.id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('my-location')
+  async updateMyLocationPatch(
+    @Request() req: any,
+    @Body() body: { latitude: number; longitude: number; isSharing?: boolean; address?: string },
   ) {
     return this.membersService.updateMyLocation(req.user.id, body);
   }

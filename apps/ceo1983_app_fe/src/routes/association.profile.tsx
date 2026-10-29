@@ -52,6 +52,7 @@ import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQ
 import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
+import { CeoBusinessLocationPicker } from "@/components/member/CeoBusinessLocationPicker";
 import { AccountSecuritySettingsForm } from "@/components/member/AccountSecuritySettingsForm";
 import {
   CustomHomeShortcutsModal,
@@ -87,6 +88,7 @@ import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { resolveMediaUrl, uploadFileToNest, fetchNestApi, isDeadAvatarUrl } from "@/lib/api-client";
 import { requestNotificationPermission } from "@/lib/notification-permissions";
 import { toast } from "sonner";
+// @ts-ignore
 import heroImg from "@/assets/vba-hero.jpg";
 
 export const Route = createFileRoute("/association/profile")({
@@ -594,6 +596,8 @@ export default function ProfileScreen() {
     (member as any)?.address ||
     (member as any)?.officeAddress ||
     "Tòa nhà CEO 1983 Tower, Cầu Giấy, TP. Hà Nội";
+  const displayLat = Number((member as any)?.latitude || (member as any)?.lat || (user as any)?.latitude || 21.0175);
+  const displayLng = Number((member as any)?.longitude || (member as any)?.lng || (user as any)?.longitude || 105.7838);
   let rawBio = (member as any)?.bio || (member as any)?.about || "";
   let extractedStaffSize = (member as any)?.companySize || (member as any)?.company_size || (member as any)?.staffSize || "";
   if (typeof rawBio === "string" && rawBio.trim().startsWith("{")) {
@@ -985,6 +989,20 @@ export default function ProfileScreen() {
                     </div>
                     <Building2 className="size-4 text-slate-400" />
                   </div>
+
+                  {/* Địa chỉ doanh nghiệp và Bản đồ định vị tương tác */}
+                  <div className="pt-2">
+                    <CeoBusinessLocationPicker
+                      initialAddress={displayAddress}
+                      initialLat={displayLat}
+                      initialLng={displayLng}
+                      companyName={displayCompany}
+                      userId={user?.id}
+                      onAddressSaved={() => {
+                        reloadMember?.();
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -1113,7 +1131,7 @@ export default function ProfileScreen() {
                         <Link
                           key={ev.id}
                           to="/events/$eventId"
-                          params={{ eventId: ev.id }}
+                          params={{ eventId: ev.id } as any}
                           className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
@@ -1412,7 +1430,7 @@ export default function ProfileScreen() {
                 <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
                   <Link
                     to="/association/products"
-                    search={{}}
+                    search={undefined as any}
                     className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -2083,6 +2101,7 @@ export default function ProfileScreen() {
         initialCover={displayCover}
         initialCompany={displayCompany}
         initialTitle={displayTitle}
+        initialAddress={displayAddress}
         initialWebsite={displayWebsite}
         initialCompanySize={displayCompanySize}
         initialIndustry={displayIndustry}

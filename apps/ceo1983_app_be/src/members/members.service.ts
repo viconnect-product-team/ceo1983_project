@@ -774,6 +774,8 @@ export class MembersService {
     avatar?: string;
     companyLogo?: string;
     address?: string;
+    latitude?: number;
+    longitude?: number;
     website?: string;
     bio?: string;
     companySize?: string;
@@ -830,6 +832,10 @@ export class MembersService {
           phone = COALESCE(${phone || null}, phone),
           email = COALESCE(${email || null}, email),
           address = COALESCE(${address || null}, address),
+          latitude = COALESCE(${data.latitude !== undefined ? data.latitude : null}, latitude),
+          longitude = COALESCE(${data.longitude !== undefined ? data.longitude : null}, longitude),
+          is_location_sharing = CASE WHEN ${data.latitude !== undefined} THEN true ELSE is_location_sharing END,
+          last_location_updated_at = CASE WHEN ${data.latitude !== undefined} THEN NOW() ELSE last_location_updated_at END,
           website = COALESCE(${website || null}, website),
           company_size = COALESCE(${companySize || null}, company_size),
           industry = COALESCE(${industry || null}, industry),
@@ -852,6 +858,10 @@ export class MembersService {
           work_phone = COALESCE(${phone || null}, work_phone),
           work_email = COALESCE(${email || null}, work_email),
           address = COALESCE(${address || null}, address),
+          latitude = COALESCE(${data.latitude !== undefined ? data.latitude : null}, latitude),
+          longitude = COALESCE(${data.longitude !== undefined ? data.longitude : null}, longitude),
+          is_location_sharing = CASE WHEN ${data.latitude !== undefined} THEN true ELSE is_location_sharing END,
+          last_location_updated_at = CASE WHEN ${data.latitude !== undefined} THEN NOW() ELSE last_location_updated_at END,
           website = COALESCE(${website || null}, website),
           bio = COALESCE(${bio || null}, bio),
           updated_at = NOW()
@@ -886,6 +896,10 @@ export class MembersService {
           work_phone = COALESCE(${phone || null}, work_phone),
           work_email = COALESCE(${email || null}, work_email),
           address = COALESCE(${address || null}, address),
+          latitude = COALESCE(${data.latitude !== undefined ? data.latitude : null}, latitude),
+          longitude = COALESCE(${data.longitude !== undefined ? data.longitude : null}, longitude),
+          is_location_sharing = CASE WHEN ${data.latitude !== undefined} THEN true ELSE is_location_sharing END,
+          last_location_updated_at = CASE WHEN ${data.latitude !== undefined} THEN NOW() ELSE last_location_updated_at END,
           website = COALESCE(${website || null}, website),
           bio = COALESCE(${bio || null}, bio),
           updated_at = NOW()
@@ -2694,6 +2708,8 @@ export class MembersService {
     taxCode?: string;
     industry?: string;
     address?: string;
+    latitude?: number;
+    longitude?: number;
     website?: string;
     staffSize?: string;
     boardWish?: string;
@@ -3309,18 +3325,20 @@ export class MembersService {
     };
   }
 
-  async updateMyLocation(userId: string, body: { latitude: number; longitude: number; isSharing?: boolean }) {
+  async updateMyLocation(userId: string, body: { latitude: number; longitude: number; isSharing?: boolean; address?: string }) {
     if (!userId) throw new BadRequestException('Chưa đăng nhập');
     const isSharing = body.isSharing !== undefined ? Boolean(body.isSharing) : true;
+    const addressUpdate = body.address ? `, address = '${body.address.replace(/'/g, "''")}'` : '';
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.members 
       SET latitude = ${body.latitude}, 
           longitude = ${body.longitude}, 
           is_location_sharing = ${isSharing},
           last_location_updated_at = now()
+          ${addressUpdate}
       WHERE user_id = '${userId}'::uuid OR id = '${userId}';
     `);
-    return { success: true, message: 'Đã cập nhật vị trí bản đồ' };
+    return { success: true, message: 'Đã cập nhật vị trí bản đồ & địa chỉ doanh nghiệp' };
   }
 }
 

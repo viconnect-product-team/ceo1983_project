@@ -16,6 +16,7 @@ import {
   Share2,
   ExternalLink,
   MessageCircle,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -44,6 +45,7 @@ export interface QuickProfileEditModalProps {
   initialTiktok?: string;
   initialCompanySize?: string;
   initialIndustry?: string;
+  initialAddress?: string;
   initialBio?: string;
   userId?: string;
   onSaved?: (updated: {
@@ -54,6 +56,7 @@ export interface QuickProfileEditModalProps {
     companyLogo?: string | null;
     company?: string;
     title?: string;
+    address?: string;
     linkedin?: string;
     facebook?: string;
     zalo?: string;
@@ -75,6 +78,7 @@ export function QuickProfileEditModal({
   initialCompanyLogo = null,
   initialCompany = "",
   initialTitle = "",
+  initialAddress = "",
   initialLinkedin = "",
   initialFacebook = "",
   initialZalo = "",
@@ -91,6 +95,7 @@ export function QuickProfileEditModal({
   const [phone, setPhone] = useState(initialPhone);
   const [company, setCompany] = useState(initialCompany);
   const [title, setTitle] = useState(initialTitle);
+  const [address, setAddress] = useState(initialAddress);
   const [companySize, setCompanySize] = useState(initialCompanySize);
   const [industry, setIndustry] = useState(initialIndustry);
   const [bio, setBio] = useState(initialBio);
@@ -123,6 +128,7 @@ export function QuickProfileEditModal({
       setPhone(initialPhone);
       setCompany(initialCompany);
       setTitle(initialTitle);
+      setAddress(initialAddress);
       setCompanySize(initialCompanySize);
       setIndustry(initialIndustry);
       setBio(initialBio);
@@ -148,12 +154,13 @@ export function QuickProfileEditModal({
           if (cp.website && !initialWebsite) setWebsite(cp.website);
           if (cp.tiktok && !initialTiktok) setTiktok(cp.tiktok);
           if (cp.companySize && !initialCompanySize) setCompanySize(cp.companySize);
+          if (cp.address && !initialAddress) setAddress(cp.address);
           if (cp.industry && !initialIndustry) setIndustry(cp.industry);
           if (cp.bio && !initialBio) setBio(cp.bio);
         }
       } catch {}
     }
-  }, [open, initialName, initialPhone, initialCompany, initialTitle, initialCompanySize, initialIndustry, initialBio, initialLinkedin, initialFacebook, initialZalo, initialWebsite, initialTiktok, initialAvatar, initialCover, initialCompanyLogo]);
+  }, [open, initialName, initialPhone, initialCompany, initialTitle, initialAddress, initialCompanySize, initialIndustry, initialBio, initialLinkedin, initialFacebook, initialZalo, initialWebsite, initialTiktok, initialAvatar, initialCover, initialCompanyLogo]);
 
   if (!open || !mounted || typeof document === "undefined") return null;
 
@@ -235,6 +242,7 @@ export function QuickProfileEditModal({
         phone: phone.trim(),
         company: company.trim(),
         title: title.trim(),
+        address: address.trim(),
         companySize: companySize.trim(),
         industry: industry.trim(),
         bio: bio.trim(),
@@ -291,6 +299,7 @@ export function QuickProfileEditModal({
           phone: updatedData.phone || existingMem.phone,
           company: updatedData.company || existingMem.company,
           companyName: updatedData.company || existingMem.companyName,
+          address: updatedData.address || existingMem.address,
           title: updatedData.title || existingMem.title,
           companySize: updatedData.companySize || existingMem.companySize,
           industry: updatedData.industry || existingMem.industry,
@@ -328,6 +337,7 @@ export function QuickProfileEditModal({
         phone: phone.trim(),
         company: company.trim(),
         title: title.trim(),
+        address: address.trim(),
         website: website.trim(),
         companySize: companySize.trim(),
         industry: industry.trim(),
@@ -613,6 +623,22 @@ export function QuickProfileEditModal({
                   onChange={(e) => setIndustry(e.target.value)}
                   placeholder="VD: Công nghệ thông tin..."
                   className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Địa Chỉ Trụ Sở Doanh Nghiệp
+              </label>
+              <div className="relative">
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#DC2626]" />
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Nhập địa chỉ trụ sở văn phòng doanh nghiệp..."
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none focus:border-[#003B95] dark:focus:border-amber-400 transition"
                 />
               </div>
             </div>
