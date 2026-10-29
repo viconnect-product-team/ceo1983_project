@@ -26,6 +26,8 @@ import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { Card } from "@/components/ui/card";
 import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
 import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
+import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
+import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
 import {
   createTransactionFn,
   deleteTransactionFn,
@@ -195,6 +197,8 @@ function IncomePage() {
 
   // Status filter: all | completed | pending
   const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "pending">("all");
+  // 3 Chế độ xem: Dashboard Tổng Hợp | Biểu Đồ Cột & Tròn | Cây Đơn Vị (6 Ban)
+  const [viewMode, setViewMode] = useState<FinanceViewMode>("dashboard");
   // Method filter: all | cash (Tiền mặt) | bank (Chuyển khoản)
   const [methodFilter, setMethodFilter] = useState<"all" | "cash" | "bank">("all");
   // Category filter: all | membership_fee | event_ticket | event_walkin | sponsor | other
@@ -228,8 +232,8 @@ function IncomePage() {
       defaultCategory === "event_walkin"
         ? "Thu tiền mặt trực tiếp tại bàn đón tiếp sự kiện"
         : defaultCategory === "membership_fee"
-        ? "Thu hội phí thường niên"
-        : ""
+          ? "Thu hội phí thường niên"
+          : ""
     );
     setFormAmount(0);
     setFormMethod(defaultMethod || "bank");
@@ -559,371 +563,391 @@ function IncomePage() {
         }
       />
 
-      {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Tổng thu quỹ (Sky gradient - Blue) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG THU QUỸ</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(totalIncome)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Toàn bộ các nguồn thu quỹ hội
-          </div>
-        </div>
-
-        {/* Card 2: Đã Thu Thực Tế (Emerald gradient - Green) */}
-        <div
-          onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
-          className={`h-32 p-4 bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${
-            statusFilter === "completed" ? "ring-2 ring-emerald-500" : ""
-          }`}
-        >
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ THU THỰC TẾ</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(completedIncome)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Đã thanh toán &amp; vào quỹ an toàn
-          </div>
-        </div>
-
-        {/* Card 3: Chờ Thanh Toán (Amber / Orange gradient) */}
-        <div
-          onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
-          className={`h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${
-            statusFilter === "pending" ? "ring-2 ring-amber-500" : ""
-          }`}
-        >
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHỜ THANH TOÁN</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(pendingIncome)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            {pendingCount} khoản đang chờ xác nhận
-          </div>
-        </div>
-
-        {/* Card 4: Thu Tiền Mặt (Violet gradient - Indigo) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">THU TIỀN MẶT</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(incomeCash)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Thu trực tiếp tại quầy &amp; sự kiện
-          </div>
-        </div>
+      {/* ── 3 CHẾ ĐỘ XEM: DASHBOARD TỔNG HỢP | BIỂU ĐỒ CỘT & TRÒN | CÂY ĐƠN VỊ (6 BAN) ── */}
+      <div className="mb-6">
+        <FinanceViewModeTabs viewMode={viewMode} onChange={setViewMode} />
       </div>
 
-      {/* Biểu Đồ Trực Quan Cơ Cấu Nguồn Thu & Nhà Tài Trợ */}
-      <FinanceChartsSection
-        transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_INCOME_TRANSACTIONS}
-        defaultTab="income_sponsor"
-        hideTabs={false}
-        title="Biểu Đồ Phân Tích Cơ Cấu Nguồn Thu & Tài Trợ"
-        subtitle="Trực quan hóa tỷ trọng Hội phí, Nhà tài trợ sự kiện, Vé tham gia và các nguồn thu khác"
-        className="mb-6"
-      />
-
-      {/* Filter Toolbar */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Status Filter: Tất cả | Đã thu | Chờ thanh toán */}
-          <div className="flex items-center rounded-xl bg-muted/60 p-1">
-            <button
-              onClick={() => setStatusFilter("all")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
-                statusFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tất cả ({incomeList.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter("completed")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
-                statusFilter === "completed" ? "bg-emerald-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Đã thu
-            </button>
-            <button
-              onClick={() => setStatusFilter("pending")}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
-                statusFilter === "pending" ? "bg-amber-500 text-slate-950 font-bold shadow-sm" : "text-amber-600 hover:text-amber-700"
-              }`}
-            >
-              <span>Chờ thanh toán</span>
-              {pendingCount > 0 && (
-                <span className="rounded-full bg-amber-200 dark:bg-amber-900/60 px-1.5 py-0.2 text-[10px] font-black text-amber-900 dark:text-amber-200">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Method Filter */}
-          <div className="flex items-center rounded-xl bg-muted/60 p-1">
-            <button
-              onClick={() => setMethodFilter("all")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                methodFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tất cả PT
-            </button>
-            <button
-              onClick={() => setMethodFilter("cash")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                methodFilter === "cash" ? "bg-emerald-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tiền mặt
-            </button>
-            <button
-              onClick={() => setMethodFilter("bank")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                methodFilter === "bank" ? "bg-blue-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Chuyển khoản
-            </button>
-          </div>
-
-          {/* Category Filter */}
-          <div className="flex items-center rounded-xl bg-muted/60 p-1">
-            <button
-              onClick={() => setCategoryFilter("all")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tất cả nguồn thu
-            </button>
-            <button
-              onClick={() => setCategoryFilter("membership_fee")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "membership_fee" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Phí hội viên
-            </button>
-            <button
-              onClick={() => setCategoryFilter("event_ticket")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "event_ticket" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Vé sự kiện
-            </button>
-            <button
-              onClick={() => setCategoryFilter("event_walkin")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "event_walkin" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Thu đột xuất
-            </button>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="relative min-w-[240px] flex-1 sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo mã, nội dung, người nộp..."
-            className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+      {/* ── CHẾ ĐỘ 2: BIỂU ĐỒ CỘT & TRÒN (TOÀN BỘ TRỰC QUAN HÓA) ── */}
+      {viewMode === "charts" && (
+        <div className="space-y-6">
+          <FinanceChartsSection
+            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_INCOME_TRANSACTIONS}
+            defaultTab="income_sponsor"
+            hideTabs={false}
+            title="Biểu Đồ Phân Tích Cơ Cấu Nguồn Thu & Tài Trợ"
+            subtitle="Trực quan hóa tỷ trọng Hội phí, Nhà tài trợ sự kiện, Vé tham gia và các nguồn thu khác"
+            className="mb-6"
           />
         </div>
-      </div>
+      )}
 
-      {/* Main Income Table */}
-      <Card className="overflow-hidden">
-        <div className="relative overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-left text-sm table-fixed">
-          <thead className="border-b border-border bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <ResizableTh colKey="stt" width={colWidths.stt} onResize={startResize} className="sticky left-0 z-20 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">
-                STT
-              </ResizableTh>
-              <ResizableTh colKey="id" width={colWidths.id} onResize={startResize} style={{ left: `${colWidths.stt}px` }} className="sticky z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">
-                Mã phiếu thu
-              </ResizableTh>
-              <ResizableTh colKey="date" width={colWidths.date} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Ngày thu
-              </ResizableTh>
-              <ResizableTh colKey="category" width={colWidths.category} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Danh mục thu
-              </ResizableTh>
-              <ResizableTh colKey="description" width={colWidths.description} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Nội dung thu
-              </ResizableTh>
-              <ResizableTh colKey="recipient" width={colWidths.recipient} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Người nộp / Đơn vị
-              </ResizableTh>
-              <ResizableTh colKey="amount" width={colWidths.amount} onResize={startResize} className="px-4 py-3 text-right font-bold text-emerald-600 border-b border-border">
-                Số tiền
-              </ResizableTh>
-              <ResizableTh colKey="method" width={colWidths.method} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Hình thức
-              </ResizableTh>
-              <ResizableTh colKey="status" width={colWidths.status} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Trạng thái
-              </ResizableTh>
-              <ResizableTh colKey="invoice" width={colWidths.invoice} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
-                Tải hóa đơn
-              </ResizableTh>
-              <ResizableTh colKey="actions" width={colWidths.actions} onResize={startResize} className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">
-                Thao tác
-              </ResizableTh>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {(tc?.paged || []).length === 0 ? (
-              <tr>
-                <td colSpan={11} className="py-12 text-center text-muted-foreground">
-                  Không tìm thấy khoản thu nào phù hợp
-                </td>
-              </tr>
-            ) : (
-              (tc?.paged || []).map((tx, idx) => (
-                <tr key={tx.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
-                  <td style={{ width: `${colWidths.stt}px`, maxWidth: `${colWidths.stt}px` }} className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
-                    {(tc.page - 1) * tc.pageSize + idx + 1}
-                  </td>
-                  <td style={{ width: `${colWidths.id}px`, maxWidth: `${colWidths.id}px`, left: `${colWidths.stt}px` }} className="sticky z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
-                    <TruncatedText text={tx.id} maxWidth="w-full" />
-                  </td>
-                  <td style={{ width: `${colWidths.date}px`, maxWidth: `${colWidths.date}px` }} className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap border-b border-border/50">
-                    {tx.date}
-                  </td>
-                  <td style={{ width: `${colWidths.category}px`, maxWidth: `${colWidths.category}px` }} className="px-4 py-3 text-xs border-b border-border/50">
-                    {tx.category === "event_walkin" ? (
-                      <Pill tone="warn">Thu đột xuất</Pill>
-                    ) : (
-                      <TruncatedText text={getCategoryLabel(tx.category)} maxWidth="w-full" />
-                    )}
-                  </td>
-                  <td style={{ width: `${colWidths.description}px`, maxWidth: `${colWidths.description}px` }} className="px-4 py-3 text-xs font-medium border-b border-border/50">
-                    <TruncatedText text={tx.description || "—"} maxWidth="w-full" />
-                  </td>
-                  <td style={{ width: `${colWidths.recipient}px`, maxWidth: `${colWidths.recipient}px` }} className="px-4 py-3 text-xs font-semibold text-foreground border-b border-border/50">
-                    <TruncatedText text={tx.recipient || "—"} maxWidth="w-full" />
-                  </td>
-                  <td style={{ width: `${colWidths.amount}px`, maxWidth: `${colWidths.amount}px` }} className="px-4 py-3 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap border-b border-border/50">
-                    +{fmt.money(tx.amount)}
-                  </td>
-                  <td style={{ width: `${colWidths.method}px`, maxWidth: `${colWidths.method}px` }} className="px-4 py-3 text-xs border-b border-border/50">
-                    {tx.method === "cash" ? (
-                      <Pill tone="success">Tiền mặt</Pill>
-                    ) : (
-                      <Pill tone="info">Chuyển khoản</Pill>
-                    )}
-                  </td>
-                  <td style={{ width: `${colWidths.status}px`, maxWidth: `${colWidths.status}px` }} className="px-4 py-3 text-xs border-b border-border/50">
-                    {tx.status === "completed" ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
-                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">Đã xác nhận</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
-                        <Clock className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">Chờ xác nhận</span>
-                      </span>
-                    )}
-                  </td>
-
-                  {/* Column Tải hóa đơn / Phiếu thu on each row */}
-                  <td style={{ width: `${colWidths.invoice}px`, maxWidth: `${colWidths.invoice}px` }} className="px-4 py-3 text-center border-b border-border/50">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        downloadInvoiceVoucher({
-                          id: tx.id,
-                          date: tx.date,
-                          type: "income",
-                          category: tx.category,
-                          description: tx.description,
-                          amount: tx.amount,
-                          method: tx.method,
-                          status: tx.status,
-                          recipient: tx.recipient,
-                        })
-                      }
-                      title="Tải phiếu thu / Hóa đơn điện tử PDF"
-                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-xs hover:bg-muted cursor-pointer transition-colors"
-                    >
-                      <FileDown className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                      <span>Tải HĐ</span>
-                    </button>
-                  </td>
-
-                  {/* Actions */}
-                  <td style={{ width: `${colWidths.actions}px`, maxWidth: `${colWidths.actions}px` }} className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
-                    <div className="flex items-center justify-end gap-1.5">
-                      {tx.status === "pending" && (
-                        <button
-                          type="button"
-                          onClick={() => handleConfirmPayment(tx)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer transition-colors"
-                          title="Xác nhận đã nhận đủ số tiền khoản thu này"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                          <span>Đã thu</span>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => openEdit(tx)}
-                        title="Sửa phiếu thu"
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(tx)}
-                        disabled={deletingId === tx.id}
-                        title="Xóa"
-                        className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-500/10 cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* ── CHẾ ĐỘ 3: CÂY ĐƠN VỊ & SƠ ĐỒ 6 BAN CHUYÊN MÔN ── */}
+      {viewMode === "unit_tree" && (
+        <div className="space-y-6">
+          <FinanceUnitTreeSection
+            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_INCOME_TRANSACTIONS}
+            type="income"
+            title="Cây Phân Cấp Nguồn Thu Theo 6 Ban & Khối Doanh Nghiệp"
+            subtitle="Sơ đồ tỷ trọng thực thu theo Ban Điều Hành, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện"
+            className="mb-6"
+            onSelectUnit={(unit) => {
+              setQ(unit);
+              setViewMode("dashboard");
+              toast.success(`Đã chuyển sang bảng dữ liệu lọc theo: ${unit}`);
+            }}
+          />
         </div>
-        <Pagination
-          page={tc.page}
-          pageCount={tc.pageCount}
-          pageSize={tc.pageSize}
-          total={tc.total}
-          from={tc.from}
-          to={tc.to}
-          onPage={tc.setPage}
-          onPageSize={tc.setPageSize}
-        />
-      </Card>
+      )}
+
+      {/* ── CHẾ ĐỘ 1: DASHBOARD TỔNG HỢP (4 THẺ KPI + BẢNG EXCEL CO DÃN CỘT) ── */}
+      {viewMode === "dashboard" && (
+        <>
+          {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Tổng thu quỹ (Sky gradient - Blue) */}
+            <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+              <div className="h-8 flex items-center gap-2">
+                <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG THU QUỸ</div>
+              </div>
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+                {fmt.money(totalIncome)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                Toàn bộ các nguồn thu quỹ hội
+              </div>
+            </div>
+
+            {/* Card 2: Đã Thu Thực Tế (Emerald gradient - Green) */}
+            <div
+              onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
+              className={`h-32 p-4 bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${statusFilter === "completed" ? "ring-2 ring-emerald-500" : ""
+                }`}
+            >
+              <div className="h-8 flex items-center gap-2">
+                <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ THU THỰC TẾ</div>
+              </div>
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+                {fmt.money(completedIncome)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                Đã thanh toán &amp; vào quỹ an toàn
+              </div>
+            </div>
+
+            {/* Card 3: Chờ Thanh Toán (Amber / Orange gradient) */}
+            <div
+              onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+              className={`h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${statusFilter === "pending" ? "ring-2 ring-amber-500" : ""
+                }`}
+            >
+              <div className="h-8 flex items-center gap-2">
+                <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHỜ THANH TOÁN</div>
+              </div>
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+                {fmt.money(pendingIncome)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                {pendingCount} khoản đang chờ xác nhận
+              </div>
+            </div>
+
+            {/* Card 4: Thu Tiền Mặt (Violet gradient - Indigo) */}
+            <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+              <div className="h-8 flex items-center gap-2">
+                <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">THU TIỀN MẶT</div>
+              </div>
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+                {fmt.money(incomeCash)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                Thu trực tiếp tại quầy &amp; sự kiện
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Toolbar */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Status Filter: Tất cả | Đã thu | Chờ thanh toán */}
+              <div className="flex items-center rounded-xl bg-muted/60 p-1">
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${statusFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Tất cả ({incomeList.length})
+                </button>
+                <button
+                  onClick={() => setStatusFilter("completed")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${statusFilter === "completed" ? "bg-emerald-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Đã thu
+                </button>
+                <button
+                  onClick={() => setStatusFilter("pending")}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${statusFilter === "pending" ? "bg-amber-500 text-slate-950 font-bold shadow-sm" : "text-amber-600 hover:text-amber-700"
+                    }`}
+                >
+                  <span>Chờ thanh toán</span>
+                  {pendingCount > 0 && (
+                    <span className="rounded-full bg-amber-200 dark:bg-amber-900/60 px-1.5 py-0.2 text-[10px] font-black text-amber-900 dark:text-amber-200">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Method Filter */}
+              <div className="flex items-center rounded-xl bg-muted/60 p-1">
+                <button
+                  onClick={() => setMethodFilter("all")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${methodFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Tất cả PT
+                </button>
+                <button
+                  onClick={() => setMethodFilter("cash")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${methodFilter === "cash" ? "bg-emerald-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Tiền mặt
+                </button>
+                <button
+                  onClick={() => setMethodFilter("bank")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${methodFilter === "bank" ? "bg-blue-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Chuyển khoản
+                </button>
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex items-center rounded-xl bg-muted/60 p-1">
+                <button
+                  onClick={() => setCategoryFilter("all")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${categoryFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Tất cả nguồn thu
+                </button>
+                <button
+                  onClick={() => setCategoryFilter("membership_fee")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${categoryFilter === "membership_fee" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Phí hội viên
+                </button>
+                <button
+                  onClick={() => setCategoryFilter("event_ticket")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${categoryFilter === "event_ticket" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Vé sự kiện
+                </button>
+                <button
+                  onClick={() => setCategoryFilter("event_walkin")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${categoryFilter === "event_walkin" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Thu đột xuất
+                </button>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="relative min-w-[240px] flex-1 sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Tìm theo mã, nội dung, người nộp..."
+                className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          {/* Main Income Table */}
+          <Card className="overflow-hidden">
+            <div className="relative overflow-x-auto">
+              <table className="w-full border-separate border-spacing-0 text-left text-sm table-fixed">
+                <thead className="border-b border-border bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <ResizableTh colKey="stt" width={colWidths.stt} onResize={startResize} className="sticky left-0 z-20 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">
+                      STT
+                    </ResizableTh>
+                    <ResizableTh colKey="id" width={colWidths.id} onResize={startResize} style={{ left: `${colWidths.stt}px` }} className="sticky z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">
+                      Mã phiếu thu
+                    </ResizableTh>
+                    <ResizableTh colKey="date" width={colWidths.date} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Ngày thu
+                    </ResizableTh>
+                    <ResizableTh colKey="category" width={colWidths.category} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Danh mục thu
+                    </ResizableTh>
+                    <ResizableTh colKey="description" width={colWidths.description} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Nội dung thu
+                    </ResizableTh>
+                    <ResizableTh colKey="recipient" width={colWidths.recipient} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Người nộp / Đơn vị
+                    </ResizableTh>
+                    <ResizableTh colKey="amount" width={colWidths.amount} onResize={startResize} className="px-4 py-3 text-right font-bold text-emerald-600 border-b border-border">
+                      Số tiền
+                    </ResizableTh>
+                    <ResizableTh colKey="method" width={colWidths.method} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Hình thức
+                    </ResizableTh>
+                    <ResizableTh colKey="status" width={colWidths.status} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Trạng thái
+                    </ResizableTh>
+                    <ResizableTh colKey="invoice" width={colWidths.invoice} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
+                      Tải hóa đơn
+                    </ResizableTh>
+                    <ResizableTh colKey="actions" width={colWidths.actions} onResize={startResize} className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">
+                      Thao tác
+                    </ResizableTh>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(tc?.paged || []).length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="py-12 text-center text-muted-foreground">
+                        Không tìm thấy khoản thu nào phù hợp
+                      </td>
+                    </tr>
+                  ) : (
+                    (tc?.paged || []).map((tx, idx) => (
+                      <tr key={tx.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
+                        <td style={{ width: `${colWidths.stt}px`, maxWidth: `${colWidths.stt}px` }} className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                          {(tc.page - 1) * tc.pageSize + idx + 1}
+                        </td>
+                        <td style={{ width: `${colWidths.id}px`, maxWidth: `${colWidths.id}px`, left: `${colWidths.stt}px` }} className="sticky z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
+                          <TruncatedText text={tx.id} maxWidth="w-full" />
+                        </td>
+                        <td style={{ width: `${colWidths.date}px`, maxWidth: `${colWidths.date}px` }} className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap border-b border-border/50">
+                          {tx.date}
+                        </td>
+                        <td style={{ width: `${colWidths.category}px`, maxWidth: `${colWidths.category}px` }} className="px-4 py-3 text-xs border-b border-border/50">
+                          {tx.category === "event_walkin" ? (
+                            <Pill tone="warn">Thu đột xuất</Pill>
+                          ) : (
+                            <TruncatedText text={getCategoryLabel(tx.category)} maxWidth="w-full" />
+                          )}
+                        </td>
+                        <td style={{ width: `${colWidths.description}px`, maxWidth: `${colWidths.description}px` }} className="px-4 py-3 text-xs font-medium border-b border-border/50">
+                          <TruncatedText text={tx.description || "—"} maxWidth="w-full" />
+                        </td>
+                        <td style={{ width: `${colWidths.recipient}px`, maxWidth: `${colWidths.recipient}px` }} className="px-4 py-3 text-xs font-semibold text-foreground border-b border-border/50">
+                          <TruncatedText text={tx.recipient || "—"} maxWidth="w-full" />
+                        </td>
+                        <td style={{ width: `${colWidths.amount}px`, maxWidth: `${colWidths.amount}px` }} className="px-4 py-3 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap border-b border-border/50">
+                          +{fmt.money(tx.amount)}
+                        </td>
+                        <td style={{ width: `${colWidths.method}px`, maxWidth: `${colWidths.method}px` }} className="px-4 py-3 text-xs border-b border-border/50">
+                          {tx.method === "cash" ? (
+                            <Pill tone="success">Tiền mặt</Pill>
+                          ) : (
+                            <Pill tone="info">Chuyển khoản</Pill>
+                          )}
+                        </td>
+                        <td style={{ width: `${colWidths.status}px`, maxWidth: `${colWidths.status}px` }} className="px-4 py-3 text-xs border-b border-border/50">
+                          {tx.status === "completed" ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
+                              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">Đã xác nhận</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
+                              <Clock className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">Chờ xác nhận</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Column Tải hóa đơn / Phiếu thu on each row */}
+                        <td style={{ width: `${colWidths.invoice}px`, maxWidth: `${colWidths.invoice}px` }} className="px-4 py-3 text-center border-b border-border/50">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              downloadInvoiceVoucher({
+                                id: tx.id,
+                                date: tx.date,
+                                type: "income",
+                                category: tx.category,
+                                description: tx.description,
+                                amount: tx.amount,
+                                method: tx.method,
+                                status: tx.status,
+                                recipient: tx.recipient,
+                              })
+                            }
+                            title="Tải phiếu thu / Hóa đơn điện tử PDF"
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-xs hover:bg-muted cursor-pointer transition-colors"
+                          >
+                            <FileDown className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            <span>Tải HĐ</span>
+                          </button>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ width: `${colWidths.actions}px`, maxWidth: `${colWidths.actions}px` }} className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {tx.status === "pending" && (
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmPayment(tx)}
+                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer transition-colors"
+                                title="Xác nhận đã nhận đủ số tiền khoản thu này"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                                <span>Đã thu</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => openEdit(tx)}
+                              title="Sửa phiếu thu"
+                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDelete(tx)}
+                              disabled={deletingId === tx.id}
+                              title="Xóa"
+                              className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={tc.page}
+              pageCount={tc.pageCount}
+              pageSize={tc.pageSize}
+              total={tc.total}
+              from={tc.from}
+              to={tc.to}
+              onPage={tc.setPage}
+              onPageSize={tc.setPageSize}
+            />
+          </Card>
+        </>
+      )}
 
       {/* Modal Lập / Sửa Phiếu Thu */}
       {modalOpen && (

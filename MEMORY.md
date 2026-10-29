@@ -1,5 +1,30 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 29/10/2026 (v9.8): Nâng Cấp Toàn Diện Thống Kê Chi Tiết Tree Menu, Quản Lý Tài Liệu Tự Thêm Danh Mục Chuẩn Google Drive, 3 Chế Độ Xem Báo Cáo Tài Chính & Đồng Bộ Hồ Sơ Thẻ Hội Viên Mobile App ([NODE-CRM-002], [NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011], [NODE-CRM-014], [NODE-APP-001], [NODE-APP-002], [NODE-APP-006], [NODE-APP-007])**:
+  1. *Web CRM - Thống Kê Quản Trị Chi Tiết Menu Tree & Biểu Đồ 4 Cột Đa Chỉ Số ([NODE-CRM-002])*:
+     - **Menu Tree Sidebar mở rộng**: Menu "Thống kê CLB & Hội viên" hỗ trợ mở rộng/thu gọn dạng Tree trực quan với 5 danh mục con: (1) Tích cực & Tiêu cực (`positive_negative`), (2) 3 thành viên kết nối nhiều nhất (`top_connectors`), (3) Top chia sẻ cơ hội B2B (`top_b2b`), (4) Top sự kiện & họp ban (`top_events`), (5) Top người giới thiệu (`top_referrals`).
+     - **Biểu đồ 4 cột Bar chuẩn mực kèm 2 đường Timeline**: Từng danh mục hiển thị đầy đủ 4 cột chỉ số độc lập: Cột 1 Xanh Navy (#003B95 - Chỉ số thực tế), Cột 2 Xanh Lục (#10B981 - Mức độ tham gia/hồ sơ duyệt), Cột 3 Vàng Hổ Phách (#F59E0B - Giao thương/Ký kết/Đóng góp), Cột 4 Đỏ Cảnh Báo (#DC2626 - Tiêu cực/Ít tương tác/Quá hạn/Cần hỗ trợ). Đường timeline kết hợp 2 đường: Xanh tăng trưởng (#10B981) và Đỏ suy giảm nét đứt (#DC2626).
+     - **Bục Top 3 Podium & Bảng Danh Sách Top 4 Đến Top 10**: Vinh danh Top 1 Kim Cương 💎, Top 2 Bạch Kim 🪙, Top 3 Vàng 🥇. Bên dưới bổ sung danh sách chi tiết từ Top 4 đến Top 10 với avatar, họ tên, vai trò, doanh nghiệp, ban chuyên môn, thành tích và nút gọi liên hệ.
+  2. *Web CRM - Quản Lý Tài Liệu Tự Do Thêm Danh Mục & Tiêu Đề Chuẩn Google Drive ([NODE-CRM-014])*:
+     - **Tự thêm danh mục & tiêu đề không ép cứng mã nguồn**: Tạo mới component `DriveDocumentModal.tsx`, cho phép người dùng tự do nhập tiêu đề tài liệu và chọn danh mục có sẵn hoặc chọn "+ Tự thêm danh mục mới" gõ bất kỳ tên danh mục nào. Danh mục mới được lưu vào `localStorage` (`vba_custom_doc_categories`) và đồng bộ vào bộ lọc toàn hệ thống.
+     - **Tạo thư mục con hỗ trợ tự thêm danh mục**: Modal tạo thư mục cho phép tự gõ tên danh mục mới, chọn 6 màu Google Drive và tự động lưu vào vị trí thư mục hiện tại.
+     - **Tải file chuẩn xác**: Hàm `onDownload` tải file về máy tính người dùng giữ nguyên vẹn 100% tên tệp gốc và phần mở rộng tương ứng (`.pdf`, `.docx`, `.xlsx`, `.zip`...).
+  3. *Web CRM - Nhóm Tài Chính Báo Cáo 3 Dạng Xem Chuyên Nghiệp ([NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011])*:
+     - Áp dụng trên cả 3 màn hình Quản lý Thu (`/income`), Quản lý Chi (`/expenses`), và Báo Cáo Tài Chính Tổng Hợp (`/finance-report`).
+     - Tích hợp thanh chuyển đổi 3 chế độ xem (`FinanceViewModeTabs.tsx`):
+       1. **Dashboard Tổng Hợp (`dashboard`)**: Thẻ KPI doanh thu/chi phí/tồn quỹ và bảng Excel dữ liệu chi tiết có co dãn cột kéo thả.
+       2. **Biểu Đồ Cột & Tròn Recharts (`charts`)**: Biểu đồ cột đa chu kỳ và biểu đồ tròn cơ cấu nguồn thu/khoản chi.
+       3. **Cây Đơn Vị 6 Ban & Khối Doanh Nghiệp (`unit_tree`)**: Cây phân cấp cơ cấu CLB CEO 1983 (Hiệp hội HQ -> 6 Ban chuyên môn: BĐH, BTV, BTT, BXT, BTC, BTN & Khối Doanh nghiệp thành viên: Kim Cương, Vàng, Bạc) kèm tính toán thực thu/chi, số giao dịch, tỷ trọng % và thanh tiến độ.
+  4. *Mobile App - Khắc Phục Lỗi Cập Nhật Hồ Sơ Thẻ Hội Viên ([NODE-APP-002], [NODE-APP-011])*:
+     - Sửa triệt để hàm `resolveDisplay` trong `association.card.tsx`: Đổi độ ưu tiên dữ liệu mới chỉnh sửa (`customProfile?.name`, `customProfile?.company`, `customAvatar`) lên trước dữ liệu cũ từ server (`dbMemberName`, `dbCompany`, `member?.avatar`).
+     - Đồng bộ ngay lập tức `directMember` và `customProfile` khi người dùng lưu trong `EditCardModal`, đảm bảo mọi thông tin chỉnh sửa (họ tên, doanh nghiệp, chức danh, hotline, email, địa chỉ) cập nhật ngay lập tức trên thẻ và hồ sơ.
+  5. *Mobile App - Tinh Chỉnh UI Trang Chủ & Sàn Thương Mại ([NODE-APP-001], [NODE-APP-007])*:
+     - Nút "Xem tất cả tính năng" tại phân hệ Tính năng nhanh đã loại bỏ hoàn toàn viền bao quanh (`border`).
+     - Banner Sàn thương mại nội bộ đã loại bỏ nút "Vào mua sắm &rarr;".
+  6. *Mobile App - Thống Kê Bổ Sung Top Người Giới Thiệu & Danh Sách Top 4 - 10 ([NODE-APP-006])*:
+     - Bổ sung danh mục thứ 4: "Top người giới thiệu hội viên" (`top_referrals`) với 4 thẻ KPI đại sứ và biểu đồ xu hướng.
+     - Dưới bục vinh danh Top 3 (Kim Cương 💎, Bạch Kim 🪙, Vàng 🥇), bổ sung khối danh sách xếp hạng từ Top 4 đến Top 10 cho toàn bộ các danh mục thống kê với số thứ tự, avatar, doanh nghiệp, ban phụ trách, số điểm/thành tích và nút gọi điện thoại trực tiếp.
+
 - **Bản cập nhật ngày 29/10/2026 (v9.7): Nâng Cấp Toàn Diện Hệ Thống Quản Lý Tài Liệu Chuẩn Google Drive & Bản Đồ Định Vị Địa Chỉ Doanh Nghiệp Màn Cá Nhân Mobile App ([NODE-CRM-014] & [NODE-APP-011])**:
   1. *Quản Lý Tài Liệu Chuẩn Google Drive ([NODE-CRM-014])*:
      - **Tạo thư mục đa cấp & Bảng màu Drive**: Hỗ trợ tạo thư mục với bảng 6 mã màu nhận diện chuẩn Google Drive (#F59E0B, #DC2626, #003B95, #059669, #7C3AED, #475569), di chuyển cây thư mục phân cấp cha-con (`folder_id`), xóa thư mục đệ quy cascade an toàn.

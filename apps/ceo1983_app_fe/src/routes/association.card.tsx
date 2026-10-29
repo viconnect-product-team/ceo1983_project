@@ -121,15 +121,15 @@ function resolveDisplay(
   const isGeneric = !member?.name || member.name === "Thành viên mới" || member.name === "Hội viên CLB CEO 1983";
   const authUserName = currentUser?.name || currentUser?.user_metadata?.full_name;
 
-  // Real member record from database takes first priority
-  const dbMemberName = (!isGeneric && member?.name) ? member.name.trim() : null;
+  // Khi người dùng chỉnh sửa hồ sơ thẻ (customProfile hoặc settings), thông tin mới cập nhật PHẢI có độ ưu tiên cao nhất
   const customName = customProfile?.name?.trim() || s?.displayName?.trim();
-  const rawName = dbMemberName || customName || authUserName || member?.name || "";
+  const dbMemberName = (!isGeneric && member?.name) ? member.name.trim() : null;
+  const rawName = customName || dbMemberName || authUserName || member?.name || "";
   const cleanName = rawName || "Hội viên CLB CEO 1983";
 
-  const dbCompany = (member as any)?.companyName || (member as any)?.company;
   const customCompany = customProfile?.company?.trim() || s?.displayCompany?.trim();
-  const rawCompany = dbCompany || customCompany;
+  const dbCompany = (member as any)?.companyName || (member as any)?.company;
+  const rawCompany = customCompany || dbCompany;
   const isOldSeed = rawCompany && (rawCompany.includes("Default Platform") || rawCompany.includes("CLB CEO 1983"));
   const cleanCompany = !rawCompany || isOldSeed ? "CLB Doanh Nhân CEO 1983" : rawCompany;
 
@@ -138,13 +138,13 @@ function resolveDisplay(
     company: cleanCompany.trim(),
     photo: (() => {
       const raw =
-        member?.avatar ||
-        (member as any)?.avatarUrl ||
-        s?.photoUrl ||
-        (currentUser as any)?.avatar_url ||
-        (currentUser as any)?.user_metadata?.avatar_url ||
         customAvatar ||
         customProfile?.avatar ||
+        s?.photoUrl ||
+        member?.avatar ||
+        (member as any)?.avatarUrl ||
+        (currentUser as any)?.avatar_url ||
+        (currentUser as any)?.user_metadata?.avatar_url ||
         null;
       return raw ? (resolveMediaUrl(raw) || raw) : null;
     })(),
@@ -1330,16 +1330,31 @@ function CardScreen() {
       )}
 
       {/* Edit display modal */}
-      {editOpen && member && (
+      {editOpen && (effectiveMember || member) && (
         <EditCardModal
-          member={member}
+          member={(effectiveMember || member)!}
           current={d}
           onClose={() => setEditOpen(false)}
           onSaved={() => {
             setEditOpen(false);
             try {
-              setCustomProfile(JSON.parse(localStorage.getItem("vba_custom_profile") || "null"));
-              setCustomAvatar(localStorage.getItem("vba_member_avatar_photo"));
+              const fresh = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
+              setCustomProfile(fresh);
+              const freshAvatar = localStorage.getItem("vba_member_avatar_photo");
+              setCustomAvatar(freshAvatar);
+              if (fresh) {
+                setDirectMember((prev: any) => ({
+                  ...(prev || {}),
+                  ...fresh,
+                  name: fresh.name,
+                  company: fresh.company,
+                  companyName: fresh.company,
+                  title: fresh.title,
+                  phone: fresh.phone,
+                  email: fresh.email,
+                  avatar: freshAvatar || fresh.avatar || prev?.avatar,
+                }));
+              }
             } catch {}
             reloadSettings();
           }}
@@ -1392,13 +1407,28 @@ function EditCardModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [name, setName] = useState(() => {
-    return current.name || member.name || "";
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.name || current.name || member.name || "";
+    } catch {
+      return current.name || member.name || "";
+    }
   });
   const [company, setCompany] = useState(() => {
-    return current.company || (member as any)?.company || (member as any)?.companyName || member.title || "";
+    try {
+      const cp = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+      return cp.company || current.company || (member as any)?.company || (member as any)?.companyName || member.title || "";
+    } catch {
+      return current.company || (member as any)?.company || (member as any)?.companyName || member.title || "";
+    }
   });
   const [photo, setPhoto] = useState<string | null>(() => {
-    return current.photo || member?.avatar || (member as any)?.avatarUrl || null;
+    try {
+      const av = localStorage.getItem("vba_member_avatar_photo");
+      return av || current.photo || member?.avatar || (member as any)?.avatarUrl || null;
+    } catch {
+      return current.photo || member?.avatar || (member as any)?.avatarUrl || null;
+    }
   });
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
     return (member as any)?.companyLogoUrl || (member as any)?.companyLogo || null;

@@ -1249,7 +1249,7 @@ function Home() {
             <button
               type="button"
               onClick={() => setAllFeaturesModalOpen(true)}
-              className="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer border border-amber-500/30"
+              className="px-2 py-0.5 rounded-full text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer"
               title="Xem tất cả tính năng"
             >
               <Sparkles className="size-3 text-amber-500" />
@@ -1565,9 +1565,6 @@ function Home() {
                     Tổng giá trị: <span className="font-bold text-emerald-400">{totalProductsValue || "4.8 Tỷ đ"}</span>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-[11px] font-bold text-white shadow-xs">
-                  Vào mua sắm &rarr;
-                </span>
               </div>
             </div>
           </Link>

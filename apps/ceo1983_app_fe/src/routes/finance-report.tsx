@@ -33,6 +33,8 @@ import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
 import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
+import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
+import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
 
 const FALLBACK_TRANSACTIONS: Transaction[] = [
   {
@@ -169,6 +171,7 @@ function FinanceReport() {
   const rawTransactions = (Route.useLoaderData() as Transaction[]) || FALLBACK_TRANSACTIONS;
 
   const [period, setPeriod] = useState<PeriodFilter>("all");
+  const [viewMode, setViewMode] = useState<FinanceViewMode>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -413,7 +416,40 @@ function FinanceReport() {
         }
       />
 
-      {/* Period & Filter Control Bar */}
+      {/* ── 3 CHẾ ĐỘ XEM: DASHBOARD TỔNG HỢP | BIỂU ĐỒ CỘT & TRÒN | CÂY ĐƠN VỊ (6 BAN) ── */}
+      <div className="mb-6">
+        <FinanceViewModeTabs viewMode={viewMode} onChange={setViewMode} />
+      </div>
+
+      {/* ── CHẾ ĐỘ 2: BIỂU ĐỒ CỘT & TRÒN (TOÀN BỘ TRỰC QUAN HÓA THU CHI & DÒNG TIỀN) ── */}
+      {viewMode === "charts" && (
+        <div className="space-y-6">
+          <FinanceChartsSection transactions={transactions} className="mb-6" />
+        </div>
+      )}
+
+      {/* ── CHẾ ĐỘ 3: CÂY ĐƠN VỊ & SƠ ĐỒ 6 BAN CHUYÊN MÔN ── */}
+      {viewMode === "unit_tree" && (
+        <div className="space-y-6">
+          <FinanceUnitTreeSection
+            transactions={transactions}
+            type="both"
+            title="Cây Phân Cấp Ngân Sách Tổng Thể Hiệp Hội CEO 1983"
+            subtitle="Sơ đồ tỷ trọng phân bổ thu - chi theo Ban Điều Hành, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện"
+            className="mb-6"
+            onSelectUnit={(unit) => {
+              setSearchQuery(unit);
+              setViewMode("dashboard");
+              toast.success(`Đã chuyển sang bảng dữ liệu lọc theo: ${unit}`);
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── CHẾ ĐỘ 1: DASHBOARD TỔNG HỢP (4 THẺ KPI + SỔ GIAO DỊCH KẾ TOÁN) ── */}
+      {viewMode === "dashboard" && (
+        <>
+          {/* Period & Filter Control Bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-bold text-muted-foreground mr-1">Kỳ báo cáo:</span>
@@ -563,10 +599,6 @@ function FinanceReport() {
           </div>
         </div>
       </div>
-
-      {/* Khối Biểu Đồ Tài Chính Trực Quan (Thu, Chi, Tài Trợ & Dòng Tiền) */}
-      <FinanceChartsSection transactions={transactions} className="mb-6" />
-
 
       {/* Categorized Breakdown Grid */}
       <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -759,6 +791,8 @@ function FinanceReport() {
           pageSizeOptions={[10, 20, 50, 100]}
         />
       </div>
+      </>
+      )}
 
       {/* Modal Xuất Báo Cáo Tài Chính - Mờ nền Dashboard (bg-black/60 backdrop-blur-sm) */}
       {exportModalOpen && (

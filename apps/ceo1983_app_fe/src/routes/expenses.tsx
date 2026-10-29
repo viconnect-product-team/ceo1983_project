@@ -26,6 +26,8 @@ import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { Card } from "@/components/ui/card";
 import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
 import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
+import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
+import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
 import {
   createTransactionFn,
   deleteTransactionFn,
@@ -188,6 +190,8 @@ function ExpensesPage() {
 
   const TRANSACTIONS = transactionsList;
 
+  // 3 Chế độ xem: Dashboard Tổng Hợp | Biểu Đồ Cột & Tròn | Cây Đơn Vị (6 Ban)
+  const [viewMode, setViewMode] = useState<FinanceViewMode>("dashboard");
   // Filter: all | cash (Tiền mặt) | bank (Chuyển khoản)
   const [methodFilter, setMethodFilter] = useState<"all" | "cash" | "bank">("all");
   // Sub-filter: all | standard (Chi tiêu thường) | advance (Tạm ứng)
@@ -665,361 +669,387 @@ function ExpensesPage() {
         }
       />
 
-      {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Tổng Chi Thực Tế (Sky gradient - Blue) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG CHI THỰC TẾ</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(totalActualExpense)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Chi trực tiếp + Tạm ứng - Hoàn ứng
-          </div>
-        </div>
-
-        {/* Card 2: Quỹ Còn Lại Sau Chi (Emerald gradient) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">QUỸ CÒN LẠI (DÒNG TIỀN)</div>
-          </div>
-          <div className={`text-2xl font-bold font-['Inter'] leading-7 ${netFundBalance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-rose-600 dark:text-rose-400"}`}>
-            {fmt.money(netFundBalance)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Tổng quỹ đã trừ thực chi (-{fmt.money(totalActualExpense)})
-          </div>
-        </div>
-
-        {/* Card 3: Chi Chuyển Khoản (Orange gradient - Orange) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHI CHUYỂN KHOẢN</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(expenseBank)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Ủy nhiệm chi &amp; chuyển khoản ngân hàng
-          </div>
-        </div>
-
-        {/* Card 4: Tạm Ứng & Hoàn Ứng (Green gradient - Emerald) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">TẠM ỨNG &amp; HOÀN ỨNG</div>
-          </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
-            {fmt.money(totalAdvance)}
-          </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-            Đã hoàn ứng: <strong className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">+{fmt.money(totalRefunded)}</strong>
-          </div>
-        </div>
+      {/* ── 3 CHẾ ĐỘ XEM: DASHBOARD TỔNG HỢP | BIỂU ĐỒ CỘT & TRÒN | CÂY ĐƠN VỊ (6 BAN) ── */}
+      <div className="mb-6">
+        <FinanceViewModeTabs viewMode={viewMode} onChange={setViewMode} />
       </div>
 
-      {/* Biểu Đồ Phân Bổ Chi Tiêu Thực Tế */}
-      <FinanceChartsSection
-        transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_EXPENSES_TRANSACTIONS}
-        defaultTab="expense"
-        hideTabs={false}
-        title="Biểu Đồ Phân Bổ Chi Tiêu Thực Tế & Cơ Cấu Danh Mục"
-        subtitle="Trực quan hóa chi phí theo từng nhóm nghiệp vụ: Địa điểm, Gala ẩm thực, Quà tặng, Truyền thông và Vận hành"
-        className="mb-6"
-      />
-
-      {/* Filter Toolbar */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Method Filter */}
-          <div className="flex items-center rounded-xl bg-muted/60 p-1">
-            <button
-              onClick={() => setMethodFilter("all")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                methodFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tất cả PT
-            </button>
-            <button
-              onClick={() => setMethodFilter("cash")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                methodFilter === "cash" ? "bg-emerald-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tiền mặt
-            </button>
-            <button
-              onClick={() => setMethodFilter("bank")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                methodFilter === "bank" ? "bg-blue-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Chuyển khoản
-            </button>
-          </div>
-
-          {/* Category Filter */}
-          <div className="flex items-center rounded-xl bg-muted/60 p-1">
-            <button
-              onClick={() => setCategoryFilter("all")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Mọi khoản chi
-            </button>
-            <button
-              onClick={() => setCategoryFilter("advance")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "advance" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tạm ứng
-            </button>
-            <button
-              onClick={() => setCategoryFilter("standard")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                categoryFilter === "standard" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Chi thường
-            </button>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="relative min-w-[240px] flex-1 sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm theo mã, nội dung, người nhận..."
-            className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+      {/* ── CHẾ ĐỘ 2: BIỂU ĐỒ CỘT & TRÒN (PHÂN BỔ CHI TIÊU THỰC TẾ) ── */}
+      {viewMode === "charts" && (
+        <div className="space-y-6">
+          <FinanceChartsSection
+            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_EXPENSES_TRANSACTIONS}
+            defaultTab="expense"
+            hideTabs={false}
+            title="Biểu Đồ Phân Bổ Chi Tiêu Thực Tế & Cơ Cấu Danh Mục"
+            subtitle="Trực quan hóa chi phí theo từng nhóm nghiệp vụ: Địa điểm, Gala ẩm thực, Quà tặng, Truyền thông và Vận hành"
+            className="mb-6"
           />
         </div>
-      </div>
+      )}
 
-      {/* Main Expense Table */}
-      <Card className="overflow-hidden">
-        <div className="relative overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-left text-sm table-fixed">
-          <thead className="border-b border-border bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <ResizableTh colKey="stt" width={colWidths.stt} onResize={startResize} className="sticky left-0 z-20 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">
-                STT
-              </ResizableTh>
-              <ResizableTh colKey="id" width={colWidths.id} onResize={startResize} style={{ left: `${colWidths.stt}px` }} className="sticky z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">
-                Mã phiếu chi
-              </ResizableTh>
-              <ResizableTh colKey="date" width={colWidths.date} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Ngày chi
-              </ResizableTh>
-              <ResizableTh colKey="category" width={colWidths.category} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Danh mục
-              </ResizableTh>
-              <ResizableTh colKey="description" width={colWidths.description} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Nội dung chi
-              </ResizableTh>
-              <ResizableTh colKey="recipient" width={colWidths.recipient} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Người nhận / Đơn vị
-              </ResizableTh>
-              <ResizableTh colKey="amount" width={colWidths.amount} onResize={startResize} className="px-4 py-3 text-right border-b border-border">
-                Số tiền
-              </ResizableTh>
-              <ResizableTh colKey="advanceRefund" width={colWidths.advanceRefund} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
-                Tạm ứng & Hoàn ứng
-              </ResizableTh>
-              <ResizableTh colKey="netExpense" width={colWidths.netExpense} onResize={startResize} className="px-4 py-3 text-right font-bold text-rose-600 border-b border-border">
-                Chi thực tế
-              </ResizableTh>
-              <ResizableTh colKey="method" width={colWidths.method} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Hình thức
-              </ResizableTh>
-              <ResizableTh colKey="status" width={colWidths.status} onResize={startResize} className="px-4 py-3 border-b border-border">
-                Trạng thái
-              </ResizableTh>
-              <ResizableTh colKey="invoice" width={colWidths.invoice} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
-                Tải hóa đơn
-              </ResizableTh>
-              <ResizableTh colKey="actions" width={colWidths.actions} onResize={startResize} className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">
-                Thao tác
-              </ResizableTh>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {(tc?.paged || []).length === 0 ? (
-              <tr>
-                <td colSpan={13} className="py-12 text-center text-muted-foreground">
-                  Không tìm thấy khoản chi nào phù hợp
-                </td>
-              </tr>
-            ) : (
-              (tc?.paged || []).map((tx, idx) => {
-                const isAdvance = tx.category === "advance" || (tx.advanceAmount && tx.advanceAmount > 0);
-                const advVal = tx.advanceAmount || (tx.category === "advance" ? tx.amount : 0);
-                const refVal = tx.refundAmount || 0;
-                const netExpense = advVal > 0 ? advVal - refVal : tx.amount;
+      {/* ── CHẾ ĐỘ 3: CÂY ĐƠN VỊ & SƠ ĐỒ 6 BAN CHUYÊN MÔN ── */}
+      {viewMode === "unit_tree" && (
+        <div className="space-y-6">
+          <FinanceUnitTreeSection
+            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_EXPENSES_TRANSACTIONS}
+            type="expense"
+            title="Cây Phân Cấp Ngân Sách Chi Theo 6 Ban & Các Hạng Mục"
+            subtitle="Sơ đồ tỷ trọng thực chi theo Ban Điều Hành, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện"
+            className="mb-6"
+            onSelectUnit={(unit) => {
+              setQ(unit);
+              setViewMode("dashboard");
+              toast.success(`Đã chuyển sang bảng dữ liệu lọc theo: ${unit}`);
+            }}
+          />
+        </div>
+      )}
 
-                return (
-                  <tr key={tx.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
-                    <td style={{ width: `${colWidths.stt}px`, maxWidth: `${colWidths.stt}px` }} className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
-                      {(tc.page - 1) * tc.pageSize + idx + 1}
-                    </td>
-                    <td style={{ width: `${colWidths.id}px`, maxWidth: `${colWidths.id}px`, left: `${colWidths.stt}px` }} className="sticky z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
-                      <TruncatedText text={tx.id} maxWidth="w-full" />
-                    </td>
-                    <td style={{ width: `${colWidths.date}px`, maxWidth: `${colWidths.date}px` }} className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap border-b border-border/50">
-                      {tx.date}
-                    </td>
-                    <td style={{ width: `${colWidths.category}px`, maxWidth: `${colWidths.category}px` }} className="px-4 py-3 text-xs border-b border-border/50">
-                      {isAdvance ? (
-                        <Pill tone="warn">Tạm ứng</Pill>
-                      ) : (
-                        <TruncatedText text={getCategoryLabel(tx.category)} maxWidth="w-full" />
-                      )}
-                    </td>
-                    <td style={{ width: `${colWidths.description}px`, maxWidth: `${colWidths.description}px` }} className="px-4 py-3 text-xs font-medium border-b border-border/50">
-                      <TruncatedText text={tx.description || "—"} maxWidth="w-full" />
-                    </td>
-                    <td style={{ width: `${colWidths.recipient}px`, maxWidth: `${colWidths.recipient}px` }} className="px-4 py-3 text-xs font-semibold text-foreground border-b border-border/50">
-                      <TruncatedText text={tx.recipient || "—"} maxWidth="w-full" />
-                    </td>
-                    <td style={{ width: `${colWidths.amount}px`, maxWidth: `${colWidths.amount}px` }} className="px-4 py-3 text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap border-b border-border/50">
-                      {fmt.money(tx.amount)}
-                    </td>
-                    <td style={{ width: `${colWidths.advanceRefund}px`, maxWidth: `${colWidths.advanceRefund}px` }} className="px-4 py-3 text-center text-xs whitespace-nowrap border-b border-border/50">
-                      {isAdvance ? (
-                        <div className="inline-flex flex-col items-center">
-                          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
-                            Ứng: {fmt.money(advVal)}
-                          </span>
-                          {refVal > 0 ? (
-                            <span className="text-[10px] font-bold text-emerald-600">
-                              Hoàn tiền: +{fmt.money(refVal)}
-                            </span>
-                          ) : (
+      {/* ── CHẾ ĐỘ 1: DASHBOARD TỔNG HỢP (4 THẺ KPI + BẢNG EXCEL CO DÃN CỘT) ── */}
+      {viewMode === "dashboard" && (
+        <>
+          {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Tổng Chi Thực Tế (Sky gradient - Blue) */}
+            <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+              <div className="h-8 flex items-center gap-2">
+                <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG CHI THỰC TẾ</div>
+              </div>
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+                {fmt.money(totalActualExpense)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                Chi trực tiếp + Tạm ứng - Hoàn ứng
+              </div>
+            </div>
+
+            {/* Card 2: Quỹ Còn Lại Sau Chi (Emerald gradient) */}
+            <div className="h-32 p-4 bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+              <div className="h-8 flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">QUỸ CÒN LẠI (DÒNG TIỀN)</div>
+              </div>
+              <div className={`text-2xl font-bold font-['Inter'] leading-7 ${netFundBalance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-rose-600 dark:text-rose-400"}`}>
+                {fmt.money(netFundBalance)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                Tổng quỹ đã trừ thực chi (-{fmt.money(totalActualExpense)})
+              </div>
+            </div>
+
+            {/* Card 3: Chi Chuyển Khoản (Orange gradient - Orange) */}
+            <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+              <div className="h-8 flex items-center gap-2">
+                <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHI CHUYỂN KHOẢN</div>
+              </div>
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+                {fmt.money(expenseBank)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                Ủy nhiệm chi &amp; chuyển khoản ngân hàng
+              </div>
+            </div>
+
+            {/* Card 4: Tạm Ứng & Hoàn Ứng (Green gradient - Emerald) */}
+            <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+              <div className="h-8 flex items-center gap-2">
+                <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">TẠM ỨNG &amp; HOÀN ỨNG</div>
+              </div>
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+                {fmt.money(totalAdvance)}
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+                Đã hoàn ứng: <strong className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">+{fmt.money(totalRefunded)}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Toolbar */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Method Filter */}
+              <div className="flex items-center rounded-xl bg-muted/60 p-1">
+                <button
+                  onClick={() => setMethodFilter("all")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${methodFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Tất cả PT
+                </button>
+                <button
+                  onClick={() => setMethodFilter("cash")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${methodFilter === "cash" ? "bg-emerald-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Tiền mặt
+                </button>
+                <button
+                  onClick={() => setMethodFilter("bank")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${methodFilter === "bank" ? "bg-blue-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Chuyển khoản
+                </button>
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex items-center rounded-xl bg-muted/60 p-1">
+                <button
+                  onClick={() => setCategoryFilter("all")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${categoryFilter === "all" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Mọi khoản chi
+                </button>
+                <button
+                  onClick={() => setCategoryFilter("advance")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${categoryFilter === "advance" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Tạm ứng
+                </button>
+                <button
+                  onClick={() => setCategoryFilter("standard")}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${categoryFilter === "standard" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  Chi thường
+                </button>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="relative min-w-[240px] flex-1 sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Tìm theo mã, nội dung, người nhận..."
+                className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          {/* Main Expense Table */}
+          <Card className="overflow-hidden">
+            <div className="relative overflow-x-auto">
+              <table className="w-full border-separate border-spacing-0 text-left text-sm table-fixed">
+                <thead className="border-b border-border bg-secondary/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <ResizableTh colKey="stt" width={colWidths.stt} onResize={startResize} className="sticky left-0 z-20 bg-secondary/90 px-3 py-3 text-center text-xs font-bold border-b border-border">
+                      STT
+                    </ResizableTh>
+                    <ResizableTh colKey="id" width={colWidths.id} onResize={startResize} style={{ left: `${colWidths.stt}px` }} className="sticky z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">
+                      Mã phiếu chi
+                    </ResizableTh>
+                    <ResizableTh colKey="date" width={colWidths.date} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Ngày chi
+                    </ResizableTh>
+                    <ResizableTh colKey="category" width={colWidths.category} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Danh mục
+                    </ResizableTh>
+                    <ResizableTh colKey="description" width={colWidths.description} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Nội dung chi
+                    </ResizableTh>
+                    <ResizableTh colKey="recipient" width={colWidths.recipient} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Người nhận / Đơn vị
+                    </ResizableTh>
+                    <ResizableTh colKey="amount" width={colWidths.amount} onResize={startResize} className="px-4 py-3 text-right border-b border-border">
+                      Số tiền
+                    </ResizableTh>
+                    <ResizableTh colKey="advanceRefund" width={colWidths.advanceRefund} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
+                      Tạm ứng & Hoàn ứng
+                    </ResizableTh>
+                    <ResizableTh colKey="netExpense" width={colWidths.netExpense} onResize={startResize} className="px-4 py-3 text-right font-bold text-rose-600 border-b border-border">
+                      Chi thực tế
+                    </ResizableTh>
+                    <ResizableTh colKey="method" width={colWidths.method} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Hình thức
+                    </ResizableTh>
+                    <ResizableTh colKey="status" width={colWidths.status} onResize={startResize} className="px-4 py-3 border-b border-border">
+                      Trạng thái
+                    </ResizableTh>
+                    <ResizableTh colKey="invoice" width={colWidths.invoice} onResize={startResize} className="px-4 py-3 text-center border-b border-border">
+                      Tải hóa đơn
+                    </ResizableTh>
+                    <ResizableTh colKey="actions" width={colWidths.actions} onResize={startResize} className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">
+                      Thao tác
+                    </ResizableTh>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(tc?.paged || []).length === 0 ? (
+                    <tr>
+                      <td colSpan={13} className="py-12 text-center text-muted-foreground">
+                        Không tìm thấy khoản chi nào phù hợp
+                      </td>
+                    </tr>
+                  ) : (
+                    (tc?.paged || []).map((tx, idx) => {
+                      const isAdvance = tx.category === "advance" || (tx.advanceAmount && tx.advanceAmount > 0);
+                      const advVal = tx.advanceAmount || (tx.category === "advance" ? tx.amount : 0);
+                      const refVal = tx.refundAmount || 0;
+                      const netExpense = advVal > 0 ? advVal - refVal : tx.amount;
+
+                      return (
+                        <tr key={tx.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
+                          <td style={{ width: `${colWidths.stt}px`, maxWidth: `${colWidths.stt}px` }} className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                            {(tc.page - 1) * tc.pageSize + idx + 1}
+                          </td>
+                          <td style={{ width: `${colWidths.id}px`, maxWidth: `${colWidths.id}px`, left: `${colWidths.stt}px` }} className="sticky z-10 bg-card px-4 py-3 font-mono text-xs font-bold text-foreground group-hover:bg-muted/70 border-b border-border/50">
+                            <TruncatedText text={tx.id} maxWidth="w-full" />
+                          </td>
+                          <td style={{ width: `${colWidths.date}px`, maxWidth: `${colWidths.date}px` }} className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap border-b border-border/50">
+                            {tx.date}
+                          </td>
+                          <td style={{ width: `${colWidths.category}px`, maxWidth: `${colWidths.category}px` }} className="px-4 py-3 text-xs border-b border-border/50">
+                            {isAdvance ? (
+                              <Pill tone="warn">Tạm ứng</Pill>
+                            ) : (
+                              <TruncatedText text={getCategoryLabel(tx.category)} maxWidth="w-full" />
+                            )}
+                          </td>
+                          <td style={{ width: `${colWidths.description}px`, maxWidth: `${colWidths.description}px` }} className="px-4 py-3 text-xs font-medium border-b border-border/50">
+                            <TruncatedText text={tx.description || "—"} maxWidth="w-full" />
+                          </td>
+                          <td style={{ width: `${colWidths.recipient}px`, maxWidth: `${colWidths.recipient}px` }} className="px-4 py-3 text-xs font-semibold text-foreground border-b border-border/50">
+                            <TruncatedText text={tx.recipient || "—"} maxWidth="w-full" />
+                          </td>
+                          <td style={{ width: `${colWidths.amount}px`, maxWidth: `${colWidths.amount}px` }} className="px-4 py-3 text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap border-b border-border/50">
+                            {fmt.money(tx.amount)}
+                          </td>
+                          <td style={{ width: `${colWidths.advanceRefund}px`, maxWidth: `${colWidths.advanceRefund}px` }} className="px-4 py-3 text-center text-xs whitespace-nowrap border-b border-border/50">
+                            {isAdvance ? (
+                              <div className="inline-flex flex-col items-center">
+                                <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                                  Ứng: {fmt.money(advVal)}
+                                </span>
+                                {refVal > 0 ? (
+                                  <span className="text-[10px] font-bold text-emerald-600">
+                                    Hoàn tiền: +{fmt.money(refVal)}
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => openRefundModal(tx)}
+                                    className="mt-0.5 text-[10px] font-bold text-primary underline hover:text-primary/80 cursor-pointer"
+                                  >
+                                    Gửi lại tiền thừa
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </td>
+                          <td style={{ width: `${colWidths.netExpense}px`, maxWidth: `${colWidths.netExpense}px` }} className="px-4 py-3 text-right font-mono text-xs font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap border-b border-border/50">
+                            -{fmt.money(netExpense)}
+                          </td>
+                          <td style={{ width: `${colWidths.method}px`, maxWidth: `${colWidths.method}px` }} className="px-4 py-3 text-xs border-b border-border/50">
+                            {tx.method === "cash" ? (
+                              <Pill tone="success">Tiền mặt</Pill>
+                            ) : (
+                              <Pill tone="info">Chuyển khoản</Pill>
+                            )}
+                          </td>
+                          <td style={{ width: `${colWidths.status}px`, maxWidth: `${colWidths.status}px` }} className="px-4 py-3 text-xs border-b border-border/50">
+                            {tx.status === "completed" ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
+                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">Đã duyệt</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
+                                <Clock className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">Chờ duyệt</span>
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Column Tải Hóa Đơn on every row (User requirement) */}
+                          <td style={{ width: `${colWidths.invoice}px`, maxWidth: `${colWidths.invoice}px` }} className="px-4 py-3 text-center border-b border-border/50">
                             <button
                               type="button"
-                              onClick={() => openRefundModal(tx)}
-                              className="mt-0.5 text-[10px] font-bold text-primary underline hover:text-primary/80 cursor-pointer"
+                              onClick={() =>
+                                downloadInvoiceVoucher({
+                                  id: tx.id,
+                                  date: tx.date,
+                                  type: "expense",
+                                  category: tx.category,
+                                  description: tx.description,
+                                  amount: netExpense,
+                                  method: tx.method,
+                                  status: tx.status,
+                                  recipient: tx.recipient,
+                                  advanceAmount: tx.advanceAmount,
+                                  refundAmount: tx.refundAmount,
+                                })
+                              }
+                              title="Tải hóa đơn / Phiếu chi PDF"
+                              className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-xs hover:bg-muted cursor-pointer transition-colors"
                             >
-                              Gửi lại tiền thừa
+                              <FileDown className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span>Tải HĐ</span>
                             </button>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
-                    </td>
-                    <td style={{ width: `${colWidths.netExpense}px`, maxWidth: `${colWidths.netExpense}px` }} className="px-4 py-3 text-right font-mono text-xs font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap border-b border-border/50">
-                      -{fmt.money(netExpense)}
-                    </td>
-                    <td style={{ width: `${colWidths.method}px`, maxWidth: `${colWidths.method}px` }} className="px-4 py-3 text-xs border-b border-border/50">
-                      {tx.method === "cash" ? (
-                        <Pill tone="success">Tiền mặt</Pill>
-                      ) : (
-                        <Pill tone="info">Chuyển khoản</Pill>
-                      )}
-                    </td>
-                    <td style={{ width: `${colWidths.status}px`, maxWidth: `${colWidths.status}px` }} className="px-4 py-3 text-xs border-b border-border/50">
-                      {tx.status === "completed" ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
-                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">Đã duyệt</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
-                          <Clock className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">Chờ duyệt</span>
-                        </span>
-                      )}
-                    </td>
+                          </td>
 
-                    {/* Column Tải Hóa Đơn on every row (User requirement) */}
-                    <td style={{ width: `${colWidths.invoice}px`, maxWidth: `${colWidths.invoice}px` }} className="px-4 py-3 text-center border-b border-border/50">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          downloadInvoiceVoucher({
-                            id: tx.id,
-                            date: tx.date,
-                            type: "expense",
-                            category: tx.category,
-                            description: tx.description,
-                            amount: netExpense,
-                            method: tx.method,
-                            status: tx.status,
-                            recipient: tx.recipient,
-                            advanceAmount: tx.advanceAmount,
-                            refundAmount: tx.refundAmount,
-                          })
-                        }
-                        title="Tải hóa đơn / Phiếu chi PDF"
-                        className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-xs hover:bg-muted cursor-pointer transition-colors"
-                      >
-                        <FileDown className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span>Tải HĐ</span>
-                      </button>
-                    </td>
-
-                    {/* Actions */}
-                    <td style={{ width: `${colWidths.actions}px`, maxWidth: `${colWidths.actions}px` }} className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {isAdvance && (
-                          <button
-                            type="button"
-                            onClick={() => openRefundModal(tx)}
-                            title="Quản lý hoàn ứng tiền thừa"
-                            className="rounded-lg p-1.5 text-amber-600 hover:bg-amber-500/10 cursor-pointer"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => openEdit(tx)}
-                          title="Sửa phiếu chi"
-                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(tx)}
-                          disabled={deletingId === tx.id}
-                          title="Xóa"
-                          className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-500/10 cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-        </div>
-        <Pagination
-          page={tc.page}
-          pageCount={tc.pageCount}
-          pageSize={tc.pageSize}
-          total={tc.total}
-          from={tc.from}
-          to={tc.to}
-          onPage={tc.setPage}
-          onPageSize={tc.setPageSize}
-        />
-      </Card>
+                          {/* Actions */}
+                          <td style={{ width: `${colWidths.actions}px`, maxWidth: `${colWidths.actions}px` }} className="sticky right-0 z-10 bg-card px-4 py-3 text-right whitespace-nowrap group-hover:bg-muted/70 border-b border-border/50">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isAdvance && (
+                                <button
+                                  type="button"
+                                  onClick={() => openRefundModal(tx)}
+                                  title="Quản lý hoàn ứng tiền thừa"
+                                  className="rounded-lg p-1.5 text-amber-600 hover:bg-amber-500/10 cursor-pointer"
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => openEdit(tx)}
+                                title="Sửa phiếu chi"
+                                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onDelete(tx)}
+                                disabled={deletingId === tx.id}
+                                title="Xóa"
+                                className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={tc.page}
+              pageCount={tc.pageCount}
+              pageSize={tc.pageSize}
+              total={tc.total}
+              from={tc.from}
+              to={tc.to}
+              onPage={tc.setPage}
+              onPageSize={tc.setPageSize}
+            />
+          </Card>
+        </>
+      )}
 
       {/* Modal Lập / Sửa Phiếu Chi & Tạm Ứng */}
       {modalOpen && (

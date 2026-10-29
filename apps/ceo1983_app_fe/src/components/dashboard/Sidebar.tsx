@@ -65,7 +65,8 @@ import type { LucideIcon } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useTheme } from "@/lib/theme";
 
-type Item = { key: TKey; icon: LucideIcon; to?: string; label?: string };
+type SubItem = { to: string; label: string; icon?: LucideIcon };
+type Item = { key: TKey; icon: LucideIcon; to?: string; label?: string; children?: SubItem[] };
 
 const overview: Item[] = [
   { key: "nav.dashboard", icon: LayoutDashboard, to: "/" },
@@ -90,7 +91,19 @@ const sponsors: Item[] = [
   { key: "nav.sponsorReport", icon: FileBarChart, to: "/sponsor-report" },
 ];
 const finance: Item[] = [
-  { key: "nav.analytics" as TKey, icon: BarChart3, to: "/analytics", label: "Thống kê CLB & Hội viên" },
+  {
+    key: "nav.analytics" as TKey,
+    icon: BarChart3,
+    to: "/analytics",
+    label: "Thống kê CLB & Hội viên",
+    children: [
+      { to: "/analytics?category=activity_sentiment", label: "⚠️ Tích cực & Tiêu cực" },
+      { to: "/analytics?category=top_connections", label: "🤝 3 thành viên kết nối" },
+      { to: "/analytics?category=top_opportunities", label: "💼 Top chia sẻ cơ hội B2B" },
+      { to: "/analytics?category=top_events_meetings", label: "📅 Top sự kiện & họp ban" },
+      { to: "/analytics?category=top_referrals", label: "🌟 Top người giới thiệu" },
+    ],
+  },
   { key: "nav.fee", icon: Wallet, to: "/fees" },
   { key: "nav.income", icon: ArrowDownCircle, to: "/income" },
   { key: "nav.expenses" as TKey, icon: ArrowUpCircle, to: "/expenses" },
@@ -197,11 +210,25 @@ function NavItem({
   const label = getLabel ? getLabel(item, defaultLabel) : defaultLabel;
   const showBadge = !!badge && badge > 0;
   const badgeText = badge && badge > 99 ? "99+" : String(badge ?? 0);
+
+  const hasChildren = Boolean(item.children && item.children.length > 0);
+  const isParentActive = Boolean(item.to && pathname && (pathname === item.to || pathname.startsWith(item.to + "/")));
+
+  const [expanded, setExpanded] = useState<boolean>(() => {
+    return isParentActive;
+  });
+
+  useEffect(() => {
+    if (isParentActive) {
+      setExpanded(true);
+    }
+  }, [isParentActive]);
+
   const cls = `group relative flex w-full items-center gap-3 rounded-lg py-2 text-[13px] outline-none transition-[background-color,color] duration-[var(--motion-fast)] ease-out focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
     collapsed ? "justify-center px-0" : "pl-3.5 pr-3"
   } ${
     active
-      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
       : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
   }`;
   const badgeEl = showBadge ? (
@@ -229,30 +256,81 @@ function NavItem({
       />
       {!collapsed && <span className="flex-1 truncate text-left font-medium">{label}</span>}
       {badgeEl}
+      {!collapsed && hasChildren && (
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded((prev) => !prev);
+          }}
+          className="ml-auto p-1 rounded hover:bg-sidebar-accent/80 text-sidebar-foreground/60 transition cursor-pointer"
+          title={expanded ? "Thu gọn menu" : "Mở rộng menu"}
+        >
+          {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+        </span>
+      )}
     </>
   );
-  if (item.to) {
-    return (
-      <Link
-        to={item.to}
-        data-active={active ? "true" : undefined}
-        className={cls}
-        onClick={onNavigate}
-        title={collapsed ? label : undefined}
-      >
-        {inner}
-      </Link>
-    );
-  }
+
   return (
-    <button
-      data-active={active ? "true" : undefined}
-      className={cls}
-      onClick={onNavigate}
-      title={collapsed ? label : undefined}
-    >
-      {inner}
-    </button>
+    <div className="w-full">
+      {item.to ? (
+        <Link
+          to={item.to}
+          data-active={active ? "true" : undefined}
+          className={cls}
+          onClick={() => {
+            if (hasChildren) setExpanded(true);
+            if (onNavigate) onNavigate();
+          }}
+          title={collapsed ? label : undefined}
+        >
+          {inner}
+        </Link>
+      ) : (
+        <button
+          data-active={active ? "true" : undefined}
+          className={cls}
+          onClick={() => {
+            if (hasChildren) setExpanded((prev) => !prev);
+            if (onNavigate) onNavigate();
+          }}
+          title={collapsed ? label : undefined}
+        >
+          {inner}
+        </button>
+      )}
+
+      {/* Sub-menu tree rendered when expanded and not collapsed */}
+      {!collapsed && hasChildren && expanded && (
+        <div className="ml-5 pl-2.5 my-1 border-l-2 border-sidebar-border/60 space-y-0.5 animate-in fade-in-50 duration-150">
+          {item.children!.map((child) => {
+            const childActive = isActive(pathname, child.to, searchStr);
+            return (
+              <Link
+                key={child.to}
+                to={child.to}
+                onClick={onNavigate}
+                className={`group flex items-center gap-2 rounded-lg py-1.5 px-2.5 text-[12px] font-medium transition-[background-color,color] ${
+                  childActive
+                    ? "bg-sidebar-accent text-sidebar-primary font-bold shadow-2xs"
+                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                <span
+                  className={`size-1.5 rounded-full transition-transform ${
+                    childActive ? "bg-sidebar-primary scale-125" : "bg-sidebar-foreground/35 group-hover:bg-sidebar-foreground/60"
+                  }`}
+                />
+                <span className="truncate">{child.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
