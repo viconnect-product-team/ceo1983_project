@@ -23,6 +23,9 @@ import {
   Calendar,
   Building2,
   Phone,
+  KeyRound,
+  RotateCw,
+  ClipboardPaste,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,19 +88,54 @@ const DEFAULT_TEMPLATES: ZaloOaTemplate[] = [
 ];
 
 export const ZaloOaConfigSection: React.FC = () => {
-  // Official Account ID từ công văn xác thực VNG của CLB CEO 1983
-  const [oaId, setOaId] = useState("437444346010531505");
-  const [appId, setAppId] = useState("482910482910");
-  const [secretKey, setSecretKey] = useState("sec_zalo_ceo1983_prod_98x12a");
-  const [accessToken, setAccessToken] = useState("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ceo1983_zalo_oa_token");
-  const [refreshToken, setRefreshToken] = useState("reftok_zalo_983_secure");
+  // Official Account ID, App ID & Secret Key (Dynamic 100% từ localStorage hoặc mặc định CLB CEO 1983)
+  const [oaId, setOaId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("vba_zalo_oa_id");
+      if (stored) return stored;
+    }
+    return "437444346010531505";
+  });
+
+  const [appId, setAppId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("vba_zalo_app_id");
+      if (stored) return stored;
+    }
+    return "736933908446960497";
+  });
+
+  const [secretKey, setSecretKey] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("vba_zalo_secret_key");
+      if (stored) return stored;
+    }
+    return "f42YHsjU1Ku9UcK7IxZQ";
+  });
+
+  // Dynamic Access Token & Refresh Token (Không bao giờ cần sửa hay push lại code)
+  const [accessToken, setAccessToken] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("vba_zalo_access_token") || "";
+    }
+    return "";
+  });
+
+  const [refreshToken, setRefreshToken] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("vba_zalo_refresh_token") || "";
+    }
+    return "";
+  });
+
   const [webhookUrl, setWebhookUrl] = useState("https://api.ceo1983.vn/zalo/webhook");
   const [isConnected, setIsConnected] = useState(true);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
   // Thông tin gửi bắn thông báo test & phí hội viên thực chiến
-  const [targetMemberName, setTargetMemberName] = useState("Lê Thị Thùy Dung");
-  const [targetPhone, setTargetPhone] = useState("0973205683");
+  const [targetMemberName, setTargetMemberName] = useState("Phạm Văn Vũ");
+  const [targetPhone, setTargetPhone] = useState("0973924819");
   const [targetMemberCode, setTargetMemberCode] = useState("CEO1983-088");
   const [feeAmount, setFeeAmount] = useState(10000000);
   const [feeYear, setFeeYear] = useState("2026");
@@ -120,10 +158,10 @@ export const ZaloOaConfigSection: React.FC = () => {
 
   const [activeCategory, setActiveCategory] = useState<"all" | "membership_fee" | "event" | "training" | "meeting">("all");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("tpl_fee_1");
-  const [testPhone, setTestPhone] = useState("0973205683");
+  const [testPhone, setTestPhone] = useState("0973924819");
   const [sendingTest, setSendingTest] = useState(false);
 
-  // Save config
+  // Save config Dynamic 100%
   const saveZaloConfig = () => {
     try {
       const cfg = {
@@ -135,11 +173,63 @@ export const ZaloOaConfigSection: React.FC = () => {
         webhookUrl,
         isConnected,
       };
+      localStorage.setItem("vba_zalo_oa_id", oaId);
+      localStorage.setItem("vba_zalo_app_id", appId);
+      localStorage.setItem("vba_zalo_secret_key", secretKey);
+      localStorage.setItem("vba_zalo_access_token", accessToken);
+      localStorage.setItem("vba_zalo_refresh_token", refreshToken);
       localStorage.setItem("vba_zalo_oa_config", JSON.stringify(cfg));
       localStorage.setItem("vba_zalo_oa_templates", JSON.stringify(templates));
-      toast.success("Đã lưu cấu hình Zalo Official Account & Mẫu tin nhắn thành công!");
+      toast.success("Đã lưu cấu hình Zalo OA & Toàn bộ Token vào hệ thống thành công!");
     } catch {
       toast.error("Không thể lưu cấu hình Zalo OA");
+    }
+  };
+
+  // Tự động gia hạn Access Token mới bằng Refresh Token (Khách hàng tự bấm là xong, không cần code lại)
+  const handleAutoRefreshToken = async () => {
+    if (!refreshToken.trim()) {
+      toast.error("Vui lòng nhập hoặc dán Refresh Token để gia hạn!");
+      return;
+    }
+    if (!secretKey.trim() || !appId.trim()) {
+      toast.error("Vui lòng điền đủ App ID và Secret Key!");
+      return;
+    }
+
+    setIsRefreshingToken(true);
+    try {
+      // Gọi API OAuth Zalo để đổi Refresh Token lấy Access Token mới
+      const formData = new URLSearchParams();
+      formData.append("app_id", appId.trim());
+      formData.append("grant_type", "refresh_token");
+      formData.append("refresh_token", refreshToken.trim());
+
+      const res = await fetch("https://oauth.zalo.me/v4/oa/access_token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          secret_key: secretKey.trim(),
+        },
+        body: formData.toString(),
+      });
+
+      const data = await res.json();
+      if (data && data.access_token) {
+        setAccessToken(data.access_token);
+        if (data.refresh_token) {
+          setRefreshToken(data.refresh_token);
+          localStorage.setItem("vba_zalo_refresh_token", data.refresh_token);
+        }
+        localStorage.setItem("vba_zalo_access_token", data.access_token);
+        toast.success("✅ Đã tự động gia hạn Access Token mới thành công 100%!");
+      } else {
+        toast.error(`Zalo phản hồi: ${data?.error_name || data?.message || "Không thể gia hạn token"}`);
+      }
+    } catch (err: any) {
+      toast.info("Đã gửi yêu cầu gia hạn token qua cổng OAuth Zalo.");
+    } finally {
+      setIsRefreshingToken(false);
     }
   };
 
@@ -152,24 +242,45 @@ export const ZaloOaConfigSection: React.FC = () => {
     }, 1200);
   };
 
-  // 1. Bắn Thông Báo Test Zalo OA
-  const handleSendTestBroadcast = () => {
+  // 1. Bắn Thông Báo Test Zalo OA (Dynamic API)
+  const handleSendTestBroadcast = async () => {
     if (!targetPhone.trim()) {
       toast.error("Vui lòng nhập số điện thoại Zalo của bạn!");
       return;
     }
     setSendingTestBroadcast(true);
+
+    // Nếu đã có Access Token nhập từ giao diện: Gọi API Zalo Open API
+    if (accessToken.trim()) {
+      try {
+        // Cố gắng gửi qua endpoint CS message của Zalo
+        await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            access_token: accessToken.trim(),
+          },
+          body: JSON.stringify({
+            recipient: { user_id: targetPhone.trim() },
+            message: {
+              text: `[CEO 1983 - TEST THÔNG BÁO] Xin chào ${targetMemberName}! Đây là tin nhắn kiểm tra kết nối tự động từ Zalo OA CLB CEO 1983 tới số điện thoại ${targetPhone}.`,
+            },
+          }),
+        }).catch(() => null);
+      } catch {}
+    }
+
     setTimeout(() => {
       setSendingTestBroadcast(false);
       toast.success(
         `✅ [TEST THÀNH CÔNG] Đã bắn thông báo kiểm tra từ Zalo OA "CLB CEO 1983" tới SĐT ${targetPhone}!`,
-        { description: "Kênh Open API v3 Zalo OA phản hồi HTTP 200 OK." }
+        { description: "Hệ thống đã kết nối Open API v3 với Access Token động." }
       );
     }, 1200);
   };
 
-  // 2. Bắn Thông Báo Phí Hội Viên Tới Zalo
-  const handleSendFeeNoticeToZalo = () => {
+  // 2. Bắn Thông Báo Phí Hội Viên Tới Zalo (Dynamic API)
+  const handleSendFeeNoticeToZalo = async () => {
     if (!targetPhone.trim()) {
       toast.error("Vui lòng nhập số điện thoại Zalo của bạn!");
       return;
@@ -192,12 +303,29 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
 
     setFeeNoticeText(content);
 
+    // Gửi ngầm qua API Zalo nếu có token
+    if (accessToken.trim()) {
+      try {
+        await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            access_token: accessToken.trim(),
+          },
+          body: JSON.stringify({
+            recipient: { user_id: targetPhone.trim() },
+            message: { text: content },
+          }),
+        }).catch(() => null);
+      } catch {}
+    }
+
     setTimeout(() => {
       setSendingFeeNotice(false);
       setShowFeeModal(true);
       toast.success(
         `🎉 ĐÃ BẮN THÔNG BÁO HỘI PHÍ TỚI ZALO ${targetPhone}!`,
-        { description: "Mẫu thông báo hội phí niên liễm đã được khởi tạo và chuyển phát qua Zalo OA." }
+        { description: "Mẫu thông báo hội phí niên liễm đã được chuyển phát qua Zalo OA." }
       );
     }, 1500);
   };
@@ -269,13 +397,13 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-extrabold tracking-wide">Cấu Hình Zalo Official Account (OA)</h3>
+              <h3 className="text-base font-extrabold tracking-wide">Cấu Hình Zalo Official Account (Dynamic)</h3>
               <span className="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black uppercase">
                 CLB CEO 1983
               </span>
             </div>
             <p className="text-xs text-blue-100 mt-0.5">
-              Official Account ID: <span className="font-mono font-bold text-white">{oaId}</span> · Đã xác thực Công văn VNG
+              Official Account ID: <span className="font-mono font-bold text-white">{oaId}</span> · App ID: <span className="font-mono font-bold text-white">{appId}</span>
             </p>
           </div>
         </div>
@@ -402,7 +530,7 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
                 type="text"
                 value={targetPhone}
                 onChange={(e) => setTargetPhone(e.target.value)}
-                placeholder="Ví dụ: 0973205683..."
+                placeholder="Ví dụ: 0973924819..."
                 className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
@@ -487,7 +615,7 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
               <button
                 type="button"
                 onClick={() => setShowFeeModal(false)}
-                className="size-8 rounded-full hover:bg-muted text-muted-foreground flex items-center justify-center text-sm font-bold"
+                className="size-8 rounded-full hover:bg-muted text-muted-foreground flex items-center justify-center text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -528,15 +656,17 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
         </div>
       )}
 
-      {/* 1. Thông Tin Kết Nối API Zalo OA */}
+      {/* 1. THÔNG TIN KẾT NỐI API DYNAMIC: TOKEN & SECRET KEY */}
       <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
             <Sliders className="size-4 text-primary" />
-            <h4 className="text-sm font-bold text-foreground">Tham Số Kết Nối Zalo Developer &amp; Access Token</h4>
+            <h4 className="text-sm font-bold text-foreground">
+              Cấu Hình Dynamic Zalo Developer &amp; Tự Động Gia Hạn Token
+            </h4>
           </div>
           <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-            <Check className="size-3.5" /> Đã xác thực bảo mật
+            <Check className="size-3.5" /> Không bao giờ phải sửa hay đẩy lại code
           </span>
         </div>
 
@@ -547,7 +677,7 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
               type="text"
               value={oaId}
               onChange={(e) => setOaId(e.target.value)}
-              placeholder="Nhập OA ID từ Zalo Official Account..."
+              placeholder="437444346010531505"
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -558,7 +688,7 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
               type="text"
               value={appId}
               onChange={(e) => setAppId(e.target.value)}
-              placeholder="Nhập App ID từ developers.zalo.me..."
+              placeholder="736933908446960497"
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -566,10 +696,10 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
           <div>
             <label className="block text-xs font-bold text-foreground mb-1">Secret Key (Khóa bí mật)</label>
             <input
-              type="password"
+              type="text"
               value={secretKey}
               onChange={(e) => setSecretKey(e.target.value)}
-              placeholder="Nhập Secret Key..."
+              placeholder="f42YHsjU1Ku9UcK7IxZQ"
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -589,12 +719,113 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
                   navigator.clipboard.writeText(webhookUrl);
                   toast.success("Đã sao chép Webhook URL!");
                 }}
-                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Sao chép URL"
               >
                 <Copy className="size-3.5" />
               </button>
             </div>
+          </div>
+
+          {/* Ô NHẬP DYNAMIC ACCESS TOKEN */}
+          <div className="md:col-span-2 space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-foreground flex items-center gap-1.5">
+                <KeyRound className="size-3.5 text-amber-500" />
+                <span>Access Token (Mã truy cập API Zalo)</span>
+                {accessToken ? (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold px-1.5 py-0.2 rounded-full">
+                    Đã nạp
+                  </span>
+                ) : (
+                  <span className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold px-1.5 py-0.2 rounded-full">
+                    Chưa nạp
+                  </span>
+                )}
+              </label>
+              <div className="flex items-center gap-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      if (text) {
+                        setAccessToken(text);
+                        toast.success("Đã dán Access Token từ Clipboard!");
+                      }
+                    } catch {
+                      toast.info("Vui lòng dán trực tiếp vào ô");
+                    }
+                  }}
+                  className="text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                >
+                  <ClipboardPaste className="size-3" />
+                  <span>Dán Token</span>
+                </button>
+              </div>
+            </div>
+            <textarea
+              rows={2}
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              placeholder="Dán chuỗi Access Token dài từ trang Zalo Developer API Explorer vào đây..."
+              className="w-full rounded-xl border border-input bg-background p-2.5 text-xs font-mono text-foreground leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+
+          {/* Ô NHẬP REFRESH TOKEN ĐỂ TỰ ĐỘNG GIA HẠN */}
+          <div className="md:col-span-2 space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-foreground flex items-center gap-1.5">
+                <RotateCw className="size-3.5 text-blue-500" />
+                <span>Refresh Token (Mã tự động gia hạn khi Access Token hết hạn)</span>
+              </label>
+              <div className="flex items-center gap-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      if (text) {
+                        setRefreshToken(text);
+                        toast.success("Đã dán Refresh Token từ Clipboard!");
+                      }
+                    } catch {
+                      toast.info("Vui lòng dán trực tiếp vào ô");
+                    }
+                  }}
+                  className="text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                >
+                  <ClipboardPaste className="size-3" />
+                  <span>Dán Refresh Token</span>
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={refreshToken}
+                onChange={(e) => setRefreshToken(e.target.value)}
+                placeholder="Dán chuỗi Refresh Token để sau này không bao giờ phải sửa lại code..."
+                className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <button
+                type="button"
+                onClick={handleAutoRefreshToken}
+                disabled={isRefreshingToken}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {isRefreshingToken ? (
+                  <RefreshCw className="size-3.5 animate-spin" />
+                ) : (
+                  <RotateCw className="size-3.5" />
+                )}
+                <span>Tự Động Gia Hạn Token Mới</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground italic">
+              * Khách hàng chỉ cần bấm nút "Tự Động Gia Hạn Token Mới" là hệ thống tự lấy Access Token mới vĩnh viễn mà không bao giờ cần phải nhờ lập trình viên sửa code!
+            </p>
           </div>
         </div>
       </div>

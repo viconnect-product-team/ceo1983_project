@@ -1,6 +1,6 @@
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 30/10/2026 (v10.3): Cập Nhật Thông Số Chính Thức Zalo OA "CLB CEO 1983" (OA ID: 437444346010531505) & Trung Tâm Bắn Thông Báo Phí Hội Viên Tới Zalo ([NODE-CRM-013])**:
+- **Bản cập nhật ngày 30/10/2026 (v10.3): Cập Nhật Zalo OA CLB CEO 1983 & Cơ Chế 100% Dynamic Token Tự Động Gia Hạn Vĩnh Viễn ([NODE-CRM-013])**:
   1. *Đồng Bộ Tham Số Zalo OA Chuẩn Công Văn Xác Thực VNG*:
      - Cập nhật mặc định `oaId`: **`437444346010531505`** (CLB CEO 1983, SĐT quản trị: `0367231668`, Phó Chánh VP: Lê Thị Thùy Dung `0973.205.683`).
      - Tích hợp mã QR và đường dẫn trực tiếp: `https://zalo.me/437444346010531505` giúp hội viên quét kết nối và theo dõi OA 1 chạm.
