@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getNestApiUrl } from "@/lib/api-client";
 
 export interface VNPayConfig {
   tmnCode: string;
@@ -66,21 +67,34 @@ export const VNPayConfigSection: React.FC = () => {
     }
   };
 
-  const handleGenerateTestUrl = () => {
+  const handleGenerateTestUrl = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch(getNestApiUrl("/payment/vnpay-create-url"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: testAmount,
+          orderInfo: testOrderInfo,
+          tmnCode: config.tmnCode,
+          hashSecret: config.hashSecret,
+          vnpUrl: config.vnpUrl,
+          returnUrl: config.returnUrl,
+        }),
+      });
+
+      const data = await res.json();
+      if (data && data.success && data.paymentUrl) {
+        setTestPaymentUrl(data.paymentUrl);
+        toast.success("✅ Đã tạo liên kết thanh toán VNPay mã hóa HMAC-SHA512 thành công!");
+      } else {
+        toast.error(data?.message || "Không thể tạo liên kết thanh toán VNPay");
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi kết nối máy chủ tạo URL VNPay: ${err.message}`);
+    } finally {
       setIsGenerating(false);
-      const orderId = `CEO_${Date.now()}`;
-      const url = `${config.vnpUrl}?vnp_Version=2.1.0&vnp_Command=pay&vnp_TmnCode=${config.tmnCode}&vnp_Amount=${
-        testAmount * 100
-      }&vnp_CurrCode=VND&vnp_TxnRef=${orderId}&vnp_OrderInfo=${encodeURIComponent(
-        testOrderInfo
-      )}&vnp_OrderType=billpayment&vnp_Locale=vn&vnp_ReturnUrl=${encodeURIComponent(
-        config.returnUrl
-      )}&vnp_SecureHash=f8a2910cbe782190da98231`;
-      setTestPaymentUrl(url);
-      toast.success("Đã tạo liên kết thanh toán VNPay kiểm thử thành công!");
-    }, 800);
+    }
   };
 
   return (
@@ -264,6 +278,51 @@ export const VNPayConfigSection: React.FC = () => {
                 </div>
               </label>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* KHỐI HƯỚNG DẪN: QUY ĐỊNH KÝ HỢP ĐỒNG CÁ NHÂN VS DOANH NGHIỆP & THÔNG TIN THẺ TEST SANDBOX */}
+      <div className="p-5 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 space-y-4">
+        <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300 font-extrabold text-sm">
+          <Building className="size-4" />
+          <span>Quy Định Ký Hợp Đồng VNPay: Cá Nhân Có Đăng Ký Được Không?</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+          <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-950 space-y-2">
+            <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-blue-700 dark:text-blue-400">
+              <ShieldCheck className="size-4" />
+              <span>1. Quy Định Ký Hợp Đồng Thật (Production):</span>
+            </div>
+            <ul className="space-y-1.5 list-disc pl-4 text-[11px]">
+              <li>
+                <b>Cá nhân thông thường (chỉ có CCCD):</b> VNPay <u>không</u> ký hợp đồng cổng thanh toán trực tiếp do quy định của Ngân hàng Nhà nước.
+              </li>
+              <li>
+                <b>Cách nhận tiền vào tài khoản cá nhân:</b> Đăng ký theo hình thức <b>Hộ Kinh Doanh Cá Thể</b> (thủ tục cấp quận/huyện chỉ 3 ngày). VNPay chấp nhận ký và đối soát chuyển tiền thẳng vào <b>Số tài khoản ngân hàng cá nhân</b> của chủ hộ!
+              </li>
+              <li>
+                <b>Dùng pháp nhân CLB:</b> Hoặc ký hợp đồng dưới tư cách CLB CEO 1983 (tiền đổ về STK MB Bank 1983000000 của CLB).
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-950 space-y-2">
+            <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="size-4" />
+              <span>2. Thử Nghiệm Ngay (Môi Trường Sandbox):</span>
+            </div>
+            <p className="text-[11px]">
+              Không cần giấy phép, test thanh toán hoàn toàn miễn phí ngay lập tức với thẻ ATM thử nghiệm của VNPay:
+            </p>
+            <div className="bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-[11px] space-y-1">
+              <div>🏦 Ngân hàng test: <b>NCB</b></div>
+              <div>💳 Số thẻ: <b className="text-blue-600">9704198526191432198</b></div>
+              <div>👤 Tên chủ thẻ: <b>NGUYEN VAN A</b></div>
+              <div>📅 Ngày phát hành: <b>07/15</b></div>
+              <div>🔑 Mật khẩu OTP: <b className="text-emerald-600">123456</b></div>
+            </div>
           </div>
         </div>
       </div>

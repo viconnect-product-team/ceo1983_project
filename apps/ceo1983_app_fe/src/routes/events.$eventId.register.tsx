@@ -23,7 +23,7 @@ import {
   Briefcase,
   AlertCircle,
 } from "lucide-react";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, getNestApiUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/events/$eventId/register")({
@@ -397,18 +397,33 @@ function GuestEventRegistrationPage() {
                       } catch { }
 
                       const orderInfo = `CEO 1983 - Thanh toan ve su kien EV${result.registrationId}`;
-                      const amount = (result.totalAmount || 0) * 100;
+                      const amount = result.totalAmount || 0;
                       const orderRef = `EV${result.registrationId}_${Date.now()}`;
-                      const checkoutUrl = `${vnpConfig.vnpUrl}?vnp_Version=2.1.0&vnp_Command=pay&vnp_TmnCode=${vnpConfig.tmnCode}&vnp_Amount=${amount}&vnp_CurrCode=VND&vnp_TxnRef=${orderRef}&vnp_OrderInfo=${encodeURIComponent(
-                        orderInfo
-                      )}&vnp_OrderType=billpayment&vnp_Locale=vn&vnp_ReturnUrl=${encodeURIComponent(
-                        vnpConfig.returnUrl
-                      )}&vnp_SecureHash=f8a2910cbe782190da98231`;
 
-                      toast.info("Đang chuyển hướng tới Cổng Thanh Toán VNPay...");
-                      setTimeout(() => {
-                        window.open(checkoutUrl, "_blank");
-                      }, 400);
+                      toast.info("Đang kết nối Cổng Thanh Toán VNPay...");
+                      fetch(getNestApiUrl("/payment/vnpay-create-url"), {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          amount,
+                          orderInfo,
+                          orderId: orderRef,
+                          tmnCode: vnpConfig.tmnCode,
+                          vnpUrl: vnpConfig.vnpUrl,
+                          returnUrl: vnpConfig.returnUrl,
+                        }),
+                      })
+                        .then((res) => res.json())
+                        .then((data) => {
+                          if (data && data.success && data.paymentUrl) {
+                            window.open(data.paymentUrl, "_blank");
+                          } else {
+                            toast.error(data?.message || "Không thể tạo liên kết VNPay");
+                          }
+                        })
+                        .catch((err) => {
+                          toast.error("Lỗi kết nối VNPay: " + err.message);
+                        });
                     }}
                     className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#003B95] via-[#0052cc] to-blue-800 hover:from-[#002f78] hover:to-[#0043a8] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 active:scale-98 transition cursor-pointer"
                   >
@@ -799,8 +814,8 @@ function GuestEventRegistrationPage() {
                   type="button"
                   onClick={() => setTicketType(t.id)}
                   className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${ticketType === t.id
-                      ? "border-[#003B95] bg-blue-50/60 ring-2 ring-[#003B95]/20 shadow-xs"
-                      : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
+                    ? "border-[#003B95] bg-blue-50/60 ring-2 ring-[#003B95]/20 shadow-xs"
+                    : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
                     }`}
                 >
                   <div className="flex items-center justify-between mb-1">

@@ -615,7 +615,7 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
         </div>
 
         {/* Form thiết lập thông số người nhận & 2 Nút Bắn Hành Động */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1">
           <div>
             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
               Họ Tên Hội Viên Nhận:
@@ -644,6 +644,22 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
                 onChange={(e) => setTargetPhone(e.target.value)}
                 placeholder="Ví dụ: 0973924819..."
                 className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center justify-between">
+              <span>Zalo User ID (UID):</span>
+            </label>
+            <div className="relative">
+              <KeyRound className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                placeholder="Tự động phân giải / Chọn bên trên..."
+                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono text-foreground focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
           </div>

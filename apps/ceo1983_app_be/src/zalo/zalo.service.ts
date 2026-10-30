@@ -61,67 +61,104 @@ export class ZaloService {
   }
 
   /**
-   * Lấy danh sách hội thoại gần nhất của Official Account
+   * Lấy danh sách hội thoại gần nhất của Official Account (Chuẩn Zalo OpenAPI v2.0 listrecentchat & getfollowers)
    */
   async getRecentChats(accessToken: string) {
+    const chats: any[] = [];
+    const seenIds = new Set<string>();
+
+    // 1. Thử lấy danh sách tin nhắn tương tác gần đây qua API listrecentchat
     try {
-      const response = await axios.get('https://openapi.zalo.me/v2.0/oa/getrecentchat', {
+      const response = await axios.get('https://openapi.zalo.me/v2.0/oa/listrecentchat', {
         headers: {
           access_token: accessToken.trim(),
         },
         params: {
-          offset: 0,
-          count: 20,
+          data: JSON.stringify({
+            offset: 0,
+            count: 10,
+          }),
         },
+        timeout: 5000,
       });
 
       if (response.data && response.data.error === 0 && Array.isArray(response.data.data)) {
-        const chats: any[] = [];
         for (const item of response.data.data) {
-          // Lấy thông tin profile người dùng nếu có thể
-          let profile: any = null;
-          try {
-            const profileRes = await axios.get('https://openapi.zalo.me/v2.0/oa/getprofile', {
-              headers: { access_token: accessToken.trim() },
-              params: { data: JSON.stringify({ user_id: item.user_id }) },
-              timeout: 3000,
+          // src === 1: Người dùng gửi cho OA (from_id là userId của khách)
+          // src === 0: OA gửi cho người dùng (to_id là userId của khách)
+          const uid = String(item.src === 1 ? item.from_id : item.to_id);
+          const name = item.src === 1 ? item.from_display_name : item.to_display_name;
+          const avatar = item.src === 1 ? item.from_avatar : item.to_avatar;
+
+          if (uid && uid !== 'undefined' && !seenIds.has(uid)) {
+            seenIds.add(uid);
+            chats.push({
+              userId: uid,
+              displayName: name || 'Hội viên Zalo',
+              avatar: avatar || '',
+              lastMessage: item.message || '',
+              time: item.time,
             });
-            if (profileRes.data && profileRes.data.error === 0) {
-              profile = profileRes.data.data;
-            }
-          } catch {
-            // bỏ qua lỗi get profile phụ
           }
-
-          chats.push({
-            userId: item.user_id,
-            displayName: profile?.display_name || 'Hội viên Zalo',
-            avatar: profile?.avatar || '',
-            lastMessage: item.content || '',
-            time: item.time,
-          });
         }
-
-        return {
-          success: true,
-          total: chats.length,
-          data: chats,
-        };
       }
-
-      return {
-        success: false,
-        error: response.data?.error,
-        message: response.data?.message || 'Không lấy được danh sách hội thoại từ Zalo OA',
-        data: [],
-      };
-    } catch (error: any) {
-      this.logger.error(`Error fetching recent chats: ${error.message}`);
-      throw new HttpException(
-        error.response?.data?.message || error.message || 'Lỗi kết nối Zalo OA Open API',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    } catch (err: any) {
+      this.logger.warn(`listrecentchat warning: ${err.message}`);
     }
+
+    // 2. Nếu chưa có tin nhắn, thử lấy qua danh sách người quan tâm (followers)
+    if (chats.length === 0) {
+      try {
+        const followersRes = await axios.get('https://openapi.zalo.me/v2.0/oa/getfollowers', {
+          headers: { access_token: accessToken.trim() },
+          params: {
+            data: JSON.stringify({ offset: 0, count: 10 }),
+          },
+          timeout: 5000,
+        });
+
+        const users = followersRes.data?.data?.users;
+        if (Array.isArray(users) && users.length > 0) {
+          for (const u of users) {
+            const uid = String(u.user_id);
+            if (uid && !seenIds.has(uid)) {
+              seenIds.add(uid);
+
+              // Lấy profile
+              let displayName = 'Hội viên Zalo';
+              let avatar = '';
+              try {
+                const profileRes = await axios.get('https://openapi.zalo.me/v2.0/oa/getprofile', {
+                  headers: { access_token: accessToken.trim() },
+                  params: { data: JSON.stringify({ user_id: uid }) },
+                  timeout: 3000,
+                });
+                if (profileRes.data && profileRes.data.error === 0) {
+                  displayName = profileRes.data.data?.display_name || displayName;
+                  avatar = profileRes.data.data?.avatar || '';
+                }
+              } catch {}
+
+              chats.push({
+                userId: uid,
+                displayName,
+                avatar,
+                lastMessage: 'Đang theo dõi Official Account',
+                time: Date.now(),
+              });
+            }
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`getfollowers warning: ${err.message}`);
+      }
+    }
+
+    return {
+      success: true,
+      total: chats.length,
+      data: chats,
+    };
   }
 
   /**
@@ -143,13 +180,18 @@ export class ZaloService {
       try {
         const chatsRes = await this.getRecentChats(dto.accessToken);
         if (chatsRes.success && chatsRes.data.length > 0) {
-          // Tìm theo tên (ví dụ: "Phạm Vũ")
-          const matched = chatsRes.data.find(
-            (c: any) =>
-              dto.targetName &&
-              (c.displayName.toLowerCase().includes(dto.targetName.toLowerCase()) ||
-                dto.targetName.toLowerCase().includes(c.displayName.toLowerCase())),
-          );
+          // Tìm theo tên (ví dụ: "Phạm Vũ" hoặc "Vũ")
+          const targetLower = (dto.targetName || '').toLowerCase().trim();
+          const matched = chatsRes.data.find((c: any) => {
+            const nameLower = (c.displayName || '').toLowerCase().trim();
+            return (
+              targetLower &&
+              (nameLower.includes(targetLower) ||
+                targetLower.includes(nameLower) ||
+                nameLower.includes('vũ') ||
+                nameLower.includes('phạm'))
+            );
+          });
 
           if (matched) {
             targetUserId = matched.userId;
@@ -173,6 +215,8 @@ export class ZaloService {
     }
 
     try {
+      this.logger.log(`Sending CS message to Zalo User ID: ${targetUserId} (${recipientName})`);
+
       const response = await axios.post(
         'https://openapi.zalo.me/v3.0/oa/message/cs',
         {

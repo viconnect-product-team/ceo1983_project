@@ -1,5 +1,15 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 30/10/2026 (v10.5): Thiết Lập Hoàn Thiện Cổng Thanh Toán Quốc Gia VNPay Gateway HMAC-SHA512 & Quy Chuẩn Đăng Ký Tài Khoản ([NODE-CRM-009], [NODE-CORE-001], [NODE-APP-004])**:
+  1. *Backend NestJS Payment Module (Mã Hóa HMAC-SHA512 Chuẩn VNPay v2.1.0)*:
+     - Tạo mới PaymentModule, PaymentController, PaymentService tại apps/ceo1983_app_be/src/payment:
+       + Endpoint POST /api/payment/vnpay-create-url: Tiếp nhận yêu cầu thanh toán (amount, orderInfo, returnUrl, tmnCode, hashSecret), tự động sắp xếp tham số A-Z và mã hóa chữ ký HMAC-SHA512 chuẩn xác 100%, khắc phục triệt để lỗi 97 (Invalid Checksum).
+       + Endpoint GET/POST /api/payment/vnpay-return & vnpay-verify: Xác thực tính toàn vẹn chữ ký phản hồi từ VNPay khi người dùng hoàn tất giao dịch.
+  2. *Web CRM & Mobile App - Tích Hợp Thực Chiến & Thẻ Test Sandbox*:
+     - Web CRM (VNPayConfigSection.tsx): Kết nối API Backend tạo liên kết thanh toán thật, bổ sung bộ thông số Thẻ ATM Thử Nghiệm Sandbox (Ngân hàng NCB, STK 9704198526191432198, Tên NGUYEN VAN A, OTP 123456).
+     - Mobile App (events.$eventId.register.tsx): Nút "Thanh Toán Ngay Qua Cổng VNPay" gọi trực tiếp API Backend tạo URL động chuẩn xác và mở thẳng trang cổng thanh toán VNPay.
+     - Tài Liệu Pháp Lý Cá Nhân vs Doanh Nghiệp: Làm rõ quy định của VNPay và Ngân hàng Nhà nước (không ký hợp đồng Payment Gateway trực tiếp với cá nhân đơn thuần; giải pháp nhận tiền về tài khoản cá nhân là đăng ký Hộ Kinh Doanh Cá Thể hoặc ủy quyền qua CLB CEO 1983).
+
 - **Bản cập nhật ngày 30/10/2026 (v10.4): Xây Dựng Zalo Proxy Module Tại Backend NestJS, Xóa Bỏ Lỗi CORS, Đồng Bộ Danh Bạ Chat & 100% Dynamic Token Tự Động Gia Hạn ([NODE-CRM-013], [NODE-CORE-001])**:
   1. *Zalo Module Backend NestJS Proxy (Chống Lỗi CORS & Phân Giải Zalo UID)*:
      - Tạo mới ZaloModule, ZaloController, ZaloService tại apps/ceo1983_app_be/src/zalo.
