@@ -1,5 +1,17 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 30/10/2026 (v10.4): Xây Dựng Zalo Proxy Module Tại Backend NestJS, Xóa Bỏ Lỗi CORS, Đồng Bộ Danh Bạ Chat & 100% Dynamic Token Tự Động Gia Hạn ([NODE-CRM-013], [NODE-CORE-001])**:
+  1. *Zalo Module Backend NestJS Proxy (Chống Lỗi CORS & Phân Giải Zalo UID)*:
+     - Tạo mới ZaloModule, ZaloController, ZaloService tại apps/ceo1983_app_be/src/zalo.
+     - Endpoint POST /api/zalo/send-message: Nhận lệnh gửi tin từ Web CRM, thực hiện request Server-to-Server tới Zalo OA API, giải quyết triệt để lỗi CORS của trình duyệt.
+     - Cơ chế tự động phân giải Zalo User ID: Gọi getrecentchat để tìm Zalo UID của người dùng (như anh Phạm Vũ) vừa chat với OA và tự động gửi đích danh.
+     - Endpoint POST /api/zalo/refresh-token: Gọi Zalo OAuth để đổi Refresh Token lấy Access Token mới qua server.
+     - Endpoint GET /api/zalo/recent-chats: Lấy danh bạ người chat gần đây kèm tên, ảnh đại diện và tin nhắn cuối.
+  2. *Web CRM - Tích Hợp Danh Bạ 1 Chạm & Bắn Tự Động*:
+     - Bổ sung nút Đồng bộ danh bạ từ Zalo OA trên giao diện CRM ZaloOaConfigSection.tsx: Hiển thị danh sách hội viên đang tương tác để chọn người nhận 1 chạm.
+     - Cơ chế Zero Hardcoding: Người dùng chỉ cần dán Refresh Token 1 lần hoặc bấm Tự Động Gia Hạn Token Mới là hệ thống hoạt động trọn đời mà không cần lập trình viên sửa code.
+
+
 - **Bản cập nhật ngày 30/10/2026 (v10.3): Cập Nhật Zalo OA CLB CEO 1983 & Cơ Chế 100% Dynamic Token Tự Động Gia Hạn Vĩnh Viễn ([NODE-CRM-013])**:
   1. *Đồng Bộ Tham Số Zalo OA Chuẩn Công Văn Xác Thực VNG*:
      - Cập nhật mặc định `oaId`: **`437444346010531505`** (CLB CEO 1983, SĐT quản trị: `0367231668`, Phó Chánh VP: Lê Thị Thùy Dung `0973.205.683`).

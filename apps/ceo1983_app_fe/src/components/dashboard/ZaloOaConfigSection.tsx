@@ -28,6 +28,7 @@ import {
   ClipboardPaste,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getNestApiUrl } from "@/lib/api-client";
 
 export interface ZaloOaTemplate {
   id: string;
@@ -145,6 +146,17 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [feeNoticeText, setFeeNoticeText] = useState("");
   const [showFeeModal, setShowFeeModal] = useState(false);
 
+  // Danh sách hội viên tương tác gần đây từ Zalo OA (để lấy User ID chính xác 100%)
+  const [recentChats, setRecentChats] = useState<{
+    userId: string;
+    displayName: string;
+    avatar: string;
+    lastMessage: string;
+    time: number;
+  }[]>([]);
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+
   // Template Management
   const [templates, setTemplates] = useState<ZaloOaTemplate[]>(() => {
     if (typeof window === "undefined") return DEFAULT_TEMPLATES;
@@ -186,7 +198,7 @@ export const ZaloOaConfigSection: React.FC = () => {
     }
   };
 
-  // Tự động gia hạn Access Token mới bằng Refresh Token (Khách hàng tự bấm là xong, không cần code lại)
+  // Tự động gia hạn Access Token mới bằng Refresh Token qua Backend NestJS (Zero CORS, Zero Hardcoding)
   const handleAutoRefreshToken = async () => {
     if (!refreshToken.trim()) {
       toast.error("Vui lòng nhập hoặc dán Refresh Token để gia hạn!");
@@ -199,35 +211,31 @@ export const ZaloOaConfigSection: React.FC = () => {
 
     setIsRefreshingToken(true);
     try {
-      // Gọi API OAuth Zalo để đổi Refresh Token lấy Access Token mới
-      const formData = new URLSearchParams();
-      formData.append("app_id", appId.trim());
-      formData.append("grant_type", "refresh_token");
-      formData.append("refresh_token", refreshToken.trim());
-
-      const res = await fetch("https://oauth.zalo.me/v4/oa/access_token", {
+      // Gọi qua NestJS Backend Server để đổi Refresh Token (Tránh triệt để lỗi CORS từ trình duyệt)
+      const res = await fetch(getNestApiUrl("/zalo/refresh-token"), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          secret_key: secretKey.trim(),
-        },
-        body: formData.toString(),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appId: appId.trim(),
+          secretKey: secretKey.trim(),
+          refreshToken: refreshToken.trim(),
+        }),
       });
 
       const data = await res.json();
-      if (data && data.access_token) {
-        setAccessToken(data.access_token);
-        if (data.refresh_token) {
-          setRefreshToken(data.refresh_token);
-          localStorage.setItem("vba_zalo_refresh_token", data.refresh_token);
+      if (data && data.success && data.accessToken) {
+        setAccessToken(data.accessToken);
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken);
+          localStorage.setItem("vba_zalo_refresh_token", data.refreshToken);
         }
-        localStorage.setItem("vba_zalo_access_token", data.access_token);
+        localStorage.setItem("vba_zalo_access_token", data.accessToken);
         toast.success("✅ Đã tự động gia hạn Access Token mới thành công 100%!");
       } else {
-        toast.error(`Zalo phản hồi: ${data?.error_name || data?.message || "Không thể gia hạn token"}`);
+        toast.error(`Zalo phản hồi: ${data?.message || data?.error_description || "Không thể gia hạn token"}`);
       }
     } catch (err: any) {
-      toast.info("Đã gửi yêu cầu gia hạn token qua cổng OAuth Zalo.");
+      toast.error(`Lỗi kết nối máy chủ gia hạn token: ${err.message}`);
     } finally {
       setIsRefreshingToken(false);
     }
@@ -242,47 +250,81 @@ export const ZaloOaConfigSection: React.FC = () => {
     }, 1200);
   };
 
-  // 1. Bắn Thông Báo Test Zalo OA (Dynamic API)
+  // Đồng bộ danh sách hội viên vừa tương tác qua Zalo OA để lấy Zalo User ID chính xác 100%
+  const handleFetchRecentChats = async () => {
+    if (!accessToken.trim()) {
+      toast.error("Vui lòng dán Access Token vào ô cấu hình phía dưới trước!");
+      return;
+    }
+    setLoadingChats(true);
+    try {
+      const res = await fetch(
+        `${getNestApiUrl("/zalo/recent-chats")}?accessToken=${encodeURIComponent(accessToken.trim())}`
+      );
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.data)) {
+        setRecentChats(data.data);
+        if (data.data.length > 0) {
+          toast.success(`🎉 Đã tìm thấy ${data.data.length} hội viên vừa tương tác qua Zalo OA!`);
+          if (!selectedUserId) {
+            setSelectedUserId(data.data[0].userId);
+            setTargetMemberName(data.data[0].displayName);
+          }
+        } else {
+          toast.info("Chưa có hội viên nào gửi tin nhắn tới Zalo OA này.");
+        }
+      } else {
+        toast.error(`Zalo phản hồi: ${data?.message || "Không thể tải danh sách chat"}`);
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi kết nối máy chủ: ${err.message}`);
+    } finally {
+      setLoadingChats(false);
+    }
+  };
+
+  // 1. Bắn Thông Báo Test Zalo OA (Dynamic API qua Backend NestJS Server)
   const handleSendTestBroadcast = async () => {
-    if (!targetPhone.trim()) {
-      toast.error("Vui lòng nhập số điện thoại Zalo của bạn!");
+    if (!accessToken.trim()) {
+      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
       return;
     }
     setSendingTestBroadcast(true);
 
-    // Nếu đã có Access Token nhập từ giao diện: Gọi API Zalo Open API
-    if (accessToken.trim()) {
-      try {
-        // Cố gắng gửi qua endpoint CS message của Zalo
-        await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            access_token: accessToken.trim(),
-          },
-          body: JSON.stringify({
-            recipient: { user_id: targetPhone.trim() },
-            message: {
-              text: `[CEO 1983 - TEST THÔNG BÁO] Xin chào ${targetMemberName}! Đây là tin nhắn kiểm tra kết nối tự động từ Zalo OA CLB CEO 1983 tới số điện thoại ${targetPhone}.`,
-            },
-          }),
-        }).catch(() => null);
-      } catch {}
-    }
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/send-message"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accessToken: accessToken.trim(),
+          userId: selectedUserId || undefined,
+          targetPhone: targetPhone.trim(),
+          targetName: targetMemberName.trim(),
+          message: `[CEO 1983 - TEST THÔNG BÁO] Xin chào ${targetMemberName}! Đây là tin nhắn kiểm tra kết nối tự động từ Zalo OA CLB CEO 1983 tới SĐT ${targetPhone}.`,
+        }),
+      });
 
-    setTimeout(() => {
+      const data = await res.json();
+      if (data && data.success) {
+        toast.success(`🎉 ĐÃ BẮN THÔNG BÁO TEST THÀNH CÔNG VỀ ZALO ĐIỆN THOẠI!`, {
+          description: `Đã gửi trực tiếp tới: ${data.recipient?.name || targetMemberName} (UID: ${data.recipient?.userId || "OA-User"})`,
+        });
+      } else {
+        toast.error(`Zalo từ chối gửi: ${data?.message || "Lỗi gửi tin"}`, {
+          description: data?.error ? `Mã lỗi Zalo: ${data.error}` : undefined,
+        });
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi hệ thống: ${err.message}`);
+    } finally {
       setSendingTestBroadcast(false);
-      toast.success(
-        `✅ [TEST THÀNH CÔNG] Đã bắn thông báo kiểm tra từ Zalo OA "CLB CEO 1983" tới SĐT ${targetPhone}!`,
-        { description: "Hệ thống đã kết nối Open API v3 với Access Token động." }
-      );
-    }, 1200);
+    }
   };
 
-  // 2. Bắn Thông Báo Phí Hội Viên Tới Zalo (Dynamic API)
+  // 2. Bắn Thông Báo Phí Hội Viên Tới Zalo (Dynamic API qua Backend NestJS Server)
   const handleSendFeeNoticeToZalo = async () => {
-    if (!targetPhone.trim()) {
-      toast.error("Vui lòng nhập số điện thoại Zalo của bạn!");
+    if (!accessToken.trim()) {
+      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
       return;
     }
     setSendingFeeNotice(true);
@@ -303,31 +345,36 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
 
     setFeeNoticeText(content);
 
-    // Gửi ngầm qua API Zalo nếu có token
-    if (accessToken.trim()) {
-      try {
-        await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            access_token: accessToken.trim(),
-          },
-          body: JSON.stringify({
-            recipient: { user_id: targetPhone.trim() },
-            message: { text: content },
-          }),
-        }).catch(() => null);
-      } catch {}
-    }
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/send-message"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accessToken: accessToken.trim(),
+          userId: selectedUserId || undefined,
+          targetPhone: targetPhone.trim(),
+          targetName: targetMemberName.trim(),
+          message: content,
+        }),
+      });
 
-    setTimeout(() => {
-      setSendingFeeNotice(false);
+      const data = await res.json();
       setShowFeeModal(true);
-      toast.success(
-        `🎉 ĐÃ BẮN THÔNG BÁO HỘI PHÍ TỚI ZALO ${targetPhone}!`,
-        { description: "Mẫu thông báo hội phí niên liễm đã được chuyển phát qua Zalo OA." }
-      );
-    }, 1500);
+      if (data && data.success) {
+        toast.success(`🎉 ĐÃ BẮN THÔNG BÁO PHÍ THÀNH CÔNG TỚI ZALO ĐIỆN THOẠI!`, {
+          description: `Đã gửi trực tiếp tới ${data.recipient?.name || targetMemberName} qua Zalo OA.`,
+        });
+      } else {
+        toast.error(`Zalo từ chối gửi: ${data?.message || "Lỗi gửi tin"}`, {
+          description: data?.error ? `Mã lỗi Zalo: ${data.error}` : undefined,
+        });
+      }
+    } catch (err: any) {
+      setShowFeeModal(true);
+      toast.error(`Lỗi hệ thống khi gửi: ${err.message}`);
+    } finally {
+      setSendingFeeNotice(false);
+    }
   };
 
   const currentTemplate = templates.find((t) => t.id === selectedTemplateId) || templates[0];
@@ -500,6 +547,71 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
               </li>
             </ol>
           </div>
+        </div>
+
+        {/* DANH SÁCH HỘI VIÊN TƯƠNG TÁC GẦN ĐÂY QUA ZALO OA */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-950 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <User className="size-4 text-blue-600" />
+              <span className="text-xs font-black uppercase text-slate-900 dark:text-slate-100">
+                Hội Viên Đang Tương Tác Qua Zalo OA:
+              </span>
+              {selectedUserId && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-mono text-[10px] font-bold">
+                  UID: {selectedUserId}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleFetchRecentChats}
+              disabled={loadingChats}
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 self-start sm:self-auto bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-xl border border-blue-200 dark:border-blue-900"
+            >
+              <RefreshCw className={`size-3.5 ${loadingChats ? "animate-spin" : ""}`} />
+              <span>{loadingChats ? "Đang đồng bộ..." : "Đồng bộ danh bạ từ Zalo OA"}</span>
+            </button>
+          </div>
+
+          {recentChats.length > 0 ? (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {recentChats.map((chat) => (
+                <button
+                  key={chat.userId}
+                  type="button"
+                  onClick={() => {
+                    setSelectedUserId(chat.userId);
+                    setTargetMemberName(chat.displayName);
+                    toast.info(`Đã chọn: ${chat.displayName} (UID: ${chat.userId})`);
+                  }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                    selectedUserId === chat.userId
+                      ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-blue-400"
+                  }`}
+                >
+                  {chat.avatar ? (
+                    <img src={chat.avatar} alt={chat.displayName} className="size-5 rounded-full object-cover" />
+                  ) : (
+                    <div className="size-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]">
+                      {chat.displayName.charAt(0)}
+                    </div>
+                  )}
+                  <span>{chat.displayName}</span>
+                  {chat.lastMessage && (
+                    <span className="text-[10px] opacity-80 max-w-[140px] truncate font-normal">
+                      "{chat.lastMessage}"
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-500 italic">
+              💡 Bấm nút <b>"Đồng bộ danh bạ từ Zalo OA"</b> để tải hội viên (như Phạm Vũ) vừa chat với OA và tự động chọn Zalo UID. Nếu không chọn, hệ thống sẽ tự phân giải theo tên người nhận gần nhất.
+            </p>
+          )}
         </div>
 
         {/* Form thiết lập thông số người nhận & 2 Nút Bắn Hành Động */}

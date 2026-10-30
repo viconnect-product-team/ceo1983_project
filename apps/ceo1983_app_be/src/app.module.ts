@@ -24,6 +24,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { FeedModule } from './feed/feed.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { TrainingsModule } from './trainings/trainings.module';
+import { ZaloModule } from './zalo/zalo.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { TrainingsModule } from './trainings/trainings.module';
     FeedModule,
     AnalyticsModule,
     TrainingsModule,
+    ZaloModule,
   ],
   controllers: [AppController],
   providers: [AppService],
