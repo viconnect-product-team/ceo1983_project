@@ -358,7 +358,7 @@ export default function ProfileScreen() {
     }
   };
 
-  // Cài đặt ứng dụng nhanh 1 chạm (PWA Native Prompt / Tải APK Android / Hướng dẫn iOS Safari)
+  // Cài đặt ứng dụng nhanh 1 chạm (PWA Native Prompt / Hướng dẫn iOS Safari & Android Chrome)
   const handleFastInstallApp = async () => {
     // 1. Nếu có prompt PWA từ trình duyệt (Chrome/Edge/Samsung Internet): Kích hoạt hộp thoại cài đặt ngay lập tức!
     const p = (window as any).__pwaInstallPrompt;
@@ -368,40 +368,15 @@ export default function ProfileScreen() {
         const choice = await p.userChoice;
         if (choice?.outcome === "accepted") {
           toast.success("Ứng dụng đang được tự động cài đặt lên màn hình chính!");
+          (window as any).__pwaInstallPrompt = null;
+          return;
         }
-        (window as any).__pwaInstallPrompt = null;
-        return;
       } catch (err) {
         console.warn("Fast install prompt error:", err);
       }
     }
 
-    const userAgent = typeof window !== "undefined" ? window.navigator.userAgent.toLowerCase() : "";
-    const isAndroid = /android/i.test(userAgent);
-    const isIos = /iphone|ipad|ipod/i.test(userAgent);
-
-    // 2. Nếu là Android (không có sự kiện prompt trước đó): Tự động kích hoạt tải nhanh tệp APK cài đặt gốc
-    if (isAndroid) {
-      toast.info("Đang tự động tải bộ cài APK ứng dụng CEO 1983 cho Android...");
-      const link = document.createElement("a");
-      link.href = "/docs/CEO1983-app-latest.apk";
-      link.download = "CEO1983-app-latest.apk";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      return;
-    }
-
-    // 3. Nếu là iOS: Thông báo nhanh 1 thao tác và mở popup chỉ dẫn
-    if (isIos) {
-      toast.info("Chạm nút Chia sẻ ⎋ dưới đáy Safari → chọn 'Thêm vào MH chính' ⊞", {
-        duration: 5000,
-      });
-      window.dispatchEvent(new CustomEvent("open-install-prompt"));
-      return;
-    }
-
-    // 4. Môi trường khác: Mở popup hướng dẫn cài đặt PWA
+    // 2. Mở bảng điều khiển cài đặt ứng dụng chuyên biệt hỗ trợ cả iPhone (iOS) và Android
     window.dispatchEvent(new CustomEvent("open-install-prompt"));
   };
 
@@ -1003,71 +978,6 @@ export default function ProfileScreen() {
                       }}
                     />
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* 1.3. Đầu mục: Hoạt động & Thống kê kết nối CLB */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("activity")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
-                    <BadgeCheck className="size-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Hoạt động &amp; Thống kê kết nối CLB
-                    </h3>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                      {participatedEvents.length} sự kiện • {connectedOpportunities.length} cơ hội giao thương
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["activity"] ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
-                  }`}
-                />
-              </button>
-
-              {expandedSections["activity"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
-                      onClick={() => setActiveTab("friends")}
-                      className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 cursor-pointer hover:bg-blue-100/60 transition"
-                    >
-                      <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">
-                        Sự kiện đã tham gia
-                      </div>
-                      <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
-                        {participatedEvents.length} sự kiện
-                      </div>
-                    </div>
-                    <div
-                      onClick={() => setActiveTab("friends")}
-                      className="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 cursor-pointer hover:bg-amber-100/60 transition"
-                    >
-                      <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">
-                        Cơ hội đã kết nối
-                      </div>
-                      <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
-                        {connectedOpportunities.length} cơ hội
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("friends")}
-                    className="w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-[#003B95] dark:text-blue-400 flex items-center justify-center gap-1.5 transition cursor-pointer"
-                  >
-                    <span>Xem toàn bộ lịch trình &amp; giao thương chi tiết</span>
-                    <ChevronRight className="size-3.5" />
-                  </button>
                 </div>
               )}
             </div>

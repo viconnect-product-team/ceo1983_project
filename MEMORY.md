@@ -1,5 +1,20 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 30/10/2026 (v10.1): Tinh Chỉnh Giao Diện Bình Luận Chuẩn Facebook, Loại Bỏ Khối Thống Kê CLB Màn Tài Khoản & Khắc Phục Triệt Để Cài Đặt Ứng Dụng PWA Trên Cả iOS và Android ([NODE-APP-003], [NODE-APP-011], [NODE-CORE-006])**:
+  1. *Bình Luận Chuẩn Facebook Mobile ([NODE-APP-003])*:
+     - Tái thiết kế bóng chat tròn Speech Bubble với nền xám mềm mại bo góc 18px (#f0f2f5 / #3a3b3c), loại bỏ hoàn toàn các nhãn kỹ thuật thô ráp ("Cấp 1/Cấp 2/Cấp 3").
+     - Thanh hành động nằm ngoài bóng chat chuẩn 100% Facebook: "Thích · Phản hồi · [Thời gian]".
+     - Nút "Thích" tích hợp popover dải 6 biểu cảm (👍 Thích, ❤️ Yêu thích, 🤝 Hợp tác, 👏 Hoan hô, 🔥 Bùng nổ, 🎉 Chúc mừng) với hiệu ứng nảy phóng to khi hover/chạm.
+     - Huy hiệu cảm xúc ghim nổi ở góc dưới phải của bóng chat kèm số lượng.
+     - Thanh nhập bình luận bổ sung ảnh đại diện của người dùng hiện tại ở bên trái và ô nhập con nhộng bo tròn 22px chứa các nút đính kèm (Ảnh, GIF, Cảm xúc) cùng nút Gửi sáng màu xanh Navy/Facebook.
+  2. *Loại Bỏ Khối Hoạt Động & Thống Kê CLB Ở Màn Tài Khoản ([NODE-APP-011])*:
+     - Gỡ bỏ hoàn toàn mục 1.3 "Hoạt động & Thống kê kết nối CLB" khỏi tab Hồ sơ tại màn hình cá nhân (`association.profile.tsx`), tinh gọn giao diện và tập trung vào hồ sơ doanh nhân, quy mô lĩnh vực kinh doanh và bản đồ định vị trụ sở doanh nghiệp.
+  3. *Khắc Phục Lỗi Cài Đặt Ứng Dụng Trên Cả iOS và Android ([NODE-APP-011], [NODE-CORE-006])*:
+     - Tạo mới tệp `manifest.json` trong thư mục public đồng bộ cùng `manifest.webmanifest`, đảm bảo chuẩn PWA Web App Manifest cho cả Google Chrome và Apple Safari.
+     - Loại bỏ hành vi tải tệp APK 404 gây lỗi trên Android.
+     - Nâng cấp modal cài đặt (`IosInstallPrompt.tsx`) với thanh chuyển đổi 2 nền tảng: "🍎 Dành Cho iPhone (iOS)" và "🤖 Dành Cho Android".
+     - Hỗ trợ nút cài đặt tự động 1 chạm khi trình duyệt hỗ trợ (Chromium beforeinstallprompt), đồng thời hiển thị hướng dẫn trực quan 3 bước từng thao tác (Mở Safari/Chrome &rarr; Chạm nút Chia sẻ ⎋ hoặc Menu ⋮ &rarr; Chọn Thêm vào MH chính &rarr; Xác nhận).
+
 - **Bản cập nhật ngày 30/10/2026 (v10.0): Hoàn Thiện Toàn Diện 8 Hạng Mục Nâng Cấp Hệ Thống Web CRM & Mobile App CEO 1983 ([NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007], [NODE-APP-011], [NODE-CRM-002], [NODE-CRM-004], [NODE-CRM-008], [NODE-CRM-009], [NODE-CRM-013], [NODE-CORE-001])**:
   1. *Nâng Cấp Ưu Đãi B2B Tự Đăng Đa Dạng & Quét QR Tại Điểm Bán ([NODE-APP-007], [NODE-CRM-008])*:
      - Hội viên CLB CEO 1983 có thể tự đăng ưu đãi cho toàn thể hội viên với đầy đủ trường: Mã Voucher, Tiêu đề ưu đãi, Nội dung chi tiết, Loại ưu đãi (% giảm giá, Mua 1 tặng 1, Quà tặng kèm, Đồng giá ưu đãi), Ngày đăng, Giá trị ưu đãi, Nơi áp dụng và Mã QR riêng biệt để hội viên khác quét nhận ưu đãi trực tiếp tại cửa hàng/doanh nghiệp.

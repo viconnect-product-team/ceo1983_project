@@ -36,7 +36,7 @@ import { useAuth } from "@/context/AuthContext";
 import { CreatePostModal, COMMITTEES } from "./CreatePostModal";
 
 export const COMMENT_EMOTIONS = [
-  { id: "like", emoji: "👍", label: "Tuyệt vời" },
+  { id: "like", emoji: "👍", label: "Thích" },
   { id: "love", emoji: "❤️", label: "Yêu thích" },
   { id: "handshake", emoji: "🤝", label: "Hợp tác" },
   { id: "clap", emoji: "👏", label: "Hoan hô" },
@@ -177,18 +177,18 @@ function RenderCommentNode({
     level === 1
       ? ""
       : level === 2
-      ? "ml-3 sm:ml-5 pl-2.5 border-l-2 border-amber-400/70 dark:border-amber-500/50"
-      : "ml-6 sm:ml-9 pl-2.5 border-l-2 border-blue-400/70 dark:border-blue-500/50";
+      ? "ml-4 sm:ml-6 pl-2.5 border-l-2 border-slate-200 dark:border-slate-700/60"
+      : "ml-7 sm:ml-10 pl-2.5 border-l-2 border-slate-200 dark:border-slate-700/60";
 
   return (
-    <div className={`space-y-1.5 ${levelIndent}`}>
-      <div className="flex items-start gap-2 text-xs">
+    <div className={`space-y-1 ${levelIndent}`}>
+      <div className="flex items-start gap-2 text-xs group">
         {node.authorAvatar ? (
           <img
             src={resolveMediaUrl(node.authorAvatar) || node.authorAvatar}
             alt={node.authorName || "Hội viên"}
-            className={`rounded-full object-cover shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700 shadow-xs ${
-              level === 1 ? "size-7" : level === 2 ? "size-6" : "size-5"
+            className={`rounded-full object-cover shrink-0 mt-0.5 border border-slate-200 dark:border-slate-700 shadow-2xs ${
+              level === 1 ? "size-8" : "size-7"
             }`}
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
@@ -196,88 +196,81 @@ function RenderCommentNode({
           />
         ) : (
           <div
-            className={`rounded-full shrink-0 mt-0.5 bg-gradient-to-br from-[#1F3864] to-[#B8860B] text-white font-bold flex items-center justify-center text-[10px] shadow-xs ${
-              level === 1 ? "size-7" : level === 2 ? "size-6" : "size-5"
+            className={`rounded-full shrink-0 mt-0.5 bg-gradient-to-br from-[#003B95] to-[#B8860B] text-white font-bold flex items-center justify-center text-[10.5px] shadow-2xs ${
+              level === 1 ? "size-8" : "size-7"
             }`}
           >
             {((node.authorName || "H").trim()[0] || "H").toUpperCase()}
           </div>
         )}
-        <div className="flex-1 bg-slate-100 dark:bg-slate-800/80 px-3 py-2 rounded-2xl relative">
-          <div className="flex items-center justify-between gap-1 flex-wrap">
+
+        <div className="flex-1 min-w-0">
+          {/* ── BÓNG CHAT CHUẨN FACEBOOK SPEECH BUBBLE ── */}
+          <div className="inline-block max-w-[95%] bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-[18px] px-3.5 py-2 relative shadow-2xs">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-[11px] text-slate-900 dark:text-white">
+              <span className="font-bold text-[12px] text-slate-900 dark:text-white hover:underline cursor-pointer">
                 {node.authorName || "Hội viên Doanh nhân"}
               </span>
-              {level > 1 && (
-                <span
-                  className={`px-1.5 py-0.2 rounded-md text-[8.5px] font-extrabold uppercase ${
-                    level === 2
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/40"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300/40"
-                  }`}
-                >
-                  Cấp {level}
-                </span>
-              )}
               {node.replyToAuthorName && (
-                <span className="text-[10px] text-blue-600 dark:text-amber-400 font-medium">
+                <span className="text-[11px] text-[#003B95] dark:text-blue-400 font-semibold">
                   @{node.replyToAuthorName}
                 </span>
               )}
             </div>
-            <span className="text-[9px] text-slate-400 font-mono">
-              {formatTime(node.createdAt)}
-            </span>
+
+            {node.content && (
+              <p className="text-slate-900 dark:text-slate-100 text-[12px] mt-0.5 whitespace-pre-wrap break-words leading-relaxed select-text">
+                {node.content}
+              </p>
+            )}
+
+            {/* Attached Media (Image / Video / GIF) */}
+            {node.mediaUrl && (node.mediaType === "image" || node.mediaType === "gif") && (
+              <div className="mt-1.5 rounded-xl overflow-hidden max-w-xs border border-slate-200 dark:border-slate-700 shadow-2xs">
+                <img
+                  src={resolveMediaUrl(node.mediaUrl) || node.mediaUrl}
+                  alt="Đính kèm"
+                  onClick={() => onLightbox(node.mediaUrl!)}
+                  className="w-full max-h-48 object-cover cursor-pointer hover:opacity-95 transition"
+                />
+              </div>
+            )}
+
+            {node.mediaUrl && node.mediaType === "video" && (
+              <div className="mt-1.5 rounded-xl overflow-hidden max-w-xs border border-slate-200 dark:border-slate-700 shadow-2xs">
+                <video
+                  src={resolveMediaUrl(node.mediaUrl) || node.mediaUrl}
+                  controls
+                  className="w-full max-h-48 rounded-xl bg-black"
+                />
+              </div>
+            )}
+
+            {/* Floating Reaction Badge at bottom-right of bubble */}
+            {matchedEmotion && (
+              <div
+                onClick={() => onReact(postId, node.id, "")}
+                className="absolute -bottom-2 right-2 flex items-center gap-0.5 bg-white dark:bg-[#242526] rounded-full px-1.5 py-0.5 shadow-sm border border-slate-200 dark:border-slate-700 text-[10px] cursor-pointer hover:scale-110 transition"
+                title="Chạm để gỡ cảm xúc"
+              >
+                <span className="text-xs">{matchedEmotion.emoji}</span>
+                <span className="font-bold text-slate-700 dark:text-slate-200 text-[9.5px]">1</span>
+              </div>
+            )}
           </div>
-
-          {node.content && (
-            <p className="text-slate-700 dark:text-slate-300 text-[11.5px] mt-0.5 whitespace-normal break-words break-all leading-relaxed select-text">
-              {node.content}
-            </p>
-          )}
-
-          {/* Attached Media (Image / Video / GIF) */}
-          {node.mediaUrl && (node.mediaType === "image" || node.mediaType === "gif") && (
-            <div className="mt-2 rounded-xl overflow-hidden max-w-xs border border-slate-200 dark:border-slate-700 shadow-xs">
-              <img
-                src={resolveMediaUrl(node.mediaUrl) || node.mediaUrl}
-                alt="Đính kèm"
-                onClick={() => onLightbox(node.mediaUrl!)}
-                className="w-full max-h-48 object-cover cursor-pointer hover:opacity-95 transition"
-              />
-            </div>
-          )}
-
-          {node.mediaUrl && node.mediaType === "video" && (
-            <div className="mt-2 rounded-xl overflow-hidden max-w-xs border border-slate-200 dark:border-slate-700 shadow-xs">
-              <video
-                src={resolveMediaUrl(node.mediaUrl) || node.mediaUrl}
-                controls
-                className="w-full max-h-48 rounded-xl bg-black"
-              />
-            </div>
-          )}
-
-          {/* Emotion Badge if reacted */}
-          {matchedEmotion && (
-            <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300/50 text-[11px] shadow-xs">
-              <span>{matchedEmotion.emoji}</span>
-              <span className="font-semibold text-amber-900 dark:text-amber-200 text-[10px]">
-                {matchedEmotion.label}
-              </span>
-            </div>
-          )}
 
           {/* Emotion Picker Popover Row */}
           {isReactionPickerOpen && (
-            <div className="mt-2 p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center gap-1.5 overflow-x-auto no-scrollbar animate-in zoom-in-95 duration-100 z-10">
-              {COMMENT_EMOTIONS.map((emo) => (
+            <div className="mt-1 mb-1 p-1 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl inline-flex items-center gap-1 animate-in zoom-in-95 duration-100 z-20">
+              {COMMENT_EMOTIONS.slice(0, 6).map((emo) => (
                 <button
                   key={emo.id}
                   type="button"
-                  onClick={() => onReact(postId, node.id, emo.id)}
-                  className="p-1 rounded-xl hover:bg-amber-100 dark:hover:bg-slate-800 text-base transition hover:scale-125 cursor-pointer shrink-0"
+                  onClick={() => {
+                    onReact(postId, node.id, emo.id);
+                    setActiveReactionCommentId(null);
+                  }}
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-base transition-transform hover:scale-130 active:scale-95 cursor-pointer"
                   title={emo.label}
                 >
                   {emo.emoji}
@@ -286,54 +279,77 @@ function RenderCommentNode({
               <button
                 type="button"
                 onClick={() => setActiveReactionCommentId(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer ml-1"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer ml-0.5"
               >
                 <X className="size-3" />
               </button>
             </div>
           )}
 
-          {/* Comment actions: Reply button, Emotion button & Collapse button */}
-          <div className="flex items-center gap-3 mt-1.5 text-[10px] font-semibold text-slate-500">
+          {/* ── ACTION BAR DƯỚI BÓNG CHAT: Thích · Phản hồi · 2 giờ (OUTSIDE BUBBLE) ── */}
+          <div className="flex items-center gap-3 mt-1 ml-2 text-[11px] font-bold text-slate-500 select-none">
+            <button
+              type="button"
+              onClick={() => {
+                if (node.reaction) {
+                  onReact(postId, node.id, "");
+                } else {
+                  onReact(postId, node.id, "like");
+                }
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setActiveReactionCommentId(isReactionPickerOpen ? null : node.id);
+              }}
+              className={`hover:underline cursor-pointer transition ${
+                matchedEmotion
+                  ? "text-[#003B95] dark:text-blue-400 font-extrabold flex items-center gap-1"
+                  : "hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              {matchedEmotion ? (
+                <>
+                  <span>{matchedEmotion.emoji}</span>
+                  <span>{matchedEmotion.label}</span>
+                </>
+              ) : (
+                "Thích"
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveReactionCommentId(isReactionPickerOpen ? null : node.id)}
+              className="text-slate-400 hover:text-amber-500 cursor-pointer text-[10px]"
+              title="Thả cảm xúc khác"
+            >
+              <Smile className="size-3" />
+            </button>
+
             <button
               type="button"
               onClick={() =>
                 onReply(postId, node.id, node.authorName || "Hội viên", (node.level || 1) as 1 | 2 | 3)
               }
-              className="hover:text-[#1F3864] dark:hover:text-amber-400 flex items-center gap-1 cursor-pointer transition text-[#1F3864] dark:text-amber-400"
+              className="hover:underline cursor-pointer text-slate-600 dark:text-slate-300 hover:text-slate-900"
             >
-              <CornerDownRight className="size-2.5" />
-              <span>Trả lời (Cấp {Math.min(3, (node.level || 1) + 1)})</span>
+              Phản hồi
             </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                setActiveReactionCommentId(isReactionPickerOpen ? null : node.id)
-              }
-              className="hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1 cursor-pointer transition text-amber-600 dark:text-amber-400"
-            >
-              <Smile className="size-2.5" />
-              <span>Thả emotion</span>
-            </button>
+            <span className="text-slate-400 font-normal text-[10.5px]">
+              {formatTime(node.createdAt)}
+            </span>
 
             {hasChildren && (
               <button
                 type="button"
                 onClick={() => onToggleCollapse(node.id)}
-                className="hover:text-slate-700 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer transition text-slate-500"
+                className="text-[#003B95] dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer font-bold ml-1"
               >
-                {isCollapsed ? (
-                  <>
-                    <ChevronDown className="size-2.5" />
-                    <span>Xem {node.children.length} phản hồi</span>
-                  </>
-                ) : (
-                  <>
-                    <ChevronUp className="size-2.5" />
-                    <span>Thu gọn phản hồi</span>
-                  </>
-                )}
+                <CornerDownRight className="size-2.5" />
+                <span>
+                  {isCollapsed ? `Xem ${node.children.length} câu trả lời` : "Thu gọn"}
+                </span>
               </button>
             )}
           </div>
@@ -1276,10 +1292,25 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                       </div>
                     )}
 
-                    {/* Inline quick comment input with allowClear & media buttons */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="relative flex-1">
+                    {/* Inline quick comment input Facebook Style */}
+                    <div className="space-y-1.5 pt-1.5">
+                      <div className="flex items-center gap-2">
+                        {user?.avatar ? (
+                          <img
+                            src={resolveMediaUrl(user.avatar) || user.avatar}
+                            alt={user.name || "Tôi"}
+                            className="size-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
+                            }}
+                          />
+                        ) : (
+                          <div className="size-8 rounded-full shrink-0 bg-gradient-to-br from-[#003B95] to-[#B8860B] text-white font-bold flex items-center justify-center text-xs shadow-2xs">
+                            {((user?.name || "T").trim()[0] || "T").toUpperCase()}
+                          </div>
+                        )}
+
+                        <div className="flex-1 flex items-center gap-1.5 bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-[22px] px-3.5 py-1.5 border border-transparent focus-within:border-blue-400 dark:focus-within:border-blue-500 shadow-2xs transition">
                           <input
                             type="text"
                             placeholder={
@@ -1292,100 +1323,95 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                               setInlineInputText({ ...inlineInputText, [post.id]: e.target.value })
                             }
                             onKeyDown={(e) => e.key === "Enter" && handleSendInlineComment(post.id)}
-                            className="w-full pl-3 pr-8 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#1F3864]"
+                            className="w-full bg-transparent text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none"
                           />
+
                           {inlineInputText[post.id] && (
                             <button
                               type="button"
                               onClick={() => setInlineInputText({ ...inlineInputText, [post.id]: "" })}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                               title="Xóa trắng"
                             >
                               <X className="size-3.5" />
                             </button>
                           )}
-                        </div>
 
-                        {/* Media Actions Toolbar */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {/* Upload Image */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveUploadPostId(post.id);
-                              imageInputRef.current?.click();
-                            }}
-                            disabled={uploadingMediaFor === post.id}
-                            className="p-2 rounded-xl text-slate-500 hover:text-[#1F3864] dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                            title="Đính kèm ảnh"
-                          >
-                            <ImageIcon className="size-4" />
-                          </button>
+                          {/* Media Toolbar buttons inside capsule */}
+                          <div className="flex items-center gap-0.5 shrink-0 text-slate-500">
+                            {/* Upload Image */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveUploadPostId(post.id);
+                                imageInputRef.current?.click();
+                              }}
+                              disabled={uploadingMediaFor === post.id}
+                              className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-[#003B95] dark:hover:text-blue-400 transition cursor-pointer"
+                              title="Đính kèm ảnh"
+                            >
+                              <ImageIcon className="size-4" />
+                            </button>
 
-                          {/* Upload Video */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveUploadPostId(post.id);
-                              videoInputRef.current?.click();
-                            }}
-                            disabled={uploadingMediaFor === post.id}
-                            className="p-2 rounded-xl text-slate-500 hover:text-[#1F3864] dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                            title="Đính kèm video"
-                          >
-                            <Video className="size-4" />
-                          </button>
+                            {/* GIF Picker */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveMediaPickerFor((cur) =>
+                                  cur?.postId === post.id && cur?.type === "gif" ? null : { postId: post.id, type: "gif" }
+                                )
+                              }
+                              className={`px-1.5 py-0.5 rounded-md text-[10px] font-black tracking-wider transition cursor-pointer ${
+                                activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "gif"
+                                  ? "bg-amber-500 text-white"
+                                  : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-[#003B95]"
+                              }`}
+                              title="Chọn GIF"
+                            >
+                              GIF
+                            </button>
 
-                          {/* GIF Picker */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setActiveMediaPickerFor((cur) =>
-                                cur?.postId === post.id && cur?.type === "gif" ? null : { postId: post.id, type: "gif" }
-                              )
-                            }
-                            className={`px-2 py-1 rounded-xl text-[11px] font-black tracking-wider transition cursor-pointer ${
-                              activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "gif"
-                                ? "bg-amber-500 text-white"
-                                : "text-slate-500 hover:text-[#1F3864] dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                            }`}
-                            title="Chọn GIF"
-                          >
-                            GIF
-                          </button>
+                            {/* Emotion Picker */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveMediaPickerFor((cur) =>
+                                  cur?.postId === post.id && cur?.type === "emotion" ? null : { postId: post.id, type: "emotion" }
+                                )
+                              }
+                              className={`p-1.5 rounded-full transition cursor-pointer ${
+                                activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "emotion"
+                                  ? "bg-amber-500 text-white"
+                                  : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-amber-500"
+                              }`}
+                              title="Thả Cảm Xúc"
+                            >
+                              <Smile className="size-4" />
+                            </button>
 
-                          {/* Emotion Picker */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setActiveMediaPickerFor((cur) =>
-                                cur?.postId === post.id && cur?.type === "emotion" ? null : { postId: post.id, type: "emotion" }
-                              )
-                            }
-                            className={`p-2 rounded-xl transition cursor-pointer ${
-                              activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "emotion"
-                                ? "bg-amber-500 text-white"
-                                : "text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                            }`}
-                            title="Thả Emotion"
-                          >
-                            <Smile className="size-4" />
-                          </button>
-
-                          {/* Send Button */}
-                          <button
-                            type="button"
-                            disabled={submittingCommentFor === post.id || uploadingMediaFor === post.id}
-                            onClick={() => handleSendInlineComment(post.id)}
-                            className="p-2 rounded-2xl bg-[#1F3864] hover:bg-[#152747] text-white transition cursor-pointer disabled:opacity-50"
-                            title="Gửi bình luận"
-                          >
-                            {submittingCommentFor === post.id || uploadingMediaFor === post.id ? (
-                              <Loader2 className="size-3.5 animate-spin" />
-                            ) : (
-                              <Send className="size-3.5" />
-                            )}
-                          </button>
+                            {/* Send Button */}
+                            <button
+                              type="button"
+                              disabled={
+                                submittingCommentFor === post.id ||
+                                uploadingMediaFor === post.id ||
+                                (!inlineInputText[post.id]?.trim() && !commentMediaMap[post.id] && !commentEmotionMap[post.id])
+                              }
+                              onClick={() => handleSendInlineComment(post.id)}
+                              className={`p-1.5 rounded-full transition cursor-pointer disabled:opacity-30 ${
+                                inlineInputText[post.id]?.trim() || commentMediaMap[post.id] || commentEmotionMap[post.id]
+                                  ? "bg-[#003B95] text-white hover:bg-[#002B70] shadow-2xs"
+                                  : "text-slate-400"
+                              }`}
+                              title="Gửi bình luận"
+                            >
+                              {submittingCommentFor === post.id || uploadingMediaFor === post.id ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <Send className="size-3.5" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
