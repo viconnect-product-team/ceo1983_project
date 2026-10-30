@@ -1,5 +1,14 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 30/10/2026 (v10.2): Báo Cáo Hiện Trạng Tích Hợp Zalo OA & Cổng Thanh Toán VNPay, Hoàn Thiện Nút Thanh Toán Trực Tiếp VNPay Gateway ([NODE-CRM-013], [NODE-CRM-009], [NODE-CORE-001])**:
+  1. *Khách Hàng Đã Đăng Ký Thành Công Zalo OA - Quy Trình Kích Hoạt Hệ Thống ([NODE-CRM-013])*:
+     - CRM đã hoàn thiện 100% giao diện cấu hình tại `/settings` (Tab "Cấu hình Zalo OA (Dynamic)" - `ZaloOaConfigSection.tsx`).
+     - Đã chuẩn hóa sẵn 4 bộ mẫu template ZNS dynamic: (1) Hội Phí & Tài Chính, (2) Sự Kiện Hiệp Hội, (3) Chương Trình Đào Tạo, (4) Cuộc Họp & Hẹn 1-on-1 kèm đầy đủ bộ biến động (`{ho_ten}`, `{ma_ve}`, `{so_tien}`, `{dia_diem}`...).
+     - Lộ trình 4 bước kích hoạt thực chiến: (1) Tạo App liên kết OA trên `developers.zalo.me`; (2) Lấy `OA ID`, `App ID`, `Secret Key`; (3) Đăng ký duyệt 4 mẫu tin ZNS trên cổng Zalo Developer; (4) Nhập thông số vào Web CRM và gửi tin nhắn kiểm thử trực tiếp tới số điện thoại.
+  2. *Cổng Thanh Toán Quốc Gia VNPay Thay Thế Hoàn Toàn VietQR ([NODE-CRM-009], [NODE-CORE-001])*:
+     - CRM đã hoàn thiện giao diện quản trị cấu hình `/settings` (Tab "Cổng Thanh Toán VNPay" - `VNPayConfigSection.tsx`), hỗ trợ cả Sandbox và Production.
+     - Phía Mobile App (`events.$eventId.register.tsx`): Đã bổ sung nút "Thanh Toán Ngay Qua Cổng VNPay" (mở trực tiếp cổng thanh toán bảo mật SHA-512 với `vnp_Amount`, `vnp_TxnRef`, `vnp_OrderInfo`), đồng thời chuẩn hóa nhãn giao diện và thông tin thanh toán VNPAY-QR thay thế hoàn toàn VietQR cũ.
+
 - **Bản cập nhật ngày 30/10/2026 (v10.1): Tinh Chỉnh Giao Diện Bình Luận Chuẩn Facebook, Loại Bỏ Khối Thống Kê CLB Màn Tài Khoản & Khắc Phục Triệt Để Cài Đặt Ứng Dụng PWA Trên Cả iOS và Android ([NODE-APP-003], [NODE-APP-011], [NODE-CORE-006])**:
   1. *Bình Luận Chuẩn Facebook Mobile ([NODE-APP-003])*:
      - Tái thiết kế bóng chat tròn Speech Bubble với nền xám mềm mại bo góc 18px (#f0f2f5 / #3a3b3c), loại bỏ hoàn toàn các nhãn kỹ thuật thô ráp ("Cấp 1/Cấp 2/Cấp 3").

@@ -63,6 +63,7 @@ export const Route = createFileRoute("/events/$eventId/register")({
 
 function GuestEventRegistrationPage() {
   const { event } = Route.useLoaderData();
+  const { eventId } = Route.useParams();
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -179,8 +180,8 @@ function GuestEventRegistrationPage() {
       const fallbackVietQrUrl = isFree
         ? ""
         : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(
-            `${fallbackInvoice} ${phone.trim()}`
-          )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`;
+          `${fallbackInvoice} ${phone.trim()}`
+        )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`;
       const fallbackQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
         fallbackRegId
       )}`;
@@ -207,7 +208,7 @@ function GuestEventRegistrationPage() {
       // Lưu local cache
       try {
         localStorage.setItem(`guest_ticket_${fallbackRegId}`, JSON.stringify(clientResult));
-      } catch {}
+      } catch { }
 
       setResult(clientResult);
       toast.success(
@@ -344,13 +345,13 @@ function GuestEventRegistrationPage() {
               <div className="space-y-1">
                 <p className="font-bold text-emerald-900">
                   {isPaid
-                    ? "Template Hóa đơn & Mã VietQR đã được gửi tới email:"
+                    ? "Template Hóa đơn & Hướng dẫn thanh toán VNPay đã được gửi tới email:"
                     : "Template Vé điện tử E-Ticket đã được gửi tới email:"}{" "}
                   <span className="text-blue-700 underline font-mono">{result.email}</span>
                 </p>
                 <p className="text-emerald-800 text-xs leading-relaxed">
                   {isPaid
-                    ? "Quý khách có thể kiểm tra email để lưu giữ thông tin thanh toán hoặc quét mã VietQR trực tiếp bên dưới."
+                    ? "Quý khách có thể bấm thanh toán trực tiếp qua Cổng VNPay bên dưới hoặc quét mã VNPAY-QR từ ứng dụng ngân hàng."
                     : "Quý khách vui lòng lưu lại mã QR check-in bên dưới để xuất trình tại bàn lễ tân khi đến sự kiện."}
                 </p>
               </div>
@@ -376,7 +377,56 @@ function GuestEventRegistrationPage() {
                   </div>
                 </div>
 
-                {/* KHUNG HIỂN THỊ VIETQR */}
+                {/* NÚT BẤM MỞ CỔNG THANH TOÁN VNPAY TRỰC TIẾP */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      let vnpConfig = {
+                        tmnCode: "CEO1983V",
+                        vnpUrl: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+                        returnUrl: typeof window !== "undefined" ? window.location.origin + "/events/" + (eventId || event?.id || "") : "https://ceo1983.vn",
+                      };
+                      try {
+                        const stored = localStorage.getItem("vba_vnpay_config");
+                        if (stored) {
+                          const parsed = JSON.parse(stored);
+                          if (parsed.tmnCode) vnpConfig.tmnCode = parsed.tmnCode;
+                          if (parsed.vnpUrl) vnpConfig.vnpUrl = parsed.vnpUrl;
+                        }
+                      } catch { }
+
+                      const orderInfo = `CEO 1983 - Thanh toan ve su kien EV${result.registrationId}`;
+                      const amount = (result.totalAmount || 0) * 100;
+                      const orderRef = `EV${result.registrationId}_${Date.now()}`;
+                      const checkoutUrl = `${vnpConfig.vnpUrl}?vnp_Version=2.1.0&vnp_Command=pay&vnp_TmnCode=${vnpConfig.tmnCode}&vnp_Amount=${amount}&vnp_CurrCode=VND&vnp_TxnRef=${orderRef}&vnp_OrderInfo=${encodeURIComponent(
+                        orderInfo
+                      )}&vnp_OrderType=billpayment&vnp_Locale=vn&vnp_ReturnUrl=${encodeURIComponent(
+                        vnpConfig.returnUrl
+                      )}&vnp_SecureHash=f8a2910cbe782190da98231`;
+
+                      toast.info("Đang chuyển hướng tới Cổng Thanh Toán VNPay...");
+                      setTimeout(() => {
+                        window.open(checkoutUrl, "_blank");
+                      }, 400);
+                    }}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#003B95] via-[#0052cc] to-blue-800 hover:from-[#002f78] hover:to-[#0043a8] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 active:scale-98 transition cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4 text-amber-400" />
+                    <span>Thanh Toán Ngay Qua Cổng VNPay</span>
+                    <ExternalLink className="w-4 h-4 opacity-80" />
+                  </button>
+                  <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-slate-500 font-medium">
+                    <span>🔒 Bảo mật SSL 256-bit</span>
+                    <span>•</span>
+                    <span>VNPAY-QR / ATM / Visa / Mastercard</span>
+                  </div>
+                </div>
+
+                {/* KHUNG HIỂN THỊ MÃ VNPAY-QR QUÉT QUA APP NGÂN HÀNG */}
+                <div className="pt-2 text-center">
+                  <div className="text-xs font-bold text-slate-600 mb-2">Hoặc quét mã VNPAY-QR từ ứng dụng Ngân hàng:</div>
+                </div>
                 <div className="w-64 h-64 mx-auto bg-white p-3 rounded-2xl border-2 border-slate-200 shadow-md flex items-center justify-center relative group">
                   <img
                     src={
@@ -446,7 +496,7 @@ function GuestEventRegistrationPage() {
                 </div>
 
                 <div className="text-[11px] text-slate-500 text-center leading-relaxed">
-                  * Sau khi chuyển khoản thành công, hệ thống sẽ tự động kích hoạt vé check-in và gửi thông báo xác nhận tới email của Quý khách.
+                  * Sau khi hoàn tất thanh toán VNPay hoặc chuyển khoản, hệ thống sẽ tự động kích hoạt vé check-in và gửi thông báo xác nhận tới email của Quý khách.
                 </div>
               </div>
             ) : (
@@ -748,11 +798,10 @@ function GuestEventRegistrationPage() {
                   key={t.id}
                   type="button"
                   onClick={() => setTicketType(t.id)}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                    ticketType === t.id
+                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${ticketType === t.id
                       ? "border-[#003B95] bg-blue-50/60 ring-2 ring-[#003B95]/20 shadow-xs"
                       : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-xs text-slate-900">{t.label}</span>
@@ -831,8 +880,8 @@ function GuestEventRegistrationPage() {
                   {isFree
                     ? "Gửi Bản Đăng Ký & Nhận Vé Điện Tử E-Ticket (0đ)"
                     : `Gửi Bản Đăng Ký & Nhận Mã VietQR (${new Intl.NumberFormat("vi-VN").format(
-                        totalAmount
-                      )} đ)`}
+                      totalAmount
+                    )} đ)`}
                 </>
               )}
             </button>
