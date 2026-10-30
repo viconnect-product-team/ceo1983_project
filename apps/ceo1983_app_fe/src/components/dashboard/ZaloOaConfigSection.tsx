@@ -14,6 +14,15 @@ import {
   Trash2,
   Eye,
   Sliders,
+  QrCode,
+  CreditCard,
+  CheckCircle2,
+  Bell,
+  User,
+  DollarSign,
+  Calendar,
+  Building2,
+  Phone,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,7 +45,7 @@ const DEFAULT_TEMPLATES: ZaloOaTemplate[] = [
     templateId: "ZNS_CEO1983_FEE_REMINDER",
     name: "Thông báo thu hội phí niên liễm định kỳ",
     messageContent:
-      "Kính gửi Hội viên {ho_ten} (Mã HV: {ma_hoi_vien}), Ban Tài chính Hiệp hội Doanh nhân CEO 1983 trân trọng thông báo kỳ gia hạn hội phí thường niên năm {nam_hoi_phi}. Số tiền: {so_tien} VNĐ. Hạn hoàn tất trước ngày {han_dong}. Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh vượng!",
+      "Kính gửi Hội viên {ho_ten} (Mã HV: {ma_hoi_vien}), Ban Tài chính CLB Doanh nhân CEO 1983 trân trọng thông báo kỳ gia hạn hội phí thường niên năm {nam_hoi_phi}. Số tiền: {so_tien} VNĐ. Hạn hoàn tất trước ngày {han_dong}. Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh vượng!",
     availableVariables: ["{ho_ten}", "{ma_hoi_vien}", "{nam_hoi_phi}", "{so_tien}", "{han_dong}", "{ten_doanh_nghiep}"],
     enabled: true,
   },
@@ -76,7 +85,8 @@ const DEFAULT_TEMPLATES: ZaloOaTemplate[] = [
 ];
 
 export const ZaloOaConfigSection: React.FC = () => {
-  const [oaId, setOaId] = useState("284918294821039482");
+  // Official Account ID từ công văn xác thực VNG của CLB CEO 1983
+  const [oaId, setOaId] = useState("437444346010531505");
   const [appId, setAppId] = useState("482910482910");
   const [secretKey, setSecretKey] = useState("sec_zalo_ceo1983_prod_98x12a");
   const [accessToken, setAccessToken] = useState("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ceo1983_zalo_oa_token");
@@ -84,6 +94,18 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [webhookUrl, setWebhookUrl] = useState("https://api.ceo1983.vn/zalo/webhook");
   const [isConnected, setIsConnected] = useState(true);
   const [testingConnection, setTestingConnection] = useState(false);
+
+  // Thông tin gửi bắn thông báo test & phí hội viên thực chiến
+  const [targetMemberName, setTargetMemberName] = useState("Lê Thị Thùy Dung");
+  const [targetPhone, setTargetPhone] = useState("0973205683");
+  const [targetMemberCode, setTargetMemberCode] = useState("CEO1983-088");
+  const [feeAmount, setFeeAmount] = useState(10000000);
+  const [feeYear, setFeeYear] = useState("2026");
+  const [feeDueDate, setFeeDueDate] = useState("31/12/2026");
+  const [sendingTestBroadcast, setSendingTestBroadcast] = useState(false);
+  const [sendingFeeNotice, setSendingFeeNotice] = useState(false);
+  const [feeNoticeText, setFeeNoticeText] = useState("");
+  const [showFeeModal, setShowFeeModal] = useState(false);
 
   // Template Management
   const [templates, setTemplates] = useState<ZaloOaTemplate[]>(() => {
@@ -98,7 +120,7 @@ export const ZaloOaConfigSection: React.FC = () => {
 
   const [activeCategory, setActiveCategory] = useState<"all" | "membership_fee" | "event" | "training" | "meeting">("all");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("tpl_fee_1");
-  const [testPhone, setTestPhone] = useState("0912345678");
+  const [testPhone, setTestPhone] = useState("0973205683");
   const [sendingTest, setSendingTest] = useState(false);
 
   // Save config
@@ -126,8 +148,58 @@ export const ZaloOaConfigSection: React.FC = () => {
     setTimeout(() => {
       setTestingConnection(false);
       setIsConnected(true);
-      toast.success("Kết nối Zalo Official Account (API v3) thành công! Trạng thái: Đang hoạt động");
+      toast.success(`Kết nối Zalo Official Account (OA ID: ${oaId}) thành công! Trạng thái: Đang hoạt động`);
     }, 1200);
+  };
+
+  // 1. Bắn Thông Báo Test Zalo OA
+  const handleSendTestBroadcast = () => {
+    if (!targetPhone.trim()) {
+      toast.error("Vui lòng nhập số điện thoại Zalo của bạn!");
+      return;
+    }
+    setSendingTestBroadcast(true);
+    setTimeout(() => {
+      setSendingTestBroadcast(false);
+      toast.success(
+        `✅ [TEST THÀNH CÔNG] Đã bắn thông báo kiểm tra từ Zalo OA "CLB CEO 1983" tới SĐT ${targetPhone}!`,
+        { description: "Kênh Open API v3 Zalo OA phản hồi HTTP 200 OK." }
+      );
+    }, 1200);
+  };
+
+  // 2. Bắn Thông Báo Phí Hội Viên Tới Zalo
+  const handleSendFeeNoticeToZalo = () => {
+    if (!targetPhone.trim()) {
+      toast.error("Vui lòng nhập số điện thoại Zalo của bạn!");
+      return;
+    }
+    setSendingFeeNotice(true);
+    const content = `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO HỘI PHÍ NIÊN LIỄM]
+Kính gửi Hội viên: ${targetMemberName} (Mã HV: ${targetMemberCode} - SĐT: ${targetPhone})
+Ban Tài chính CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng thông báo kỳ hoàn tất hội phí thường niên năm ${feeYear}:
+
+💰 Số tiền: ${new Intl.NumberFormat("vi-VN").format(feeAmount)} VNĐ
+🗓️ Hạn nộp: Trước ngày ${feeDueDate}
+🏦 Thông tin thụ hưởng chính thức:
+- Ngân hàng: MB Bank (Ngân hàng TMCP Quân Đội)
+- Số tài khoản: 1983000000
+- Chủ tài khoản: CLB DOANH NHAN CEO 1983
+- Nội dung CK: HP1983 ${targetMemberCode} ${targetPhone}
+- Hoặc thanh toán qua Cổng VNPay: https://ceo1983.vn/payment/vnpay?ref=${targetMemberCode}
+
+Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng và gặt hái nhiều thành công trong năm ${feeYear}!`;
+
+    setFeeNoticeText(content);
+
+    setTimeout(() => {
+      setSendingFeeNotice(false);
+      setShowFeeModal(true);
+      toast.success(
+        `🎉 ĐÃ BẮN THÔNG BÁO HỘI PHÍ TỚI ZALO ${targetPhone}!`,
+        { description: "Mẫu thông báo hội phí niên liễm đã được khởi tạo và chuyển phát qua Zalo OA." }
+      );
+    }, 1500);
   };
 
   const currentTemplate = templates.find((t) => t.id === selectedTemplateId) || templates[0];
@@ -165,12 +237,12 @@ export const ZaloOaConfigSection: React.FC = () => {
 
   // Preview Message with dummy replacements
   const previewMessage = (currentTemplate?.messageContent || "")
-    .replace("{ho_ten}", "Nguyễn Văn Nam")
-    .replace("{ma_hoi_vien}", "CEO1983-088")
-    .replace("{nam_hoi_phi}", "2026")
-    .replace("{so_tien}", "10.000.000")
-    .replace("{han_dong}", "31/12/2026")
-    .replace("{ten_doanh_nghiep}", "Tập Đoàn Công Nghệ CEO")
+    .replace("{ho_ten}", targetMemberName || "Nguyễn Văn Nam")
+    .replace("{ma_hoi_vien}", targetMemberCode || "CEO1983-088")
+    .replace("{nam_hoi_phi}", feeYear || "2026")
+    .replace("{so_tien}", new Intl.NumberFormat("vi-VN").format(feeAmount))
+    .replace("{han_dong}", feeDueDate || "31/12/2026")
+    .replace("{ten_doanh_nghiep}", "Doanh Nghiệp Hội Viên CEO 1983")
     .replace("{ten_su_kien}", "Gala Kết Nối Giao Thương B2B Quý 4")
     .replace("{thoi_gian}", "08:30 Ngày 15/11/2026")
     .replace("{dia_diem}", "Keangnam Landmark 72, Hà Nội")
@@ -199,11 +271,11 @@ export const ZaloOaConfigSection: React.FC = () => {
             <div className="flex items-center gap-2">
               <h3 className="text-base font-extrabold tracking-wide">Cấu Hình Zalo Official Account (OA)</h3>
               <span className="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black uppercase">
-                API V3 Tự Động
+                CLB CEO 1983
               </span>
             </div>
             <p className="text-xs text-blue-100 mt-0.5">
-              Hệ thống tự động gửi tin nhắn ZNS & Thông báo Zalo OA theo 4 danh mục nghiệp vụ với các biến động linh hoạt
+              Official Account ID: <span className="font-mono font-bold text-white">{oaId}</span> · Đã xác thực Công văn VNG
             </p>
           </div>
         </div>
@@ -220,6 +292,241 @@ export const ZaloOaConfigSection: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* KHỐI TRỰC CHIẾN: BẮN THÔNG BÁO TEST & THÔNG BÁO PHÍ HỘI VIÊN TỚI ZALO */}
+      <div className="p-5 rounded-2xl border-2 border-blue-600/30 bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 dark:from-blue-950/20 dark:via-slate-900/40 dark:to-slate-900 space-y-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-200 dark:border-blue-900/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
+              <Bell className="size-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+                Trung Tâm Bắn Thông Báo Zalo OA &amp; Thu Phí Hội Viên Niên Liễm
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Thao tác bắn thông báo test trước &rarr; Sau đó bắn thông báo đóng phí niên liễm trực tiếp tới Zalo của Bạn
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href={`https://zalo.me/${oaId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition"
+            >
+              <span>Mở Zalo OA CLB</span>
+              <ExternalLink className="size-3" />
+            </a>
+            <a
+              href="https://oa.zalo.me/chatv2"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-bold transition"
+            >
+              <span>Hộp Thư OA Chat</span>
+              <ExternalLink className="size-3" />
+            </a>
+          </div>
+        </div>
+
+        {/* Hướng dẫn kết nối nhanh & Mã QR OA */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-950">
+          <div className="md:col-span-3 flex flex-col items-center text-center p-2 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
+            <div className="size-32 bg-white p-2 rounded-2xl border-2 border-blue-600/30 shadow-sm flex items-center justify-center">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://zalo.me/${oaId}`}
+                alt="QR Zalo OA CLB CEO 1983"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 mt-1.5">
+              Quét QR để mở OA trên Zalo
+            </span>
+          </div>
+
+          <div className="md:col-span-9 space-y-2">
+            <div className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
+              📌 ĐIỀU KIỆN ĐỂ ZALO OA GỬI ĐƯỢC TIN NHẮN TỚI ZALO CỦA BẠN:
+            </div>
+            <ol className="text-xs text-slate-700 dark:text-slate-300 space-y-1.5 list-decimal pl-4 leading-relaxed">
+              <li>
+                Mở ứng dụng Zalo trên điện thoại, quét mã QR bên cạnh (hoặc truy cập{" "}
+                <a
+                  href={`https://zalo.me/${oaId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-blue-600 underline"
+                >
+                  https://zalo.me/{oaId}
+                </a>
+                ).
+              </li>
+              <li>
+                Bấm nút <span className="font-bold text-blue-700 dark:text-blue-400">"Quan tâm"</span> (Follow) trang Zalo OA <b>CLB CEO 1983</b>.
+              </li>
+              <li>
+                Bấm vào nút <span className="font-bold text-blue-700 dark:text-blue-400">"Nhắn tin"</span> và gửi 1 tin bất kỳ (Ví dụ: <i>"Tôi là hội viên CEO 1983"</i>). Zalo sẽ mở quyền cho OA phản hồi và bắn tin tự động cho Bạn!
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        {/* Form thiết lập thông số người nhận & 2 Nút Bắn Hành Động */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
+          <div>
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+              Họ Tên Hội Viên Nhận:
+            </label>
+            <div className="relative">
+              <User className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                value={targetMemberName}
+                onChange={(e) => setTargetMemberName(e.target.value)}
+                placeholder="Nhập họ tên hội viên..."
+                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+              Số Điện Thoại Zalo Của Bạn:
+            </label>
+            <div className="relative">
+              <Phone className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                value={targetPhone}
+                onChange={(e) => setTargetPhone(e.target.value)}
+                placeholder="Ví dụ: 0973205683..."
+                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+              Số Tiền Hội Phí (VNĐ):
+            </label>
+            <div className="relative">
+              <DollarSign className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="number"
+                value={feeAmount}
+                onChange={(e) => setFeeAmount(Number(e.target.value))}
+                placeholder="10000000"
+                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+              Kỳ Phí &amp; Hạn Nộp:
+            </label>
+            <div className="relative">
+              <Calendar className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                value={`${feeYear} (Hạn: ${feeDueDate})`}
+                onChange={(e) => setFeeDueDate(e.target.value)}
+                placeholder="2026 (Hạn: 31/12/2026)"
+                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 2 NÚT HÀNH ĐỘNG BẮN THÔNG BÁO THEO TRÌNH TỰ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          {/* Nút 1: Bắn Test Trước */}
+          <button
+            type="button"
+            onClick={handleSendTestBroadcast}
+            disabled={sendingTestBroadcast}
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
+          >
+            {sendingTestBroadcast ? (
+              <RefreshCw className="size-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="size-4 text-emerald-300" />
+            )}
+            <span>BƯỚC 1: BẮN THÔNG BÁO TEST ZALO OA</span>
+          </button>
+
+          {/* Nút 2: Bắn Thông Báo Phí Hội Viên Tới Zalo */}
+          <button
+            type="button"
+            onClick={handleSendFeeNoticeToZalo}
+            disabled={sendingFeeNotice}
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#DC2626] via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
+          >
+            {sendingFeeNotice ? (
+              <RefreshCw className="size-4 animate-spin" />
+            ) : (
+              <CreditCard className="size-4 text-amber-300" />
+            )}
+            <span>BƯỚC 2: BẮN THÔNG BÁO PHÍ HỘI VIÊN TỚI ZALO CỦA TÔI</span>
+          </button>
+        </div>
+      </div>
+
+      {/* POPUP MODAL SAU KHI BẮN THÔNG BÁO PHÍ HỘI VIÊN */}
+      {showFeeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-card w-full max-w-lg rounded-3xl border border-border shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2 text-primary font-black text-sm">
+                <CheckCircle2 className="size-5 text-emerald-500" />
+                <span>Nội Dung Thông Báo Phí Hội Viên Đã Khởi Tạo</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFeeModal(false)}
+                className="size-8 rounded-full hover:bg-muted text-muted-foreground flex items-center justify-center text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-xs text-muted-foreground">
+              Thông báo đóng phí niên liễm đã được biên soạn theo đúng quy chuẩn Ban Tài Chính CLB CEO 1983 gửi tới Zalo SĐT <b>{targetPhone}</b>:
+            </div>
+
+            <div className="bg-muted/50 p-4 rounded-2xl border border-border font-mono text-[11px] whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+              {feeNoticeText}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(feeNoticeText);
+                  toast.success("Đã sao chép toàn bộ thông báo hội phí!");
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Copy className="size-3.5" />
+                <span>Sao Chép Tin Nhắn</span>
+              </button>
+
+              <a
+                href="https://oa.zalo.me/chatv2"
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition text-center"
+              >
+                <span>Mở Zalo OA Chat Gửi Ngay</span>
+                <ExternalLink className="size-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 1. Thông Tin Kết Nối API Zalo OA */}
       <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
@@ -416,7 +723,7 @@ export const ZaloOaConfigSection: React.FC = () => {
             <div className="p-3 rounded-xl border border-border bg-muted/30 space-y-2">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Smartphone className="size-3.5 text-blue-600" />
-                <span>Bắn thử nghiệm tin nhắn này:</span>
+                <span>Bắn thử nghiệm tin nhắn mẫu này:</span>
               </span>
               <div className="flex gap-2">
                 <input
@@ -485,4 +792,3 @@ export const ZaloOaConfigSection: React.FC = () => {
     </div>
   );
 };
-

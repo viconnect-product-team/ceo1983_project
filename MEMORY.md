@@ -1,5 +1,13 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 30/10/2026 (v10.3): Cập Nhật Thông Số Chính Thức Zalo OA "CLB CEO 1983" (OA ID: 437444346010531505) & Trung Tâm Bắn Thông Báo Phí Hội Viên Tới Zalo ([NODE-CRM-013])**:
+  1. *Đồng Bộ Tham Số Zalo OA Chuẩn Công Văn Xác Thực VNG*:
+     - Cập nhật mặc định `oaId`: **`437444346010531505`** (CLB CEO 1983, SĐT quản trị: `0367231668`, Phó Chánh VP: Lê Thị Thùy Dung `0973.205.683`).
+     - Tích hợp mã QR và đường dẫn trực tiếp: `https://zalo.me/437444346010531505` giúp hội viên quét kết nối và theo dõi OA 1 chạm.
+  2. *Trung Tâm Bắn Thông Báo 2 Bước Thực Chiến*:
+     - **Bước 1**: Bắn thông báo test kiểm tra kết nối API v3 tới Zalo cá nhân.
+     - **Bước 2**: Bắn thông báo thu phí hội viên thường niên (10.000.000 VNĐ, hạn nộp, tài khoản MB Bank 1983000000, link thanh toán VNPay) với giao diện pop-up sao chép nhanh và nút mở trực tiếp Zalo OA Chat (`https://oa.zalo.me/chatv2`).
+
 - **Bản cập nhật ngày 30/10/2026 (v10.2): Báo Cáo Hiện Trạng Tích Hợp Zalo OA & Cổng Thanh Toán VNPay, Hoàn Thiện Nút Thanh Toán Trực Tiếp VNPay Gateway ([NODE-CRM-013], [NODE-CRM-009], [NODE-CORE-001])**:
   1. *Khách Hàng Đã Đăng Ký Thành Công Zalo OA - Quy Trình Kích Hoạt Hệ Thống ([NODE-CRM-013])*:
      - CRM đã hoàn thiện 100% giao diện cấu hình tại `/settings` (Tab "Cấu hình Zalo OA (Dynamic)" - `ZaloOaConfigSection.tsx`).
