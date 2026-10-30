@@ -72,7 +72,7 @@ function SettingsPage() {
         setTwoFA(s.twoFa);
         setLang(s.lang);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       active = false;
     };
@@ -121,11 +121,10 @@ function SettingsPage() {
                 <button
                   key={tt.key}
                   onClick={() => setTab(tt.key)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-                    active
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${active
                       ? "bg-secondary font-semibold text-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   {t(tt.label as TKey)}
@@ -261,11 +260,10 @@ function SettingsPage() {
                 >
                   <span className="text-sm font-medium text-foreground">{i.name}</span>
                   <button
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                      i.connected
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${i.connected
                         ? "border border-border bg-background text-foreground hover:bg-muted"
                         : "text-primary-foreground shadow-[var(--shadow-glow)]"
-                    }`}
+                      }`}
                     style={i.connected ? undefined : { background: "var(--gradient-primary)" }}
                   >
                     {i.connected ? t("common.disconnect") : t("common.connect")}
