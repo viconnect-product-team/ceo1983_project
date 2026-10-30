@@ -1,5 +1,28 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 30/10/2026 (v10.7): Khắc Phục Triệt Để Lỗi Hydration Mismatch React Error #418 Tại Trang Cài Đặt Settings & ThemeProvider SSR ([NODE-CRM-010], [NODE-CORE-001])**:
+  1. *Nguyên Nhân Lỗi React Error #418 (Hydration Failed Tag HTML)*:
+     - Xung đột theme mặc định: `__root.tsx` thiết lập SSR `<html className="dark" data-theme="dark">`, nhưng `readInitial()` trong `theme.tsx` lại fallback về `"light"`.
+     - Vi phạm render SSR: `ThemeProvider` gọi trực tiếp `applyTheme(initial)` bên trong `useState` initializer, làm biến đổi DOM `<html>` (xóa class `.dark`) ngay trong pha hydrate của React.
+     - Khởi tạo `useState` trực tiếp từ `localStorage`: Tại `settings.tsx`, `ZaloOaConfigSection.tsx` và `VNPayConfigSection.tsx`, việc đọc `localStorage` trong hàm khởi tạo state khiến HTML render trên server khác với client DOM.
+  2. *Giải Pháp Chuẩn Hóa Kiến Trúc*:
+     - Đồng bộ theme mặc định toàn hệ thống là `"dark"`.
+     - Chuyển `applyTheme(initial)` và việc đọc `localStorage` sang `useEffect` (chạy sau khi React hoàn tất hydrate).
+     - Khởi tạo giá trị state mặc định đồng nhất trên cả SSR và Client cho `settings.tsx`, `ZaloOaConfigSection.tsx`, `VNPayConfigSection.tsx`.
+     - Triệt tiêu 100% lỗi hydration mismatch `Minified React error #418`.
+
+- **Bản cập nhật ngày 30/10/2026 (v10.6): Nâng Cấp Trung Tâm Chiến Dịch Bắn Thông Báo Hàng Loạt (Bulk Broadcast Campaign) Cho Toàn Thể Hội Viên CLB ([NODE-CRM-013], [NODE-CORE-001])**:
+  1. *Giải Pháp Gửi Tin Hàng Loạt Cho Nhiều Hội Viên*:
+     - Giải quyết câu hỏi vận hành thực tế của CLB: Không chỉ dừng lại ở gửi test đơn 1-1, hệ thống đã trang bị hoàn chỉnh cơ chế bắn chiến dịch hàng loạt (Bulk Campaign) cho 100+ hội viên cùng lúc.
+     - Phân loại rõ 2 giải pháp công nghệ:
+       + **ZNS (Zalo Notification Service)**: Gửi tin thông báo chính thức theo danh sách Số Điện Thoại hội viên (không yêu cầu hội viên phải chat trước với OA).
+       + **Bulk Queue API (NestJS Server)**: Tiếp nhận danh sách nhiều hội viên, tự động thay thế biến động ({ho_ten}, {ma_hoi_vien}, {so_tien}, {so_dien_thoai}), xếp hàng đợi gửi tuần tự (delay 250ms) để chống chặn rate-limit từ Zalo.
+  2. *Web CRM - Giao Diện Chiến Dịch Hàng Loạt (Bulk Broadcast Center)*:
+     - Thêm thanh chuyển đổi 2 chế độ: **Gửi Cá Nhân 1-1** (để test) & **Chiến Dịch Hàng Loạt (Bulk Campaign)**.
+     - Bộ lọc nhóm hội viên thông minh: Tất Cả Hội Viên, Hội Viên Chưa Đóng Niên Liễm 2026, Thành Viên Ban Điều Hành & Ban Thư Ký.
+     - Bảng danh sách hội viên tích hợp Checkbox chọn tất cả / bỏ chọn từng người, hiển thị rõ Tên, SĐT, Doanh nghiệp, Mã HV, Tình trạng niên liễm.
+     - Thanh tiến trình phát thông báo real-time và Bảng báo cáo kết quả chi tiết (Tổng số, Thành công, Thất bại kèm lý do).
+
 - **Bản cập nhật ngày 30/10/2026 (v10.5): Thiết Lập Hoàn Thiện Cổng Thanh Toán Quốc Gia VNPay Gateway HMAC-SHA512 & Quy Chuẩn Đăng Ký Tài Khoản ([NODE-CRM-009], [NODE-CORE-001], [NODE-APP-004])**:
   1. *Backend NestJS Payment Module (Mã Hóa HMAC-SHA512 Chuẩn VNPay v2.1.0)*:
      - Tạo mới PaymentModule, PaymentController, PaymentService tại apps/ceo1983_app_be/src/payment:

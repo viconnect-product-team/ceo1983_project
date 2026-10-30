@@ -23,24 +23,26 @@ function applyTheme(theme: Theme) {
 }
 
 function readInitial(): Theme {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "dark" || saved === "light") return saved;
   } catch {
     /* ignore */
   }
-  return "light";
+  return "dark";
 }
 
 const ORDER: Theme[] = ["light", "dark"];
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
+  const [theme, setThemeState] = useState<Theme>("dark");
+
+  useEffect(() => {
     const initial = readInitial();
+    setThemeState(initial);
     applyTheme(initial);
-    return initial;
-  });
+  }, []);
 
   const setTheme = (t: Theme) => {
     setThemeState(t);

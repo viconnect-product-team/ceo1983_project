@@ -43,15 +43,17 @@ const DEFAULT_VNPAY_CONFIG: VNPayConfig = {
 };
 
 export const VNPayConfigSection: React.FC = () => {
-  const [config, setConfig] = useState<VNPayConfig>(() => {
-    if (typeof window === "undefined") return DEFAULT_VNPAY_CONFIG;
+  const [config, setConfig] = useState<VNPayConfig>(DEFAULT_VNPAY_CONFIG);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     try {
       const stored = localStorage.getItem("vba_vnpay_config");
-      return stored ? JSON.parse(stored) : DEFAULT_VNPAY_CONFIG;
+      if (stored) setConfig(JSON.parse(stored));
     } catch {
-      return DEFAULT_VNPAY_CONFIG;
+      /* ignore */
     }
-  });
+  }, []);
 
   const [testAmount, setTestAmount] = useState(1000000);
   const [testOrderInfo, setTestOrderInfo] = useState("CEO 1983 - Đóng hội phí thường niên");

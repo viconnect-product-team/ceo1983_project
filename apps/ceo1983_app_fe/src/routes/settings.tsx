@@ -43,12 +43,7 @@ function SettingsPage() {
   const t = useT();
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("general");
   const { lang, setLang } = useLang();
-  const [orgName, setOrgName] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("vba_active_assoc_name") || localStorage.getItem("crm_system_name") || "CLB Doanh Nhân CEO 1983";
-    }
-    return "CLB Doanh Nhân CEO 1983";
-  });
+  const [orgName, setOrgName] = useState("CLB Doanh Nhân CEO 1983");
   const [email, setEmail] = useState("contact@ceo1983.vn");
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(false);
@@ -57,6 +52,13 @@ function SettingsPage() {
 
   const loadSettings = useServerFn(getSettingsFn);
   const persistSettings = useServerFn(saveSettingsFn);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("vba_active_assoc_name") || localStorage.getItem("crm_system_name");
+      if (stored) setOrgName(stored);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;

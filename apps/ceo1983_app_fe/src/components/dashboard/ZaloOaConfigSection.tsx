@@ -26,6 +26,10 @@ import {
   KeyRound,
   RotateCw,
   ClipboardPaste,
+  Users,
+  CheckSquare,
+  Square,
+  ListFilter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getNestApiUrl } from "@/lib/api-client";
@@ -88,46 +92,117 @@ const DEFAULT_TEMPLATES: ZaloOaTemplate[] = [
   },
 ];
 
+export interface BulkMember {
+  id: string;
+  name: string;
+  phone: string;
+  memberCode: string;
+  company: string;
+  feeStatus: "unpaid" | "paid";
+  role: "member" | "board" | "executive";
+  userId?: string;
+}
+
+const DEFAULT_BULK_MEMBERS: BulkMember[] = [
+  {
+    id: "m_1",
+    name: "Phạm Văn Vũ",
+    phone: "0973924819",
+    memberCode: "CEO1983-088",
+    company: "Viconnect Digital Tech",
+    feeStatus: "unpaid",
+    role: "member",
+  },
+  {
+    id: "m_2",
+    name: "Lê Thị Thùy Dung",
+    phone: "0973205683",
+    memberCode: "CEO1983-002",
+    company: "Thuận Nhiên Foods Organic",
+    feeStatus: "paid",
+    role: "board",
+  },
+  {
+    id: "m_3",
+    name: "Chung Hoàng",
+    phone: "0367231668",
+    memberCode: "CEO1983-001",
+    company: "Chung Hoàng Media & Entertainment",
+    feeStatus: "paid",
+    role: "executive",
+  },
+  {
+    id: "m_4",
+    name: "Nguyễn Văn Nam",
+    phone: "0912345678",
+    memberCode: "CEO1983-015",
+    company: "Bất Động Sản & Xây Dựng Thủ Đô",
+    feeStatus: "unpaid",
+    role: "member",
+  },
+  {
+    id: "m_5",
+    name: "Trần Bích Ngọc",
+    phone: "0987654321",
+    memberCode: "CEO1983-022",
+    company: "Dược Phẩm Quốc Tế BioTech",
+    feeStatus: "unpaid",
+    role: "member",
+  },
+  {
+    id: "m_6",
+    name: "Hoàng Tuấn Anh",
+    phone: "0905123456",
+    memberCode: "CEO1983-045",
+    company: "Cơ Khí Chính Xác & Tự Động Hóa",
+    feeStatus: "unpaid",
+    role: "member",
+  },
+  {
+    id: "m_7",
+    name: "Vũ Hải Yến",
+    phone: "0934567890",
+    memberCode: "CEO1983-067",
+    company: "Thời Trang & May Mặc Xuất Khẩu",
+    feeStatus: "unpaid",
+    role: "member",
+  },
+  {
+    id: "m_8",
+    name: "Đỗ Mạnh Hùng",
+    phone: "0945678901",
+    memberCode: "CEO1983-099",
+    company: "Vận Tải Quốc Tế & Logistics",
+    feeStatus: "paid",
+    role: "board",
+  },
+  {
+    id: "m_9",
+    name: "Phạm Phương Thảo",
+    phone: "0967890123",
+    memberCode: "CEO1983-112",
+    company: "Chuỗi Nhà Hàng & Ẩm Thực Hà Nội",
+    feeStatus: "unpaid",
+    role: "member",
+  },
+  {
+    id: "m_10",
+    name: "Bùi Quốc Toàn",
+    phone: "0923456789",
+    memberCode: "CEO1983-125",
+    company: "Thiết Kế Nội Thất & Kiến Trúc",
+    feeStatus: "paid",
+    role: "member",
+  },
+];
+
 export const ZaloOaConfigSection: React.FC = () => {
   // Official Account ID, App ID & Secret Key (Dynamic 100% từ localStorage hoặc mặc định CLB CEO 1983)
-  const [oaId, setOaId] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("vba_zalo_oa_id");
-      if (stored) return stored;
-    }
-    return "437444346010531505";
-  });
-
-  const [appId, setAppId] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("vba_zalo_app_id");
-      if (stored) return stored;
-    }
-    return "736933908446960497";
-  });
-
-  const [secretKey, setSecretKey] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("vba_zalo_secret_key");
-      if (stored) return stored;
-    }
-    return "f42YHsjU1Ku9UcK7IxZQ";
-  });
-
-  // Dynamic Access Token & Refresh Token (Không bao giờ cần sửa hay push lại code)
-  const [accessToken, setAccessToken] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("vba_zalo_access_token") || "";
-    }
-    return "";
-  });
-
-  const [refreshToken, setRefreshToken] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("vba_zalo_refresh_token") || "";
-    }
-    return "";
-  });
+  const [oaId, setOaId] = useState("437444346010531505");
+  const [appId, setAppId] = useState("736933908446960497");
+  const [secretKey, setSecretKey] = useState("f42YHsjU1Ku9UcK7IxZQ");
+  const [accessToken, setAccessToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
 
   const [webhookUrl, setWebhookUrl] = useState("https://api.ceo1983.vn/zalo/webhook");
   const [isConnected, setIsConnected] = useState(true);
@@ -157,16 +232,45 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [loadingChats, setLoadingChats] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
 
+  // Chế độ gửi: Bắn đơn cá nhân 1-1 vs Chiến dịch bắn hàng loạt (Bulk Campaign)
+  const [broadcastMode, setBroadcastMode] = useState<"single_test" | "bulk_campaign">("single_test");
+  const [bulkFilter, setBulkFilter] = useState<"all" | "unpaid_fee" | "board">("unpaid_fee");
+  const [bulkMembers, setBulkMembers] = useState<BulkMember[]>(DEFAULT_BULK_MEMBERS);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>(() =>
+    DEFAULT_BULK_MEMBERS.filter((m) => m.feeStatus === "unpaid").map((m) => m.id)
+  );
+  const [isSendingBulk, setIsSendingBulk] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, percentage: 0 });
+  const [bulkResults, setBulkResults] = useState<{
+    total: number;
+    successCount: number;
+    failedCount: number;
+    results: any[];
+  } | null>(null);
+  const [showBulkResultModal, setShowBulkResultModal] = useState(false);
+
   // Template Management
-  const [templates, setTemplates] = useState<ZaloOaTemplate[]>(() => {
-    if (typeof window === "undefined") return DEFAULT_TEMPLATES;
+  const [templates, setTemplates] = useState<ZaloOaTemplate[]>(DEFAULT_TEMPLATES);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedOaId = localStorage.getItem("vba_zalo_oa_id");
+    if (storedOaId) setOaId(storedOaId);
+    const storedAppId = localStorage.getItem("vba_zalo_app_id");
+    if (storedAppId) setAppId(storedAppId);
+    const storedSecret = localStorage.getItem("vba_zalo_secret_key");
+    if (storedSecret) setSecretKey(storedSecret);
+    const storedAccess = localStorage.getItem("vba_zalo_access_token");
+    if (storedAccess) setAccessToken(storedAccess);
+    const storedRefresh = localStorage.getItem("vba_zalo_refresh_token");
+    if (storedRefresh) setRefreshToken(storedRefresh);
     try {
       const stored = localStorage.getItem("vba_zalo_oa_templates");
-      return stored ? JSON.parse(stored) : DEFAULT_TEMPLATES;
+      if (stored) setTemplates(JSON.parse(stored));
     } catch {
-      return DEFAULT_TEMPLATES;
+      /* ignore */
     }
-  });
+  }, []);
 
   const [activeCategory, setActiveCategory] = useState<"all" | "membership_fee" | "event" | "training" | "meeting">("all");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("tpl_fee_1");
@@ -377,6 +481,76 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
     }
   };
 
+  // 3. Khởi chạy chiến dịch bắn thông báo Zalo OA / ZNS hàng loạt cho nhiều hội viên
+  const handleExecuteBulkCampaign = async () => {
+    if (!accessToken.trim()) {
+      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
+      return;
+    }
+    const selectedMembers = bulkMembers.filter((m) => selectedMemberIds.includes(m.id));
+    if (selectedMembers.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 hội viên để gửi chiến dịch!");
+      return;
+    }
+
+    setIsSendingBulk(true);
+    setBulkProgress({ current: 0, total: selectedMembers.length, percentage: 0 });
+    setBulkResults(null);
+
+    const messageTemplate = `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO HỘI PHÍ NIÊN LIỄM]
+Kính gửi Hội viên: {ho_ten} (Mã HV: {ma_hoi_vien} - SĐT: {so_dien_thoai})
+Ban Tài chính CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng thông báo kỳ hoàn tất hội phí thường niên năm ${feeYear}:
+
+💰 Số tiền: ${new Intl.NumberFormat("vi-VN").format(feeAmount)} VNĐ
+🗓️ Hạn nộp: Trước ngày ${feeDueDate}
+🏦 Thông tin thụ hưởng chính thức:
+- Ngân hàng: MB Bank (Ngân hàng TMCP Quân Đội)
+- Số tài khoản: 1983000000
+- Chủ tài khoản: CLB DOANH NHAN CEO 1983
+- Nội dung CK: HP1983 {ma_hoi_vien} {so_dien_thoai}
+- Hoặc thanh toán qua Cổng VNPay: https://ceo1983.vn/payment/vnpay?ref={ma_hoi_vien}
+
+Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh vượng!`;
+
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/send-bulk"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accessToken: accessToken.trim(),
+          recipients: selectedMembers.map((m) => ({
+            userId: m.userId,
+            phone: m.phone,
+            name: m.name,
+            memberCode: m.memberCode,
+            feeAmount: feeAmount,
+            company: m.company,
+          })),
+          messageTemplate,
+          delayMs: 250,
+        }),
+      });
+
+      const data = await res.json();
+      if (data && data.success) {
+        setBulkResults({
+          total: data.total,
+          successCount: data.successCount,
+          failedCount: data.failedCount,
+          results: data.results || [],
+        });
+        setShowBulkResultModal(true);
+        toast.success(`🎉 Chiến dịch hoàn tất: ${data.successCount}/${data.total} hội viên đã nhận thông báo!`);
+      } else {
+        toast.error(`Chiến dịch thất bại: ${data?.message || "Lỗi xử lý"}`);
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi hệ thống: ${err.message}`);
+    } finally {
+      setIsSendingBulk(false);
+    }
+  };
+
   const currentTemplate = templates.find((t) => t.id === selectedTemplateId) || templates[0];
 
   const handleUpdateTemplateContent = (newContent: string) => {
@@ -485,28 +659,52 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Chuyển đổi 2 chế độ: Đơn 1-1 vs Hàng Loạt Bulk */}
+            <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-2xl border border-blue-200 dark:border-blue-900 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setBroadcastMode("single_test")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  broadcastMode === "single_test"
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <User className="size-3.5" />
+                <span>Gửi Cá Nhân 1-1</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBroadcastMode("bulk_campaign")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  broadcastMode === "bulk_campaign"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <Users className="size-3.5" />
+                <span>Chiến Dịch Hàng Loạt ({selectedMemberIds.length})</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[9px] font-black">
+                  PRO
+                </span>
+              </button>
+            </div>
+
             <a
               href={`https://zalo.me/${oaId}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition"
             >
-              <span>Mở Zalo OA CLB</span>
-              <ExternalLink className="size-3" />
-            </a>
-            <a
-              href="https://oa.zalo.me/chatv2"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-bold transition"
-            >
-              <span>Hộp Thư OA Chat</span>
+              <span>Mở Zalo OA</span>
               <ExternalLink className="size-3" />
             </a>
           </div>
         </div>
 
+        {broadcastMode === "single_test" ? (
+          <>
         {/* Hướng dẫn kết nối nhanh & Mã QR OA */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-950">
           <div className="md:col-span-3 flex flex-col items-center text-center p-2 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
@@ -729,6 +927,203 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
             <span>BƯỚC 2: BẮN THÔNG BÁO PHÍ HỘI VIÊN TỚI ZALO CỦA TÔI</span>
           </button>
         </div>
+        </>
+      ) : (
+        /* KHỐI CHIẾN DỊCH BẮN THÔNG BÁO HÀNG LOẠT (BULK CAMPAIGN) */
+        <div className="space-y-4 animate-in fade-in">
+          {/* Bộ Lọc Nhóm Hội Viên & Hành Động Chọn Tất Cả */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-blue-100 dark:border-blue-950">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-black text-slate-800 dark:text-slate-200 mr-2 flex items-center gap-1">
+                <ListFilter className="size-3.5 text-blue-600" />
+                <span>Nhóm Hội Viên Nhận:</span>
+              </span>
+              {[
+                { key: "all", label: `Tất Cả (${bulkMembers.length})` },
+                {
+                  key: "unpaid_fee",
+                  label: `Chưa Đóng Niên Liễm (${bulkMembers.filter((m) => m.feeStatus === "unpaid").length})`,
+                },
+                {
+                  key: "board",
+                  label: `Ban Điều Hành (${bulkMembers.filter((m) => m.role !== "member").length})`,
+                },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => {
+                    setBulkFilter(item.key as any);
+                    let filtered = bulkMembers;
+                    if (item.key === "unpaid_fee") filtered = bulkMembers.filter((m) => m.feeStatus === "unpaid");
+                    if (item.key === "board") filtered = bulkMembers.filter((m) => m.role !== "member");
+                    setSelectedMemberIds(filtered.map((m) => m.id));
+                  }}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    bulkFilter === item.key
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedMemberIds.length === bulkMembers.length) {
+                    setSelectedMemberIds([]);
+                  } else {
+                    setSelectedMemberIds(bulkMembers.map((m) => m.id));
+                  }
+                }}
+                className="text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                {selectedMemberIds.length === bulkMembers.length ? (
+                  <>
+                    <Square className="size-3.5" />
+                    <span>Bỏ chọn tất cả</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="size-3.5" />
+                    <span>Chọn tất cả ({bulkMembers.length})</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Bảng Danh Sách Hội Viên Được Chọn Gửi Chiến Dịch */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-blue-100 dark:border-blue-950 overflow-hidden shadow-xs">
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold sticky top-0 border-b border-slate-200 dark:border-slate-800 z-10">
+                  <tr>
+                    <th className="p-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedMemberIds.length > 0 && selectedMemberIds.length === bulkMembers.length}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedMemberIds(bulkMembers.map((m) => m.id));
+                          else setSelectedMemberIds([]);
+                        }}
+                        className="size-4 rounded text-blue-600 cursor-pointer"
+                      />
+                    </th>
+                    <th className="p-3">Hội Viên</th>
+                    <th className="p-3">Mã HV</th>
+                    <th className="p-3">Số Điện Thoại</th>
+                    <th className="p-3">Doanh Nghiệp</th>
+                    <th className="p-3 text-center">Niên Liễm 2026</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                  {bulkMembers.map((m) => {
+                    const isSelected = selectedMemberIds.includes(m.id);
+                    return (
+                      <tr
+                        key={m.id}
+                        onClick={() => {
+                          if (isSelected) setSelectedMemberIds((prev) => prev.filter((id) => id !== m.id));
+                          else setSelectedMemberIds((prev) => [...prev, m.id]);
+                        }}
+                        className={`hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition cursor-pointer ${
+                          isSelected ? "bg-blue-50/30 dark:bg-blue-950/20" : ""
+                        }`}
+                      >
+                        <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedMemberIds((prev) => [...prev, m.id]);
+                              else setSelectedMemberIds((prev) => prev.filter((id) => id !== m.id));
+                            }}
+                            className="size-4 rounded text-blue-600 cursor-pointer"
+                          />
+                        </td>
+                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          <div className="size-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px]">
+                            {m.name.charAt(0)}
+                          </div>
+                          <span>{m.name}</span>
+                          {m.role !== "member" && (
+                            <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 text-[9px] font-extrabold uppercase">
+                              BĐH
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 font-mono text-[11px] text-slate-600 dark:text-slate-400 font-bold">
+                          {m.memberCode}
+                        </td>
+                        <td className="p-3 font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                          {m.phone}
+                        </td>
+                        <td className="p-3 text-slate-700 dark:text-slate-300 text-[11px] truncate max-w-[180px]">
+                          {m.company}
+                        </td>
+                        <td className="p-3 text-center">
+                          {m.feeStatus === "unpaid" ? (
+                            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 text-[10px] font-bold">
+                              Chưa đóng
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
+                              Đã nộp
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Thanh Tiến Trình Gửi Hàng Loạt */}
+          {isSendingBulk && (
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
+                <span className="flex items-center gap-1.5">
+                  <RefreshCw className="size-3.5 animate-spin" />
+                  <span>Đang phát thông báo Zalo OA theo hàng đợi...</span>
+                </span>
+                <span>Đang xử lý chiến dịch</span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full w-full animate-pulse" />
+              </div>
+            </div>
+          )}
+
+          {/* NÚT KHỞI CHẠY CHIẾN DỊCH BẮN HÀNG LOẠT */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={handleExecuteBulkCampaign}
+              disabled={isSendingBulk || selectedMemberIds.length === 0}
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#DC2626] via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-red-900/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+            >
+              {isSendingBulk ? (
+                <RefreshCw className="size-5 animate-spin" />
+              ) : (
+                <Sparkles className="size-5 text-amber-300" />
+              )}
+              <span>
+                🚀 KHỞI CHẠY CHIẾN DỊCH BẮN THÔNG BÁO CHO {selectedMemberIds.length} HỘI VIÊN ĐÃ CHỌN
+              </span>
+            </button>
+            <p className="text-[11px] text-slate-500 text-center mt-2">
+              Hệ thống sẽ tự động cá nhân hóa tên hội viên, mã hội viên, số tiền và gửi tuần tự theo hàng đợi để đảm bảo 100% không bị Zalo chặn rate-limit.
+            </p>
+          </div>
+        </div>
+      )}
       </div>
 
       {/* POPUP MODAL SAU KHI BẮN THÔNG BÁO PHÍ HỘI VIÊN */}
@@ -779,6 +1174,87 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
                 <span>Mở Zalo OA Chat Gửi Ngay</span>
                 <ExternalLink className="size-3.5" />
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL BÁO CÁO KẾT QUẢ CHIẾN DỊCH BẮN HÀNG LOẠT */}
+      {showBulkResultModal && bulkResults && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-card w-full max-w-2xl rounded-3xl border border-border shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2 text-primary font-black text-sm">
+                <CheckCircle2 className="size-5 text-emerald-500" />
+                <span>Báo Cáo Kết Quả Chiến Dịch Bắn Thông Báo Hàng Loạt</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBulkResultModal(false)}
+                className="size-8 rounded-full hover:bg-muted text-muted-foreground flex items-center justify-center text-sm font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900">
+                <div className="text-xs text-muted-foreground font-bold">Tổng Số Hội Viên</div>
+                <div className="text-xl font-black text-blue-600 dark:text-blue-400 mt-1">{bulkResults.total}</div>
+              </div>
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900">
+                <div className="text-xs text-muted-foreground font-bold">Thành Công</div>
+                <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{bulkResults.successCount}</div>
+              </div>
+              <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900">
+                <div className="text-xs text-muted-foreground font-bold">Cần Kích Hoạt Zalo</div>
+                <div className="text-xl font-black text-red-600 dark:text-red-400 mt-1">{bulkResults.failedCount}</div>
+              </div>
+            </div>
+
+            <div className="max-h-64 overflow-y-auto rounded-2xl border border-border">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted sticky top-0 font-bold border-b border-border">
+                  <tr>
+                    <th className="p-2.5">Hội Viên</th>
+                    <th className="p-2.5">SĐT</th>
+                    <th className="p-2.5 text-center">Trạng Thái</th>
+                    <th className="p-2.5">Chi Tiết</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {bulkResults.results.map((r: any, idx: number) => (
+                    <tr key={idx}>
+                      <td className="p-2.5 font-bold">{r.name}</td>
+                      <td className="p-2.5 font-mono">{r.phone}</td>
+                      <td className="p-2.5 text-center">
+                        {r.status === "success" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px]">
+                            Thành công
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 font-bold text-[10px]">
+                            Chưa nhận
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-2.5 text-[11px] text-muted-foreground">
+                        {r.status === "success" ? `Zalo UID: ${r.userId || "OK"}` : (r.error || "Chưa tương tác với OA")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowBulkResultModal(false)}
+                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold cursor-pointer"
+              >
+                Đóng Báo Cáo
+              </button>
             </div>
           </div>
         </div>

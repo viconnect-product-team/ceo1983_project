@@ -1,5 +1,10 @@
 import { Controller, Post, Get, Body, Query, Headers } from '@nestjs/common';
-import { ZaloService, SendZaloMessageDto, RefreshZaloTokenDto } from './zalo.service';
+import {
+  ZaloService,
+  SendZaloMessageDto,
+  RefreshZaloTokenDto,
+  SendBulkZaloMessageDto,
+} from './zalo.service';
 
 @Controller('zalo')
 export class ZaloController {
@@ -25,6 +30,11 @@ export class ZaloController {
   @Post('send-message')
   async sendMessage(@Body() dto: SendZaloMessageDto) {
     return this.zaloService.sendMessage(dto);
+  }
+
+  @Post('send-bulk')
+  async sendBulkMessages(@Body() dto: SendBulkZaloMessageDto) {
+    return this.zaloService.sendBulkMessages(dto);
   }
 }
 

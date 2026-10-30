@@ -15,6 +15,22 @@ export class RefreshZaloTokenDto {
   refreshToken!: string;
 }
 
+export class SendBulkRecipientDto {
+  userId?: string;
+  phone!: string;
+  name!: string;
+  memberCode?: string;
+  feeAmount?: number;
+  company?: string;
+}
+
+export class SendBulkZaloMessageDto {
+  accessToken!: string;
+  recipients!: SendBulkRecipientDto[];
+  messageTemplate!: string;
+  delayMs?: number;
+}
+
 @Injectable()
 export class ZaloService {
   private readonly logger = new Logger(ZaloService.name);
@@ -271,5 +287,99 @@ export class ZaloService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  /**
+   * Bắn thông báo chiến dịch hàng loạt tới nhiều hội viên Zalo (Bulk Messaging Queue)
+   */
+  async sendBulkMessages(dto: SendBulkZaloMessageDto) {
+    if (!dto.accessToken?.trim()) {
+      throw new HttpException('Thiếu Access Token của Zalo OA', HttpStatus.BAD_REQUEST);
+    }
+    if (!dto.recipients || !Array.isArray(dto.recipients) || dto.recipients.length === 0) {
+      throw new HttpException('Danh sách hội viên nhận tin không được để trống', HttpStatus.BAD_REQUEST);
+    }
+
+    const results: Array<{
+      phone: string;
+      name: string;
+      status: 'success' | 'failed';
+      userId?: string;
+      error?: string;
+    }> = [];
+
+    let successCount = 0;
+    let failedCount = 0;
+    const delay = dto.delayMs || 250;
+
+    this.logger.log(`Starting bulk campaign for ${dto.recipients.length} members`);
+
+    for (const recipient of dto.recipients) {
+      // Thay thế các biến động tương ứng cho từng hội viên
+      let message = dto.messageTemplate
+        .replace(/{ho_ten}/g, recipient.name || 'Hội viên')
+        .replace(/{so_dien_thoai}/g, recipient.phone || '')
+        .replace(/{ma_hoi_vien}/g, recipient.memberCode || 'CEO1983')
+        .replace(
+          /{so_tien}/g,
+          recipient.feeAmount
+            ? new Intl.NumberFormat('vi-VN').format(recipient.feeAmount)
+            : '10.000.000',
+        )
+        .replace(/{ten_doanh_nghiep}/g, recipient.company || 'Doanh nghiệp Hội viên CEO 1983');
+
+      try {
+        const sendRes = await this.sendMessage({
+          accessToken: dto.accessToken,
+          userId: recipient.userId,
+          targetPhone: recipient.phone,
+          targetName: recipient.name,
+          message,
+        });
+
+        if (sendRes.success) {
+          successCount++;
+          results.push({
+            phone: recipient.phone,
+            name: recipient.name,
+            status: 'success',
+            userId: sendRes.recipient?.userId,
+          });
+        } else {
+          failedCount++;
+          results.push({
+            phone: recipient.phone,
+            name: recipient.name,
+            status: 'failed',
+            error: sendRes.message || 'Lỗi gửi tin',
+          });
+        }
+      } catch (err: any) {
+        failedCount++;
+        results.push({
+          phone: recipient.phone,
+          name: recipient.name,
+          status: 'failed',
+          error: err.message || 'Không thể gửi tin',
+        });
+      }
+
+      // Delay nhỏ giữa các request để đảm bảo không bị Zalo rate limit
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    this.logger.log(
+      `Finished bulk campaign: ${successCount} succeeded, ${failedCount} failed out of ${dto.recipients.length}`,
+    );
+
+    return {
+      success: true,
+      total: dto.recipients.length,
+      successCount,
+      failedCount,
+      results,
+    };
   }
 }
