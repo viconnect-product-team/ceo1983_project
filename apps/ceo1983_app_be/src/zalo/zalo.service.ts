@@ -233,7 +233,7 @@ export class ZaloService {
     try {
       this.logger.log(`Sending CS message to Zalo User ID: ${targetUserId} (${recipientName})`);
 
-      const response = await axios.post(
+      let response = await axios.post(
         'https://openapi.zalo.me/v3.0/oa/message/cs',
         {
           recipient: {
@@ -251,7 +251,39 @@ export class ZaloService {
         },
       );
 
-      const zaloData = response.data;
+      let zaloData = response.data;
+
+      // Fallback sang endpoint v2.0 nếu v3.0 trả về lỗi -235 (Loại OA chưa hỗ trợ v3.0 CS)
+      if (zaloData && zaloData.error === -235) {
+        try {
+          this.logger.log(`API v3.0 returned -235, attempting fallback to v2.0 message API...`);
+          const fallbackRes = await axios.post(
+            'https://openapi.zalo.me/v2.0/oa/message',
+            {
+              recipient: {
+                user_id: targetUserId,
+              },
+              message: {
+                text: dto.message,
+              },
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                access_token: dto.accessToken.trim(),
+              },
+            },
+          );
+          if (fallbackRes.data && fallbackRes.data.error === 0) {
+            zaloData = fallbackRes.data;
+          } else if (fallbackRes.data) {
+            this.logger.warn(`v2.0 fallback response: ${JSON.stringify(fallbackRes.data)}`);
+          }
+        } catch (e: any) {
+          this.logger.warn(`v2.0 fallback failed: ${e.message}`);
+        }
+      }
+
       if (zaloData && zaloData.error === 0) {
         return {
           success: true,
@@ -272,6 +304,9 @@ export class ZaloService {
         errorDesc = 'Zalo User ID không hợp lệ hoặc người dùng chưa quan tâm/nhắn tin với OA!';
       } else if (zaloData?.error === -221) {
         errorDesc = 'Đã quá 48h kể từ tin nhắn tương tác cuối cùng của người dùng với OA theo chính sách CS của Zalo.';
+      } else if (zaloData?.error === -235) {
+        errorDesc =
+          'Loại hình Zalo OA của bạn chưa được cấp quyền dùng API gửi tin tự động (Lỗi -235). Nguyên nhân: Tài khoản OA của bạn hiện là OA Nội Dung hoặc OA Miễn Phí chưa nâng cấp Gói Dịch Vụ OA (Dùng thử/Cơ bản/Nâng cao) trên oa.zalo.me. Bạn hãy bấm nút "Mở Zalo OA Chat Gửi Ngay" hoặc chuyển sang giải pháp ZNS theo SĐT!';
       }
 
       return {
