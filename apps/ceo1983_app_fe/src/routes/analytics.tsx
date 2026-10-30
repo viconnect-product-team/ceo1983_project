@@ -23,11 +23,13 @@ import {
   Building,
   UserPlus,
   Medal,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader } from "@/components/dashboard/PageKit";
+import { MilestoneAwardsManagerModal } from "@/components/analytics/MilestoneAwardsManagerModal";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -185,6 +187,7 @@ export function AnalyticsDashboardPage() {
   const [selectedCat, setSelectedCat] = useState<AnalyticsCategory>("activity_sentiment");
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showMilestoneAwardsModal, setShowMilestoneAwardsModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverData, setServerData] = useState<any>(null);
 
@@ -662,6 +665,15 @@ interface RankedMemberItem {
                   </button>
                 ))}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMilestoneAwardsModal(true)}
+                className="px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black flex items-center gap-2 shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer"
+              >
+                <Trophy className="size-4 text-slate-950" />
+                <span>Giải Thưởng Mốc Thống Kê</span>
+              </button>
 
               <button
                 type="button"
@@ -1250,6 +1262,12 @@ interface RankedMemberItem {
             </div>
           </div>
         )}
+
+        {/* Modal Quản lý Giải Thưởng Cột Mốc Thống Kê Gamification */}
+        <MilestoneAwardsManagerModal
+          isOpen={showMilestoneAwardsModal}
+          onClose={() => setShowMilestoneAwardsModal(false)}
+        />
       </div>
     </AppShell>
   );

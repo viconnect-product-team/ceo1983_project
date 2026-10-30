@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   MapPin,
   Navigation,
@@ -10,6 +10,10 @@ import {
   Compass,
   RefreshCw,
   ExternalLink,
+  Layers,
+  ZoomIn,
+  ZoomOut,
+  LocateFixed,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -23,7 +27,7 @@ interface CeoBusinessLocationPickerProps {
   onAddressSaved?: (newAddress: string, lat: number, lng: number) => void;
 }
 
-// Center Hanoi Keangnam
+// Tâm Keangnam Landmark 72, Hà Nội (Trụ sở CEO 1983)
 const DEFAULT_CENTER = { lat: 21.0175, lng: 105.7838 };
 
 function loadLeaflet(): Promise<any> {
@@ -31,24 +35,39 @@ function loadLeaflet(): Promise<any> {
   if ((window as any).L) return Promise.resolve((window as any).L);
 
   return new Promise((resolve, reject) => {
+    // 1. Load CSS
     if (!document.getElementById("leaflet-css")) {
       const link = document.createElement("link");
       link.id = "leaflet-css";
       link.rel = "stylesheet";
-      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css";
       document.head.appendChild(link);
     }
+
+    // 2. Load JS
     const existingScript = document.getElementById("leaflet-js") as HTMLScriptElement;
     if (existingScript) {
-      existingScript.addEventListener("load", () => resolve((window as any).L));
+      if ((window as any).L) {
+        resolve((window as any).L);
+      } else {
+        existingScript.addEventListener("load", () => resolve((window as any).L));
+      }
       return;
     }
+
     const script = document.createElement("script");
     script.id = "leaflet-js";
-    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js";
     script.async = true;
     script.onload = () => resolve((window as any).L);
-    script.onerror = reject;
+    script.onerror = () => {
+      // Fallback sang unpkg nếu cdnjs lỗi
+      const fallbackScript = document.createElement("script");
+      fallbackScript.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      fallbackScript.onload = () => resolve((window as any).L);
+      fallbackScript.onerror = reject;
+      document.head.appendChild(fallbackScript);
+    };
     document.head.appendChild(script);
   });
 }
@@ -62,14 +81,21 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
   onAddressSaved,
 }) => {
   const [address, setAddress] = useState(initialAddress);
-  const [lat, setLat] = useState<number>(initialLat && !isNaN(initialLat) ? initialLat : DEFAULT_CENTER.lat);
-  const [lng, setLng] = useState<number>(initialLng && !isNaN(initialLng) ? initialLng : DEFAULT_CENTER.lng);
+  const [lat, setLat] = useState<number>(
+    initialLat && !isNaN(initialLat) ? initialLat : DEFAULT_CENTER.lat
+  );
+  const [lng, setLng] = useState<number>(
+    initialLng && !isNaN(initialLng) ? initialLng : DEFAULT_CENTER.lng
+  );
   const [isLocating, setIsLocating] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanged, setHasChanged] = useState(false);
+  const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(15);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
@@ -97,6 +123,163 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
     }
   };
 
+  // ── 2D CANVAS MAP ENGINE (Vẽ hình ảnh bản đồ 2D đường phố tức thì khi chưa có Leaflet) ──
+  const draw2DCanvasMap = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Nền phố xá đô thị 2D (màu xám sáng chuẩn Apple / Google Maps 2D)
+    ctx.fillStyle = "#F1F5F9";
+    ctx.fillRect(0, 0, width, height);
+
+    // 1. Vẽ các khối đô thị / khu dân cư
+    ctx.fillStyle = "#E2E8F0";
+    ctx.fillRect(20, 20, width * 0.35, height * 0.3);
+    ctx.fillRect(width * 0.55, 30, width * 0.4, height * 0.35);
+    ctx.fillRect(30, height * 0.6, width * 0.3, height * 0.32);
+    ctx.fillRect(width * 0.5, height * 0.55, width * 0.45, height * 0.38);
+
+    // 2. Vẽ công viên & mảng xanh sinh thái
+    ctx.fillStyle = "#DCFCE7"; // Xanh lá cây nhạt
+    ctx.beginPath();
+    ctx.roundRect(width * 0.65, 45, 80, 50, 8);
+    ctx.fill();
+
+    ctx.fillStyle = "#BBF7D0";
+    ctx.beginPath();
+    ctx.roundRect(40, height * 0.65, 75, 45, 8);
+    ctx.fill();
+
+    // 3. Vẽ hồ nước / sông ngòi 2D
+    ctx.fillStyle = "#BAE6FD"; // Xanh nước biển
+    ctx.beginPath();
+    ctx.ellipse(width * 0.22, height * 0.35, 45, 25, Math.PI / 6, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // 4. Vẽ mạng lưới đường giao thông 2D
+    // Đường nhánh
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 6;
+    ctx.lineCap = "round";
+
+    // Trục ngang
+    ctx.beginPath();
+    ctx.moveTo(0, height * 0.45);
+    ctx.lineTo(width, height * 0.45);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, height * 0.85);
+    ctx.lineTo(width, height * 0.85);
+    ctx.stroke();
+
+    // Trục dọc
+    ctx.beginPath();
+    ctx.moveTo(width * 0.45, 0);
+    ctx.lineTo(width * 0.45, height);
+    ctx.stroke();
+
+    // Trục đại lộ chính (Vàng cam nổi bật như Google Maps)
+    ctx.strokeStyle = "#FEF08A";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(0, height * 0.5);
+    ctx.lineTo(width, height * 0.5);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#FDE047";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, height * 0.5);
+    ctx.lineTo(width, height * 0.5);
+    ctx.stroke();
+
+    // Đại lộ xuyên tâm (Đại lộ Thăng Long / Phạm Hùng)
+    ctx.strokeStyle = "#FEF08A";
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.moveTo(width * 0.1, 0);
+    ctx.lineTo(width * 0.8, height);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#FDE047";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(width * 0.1, 0);
+    ctx.lineTo(width * 0.8, height);
+    ctx.stroke();
+
+    // 5. Tên phố và địa danh 2D
+    ctx.font = "bold 9px sans-serif";
+    ctx.fillStyle = "#64748B";
+    ctx.fillText("ĐẠI LỘ THĂNG LONG", width * 0.25, height * 0.42);
+    ctx.fillText("ĐƯỜNG PHẠM HÙNG", width * 0.48, height * 0.2);
+    ctx.fillText("KEANGNAM LANDMARK 72", width * 0.46, height * 0.72);
+
+    // 6. Điểm tòa nhà Keangnam
+    ctx.fillStyle = "#003B95";
+    ctx.beginPath();
+    ctx.roundRect(width * 0.46, height * 0.6, 20, 20, 4);
+    ctx.fill();
+
+    // 7. Vẽ GHIM ĐỎ THƯƠNG HIỆU CEO 1983 TẠI VỊ TRÍ CHỌN
+    const pinX = width / 2;
+    const pinY = height / 2;
+
+    // Vòng tỏa sóng pulse
+    ctx.fillStyle = "rgba(220, 38, 38, 0.25)";
+    ctx.beginPath();
+    ctx.arc(pinX, pinY, 22, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Bóng ghim
+    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+    ctx.beginPath();
+    ctx.ellipse(pinX, pinY + 6, 8, 3.5, 0, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Đầu ghim đỏ
+    ctx.fillStyle = "#DC2626";
+    ctx.beginPath();
+    ctx.arc(pinX, pinY - 14, 12, 0, 2 * Math.PI);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(pinX - 9, pinY - 10);
+    ctx.lineTo(pinX, pinY + 2);
+    ctx.lineTo(pinX + 9, pinY - 10);
+    ctx.fillStyle = "#DC2626";
+    ctx.fill();
+
+    // Chấm trắng ở tâm ghim
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(pinX, pinY - 14, 5, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Hộp chú thích công ty
+    ctx.fillStyle = "rgba(0, 59, 149, 0.95)";
+    ctx.beginPath();
+    const boxW = Math.min(220, width - 40);
+    ctx.roundRect(pinX - boxW / 2, pinY - 48, boxW, 24, 6);
+    ctx.fill();
+
+    ctx.font = "bold 10px sans-serif";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.textAlign = "center";
+    ctx.fillText(companyName.slice(0, 28), pinX, pinY - 33);
+  }, [companyName]);
+
+  // Vẽ Canvas khi mount hoặc kích thước thay đổi
+  useEffect(() => {
+    draw2DCanvasMap();
+  }, [draw2DCanvasMap, lat, lng]);
+
   // Khởi tạo bản đồ Leaflet
   useEffect(() => {
     let isCancelled = false;
@@ -105,7 +288,8 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
       .then((L) => {
         if (isCancelled || !mapContainerRef.current) return;
 
-        // Tránh tạo lặp map
+        setLeafletLoaded(true);
+
         if (mapInstanceRef.current) {
           mapInstanceRef.current.remove();
           mapInstanceRef.current = null;
@@ -113,7 +297,7 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
 
         const map = L.map(mapContainerRef.current, {
           center: [lat, lng],
-          zoom: 15,
+          zoom: zoomLevel,
           zoomControl: false,
         });
         mapInstanceRef.current = map;
@@ -121,20 +305,24 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
         // Custom Zoom Control ở góc phải dưới
         L.control.zoom({ position: "bottomright" }).addTo(map);
 
-        // Tile layer chuẩn Google Maps & OpenStreetMap sạch đẹp
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; <a href="https://openstreetmap.org">OSM</a>',
-          maxZoom: 19,
-        }).addTo(map);
+        // Tile layer CartoDB Voyager 2D: Rất đẹp, phố xá rõ nét, tốc độ siêu nhanh tại Việt Nam
+        L.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+          {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OSM',
+            maxZoom: 19,
+            subdomains: "abcd",
+          }
+        ).addTo(map);
 
         // Tạo custom icon ghim đỏ thương hiệu CEO 1983
         const redIcon = L.divIcon({
           className: "ceo-custom-pin",
           html: `
             <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-              <div style="position: absolute; width: 36px; height: 36px; border-radius: 50%; background: rgba(220, 38, 38, 0.25); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; background: #DC2626; border: 2px solid #FFFFFF; box-shadow: 0 4px 10px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <div style="position: absolute; width: 36px; height: 36px; border-radius: 50%; background: rgba(220, 38, 38, 0.3); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+              <div style="position: relative; width: 30px; height: 30px; border-radius: 50%; background: #DC2626; border: 2.5px solid #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
@@ -179,13 +367,12 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
           await reverseGeocode(clickLat, clickLng);
         });
 
-        // Kích hoạt lại resize khi render
         setTimeout(() => {
           map.invalidateSize();
         }, 200);
       })
       .catch((err) => {
-        console.warn("Leaflet load error:", err);
+        console.warn("Leaflet CDN delay, using 2D Canvas Engine fallback:", err);
       });
 
     return () => {
@@ -197,13 +384,14 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
     };
   }, []);
 
-  // Cập nhật vị trí ghim và tâm bản đồ khi lat/lng thay đổi từ bên ngoài
-  const updateMapPosition = (newLat: number, newLng: number, zoomLevel = 16) => {
+  // Cập nhật vị trí ghim và tâm bản đồ khi lat/lng thay đổi
+  const updateMapPosition = (newLat: number, newLng: number, zoom = 16) => {
     setLat(newLat);
     setLng(newLng);
+    setZoomLevel(zoom);
     if (mapInstanceRef.current && markerRef.current) {
       markerRef.current.setLatLng([newLat, newLng]);
-      mapInstanceRef.current.setView([newLat, newLng], zoomLevel, { animate: true });
+      mapInstanceRef.current.setView([newLat, newLng], zoom, { animate: true });
     }
   };
 
@@ -248,23 +436,43 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
       if (!res.ok) throw new Error("Search failed");
       const list = await res.json();
       if (!list || list.length === 0) {
-        toast.error("Không tìm thấy tọa độ phù hợp cho địa chỉ này. Bạn có thể bấm chọn trực tiếp trên bản đồ!");
+        toast.error("Không tìm thấy tọa độ cho địa chỉ này. Hãy thử nhập địa chỉ rõ ràng hơn!");
         return;
       }
       const item = list[0];
-      const newLat = parseFloat(item.lat);
-      const newLng = parseFloat(item.lon);
-      updateMapPosition(newLat, newLng, 16);
+      const parsedLat = parseFloat(item.lat);
+      const parsedLng = parseFloat(item.lon);
+      updateMapPosition(parsedLat, parsedLng, 16);
       setHasChanged(true);
-      toast.success("Đã định vị được vị trí trên bản đồ!");
+      toast.success("Đã định vị địa chỉ thành công trên bản đồ!");
     } catch {
-      toast.error("Lỗi kết nối tra cứu tọa độ!");
+      toast.error("Không thể tìm kiếm địa chỉ lúc này. Vui lòng thử lại!");
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Lưu địa chỉ và vị trí bản đồ vào CSDL
+  // Click trên canvas 2D fallback để chọn vị trí
+  const handleCanvasClick = async (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const deltaX = (x - rect.width / 2) / rect.width;
+    const deltaY = (y - rect.height / 2) / rect.height;
+
+    // Giả lập dời tọa độ tương ứng
+    const newLat = lat - deltaY * 0.01;
+    const newLng = lng + deltaX * 0.01;
+
+    updateMapPosition(newLat, newLng);
+    setHasChanged(true);
+    await reverseGeocode(newLat, newLng);
+  };
+
+  // Lưu địa chỉ và tọa độ vào Hồ Sơ Doanh Nghiệp
   const handleSaveLocation = async () => {
     if (!address.trim()) {
       toast.error("Vui lòng nhập địa chỉ doanh nghiệp!");
@@ -276,32 +484,20 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
         address: address.trim(),
         latitude: lat,
         longitude: lng,
-        isSharing: true,
+        company: companyName,
       };
 
-      // 1. Cập nhật localStorage để phản hồi tức thì
+      // 1. Lưu vào cache localStorage
       try {
-        const stored = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
-        const updated = {
-          ...stored,
-          address: address.trim(),
-          latitude: lat,
-          longitude: lng,
-          is_location_sharing: true,
-        };
-        localStorage.setItem("vba_my_member", JSON.stringify(updated));
-        if (userId) {
-          localStorage.setItem(`vba_my_member_${userId}`, JSON.stringify(updated));
-        }
-
-        const customProfile = JSON.parse(localStorage.getItem("vba_custom_profile") || "{}");
+        const rawProfile = localStorage.getItem("vba_custom_profile");
+        const customProfile = rawProfile ? JSON.parse(rawProfile) : {};
         localStorage.setItem(
           "vba_custom_profile",
           JSON.stringify({ ...customProfile, address: address.trim(), latitude: lat, longitude: lng })
         );
       } catch {}
 
-      // 2. Gửi API đồng bộ vào CSDL PostgreSQL (hỗ trợ cả members/me và members/my-location)
+      // 2. Gửi API đồng bộ vào CSDL PostgreSQL
       await fetchNestApi("/members/my-location", {
         method: "PUT",
         body: JSON.stringify(payload),
@@ -347,10 +543,10 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
           </div>
           <div>
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-              Địa chỉ &amp; Bản đồ định vị doanh nghiệp
+              Địa chỉ &amp; Bản đồ 2D định vị doanh nghiệp
             </h3>
             <p className="text-[10px] text-slate-500 dark:text-slate-400">
-              Chạm hoặc kéo ghim trên bản đồ để cập nhật vị trí trụ sở
+              Chạm hoặc kéo ghim trên bản đồ 2D để cập nhật trụ sở
             </p>
           </div>
         </div>
@@ -406,20 +602,53 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
         </div>
       </div>
 
-      {/* 2. Bản đồ định vị tương tác hiển thị ngay bên dưới */}
+      {/* 2. Bản đồ 2D định vị tương tác hiển thị ngay bên dưới */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-medium">
           <span className="flex items-center gap-1">
             <Compass className="size-3 text-amber-500" />
-            Tọa độ: <strong className="text-slate-700 dark:text-slate-300">{lat.toFixed(4)}, {lng.toFixed(4)}</strong>
+            Tọa độ 2D: <strong className="text-slate-700 dark:text-slate-300">{lat.toFixed(4)}, {lng.toFixed(4)}</strong>
           </span>
           <span className="text-amber-600 dark:text-amber-400 font-semibold">
             Bấm lên bản đồ để dời ghim
           </span>
         </div>
 
-        <div className="relative w-full h-[220px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner bg-slate-100 dark:bg-slate-900">
-          <div ref={mapContainerRef} className="w-full h-full z-0" />
+        <div className="relative w-full h-[230px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner bg-slate-100 dark:bg-slate-900">
+          {/* Leaflet Map Layer */}
+          <div
+            ref={mapContainerRef}
+            className={`w-full h-full z-0 transition-opacity duration-300 ${
+              leafletLoaded ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          />
+
+          {/* Fallback 2D Canvas Map Engine (Hiện 0ms ngay lập tức không phụ thuộc CDN) */}
+          {!leafletLoaded && (
+            <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center">
+              <canvas
+                ref={canvasRef}
+                width={420}
+                height={230}
+                onClick={handleCanvasClick}
+                className="w-full h-full object-cover cursor-crosshair"
+              />
+              <div className="absolute top-2 left-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs px-2 py-1 rounded-lg text-[9px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                <Layers className="size-3 text-[#003B95]" />
+                <span>Bản đồ 2D CEO 1983 (Chạm để dời ghim)</span>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Keangnam button */}
+          <button
+            type="button"
+            onClick={() => updateMapPosition(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, 16)}
+            className="absolute bottom-2 left-2 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2.5 py-1 rounded-xl text-[10px] font-extrabold text-[#003B95] dark:text-amber-400 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 transition cursor-pointer flex items-center gap-1"
+          >
+            <LocateFixed className="size-3 text-red-500" />
+            <span>Về Keangnam 72</span>
+          </button>
         </div>
       </div>
 
@@ -445,4 +674,3 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
     </div>
   );
 };
-

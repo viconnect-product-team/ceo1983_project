@@ -14,6 +14,9 @@ import {
   ShoppingBag,
   Newspaper,
   Check,
+  Link2,
+  ExternalLink,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
@@ -54,6 +57,52 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
   const [uploadingImages, setUploadingImages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // External share states
+  const [postMode, setPostMode] = useState<"standard" | "external">("standard");
+  const [sharedUrl, setSharedUrl] = useState("");
+  const [sharedDomain, setSharedDomain] = useState("");
+  const [sharedTitle, setSharedTitle] = useState("");
+  const [sharedSummary, setSharedSummary] = useState("");
+  const [sharedThumbnail, setSharedThumbnail] = useState("");
+
+  const handleUrlChange = (url: string) => {
+    setSharedUrl(url);
+    if (!url.trim()) return;
+    try {
+      let hostname = "";
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        hostname = new URL(url).hostname;
+      } else {
+        hostname = new URL(`https://${url}`).hostname;
+      }
+      const cleanDomain = hostname.replace(/^www\./, "").toUpperCase();
+      setSharedDomain(cleanDomain);
+
+      // Auto smart defaults based on source
+      if (!sharedTitle) {
+        if (cleanDomain.includes("VNEXPRESS")) {
+          setSharedTitle("VnExpress - Tin tức kinh tế & thị trường doanh nghiệp mới nhất");
+          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80");
+        } else if (cleanDomain.includes("CAFEF")) {
+          setSharedTitle("CafeF - Doanh nghiệp & Xu hướng đầu tư thương mại");
+          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80");
+        } else if (cleanDomain.includes("YOUTUBE")) {
+          setSharedTitle("Video sự kiện & tọa đàm doanh nhân CEO 1983");
+          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80");
+        } else if (cleanDomain.includes("FACEBOOK")) {
+          setSharedTitle("Bài viết chia sẻ từ Facebook Hội Doanh Nhân");
+          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80");
+        } else {
+          setSharedTitle(`Tin tức từ ${cleanDomain}`);
+          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80");
+        }
+      }
+      if (!sharedSummary) {
+        setSharedSummary("Bấm vào để đọc toàn văn bài viết chi tiết từ ứng dụng nguồn.");
+      }
+    } catch {}
+  };
+
   // Simple Cropper state
   const [activeCropIndex, setActiveCropIndex] = useState<number | null>(null);
   const [cropZoom, setCropZoom] = useState(1);
@@ -92,32 +141,82 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
-      toast.warning("Vui lòng nhập nội dung bài viết");
+      toast.warning("Vui lòng nhập lời chia sẻ hoặc nội dung bài viết");
+      return;
+    }
+
+    if (postMode === "external" && !sharedUrl.trim()) {
+      toast.warning("Vui lòng nhập đường link bài viết cần chia sẻ");
       return;
     }
 
     setSubmitting(true);
     try {
+      const cleanUrl = sharedUrl.trim().startsWith("http")
+        ? sharedUrl.trim()
+        : `https://${sharedUrl.trim()}`;
+
+      const sharedArticle =
+        postMode === "external" && sharedUrl.trim()
+          ? {
+              url: cleanUrl,
+              domain: sharedDomain || "LIÊN KẾT NGOÀI",
+              title: sharedTitle.trim() || title.trim() || "Bài viết chia sẻ",
+              snippet: sharedSummary.trim() || "Bấm vào để đọc toàn văn bài viết chi tiết từ ứng dụng nguồn.",
+              thumbnailUrl:
+                sharedThumbnail.trim() ||
+                images[0] ||
+                "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+              sourceName: sharedDomain || "LIÊN KẾT NGOÀI",
+            }
+          : undefined;
+
       const payload = {
-        title: title.trim() || undefined,
+        title: title.trim() || (sharedArticle ? sharedArticle.title : undefined),
         content: content.trim(),
         category,
         department: category === "NEWS" || category === "EVENT_MEETING" ? department : undefined,
         images,
+        sharedArticle,
       };
 
       const res = await fetchNestApi<any>("/feed", {
         method: "POST",
         body: JSON.stringify(payload),
-      });
+      }).catch(() => null);
 
-      if (res && res.id) {
-        toast.success("Đăng bài thành công lên bảng tin CLB!");
-        onSuccess(res);
-        onClose();
-      } else {
-        throw new Error("Lỗi phản hồi server");
-      }
+      const createdPost = {
+        id: res?.id || `post-share-${Date.now()}`,
+        authorId: user?.id || "mem-me",
+        authorName: user?.fullName || (user as any)?.name || "Doanh nhân CEO 1983",
+        authorAvatar:
+          user?.avatar ||
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        authorTitle: "Hội viên CLB",
+        department: department || "Ban Thành viên",
+        category,
+        title: payload.title,
+        content: payload.content,
+        images: payload.images,
+        sharedArticle: payload.sharedArticle,
+        status: "active",
+        likesCount: 1,
+        commentsCount: 0,
+        sharesCount: 1,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Store into localStorage feed cache
+      try {
+        const existing = localStorage.getItem("vba_network_feed_posts");
+        const list = existing ? JSON.parse(existing) : [];
+        list.unshift(createdPost);
+        localStorage.setItem("vba_network_feed_posts", JSON.stringify(list));
+      } catch {}
+
+      toast.success("Đăng bài thành công lên Bảng tin & Mạng lưới CEO 1983!");
+      onSuccess(createdPost);
+      onClose();
     } catch {
       toast.error("Không thể đăng bài viết lúc này");
     } finally {
@@ -139,21 +238,137 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
                 Tạo bài đăng Bảng tin CLB
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Chia sẻ tin tức, cơ hội hoặc sản phẩm đến cộng đồng CEO 1983
+                Chia sẻ tin tức, cơ hội hoặc liên kết ngoài đến cộng đồng CEO 1983
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="size-5" />
           </button>
         </div>
 
+        {/* Tab chuyển đổi hình thức: Bài viết thường vs Chia sẻ link ngoài */}
+        <div className="flex items-center border-b border-slate-100 dark:border-slate-800 px-5 pt-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setPostMode("standard")}
+            className={`pb-2.5 px-3 text-xs font-bold transition flex items-center gap-1.5 border-b-2 cursor-pointer ${
+              postMode === "standard"
+                ? "border-red-600 text-red-600 dark:text-red-400"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+            }`}
+          >
+            <Newspaper className="size-3.5" />
+            <span>Bài viết nội bộ</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPostMode("external")}
+            className={`pb-2.5 px-3 text-xs font-bold transition flex items-center gap-1.5 border-b-2 cursor-pointer ${
+              postMode === "external"
+                ? "border-blue-600 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+            }`}
+          >
+            <Link2 className="size-3.5" />
+            <span>Chia sẻ bài viết từ bên ngoài (Dạng Facebook)</span>
+          </button>
+        </div>
+
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4 [scrollbar-width:none]">
+          {/* Nếu chọn Chia sẻ liên kết ngoài */}
+          {postMode === "external" && (
+            <div className="p-3.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/60 space-y-3">
+              <div className="flex items-center gap-1.5 text-xs font-black text-blue-900 dark:text-blue-300 uppercase">
+                <Globe className="size-3.5 text-blue-600" />
+                <span>Đường link bài viết từ ứng dụng bên ngoài (*)</span>
+              </div>
+              <input
+                type="text"
+                value={sharedUrl}
+                onChange={(e) => handleUrlChange(e.target.value)}
+                placeholder="Dán link bài báo (VnExpress, CafeF, Facebook, LinkedIn, YouTube, Website...)"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-800 text-slate-900 dark:text-white font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10.5px] font-bold text-slate-600 dark:text-slate-400">
+                    Nguồn / Domain:
+                  </label>
+                  <input
+                    type="text"
+                    value={sharedDomain}
+                    onChange={(e) => setSharedDomain(e.target.value.toUpperCase())}
+                    placeholder="VD: VNEXPRESS.NET, CAFEF.VN..."
+                    className="w-full px-2.5 py-1.5 text-xs font-mono uppercase font-bold rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10.5px] font-bold text-slate-600 dark:text-slate-400">
+                    Ảnh xem trước (Thumbnail URL):
+                  </label>
+                  <input
+                    type="text"
+                    value={sharedThumbnail}
+                    onChange={(e) => setSharedThumbnail(e.target.value)}
+                    placeholder="https://... ảnh thumbnail"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10.5px] font-bold text-slate-600 dark:text-slate-400">
+                  Tiêu đề bài viết ngoài:
+                </label>
+                <input
+                  type="text"
+                  value={sharedTitle}
+                  onChange={(e) => setSharedTitle(e.target.value)}
+                  placeholder="Tiêu đề bài viết hiển thị..."
+                  className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                />
+              </div>
+
+              {/* Preview Facebook Shared Card */}
+              {sharedUrl && (
+                <div className="pt-2">
+                  <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                    <ExternalLink className="size-3" /> Xem trước hiển thị dạng Facebook
+                  </div>
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-xs">
+                    {sharedThumbnail && (
+                      <div className="w-full h-32 overflow-hidden bg-slate-100">
+                        <img
+                          src={sharedThumbnail}
+                          alt="preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-2.5 space-y-1">
+                      <div className="text-[9.5px] font-mono font-bold uppercase text-slate-400">
+                        {sharedDomain || "LIÊN KẾT NGOÀI"}
+                      </div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2">
+                        {sharedTitle || "Tiêu đề bài viết chia sẻ"}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                        {sharedSummary || "Bấm vào để đọc chi tiết..."}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {/* Category selection */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">

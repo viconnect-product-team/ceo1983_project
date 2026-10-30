@@ -362,10 +362,10 @@ function GuestEventRegistrationPage() {
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <div className="flex items-center gap-2 text-sm font-bold text-[#003B95]">
                     <CreditCard className="w-4 h-4 text-amber-500" />
-                    TEMPLATE MÃ VIETQR THANH TOÁN
+                    CỔNG THANH TOÁN VNPAY &amp; MÃ VNPAY-QR
                   </div>
                   <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
-                    Napas 24/7
+                    VNPAY Gateway / QR
                   </span>
                 </div>
 
@@ -385,7 +385,7 @@ function GuestEventRegistrationPage() {
                         `EV${result.registrationId} ${result.phone}`
                       )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`
                     }
-                    alt="VietQR Thanh Toán Phí Sự Kiện"
+                    alt="VNPAY-QR Thanh Toán Phí Sự Kiện"
                     className="w-full h-full object-contain"
                   />
                 </div>

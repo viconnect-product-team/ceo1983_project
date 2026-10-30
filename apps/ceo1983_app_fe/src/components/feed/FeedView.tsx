@@ -76,6 +76,15 @@ interface FeedPost {
   hasLiked?: boolean;
   createdAt: string;
   externalLink?: string;
+  sharedArticle?: {
+    url: string;
+    domain: string;
+    title: string;
+    snippet?: string;
+    thumbnailUrl?: string;
+    sourceName?: string;
+  };
+  status?: "active" | "hidden" | "deleted";
   // Enhanced attributes for Meetings, Events & Trainings
   posterUrl?: string;
   qrCodeUrl?: string;
@@ -485,6 +494,21 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
       } else if (Array.isArray(res)) {
         feedItems = res;
       }
+
+      // Merge local shared posts (including external shared posts from members)
+      try {
+        const local = localStorage.getItem("vba_network_feed_posts");
+        if (local) {
+          const localPosts = JSON.parse(local);
+          const existingIds = new Set(feedItems.map((p) => p.id));
+          localPosts.forEach((lp: any) => {
+            if (!existingIds.has(lp.id) && lp.status !== "hidden" && lp.status !== "deleted") {
+              feedItems.unshift(lp);
+            }
+          });
+        }
+      } catch {}
+
       setPosts(feedItems);
 
       // Auto-load comments for each post
@@ -881,8 +905,43 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                   {post.content}
                 </p>
 
-                {/* ── FACEBOOK-STYLE SHARED PREVIEW LINK CARD (FOR OPPORTUNITY OR EXTERNAL SHARES) ── */}
-                {isSharedOpportunity && (
+                {/* ── BÀI VIẾT CHIA SẺ TỪ ỨNG DỤNG BÊN NGOÀI (CHUẨN GIAO DIỆN FACEBOOK SHARE CARD) ── */}
+                {post.sharedArticle ? (
+                  <a
+                    href={post.sharedArticle.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:border-blue-500/60 transition group shadow-xs cursor-pointer"
+                  >
+                    {post.sharedArticle.thumbnailUrl && (
+                      <div className="w-full h-44 sm:h-52 overflow-hidden bg-slate-900 relative">
+                        <img
+                          src={resolveMediaUrl(post.sharedArticle.thumbnailUrl) || post.sharedArticle.thumbnailUrl}
+                          alt={post.sharedArticle.title}
+                          className="w-full h-full object-cover group-hover:scale-103 transition duration-300"
+                        />
+                        <div className="absolute top-2.5 right-2.5 bg-black/75 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+                          <ExternalLink className="size-3 text-blue-400" />
+                          <span>Xem bài gốc</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="p-3.5 space-y-1 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                      <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                        <Globe className="size-3 text-blue-600 dark:text-blue-400" />
+                        <span>{post.sharedArticle.domain || "LIÊN KẾT NGOÀI"}</span>
+                      </div>
+                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition leading-snug line-clamp-2">
+                        {post.sharedArticle.title}
+                      </h4>
+                      {post.sharedArticle.snippet && (
+                        <p className="text-[11.5px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {post.sharedArticle.snippet}
+                        </p>
+                      )}
+                    </div>
+                  </a>
+                ) : isSharedOpportunity ? (
                   <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/40 hover:border-amber-400/60 transition group cursor-pointer">
                     {post.images && post.images.length > 0 ? (
                       <div className="aspect-16/9 w-full overflow-hidden bg-slate-900 relative">
@@ -916,7 +975,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                       </p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Multi-image display grid if not opportunity or multiple images */}
                 {!isSharedOpportunity && Array.isArray(post.images) && post.images.length > 0 && (

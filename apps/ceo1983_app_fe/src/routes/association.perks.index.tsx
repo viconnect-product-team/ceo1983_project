@@ -30,6 +30,7 @@ import {
   ExternalLink,
   Store,
   Navigation,
+  Plus,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -38,6 +39,10 @@ import { type Perk } from "@/lib/member-app.functions";
 import { useT } from "@/lib/i18n";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { toast } from "sonner";
+import {
+  MemberPerkCreateModal,
+  type MemberPerkFormData,
+} from "@/components/perks/MemberPerkCreateModal";
 
 export const Route = createFileRoute("/association/perks/")({
   component: PerksScreen,
@@ -68,6 +73,13 @@ export interface ExtendedPerk extends Perk {
   hotline?: string;
   mapUrl?: string;
   stallUrl?: string;
+  voucherCode?: string;
+  discountType?: string;
+  applicableLocation?: string;
+  productName?: string;
+  isMemberPerk?: boolean;
+  creatorName?: string;
+  qrPayload?: string;
 }
 
 const DEFAULT_PERKS_SEED: ExtendedPerk[] = [
@@ -269,23 +281,102 @@ function PerksScreen() {
   }, [fetchLivePerks]);
 
   const [giftModalOpen, setGiftModalOpen] = useState(false);
+  const [isCreatePerkOpen, setIsCreatePerkOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
   const [activePrize, setActivePrize] = useState<(typeof LUCKY_DRAW_PRIZES)[0] | null>(null);
 
+  // Load custom perks posted by members
+  const [memberCustomPerks, setMemberCustomPerks] = useState<ExtendedPerk[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("vba_member_custom_perks");
+      if (!stored) return [];
+      const parsed: MemberPerkFormData[] = JSON.parse(stored);
+      return parsed.map((m) => ({
+        id: m.id,
+        title: m.title,
+        category: m.category || "Hội viên đăng",
+        partner: m.partner,
+        summary: m.description.slice(0, 90) + (m.description.length > 90 ? "..." : ""),
+        description: m.description,
+        discount: m.discountValue,
+        icon: "gift",
+        link: m.qrPayload || "",
+        validUntil: m.validUntil,
+        locationName: m.applicableLocation,
+        address: m.address || m.applicableLocation,
+        hotline: m.hotline || "0983198383",
+        mapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(m.partner + " " + (m.address || "Ha Noi"))}`,
+        stallUrl: "/association/products",
+        voucherCode: m.voucherCode,
+        discountType: m.discountType,
+        applicableLocation: m.applicableLocation,
+        productName: m.productName,
+        isMemberPerk: true,
+        creatorName: m.creatorName,
+        qrPayload: m.qrPayload,
+      }));
+    } catch {
+      return [];
+    }
+  });
+
+  const handlePerkCreated = (newPerkData: MemberPerkFormData) => {
+    const formatted: ExtendedPerk = {
+      id: newPerkData.id,
+      title: newPerkData.title,
+      category: newPerkData.category || "Hội viên đăng",
+      partner: newPerkData.partner,
+      summary: newPerkData.description.slice(0, 90),
+      description: newPerkData.description,
+      discount: newPerkData.discountValue,
+      icon: "gift",
+      link: newPerkData.qrPayload || "",
+      validUntil: newPerkData.validUntil,
+      locationName: newPerkData.applicableLocation,
+      address: newPerkData.address || newPerkData.applicableLocation,
+      hotline: newPerkData.hotline || "0983198383",
+      mapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(newPerkData.partner + " " + (newPerkData.address || "Ha Noi"))}`,
+      stallUrl: "/association/products",
+      voucherCode: newPerkData.voucherCode,
+      discountType: newPerkData.discountType,
+      applicableLocation: newPerkData.applicableLocation,
+      productName: newPerkData.productName,
+      isMemberPerk: true,
+      creatorName: newPerkData.creatorName,
+      qrPayload: newPerkData.qrPayload,
+    };
+    setMemberCustomPerks((prev) => [formatted, ...prev]);
+  };
+
   const categories = useMemo(() => {
-    return ["Tất cả", "Trúng thưởng", "Golf & Nghỉ dưỡng", "Dịch vụ Doanh nghiệp", "Ẩm thực & Tiếp khách"];
+    return [
+      "Tất cả",
+      "Hội viên đăng",
+      "Trúng thưởng",
+      "Golf & Nghỉ dưỡng",
+      "Dịch vụ Doanh nghiệp",
+      "Ẩm thực & Tiếp khách",
+    ];
   }, []);
 
   const combinedPerks = useMemo(() => {
-    const list = [...(serverPerks || [])];
+    const systemList = [...(serverPerks || [])];
+    const memberList = [...memberCustomPerks];
+
     if (selectedCategory === "Trúng thưởng") {
       return LUCKY_DRAW_PRIZES;
     }
-    if (selectedCategory === "Tất cả") {
-      return [...LUCKY_DRAW_PRIZES.slice(0, 2), ...list];
+    if (selectedCategory === "Hội viên đăng") {
+      return memberList;
     }
-    return list.filter((p) => p.category?.toLowerCase().includes(selectedCategory.toLowerCase()));
-  }, [serverPerks, selectedCategory]);
+    if (selectedCategory === "Tất cả") {
+      return [...memberList, ...LUCKY_DRAW_PRIZES.slice(0, 2), ...systemList];
+    }
+    return [...memberList, ...systemList].filter((p) =>
+      p.category?.toLowerCase().includes(selectedCategory.toLowerCase())
+    );
+  }, [serverPerks, memberCustomPerks, selectedCategory]);
 
   return (
     <div className="vba-animate pb-24">
@@ -323,6 +414,33 @@ function PerksScreen() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── NÚT ĐĂNG ƯU ĐÃI DOANH NGHIỆP DÀNH CHO HỘI VIÊN ── */}
+      <div className="px-4 pt-3">
+        <button
+          type="button"
+          onClick={() => setIsCreatePerkOpen(true)}
+          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#DC2626] via-[#B8860B] to-[#003B95] hover:opacity-95 text-white flex items-center justify-between shadow-md shadow-red-900/20 active:scale-[0.99] transition cursor-pointer group"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-white/20 text-white backdrop-blur-sm">
+              <Plus className="size-4 stroke-[3]" />
+            </span>
+            <div className="text-left">
+              <div className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                <span>Đăng Ưu Đãi Doanh Nghiệp Của Bạn</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[9.5px] font-black">
+                  B2B
+                </span>
+              </div>
+              <div className="text-[11px] text-white/90">
+                Voucher, % giảm giá, Mua 1 Tặng 1 dành riêng cho Hội viên
+              </div>
+            </div>
+          </div>
+          <Sparkles className="size-5 text-amber-300 group-hover:rotate-12 transition-transform" />
+        </button>
       </div>
 
       {/* Category Filter Chips including Trúng thưởng */}
@@ -388,29 +506,54 @@ function PerksScreen() {
             {/* Canvas QR Code with CEO 1983 center logo */}
             <div className="mx-auto my-1 p-3 bg-white rounded-2xl border-2 border-amber-400/80 shadow-md flex flex-col items-center">
               <QrCanvas
-                value={`https://ceo1983.vn/perks/redeem?id=${qrPerkModal.id}&token=${Date.now()}`}
+                value={qrPerkModal.qrPayload || `https://ceo1983.vn/perks/redeem?id=${qrPerkModal.id}&voucher=${qrPerkModal.voucherCode || ""}&token=${Date.now()}`}
                 size={180}
                 logoUrl="/ceo1983-emblem-8.png"
                 logoScale={0.24}
               />
-              <span className="text-[10px] font-mono font-bold text-slate-500 mt-2">
-                MÃ: CEO1983-{qrPerkModal.id.toUpperCase()}-VIP
-              </span>
+              <div className="mt-2.5 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-300">
+                <span className="text-[11px] font-mono font-black text-amber-900 tracking-wider">
+                  MÃ VOUCHER: {qrPerkModal.voucherCode || `CEO1983-${qrPerkModal.id.toUpperCase()}-VIP`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = qrPerkModal.voucherCode || `CEO1983-${qrPerkModal.id.toUpperCase()}-VIP`;
+                    navigator.clipboard.writeText(code);
+                    toast.success(`Đã sao chép mã voucher: ${code}`);
+                  }}
+                  className="text-[10px] text-blue-700 font-bold hover:underline cursor-pointer ml-1"
+                >
+                  Sao chép
+                </button>
+              </div>
             </div>
 
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Xuất trình mã QR này tại quầy lễ tân hoặc thu ngân của đối tác để quét nhận chiết khấu!
             </p>
 
-            {/* Location & Contact Information */}
+            {/* Location, Product & Contact Information */}
             <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left text-xs space-y-1.5">
+              {qrPerkModal.productName && (
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <Store className="size-3.5 shrink-0 text-amber-600" />
+                  <span>Sản phẩm: <strong>{qrPerkModal.productName}</strong></span>
+                </div>
+              )}
+              {qrPerkModal.applicableLocation && (
+                <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                  <MapPin className="size-3.5 shrink-0 text-red-600 mt-0.5" />
+                  <span>Nơi áp dụng: <strong>{qrPerkModal.applicableLocation}</strong></span>
+                </div>
+              )}
               <div className="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
                 <MapPin className="size-3.5 shrink-0 text-emerald-600 mt-0.5" />
-                <span className="line-clamp-2">{qrPerkModal.address || "Hà Nội"}</span>
+                <span className="line-clamp-2">{qrPerkModal.address || "Hà Nội & Toàn quốc"}</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                 <Phone className="size-3.5 shrink-0 text-blue-600" />
-                <span className="font-mono font-bold">{qrPerkModal.hotline || "0901000001"}</span>
+                <span className="font-mono font-bold">{qrPerkModal.hotline || "0983198383"}</span>
               </div>
             </div>
 
@@ -672,7 +815,12 @@ function PerksScreen() {
                   />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {extPerk.isMemberPerk && (
+                      <span className="inline-block rounded-md bg-blue-100 dark:bg-blue-950/90 border border-blue-300 dark:border-blue-600/80 px-2 py-0.5 text-[10px] font-extrabold text-blue-900 dark:text-blue-300">
+                        🏢 Hội viên đăng
+                      </span>
+                    )}
                     {p.category && (
                       <span className="inline-block rounded-md bg-amber-100 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-600/80 px-2 py-0.5 text-[10.5px] font-extrabold text-amber-900 dark:text-amber-300">
                         {p.category}
@@ -687,17 +835,35 @@ function PerksScreen() {
                   <h3 className="mt-1 truncate text-[14px] font-bold text-slate-900 dark:text-white group-hover:text-[#1F3864] dark:group-hover:text-amber-400 transition-colors">
                     {p.title}
                   </h3>
-                  <div className="text-[11px] text-slate-500 font-semibold truncate">
-                    {p.partner}
+                  <div className="text-[11px] text-slate-500 font-semibold truncate flex items-center gap-1.5">
+                    <span>{p.partner}</span>
+                    {extPerk.voucherCode && (
+                      <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">
+                        • Mã: {extPerk.voucherCode}
+                      </span>
+                    )}
                   </div>
+                  {extPerk.productName && (
+                    <div className="text-[11px] text-blue-700 dark:text-blue-300 font-medium truncate">
+                      Sản phẩm: {extPerk.productName}
+                    </div>
+                  )}
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:translate-x-0.5 transition-transform mt-1" />
               </Link>
 
-              {/* Location Display */}
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 px-1">
-                <MapPin className="size-3.5 text-emerald-600 shrink-0" />
-                <span className="truncate">{extPerk.address || extPerk.locationName || "Hệ thống đối tác toàn quốc"}</span>
+              {/* Location & Applicable Scope Display */}
+              <div className="space-y-0.5 text-[11px] px-1">
+                {extPerk.applicableLocation && (
+                  <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
+                    <Store className="size-3.5 text-amber-600 shrink-0" />
+                    <span className="truncate">Áp dụng: {extPerk.applicableLocation}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                  <MapPin className="size-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate">{extPerk.address || extPerk.locationName || "Hệ thống đối tác toàn quốc"}</span>
+                </div>
               </div>
 
               {/* Quick Utility Action Buttons Row (STRICTLY NO RED BUTTONS) */}
@@ -706,10 +872,10 @@ function PerksScreen() {
                 <button
                   type="button"
                   onClick={() => setQrPerkModal(extPerk)}
-                  className="flex-1 py-1.5 px-2 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1 shadow-xs transition"
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1 shadow-xs transition cursor-pointer"
                 >
                   <QrCode className="size-3.5 text-amber-300" />
-                  <span>Mã QR</span>
+                  <span>Mã QR Nhận Ưu Đãi</span>
                 </button>
 
                 {/* 2. Google Maps Direct Navigation Link */}
@@ -748,6 +914,13 @@ function PerksScreen() {
           );
         })}
       </div>
+
+      {/* Modal Đăng Ưu Đãi Doanh Nghiệp Của Hội Viên */}
+      <MemberPerkCreateModal
+        isOpen={isCreatePerkOpen}
+        onClose={() => setIsCreatePerkOpen(false)}
+        onSuccess={handlePerkCreated}
+      />
     </div>
   );
 }

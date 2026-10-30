@@ -1,5 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Gift, Pencil, Plus, Trash2, ExternalLink, Search, LayoutGrid, List } from "lucide-react";
+import {
+  Gift,
+  Pencil,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Search,
+  LayoutGrid,
+  List,
+  Building2,
+  QrCode,
+  Eye,
+  EyeOff,
+  Tag,
+  CheckCircle2,
+  X,
+  Store,
+  MapPin,
+  Phone,
+} from "lucide-react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,6 +29,8 @@ import { fetchNestApi } from "@/lib/api-client";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { QrCanvas } from "@/components/member/QrCanvas";
+import type { MemberPerkFormData } from "@/components/perks/MemberPerkCreateModal";
 import {
   createPerkFn,
   deletePerkFn,
@@ -146,6 +167,84 @@ function PerksAdminPage() {
 
   const [view, setView] = useState<"table" | "cards">("table");
   const [q, setQ] = useState("");
+  const [activeTab, setActiveTab] = useState<"system" | "member_perks">("system");
+  const [selectedQrPerk, setSelectedQrPerk] = useState<MemberPerkFormData | null>(null);
+
+  // Load custom perks posted by members
+  const [memberPerks, setMemberPerks] = useState<MemberPerkFormData[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("vba_member_custom_perks");
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {}
+    return [
+      {
+        id: "perk-mem-seed-1",
+        voucherCode: "CEO83-DESIGN30",
+        title: "Giảm 30% Chi Phí Thiết Kế Kiến Trúc & Thi Công Nội Thất",
+        description: "Áp dụng cho doanh nghiệp Hội viên CEO 1983 khi ký hợp đồng thi công văn phòng, biệt thự.",
+        discountType: "percent",
+        discountValue: "Giảm 30%",
+        partner: "Công Ty CP Kiến Trúc Xanh An Phát",
+        category: "Nội thất & Xây dựng",
+        productName: "Gói Thiết Kế & Thi Công Nội Thất Cao Cấp",
+        applicableLocation: "Tại Văn phòng Hà Nội & TP. Hồ Chí Minh",
+        address: "Tầng 8, Tòa Discovery Complex, 302 Cầu Giấy, Hà Nội",
+        hotline: "0934 556 677",
+        validFrom: "2026-01-01",
+        validUntil: "2026-12-31",
+        qrPayload: JSON.stringify({ type: "CEO1983_PERK_VOUCHER", voucher: "CEO83-DESIGN30", discount: "Giảm 30%" }),
+        creatorName: "Vũ Thành Đạt - Giám đốc",
+        status: "active",
+        createdAt: "2026-10-15T08:00:00.000Z",
+      },
+      {
+        id: "perk-mem-seed-2",
+        voucherCode: "CEO83-BOGO-FNB",
+        title: "Mua 1 Tặng 1 Toàn Bộ Menu Đồ Uống & Tiệc Doanh Nhân",
+        description: "Tặng 01 phần thức uống cùng loại hoặc giảm 10% tiệc gala tiếp khách doanh nghiệp.",
+        discountType: "bogo",
+        discountValue: "Mua 1 Tặng 1",
+        partner: "Hệ Thống Nhà Hàng & Lounge Legend 83",
+        category: "Ẩm thực & Nhà hàng F&B",
+        productName: "Menu Ẩm Thực Tiếp Khách & Rượu Vang VIP",
+        applicableLocation: "Tất cả chi nhánh tại Hà Nội & Đà Nẵng",
+        address: "Số 68 Bà Triệu, Q. Hoàn Kiếm, Hà Nội",
+        hotline: "0912 345 678",
+        validFrom: "2026-02-01",
+        validUntil: "2026-12-31",
+        qrPayload: JSON.stringify({ type: "CEO1983_PERK_VOUCHER", voucher: "CEO83-BOGO-FNB", discount: "Mua 1 Tặng 1" }),
+        creatorName: "Nguyễn Thị Mai - Phó Tổng GĐ",
+        status: "active",
+        createdAt: "2026-10-20T10:00:00.000Z",
+      },
+    ];
+  });
+
+  const handleToggleMemberPerkStatus = (id: string, newStatus: "active" | "hidden") => {
+    setMemberPerks((prev) => {
+      const updated = prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item));
+      try {
+        localStorage.setItem("vba_member_custom_perks", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    toast.success(newStatus === "active" ? "Đã duyệt và hiển thị ưu đãi lên App!" : "Đã tạm gỡ/ẩn ưu đãi khỏi App!");
+  };
+
+  const handleDeleteMemberPerk = (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn ưu đãi B2B này?")) return;
+    setMemberPerks((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      try {
+        localStorage.setItem("vba_member_custom_perks", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    toast.success("Đã xóa ưu đãi thành công!");
+  };
 
   const filteredPerks = useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -342,19 +441,194 @@ function PerksAdminPage() {
       {/* Birthday Promotion & Perks Policy Managed by Association CRM */}
       <BirthdayPromoManager />
 
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatCard
-          label={t("perks.kpi.total")}
-          value={perks.length}
-          icon={<Gift className="h-4 w-4" />}
-        />
-        <StatCard
-          label={t("perks.kpi.active")}
-          value={active.length}
-          tone="success"
-          icon={<Gift className="h-4 w-4" />}
-        />
+      {/* Tab Switch: Hệ Thống vs Hội Viên Tự Đăng B2B */}
+      <div className="mb-5 flex items-center gap-2 border-b border-border pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("system")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === "system"
+              ? "bg-[#003B95] text-white shadow-sm"
+              : "bg-secondary text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Building2 className="size-4" />
+          <span>Ưu Đãi Đối Tác / Hiệp Hội ({perks.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("member_perks")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === "member_perks"
+              ? "bg-gradient-to-r from-[#DC2626] to-[#B8860B] text-white shadow-sm"
+              : "bg-secondary text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Gift className="size-4" />
+          <span>Ưu Đãi Do Hội Viên Đăng B2B ({memberPerks.length})</span>
+        </button>
       </div>
+
+      {activeTab === "member_perks" ? (
+        <div className="space-y-5">
+          {/* Member Perks KPI Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard
+              label="Tổng ưu đãi B2B Hội viên đăng"
+              value={memberPerks.length}
+              icon={<Gift className="h-4 w-4 text-[#DC2626]" />}
+            />
+            <StatCard
+              label="Đang hiển thị trên Mobile App"
+              value={memberPerks.filter((p) => p.status === "active").length}
+              tone="success"
+              icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+            />
+            <StatCard
+              label="Đã tạm ẩn / Gỡ khỏi App"
+              value={memberPerks.filter((p) => p.status === "hidden").length}
+              tone="warning"
+              icon={<EyeOff className="h-4 w-4 text-amber-600" />}
+            />
+          </div>
+
+          {/* Member Perks Table */}
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  Danh Sách Ưu Đãi Doanh Nghiệp Do Hội Viên Đăng
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Quyền Quản Trị / Ban Điều Hành: Kiểm duyệt, gỡ bỏ hoặc kích hoạt mã ưu đãi của Hội viên
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto relative">
+              <table className="w-full text-sm border-separate border-spacing-0">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/80 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <th className="sticky left-0 z-20 w-[56px] min-w-[56px] bg-secondary px-3 py-3 text-center border-r border-b border-border">
+                      STT
+                    </th>
+                    <th className="px-4 py-3 border-b border-border">Mã Voucher</th>
+                    <th className="px-4 py-3 border-b border-border">Ưu Đãi & Doanh Nghiệp</th>
+                    <th className="px-4 py-3 border-b border-border">Hình thức & Mức giảm</th>
+                    <th className="px-4 py-3 border-b border-border">Sản phẩm & Nơi áp dụng</th>
+                    <th className="px-4 py-3 border-b border-border">Hội viên đăng</th>
+                    <th className="px-4 py-3 border-b border-border">Hạn dùng</th>
+                    <th className="px-4 py-3 border-b border-border">Trạng thái</th>
+                    <th className="sticky right-0 z-20 min-w-[150px] bg-secondary px-4 py-3 text-right border-l border-b border-border">
+                      Thao tác Quản trị
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {memberPerks.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-8 text-center text-xs text-muted-foreground">
+                        Chưa có ưu đãi B2B nào được hội viên gửi lên.
+                      </td>
+                    </tr>
+                  ) : (
+                    memberPerks.map((mp, idx) => (
+                      <tr key={mp.id} className="border-b border-border hover:bg-secondary/40 transition">
+                        <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center text-xs font-medium text-muted-foreground border-r border-b border-border">
+                          {idx + 1}
+                        </td>
+                        <td className="px-4 py-3 border-b border-border">
+                          <span className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-300 font-mono text-xs font-black">
+                            {mp.voucherCode}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 border-b border-border">
+                          <div className="font-bold text-foreground text-xs">{mp.title}</div>
+                          <div className="text-[11px] text-muted-foreground">{mp.partner}</div>
+                        </td>
+                        <td className="px-4 py-3 border-b border-border">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-xs font-bold">
+                            {mp.discountValue}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 border-b border-border text-xs">
+                          <div className="font-medium text-foreground">{mp.productName}</div>
+                          <div className="text-[11px] text-muted-foreground">{mp.applicableLocation}</div>
+                        </td>
+                        <td className="px-4 py-3 border-b border-border text-xs">
+                          <div className="font-medium text-foreground">{mp.creatorName || "Hội viên"}</div>
+                          <div className="text-[11px] text-blue-600 font-mono">{mp.hotline}</div>
+                        </td>
+                        <td className="px-4 py-3 border-b border-border text-xs font-mono text-muted-foreground">
+                          {mp.validUntil}
+                        </td>
+                        <td className="px-4 py-3 border-b border-border">
+                          <Pill color={mp.status === "active" ? "success" : "neutral"}>
+                            {mp.status === "active" ? "Đang hiện" : "Đã gỡ/ẩn"}
+                          </Pill>
+                        </td>
+                        <td className="sticky right-0 z-10 bg-card px-4 py-3 text-right border-l border-b border-border">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedQrPerk(mp)}
+                              className="p-1.5 rounded-lg bg-secondary hover:bg-muted text-foreground transition cursor-pointer"
+                              title="Xem mã QR ưu đãi"
+                            >
+                              <QrCode className="size-4 text-blue-600" />
+                            </button>
+                            {mp.status === "active" ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleMemberPerkStatus(mp.id, "hidden")}
+                                className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                                title="Gỡ ưu đãi khỏi App"
+                              >
+                                <EyeOff className="size-3.5" /> Gỡ
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleMemberPerkStatus(mp.id, "active")}
+                                className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                                title="Duyệt và hiển thị ưu đãi lên App"
+                              >
+                                <Eye className="size-3.5" /> Duyệt
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMemberPerk(mp.id)}
+                              className="p-1.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition cursor-pointer"
+                              title="Xóa ưu đãi vĩnh viễn"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <StatCard
+              label={t("perks.kpi.total")}
+              value={perks.length}
+              icon={<Gift className="h-4 w-4" />}
+            />
+            <StatCard
+              label={t("perks.kpi.active")}
+              value={active.length}
+              tone="success"
+              icon={<Gift className="h-4 w-4" />}
+            />
+          </div>
 
       {/* Filters */}
       <div className="mb-5 flex flex-wrap items-center gap-3">
@@ -517,6 +791,64 @@ function PerksAdminPage() {
               </div>
             </Card>
           ))}
+        </div>
+      )}
+      </>
+      )}
+
+      {/* Modal Xem Mã QR Ưu Đãi B2B */}
+      {selectedQrPerk && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in-50"
+          onClick={() => setSelectedQrPerk(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center text-foreground shadow-2xl space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedQrPerk(null)}
+              className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-secondary hover:bg-muted text-muted-foreground transition cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider">
+              ✦ Mã QR Ưu Đãi B2B ✦
+            </span>
+
+            <h3 className="text-base font-bold text-foreground">
+              {selectedQrPerk.title}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {selectedQrPerk.partner} • {selectedQrPerk.discountValue}
+            </p>
+
+            <div className="mx-auto my-2 p-3 bg-white rounded-2xl border-2 border-amber-400 shadow-sm inline-block">
+              <QrCanvas
+                value={selectedQrPerk.qrPayload || `https://ceo1983.vn/perks/redeem?voucher=${selectedQrPerk.voucherCode}`}
+                size={180}
+                logoUrl="/ceo1983-emblem-8.png"
+                logoScale={0.24}
+              />
+            </div>
+
+            <div className="p-2 rounded-xl bg-secondary text-xs font-mono font-bold text-primary">
+              MÃ VOUCHER: {selectedQrPerk.voucherCode}
+            </div>
+
+            <p className="text-[11px] text-muted-foreground">
+              Nơi áp dụng: {selectedQrPerk.applicableLocation}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setSelectedQrPerk(null)}
+              className="w-full py-2.5 rounded-xl bg-secondary hover:bg-muted text-foreground text-xs font-bold transition cursor-pointer"
+            >
+              Đóng lại
+            </button>
+          </div>
         </div>
       )}
 

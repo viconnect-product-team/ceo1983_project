@@ -43,6 +43,7 @@ import { useServerData } from "@/hooks/use-server-data";
 import { listMyEvents, registerForEvent, cancelEventRegistration, getMyMember, isEventFull, type MyEvent, type MyMember } from "@/lib/member-app.functions";
 import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { formatDisplayDate } from "@/lib/date-format";
+import { saveCalendarItem } from "@/lib/calendar-reminder";
 import { useT, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import eventImg from "@/assets/vba-event.jpg";
@@ -1140,6 +1141,19 @@ function EventsScreen() {
           };
           localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
 
+          // Tự động lưu vào Lịch hội viên & Bật báo thức nhắc lịch
+          saveCalendarItem({
+            id: `ev-${eventId}`,
+            sourceType: "event",
+            title: registeringEvent.title,
+            dateStr: (registeringEvent.date || new Date().toISOString()).split("T")[0],
+            timeStr: (registeringEvent as any).time || "08:30",
+            location: registeringEvent.place || "Keangnam Landmark 72, Hà Nội",
+            details: `Vé tham dự: ${actualTicketCount} (${formTicketType}) · Mã vé: ${tempInvNo}`,
+            alarmEnabled: true,
+            alarmLeadMinutes: 30,
+          });
+
           window.dispatchEvent(new Event("vba.events.changed"));
           window.dispatchEvent(new Event("vba.history.changed"));
         } catch (err) {
@@ -1210,6 +1224,19 @@ function EventsScreen() {
             category: "Sự kiện",
           };
           localStorage.setItem("vba_recent_activities", JSON.stringify([newAct, ...existingActivities]));
+
+          // Tự động lưu vào Lịch hội viên & Bật báo thức nhắc lịch
+          saveCalendarItem({
+            id: `ev-${eventId}`,
+            sourceType: "event",
+            title: registeringEvent.title,
+            dateStr: (registeringEvent.date || new Date().toISOString()).split("T")[0],
+            timeStr: (registeringEvent as any).time || "08:30",
+            location: registeringEvent.place || "Keangnam Landmark 72, Hà Nội",
+            details: `Vé tham dự: ${actualTicketCount} (${formTicketType}) · Mã vé: ${tempInvNo}`,
+            alarmEnabled: true,
+            alarmLeadMinutes: 30,
+          });
 
           window.dispatchEvent(new Event("vba.events.changed"));
           window.dispatchEvent(new Event("vba.history.changed"));

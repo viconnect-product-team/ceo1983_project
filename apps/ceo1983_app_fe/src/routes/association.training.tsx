@@ -20,11 +20,13 @@ import {
   ChevronRight,
   Maximize2,
   Check,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { useAuth } from "@/context/AuthContext";
+import { saveCalendarItem } from "@/lib/calendar-reminder";
 
 export const Route = createFileRoute("/association/training")({
   component: AssociationTrainingScreen,
@@ -273,7 +275,26 @@ export function AssociationTrainingScreen() {
       }).catch(() => null);
 
       setCheckedInIds((prev) => ({ ...prev, [training.id]: true }));
-      toast.success("Điểm danh tham gia buổi đào tạo thành công!");
+
+      // Tự động lưu vào Lịch & Bật báo thức nhắc lịch
+      saveCalendarItem({
+        id: `train-${training.id}`,
+        sourceType: "training",
+        title: training.title,
+        dateStr: (training.start_time || new Date().toISOString()).split("T")[0],
+        timeStr: training.start_time
+          ? new Date(training.start_time).toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "09:00",
+        location: training.location || "Phòng họp trực tuyến Jitsi Meet",
+        details: `Chuyên gia: ${training.instructor_name || "CEO 1983"}`,
+        alarmEnabled: true,
+        alarmLeadMinutes: 30,
+      });
+
+      toast.success("Điểm danh & đã lưu lịch đào tạo vào Báo thức nhắc hẹn!");
     } catch {
       toast.error("Không thể ghi nhận điểm danh.");
     } finally {
@@ -631,6 +652,34 @@ export function AssociationTrainingScreen() {
                         <span>Tài liệu ({t.materials.length})</span>
                       </button>
                     )}
+
+                    {/* Add to Calendar & Alarm Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        saveCalendarItem({
+                          id: `train-${t.id}`,
+                          sourceType: "training",
+                          title: t.title,
+                          dateStr: (t.start_time || new Date().toISOString()).split("T")[0],
+                          timeStr: t.start_time
+                            ? new Date(t.start_time).toLocaleTimeString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "09:00",
+                          location: t.location || "Phòng họp trực tuyến Jitsi Meet",
+                          details: `Chuyên gia: ${t.instructor_name || "CEO 1983"}`,
+                          alarmEnabled: true,
+                          alarmLeadMinutes: 30,
+                        });
+                        toast.success("Đã lưu khóa đào tạo vào Lịch & Bật báo thức nhắc nhở!");
+                      }}
+                      className="p-2.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition cursor-pointer"
+                      title="Lưu vào Lịch & Nhắc lịch"
+                    >
+                      <Bell className="size-4" />
+                    </button>
 
                     {/* Share Link Button */}
                     {t.format !== "offline" && (

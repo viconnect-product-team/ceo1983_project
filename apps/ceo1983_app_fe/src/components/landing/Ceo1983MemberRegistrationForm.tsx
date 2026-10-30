@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Building2,
   User,
@@ -50,6 +50,17 @@ export function Ceo1983MemberRegistrationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [registeredData, setRegisteredData] = useState<any>(null);
+  const [referrerCode, setReferrerCode] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("ref") || params.get("referral") || params.get("referrer") || "";
+      if (ref) {
+        setReferrerCode(ref.trim());
+      }
+    }
+  }, []);
 
   const industries = [
     { value: "ind.trade", label: "Thương mại & Bán lẻ" },
@@ -103,8 +114,36 @@ export function Ceo1983MemberRegistrationForm() {
           staffSize,
           notes: notes.trim(),
           attachments, // Documents stored for company data & AI parsing
+          referredBy: referrerCode || undefined,
         }),
       });
+
+      // Chỉ khi người dùng bấm gửi ở form đăng ký mới tính lượt giới thiệu
+      if (referrerCode) {
+        try {
+          const rawConv = localStorage.getItem("vba_referral_conversions");
+          const conversions = rawConv ? JSON.parse(rawConv) : [];
+          const newConv = {
+            id: `ref-conv-${Date.now()}`,
+            referrerCode,
+            newMemberName: fullName.trim(),
+            newMemberEmail: email.trim().toLowerCase(),
+            newMemberPhone: phone.trim(),
+            newMemberCompany: companyName.trim(),
+            submittedAt: new Date().toISOString(),
+            status: "submitted",
+          };
+          conversions.unshift(newConv);
+          localStorage.setItem("vba_referral_conversions", JSON.stringify(conversions));
+
+          const rawCounts = localStorage.getItem("vba_member_referral_counts");
+          const counts = rawCounts ? JSON.parse(rawCounts) : {};
+          counts[referrerCode] = (counts[referrerCode] || 0) + 1;
+          localStorage.setItem("vba_member_referral_counts", JSON.stringify(counts));
+
+          window.dispatchEvent(new CustomEvent("vba_referral_updated", { detail: newConv }));
+        } catch {}
+      }
 
       setRegisteredData({
         fullName,
@@ -266,6 +305,21 @@ export function Ceo1983MemberRegistrationForm() {
                 Bảo mật thông tin doanh nghiệp theo tiêu chuẩn Hiệp hội
               </span>
             </div>
+
+            {referrerCode && (
+              <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-amber-400 text-slate-950 font-bold text-sm">🤝</span>
+                  <div>
+                    <span className="font-bold text-amber-900">Hội viên giới thiệu gia nhập: </span>
+                    <span className="font-mono font-black text-[#003B95]">{referrerCode}</span>
+                  </div>
+                </div>
+                <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded-full">
+                  ✓ Chỉ tính lượt giới thiệu khi gửi đơn thành công
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

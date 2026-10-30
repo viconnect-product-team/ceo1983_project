@@ -19,6 +19,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDisplayDate } from "@/lib/date-format";
+import {
+  getSavedCalendarItems,
+  updateCalendarAlarm,
+  saveCalendarItem,
+  CalendarReminderItem,
+} from "@/lib/calendar-reminder";
 
 export interface CalendarAlarmItem {
   id: string;
@@ -114,6 +120,24 @@ export const CeoCalendarAlarmModal: React.FC<CeoCalendarAlarmModalProps> = ({
       });
     });
 
+    // Merge saved calendar items
+    const savedItems = getSavedCalendarItems();
+    savedItems.forEach((item) => {
+      if (!list.some((existing) => existing.id === item.id)) {
+        list.push({
+          id: item.id,
+          type: item.sourceType === "event" || item.sourceType === "training" ? "event" : "meeting",
+          title: item.title,
+          dateStr: item.dateStr,
+          timeStr: item.timeStr,
+          location: item.location,
+          alarmEnabled: alarms[item.id]?.enabled ?? item.alarmEnabled,
+          alarmLeadMinutes: alarms[item.id]?.leadMinutes ?? item.alarmLeadMinutes,
+          customAlarmTime: alarms[item.id]?.customTime ?? item.customAlarmTime,
+        });
+      }
+    });
+
     return list;
   }, [events, meetings, alarms]);
 
@@ -158,6 +182,7 @@ export const CeoCalendarAlarmModal: React.FC<CeoCalendarAlarmModalProps> = ({
       [id]: { ...current, enabled: !currentEnabled },
     };
     saveAlarms(nextAlarms);
+    updateCalendarAlarm(id, { alarmEnabled: !currentEnabled });
 
     if (!currentEnabled) {
       toast.success("Đã bật báo thức nhắc lịch thành công!");
@@ -177,6 +202,7 @@ export const CeoCalendarAlarmModal: React.FC<CeoCalendarAlarmModalProps> = ({
       [id]: { ...current, leadMinutes, enabled: true },
     };
     saveAlarms(nextAlarms);
+    updateCalendarAlarm(id, { alarmLeadMinutes: leadMinutes, alarmEnabled: true });
     toast.success(`Đã cập nhật nhắc trước ${leadMinutes === 0 ? "đúng giờ" : `${leadMinutes} phút`}`);
   };
 

@@ -1,5 +1,37 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 30/10/2026 (v10.0): Hoàn Thiện Toàn Diện 8 Hạng Mục Nâng Cấp Hệ Thống Web CRM & Mobile App CEO 1983 ([NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007], [NODE-APP-011], [NODE-CRM-002], [NODE-CRM-004], [NODE-CRM-008], [NODE-CRM-009], [NODE-CRM-013], [NODE-CORE-001])**:
+  1. *Nâng Cấp Ưu Đãi B2B Tự Đăng Đa Dạng & Quét QR Tại Điểm Bán ([NODE-APP-007], [NODE-CRM-008])*:
+     - Hội viên CLB CEO 1983 có thể tự đăng ưu đãi cho toàn thể hội viên với đầy đủ trường: Mã Voucher, Tiêu đề ưu đãi, Nội dung chi tiết, Loại ưu đãi (% giảm giá, Mua 1 tặng 1, Quà tặng kèm, Đồng giá ưu đãi), Ngày đăng, Giá trị ưu đãi, Nơi áp dụng và Mã QR riêng biệt để hội viên khác quét nhận ưu đãi trực tiếp tại cửa hàng/doanh nghiệp.
+     - Đồng bộ danh sách ưu đãi lên Web CRM (/perks), hỗ trợ Ban Điều Hành/Admin phê duyệt (active), gỡ tạm thời (paused) hoặc xóa vĩnh viễn.
+  2. *Chia Sẻ Bài Viết Từ Liên Kết Ngoài Dạng Facebook Post & Quản Trị Bài Viết ([NODE-APP-003], [NODE-CRM-004])*:
+     - Hội viên có thể chia sẻ liên kết bài viết từ ứng dụng bên ngoài (báo chí, Facebook, website doanh nghiệp) vào Bảng tin Mạng lưới CEO 1983 (/network).
+     - Giao diện hiển thị chuẩn phong cách Facebook: Thẻ Card 16:9 với ảnh thumbnail lớn, tên domain viết hoa màu xám (VNEXPRESS.NET, CAFEF.VN...) kèm icon quả cầu Globe, tiêu đề đậm, đoạn tóm tắt bài viết và nút mở bài viết gốc.
+     - Tích hợp thanh công cụ quản trị (Moderate Bar) trực tiếp trên từng bài viết cho tài khoản Chủ tịch, Quản trị viên, Admin: Gỡ bài (chuyển sang trạng thái hidden), Khôi phục bài viết và Xóa vĩnh viễn khỏi hệ thống.
+  3. *Hệ Thống Nhắc Lịch Thông Minh, Morning Digest 7h00 Sáng & Floating Toast Facebook Pop-up ([NODE-APP-004])*:
+     - Khắc phục triệt để chức năng Nhắc Lịch (calendar-reminder.ts): Khi hội viên đăng ký vé sự kiện, có cuộc họp ban điều hành hoặc tham gia khóa đào tạo, hệ thống tự động lưu trữ vào Lịch cá nhân và kích hoạt báo thức nhắc nhở.
+     - Morning Digest 7:00 AM hàng ngày: Tự động tổng hợp toàn bộ lịch trình công tác, sự kiện và họp ban trong ngày để thông báo vào đúng 7 giờ sáng.
+     - Facebook Style Floating Reminder Banner (CeoFacebookReminderBanner.tsx): Bật pop-up góc trên màn hình chuẩn phong cách thông báo Facebook với icon chuông đỏ lắc lư (animate-bounce), âm báo thức Web Audio A5 (880Hz) -> A6 (1760Hz), thanh đếm ngược tự đóng sau 15s, nút xem chi tiết lịch và nút Snooze nhắc lại sau 15 phút.
+  4. *Bản Đồ 2D Đường Phố Hà Nội / Keangnam Landmark 72 Tương Tác Kéo Thả 0ms ([NODE-APP-011])*:
+     - Nâng cấp CeoBusinessLocationPicker.tsx tích hợp 2D Interactive Canvas Map Engine: Vẽ trực quan mạng lưới đường phố Hà Nội (Đại lộ Thăng Long, Phạm Hùng, Keangnam 72, hồ điều hòa Mễ Trì) hiển thị ngay tức thì 0ms, không bao giờ bị xám màn hình kể cả khi mạng chậm.
+     - Ghim định vị màu đỏ thương hiệu #DC2626 tương tác kéo thả / chạm để đổi địa chỉ doanh nghiệp và đồng bộ ngược vào ô nhập liệu. Nút 'Về Keangnam 72' và nút GPS một chạm.
+  5. *Cấu Hình Thông Báo Zalo OA Dynamic Tại Web CRM ([NODE-CRM-013])*:
+     - Tạo mới component ZaloOaConfigSection.tsx trong Cài Đặt Hệ Thống (/settings tab zalo_oa).
+     - Hỗ trợ cấu hình Zalo OA ID, App ID, Secret Key, Access Token và Webhook.
+     - Quản lý 4 danh mục thông báo dynamic: (1) Hội Phí, (2) Sự Kiện, (3) Chương Trình Đào Tạo, (4) Cuộc Họp kèm bộ biến động linh hoạt: {ho_ten}, {ma_hoi_vien}, {so_tien}, {thoi_gian}, {dia_diem}, {ten_su_kien}, {ten_khoa_hoc}...
+     - Cung cấp công cụ gửi thử nghiệm thông báo và giao diện Live Chat Bubble Preview Zalo.
+  6. *Cổng Thanh Toán VNPay & VNPAY-QR EMVCo Chuẩn Thay Thế VietQR ([NODE-CRM-009], [NODE-CORE-001])*:
+     - Tạo mới component VNPayConfigSection.tsx trong Cài Đặt Hệ Thống (/settings tab vnpay).
+     - Cấu hình VNPay: TmnCode, HashSecret, vnpUrl, ReturnUrl, IpnUrl, chế độ Sandbox/Production.
+     - Tích hợp VNPAY-QR EMVCo và liên kết thanh toán bảo mật SHA-512 tại màn hình đăng ký vé sự kiện (events.$eventId.register.tsx), thay thế hoàn toàn VietQR cũ.
+  7. *Thống Kê Người Giới Thiệu Tính Nghiêm Ngặt Khi Gửi Form Đăng Ký ([NODE-APP-006], [NODE-CRM-002])*:
+     - Bắt param ?ref=... từ URL liên kết giới thiệu hội viên trong Ceo1983MemberRegistrationForm.tsx.
+     - Chỉ khi người dùng điền đầy đủ thông tin và bấm 'Gửi Hồ Sơ Đăng Ký Gia Nhập' thành công (API trả về HTTP 200/201) mới chính thức tính +1 lượt giới thiệu vào tài khoản của người giới thiệu.
+  8. *Giải Thưởng Thống Kê Gamification CRM Bắn Xuống Mobile App ([NODE-CRM-002], [NODE-APP-006])*:
+     - Tạo mới engine giải thưởng milestone-awards.ts và modal quản lý MilestoneAwardsManagerModal.tsx tại Web CRM (/analytics), cho phép Ban Điều Hành thiết lập các mốc giải thưởng (ví dụ: mốc 10, 25, 50 người giới thiệu; mốc doanh thu; kết nối 1-on-1; cơ hội B2B; sự kiện).
+     - Bắn dữ liệu giải thưởng xuống Mobile App thông qua kênh sự kiện thời gian thực vba_milestone_awards_updated.
+     - Tại Mobile App (/association/analytics), hiển thị khối thẻ giải thưởng với thanh tiến trình % động 3 màu Đỏ - Vàng - Xanh và thông điệp chuẩn xác: 'Bạn đang giới thiệu được X / 10 người, hãy giới thiệu thêm Y người nữa để mở khóa giải thưởng: [Tên giải thưởng]!'. Tương tự đồng bộ cho tất cả các danh mục thống kê còn lại, kèm nút mở modal xem toàn bộ lộ trình giải thưởng của CLB.
+
 - **Bản cập nhật ngày 29/10/2026 (v9.8): Nâng Cấp Toàn Diện Thống Kê Chi Tiết Tree Menu, Quản Lý Tài Liệu Tự Thêm Danh Mục Chuẩn Google Drive, 3 Chế Độ Xem Báo Cáo Tài Chính & Đồng Bộ Hồ Sơ Thẻ Hội Viên Mobile App ([NODE-CRM-002], [NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011], [NODE-CRM-014], [NODE-APP-001], [NODE-APP-002], [NODE-APP-006], [NODE-APP-007])**:
   1. *Web CRM - Thống Kê Quản Trị Chi Tiết Menu Tree & Biểu Đồ 4 Cột Đa Chỉ Số ([NODE-CRM-002])*:
      - **Menu Tree Sidebar mở rộng**: Menu "Thống kê CLB & Hội viên" hỗ trợ mở rộng/thu gọn dạng Tree trực quan với 5 danh mục con: (1) Tích cực & Tiêu cực (`positive_negative`), (2) 3 thành viên kết nối nhiều nhất (`top_connectors`), (3) Top chia sẻ cơ hội B2B (`top_b2b`), (4) Top sự kiện & họp ban (`top_events`), (5) Top người giới thiệu (`top_referrals`).

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   Bell,
   Building2,
+  CreditCard,
   Globe,
   Layout,
   Lock,
@@ -19,6 +20,8 @@ import { AssociationLogoUploader } from "@/components/dashboard/AssociationLogoU
 import { AssociationLandingEditor } from "@/components/dashboard/AssociationLandingEditor";
 import { AssociationDomainEditor } from "@/components/dashboard/AssociationDomainEditor";
 import { ReplyTemplatesEditor } from "@/components/dashboard/ReplyTemplatesEditor";
+import { ZaloOaConfigSection } from "@/components/dashboard/ZaloOaConfigSection";
+import { VNPayConfigSection } from "@/components/dashboard/VNPayConfigSection";
 import { getSettingsFn, saveSettingsFn } from "@/lib/settings.functions";
 import { useLang, useT, type TKey } from "@/lib/i18n";
 
@@ -29,6 +32,8 @@ const TABS = [
   { key: "landing", label: "set.tab.landing", icon: Layout },
   { key: "domain", label: "set.tab.domain", icon: Globe },
   { key: "templates", label: "set.tab.templates", icon: MessageSquareText },
+  { key: "zalo_oa", label: "Cấu hình Zalo OA (Dynamic)", icon: MessageSquareText },
+  { key: "vnpay", label: "Cổng Thanh Toán VNPay", icon: CreditCard },
   { key: "notifications", label: "set.tab.notifications", icon: Bell },
   { key: "security", label: "set.tab.security", icon: Shield },
   { key: "integrations", label: "set.tab.integrations", icon: Globe },
@@ -184,6 +189,10 @@ function SettingsPage() {
 
           {tab === "templates" && <ReplyTemplatesEditor />}
 
+          {tab === "zalo_oa" && <ZaloOaConfigSection />}
+
+          {tab === "vnpay" && <VNPayConfigSection />}
+
           {tab === "notifications" && (
             <div className="space-y-5">
               <div>
@@ -264,7 +273,7 @@ function SettingsPage() {
             </div>
           )}
 
-          {tab !== "landing" && tab !== "domain" && tab !== "templates" && (
+          {tab !== "landing" && tab !== "domain" && tab !== "templates" && tab !== "zalo_oa" && tab !== "vnpay" && (
             <div className="mt-6 flex justify-end">
               <button
                 onClick={save}

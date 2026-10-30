@@ -35,11 +35,14 @@ import {
   ShieldCheck,
   UserPlus,
   Medal,
+  Trophy,
+  Gift,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { MemberHeader } from "@/components/member/MemberShell";
+import { MilestoneAward, getAwardsByCategory } from "@/lib/milestone-awards";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -99,6 +102,20 @@ export function AssociationAnalyticsScreen() {
   const [timeRange, setTimeRange] = useState<"month" | "quarter" | "year">("month");
   const [loading, setLoading] = useState(false);
   const [serverData, setServerData] = useState<any>(null);
+
+  // Giải thưởng Gamification đồng bộ từ Web CRM
+  const [awardsUpdatedTick, setAwardsUpdatedTick] = useState(0);
+  const [showAwardsRoadmapModal, setShowAwardsRoadmapModal] = useState(false);
+
+  useEffect(() => {
+    const handleAwardsUpdate = () => {
+      setAwardsUpdatedTick((prev) => prev + 1);
+    };
+    window.addEventListener("vba_milestone_awards_updated", handleAwardsUpdate);
+    return () => {
+      window.removeEventListener("vba_milestone_awards_updated", handleAwardsUpdate);
+    };
+  }, []);
 
   // Fetch real current member info for audit proof
   useEffect(() => {
@@ -282,6 +299,68 @@ export function AssociationAnalyticsScreen() {
         ];
     }
   }, [activeCategory, serverData]);
+
+  // Tiến trình giải thưởng Gamification đồng bộ từ CRM cho từng danh mục
+  const currentAwardProgress = useMemo(() => {
+    let mappedCat: MilestoneAward["category"] = "top_referrals";
+    let defaultCurrent = 4;
+    let unitLabel = "người";
+    let actionVerb = "giới thiệu";
+
+    if (activeCategory === "top_connections") {
+      mappedCat = "top_connect";
+      defaultCurrent = 8;
+      unitLabel = "cuộc gặp 1-on-1";
+      actionVerb = "kết nối";
+    } else if (activeCategory === "top_opportunities") {
+      mappedCat = "top_opportunities";
+      defaultCurrent = 3;
+      unitLabel = "cơ hội B2B";
+      actionVerb = "chia sẻ";
+    } else if (activeCategory === "top_events_meetings") {
+      mappedCat = "top_events_meetings";
+      defaultCurrent = 6;
+      unitLabel = "sự kiện & cuộc họp";
+      actionVerb = "tham gia";
+    } else if (activeCategory === "top_referrals") {
+      mappedCat = "top_referrals";
+      try {
+        const rawCounts = localStorage.getItem("vba_member_referral_counts");
+        if (rawCounts) {
+          const parsed = JSON.parse(rawCounts);
+          const myCode = (currentMember as any)?.memberCode || (user as any)?.memberCode || "CEO-1983-001";
+          if (parsed && typeof parsed[myCode] === "number") {
+            defaultCurrent = parsed[myCode];
+          }
+        }
+      } catch {}
+      unitLabel = "người";
+      actionVerb = "giới thiệu";
+    }
+
+    const catAwards = getAwardsByCategory(mappedCat);
+    // Find next unreached milestone
+    const nextAward =
+      catAwards.find((a) => a.targetCount > defaultCurrent) ||
+      catAwards[catAwards.length - 1];
+    const target = nextAward ? nextAward.targetCount : 10;
+    const remaining = Math.max(0, target - defaultCurrent);
+    const percent = Math.min(100, Math.round((defaultCurrent / target) * 100));
+    const isCompleted = defaultCurrent >= target;
+
+    return {
+      mappedCat,
+      categoryAwards: catAwards,
+      currentCount: defaultCurrent,
+      targetCount: target,
+      remaining,
+      percent,
+      isCompleted,
+      unitLabel,
+      actionVerb,
+      award: nextAward,
+    };
+  }, [activeCategory, awardsUpdatedTick, currentMember, user]);
 
   // Biểu đồ Cột + Đường (Composed Chart)
   const chartData = useMemo(() => {
@@ -560,6 +639,107 @@ export function AssociationAnalyticsScreen() {
       </div>
 
       <div className="px-3 sm:px-4 pt-3.5 space-y-4">
+        {/* ── KHỐI TIẾN TRÌNH GIẢI THƯỞNG MỐC THỐNG KÊ (GAMIFICATION BẮN TỪ CRM XUỐNG APP) ── */}
+        <div className="p-4 rounded-3xl bg-gradient-to-br from-amber-500/10 via-rose-500/10 to-blue-500/10 dark:from-amber-950/40 dark:via-slate-900/60 dark:to-blue-950/40 border-2 border-amber-400/50 dark:border-amber-500/30 shadow-md relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 shadow-sm font-black">
+                <Trophy className="size-4 text-slate-950" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                    Giải Thưởng Mốc Thống Kê
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    {currentAwardProgress.mappedCat === "top_referrals"
+                      ? "Top Giới Thiệu"
+                      : currentAwardProgress.mappedCat === "top_connect"
+                      ? "Top Kết Nối"
+                      : currentAwardProgress.mappedCat === "top_opportunities"
+                      ? "Top Cơ Hội"
+                      : "Top Sự Kiện"}
+                  </span>
+                </div>
+                <h4 className="text-xs font-black text-slate-900 dark:text-white line-clamp-1">
+                  Mục tiêu: {currentAwardProgress.award?.awardName || "Mốc Thành Tích Vàng"}
+                </h4>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowAwardsRoadmapModal(true)}
+              className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-[11px] font-bold text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+            >
+              <Gift className="size-3.5" />
+              <span>Lộ trình ({currentAwardProgress.categoryAwards.length})</span>
+            </button>
+          </div>
+
+          {/* Câu thông điệp tiến trình chuẩn yêu cầu: "Bạn đang giới thiệu được /10 người hãy giới thiệu thêm..." */}
+          <div className="p-3 rounded-2xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-xs border border-slate-200/80 dark:border-slate-800 space-y-2">
+            <div className="flex items-start gap-2">
+              <Sparkles className="size-4 text-amber-500 shrink-0 mt-0.5 animate-pulse" />
+              <p className="text-xs text-slate-800 dark:text-slate-100 font-medium leading-relaxed">
+                {currentAwardProgress.isCompleted ? (
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    🎉 Xuất sắc! Bạn đã đạt mốc {currentAwardProgress.targetCount} {currentAwardProgress.unitLabel} và mở khóa thành công giải thưởng:{" "}
+                    <span className="font-black text-amber-500">{currentAwardProgress.award?.awardName}</span>!
+                  </span>
+                ) : (
+                  <>
+                    Bạn đang {currentAwardProgress.actionVerb} được{" "}
+                    <strong className="text-[#003B95] dark:text-cyan-400 font-black text-sm">
+                      {currentAwardProgress.currentCount}
+                    </strong>{" "}
+                    /{" "}
+                    <strong className="text-slate-900 dark:text-white font-black text-sm">
+                      {currentAwardProgress.targetCount}
+                    </strong>{" "}
+                    {currentAwardProgress.unitLabel}, hãy {currentAwardProgress.actionVerb} thêm{" "}
+                    <strong className="text-[#DC2626] font-black text-sm">
+                      {currentAwardProgress.remaining}
+                    </strong>{" "}
+                    {currentAwardProgress.unitLabel} nữa để mở khóa giải thưởng:{" "}
+                    <span className="font-black text-amber-600 dark:text-amber-400 underline decoration-amber-400">
+                      {currentAwardProgress.award?.awardName}
+                    </span>
+                    !
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Chi tiết phần thưởng */}
+            {currentAwardProgress.award?.rewardValueStr && (
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 bg-amber-50/80 dark:bg-amber-950/30 px-2.5 py-1 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
+                <Gift className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Phần thưởng mở khóa:</span>
+                <span className="font-bold text-amber-700 dark:text-amber-300">
+                  {currentAwardProgress.award.rewardValueStr}
+                </span>
+              </div>
+            )}
+
+            {/* Thanh tiến trình % động màu Đỏ - Vàng - Xanh */}
+            <div className="space-y-1 pt-1">
+              <div className="flex justify-between items-center text-[10px] font-bold">
+                <span className="text-slate-500">Tiến độ mở khóa</span>
+                <span className="text-[#003B95] dark:text-amber-400 font-black">
+                  {currentAwardProgress.percent}%
+                </span>
+              </div>
+              <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#DC2626] via-[#F59E0B] to-[#003B95] transition-all duration-500 shadow-xs"
+                  style={{ width: `${currentAwardProgress.percent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ── TỔNG QUAN CHUNG CƠ HỘI TOÀN HỆ THỐNG (Req 6 & 7: thay thế các ô vuông) ── */}
         <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-950 via-[#1F3864] to-[#003B95] text-white shadow-sm border border-blue-900/30">
           <div className="flex items-center justify-between mb-2">
@@ -1115,6 +1295,134 @@ export function AssociationAnalyticsScreen() {
                 <span>Xác nhận xuất ({exportFormat.toUpperCase()}) &amp; Lưu bằng chứng</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL LỘ TRÌNH GIẢI THƯỞNG GAMIFICATION TẤT CẢ CÁC MỐC ── */}
+      {showAwardsRoadmapModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/70 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-lg bg-white dark:bg-[#0f172a] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="size-9 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Trophy className="size-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                    Lộ Trình Giải Thưởng Gamification
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Bắn trực tiếp từ Ban Điều Hành Web CRM CEO 1983
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAwardsRoadmapModal(false)}
+                className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Danh sách các mốc giải thưởng của danh mục hiện tại */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-900/20 to-amber-500/10 border border-blue-500/20 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500">Thành tích hiện tại của bạn:</span>
+                  <p className="text-base font-black text-[#003B95] dark:text-amber-400">
+                    {currentAwardProgress.currentCount} {currentAwardProgress.unitLabel}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-slate-500">Danh mục:</span>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {currentAwardProgress.mappedCat === "top_referrals"
+                      ? "Top Người Giới Thiệu"
+                      : currentAwardProgress.mappedCat === "top_connect"
+                      ? "Kết Nối 1-on-1"
+                      : currentAwardProgress.mappedCat === "top_opportunities"
+                      ? "Cơ Hội Giao Thương B2B"
+                      : "Sự Kiện & Họp Ban"}
+                  </p>
+                </div>
+              </div>
+
+              {currentAwardProgress.categoryAwards.length === 0 ? (
+                <div className="p-6 text-center text-slate-500 text-xs">
+                  Chưa có mốc giải thưởng nào được kích hoạt cho danh mục này.
+                </div>
+              ) : (
+                currentAwardProgress.categoryAwards.map((aw, index) => {
+                  const isReached = currentAwardProgress.currentCount >= aw.targetCount;
+                  return (
+                    <div
+                      key={aw.id || index}
+                      className={`p-3.5 rounded-2xl border transition-all ${
+                        isReached
+                          ? "bg-emerald-500/10 border-emerald-500/30"
+                          : "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`size-7 rounded-xl flex items-center justify-center text-xs font-black ${
+                              isReached
+                                ? "bg-emerald-600 text-white"
+                                : "bg-amber-500 text-slate-950"
+                            }`}
+                          >
+                            #{index + 1}
+                          </div>
+                          <div>
+                            <span className="text-xs font-black text-slate-900 dark:text-white">
+                              {aw.awardName}
+                            </span>
+                            <div className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">
+                              Mốc: {aw.targetCount} {aw.targetUnit}
+                            </div>
+                          </div>
+                        </div>
+
+                        {isReached ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                            <CheckCircle2 className="size-3" />
+                            Đã Đạt
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            Cần thêm {Math.max(0, aw.targetCount - currentAwardProgress.currentCount)} {aw.targetUnit}
+                          </span>
+                        )}
+                      </div>
+
+                      {aw.awardDescription && (
+                        <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                          {aw.awardDescription}
+                        </p>
+                      )}
+
+                      {aw.rewardValueStr && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg">
+                          <Gift className="size-3" />
+                          <span>Phần thưởng: {aw.rewardValueStr}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowAwardsRoadmapModal(false)}
+              className="w-full py-2.5 rounded-2xl bg-[#003B95] text-white font-bold text-xs hover:bg-[#002B70] transition cursor-pointer"
+            >
+              Đóng
+            </button>
           </div>
         </div>
       )}

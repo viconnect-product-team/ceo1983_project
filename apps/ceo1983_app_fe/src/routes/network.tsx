@@ -8,10 +8,13 @@ import {
   Clock,
   Download,
   ExternalLink,
+  Eye,
+  EyeOff,
   File,
   FileArchive,
   FileSpreadsheet,
   FileText,
+  Globe,
   Handshake,
   Image as ImageIcon,
   Loader2,
@@ -51,6 +54,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { AppShell } from "@/components/dashboard/AppShell";
+import { useAuth } from "@/context/AuthContext";
 import { PageHeader, StatCard, Card, Pill } from "@/components/dashboard/PageKit";
 import { useFmt, useT } from "@/lib/i18n";
 import { MEMBERS, hydrateMembers, type Member } from "@/lib/members-data";
@@ -578,7 +582,7 @@ function ConnectActions({
         <CancelRequestDialog
           member={member}
           trigger={
-            <GhostBtn icon={X} onClick={() => {}}>
+            <GhostBtn icon={X} onClick={() => { }}>
               {t("net.action.cancel")}
             </GhostBtn>
           }
@@ -928,11 +932,10 @@ function ChatPanel({
               )}
 
               <div
-                className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
-                  mine
+                className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${mine
                     ? "rounded-br-sm text-primary-foreground"
                     : "rounded-bl-sm bg-secondary text-foreground"
-                } ${m.pinned ? "ring-2 ring-amber-400/80" : ""}`}
+                  } ${m.pinned ? "ring-2 ring-amber-400/80" : ""}`}
                 style={mine ? { background: "var(--gradient-primary)" } : undefined}
               >
                 {/* Group message sender identification */}
@@ -984,11 +987,10 @@ function ChatPanel({
                           </div>
                         ) : (
                           <div
-                            className={`flex items-center justify-between gap-2 rounded-lg border p-2 text-xs ${
-                              mine
+                            className={`flex items-center justify-between gap-2 rounded-lg border p-2 text-xs ${mine
                                 ? "bg-white/10 border-white/20 text-primary-foreground"
                                 : "bg-card border-border text-foreground"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-2 min-w-0 flex-1">
                               <AttachmentIcon type={att.type} />
@@ -1015,9 +1017,8 @@ function ChatPanel({
 
                 {/* Time & Read Status */}
                 <div
-                  className={`mt-1 flex items-center gap-1 text-[10px] ${
-                    mine ? "justify-end text-primary-foreground/70" : "text-muted-foreground"
-                  }`}
+                  className={`mt-1 flex items-center gap-1 text-[10px] ${mine ? "justify-end text-primary-foreground/70" : "text-muted-foreground"
+                    }`}
                 >
                   <span>
                     {fmt.date(m.at)} ·{" "}
@@ -1195,11 +1196,10 @@ function NewChatDialog({
                 key={c}
                 type="button"
                 onClick={() => setComm(c)}
-                className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition ${
-                  comm === c
+                className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition ${comm === c
                     ? "bg-primary text-primary-foreground font-semibold"
                     : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                }`}
+                  }`}
               >
                 {c}
               </button>
@@ -1399,11 +1399,10 @@ function NewGroupChatDialog({
                   key={c}
                   type="button"
                   onClick={() => setComm(c)}
-                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition ${
-                    comm === c
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition ${comm === c
                       ? "bg-primary text-primary-foreground font-semibold"
                       : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                  }`}
+                    }`}
                 >
                   {c}
                 </button>
@@ -1425,15 +1424,14 @@ function NewGroupChatDialog({
                 <div
                   key={m.id}
                   onClick={() => toggleMember(m.id)}
-                  className={`flex cursor-pointer items-center justify-between p-2 rounded-lg transition ${
-                    isChecked ? "bg-amber-500/15 border border-amber-500/30" : "hover:bg-secondary/60"
-                  }`}
+                  className={`flex cursor-pointer items-center justify-between p-2 rounded-lg transition ${isChecked ? "bg-amber-500/15 border border-amber-500/30" : "hover:bg-secondary/60"
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => {}}
+                      onChange={() => { }}
                       className="h-4 w-4 rounded border-border text-primary cursor-pointer"
                     />
                     <Avatar member={m} size={32} />
@@ -1445,9 +1443,8 @@ function NewGroupChatDialog({
                     </div>
                   </div>
                   <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                      isChecked ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-muted-foreground"
-                    }`}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded ${isChecked ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-muted-foreground"
+                      }`}
                   >
                     {isChecked ? "Đã chọn" : "Chọn"}
                   </span>
@@ -1476,7 +1473,7 @@ function NewGroupChatDialog({
 
 export type FeedItem = {
   id: string;
-  type: "product" | "opportunity" | "news";
+  type: "product" | "opportunity" | "news" | "member_post" | "shared_link";
   title: string;
   content: string;
   authorId: string;
@@ -1493,6 +1490,18 @@ export type FeedItem = {
   images: string[];
   videoUrl?: string;
   linkTo?: string;
+  sharedArticle?: {
+    url: string;
+    title: string;
+    excerpt?: string;
+    thumbnail?: string;
+    sourceName?: string;
+  };
+  status?: "active" | "hidden";
+  isCustomPost?: boolean;
+  likesCount?: number;
+  commentsCount?: number;
+  sharesCount?: number;
   raw: any;
 };
 
@@ -1699,11 +1708,10 @@ function ScheduleMeetingModal({
                   setType("offline");
                   setLocation("Văn phòng CEO 1983 hoặc Cafe Doanh nhân");
                 }}
-                className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${
-                  type === "offline"
+                className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${type === "offline"
                     ? "border-primary bg-primary/10 text-primary shadow-xs"
                     : "border-border bg-card text-muted-foreground hover:bg-muted"
-                }`}
+                  }`}
               >
                 <MapPin className="h-3.5 w-3.5" />
                 Trực tiếp (Offline)
@@ -1714,11 +1722,10 @@ function ScheduleMeetingModal({
                   setType("online");
                   setLocation("Google Meet (sẽ gửi link họp)");
                 }}
-                className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${
-                  type === "online"
+                className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer ${type === "online"
                     ? "border-primary bg-primary/10 text-primary shadow-xs"
                     : "border-border bg-card text-muted-foreground hover:bg-muted"
-                }`}
+                  }`}
               >
                 <Video className="h-3.5 w-3.5" />
                 Trực tuyến (Online)
@@ -1787,16 +1794,23 @@ function FeedCard({
   item,
   onOpenChat,
   onScheduleMeeting,
+  canModerate,
+  onToggleHide,
+  onDeletePost,
 }: {
   item: FeedItem;
   onOpenChat: (authorId: string) => void;
   onScheduleMeeting: (target: { memberId: string; name: string; subtitle?: string; contextTitle?: string }) => void;
+  canModerate?: boolean;
+  onToggleHide?: (itemId: string) => void;
+  onDeletePost?: (itemId: string) => void;
 }) {
   const fmt = useFmt();
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <Card className="p-5 border border-border bg-card rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+    <Card className={`p-5 border bg-card rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${item.status === "hidden" ? "border-dashed border-rose-300 bg-rose-50/20 dark:bg-rose-950/10 opacity-75" : "border-border"
+      }`}>
       <div>
         {/* Post Author Header */}
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -1830,6 +1844,58 @@ function FeedCard({
           </div>
         </div>
 
+        {/* Admin Moderation Bar if authorized */}
+        {canModerate && (item.isCustomPost || item.type === "member_post" || item.type === "shared_link") && (
+          <div className="mb-3 p-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5 text-amber-600" />
+              <span className="text-xs font-bold text-foreground">BQT Quản trị:</span>
+              {item.status === "hidden" ? (
+                <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+                  🚫 Đã gỡ khỏi bảng tin
+                </span>
+              ) : (
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  ✅ Đang hiển thị
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {onToggleHide && (
+                <button
+                  type="button"
+                  onClick={() => onToggleHide(item.id)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-card text-xs font-semibold hover:bg-muted text-foreground transition cursor-pointer"
+                >
+                  {item.status === "hidden" ? (
+                    <>
+                      <Eye className="h-3 w-3 text-emerald-600" />
+                      <span>Khôi phục</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-3 w-3 text-amber-600" />
+                      <span>Gỡ bài</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {onDeletePost && (
+                <button
+                  type="button"
+                  onClick={() => onDeletePost(item.id)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-xs font-semibold hover:bg-destructive/20 transition cursor-pointer"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  <span>Xóa</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Post Title */}
         <h4 className="text-base font-bold text-foreground mb-2 line-clamp-2 leading-snug">
           {item.title}
@@ -1856,6 +1922,60 @@ function FeedCard({
           >
             {expanded ? "Thu gọn" : "Xem thêm..."}
           </button>
+        )}
+
+        {/* Shared Article Box (Facebook Post Style Preview) */}
+        {item.sharedArticle && (
+          <div className="mb-3 rounded-2xl border border-border/80 bg-slate-50/70 dark:bg-slate-900/60 overflow-hidden shadow-xs hover:border-primary/50 transition duration-200">
+            {item.sharedArticle.thumbnail && (
+              <a
+                href={item.sharedArticle.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block relative aspect-video w-full overflow-hidden bg-muted group cursor-pointer"
+              >
+                <img
+                  src={resolveMediaUrl(item.sharedArticle.thumbnail) || item.sharedArticle.thumbnail}
+                  alt={item.sharedArticle.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+              </a>
+            )}
+            <div className="p-3.5 space-y-1.5">
+              <div className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 tracking-wider">
+                <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="truncate">{item.sharedArticle.sourceName || "LIÊN KẾT BÊN NGOÀI"}</span>
+              </div>
+              <a
+                href={item.sharedArticle.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-sm text-foreground line-clamp-2 hover:text-primary transition-colors leading-snug cursor-pointer block"
+              >
+                {item.sharedArticle.title}
+              </a>
+              {item.sharedArticle.excerpt && (
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                  {item.sharedArticle.excerpt}
+                </p>
+              )}
+              <div className="pt-1 flex items-center justify-between">
+                <a
+                  href={item.sharedArticle.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+                >
+                  <span>Mở bài viết gốc</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
+                  {item.sharedArticle.url}
+                </span>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Media Preview (Facebook-style Images) */}
@@ -2020,8 +2140,62 @@ function NetworkPage() {
     return () => clearInterval(id);
   }, []);
 
+  const { user } = useAuth();
+  const canModerate = Boolean(
+    user &&
+    (user.isAdmin ||
+      user.isPresident ||
+      user.isExecutive ||
+      user.role === "admin" ||
+      user.role === "quan_tri" ||
+      user.role === "chu_tich" ||
+      String((user as any).executive_role || "").toLowerCase().includes("dieu_hanh") ||
+      String((user as any).role || "").toLowerCase().includes("admin"))
+  );
+
+  const [customPosts, setCustomPosts] = useState<any[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("vba_network_feed_posts");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleToggleHidePost = (postId: string) => {
+    setCustomPosts((prev) => {
+      const updated = prev.map((p) => {
+        if (p.id === postId) {
+          const nextStatus = p.status === "hidden" ? "active" : "hidden";
+          toast.success(nextStatus === "hidden" ? "Đã gỡ bài viết khỏi bảng tin" : "Đã khôi phục hiển thị bài viết");
+          return { ...p, status: nextStatus };
+        }
+        return p;
+      });
+      try {
+        localStorage.setItem("vba_network_feed_posts", JSON.stringify(updated));
+      } catch { }
+      return updated;
+    });
+  };
+
+  const handleDeletePost = (postId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn bài viết này khỏi hệ thống?")) return;
+    setCustomPosts((prev) => {
+      const updated = prev.filter((p) => p.id !== postId);
+      try {
+        localStorage.setItem("vba_network_feed_posts", JSON.stringify(updated));
+      } catch { }
+      return updated;
+    });
+    toast.success("Đã xóa vĩnh viễn bài viết thành công!");
+  };
+
   const [tab, setTab] = useState<Tab>("feed");
-  const [feedTypeFilter, setFeedTypeFilter] = useState<"all" | "product" | "opportunity" | "news">("all");
+  const [feedTypeFilter, setFeedTypeFilter] = useState<
+    "all" | "product" | "opportunity" | "news" | "member_post" | "shared_link"
+  >("all");
   const [meetingTarget, setMeetingTarget] = useState<{
     memberId: string;
     name: string;
@@ -2248,11 +2422,50 @@ function NetworkPage() {
       });
     });
 
+    // 4. Custom Posts & Shared Articles from Mobile / Web Network
+    customPosts.forEach((cp) => {
+      const isShared = Boolean(cp.sharedArticle && cp.sharedArticle.url);
+      const authorMem = findMemberForFeed(cp.authorId, cp.authorName);
+      list.push({
+        id: cp.id,
+        type: isShared ? "shared_link" : "member_post",
+        title: cp.title || (isShared ? cp.sharedArticle.title : "Bài chia sẻ từ hội viên"),
+        content: cp.content || "",
+        authorId: cp.authorId || authorMem.id,
+        authorName: cp.authorName || authorMem.name,
+        authorSubtitle: cp.authorTitle || authorMem.contact || "Hội viên CLB CEO 1983",
+        authorCommittee: cp.department || getMemberCommittee(authorMem),
+        authorAvatar: cp.authorAvatar || (authorMem as any)?.avatar || "",
+        createdAt: cp.createdAt || new Date().toISOString(),
+        badge: isShared
+          ? {
+            label: "🔗 Chia sẻ ngoài",
+            colorCls: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
+          }
+          : {
+            label: "📝 Hội viên đăng",
+            colorCls: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20",
+          },
+        images: cp.images || [],
+        sharedArticle: cp.sharedArticle,
+        status: cp.status || "active",
+        isCustomPost: true,
+        likesCount: cp.likesCount,
+        commentsCount: cp.commentsCount,
+        sharesCount: cp.sharesCount,
+        raw: cp,
+      });
+    });
+
     return list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-  }, [products, opportunities, news, fmt]);
+  }, [products, opportunities, news, customPosts, fmt]);
 
   const filteredFeed = useMemo(() => {
     let result = feedItems;
+    // An bài bị gỡ đối với người xem thông thường, hiển thị cho admin quản trị
+    if (!canModerate) {
+      result = result.filter((item) => item.status !== "hidden");
+    }
     if (feedTypeFilter !== "all") {
       result = result.filter((item) => item.type === feedTypeFilter);
     }
@@ -2268,7 +2481,7 @@ function NetworkPage() {
       );
     }
     return result;
-  }, [feedItems, feedTypeFilter, query]);
+  }, [feedItems, feedTypeFilter, query, canModerate]);
 
   const [feedPage, setFeedPage] = useState(1);
   const FEED_PER_PAGE = 8;
@@ -2358,19 +2571,17 @@ function NetworkPage() {
                 setTab(tb.key);
                 setQuery("");
               }}
-              className={`relative -mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition flex items-center gap-2 cursor-pointer ${
-                active
+              className={`relative -mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition flex items-center gap-2 cursor-pointer ${active
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               {tb.icon}
               <span>{tb.label}</span>
               {tb.count != null && tb.count > 0 && (
                 <span
-                  className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                    active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   {tb.count}
                 </span>
@@ -2399,6 +2610,16 @@ function NetworkPage() {
                   count: feedItems.filter((i) => i.type === "opportunity").length,
                 },
                 {
+                  key: "shared_link",
+                  label: "🔗 Bài chia sẻ ngoài (Facebook)",
+                  count: feedItems.filter((i) => i.type === "shared_link").length,
+                },
+                {
+                  key: "member_post",
+                  label: "📝 Bài viết hội viên",
+                  count: feedItems.filter((i) => i.type === "member_post").length,
+                },
+                {
                   key: "news",
                   label: "📰 Tin tức sự kiện",
                   count: feedItems.filter((i) => i.type === "news").length,
@@ -2410,19 +2631,17 @@ function NetworkPage() {
                     key={item.key}
                     type="button"
                     onClick={() => setFeedTypeFilter(item.key as typeof feedTypeFilter)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      isSelected
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${isSelected
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "bg-secondary/70 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     <span>{item.label}</span>
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                        isSelected
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] ${isSelected
                           ? "bg-primary-foreground/25 text-primary-foreground font-bold"
                           : "bg-muted text-muted-foreground"
-                      }`}
+                        }`}
                     >
                       {item.count}
                     </span>
@@ -2493,6 +2712,9 @@ function NetworkPage() {
                     item={item}
                     onOpenChat={openChat}
                     onScheduleMeeting={(target) => setMeetingTarget(target)}
+                    canModerate={canModerate}
+                    onToggleHide={handleToggleHidePost}
+                    onDeletePost={handleDeletePost}
                   />
                 ))}
               </div>
@@ -2539,25 +2761,23 @@ function NetworkPage() {
                 comm === "Tất cả các ban"
                   ? MEMBERS.filter((m) => m.id !== CURRENT_USER_ID).length
                   : MEMBERS.filter(
-                      (m) => m.id !== CURRENT_USER_ID && getMemberCommittee(m) === comm,
-                    ).length;
+                    (m) => m.id !== CURRENT_USER_ID && getMemberCommittee(m) === comm,
+                  ).length;
               return (
                 <button
                   key={comm}
                   onClick={() => setSelectedCommittee(comm)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
-                    isSelected
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${isSelected
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "bg-secondary/70 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <span>{comm}</span>
                   <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                      isSelected
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${isSelected
                         ? "bg-primary-foreground/25 text-primary-foreground font-bold"
                         : "bg-muted text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     {count}
                   </span>
@@ -2704,22 +2924,20 @@ function NetworkPage() {
                 <button
                   type="button"
                   onClick={() => setChatSubFilter("all")}
-                  className={`flex-1 py-1 rounded-md text-center transition cursor-pointer ${
-                    chatSubFilter === "all"
+                  className={`flex-1 py-1 rounded-md text-center transition cursor-pointer ${chatSubFilter === "all"
                       ? "bg-card text-foreground font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   Tất cả ({messageList.length + groupList.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setChatSubFilter("group")}
-                  className={`flex-1 py-1 rounded-md text-center transition flex items-center justify-center gap-1 cursor-pointer ${
-                    chatSubFilter === "group"
+                  className={`flex-1 py-1 rounded-md text-center transition flex items-center justify-center gap-1 cursor-pointer ${chatSubFilter === "group"
                       ? "bg-card text-amber-600 dark:text-amber-400 font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Users className="h-3 w-3" />
                   <span>Nhóm ({groupList.length})</span>
@@ -2727,11 +2945,10 @@ function NetworkPage() {
                 <button
                   type="button"
                   onClick={() => setChatSubFilter("direct")}
-                  className={`flex-1 py-1 rounded-md text-center transition cursor-pointer ${
-                    chatSubFilter === "direct"
+                  className={`flex-1 py-1 rounded-md text-center transition cursor-pointer ${chatSubFilter === "direct"
                       ? "bg-card text-foreground font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   Cá nhân ({messageList.length})
                 </button>
@@ -2753,9 +2970,8 @@ function NetworkPage() {
                     <button
                       key={group.id}
                       onClick={() => selectPeer(group.id)}
-                      className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition ${
-                        active ? "bg-amber-500/15 border-l-4 border-l-amber-500" : "hover:bg-secondary/60"
-                      }`}
+                      className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition ${active ? "bg-amber-500/15 border-l-4 border-l-amber-500" : "hover:bg-secondary/60"
+                        }`}
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-black shadow-xs">
                         <Users className="h-5 w-5" />
@@ -2804,9 +3020,8 @@ function NetworkPage() {
                     <button
                       key={member.id}
                       onClick={() => selectPeer(member.id)}
-                      className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition ${
-                        active ? "bg-secondary" : "hover:bg-secondary/60"
-                      }`}
+                      className={`flex w-full items-start gap-3 border-b border-border p-3 text-left transition ${active ? "bg-secondary" : "hover:bg-secondary/60"
+                        }`}
                     >
                       <Avatar member={member} size={40} />
                       <div className="min-w-0 flex-1">

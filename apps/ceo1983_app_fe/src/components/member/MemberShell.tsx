@@ -18,6 +18,8 @@ import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQ
 import { canScanEventQr, isPrivilegedAdminOrPresident } from "@/lib/checkin-gatekeeper-auth";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { toast } from "sonner";
+import { useCalendarNotifications } from "@/hooks/use-calendar-notifications";
+import { CeoFacebookReminderBanner } from "@/components/calendar/CeoFacebookReminderBanner";
 
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
@@ -25,6 +27,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
   const isLight = theme === "light";
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  // Nhắc lịch thông minh kiểu Facebook Pop-up (7h sáng & trước sự kiện/cuộc họp)
+  const { activeNotice, dismissNotice, snoozeNotice } = useCalendarNotifications();
 
   // ── BẢO VỆ ĐIỀU HƯỚNG CHUẨN NATIVE APP (NHƯ MOMO) ──
   // 1. Lắng nghe sự kiện phím Back cứng từ Native Android APK (Capacitor Bridge)
@@ -291,6 +296,11 @@ export function MemberScreen({ children }: { children: ReactNode }) {
           {children}
         </PullToRefresh>
         <MemberTabBar />
+        <CeoFacebookReminderBanner
+          notice={activeNotice}
+          onDismiss={dismissNotice}
+          onSnooze={snoozeNotice}
+        />
         <IncomingConnectionModal />
         <WelcomeMemberModal />
       </div>
