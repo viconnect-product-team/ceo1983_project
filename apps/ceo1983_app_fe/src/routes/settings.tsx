@@ -19,7 +19,7 @@ import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { AssociationLogoUploader } from "@/components/dashboard/AssociationLogoUploader";
 import { AssociationLandingEditor } from "@/components/dashboard/AssociationLandingEditor";
 import { AssociationDomainEditor } from "@/components/dashboard/AssociationDomainEditor";
-import { ReplyTemplatesEditor } from "@/components/dashboard/ReplyTemplatesEditor";
+import { OmnichannelTemplatesSection } from "@/components/dashboard/OmnichannelTemplatesSection";
 import { ZaloOaConfigSection } from "@/components/dashboard/ZaloOaConfigSection";
 import { VNPayConfigSection } from "@/components/dashboard/VNPayConfigSection";
 import { getSettingsFn, saveSettingsFn } from "@/lib/settings.functions";
@@ -31,7 +31,7 @@ const TABS = [
   { key: "general", label: "set.tab.general", icon: Building2 },
   { key: "landing", label: "set.tab.landing", icon: Layout },
   { key: "domain", label: "set.tab.domain", icon: Globe },
-  { key: "templates", label: "set.tab.templates", icon: MessageSquareText },
+  { key: "templates", label: "Mẫu Thông Báo & Phản Hồi Đa Kênh", icon: Mail },
   { key: "zalo_oa", label: "Cấu hình Zalo OA (Dynamic)", icon: MessageSquareText },
   { key: "vnpay", label: "Cổng Thanh Toán VNPay", icon: CreditCard },
   { key: "notifications", label: "set.tab.notifications", icon: Bell },
@@ -57,6 +57,12 @@ function SettingsPage() {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("vba_active_assoc_name") || localStorage.getItem("crm_system_name");
       if (stored) setOrgName(stored);
+
+      const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get("tab") as (typeof TABS)[number]["key"] | null;
+      if (urlTab && TABS.some((t) => t.key === urlTab)) {
+        setTab(urlTab);
+      }
     }
   }, []);
 
@@ -188,7 +194,7 @@ function SettingsPage() {
 
           {tab === "domain" && <AssociationDomainEditor />}
 
-          {tab === "templates" && <ReplyTemplatesEditor />}
+          {tab === "templates" && <OmnichannelTemplatesSection />}
 
           {tab === "zalo_oa" && <ZaloOaConfigSection />}
 

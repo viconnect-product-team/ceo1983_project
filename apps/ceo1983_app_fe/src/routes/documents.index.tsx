@@ -906,8 +906,8 @@ function DocsPage() {
         className="relative min-h-[calc(100vh-120px)]"
       >
         <PageHeader
-          title={docTab === "mail_templates" ? "Quản lý Template Mail & Thông báo" : t("doc.title")}
-          subtitle={docTab === "mail_templates" ? "Thiết lập mẫu email tự động CRM: hội phí, cảm ơn hội viên, vé sự kiện, nhắc nợ..." : t("doc.subtitle")}
+          title={docTab === "mail_templates" ? "Mẫu Biểu Văn Bản & Công Văn Hiệp Hội" : t("doc.title")}
+          subtitle={docTab === "mail_templates" ? "Kho biểu mẫu văn bản, hợp đồng mẫu chính thức và liên kết quản lý template thông báo CRM" : t("doc.subtitle")}
           actions={
             docTab === "docs" ? (
               <div className="flex items-center gap-2">
@@ -1079,19 +1079,176 @@ function DocsPage() {
                 : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
           >
-            <Mail className="h-4 w-4" />
-            <span>Quản Lý Template Mail CRM</span>
+            <FileText className="h-4 w-4" />
+            <span>Mẫu Biểu &amp; Công Văn CLB</span>
             <span
               className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold ${docTab === "mail_templates" ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
                 }`}
             >
-              Dynamic
+              Biểu Mẫu
             </span>
           </button>
         </div>
 
         {docTab === "mail_templates" ? (
-          <MailTemplateManager />
+          <div className="space-y-6">
+            {/* BANNER THÔNG BÁO CHUYỂN GIAO TEMPLATE SANG CẤU HÌNH HỆ THỐNG */}
+            <div className="rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-amber-50/40 p-5 dark:border-blue-900/50 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-slate-900 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3.5">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md">
+                    <Mail className="size-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        Quản Lý Mẫu Template Email &amp; Zalo OA Đã Chuyển Sang Cấu Hình Hệ Thống
+                      </h4>
+                      <span className="rounded-full bg-blue-600/10 px-2 py-0.5 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase">
+                        Quy Hoạch Mới
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Toàn bộ các mẫu Template Email CRM, mẫu tin nhắn Zalo OA và mẫu phản hồi nhanh đã được tích hợp tập trung tại <strong>Cài đặt hệ thống &rarr; Mẫu Thông Báo &amp; Phản Hồi Đa Kênh</strong>.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/settings"
+                  search={{ tab: "templates" } as any}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] px-4 py-2.5 text-xs font-black text-white shadow-md transition"
+                >
+                  <span>Đi Đến Cấu Hình Mẫu (/settings)</span>
+                  <ExternalLink className="size-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* DANH SÁCH MẪU BIỂU VĂN BẢN VÀ CÔNG VĂN CHÍNH THỨC */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">
+                    Kho Mẫu Biểu Văn Bản, Hợp Đồng &amp; Công Văn CLB CEO 1983
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Tài liệu biểu mẫu văn bản hành chính, quy chế và hợp đồng chuẩn mực ban hành bởi Ban Chấp Hành
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  {
+                    code: "BM-01",
+                    title: "Đơn Đề Nghị Gia Nhập CLB Doanh Nhân CEO 1983",
+                    type: "Đơn / Phiếu Đăng Ký",
+                    format: "DOCX",
+                    desc: "Mẫu đơn chính thức dành cho Doanh nhân sinh năm 1983 đăng ký xét duyệt gia nhập Hiệp hội.",
+                    date: "01/11/2026",
+                    fileUrl: "/docs/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983.docx",
+                  },
+                  {
+                    code: "BM-02",
+                    title: "Bản Cam Kết Đạo Đức Doanh Nhân & Văn Hóa CEO 1983",
+                    type: "Quy Chế & Cam Kết",
+                    format: "PDF",
+                    desc: "Cam kết 5 chuẩn mực văn hóa, tinh thần đoàn kết, tương trợ và trách nhiệm xã hội.",
+                    date: "25/10/2026",
+                    fileUrl: "/BAO_CAO_PENTEST_SECURITY_AUDIT_CEO1983.pdf",
+                  },
+                  {
+                    code: "BM-03",
+                    title: "Hợp Đồng Tài Trợ Sự Kiện Đại Hội & Gala Thường Niên",
+                    type: "Hợp Đồng Mẫu",
+                    format: "DOCX",
+                    desc: "Mẫu hợp đồng tài trợ danh vị Kim Cương, Vàng, Bạc và đồng hành cùng các sự kiện kinh tế.",
+                    date: "15/10/2026",
+                    fileUrl: "/docs/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983.docx",
+                  },
+                  {
+                    code: "BM-04",
+                    title: "Biên Bản Họp Phiên Thường Kỳ Ban Chấp Hành & Thư Ký",
+                    type: "Biên Bản Họp",
+                    format: "DOCX",
+                    desc: "Mẫu biên bản ghi nhận nghị quyết, phân công nhiệm vụ và chỉ tiêu các ban chuyên môn.",
+                    date: "10/10/2026",
+                    fileUrl: "/docs/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983.docx",
+                  },
+                  {
+                    code: "BM-05",
+                    title: "Giấy Triệu Tập Hội Nghị Toàn Thể Doanh Nhân CEO 1983",
+                    type: "Giấy Triệu Tập / Thư Mời",
+                    format: "PDF",
+                    desc: "Mẫu công văn triệu tập hội nghị xúc tiến thương mại B2B và báo cáo tổng kết năm.",
+                    date: "01/10/2026",
+                    fileUrl: "/BAO_CAO_PENTEST_SECURITY_AUDIT_CEO1983.pdf",
+                  },
+                  {
+                    code: "BM-06",
+                    title: "Quy Chế Quản Lý Thu - Chi & Quyết Toán Quỹ Hiệp Hội",
+                    type: "Quy Chế Tài Chính",
+                    format: "PDF",
+                    desc: "Quy định tài chính minh bạch, hạn mức tạm ứng, chứng từ quyết toán và sao kê ngân hàng MB Bank.",
+                    date: "15/09/2026",
+                    fileUrl: "/BAO_CAO_PENTEST_SECURITY_AUDIT_CEO1983.pdf",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.code}
+                    className="flex flex-col justify-between rounded-2xl border border-border bg-card p-4 shadow-xs hover:border-primary/40 transition"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-mono font-bold text-muted-foreground">
+                          {item.code}
+                        </span>
+                        <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          {item.format}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm text-foreground line-clamp-2 leading-snug">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {item.desc}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
+                      <span className="text-[11px] text-muted-foreground">{item.date}</span>
+                      <a
+                        href={item.fileUrl}
+                        download
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition"
+                      >
+                        <Download className="size-3.5" />
+                        <span>Tải Mẫu</span>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* PHẦN XEM NHANH TRÌNH QUẢN LÝ TEMPLATE EMAIL (NẾU CẦN CHỈNH SỬA TRỰC TIẾP) */}
+            <div className="border-t border-border pt-4">
+              <details className="group rounded-2xl border border-border bg-card overflow-hidden">
+                <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-sm text-foreground hover:bg-muted/50 transition">
+                  <span className="flex items-center gap-2">
+                    <Mail className="size-4 text-primary" />
+                    <span>Mở Trình Quản Lý Template Email Trực Tiếp Tại Đây (Quick View)</span>
+                  </span>
+                  <span className="text-xs text-muted-foreground group-open:rotate-180 transition transform">
+                    ▼
+                  </span>
+                </summary>
+                <div className="p-4 border-t border-border bg-background">
+                  <MailTemplateManager />
+                </div>
+              </details>
+            </div>
+          </div>
         ) : (
           <>
             <div className="mb-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

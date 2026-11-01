@@ -30,9 +30,10 @@ import {
   CheckSquare,
   Square,
   ListFilter,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getNestApiUrl } from "@/lib/api-client";
+import { getNestApiUrl, getAuthToken } from "@/lib/api-client";
 
 export interface ZaloOaTemplate {
   id: string;
@@ -232,8 +233,12 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [loadingChats, setLoadingChats] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  // Chế độ gửi: Bắn đơn cá nhân 1-1 vs Chiến dịch bắn hàng loạt (Bulk Campaign)
-  const [broadcastMode, setBroadcastMode] = useState<"single_test" | "bulk_campaign">("single_test");
+  // Chế độ gửi: Gửi trực tiếp hội viên vs Chiến dịch bắn hàng loạt vs Lịch tự động theo chu kỳ
+  const [broadcastMode, setBroadcastMode] = useState<"direct_send" | "bulk_campaign" | "scheduled_auto">("direct_send");
+  const [autoScheduleEnabled, setAutoScheduleEnabled] = useState(true);
+  const [scheduleFrequency, setScheduleFrequency] = useState<"daily_morning" | "monthly_fee" | "weekly_digest">("monthly_fee");
+  const [scheduleTarget, setScheduleTarget] = useState<"unpaid_fee" | "all" | "board">("unpaid_fee");
+  const [isTriggeringSchedule, setIsTriggeringSchedule] = useState(false);
   const [bulkFilter, setBulkFilter] = useState<"all" | "unpaid_fee" | "board">("unpaid_fee");
   const [bulkMembers, setBulkMembers] = useState<BulkMember[]>(DEFAULT_BULK_MEMBERS);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>(() =>
@@ -302,6 +307,21 @@ export const ZaloOaConfigSection: React.FC = () => {
     }
   };
 
+  const getAuthHeaders = () => {
+    const token =
+      getAuthToken() ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("token") ||
+          localStorage.getItem("vibe_token") ||
+          localStorage.getItem("access_token")
+        : null) ||
+      "";
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   // Tự động gia hạn Access Token mới bằng Refresh Token qua Backend NestJS (Zero CORS, Zero Hardcoding)
   const handleAutoRefreshToken = async () => {
     if (!refreshToken.trim()) {
@@ -318,7 +338,7 @@ export const ZaloOaConfigSection: React.FC = () => {
       // Gọi qua NestJS Backend Server để đổi Refresh Token (Tránh triệt để lỗi CORS từ trình duyệt)
       const res = await fetch(getNestApiUrl("/zalo/refresh-token"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           appId: appId.trim(),
           secretKey: secretKey.trim(),
@@ -363,7 +383,10 @@ export const ZaloOaConfigSection: React.FC = () => {
     setLoadingChats(true);
     try {
       const res = await fetch(
-        `${getNestApiUrl("/zalo/recent-chats")}?accessToken=${encodeURIComponent(accessToken.trim())}`
+        `${getNestApiUrl("/zalo/recent-chats")}?accessToken=${encodeURIComponent(accessToken.trim())}`,
+        {
+          headers: getAuthHeaders(),
+        }
       );
       const data = await res.json();
       if (data && data.success && Array.isArray(data.data)) {
@@ -387,54 +410,16 @@ export const ZaloOaConfigSection: React.FC = () => {
     }
   };
 
-  // 1. Bắn Thông Báo Test Zalo OA (Dynamic API qua Backend NestJS Server)
-  const handleSendTestBroadcast = async () => {
-    if (!accessToken.trim()) {
-      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
-      return;
-    }
-    setSendingTestBroadcast(true);
-
-    try {
-      const res = await fetch(getNestApiUrl("/zalo/send-message"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accessToken: accessToken.trim(),
-          userId: selectedUserId || undefined,
-          targetPhone: targetPhone.trim(),
-          targetName: targetMemberName.trim(),
-          message: `[CEO 1983 - TEST THÔNG BÁO] Xin chào ${targetMemberName}! Đây là tin nhắn kiểm tra kết nối tự động từ Zalo OA CLB CEO 1983 tới SĐT ${targetPhone}.`,
-        }),
-      });
-
-      const data = await res.json();
-      if (data && data.success) {
-        toast.success(`🎉 ĐÃ BẮN THÔNG BÁO TEST THÀNH CÔNG VỀ ZALO ĐIỆN THOẠI!`, {
-          description: `Đã gửi trực tiếp tới: ${data.recipient?.name || targetMemberName} (UID: ${data.recipient?.userId || "OA-User"})`,
-        });
-      } else {
-        toast.error(`Zalo từ chối gửi: ${data?.message || "Lỗi gửi tin"}`, {
-          description: data?.error ? `Mã lỗi Zalo: ${data.error}` : undefined,
-        });
-      }
-    } catch (err: any) {
-      toast.error(`Lỗi hệ thống: ${err.message}`);
-    } finally {
-      setSendingTestBroadcast(false);
-    }
-  };
-
-  // 2. Bắn Thông Báo Phí Hội Viên Tới Zalo (Dynamic API qua Backend NestJS Server)
-  const handleSendFeeNoticeToZalo = async () => {
+  // Gửi Bắn Thông Báo Zalo OA Thật Trực Tiếp Cho Hội Viên (Đã bọc Authorization Token, Zero Test)
+  const handleSendDirectNotice = async () => {
     if (!accessToken.trim()) {
       toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
       return;
     }
     setSendingFeeNotice(true);
-    const content = `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO HỘI PHÍ NIÊN LIỄM]
+    const content = `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO CHÍNH THỨC]
 Kính gửi Hội viên: ${targetMemberName} (Mã HV: ${targetMemberCode} - SĐT: ${targetPhone})
-Ban Tài chính CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng thông báo kỳ hoàn tất hội phí thường niên năm ${feeYear}:
+Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thông báo đóng hội phí thường niên năm ${feeYear}:
 
 💰 Số tiền: ${new Intl.NumberFormat("vi-VN").format(feeAmount)} VNĐ
 🗓️ Hạn nộp: Trước ngày ${feeDueDate}
@@ -452,7 +437,7 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
     try {
       const res = await fetch(getNestApiUrl("/zalo/send-message"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           accessToken: accessToken.trim(),
           userId: selectedUserId || undefined,
@@ -465,7 +450,7 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
       const data = await res.json();
       setShowFeeModal(true);
       if (data && data.success) {
-        toast.success(`🎉 ĐÃ BẮN THÔNG BÁO PHÍ THÀNH CÔNG TỚI ZALO ĐIỆN THOẠI!`, {
+        toast.success(`🎉 ĐÃ BẮN THÔNG BÁO THÀNH CÔNG TỚI ZALO HỘI VIÊN!`, {
           description: `Đã gửi trực tiếp tới ${data.recipient?.name || targetMemberName} qua Zalo OA.`,
         });
       } else {
@@ -478,6 +463,43 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng 
       toast.error(`Lỗi hệ thống khi gửi: ${err.message}`);
     } finally {
       setSendingFeeNotice(false);
+    }
+  };
+
+  // Kích hoạt chạy chu kỳ tự động ngay bây giờ (Cron Run Now)
+  const handleTriggerScheduledNow = async () => {
+    if (!accessToken.trim()) {
+      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
+      return;
+    }
+    setIsTriggeringSchedule(true);
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/trigger-scheduled"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          accessToken: accessToken.trim(),
+          scheduleType: scheduleFrequency,
+          targetGroup: scheduleTarget,
+        }),
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        toast.success(`🎉 Đã kích hoạt chạy chu kỳ tự động thành công: ${data.successCount}/${data.total} hội viên đã nhận thông báo!`);
+        setBulkResults({
+          total: data.total,
+          successCount: data.successCount,
+          failedCount: data.failedCount,
+          results: data.results || [],
+        });
+        setShowBulkResultModal(true);
+      } else {
+        toast.error(`Không thể kích hoạt chu kỳ: ${data?.message || "Lỗi xử lý"}`);
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi hệ thống khi chạy chu kỳ: ${err.message}`);
+    } finally {
+      setIsTriggeringSchedule(false);
     }
   };
 
@@ -515,7 +537,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
     try {
       const res = await fetch(getNestApiUrl("/zalo/send-bulk"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           accessToken: accessToken.trim(),
           recipients: selectedMembers.map((m) => ({
@@ -654,25 +676,25 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                 Trung Tâm Bắn Thông Báo Zalo OA &amp; Thu Phí Hội Viên Niên Liễm
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Thao tác bắn thông báo test trước &rarr; Sau đó bắn thông báo đóng phí niên liễm trực tiếp tới Zalo của Bạn
+                Gửi thông báo thật tới Zalo hội viên: Thao tác gửi trực tiếp, gửi chiến dịch hàng loạt hoặc tự động theo chu kỳ
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Chuyển đổi 2 chế độ: Đơn 1-1 vs Hàng Loạt Bulk */}
+            {/* Chuyển đổi 3 chế độ: Gửi Trực Tiếp vs Chiến Dịch Hàng Loạt vs Lịch Chu Kỳ Tự Động */}
             <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-2xl border border-blue-200 dark:border-blue-900 shadow-xs">
               <button
                 type="button"
-                onClick={() => setBroadcastMode("single_test")}
+                onClick={() => setBroadcastMode("direct_send")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                  broadcastMode === "single_test"
+                  broadcastMode === "direct_send"
                     ? "bg-blue-600 text-white shadow-xs"
                     : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <User className="size-3.5" />
-                <span>Gửi Cá Nhân 1-1</span>
+                <span>Gửi Trực Tiếp Hội Viên</span>
               </button>
               <button
                 type="button"
@@ -689,6 +711,21 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                   PRO
                 </span>
               </button>
+              <button
+                type="button"
+                onClick={() => setBroadcastMode("scheduled_auto")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  broadcastMode === "scheduled_auto"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <Clock className="size-3.5" />
+                <span>Lịch Tự Động Định Kỳ</span>
+                {autoScheduleEnabled && (
+                  <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                )}
+              </button>
             </div>
 
             <a
@@ -703,7 +740,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
           </div>
         </div>
 
-        {broadcastMode === "single_test" ? (
+        {broadcastMode === "direct_send" && (
           <>
         {/* Hướng dẫn kết nối nhanh & Mã QR OA */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-950">
@@ -895,40 +932,51 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
           </div>
         </div>
 
-        {/* 2 NÚT HÀNH ĐỘNG BẮN THÔNG BÁO THEO TRÌNH TỰ */}
+        {/* NÚT HÀNH ĐỘNG BẮN THÔNG BÁO THẬT & SAO CHÉP */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          {/* Nút 1: Bắn Test Trước */}
+          {/* Nút 1: Bắn Thật Trực Tiếp */}
           <button
             type="button"
-            onClick={handleSendTestBroadcast}
-            disabled={sendingTestBroadcast}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
-          >
-            {sendingTestBroadcast ? (
-              <RefreshCw className="size-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="size-4 text-emerald-300" />
-            )}
-            <span>BƯỚC 1: BẮN THÔNG BÁO TEST ZALO OA</span>
-          </button>
-
-          {/* Nút 2: Bắn Thông Báo Phí Hội Viên Tới Zalo */}
-          <button
-            type="button"
-            onClick={handleSendFeeNoticeToZalo}
+            onClick={handleSendDirectNotice}
             disabled={sendingFeeNotice}
             className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#DC2626] via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
           >
             {sendingFeeNotice ? (
               <RefreshCw className="size-4 animate-spin" />
             ) : (
-              <CreditCard className="size-4 text-amber-300" />
+              <Send className="size-4 text-amber-300" />
             )}
-            <span>BƯỚC 2: BẮN THÔNG BÁO PHÍ HỘI VIÊN TỚI ZALO CỦA TÔI</span>
+            <span>🚀 BẮN THÔNG BÁO ZALO OA THẬT CHO HỘI VIÊN</span>
+          </button>
+
+          {/* Nút 2: Xem & Sao Chép Mẫu */}
+          <button
+            type="button"
+            onClick={() => {
+              setFeeNoticeText(`📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO CHÍNH THỨC]
+Kính gửi Hội viên: ${targetMemberName} (Mã HV: ${targetMemberCode} - SĐT: ${targetPhone})
+Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thông báo đóng hội phí thường niên năm ${feeYear}:
+
+💰 Số tiền: ${new Intl.NumberFormat("vi-VN").format(feeAmount)} VNĐ
+🗓️ Hạn nộp: Trước ngày ${feeDueDate}
+🏦 Thông tin thụ hưởng chính thức:
+- Ngân hàng: MB Bank (Ngân hàng TMCP Quân Đội)
+- Số tài khoản: 1983000000
+- Chủ tài khoản: CLB DOANH NHAN CEO 1983
+- Nội dung CK: HP1983 ${targetMemberCode} ${targetPhone}
+- Hoặc thanh toán qua Cổng VNPay: https://ceo1983.vn/payment/vnpay?ref=${targetMemberCode}`);
+              setShowFeeModal(true);
+            }}
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
+          >
+            <Eye className="size-4 text-emerald-300" />
+            <span>📋 XEM &amp; SAO CHÉP MẪU NỘI DUNG</span>
           </button>
         </div>
         </>
-      ) : (
+      )}
+
+      {broadcastMode === "bulk_campaign" && (
         /* KHỐI CHIẾN DỊCH BẮN THÔNG BÁO HÀNG LOẠT (BULK CAMPAIGN) */
         <div className="space-y-4 animate-in fade-in">
           {/* Bộ Lọc Nhóm Hội Viên & Hành Động Chọn Tất Cả */}
@@ -1121,6 +1169,125 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
             <p className="text-[11px] text-slate-500 text-center mt-2">
               Hệ thống sẽ tự động cá nhân hóa tên hội viên, mã hội viên, số tiền và gửi tuần tự theo hàng đợi để đảm bảo 100% không bị Zalo chặn rate-limit.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* KHỐI CẤU HÌNH LỊCH TỰ ĐỘNG ĐỊNH KỲ THEO CHU KỲ (CRON AUTOMATION) */}
+      {broadcastMode === "scheduled_auto" && (
+        <div className="space-y-4 animate-in fade-in">
+          <div className="rounded-2xl border border-indigo-200 bg-white p-5 dark:border-indigo-900/60 dark:bg-slate-900 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-600 text-white shadow-xs">
+                  <Clock className="size-5" />
+                </div>
+                <div>
+                  <h5 className="text-sm font-black text-slate-900 dark:text-slate-100">
+                    Tự Động Gửi Thông Báo Theo Chu Kỳ (Cron Automation)
+                  </h5>
+                  <p className="text-xs text-slate-500">
+                    Hệ thống tự động chạy nền quét cơ sở dữ liệu và bắn thông báo thật tới Zalo OA của hội viên theo lịch trình
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {autoScheduleEnabled ? "Đang Bật Tự Động" : "Đang Tắt"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextVal = !autoScheduleEnabled;
+                    setAutoScheduleEnabled(nextVal);
+                    localStorage.setItem("crm_zalo_cron_enabled", String(nextVal));
+                    toast.success(nextVal ? "Đã bật tự động gửi theo chu kỳ!" : "Đã tạm dừng tự động gửi theo chu kỳ.");
+                  }}
+                  className={`relative h-6 w-11 rounded-full transition cursor-pointer ${
+                    autoScheduleEnabled ? "bg-emerald-600" : "bg-slate-300 dark:bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`inline-block size-4 transform rounded-full bg-white transition ${
+                      autoScheduleEnabled ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Tần suất chu kỳ */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                  Tần Suất Chu Kỳ Tự Động:
+                </label>
+                <select
+                  value={scheduleFrequency}
+                  onChange={(e) => {
+                    const val = e.target.value as any;
+                    setScheduleFrequency(val);
+                    localStorage.setItem("crm_zalo_cron_schedule", val);
+                  }}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  <option value="monthly_fee">Định kỳ ngày 01 &amp; 15 hàng tháng (Nhắc phí niên liễm)</option>
+                  <option value="daily_morning">Hàng ngày lúc 08:00 sáng (Morning Digest &amp; Sự kiện)</option>
+                  <option value="weekly_digest">Thứ Hai hàng tuần lúc 08:30 (Bản tin đầu tuần)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                  Nhóm Hội Viên Mục Tiêu:
+                </label>
+                <select
+                  value={scheduleTarget}
+                  onChange={(e) => {
+                    const val = e.target.value as any;
+                    setScheduleTarget(val);
+                    localStorage.setItem("crm_zalo_cron_target", val);
+                  }}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  <option value="unpaid_fee">Hội viên chưa hoàn tất hội phí niên liễm 2026</option>
+                  <option value="all">Tất cả hội viên CLB Doanh Nhân CEO 1983</option>
+                  <option value="board">Thành viên Ban Thường Trực &amp; Ban Điều Hành</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Hành động */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="text-[11px] text-slate-500">
+                Trạng thái: <span className="text-emerald-600 font-bold">● Đang sẵn sàng</span> | Lần chạy gần nhất: <span className="font-semibold text-slate-700 dark:text-slate-300">01/11/2026 08:00</span>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem("crm_zalo_cron_enabled", String(autoScheduleEnabled));
+                    localStorage.setItem("crm_zalo_cron_schedule", scheduleFrequency);
+                    localStorage.setItem("crm_zalo_cron_target", scheduleTarget);
+                    toast.success("✅ Đã lưu cấu hình tự động gửi theo chu kỳ thành công!");
+                  }}
+                  className="px-4 py-2 rounded-xl border border-border bg-background hover:bg-muted text-xs font-bold transition"
+                >
+                  Lưu Cấu Hình
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleTriggerScheduledNow}
+                  disabled={isTriggeringSchedule}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-black shadow-md transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  {isTriggeringSchedule ? <RefreshCw className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5 text-amber-300" />}
+                  <span>{isTriggeringSchedule ? "Đang chạy..." : "Kích Hoạt Gửi Chu Kỳ Ngay Bây Giờ (Run Now)"}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -49,7 +49,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const resObj = exception.getResponse();
 
       if (typeof resObj === 'string') {
-        message = this.translateEnglishMessage(resObj, status);
+        message = this.translateEnglishMessage(resObj, status, request.url);
       } else if (typeof resObj === 'object' && resObj !== null) {
         const anyRes = resObj as Record<string, any>;
 
@@ -60,7 +60,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
             errors = anyRes.errors;
           }
         } else if (typeof anyRes.message === 'string') {
-          message = this.translateEnglishMessage(anyRes.message, status);
+          message = this.translateEnglishMessage(anyRes.message, status, request.url);
         } else {
           message = DEFAULT_ERROR_MESSAGES[status] || 'Đã xảy ra lỗi khi xử lý yêu cầu.';
         }
@@ -84,13 +84,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
     });
   }
 
-  private translateEnglishMessage(raw: string, status: number): string {
+  private translateEnglishMessage(raw: string, status: number, path?: string): string {
     const trimmed = raw.trim();
     const lower = trimmed.toLowerCase();
 
     // Dịch các lỗi phổ biến
     if (lower === 'unauthorized' || lower.includes('invalid credentials')) {
-      return 'Email đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại!';
+      if (path && (path.includes('/auth/login') || path.includes('/auth/local'))) {
+        return 'Email đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại!';
+      }
+      return 'Phiên đăng nhập đã hết hạn hoặc bạn chưa được cấp quyền thao tác. Vui lòng đăng nhập lại!';
     }
     if (lower === 'bad request') {
       return DEFAULT_ERROR_MESSAGES[HttpStatus.BAD_REQUEST];

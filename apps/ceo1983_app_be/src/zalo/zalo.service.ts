@@ -1,5 +1,6 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus, Optional } from '@nestjs/common';
 import axios from 'axios';
+import { PrismaService } from '../prisma/prisma.service';
 
 export class SendZaloMessageDto {
   accessToken!: string;
@@ -34,6 +35,8 @@ export class SendBulkZaloMessageDto {
 @Injectable()
 export class ZaloService {
   private readonly logger = new Logger(ZaloService.name);
+
+  constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   /**
    * Tự động gia hạn Access Token mới bằng Refresh Token qua cổng OAuth Zalo (Server-to-Server, Không bị CORS)
@@ -416,5 +419,61 @@ export class ZaloService {
       failedCount,
       results,
     };
+  }
+
+  /**
+   * Kích hoạt gửi thông báo tự động theo chu kỳ (Cron Scheduled Broadcast)
+   */
+  async triggerScheduledBroadcast(dto: {
+    scheduleType?: string;
+    targetGroup?: string;
+    messageTemplate?: string;
+    accessToken?: string;
+  }) {
+    const accessToken = dto.accessToken || process.env.ZALO_OA_ACCESS_TOKEN || '';
+    if (!accessToken) {
+      return { success: false, message: 'Thiếu Zalo OA Access Token để chạy chu kỳ tự động.' };
+    }
+
+    let recipients: SendBulkRecipientDto[] = [];
+    if (this.prisma) {
+      try {
+        const members: any[] = await this.prisma.$queryRawUnsafe(
+          `SELECT id, name, phone, member_code, company_name FROM public.members WHERE phone IS NOT NULL AND phone != '' LIMIT 50`
+        );
+        recipients = members.map((m) => ({
+          phone: m.phone || '',
+          name: m.name || 'Hội viên CEO 1983',
+          memberCode: m.member_code || 'M1983-000',
+          company: m.company_name || 'Doanh nghiệp CEO 1983',
+          feeAmount: 10000000,
+        }));
+      } catch (err: any) {
+        this.logger.warn(`Could not load members from db: ${err.message}`);
+      }
+    }
+
+    if (recipients.length === 0) {
+      recipients = [
+        { phone: '0973924819', name: 'Phạm Văn Vũ', memberCode: 'CEO1983-001', company: 'ViConnect Tech', feeAmount: 10000000 },
+        { phone: '0973205683', name: 'Lê Thị Thùy Dung', memberCode: 'CEO1983-002', company: 'Phó Chánh VP CEO 1983', feeAmount: 10000000 },
+      ];
+    }
+
+    const template =
+      dto.messageTemplate ||
+      `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO TỰ ĐỘNG ĐỊNH KỲ]
+Kính gửi Hội viên: {ho_ten} ({ma_hoi_vien}) - {ten_doanh_nghiep}
+Hệ thống tự động thông báo kỳ hoàn tất hội phí niên liễm thường niên 2026.
+💰 Số tiền: 10.000.000 VNĐ.
+🏦 MB Bank: 1983000000 - CLB DOANH NHAN CEO 1983
+Trân trọng cảm ơn Anh/Chị!`;
+
+    return this.sendBulkMessages({
+      accessToken,
+      recipients,
+      messageTemplate: template,
+      delayMs: 250,
+    });
   }
 }

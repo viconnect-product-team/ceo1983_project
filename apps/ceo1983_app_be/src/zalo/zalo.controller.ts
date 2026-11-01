@@ -38,5 +38,18 @@ export class ZaloController {
   async sendBulkMessages(@Body() dto: SendBulkZaloMessageDto) {
     return this.zaloService.sendBulkMessages(dto);
   }
+
+  @Post('trigger-scheduled')
+  async triggerScheduledBroadcast(
+    @Body()
+    dto: {
+      scheduleType?: string;
+      targetGroup?: string;
+      messageTemplate?: string;
+      accessToken?: string;
+    },
+  ) {
+    return this.zaloService.triggerScheduledBroadcast(dto);
+  }
 }
 
