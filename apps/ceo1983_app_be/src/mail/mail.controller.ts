@@ -13,6 +13,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { MailService } from './mail.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 export interface CreateMailTemplateDto {
   code: string;
@@ -48,6 +51,8 @@ export interface SendTestEmailDto {
 }
 
 @Controller('mail')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk')
 export class MailController {
   constructor(private readonly mailService: MailService) {}
 

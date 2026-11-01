@@ -363,8 +363,8 @@ export class UsersService {
   // ── ACCOUNT MANAGEMENT METHODS ──────────────────────────────────────────
 
   async checkIsAdmin(userId: string): Promise<boolean> {
-    if (userId === 'mock-admin-id' || userId === '00000000-0000-0000-0000-000000000000') {
-      return true;
+    if (!userId || !/^[0-9a-fA-F-]{36}$/.test(userId)) {
+      return false;
     }
     const roles = await this.usersRepo.getUserRoles(userId);
 

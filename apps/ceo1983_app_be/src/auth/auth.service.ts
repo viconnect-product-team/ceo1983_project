@@ -9,10 +9,13 @@ import * as jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import axios from 'axios';
 
+import * as crypto from 'crypto';
+
 @Injectable()
 export class AuthService {
   private googleClient: OAuth2Client;
   private appleJwksClient: jwksClient.JwksClient;
+  private resetTokenStore = new Map<string, { token: string; expiresAt: number }>();
 
   constructor(
     private usersService: UsersService,
@@ -43,28 +46,12 @@ export class AuthService {
       isMatch = await bcrypt.compare(normalizedPass, user.password).catch(() => false);
     }
 
-    // Tier 2: plain text equality
-    if (!isMatch && (cleanPass === user.password || normalizedPass === user.password)) {
+    // Tier 2: legacy plaintext auto-migration to bcrypt (one-time security upgrade)
+    if (!isMatch && user.password && !user.password.startsWith('$2') && (cleanPass === user.password || normalizedPass === user.password)) {
       isMatch = true;
-    }
-
-    // Tier 3: check public.members about / notes field for Pass=...
-    if (!isMatch) {
-      const memberInfo = await this.usersService.getMemberInfo(user.id, user.email || undefined);
-      const rawText = `${memberInfo?.about || ''} ${memberInfo?.notes || ''}`.trim();
-      if (rawText) {
-        const passMatch = rawText.match(/Pass=([^\s|]+)/);
-        if (passMatch) {
-          const expected = passMatch[1].trim();
-          if (expected === cleanPass || expected === normalizedPass) {
-            isMatch = true;
-            // Sync hash into vione_users for instant future logins
-            const salt = await bcrypt.genSalt(10);
-            const newHash = await bcrypt.hash(cleanPass || normalizedPass, salt);
-            await this.usersService.syncUserPasswordHash(user.id, newHash).catch(() => {});
-          }
-        }
-      }
+      const salt = await bcrypt.genSalt(10);
+      const newHash = await bcrypt.hash(cleanPass || normalizedPass, salt);
+      await this.usersService.syncUserPasswordHash(user.id, newHash).catch(() => {});
     }
 
     if (isMatch) {
@@ -471,8 +458,27 @@ export class AuthService {
     if (!email || !email.trim()) {
       throw new BadRequestException('Email is required');
     }
-    const user = await this.usersService.findByEmail(email.trim()).catch(() => null);
-    // Return success to avoid email enumeration
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await this.usersService.findByEmail(cleanEmail).catch(() => null);
+
+    if (user && user.email) {
+      // Sinh token bảo mật 32-byte ngẫu nhiên với thời hạn 15 phút
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = Date.now() + 15 * 60 * 1000;
+      this.resetTokenStore.set(cleanEmail, { token, expiresAt });
+
+      if (this.mailService) {
+        void this.mailService.sendDirectEmail({
+          to: cleanEmail,
+          subject: '[CEO 1983] Yêu cầu đặt lại mật khẩu tài khoản',
+          html: `<p>Xin chào,</p><p>Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản CEO 1983 của bạn.</p><p>Mã xác thực của bạn (có hiệu lực trong 15 phút):</p><h2 style="color: #2563eb; letter-spacing: 2px;">${token}</h2><p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>`,
+        }).catch((err) => {
+          console.warn('Could not send reset password email:', err?.message);
+        });
+      }
+    }
+
+    // Luôn trả về thông báo chung để tránh tấn công dò quét email (Email Enumeration Protection)
     return { ok: true, message: 'Nếu email tồn tại trên hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.' };
   }
 
@@ -480,17 +486,33 @@ export class AuthService {
     if (!data.newPassword || data.newPassword.length < 6) {
       throw new BadRequestException('Mật khẩu mới phải có ít nhất 6 ký tự');
     }
-    const email = data.email?.trim();
+    const email = data.email?.trim()?.toLowerCase();
     if (!email) {
       throw new BadRequestException('Email is required');
     }
+
+    // BẮT BUỘC KIỂM TRA TOKEN BẢO MẬT (OWASP A07 / VULN-01 Fix)
+    if (!data.token || typeof data.token !== 'string' || !data.token.trim()) {
+      throw new BadRequestException('Mã xác thực đặt lại mật khẩu là bắt buộc và không được để trống!');
+    }
+
+    const stored = this.resetTokenStore.get(email);
+    if (!stored || stored.token !== data.token.trim() || stored.expiresAt < Date.now()) {
+      throw new BadRequestException('Mã xác thực đặt lại mật khẩu không hợp lệ hoặc đã hết hạn (chỉ có hiệu lực trong 15 phút)!');
+    }
+
     const user = await this.usersService.findByEmail(email).catch(() => null);
     if (!user) {
       throw new BadRequestException('Tài khoản không tồn tại trên hệ thống');
     }
-    const salt = await bcrypt.genSalt();
+
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(data.newPassword, salt);
     await this.usersService.updateUser(user.id, { password: hashedPassword });
+
+    // Hủy token ngay sau khi sử dụng thành công (One-time token consumption)
+    this.resetTokenStore.delete(email);
+
     return { ok: true, message: 'Đặt lại mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.' };
   }
 

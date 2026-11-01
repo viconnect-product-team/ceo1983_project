@@ -22,7 +22,7 @@ export class PaymentController {
   }
 
   @Post('vnpay-verify')
-  verifyVNPayPost(@Body() dto: { vnpParams: Record<string, string>; hashSecret?: string }) {
+  verifyVNPayPost(@Body() dto: { vnpParams: Record<string, string> }) {
     return this.paymentService.verifyReturnUrl(dto);
   }
 }

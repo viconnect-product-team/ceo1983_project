@@ -92,8 +92,9 @@ import { createVietnameseValidationPipe } from './common/pipes/validation.pipe';
 async function bootstrap() {
   await resolveDatabaseConfig();
   const app = await NestFactory.create(AppModule);
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ extended: true, limit: '50mb' }));
+  // VULN-15 Fix: Giảm tải trọng JSON từ 50MB xuống 15MB để ngăn ngừa tấn công DoS
+  app.use(json({ limit: '15mb' }));
+  app.use(urlencoded({ extended: true, limit: '15mb' }));
 
   // Security Headers Middleware (OWASP Standard)
   app.use((req, res, next) => {
@@ -103,12 +104,31 @@ async function bootstrap() {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=*, microphone=(), geolocation=*');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://appleid.apple.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-ancestors 'self'");
     next();
   });
 
   app.setGlobalPrefix('api');
+  // VULN-11 Fix: Khóa chặt chính sách CORS Whitelist theo các tên miền chính thức, ngăn ngừa CSRF & rò rỉ dữ liệu
+  const allowedOrigins = [
+    'https://ceo1983.viconnect.vn',
+    'https://crm.ceo1983.viconnect.vn',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:8080',
+    'capacitor://localhost',
+  ];
   app.enableCors({
-    origin: true,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.viconnect.vn')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Chặn bởi chính sách an ninh CORS của CEO 1983'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

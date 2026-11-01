@@ -14,10 +14,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    if (payload.sub !== 'mock-admin-id' && !uuidRegex.test(payload.sub)) {
-      throw new UnauthorizedException('Invalid user ID format');
+    if (!payload.sub || !uuidRegex.test(payload.sub)) {
+      throw new UnauthorizedException('Invalid user ID format in token');
     }
-    const id = payload.sub === 'mock-admin-id' ? '00000000-0000-0000-0000-000000000000' : payload.sub;
+    const id = payload.sub;
     return {
       id,
       userId: id,

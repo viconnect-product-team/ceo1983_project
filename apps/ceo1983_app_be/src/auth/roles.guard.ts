@@ -80,7 +80,10 @@ export class RolesGuard implements CanActivate {
             );
           }
           if (vu.role) dbRoles.push(vu.role);
-          if (vu.email?.toLowerCase().includes('admin') || vu.username?.toLowerCase().includes('admin')) {
+          // VULN-02 Fix: Chỉ tài khoản quản trị hệ thống chính thức được định danh tường minh (loại bỏ lỗ hổng substring includes 'admin')
+          const cleanEmail = (vu.email || '').toLowerCase().trim();
+          const cleanUsername = (vu.username || '').toLowerCase().trim();
+          if (cleanEmail === 'admin@connect.vn' || cleanUsername === 'admin@connect.vn' || cleanEmail === 'ceo.chutich@ceo1983.com') {
             dbRoles.push('admin', 'platform_admin', 'adm');
           }
         }

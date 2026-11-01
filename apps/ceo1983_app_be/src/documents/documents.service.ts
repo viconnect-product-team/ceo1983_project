@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { DocumentsRepository } from './documents.repository';
 import { CreateDocumentDto, UpdateDocumentDto } from './dto';
 
@@ -84,7 +84,13 @@ export class DocumentsService {
     return this.mapRow(r);
   }
 
-  async update(id: string, data: UpdateDocumentDto) {
+  async update(id: string, data: UpdateDocumentDto, userId?: string) {
+    if (userId) {
+      const existing = await this.documentsRepo.findFilePath(id);
+      if (!existing) {
+        throw new NotFoundException('Không tìm thấy tài liệu để cập nhật');
+      }
+    }
     const filePath = data.filePath;
     const isFolder = data.isFolder !== undefined ? data.isFolder : (data.type === 'folder' ? true : undefined);
     const folderId = data.folderId !== undefined ? data.folderId : data.parentId;
@@ -129,7 +135,13 @@ export class DocumentsService {
     return { id, targetFolderId };
   }
 
-  async delete(id: string) {
+  async delete(id: string, userId?: string) {
+    if (userId) {
+      const existing = await this.documentsRepo.findFilePath(id);
+      if (!existing) {
+        throw new NotFoundException('Không tìm thấy tài liệu để xóa');
+      }
+    }
     const ok = await this.documentsRepo.deleteDocument(id);
     return { ok };
   }

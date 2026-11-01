@@ -70,7 +70,8 @@ export class PaymentService {
     }
 
     const tmnCode = dto.tmnCode?.trim() || this.defaultTmnCode;
-    const hashSecret = dto.hashSecret?.trim() || this.defaultHashSecret;
+    // VULN-05 Fix: Tuyệt đối không nhận hashSecret từ client. 100% sử dụng secret an toàn từ biến môi trường máy chủ
+    const hashSecret = process.env.VNP_HASH_SECRET?.trim() || this.defaultHashSecret;
     const vnpUrl = dto.vnpUrl?.trim() || this.defaultVnpUrl;
     const returnUrl = dto.returnUrl?.trim() || this.defaultReturnUrl;
 
@@ -131,7 +132,8 @@ export class PaymentService {
     delete vnpParams['vnp_SecureHash'];
     delete vnpParams['vnp_SecureHashType'];
 
-    const hashSecret = dto.hashSecret?.trim() || this.defaultHashSecret;
+    // VULN-05 Fix: Tuyệt đối không nhận hashSecret từ client. 100% sử dụng secret an toàn từ biến môi trường máy chủ
+    const hashSecret = process.env.VNP_HASH_SECRET?.trim() || this.defaultHashSecret;
     const sortedParams = this.sortObject(vnpParams);
 
     const signData = Object.keys(sortedParams)

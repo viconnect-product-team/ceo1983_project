@@ -57,3 +57,11 @@ release_apk/
 
 # Scratch & Temporary Scripts
 scratch/
+
+# Secrets, Environment Configs & SSL Private Keys (OWASP A02 Protection)
+.env*
+!.env.example
+*.key
+*.pem
+*dump*.json
+ceo1983_accounts_summary.json

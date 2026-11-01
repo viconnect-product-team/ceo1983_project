@@ -45,8 +45,8 @@ const config: CapacitorConfig = {
     allowNavigation: [
       '14.225.217.232*',
       '14.225.217.232:5444*',
-      '*.14-225-217-232.sslip.io*',
-      '*.sslip.io*',
+      'ceo1983.viconnect.vn*',
+      '*.ceo1983.viconnect.vn*',
       'ceo1983.com*',
       '*.ceo1983.com*',
       'api.qrserver.com*'

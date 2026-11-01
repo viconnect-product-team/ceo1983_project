@@ -1,12 +1,14 @@
-import { Controller, Post, Get, Body, Query, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Headers, UseGuards } from '@nestjs/common';
 import {
   ZaloService,
   SendZaloMessageDto,
   RefreshZaloTokenDto,
   SendBulkZaloMessageDto,
 } from './zalo.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('zalo')
+@UseGuards(JwtAuthGuard)
 export class ZaloController {
   constructor(private readonly zaloService: ZaloService) {}
 

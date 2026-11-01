@@ -225,7 +225,22 @@ export class UploadController {
     } catch {}
     filePathStr = filePathStr.replace(/^\/+/, '');
 
+    // VULN-04 Fix: Chặn đứng Path Traversal & truy cập tệp ẩn (.env, ..)
+    if (
+      filePathStr.includes('..') ||
+      filePathStr.includes('\\') ||
+      filePathStr.includes('\0') ||
+      filePathStr.includes('://') ||
+      path.isAbsolute(filePathStr)
+    ) {
+      return res.status(403).send('Forbidden: Invalid or malicious file path');
+    }
+
     const filenameOnly = path.basename(filePathStr);
+    if (filenameOnly.startsWith('.') || filePathStr.startsWith('.')) {
+      return res.status(403).send('Forbidden: Access to hidden files is denied');
+    }
+
     const contentType = getContentType(filePathStr);
 
     try {
@@ -261,7 +276,6 @@ export class UploadController {
         path.join('/tmp', 'uploads', 'logos', filenameOnly),
         path.join('/tmp', 'uploads', 'documents', filenameOnly),
         path.join(process.cwd(), 'dist', 'uploads', filePathStr),
-        path.join(process.cwd(), filePathStr),
       ];
 
       for (const cand of candidates) {
@@ -270,6 +284,11 @@ export class UploadController {
             const fileBuf = fs.readFileSync(cand);
             res.setHeader('Content-Type', contentType);
             res.setHeader('Cache-Control', 'public, max-age=86400');
+            // VULN-13 Fix: Chống Stored XSS khi xem tệp SVG
+            if (contentType === 'image/svg+xml') {
+              res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+              res.setHeader('X-Content-Type-Options', 'nosniff');
+            }
             return res.status(200).send(fileBuf);
           }
         } catch {}

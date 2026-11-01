@@ -1020,9 +1020,12 @@ export function MailTemplateManager() {
                       : "max-w-2xl bg-white rounded-xl shadow-md p-2"
                   }`}
                 >
-                  <div
-                    className="text-slate-900"
-                    dangerouslySetInnerHTML={{ __html: renderedContent.html }}
+                  {/* VULN-13 Fix: Sử dụng Sandboxed Iframe triệt tiêu 100% rủi ro XSS khi hiển thị HTML email */}
+                  <iframe
+                    title="Email Template Live Preview"
+                    srcDoc={renderedContent.html}
+                    sandbox=""
+                    className="w-full min-h-[420px] border-0 rounded-lg bg-white text-slate-900"
                   />
                 </div>
               </div>
